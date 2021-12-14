@@ -118,6 +118,9 @@ async function downloadPkgBuffer(name) {
   const pkg = Module.packages[name];
   const file_name = pkg.file_name;
   const resp = await fetch(`${baseURL}${file_name}`);
+  if (!resp.ok) {
+    throw new Error(`Failed to load package ${name}: request failed.`);
+  }
   const buffer = await resp.arrayBuffer();
   return buffer;
 }
@@ -219,33 +222,50 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       packagePromises[name] = downloadPkgBuffer(name);
     }
 
+    const loaded = [];
+    const failed = {};
     // TODO: At some point add support for prefetching modules by awaiting on a
     // promise right here which resolves in loadPyodide when the bootstrap is done.
-
     for (const name of toLoadShared) {
-      sharedLibraryPromises[name] = sharedLibraryPromises[name].then((buffer) =>
-        unpackBuffer(name, buffer)
-      );
+      sharedLibraryPromises[name] = sharedLibraryPromises[name]
+        .then((buffer) => {
+          unpackBuffer(name, buffer);
+          loaded.push(name);
+          loadedPackages[name] = "pyodide";
+        })
+        .catch((err) => {
+          failed[name] = err;
+        });
     }
 
     await Promise.all(Object.values(sharedLibraryPromises));
 
     for (const name of toLoad) {
-      packagePromises[name] = packagePromises[name].then((buffer) =>
-        unpackBuffer(name, buffer)
-      );
+      packagePromises[name] = packagePromises[name]
+        .then((buffer) => {
+          unpackBuffer(name, buffer);
+          loaded.push(name);
+          loadedPackages[name] = "pyodide";
+        })
+        .catch((err) => {
+          failed[name] = err;
+        });
     }
     await Promise.all(Object.values(packagePromises));
 
     Module.reportUndefinedSymbols();
-    messageCallback(`Loaded ${packageNames}`);
+    if (loaded.length > 0) {
+      const successNames = loaded.join(", ");
+      messageCallback(`Loaded ${successNames}`);
+    }
+    if (Object.keys(failed).length > 0) {
+      const failedNames = Object.keys(failed).join(", ");
+      messageCallback(`Failed to load ${failedNames}`);
+    }
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
     Module.importlib.invalidate_caches();
-    for (let pkg of toLoad) {
-      loadedPackages[pkg] = "pyodide";
-    }
   } finally {
     releaseLock();
   }

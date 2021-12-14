@@ -1,4 +1,6 @@
 import pytest
+from pathlib import Path
+import shutil
 
 from conftest import JavascriptException
 
@@ -48,26 +50,17 @@ def test_load_handle_failure(selenium_standalone):
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone
-    selenium.run(
+    selenium.run_js(
         """
-        from pyodide import package_loader
-        from pyodide.package_loader import pyfetch, SITE_PACKAGES
-        async def bad_load_package(url, name):
-            resp = await pyfetch(url + "garbage")
-            await resp.unpack_archive(extract_dir=SITE_PACKAGES)
-            return to_js(list((SITE_PACKAGES / name).glob("**/*.so")))
-        orig_load_package = package_loader.load_package
-        package_loader.load_package = bad_load_package
+        self.orig_pytz_name = pyodide._module.packages["pytz"].file_name;
+        pyodide._module.packages["pytz"].file_name += "garbage";
         """
     )
-    with pytest.raises(
-        JavascriptException,
-        match="OSError: Request for ./pytz-2021.1-py3-none-any.whlgarbage failed with status 404: File not found",
-    ):
-        selenium.load_package("pytz")
+    selenium.load_package("pytz")
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
-    selenium.run("package_loader.load_package = orig_load_package")
-
+    selenium.run_js(
+        """pyodide._module.packages["pytz"].file_name = self.orig_pytz_name"""
+    )
     selenium.load_package("pytz")
     selenium.run("import pytz")
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
