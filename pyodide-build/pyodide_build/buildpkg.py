@@ -566,8 +566,8 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
     build_dir = pkg_root / "build"
     src_dir_name: str = pkg_name + "-" + pkg["package"]["version"]
     src_path = build_dir / src_dir_name
-    source_metadata = pkg.get("source", {})
-    build_metadata = pkg.get("build", {})
+    source_metadata = pkg["source"]
+    build_metadata = pkg["build"]
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         if not needs_rebuild(pkg_root, build_dir, source_metadata):
             return
@@ -672,15 +672,16 @@ def main(args):
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     success = True
     try:
-        build_metadata = pkg.get("build", {})
-        pkg["build"] = build_metadata
-        build_metadata["cflags"] = build_metadata.get("cflags", "") + " " + args.cflags
-        build_metadata["cxxflags"] = (
-            build_metadata.get("cxxflags", "") + " " + args.cxxflags
-        )
-        build_metadata["ldflags"] += (
-            build_metadata.get("ldflags", "") + " " + args.ldflags
-        )
+        pkg["source"] = pkg.get("source", {})
+        pkg["build"] = pkg.get("build", {})
+        build_metadata = pkg["build"]
+        build_metadata["cflags"] = build_metadata.get("cflags", "")
+        build_metadata["cxxflags"] = build_metadata.get("cxxflags", "")
+        build_metadata["ldflags"] = build_metadata.get("ldflags", "")
+
+        build_metadata["cflags"] += f" {args.cflags}"
+        build_metadata["cxxflags"] += f" {args.cxxflags}"
+        build_metadata["ldflags"] += f" {args.ldflags}"
         build_package(pkg_root, pkg, target=args.target, install_dir=args.install_dir)
     except:
         success = False
