@@ -228,8 +228,8 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     // promise right here which resolves in loadPyodide when the bootstrap is done.
     for (const name of toLoadShared) {
       sharedLibraryPromises[name] = sharedLibraryPromises[name]
-        .then((buffer) => {
-          unpackBuffer(name, buffer);
+        .then(async (buffer) => {
+          await unpackBuffer(name, buffer);
           loaded.push(name);
           loadedPackages[name] = "pyodide";
         })
@@ -242,8 +242,8 @@ export async function loadPackage(names, messageCallback, errorCallback) {
 
     for (const name of toLoad) {
       packagePromises[name] = packagePromises[name]
-        .then((buffer) => {
-          unpackBuffer(name, buffer);
+        .then(async (buffer) => {
+          await unpackBuffer(name, buffer);
           loaded.push(name);
           loadedPackages[name] = "pyodide";
         })
@@ -261,6 +261,10 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     if (Object.keys(failed).length > 0) {
       const failedNames = Object.keys(failed).join(", ");
       messageCallback(`Failed to load ${failedNames}`);
+      for (let [name, err] of Object.entries(failed)) {
+        console.warn(`The following error occurred while loading ${name}:`);
+        console.error(err);
+      }
     }
 
     // We have to invalidate Python's import caches, or it won't
