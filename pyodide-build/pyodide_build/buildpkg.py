@@ -470,8 +470,32 @@ def create_packaged_token(buildpath: Path):
     (buildpath / ".packaged").write_text("\n")
 
 
-def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner):
-    if pkg.get("build", {}).get("library"):
+def run_script(
+    buildpath: Path,
+    srcpath: Path,
+    build_metadata: Dict[str, Any],
+    bash_runner: BashRunnerWithSharedEnvironment,
+):
+    """
+    Run the build script indicated in meta.yaml
+
+    Parameters
+    ----------
+    buildpath
+        the package build path. Usually `packages/<name>/build`
+
+    srcpath
+        the package source path. Usually
+        `packages/<name>/build/<name>-<version>`.
+
+    build_metadata
+        The build section from meta.yaml.
+
+    bash_runner
+        The runner we will use to execute our bash commands. Preserves environment
+        variables from one invocation to the next.
+    """
+    if build_metadata.get("library"):
         # in libraries this  writes the packaged flag
         # We don't really do packaging, but needs_rebuild checks .packaged to
         # determine if it needs to rebuild
@@ -479,13 +503,26 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner)
             return
 
     with chdir(srcpath):
-        bash_runner.run(pkg["build"]["script"], check=True)
+        bash_runner.run(build_metadata["script"], check=True)
 
 
-def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
+def needs_rebuild(
+    pkg_root: Path, buildpath: Path, source_metadata: Dict[str, Any]
+) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
     sources are newer than the `.packaged` thunk.
+
+    pkg_root
+        The path to the root directory for the package. Generally
+        $PYODIDE_ROOT/packages/<PACKAGES>
+
+    buildpath
+        The path to the build directory. Generally will be
+        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
+
+    src_metadata
+        The source section from meta.yaml.
     """
     packaged_token = buildpath / ".packaged"
     if not packaged_token.is_file():
@@ -495,9 +532,9 @@ def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
 
     def source_files():
         yield pkg_root / "meta.yaml"
-        yield from pkg.get("source", {}).get("patches", [])
-        yield from (x[0] for x in pkg.get("source", {}).get("extras", []))
-        src_path = pkg.get("source", {}).get("path")
+        yield from source_metadata.get("patches", [])
+        yield from (x[0] for x in source_metadata.get("extras", []))
+        src_path = source_metadata.get("path")
         if src_path:
             yield from Path(src_path).glob("**/*")
 
@@ -509,6 +546,22 @@ def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
 
 
 def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
+    """
+    Build the package. The main entrypoint in this module.
+
+    pkg_root
+        The path to the root directory for the package. Generally
+        $PYODIDE_ROOT/packages/<PACKAGES>
+
+    pkg
+        The package metadata parsed from the meta.yaml file in pkg_root
+
+    target
+        The path to the target Python installation
+
+    install_dir
+        Directory for installing built host packages.
+    """
     pkg_name = pkg["package"]["name"]
     build_dir = pkg_root / "build"
     src_dir_name: str = pkg_name + "-" + pkg["package"]["version"]
@@ -516,7 +569,7 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
     source_metadata = pkg.get("source", {})
     build_metadata = pkg.get("build", {})
     with chdir(pkg_root), get_bash_runner() as bash_runner:
-        if not needs_rebuild(pkg, pkg_root, build_dir):
+        if not needs_rebuild(pkg_root, build_dir, source_metadata):
             return
         if source_metadata:
             if build_dir.resolve().is_dir():
