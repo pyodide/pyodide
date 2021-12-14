@@ -13,6 +13,7 @@ const IN_NODE =
  * @private
  */
 export let loadScript;
+export let fetch;
 if (globalThis.document) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
@@ -33,7 +34,7 @@ if (globalThis.document) {
   loadScript = async (url) => {
     if (url.includes("://")) {
       // If it's a url, have to load it with fetch and then eval it.
-      const fetch = await fetchPromise;
+      fetch = await fetchPromise;
       const vm = await vmPromise;
       vm.runInThisContext(await (await fetch(url)).text());
     } else {
