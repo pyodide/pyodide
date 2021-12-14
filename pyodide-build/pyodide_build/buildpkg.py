@@ -114,9 +114,13 @@ def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
     """
     Checks that an archive matches the checksum in the package metadata.
 
-    archive -- the path to the archive we wish to checksum
 
-    source_metadata -- The source section from meta.yaml.
+    Parameters
+    ----------
+    archive
+        the path to the archive we wish to checksum
+    source_metadata
+        The source section from meta.yaml.
     """
     checksum_keys = {"md5", "sha256"}.intersection(source_metadata)
     if not checksum_keys:
@@ -157,19 +161,25 @@ def trim_archive_extension(tarballname):
 
 
 def download_and_extract(
-    buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any], args
+    buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
 ) -> Path:
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
 
-    buildpath -- The path to the build directory. Generally will be
-    $(PYOIDE_ROOT)/packages/<package-name>/build/.
+    Arguments
+    ---------
 
-    srcpath -- The place we want the source to end up. Will generally be
-    $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
+    buildpath
+        The path to the build directory. Generally will be
+        $(PYOIDE_ROOT)/packages/<package-name>/build/.
 
-    pkg -- The dictionary from parsing meta.yaml.
+    srcpath
+        The place we want the source to end up. Will generally be
+        $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
+
+    src_metadata
+        The source section from meta.yaml.
     """
     response = request.urlopen(src_metadata["url"])
     _, parameters = cgi.parse_header(response.headers.get("Content-Disposition", ""))
@@ -180,7 +190,7 @@ def download_and_extract(
 
     tarballpath = buildpath / tarballname
     if not tarballpath.is_file():
-        os.makedirs(os.path.dirname(tarballpath), exist_ok=True)
+        os.makedirs(tarballpath.parent, exist_ok=True)
         with open(tarballpath, "wb") as f:
             f.write(response.read())
         try:
@@ -199,56 +209,72 @@ def download_and_extract(
 
 
 def prepare_source(
-    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any], args
+    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
 ) -> Path:
     """
-    Figure out from the "source" key in the package metadata where to get the source from,
-    then get the source into srcpath.
+    Figure out from the "source" key in the package metadata where to get the source
+    from, then get the source into srcpath (or somewhere else, if it goes somewhere
+    else, returns where it ended up).
 
-    buildpath -- The path to the build directory. Generally will be
-    $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
+    Arguments
+    ---------
+    pkg_root
+        The path to the root directory for the package. Generally
+        $PYODIDE_ROOT/packages/<PACKAGES>
 
-    srcpath -- The place we want the source to end up. Will generally be
-    $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
+    buildpath
+        The path to the build directory. Generally will be
+        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
 
-    pkg -- The dictionary from parsing meta.yaml.
+    srcpath
+        The default place we want the source to end up. Will generally be
+        $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
 
-    Returns: The location where the source ended up.
+    src_metadata
+        The source section from meta.yaml.
+
+    Returns
+    -------
+        The location where the source ended up.
     """
-    if not "url" in src_metadata and not "path" in src_metadata:
-        raise ValueError("Incorrect source provided")
-
     if "url" in src_metadata:
-        srcpath = download_and_extract(buildpath, srcpath, src_metadata, args)
-        patch(pkg_root, srcpath, src_metadata, args)
+        srcpath = download_and_extract(buildpath, srcpath, src_metadata)
+        patch(pkg_root, srcpath, src_metadata)
         return srcpath
 
-    if "path" in src_metadata:
-        srcdir = Path(src_metadata["path"])
+    if "path" not in src_metadata:
+        raise ValueError(
+            "Incorrect source provided. Either a url or a path must be provided."
+        )
 
-        if not srcdir.is_dir():
-            raise ValueError(f"path={srcdir} must point to a directory that exists")
+    srcdir = Path(src_metadata["path"])
 
-        if not srcpath.is_dir():
-            shutil.copytree(srcdir, srcpath)
+    if not srcdir.is_dir():
+        raise ValueError(f"path={srcdir} must point to a directory that exists")
 
-        return srcpath
+    if not srcpath.is_dir():
+        shutil.copytree(srcdir, srcpath)
 
-    assert False, "Unreachable"
+    return srcpath
 
 
-def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any], args):
+def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
     """
     Apply patches to the source.
 
-    meta_file -- the Path to the meta.yaml file
+    Parameters
+    ----------
+    pkg_root
+        The path to the root directory for the package. Generally
+        $PYODIDE_ROOT/packages/<PACKAGES>
 
-    srcpath -- The path to the source. We extract the source into the build
-    directory, so it will be something like $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
+    srcpath
+        The path to the source. We extract the source into the build directory, so it
+        will be something like
+        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
 
-    src_metadata -- The "source" key from meta.yaml.
-
-    args -- the command line args, currently ignored.
+    src_metadata
+        The "source" key from meta.yaml.
     """
     if (srcpath / ".patched").is_file():
         return
@@ -287,7 +313,19 @@ def pack_wheel(path):
     os.chdir(cwd)
 
 
-def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
+def compile(
+    pkg_name: str,
+    pkg_root: Path,
+    srcpath: Path,
+    build_metadata: Dict[str, Any],
+    bash_runner: BashRunnerWithSharedEnvironment,
+    *,
+    cflags: str,
+    cxxflags: str,
+    ldflags: str,
+    target: str,
+    install_dir: str,
+):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
     with compiler wrappers subbed in, which don't actually build the package but
@@ -298,19 +336,52 @@ def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runne
     In any case, only works for Python packages, not libraries or shared libraries
     which don't have a setup.py.
 
-    pkg_root -- the root directory of the package
+    Parameters
+    ----------
+    pkg_root
+        The path to the root directory for the package. Generally
+        $PYODIDE_ROOT/packages/<PACKAGES>
 
-    srcpath -- The path to the source. We extract the source into the build
-    directory, so it will be something like $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
+    srcpath
+        The path to the source. We extract the source into the build directory, so it
+        will be something like
+        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
 
-    args -- the command line args that buildpkg was invoked with. Specifies compile
-    flags and install directory.
+    build_metadata
+        The command line args that buildpkg was invoked with. Specifies compile flags
+        and install directory.
+
+    bash_runner
+        The runner we will use to execute our bash commands. Preserves environment
+        variables from one invocation to the next.
+
+    cflags
+        Extra compile flags
+
+    cxxflags
+        Extra C++ compile flags
+
+    ldflags
+        Extra link flags
+
+    target
+        The path to the target Python installation
+
+    install_dir
+        Directory for installing built host packages. Defaults to setup.py
+        default. Set to 'skip' to skip installation. Installation is
+        needed if you want to build other packages that depend on this one.
     """
     if (srcpath / ".built").is_file():
         return
 
-    if pkg.get("build", {}).get("skip_host", True):
+    if build_metadata.get("skip_host", True):
         bash_runner.env["SKIP_HOST"] = ""
+
+    cflags += " " + build_metadata.get("cflags", "")
+    cxxflags += " " + build_metadata.get("cxxflags", "")
+    ldflags += " " + build_metadata.get("ldflags", "")
+    replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
     with chdir(srcpath):
         subprocess.run(
@@ -320,17 +391,17 @@ def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runne
                 "pyodide_build",
                 "pywasmcross",
                 "--cflags",
-                args.cflags + " " + pkg.get("build", {}).get("cflags", ""),
+                cflags,
                 "--cxxflags",
-                args.cxxflags + " " + pkg.get("build", {}).get("cxxflags", ""),
+                cxxflags,
                 "--ldflags",
-                args.ldflags + " " + pkg.get("build", {}).get("ldflags", ""),
+                ldflags,
                 "--target",
-                args.target,
+                target,
                 "--install-dir",
-                args.install_dir,
+                install_dir,
                 "--replace-libs",
-                ";".join(pkg.get("build", {}).get("replace-libs", [])),
+                replace_libs,
             ],
             check=True,
             env=bash_runner.env,
@@ -340,17 +411,17 @@ def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runne
     wheel_path = next(distdir.glob("*.whl"))
     unpack_wheel(wheel_path)
     wheel_dir = Path(next(p for p in distdir.glob("*") if p.is_dir()))
-    post = pkg.get("build", {}).get("post")
-    if post is not None:
+    post = build_metadata.get("post")
+    if post:
         bash_runner.env.update({"PKGDIR": str(pkg_root)})
         bash_runner.run(post, check=True)
 
     test_dir = distdir / "tests"
     nmoved = unvendor_tests(wheel_dir, test_dir)
-    name = pkg["package"]["name"]
+    pkg_name
     if nmoved:
         with chdir(distdir):
-            shutil.make_archive(f"{name}-tests", "tar", test_dir)
+            shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
     pack_wheel(wheel_dir)
     # Wheel_dir causes dangerous file tree contamination.
     # Important to get rid of it!
@@ -453,9 +524,9 @@ def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
 
 
 def build_package(pkg_root: Path, pkg: Dict, args):
-    name = pkg["package"]["name"]
+    pkg_name = pkg["package"]["name"]
     build_dir = pkg_root / "build"
-    src_dir_name: str = name + "-" + pkg["package"]["version"]
+    src_dir_name: str = pkg_name + "-" + pkg["package"]["version"]
     src_path = build_dir / src_dir_name
     source_metadata = pkg.get("source", {})
     build_metadata = pkg.get("build", {})
@@ -467,7 +538,7 @@ def build_package(pkg_root: Path, pkg: Dict, args):
                 shutil.rmtree(build_dir)
             os.makedirs(build_dir)
 
-        srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata, args)
+        srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata)
         if build_metadata.get("script"):
             run_script(build_dir, srcpath, pkg, bash_runner)
         if build_metadata.get("library") or build_metadata.get("skip_build"):
@@ -476,8 +547,19 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         # shared libraries get built by the script and put into install
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
-        if not build_metadata.get("sharedlibrary"):
-            compile(pkg_root, srcpath, pkg, args, bash_runner)
+        if not pkg.get("build", {}).get("sharedlibrary"):
+            compile(
+                pkg_name,
+                pkg_root,
+                srcpath,
+                pkg,
+                bash_runner,
+                cflags=args.cflags,
+                cxxflags=args.cxxflags,
+                ldflags=args.ldflags,
+                target=args.target,
+                install_dir=args.install_dir,
+            )
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
         create_packaged_token(build_dir)
