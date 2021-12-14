@@ -5,7 +5,7 @@ import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
-  fetchTarFile,
+  _fetchBinaryFile,
   loadPackage,
 } from "./load-pyodide.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
@@ -291,7 +291,10 @@ export async function loadPyodide(config) {
   }
   Module.indexURL = config.indexURL;
   let packageIndexReady = initializePackageIndex(config.indexURL);
-  let pyodide_py_tar_promise = fetchTarFile(config.indexURL, "pyodide_py.tar");
+  let pyodide_py_tar_promise = _fetchBinaryFile(
+    config.indexURL,
+    "pyodide_py.tar"
+  );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
   setHomeDirectory(config.homedir);

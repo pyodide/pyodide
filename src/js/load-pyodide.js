@@ -43,7 +43,7 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
-export async function fetchTarFile(indexURL, path) {
+export async function _fetchBinaryFile(indexURL, path) {
   if (IN_NODE) {
     const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
     const tar_buffer = await fsPromises.readFile(`${indexURL}${path}`);
