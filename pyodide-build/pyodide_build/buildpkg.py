@@ -561,7 +561,7 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
 
         srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata)
         if build_metadata.get("script"):
-            run_script(build_dir, srcpath, pkg, bash_runner)
+            run_script(build_dir, srcpath, build_metadata, bash_runner)
         if build_metadata.get("library") or build_metadata.get("skip_build"):
             create_packaged_token(build_dir)
             return
@@ -655,7 +655,7 @@ def main(args):
         build_metadata["ldflags"] += f" {args.ldflags}"
         build_package(
             pkg_root,
-            build_metadata,
+            pkg,
             target=args.target,
             install_dir=args.install_dir,
         )
