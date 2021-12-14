@@ -93,23 +93,6 @@ def get_bash_runner():
         b.close()
 
 
-def _have_terser():
-    try:
-        # Check npm exists and terser is installed locally
-        subprocess.run(
-            [
-                "npm",
-                "list",
-                "terser",
-            ],
-            stdout=subprocess.DEVNULL,
-        )
-    except subprocess.CalledProcessError:
-        return False
-
-    return True
-
-
 def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
     """
     Checks that an archive matches the checksum in the package metadata.
@@ -648,23 +631,11 @@ def make_parser(parser: argparse.ArgumentParser):
             "needed if you want to build other packages that depend on this one."
         ),
     )
-    parser.add_argument(
-        "--no-compress-package",
-        action="store_false",
-        default=True,
-        dest="compress_package",
-        help="Do not compress built packages.",
-    )
     return parser
 
 
 def main(args):
     meta_file = Path(args.package[0]).resolve()
-    if args.compress_package and not _have_terser():
-        raise RuntimeError(
-            "Terser is required to compress packages. Try `npm install -g terser` to install terser."
-        )
-
     pkg_root = meta_file.parent
     pkg = parse_package_config(meta_file)
     name = pkg["package"]["name"]
@@ -682,7 +653,12 @@ def main(args):
         build_metadata["cflags"] += f" {args.cflags}"
         build_metadata["cxxflags"] += f" {args.cxxflags}"
         build_metadata["ldflags"] += f" {args.ldflags}"
-        build_package(pkg_root, pkg, target=args.target, install_dir=args.install_dir)
+        build_package(
+            pkg_root,
+            pkg,
+            target=args.target,
+            install_dir=args.install_dir,
+        )
     except:
         success = False
         raise
