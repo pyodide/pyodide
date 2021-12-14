@@ -63,7 +63,6 @@ def test_prepare_source(monkeypatch):
         pkg_root = Path(pkg["package"]["name"])
         buildpath = pkg_root / "build"
         source_path = buildpath / source_dir_name
-        # pkg_root : Path, buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any], args
         src_metadata = pkg["source"]
         srcpath = buildpkg.prepare_source(
             pkg_root, buildpath, source_path, src_metadata

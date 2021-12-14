@@ -320,8 +320,7 @@ def compile(
         $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
 
     build_metadata
-        The command line args that buildpkg was invoked with. Specifies compile flags
-        and install directory.
+        The build section from meta.yaml.
 
     bash_runner
         The runner we will use to execute our bash commands. Preserves environment
@@ -438,7 +437,12 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
 
 
 def package_files(
-    buildpath: Path, srcpath: Path, pkg: Dict[str, Any], compress: bool = False
+    pkg_name: str,
+    buildpath: Path,
+    srcpath: Path,
+    *,
+    should_unvendor_tests: bool = True,
+    compress: bool = False,
 ) -> None:
     """Package the installation folder into .data and .js files
 
@@ -446,6 +450,7 @@ def package_files(
     ----------
     buildpath
         the package build path. Usually `packages/<name>/build`
+
     srcpath
         the package source path. Usually
         `packages/<name>/build/<name>-<version>`.
@@ -461,11 +466,10 @@ def package_files(
     if (buildpath / ".packaged").is_file():
         return
 
-    name = pkg["package"]["name"]
     install_prefix = (srcpath / "install").resolve()
     test_install_prefix = (srcpath / "install-test").resolve()
 
-    if pkg.get("build", {}).get("unvendor-tests", True):
+    if should_unvendor_tests:
         n_unvendored = unvendor_tests(install_prefix, test_install_prefix)
     else:
         n_unvendored = 0
@@ -474,8 +478,8 @@ def package_files(
     subprocess.run(
         [
             str(common.file_packager_path()),
-            f"{name}.data",
-            f"--js-output={name}.js",
+            f"{pkg_name}.data",
+            f"--js-output={pkg_name}.js",
             "--preload",
             f"{install_prefix}@/",
         ],
@@ -489,9 +493,9 @@ def package_files(
                 "npx",
                 "--no-install",
                 "terser",
-                buildpath / (name + ".js"),
+                buildpath / f"{pkg_name}.js",
                 "-o",
-                buildpath / (name + ".js"),
+                buildpath / f"{pkg_name}.js",
             ],
             check=True,
         )
@@ -501,8 +505,8 @@ def package_files(
         subprocess.run(
             [
                 str(common.file_packager_path()),
-                f"{name}-tests.data",
-                f"--js-output={name}-tests.js",
+                f"{pkg_name}-tests.data",
+                f"--js-output={pkg_name}-tests.js",
                 "--preload",
                 f"{test_install_prefix}@/",
             ],
@@ -516,9 +520,9 @@ def package_files(
                     "npx",
                     "--no-install",
                     "terser",
-                    buildpath / (name + "-tests.js"),
+                    buildpath / f"{pkg_name}-tests.js",
                     "-o",
-                    buildpath / (name + "-tests.js"),
+                    buildpath / f"{pkg_name}-tests.js",
                 ],
                 check=True,
             )
@@ -567,7 +571,7 @@ def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
     return False
 
 
-def build_package(pkg_root: Path, pkg: Dict, args):
+def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
     name = pkg["package"]["name"]
     build_dir = pkg_root / "build"
     src_dir_name: str = name + "-" + pkg["package"]["version"]
@@ -592,18 +596,22 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
         if not build_metadata.get("sharedlibrary"):
-            build_metadata["cflags"] += " " + args.cflags
-            build_metadata["cxxflags"] += " " + args.cxxflags
-            build_metadata["ldflags"] += " " + args.ldflags
             compile(
                 pkg_root,
                 srcpath,
                 build_metadata,
                 bash_runner,
-                target=args.target,
-                install_dir=args.install_dir,
+                target=target,
+                install_dir=install_dir,
             )
-        package_files(build_dir, srcpath, pkg, compress=args.compress_package)
+        should_unvendor_tests = build_metadata.get("unvendor_tests", False)
+        package_files(
+            name,
+            build_dir,
+            srcpath,
+            should_unvendor_tests=should_unvendor_tests,
+            compress=args.compress_package,
+        )
         create_packaged_token(build_dir)
 
 
@@ -679,7 +687,16 @@ def main(args):
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     success = True
     try:
-        build_package(pkg_root, pkg, args)
+        build_metadata = pkg.get("build", {})
+        pkg["build"] = build_metadata
+        build_metadata["cflags"] = build_metadata.get("cflags", "") + " " + args.cflags
+        build_metadata["cxxflags"] = (
+            build_metadata.get("cxxflags", "") + " " + args.cxxflags
+        )
+        build_metadata["ldflags"] += (
+            build_metadata.get("ldflags", "") + " " + args.ldflags
+        )
+        build_package(pkg_root, pkg, target=args.target, install_dir=args.install_dir)
     except:
         success = False
         raise
