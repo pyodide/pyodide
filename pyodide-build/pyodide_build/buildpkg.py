@@ -345,8 +345,7 @@ def compile(
         $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
 
     build_metadata
-        The command line args that buildpkg was invoked with. Specifies compile flags
-        and install directory.
+        The build section from meta.yaml.
 
     bash_runner
         The runner we will use to execute our bash commands. Preserves environment
@@ -402,8 +401,9 @@ def compile(
         bash_runner.run(post, check=True)
 
     test_dir = distdir / "tests"
-    nmoved = unvendor_tests(wheel_dir, test_dir)
-    pkg_name
+    nmoved = 0
+    if build_metadata.get("unvendor_tests"):
+        nmoved = unvendor_tests(wheel_dir, test_dir)
     if nmoved:
         with chdir(distdir):
             shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
@@ -508,7 +508,7 @@ def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
     return False
 
 
-def build_package(pkg_root: Path, pkg: Dict, args):
+def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
     pkg_name = pkg["package"]["name"]
     build_dir = pkg_root / "build"
     src_dir_name: str = pkg_name + "-" + pkg["package"]["version"]
@@ -533,17 +533,14 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
         if not build_metadata.get("sharedlibrary"):
-            build_metadata["cflags"] += " " + args.cflags
-            build_metadata["cxxflags"] += " " + args.cxxflags
-            build_metadata["ldflags"] += " " + args.ldflags
             compile(
                 pkg_name,
                 pkg_root,
                 srcpath,
                 build_metadata,
                 bash_runner,
-                target=args.target,
-                install_dir=args.install_dir,
+                target=target,
+                install_dir=install_dir,
             )
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
@@ -622,7 +619,16 @@ def main(args):
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     success = True
     try:
-        build_package(pkg_root, pkg, args)
+        build_metadata = pkg.get("build", {})
+        pkg["build"] = build_metadata
+        build_metadata["cflags"] = build_metadata.get("cflags", "") + " " + args.cflags
+        build_metadata["cxxflags"] = (
+            build_metadata.get("cxxflags", "") + " " + args.cxxflags
+        )
+        build_metadata["ldflags"] += (
+            build_metadata.get("ldflags", "") + " " + args.ldflags
+        )
+        build_package(pkg_root, pkg, target=args.target, install_dir=args.install_dir)
     except:
         success = False
         raise
