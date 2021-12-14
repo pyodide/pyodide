@@ -180,7 +180,7 @@ def download_and_extract(
 
     tarballpath = buildpath / tarballname
     if not tarballpath.is_file():
-        os.makedirs(os.path.dirname(tarballpath), exist_ok=True)
+        os.makedirs(tarballpath.parent, exist_ok=True)
         with open(tarballpath, "wb") as f:
             f.write(response.read())
         try:
