@@ -146,7 +146,7 @@ class Package(BasePackage):
             return
         if self.shared_library:
             file_path = shutil.make_archive(
-                f"{self.name}-{self.version}", "tar", self.pkgdir / "dist"
+                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
             )
             shutil.copy(file_path, outputdir)
             self.file_name = Path(file_path).name
