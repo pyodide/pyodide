@@ -183,12 +183,7 @@ export async function loadPackagesFromImports(
  * @async
  */
 export async function runPythonAsync(code, globals = Module.globals) {
-  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
-  try {
-    return await coroutine;
-  } finally {
-    coroutine.destroy();
-  }
+  return await Module.pyodide_py.eval_code_async(code, globals);
 }
 Module.runPythonAsync = runPythonAsync;
 
