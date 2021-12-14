@@ -653,8 +653,8 @@ def build_package(
 
         srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata)
         if build_metadata.get("script"):
-            run_script(build_dir, srcpath, pkg, bash_runner)
-        if build_metadata.get("library", False):
+            run_script(build_dir, srcpath, build_metadata, bash_runner)
+        if build_metadata.get("library"):
             create_packaged_token(build_dir)
             return
         # shared libraries get built by the script and put into install
@@ -764,7 +764,7 @@ def main(args):
         build_metadata["ldflags"] += f" {args.ldflags}"
         build_package(
             pkg_root,
-            build_metadata,
+            pkg,
             target=args.target,
             install_dir=args.install_dir,
             compress_package=args.compress_package,
