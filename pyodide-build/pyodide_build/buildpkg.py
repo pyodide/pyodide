@@ -615,7 +615,9 @@ def needs_rebuild(
     return False
 
 
-def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
+def build_package(
+    pkg_root: Path, pkg: Dict, *, target: str, install_dir: str, compress_package: bool
+):
     """
     Build the package. The main entrypoint in this module.
 
@@ -631,6 +633,9 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
 
     install_dir
         Directory for installing built host packages.
+
+    compress_package
+        Should we compress the package?
     """
     name = pkg["package"]["name"]
     build_dir = pkg_root / "build"
@@ -670,7 +675,7 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
             build_dir,
             srcpath,
             should_unvendor_tests=should_unvendor_tests,
-            compress=args.compress_package,
+            compress=compress_package,
         )
         create_packaged_token(build_dir)
 
@@ -757,7 +762,13 @@ def main(args):
         build_metadata["cflags"] += f" {args.cflags}"
         build_metadata["cxxflags"] += f" {args.cxxflags}"
         build_metadata["ldflags"] += f" {args.ldflags}"
-        build_package(pkg_root, pkg, target=args.target, install_dir=args.install_dir)
+        build_package(
+            pkg_root,
+            pkg,
+            target=args.target,
+            install_dir=args.install_dir,
+            compress_package=args.compress_package,
+        )
     except:
         success = False
         raise
