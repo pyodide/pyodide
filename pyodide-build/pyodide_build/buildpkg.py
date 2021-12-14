@@ -669,7 +669,7 @@ def build_package(
                 target=target,
                 install_dir=install_dir,
             )
-        should_unvendor_tests = build_metadata.get("unvendor_tests", True)
+        should_unvendor_tests = build_metadata.get("unvendor-tests", True)
         package_files(
             name,
             build_dir,
