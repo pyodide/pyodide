@@ -320,9 +320,6 @@ def compile(
     build_metadata: Dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
-    cflags: str,
-    cxxflags: str,
-    ldflags: str,
     target: str,
     install_dir: str,
 ):
@@ -355,15 +352,6 @@ def compile(
         The runner we will use to execute our bash commands. Preserves environment
         variables from one invocation to the next.
 
-    cflags
-        Extra compile flags
-
-    cxxflags
-        Extra C++ compile flags
-
-    ldflags
-        Extra link flags
-
     target
         The path to the target Python installation
 
@@ -378,9 +366,6 @@ def compile(
     if build_metadata.get("skip_host", True):
         bash_runner.env["SKIP_HOST"] = ""
 
-    cflags += " " + build_metadata.get("cflags", "")
-    cxxflags += " " + build_metadata.get("cxxflags", "")
-    ldflags += " " + build_metadata.get("ldflags", "")
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
     with chdir(srcpath):
@@ -391,11 +376,11 @@ def compile(
                 "pyodide_build",
                 "pywasmcross",
                 "--cflags",
-                cflags,
+                build_metadata["cflags"],
                 "--cxxflags",
-                cxxflags,
+                build_metadata["cxxflags"],
                 "--ldflags",
-                ldflags,
+                build_metadata["ldflags"],
                 "--target",
                 target,
                 "--install-dir",
@@ -547,16 +532,16 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         # shared libraries get built by the script and put into install
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
-        if not pkg.get("build", {}).get("sharedlibrary"):
+        if not build_metadata.get("sharedlibrary"):
+            build_metadata["cflags"] += " " + args.cflags
+            build_metadata["cxxflags"] += " " + args.cxxflags
+            build_metadata["ldflags"] += " " + args.ldflags
             compile(
                 pkg_name,
                 pkg_root,
                 srcpath,
-                pkg,
+                build_metadata,
                 bash_runner,
-                cflags=args.cflags,
-                cxxflags=args.cxxflags,
-                ldflags=args.ldflags,
                 target=args.target,
                 install_dir=args.install_dir,
             )
