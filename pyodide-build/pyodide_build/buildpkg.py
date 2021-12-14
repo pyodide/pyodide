@@ -104,9 +104,13 @@ def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
     """
     Checks that an archive matches the checksum in the package metadata.
 
-    archive -- the path to the archive we wish to checksum
 
-    source_metadata -- The source section from meta.yaml.
+    Parameters
+    ----------
+    archive
+        the path to the archive we wish to checksum
+    source_metadata
+        The source section from meta.yaml.
     """
     checksum_keys = {"md5", "sha256"}.intersection(source_metadata)
     if not checksum_keys:
