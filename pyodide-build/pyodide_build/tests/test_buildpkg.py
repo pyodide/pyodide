@@ -76,9 +76,9 @@ def test_run_script(is_library, tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
-    pkg = {"build": {"script": script, "library": is_library}}
+    build_metadata = {"script": script, "library": is_library}
     shared_env = buildpkg.BashRunnerWithSharedEnvironment()
-    buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
+    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
     assert (src_dir / "out.txt").exists()
 
 
@@ -86,10 +86,10 @@ def test_run_script_environment(tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
-    pkg = {"build": {"script": script, "library": False}}
+    build_metadata = {"script": script, "library": False}
     shared_env = buildpkg.BashRunnerWithSharedEnvironment()
     shared_env.env.pop("A", None)
-    buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
+    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
     assert shared_env.env["A"] == "2"
 
 
@@ -135,25 +135,24 @@ def test_unvendor_tests(tmpdir):
 
 
 def test_needs_rebuild(tmpdir):
-    tmpdir = Path(tmpdir)
-    builddir = tmpdir / "build"
-    meta_yaml = tmpdir / "meta.yaml"
+    pkg_root = tmpdir
+    pkg_root = Path(pkg_root)
+    builddir = pkg_root / "build"
+    meta_yaml = pkg_root / "meta.yaml"
     packaged = builddir / ".packaged"
 
-    patch_file = tmpdir / "patch"
-    extra_file = tmpdir / "extra"
-    src_path = tmpdir / "src"
+    patch_file = pkg_root / "patch"
+    extra_file = pkg_root / "extra"
+    src_path = pkg_root / "src"
     src_path_file = src_path / "file"
-    pkg_dict = {
-        "source": {
-            "patches": [
-                str(patch_file),
-            ],
-            "extras": [
-                (str(extra_file), ""),
-            ],
-            "path": str(src_path),
-        }
+    source_metadata = {
+        "patches": [
+            str(patch_file),
+        ],
+        "extras": [
+            (str(extra_file), ""),
+        ],
+        "path": str(src_path),
     }
 
     builddir.mkdir()
@@ -164,36 +163,36 @@ def test_needs_rebuild(tmpdir):
     src_path_file.touch()
 
     # No .packaged file, rebuild
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
 
     # .packaged file exists, no rebuild
     packaged.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is False
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
 
     # newer meta.yaml file, rebuild
     packaged.touch()
     time.sleep(0.01)
     meta_yaml.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
 
     # newer patch file, rebuild
     packaged.touch()
     time.sleep(0.01)
     patch_file.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
 
     # newer extra file, rebuild
     packaged.touch()
     time.sleep(0.01)
     extra_file.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
 
     # newer source path, rebuild
     packaged.touch()
     time.sleep(0.01)
     src_path_file.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
 
     # newer .packaged file, no rebuild
     packaged.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is False
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
