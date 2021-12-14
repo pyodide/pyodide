@@ -764,7 +764,7 @@ def main(args):
         build_metadata["ldflags"] += f" {args.ldflags}"
         build_package(
             pkg_root,
-            pkg,
+            build_metadata,
             target=args.target,
             install_dir=args.install_dir,
             compress_package=args.compress_package,
