@@ -385,7 +385,7 @@ def compile(
 
     test_dir = distdir / "tests"
     nmoved = 0
-    if build_metadata.get("unvendor_tests"):
+    if build_metadata.get("unvendor_tests", True):
         nmoved = unvendor_tests(wheel_dir, test_dir)
     if nmoved:
         with chdir(distdir):
