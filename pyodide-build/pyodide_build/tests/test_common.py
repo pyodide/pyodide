@@ -51,6 +51,7 @@ def test_parse_package_subset():
         "fpcast-test",
         "test",
         "distutils",
+        "sharedlib-test-py",
     }
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
@@ -72,6 +73,7 @@ def test_parse_package_subset():
         "pytest",
         "test",
         "distutils",
+        "sharedlib-test-py",
     }
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {

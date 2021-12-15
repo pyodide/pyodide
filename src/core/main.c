@@ -117,7 +117,13 @@ main(int argc, char** argv)
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
+  emscripten_exit_with_live_runtime();
+  return 0;
+}
 
+int
+pyodide_init(void)
+{
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
   JsRef _pyodide_proxy = NULL;
@@ -156,6 +162,5 @@ main(int argc, char** argv)
 
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  emscripten_exit_with_live_runtime();
   return 0;
 }

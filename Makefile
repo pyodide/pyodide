@@ -18,6 +18,7 @@ all: check \
 	build/console.html \
 	build/distutils.tar \
 	build/packages.json \
+	build/pyodide_py.tar \
 	build/test.tar \
 	build/test.html \
 	build/webworker.js \
@@ -26,6 +27,9 @@ all: check \
 
 $(CPYTHONLIB)/tzdata :
 	pip install tzdata --target=$(CPYTHONLIB)
+
+build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
+	cd src/py && tar --exclude '*__pycache__*' -cvf ../../build/pyodide_py.tar pyodide _pyodide
 
 build/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -40,8 +44,6 @@ build/pyodide.asm.js: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	$(wildcard src/py/lib/*.py) \
-	$(wildcard src/py/pyodide/*.py) \
-	$(wildcard src/py/_pyodide/*.py) \
 	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
