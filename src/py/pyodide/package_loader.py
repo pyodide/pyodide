@@ -15,7 +15,6 @@ TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
 
 
 def unpack_buffer(filename, buffer, target="site"):
-    print("unpack", filename, target)
     target_dir = TARGETS[target]
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)

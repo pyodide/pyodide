@@ -111,7 +111,7 @@ def test_test_unvendoring(selenium_standalone):
             from pathlib import Path
             test_path =  Path(regex.__file__).parent / "test_regex.py"
             assert not test_path.exists()
-        `)
+        `);
         """
     )
 
@@ -120,13 +120,13 @@ def test_test_unvendoring(selenium_standalone):
         await pyodide.loadPackage("regex-tests");
         pyodide.runPython(`
             assert test_path.exists()
-        `)
+        `);
         """
     )
 
     assert selenium.run_js(
         """
-        return pyodide._module.packages['regex'].unvendored_tests
+        return pyodide._module.packages['regex'].unvendored_tests;
         """
     )
 

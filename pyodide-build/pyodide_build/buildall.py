@@ -348,6 +348,7 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
                 "depends": [name.lower()],
                 "imports": [],
                 "file_name": pkg.unvendored_tests.name,
+                "install_dir": pkg.install_dir,
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
