@@ -16,7 +16,10 @@ def test_load_packages_multiple(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'packaging')
-    assert selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
+    assert (
+        selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
+        or selenium.logs.count(f"Loaded {packages[1]}, {packages[0]}") == 1
+    )
 
 
 @pytest.mark.parametrize(
