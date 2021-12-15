@@ -176,23 +176,26 @@ async function unpackBuffer(name, buffer) {
   loadedPackages[name] = pkg;
 }
 
-// This is a promise that is resolved iff there are no pending package loads. It
-// never fails.
-let _dynlibLock = Promise.resolve();
+function createLock() {
+  // This is a promise that is resolved when the lock is open, not resolved when lock is held.
+  let _lock = Promise.resolve();
 
-/**
- * An async lock for package loading. Prevents race conditions in loadPackage.
- * @returns A zero argument function that releases the lock.
- * @private
- */
-async function acquireDynlibLock() {
-  let old_lock = _dynlibLock;
-  let releaseLock;
-  _dynlibLock = new Promise((resolve) => (releaseLock = resolve));
-  await old_lock;
-  return releaseLock;
+  /**
+   * An async lock for package loading. Prevents race conditions in loadPackage.
+   * @returns A zero argument function that releases the lock.
+   * @private
+   */
+  async function acquireLock() {
+    let old_lock = _lock;
+    let releaseLock;
+    _lock = new Promise((resolve) => (releaseLock = resolve));
+    await old_lock;
+    return releaseLock;
+  }
+  return acquireLock;
 }
 
+const acquireDynlibLock = createLock();
 async function loadDynlib(lib, shared) {
   const byteArray = Module.FS.lookupPath(lib).node.contents;
   const releaseDynlibLock = await acquireDynlibLock();
@@ -219,6 +222,8 @@ async function loadDynlib(lib, shared) {
  * @returns {void}
  * @private
  */
+
+const acquirePackageLock = createLock();
 
 /**
  * Load a package or a list of packages over the network. This installs the
@@ -322,23 +327,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   } finally {
     releaseLock();
   }
-}
-
-// This is a promise that is resolved iff there are no pending package loads. It
-// never fails.
-let _package_lock = Promise.resolve();
-
-/**
- * An async lock for package loading. Prevents race conditions in loadPackage.
- * @returns A zero argument function that releases the lock.
- * @private
- */
-async function acquirePackageLock() {
-  let old_lock = _package_lock;
-  let releaseLock;
-  _package_lock = new Promise((resolve) => (releaseLock = resolve));
-  await old_lock;
-  return releaseLock;
 }
 
 /**

@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import List
 import functools
-import packaging.utils
+import json
 
 from pyodide_build.io import parse_package_config
 
@@ -33,24 +33,10 @@ def built_packages() -> List[str]:
 
     This functions lists the names of the .data files in the build/ directory.
     """
-    if not BUILD_DIR.exists():
+    packages_json_path = BUILD_DIR / "packages.json"
+    if not packages_json_path.exists():
         return []
-    registered_packages_list = registered_packages_lowercase()
-    registered_packages_ = set(registered_packages_list)
-    for x in registered_packages_list:
-        registered_packages_.add(x.replace("_", "-"))
-
-    packages = []
-    for fpath in os.listdir(BUILD_DIR):
-        if not fpath.endswith(".whl") and not fpath.endswith(".tar"):
-            continue
-        if fpath.endswith(".whl"):
-            name = str(packaging.utils.parse_wheel_filename(fpath)[0])
-        else:
-            name = fpath.partition("-")[0].lower()
-        if name in registered_packages_:
-            packages.append(name)
-    return packages
+    return list(json.loads(packages_json_path.read_text())["packages"].keys())
 
 
 def registered_packages_meta():

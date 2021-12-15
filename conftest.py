@@ -14,7 +14,7 @@ import pexpect
 import queue
 import sys
 import shutil
-
+import functools
 import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
@@ -72,8 +72,20 @@ def pytest_collection_modifyitems(config, items):
         _maybe_skip_test(item, delayed=True)
 
 
+@functools.cache
+def built_packages():
+    """Returns a list of built package names.
+
+    This functions lists the names of the .data files in the build/ directory.
+    """
+    packages_json_path = BUILD_PATH / "packages.json"
+    if not packages_json_path.exists():
+        return []
+    return list(json.loads(packages_json_path.read_text())["packages"].keys())
+
+
 def _package_is_built(package_name: str) -> bool:
-    return not not list(BUILD_PATH.glob(f"{package_name}*"))
+    return package_name in built_packages()
 
 
 class JavascriptException(Exception):
