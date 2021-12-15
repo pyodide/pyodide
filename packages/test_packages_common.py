@@ -22,12 +22,6 @@ def registered_packages() -> List[str]:
 
 
 @functools.cache
-def registered_packages_lowercase() -> List[str]:
-    """Returns a list of lowercased registered package names"""
-    return [name.lower() for name in registered_packages()]
-
-
-@functools.cache
 def built_packages() -> List[str]:
     """Returns a list of built package names.
 
@@ -72,7 +66,7 @@ def test_parse_package(name):
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    if name.lower().replace("_", "-") not in built_packages():
+    if name not in built_packages():
         print(name, sorted(built_packages()))
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
