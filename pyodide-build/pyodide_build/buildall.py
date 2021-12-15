@@ -137,24 +137,25 @@ class Package(BasePackage):
 
             raise
 
-        if not self.library:
+        if self.library:
+            return
+        shutil.copyfile(
+            self.pkgdir / "build" / (self.name + ".data"),
+            outputdir / (self.name + ".data"),
+        )
+        shutil.copyfile(
+            self.pkgdir / "build" / (self.name + ".js"),
+            outputdir / (self.name + ".js"),
+        )
+        if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
             shutil.copyfile(
-                self.pkgdir / "build" / (self.name + ".data"),
-                outputdir / (self.name + ".data"),
+                self.pkgdir / "build" / (self.name + "-tests.data"),
+                outputdir / (self.name + "-tests.data"),
             )
             shutil.copyfile(
-                self.pkgdir / "build" / (self.name + ".js"),
-                outputdir / (self.name + ".js"),
+                self.pkgdir / "build" / (self.name + "-tests.js"),
+                outputdir / (self.name + "-tests.js"),
             )
-            if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
-                shutil.copyfile(
-                    self.pkgdir / "build" / (self.name + "-tests.data"),
-                    outputdir / (self.name + "-tests.data"),
-                )
-                shutil.copyfile(
-                    self.pkgdir / "build" / (self.name + "-tests.js"),
-                    outputdir / (self.name + "-tests.js"),
-                )
 
 
 def generate_dependency_graph(
