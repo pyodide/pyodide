@@ -13,7 +13,7 @@ const IN_NODE =
  * @private
  */
 export let loadScript;
-export let fetch;
+let fetchPromise;
 if (globalThis.document) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
@@ -27,14 +27,14 @@ if (globalThis.document) {
   const pathPromise = import(/* webpackIgnore: true */ "path").then(
     (M) => M.default
   );
-  const fetchPromise = import("node-fetch").then((M) => M.default);
+  fetchPromise = import("node-fetch").then((M) => M.default);
   const vmPromise = import(/* webpackIgnore: true */ "vm").then(
     (M) => M.default
   );
   loadScript = async (url) => {
     if (url.includes("://")) {
       // If it's a url, have to load it with fetch and then eval it.
-      fetch = await fetchPromise;
+      const fetch = await fetchPromise;
       const vm = await vmPromise;
       vm.runInThisContext(await (await fetch(url)).text());
     } else {
@@ -115,15 +115,23 @@ function recursiveDependencies(names) {
   return [toLoad, toLoadShared];
 }
 
-async function downloadPkgBuffer(name) {
-  const pkg = Module.packages[name];
-  const file_name = pkg.file_name;
-  const resp = await fetch(`${baseURL}${file_name}`);
-  if (!resp.ok) {
+async function getBinaryFile(file_name) {
+  let response;
+  if (IN_NODE) {
+    const fetch = await fetchPromise;
+    response = await fetch(`${baseURL}${file_name}`);
+  } else {
+    response = await fetch(`${baseURL}${file_name}`);
+  }
+  if (!response.ok) {
     throw new Error(`Failed to load package ${name}: request failed.`);
   }
-  const buffer = await resp.arrayBuffer();
-  return buffer;
+  return await response.arrayBuffer();
+}
+
+async function downloadPkgBuffer(name) {
+  const pkg = Module.packages[name];
+  return await getBinaryFile(pkg.file_name);
 }
 
 async function unpackBuffer(name, buffer) {
