@@ -7,6 +7,21 @@ const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
+let nodePathMod;
+let nodeFetch;
+let nodeFsPromisesMod;
+let nodeVmMod;
+
+export async function initNodeModules() {
+  if (!IN_NODE) {
+    return;
+  }
+  nodePathMod = (await import(/* webpackIgnore: true */ "path")).default;
+  nodeFsPromisesMod = await import(/* webpackIgnore: true */ "fs/promises");
+  nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
+  nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
+}
+
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
@@ -18,8 +33,7 @@ export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
-    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
-    const package_string = await fsPromises.readFile(
+    const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}packages.json`
     );
     package_json = JSON.parse(package_string);
@@ -43,14 +57,55 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
-export async function _fetchBinaryFile(indexURL, path) {
-  if (IN_NODE) {
-    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
-    const tar_buffer = await fsPromises.readFile(`${indexURL}${path}`);
-    return tar_buffer.buffer;
-  } else {
-    let response = await fetch(`${indexURL}${path}`);
+Module.locateFile = function (path) {
+  return baseURL + path;
+};
+
+async function node_loadBinaryFile(indexURL, path) {
+  if (path.includes("://")) {
+    let response = await nodeFetch(path);
+    if (!response.ok) {
+      throw new Error(`Failed to load '${path}': request failed.`);
+    }
     return await response.arrayBuffer();
+  } else {
+    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    return data.buffer;
+  }
+}
+
+function getFetch() {
+  if (IN_NODE) {
+    return nodeFetch;
+  } else {
+    return fetch;
+  }
+}
+
+async function _fetchBinaryFile(indexURL, path) {
+  let fetch = getFetch();
+  let response = await fetch(`${indexURL}${path}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load '${indexURL}${path}': request failed.`);
+  }
+  return await response.arrayBuffer();
+}
+
+export let _loadBinaryFile;
+if (IN_NODE) {
+  _loadBinaryFile = node_loadBinaryFile;
+} else {
+  _loadBinaryFile = _fetchBinaryFile;
+}
+
+async function nodeLoadScript(url) {
+  if (url.includes("://")) {
+    // If it's a url, load it with fetch and then eval it.
+    nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
+  } else {
+    // Otherwise, hopefully it is a relative path we can load from the file
+    // system.
+    await import(nodePathMod.resolve(url));
   }
 }
 
@@ -60,7 +115,6 @@ export async function _fetchBinaryFile(indexURL, path) {
  * @private
  */
 export let loadScript;
-let fetchPromise;
 if (globalThis.document) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
@@ -71,26 +125,7 @@ if (globalThis.document) {
     globalThis.importScripts(url);
   };
 } else if (IN_NODE) {
-  const pathPromise = import(/* webpackIgnore: true */ "path").then(
-    (M) => M.default
-  );
-  fetchPromise = import("node-fetch").then((M) => M.default);
-  const vmPromise = import(/* webpackIgnore: true */ "vm").then(
-    (M) => M.default
-  );
-  loadScript = async (url) => {
-    if (url.includes("://")) {
-      // If it's a url, have to load it with fetch and then eval it.
-      const fetch = await fetchPromise;
-      const vm = await vmPromise;
-      vm.runInThisContext(await (await fetch(url)).text());
-    } else {
-      // Otherwise, hopefully it is a relative path we can load from the file
-      // system.
-      const path = await pathPromise;
-      await import(path.resolve(url));
-    }
-  };
+  loadScript = nodeLoadScript;
 } else {
   throw new Error("Cannot determine runtime environment");
 }
@@ -126,23 +161,9 @@ function recursiveDependencies(names) {
   return [toLoad, toLoadShared];
 }
 
-async function getBinaryFile(file_name) {
-  let response;
-  if (IN_NODE) {
-    const fetch = await fetchPromise;
-    response = await fetch(`${baseURL}${file_name}`);
-  } else {
-    response = await fetch(`${baseURL}${file_name}`);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load package ${name}: request failed.`);
-  }
-  return await response.arrayBuffer();
-}
-
 async function downloadPkgBuffer(name) {
   const pkg = Module.packages[name];
-  return await getBinaryFile(pkg.file_name);
+  return await _loadBinaryFile(baseURL, pkg.file_name);
 }
 
 async function unpackBuffer(name, buffer) {
@@ -291,6 +312,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       for (let [name, err] of Object.entries(failed)) {
         console.warn(`The following error occurred while loading ${name}:`);
         console.error(err);
+        throw err;
       }
     }
 
