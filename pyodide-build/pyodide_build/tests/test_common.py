@@ -63,6 +63,7 @@ def test_parse_package_subset():
         "scikit-learn",
         "joblib",
         "pytest",
+        "sharedlib-test-py",
     }
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
