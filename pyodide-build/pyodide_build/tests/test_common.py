@@ -43,6 +43,7 @@ def test_parse_package_subset():
         "micropip",
         "regex",
         "fpcast-test",
+        "sharedlib-test-py",
     }
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
