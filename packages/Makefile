@@ -22,7 +22,10 @@ all: .artifacts/bin/pyodide-build .artifacts/bin/wheel
 	$(HOSTPYTHON) -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
 
 .artifacts/bin/wheel:
-	git clone git@github.com:hoodmane/wheel.git --branch handle-files-with-commas --depth 1 .artifacts/bin/wheel
+	# For the moment we need a fork of the wheel package because it doesn't properly handle commas in file names.
+	# statsmodels has commas in file names, so this fork is resiliant to that.
+	# See my PR here: https://github.com/pypa/wheel/pull/427
+	git clone https://github.com/hoodmane/wheel.git --branch handle-files-with-commas --depth 1 .artifacts/bin/wheel
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
