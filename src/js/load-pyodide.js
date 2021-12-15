@@ -95,42 +95,6 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
-/** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
-/** @private */
-let baseURL;
-/**
- * @param {string} indexURL
- * @private
- */
-export async function initializePackageIndex(indexURL) {
-  baseURL = indexURL;
-  let package_json;
-  if (IN_NODE) {
-    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
-    const package_string = await fsPromises.readFile(
-      `${indexURL}packages.json`
-    );
-    package_json = JSON.parse(package_string);
-  } else {
-    let response = await fetch(`${indexURL}packages.json`);
-    package_json = await response.json();
-  }
-  if (!package_json.packages) {
-    throw new Error(
-      "Loaded packages.json does not contain the expected key 'packages'."
-    );
-  }
-  Module.packages = package_json.packages;
-
-  // compute the inverted index for imports to package names
-  Module._import_name_to_package_name = new Map();
-  for (let name of Object.keys(Module.packages)) {
-    for (let import_name of Module.packages[name].imports) {
-      Module._import_name_to_package_name.set(import_name, name);
-    }
-  }
-}
-
 function addPackageToLoad(name, toLoad, toLoadShared) {
   name = name.toLowerCase();
   if (name in loadedPackages) {
