@@ -126,13 +126,12 @@ class Package(BasePackage):
 
         if rebuilt:
             shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+            if args.log_dir and (self.pkgdir / "build.log").exists():
+                shutil.copy(
+                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
+                )
         else:
             (self.pkgdir / "build.log.tmp").unlink()
-
-        if args.log_dir and (self.pkgdir / "build.log").exists():
-            shutil.copy(
-                self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
-            )
 
         try:
             p.check_returncode()
