@@ -18,4 +18,4 @@ requirements:
 test:
   imports:
     - b2d
-    - b2d.framework
+    - b2d.testbed
