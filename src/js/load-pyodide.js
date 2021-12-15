@@ -273,9 +273,17 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const sharedLibraryPromises = {};
     const packagePromises = {};
     for (const name of toLoadShared) {
+      toLoadShared.delete(name);
+      if (loadedPackages[name]) {
+        continue;
+      }
       sharedLibraryPromises[name] = downloadPkgBuffer(name);
     }
     for (const name of toLoad) {
+      if (loadedPackages[name]) {
+        toLoad.delete(name);
+        continue;
+      }
       packagePromises[name] = downloadPkgBuffer(name);
     }
 
@@ -296,7 +304,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     }
 
     await Promise.all(Object.values(sharedLibraryPromises));
-
     for (const name of toLoad) {
       packagePromises[name] = packagePromises[name]
         .then(async (buffer) => {
@@ -321,7 +328,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       for (let [name, err] of Object.entries(failed)) {
         console.warn(`The following error occurred while loading ${name}:`);
         console.error(err);
-        throw err;
       }
     }
 
