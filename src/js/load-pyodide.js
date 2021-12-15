@@ -169,7 +169,11 @@ async function downloadPkgBuffer(name) {
 async function unpackBuffer(name, buffer) {
   const pkg = Module.packages[name];
   const file_name = pkg.file_name;
-  const dynlibs = Module.package_loader.unpack_buffer(file_name, buffer);
+  const dynlibs = Module.package_loader.unpack_buffer(
+    file_name,
+    buffer,
+    pkg.install_dir
+  );
   for (let dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }

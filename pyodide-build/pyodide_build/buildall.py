@@ -33,6 +33,7 @@ class BasePackage:
     dependents: Set[str]
     unvendored_tests: Optional[Path] = None
     file_name: Optional[str] = None
+    install_dir: str = "site"
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -59,6 +60,7 @@ class StdLibPackage(BasePackage):
         self.unbuilt_dependencies = set()
         self.dependents = set()
         self.file_name = self.name + ".tar"
+        self.install_dir = "lib"
 
     def build(self, outputdir: Path, args) -> None:
         # All build / packaging steps are already done in the main Makefile
@@ -325,6 +327,7 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
             "name": name,
             "version": pkg.version,
             "file_name": pkg.file_name,
+            "install_dir": pkg.install_dir,
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
