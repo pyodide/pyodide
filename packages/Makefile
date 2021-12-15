@@ -11,7 +11,7 @@ else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
 endif
 
-all: .artifacts/bin/pyodide-build
+all: .artifacts/bin/pyodide-build .artifacts/bin/wheel
 	mkdir -p build-logs
 	PYTHONPATH="$(PYODIDE_LIBRARIES)/lib/python:$(PYODIDE_ROOT)/pyodide-build/" pyodide-build buildall . ../build \
 		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES) --n-jobs $${PYODIDE_JOBS:-4} \
@@ -20,6 +20,9 @@ all: .artifacts/bin/pyodide-build
 .artifacts/bin/pyodide-build: ../pyodide-build/pyodide_build/**
 	mkdir -p $(PYODIDE_LIBRARIES)
 	$(HOSTPYTHON) -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
+
+.artifacts/bin/wheel:
+	git clone git@github.com:hoodmane/wheel.git --branch handle-files-with-commas --depth 1 .artifacts/bin/wheel
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \

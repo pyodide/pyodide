@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import pathlib
 import shutil
 import subprocess
 import sys
@@ -285,14 +286,28 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
 def unpack_wheel(path):
     cwd = Path.cwd()
     os.chdir(path.parent)
-    subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
+    wheel_path = str(
+        pathlib.Path(os.environ["PYODIDE_ROOT"]) / "packages/.artifacts/bin/wheel/src/"
+    )
+    subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", path.name],
+        check=True,
+        env={"PYTHONPATH": wheel_path},
+    )
     os.chdir(cwd)
 
 
 def pack_wheel(path):
     cwd = Path.cwd()
     os.chdir(path.parent)
-    subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
+    wheel_path = str(
+        pathlib.Path(os.environ["PYODIDE_ROOT"]) / "packages/.artifacts/bin/wheel/src/"
+    )
+    subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", path.name],
+        check=True,
+        env={"PYTHONPATH": wheel_path},
+    )
     os.chdir(cwd)
 
 
