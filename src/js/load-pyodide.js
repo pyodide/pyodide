@@ -273,8 +273,8 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const sharedLibraryPromises = {};
     const packagePromises = {};
     for (const name of toLoadShared) {
-      toLoadShared.delete(name);
       if (loadedPackages[name]) {
+        toLoadShared.delete(name);
         continue;
       }
       sharedLibraryPromises[name] = downloadPkgBuffer(name);

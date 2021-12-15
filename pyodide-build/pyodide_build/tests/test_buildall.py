@@ -46,6 +46,7 @@ def test_generate_packages_json():
         "file_name": "micropip.file",
         "depends": ["pyparsing", "packaging", "distutils"],
         "imports": ["micropip"],
+        "install_dir": "site",
     }
 
 
