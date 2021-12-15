@@ -1,0 +1,13 @@
+package:
+  name: sharedlib-test
+  version: "1.0"
+
+source:
+  path: src
+
+build:
+  sharedlibrary: true
+  script: |
+    emcc -c main.c -o main.o -fPIC
+    mkdir install
+    emcc main.o -sSIDE_MODULE -o install/sharedlib-test.so

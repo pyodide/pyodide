@@ -97,6 +97,32 @@ substitutions:
   that looks up the name on `builtins` if lookup on `globals` fails.
   {pr}`1905`
 
+- {{Enhancement}} Coroutines have their memory managed in a more convenient way.
+  In particular, now it is only necessary to either `await` the coroutine or call
+  one of `.then`, `.except` or `.finally` to prevent a leak. It is no longer
+  necessary to manually destroy the coroutine. Example: before:
+
+```js
+async function runPythonAsync(code, globals) {
+  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
+  try {
+    return await coroutine;
+  } finally {
+    coroutine.destroy();
+  }
+}
+```
+
+After:
+
+```js
+async function runPythonAsync(code, globals) {
+  return await Module.pyodide_py.eval_code_async(code, globals);
+}
+```
+
+{pr}`2030`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all

@@ -40,6 +40,7 @@ def _parse_package_subset(query: Optional[str]) -> Set[str]:
         "Jinja2",
         "regex",
         "fpcast-test",
+        "sharedlib-test-py",
     }
     core_scipy_packages = {
         "numpy",
