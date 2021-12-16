@@ -950,6 +950,9 @@ class PyProxyAwaitableMethods {
    * @private
    */
   _ensure_future() {
+    if (this.$$.promise) {
+      return this.$$.promise;
+    }
     let ptrobj = _getPtr(this);
     let resolveHandle;
     let rejectHandle;
@@ -975,6 +978,8 @@ class PyProxyAwaitableMethods {
     if (errcode === -1) {
       Module._pythonexc2js();
     }
+    this.$$.promise = promise;
+    this.destroy();
     return promise;
   }
   /**

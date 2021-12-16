@@ -42,6 +42,8 @@ def test_parse_package_subset():
         "Jinja2",
         "micropip",
         "regex",
+        "fpcast-test",
+        "sharedlib-test-py",
     }
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
@@ -53,6 +55,7 @@ def test_parse_package_subset():
         "Jinja2",
         "micropip",
         "regex",
+        "fpcast-test",
         "numpy",
         "scipy",
         "pandas",
@@ -60,6 +63,7 @@ def test_parse_package_subset():
         "scikit-learn",
         "joblib",
         "pytest",
+        "sharedlib-test-py",
     }
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
