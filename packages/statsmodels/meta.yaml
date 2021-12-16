@@ -7,6 +7,9 @@ source:
   sha256: 4ab219c776bf5b2187645c0ccb00cf8564c6c17541ae66ab96503f07368197d3
 
 build:
+  script: |
+    # Get rid of files with commas in their name, it breaks the wheel package.
+    find -name '*,*' -delete
   ldflags: -L$(NUMPY_LIB)
 
 requirements:
