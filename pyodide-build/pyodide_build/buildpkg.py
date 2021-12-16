@@ -394,11 +394,6 @@ def compile(
         with chdir(distdir):
             shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
     pack_wheel(wheel_dir)
-    # Wheel_dir causes dangerous file tree contamination.
-    # Important to get rid of it!
-    # Question: Could we make pytest not look in build and dist directories?
-    shutil.rmtree(wheel_dir)
-    shutil.rmtree(test_dir, True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
@@ -449,6 +444,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
                     test_install_prefix / root_rel / fpath,
                 )
                 n_moved += 1
+
     return n_moved
 
 

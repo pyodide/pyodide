@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
+
 # TODO: support more complex types for validation
 
 PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
