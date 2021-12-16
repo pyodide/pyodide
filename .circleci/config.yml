@@ -248,10 +248,6 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Clean package directories
-          command: |
-            make -C packages clean
-      - run:
           name: test
           command: |
             mkdir test-results
