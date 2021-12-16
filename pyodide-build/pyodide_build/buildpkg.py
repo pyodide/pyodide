@@ -497,14 +497,16 @@ def package_files(
     if compress:
         subprocess.run(
             [
-                "npx",
-                "--no-install",
+                "npm",
+                "run",
                 "terser",
+                "--",
                 buildpath / f"{pkg_name}.js",
                 "-o",
                 buildpath / f"{pkg_name}.js",
             ],
             check=True,
+            cwd=os.environ["PYODIDE_ROOT"] + "/src/js",
         )
 
     # Package tests
@@ -524,14 +526,16 @@ def package_files(
         if compress:
             subprocess.run(
                 [
-                    "npx",
-                    "--no-install",
+                    "npm",
+                    "run",
                     "terser",
-                    buildpath / f"{pkg_name}-tests.js",
+                    "--",
+                    buildpath / f"{pkg_name}.js",
                     "-o",
-                    buildpath / f"{pkg_name}-tests.js",
+                    buildpath / f"{pkg_name}.js",
                 ],
                 check=True,
+                cwd=os.environ["PYODIDE_ROOT"] + "/src/js",
             )
 
 
