@@ -6,7 +6,7 @@ import functools
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
 
 
-def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
+def _parse_package_subset(query: Optional[str]) -> Set[str]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
     Also add the list of mandatory packages: ["pyparsing", "packaging",
@@ -14,7 +14,7 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
 
     Supports folowing meta-packages,
      - 'core': corresponds to packages needed to run the core test suite
-       {"micropip", "pyparsing", "pytz", "packaging", "Jinja2"}. This is the default option
+       {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "fpcast-test"}. This is the default option
        if query is None.
      - 'min-scipy-stack': includes the "core" meta-package as well as some of the
        core packages from the scientific python stack and their dependencies:
@@ -32,7 +32,16 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     if query is None:
         query = "core"
 
-    core_packages = {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "regex"}
+    core_packages = {
+        "micropip",
+        "pyparsing",
+        "pytz",
+        "packaging",
+        "Jinja2",
+        "regex",
+        "fpcast-test",
+        "sharedlib-test-py",
+    }
     core_scipy_packages = {
         "numpy",
         "scipy",
@@ -45,13 +54,10 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     packages = {el.strip() for el in query.split(",")}
     packages.update(["pyparsing", "packaging", "micropip"])
     # handle meta-packages
-    if "*" in packages:
-        # build all packages
-        return None
-    elif "core" in packages:
+    if "core" in packages:
         packages |= core_packages
         packages.discard("core")
-    elif "min-scipy-stack" in packages:
+    if "min-scipy-stack" in packages:
         packages |= core_packages | core_scipy_packages
         packages.discard("min-scipy-stack")
 

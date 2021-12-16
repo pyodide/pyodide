@@ -34,3 +34,19 @@ def test_pillow():
     with io.BytesIO() as asjpg:
         img.save(asjpg, format="JPEG")
         img = Image.open(asjpg)
+
+
+@run_in_pyodide(
+    packages=["pillow"],
+)
+def test_jpeg_modes():
+    from PIL import Image
+
+    rgb = Image.new("RGB", (4, 4))
+    rgb.save("rgb.jpg")
+
+    gray = Image.new("L", (4, 4))
+    gray.save("gray.jpg")
+
+    bw = Image.new("1", (4, 4))
+    bw.save("bw.jpg")

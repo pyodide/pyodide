@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import time
 
 from pathlib import Path
 
@@ -33,7 +34,7 @@ def test_subprocess_with_shared_env():
     assert p.env["A"] == "7"
 
 
-def test_download_and_extract(monkeypatch):
+def test_prepare_source(monkeypatch):
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: True)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "unpack_archive", lambda *args, **kwargs: True)
@@ -55,11 +56,19 @@ def test_download_and_extract(monkeypatch):
     )
 
     for pkg in test_pkgs:
-        packagedir = pkg["package"]["name"] + "-" + pkg["package"]["version"]
-        buildpath = Path(pkg["package"]["name"]) / "build"
-        srcpath = buildpkg.download_and_extract(buildpath, packagedir, pkg, args=None)
+        pkg["source"]["patches"] = []
 
-        assert srcpath.name.lower().endswith(packagedir.lower())
+    for pkg in test_pkgs:
+        source_dir_name = pkg["package"]["name"] + "-" + pkg["package"]["version"]
+        pkg_root = Path(pkg["package"]["name"])
+        buildpath = pkg_root / "build"
+        source_path = buildpath / source_dir_name
+        src_metadata = pkg["source"]
+        srcpath = buildpkg.prepare_source(
+            pkg_root, buildpath, source_path, src_metadata
+        )
+
+        assert srcpath.name.lower().endswith(source_dir_name.lower())
 
 
 @pytest.mark.parametrize("is_library", [True, False])
@@ -67,24 +76,20 @@ def test_run_script(is_library, tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
-    pkg = {"build": {"script": script, "library": is_library}}
+    build_metadata = {"script": script, "library": is_library}
     shared_env = buildpkg.BashRunnerWithSharedEnvironment()
-    buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
+    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
     assert (src_dir / "out.txt").exists()
-    if is_library:
-        assert (build_dir / ".packaged").exists()
-    else:
-        assert not (build_dir / ".packaged").exists()
 
 
 def test_run_script_environment(tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
-    pkg = {"build": {"script": script, "library": False}}
+    build_metadata = {"script": script, "library": False}
     shared_env = buildpkg.BashRunnerWithSharedEnvironment()
     shared_env.env.pop("A", None)
-    buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
+    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
     assert shared_env.env["A"] == "2"
 
 
@@ -127,3 +132,67 @@ def test_unvendor_tests(tmpdir):
 
     # One test folder and two test file
     assert n_moved == 3
+
+
+def test_needs_rebuild(tmpdir):
+    pkg_root = tmpdir
+    pkg_root = Path(pkg_root)
+    builddir = pkg_root / "build"
+    meta_yaml = pkg_root / "meta.yaml"
+    packaged = builddir / ".packaged"
+
+    patch_file = pkg_root / "patch"
+    extra_file = pkg_root / "extra"
+    src_path = pkg_root / "src"
+    src_path_file = src_path / "file"
+    source_metadata = {
+        "patches": [
+            str(patch_file),
+        ],
+        "extras": [
+            (str(extra_file), ""),
+        ],
+        "path": str(src_path),
+    }
+
+    builddir.mkdir()
+    meta_yaml.touch()
+    patch_file.touch()
+    extra_file.touch()
+    src_path.mkdir()
+    src_path_file.touch()
+
+    # No .packaged file, rebuild
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+
+    # .packaged file exists, no rebuild
+    packaged.touch()
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
+
+    # newer meta.yaml file, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    meta_yaml.touch()
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+
+    # newer patch file, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    patch_file.touch()
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+
+    # newer extra file, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    extra_file.touch()
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+
+    # newer source path, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    src_path_file.touch()
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+
+    # newer .packaged file, no rebuild
+    packaged.touch()
+    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False

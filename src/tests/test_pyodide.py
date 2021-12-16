@@ -28,6 +28,18 @@ def test_find_imports():
     assert res == []
 
 
+def test_pyimport(selenium):
+    selenium.run_js(
+        """
+        let platform = pyodide.pyimport("platform");
+        assert(() => platform.machine() === "wasm32");
+        assert(() => !pyodide.globals.has("platform"))
+        assertThrows(() => pyodide.pyimport("platform;"), "PythonError", "ModuleNotFoundError: No module named 'platform;'");
+        platform.destroy();
+        """
+    )
+
+
 def test_code_runner():
     assert should_quiet("1+1;")
     assert not should_quiet("1+1#;")
