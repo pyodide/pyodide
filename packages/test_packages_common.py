@@ -67,7 +67,6 @@ def test_parse_package(name):
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     if name not in built_packages():
-        print(name, sorted(built_packages()))
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"

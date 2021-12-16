@@ -12,7 +12,6 @@ except ImportError:
 from ._core import IN_BROWSER
 from ._util import unpack_buffer_archive
 
-
 __all__ = [
     "open_url",
     "pyfetch",

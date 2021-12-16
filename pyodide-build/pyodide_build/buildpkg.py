@@ -150,8 +150,8 @@ def download_and_extract(
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
 
     buildpath
         The path to the build directory. Generally will be
@@ -199,8 +199,8 @@ def prepare_source(
     from, then get the source into srcpath (or somewhere else, if it goes somewhere
     else, returns where it ended up).
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     pkg_root
         The path to the root directory for the package. Generally
         $PYODIDE_ROOT/packages/<PACKAGES>
@@ -318,6 +318,9 @@ def compile(
 
     Parameters
     ----------
+    pkg_name
+        The name of the package
+
     pkg_root
         The path to the root directory for the package. Generally
         $PYODIDE_ROOT/packages/<PACKAGES>

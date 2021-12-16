@@ -10,8 +10,9 @@ import sysconfig
 
 SITE_PACKAGES = pathlib.Path(getsitepackages()[0])
 STD_LIB = pathlib.Path(sysconfig.get_path("stdlib"))  # type: ignore
-
 TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
+ZIP_TYPES = {".whl", ".zip"}
+TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 
 
 def unpack_buffer(filename, buffer, target="site"):
@@ -20,10 +21,6 @@ def unpack_buffer(filename, buffer, target="site"):
         buffer._into_file(f)
         shutil.unpack_archive(f.name, target_dir)
         return get_dynlibs(f, target_dir)
-
-
-ZIP_TYPES = {".whl", ".zip"}
-TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 
 
 def get_dynlibs(f, target_dir):
