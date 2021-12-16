@@ -125,6 +125,7 @@ substitutions:
   {pr}`1883`
 
 - New packages: `logbook`
+- New packages: `pyb2d`
 
 ### Uncategorized
 
