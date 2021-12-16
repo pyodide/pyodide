@@ -244,6 +244,10 @@ export async function loadPyodide(config) {
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
+  if (loadPyodide.inProgress) {
+    throw new Error("Pyodide is already loading.");
+  }
+  loadPyodide.inProgress = true;
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
