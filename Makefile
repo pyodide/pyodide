@@ -75,8 +75,8 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
-	cd src/js && npm run build
-	cd ../../ && npx rollup -c ./src/js/rollup.config.js
+	cd src/js && npm run tsc
+	cd src/js && npm run rollup -c rollup.config.js
 
 src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
@@ -133,7 +133,7 @@ lint: node_modules/.installed
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
-	npx prettier --check src
+	cd src/js && npm run prettier -- --check ..
 	black --check .
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \
@@ -180,14 +180,14 @@ clean-all:
 build/test.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/test.data --js-output=build/test.js \
 		--preload $(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test
-	npx terser build/test.js -o build/test.js
+	cd src/js && npm run terser -- ../../build/test.js -o ../../build/test.js
 
 
 build/distutils.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js \
 		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMAJOR).$(PYMINOR)/distutils \
 		--exclude tests
-	npx terser build/distutils.js -o build/distutils.js
+	cd src/js && npm run terser -- -o ../../build/distutils.js ../../build/distutils.js
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)

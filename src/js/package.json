@@ -28,7 +28,10 @@
   "type": "module",
   "scripts": {
     "test": "mocha",
-    "build": "tsc"
+    "tsc": "tsc",
+    "rollup": "rollup",
+    "prettier": "prettier",
+    "terser": "terser"
   },
   "mocha": {
     "timeout": 30000,

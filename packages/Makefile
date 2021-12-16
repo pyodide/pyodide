@@ -26,6 +26,9 @@ update-all:
 		pyodide-build mkpkg "$${pkg}" --update; \
 	done
 
+tmp:
+	echo $(PYODIDE_ROOT)
+
 clean:
 	rm -rf ./*/build ./*/build.log
 	rm -rf ./.artifacts
