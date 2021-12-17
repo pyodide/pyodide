@@ -124,8 +124,7 @@ substitutions:
   feature, is now unvendored.
   {pr}`1883`
 
-- New packages: `logbook`
-- New packages: `pyb2d`
+- New packages: `logbook`, `pyb2d`
 
 ### Uncategorized
 
