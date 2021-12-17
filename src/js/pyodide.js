@@ -239,9 +239,18 @@ function finalizeBootstrap(config) {
  * @async
  */
 export async function loadPyodide(config) {
+  if (globalThis.__pyodide_module) {
+    throw new Error("Pyodide is already loading.");
+  }
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
+
+  loadPyodide.inProgress = true;
+  // A global "mount point" for the package loaders to talk to pyodide
+  // See "--export-name=__pyodide_module" in buildpkg.py
+  globalThis.__pyodide_module = Module;
+
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
@@ -249,19 +258,6 @@ export async function loadPyodide(config) {
     homedir: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
-  if (globalThis.__pyodide_module) {
-    if (globalThis.languagePluginURL) {
-      throw new Error(
-        "Pyodide is already loading because languagePluginURL is defined."
-      );
-    } else {
-      throw new Error("Pyodide is already loading.");
-    }
-  }
-  loadPyodide.inProgress = true;
-  // A global "mount point" for the package loaders to talk to pyodide
-  // See "--export-name=__pyodide_module" in buildpkg.py
-  globalThis.__pyodide_module = Module;
 
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
