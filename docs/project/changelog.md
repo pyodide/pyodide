@@ -176,7 +176,7 @@ async function runPythonAsync(code, globals) {
 - {{Fix}} numpy fft module now works correctly.
   {pr}`2028`
 
-- New packages: `logbook`
+- New packages: `logbook`, `pyb2d`
 
 ### Uncategorized
 
