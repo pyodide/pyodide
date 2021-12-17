@@ -241,13 +241,14 @@ function finalizeBootstrap(config) {
  * @async
  */
 export async function loadPyodide(config) {
+  if (globalThis.__pyodide_module) {
+    throw new Error("Pyodide is already loading.");
+  }
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
-  if (loadPyodide.inProgress) {
-    throw new Error("Pyodide is already loading.");
-  }
   loadPyodide.inProgress = true;
+
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
@@ -255,9 +256,6 @@ export async function loadPyodide(config) {
     homedir: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
-  if (!config.indexURL) {
-    throw new Error("Please provide indexURL parameter to loadPyodide");
-  }
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
