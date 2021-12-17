@@ -131,19 +131,6 @@ async function node_loadBinaryFile(indexURL, path) {
 }
 
 /**
- * Helper function, we want to assign the result to fetch, but we need to
- * extract this out since the assignment shadows fetch.
- * @private
- */
-function getFetch() {
-  if (IN_NODE) {
-    return nodeFetch;
-  } else {
-    return fetch;
-  }
-}
-
-/**
  * Load a binary file, only for use in browser. Resolves relative paths against
  * indexURL.
  *
@@ -153,7 +140,6 @@ function getFetch() {
  * @private
  */
 async function browser_loadBinaryFile(indexURL, path) {
-  const fetch = getFetch();
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
   let response = await fetch(url);
