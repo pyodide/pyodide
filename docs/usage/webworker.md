@@ -119,7 +119,7 @@ self.onmessage = async (event) => {
   // make sure loading is done
   await pyodideReadyPromise;
   // Don't bother yet with this line, suppose our API is built in such a way:
-  const { python, ...context } = event.data;
+  const { id, python, ...context } = event.data;
   // The worker copies the context in its own "memory" (an object mapping name to values)
   for (const key of Object.keys(context)) {
     self[key] = context[key];
@@ -128,9 +128,9 @@ self.onmessage = async (event) => {
   try {
     await self.pyodide.loadPackagesFromImports(python);
     let results = await self.pyodide.runPythonAsync(python);
-    self.postMessage({ results });
+    self.postMessage({ results, id });
   } catch (error) {
-    self.postMessage({ error: error.message });
+    self.postMessage({ error: error.message, id });
   }
 };
 ```
@@ -147,25 +147,32 @@ this API does.
 ```js
 const pyodideWorker = new Worker("./build/webworker.js");
 
-export function run(script, context, onSuccess, onError) {
-  pyodideWorker.onerror = onError;
-  pyodideWorker.onmessage = (e) => onSuccess(e.data);
-  pyodideWorker.postMessage({
-    ...context,
-    python: script,
-  });
-}
+const callbacks = {};
 
-// Transform the run (callback) form to a more modern async form.
-// This is what allows writing:
-//    const {results, error} = await asyncRun(script, context);
-// Instead of:
-//    run(script, context, successCallback, errorCallback);
-export function asyncRun(script, context) {
-  return new Promise(function (onSuccess, onError) {
-    run(script, context, onSuccess, onError);
-  });
-}
+pyodideWorker.onmessage = (event) => {
+  const { id, ...data } = event.data;
+  const onSuccess = callbacks[id];
+  delete callbacks[id];
+  onSuccess(data);
+};
+
+const asyncRun = (() => {
+  let id = 0;  // identify a Promise
+  return (script, context) => {
+    // the id could be generated more carefully
+    id = (id + 1) % Number.MAX_SAFE_INTEGER;
+    return new Promise((onSuccess) => {
+      callbacks[id] = onSuccess;
+      pyodideWorker.postMessage({
+        ...context,
+        python: script,
+        id
+      });
+    })
+  }
+})();
+
+export { asyncRun }
 ```
 
 [worker api]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API

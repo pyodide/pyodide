@@ -103,7 +103,8 @@
               }
             } catch (e) {
               if (e.constructor.name === "PythonError") {
-                term.error(fut.formatted_error.trimEnd());
+                const message = fut.formatted_error || e.message;
+                term.error(message.trimEnd());
               } else {
                 throw e;
               }

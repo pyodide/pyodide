@@ -48,6 +48,16 @@ substitutions:
   runtime issue due to webpack are solved.
   {pr}`1900`
 
+- {{Enhancement}} Added a {any}`pyodide.pyimport` API to import a Python module
+  and return it as a `PyProxy`. Note that this does a different thing than the
+  original `pyimport` API: it imports a package and returns it without adding
+  the package to the global scope.
+  {pr}`1944`
+
+- {{Enhancement}} Added a {any}`pyodide.unpackArchive` API which unpacks an archive represented as an ArrayBuffer into the working directory.
+  This is intended as a way to install packages from a local application.
+  {pr}`1944`
+
 - {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
   parameter which sets home directory of Pyodide virtual file system.
   {pr}`1936`
@@ -87,6 +97,32 @@ substitutions:
   that looks up the name on `builtins` if lookup on `globals` fails.
   {pr}`1905`
 
+- {{Enhancement}} Coroutines have their memory managed in a more convenient way.
+  In particular, now it is only necessary to either `await` the coroutine or call
+  one of `.then`, `.except` or `.finally` to prevent a leak. It is no longer
+  necessary to manually destroy the coroutine. Example: before:
+
+```js
+async function runPythonAsync(code, globals) {
+  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
+  try {
+    return await coroutine;
+  } finally {
+    coroutine.destroy();
+  }
+}
+```
+
+After:
+
+```js
+async function runPythonAsync(code, globals) {
+  return await Module.pyodide_py.eval_code_async(code, globals);
+}
+```
+
+{pr}`2030`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
@@ -112,6 +148,15 @@ substitutions:
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
   {pr}`1859`
 
+- {{Enhancement}} {func}`micropip.install` now accepts a `keep_going` parameter. If set to True,
+  micropip reports all identifiable dependencies that don't have pure Python wheels, instead of
+  failing after processing the first one.
+  {pr}`1976`
+
+- {{Enhancement}} Added a new API {func}`micropip.list` which returns the list of installed
+  packages by micropip.
+  {pr}`2012`
+
 ### packages
 
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
@@ -123,6 +168,13 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
+
+- {{Fix}} pillow and imageio now correctly encodes/decodes grayscale and
+  black-and-white JPEG image format.
+  {pr}`2028`
+
+- {{Fix}} numpy fft module now works correctly.
+  {pr}`2028`
 
 - New packages: `logbook`, `pyb2d`
 
@@ -137,6 +189,13 @@ substitutions:
 - {{Fix}} The `_` variable is now set by the Pyodide repl just like it is set in
   the native Python repl.
   {pr}`1904`
+
+- {{Fix}} The console now correctly handles it when an object's `__repr__` function raises an exception.
+  {pr}`2021`
+
+- {{ Enhancement }} Removed the `-s EMULATE_FUNCTION_POINTER_CASTS` flag,
+  yielding large benefits in speed, stack usage, and code size.
+  {pr}`2019`
 
 ## Version 0.18.1
 
@@ -176,7 +235,7 @@ substitutions:
 
 ### Packages
 
-- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+- {{Fix}} pillow now correctly encodes/decodes RGB JPEG image format. {pr}`1818`
 
 ### Micellaneous
 

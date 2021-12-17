@@ -408,6 +408,35 @@ def test_console_html(console_html_fixture):
         ).strip()
     )
 
+    assert (
+        exec_and_get_result(
+            dedent(
+                """
+            class Test:
+                def __repr__(self):
+                    raise TypeError("hi")
+
+            Test()
+            """
+            ).strip()
+        )
+        == dedent(
+            """
+            >>> class Test:
+            ...     def __repr__(self):
+            ...         raise TypeError(\"hi\")
+            ... \
+
+            >>> Test()
+            [[;;;terminal-error]Traceback (most recent call last):
+              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 486, in repr_shorten
+                text = repr(value)
+              File \"<console>\", line 3, in __repr__
+            TypeError: hi]
+            """
+        ).strip()
+    )
+
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
     assert long_output[2] == "[[;orange;]<long output truncated>]"

@@ -84,7 +84,7 @@ export let version = ""; // actually defined in loadPyodide (see pyodide.js)
  * is returned.
  *
  * @param {string} code Python code to evaluate
- * @param {PyProxy} globals An optional Python dictionary to use as the globals.
+ * @param {PyProxy=} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript. See the
@@ -176,19 +176,14 @@ export async function loadPackagesFromImports(
  *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
- * @param {PyProxy} globals An optional Python dictionary to use as the globals.
+ * @param {PyProxy=} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code_async` to evaluate the code.
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
  * @async
  */
 export async function runPythonAsync(code, globals = Module.globals) {
-  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
-  try {
-    return await coroutine;
-  } finally {
-    coroutine.destroy();
-  }
+  return await Module.pyodide_py.eval_code_async(code, globals);
 }
 Module.runPythonAsync = runPythonAsync;
 
@@ -241,7 +236,7 @@ export function unregisterJsModule(name) {
  *
  * @param {*} obj
  * @param {object} options
- * @param {number} options.depth Optional argument to limit the depth of the
+ * @param {number=} options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
@@ -286,6 +281,56 @@ export function toPy(obj, { depth = -1 } = {}) {
     Module._Py_DecRef(py_result);
   }
   return Module.hiwire.pop_value(result);
+}
+
+/**
+ * Imports a module and returns it.
+ * Warning: this function has a completely different behavior than the old removed pyimport function!
+ * ``pyimport`` is roughly equivalent to:
+ *
+ * .. code-block:: pyodide
+ *
+ *      pyodide.runPython(`import ${pkgname}; ${pkgname}`);
+ *
+ * except that the global namespace will not change.
+ * Example:
+ *
+ * .. code-block:: pyodide
+ *
+ *    let sysmodule = pyodide.pyimport("sys");
+ *    let recursionLimit = sys.getrecursionlimit();
+ *
+ * The best way to run Python code with Pyodide is
+ * 1. write a Python package,
+ * 2. load your Python package into the Pyodide (Emscripten) file system,
+ * 3. import the package with `let mypkg = pyodide.pyimport("mypkgname")`,
+ * 4. call into your package with `mypkg.some_api(some_args)`.
+ *
+ * @param {string} mod_name The name of the module to import
+ * @returns A PyProxy for the imported module
+ */
+export function pyimport(mod_name) {
+  return Module.importlib.import_module(mod_name);
+}
+
+/**
+ * Unpack an archive into a target directory.
+ *
+ * @param {ArrayBuffer} buffer The archive as an ArrayBuffer (it's also fine to pass a TypedArray).
+ * @param {string} format The format of the archive. Should be one of the formats recognized by `shutil.unpack_archive`.
+ * By default the options are 'bztar', 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each format, e.g.,
+ * for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or 'tgz' are considered to be synonyms.
+ *
+ * @param {string=} extract_dir The directory to unpack the archive into. Defaults to the working directory.
+ */
+export function unpackArchive(buffer, format, extract_dir) {
+  if (!Module._util_module) {
+    Module._util_module = pyimport("pyodide._util");
+  }
+  Module._util_module.unpack_buffer_archive.callKwargs(buffer, {
+    format,
+    extract_dir,
+  });
 }
 
 /**
@@ -363,6 +408,8 @@ export function makePublicAPI() {
     setInterruptBuffer,
     checkInterrupt,
     toPy,
+    pyimport,
+    unpackArchive,
     registerComlink,
     PythonError,
     PyBuffer,

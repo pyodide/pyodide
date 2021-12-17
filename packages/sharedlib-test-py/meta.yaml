@@ -1,0 +1,14 @@
+package:
+  name: sharedlib-test-py
+  version: "1.0"
+requirements:
+  run:
+    - sharedlib-test
+source:
+  path: src
+build:
+  cflags: |
+    -I$(PYODIDE_ROOT)/packages/sharedlib-test/build/sharedlib-test-1.0/include
+test:
+  imports:
+    - sharedlib_test
