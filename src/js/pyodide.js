@@ -272,6 +272,9 @@ export async function loadPyodide(config) {
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
+  // locateFile tells Emscripten where to find the data files that initialize
+  // the file system.
+  Module.locateFile = (path) => config.indexURL + path;
   const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
@@ -282,6 +285,11 @@ export async function loadPyodide(config) {
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  // Disable futher loading of Emscripten file_packager stuff.
+  Module.locateFile = (path) => {
+    throw new Error("Didn't expect to load any more file_packager files!");
+  };
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(pyodide_py_tar);

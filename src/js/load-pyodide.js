@@ -1,5 +1,10 @@
 import { Module } from "./module.js";
 
+//
+// Initialization code and node/browser shims
+//
+
+// Detect if we're in node
 const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
@@ -12,6 +17,11 @@ let nodeFetch;
 let nodeFsPromisesMod;
 let nodeVmMod;
 
+/**
+ * If we're in node, it's most convenient to import various node modules on
+ * initialization. Otherwise, this does nothing.
+ * @private
+ */
 export async function initNodeModules() {
   if (!IN_NODE) {
     return;
@@ -26,6 +36,9 @@ export async function initNodeModules() {
 /** @private */
 let baseURL;
 /**
+ * Initialize the packages index. This is called as early as possible in
+ * loadPyodide so that fetching packages.json can occur in parallel with other
+ * operations.
  * @param {string} indexURL
  * @private
  */
@@ -57,47 +70,11 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
-Module.locateFile = function (path) {
-  return baseURL + path;
-};
-
-async function node_loadBinaryFile(indexURL, path) {
-  if (path.includes("://")) {
-    let response = await nodeFetch(path);
-    if (!response.ok) {
-      throw new Error(`Failed to load '${path}': request failed.`);
-    }
-    return await response.arrayBuffer();
-  } else {
-    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
-    return data.buffer;
-  }
-}
-
-function getFetch() {
-  if (IN_NODE) {
-    return nodeFetch;
-  } else {
-    return fetch;
-  }
-}
-
-async function _fetchBinaryFile(indexURL, path) {
-  let fetch = getFetch();
-  let response = await fetch(`${indexURL}${path}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load '${indexURL}${path}': request failed.`);
-  }
-  return await response.arrayBuffer();
-}
-
-export let _loadBinaryFile;
-if (IN_NODE) {
-  _loadBinaryFile = node_loadBinaryFile;
-} else {
-  _loadBinaryFile = _fetchBinaryFile;
-}
-
+/**
+ * Load a text file and executes it as Javascript
+ * @param {str} url The path to load. May be a url or a relative file system path.
+ * @private
+ */
 async function nodeLoadScript(url) {
   if (url.includes("://")) {
     // If it's a url, load it with fetch and then eval it.
@@ -110,11 +87,13 @@ async function nodeLoadScript(url) {
 }
 
 /**
+ * Currently loadScript is only used once to load `pyodide.asm.js`.
  * @param {string) url
  * @async
  * @private
  */
 export let loadScript;
+
 if (globalThis.document) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
@@ -130,6 +109,78 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
+/**
+ * Load a binary file, only for use in Node. If the path explicitly is a URL,
+ * then fetch from a URL, else load from the file system.
+ * @param {str} indexURL base path to resolve relative paths
+ * @param {str} path the path to load
+ * @returns An ArrayBuffer containing the binary data
+ * @private
+ */
+async function node_loadBinaryFile(indexURL, path) {
+  if (path.includes("://")) {
+    let response = await nodeFetch(path);
+    if (!response.ok) {
+      throw new Error(`Failed to load '${path}': request failed.`);
+    }
+    return await response.arrayBuffer();
+  } else {
+    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    return data.buffer;
+  }
+}
+
+/**
+ * Helper function, we want to assign the result to fetch, but we need to
+ * extract this out since the assignment shadows fetch.
+ * @private
+ */
+function getFetch() {
+  if (IN_NODE) {
+    return nodeFetch;
+  } else {
+    return fetch;
+  }
+}
+
+/**
+ * Load a binary file, only for use in browser. Resolves relative paths against
+ * indexURL.
+ *
+ * @param {str} indexURL base path to resolve relative paths
+ * @param {str} path the path to load
+ * @returns An ArrayBuffer containing the binary data
+ * @private
+ */
+async function browser_loadBinaryFile(indexURL, path) {
+  const fetch = getFetch();
+  const url = new URL(path, indexURL).toString();
+  let response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load '${url}': request failed.`);
+  }
+  return await response.arrayBuffer();
+}
+
+export let _loadBinaryFile;
+if (IN_NODE) {
+  _loadBinaryFile = node_loadBinaryFile;
+} else {
+  _loadBinaryFile = browser_loadBinaryFile;
+}
+
+//
+// Dependency resolution
+//
+
+/**
+ * Recursively add a package and its dependencies to toLoad and toLoadShared.
+ * A helper function for recursiveDependencies.
+ * @param {str} name The package to add
+ * @param {Set} toLoad The set of names of packages to load
+ * @param {Set} toLoadShared The set of names of shared libraries to load
+ * @private
+ */
 function addPackageToLoad(name, toLoad, toLoadShared) {
   name = name.toLowerCase();
   if (name in loadedPackages) {
@@ -152,6 +203,13 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   }
 }
 
+/**
+ * Calculate the dependencies of a set of packages
+ * @param names The list of names whose dependencies we need to calculate.
+ * @returns Two sets, the set of normal dependencies and the set of shared
+ * dependencies
+ * @private
+ */
 function recursiveDependencies(names) {
   const toLoad = new Set();
   const toLoadShared = new Set();
@@ -161,14 +219,31 @@ function recursiveDependencies(names) {
   return [toLoad, toLoadShared];
 }
 
-async function downloadPkgBuffer(name) {
+//
+// Dependency download and install
+//
+
+/**
+ * Download a package.
+ * @param {str} name The name of the package
+ * @returns {ArrayBuffer} The binary data for the package
+ * @private
+ */
+async function downloadPackage(name) {
   const pkg = Module.packages[name];
   return await _loadBinaryFile(baseURL, pkg.file_name);
 }
 
-async function unpackBuffer(name, buffer) {
+/**
+ * Install the package into the file system.
+ * @param {str} name The name of the package
+ * @param {str} buffer The binary data returned by downloadPkgBuffer
+ * @private
+ */
+async function installPackage(name, buffer) {
   const pkg = Module.packages[name];
   const file_name = pkg.file_name;
+  // This Python helper function unpacks the buffer and lists out any so files therein.
   const dynlibs = Module.package_loader.unpack_buffer(
     file_name,
     buffer,
@@ -180,12 +255,16 @@ async function unpackBuffer(name, buffer) {
   loadedPackages[name] = pkg;
 }
 
+/**
+ * @returns A new asynchronous lock
+ * @private
+ */
 function createLock() {
   // This is a promise that is resolved when the lock is open, not resolved when lock is held.
   let _lock = Promise.resolve();
 
   /**
-   * An async lock for package loading. Prevents race conditions in loadPackage.
+   * Acquire the async lock
    * @returns A zero argument function that releases the lock.
    * @private
    */
@@ -199,7 +278,21 @@ function createLock() {
   return acquireLock;
 }
 
+// Emscripten has a lock in the corresponding code in library_browser.js. I
+// don't know why we need it, but quite possibly bad stuff will happen without
+// it.
 const acquireDynlibLock = createLock();
+
+/**
+ * Load a dynamic library. This is an async operation and Python imports are
+ * synchronous so we have to do it ahead of time. When we add more support for
+ * synchronous I/O, we could consider doing this later as a part of a Python
+ * import hook.
+ *
+ * @param {str} lib The file system path to the library.
+ * @param {bool} shared Is this a shared library or not?
+ * @private
+ */
 async function loadDynlib(lib, shared) {
   const byteArray = Module.FS.lookupPath(lib).node.contents;
   const releaseDynlibLock = await acquireDynlibLock();
@@ -274,27 +367,31 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const packagePromises = {};
     for (const name of toLoadShared) {
       if (loadedPackages[name]) {
+        // Handle the race condition where the package was loaded between when
+        // we did dependency resolution and when we acquired the lock.
         toLoadShared.delete(name);
         continue;
       }
-      sharedLibraryPromises[name] = downloadPkgBuffer(name);
+      sharedLibraryPromises[name] = downloadPackage(name);
     }
     for (const name of toLoad) {
       if (loadedPackages[name]) {
+        // Handle the race condition where the package was loaded between when
+        // we did dependency resolution and when we acquired the lock.
         toLoad.delete(name);
         continue;
       }
-      packagePromises[name] = downloadPkgBuffer(name);
+      packagePromises[name] = downloadPackage(name);
     }
 
     const loaded = [];
     const failed = {};
-    // TODO: At some point add support for prefetching modules by awaiting on a
-    // promise right here which resolves in loadPyodide when the bootstrap is done.
+    // TODO: add support for prefetching modules by awaiting on a promise right
+    // here which resolves in loadPyodide when the bootstrap is done.
     for (const name of toLoadShared) {
       sharedLibraryPromises[name] = sharedLibraryPromises[name]
         .then(async (buffer) => {
-          await unpackBuffer(name, buffer);
+          await installPackage(name, buffer);
           loaded.push(name);
           loadedPackages[name] = "pyodide";
         })
@@ -307,7 +404,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     for (const name of toLoad) {
       packagePromises[name] = packagePromises[name]
         .then(async (buffer) => {
-          await unpackBuffer(name, buffer);
+          await installPackage(name, buffer);
           loaded.push(name);
           loadedPackages[name] = "pyodide";
         })
