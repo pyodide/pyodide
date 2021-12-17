@@ -155,7 +155,7 @@ function getFetch() {
 async function browser_loadBinaryFile(indexURL, path) {
   const fetch = getFetch();
   const base = new URL(indexURL, location);
-  const url = new URL(path, base).toString();
+  const url = new URL(path, base);
   let response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to load '${url}': request failed.`);
