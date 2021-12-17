@@ -394,6 +394,11 @@ def compile(
         with chdir(distdir):
             shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
     pack_wheel(wheel_dir)
+    # wheel_dir causes pytest collection failures for in-tree packages like
+    # micropip. To prevent these, we get rid of wheel_dir after repacking the
+    # wheel.
+    shutil.rmtree(wheel_dir)
+    shutil.rmtree(test_dir, True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
