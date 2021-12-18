@@ -48,7 +48,7 @@ echo "--------------------------------------------"
 
 # wget --passive-ftp ftp://netlib.bell-labs.com/netlib/f2c.tar
 
-wget http://netlib.sandia.gov/cgi-bin/netlib/netlibfiles.tar?filename=netlib/f2c -O "f2c.tar"
+wget http://hpc.sourceforge.net/f2c.tar -O "f2c.tar"
 
 echo "... done."
 

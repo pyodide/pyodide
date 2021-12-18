@@ -76,38 +76,40 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
-PyObject* init_dict;
-
-/**
- * The C code for runPythonSimple. The definition of runPythonSimple is in
- * `pyodide.js` for greater visibility.
- */
-int
-run_python_simple_inner(char* code)
-{
-  PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
-  Py_XDECREF(result);
-  return result ? 0 : -1;
-}
-
 // from numpy_patch.c (no need for a header just for this)
 int
 numpy_patch_init();
 
 int
+get_python_stack_depth()
+{
+  PyThreadState* tstate = PyThreadState_GET();
+  return tstate->recursion_depth;
+}
+
+/**
+ * Bootstrap steps here:
+ *  1. Import _pyodide package (we depend on this in _pyodide_core)
+ *  2. Initialize the different ffi components and create the _pyodide_core
+ *     module
+ *  3. Create a PyProxy wrapper around _pyodide package so that JavaScript can
+ *     call into _pyodide._base.eval_code and
+ *     _pyodide._import_hook.register_js_finder (this happens in loadPyodide in
+ *     pyodide.js)
+ */
+int
 main(int argc, char** argv)
 {
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+    Module.wasmTable = wasmTable;
+  });
+
   // This exits and prints a message to stderr on failure,
   // no status code to check.
   initialize_python();
-
-  // Once we initialize init_dict, runPythonSimple can work. This gives us a way
-  // to run Python code that works even if the rest of the initialization fails
-  // pretty badly.
-  init_dict = PyDict_New();
-  if (init_dict == NULL) {
-    FATAL_ERROR("Failed to create init_dict.");
-  }
 
   if (alignof(JsRef) != alignof(int)) {
     FATAL_ERROR("JsRef doesn't have the same alignment as int.");
@@ -115,24 +117,26 @@ main(int argc, char** argv)
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
+  emscripten_exit_with_live_runtime();
+  return 0;
+}
 
-  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
-  if (_pyodide == NULL) {
-    FATAL_ERROR("Failed to import pyodide module");
-  }
-  Py_CLEAR(_pyodide);
-
+int
+pyodide_init(void)
+{
+  PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
+  JsRef _pyodide_proxy = NULL;
+
+  _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import _pyodide module");
+  }
+
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
-
-  EM_ASM({
-    // For some reason emscripten doesn't make UTF8ToString available on Module
-    // by default...
-    Module.UTF8ToString = UTF8ToString;
-  });
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
@@ -143,27 +147,20 @@ main(int argc, char** argv)
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
-  TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  // Enable Javascript access to the global variables from runPythonSimple.
-  JsRef init_dict_proxy = python2js(init_dict);
-  if (init_dict_proxy == NULL) {
-    FATAL_ERROR("Failed to create init_dict proxy.");
+  // Enable JavaScript access to the _pyodide module.
+  _pyodide_proxy = python2js(_pyodide);
+  if (_pyodide_proxy == NULL) {
+    FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0); }, init_dict_proxy);
+  EM_ASM({ Module._pyodide = Module.hiwire.pop_value($0); }, _pyodide_proxy);
 
-  PyObject* pyodide = PyImport_ImportModule("pyodide");
-  if (pyodide == NULL) {
-    FATAL_ERROR("Failed to import pyodide module");
-  }
+  Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  Py_CLEAR(pyodide);
-  printf("Python initialization complete\n");
-  emscripten_exit_with_live_runtime();
   return 0;
 }

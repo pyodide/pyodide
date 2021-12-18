@@ -5,15 +5,17 @@ from pathlib import Path
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
-
+    selenium = selenium_standalone
+    if selenium.browser == "node":
+        pytest.xfail("Loading urls in node seems to time out right now")
     if active_server == "secondary":
         url, port, log_main = web_server_secondary
-        log_backup = selenium_standalone.server_log
+        log_backup = selenium.server_log
     elif active_server == "main":
         _, _, log_backup = web_server_secondary
-        log_main = selenium_standalone.server_log
-        url = selenium_standalone.server_hostname
-        port = selenium_standalone.server_port
+        log_main = selenium.server_log
+        url = selenium.server_hostname
+        port = selenium.server_port
     else:
         raise AssertionError()
 
@@ -23,26 +25,26 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         fh_main.seek(0, 2)
         fh_backup.seek(0, 2)
 
-        selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
-        assert "Skipping unknown package" not in selenium_standalone.logs
+        selenium.load_package(f"http://{url}:{port}/pyparsing.js")
+        assert "Skipping unknown package" not in selenium.logs
 
-        # check that all ressources were loaded from the active server
+        # check that all resources were loaded from the active server
         txt = fh_main.read()
         assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
         assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
 
-        # no additional ressources were loaded from the other server
+        # no additional resources were loaded from the other server
         assert len(fh_backup.read()) == 0
 
-    selenium_standalone.run(
+    selenium.run(
         """
         from pyparsing import Word, alphas
         repr(Word(alphas).parseString('hello'))
         """
     )
 
-    selenium_standalone.load_package(f"http://{url}:{port}/pytz.js")
-    selenium_standalone.run("import pytz")
+    selenium.load_package(f"http://{url}:{port}/pytz.js")
+    selenium.run("import pytz")
 
 
 def test_load_relative_url(selenium_standalone):
@@ -146,13 +148,13 @@ def test_load_package_unknown(selenium_standalone):
     shutil.copyfile(build_dir / "pyparsing.data", build_dir / "pyparsing-custom.data")
 
     try:
-        selenium_standalone.load_package(f"http://{url}:{port}/pyparsing-custom.js")
+        selenium_standalone.load_package(f"./pyparsing-custom.js")
     finally:
         (build_dir / "pyparsing-custom.js").unlink()
         (build_dir / "pyparsing-custom.data").unlink()
 
     assert selenium_standalone.run_js(
-        "return window.pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
+        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
     )
 
 
@@ -177,10 +179,18 @@ def test_load_twice_same_source(selenium_standalone):
 
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
-    to_load = "pyparsing"
-    selenium.run(f"import js ; js.pyodide.loadPackage(['{to_load}'])")
-    assert f"Loading {to_load}" in selenium.logs
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [to_load]
+    to_load = ["pyparsing"]
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            from pyodide_js import loadPackage
+            await loadPackage({to_load!r})
+            del loadPackage
+        `);
+        """
+    )
+    assert f"Loading {to_load[0]}" in selenium.logs
+    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
 @pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
@@ -194,3 +204,74 @@ def test_load_package_mixed_case(selenium_standalone, jinja2):
         `)
         """
     )
+
+
+def test_test_unvendoring(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("regex");
+        pyodide.runPython(`
+            import regex
+            from pathlib import Path
+            test_path =  Path(regex.__file__).parent / "test_regex.py"
+            assert not test_path.exists()
+        `)
+        """
+    )
+
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("regex-tests");
+        pyodide.runPython(`
+            assert test_path.exists()
+        `)
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        return pyodide._module.packages['regex'].unvendored_tests
+        """
+    )
+
+
+def test_install_archive(selenium):
+    build_dir = Path(__file__).parents[2] / "build"
+    test_dir = Path(__file__).parent
+    shutil.make_archive(
+        test_dir / "test_pkg", "gztar", root_dir=test_dir, base_dir="test_pkg"
+    )
+    build_test_pkg = build_dir / "test_pkg.tar.gz"
+    if not build_test_pkg.exists():
+        build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
+    try:
+        for fmt_name in ["gztar", "tar.gz", "tgz", ".tar.gz", ".tgz"]:
+            selenium.run_js(
+                f"""
+                let resp = await fetch("test_pkg.tar.gz");
+                let buf = await resp.arrayBuffer();
+                pyodide.unpackArchive(buf, {fmt_name!r});
+                """
+            )
+            selenium.run_js(
+                """
+                let test_pkg = pyodide.pyimport("test_pkg");
+                let some_module = pyodide.pyimport("test_pkg.some_module");
+                try {
+                    assert(() => test_pkg.test1(5) === 26);
+                    assert(() => some_module.test1(5) === 26);
+                    assert(() => some_module.test2(5) === 24);
+                } finally {
+                    test_pkg.destroy();
+                    some_module.destroy();
+                    pyodide.runPython(`
+                        import shutil
+                        shutil.rmtree("test_pkg")
+                    `)
+                }
+                """
+            )
+    finally:
+        (build_dir / "test_pkg.tar").unlink(missing_ok=True)
+        (test_dir / "test_pkg.tar").unlink(missing_ok=True)

@@ -3,14 +3,14 @@ JS_FILE(python2js_buffer_init, () => {
 
   /**
    * Determine type and endianness of data from format. This is a helper
-   * function for converting buffers from Python to Javascript, used in
+   * function for converting buffers from Python to JavaScript, used in
    * PyProxyBufferMethods and in `toJs` on a buffer.
    *
    * To understand this function it will be helpful to look at the tables here:
    * https://docs.python.org/3/library/struct.html#format-strings
    *
    * @arg format {String} A Python format string (caller must convert it to a
-   *      Javascript string).
+   *      JavaScript string).
    * @arg errorMessage {String} Extra stuff to append to an error message if
    *      thrown. Should be a complete sentence.
    * @returns A pair, an appropriate TypedArray constructor and a boolean which
@@ -106,7 +106,7 @@ JS_FILE(python2js_buffer_init, () => {
   };
 
   /**
-   * Convert a 1-dimensional contiguous buffer to Javascript.
+   * Convert a 1-dimensional contiguous buffer to JavaScript.
    *
    * In this case we can just slice the memory out of the wasm HEAP.
    * @param {number} ptr A pointer to the start of the buffer in wasm memory
@@ -124,7 +124,7 @@ JS_FILE(python2js_buffer_init, () => {
   };
 
   /**
-   * Convert a 1d noncontiguous buffer to Javascript.
+   * Convert a 1d noncontiguous buffer to JavaScript.
    *
    * Since the buffer is not contiguous we have to copy it in chunks.
    * @param {number} ptr The WAM memory pointer to the start of the buffer.
@@ -152,7 +152,7 @@ JS_FILE(python2js_buffer_init, () => {
     for (let i = 0; i < n; ++i) {
       let curptr = ptr + i * stride;
       if (suboffset >= 0) {
-        curptr = HEAP32[curptr / 4] + suboffset;
+        curptr = DEREF_U32(curptr, 0) + suboffset;
       }
       buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize);
     }
@@ -160,7 +160,7 @@ JS_FILE(python2js_buffer_init, () => {
   };
 
   /**
-   * Convert an ndarray to a nested Javascript array, the main function.
+   * Convert an ndarray to a nested JavaScript array, the main function.
    *
    * This is called by _python2js_buffer_inner (defined in python2js_buffer.c).
    * There are two layers of setup that need to be done to get the base case of
@@ -176,17 +176,17 @@ JS_FILE(python2js_buffer_init, () => {
    * @param {number} bufferData All of the data out of the Py_buffer, plus the
    * converter function: ndim, format, itemsize, shape (a ptr), strides (a ptr),
    * suboffsets (a ptr), converter,
-   * @returns A nested Javascript array, the result of the conversion.
+   * @returns A nested JavaScript array, the result of the conversion.
    * @private
    */
   Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
     "use strict";
-    // When indexing HEAP32 we need to divide the pointer by 4
-    let n = HEAP32[bufferData.shape / 4 + curdim];
-    let stride = HEAP32[bufferData.strides / 4 + curdim];
+    // Stride and suboffset are signed, n is unsigned.
+    let n = DEREF_U32(bufferData.shape, curdim);
+    let stride = DEREF_I32(bufferData.strides, curdim);
     let suboffset = -1;
     if (bufferData.suboffsets !== 0) {
-      suboffset = HEAP32[bufferData.suboffsets / 4 + curdim];
+      suboffset = DEREF_I32(bufferData.suboffsets, curdim);
     }
     if (curdim === bufferData.ndim - 1) {
       // Last dimension, use appropriate 1d converter
@@ -211,7 +211,7 @@ JS_FILE(python2js_buffer_init, () => {
       // https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets
       let curPtr = ptr + i * stride;
       if (suboffset >= 0) {
-        curptr = HEAP32[curptr / 4] + suboffset;
+        curptr = DEREF_U32(curptr, 0) + suboffset;
       }
       result.push(
         Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData)

@@ -14,8 +14,14 @@ source:
 
   extras:
     -
+      - src/browser_backend.py
+      - lib/matplotlib/backends/browser_backend.py
+    -
       - src/wasm_backend.py
       - lib/matplotlib/backends/wasm_backend.py
+    -
+      - src/html5_canvas_backend.py
+      - lib/matplotlib/backends/html5_canvas_backend.py
     -
       - src/setup.cfg
       - ./setup.cfg
@@ -31,6 +37,8 @@ build:
     rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
     rm -rf $SITEPACKAGES/sphinxext
     cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
+    mkdir -p $PKGDIR/../../build/fonts
+    cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
   run:

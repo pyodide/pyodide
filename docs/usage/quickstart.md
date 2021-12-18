@@ -9,17 +9,18 @@ Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in 
 ## Setup
 
 To include Pyodide in your project you can use the following CDN URL:
-```{eval-rst}
-  https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
+
+```text
+https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
 ```
 
-You can also download a release from [Github
+You can also download a release from [GitHub
 releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
-yourself. See {ref}`serving_pyodide_packages` for more details.
+yourself. See {ref}`downloading_deploying` for more details.
 
-The `pyodide.js` file defines a single async function called {any}`loadPyodide
-<globalThis.loadPyodide>` which sets up the Python environment and returns {js:mod}`the
-Pyodide top level namespace <pyodide>`.
+The `pyodide.js` file defines a single async function called
+{any}`loadPyodide <globalThis.loadPyodide>` which sets up the Python environment
+and returns {js:mod}`the Pyodide top level namespace <pyodide>`.
 
 ```pyodide
 async function main() {
@@ -37,9 +38,10 @@ main();
 
 Python code is run using the {any}`pyodide.runPython` function. It takes as
 input a string of Python code. If the code ends in an expression, it returns the
-result of the expression, translated to Javascript objects (see
+result of the expression, translated to JavaScript objects (see
 {ref}`type-translations`). For example the following code will return the
-version string as a Javascript string:
+version string as a JavaScript string:
+
 ```pyodide
 pyodide.runPython(`
   import sys
@@ -53,6 +55,7 @@ See {ref}`loading_packages` for information about loading additional packages.
 ## Complete example
 
 Create and save a test `index.html` page with the following contents:
+
 ```html-pyodide
 <!DOCTYPE html>
 <html>
@@ -79,70 +82,72 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-
 ## Alternative Example
 
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
-</head>
+  </head>
 
-<body>
-  <p>You can execute any Python code. Just enter something in the box below and click the button.</p>
-  <input id='code' value='sum([1, 2, 3, 4, 5])'>
-  <button onclick='evaluatePython()'>Run</button>
-  <br>
-  <br>
-  <div>
-    Output:
-  </div>
-  <textarea id='output' style='width: 100%;' rows='6' disabled></textarea>
+  <body>
+    <p>
+      You can execute any Python code. Just enter something in the box below and
+      click the button.
+    </p>
+    <input id="code" value="sum([1, 2, 3, 4, 5])" />
+    <button onclick="evaluatePython()">Run</button>
+    <br />
+    <br />
+    <div>Output:</div>
+    <textarea id="output" style="width: 100%;" rows="6" disabled></textarea>
 
-  <script>
-    const output = document.getElementById("output");
-    const code = document.getElementById("code");
+    <script>
+      const output = document.getElementById("output");
+      const code = document.getElementById("code");
 
-    function addToOutput(s) {
-      output.value += '>>>' + code.value + '\n' + s + '\n';
-    }
-
-    output.value = 'Initializing...\n';
-    // init Pyodide
-    async function main(){
-      let pyodide = await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
-      output.value += 'Ready!\n';
-      return pyodide;
-    }
-    let pyodideReadyPromise = main();
-
-    async function evaluatePython() {
-      let pyodide = await pyodideReadyPromise;
-      try {
-        let output = pyodide.runPython(code.value);
-        addToOutput(output);
-      } catch(err) {
-        addToOutput(err);
+      function addToOutput(s) {
+        output.value += ">>>" + code.value + "\n" + s + "\n";
       }
-    }
-  </script>
-</body>
 
+      output.value = "Initializing...\n";
+      // init Pyodide
+      async function main() {
+        let pyodide = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
+        });
+        output.value += "Ready!\n";
+        return pyodide;
+      }
+      let pyodideReadyPromise = main();
+
+      async function evaluatePython() {
+        let pyodide = await pyodideReadyPromise;
+        try {
+          let output = pyodide.runPython(code.value);
+          addToOutput(output);
+        } catch (err) {
+          addToOutput(err);
+        }
+      }
+    </script>
+  </body>
 </html>
 ```
 
-## Accessing Python scope from Javascript
+## Accessing Python scope from JavaScript
 
-You can also access from Javascript all functions and variables defined in
+You can also access from JavaScript all functions and variables defined in
 Python by using the {any}`pyodide.globals` object.
 
 For example, if you run the code `x = numpy.ones([3,3])` in Python, you can
-access the variable ``x`` from Javascript in your browser's developer console
+access the variable `x` from JavaScript in your browser's developer console
 as `pyodide.globals.get("x")`. The same goes
 for functions and imports. See {ref}`type-translations` for more details.
 
 You can try it yourself in the browser console:
+
 ```pyodide
 pyodide.runPython(`
   import numpy
@@ -157,8 +162,8 @@ x = pyodide.globals.get('numpy').ones(new Int32Array([3, 4])).toJs();
 ```
 
 Since you have full access to Python global scope, you can also re-assign new
-values or even Javascript functions to variables, and create new ones from
-Javascript:
+values or even JavaScript functions to variables, and create new ones from
+JavaScript:
 
 ```pyodide
 // re-assign a new value to an existing variable
@@ -177,9 +182,9 @@ pyodide.runPython("square(3)");
 
 Feel free to play around with the code using the browser console and the above example.
 
-## Accessing Javascript scope from Python
+## Accessing JavaScript scope from Python
 
-The Javascript scope can be accessed from Python using the `js` module (see
+The JavaScript scope can be accessed from Python using the `js` module (see
 {ref}`type-translations_using-js-obj-from-py`). This module represents the
 global object `window` that allows us to directly manipulate the DOM and access
 global variables and functions from Python.
@@ -191,5 +196,3 @@ div = js.document.createElement("div")
 div.innerHTML = "<h1>This element was created from Python</h1>"
 js.document.body.prepend(div)
 ```
-
-See {ref}`serving_pyodide_packages` to distribute Pyodide files locally.

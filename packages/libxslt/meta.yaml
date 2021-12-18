@@ -21,3 +21,4 @@ build:
         --with-libxml-src="$PYODIDE_ROOT/packages/libxml/build/libxml2-2.9.10" \
         --without-crypto
     emmake make -j ${PYODIDE_JOBS:-3}
+    chmod 755 xslt-config

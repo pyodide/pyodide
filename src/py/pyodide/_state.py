@@ -3,13 +3,13 @@ import sys
 import gc
 
 from ._core import JsProxy
-from ._importhooks import jsfinder
+from _pyodide._importhook import jsfinder
 
 
 def save_state() -> dict:
     """Record the current global state.
 
-    This includes which Javascript packages are loaded and the global scope in
+    This includes which JavaScript packages are loaded and the global scope in
     ``__main__.__dict__``. Many loaded modules might have global state, but
     there is no general way to track it and we don't try to.
     """

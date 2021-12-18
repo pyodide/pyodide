@@ -1,11 +1,8 @@
-from pathlib import Path
 import sys
 import argparse
 from dataclasses import dataclass
 
 import pytest
-
-sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
 from pyodide_build.pywasmcross import f2c  # noqa: E402
@@ -93,6 +90,19 @@ def test_handle_command():
     assert handle_command_wrap("gcc /usr/file.c", args) is None
 
 
+def test_handle_command_ldflags():
+    # Make sure to remove unsupported link flags for wasm-ld
+
+    args = BuildArgs()
+    assert (
+        handle_command_wrap(
+            "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so",
+            args,
+        )
+        == "emcc -Wl,-z,now -c test.o -o test.so"
+    )
+
+
 @pytest.mark.parametrize(
     "in_ext, out_ext, executable, flag_name",
     [
@@ -122,10 +132,16 @@ def test_f2c():
     )
 
 
-def test_conda_compiler_compat():
+def test_conda_unsupported_args():
+    # Check that compile arguments that are not suported by emcc and are sometimes
+    # used in conda are removed.
     args = BuildArgs()
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
+    ) == ("emcc -c test.o -o test.so")
+
+    assert handle_command_wrap(
+        "gcc -shared -c test.o -Wl,--sysroot=/ -o test.so", args
     ) == ("emcc -c test.o -o test.so")
 
 

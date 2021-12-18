@@ -3,11 +3,8 @@
  * the callPyObject method, but of course one can also execute arbitrary code
  * via the various __dundermethods__ associated to classes.
  *
- * The only entrypoint into Python that avoids this file is our bootstrap method
- * runPythonSimple which is defined in main.c
- *
  * Any time we call into wasm, the call should be wrapped in a try catch block.
- * This way if a Javascript error emerges from the wasm, we can escalate it to a
+ * This way if a JavaScript error emerges from the wasm, we can escalate it to a
  * fatal error.
  *
  * This is file is preprocessed with -imacros "pyproxy.c". As a result of this,
@@ -17,7 +14,7 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-import { Module } from "../js/module";
+import { Module } from "./module.js";
 
 /**
  * Is the argument a :any:`PyProxy`?
@@ -30,7 +27,9 @@ export function isPyProxy(jsobj) {
 Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
-  Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
+  Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
+    cache.leaked = true;
+    pyproxy_decref_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
@@ -42,7 +41,7 @@ if (globalThis.FinalizationRegistry) {
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
   // fine in chrome and when I test it in browser. It seems to be sensitive to
   // changes that don't make a difference to the semantics.
-  // TODO: after v0.17.0 release, fix selenium issues with this code.
+  // TODO: after 0.18.0, fix selenium issues with this code.
   // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
   //   try {
   //     Module._PyBuffer_Release(ptr);
@@ -76,26 +75,19 @@ Module.disable_pyproxy_allocation_tracing = function () {
 Module.disable_pyproxy_allocation_tracing();
 
 /**
+ * Create a new PyProxy wraping ptrobj which is a PyObject*.
+ *
+ * The argument cache is only needed to implement the PyProxy.copy API, it
+ * allows the copy of the PyProxy to share its attribute cache with the original
+ * version. In all other cases, pyproxy_new should be called with one argument.
+ *
  * In the case that the Python object is callable, PyProxyClass inherits from
- * Function so that PyProxy objects can be callable.
- *
- * The following properties on a Python object will be shadowed in the proxy
- * in the case that the Python object is callable:
- *  - "arguments" and
- *  - "caller"
- *
- * Inheriting from Function has the unfortunate side effect that we MUST
- * expose the members "proxy.arguments" and "proxy.caller" because they are
- * nonconfigurable, nonwritable, nonenumerable own properties. They are just
- * always `null`.
- *
- * We also get the properties "length" and "name" which are configurable so we
- * delete them in the constructor. "prototype" is not configurable so we can't
- * delete it, however it *is* writable so we set it to be undefined. We must
- * still make "prototype in proxy" be true though.
+ * Function so that PyProxy objects can be callable. In that case we MUST expose
+ * certain properties inherited from Function, but we do our best to remove as
+ * many as possible.
  * @private
  */
-Module.pyproxy_new = function (ptrobj) {
+Module.pyproxy_new = function (ptrobj, cache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
   // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -117,13 +109,20 @@ Module.pyproxy_new = function (ptrobj) {
   } else {
     target = Object.create(cls.prototype);
   }
+  if (!cache) {
+    // The cache needs to be accessed primarily from the C function
+    // _pyproxy_getattr so we make a hiwire id.
+    let cacheId = Module.hiwire.new_value(new Map());
+    cache = { cacheId, refcnt: 0 };
+  }
+  cache.refcnt++;
   Object.defineProperty(target, "$$", {
-    value: { ptr: ptrobj, type: "PyProxy" },
+    value: { ptr: ptrobj, type: "PyProxy", cache },
   });
   Module._Py_IncRef(ptrobj);
   let proxy = new Proxy(target, PyProxyHandlers);
   trace_pyproxy_alloc(proxy);
-  Module.finalizationRegistry.register(proxy, ptrobj, proxy);
+  Module.finalizationRegistry.register(proxy, [ptrobj, cache], proxy);
   return proxy;
 };
 
@@ -189,8 +188,48 @@ Module.getPyProxyClass = function (flags) {
 // Static methods
 Module.PyProxy_getPtr = _getPtr;
 
+const pyproxy_cache_destroyed_msg =
+  "This borrowed attribute proxy was automatically destroyed in the " +
+  "process of destroying the proxy it was borrowed from. Try using the 'copy' method.";
+
+function pyproxy_decref_cache(cache) {
+  if (!cache) {
+    return;
+  }
+  cache.refcnt--;
+  if (cache.refcnt === 0) {
+    let cache_map = Module.hiwire.pop_value(cache.cacheId);
+    for (let proxy_id of cache_map.values()) {
+      const cache_entry = Module.hiwire.pop_value(proxy_id);
+      if (!cache.leaked) {
+        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg);
+      }
+    }
+  }
+}
+
+Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+  if (proxy.$$.ptr === null) {
+    return;
+  }
+  let ptrobj = _getPtr(proxy);
+  Module.finalizationRegistry.unregister(proxy);
+  // Maybe the destructor will call JavaScript code that will somehow try
+  // to use this proxy. Mark it deleted before decrementing reference count
+  // just in case!
+  proxy.$$.ptr = null;
+  proxy.$$.destroyed_msg = destroyed_msg;
+  pyproxy_decref_cache(proxy.$$.cache);
+  try {
+    Module._Py_DecRef(ptrobj);
+    trace_pyproxy_dealloc(proxy);
+  } catch (e) {
+    Module.fatal_error(e);
+  }
+};
+
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
-// defined in pyproxy.c in Javascript functions.
+// defined in pyproxy.c in JavaScript functions.
 
 Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
@@ -285,26 +324,14 @@ class PyProxyClass {
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
    * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
    * collected, however there is no guarantee that the finalizer will be run
-   * in a timely manner so it is better to ``destory`` the proxy explicitly.
+   * in a timely manner so it is better to ``destroy`` the proxy explicitly.
    *
    * @param {string} [destroyed_msg] The error message to print if use is
    *        attempted after destroying. Defaults to "Object has already been
    *        destroyed".
    */
   destroy(destroyed_msg) {
-    let ptrobj = _getPtr(this);
-    Module.finalizationRegistry.unregister(this);
-    // Maybe the destructor will call Javascript code that will somehow try
-    // to use this proxy. Mark it deleted before decrementing reference count
-    // just in case!
-    this.$$.ptr = null;
-    this.$$.destroyed_msg = destroyed_msg;
-    try {
-      Module._Py_DecRef(ptrobj);
-      trace_pyproxy_dealloc(this);
-    } catch (e) {
-      Module.fatal_error(e);
-    }
+    Module.pyproxy_destroy(this, destroyed_msg);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.
@@ -313,29 +340,64 @@ class PyProxyClass {
    */
   copy() {
     let ptrobj = _getPtr(this);
-    return Module.pyproxy_new(ptrobj);
+    return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
   /**
-   * Converts the ``PyProxy`` into a Javascript object as best as possible. By
-   * default does a deep conversion, if a shallow conversion is desired, you
-   * can use ``proxy.toJs(1)``.
-   * See :ref:`Explicit Conversion of PyProxy
+   * Converts the ``PyProxy`` into a JavaScript object as best as possible. By
+   * default does a deep conversion, if a shallow conversion is desired, you can
+   * use ``proxy.toJs({depth : 1})``. See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
    *
-   * @param {number} depth How many layers deep to perform the conversion.
-   * Defaults to infinite.
-   * @return {any} The Javascript object resulting from the conversion.
+   * @param {object} options
+   * @param {number} [options.depth] How many layers deep to perform the
+   * conversion. Defaults to infinite.
+   * @param {array} [options.pyproxies] If provided, ``toJs`` will store all
+   * PyProxies created in this list. This allows you to easily destroy all the
+   * PyProxies by iterating the list without having to recurse over the
+   * generated structure. The most common use case is to create a new empty
+   * list, pass the list as `pyproxies`, and then later iterate over `pyproxies`
+   * to destroy all of created proxies.
+   * @param {boolean} [options.create_pyproxies] If false, ``toJs`` will throw a
+   * ``ConversionError`` rather than producing a ``PyProxy``.
+   * @param {boolean} [options.dict_converter] A function to be called on an
+   * iterable of pairs ``[key, value]``. Convert this iterable of pairs to the
+   * desired output. For instance, ``Object.fromEntries`` would convert the dict
+   * to an object, ``Array.from`` converts it to an array of entries, and ``(it) =>
+   * new Map(it)`` converts it to a ``Map`` (which is the default behavior).
+   * @return {any} The JavaScript object resulting from the conversion.
    */
-  toJs(depth = -1) {
+  toJs({
+    depth = -1,
+    pyproxies,
+    create_pyproxies = true,
+    dict_converter,
+  } = {}) {
     let ptrobj = _getPtr(this);
     let idresult;
-    let proxies = Module.hiwire.new_value([]);
+    let proxies_id;
+    let dict_converter_id = 0;
+    if (!create_pyproxies) {
+      proxies_id = 0;
+    } else if (pyproxies) {
+      proxies_id = Module.hiwire.new_value(pyproxies);
+    } else {
+      proxies_id = Module.hiwire.new_value([]);
+    }
+    if (dict_converter) {
+      dict_converter_id = Module.hiwire.new_value(dict_converter);
+    }
     try {
-      idresult = Module._python2js_with_depth(ptrobj, depth, proxies);
+      idresult = Module._python2js_custom_dict_converter(
+        ptrobj,
+        depth,
+        proxies_id,
+        dict_converter_id
+      );
     } catch (e) {
       Module.fatal_error(e);
     } finally {
-      Module.hiwire.decref(proxies);
+      Module.hiwire.decref(proxies_id);
+      Module.hiwire.decref(dict_converter_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
@@ -573,8 +635,6 @@ class PyProxyContainsMethods {
   }
 }
 
-class TempError extends Error {}
-
 /**
  * A helper for [Symbol.iterator].
  *
@@ -593,25 +653,18 @@ class TempError extends Error {}
  */
 function* iter_helper(iterptr, token) {
   try {
-    if (iterptr === 0) {
-      throw new TempError();
-    }
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
       yield Module.hiwire.pop_value(item);
     }
-    if (Module._PyErr_Occurred()) {
-      throw new TempError();
-    }
   } catch (e) {
-    if (e instanceof TempError) {
-      Module._pythonexc2js();
-    } else {
-      Module.fatal_error(e);
-    }
+    Module.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
     Module._Py_DecRef(iterptr);
+  }
+  if (Module._PyErr_Occurred()) {
+    Module._pythonexc2js();
   }
 }
 
@@ -645,9 +698,12 @@ class PyProxyIterableMethods {
     } catch (e) {
       Module.fatal_error(e);
     }
+    if (iterptr === 0) {
+      Module._pythonexc2js();
+    }
 
     let result = iter_helper(iterptr, token);
-    Module.finalizationRegistry.register(result, iterptr, token);
+    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
     return result;
   }
 }
@@ -734,8 +790,9 @@ function python_getattr(jsobj, jskey) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Module.hiwire.new_value(jskey);
   let idresult;
+  let cacheId = jsobj.$$.cache.cacheId;
   try {
-    idresult = Module.__pyproxy_getattr(ptrobj, idkey);
+    idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
   } catch (e) {
     Module.fatal_error(e);
   } finally {
@@ -797,24 +854,26 @@ let PyProxyHandlers = {
     if (objHasKey) {
       return true;
     }
-    // python_hasattr will crash when given a Symbol.
+    // python_hasattr will crash if given a Symbol.
     if (typeof jskey === "symbol") {
       return false;
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     return python_hasattr(jsobj, jskey);
   },
   get(jsobj, jskey) {
     // Preference order:
-    // 1. stuff from Javascript
+    // 1. stuff from JavaScript
     // 2. the result of Python getattr
 
-    // Javascript lookup -- make sure not to let symbols through, passing them
-    // to python_getattr will crash.
+    // python_getattr will crash if given a Symbol.
     if (jskey in jsobj || typeof jskey === "symbol") {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
-    // unambiguously ask for a key on the Python object
+    // unambiguously ask for a key on the Python object.
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
@@ -825,37 +884,34 @@ let PyProxyHandlers = {
     }
   },
   set(jsobj, jskey, jsval) {
-    // We're only willing to set properties on the python object, throw an
-    // error if user tries to write over any key of type 1. things we have to
-    // return to avoid making Javascript angry
-    if (typeof jskey === "symbol") {
-      throw new TypeError(`Cannot set read only field '${jskey.description}'`);
-    }
-    // Again this is a funny looking conditional, I found it as the result of
-    // a lengthy search for something that worked right.
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
+    }
+    // python_setattr will crash if given a Symbol.
+    if (typeof jskey === "symbol") {
+      return Reflect.set(jsobj, jskey, jsval);
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
   deleteProperty(jsobj, jskey) {
-    // We're only willing to delete properties on the python object, throw an
-    // error if user tries to write over any key of type 1. things we have to
-    // return to avoid making Javascript angry
-    if (typeof jskey === "symbol") {
-      throw new TypeError(
-        `Cannot delete read only field '${jskey.description}'`
-      );
-    }
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
     }
+    if (typeof jskey === "symbol") {
+      return Reflect.deleteProperty(jsobj, jskey);
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
+    }
     python_delattr(jsobj, jskey);
     // Must return "false" if "jskey" is a nonconfigurable own property.
-    // Otherwise Javascript will throw a TypeError.
+    // Otherwise JavaScript will throw a TypeError.
     return !descr || descr.configurable;
   },
   ownKeys(jsobj) {
@@ -883,7 +939,7 @@ let PyProxyHandlers = {
  */
 
 /**
- * The Promise / javascript awaitable API.
+ * The Promise / JavaScript awaitable API.
  * @private
  */
 class PyProxyAwaitableMethods {
@@ -894,6 +950,9 @@ class PyProxyAwaitableMethods {
    * @private
    */
   _ensure_future() {
+    if (this.$$.promise) {
+      return this.$$.promise;
+    }
     let ptrobj = _getPtr(this);
     let resolveHandle;
     let rejectHandle;
@@ -919,6 +978,8 @@ class PyProxyAwaitableMethods {
     if (errcode === -1) {
       Module._pythonexc2js();
     }
+    this.$$.promise = promise;
+    this.destroy();
     return promise;
   }
   /**
@@ -1043,14 +1104,14 @@ let type_to_array_map = new Map([
  */
 class PyProxyBufferMethods {
   /**
-   * Get a view of the buffer data which is usable from Javascript. No copy is
+   * Get a view of the buffer data which is usable from JavaScript. No copy is
    * ever performed.
    *
    * Present only if the proxied Python object supports the `Python Buffer
    * Protocol <https://docs.python.org/3/c-api/buffer.html>`_.
    *
    * We do not support suboffsets, if the buffer requires suboffsets we will
-   * throw an error. Javascript nd array libraries can't handle suboffsets
+   * throw an error. JavaScript nd array libraries can't handle suboffsets
    * anyways. In this case, you should use the :any:`toJs` api or copy the
    * buffer to one that doesn't use suboffets (using e.g.,
    * `numpy.ascontiguousarray
@@ -1080,41 +1141,39 @@ class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
+    let HEAPU32 = Module.HEAPU32;
+    let orig_stack_ptr = Module.stackSave();
+    let buffer_struct_ptr = Module.stackAlloc(
+      DEREF_U32(Module._buffer_struct_size, 0)
+    );
     let this_ptr = _getPtr(this);
-    let buffer_struct_ptr;
+    let errcode;
     try {
-      buffer_struct_ptr = Module.__pyproxy_get_buffer(this_ptr);
+      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
     } catch (e) {
       Module.fatal_error(e);
     }
-    if (buffer_struct_ptr === 0) {
+    if (errcode === -1) {
       Module._pythonexc2js();
     }
 
-    let HEAP32 = Module.HEAP32;
-    // This has to match the order of the fields in buffer_struct
-    let cur_ptr = buffer_struct_ptr / 4;
+    // This has to match the fields in buffer_struct
+    let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
+    let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
+    let maxByteOffset = DEREF_U32(buffer_struct_ptr, 2);
 
-    let startByteOffset = HEAP32[cur_ptr++];
-    let minByteOffset = HEAP32[cur_ptr++];
-    let maxByteOffset = HEAP32[cur_ptr++];
+    let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
+    let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
+    let itemsize = DEREF_U32(buffer_struct_ptr, 5);
+    let shape = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
+    let strides = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
 
-    let readonly = !!HEAP32[cur_ptr++];
-    let format_ptr = HEAP32[cur_ptr++];
-    let itemsize = HEAP32[cur_ptr++];
-    let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
-    let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
-
-    let view_ptr = HEAP32[cur_ptr++];
-    let c_contiguous = !!HEAP32[cur_ptr++];
-    let f_contiguous = !!HEAP32[cur_ptr++];
+    let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
+    let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
+    let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
     let format = Module.UTF8ToString(format_ptr);
-    try {
-      Module._PyMem_Free(buffer_struct_ptr);
-    } catch (e) {
-      Module.fatal_error(e);
-    }
+    Module.stackRestore(orig_stack_ptr);
 
     let success = false;
     try {
@@ -1153,7 +1212,7 @@ class PyProxyBufferMethods {
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAP32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;
@@ -1198,7 +1257,7 @@ class PyProxyBufferMethods {
  */
 
 /**
- * A class to allow access to a Python data buffers from Javascript. These are
+ * A class to allow access to a Python data buffers from JavaScript. These are
  * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
  * When you are done, release it with the :any:`release <PyBuffer.release>`
  * method.  See
@@ -1368,51 +1427,4 @@ export class PyBuffer {
     this._released = true;
     this.data = null;
   }
-}
-
-// A special proxy that we use to wrap pyodide.globals to allow property
-// access like `pyodide.globals.x`.
-let globalsPropertyAccessWarned = false;
-let globalsPropertyAccessWarningMsg =
-  "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
-  "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
-  "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
-let NamespaceProxyHandlers = {
-  has(obj, key) {
-    return Reflect.has(obj, key) || obj.has(key);
-  },
-  get(obj, key) {
-    if (Reflect.has(obj, key)) {
-      return Reflect.get(obj, key);
-    }
-    let result = obj.get(key);
-    if (!globalsPropertyAccessWarned && result !== undefined) {
-      console.warn(globalsPropertyAccessWarningMsg);
-      globalsPropertyAccessWarned = true;
-    }
-    return result;
-  },
-  set(obj, key, value) {
-    if (Reflect.has(obj, key)) {
-      throw new Error(`Cannot set read only field ${key}`);
-    }
-    if (!globalsPropertyAccessWarned) {
-      globalsPropertyAccessWarned = true;
-      console.warn(globalsPropertyAccessWarningMsg);
-    }
-    obj.set(key, value);
-  },
-  ownKeys(obj) {
-    let result = new Set(Reflect.ownKeys(obj));
-    let iter = obj.keys();
-    for (let key of iter) {
-      result.add(key);
-    }
-    iter.destroy();
-    return Array.from(result);
-  },
-};
-
-export function wrapNamespace(ns) {
-  return new Proxy(ns, NamespaceProxyHandlers);
 }

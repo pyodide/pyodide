@@ -1,0 +1,8 @@
+package:
+  name: fpcast-test
+  version: "0.1"
+source:
+  path: fpcast-test
+test:
+  imports:
+    - fpcast_test

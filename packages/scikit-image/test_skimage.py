@@ -30,7 +30,6 @@ def test_skimage():
     from skimage.color import rgb2gray
     from skimage.filters import sobel
     from skimage.segmentation import felzenszwalb, slic, quickshift, watershed
-    from skimage.segmentation import mark_boundaries
     from skimage.util import img_as_float
 
     img = img_as_float(astronaut()[::2, ::2])

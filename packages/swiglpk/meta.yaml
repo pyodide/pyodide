@@ -5,11 +5,11 @@ package:
 source:
   sha256: 0216db2930a6fe2c07ac7f0e28e76e9a2711a647836a3a4067113091c7ae221e
   url: https://files.pythonhosted.org/packages/0e/c9/9b0ec3e2ca942b6d067e84e52d72818fa9c3a1a1524671fcbec4841b54b2/swiglpk-4.65.1.tar.gz
-  extras: 
+  extras:
     - [../glpk/build/glpk-4.65/src/glpk.h, ./glpk.h]
 
 build:
-  ldflags: -L../../../glpk/build/glpk-4.65/src/.libs/
+  ldflags: -L$(PYODIDE_ROOT)/packages/glpk/build/glpk-4.65/src/.libs/
 
 requirements:
   run:

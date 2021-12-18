@@ -2,14 +2,14 @@
 #define JS2PYTHON_H
 
 /**
- * Translate Javascript objects to Python objects.
+ * Translate JavaScript objects to Python objects.
  */
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "hiwire.h"
 
-/** Convert a Javascript object to a Python object.
- *  \param x The Javascript object.
+/** Convert a JavaScript object to a Python object.
+ *  \param x The JavaScript object.
  *  \return The Python object. New reference. If NULL, a Python exception
  *    occurred during the conversion, and the Python exception API should be
  *    used to obtain the exception.

@@ -38,4 +38,4 @@ build:
     # in each module that needs them.
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
     mkdir -p install/lib
-    emcc blas_WA.a  lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -sEMULATE_FUNCTION_POINTER_CASTS -s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" -o install/lib/clapack_all.so 
+    emcc blas_WA.a  lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so

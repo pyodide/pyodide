@@ -4,14 +4,14 @@ initialization-time (or import-time) dependencies.
 1. CPython
 2. The py/_pyodide package which is a Python package with pure Python code
    avaiable in the inner stage of the Pyodide bootstrap process.
-3. The core/pyodide code, implemented in a mix of C and Javascript, which embeds
+3. The core/pyodide code, implemented in a mix of C and JavaScript, which embeds
    the CPython interpreter in an emscripten application. This relies on
    py/pyodide and js/pyodide at runtime. The final stage of initialization is to
    import py/pyodide.
 4. The py/pyodide package which has Python code that is needed for the outer
    stage of the Pyodide bootstrap process. py/pyodide relies on core/pyodide at
    import time and relies on js/pyodide at runtime.
-5. The js/pyodide package which defines the Javascript public API, sets up the
+5. The js/pyodide package which defines the JavaScript public API, sets up the
    process of loading the core/pyodide emscripten application + CPython
    interpreter, and then completes the bootstrap by injecting the js/pyodide
    API into the Python `sys.modules`.

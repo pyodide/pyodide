@@ -14,21 +14,21 @@ _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
 
-EM_JS_NUM(errcode, console_error, (char* msg), {
+EM_JS(void, console_error, (char* msg), {
   let jsmsg = UTF8ToString(msg);
   console.error(jsmsg);
 });
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-EM_JS_NUM(errcode, console_error_obj, (JsRef obj), {
+EM_JS(void, console_error_obj, (JsRef obj), {
   console.error(Module.hiwire.get_value(obj));
 });
 
 /**
- * Set Python error indicator from Javascript.
+ * Set Python error indicator from JavaScript.
  *
- * In Javascript, we can't access the type without relying on the ABI of
+ * In JavaScript, we can't access the type without relying on the ABI of
  * PyObject. Py_TYPE is part of the Python restricted API which means that there
  * are fairly strong guarantees about the ABI stability, but even so writing
  * HEAP32[err/4 + 1] is a bit opaque.
@@ -67,6 +67,7 @@ fetch_and_normalize_exception(PyObject** type,
     Py_CLEAR(*type);
     Py_CLEAR(*value);
     Py_CLEAR(*traceback);
+    fail_test();
     PyErr_SetString(PyExc_TypeError,
                     "Pyodide internal error: no exception type or value");
     PyErr_Fetch(type, value, traceback);
@@ -93,15 +94,15 @@ store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
  * the argument value. Used for reentrant errors.
  * Returns true if it restored the error indicator, false otherwise.
  *
- * If we throw a Javascript PythonError and it bubbles out to the enclosing
- * Python scope (i.e., doesn't get caught in Javascript) then we want to restore
+ * If we throw a JavaScript PythonError and it bubbles out to the enclosing
+ * Python scope (i.e., doesn't get caught in JavaScript) then we want to restore
  * the original Python exception. This produces much better stack traces in case
  * of reentrant calls and prevents issues like a KeyboardInterrupt being wrapped
  * into a PythonError being wrapped into a JsException and being caught.
  *
- * We don't do the same thing for Javascript messages that pass through Python
- * because the Python exceptions have good Javascript stack traces but
- * Javascript errors have no Python stack info. Also, Javascript has much weaker
+ * We don't do the same thing for JavaScript messages that pass through Python
+ * because the Python exceptions have good JavaScript stack traces but
+ * JavaScript errors have no Python stack info. Also, JavaScript has much weaker
  * support for catching errors by type.
  */
 bool
@@ -118,11 +119,18 @@ restore_sys_last_exception(void* value)
   if (value != last_value) {
     return 0;
   }
+  // PyErr_Restore steals a reference to each of its arguments so need to incref
+  // them first.
+  Py_INCREF(last_type);
+  Py_INCREF(last_value);
+  Py_INCREF(last_traceback);
   PyErr_Restore(last_type, last_value, last_traceback);
   success = true;
 finally:
   return success;
 }
+
+EM_JS(void, fail_test, (), { Module.fail_test = true; })
 
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
@@ -150,7 +158,7 @@ finally:
 }
 
 /**
- * Wrap the exception in a Javascript PythonError object.
+ * Wrap the exception in a JavaScript PythonError object.
  *
  * The return value of this function is always a valid hiwire ID to an error
  * object. It never returns NULL.
@@ -185,6 +193,7 @@ wrap_exception()
   success = true;
 finally:
   if (!success) {
+    fail_test();
     PySys_WriteStderr(
       "Pyodide: Internal error occurred while formatting traceback:\n");
     PyErr_Print();
@@ -201,10 +210,15 @@ finally:
   return jserror;
 }
 
-EM_JS_NUM(errcode, log_python_error, (JsRef jserror), {
-  let msg = Module.hiwire.get_value(jserror).message;
-  console.warn("Python exception:\n" + msg + "\n");
-  return 0;
+EM_JS(void, log_python_error, (JsRef jserror), {
+  // If a js error occurs in here, it's a weird edge case. This will probably
+  // never happen, but for maximum paranoia let's double check.
+  try {
+    let msg = Module.hiwire.get_value(jserror).message;
+    console.warn("Python exception:\n" + msg + "\n");
+  } catch (e) {
+    Module.fatal_error(e);
+  }
 });
 
 /**
@@ -219,16 +233,28 @@ pythonexc2js()
   hiwire_throw_error(jserror);
 }
 
+char* error__js_funcname_string = "<javascript frames>";
+char* error__js_filename_string = "???.js";
+
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
+    if (e.pyodide_fatal_error) {
+      throw e;
+    }
+    if (e instanceof Module._PropagatePythonError) {
+      // Python error indicator is already set in this case. If this branch is
+      // not taken, Python error indicator should be unset, and we have to set
+      // it. In this case we don't want to tamper with the traceback.
+      return;
+    }
     let restored_error = false;
     if (e instanceof Module.PythonError) {
       // Try to restore the original Python exception.
       restored_error = _restore_sys_last_exception(e.__error_address);
     }
     if (!restored_error) {
-      // Wrap the Javascript error
+      // Wrap the JavaScript error
       let eidx = Module.hiwire.new_value(e);
       let err = _JsProxy_create(eidx);
       _set_error(err);
@@ -238,11 +264,9 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     // Add a marker to the traceback to indicate that we passed through "native"
     // frames.
     // TODO? Use stacktracejs to add more detailed info here.
-    let funcname_ptr = stringToNewUTF8("<javascript frames>");
-    let filename_ptr = stringToNewUTF8("???.js");
-    __PyTraceback_Add(funcname_ptr, filename_ptr, -1);
-    _free(funcname_ptr);
-    _free(filename_ptr);
+    __PyTraceback_Add(HEAPU32[_error__js_funcname_string / 4],
+                      HEAPU32[_error__js_filename_string / 4],
+                      -1);
   };
   class PythonError extends Error
   {
@@ -258,6 +282,21 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     }
   };
   Module.PythonError = PythonError;
+  // A special marker. If we call a CPython API from an EM_JS function and the
+  // CPython API sets an error, we might want to return an error status back to
+  // C keeping the current Python error flag. This signals to the EM_JS wrappers
+  // that the Python error flag is set and to leave it alone and return the
+  // appropriate error value (either NULL or -1).
+  class _PropagatePythonError extends Error
+  {
+    constructor()
+    {
+      Module.fail_test = true;
+      super("If you are seeing this message, an internal Pyodide error has " +
+            "occurred. Please report it to the Pyodide maintainers.");
+    }
+  };
+  Module._PropagatePythonError = _PropagatePythonError;
   return 0;
 })
 

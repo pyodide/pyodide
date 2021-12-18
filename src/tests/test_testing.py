@@ -14,6 +14,13 @@ def test_run_in_pyodide():
     pass
 
 
+@run_in_pyodide
+async def test_run_in_pyodide_async():
+    from js import sleep
+
+    await sleep(5)
+
+
 def dummy_decorator(*args, **kwargs):
     def func(f):
         return f
