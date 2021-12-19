@@ -11,7 +11,8 @@ endif
 
 all: .artifacts/bin/pyodide-build
 	mkdir -p build-logs
-	PYTHONPATH="$(PYODIDE_LIBRARIES)/lib/python:$(PYODIDE_ROOT)/pyodide-build/" python -m pyodide_build buildall . ../build \
+	echo PYTHONPATH="$(HOSTINSTALLDIR)/lib/python:$(PYODIDE_ROOT)/pyodide-build/"
+	PYTHONPATH="$(HOSTINSTALLDIR)/lib/python:$(PYODIDE_ROOT)/pyodide-build/" python -m pyodide_build buildall . ../build \
 		$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
 		--log-dir=build-logs
 
