@@ -80,6 +80,12 @@ def get_bash_runner():
         env={
             "PATH": os.environ["PATH"],
             "PYTHONPATH": os.environ["PYTHONPATH"],
+            "PYODIDE_ROOT": os.environ["PYODIDE_ROOT"],
+            "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
+            "SITEPACKAGES": os.environ["SITEPACKAGES"],
+            "PYODIDE_JOBS": os.environ["PYODIDE_JOBS"],
+            "NUMPY_LIB": os.environ["NUMPY_LIB"],
+            "PKGDIR": os.environ["PKGDIR"],
         }
     )
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
