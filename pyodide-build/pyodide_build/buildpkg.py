@@ -76,7 +76,14 @@ class BashRunnerWithSharedEnvironment:
 
 @contextmanager
 def get_bash_runner():
-    b = BashRunnerWithSharedEnvironment()
+    b = BashRunnerWithSharedEnvironment(
+        env={
+            "PATH": os.environ["PATH"],
+            "PYTHONPATH": os.environ["PYTHONPATH"],
+        }
+    )
+    PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
+    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh")
     try:
         yield b
     finally:
