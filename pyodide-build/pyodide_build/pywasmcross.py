@@ -169,7 +169,7 @@ def replay_f2c(args, dryrun=False):
     Examples
     --------
 
-    >>> f2c(['gfortran', 'test.f'], dryrun=True)
+    >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gfortran', 'test.c']
     """
     new_args = []
@@ -216,7 +216,7 @@ def replay_command(line, args, dryrun=False):
     >>> from collections import namedtuple
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs','install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='',install_dir='')
-    >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
+    >>> replay_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
     """
