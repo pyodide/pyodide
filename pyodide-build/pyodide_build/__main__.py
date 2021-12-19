@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import sys
 
 from . import buildall
@@ -7,6 +8,7 @@ from . import buildpkg
 from . import pywasmcross
 from . import serve
 from . import mkpkg
+from .common import get_make_environment_vars
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -36,6 +38,11 @@ def make_parser() -> argparse.ArgumentParser:
 
 
 def main():
+    if not os.environ.get("__LOADED_PYODIDE_ENV"):
+        os.environ.update(get_make_environment_vars())
+        os.environ["BASH_ENV"] = ""
+        os.environ["__LOADED_PYODIDE_ENV"] = "1"
+
     main_parser = make_parser()
 
     args = main_parser.parse_args()

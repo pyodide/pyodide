@@ -295,8 +295,8 @@ def compile(
     build_metadata: Dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
-    target: str,
-    install_dir: str,
+    target_install_dir: str,
+    host_install_dir: str,
 ):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
@@ -326,10 +326,10 @@ def compile(
         The runner we will use to execute our bash commands. Preserves environment
         variables from one invocation to the next.
 
-    target
+    target_install_dir
         The path to the target Python installation
 
-    install_dir
+    host_install_dir
         Directory for installing built host packages. Defaults to setup.py
         default. Set to 'skip' to skip installation. Installation is
         needed if you want to build other packages that depend on this one.
@@ -355,10 +355,10 @@ def compile(
                 build_metadata["cxxflags"],
                 "--ldflags",
                 build_metadata["ldflags"],
-                "--target",
-                target,
-                "--install-dir",
-                install_dir,
+                "--target-install-dir",
+                target_install_dir,
+                "--host-install-dir",
+                host_install_dir,
                 "--replace-libs",
                 replace_libs,
             ],
@@ -482,16 +482,11 @@ def package_files(
         n_unvendored = 0
 
     # Package the package except for tests
-    subprocess.run(
-        [
-            str(common.file_packager_path()),
-            f"{pkg_name}.data",
-            f"--js-output={pkg_name}.js",
-            "--preload",
-            f"{install_prefix}@/",
-        ],
-        cwd=buildpath,
-        check=True,
+    common.invoke_file_packager(
+        name=pkg_name,
+        root_dir=buildpath,
+        base_dir=install_prefix,
+        pyodidedir="/",
     )
 
     if compress:
@@ -616,7 +611,12 @@ def needs_rebuild(
 
 
 def build_package(
-    pkg_root: Path, pkg: Dict, *, target: str, install_dir: str, compress_package: bool
+    pkg_root: Path,
+    pkg: Dict,
+    *,
+    target_install_dir: str,
+    host_install_dir: str,
+    compress_package: bool,
 ):
     """
     Build the package. The main entrypoint in this module.
@@ -628,10 +628,10 @@ def build_package(
     pkg
         The package metadata parsed from the meta.yaml file in pkg_root
 
-    target
+    target_install_dir
         The path to the target Python installation
 
-    install_dir
+    host_install_dir
         Directory for installing built host packages.
 
     compress_package
@@ -666,8 +666,8 @@ def build_package(
                 srcpath,
                 build_metadata,
                 bash_runner,
-                target=target,
-                install_dir=install_dir,
+                target_install_dir=target_install_dir,
+                host_install_dir=host_install_dir,
             )
         should_unvendor_tests = build_metadata.get("unvendor-tests", True)
         package_files(
@@ -711,14 +711,14 @@ def make_parser(parser: argparse.ArgumentParser):
         help="Extra linking flags",
     )
     parser.add_argument(
-        "--target",
+        "--target-install-dir",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETPYTHONROOT"),
+        default=common.get_make_flag("TARGETINSTALLDIR"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
-        "--install-dir",
+        "--host-install-dir",
         type=str,
         nargs="?",
         default="",
@@ -765,8 +765,8 @@ def main(args):
         build_package(
             pkg_root,
             pkg,
-            target=args.target,
-            install_dir=args.install_dir,
+            target_install_dir=args.target_install_dir,
+            host_install_dir=args.host_install_dir,
             compress_package=args.compress_package,
         )
     except:
