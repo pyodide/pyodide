@@ -192,6 +192,7 @@ def test_run_in_executor(selenium):
     )
 
 
+@pytest.mark.xfail("Works locally but failing in test suite as of #2022.")
 def test_webloop_exception_handler(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_async(
