@@ -76,17 +76,17 @@ class BashRunnerWithSharedEnvironment:
 
 @contextmanager
 def get_bash_runner():
-    b = BashRunnerWithSharedEnvironment(
-        env={
-            "PATH": os.environ["PATH"],
-            "PYTHONPATH": os.environ["PYTHONPATH"],
-            "PYODIDE_ROOT": os.environ["PYODIDE_ROOT"],
-            "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
-            "PYODIDE_JOBS": os.environ["PYODIDE_JOBS"],
-            "NUMPY_LIB": os.environ["NUMPY_LIB"],
-        }
-    )
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
+    env = {
+        "PATH": os.environ["PATH"],
+        "PYTHONPATH": os.environ["PYTHONPATH"],
+        "PYODIDE_ROOT": PYODIDE_ROOT,
+        "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
+        "NUMPY_LIB": os.environ["NUMPY_LIB"],
+    }
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+    b = BashRunnerWithSharedEnvironment(env=env)
     b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh")
     try:
         yield b
