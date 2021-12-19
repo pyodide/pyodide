@@ -81,6 +81,7 @@ def invoke_file_packager(
     root_dir=".",
     base_dir,
     pyodidedir,
+    compress=False,
 ):
     subprocess.run(
         [
@@ -98,6 +99,18 @@ def invoke_file_packager(
         cwd=root_dir,
         check=True,
     )
+    if compress:
+        subprocess.run(
+            [
+                "npx",
+                "--no-install",
+                "terser",
+                root_dir / f"{name}js",
+                "-o",
+                root_dir / f"{name}.js",
+            ],
+            check=True,
+        )
 
 
 def get_make_flag(name):

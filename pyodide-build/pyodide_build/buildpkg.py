@@ -498,47 +498,18 @@ def package_files(
         root_dir=buildpath,
         base_dir=install_prefix,
         pyodidedir="/",
+        compress=compress,
     )
-
-    if compress:
-        subprocess.run(
-            [
-                "npx",
-                "--no-install",
-                "terser",
-                buildpath / f"{pkg_name}.js",
-                "-o",
-                buildpath / f"{pkg_name}.js",
-            ],
-            check=True,
-        )
 
     # Package tests
     if n_unvendored > 0:
-        subprocess.run(
-            [
-                str(common.file_packager_path()),
-                f"{pkg_name}-tests.data",
-                f"--js-output={pkg_name}-tests.js",
-                "--preload",
-                f"{test_install_prefix}@/",
-            ],
-            cwd=buildpath,
-            check=True,
+        common.invoke_file_packager(
+            name=f"{pkg_name}-tests",
+            root_dir=buildpath,
+            base_dir=test_install_prefix,
+            pyodidedir="/",
+            compress=compress,
         )
-
-        if compress:
-            subprocess.run(
-                [
-                    "npx",
-                    "--no-install",
-                    "terser",
-                    buildpath / f"{pkg_name}-tests.js",
-                    "-o",
-                    buildpath / f"{pkg_name}-tests.js",
-                ],
-                check=True,
-            )
 
 
 def create_packaged_token(buildpath: Path):
