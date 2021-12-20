@@ -16,9 +16,9 @@ class BuildArgs:
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
-    host: str = ""
     replace_libs: str = ""
-    install_dir: str = ""
+    host_install_dir: str = ""
+    target_install_dir: str = ""
 
 
 def _args_wrapper(func):
@@ -65,7 +65,12 @@ def test_handle_command():
 
     # check ldflags injection
     args = BuildArgs(
-        cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="", install_dir=""
+        cflags="",
+        cxxflags="",
+        ldflags="-lm",
+        host_install_dir="",
+        replace_libs="",
+        target_install_dir="",
     )
     assert (
         replay_command_wrap("gcc -shared -c test.o -o test.so", args)
