@@ -196,14 +196,162 @@ def replay_f2c(args, dryrun=False):
         return None
     return new_args
 
+def get_library_output(line):
+    for arg in line:
+        if arg.endswith(".so") and not arg.startswith("-"):
+            return arg
+
 def parse_replace_libs(replace_libs):
     result = {}
     for l in replace_libs.split(";"):
         if not l:
             continue
         from_lib, to_lib = l.split("=")
-        result[from_lib] = to_lib
+        if to_lib:
+            result[from_lib] = to_lib
     return result
+
+
+def replay_genargs_handle_dashl(arg, replace_libs, used_libs):
+    for lib_name in replace_libs.keys():
+        # this enables glob style **/* matching
+        if PurePosixPath(arg[2:]).match(lib_name):
+            arg = "-l" + replace_libs[lib_name]
+
+    if arg == "-lffi":
+        return
+
+    # See https://github.com/emscripten-core/emscripten/issues/8650
+    if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
+        return
+
+    # WASM link doesn't like libraries being included twice
+    # skip second one
+    if arg in used_libs:
+        return
+    used_libs.add(arg)
+    return arg
+
+def replay_genargs_handle_dashI(arg, target_install_dir):
+    if (
+        str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
+        and "site-packages" not in arg
+    ):
+        return arg.replace("-I" + sys.prefix, "-I" + target_install_dir)
+    # Don't include any system directories
+    if arg[2:].startswith("/usr"):
+        return
+    return arg
+
+
+def replay_genargs_handle_argument(arg):
+
+    # ignore some link flags
+    # it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
+    # because arg may be something like "-Wl,-xxx,-yyy" where we only want
+    # to ignore "-xxx" but not "-yyy".
+    if arg.startswith("-Wl"):
+        arg = arg.replace(",-Bsymbolic-functions", "")
+        # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
+        arg = arg.replace(",--strip-all", "")
+        # wasm-ld does not regconize some link flags
+        arg = arg.replace(",--sort-common", "")
+        arg = arg.replace(",--as-needed", "")
+        # ignore unsupported --sysroot compile argument used in conda
+        arg.replace(",--sysroot", "")
+        if arg == "-Wl":
+            arg = None
+        return arg
+
+
+    # Don't include any system directories
+    if arg.startswith("-L/usr"):
+        return
+
+    # fmt: off
+    if arg in [
+        # don't use -shared, SIDE_MODULE is already used
+        # and -shared breaks it
+        "-shared",
+        # threading is disabled for now
+        "-pthread",
+        # this only applies to compiling fortran code, but we already f2c'd
+        "-ffixed-form",
+        # On Mac, we need to omit some darwin-specific arguments
+        "-bundle", "-undefined", "dynamic_lookup",
+        # This flag is needed to build numpy with SIMD optimization which we currently disable
+        "-mpopcnt",
+        # gcc flag that clang does not support
+        "-Bsymbolic-functions",
+    ]:
+        return
+    return arg
+
+
+def replay_command_generate_args(line, args, is_link_command):
+    replace_libs = parse_replace_libs(args.replace_libs)
+    if line[0] == "ar":
+        new_args = ["emar"]
+    elif line[0] == "c++":
+        new_args = ["em++"]
+    else:
+        new_args = ["emcc"]
+        # distutils doesn't use the c++ compiler when compiling c++ <sigh>
+        if any(arg.endswith((".cpp", ".cc")) for arg in line):
+            new_args = ["em++"]
+
+    if is_link_command:
+        new_args.extend(args.ldflags.split())
+    elif new_args[0] == "emcc":
+        new_args.extend(args.cflags.split())
+    elif new_args[0] == "em++":
+        new_args.extend(args.cflags.split() + args.cxxflags.split())
+
+    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
+    optflag = None
+    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in new_args[::-1]:
+        if arg in optflags_valid:
+            optflag = arg
+            break
+
+    used_libs = set()
+    # Go through and adjust arguments
+    for arg in line[1:]:
+        # The native build is possibly multithreaded, but the emscripten one
+        # definitely isn't
+        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
+        if arg in optflags_valid and optflag is not None:
+            # There are multiple contradictory optflags provided, use the one
+            # from cflags/cxxflags/ldflags
+            continue
+        if new_args[-1].startswith("-B") and "compiler_compat" in arg:
+            # conda uses custom compiler search paths with the compiler_compat folder.
+            # Ignore it.
+            del new_args[-1]
+            continue
+        
+        # don't include libraries from native builds
+        if (
+            args.host_install_dir and (
+                arg.startswith("-L" + args.host_install_dir)
+                or 
+                arg.startswith("-l" + args.host_install_dir)
+            )
+        ):
+            continue
+
+        if arg.startswith("-l"):
+            arg = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
+        elif arg.startswith("-I"):
+            arg = replay_genargs_handle_dashI(arg, args.target_install_dir)
+        else:
+            arg = replay_genargs_handle_argument(arg)
+
+        if arg:
+            new_args.append(arg)
+    return new_args
 
 
 def replay_command(line, args, dryrun=False):
@@ -230,7 +378,7 @@ def replay_command(line, args, dryrun=False):
     ['emcc', 'test.c']
     """
     # some libraries have different names on wasm e.g. png16 = png
-    replace_libs = parse_replace_libs(args.replace_libs)
+
 
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
@@ -244,139 +392,17 @@ def replay_command(line, args, dryrun=False):
         if arg.startswith("/tmp"):
             return
 
+    library_output = get_library_output(line)
+    is_link_cmd = library_output is not None
+
     if line[0] == "gfortran":
         result = replay_f2c(line)
         if result is None:
             return
         line = result
-        new_args = ["emcc"]
-    elif line[0] == "ar":
-        new_args = ["emar"]
-    elif line[0] == "c++":
-        new_args = ["em++"]
-    else:
-        new_args = ["emcc"]
-        # distutils doesn't use the c++ compiler when compiling c++ <sigh>
-        if any(arg.endswith((".cpp", ".cc")) for arg in line):
-            new_args = ["em++"]
-    library_output = False
-    for arg in line:
-        if arg.endswith(".so") and not arg.startswith("-"):
-            library_output = True
 
-    if library_output:
-        new_args.extend(args.ldflags.split())
-    elif new_args[0] == "emcc":
-        new_args.extend(args.cflags.split())
-    elif new_args[0] == "em++":
-        new_args.extend(args.cflags.split() + args.cxxflags.split())
-
-    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
-    optflag = None
-    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
-    # priority.
-    for arg in new_args[::-1]:
-        if arg in optflags_valid:
-            optflag = arg
-            break
-
-    used_libs = set()
-
-    # Go through and adjust arguments
-    for arg in line[1:]:
-        if arg in optflags_valid and optflag is not None and arg != optflag:
-            # There are multiple contradictory optflags provided, use the one
-            # from cflags/cxxflags/ldflags
-            continue
-
-        if arg.startswith("-I"):
-            if (
-                str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
-                and "site-packages" not in arg
-            ):
-                arg = arg.replace("-I" + sys.prefix, "-I" + args.target_install_dir)
-            # Don't include any system directories
-            elif arg[2:].startswith("/usr"):
-                continue
-        # Don't include any system directories
-        if arg.startswith("-L/usr"):
-            continue
-        if arg.startswith("-l"):
-            for lib_name in replace_libs.keys():
-                # this enables glob style **/* matching
-                if PurePosixPath(arg[2:]).match(lib_name):
-                    if len(replace_libs[lib_name]) > 0:
-                        arg = "-l" + replace_libs[lib_name]
-                    else:
-                        continue
-        if arg.startswith("-l"):
-            # WASM link doesn't like libraries being included twice
-            # skip second one
-            if arg in used_libs:
-                continue
-            used_libs.add(arg)
-        # some gcc flags that clang does not support actually
-        if arg == "-Bsymbolic-functions":
-            continue
-        # ignore some link flags
-        # it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
-        # because arg may be something like "-Wl,-xxx,-yyy" where we only want
-        # to ignore "-xxx" but not "-yyy".
-        if arg.startswith("-Wl"):
-            arg = arg.replace(",-Bsymbolic-functions", "")
-            # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
-            arg = arg.replace(",--strip-all", "")
-            # wasm-ld does not regconize some link flags
-            arg = arg.replace(",--sort-common", "")
-            arg = arg.replace(",--as-needed", "")
-            if arg == "-Wl":
-                continue
-        # threading is disabled for now
-        if arg == "-pthread":
-            continue
-        # this only applies to compiling fortran code, but we already f2c'd
-        if arg == "-ffixed-form":
-            continue
-        # On Mac, we need to omit some darwin-specific arguments
-        if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
-            continue
-        if arg == "-lffi":
-            continue
-        # This flag is needed to build numpy with SIMD optimization
-        if arg == "-mpopcnt":
-            continue
-        # The native build is possibly multithreaded, but the emscripten one
-        # definitely isn't
-        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
-        if arg.endswith(".so"):
-            output = arg
-        # don't include libraries from native builds
-        if (
-            len(args.host_install_dir) > 0
-            and arg.startswith("-l" + args.host_install_dir)
-            or arg.startswith("-L" + args.host_install_dir)
-        ):
-            continue
-
-        if new_args[-1].startswith("-B") and "compiler_compat" in arg:
-            # conda uses custom compiler search paths with the compiler_compat folder.
-            # Ignore it.
-            del new_args[-1]
-            continue
-
-        # ignore unsupported --sysroot compile argument used in conda
-        if arg.startswith("-Wl,--sysroot"):
-            continue
-
-        # See https://github.com/emscripten-core/emscripten/issues/8650
-        if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
-            continue
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        if arg in ["-shared"]:
-            continue
-
-        new_args.append(arg)
+    new_args = replay_command_generate_args(line, args, is_link_cmd)
+    
 
     # This can only be used for incremental rebuilds -- it generates
     # an error during clean build of numpy
@@ -393,15 +419,15 @@ def replay_command(line, args, dryrun=False):
 
     # Emscripten .so files shouldn't have the native platform slug
     if library_output:
-        renamed = output
+        renamed = library_output
         for ext in importlib.machinery.EXTENSION_SUFFIXES:
             if ext == ".so":
                 continue
             if renamed.endswith(ext):
                 renamed = renamed[: -len(ext)] + ".so"
                 break
-        if not dryrun and output != renamed:
-            os.rename(output, renamed)
+        if not dryrun and library_output != renamed:
+            os.rename(library_output, renamed)
     return new_args
 
 
@@ -409,11 +435,16 @@ def replay_compile(args):
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
     build_log_path = Path("build.log")
-    if build_log_path.is_file():
-        with open(build_log_path, "r") as fd:
-            for line in fd:
-                line = json.loads(line)
-                replay_command(line, args)
+    if not build_log_path.is_file():
+        return
+
+    lines_str = subprocess.check_output(["wc", "-l", str(build_log_path)]).decode().split(" ")[0]
+    num_lines = str(lines_str)
+    with open(build_log_path, "r") as fd:
+        for idx, line in enumerate(fd):
+            line = json.loads(line)
+            print(f"[line {idx + 1} of {num_lines}]")
+            replay_command(line, args)
 
 
 def clean_out_native_artifacts():
