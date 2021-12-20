@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import argparse
+import pathlib
+import os
 import sys
 
 from . import buildall
@@ -7,6 +9,7 @@ from . import buildpkg
 from . import pywasmcross
 from . import serve
 from . import mkpkg
+from .common import get_make_environment_vars
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -36,6 +39,17 @@ def make_parser() -> argparse.ArgumentParser:
 
 
 def main():
+    if not os.environ.get("__LOADED_PYODIDE_ENV"):
+        PYODIDE_ROOT = str(pathlib.Path(__file__).parents[2].resolve())
+        os.environ["PYODIDE_ROOT"] = PYODIDE_ROOT
+        os.environ.update(get_make_environment_vars())
+        HOSTINSTALLDIR = os.environ["HOSTINSTALLDIR"]
+        os.environ[
+            "PYTHONPATH"
+        ] = f"{HOSTINSTALLDIR}/lib/python:{PYODIDE_ROOT}/pyodide-build/"
+        os.environ["BASH_ENV"] = ""
+        os.environ["__LOADED_PYODIDE_ENV"] = "1"
+
     main_parser = make_parser()
 
     args = main_parser.parse_args()

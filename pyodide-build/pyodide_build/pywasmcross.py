@@ -50,7 +50,7 @@ class EnvironmentRewritingArgument(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def collect_args(basename):
+def capture_command(command, args):
     """
     This is called when this script is called through a symlink that looks like
     a compiler or linker.
@@ -78,36 +78,36 @@ def collect_args(basename):
     #       which we run the actual ar command.
     skip = False
     if (
-        basename in ["gcc", "cc", "c++", "gfortran", "ld"]
-        and "-o" in sys.argv[1:]
+        command in ["gcc", "cc", "c++", "gfortran", "ld"]
+        and "-o" in args
         # do not skip numpy as it is needed as build time
         # dependency by other packages (e.g. matplotlib)
         and skip_host
     ):
-        out_idx = sys.argv.index("-o")
-        if (out_idx + 1) < len(sys.argv):
+        out_idx = args.index("-o")
+        if (out_idx + 1) < len(args):
             # get the index of the output file path
             out_idx += 1
-            with open(sys.argv[out_idx], "wb") as fh:
+            with open(args[out_idx], "wb") as fh:
                 fh.write(b"")
             skip = True
 
     with open("build.log", "a") as fd:
         # TODO: store skip status in the build.log
-        json.dump([basename] + sys.argv[1:], fd)
+        json.dump([command] + args, fd)
         fd.write("\n")
 
     if skip:
-        sys.exit(0)
-    compiler_command = [basename]
+        return 0
+    compiler_command = [command]
     if shutil.which("ccache") is not None:
         # Enable ccache if it's installed
         compiler_command.insert(0, "ccache")
 
-    sys.exit(subprocess.run(compiler_command + sys.argv[1:], env=env).returncode)
+    return subprocess.run(compiler_command + args, env=env).returncode
 
 
-def make_symlinks(env):
+def capture_make_command_wrapper_symlinks(env):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -133,14 +133,14 @@ def make_symlinks(env):
 def capture_compile(args):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(os.environ)
-    make_symlinks(env)
+    capture_make_command_wrapper_symlinks(env)
     env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
 
     cmd = [sys.executable, "setup.py", "install"]
-    if args.install_dir == "skip":
+    if args.host_install_dir == "skip":
         cmd[-1] = "build"
-    elif args.install_dir != "":
-        cmd.extend(["--home", args.install_dir])
+    elif args.host_install_dir != "":
+        cmd.extend(["--home", args.host_install_dir])
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
@@ -150,7 +150,7 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
-def f2c(args, dryrun=False):
+def replay_f2c(args, dryrun=False):
     """Apply f2c to compilation arguments
 
     Parameters
@@ -169,7 +169,7 @@ def f2c(args, dryrun=False):
     Examples
     --------
 
-    >>> f2c(['gfortran', 'test.f'], dryrun=True)
+    >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gfortran', 'test.c']
     """
     new_args = []
@@ -197,7 +197,7 @@ def f2c(args, dryrun=False):
     return new_args
 
 
-def handle_command(line, args, dryrun=False):
+def replay_command(line, args, dryrun=False):
     """Handle a compilation command
 
     Parameters
@@ -214,9 +214,9 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs','install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='',install_dir='')
-    >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
+    >>> replay_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
     """
@@ -240,7 +240,7 @@ def handle_command(line, args, dryrun=False):
             return
 
     if line[0] == "gfortran":
-        result = f2c(line)
+        result = replay_f2c(line)
         if result is None:
             return
         line = result
@@ -289,7 +289,7 @@ def handle_command(line, args, dryrun=False):
                 str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
                 and "site-packages" not in arg
             ):
-                arg = arg.replace("-I" + sys.prefix, "-I" + args.target)
+                arg = arg.replace("-I" + sys.prefix, "-I" + args.target_install_dir)
             # Don't include any system directories
             elif arg[2:].startswith("/usr"):
                 continue
@@ -347,9 +347,9 @@ def handle_command(line, args, dryrun=False):
             output = arg
         # don't include libraries from native builds
         if (
-            len(args.install_dir) > 0
-            and arg.startswith("-l" + args.install_dir)
-            or arg.startswith("-L" + args.install_dir)
+            len(args.host_install_dir) > 0
+            and arg.startswith("-l" + args.host_install_dir)
+            or arg.startswith("-L" + args.host_install_dir)
         ):
             continue
 
@@ -408,7 +408,7 @@ def replay_compile(args):
         with open(build_log_path, "r") as fd:
             for line in fd:
                 line = json.loads(line)
-                handle_command(line, args)
+                replay_command(line, args)
 
 
 def clean_out_native_artifacts():
@@ -450,82 +450,73 @@ def build_wrap(args):
 
 
 def make_parser(parser):
-    basename = Path(sys.argv[0]).name
-    if basename in symlinks:
-        # skip parsing of all arguments
-        parser._actions = []
-    else:
-        parser.description = (
-            "Cross compile a Python distutils package. "
-            "Run from the root directory of the package's source.\n\n"
-            "Note: this is a private endpoint that should not be used "
-            "outside of the Pyodide Makefile."
-        )
-        parser.add_argument(
-            "--cflags",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
-            help="Extra compiling flags",
-            action=EnvironmentRewritingArgument,
-        )
-        parser.add_argument(
-            "--cxxflags",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-            help="Extra C++ specific compiling flags",
-            action=EnvironmentRewritingArgument,
-        )
-        parser.add_argument(
-            "--ldflags",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
-            help="Extra linking flags",
-            action=EnvironmentRewritingArgument,
-        )
-        parser.add_argument(
-            "--target",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("TARGETPYTHONROOT"),
-            help="The path to the target Python installation",
-        )
-        parser.add_argument(
-            "--install-dir",
-            type=str,
-            nargs="?",
-            default="",
-            help=(
-                "Directory for installing built host packages. Defaults to setup.py "
-                "default. Set to 'skip' to skip installation. Installation is "
-                "needed if you want to build other packages that depend on this one."
-            ),
-        )
-        parser.add_argument(
-            "--replace-libs",
-            type=str,
-            nargs="?",
-            default="",
-            help="Libraries to replace in final link",
-            action=EnvironmentRewritingArgument,
-        )
+    parser.description = (
+        "Cross compile a Python distutils package. "
+        "Run from the root directory of the package's source.\n\n"
+        "Note: this is a private endpoint that should not be used "
+        "outside of the Pyodide Makefile."
+    )
+    parser.add_argument(
+        "--cflags",
+        type=str,
+        nargs="?",
+        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
+        help="Extra compiling flags",
+        action=EnvironmentRewritingArgument,
+    )
+    parser.add_argument(
+        "--cxxflags",
+        type=str,
+        nargs="?",
+        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
+        help="Extra C++ specific compiling flags",
+        action=EnvironmentRewritingArgument,
+    )
+    parser.add_argument(
+        "--ldflags",
+        type=str,
+        nargs="?",
+        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
+        help="Extra linking flags",
+        action=EnvironmentRewritingArgument,
+    )
+    parser.add_argument(
+        "--target-install-dir",
+        type=str,
+        nargs="?",
+        default=common.get_make_flag("TARGETINSTALLDIR"),
+        help="The path to the target Python installation",
+    )
+    parser.add_argument(
+        "--host-install-dir",
+        type=str,
+        nargs="?",
+        default="",
+        help=(
+            "Directory for installing built host packages. Defaults to setup.py "
+            "default. Set to 'skip' to skip installation. Installation is "
+            "needed if you want to build other packages that depend on this one."
+        ),
+    )
+    parser.add_argument(
+        "--replace-libs",
+        type=str,
+        nargs="?",
+        default="",
+        help="Libraries to replace in final link",
+        action=EnvironmentRewritingArgument,
+    )
     return parser
 
 
 def main(args):
-    basename = Path(sys.argv[0]).name
-    if basename in symlinks:
-        collect_args(basename)
-    else:
-        build_wrap(args)
+    build_wrap(args)
 
 
 if __name__ == "__main__":
     basename = Path(sys.argv[0]).name
     if basename in symlinks:
-        main(None)
+        sys.exit(capture_command(basename, sys.argv[1:]))
     else:
         parser = make_parser(argparse.ArgumentParser())
         args = parser.parse_args()

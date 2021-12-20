@@ -4,10 +4,6 @@ include Makefile.envs
 
 .PHONY=check
 
-
-CPYTHONROOT=cpython
-CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
-
 CC=emcc
 CXX=em++
 

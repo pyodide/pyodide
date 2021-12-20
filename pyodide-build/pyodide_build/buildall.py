@@ -96,10 +96,10 @@ class Package(BasePackage):
                     args.cxxflags,
                     "--ldflags",
                     args.ldflags,
-                    "--target",
-                    args.target,
-                    "--install-dir",
-                    args.install_dir,
+                    "--target-install-dir",
+                    args.target_install_dir,
+                    "--host-install-dir",
+                    args.host_install_dir,
                 ],
                 check=False,
                 stdout=f,
@@ -417,22 +417,18 @@ def make_parser(parser):
         help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
     )
     parser.add_argument(
-        "--target",
+        "--target-install-dir",
         type=str,
         nargs="?",
         default=None,
-        help="The path to the target Python installation. Default: TARGETPYTHONROOT",
+        help="The path to the target Python installation. Default: TARGETINSTALLDIR",
     )
     parser.add_argument(
-        "--install-dir",
+        "--host-install-dir",
         type=str,
         nargs="?",
-        default="",
-        help=(
-            "Directory for installing built host packages. Defaults to setup.py "
-            "default. Set to 'skip' to skip installation. Installation is "
-            "needed if you want to build other packages that depend on this one."
-        ),
+        default=None,
+        help=("Directory for installing built host packages. Default: HOSTINSTALLDIR"),
     )
     parser.add_argument(
         "--log-dir",
@@ -468,9 +464,10 @@ def main(args):
         args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
     if args.ldflags is None:
         args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
-    if args.target is None:
-        args.target = common.get_make_flag("TARGETPYTHONROOT")
-
+    if args.target_install_dir is None:
+        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
+    if args.host_install_dir is None:
+        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
     build_packages(packages_dir, outputdir, args)
 
 

@@ -1,7 +1,8 @@
 from pathlib import Path
 from typing import Optional, Set
-import subprocess
+
 import functools
+import subprocess
 
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
 
@@ -71,7 +72,45 @@ def _parse_package_subset(query: Optional[str]) -> Set[str]:
 
 def file_packager_path() -> Path:
     ROOTDIR = Path(__file__).parents[2].resolve()
-    return ROOTDIR / "tools" / "file_packager.sh"
+    return ROOTDIR / "emsdk/emsdk/upstream/emscripten/tools/file_packager"
+
+
+def invoke_file_packager(
+    *,
+    name,
+    root_dir=".",
+    base_dir,
+    pyodidedir,
+    compress=False,
+):
+    subprocess.run(
+        [
+            str(file_packager_path()),
+            f"{name}.data",
+            f"--js-output={name}.js",
+            "--preload",
+            f"{base_dir}@{pyodidedir}",
+            "--lz4",
+            "--export-name=globalThis.__pyodide_module",
+            "--exclude",
+            "*__pycache__*",
+            "--use-preload-plugins",
+        ],
+        cwd=root_dir,
+        check=True,
+    )
+    if compress:
+        subprocess.run(
+            [
+                "npx",
+                "--no-install",
+                "terser",
+                root_dir / f"{name}.js",
+                "-o",
+                root_dir / f"{name}.js",
+            ],
+            check=True,
+        )
 
 
 def get_make_flag(name):
@@ -92,10 +131,10 @@ def get_make_environment_vars():
 
     This allows us to set all build vars in one place"""
     # TODO: make this not rely on paths outside of pyodide-build
-    __ROOTDIR = Path(__file__).parents[2].resolve()
+    rootdir = Path(__file__).parents[2].resolve()
     environment = {}
     result = subprocess.run(
-        ["make", "-f", str(__ROOTDIR / "Makefile.envs"), ".output_vars"],
+        ["make", "-f", str(rootdir / "Makefile.envs"), ".output_vars"],
         capture_output=True,
         text=True,
     )

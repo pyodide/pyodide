@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from pyodide_build.pywasmcross import handle_command  # noqa: E402
-from pyodide_build.pywasmcross import f2c  # noqa: E402
+from pyodide_build.pywasmcross import replay_command  # noqa: E402
+from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
 from pyodide_build.pywasmcross import make_parser
 
 
@@ -16,9 +16,9 @@ class BuildArgs:
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
-    host: str = ""
     replace_libs: str = ""
-    install_dir: str = ""
+    host_install_dir: str = ""
+    target_install_dir: str = ""
 
 
 def _args_wrapper(func):
@@ -39,16 +39,16 @@ def _args_wrapper(func):
     return _inner
 
 
-handle_command_wrap = _args_wrapper(handle_command)
-f2c_wrap = _args_wrapper(f2c)
+replay_command_wrap = _args_wrapper(replay_command)
+f2c_wrap = _args_wrapper(replay_f2c)
 
 
 def test_handle_command():
     args = BuildArgs()
-    assert handle_command_wrap("gcc -print-multiarch", args) is None
-    assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
+    assert replay_command_wrap("gcc -print-multiarch", args) is None
+    assert replay_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
-        handle_command_wrap("gcc -shared -c test.o -o test.so", args)
+        replay_command_wrap("gcc -shared -c test.o -o test.so", args)
         == "emcc -c test.o -o test.so"
     )
 
@@ -59,16 +59,21 @@ def test_handle_command():
         ldflags="-lm",
     )
     assert (
-        handle_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
+        replay_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
         == "em++ -I./lib2 -std=c++11 -I./lib1 test.cpp -o test.o"
     )
 
     # check ldflags injection
     args = BuildArgs(
-        cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="", install_dir=""
+        cflags="",
+        cxxflags="",
+        ldflags="-lm",
+        host_install_dir="",
+        replace_libs="",
+        target_install_dir="",
     )
     assert (
-        handle_command_wrap("gcc -shared -c test.o -o test.so", args)
+        replay_command_wrap("gcc -shared -c test.o -o test.so", args)
         == "emcc -lm -c test.o -o test.so"
     )
 
@@ -77,12 +82,12 @@ def test_handle_command():
         replace_libs="bob=fred",
     )
     assert (
-        handle_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
+        replay_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
         == "emcc test.o -lfred -ljim -o test.so"
     )
 
     # compilation checks in numpy
-    assert handle_command_wrap("gcc /usr/file.c", args) is None
+    assert replay_command_wrap("gcc /usr/file.c", args) is None
 
 
 def test_handle_command_ldflags():
@@ -90,7 +95,7 @@ def test_handle_command_ldflags():
 
     args = BuildArgs()
     assert (
-        handle_command_wrap(
+        replay_command_wrap(
             "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so",
             args,
         )
@@ -112,7 +117,7 @@ def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
 
     args = BuildArgs(**{flag_name: "-Oz"})
     assert (
-        handle_command_wrap(f"gcc -O3 test.{in_ext} -o test.{out_ext}", args)
+        replay_command_wrap(f"gcc -O3 test.{in_ext} -o test.{out_ext}", args)
         == f"{executable} -Oz test.{in_ext} -o test.{out_ext}"
     )
 
@@ -131,11 +136,11 @@ def test_conda_unsupported_args():
     # Check that compile arguments that are not suported by emcc and are sometimes
     # used in conda are removed.
     args = BuildArgs()
-    assert handle_command_wrap(
+    assert replay_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
     ) == ("emcc -c test.o -o test.so")
 
-    assert handle_command_wrap(
+    assert replay_command_wrap(
         "gcc -shared -c test.o -Wl,--sysroot=/ -o test.so", args
     ) == ("emcc -c test.o -o test.so")
 

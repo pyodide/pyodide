@@ -16,7 +16,13 @@ export PYMICRO=$(word 3,$(version_tuple))
 
 export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
-export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+
+export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
+export CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
+
+export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
+
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
 # Use env variable if defined, otherwise fallback to './'
