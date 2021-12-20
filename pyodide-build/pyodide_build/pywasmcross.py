@@ -196,6 +196,15 @@ def replay_f2c(args, dryrun=False):
         return None
     return new_args
 
+def parse_replace_libs(replace_libs):
+    result = {}
+    for l in replace_libs.split(";"):
+        if not l:
+            continue
+        from_lib, to_lib = l.split("=")
+        result[from_lib] = to_lib
+    return result
+
 
 def replay_command(line, args, dryrun=False):
     """Handle a compilation command
@@ -221,11 +230,7 @@ def replay_command(line, args, dryrun=False):
     ['emcc', 'test.c']
     """
     # some libraries have different names on wasm e.g. png16 = png
-    replace_libs = {}
-    for l in args.replace_libs.split(";"):
-        if len(l) > 0:
-            from_lib, to_lib = l.split("=")
-            replace_libs[from_lib] = to_lib
+    replace_libs = parse_replace_libs(args.replace_libs)
 
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
