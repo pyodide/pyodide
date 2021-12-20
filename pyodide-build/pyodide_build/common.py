@@ -105,7 +105,7 @@ def invoke_file_packager(
                 "npx",
                 "--no-install",
                 "terser",
-                root_dir / f"{name}js",
+                root_dir / f"{name}.js",
                 "-o",
                 root_dir / f"{name}.js",
             ],
