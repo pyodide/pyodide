@@ -759,7 +759,7 @@ def test_fatal_error(selenium_standalone):
 def test_reentrant_error(selenium):
     caught = selenium.run_js(
         """
-        function a(){
+        function raisePythonKeyboardInterrupt(){
             pyodide.globals.get("pyfunc")();
         }
         let caught = false;
@@ -767,9 +767,9 @@ def test_reentrant_error(selenium):
             pyodide.runPython(`
                 def pyfunc():
                     raise KeyboardInterrupt
-                from js import a
+                from js import raisePythonKeyboardInterrupt
                 try:
-                    a()
+                    raisePythonKeyboardInterrupt()
                 except Exception as e:
                     pass
             `);

@@ -86,7 +86,18 @@ class BashRunnerWithSharedEnvironment:
 
 @contextmanager
 def get_bash_runner():
-    b = BashRunnerWithSharedEnvironment()
+    PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
+    env = {
+        "PATH": os.environ["PATH"],
+        "PYTHONPATH": os.environ["PYTHONPATH"],
+        "PYODIDE_ROOT": PYODIDE_ROOT,
+        "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
+        "NUMPY_LIB": os.environ["NUMPY_LIB"],
+    }
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+    b = BashRunnerWithSharedEnvironment(env=env)
+    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh")
     try:
         yield b
     finally:
@@ -303,8 +314,8 @@ def compile(
     build_metadata: Dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
-    target: str,
-    install_dir: str,
+    target_install_dir: str,
+    host_install_dir: str,
 ):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
@@ -337,10 +348,10 @@ def compile(
         The runner we will use to execute our bash commands. Preserves environment
         variables from one invocation to the next.
 
-    target
+    target_install_dir
         The path to the target Python installation
 
-    install_dir
+    host_install_dir
         Directory for installing built host packages. Defaults to setup.py
         default. Set to 'skip' to skip installation. Installation is
         needed if you want to build other packages that depend on this one.
@@ -366,10 +377,10 @@ def compile(
                 build_metadata["cxxflags"],
                 "--ldflags",
                 build_metadata["ldflags"],
-                "--target",
-                target,
-                "--install-dir",
-                install_dir,
+                "--target-install-dir",
+                target_install_dir,
+                "--host-install-dir",
+                host_install_dir,
                 "--replace-libs",
                 replace_libs,
             ],
@@ -532,7 +543,13 @@ def needs_rebuild(
     return False
 
 
-def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
+def build_package(
+    pkg_root: Path,
+    pkg: Dict,
+    *,
+    target_install_dir: str,
+    host_install_dir: str,
+):
     """
     Build the package. The main entrypoint in this module.
 
@@ -543,10 +560,10 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
     pkg
         The package metadata parsed from the meta.yaml file in pkg_root
 
-    target
+    target_install_dir
         The path to the target Python installation
 
-    install_dir
+    host_install_dir
         Directory for installing built host packages.
     """
     pkg_name = pkg["package"]["name"]
@@ -579,8 +596,8 @@ def build_package(pkg_root: Path, pkg: Dict, *, target: str, install_dir: str):
                 srcpath,
                 build_metadata,
                 bash_runner,
-                target=target,
-                install_dir=install_dir,
+                target_install_dir=target_install_dir,
+                host_install_dir=host_install_dir,
             )
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
@@ -618,14 +635,14 @@ def make_parser(parser: argparse.ArgumentParser):
         help="Extra linking flags",
     )
     parser.add_argument(
-        "--target",
+        "--target-install-dir",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETPYTHONROOT"),
+        default=common.get_make_flag("TARGETINSTALLDIR"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
-        "--install-dir",
+        "--host-install-dir",
         type=str,
         nargs="?",
         default="",
@@ -660,8 +677,8 @@ def main(args):
         build_package(
             pkg_root,
             pkg,
-            target=args.target,
-            install_dir=args.install_dir,
+            target_install_dir=args.target_install_dir,
+            host_install_dir=args.host_install_dir,
         )
     except:
         success = False

@@ -171,5 +171,5 @@ def test_install_archive(selenium):
                 """
             )
     finally:
-        (build_dir / "test_pkg.tar").unlink(missing_ok=True)
-        (test_dir / "test_pkg.tar").unlink(missing_ok=True)
+        (build_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+        (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
