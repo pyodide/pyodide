@@ -98,6 +98,13 @@ This can be done with either,
 
 Then follow steps 2, 3, and 6 from {ref}`making-major-release`.
 
+### Making an alpha release
+
+Follow steps 2, 3, 6, 7, and 9 from {ref}`making-major-release`. Name the first
+alpha release `x.x.xa1` and in subsequent alphas increment the final number. For
+the npm package the alpha should have version in the format `x.x.x-alpha.1`.
+
+
 ### Fixing documentation for a released version
 
 Cherry pick the corresponding documentation commits to the `stable` branch. Use
