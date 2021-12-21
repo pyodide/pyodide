@@ -246,8 +246,9 @@ def replay_genargs_handle_dashI(arg, target_install_dir):
         return
     return arg
 
-import re
+
 SYS_ROOT_RE = re.compile(",--sysroot=[^,]*")
+
 
 def replay_genargs_handle_argument(arg):
 
