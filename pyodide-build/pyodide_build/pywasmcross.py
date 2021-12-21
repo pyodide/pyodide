@@ -196,10 +196,12 @@ def replay_f2c(args, dryrun=False):
         return None
     return new_args
 
+
 def get_library_output(line):
     for arg in line:
         if arg.endswith(".so") and not arg.startswith("-"):
             return arg
+
 
 def parse_replace_libs(replace_libs):
     result = {}
@@ -232,6 +234,7 @@ def replay_genargs_handle_dashl(arg, replace_libs, used_libs):
     used_libs.add(arg)
     return arg
 
+
 def replay_genargs_handle_dashI(arg, target_install_dir):
     if (
         str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
@@ -243,6 +246,8 @@ def replay_genargs_handle_dashI(arg, target_install_dir):
         return
     return arg
 
+import re
+SYS_ROOT_RE = re.compile(",--sysroot=[^,]*")
 
 def replay_genargs_handle_argument(arg):
 
@@ -258,11 +263,10 @@ def replay_genargs_handle_argument(arg):
         arg = arg.replace(",--sort-common", "")
         arg = arg.replace(",--as-needed", "")
         # ignore unsupported --sysroot compile argument used in conda
-        arg.replace(",--sysroot", "")
+        arg = SYS_ROOT_RE.sub("", arg)
         if arg == "-Wl":
             arg = None
         return arg
-
 
     # Don't include any system directories
     if arg.startswith("-L/usr"):
@@ -285,6 +289,7 @@ def replay_genargs_handle_argument(arg):
         "-Bsymbolic-functions",
     ]:
         return
+    # fmt: on
     return arg
 
 
@@ -331,14 +336,11 @@ def replay_command_generate_args(line, args, is_link_command):
             # Ignore it.
             del new_args[-1]
             continue
-        
+
         # don't include libraries from native builds
-        if (
-            args.host_install_dir and (
-                arg.startswith("-L" + args.host_install_dir)
-                or 
-                arg.startswith("-l" + args.host_install_dir)
-            )
+        if args.host_install_dir and (
+            arg.startswith("-L" + args.host_install_dir)
+            or arg.startswith("-l" + args.host_install_dir)
         ):
             continue
 
@@ -379,7 +381,6 @@ def replay_command(line, args, dryrun=False):
     """
     # some libraries have different names on wasm e.g. png16 = png
 
-
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -402,7 +403,6 @@ def replay_command(line, args, dryrun=False):
         line = result
 
     new_args = replay_command_generate_args(line, args, is_link_cmd)
-    
 
     # This can only be used for incremental rebuilds -- it generates
     # an error during clean build of numpy
@@ -438,7 +438,11 @@ def replay_compile(args):
     if not build_log_path.is_file():
         return
 
-    lines_str = subprocess.check_output(["wc", "-l", str(build_log_path)]).decode().split(" ")[0]
+    lines_str = (
+        subprocess.check_output(["wc", "-l", str(build_log_path)])
+        .decode()
+        .split(" ")[0]
+    )
     num_lines = str(lines_str)
     with open(build_log_path, "r") as fd:
         for idx, line in enumerate(fd):
