@@ -52,7 +52,7 @@ class EnvironmentRewritingArgument(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def capture_command(command: str, args: list[str]) -> int:
+def capture_command(command: str, args: List[str]) -> int:
     """
     This is called when this script is called through a symlink that looks like
     a compiler or linker.
