@@ -34,6 +34,8 @@ import shutil
 import sys
 
 
+from typing import List, Dict, Set, Optional
+
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
@@ -50,13 +52,17 @@ class EnvironmentRewritingArgument(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def capture_command(command, args):
+def capture_command(command : str, args : list[str]) -> int:
     """
     This is called when this script is called through a symlink that looks like
     a compiler or linker.
 
     It writes the arguments to the build.log, and then delegates to the real
-    native compiler or linker.
+    native compiler or linker (unless it decides to skip host compilation).
+
+    Returns
+    -------
+        The exit code of the real native compiler invocation
     """
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     # Remove the symlink compiler from the PATH, so we can delegate to the
@@ -107,7 +113,7 @@ def capture_command(command, args):
     return subprocess.run(compiler_command + args, env=env).returncode
 
 
-def capture_make_command_wrapper_symlinks(env):
+def capture_make_command_wrapper_symlinks(env : Dict[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -130,7 +136,7 @@ def capture_make_command_wrapper_symlinks(env):
         env[var] = symlink
 
 
-def capture_compile(args):
+def capture_compile(args : argparse.ArgumentParser):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(os.environ)
     capture_make_command_wrapper_symlinks(env)
@@ -150,19 +156,19 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
-def replay_f2c(args, dryrun=False):
+def replay_f2c(args : List[str], dryrun : bool = False) -> List[str]:
     """Apply f2c to compilation arguments
 
     Parameters
     ----------
-    args : iterable
+    args
        input compiler arguments
-    dryrun : bool, default=True
+    dryrun
        if False run f2c on detected fortran files
 
     Returns
     -------
-    new_args : list
+    new_args
        output compiler arguments
 
 
@@ -197,13 +203,32 @@ def replay_f2c(args, dryrun=False):
     return new_args
 
 
-def get_library_output(line):
+def get_library_output(line : List[str]):
+    """
+    Check if the command is a linker invocation. If so, return the name of the
+    output file.
+    """
     for arg in line:
         if arg.endswith(".so") and not arg.startswith("-"):
             return arg
 
 
-def parse_replace_libs(replace_libs):
+def parse_replace_libs(replace_libs : str) -> Dict[str, str]:
+    """
+    Parameters
+    ----------
+    replace_libs
+        The `--replace-libs` argument, should be a string like "a=b;c=d".
+
+    Returns
+    -------
+        The input string converted to a dictionary
+
+    Examples
+    --------
+    >>> parse_replace_libs("a=b;c=d;e=f")
+    {"a" : "b", "c": "d", "e": "f"}
+    """
     result = {}
     for l in replace_libs.split(";"):
         if not l:
@@ -214,7 +239,27 @@ def parse_replace_libs(replace_libs):
     return result
 
 
-def replay_genargs_handle_dashl(arg, replace_libs, used_libs):
+def replay_genargs_handle_dashl(arg : str, replace_libs : Dict[str, str], used_libs : Set[str]) -> Optional[str]:
+    """
+    Figure out how to replace a `-lsomelib` argument.
+
+    Parameters
+    ----------
+    arg
+        The argument we are replacing. Must start with `-l`.
+
+    replace_libs
+        The dictionary of libraries we are replacing
+    
+    used_libs
+        The libraries we've used so far in this command. emcc fails out if `-lsomelib` 
+        occurs twice, so we have to track this.
+
+    Returns
+    -------
+        The new argument, or None to delete the argument.
+    """
+    assert arg.startswith("-l")
     for lib_name in replace_libs.keys():
         # this enables glob style **/* matching
         if PurePosixPath(arg[2:]).match(lib_name):
@@ -235,7 +280,23 @@ def replay_genargs_handle_dashl(arg, replace_libs, used_libs):
     return arg
 
 
-def replay_genargs_handle_dashI(arg, target_install_dir):
+def replay_genargs_handle_dashI(arg : str, target_install_dir : str) -> Optional[str]:
+    """
+    Figure out how to replace a `-Iincludepath` argument.
+
+    Parameters
+    ----------
+    arg
+        The argument we are replacing. Must start with `-I`.
+
+    target_install_dir
+        The target_install_dir argument.
+
+    Returns
+    -------
+        The new argument, or None to delete the argument.
+    """
+    assert arg.startswith("-I")
     if (
         str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
         and "site-packages" not in arg
@@ -250,7 +311,21 @@ def replay_genargs_handle_dashI(arg, target_install_dir):
 SYS_ROOT_RE = re.compile(",--sysroot=[^,]*")
 
 
-def replay_genargs_handle_argument(arg):
+def replay_genargs_handle_argument(arg : str) -> Optional[str]:
+    """
+    Figure out how to replace a general argument.
+
+    Parameters
+    ----------
+    arg
+        The argument we are replacing. Must not start with `-I` or `-l`.
+
+    Returns
+    -------
+        The new argument, or None to delete the argument.
+    """
+    assert not arg.startswith("-I") # should be handled by other functions
+    assert not arg.startswith("-l")
 
     # ignore some link flags
     # it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
@@ -294,7 +369,27 @@ def replay_genargs_handle_argument(arg):
     return arg
 
 
-def replay_command_generate_args(line, args, is_link_command):
+def replay_command_generate_args(line : str, args: argparse.ArgumentParser, is_link_command : bool) -> List[str]:
+    """
+    A helper command for `replay_command` that generates the new arguments for
+    the compilation. 
+
+    Unlike `replay_command` this avoids I/O: it doesn't sys.exit, it doesn't run
+    subprocesses, it doesn't create any files, and it doesn't write to stdout.
+
+    Parameters
+    ----------
+    line The original compilation command as a list e.g., ["gcc", "-c",
+        "input.c", "-o", "output.c"]
+
+    args The arguments that pywasmcross was invoked with
+
+    is_link_command Is this a linker invocation?
+
+    Returns
+    -------
+        An updated argument list suitable for use with emscripten.
+    """
     replace_libs = parse_replace_libs(args.replace_libs)
     if line[0] == "ar":
         new_args = ["emar"]
@@ -357,7 +452,7 @@ def replay_command_generate_args(line, args, is_link_command):
     return new_args
 
 
-def replay_command(line, args, dryrun=False):
+def replay_command(line : List[str], args : argparse.ArgumentParser, dryrun : bool = False) -> Optional[List[str]]:
     """Handle a compilation command
 
     Parameters
@@ -432,7 +527,7 @@ def replay_command(line, args, dryrun=False):
     return new_args
 
 
-def replay_compile(args):
+def replay_compile(args : List[str]):
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
     build_log_path = Path("build.log")
@@ -460,7 +555,7 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
-def install_for_distribution(args):
+def install_for_distribution(args : argparse.ArgumentParser):
     commands = [
         sys.executable,
         "setup.py",
@@ -481,7 +576,7 @@ def install_for_distribution(args):
         subprocess.check_call(commands[:-1])
 
 
-def build_wrap(args):
+def build_wrap(args : argparse.ArgumentParser):
     build_log_path = Path("build.log")
     if not build_log_path.is_file():
         capture_compile(args)
