@@ -621,6 +621,7 @@ directly (i.e., `jsfunc(obj)`) or as `jsfunc(create_proxy(obj))`.
 ```py
 def callback():
     print("clicked!")
+import pyodide
 proxy = pyodide.create_proxy(callback)
 from js import document
 document.body.addEventListener("click", proxy)
@@ -674,7 +675,7 @@ correct due to `PyProxy` usage constraints.
 
 ```pyodide
 function callback(arg){
-    let res = arg.result();
+    var res = arg.result();
     window.result = res.toJs();
     arg.destroy();
     res.destroy();
