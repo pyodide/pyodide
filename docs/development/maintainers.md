@@ -62,6 +62,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    ```bash
    cd src/js
    npm publish # Note: use "--tag next" for prereleases
+   npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
 8. Build the pre-built Docker image locally and push,
@@ -105,6 +106,12 @@ alpha release `x.x.xa1` and in subsequent alphas increment the final number. For
 the npm package the alpha should have version in the format `x.x.x-alpha.1`. For
 the node package make sure to use `npm publish --tag next` to avoid setting the
 alpha version as the stable release.
+
+If you accidentally publish the alpha release over the stable `latest` tag, you
+can fix it with: `npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be
+the lastest stable version. Then use 
+`npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the 
+just-published alpha release.
 
 
 ### Fixing documentation for a released version
