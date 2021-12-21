@@ -52,7 +52,7 @@ class EnvironmentRewritingArgument(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-def capture_command(command : str, args : list[str]) -> int:
+def capture_command(command: str, args: list[str]) -> int:
     """
     This is called when this script is called through a symlink that looks like
     a compiler or linker.
@@ -113,7 +113,7 @@ def capture_command(command : str, args : list[str]) -> int:
     return subprocess.run(compiler_command + args, env=env).returncode
 
 
-def capture_make_command_wrapper_symlinks(env : Dict[str, str]):
+def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -136,7 +136,7 @@ def capture_make_command_wrapper_symlinks(env : Dict[str, str]):
         env[var] = symlink
 
 
-def capture_compile(args : argparse.ArgumentParser):
+def capture_compile(args: argparse.Namespace):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(os.environ)
     capture_make_command_wrapper_symlinks(env)
@@ -156,7 +156,7 @@ def capture_compile(args : argparse.ArgumentParser):
         sys.exit(result.returncode)
 
 
-def replay_f2c(args : List[str], dryrun : bool = False) -> List[str]:
+def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
     """Apply f2c to compilation arguments
 
     Parameters
@@ -203,7 +203,7 @@ def replay_f2c(args : List[str], dryrun : bool = False) -> List[str]:
     return new_args
 
 
-def get_library_output(line : List[str]):
+def get_library_output(line: List[str]):
     """
     Check if the command is a linker invocation. If so, return the name of the
     output file.
@@ -213,7 +213,7 @@ def get_library_output(line : List[str]):
             return arg
 
 
-def parse_replace_libs(replace_libs : str) -> Dict[str, str]:
+def parse_replace_libs(replace_libs: str) -> Dict[str, str]:
     """
     Parameters
     ----------
@@ -239,7 +239,9 @@ def parse_replace_libs(replace_libs : str) -> Dict[str, str]:
     return result
 
 
-def replay_genargs_handle_dashl(arg : str, replace_libs : Dict[str, str], used_libs : Set[str]) -> Optional[str]:
+def replay_genargs_handle_dashl(
+    arg: str, replace_libs: Dict[str, str], used_libs: Set[str]
+) -> Optional[str]:
     """
     Figure out how to replace a `-lsomelib` argument.
 
@@ -250,9 +252,9 @@ def replay_genargs_handle_dashl(arg : str, replace_libs : Dict[str, str], used_l
 
     replace_libs
         The dictionary of libraries we are replacing
-    
+
     used_libs
-        The libraries we've used so far in this command. emcc fails out if `-lsomelib` 
+        The libraries we've used so far in this command. emcc fails out if `-lsomelib`
         occurs twice, so we have to track this.
 
     Returns
@@ -266,21 +268,21 @@ def replay_genargs_handle_dashl(arg : str, replace_libs : Dict[str, str], used_l
             arg = "-l" + replace_libs[lib_name]
 
     if arg == "-lffi":
-        return
+        return None
 
     # See https://github.com/emscripten-core/emscripten/issues/8650
     if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
-        return
+        return None
 
     # WASM link doesn't like libraries being included twice
     # skip second one
     if arg in used_libs:
-        return
+        return None
     used_libs.add(arg)
     return arg
 
 
-def replay_genargs_handle_dashI(arg : str, target_install_dir : str) -> Optional[str]:
+def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> Optional[str]:
     """
     Figure out how to replace a `-Iincludepath` argument.
 
@@ -304,14 +306,14 @@ def replay_genargs_handle_dashI(arg : str, target_install_dir : str) -> Optional
         return arg.replace("-I" + sys.prefix, "-I" + target_install_dir)
     # Don't include any system directories
     if arg[2:].startswith("/usr"):
-        return
+        return None
     return arg
 
 
 SYS_ROOT_RE = re.compile(",--sysroot=[^,]*")
 
 
-def replay_genargs_handle_argument(arg : str) -> Optional[str]:
+def replay_genargs_handle_argument(arg: str) -> Optional[str]:
     """
     Figure out how to replace a general argument.
 
@@ -324,7 +326,7 @@ def replay_genargs_handle_argument(arg : str) -> Optional[str]:
     -------
         The new argument, or None to delete the argument.
     """
-    assert not arg.startswith("-I") # should be handled by other functions
+    assert not arg.startswith("-I")  # should be handled by other functions
     assert not arg.startswith("-l")
 
     # ignore some link flags
@@ -341,12 +343,12 @@ def replay_genargs_handle_argument(arg : str) -> Optional[str]:
         # ignore unsupported --sysroot compile argument used in conda
         arg = SYS_ROOT_RE.sub("", arg)
         if arg == "-Wl":
-            arg = None
+            return None
         return arg
 
     # Don't include any system directories
     if arg.startswith("-L/usr"):
-        return
+        return None
 
     # fmt: off
     if arg in [
@@ -364,15 +366,17 @@ def replay_genargs_handle_argument(arg : str) -> Optional[str]:
         # gcc flag that clang does not support
         "-Bsymbolic-functions",
     ]:
-        return
+        return None
     # fmt: on
     return arg
 
 
-def replay_command_generate_args(line : str, args: argparse.ArgumentParser, is_link_command : bool) -> List[str]:
+def replay_command_generate_args(
+    line: List[str], args: argparse.Namespace, is_link_command: bool
+) -> List[str]:
     """
     A helper command for `replay_command` that generates the new arguments for
-    the compilation. 
+    the compilation.
 
     Unlike `replay_command` this avoids I/O: it doesn't sys.exit, it doesn't run
     subprocesses, it doesn't create any files, and it doesn't write to stdout.
@@ -417,7 +421,7 @@ def replay_command_generate_args(line : str, args: argparse.ArgumentParser, is_l
             optflag = arg
             break
 
-    used_libs = set()
+    used_libs: Set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
         # The native build is possibly multithreaded, but the emscripten one
@@ -441,18 +445,20 @@ def replay_command_generate_args(line : str, args: argparse.ArgumentParser, is_l
             continue
 
         if arg.startswith("-l"):
-            arg = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
+            result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
         elif arg.startswith("-I"):
-            arg = replay_genargs_handle_dashI(arg, args.target_install_dir)
+            result = replay_genargs_handle_dashI(arg, args.target_install_dir)
         else:
-            arg = replay_genargs_handle_argument(arg)
+            result = replay_genargs_handle_argument(arg)
 
-        if arg:
-            new_args.append(arg)
+        if result:
+            new_args.append(result)
     return new_args
 
 
-def replay_command(line : List[str], args : argparse.ArgumentParser, dryrun : bool = False) -> Optional[List[str]]:
+def replay_command(
+    line: List[str], args: argparse.Namespace, dryrun: bool = False
+) -> Optional[List[str]]:
     """Handle a compilation command
 
     Parameters
@@ -481,22 +487,22 @@ def replay_command(line : List[str], args : argparse.ArgumentParser, dryrun : bo
     # actually part of the build
     for arg in line:
         if r"/file.c" in arg or "_configtest" in arg:
-            return
+            return None
         if re.match(r"/tmp/.*/source\.[bco]+", arg):
-            return
+            return None
         if arg == "-print-multiarch":
-            return
+            return None
         if arg.startswith("/tmp"):
-            return
+            return None
 
     library_output = get_library_output(line)
     is_link_cmd = library_output is not None
 
     if line[0] == "gfortran":
-        result = replay_f2c(line)
-        if result is None:
-            return
-        line = result
+        tmp = replay_f2c(line)
+        if tmp is None:
+            return None
+        line = tmp
 
     new_args = replay_command_generate_args(line, args, is_link_cmd)
 
@@ -509,9 +515,9 @@ def replay_command(line : List[str], args : argparse.ArgumentParser, dryrun : bo
     print(" ".join(new_args))
 
     if not dryrun:
-        result = subprocess.run(new_args)
-        if result.returncode != 0:
-            sys.exit(result.returncode)
+        returncode = subprocess.run(new_args).returncode
+        if returncode != 0:
+            sys.exit(returncode)
 
     # Emscripten .so files shouldn't have the native platform slug
     if library_output:
@@ -527,7 +533,7 @@ def replay_command(line : List[str], args : argparse.ArgumentParser, dryrun : bo
     return new_args
 
 
-def replay_compile(args : List[str]):
+def replay_compile(args: argparse.Namespace):
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
     build_log_path = Path("build.log")
@@ -541,8 +547,8 @@ def replay_compile(args : List[str]):
     )
     num_lines = str(lines_str)
     with open(build_log_path, "r") as fd:
-        for idx, line in enumerate(fd):
-            line = json.loads(line)
+        for idx, line_str in enumerate(fd):
+            line = json.loads(line_str)
             print(f"[line {idx + 1} of {num_lines}]")
             replay_command(line, args)
 
@@ -555,7 +561,7 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
-def install_for_distribution(args : argparse.ArgumentParser):
+def install_for_distribution(args: argparse.Namespace):
     commands = [
         sys.executable,
         "setup.py",
@@ -576,7 +582,7 @@ def install_for_distribution(args : argparse.ArgumentParser):
         subprocess.check_call(commands[:-1])
 
 
-def build_wrap(args : argparse.ArgumentParser):
+def build_wrap(args: argparse.Namespace):
     build_log_path = Path("build.log")
     if not build_log_path.is_file():
         capture_compile(args)
@@ -645,7 +651,7 @@ def make_parser(parser):
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace):
     build_wrap(args)
 
 
