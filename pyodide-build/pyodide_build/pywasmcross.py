@@ -227,7 +227,7 @@ def parse_replace_libs(replace_libs: str) -> Dict[str, str]:
     Examples
     --------
     >>> parse_replace_libs("a=b;c=d;e=f")
-    {"a" : "b", "c": "d", "e": "f"}
+    {'a': 'b', 'c': 'd', 'e': 'f'}
     """
     result = {}
     for l in replace_libs.split(";"):
