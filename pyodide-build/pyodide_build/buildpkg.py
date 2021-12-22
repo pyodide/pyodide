@@ -23,7 +23,7 @@ from . import pywasmcross
 
 
 @contextmanager
-def chdir(new_dir: os.PathLike[str]):
+def chdir(new_dir: "os.PathLike[str]"):
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
