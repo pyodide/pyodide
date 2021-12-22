@@ -149,10 +149,9 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, st
 
     cmd = [sys.executable, "setup.py", "install"]
     if skip_host:
-        cmd[-1] = "build"
         env["SKIP_HOST"] = "1"
-    elif host_install_dir:
-        cmd.extend(["--home", host_install_dir])
+    assert host_install_dir, "Missing host_install_dir"
+    cmd.extend(["--home", host_install_dir])
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
