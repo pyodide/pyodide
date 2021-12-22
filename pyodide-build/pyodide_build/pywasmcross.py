@@ -211,6 +211,7 @@ def get_library_output(line: List[str]) -> Optional[str]:
     for arg in line:
         if arg.endswith(".so") and not arg.startswith("-"):
             return arg
+    return None
 
 
 def parse_replace_libs(replace_libs: str) -> Dict[str, str]:
@@ -553,7 +554,7 @@ def replay_compile(args: argparse.Namespace):
     )
     num_lines = str(lines_str)
     with open(build_log_path, "r") as fd:
-        num_lines = sum(1 for _ in fd)
+        num_lines = sum(1 for _1 in fd)  # type: ignore
         fd.seek(0)
         for idx, line_str in enumerate(fd):
             line = json.loads(line_str)
