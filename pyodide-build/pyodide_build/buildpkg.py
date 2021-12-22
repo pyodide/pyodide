@@ -717,7 +717,7 @@ def make_parser(parser: argparse.ArgumentParser):
         "--host-install-dir",
         type=str,
         nargs="?",
-        default="",
+        default=common.get_make_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "
