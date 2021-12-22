@@ -575,6 +575,7 @@ def environment_substitute_args(
 class _EmptyType:
     __new__ = None  # type: ignore
 
+
 @overload
 def replay_compile(
     *,
@@ -586,6 +587,7 @@ def replay_compile(
     replace_libs: str,
 ):
     ...
+
 
 @overload
 def replay_compile(a: _EmptyType):

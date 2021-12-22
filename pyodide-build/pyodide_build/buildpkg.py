@@ -21,6 +21,7 @@ from contextlib import contextmanager
 
 from . import pywasmcross
 
+
 @contextmanager
 def chdir(new_dir: os.PathLike[str]):
     orig_dir = Path.cwd()
@@ -29,8 +30,6 @@ def chdir(new_dir: os.PathLike[str]):
         yield
     finally:
         os.chdir(orig_dir)
-
-print(chdir.__annotations__)
 
 
 from . import common
