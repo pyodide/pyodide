@@ -6,7 +6,6 @@ import sys
 
 from . import buildall
 from . import buildpkg
-from . import pywasmcross
 from . import serve
 from . import mkpkg
 from .common import get_make_environment_vars
@@ -22,7 +21,6 @@ def make_parser() -> argparse.ArgumentParser:
     for command_name, module in (
         ("buildpkg", buildpkg),
         ("buildall", buildall),
-        ("pywasmcross", pywasmcross),
         ("serve", serve),
         ("mkpkg", mkpkg),
     ):
