@@ -183,7 +183,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
     --------
 
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
-    ['gfortran', 'test.c']
+    ['emcc', 'test.c']
     """
     new_args = ["emcc"]
     found_source = False
