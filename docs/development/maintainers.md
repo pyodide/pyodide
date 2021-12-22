@@ -16,7 +16,8 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
    the release version `vX.Y.Z` (note the presence of the leading `v`). This
    also applies to `docs/conf.py`
-2. Set the version in `src/py/pyodide/__init__.py` and in `src/js/package.json`
+2. Set the version in `src/py/pyodide/__init__.py` in `src/js/package.json`, in
+   `src/py/setup.cfg` and in `pyodide-build/setup.cfg`.
 3. Make sure the change log is up-to-date.
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
@@ -48,12 +49,19 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream stable --force
    ```
    Wait for the CI to pass and create the release on GitHub.
-6. Release the pyodide-build package,
+6. Release the `pyodide-build` package and `pyodide` package:
    ```bash
    pip install twine build
    cd pyodide-build/
    python -m build .
    ls dist/   # check the produced files
+   twine check dist/*X.Y.Z*
+   twine upload dist/*X.Y.Z*
+   ```
+   And to release the `pyodide` package:
+   ```bash
+   cd src/py/
+   python -m build .
    twine check dist/*X.Y.Z*
    twine upload dist/*X.Y.Z*
    ```
@@ -109,10 +117,9 @@ alpha version as the stable release.
 
 If you accidentally publish the alpha release over the stable `latest` tag, you
 can fix it with: `npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be
-the lastest stable version. Then use 
-`npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the 
+the lastest stable version. Then use
+`npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the
 just-published alpha release.
-
 
 ### Fixing documentation for a released version
 
