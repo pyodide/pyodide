@@ -185,7 +185,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gfortran', 'test.c']
     """
-    new_args = []
+    new_args = ["emcc"]
     found_source = False
     for arg in args:
         if arg.endswith(".f"):
@@ -523,7 +523,7 @@ def replay_command(
     is_link_cmd = library_output is not None
 
     if line[0] == "gfortran":
-        tmp = replay_f2c(line)
+        tmp = replay_f2c(line[1:])
         if tmp is None:
             return None
         line = tmp
