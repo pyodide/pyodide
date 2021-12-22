@@ -121,12 +121,12 @@ def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
 
 
 def test_f2c():
-    assert f2c_wrap("gfortran test.f") == "gfortran test.c"
+    assert f2c_wrap("gfortran test.f") == "gcc test.c"
     assert f2c_wrap("gcc test.c") is None
     assert f2c_wrap("gfortran --version") is None
     assert (
         f2c_wrap("gfortran --shared -c test.o -o test.so")
-        == "gfortran --shared -c test.o -o test.so"
+        == "gcc --shared -c test.o -o test.so"
     )
 
 
