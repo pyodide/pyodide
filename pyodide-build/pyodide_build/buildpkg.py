@@ -388,7 +388,6 @@ def compile(
             target_install_dir=target_install_dir,
             host_install_dir=host_install_dir,
             replace_libs=replace_libs
-            # env=bash_runner.env
         )
         install_for_distribution()
 

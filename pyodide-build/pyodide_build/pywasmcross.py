@@ -141,7 +141,7 @@ def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
         env[var] = symlink
 
 
-def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, str]):
+def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, str]):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
     capture_make_command_wrapper_symlinks(env)
