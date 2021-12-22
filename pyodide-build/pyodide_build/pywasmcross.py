@@ -136,17 +136,17 @@ def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
         env[var] = symlink
 
 
-def capture_compile(args: argparse.Namespace):
+def capture_compile(host_install_dir: str):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(os.environ)
     capture_make_command_wrapper_symlinks(env)
     env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
 
     cmd = [sys.executable, "setup.py", "install"]
-    if args.host_install_dir == "skip":
+    if host_install_dir == "skip":
         cmd[-1] = "build"
-    elif args.host_install_dir != "":
-        cmd.extend(["--home", args.host_install_dir])
+    elif host_install_dir != "":
+        cmd.extend(["--home", host_install_dir])
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
@@ -570,7 +570,7 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
-def install_for_distribution(args: argparse.Namespace):
+def install_for_distribution():
     commands = [
         sys.executable,
         "setup.py",
@@ -594,10 +594,10 @@ def install_for_distribution(args: argparse.Namespace):
 def build_wrap(args: argparse.Namespace):
     build_log_path = Path("build.log")
     if not build_log_path.is_file():
-        capture_compile(args)
+        capture_compile(args.host_install_dir)
     clean_out_native_artifacts()
     replay_compile(args)
-    install_for_distribution(args)
+    install_for_distribution()
 
 
 def make_parser(parser):
