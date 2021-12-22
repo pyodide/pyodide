@@ -561,7 +561,7 @@ def environment_substitute_args(
     args: Dict[str, str], env: Dict[str, str] = None
 ) -> Dict[str, str]:
     if env is None:
-        env = os.environ
+        env = dict(os.environ)
     subbed_args = {}
     for arg, value in args.items():
         for e_name, e_value in env.items():
@@ -569,6 +569,11 @@ def environment_substitute_args(
         subbed_args[arg] = value
     return subbed_args
 
+
+# Hack to prevent mypy error:
+# "error: Single overload definition, multiple required"
+class _EmptyType:
+    __new__ = None  # type: ignore
 
 @overload
 def replay_compile(
@@ -581,13 +586,6 @@ def replay_compile(
     replace_libs: str,
 ):
     ...
-
-
-# Hack to prevent mypy error:
-# "error: Single overload definition, multiple required"
-class _EmptyType:
-    __new__ = None  # type: ignore
-
 
 @overload
 def replay_compile(a: _EmptyType):
