@@ -387,7 +387,7 @@ def compile(
             ldflags=build_metadata["ldflags"],
             target_install_dir=target_install_dir,
             host_install_dir=host_install_dir,
-            replace_libs=replace_libs
+            replace_libs=replace_libs,
         )
         install_for_distribution()
 
