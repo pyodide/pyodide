@@ -203,7 +203,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
     return new_args
 
 
-def get_library_output(line: List[str]):
+def get_library_output(line: List[str]) -> Optional[str]:
     """
     Check if the command is a linker invocation. If so, return the name of the
     output file.
@@ -553,6 +553,8 @@ def replay_compile(args: argparse.Namespace):
     )
     num_lines = str(lines_str)
     with open(build_log_path, "r") as fd:
+        num_lines = sum(1 for _ in fd)
+        fd.seek(0)
         for idx, line_str in enumerate(fd):
             line = json.loads(line_str)
             print(f"[line {idx + 1} of {num_lines}]")
