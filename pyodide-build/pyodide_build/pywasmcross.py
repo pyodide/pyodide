@@ -310,9 +310,6 @@ def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> Optional[s
     return arg
 
 
-SYS_ROOT_RE = re.compile(",--sysroot=[^,]*")
-
-
 def replay_genargs_handle_argument(arg: str) -> Optional[str]:
     """
     Figure out how to replace a general argument.
@@ -334,17 +331,26 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
     # because arg may be something like "-Wl,-xxx,-yyy" where we only want
     # to ignore "-xxx" but not "-yyy".
     if arg.startswith("-Wl"):
-        arg = arg.replace(",-Bsymbolic-functions", "")
-        # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
-        arg = arg.replace(",--strip-all", "")
-        # wasm-ld does not regconize some link flags
-        arg = arg.replace(",--sort-common", "")
-        arg = arg.replace(",--as-needed", "")
-        # ignore unsupported --sysroot compile argument used in conda
-        arg = SYS_ROOT_RE.sub("", arg)
-        if arg == "-Wl":
+        link_opts = arg.split(",")[1:]
+        new_link_opts = []
+        for opt in link_opts:
+            if opt in [
+                "-Bsymbolic-functions",
+                # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
+                "--strip-all",
+                # wasm-ld does not regconize some link flags
+                "--sort-common",
+                "--as-needed",
+            ]:
+                continue
+            # ignore unsupported --sysroot compile argument used in conda
+            if opt.startswith("--sysroot="):
+                continue
+            new_link_opts.append(opt)
+        if new_link_opts:
+            return "-Wl," + ",".join(new_link_opts)
+        else:
             return None
-        return arg
 
     # Don't include any system directories
     if arg.startswith("-L/usr"):
