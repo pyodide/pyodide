@@ -19,6 +19,7 @@ source:
     - patches/gemm_-no-const.patch
     - patches/sasum-returns-double-not-float.patch
     - patches/disable-scipy-stats-mvn.patch
+    - patches/remove-sgeqrfp.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
@@ -35,6 +36,7 @@ build:
     -L$(NUMPY_LIB)
     -Wl,--fatal-warnings
   script: |
+    find scipy/linalg/ -name "*.*" | xargs sed -i '/sgeqrfp/d'
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h

@@ -89,7 +89,7 @@ def get_bash_runner():
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
     b = BashRunnerWithSharedEnvironment(env=env)
-    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh")
+    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL)
     try:
         yield b
     finally:
@@ -241,10 +241,9 @@ def prepare_source(
         The location where the source ended up.
     """
     if "url" in src_metadata:
-        extract_dir = download_and_extract(buildpath, srcpath, src_metadata)
-        shutil.move(extract_dir, srcpath)
+        srcpath = download_and_extract(buildpath, srcpath, src_metadata)
         patch(pkg_root, srcpath, src_metadata)
-        return
+        return srcpath
 
     if "path" not in src_metadata:
         raise ValueError(
@@ -258,6 +257,8 @@ def prepare_source(
 
     if not srcpath.is_dir():
         shutil.copytree(srcdir, srcpath)
+
+    return srcpath
 
 
 def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
