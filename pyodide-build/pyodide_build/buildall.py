@@ -288,10 +288,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             t0 = perf_counter()
             success = True
             try:
-                import random
-
-                sleep(5 * random.random())
-                # pkg.build(outputdir, args)
+                pkg.build(outputdir, args)
             except Exception as e:
                 built_queue.put(e)
                 success = False
