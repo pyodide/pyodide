@@ -1,4 +1,7 @@
 import re
+import shutil
+from pathlib import Path
+import subprocess
 
 
 def fix_f2c_clapack_calls(f2c_output_name: str):
@@ -164,10 +167,56 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
     ]
     # fmt: on
     code = None
+    patch_output(f2c_output_name)
+
     with open(f2c_output_name, "r") as f:
         code = f.read()
-        for cur_name in lapack_names:
-            code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
-    if code:
-        with open(f2c_output_name, "w") as f:
-            f.write(code)
+
+    for cur_name in lapack_names:
+        code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
+    if f2c_output_name.endswith("_lapack_subroutine_wrappers.c"):
+        code = fix_lapack_subroutine_wrappers(code)
+    with open(f2c_output_name, "w") as f:
+        f.write(code)
+
+
+def patch_output(f2c_output_name):
+    if f2c_output_name:
+        c_file_name = Path(f2c_output_name).name
+        patch_file = (Path("../../f2cpatches/") / c_file_name).with_suffix(".patch")
+        if patch_file.exists():
+            subprocess.run(
+                [
+                    "patch",
+                    "-p1",
+                    "-i",
+                    str(patch_file),
+                ]
+            )
+
+
+def fix_lapack_subroutine_wrappers(code):
+    lines = code.split("\n")
+    new_lines = []
+    in_subroutine = False
+    sub_lines = []
+    for line in lines:
+        if line.startswith("/* Subroutine */"):
+            in_subroutine = True
+        if in_subroutine:
+            sub_lines.append(line.strip())
+            if ")" in line:
+                res_line = " ".join(sub_lines)
+                res_line = re.sub(",\s*ftnlen [a-z]*_len", "", res_line)
+                new_lines.append(res_line)
+                sub_lines = []
+                in_subroutine = False
+        else:
+            new_lines.append(line)
+    return "\n".join(new_lines)
+
+
+if __name__ == "__main__":
+    fix_f2c_clapack_calls(
+        "/home/hood/pyodide/packages/scipy/f2cfixes/_lapack_subroutine_wrappers.c"
+    )

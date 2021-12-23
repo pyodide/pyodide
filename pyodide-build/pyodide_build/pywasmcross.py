@@ -341,6 +341,8 @@ def replay_genargs_handle_linker_opts(arg):
         # ignore unsupported --sysroot compile argument used in conda
         if opt.startswith("--sysroot="):
             continue
+        if opt.startswith("--version-script="):
+            continue
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
         return ",".join(new_link_opts)
@@ -384,6 +386,7 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
         "-mpopcnt",
         # gcc flag that clang does not support
         "-Bsymbolic-functions",
+        '-fno-second-underscore',
     ]:
         return None
     # fmt: on
@@ -584,6 +587,7 @@ def replay_compile(
     host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
+    continue_from: int = 0,
 ):
     ...
 
@@ -593,7 +597,7 @@ def replay_compile(a: _EmptyType):
     ...
 
 
-def replay_compile(**kwargs):
+def replay_compile(continue_from: int = 0, **kwargs):
     args = ReplayArgs(**environment_substitute_args(kwargs))
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
@@ -611,6 +615,8 @@ def replay_compile(**kwargs):
         num_lines = sum(1 for _1 in fd)  # type: ignore
         fd.seek(0)
         for idx, line_str in enumerate(fd):
+            if idx < continue_from - 1:
+                continue
             line = json.loads(line_str)
             print(f"[line {idx + 1} of {num_lines}]")
             replay_command(line, args)

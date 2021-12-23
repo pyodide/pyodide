@@ -1,0 +1,46 @@
+From bac798c533b3c3fb1a7845bf6f31b56f1f3f01ea Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 22 Dec 2021 21:36:10 -0800
+Subject: [PATCH] disable scipy stats mvn
+
+---
+ scipy/stats/kde.py   | 5 ++++-
+ scipy/stats/setup.py | 6 +++---
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/scipy/stats/kde.py b/scipy/stats/kde.py
+index 3fc95931d..287c8e58d 100644
+--- a/scipy/stats/kde.py
++++ b/scipy/stats/kde.py
+@@ -31,7 +31,10 @@ from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, dot, exp, pi,
+ import numpy as np
+ 
+ # Local imports.
+-from . import mvn
++try:
++    from . import mvn
++except ImportError:
++    pass
+ from ._stats import gaussian_kernel_estimate
+ 
+ 
+diff --git a/scipy/stats/setup.py b/scipy/stats/setup.py
+index 94dc721bb..84dade8e9 100644
+--- a/scipy/stats/setup.py
++++ b/scipy/stats/setup.py
+@@ -24,9 +24,9 @@ def configuration(parent_package='',top_path=None):
+     )
+ 
+     # add mvn module
+-    config.add_extension('mvn',
+-        sources=['mvn.pyf','mvndst.f'],
+-    )
++    # config.add_extension('mvn',
++    #     sources=['mvn.pyf','mvndst.f'],
++    # )
+ 
+     return config
+ 
+-- 
+2.25.1
+

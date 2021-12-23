@@ -1,0 +1,30 @@
+diff --git a/scipy/linalg/src/id_dist/src/iddp_asvd.c b/../../f2cfixes/iddp_asvd.c
+index b8f532d..0063c4c 100644
+--- a/scipy/linalg/src/id_dist/src/iddp_asvd.c
++++ b/../../f2cfixes/iddp_asvd.c
+@@ -36,10 +36,8 @@
+ 	     doublereal *, doublereal *, integer *, doublereal *, doublereal *
+ 	    );
+     static integer k;
+-    extern /* Subroutine */ int iddp_asvd0__(integer *, integer *, doublereal 
+-	    *, integer *, doublereal *, doublereal *, doublereal *, 
+-	    doublereal *, doublereal *, integer *, doublereal *, doublereal *)
+-	    ;
++    extern /* Subroutine */ 
++int iddp_asvd0__(integer *, integer *, doublereal *, integer *, integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *, doublereal *, doublereal *);
+     static integer ls, lu, lv, lw2, isi, iui, ivi, icol, lcol, iproj, ilist, 
+ 	    lproj, llist, iwork, lwork;
+ 
+@@ -201,10 +199,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int iddp_asvd0__(integer *m, integer *n, doublereal *a, 
+-	integer *krank, integer *list, doublereal *proj, doublereal *u, 
+-	doublereal *v, doublereal *s, integer *ier, doublereal *col, 
+-	doublereal *work)
++/* Subroutine */ 
++int iddp_asvd0__(integer *m, integer *n, doublereal *a, integer *krank, integer *list, doublereal *proj, doublereal *u, doublereal *v, doublereal *s, integer *ier, doublereal *col, doublereal *work)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, u_dim1, u_offset, v_dim1, v_offset, proj_dim1, 

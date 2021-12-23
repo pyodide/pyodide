@@ -1,0 +1,50 @@
+diff --git a/scipy/linalg/src/id_dist/src/idd_id2svd.c b/../../f2cfixes/idd_id2svd.c
+index f66ce14..4242de9 100644
+--- a/scipy/linalg/src/id_dist/src/idd_id2svd.c
++++ b/../../f2cfixes/idd_id2svd.c
+@@ -34,11 +34,8 @@
+ 
+     /* Local variables */
+     static integer ip, ir, lp, it, lr, lt, lw;
+-    extern /* Subroutine */ int idd_id2svd0__(integer *, integer *, 
+-	    doublereal *, integer *, integer *, doublereal *, doublereal *, 
+-	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
+-	     doublereal *, doublereal *, doublereal *, doublereal *, 
+-	    doublereal *, doublereal *);
++    extern /* Subroutine */ 
++int idd_id2svd0__(integer *, integer *, doublereal *, integer *, integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *, doublereal *, doublereal *,doublereal *, doublereal *, doublereal *, doublereal *, integer *, integer *);
+     static integer ir2, ir3, lr2, lr3, iind, lind, iindt, lindt, iwork, lwork;
+ 
+ 
+@@ -138,11 +135,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idd_id2svd0__(integer *m, integer *krank, doublereal *b, 
+-	integer *n, integer *list, doublereal *proj, doublereal *u, 
+-	doublereal *v, doublereal *s, integer *ier, doublereal *work, 
+-	doublereal *p, doublereal *t, doublereal *r__, doublereal *r2, 
+-	doublereal *r3, integer *ind, integer *indt)
++/* Subroutine */ 
++int idd_id2svd0__(integer *m, integer *krank, doublereal *b, integer *n, integer *list, doublereal *proj, doublereal *u, doublereal *v, doublereal *s, integer *ier, doublereal *work, 	doublereal *p, doublereal *t, doublereal *r__, doublereal *r2, 	doublereal *r3, integer *ind, integer *indt)
+ {
+     /* System generated locals */
+     integer b_dim1, b_offset, proj_dim1, proj_offset, p_dim1, p_offset, 
+@@ -166,7 +160,7 @@
+ 	    , doublereal *, doublereal *), idd_matmultt__(integer *, integer *
+ 	    , doublereal *, integer *, doublereal *, doublereal *);
+     static integer lwork;
+-    extern /* Subroutine */ int dgesdd_(char *, integer *, integer *, 
++    extern /* Subroutine */ int wdgesdd_(char *, integer *, integer *, 
+ 	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
+ 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+ 	    integer *, ftnlen);
+@@ -287,7 +281,7 @@
+     i__1 = *krank;
+ /* Computing 2nd power */
+     i__2 = *krank;
+-    dgesdd_(jobz, krank, krank, &r3[r3_offset], &ldr, &s[1], &work[1], &ldu, &
++    wdgesdd_(jobz, krank, krank, &r3[r3_offset], &ldr, &s[1], &work[1], &ldu, &
+ 	    r__[r_offset], &ldvt, &work[i__1 * i__1 + (*krank << 2) + 1], &
+ 	    lwork, &work[i__2 * i__2 + 1], &info, (ftnlen)1);
+ 

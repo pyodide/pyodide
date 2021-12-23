@@ -1,0 +1,48 @@
+diff --git a/scipy/linalg/src/id_dist/src/idd_sfft.c b/../../f2cfixes/idd_sfft.c
+index bdbc883..6eb3936 100644
+--- a/scipy/linalg/src/id_dist/src/idd_sfft.c
++++ b/../../f2cfixes/idd_sfft.c
+@@ -69,9 +69,8 @@ L2000:
+ /* Subroutine */ int idd_sffti__(integer *l, integer *ind, integer *n, 
+ 	doublecomplex *wsave)
+ {
+-    extern /* Subroutine */ int idd_sffti1__(integer *, integer *, 
+-	    doublecomplex *), idd_sffti2__(integer *, integer *, integer *, 
+-	    doublecomplex *);
++    extern /* Subroutine */ int idd_sffti1__(integer *, integer *, doublereal *);
++	extern int idd_sffti2__(integer *, integer *, integer *, doublecomplex *);
+ 
+ 
+ /*       initializes wsave for using routine idd_sfft. */
+@@ -161,8 +160,7 @@ L2000:
+ 
+ 
+ 
+-/* Subroutine */ int idd_sffti2__(integer *l, integer *ind, integer *n, 
+-	doublecomplex *wsave)
++/* Subroutine */ int idd_sffti2__(integer *l, integer *ind, integer *n, doublecomplex *wsave)
+ {
+     /* System generated locals */
+     integer i__1, i__2, i__3, i__4, i__5, i__6;
+@@ -308,9 +306,8 @@ L2000:
+ /* Subroutine */ int idd_sfft__(integer *l, integer *ind, integer *n, 
+ 	doublecomplex *wsave, doublereal *v)
+ {
+-    extern /* Subroutine */ int idd_sfft1__(integer *, integer *, doublereal *
+-	    , doublecomplex *), idd_sfft2__(integer *, integer *, integer *, 
+-	    doublereal *, doublecomplex *);
++    extern /* Subroutine */ int idd_sfft1__(integer *, integer *, doublereal *, doublereal *);
++	extern int idd_sfft2__(integer *, integer *, integer *, doublereal *, doublecomplex *);
+ 
+ 
+ /*       computes a subset of the entries of the DFT of v, */
+@@ -368,8 +365,7 @@ L2000:
+ 
+ 
+ 
+-/* Subroutine */ int idd_sfft1__(integer *ind, integer *n, doublereal *v, 
+-	doublereal *wsave)
++/* Subroutine */ int idd_sfft1__(integer *ind, integer *n, doublereal *v, doublereal *wsave)
+ {
+     /* System generated locals */
+     integer i__1;

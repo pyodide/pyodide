@@ -1,0 +1,12 @@
+diff --git a/scipy/linalg/src/id_dist/src/idz_house.c b/../../f2cfixes/idz_house.c
+index 4c791d6..1ca2bf7 100644
+--- a/scipy/linalg/src/id_dist/src/idz_house.c
++++ b/../../f2cfixes/idz_house.c
+@@ -26,6 +26,7 @@
+ 
+ 
+ 
++void d_cnjg(doublecomplex *, doublecomplex *);
+ 
+ /* Subroutine */ int idz_houseapp__(integer *n, doublecomplex *vn, 
+ 	doublecomplex *u, integer *ifrescal, doublereal *scal, doublecomplex *

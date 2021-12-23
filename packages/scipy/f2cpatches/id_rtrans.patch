@@ -1,0 +1,170 @@
+diff --git a/scipy/linalg/src/id_dist/src/id_rtrans.c b/../../f2cfixes/id_rtrans.c
+index a610663..2791c99 100644
+--- a/scipy/linalg/src/id_dist/src/id_rtrans.c
++++ b/../../f2cfixes/id_rtrans.c
+@@ -46,8 +46,8 @@
+ 	doublereal *w, integer *keep)
+ {
+     static integer ialbetas, lalbetas, iww, lww, iixs, lixs, ninire;
+-    extern /* Subroutine */ int idd_random_transf_init0__(integer *, integer *
+-	    , doublereal *, doublereal *);
++    extern /* Subroutine */ int 
++idd_random_transf_init0__(integer *, integer *, doublereal *, integer *);
+ 
+ 
+ /*       prepares and stores in array w the data used */
+@@ -114,8 +114,8 @@
+ {
+     static integer ialbetas, lalbetas, iww, lww, iixs, lixs, ninire, igammas, 
+ 	    lgammas;
+-    extern /* Subroutine */ int idz_random_transf_init0__(integer *, integer *
+-	    , doublereal *, doublereal *, doublereal *);
++    extern /* Subroutine */ int 
++idz_random_transf_init0__(integer *, integer *, doublereal *, doublecomplex *, integer *);
+ 
+ 
+ /*       prepares and stores in array w the data used */
+@@ -185,8 +185,8 @@
+ 	doublereal *w)
+ {
+     static integer ialbetas, n;
+-    extern /* Subroutine */ int idd_random_transf0__(integer *, doublereal *, 
+-	    doublereal *, integer *, doublereal *, doublereal *, doublereal *)
++    extern /* Subroutine */ int 
++idd_random_transf0__(integer *, doublereal *, doublereal *, integer *, doublereal *, doublereal *, integer *)
+ 	    ;
+     static integer iww, iixs, nsteps;
+ 
+@@ -230,13 +230,12 @@
+ 
+ 
+ 
+-/* Subroutine */ int idd_random_transf_inverse__(doublereal *x, doublereal *y,
+-	 doublereal *w)
++/* Subroutine */ int 
++idd_random_transf_inverse__(doublereal *x, doublereal *y,doublereal *w)
+ {
+     static integer ialbetas, n, iww, iixs;
+-    extern /* Subroutine */ int idd_random_transf0_inv__(integer *, 
+-	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
+-	     doublereal *);
++    extern /* Subroutine */ int 
++idd_random_transf0_inv__(integer *, doublereal *, doublereal *, integer *, doublereal *, doublereal *,integer *);
+     static integer nsteps;
+ 
+ 
+@@ -286,9 +285,8 @@
+ 	doublereal *w)
+ {
+     static integer ialbetas, n;
+-    extern /* Subroutine */ int idz_random_transf0__(integer *, doublecomplex 
+-	    *, doublecomplex *, integer *, doublereal *, doublereal *, 
+-	    doublereal *, doublereal *);
++    extern /* Subroutine */ int 
++idz_random_transf0__(integer *, doublecomplex *, doublecomplex *, integer *, doublecomplex *, doublereal *, doublecomplex *, integer *);
+     static integer iww, iixs, nsteps, igammas;
+ 
+ 
+@@ -336,9 +334,8 @@
+ 	doublecomplex *y, doublereal *w)
+ {
+     static integer ialbetas, n, iww, iixs, nsteps;
+-    extern /* Subroutine */ int idz_random_transf0_inv__(integer *, 
+-	    doublecomplex *, doublecomplex *, integer *, doublereal *, 
+-	    doublereal *, doublereal *, doublereal *);
++    extern /* Subroutine */ int 
++idz_random_transf0_inv__(integer *, doublecomplex *, doublecomplex *, integer *, doublecomplex *, doublereal *, doublecomplex *, integer *);
+     static integer igammas;
+ 
+ 
+@@ -385,9 +382,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idd_random_transf0_inv__(integer *nsteps, doublereal *x, 
+-	doublereal *y, integer *n, doublereal *w2, doublereal *albetas, 
+-	integer *iixs)
++/* Subroutine */ int 
++idd_random_transf0_inv__(integer *nsteps, doublereal *x, doublereal *y, integer *n, doublereal *w2, doublereal *albetas, integer *iixs)
+ {
+     /* System generated locals */
+     integer albetas_dim2, albetas_offset, iixs_dim1, iixs_offset, i__1;
+@@ -512,9 +508,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idz_random_transf0_inv__(integer *nsteps, doublecomplex *
+-	x, doublecomplex *y, integer *n, doublecomplex *w2, doublereal *
+-	albetas, doublecomplex *gammas, integer *iixs)
++/* Subroutine */ int 
++idz_random_transf0_inv__(integer *nsteps, doublecomplex *x, doublecomplex *y, integer *n, doublecomplex *w2, doublereal *albetas, doublecomplex *gammas, integer *iixs)
+ {
+     /* System generated locals */
+     integer gammas_dim1, gammas_offset, albetas_dim2, albetas_offset, 
+@@ -659,9 +654,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idd_random_transf0__(integer *nsteps, doublereal *x, 
+-	doublereal *y, integer *n, doublereal *w2, doublereal *albetas, 
+-	integer *iixs)
++/* Subroutine */ int 
++idd_random_transf0__(integer *nsteps, doublereal *x, doublereal *y, integer *n, doublereal *w2, doublereal *albetas, integer *iixs)
+ {
+     /* System generated locals */
+     integer albetas_dim2, albetas_offset, iixs_dim1, iixs_offset, i__1, i__2;
+@@ -775,16 +769,16 @@
+ 
+ 
+ 
+-/* Subroutine */ int idz_random_transf_init0__(integer *nsteps, integer *n, 
+-	doublereal *albetas, doublecomplex *gammas, integer *ixs)
++/* Subroutine */ int 
++idz_random_transf_init0__(integer *nsteps, integer *n, doublereal *albetas, doublecomplex *gammas, integer *ixs)
+ {
+     /* System generated locals */
+     integer albetas_dim2, albetas_offset, ixs_dim1, ixs_offset, gammas_dim1, 
+ 	    gammas_offset, i__1;
+ 
+     /* Local variables */
+-    extern /* Subroutine */ int idz_random_transf_init00__(integer *, 
+-	    doublereal *, doublecomplex *, integer *);
++    extern /* Subroutine */ int 
++idz_random_transf_init00__(integer *, doublereal *, doublereal *, integer *);
+     static integer ijk;
+ 
+ 
+@@ -820,8 +814,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idz_random_transf_init00__(integer *n, doublereal *
+-	albetas, doublereal *gammas, integer *ixs)
++/* Subroutine */ int 
++idz_random_transf_init00__(integer *n, doublereal *albetas, doublereal *gammas, integer *ixs)
+ {
+     /* System generated locals */
+     integer i__1;
+@@ -920,9 +914,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idz_random_transf0__(integer *nsteps, doublecomplex *x, 
+-	doublecomplex *y, integer *n, doublecomplex *w2, doublereal *albetas, 
+-	doublecomplex *gammas, integer *iixs)
++/* Subroutine */ int 
++idz_random_transf0__(integer *nsteps, doublecomplex *x, doublecomplex *y, integer *n, doublecomplex *w2, doublereal *albetas, doublecomplex *gammas, integer *iixs)
+ {
+     /* System generated locals */
+     integer gammas_dim1, gammas_offset, albetas_dim2, albetas_offset, 
+@@ -1067,8 +1060,8 @@
+ 
+ 
+ 
+-/* Subroutine */ int idd_random_transf_init0__(integer *nsteps, integer *n, 
+-	doublereal *albetas, integer *ixs)
++/* Subroutine */ int 
++idd_random_transf_init0__(integer *nsteps, integer *n, doublereal *albetas, integer *ixs)
+ {
+     /* System generated locals */
+     integer albetas_dim2, albetas_offset, ixs_dim1, ixs_offset, i__1;

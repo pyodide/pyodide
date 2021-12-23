@@ -1,0 +1,63 @@
+diff --git a/scipy/linalg/src/id_dist/src/idd_frm.c b/../../f2cfixes/idd_frm.c
+index 7af0f3f..7ef7475 100644
+--- a/scipy/linalg/src/id_dist/src/idd_frm.c
++++ b/../../f2cfixes/idd_frm.c
+@@ -51,10 +51,11 @@ static integer c__1 = 1;
+     extern /* Subroutine */ int idd_random_transf__(doublereal *, doublereal *
+ 	    , doublereal *);
+     static integer iw;
+-    extern /* Subroutine */ int idd_permute__(integer *, doublereal *, 
+-	    doublereal *, doublereal *), dfftf_(integer *, doublereal *, 
+-	    doublereal *), idd_subselect__(integer *, doublereal *, integer *,
+-	     doublereal *, doublereal *);
++    extern /* Subroutine */ 
++int idd_permute__(integer *, integer *, doublereal *, doublereal *);
++
++int dfftf_(integer *, doublereal *, doublereal *); 
++int idd_subselect__(integer *, integer *, integer *, doublereal *, doublereal *);
+ 
+ 
+ /*       transforms x into y via a composition */
+@@ -138,8 +139,7 @@ static integer c__1 = 1;
+     extern /* Subroutine */ int idd_random_transf__(doublereal *, doublereal *
+ 	    , doublereal *);
+     static integer iw;
+-    extern /* Subroutine */ int idd_subselect__(integer *, doublereal *, 
+-	    integer *, doublereal *, doublereal *);
++    extern /* Subroutine */ int idd_subselect__(integer *, integer *, integer *, doublereal *, doublereal *);
+ 
+ 
+ /*       transforms x into y via a composition */
+@@ -293,8 +293,7 @@ static integer c__1 = 1;
+ 
+ 
+ 
+-/* Subroutine */ int idd_permute__(integer *n, integer *ind, doublereal *x, 
+-	doublereal *y)
++/* Subroutine */ int idd_permute__(integer *n, integer *ind, doublereal *x, doublereal *y)
+ {
+     /* System generated locals */
+     integer i__1;
+@@ -336,8 +335,8 @@ static integer c__1 = 1;
+ 
+ 
+ 
+-/* Subroutine */ int idd_subselect__(integer *n, integer *ind, integer *m, 
+-	doublereal *x, doublereal *y)
++/* Subroutine */ 
++int idd_subselect__(integer *n, integer *ind, integer *m, doublereal *x, doublereal *y)
+ {
+     /* System generated locals */
+     integer i__1;
+@@ -505,8 +504,9 @@ static integer c__1 = 1;
+     static integer l2, ia, lw;
+     extern /* Subroutine */ int id_randperm__(integer *, doublereal *);
+     static integer keep;
+-    extern /* Subroutine */ int idd_copyints__(integer *, doublereal *, 
+-	    doublereal *), prinf_(char *, integer *, integer *, ftnlen), 
++    extern /* Subroutine */ 
++int idd_copyints__(integer *, integer *, integer *), 
++prinf_(char *, integer *, integer *, ftnlen), 
+ 	    idd_pairsamps__(integer *, integer *, integer *, integer *, 
+ 	    integer *, integer *);
+     static integer idummy, nsteps;

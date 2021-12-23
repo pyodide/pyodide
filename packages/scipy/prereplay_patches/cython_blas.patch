@@ -1,0 +1,13 @@
+diff --git a/scipy/linalg/cython_blas.c b/../../prereplay_patches/cython_blas.c
+index 45085f1..383e4a1 100644
+--- a/scipy/linalg/cython_blas.c
++++ b/../../prereplay_patches/cython_blas.c
+@@ -3170,7 +3170,7 @@ static int __pyx_f_5scipy_6linalg_11cython_blas_lsame(char *__pyx_v_ca, char *__
+  *     return out
+  * 
+  */
+-  F_FUNC(lsamewrp, LSAMEWRP)((&__pyx_v_out), __pyx_v_ca, __pyx_v_cb);
++  F_FUNC(lsamewrp, LSAMEWRP)((&__pyx_v_out), __pyx_v_ca, __pyx_v_cb, strlen(__pyx_v_ca), strlen(__pyx_v_cb));
+ 
+   /* "scipy/linalg/cython_blas.pyx":299
+  *     cdef bint out
