@@ -140,7 +140,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='*, no-numpy-dependents' make -C packages
+            PYODIDE_PACKAGES='numpy' make -C packages
             ccache -s
           environment:
             PYODIDE_JOBS: 5
@@ -203,7 +203,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='*' make -C packages
+            PYODIDE_PACKAGES='scipy' make -C packages
             ccache -s
           environment:
             PYODIDE_JOBS: 5
