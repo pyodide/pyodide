@@ -15,7 +15,6 @@ import sys
 from threading import Thread, Lock
 from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List, Any
-import os
 
 from . import common
 from .io import parse_package_config
@@ -225,23 +224,6 @@ def job_priority(pkg: BasePackage):
         return 1
 
 
-def print_with_progress_line(str, progress_line):
-    if not sys.stdout.isatty():
-        print(str)
-        return
-    twidth = os.get_terminal_size()[0]
-    print(" " * twidth, end="\r")
-    print(str)
-    if progress_line:
-        print(progress_line, end="\r")
-
-
-def get_progress_line(package_set):
-    if not package_set:
-        return None
-    return f"In progress: " + ", ".join(package_set.keys())
-
-
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
@@ -273,7 +255,6 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set = {}
 
     def builder(n):
         nonlocal queue_idx
@@ -282,28 +263,19 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             with thread_lock:
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
-            package_set[pkg.name] = None
-            msg = f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) building {pkg.name}"
-            print_with_progress_line(msg, get_progress_line(package_set))
-            t0 = perf_counter()
-            success = True
-            try:
-                import random
 
-                sleep(5 * random.random())
-                # pkg.build(outputdir, args)
+            print(f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) building {pkg.name}")
+            t0 = perf_counter()
+            try:
+                pkg.build(outputdir, args)
             except Exception as e:
                 built_queue.put(e)
-                success = False
                 return
-            finally:
-                del package_set[pkg.name]
-                status = "built" if success else "failed"
-                msg = (
-                    f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
-                    f"{status} {pkg.name} in {perf_counter() - t0:.2f} s"
-                )
-                print_with_progress_line(msg, get_progress_line(package_set))
+
+            print(
+                f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
+                f"built {pkg.name} in {perf_counter() - t0:.2f} s"
+            )
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
