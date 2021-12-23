@@ -174,7 +174,7 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
 
     for cur_name in lapack_names:
         code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
-    if f2c_output_name.endswith("_lapack_subroutine_wrappers.c"):
+    if f2c_output_name.endswith("_lapack_subroutine_wrappers.c") or f2c_output_name.endswith("wrap_dummy_g77_abi.c"):
         code = fix_lapack_subroutine_wrappers(code)
     with open(f2c_output_name, "w") as f:
         f.write(code)

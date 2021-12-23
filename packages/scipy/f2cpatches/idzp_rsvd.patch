@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idzp_rsvd.c b/../../f2cfixes/idzp_rsvd.c
+diff --git a/scipy/linalg/src/id_dist/src/idzp_rsvd.c b/src/packages/scipy/f2cpatches/idzp_rsvd.c
 index ea140ec..ed4e57a 100644
 --- a/scipy/linalg/src/id_dist/src/idzp_rsvd.c
-+++ b/../../f2cfixes/idzp_rsvd.c
++++ b/src/packages/scipy/f2cpatches/idzp_rsvd.c
 @@ -37,18 +37,16 @@
      integer i__1, i__2, i__3;
  

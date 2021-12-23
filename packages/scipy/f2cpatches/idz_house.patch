@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idz_house.c b/../../f2cfixes/idz_house.c
+diff --git a/scipy/linalg/src/id_dist/src/idz_house.c b/src/packages/scipy/f2cpatches/idz_house.c
 index 4c791d6..1ca2bf7 100644
 --- a/scipy/linalg/src/id_dist/src/idz_house.c
-+++ b/../../f2cfixes/idz_house.c
++++ b/src/packages/scipy/f2cpatches/idz_house.c
 @@ -26,6 +26,7 @@
  
  

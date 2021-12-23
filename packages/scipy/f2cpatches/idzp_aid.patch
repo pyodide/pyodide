@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idzp_aid.c b/../../f2cfixes/idzp_aid.c
+diff --git a/scipy/linalg/src/id_dist/src/idzp_aid.c b/src/packages/scipy/f2cpatches/idzp_aid.c
 index 40b3f24..d56b61f 100644
 --- a/scipy/linalg/src/id_dist/src/idzp_aid.c
-+++ b/../../f2cfixes/idzp_aid.c
++++ b/src/packages/scipy/f2cpatches/idzp_aid.c
 @@ -36,11 +36,9 @@
      integer a_dim1, a_offset;
  

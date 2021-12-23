@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/id_rtrans.c b/../../f2cfixes/id_rtrans.c
+diff --git a/scipy/linalg/src/id_dist/src/id_rtrans.c b/src/packages/scipy/f2cpatches/id_rtrans.c
 index a610663..2791c99 100644
 --- a/scipy/linalg/src/id_dist/src/id_rtrans.c
-+++ b/../../f2cfixes/id_rtrans.c
++++ b/src/packages/scipy/f2cpatches/id_rtrans.c
 @@ -46,8 +46,8 @@
  	doublereal *w, integer *keep)
  {

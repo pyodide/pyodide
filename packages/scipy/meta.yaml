@@ -36,8 +36,8 @@ build:
     -L$(NUMPY_LIB)
     -Wl,--fatal-warnings
   script: |
-    find scipy/linalg/ -name "*.*" | xargs sed -i '/sgeqrfp/d'
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
+    cat ../../lapack_extras/*.f >> scipy/_build_utils/src/wrap_dummy_g77_abi.f
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h

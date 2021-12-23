@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idd_sfft.c b/../../f2cfixes/idd_sfft.c
+diff --git a/scipy/linalg/src/id_dist/src/idd_sfft.c b/src/packages/scipy/f2cpatches/idd_sfft.c
 index bdbc883..6eb3936 100644
 --- a/scipy/linalg/src/id_dist/src/idd_sfft.c
-+++ b/../../f2cfixes/idd_sfft.c
++++ b/src/packages/scipy/f2cpatches/idd_sfft.c
 @@ -69,9 +69,8 @@ L2000:
  /* Subroutine */ int idd_sffti__(integer *l, integer *ind, integer *n, 
  	doublecomplex *wsave)

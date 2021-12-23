@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idz_id2svd.c b/../../f2cfixes/idz_id2svd.c
+diff --git a/scipy/linalg/src/id_dist/src/idz_id2svd.c b/src/packages/scipy/f2cpatches/idz_id2svd.c
 index e6cec1e..8ddcc74 100644
 --- a/scipy/linalg/src/id_dist/src/idz_id2svd.c
-+++ b/../../f2cfixes/idz_id2svd.c
++++ b/src/packages/scipy/f2cpatches/idz_id2svd.c
 @@ -34,12 +34,8 @@
  
      /* Local variables */

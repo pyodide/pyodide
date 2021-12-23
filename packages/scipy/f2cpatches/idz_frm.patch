@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idz_frm.c b/../../f2cfixes/idz_frm.c
+diff --git a/scipy/linalg/src/id_dist/src/idz_frm.c b/src/packages/scipy/f2cpatches/idz_frm.c
 index 1fff7d2..b3db66d 100644
 --- a/scipy/linalg/src/id_dist/src/idz_frm.c
-+++ b/../../f2cfixes/idz_frm.c
++++ b/src/packages/scipy/f2cpatches/idz_frm.c
 @@ -47,10 +47,10 @@ static integer c__1 = 1;
      extern /* Subroutine */ int idz_random_transf__(doublecomplex *, 
  	    doublecomplex *, doublecomplex *);

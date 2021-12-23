@@ -1,0 +1,42 @@
+From 61c4bd51acb968e0bfe166a388876ba9616f68d0 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 23 Dec 2021 08:28:14 -0800
+Subject: [PATCH] Delete sgeqrfp
+
+---
+ scipy/linalg/cython_lapack_signatures.txt | 1 -
+ scipy/linalg/lapack.py                    | 2 --
+ 2 files changed, 3 deletions(-)
+
+diff --git a/scipy/linalg/cython_lapack_signatures.txt b/scipy/linalg/cython_lapack_signatures.txt
+index 05a4d30e9..0770fc7af 100644
+--- a/scipy/linalg/cython_lapack_signatures.txt
++++ b/scipy/linalg/cython_lapack_signatures.txt
+@@ -800,7 +800,6 @@ void sgeqp3(int *m, int *n, s *a, int *lda, int *jpvt, s *tau, s *work, int *lwo
+ void sgeqr2(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info)
+ void sgeqr2p(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info)
+ void sgeqrf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info)
+-void sgeqrfp(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info)
+ void sgeqrt(int *m, int *n, int *nb, s *a, int *lda, s *t, int *ldt, s *work, int *info)
+ void sgeqrt2(int *m, int *n, s *a, int *lda, s *t, int *ldt, int *info)
+ void sgeqrt3(int *m, int *n, s *a, int *lda, s *t, int *ldt, int *info)
+diff --git a/scipy/linalg/lapack.py b/scipy/linalg/lapack.py
+index 7cf46eb05..9498e2882 100644
+--- a/scipy/linalg/lapack.py
++++ b/scipy/linalg/lapack.py
+@@ -171,12 +171,10 @@ All functions
+    cgeqrf_lwork
+    zgeqrf_lwork
+ 
+-   sgeqrfp
+    dgeqrfp
+    cgeqrfp
+    zgeqrfp
+ 
+-   sgeqrfp_lwork
+    dgeqrfp_lwork
+    cgeqrfp_lwork
+    zgeqrfp_lwork
+-- 
+2.25.1
+

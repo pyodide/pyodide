@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/iddr_asvd.c b/../../f2cfixes/iddr_asvd.c
+diff --git a/scipy/linalg/src/id_dist/src/iddr_asvd.c b/src/packages/scipy/f2cpatches/iddr_asvd.c
 index 8f8095d..424dd83 100644
 --- a/scipy/linalg/src/id_dist/src/iddr_asvd.c
-+++ b/../../f2cfixes/iddr_asvd.c
++++ b/src/packages/scipy/f2cpatches/iddr_asvd.c
 @@ -32,10 +32,8 @@
      integer a_dim1, a_offset, u_dim1, u_offset, v_dim1, v_offset, i__1;
  

@@ -1,832 +1,981 @@
-17c17,18
-< /* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans)
----
-> /* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans, ftnlen 
-> 	ret_len)
-43c44,46
-< /* Subroutine */ int clangbwrp_(real *ret, char *norm, integer *n, integer * kl, integer *ku, complex *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int clangbwrp_(real *ret, char *norm, integer *n, integer *
-> 	kl, integer *ku, complex *ab, integer *ldab, real *work, ftnlen 
-> 	norm_len)
-45c48
-<     extern doublereal wclangb_(char *, integer *, integer *, integer *, 
----
->     extern doublereal clangb_(char *, integer *, integer *, integer *, 
-48c51
-<     *ret = wclangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
----
->     *ret = clangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
-52c55,56
-< /* Subroutine */ int clangewrp_(real *ret, char *norm, integer *m, integer *n, complex *a, integer *lda, real *work)
----
-> /* Subroutine */ int clangewrp_(real *ret, char *norm, integer *m, integer *n,
-> 	 complex *a, integer *lda, real *work, ftnlen norm_len)
-54c58
-<     extern doublereal wclange_(char *, integer *, integer *, complex *, 
----
->     extern doublereal clange_(char *, integer *, integer *, complex *, 
-57c61
-<     *ret = wclange_(norm, m, n, a, lda, work, (ftnlen)1);
----
->     *ret = clange_(norm, m, n, a, lda, work, (ftnlen)1);
-61c65,66
-< /* Subroutine */ int clangtwrp_(real *ret, char *norm, integer *n, complex * dl, complex *d__, complex *du)
----
-> /* Subroutine */ int clangtwrp_(real *ret, char *norm, integer *n, complex *
-> 	dl, complex *d__, complex *du, ftnlen norm_len)
-63c68
-<     extern doublereal wclangt_(char *, integer *, complex *, complex *, 
----
->     extern doublereal clangt_(char *, integer *, complex *, complex *, 
-66c71
-<     *ret = wclangt_(norm, n, dl, d__, du, (ftnlen)1);
----
->     *ret = clangt_(norm, n, dl, d__, du, (ftnlen)1);
-70c75,77
-< /* Subroutine */ int clanhbwrp_(real *ret, char *norm, char *uplo, integer *n, integer *k, complex *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int clanhbwrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 integer *k, complex *ab, integer *ldab, real *work, ftnlen norm_len, 
-> 	ftnlen uplo_len)
-72c79
-<     extern doublereal wclanhb_(char *, char *, integer *, integer *, complex *,
----
->     extern doublereal clanhb_(char *, char *, integer *, integer *, complex *,
-75c82
-<     *ret = wclanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = clanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
-79c86,88
-< /* Subroutine */ int clanhewrp_(real *ret, char *norm, char *uplo, integer *n, complex *a, integer *lda, real *work)
----
-> /* Subroutine */ int clanhewrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 complex *a, integer *lda, real *work, ftnlen norm_len, ftnlen 
-> 	uplo_len)
-81c90
-<     extern doublereal wclanhe_(char *, char *, integer *, complex *, integer *,
----
->     extern doublereal clanhe_(char *, char *, integer *, complex *, integer *,
-84c93
-<     *ret = wclanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = clanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
-88c97,99
-< /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work)
----
-> /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
-> 	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen 
-> 	transr_len, ftnlen uplo_len)
-102c113,114
-< /* Subroutine */ int clanhpwrp_(real *ret, char *norm, char *uplo, integer *n, complex *ap, real *work)
----
-> /* Subroutine */ int clanhpwrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 complex *ap, real *work, ftnlen norm_len, ftnlen uplo_len)
-104c116
-<     extern doublereal wclanhp_(char *, char *, integer *, complex *, real *, 
----
->     extern doublereal clanhp_(char *, char *, integer *, complex *, real *, 
-107c119
-<     *ret = wclanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = clanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
-111c123,124
-< /* Subroutine */ int clanhswrp_(real *ret, char *norm, integer *n, complex *a, integer *lda, real *work)
----
-> /* Subroutine */ int clanhswrp_(real *ret, char *norm, integer *n, complex *a,
-> 	 integer *lda, real *work, ftnlen norm_len)
-113c126
-<     extern doublereal wclanhs_(char *, integer *, complex *, integer *, real *,
----
->     extern doublereal clanhs_(char *, integer *, complex *, integer *, real *,
-116c129
-<     *ret = wclanhs_(norm, n, a, lda, work, (ftnlen)1);
----
->     *ret = clanhs_(norm, n, a, lda, work, (ftnlen)1);
-120c133,134
-< /* Subroutine */ int clanhtwrp_(real *ret, char *norm, integer *n, real *d__, complex *e)
----
-> /* Subroutine */ int clanhtwrp_(real *ret, char *norm, integer *n, real *d__, 
-> 	complex *e, ftnlen norm_len)
-122c136
-<     extern doublereal wclanht_(char *, integer *, real *, complex *, ftnlen);
----
->     extern doublereal clanht_(char *, integer *, real *, complex *, ftnlen);
-124c138
-<     *ret = wclanht_(norm, n, d__, e, (ftnlen)1);
----
->     *ret = clanht_(norm, n, d__, e, (ftnlen)1);
-128c142,144
-< /* Subroutine */ int clansbwrp_(real *ret, char *norm, char *uplo, integer *n, integer *k, complex *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int clansbwrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 integer *k, complex *ab, integer *ldab, real *work, ftnlen norm_len, 
-> 	ftnlen uplo_len)
-130c146
-<     extern doublereal wclansb_(char *, char *, integer *, integer *, complex *,
----
->     extern doublereal clansb_(char *, char *, integer *, integer *, complex *,
-133c149
-<     *ret = wclansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = clansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
-137c153,154
-< /* Subroutine */ int clanspwrp_(real *ret, char *norm, char *uplo, integer *n, complex *ap, real *work)
----
-> /* Subroutine */ int clanspwrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 complex *ap, real *work, ftnlen norm_len, ftnlen uplo_len)
-139c156
-<     extern doublereal wclansp_(char *, char *, integer *, complex *, real *, 
----
->     extern doublereal clansp_(char *, char *, integer *, complex *, real *, 
-142c159
-<     *ret = wclansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = clansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
-146c163,165
-< /* Subroutine */ int clansywrp_(real *ret, char *norm, char *uplo, integer *n, complex *a, integer *lda, real *work)
----
-> /* Subroutine */ int clansywrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 complex *a, integer *lda, real *work, ftnlen norm_len, ftnlen 
-> 	uplo_len)
-148c167
-<     extern doublereal wclansy_(char *, char *, integer *, complex *, integer *,
----
->     extern doublereal clansy_(char *, char *, integer *, complex *, integer *,
-151c170
-<     *ret = wclansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = clansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
-155c174,176
-< /* Subroutine */ int clantbwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, complex *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int clantbwrp_(real *ret, char *norm, char *uplo, char *diag,
-> 	 integer *n, integer *k, complex *ab, integer *ldab, real *work, 
-> 	ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
-157c178
-<     extern doublereal wclantb_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal clantb_(char *, char *, char *, integer *, integer *, 
-160c181
-<     *ret = wclantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
----
->     *ret = clantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
-165c186,188
-< /* Subroutine */ int clantpwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, complex *ap, real *work)
----
-> /* Subroutine */ int clantpwrp_(real *ret, char *norm, char *uplo, char *diag,
-> 	 integer *n, complex *ap, real *work, ftnlen norm_len, ftnlen 
-> 	uplo_len, ftnlen diag_len)
-167c190
-<     extern doublereal wclantp_(char *, char *, char *, integer *, complex *, 
----
->     extern doublereal clantp_(char *, char *, char *, integer *, complex *, 
-170c193
-<     *ret = wclantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
----
->     *ret = clantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
-175c198,200
-< /* Subroutine */ int clantrwrp_(real *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, complex *a, integer *lda, real *work)
----
-> /* Subroutine */ int clantrwrp_(real *ret, char *norm, char *uplo, char *diag,
-> 	 integer *m, integer *n, complex *a, integer *lda, real *work, ftnlen 
-> 	norm_len, ftnlen uplo_len, ftnlen diag_len)
-177c202
-<     extern doublereal wclantr_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal clantr_(char *, char *, char *, integer *, integer *, 
-180c205
-<     *ret = wclantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
----
->     *ret = clantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
-193c218,219
-< /* Subroutine */ int dlamchwrp_(doublereal *ret, char *cmach)
----
-> /* Subroutine */ int dlamchwrp_(doublereal *ret, char *cmach, ftnlen 
-> 	cmach_len)
-195c221
-<     extern doublereal wdlamch_(char *, ftnlen);
----
->     extern doublereal dlamch_(char *, ftnlen);
-197c223
-<     *ret = wdlamch_(cmach, (ftnlen)1);
----
->     *ret = dlamch_(cmach, (ftnlen)1);
-201c227,228
-< /* Subroutine */ int dlanegwrp_(integer *ret, integer *n, doublereal *d__, doublereal *lld, doublereal *sigma, doublereal *pivmin, integer *r__)
----
-> /* Subroutine */ int dlanegwrp_(integer *ret, integer *n, doublereal *d__, 
-> 	doublereal *lld, doublereal *sigma, doublereal *pivmin, integer *r__)
-210c237,239
-< /* Subroutine */ int dlangbwrp_(doublereal *ret, char *norm, integer *n, integer *kl, integer *ku, doublereal *ab, integer *ldab, doublereal * work)
----
-> /* Subroutine */ int dlangbwrp_(doublereal *ret, char *norm, integer *n, 
-> 	integer *kl, integer *ku, doublereal *ab, integer *ldab, doublereal *
-> 	work, ftnlen norm_len)
-212c241
-<     extern doublereal wdlangb_(char *, integer *, integer *, integer *, 
----
->     extern doublereal dlangb_(char *, integer *, integer *, integer *, 
-215c244
-<     *ret = wdlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
----
->     *ret = dlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
-219c248,250
-< /* Subroutine */ int dlangewrp_(doublereal *ret, char *norm, integer *m, integer *n, doublereal *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int dlangewrp_(doublereal *ret, char *norm, integer *m, 
-> 	integer *n, doublereal *a, integer *lda, doublereal *work, ftnlen 
-> 	norm_len)
-221c252
-<     extern doublereal wdlange_(char *, integer *, integer *, doublereal *, 
----
->     extern doublereal dlange_(char *, integer *, integer *, doublereal *, 
-224c255
-<     *ret = wdlange_(norm, m, n, a, lda, work, (ftnlen)1);
----
->     *ret = dlange_(norm, m, n, a, lda, work, (ftnlen)1);
-228c259,260
-< /* Subroutine */ int dlangtwrp_(doublereal *ret, char *norm, integer *n, doublereal *dl, doublereal *d__, doublereal *du)
----
-> /* Subroutine */ int dlangtwrp_(doublereal *ret, char *norm, integer *n, 
-> 	doublereal *dl, doublereal *d__, doublereal *du, ftnlen norm_len)
-230c262
-<     extern doublereal wdlangt_(char *, integer *, doublereal *, doublereal *, 
----
->     extern doublereal dlangt_(char *, integer *, doublereal *, doublereal *, 
-233c265
-<     *ret = wdlangt_(norm, n, dl, d__, du, (ftnlen)1);
----
->     *ret = dlangt_(norm, n, dl, d__, du, (ftnlen)1);
-237c269,270
-< /* Subroutine */ int dlanhswrp_(doublereal *ret, char *norm, integer *n, doublereal *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int dlanhswrp_(doublereal *ret, char *norm, integer *n, 
-> 	doublereal *a, integer *lda, doublereal *work, ftnlen norm_len)
-239c272
-<     extern doublereal wdlanhs_(char *, integer *, doublereal *, integer *, 
----
->     extern doublereal dlanhs_(char *, integer *, doublereal *, integer *, 
-242c275
-<     *ret = wdlanhs_(norm, n, a, lda, work, (ftnlen)1);
----
->     *ret = dlanhs_(norm, n, a, lda, work, (ftnlen)1);
-246c279,281
-< /* Subroutine */ int dlansbwrp_(doublereal *ret, char *norm, char *uplo, integer *n, integer *k, doublereal *ab, integer *ldab, doublereal * work)
----
-> /* Subroutine */ int dlansbwrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, integer *k, doublereal *ab, integer *ldab, doublereal *
-> 	work, ftnlen norm_len, ftnlen uplo_len)
-248c283
-<     extern doublereal wdlansb_(char *, char *, integer *, integer *, 
----
->     extern doublereal dlansb_(char *, char *, integer *, integer *, 
-251c286
-<     *ret = wdlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = dlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
-255c290,292
-< /* Subroutine */ int dlansfwrp_(doublereal *ret, char *norm, char *transr, char *uplo, integer *n, doublereal *a, doublereal *work)
----
-> /* Subroutine */ int dlansfwrp_(doublereal *ret, char *norm, char *transr, 
-> 	char *uplo, integer *n, doublereal *a, doublereal *work, ftnlen 
-> 	norm_len, ftnlen transr_len, ftnlen uplo_len)
-269c306,308
-< /* Subroutine */ int dlanspwrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublereal *ap, doublereal *work)
----
-> /* Subroutine */ int dlanspwrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, doublereal *ap, doublereal *work, ftnlen norm_len, ftnlen 
-> 	uplo_len)
-271c310
-<     extern doublereal wdlansp_(char *, char *, integer *, doublereal *, 
----
->     extern doublereal dlansp_(char *, char *, integer *, doublereal *, 
-274c313
-<     *ret = wdlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = dlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
-278c317,318
-< /* Subroutine */ int dlanstwrp_(doublereal *ret, char *norm, integer *n, doublereal *d__, doublereal *e)
----
-> /* Subroutine */ int dlanstwrp_(doublereal *ret, char *norm, integer *n, 
-> 	doublereal *d__, doublereal *e, ftnlen norm_len)
-280c320
-<     extern doublereal wdlanst_(char *, integer *, doublereal *, doublereal *, 
----
->     extern doublereal dlanst_(char *, integer *, doublereal *, doublereal *, 
-283c323
-<     *ret = wdlanst_(norm, n, d__, e, (ftnlen)1);
----
->     *ret = dlanst_(norm, n, d__, e, (ftnlen)1);
-287c327,329
-< /* Subroutine */ int dlansywrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublereal *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int dlansywrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, doublereal *a, integer *lda, doublereal *work, ftnlen 
-> 	norm_len, ftnlen uplo_len)
-289c331
-<     extern doublereal wdlansy_(char *, char *, integer *, doublereal *, 
----
->     extern doublereal dlansy_(char *, char *, integer *, doublereal *, 
-292c334
-<     *ret = wdlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = dlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
-296c338,340
-< /* Subroutine */ int dlantbwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, doublereal *ab, integer *ldab, doublereal *work)
----
-> /* Subroutine */ int dlantbwrp_(doublereal *ret, char *norm, char *uplo, char 
-> 	*diag, integer *n, integer *k, doublereal *ab, integer *ldab, 
-> 	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
-298c342
-<     extern doublereal wdlantb_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal dlantb_(char *, char *, char *, integer *, integer *, 
-301c345
-<     *ret = wdlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
----
->     *ret = dlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
-306c350,352
-< /* Subroutine */ int dlantpwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, doublereal *ap, doublereal *work)
----
-> /* Subroutine */ int dlantpwrp_(doublereal *ret, char *norm, char *uplo, char 
-> 	*diag, integer *n, doublereal *ap, doublereal *work, ftnlen norm_len, 
-> 	ftnlen uplo_len, ftnlen diag_len)
-308c354
-<     extern doublereal wdlantp_(char *, char *, char *, integer *, doublereal *,
----
->     extern doublereal dlantp_(char *, char *, char *, integer *, doublereal *,
-311c357
-<     *ret = wdlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
----
->     *ret = dlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
-316c362,364
-< /* Subroutine */ int dlantrwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, doublereal *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int dlantrwrp_(doublereal *ret, char *norm, char *uplo, char 
-> 	*diag, integer *m, integer *n, doublereal *a, integer *lda, 
-> 	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
-318c366
-<     extern doublereal wdlantr_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal dlantr_(char *, char *, char *, integer *, integer *, 
-321c369
-<     *ret = wdlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
----
->     *ret = dlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
-334c382,383
-< /* Subroutine */ int dlapy3wrp_(doublereal *ret, doublereal *x, doublereal *y, doublereal *z__)
----
-> /* Subroutine */ int dlapy3wrp_(doublereal *ret, doublereal *x, doublereal *y,
-> 	 doublereal *z__)
-342c391,392
-< /* Subroutine */ int dzsum1wrp_(doublereal *ret, integer *n, doublecomplex * cx, integer *incx)
----
-> /* Subroutine */ int dzsum1wrp_(doublereal *ret, integer *n, doublecomplex *
-> 	cx, integer *incx)
-354c404,405
-< /* Subroutine */ int icmax1wrp_(integer *ret, integer *n, complex *cx, integer *incx)
----
-> /* Subroutine */ int icmax1wrp_(integer *ret, integer *n, complex *cx, 
-> 	integer *incx)
-366c417,418
-< /* Subroutine */ int ieeeckwrp_(integer *ret, integer *ispec, real *zero, real *one)
----
-> /* Subroutine */ int ieeeckwrp_(integer *ret, integer *ispec, real *zero, 
-> 	real *one)
-374c426,427
-< /* Subroutine */ int ilaclcwrp_(integer *ret, integer *m, integer *n, complex *a, integer *lda)
----
-> /* Subroutine */ int ilaclcwrp_(integer *ret, integer *m, integer *n, complex 
-> 	*a, integer *lda)
-382c435,436
-< /* Subroutine */ int ilaclrwrp_(integer *ret, integer *m, integer *n, complex *a, integer *lda)
----
-> /* Subroutine */ int ilaclrwrp_(integer *ret, integer *m, integer *n, complex 
-> 	*a, integer *lda)
-390c444
-< /* Subroutine */ int iladiagwrp_(integer *ret, char *diag)
----
-> /* Subroutine */ int iladiagwrp_(integer *ret, char *diag, ftnlen diag_len)
-398c452,453
-< /* Subroutine */ int iladlcwrp_(integer *ret, integer *m, integer *n, doublereal *a, integer *lda)
----
-> /* Subroutine */ int iladlcwrp_(integer *ret, integer *m, integer *n, 
-> 	doublereal *a, integer *lda)
-406c461,462
-< /* Subroutine */ int iladlrwrp_(integer *ret, integer *m, integer *n, doublereal *a, integer *lda)
----
-> /* Subroutine */ int iladlrwrp_(integer *ret, integer *m, integer *n, 
-> 	doublereal *a, integer *lda)
-414c470
-< /* Subroutine */ int ilaprecwrp_(integer *ret, char *prec)
----
-> /* Subroutine */ int ilaprecwrp_(integer *ret, char *prec, ftnlen prec_len)
-422c478,479
-< /* Subroutine */ int ilaslcwrp_(integer *ret, integer *m, integer *n, real *a, integer *lda)
----
-> /* Subroutine */ int ilaslcwrp_(integer *ret, integer *m, integer *n, real *a,
-> 	 integer *lda)
-430c487,488
-< /* Subroutine */ int ilaslrwrp_(integer *ret, integer *m, integer *n, real *a, integer *lda)
----
-> /* Subroutine */ int ilaslrwrp_(integer *ret, integer *m, integer *n, real *a,
-> 	 integer *lda)
-438c496
-< /* Subroutine */ int ilatranswrp_(integer *ret, char *trans)
----
-> /* Subroutine */ int ilatranswrp_(integer *ret, char *trans, ftnlen trans_len)
-446c504
-< /* Subroutine */ int ilauplowrp_(integer *ret, char *uplo)
----
-> /* Subroutine */ int ilauplowrp_(integer *ret, char *uplo, ftnlen uplo_len)
-454c512,513
-< /* Subroutine */ int ilazlcwrp_(integer *ret, integer *m, integer *n, doublecomplex *a, integer *lda)
----
-> /* Subroutine */ int ilazlcwrp_(integer *ret, integer *m, integer *n, 
-> 	doublecomplex *a, integer *lda)
-462c521,522
-< /* Subroutine */ int ilazlrwrp_(integer *ret, integer *m, integer *n, doublecomplex *a, integer *lda)
----
-> /* Subroutine */ int ilazlrwrp_(integer *ret, integer *m, integer *n, 
-> 	doublecomplex *a, integer *lda)
-470c530,531
-< /* Subroutine */ int izmax1wrp_(integer *ret, integer *n, doublecomplex *cx, integer *incx)
----
-> /* Subroutine */ int izmax1wrp_(integer *ret, integer *n, doublecomplex *cx, 
-> 	integer *incx)
-482c543,544
-< /* Subroutine */ int scsum1wrp_(real *ret, integer *n, complex *cx, integer * incx)
----
-> /* Subroutine */ int scsum1wrp_(real *ret, integer *n, complex *cx, integer *
-> 	incx)
-494c556
-< /* Subroutine */ int slamchwrp_(real *ret, char *cmach)
----
-> /* Subroutine */ int slamchwrp_(real *ret, char *cmach, ftnlen cmach_len)
-496c558
-<     extern doublereal wslamch_(char *, ftnlen);
----
->     extern doublereal slamch_(char *, ftnlen);
-498c560
-<     *ret = wslamch_(cmach, (ftnlen)1);
----
->     *ret = slamch_(cmach, (ftnlen)1);
-502c564,565
-< /* Subroutine */ int slangbwrp_(real *ret, char *norm, integer *n, integer * kl, integer *ku, real *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int slangbwrp_(real *ret, char *norm, integer *n, integer *
-> 	kl, integer *ku, real *ab, integer *ldab, real *work, ftnlen norm_len)
-504c567
-<     extern doublereal wslangb_(char *, integer *, integer *, integer *, real *,
----
->     extern doublereal slangb_(char *, integer *, integer *, integer *, real *,
-507c570
-<     *ret = wslangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
----
->     *ret = slangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
-511c574,575
-< /* Subroutine */ int slangewrp_(real *ret, char *norm, integer *m, integer *n, real *a, integer *lda, real *work)
----
-> /* Subroutine */ int slangewrp_(real *ret, char *norm, integer *m, integer *n,
-> 	 real *a, integer *lda, real *work, ftnlen norm_len)
-513c577
-<     extern doublereal wslange_(char *, integer *, integer *, real *, integer *,
----
->     extern doublereal slange_(char *, integer *, integer *, real *, integer *,
-516c580
-<     *ret = wslange_(norm, m, n, a, lda, work, (ftnlen)1);
----
->     *ret = slange_(norm, m, n, a, lda, work, (ftnlen)1);
-520c584,585
-< /* Subroutine */ int slangtwrp_(real *ret, char *norm, integer *n, real *dl, real *d__, real *du)
----
-> /* Subroutine */ int slangtwrp_(real *ret, char *norm, integer *n, real *dl, 
-> 	real *d__, real *du, ftnlen norm_len)
-522c587
-<     extern doublereal wslangt_(char *, integer *, real *, real *, real *, 
----
->     extern doublereal slangt_(char *, integer *, real *, real *, real *, 
-525c590
-<     *ret = wslangt_(norm, n, dl, d__, du, (ftnlen)1);
----
->     *ret = slangt_(norm, n, dl, d__, du, (ftnlen)1);
-529c594,595
-< /* Subroutine */ int slanhswrp_(real *ret, char *norm, integer *n, real *a, integer *lda, real *work)
----
-> /* Subroutine */ int slanhswrp_(real *ret, char *norm, integer *n, real *a, 
-> 	integer *lda, real *work, ftnlen norm_len)
-531c597
-<     extern doublereal wslanhs_(char *, integer *, real *, integer *, real *, 
----
->     extern doublereal slanhs_(char *, integer *, real *, integer *, real *, 
-534c600
-<     *ret = wslanhs_(norm, n, a, lda, work, (ftnlen)1);
----
->     *ret = slanhs_(norm, n, a, lda, work, (ftnlen)1);
-538c604,606
-< /* Subroutine */ int slansbwrp_(real *ret, char *norm, char *uplo, integer *n, integer *k, real *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int slansbwrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 integer *k, real *ab, integer *ldab, real *work, ftnlen norm_len, 
-> 	ftnlen uplo_len)
-540c608
-<     extern doublereal wslansb_(char *, char *, integer *, integer *, real *, 
----
->     extern doublereal slansb_(char *, char *, integer *, integer *, real *, 
-543c611
-<     *ret = wslansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = slansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
-547c615,617
-< /* Subroutine */ int slansfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, real *a, real *work)
----
-> /* Subroutine */ int slansfwrp_(real *ret, char *norm, char *transr, char *
-> 	uplo, integer *n, real *a, real *work, ftnlen norm_len, ftnlen 
-> 	transr_len, ftnlen uplo_len)
-561c631,632
-< /* Subroutine */ int slanspwrp_(real *ret, char *norm, char *uplo, integer *n, real *ap, real *work)
----
-> /* Subroutine */ int slanspwrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 real *ap, real *work, ftnlen norm_len, ftnlen uplo_len)
-563c634
-<     extern doublereal wslansp_(char *, char *, integer *, real *, real *, 
----
->     extern doublereal slansp_(char *, char *, integer *, real *, real *, 
-566c637
-<     *ret = wslansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = slansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
-570c641,642
-< /* Subroutine */ int slanstwrp_(real *ret, char *norm, integer *n, real *d__, real *e)
----
-> /* Subroutine */ int slanstwrp_(real *ret, char *norm, integer *n, real *d__, 
-> 	real *e, ftnlen norm_len)
-572c644
-<     extern doublereal wslanst_(char *, integer *, real *, real *, ftnlen);
----
->     extern doublereal slanst_(char *, integer *, real *, real *, ftnlen);
-574c646
-<     *ret = wslanst_(norm, n, d__, e, (ftnlen)1);
----
->     *ret = slanst_(norm, n, d__, e, (ftnlen)1);
-578c650,651
-< /* Subroutine */ int slansywrp_(real *ret, char *norm, char *uplo, integer *n, real *a, integer *lda, real *work)
----
-> /* Subroutine */ int slansywrp_(real *ret, char *norm, char *uplo, integer *n,
-> 	 real *a, integer *lda, real *work, ftnlen norm_len, ftnlen uplo_len)
-580c653
-<     extern doublereal wslansy_(char *, char *, integer *, real *, integer *, 
----
->     extern doublereal slansy_(char *, char *, integer *, real *, integer *, 
-583c656
-<     *ret = wslansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = slansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
-587c660,662
-< /* Subroutine */ int slantbwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, real *ab, integer *ldab, real *work)
----
-> /* Subroutine */ int slantbwrp_(real *ret, char *norm, char *uplo, char *diag,
-> 	 integer *n, integer *k, real *ab, integer *ldab, real *work, ftnlen 
-> 	norm_len, ftnlen uplo_len, ftnlen diag_len)
-589c664
-<     extern doublereal wslantb_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal slantb_(char *, char *, char *, integer *, integer *, 
-592c667
-<     *ret = wslantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
----
->     *ret = slantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
-597c672,674
-< /* Subroutine */ int slantpwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, real *ap, real *work)
----
-> /* Subroutine */ int slantpwrp_(real *ret, char *norm, char *uplo, char *diag,
-> 	 integer *n, real *ap, real *work, ftnlen norm_len, ftnlen uplo_len, 
-> 	ftnlen diag_len)
-599c676
-<     extern doublereal wslantp_(char *, char *, char *, integer *, real *, real 
----
->     extern doublereal slantp_(char *, char *, char *, integer *, real *, real 
-602c679
-<     *ret = wslantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
----
->     *ret = slantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
-607c684,686
-< /* Subroutine */ int slantrwrp_(real *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, real *a, integer *lda, real *work)
----
-> /* Subroutine */ int slantrwrp_(real *ret, char *norm, char *uplo, char *diag,
-> 	 integer *m, integer *n, real *a, integer *lda, real *work, ftnlen 
-> 	norm_len, ftnlen uplo_len, ftnlen diag_len)
-609c688
-<     extern doublereal wslantr_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal slantr_(char *, char *, char *, integer *, integer *, 
-612c691
-<     *ret = wslantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
----
->     *ret = slantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
-633c712,713
-< /* Subroutine */ int zladivwrp_(doublecomplex *ret, doublecomplex *x, doublecomplex *y)
----
-> /* Subroutine */ int zladivwrp_(doublecomplex *ret, doublecomplex *x, 
-> 	doublecomplex *y)
-647c727,729
-< /* Subroutine */ int zlangbwrp_(doublereal *ret, char *norm, integer *n, integer *kl, integer *ku, doublecomplex *ab, integer *ldab, doublereal *work)
----
-> /* Subroutine */ int zlangbwrp_(doublereal *ret, char *norm, integer *n, 
-> 	integer *kl, integer *ku, doublecomplex *ab, integer *ldab, 
-> 	doublereal *work, ftnlen norm_len)
-649c731
-<     extern doublereal wzlangb_(char *, integer *, integer *, integer *, 
----
->     extern doublereal zlangb_(char *, integer *, integer *, integer *, 
-652c734
-<     *ret = wzlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
----
->     *ret = zlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
-656c738,740
-< /* Subroutine */ int zlangewrp_(doublereal *ret, char *norm, integer *m, integer *n, doublecomplex *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int zlangewrp_(doublereal *ret, char *norm, integer *m, 
-> 	integer *n, doublecomplex *a, integer *lda, doublereal *work, ftnlen 
-> 	norm_len)
-658c742
-<     extern doublereal wzlange_(char *, integer *, integer *, doublecomplex *, 
----
->     extern doublereal zlange_(char *, integer *, integer *, doublecomplex *, 
-661c745
-<     *ret = wzlange_(norm, m, n, a, lda, work, (ftnlen)1);
----
->     *ret = zlange_(norm, m, n, a, lda, work, (ftnlen)1);
-665c749,751
-< /* Subroutine */ int zlangtwrp_(doublereal *ret, char *norm, integer *n, doublecomplex *dl, doublecomplex *d__, doublecomplex *du)
----
-> /* Subroutine */ int zlangtwrp_(doublereal *ret, char *norm, integer *n, 
-> 	doublecomplex *dl, doublecomplex *d__, doublecomplex *du, ftnlen 
-> 	norm_len)
-667c753
-<     extern doublereal wzlangt_(char *, integer *, doublecomplex *, 
----
->     extern doublereal zlangt_(char *, integer *, doublecomplex *, 
-670c756
-<     *ret = wzlangt_(norm, n, dl, d__, du, (ftnlen)1);
----
->     *ret = zlangt_(norm, n, dl, d__, du, (ftnlen)1);
-674c760,762
-< /* Subroutine */ int zlanhbwrp_(doublereal *ret, char *norm, char *uplo, integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal * work)
----
-> /* Subroutine */ int zlanhbwrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal *
-> 	work, ftnlen norm_len, ftnlen uplo_len)
-676c764
-<     extern doublereal wzlanhb_(char *, char *, integer *, integer *, 
----
->     extern doublereal zlanhb_(char *, char *, integer *, integer *, 
-679c767
-<     *ret = wzlanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = zlanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
-683c771,773
-< /* Subroutine */ int zlanhewrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int zlanhewrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, doublecomplex *a, integer *lda, doublereal *work, ftnlen 
-> 	norm_len, ftnlen uplo_len)
-685c775
-<     extern doublereal wzlanhe_(char *, char *, integer *, doublecomplex *, 
----
->     extern doublereal zlanhe_(char *, char *, integer *, doublecomplex *, 
-688c778
-<     *ret = wzlanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = zlanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
-692c782,784
-< /* Subroutine */ int zlanhfwrp_(doublereal *ret, char *norm, char *transr, char *uplo, integer *n, doublecomplex *a, doublereal *work)
----
-> /* Subroutine */ int zlanhfwrp_(doublereal *ret, char *norm, char *transr, 
-> 	char *uplo, integer *n, doublecomplex *a, doublereal *work, ftnlen 
-> 	norm_len, ftnlen transr_len, ftnlen uplo_len)
-706c798,800
-< /* Subroutine */ int zlanhpwrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *ap, doublereal *work)
----
-> /* Subroutine */ int zlanhpwrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, doublecomplex *ap, doublereal *work, ftnlen norm_len, 
-> 	ftnlen uplo_len)
-708c802
-<     extern doublereal wzlanhp_(char *, char *, integer *, doublecomplex *, 
----
->     extern doublereal zlanhp_(char *, char *, integer *, doublecomplex *, 
-711c805
-<     *ret = wzlanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = zlanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
-715c809,810
-< /* Subroutine */ int zlanhswrp_(doublereal *ret, char *norm, integer *n, doublecomplex *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int zlanhswrp_(doublereal *ret, char *norm, integer *n, 
-> 	doublecomplex *a, integer *lda, doublereal *work, ftnlen norm_len)
-717c812
-<     extern doublereal wzlanhs_(char *, integer *, doublecomplex *, integer *, 
----
->     extern doublereal zlanhs_(char *, integer *, doublecomplex *, integer *, 
-720c815
-<     *ret = wzlanhs_(norm, n, a, lda, work, (ftnlen)1);
----
->     *ret = zlanhs_(norm, n, a, lda, work, (ftnlen)1);
-724c819,820
-< /* Subroutine */ int zlanhtwrp_(doublereal *ret, char *norm, integer *n, doublereal *d__, doublecomplex *e)
----
-> /* Subroutine */ int zlanhtwrp_(doublereal *ret, char *norm, integer *n, 
-> 	doublereal *d__, doublecomplex *e, ftnlen norm_len)
-726c822
-<     extern doublereal wzlanht_(char *, integer *, doublereal *, doublecomplex *
----
->     extern doublereal zlanht_(char *, integer *, doublereal *, doublecomplex *
-729c825
-<     *ret = wzlanht_(norm, n, d__, e, (ftnlen)1);
----
->     *ret = zlanht_(norm, n, d__, e, (ftnlen)1);
-733c829,831
-< /* Subroutine */ int zlansbwrp_(doublereal *ret, char *norm, char *uplo, integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal * work)
----
-> /* Subroutine */ int zlansbwrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal *
-> 	work, ftnlen norm_len, ftnlen uplo_len)
-735c833
-<     extern doublereal wzlansb_(char *, char *, integer *, integer *, 
----
->     extern doublereal zlansb_(char *, char *, integer *, integer *, 
-738c836
-<     *ret = wzlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = zlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
-742c840,842
-< /* Subroutine */ int zlanspwrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *ap, doublereal *work)
----
-> /* Subroutine */ int zlanspwrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, doublecomplex *ap, doublereal *work, ftnlen norm_len, 
-> 	ftnlen uplo_len)
-744c844
-<     extern doublereal wzlansp_(char *, char *, integer *, doublecomplex *, 
----
->     extern doublereal zlansp_(char *, char *, integer *, doublecomplex *, 
-747c847
-<     *ret = wzlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = zlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
-751c851,853
-< /* Subroutine */ int zlansywrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int zlansywrp_(doublereal *ret, char *norm, char *uplo, 
-> 	integer *n, doublecomplex *a, integer *lda, doublereal *work, ftnlen 
-> 	norm_len, ftnlen uplo_len)
-753c855
-<     extern doublereal wzlansy_(char *, char *, integer *, doublecomplex *, 
----
->     extern doublereal zlansy_(char *, char *, integer *, doublecomplex *, 
-756c858
-<     *ret = wzlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
----
->     *ret = zlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
-760c862,864
-< /* Subroutine */ int zlantbwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal *work)
----
-> /* Subroutine */ int zlantbwrp_(doublereal *ret, char *norm, char *uplo, char 
-> 	*diag, integer *n, integer *k, doublecomplex *ab, integer *ldab, 
-> 	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
-762c866
-<     extern doublereal wzlantb_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal zlantb_(char *, char *, char *, integer *, integer *, 
-765c869
-<     *ret = wzlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
----
->     *ret = zlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
-770c874,876
-< /* Subroutine */ int zlantpwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, doublecomplex *ap, doublereal *work)
----
-> /* Subroutine */ int zlantpwrp_(doublereal *ret, char *norm, char *uplo, char 
-> 	*diag, integer *n, doublecomplex *ap, doublereal *work, ftnlen 
-> 	norm_len, ftnlen uplo_len, ftnlen diag_len)
-772c878
-<     extern doublereal wzlantp_(char *, char *, char *, integer *, 
----
->     extern doublereal zlantp_(char *, char *, char *, integer *, 
-775c881
-<     *ret = wzlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
----
->     *ret = zlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
-780c886,888
-< /* Subroutine */ int zlantrwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, doublecomplex *a, integer *lda, doublereal *work)
----
-> /* Subroutine */ int zlantrwrp_(doublereal *ret, char *norm, char *uplo, char 
-> 	*diag, integer *m, integer *n, doublecomplex *a, integer *lda, 
-> 	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
-782c890
-<     extern doublereal wzlantr_(char *, char *, char *, integer *, integer *, 
----
->     extern doublereal zlantr_(char *, char *, char *, integer *, integer *, 
-785c893
-<     *ret = wzlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
----
->     *ret = zlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
+diff --git a/scipy/linalg/_lapack_subroutine_wrappers.c b/src/packages/scipy/f2cpatches/_lapack_subroutine_wrappers.c
+index 20fcd24..f5c10de 100644
+--- a/scipy/linalg/_lapack_subroutine_wrappers.c
++++ b/src/packages/scipy/f2cpatches/_lapack_subroutine_wrappers.c
+@@ -14,8 +14,7 @@
+ 
+ /*     This file was generated by _generate_pyx.py. */
+ /*     Do not edit this file directly. */
+-/* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans, ftnlen 
+-	ret_len)
++/* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans)
+ {
+     /* System generated locals */
+     char ch__1[1];
+@@ -41,62 +40,52 @@
+     return 0;
+ } /* cladivwrp_ */
+ 
+-/* Subroutine */ int clangbwrp_(real *ret, char *norm, integer *n, integer *
+-	kl, integer *ku, complex *ab, integer *ldab, real *work, ftnlen 
+-	norm_len)
++/* Subroutine */ int clangbwrp_(real *ret, char *norm, integer *n, integer * kl, integer *ku, complex *ab, integer *ldab, real *work)
+ {
+-    extern doublereal clangb_(char *, integer *, integer *, integer *, 
++    extern doublereal wclangb_(char *, integer *, integer *, integer *, 
+ 	    complex *, integer *, real *, ftnlen);
+ 
+-    *ret = clangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
++    *ret = wclangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
+     return 0;
+ } /* clangbwrp_ */
+ 
+-/* Subroutine */ int clangewrp_(real *ret, char *norm, integer *m, integer *n,
+-	 complex *a, integer *lda, real *work, ftnlen norm_len)
++/* Subroutine */ int clangewrp_(real *ret, char *norm, integer *m, integer *n, complex *a, integer *lda, real *work)
+ {
+-    extern doublereal clange_(char *, integer *, integer *, complex *, 
++    extern doublereal wclange_(char *, integer *, integer *, complex *, 
+ 	    integer *, real *, ftnlen);
+ 
+-    *ret = clange_(norm, m, n, a, lda, work, (ftnlen)1);
++    *ret = wclange_(norm, m, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* clangewrp_ */
+ 
+-/* Subroutine */ int clangtwrp_(real *ret, char *norm, integer *n, complex *
+-	dl, complex *d__, complex *du, ftnlen norm_len)
++/* Subroutine */ int clangtwrp_(real *ret, char *norm, integer *n, complex * dl, complex *d__, complex *du)
+ {
+-    extern doublereal clangt_(char *, integer *, complex *, complex *, 
++    extern doublereal wclangt_(char *, integer *, complex *, complex *, 
+ 	    complex *, ftnlen);
+ 
+-    *ret = clangt_(norm, n, dl, d__, du, (ftnlen)1);
++    *ret = wclangt_(norm, n, dl, d__, du, (ftnlen)1);
+     return 0;
+ } /* clangtwrp_ */
+ 
+-/* Subroutine */ int clanhbwrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 integer *k, complex *ab, integer *ldab, real *work, ftnlen norm_len, 
+-	ftnlen uplo_len)
++/* Subroutine */ int clanhbwrp_(real *ret, char *norm, char *uplo, integer *n, integer *k, complex *ab, integer *ldab, real *work)
+ {
+-    extern doublereal clanhb_(char *, char *, integer *, integer *, complex *,
++    extern doublereal wclanhb_(char *, char *, integer *, integer *, complex *,
+ 	     integer *, real *, ftnlen, ftnlen);
+ 
+-    *ret = clanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
++    *ret = wclanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* clanhbwrp_ */
+ 
+-/* Subroutine */ int clanhewrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 complex *a, integer *lda, real *work, ftnlen norm_len, ftnlen 
+-	uplo_len)
++/* Subroutine */ int clanhewrp_(real *ret, char *norm, char *uplo, integer *n, complex *a, integer *lda, real *work)
+ {
+-    extern doublereal clanhe_(char *, char *, integer *, complex *, integer *,
++    extern doublereal wclanhe_(char *, char *, integer *, complex *, integer *,
+ 	     real *, ftnlen, ftnlen);
+ 
+-    *ret = clanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
++    *ret = wclanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* clanhewrp_ */
+ 
+-/* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
+-	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen 
+-	transr_len, ftnlen uplo_len)
++/* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work)
+ {
+     extern doublereal clanhf_(char *, char *, char *, integer *, complex *, 
+ 	    real *, ftnlen, ftnlen, ftnlen);
+@@ -110,99 +99,85 @@
+     return 0;
+ } /* clanhfwrp_ */
+ 
+-/* Subroutine */ int clanhpwrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 complex *ap, real *work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int clanhpwrp_(real *ret, char *norm, char *uplo, integer *n, complex *ap, real *work)
+ {
+-    extern doublereal clanhp_(char *, char *, integer *, complex *, real *, 
++    extern doublereal wclanhp_(char *, char *, integer *, complex *, real *, 
+ 	    ftnlen, ftnlen);
+ 
+-    *ret = clanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
++    *ret = wclanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* clanhpwrp_ */
+ 
+-/* Subroutine */ int clanhswrp_(real *ret, char *norm, integer *n, complex *a,
+-	 integer *lda, real *work, ftnlen norm_len)
++/* Subroutine */ int clanhswrp_(real *ret, char *norm, integer *n, complex *a, integer *lda, real *work)
+ {
+-    extern doublereal clanhs_(char *, integer *, complex *, integer *, real *,
++    extern doublereal wclanhs_(char *, integer *, complex *, integer *, real *,
+ 	     ftnlen);
+ 
+-    *ret = clanhs_(norm, n, a, lda, work, (ftnlen)1);
++    *ret = wclanhs_(norm, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* clanhswrp_ */
+ 
+-/* Subroutine */ int clanhtwrp_(real *ret, char *norm, integer *n, real *d__, 
+-	complex *e, ftnlen norm_len)
++/* Subroutine */ int clanhtwrp_(real *ret, char *norm, integer *n, real *d__, complex *e)
+ {
+-    extern doublereal clanht_(char *, integer *, real *, complex *, ftnlen);
++    extern doublereal wclanht_(char *, integer *, real *, complex *, ftnlen);
+ 
+-    *ret = clanht_(norm, n, d__, e, (ftnlen)1);
++    *ret = wclanht_(norm, n, d__, e, (ftnlen)1);
+     return 0;
+ } /* clanhtwrp_ */
+ 
+-/* Subroutine */ int clansbwrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 integer *k, complex *ab, integer *ldab, real *work, ftnlen norm_len, 
+-	ftnlen uplo_len)
++/* Subroutine */ int clansbwrp_(real *ret, char *norm, char *uplo, integer *n, integer *k, complex *ab, integer *ldab, real *work)
+ {
+-    extern doublereal clansb_(char *, char *, integer *, integer *, complex *,
++    extern doublereal wclansb_(char *, char *, integer *, integer *, complex *,
+ 	     integer *, real *, ftnlen, ftnlen);
+ 
+-    *ret = clansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
++    *ret = wclansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* clansbwrp_ */
+ 
+-/* Subroutine */ int clanspwrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 complex *ap, real *work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int clanspwrp_(real *ret, char *norm, char *uplo, integer *n, complex *ap, real *work)
+ {
+-    extern doublereal clansp_(char *, char *, integer *, complex *, real *, 
++    extern doublereal wclansp_(char *, char *, integer *, complex *, real *, 
+ 	    ftnlen, ftnlen);
+ 
+-    *ret = clansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
++    *ret = wclansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* clanspwrp_ */
+ 
+-/* Subroutine */ int clansywrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 complex *a, integer *lda, real *work, ftnlen norm_len, ftnlen 
+-	uplo_len)
++/* Subroutine */ int clansywrp_(real *ret, char *norm, char *uplo, integer *n, complex *a, integer *lda, real *work)
+ {
+-    extern doublereal clansy_(char *, char *, integer *, complex *, integer *,
++    extern doublereal wclansy_(char *, char *, integer *, complex *, integer *,
+ 	     real *, ftnlen, ftnlen);
+ 
+-    *ret = clansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
++    *ret = wclansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* clansywrp_ */
+ 
+-/* Subroutine */ int clantbwrp_(real *ret, char *norm, char *uplo, char *diag,
+-	 integer *n, integer *k, complex *ab, integer *ldab, real *work, 
+-	ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int clantbwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, complex *ab, integer *ldab, real *work)
+ {
+-    extern doublereal clantb_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wclantb_(char *, char *, char *, integer *, integer *, 
+ 	    complex *, integer *, real *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = clantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
++    *ret = wclantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
+ 	    1, (ftnlen)1);
+     return 0;
+ } /* clantbwrp_ */
+ 
+-/* Subroutine */ int clantpwrp_(real *ret, char *norm, char *uplo, char *diag,
+-	 integer *n, complex *ap, real *work, ftnlen norm_len, ftnlen 
+-	uplo_len, ftnlen diag_len)
++/* Subroutine */ int clantpwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, complex *ap, real *work)
+ {
+-    extern doublereal clantp_(char *, char *, char *, integer *, complex *, 
++    extern doublereal wclantp_(char *, char *, char *, integer *, complex *, 
+ 	    real *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = clantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
++    *ret = wclantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
+ 	    ftnlen)1);
+     return 0;
+ } /* clantpwrp_ */
+ 
+-/* Subroutine */ int clantrwrp_(real *ret, char *norm, char *uplo, char *diag,
+-	 integer *m, integer *n, complex *a, integer *lda, real *work, ftnlen 
+-	norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int clantrwrp_(real *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, complex *a, integer *lda, real *work)
+ {
+-    extern doublereal clantr_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wclantr_(char *, char *, char *, integer *, integer *, 
+ 	    complex *, integer *, real *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = clantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
++    *ret = wclantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
+ 	     (ftnlen)1);
+     return 0;
+ } /* clantrwrp_ */
+@@ -215,17 +190,15 @@
+     return 0;
+ } /* disnanwrp_ */
+ 
+-/* Subroutine */ int dlamchwrp_(doublereal *ret, char *cmach, ftnlen 
+-	cmach_len)
++/* Subroutine */ int dlamchwrp_(doublereal *ret, char *cmach)
+ {
+-    extern doublereal dlamch_(char *, ftnlen);
++    extern doublereal wdlamch_(char *, ftnlen);
+ 
+-    *ret = dlamch_(cmach, (ftnlen)1);
++    *ret = wdlamch_(cmach, (ftnlen)1);
+     return 0;
+ } /* dlamchwrp_ */
+ 
+-/* Subroutine */ int dlanegwrp_(integer *ret, integer *n, doublereal *d__, 
+-	doublereal *lld, doublereal *sigma, doublereal *pivmin, integer *r__)
++/* Subroutine */ int dlanegwrp_(integer *ret, integer *n, doublereal *d__, doublereal *lld, doublereal *sigma, doublereal *pivmin, integer *r__)
+ {
+     extern integer dlaneg_(integer *, doublereal *, doublereal *, doublereal *
+ 	    , doublereal *, integer *);
+@@ -234,62 +207,52 @@
+     return 0;
+ } /* dlanegwrp_ */
+ 
+-/* Subroutine */ int dlangbwrp_(doublereal *ret, char *norm, integer *n, 
+-	integer *kl, integer *ku, doublereal *ab, integer *ldab, doublereal *
+-	work, ftnlen norm_len)
++/* Subroutine */ int dlangbwrp_(doublereal *ret, char *norm, integer *n, integer *kl, integer *ku, doublereal *ab, integer *ldab, doublereal * work)
+ {
+-    extern doublereal dlangb_(char *, integer *, integer *, integer *, 
++    extern doublereal wdlangb_(char *, integer *, integer *, integer *, 
+ 	    doublereal *, integer *, doublereal *, ftnlen);
+ 
+-    *ret = dlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
++    *ret = wdlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
+     return 0;
+ } /* dlangbwrp_ */
+ 
+-/* Subroutine */ int dlangewrp_(doublereal *ret, char *norm, integer *m, 
+-	integer *n, doublereal *a, integer *lda, doublereal *work, ftnlen 
+-	norm_len)
++/* Subroutine */ int dlangewrp_(doublereal *ret, char *norm, integer *m, integer *n, doublereal *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal dlange_(char *, integer *, integer *, doublereal *, 
++    extern doublereal wdlange_(char *, integer *, integer *, doublereal *, 
+ 	    integer *, doublereal *, ftnlen);
+ 
+-    *ret = dlange_(norm, m, n, a, lda, work, (ftnlen)1);
++    *ret = wdlange_(norm, m, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* dlangewrp_ */
+ 
+-/* Subroutine */ int dlangtwrp_(doublereal *ret, char *norm, integer *n, 
+-	doublereal *dl, doublereal *d__, doublereal *du, ftnlen norm_len)
++/* Subroutine */ int dlangtwrp_(doublereal *ret, char *norm, integer *n, doublereal *dl, doublereal *d__, doublereal *du)
+ {
+-    extern doublereal dlangt_(char *, integer *, doublereal *, doublereal *, 
++    extern doublereal wdlangt_(char *, integer *, doublereal *, doublereal *, 
+ 	    doublereal *, ftnlen);
+ 
+-    *ret = dlangt_(norm, n, dl, d__, du, (ftnlen)1);
++    *ret = wdlangt_(norm, n, dl, d__, du, (ftnlen)1);
+     return 0;
+ } /* dlangtwrp_ */
+ 
+-/* Subroutine */ int dlanhswrp_(doublereal *ret, char *norm, integer *n, 
+-	doublereal *a, integer *lda, doublereal *work, ftnlen norm_len)
++/* Subroutine */ int dlanhswrp_(doublereal *ret, char *norm, integer *n, doublereal *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal dlanhs_(char *, integer *, doublereal *, integer *, 
++    extern doublereal wdlanhs_(char *, integer *, doublereal *, integer *, 
+ 	    doublereal *, ftnlen);
+ 
+-    *ret = dlanhs_(norm, n, a, lda, work, (ftnlen)1);
++    *ret = wdlanhs_(norm, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* dlanhswrp_ */
+ 
+-/* Subroutine */ int dlansbwrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, integer *k, doublereal *ab, integer *ldab, doublereal *
+-	work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int dlansbwrp_(doublereal *ret, char *norm, char *uplo, integer *n, integer *k, doublereal *ab, integer *ldab, doublereal * work)
+ {
+-    extern doublereal dlansb_(char *, char *, integer *, integer *, 
++    extern doublereal wdlansb_(char *, char *, integer *, integer *, 
+ 	    doublereal *, integer *, doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = dlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
++    *ret = wdlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* dlansbwrp_ */
+ 
+-/* Subroutine */ int dlansfwrp_(doublereal *ret, char *norm, char *transr, 
+-	char *uplo, integer *n, doublereal *a, doublereal *work, ftnlen 
+-	norm_len, ftnlen transr_len, ftnlen uplo_len)
++/* Subroutine */ int dlansfwrp_(doublereal *ret, char *norm, char *transr, char *uplo, integer *n, doublereal *a, doublereal *work)
+ {
+     extern doublereal dlansf_(char *, char *, char *, integer *, doublereal *,
+ 	     doublereal *, ftnlen, ftnlen, ftnlen);
+@@ -303,70 +266,59 @@
+     return 0;
+ } /* dlansfwrp_ */
+ 
+-/* Subroutine */ int dlanspwrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, doublereal *ap, doublereal *work, ftnlen norm_len, ftnlen 
+-	uplo_len)
++/* Subroutine */ int dlanspwrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublereal *ap, doublereal *work)
+ {
+-    extern doublereal dlansp_(char *, char *, integer *, doublereal *, 
++    extern doublereal wdlansp_(char *, char *, integer *, doublereal *, 
+ 	    doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = dlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
++    *ret = wdlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* dlanspwrp_ */
+ 
+-/* Subroutine */ int dlanstwrp_(doublereal *ret, char *norm, integer *n, 
+-	doublereal *d__, doublereal *e, ftnlen norm_len)
++/* Subroutine */ int dlanstwrp_(doublereal *ret, char *norm, integer *n, doublereal *d__, doublereal *e)
+ {
+-    extern doublereal dlanst_(char *, integer *, doublereal *, doublereal *, 
++    extern doublereal wdlanst_(char *, integer *, doublereal *, doublereal *, 
+ 	    ftnlen);
+ 
+-    *ret = dlanst_(norm, n, d__, e, (ftnlen)1);
++    *ret = wdlanst_(norm, n, d__, e, (ftnlen)1);
+     return 0;
+ } /* dlanstwrp_ */
+ 
+-/* Subroutine */ int dlansywrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, doublereal *a, integer *lda, doublereal *work, ftnlen 
+-	norm_len, ftnlen uplo_len)
++/* Subroutine */ int dlansywrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublereal *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal dlansy_(char *, char *, integer *, doublereal *, 
++    extern doublereal wdlansy_(char *, char *, integer *, doublereal *, 
+ 	    integer *, doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = dlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
++    *ret = wdlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* dlansywrp_ */
+ 
+-/* Subroutine */ int dlantbwrp_(doublereal *ret, char *norm, char *uplo, char 
+-	*diag, integer *n, integer *k, doublereal *ab, integer *ldab, 
+-	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int dlantbwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, doublereal *ab, integer *ldab, doublereal *work)
+ {
+-    extern doublereal dlantb_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wdlantb_(char *, char *, char *, integer *, integer *, 
+ 	    doublereal *, integer *, doublereal *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = dlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
++    *ret = wdlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
+ 	    1, (ftnlen)1);
+     return 0;
+ } /* dlantbwrp_ */
+ 
+-/* Subroutine */ int dlantpwrp_(doublereal *ret, char *norm, char *uplo, char 
+-	*diag, integer *n, doublereal *ap, doublereal *work, ftnlen norm_len, 
+-	ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int dlantpwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, doublereal *ap, doublereal *work)
+ {
+-    extern doublereal dlantp_(char *, char *, char *, integer *, doublereal *,
++    extern doublereal wdlantp_(char *, char *, char *, integer *, doublereal *,
+ 	     doublereal *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = dlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
++    *ret = wdlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
+ 	    ftnlen)1);
+     return 0;
+ } /* dlantpwrp_ */
+ 
+-/* Subroutine */ int dlantrwrp_(doublereal *ret, char *norm, char *uplo, char 
+-	*diag, integer *m, integer *n, doublereal *a, integer *lda, 
+-	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int dlantrwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, doublereal *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal dlantr_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wdlantr_(char *, char *, char *, integer *, integer *, 
+ 	    doublereal *, integer *, doublereal *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = dlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
++    *ret = wdlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
+ 	     (ftnlen)1);
+     return 0;
+ } /* dlantrwrp_ */
+@@ -379,8 +331,7 @@
+     return 0;
+ } /* dlapy2wrp_ */
+ 
+-/* Subroutine */ int dlapy3wrp_(doublereal *ret, doublereal *x, doublereal *y,
+-	 doublereal *z__)
++/* Subroutine */ int dlapy3wrp_(doublereal *ret, doublereal *x, doublereal *y, doublereal *z__)
+ {
+     extern doublereal dlapy3_(doublereal *, doublereal *, doublereal *);
+ 
+@@ -388,8 +339,7 @@
+     return 0;
+ } /* dlapy3wrp_ */
+ 
+-/* Subroutine */ int dzsum1wrp_(doublereal *ret, integer *n, doublecomplex *
+-	cx, integer *incx)
++/* Subroutine */ int dzsum1wrp_(doublereal *ret, integer *n, doublecomplex * cx, integer *incx)
+ {
+     extern doublereal dzsum1_(integer *, doublecomplex *, integer *);
+ 
+@@ -401,8 +351,7 @@
+     return 0;
+ } /* dzsum1wrp_ */
+ 
+-/* Subroutine */ int icmax1wrp_(integer *ret, integer *n, complex *cx, 
+-	integer *incx)
++/* Subroutine */ int icmax1wrp_(integer *ret, integer *n, complex *cx, integer *incx)
+ {
+     extern integer icmax1_(integer *, complex *, integer *);
+ 
+@@ -414,8 +363,7 @@
+     return 0;
+ } /* icmax1wrp_ */
+ 
+-/* Subroutine */ int ieeeckwrp_(integer *ret, integer *ispec, real *zero, 
+-	real *one)
++/* Subroutine */ int ieeeckwrp_(integer *ret, integer *ispec, real *zero, real *one)
+ {
+     extern integer ieeeck_(integer *, real *, real *);
+ 
+@@ -423,8 +371,7 @@
+     return 0;
+ } /* ieeeckwrp_ */
+ 
+-/* Subroutine */ int ilaclcwrp_(integer *ret, integer *m, integer *n, complex 
+-	*a, integer *lda)
++/* Subroutine */ int ilaclcwrp_(integer *ret, integer *m, integer *n, complex *a, integer *lda)
+ {
+     extern integer ilaclc_(integer *, integer *, complex *, integer *);
+ 
+@@ -432,8 +379,7 @@
+     return 0;
+ } /* ilaclcwrp_ */
+ 
+-/* Subroutine */ int ilaclrwrp_(integer *ret, integer *m, integer *n, complex 
+-	*a, integer *lda)
++/* Subroutine */ int ilaclrwrp_(integer *ret, integer *m, integer *n, complex *a, integer *lda)
+ {
+     extern integer ilaclr_(integer *, integer *, complex *, integer *);
+ 
+@@ -441,7 +387,7 @@
+     return 0;
+ } /* ilaclrwrp_ */
+ 
+-/* Subroutine */ int iladiagwrp_(integer *ret, char *diag, ftnlen diag_len)
++/* Subroutine */ int iladiagwrp_(integer *ret, char *diag)
+ {
+     extern integer iladiag_(char *, ftnlen);
+ 
+@@ -449,8 +395,7 @@
+     return 0;
+ } /* iladiagwrp_ */
+ 
+-/* Subroutine */ int iladlcwrp_(integer *ret, integer *m, integer *n, 
+-	doublereal *a, integer *lda)
++/* Subroutine */ int iladlcwrp_(integer *ret, integer *m, integer *n, doublereal *a, integer *lda)
+ {
+     extern integer iladlc_(integer *, integer *, doublereal *, integer *);
+ 
+@@ -458,8 +403,7 @@
+     return 0;
+ } /* iladlcwrp_ */
+ 
+-/* Subroutine */ int iladlrwrp_(integer *ret, integer *m, integer *n, 
+-	doublereal *a, integer *lda)
++/* Subroutine */ int iladlrwrp_(integer *ret, integer *m, integer *n, doublereal *a, integer *lda)
+ {
+     extern integer iladlr_(integer *, integer *, doublereal *, integer *);
+ 
+@@ -467,7 +411,7 @@
+     return 0;
+ } /* iladlrwrp_ */
+ 
+-/* Subroutine */ int ilaprecwrp_(integer *ret, char *prec, ftnlen prec_len)
++/* Subroutine */ int ilaprecwrp_(integer *ret, char *prec)
+ {
+     extern integer ilaprec_(char *, ftnlen);
+ 
+@@ -475,8 +419,7 @@
+     return 0;
+ } /* ilaprecwrp_ */
+ 
+-/* Subroutine */ int ilaslcwrp_(integer *ret, integer *m, integer *n, real *a,
+-	 integer *lda)
++/* Subroutine */ int ilaslcwrp_(integer *ret, integer *m, integer *n, real *a, integer *lda)
+ {
+     extern integer ilaslc_(integer *, integer *, real *, integer *);
+ 
+@@ -484,8 +427,7 @@
+     return 0;
+ } /* ilaslcwrp_ */
+ 
+-/* Subroutine */ int ilaslrwrp_(integer *ret, integer *m, integer *n, real *a,
+-	 integer *lda)
++/* Subroutine */ int ilaslrwrp_(integer *ret, integer *m, integer *n, real *a, integer *lda)
+ {
+     extern integer ilaslr_(integer *, integer *, real *, integer *);
+ 
+@@ -493,7 +435,7 @@
+     return 0;
+ } /* ilaslrwrp_ */
+ 
+-/* Subroutine */ int ilatranswrp_(integer *ret, char *trans, ftnlen trans_len)
++/* Subroutine */ int ilatranswrp_(integer *ret, char *trans)
+ {
+     extern integer ilatrans_(char *, ftnlen);
+ 
+@@ -501,7 +443,7 @@
+     return 0;
+ } /* ilatranswrp_ */
+ 
+-/* Subroutine */ int ilauplowrp_(integer *ret, char *uplo, ftnlen uplo_len)
++/* Subroutine */ int ilauplowrp_(integer *ret, char *uplo)
+ {
+     extern integer ilauplo_(char *, ftnlen);
+ 
+@@ -509,8 +451,7 @@
+     return 0;
+ } /* ilauplowrp_ */
+ 
+-/* Subroutine */ int ilazlcwrp_(integer *ret, integer *m, integer *n, 
+-	doublecomplex *a, integer *lda)
++/* Subroutine */ int ilazlcwrp_(integer *ret, integer *m, integer *n, doublecomplex *a, integer *lda)
+ {
+     extern integer ilazlc_(integer *, integer *, doublecomplex *, integer *);
+ 
+@@ -518,8 +459,7 @@
+     return 0;
+ } /* ilazlcwrp_ */
+ 
+-/* Subroutine */ int ilazlrwrp_(integer *ret, integer *m, integer *n, 
+-	doublecomplex *a, integer *lda)
++/* Subroutine */ int ilazlrwrp_(integer *ret, integer *m, integer *n, doublecomplex *a, integer *lda)
+ {
+     extern integer ilazlr_(integer *, integer *, doublecomplex *, integer *);
+ 
+@@ -527,8 +467,7 @@
+     return 0;
+ } /* ilazlrwrp_ */
+ 
+-/* Subroutine */ int izmax1wrp_(integer *ret, integer *n, doublecomplex *cx, 
+-	integer *incx)
++/* Subroutine */ int izmax1wrp_(integer *ret, integer *n, doublecomplex *cx, integer *incx)
+ {
+     extern integer izmax1_(integer *, doublecomplex *, integer *);
+ 
+@@ -540,8 +479,7 @@
+     return 0;
+ } /* izmax1wrp_ */
+ 
+-/* Subroutine */ int scsum1wrp_(real *ret, integer *n, complex *cx, integer *
+-	incx)
++/* Subroutine */ int scsum1wrp_(real *ret, integer *n, complex *cx, integer * incx)
+ {
+     extern doublereal scsum1_(integer *, complex *, integer *);
+ 
+@@ -553,68 +491,60 @@
+     return 0;
+ } /* scsum1wrp_ */
+ 
+-/* Subroutine */ int slamchwrp_(real *ret, char *cmach, ftnlen cmach_len)
++/* Subroutine */ int slamchwrp_(real *ret, char *cmach)
+ {
+-    extern doublereal slamch_(char *, ftnlen);
++    extern doublereal wslamch_(char *, ftnlen);
+ 
+-    *ret = slamch_(cmach, (ftnlen)1);
++    *ret = wslamch_(cmach, (ftnlen)1);
+     return 0;
+ } /* slamchwrp_ */
+ 
+-/* Subroutine */ int slangbwrp_(real *ret, char *norm, integer *n, integer *
+-	kl, integer *ku, real *ab, integer *ldab, real *work, ftnlen norm_len)
++/* Subroutine */ int slangbwrp_(real *ret, char *norm, integer *n, integer * kl, integer *ku, real *ab, integer *ldab, real *work)
+ {
+-    extern doublereal slangb_(char *, integer *, integer *, integer *, real *,
++    extern doublereal wslangb_(char *, integer *, integer *, integer *, real *,
+ 	     integer *, real *, ftnlen);
+ 
+-    *ret = slangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
++    *ret = wslangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
+     return 0;
+ } /* slangbwrp_ */
+ 
+-/* Subroutine */ int slangewrp_(real *ret, char *norm, integer *m, integer *n,
+-	 real *a, integer *lda, real *work, ftnlen norm_len)
++/* Subroutine */ int slangewrp_(real *ret, char *norm, integer *m, integer *n, real *a, integer *lda, real *work)
+ {
+-    extern doublereal slange_(char *, integer *, integer *, real *, integer *,
++    extern doublereal wslange_(char *, integer *, integer *, real *, integer *,
+ 	     real *, ftnlen);
+ 
+-    *ret = slange_(norm, m, n, a, lda, work, (ftnlen)1);
++    *ret = wslange_(norm, m, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* slangewrp_ */
+ 
+-/* Subroutine */ int slangtwrp_(real *ret, char *norm, integer *n, real *dl, 
+-	real *d__, real *du, ftnlen norm_len)
++/* Subroutine */ int slangtwrp_(real *ret, char *norm, integer *n, real *dl, real *d__, real *du)
+ {
+-    extern doublereal slangt_(char *, integer *, real *, real *, real *, 
++    extern doublereal wslangt_(char *, integer *, real *, real *, real *, 
+ 	    ftnlen);
+ 
+-    *ret = slangt_(norm, n, dl, d__, du, (ftnlen)1);
++    *ret = wslangt_(norm, n, dl, d__, du, (ftnlen)1);
+     return 0;
+ } /* slangtwrp_ */
+ 
+-/* Subroutine */ int slanhswrp_(real *ret, char *norm, integer *n, real *a, 
+-	integer *lda, real *work, ftnlen norm_len)
++/* Subroutine */ int slanhswrp_(real *ret, char *norm, integer *n, real *a, integer *lda, real *work)
+ {
+-    extern doublereal slanhs_(char *, integer *, real *, integer *, real *, 
++    extern doublereal wslanhs_(char *, integer *, real *, integer *, real *, 
+ 	    ftnlen);
+ 
+-    *ret = slanhs_(norm, n, a, lda, work, (ftnlen)1);
++    *ret = wslanhs_(norm, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* slanhswrp_ */
+ 
+-/* Subroutine */ int slansbwrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 integer *k, real *ab, integer *ldab, real *work, ftnlen norm_len, 
+-	ftnlen uplo_len)
++/* Subroutine */ int slansbwrp_(real *ret, char *norm, char *uplo, integer *n, integer *k, real *ab, integer *ldab, real *work)
+ {
+-    extern doublereal slansb_(char *, char *, integer *, integer *, real *, 
++    extern doublereal wslansb_(char *, char *, integer *, integer *, real *, 
+ 	    integer *, real *, ftnlen, ftnlen);
+ 
+-    *ret = slansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
++    *ret = wslansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* slansbwrp_ */
+ 
+-/* Subroutine */ int slansfwrp_(real *ret, char *norm, char *transr, char *
+-	uplo, integer *n, real *a, real *work, ftnlen norm_len, ftnlen 
+-	transr_len, ftnlen uplo_len)
++/* Subroutine */ int slansfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, real *a, real *work)
+ {
+     extern doublereal slansf_(char *, char *, char *, integer *, real *, real 
+ 	    *, ftnlen, ftnlen, ftnlen);
+@@ -628,67 +558,58 @@
+     return 0;
+ } /* slansfwrp_ */
+ 
+-/* Subroutine */ int slanspwrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 real *ap, real *work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int slanspwrp_(real *ret, char *norm, char *uplo, integer *n, real *ap, real *work)
+ {
+-    extern doublereal slansp_(char *, char *, integer *, real *, real *, 
++    extern doublereal wslansp_(char *, char *, integer *, real *, real *, 
+ 	    ftnlen, ftnlen);
+ 
+-    *ret = slansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
++    *ret = wslansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* slanspwrp_ */
+ 
+-/* Subroutine */ int slanstwrp_(real *ret, char *norm, integer *n, real *d__, 
+-	real *e, ftnlen norm_len)
++/* Subroutine */ int slanstwrp_(real *ret, char *norm, integer *n, real *d__, real *e)
+ {
+-    extern doublereal slanst_(char *, integer *, real *, real *, ftnlen);
++    extern doublereal wslanst_(char *, integer *, real *, real *, ftnlen);
+ 
+-    *ret = slanst_(norm, n, d__, e, (ftnlen)1);
++    *ret = wslanst_(norm, n, d__, e, (ftnlen)1);
+     return 0;
+ } /* slanstwrp_ */
+ 
+-/* Subroutine */ int slansywrp_(real *ret, char *norm, char *uplo, integer *n,
+-	 real *a, integer *lda, real *work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int slansywrp_(real *ret, char *norm, char *uplo, integer *n, real *a, integer *lda, real *work)
+ {
+-    extern doublereal slansy_(char *, char *, integer *, real *, integer *, 
++    extern doublereal wslansy_(char *, char *, integer *, real *, integer *, 
+ 	    real *, ftnlen, ftnlen);
+ 
+-    *ret = slansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
++    *ret = wslansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* slansywrp_ */
+ 
+-/* Subroutine */ int slantbwrp_(real *ret, char *norm, char *uplo, char *diag,
+-	 integer *n, integer *k, real *ab, integer *ldab, real *work, ftnlen 
+-	norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int slantbwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, real *ab, integer *ldab, real *work)
+ {
+-    extern doublereal slantb_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wslantb_(char *, char *, char *, integer *, integer *, 
+ 	    real *, integer *, real *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = slantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
++    *ret = wslantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
+ 	    1, (ftnlen)1);
+     return 0;
+ } /* slantbwrp_ */
+ 
+-/* Subroutine */ int slantpwrp_(real *ret, char *norm, char *uplo, char *diag,
+-	 integer *n, real *ap, real *work, ftnlen norm_len, ftnlen uplo_len, 
+-	ftnlen diag_len)
++/* Subroutine */ int slantpwrp_(real *ret, char *norm, char *uplo, char *diag, integer *n, real *ap, real *work)
+ {
+-    extern doublereal slantp_(char *, char *, char *, integer *, real *, real 
++    extern doublereal wslantp_(char *, char *, char *, integer *, real *, real 
+ 	    *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = slantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
++    *ret = wslantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
+ 	    ftnlen)1);
+     return 0;
+ } /* slantpwrp_ */
+ 
+-/* Subroutine */ int slantrwrp_(real *ret, char *norm, char *uplo, char *diag,
+-	 integer *m, integer *n, real *a, integer *lda, real *work, ftnlen 
+-	norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int slantrwrp_(real *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, real *a, integer *lda, real *work)
+ {
+-    extern doublereal slantr_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wslantr_(char *, char *, char *, integer *, integer *, 
+ 	    real *, integer *, real *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = slantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
++    *ret = wslantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
+ 	     (ftnlen)1);
+     return 0;
+ } /* slantrwrp_ */
+@@ -709,8 +630,7 @@
+     return 0;
+ } /* slapy3wrp_ */
+ 
+-/* Subroutine */ int zladivwrp_(doublecomplex *ret, doublecomplex *x, 
+-	doublecomplex *y)
++/* Subroutine */ int zladivwrp_(doublecomplex *ret, doublecomplex *x, doublecomplex *y)
+ {
+     /* System generated locals */
+     doublecomplex z__1;
+@@ -724,64 +644,52 @@
+     return 0;
+ } /* zladivwrp_ */
+ 
+-/* Subroutine */ int zlangbwrp_(doublereal *ret, char *norm, integer *n, 
+-	integer *kl, integer *ku, doublecomplex *ab, integer *ldab, 
+-	doublereal *work, ftnlen norm_len)
++/* Subroutine */ int zlangbwrp_(doublereal *ret, char *norm, integer *n, integer *kl, integer *ku, doublecomplex *ab, integer *ldab, doublereal *work)
+ {
+-    extern doublereal zlangb_(char *, integer *, integer *, integer *, 
++    extern doublereal wzlangb_(char *, integer *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublereal *, ftnlen);
+ 
+-    *ret = zlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
++    *ret = wzlangb_(norm, n, kl, ku, ab, ldab, work, (ftnlen)1);
+     return 0;
+ } /* zlangbwrp_ */
+ 
+-/* Subroutine */ int zlangewrp_(doublereal *ret, char *norm, integer *m, 
+-	integer *n, doublecomplex *a, integer *lda, doublereal *work, ftnlen 
+-	norm_len)
++/* Subroutine */ int zlangewrp_(doublereal *ret, char *norm, integer *m, integer *n, doublecomplex *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal zlange_(char *, integer *, integer *, doublecomplex *, 
++    extern doublereal wzlange_(char *, integer *, integer *, doublecomplex *, 
+ 	    integer *, doublereal *, ftnlen);
+ 
+-    *ret = zlange_(norm, m, n, a, lda, work, (ftnlen)1);
++    *ret = wzlange_(norm, m, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* zlangewrp_ */
+ 
+-/* Subroutine */ int zlangtwrp_(doublereal *ret, char *norm, integer *n, 
+-	doublecomplex *dl, doublecomplex *d__, doublecomplex *du, ftnlen 
+-	norm_len)
++/* Subroutine */ int zlangtwrp_(doublereal *ret, char *norm, integer *n, doublecomplex *dl, doublecomplex *d__, doublecomplex *du)
+ {
+-    extern doublereal zlangt_(char *, integer *, doublecomplex *, 
++    extern doublereal wzlangt_(char *, integer *, doublecomplex *, 
+ 	    doublecomplex *, doublecomplex *, ftnlen);
+ 
+-    *ret = zlangt_(norm, n, dl, d__, du, (ftnlen)1);
++    *ret = wzlangt_(norm, n, dl, d__, du, (ftnlen)1);
+     return 0;
+ } /* zlangtwrp_ */
+ 
+-/* Subroutine */ int zlanhbwrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal *
+-	work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int zlanhbwrp_(doublereal *ret, char *norm, char *uplo, integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal * work)
+ {
+-    extern doublereal zlanhb_(char *, char *, integer *, integer *, 
++    extern doublereal wzlanhb_(char *, char *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = zlanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
++    *ret = wzlanhb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* zlanhbwrp_ */
+ 
+-/* Subroutine */ int zlanhewrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, doublecomplex *a, integer *lda, doublereal *work, ftnlen 
+-	norm_len, ftnlen uplo_len)
++/* Subroutine */ int zlanhewrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal zlanhe_(char *, char *, integer *, doublecomplex *, 
++    extern doublereal wzlanhe_(char *, char *, integer *, doublecomplex *, 
+ 	    integer *, doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = zlanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
++    *ret = wzlanhe_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* zlanhewrp_ */
+ 
+-/* Subroutine */ int zlanhfwrp_(doublereal *ret, char *norm, char *transr, 
+-	char *uplo, integer *n, doublecomplex *a, doublereal *work, ftnlen 
+-	norm_len, ftnlen transr_len, ftnlen uplo_len)
++/* Subroutine */ int zlanhfwrp_(doublereal *ret, char *norm, char *transr, char *uplo, integer *n, doublecomplex *a, doublereal *work)
+ {
+     extern doublereal zlanhf_(char *, char *, char *, integer *, 
+ 	    doublecomplex *, doublereal *, ftnlen, ftnlen, ftnlen);
+@@ -795,102 +703,86 @@
+     return 0;
+ } /* zlanhfwrp_ */
+ 
+-/* Subroutine */ int zlanhpwrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, doublecomplex *ap, doublereal *work, ftnlen norm_len, 
+-	ftnlen uplo_len)
++/* Subroutine */ int zlanhpwrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *ap, doublereal *work)
+ {
+-    extern doublereal zlanhp_(char *, char *, integer *, doublecomplex *, 
++    extern doublereal wzlanhp_(char *, char *, integer *, doublecomplex *, 
+ 	    doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = zlanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
++    *ret = wzlanhp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* zlanhpwrp_ */
+ 
+-/* Subroutine */ int zlanhswrp_(doublereal *ret, char *norm, integer *n, 
+-	doublecomplex *a, integer *lda, doublereal *work, ftnlen norm_len)
++/* Subroutine */ int zlanhswrp_(doublereal *ret, char *norm, integer *n, doublecomplex *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal zlanhs_(char *, integer *, doublecomplex *, integer *, 
++    extern doublereal wzlanhs_(char *, integer *, doublecomplex *, integer *, 
+ 	    doublereal *, ftnlen);
+ 
+-    *ret = zlanhs_(norm, n, a, lda, work, (ftnlen)1);
++    *ret = wzlanhs_(norm, n, a, lda, work, (ftnlen)1);
+     return 0;
+ } /* zlanhswrp_ */
+ 
+-/* Subroutine */ int zlanhtwrp_(doublereal *ret, char *norm, integer *n, 
+-	doublereal *d__, doublecomplex *e, ftnlen norm_len)
++/* Subroutine */ int zlanhtwrp_(doublereal *ret, char *norm, integer *n, doublereal *d__, doublecomplex *e)
+ {
+-    extern doublereal zlanht_(char *, integer *, doublereal *, doublecomplex *
++    extern doublereal wzlanht_(char *, integer *, doublereal *, doublecomplex *
+ 	    , ftnlen);
+ 
+-    *ret = zlanht_(norm, n, d__, e, (ftnlen)1);
++    *ret = wzlanht_(norm, n, d__, e, (ftnlen)1);
+     return 0;
+ } /* zlanhtwrp_ */
+ 
+-/* Subroutine */ int zlansbwrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal *
+-	work, ftnlen norm_len, ftnlen uplo_len)
++/* Subroutine */ int zlansbwrp_(doublereal *ret, char *norm, char *uplo, integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal * work)
+ {
+-    extern doublereal zlansb_(char *, char *, integer *, integer *, 
++    extern doublereal wzlansb_(char *, char *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = zlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
++    *ret = wzlansb_(norm, uplo, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* zlansbwrp_ */
+ 
+-/* Subroutine */ int zlanspwrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, doublecomplex *ap, doublereal *work, ftnlen norm_len, 
+-	ftnlen uplo_len)
++/* Subroutine */ int zlanspwrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *ap, doublereal *work)
+ {
+-    extern doublereal zlansp_(char *, char *, integer *, doublecomplex *, 
++    extern doublereal wzlansp_(char *, char *, integer *, doublecomplex *, 
+ 	    doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = zlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
++    *ret = wzlansp_(norm, uplo, n, ap, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* zlanspwrp_ */
+ 
+-/* Subroutine */ int zlansywrp_(doublereal *ret, char *norm, char *uplo, 
+-	integer *n, doublecomplex *a, integer *lda, doublereal *work, ftnlen 
+-	norm_len, ftnlen uplo_len)
++/* Subroutine */ int zlansywrp_(doublereal *ret, char *norm, char *uplo, integer *n, doublecomplex *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal zlansy_(char *, char *, integer *, doublecomplex *, 
++    extern doublereal wzlansy_(char *, char *, integer *, doublecomplex *, 
+ 	    integer *, doublereal *, ftnlen, ftnlen);
+ 
+-    *ret = zlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
++    *ret = wzlansy_(norm, uplo, n, a, lda, work, (ftnlen)1, (ftnlen)1);
+     return 0;
+ } /* zlansywrp_ */
+ 
+-/* Subroutine */ int zlantbwrp_(doublereal *ret, char *norm, char *uplo, char 
+-	*diag, integer *n, integer *k, doublecomplex *ab, integer *ldab, 
+-	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int zlantbwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, integer *k, doublecomplex *ab, integer *ldab, doublereal *work)
+ {
+-    extern doublereal zlantb_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wzlantb_(char *, char *, char *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublereal *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = zlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
++    *ret = wzlantb_(norm, uplo, diag, n, k, ab, ldab, work, (ftnlen)1, (ftnlen)
+ 	    1, (ftnlen)1);
+     return 0;
+ } /* zlantbwrp_ */
+ 
+-/* Subroutine */ int zlantpwrp_(doublereal *ret, char *norm, char *uplo, char 
+-	*diag, integer *n, doublecomplex *ap, doublereal *work, ftnlen 
+-	norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int zlantpwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *n, doublecomplex *ap, doublereal *work)
+ {
+-    extern doublereal zlantp_(char *, char *, char *, integer *, 
++    extern doublereal wzlantp_(char *, char *, char *, integer *, 
+ 	    doublecomplex *, doublereal *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = zlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
++    *ret = wzlantp_(norm, uplo, diag, n, ap, work, (ftnlen)1, (ftnlen)1, (
+ 	    ftnlen)1);
+     return 0;
+ } /* zlantpwrp_ */
+ 
+-/* Subroutine */ int zlantrwrp_(doublereal *ret, char *norm, char *uplo, char 
+-	*diag, integer *m, integer *n, doublecomplex *a, integer *lda, 
+-	doublereal *work, ftnlen norm_len, ftnlen uplo_len, ftnlen diag_len)
++/* Subroutine */ int zlantrwrp_(doublereal *ret, char *norm, char *uplo, char *diag, integer *m, integer *n, doublecomplex *a, integer *lda, doublereal *work)
+ {
+-    extern doublereal zlantr_(char *, char *, char *, integer *, integer *, 
++    extern doublereal wzlantr_(char *, char *, char *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublereal *, ftnlen, ftnlen, ftnlen);
+ 
+-    *ret = zlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
++    *ret = wzlantr_(norm, uplo, diag, m, n, a, lda, work, (ftnlen)1, (ftnlen)1,
+ 	     (ftnlen)1);
+     return 0;
+ } /* zlantrwrp_ */

@@ -454,7 +454,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
         if root_rel.name in ["test", "tests"]:
             # This is a test folder
             (test_install_prefix / root_rel).parent.mkdir(exist_ok=True, parents=True)
-            (test_install_prefix / root_rel).unlink(missing_ok=True)
+            shutil.rmtree(test_install_prefix / root_rel, ignore_errors=True)
             shutil.move(install_prefix / root_rel, test_install_prefix / root_rel)
             n_moved += 1
             continue
@@ -465,6 +465,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
                 or fnmatch.fnmatchcase(fpath, "*_test.py")
                 or fpath == "conftest.py"
             ):
+                shutil.rmtree(test_install_prefix / root_rel, ignore_errors=True)
                 (test_install_prefix / root_rel).mkdir(exist_ok=True, parents=True)
                 shutil.move(
                     install_prefix / root_rel / fpath,

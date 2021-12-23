@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idd_svd.c b/../../f2cfixes/idd_svd.c
+diff --git a/scipy/linalg/src/id_dist/src/idd_svd.c b/src/packages/scipy/f2cpatches/idd_svd.c
 index 75dfdcd..7020740 100644
 --- a/scipy/linalg/src/id_dist/src/idd_svd.c
-+++ b/../../f2cfixes/idd_svd.c
++++ b/src/packages/scipy/f2cpatches/idd_svd.c
 @@ -49,11 +49,10 @@
      static integer iftranspose, info;
      static char jobz[1];

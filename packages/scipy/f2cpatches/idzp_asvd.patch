@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idzp_asvd.c b/../../f2cfixes/idzp_asvd.c
+diff --git a/scipy/linalg/src/id_dist/src/idzp_asvd.c b/src/packages/scipy/f2cpatches/idzp_asvd.c
 index c08a549..6a6d55c 100644
 --- a/scipy/linalg/src/id_dist/src/idzp_asvd.c
-+++ b/../../f2cfixes/idzp_asvd.c
++++ b/src/packages/scipy/f2cpatches/idzp_asvd.c
 @@ -36,14 +36,12 @@
  	     doublecomplex *, doublecomplex *, integer *, doublecomplex *, 
  	    doublecomplex *);

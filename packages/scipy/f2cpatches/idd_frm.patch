@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idd_frm.c b/../../f2cfixes/idd_frm.c
+diff --git a/scipy/linalg/src/id_dist/src/idd_frm.c b/src/packages/scipy/f2cpatches/idd_frm.c
 index 7af0f3f..7ef7475 100644
 --- a/scipy/linalg/src/id_dist/src/idd_frm.c
-+++ b/../../f2cfixes/idd_frm.c
++++ b/src/packages/scipy/f2cpatches/idd_frm.c
 @@ -51,10 +51,11 @@ static integer c__1 = 1;
      extern /* Subroutine */ int idd_random_transf__(doublereal *, doublereal *
  	    , doublereal *);

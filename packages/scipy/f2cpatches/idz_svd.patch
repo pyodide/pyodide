@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/idz_svd.c b/../../f2cfixes/idz_svd.c
+diff --git a/scipy/linalg/src/id_dist/src/idz_svd.c b/src/packages/scipy/f2cpatches/idz_svd.c
 index 2f0a73a..d387c73 100644
 --- a/scipy/linalg/src/id_dist/src/idz_svd.c
-+++ b/../../f2cfixes/idz_svd.c
++++ b/src/packages/scipy/f2cpatches/idz_svd.c
 @@ -51,13 +51,13 @@
  	    doublecomplex *);
      static integer info;

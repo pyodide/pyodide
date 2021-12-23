@@ -1,0 +1,1609 @@
+diff --git a/src/packages/scipy/build/scipy-1.6.1/scipy/_build_utils/src/wrap_dummy_g77_abi.c b/src/packages/scipy/f2cpatches/wrap_dummy_g77_abi.c
+index f25b5bd..dff9d59 100644
+--- a/src/packages/scipy/build/scipy-1.6.1/scipy/_build_utils/src/wrap_dummy_g77_abi.c
++++ b/src/packages/scipy/f2cpatches/wrap_dummy_g77_abi.c
+@@ -251,10 +251,7 @@ static integer c__2 = 2;
+ /* > \ingroup complexGEcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int cgemqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *nb, complex *v, integer *ldv, complex *t, 
+-	integer *ldt, complex *c__, integer *ldc, complex *work, integer *
+-	info, ftnlen side_len, ftnlen trans_len)
++/* Subroutine */ int cgemqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *nb, complex *v, integer *ldv, complex *t, integer *ldt, complex *c__, integer *ldc, complex *work, integer * info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, c_dim1, c_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -263,9 +260,9 @@ static integer c__2 = 2;
+     /* Local variables */
+     static integer i__, q, ib, kf;
+     static logical left, tran;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+-    extern /* Subroutine */ int clarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wclarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, complex *, integer *, complex *, 
+ 	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+ 	    ftnlen, ftnlen, ftnlen), xerbla_(char *, integer *, ftnlen);
+@@ -311,10 +308,10 @@ static integer c__2 = 2;
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "C", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "C", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldwork = max(1,*n);
+@@ -364,7 +361,7 @@ static integer c__2 = 2;
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *m - i__ + 1;
+-	    clarfb_("L", "C", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
++	    wclarfb_("L", "C", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -379,7 +376,7 @@ static integer c__2 = 2;
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *n - i__ + 1;
+-	    clarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
++	    wclarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -394,7 +391,7 @@ static integer c__2 = 2;
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *m - i__ + 1;
+-	    clarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
++	    wclarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -409,7 +406,7 @@ static integer c__2 = 2;
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *n - i__ + 1;
+-	    clarfb_("R", "C", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
++	    wclarfb_("R", "C", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -573,21 +570,20 @@ static integer c__2 = 2;
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int cgeqrfp_(integer *m, integer *n, complex *a, integer *
+-	lda, complex *tau, complex *work, integer *lwork, integer *info)
++/* Subroutine */ int cgeqrfp_(integer *m, integer *n, complex *a, integer * lda, complex *tau, complex *work, integer *lwork, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2, i__3, i__4;
+ 
+     /* Local variables */
+     static integer i__, k, ib, nb, nx, iws, nbmin, iinfo;
+-    extern /* Subroutine */ int clarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wclarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, complex *, integer *, complex *, 
+ 	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen), clarft_(char *, char *, integer *, 
++	    ftnlen, ftnlen, ftnlen), wclarft_(char *, char *, integer *, 
+ 	    integer *, complex *, integer *, complex *, complex *, integer *, 
+ 	    ftnlen, ftnlen), xerbla_(char *, integer *, ftnlen);
+-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
++    extern integer wilaenv_(integer *, char *, char *, integer *, integer *, 
+ 	    integer *, integer *, ftnlen, ftnlen);
+     static integer ldwork, lwkopt;
+     static logical lquery;
+@@ -627,7 +623,7 @@ static integer c__2 = 2;
+ 
+     /* Function Body */
+     *info = 0;
+-    nb = ilaenv_(&c__1, "CGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
++    nb = wilaenv_(&c__1, "CGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
+ 	    1);
+     lwkopt = *n * nb;
+     work[1].r = (real) lwkopt, work[1].i = 0.f;
+@@ -665,7 +661,7 @@ static integer c__2 = 2;
+ /*        Determine when to cross over from blocked to unblocked code. */
+ 
+ /* Computing MAX */
+-	i__1 = 0, i__2 = ilaenv_(&c__3, "CGEQRF", " ", m, n, &c_n1, &c_n1, (
++	i__1 = 0, i__2 = wilaenv_(&c__3, "CGEQRF", " ", m, n, &c_n1, &c_n1, (
+ 		ftnlen)6, (ftnlen)1);
+ 	nx = max(i__1,i__2);
+ 	if (nx < k) {
+@@ -681,7 +677,7 @@ static integer c__2 = 2;
+ 
+ 		nb = *lwork / ldwork;
+ /* Computing MAX */
+-		i__1 = 2, i__2 = ilaenv_(&c__2, "CGEQRF", " ", m, n, &c_n1, &
++		i__1 = 2, i__2 = wilaenv_(&c__2, "CGEQRF", " ", m, n, &c_n1, &
+ 			c_n1, (ftnlen)6, (ftnlen)1);
+ 		nbmin = max(i__1,i__2);
+ 	    }
+@@ -711,7 +707,7 @@ static integer c__2 = 2;
+ /*              H = H(i) H(i+1) . . . H(i+ib-1) */
+ 
+ 		i__3 = *m - i__ + 1;
+-		clarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
++		wclarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
+ 			a_dim1], lda, &tau[i__], &work[1], &ldwork, (ftnlen)7,
+ 			 (ftnlen)10);
+ 
+@@ -719,7 +715,7 @@ static integer c__2 = 2;
+ 
+ 		i__3 = *m - i__ + 1;
+ 		i__4 = *n - i__ - ib + 1;
+-		clarfb_("Left", "Conjugate transpose", "Forward", "Columnwise"
++		wclarfb_("Left", "Conjugate transpose", "Forward", "Columnwise"
+ 			, &i__3, &i__4, &ib, &a[i__ + i__ * a_dim1], lda, &
+ 			work[1], &ldwork, &a[i__ + (i__ + ib) * a_dim1], lda, 
+ 			&work[ib + 1], &ldwork, (ftnlen)4, (ftnlen)19, (
+@@ -889,15 +885,14 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int cgeqrt_(integer *m, integer *n, integer *nb, complex *a, 
+-	integer *lda, complex *t, integer *ldt, complex *work, integer *info)
++/* Subroutine */ int cgeqrt_(integer *m, integer *n, integer *nb, complex *a, integer *lda, complex *t, integer *ldt, complex *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, t_dim1, t_offset, i__1, i__2, i__3, i__4, i__5;
+ 
+     /* Local variables */
+     static integer i__, k, ib, iinfo;
+-    extern /* Subroutine */ int clarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wclarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, complex *, integer *, complex *, 
+ 	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+ 	    ftnlen, ftnlen, ftnlen), xerbla_(char *, integer *, ftnlen), 
+@@ -988,7 +983,7 @@ f"> */
+ 	    i__3 = *m - i__ + 1;
+ 	    i__4 = *n - i__ - ib + 1;
+ 	    i__5 = *n - i__ - ib + 1;
+-	    clarfb_("L", "C", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
++	    wclarfb_("L", "C", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
+ 		    a_dim1], lda, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + 
+ 		    ib) * a_dim1], lda, &work[1], &i__5, (ftnlen)1, (ftnlen)1,
+ 		     (ftnlen)1, (ftnlen)1);
+@@ -1115,9 +1110,7 @@ f"> */
+ /* > \ingroup complexSYcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int csyconv_(char *uplo, char *way, integer *n, complex *a, 
+-	integer *lda, integer *ipiv, complex *e, integer *info, ftnlen 
+-	uplo_len, ftnlen way_len)
++/* Subroutine */ int csyconv_(char *uplo, char *way, integer *n, complex *a, integer *lda, integer *ipiv, complex *e, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2, i__3;
+@@ -1125,7 +1118,7 @@ f"> */
+     /* Local variables */
+     static integer i__, j, ip;
+     static complex temp;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen);
+     static logical convert;
+@@ -1160,11 +1153,11 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -1645,16 +1638,14 @@ f.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int csyconvf_(char *uplo, char *way, integer *n, complex *a, 
+-	integer *lda, complex *e, integer *ipiv, integer *info, ftnlen 
+-	uplo_len, ftnlen way_len)
++/* Subroutine */ int csyconvf_(char *uplo, char *way, integer *n, complex *a, integer *lda, complex *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2;
+ 
+     /* Local variables */
+     static integer i__, ip;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     extern /* Subroutine */ int cswap_(integer *, complex *, integer *, 
+ 	    complex *, integer *);
+     static logical upper;
+@@ -1691,11 +1682,11 @@ f.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -2234,16 +2225,14 @@ f_rook.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int csyconvf_rook__(char *uplo, char *way, integer *n, 
+-	complex *a, integer *lda, complex *e, integer *ipiv, integer *info, 
+-	ftnlen uplo_len, ftnlen way_len)
++/* Subroutine */ int csyconvf_rook__(char *uplo, char *way, integer *n, complex *a, integer *lda, complex *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2;
+ 
+     /* Local variables */
+     static integer i__, ip, ip2;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     extern /* Subroutine */ int cswap_(integer *, complex *, integer *, 
+ 	    complex *, integer *);
+     static logical upper;
+@@ -2280,11 +2269,11 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -2836,11 +2825,7 @@ f_rook.f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int ctpmqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *l, integer *nb, complex *v, integer *ldv, 
+-	complex *t, integer *ldt, complex *a, integer *lda, complex *b, 
+-	integer *ldb, complex *work, integer *info, ftnlen side_len, ftnlen 
+-	trans_len)
++/* Subroutine */ int ctpmqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *l, integer *nb, complex *v, integer *ldv, complex *t, integer *ldt, complex *a, integer *lda, complex *b, integer *ldb, complex *work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, a_dim1, a_offset, b_dim1, b_offset, t_dim1, 
+@@ -2850,13 +2835,12 @@ f_rook.f"> */
+     static integer i__, ib, lb, mb, kf, ldaq;
+     static logical left, tran;
+     static integer ldvq;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), ctprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, complex *, integer *, complex *, integer *, complex *, 
+-	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen);
++	    integer *, complex *, integer *, complex *, integer *);
+     static logical notran;
+ 
+ 
+@@ -2901,10 +2885,10 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "C", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "C", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldvq = max(1,*m);
+@@ -2967,8 +2951,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("L", "C", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -2989,8 +2972,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -3011,8 +2993,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -3033,8 +3014,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("R", "C", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -3234,9 +3214,7 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int ctpqrt_(integer *m, integer *n, integer *l, integer *nb, 
+-	complex *a, integer *lda, complex *b, integer *ldb, complex *t, 
+-	integer *ldt, complex *work, integer *info)
++/* Subroutine */ int ctpqrt_(integer *m, integer *n, integer *l, integer *nb, complex *a, integer *lda, complex *b, integer *ldb, complex *t, integer *ldt, complex *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, b_dim1, b_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -3247,8 +3225,7 @@ f"> */
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), ctprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, complex *, integer *, complex *, integer *, complex *, 
+-	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen), ctpqrt2_(integer *, integer *, integer *,
++	    integer *, complex *, integer *, complex *, integer *), ctpqrt2_(integer *, integer *, integer *,
+ 	     complex *, integer *, complex *, integer *, complex *, integer *,
+ 	     integer *);
+ 
+@@ -3342,7 +3319,7 @@ f"> */
+ 	    ctprfb_("L", "C", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
++		    , &ib);
+ 	}
+     }
+     return 0;
+@@ -3519,10 +3496,7 @@ f"> */
+ /* > \ingroup doubleGEcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int dgemqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *nb, doublereal *v, integer *ldv, doublereal *t, 
+-	integer *ldt, doublereal *c__, integer *ldc, doublereal *work, 
+-	integer *info, ftnlen side_len, ftnlen trans_len)
++/* Subroutine */ int dgemqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *nb, doublereal *v, integer *ldv, doublereal *t, integer *ldt, doublereal *c__, integer *ldc, doublereal *work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, c_dim1, c_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -3531,9 +3505,9 @@ f"> */
+     /* Local variables */
+     static integer i__, q, ib, kf;
+     static logical left, tran;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+-    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wdlarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+ 	    integer *, ftnlen, ftnlen, ftnlen, ftnlen), xerbla_(char *, 
+@@ -3580,10 +3554,10 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "T", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "T", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldwork = max(1,*n);
+@@ -3633,7 +3607,7 @@ f"> */
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *m - i__ + 1;
+-	    dlarfb_("L", "T", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
++	    wdlarfb_("L", "T", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -3648,7 +3622,7 @@ f"> */
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *n - i__ + 1;
+-	    dlarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
++	    wdlarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -3663,7 +3637,7 @@ f"> */
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *m - i__ + 1;
+-	    dlarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
++	    wdlarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -3678,7 +3652,7 @@ f"> */
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *n - i__ + 1;
+-	    dlarfb_("R", "T", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
++	    wdlarfb_("R", "T", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -3842,22 +3816,21 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int dgeqrfp_(integer *m, integer *n, doublereal *a, integer *
+-	lda, doublereal *tau, doublereal *work, integer *lwork, integer *info)
++/* Subroutine */ int dgeqrfp_(integer *m, integer *n, doublereal *a, integer * lda, doublereal *tau, doublereal *work, integer *lwork, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2, i__3, i__4;
+ 
+     /* Local variables */
+     static integer i__, k, ib, nb, nx, iws, nbmin, iinfo;
+-    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wdlarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, ftnlen, ftnlen, ftnlen, ftnlen), dlarft_(char *, char *
++	    integer *, ftnlen, ftnlen, ftnlen, ftnlen), wdlarft_(char *, char *
+ 	    , integer *, integer *, doublereal *, integer *, doublereal *, 
+ 	    doublereal *, integer *, ftnlen, ftnlen), xerbla_(char *, integer 
+ 	    *, ftnlen);
+-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
++    extern integer wilaenv_(integer *, char *, char *, integer *, integer *, 
+ 	    integer *, integer *, ftnlen, ftnlen);
+     static integer ldwork, lwkopt;
+     static logical lquery;
+@@ -3897,7 +3870,7 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    nb = ilaenv_(&c__1, "DGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
++    nb = wilaenv_(&c__1, "DGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
+ 	    1);
+     lwkopt = *n * nb;
+     work[1] = (doublereal) lwkopt;
+@@ -3935,7 +3908,7 @@ f"> */
+ /*        Determine when to cross over from blocked to unblocked code. */
+ 
+ /* Computing MAX */
+-	i__1 = 0, i__2 = ilaenv_(&c__3, "DGEQRF", " ", m, n, &c_n1, &c_n1, (
++	i__1 = 0, i__2 = wilaenv_(&c__3, "DGEQRF", " ", m, n, &c_n1, &c_n1, (
+ 		ftnlen)6, (ftnlen)1);
+ 	nx = max(i__1,i__2);
+ 	if (nx < k) {
+@@ -3951,7 +3924,7 @@ f"> */
+ 
+ 		nb = *lwork / ldwork;
+ /* Computing MAX */
+-		i__1 = 2, i__2 = ilaenv_(&c__2, "DGEQRF", " ", m, n, &c_n1, &
++		i__1 = 2, i__2 = wilaenv_(&c__2, "DGEQRF", " ", m, n, &c_n1, &
+ 			c_n1, (ftnlen)6, (ftnlen)1);
+ 		nbmin = max(i__1,i__2);
+ 	    }
+@@ -3981,7 +3954,7 @@ f"> */
+ /*              H = H(i) H(i+1) . . . H(i+ib-1) */
+ 
+ 		i__3 = *m - i__ + 1;
+-		dlarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
++		wdlarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
+ 			a_dim1], lda, &tau[i__], &work[1], &ldwork, (ftnlen)7,
+ 			 (ftnlen)10);
+ 
+@@ -3989,7 +3962,7 @@ f"> */
+ 
+ 		i__3 = *m - i__ + 1;
+ 		i__4 = *n - i__ - ib + 1;
+-		dlarfb_("Left", "Transpose", "Forward", "Columnwise", &i__3, &
++		wdlarfb_("Left", "Transpose", "Forward", "Columnwise", &i__3, &
+ 			i__4, &ib, &a[i__ + i__ * a_dim1], lda, &work[1], &
+ 			ldwork, &a[i__ + (i__ + ib) * a_dim1], lda, &work[ib 
+ 			+ 1], &ldwork, (ftnlen)4, (ftnlen)9, (ftnlen)7, (
+@@ -4159,16 +4132,14 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int dgeqrt_(integer *m, integer *n, integer *nb, doublereal *
+-	a, integer *lda, doublereal *t, integer *ldt, doublereal *work, 
+-	integer *info)
++/* Subroutine */ int dgeqrt_(integer *m, integer *n, integer *nb, doublereal * a, integer *lda, doublereal *t, integer *ldt, doublereal *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, t_dim1, t_offset, i__1, i__2, i__3, i__4, i__5;
+ 
+     /* Local variables */
+     static integer i__, k, ib, iinfo;
+-    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wdlarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+ 	    integer *, ftnlen, ftnlen, ftnlen, ftnlen), xerbla_(char *, 
+@@ -4260,7 +4231,7 @@ f"> */
+ 	    i__3 = *m - i__ + 1;
+ 	    i__4 = *n - i__ - ib + 1;
+ 	    i__5 = *n - i__ - ib + 1;
+-	    dlarfb_("L", "T", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
++	    wdlarfb_("L", "T", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
+ 		    a_dim1], lda, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + 
+ 		    ib) * a_dim1], lda, &work[1], &i__5, (ftnlen)1, (ftnlen)1,
+ 		     (ftnlen)1, (ftnlen)1);
+@@ -4387,9 +4358,7 @@ f"> */
+ /* > \ingroup doubleSYcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int dsyconv_(char *uplo, char *way, integer *n, doublereal *
+-	a, integer *lda, integer *ipiv, doublereal *e, integer *info, ftnlen 
+-	uplo_len, ftnlen way_len)
++/* Subroutine */ int dsyconv_(char *uplo, char *way, integer *n, doublereal * a, integer *lda, integer *ipiv, doublereal *e, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1;
+@@ -4397,7 +4366,7 @@ f"> */
+     /* Local variables */
+     static integer i__, j, ip;
+     static doublereal temp;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen);
+     static logical convert;
+@@ -4432,11 +4401,11 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -4867,16 +4836,14 @@ f.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int dsyconvf_(char *uplo, char *way, integer *n, doublereal *
+-	a, integer *lda, doublereal *e, integer *ipiv, integer *info, ftnlen 
+-	uplo_len, ftnlen way_len)
++/* Subroutine */ int dsyconvf_(char *uplo, char *way, integer *n, doublereal * a, integer *lda, doublereal *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1;
+ 
+     /* Local variables */
+     static integer i__, ip;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     extern /* Subroutine */ int dswap_(integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *);
+     static logical upper;
+@@ -4913,11 +4880,11 @@ f.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -5438,16 +5405,14 @@ f_rook.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int dsyconvf_rook__(char *uplo, char *way, integer *n, 
+-	doublereal *a, integer *lda, doublereal *e, integer *ipiv, integer *
+-	info, ftnlen uplo_len, ftnlen way_len)
++/* Subroutine */ int dsyconvf_rook__(char *uplo, char *way, integer *n, doublereal *a, integer *lda, doublereal *e, integer *ipiv, integer * info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1;
+ 
+     /* Local variables */
+     static integer i__, ip, ip2;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     extern /* Subroutine */ int dswap_(integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *);
+     static logical upper;
+@@ -5484,11 +5449,11 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -6025,11 +5990,7 @@ f_rook.f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int dtpmqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *l, integer *nb, doublereal *v, integer *ldv, 
+-	doublereal *t, integer *ldt, doublereal *a, integer *lda, doublereal *
+-	b, integer *ldb, doublereal *work, integer *info, ftnlen side_len, 
+-	ftnlen trans_len)
++/* Subroutine */ int dtpmqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *l, integer *nb, doublereal *v, integer *ldv, doublereal *t, integer *ldt, doublereal *a, integer *lda, doublereal * b, integer *ldb, doublereal *work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, a_dim1, a_offset, b_dim1, b_offset, t_dim1, 
+@@ -6039,13 +6000,15 @@ f_rook.f"> */
+     static integer i__, ib, lb, mb, kf, ldaq;
+     static logical left, tran;
+     static integer ldvq;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+-    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), dtprfb_(
++    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), 
++	
++	dtprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, doublereal *, integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, ftnlen, ftnlen, ftnlen, ftnlen);
++	    integer *);
+     static logical notran;
+ 
+ 
+@@ -6090,10 +6053,10 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "T", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "T", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldvq = max(1,*m);
+@@ -6156,8 +6119,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("L", "T", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -6178,8 +6140,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -6200,8 +6161,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -6222,8 +6182,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("R", "T", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -6423,9 +6382,7 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int dtpqrt_(integer *m, integer *n, integer *l, integer *nb, 
+-	doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal *
+-	t, integer *ldt, doublereal *work, integer *info)
++/* Subroutine */ int dtpqrt_(integer *m, integer *n, integer *l, integer *nb, doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal * t, integer *ldt, doublereal *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, b_dim1, b_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -6433,13 +6390,12 @@ f"> */
+ 
+     /* Local variables */
+     static integer i__, ib, lb, mb, iinfo;
+-    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), dtprfb_(
+-	    char *, char *, char *, char *, integer *, integer *, integer *, 
+-	    integer *, doublereal *, integer *, doublereal *, integer *, 
+-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, ftnlen, ftnlen, ftnlen, ftnlen), dtpqrt2_(integer *, 
+-	    integer *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, doublereal *, integer *, integer *);
++    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), 
++	
++dtprfb_(char *, char *, char *, char *, integer *, integer *, integer *, integer *, doublereal *, integer *, doublereal *, integer *, 
++	    doublereal *, integer *, doublereal *, integer *, doublereal *, integer *), 
++		
++		dtpqrt2_(integer *, integer *, integer *, doublereal *, integer *, doublereal *, integer *, doublereal *, integer *, integer *);
+ 
+ 
+ /*  -- LAPACK computational routine -- */
+@@ -6531,9 +6487,8 @@ f"> */
+ 	    dtprfb_("L", "T", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
+-	}
+-    }
++		    , &ib);
++	}}
+     return 0;
+ 
+ /*     End of DTPQRT */
+@@ -6708,10 +6663,7 @@ f"> */
+ /* > \ingroup realGEcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int sgemqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *nb, real *v, integer *ldv, real *t, integer *
+-	ldt, real *c__, integer *ldc, real *work, integer *info, ftnlen 
+-	side_len, ftnlen trans_len)
++/* Subroutine */ int sgemqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *nb, real *v, integer *ldv, real *t, integer * ldt, real *c__, integer *ldc, real *work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, c_dim1, c_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -6720,9 +6672,9 @@ f"> */
+     /* Local variables */
+     static integer i__, q, ib, kf;
+     static logical left, tran;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+-    extern /* Subroutine */ int slarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wslarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, real *, integer *, real *, 
+ 	    integer *, real *, integer *, real *, integer *, ftnlen, ftnlen, 
+ 	    ftnlen, ftnlen), xerbla_(char *, integer *, ftnlen);
+@@ -6768,10 +6720,10 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "T", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "T", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldwork = max(1,*n);
+@@ -6821,7 +6773,7 @@ f"> */
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *m - i__ + 1;
+-	    slarfb_("L", "T", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
++	    wslarfb_("L", "T", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -6836,7 +6788,7 @@ f"> */
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *n - i__ + 1;
+-	    slarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
++	    wslarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -6851,7 +6803,7 @@ f"> */
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *m - i__ + 1;
+-	    slarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
++	    wslarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -6866,7 +6818,7 @@ f"> */
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *n - i__ + 1;
+-	    slarfb_("R", "T", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
++	    wslarfb_("R", "T", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -7030,21 +6982,20 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int sgeqrfp_(integer *m, integer *n, real *a, integer *lda, 
+-	real *tau, real *work, integer *lwork, integer *info)
++/* Subroutine */ int sgeqrfp_(integer *m, integer *n, real *a, integer *lda, real *tau, real *work, integer *lwork, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2, i__3, i__4;
+ 
+     /* Local variables */
+     static integer i__, k, ib, nb, nx, iws, nbmin, iinfo;
+-    extern /* Subroutine */ int slarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wslarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, real *, integer *, real *, 
+ 	    integer *, real *, integer *, real *, integer *, ftnlen, ftnlen, 
+ 	    ftnlen, ftnlen), xerbla_(char *, integer *, ftnlen);
+-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
++    extern integer wilaenv_(integer *, char *, char *, integer *, integer *, 
+ 	    integer *, integer *, ftnlen, ftnlen);
+-    extern /* Subroutine */ int slarft_(char *, char *, integer *, integer *, 
++    extern /* Subroutine */ int wslarft_(char *, char *, integer *, integer *, 
+ 	    real *, integer *, real *, real *, integer *, ftnlen, ftnlen);
+     static integer ldwork, lwkopt;
+     static logical lquery;
+@@ -7084,7 +7035,7 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    nb = ilaenv_(&c__1, "SGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
++    nb = wilaenv_(&c__1, "SGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
+ 	    1);
+     lwkopt = *n * nb;
+     work[1] = (real) lwkopt;
+@@ -7122,7 +7073,7 @@ f"> */
+ /*        Determine when to cross over from blocked to unblocked code. */
+ 
+ /* Computing MAX */
+-	i__1 = 0, i__2 = ilaenv_(&c__3, "SGEQRF", " ", m, n, &c_n1, &c_n1, (
++	i__1 = 0, i__2 = wilaenv_(&c__3, "SGEQRF", " ", m, n, &c_n1, &c_n1, (
+ 		ftnlen)6, (ftnlen)1);
+ 	nx = max(i__1,i__2);
+ 	if (nx < k) {
+@@ -7138,7 +7089,7 @@ f"> */
+ 
+ 		nb = *lwork / ldwork;
+ /* Computing MAX */
+-		i__1 = 2, i__2 = ilaenv_(&c__2, "SGEQRF", " ", m, n, &c_n1, &
++		i__1 = 2, i__2 = wilaenv_(&c__2, "SGEQRF", " ", m, n, &c_n1, &
+ 			c_n1, (ftnlen)6, (ftnlen)1);
+ 		nbmin = max(i__1,i__2);
+ 	    }
+@@ -7168,7 +7119,7 @@ f"> */
+ /*              H = H(i) H(i+1) . . . H(i+ib-1) */
+ 
+ 		i__3 = *m - i__ + 1;
+-		slarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
++		wslarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
+ 			a_dim1], lda, &tau[i__], &work[1], &ldwork, (ftnlen)7,
+ 			 (ftnlen)10);
+ 
+@@ -7176,7 +7127,7 @@ f"> */
+ 
+ 		i__3 = *m - i__ + 1;
+ 		i__4 = *n - i__ - ib + 1;
+-		slarfb_("Left", "Transpose", "Forward", "Columnwise", &i__3, &
++		wslarfb_("Left", "Transpose", "Forward", "Columnwise", &i__3, &
+ 			i__4, &ib, &a[i__ + i__ * a_dim1], lda, &work[1], &
+ 			ldwork, &a[i__ + (i__ + ib) * a_dim1], lda, &work[ib 
+ 			+ 1], &ldwork, (ftnlen)4, (ftnlen)9, (ftnlen)7, (
+@@ -7346,15 +7297,14 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int sgeqrt_(integer *m, integer *n, integer *nb, real *a, 
+-	integer *lda, real *t, integer *ldt, real *work, integer *info)
++/* Subroutine */ int sgeqrt_(integer *m, integer *n, integer *nb, real *a, integer *lda, real *t, integer *ldt, real *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, t_dim1, t_offset, i__1, i__2, i__3, i__4, i__5;
+ 
+     /* Local variables */
+     static integer i__, k, ib, iinfo;
+-    extern /* Subroutine */ int slarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wslarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, real *, integer *, real *, 
+ 	    integer *, real *, integer *, real *, integer *, ftnlen, ftnlen, 
+ 	    ftnlen, ftnlen), xerbla_(char *, integer *, ftnlen), sgeqrt2_(
+@@ -7445,7 +7395,7 @@ f"> */
+ 	    i__3 = *m - i__ + 1;
+ 	    i__4 = *n - i__ - ib + 1;
+ 	    i__5 = *n - i__ - ib + 1;
+-	    slarfb_("L", "T", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
++	    wslarfb_("L", "T", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
+ 		    a_dim1], lda, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + 
+ 		    ib) * a_dim1], lda, &work[1], &i__5, (ftnlen)1, (ftnlen)1,
+ 		     (ftnlen)1, (ftnlen)1);
+@@ -7572,9 +7522,7 @@ f"> */
+ /* > \ingroup realSYcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int ssyconv_(char *uplo, char *way, integer *n, real *a, 
+-	integer *lda, integer *ipiv, real *e, integer *info, ftnlen uplo_len, 
+-	ftnlen way_len)
++/* Subroutine */ int ssyconv_(char *uplo, char *way, integer *n, real *a, integer *lda, integer *ipiv, real *e, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1;
+@@ -7582,7 +7530,7 @@ f"> */
+     /* Local variables */
+     static integer i__, j, ip;
+     static real temp;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen);
+     static logical convert;
+@@ -7617,11 +7565,11 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -8052,16 +8000,14 @@ f.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int ssyconvf_(char *uplo, char *way, integer *n, real *a, 
+-	integer *lda, real *e, integer *ipiv, integer *info, ftnlen uplo_len, 
+-	ftnlen way_len)
++/* Subroutine */ int ssyconvf_(char *uplo, char *way, integer *n, real *a, integer *lda, real *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1;
+ 
+     /* Local variables */
+     static integer i__, ip;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int sswap_(integer *, real *, integer *, real *, 
+ 	    integer *), xerbla_(char *, integer *, ftnlen);
+@@ -8097,11 +8043,11 @@ f.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -8622,16 +8568,14 @@ f_rook.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int ssyconvf_rook__(char *uplo, char *way, integer *n, real *
+-	a, integer *lda, real *e, integer *ipiv, integer *info, ftnlen 
+-	uplo_len, ftnlen way_len)
++/* Subroutine */ int ssyconvf_rook__(char *uplo, char *way, integer *n, real * a, integer *lda, real *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1;
+ 
+     /* Local variables */
+     static integer i__, ip, ip2;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int sswap_(integer *, real *, integer *, real *, 
+ 	    integer *), xerbla_(char *, integer *, ftnlen);
+@@ -8667,11 +8611,11 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -9208,10 +9152,7 @@ f_rook.f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int stpmqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *l, integer *nb, real *v, integer *ldv, real *t, 
+-	integer *ldt, real *a, integer *lda, real *b, integer *ldb, real *
+-	work, integer *info, ftnlen side_len, ftnlen trans_len)
++/* Subroutine */ int stpmqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *l, integer *nb, real *v, integer *ldv, real *t, integer *ldt, real *a, integer *lda, real *b, integer *ldb, real * work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, a_dim1, a_offset, b_dim1, b_offset, t_dim1, 
+@@ -9221,13 +9162,12 @@ f_rook.f"> */
+     static integer i__, ib, lb, mb, kf, ldaq;
+     static logical left, tran;
+     static integer ldvq;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), stprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, real *, integer *, real *, integer *, real *, integer *
+-	    , real *, integer *, real *, integer *, ftnlen, ftnlen, ftnlen, 
+-	    ftnlen);
++	    , real *, integer *, real *, integer *);
+     static logical notran;
+ 
+ 
+@@ -9272,10 +9212,10 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "T", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "T", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldvq = max(1,*m);
+@@ -9338,8 +9278,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("L", "T", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -9360,8 +9299,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -9382,8 +9320,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -9404,8 +9341,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("R", "T", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -9605,9 +9541,7 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int stpqrt_(integer *m, integer *n, integer *l, integer *nb, 
+-	real *a, integer *lda, real *b, integer *ldb, real *t, integer *ldt, 
+-	real *work, integer *info)
++/* Subroutine */ int stpqrt_(integer *m, integer *n, integer *l, integer *nb, real *a, integer *lda, real *b, integer *ldb, real *t, integer *ldt, real *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, b_dim1, b_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -9618,8 +9552,7 @@ f"> */
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), stprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, real *, integer *, real *, integer *, real *, integer *
+-	    , real *, integer *, real *, integer *, ftnlen, ftnlen, ftnlen, 
+-	    ftnlen), stpqrt2_(integer *, integer *, integer *, real *, 
++	    , real *, integer *, real *, integer *), stpqrt2_(integer *, integer *, integer *, real *, 
+ 	    integer *, real *, integer *, real *, integer *, integer *);
+ 
+ 
+@@ -9712,7 +9645,7 @@ f"> */
+ 	    stprfb_("L", "T", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
++		    , &ib);
+ 	}
+     }
+     return 0;
+@@ -9889,10 +9822,7 @@ f"> */
+ /* > \ingroup complex16GEcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int zgemqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *nb, doublecomplex *v, integer *ldv, 
+-	doublecomplex *t, integer *ldt, doublecomplex *c__, integer *ldc, 
+-	doublecomplex *work, integer *info, ftnlen side_len, ftnlen trans_len)
++/* Subroutine */ int zgemqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *nb, doublecomplex *v, integer *ldv, doublecomplex *t, integer *ldt, doublecomplex *c__, integer *ldc, doublecomplex *work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, c_dim1, c_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -9901,9 +9831,9 @@ f"> */
+     /* Local variables */
+     static integer i__, q, ib, kf;
+     static logical left, tran;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+-    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), zlarfb_(
++    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), wzlarfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublecomplex *, integer *, 
+ 	    doublecomplex *, integer *, doublecomplex *, integer *, ftnlen, 
+@@ -9950,10 +9880,10 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "C", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "C", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldwork = max(1,*n);
+@@ -10003,7 +9933,7 @@ f"> */
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *m - i__ + 1;
+-	    zlarfb_("L", "C", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
++	    wzlarfb_("L", "C", "F", "C", &i__3, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -10018,7 +9948,7 @@ f"> */
+ 	    i__3 = *nb, i__4 = *k - i__ + 1;
+ 	    ib = min(i__3,i__4);
+ 	    i__3 = *n - i__ + 1;
+-	    zlarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
++	    wzlarfb_("R", "N", "F", "C", m, &i__3, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -10033,7 +9963,7 @@ f"> */
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *m - i__ + 1;
+-	    zlarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
++	    wzlarfb_("L", "N", "F", "C", &i__2, n, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ + c_dim1], ldc, 
+ 		    &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -10048,7 +9978,7 @@ f"> */
+ 	    i__2 = *nb, i__3 = *k - i__ + 1;
+ 	    ib = min(i__2,i__3);
+ 	    i__2 = *n - i__ + 1;
+-	    zlarfb_("R", "C", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
++	    wzlarfb_("R", "C", "F", "C", m, &i__2, &ib, &v[i__ + i__ * v_dim1],
+ 		     ldv, &t[i__ * t_dim1 + 1], ldt, &c__[i__ * c_dim1 + 1], 
+ 		    ldc, &work[1], &ldwork, (ftnlen)1, (ftnlen)1, (ftnlen)1, (
+ 		    ftnlen)1);
+@@ -10212,9 +10142,7 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int zgeqrfp_(integer *m, integer *n, doublecomplex *a, 
+-	integer *lda, doublecomplex *tau, doublecomplex *work, integer *lwork,
+-	 integer *info)
++/* Subroutine */ int zgeqrfp_(integer *m, integer *n, doublecomplex *a, integer *lda, doublecomplex *tau, doublecomplex *work, integer *lwork, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2, i__3, i__4;
+@@ -10222,14 +10150,14 @@ f"> */
+     /* Local variables */
+     static integer i__, k, ib, nb, nx, iws, nbmin, iinfo;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen);
+-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
++    extern integer wilaenv_(integer *, char *, char *, integer *, integer *, 
+ 	    integer *, integer *, ftnlen, ftnlen);
+-    extern /* Subroutine */ int zlarfb_(char *, char *, char *, char *, 
++    extern /* Subroutine */ int wzlarfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, doublecomplex *, integer *, 
+ 	    doublecomplex *, integer *, doublecomplex *, integer *, 
+ 	    doublecomplex *, integer *, ftnlen, ftnlen, ftnlen, ftnlen);
+     static integer ldwork;
+-    extern /* Subroutine */ int zlarft_(char *, char *, integer *, integer *, 
++    extern /* Subroutine */ int wzlarft_(char *, char *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublecomplex *, doublecomplex *, 
+ 	    integer *, ftnlen, ftnlen);
+     static integer lwkopt;
+@@ -10270,7 +10198,7 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    nb = ilaenv_(&c__1, "ZGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
++    nb = wilaenv_(&c__1, "ZGEQRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
+ 	    1);
+     lwkopt = *n * nb;
+     work[1].r = (doublereal) lwkopt, work[1].i = 0.;
+@@ -10308,7 +10236,7 @@ f"> */
+ /*        Determine when to cross over from blocked to unblocked code. */
+ 
+ /* Computing MAX */
+-	i__1 = 0, i__2 = ilaenv_(&c__3, "ZGEQRF", " ", m, n, &c_n1, &c_n1, (
++	i__1 = 0, i__2 = wilaenv_(&c__3, "ZGEQRF", " ", m, n, &c_n1, &c_n1, (
+ 		ftnlen)6, (ftnlen)1);
+ 	nx = max(i__1,i__2);
+ 	if (nx < k) {
+@@ -10324,7 +10252,7 @@ f"> */
+ 
+ 		nb = *lwork / ldwork;
+ /* Computing MAX */
+-		i__1 = 2, i__2 = ilaenv_(&c__2, "ZGEQRF", " ", m, n, &c_n1, &
++		i__1 = 2, i__2 = wilaenv_(&c__2, "ZGEQRF", " ", m, n, &c_n1, &
+ 			c_n1, (ftnlen)6, (ftnlen)1);
+ 		nbmin = max(i__1,i__2);
+ 	    }
+@@ -10354,7 +10282,7 @@ f"> */
+ /*              H = H(i) H(i+1) . . . H(i+ib-1) */
+ 
+ 		i__3 = *m - i__ + 1;
+-		zlarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
++		wzlarft_("Forward", "Columnwise", &i__3, &ib, &a[i__ + i__ * 
+ 			a_dim1], lda, &tau[i__], &work[1], &ldwork, (ftnlen)7,
+ 			 (ftnlen)10);
+ 
+@@ -10362,7 +10290,7 @@ f"> */
+ 
+ 		i__3 = *m - i__ + 1;
+ 		i__4 = *n - i__ - ib + 1;
+-		zlarfb_("Left", "Conjugate transpose", "Forward", "Columnwise"
++		wzlarfb_("Left", "Conjugate transpose", "Forward", "Columnwise"
+ 			, &i__3, &i__4, &ib, &a[i__ + i__ * a_dim1], lda, &
+ 			work[1], &ldwork, &a[i__ + (i__ + ib) * a_dim1], lda, 
+ 			&work[ib + 1], &ldwork, (ftnlen)4, (ftnlen)19, (
+@@ -10532,16 +10460,14 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int zgeqrt_(integer *m, integer *n, integer *nb, 
+-	doublecomplex *a, integer *lda, doublecomplex *t, integer *ldt, 
+-	doublecomplex *work, integer *info)
++/* Subroutine */ int zgeqrt_(integer *m, integer *n, integer *nb, doublecomplex *a, integer *lda, doublecomplex *t, integer *ldt, doublecomplex *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, t_dim1, t_offset, i__1, i__2, i__3, i__4, i__5;
+ 
+     /* Local variables */
+     static integer i__, k, ib, iinfo;
+-    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), zlarfb_(
++    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), wzlarfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    doublecomplex *, integer *, doublecomplex *, integer *, 
+ 	    doublecomplex *, integer *, doublecomplex *, integer *, ftnlen, 
+@@ -10633,7 +10559,7 @@ f"> */
+ 	    i__3 = *m - i__ + 1;
+ 	    i__4 = *n - i__ - ib + 1;
+ 	    i__5 = *n - i__ - ib + 1;
+-	    zlarfb_("L", "C", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
++	    wzlarfb_("L", "C", "F", "C", &i__3, &i__4, &ib, &a[i__ + i__ * 
+ 		    a_dim1], lda, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + 
+ 		    ib) * a_dim1], lda, &work[1], &i__5, (ftnlen)1, (ftnlen)1,
+ 		     (ftnlen)1, (ftnlen)1);
+@@ -10760,9 +10686,7 @@ f"> */
+ /* > \ingroup complex16SYcomputational */
+ 
+ /*  ===================================================================== */
+-/* Subroutine */ int zsyconv_(char *uplo, char *way, integer *n, 
+-	doublecomplex *a, integer *lda, integer *ipiv, doublecomplex *e, 
+-	integer *info, ftnlen uplo_len, ftnlen way_len)
++/* Subroutine */ int zsyconv_(char *uplo, char *way, integer *n, doublecomplex *a, integer *lda, integer *ipiv, doublecomplex *e, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2, i__3;
+@@ -10770,7 +10694,7 @@ f"> */
+     /* Local variables */
+     static integer i__, j, ip;
+     static doublecomplex temp;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen);
+     static logical convert;
+@@ -10805,11 +10729,11 @@ f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -11292,16 +11216,14 @@ f.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int zsyconvf_(char *uplo, char *way, integer *n, 
+-	doublecomplex *a, integer *lda, doublecomplex *e, integer *ipiv, 
+-	integer *info, ftnlen uplo_len, ftnlen way_len)
++/* Subroutine */ int zsyconvf_(char *uplo, char *way, integer *n, doublecomplex *a, integer *lda, doublecomplex *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2;
+ 
+     /* Local variables */
+     static integer i__, ip;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int zswap_(integer *, doublecomplex *, integer *, 
+ 	    doublecomplex *, integer *), xerbla_(char *, integer *, ftnlen);
+@@ -11337,11 +11259,11 @@ f.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -11880,16 +11802,14 @@ f_rook.f"> */
+ /* > */
+ /* > \endverbatim */
+ /*  ===================================================================== */
+-/* Subroutine */ int zsyconvf_rook__(char *uplo, char *way, integer *n, 
+-	doublecomplex *a, integer *lda, doublecomplex *e, integer *ipiv, 
+-	integer *info, ftnlen uplo_len, ftnlen way_len)
++/* Subroutine */ int zsyconvf_rook__(char *uplo, char *way, integer *n, doublecomplex *a, integer *lda, doublecomplex *e, integer *ipiv, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, i__1, i__2;
+ 
+     /* Local variables */
+     static integer i__, ip, ip2;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical upper;
+     extern /* Subroutine */ int zswap_(integer *, doublecomplex *, integer *, 
+ 	    doublecomplex *, integer *), xerbla_(char *, integer *, ftnlen);
+@@ -11925,11 +11845,11 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    upper = lsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
+-    convert = lsame_(way, "C", (ftnlen)1, (ftnlen)1);
+-    if (! upper && ! lsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
++    upper = wlsame_(uplo, "U", (ftnlen)1, (ftnlen)1);
++    convert = wlsame_(way, "C", (ftnlen)1, (ftnlen)1);
++    if (! upper && ! wlsame_(uplo, "L", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -1;
+-    } else if (! convert && ! lsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
++    } else if (! convert && ! wlsame_(way, "R", (ftnlen)1, (ftnlen)1)) {
+ 	*info = -2;
+     } else if (*n < 0) {
+ 	*info = -3;
+@@ -12481,11 +12401,7 @@ f_rook.f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int ztpmqrt_(char *side, char *trans, integer *m, integer *n,
+-	 integer *k, integer *l, integer *nb, doublecomplex *v, integer *ldv, 
+-	doublecomplex *t, integer *ldt, doublecomplex *a, integer *lda, 
+-	doublecomplex *b, integer *ldb, doublecomplex *work, integer *info, 
+-	ftnlen side_len, ftnlen trans_len)
++/* Subroutine */ int ztpmqrt_(char *side, char *trans, integer *m, integer *n, integer *k, integer *l, integer *nb, doublecomplex *v, integer *ldv, doublecomplex *t, integer *ldt, doublecomplex *a, integer *lda, doublecomplex *b, integer *ldb, doublecomplex *work, integer *info)
+ {
+     /* System generated locals */
+     integer v_dim1, v_offset, a_dim1, a_offset, b_dim1, b_offset, t_dim1, 
+@@ -12495,15 +12411,14 @@ f_rook.f"> */
+     static integer i__, ib, lb, mb, kf, ldaq;
+     static logical left, tran;
+     static integer ldvq;
+-    extern logical lsame_(char *, char *, ftnlen, ftnlen);
++    extern logical wlsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen);
+     static logical notran;
+     extern /* Subroutine */ int ztprfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, integer *, doublecomplex *, 
+ 	    integer *, doublecomplex *, integer *, doublecomplex *, integer *,
+-	     doublecomplex *, integer *, doublecomplex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen);
++	     doublecomplex *, integer *, doublecomplex *, integer *);
+ 
+ 
+ /*  -- LAPACK computational routine -- */
+@@ -12547,10 +12462,10 @@ f_rook.f"> */
+ 
+     /* Function Body */
+     *info = 0;
+-    left = lsame_(side, "L", (ftnlen)1, (ftnlen)1);
+-    right = lsame_(side, "R", (ftnlen)1, (ftnlen)1);
+-    tran = lsame_(trans, "C", (ftnlen)1, (ftnlen)1);
+-    notran = lsame_(trans, "N", (ftnlen)1, (ftnlen)1);
++    left = wlsame_(side, "L", (ftnlen)1, (ftnlen)1);
++    right = wlsame_(side, "R", (ftnlen)1, (ftnlen)1);
++    tran = wlsame_(trans, "C", (ftnlen)1, (ftnlen)1);
++    notran = wlsame_(trans, "N", (ftnlen)1, (ftnlen)1);
+ 
+     if (left) {
+ 	ldvq = max(1,*m);
+@@ -12613,8 +12528,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("L", "C", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -12635,8 +12549,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -12657,8 +12570,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -12679,8 +12591,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("R", "C", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -12880,9 +12791,7 @@ f"> */
+ /* > \endverbatim */
+ /* > */
+ /*  ===================================================================== */
+-/* Subroutine */ int ztpqrt_(integer *m, integer *n, integer *l, integer *nb, 
+-	doublecomplex *a, integer *lda, doublecomplex *b, integer *ldb, 
+-	doublecomplex *t, integer *ldt, doublecomplex *work, integer *info)
++/* Subroutine */ int ztpqrt_(integer *m, integer *n, integer *l, integer *nb, doublecomplex *a, integer *lda, doublecomplex *b, integer *ldb, doublecomplex *t, integer *ldt, doublecomplex *work, integer *info)
+ {
+     /* System generated locals */
+     integer a_dim1, a_offset, b_dim1, b_offset, t_dim1, t_offset, i__1, i__2, 
+@@ -12894,7 +12803,7 @@ f"> */
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, doublecomplex *, integer *, doublecomplex *, integer *,
+ 	     doublecomplex *, integer *, doublecomplex *, integer *, 
+-	    doublecomplex *, integer *, ftnlen, ftnlen, ftnlen, ftnlen), 
++	    doublecomplex *, integer *), 
+ 	    ztpqrt2_(integer *, integer *, integer *, doublecomplex *, 
+ 	    integer *, doublecomplex *, integer *, doublecomplex *, integer *,
+ 	     integer *);
+@@ -12989,7 +12898,7 @@ f"> */
+ 	    ztprfb_("L", "C", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
++		    , &ib);
+ 	}
+     }
+     return 0;
+@@ -12998,3 +12907,10 @@ f"> */
+ 
+ } /* ztpqrt_ */
+ 
++
++typedef struct { float real, imag; } npy_complex64;
++typedef struct { double real, imag; } npy_complex128;
++int sorcsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, float *x11, int *ldx11, float *x12, int *ldx12, float *x21, int *ldx21, float *x22, int *ldx22, float *theta, float *u1, int *ldu1, float *u2, int *ldu2, float *v1t, int *ldv1t, float *v2t, int *ldv2t, float *work, int *lwork, int *iwork, int *info){}
++int dorcsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, double *x11, int *ldx11, double *x12, int *ldx12, double *x21, int *ldx21, double *x22, int *ldx22, double *theta, double *u1, int *ldu1, double *u2, int *ldu2, double *v1t, int *ldv1t, double *v2t, int *ldv2t, double *work, int *lwork, int *iwork, int *info){}
++int zuncsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, npy_complex128 *x11, int *ldx11, npy_complex128 *x12, int *ldx12, npy_complex128 *x21, int *ldx21, npy_complex128 *x22, int *ldx22, double *theta, npy_complex128 *u1, int *ldu1, npy_complex128 *u2, int *ldu2, npy_complex128 *v1t, int *ldv1t, npy_complex128 *v2t, int *ldv2t, npy_complex128 *work, int *lwork, double *rwork, int *lrwork, int *iwork, int *info){}
++int cuncsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, npy_complex64 *x11, int *ldx11, npy_complex64 *x12, int *ldx12, npy_complex64 *x21, int *ldx21, npy_complex64 *x22, int *ldx22, float *theta, npy_complex64 *u1, int *ldu1, npy_complex64 *u2, int *ldu2, npy_complex64 *v1t, int *ldv1t, npy_complex64 *v2t, int *ldv2t, npy_complex64 *work, int *lwork, float *rwork, int *lrwork, int *iwork, int *info){}

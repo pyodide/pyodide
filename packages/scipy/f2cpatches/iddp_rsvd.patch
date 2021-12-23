@@ -1,7 +1,7 @@
-diff --git a/scipy/linalg/src/id_dist/src/iddp_rsvd.c b/../../f2cfixes/iddp_rsvd.c
+diff --git a/scipy/linalg/src/id_dist/src/iddp_rsvd.c b/src/packages/scipy/f2cpatches/iddp_rsvd.c
 index fec7f8b..5dce6a9 100644
 --- a/scipy/linalg/src/id_dist/src/iddp_rsvd.c
-+++ b/../../f2cfixes/iddp_rsvd.c
++++ b/src/packages/scipy/f2cpatches/iddp_rsvd.c
 @@ -40,11 +40,8 @@
  	     integer *, U_fp, doublereal *, doublereal *, doublereal *, 
  	    doublereal *, integer *, doublereal *, doublereal *, integer *);
