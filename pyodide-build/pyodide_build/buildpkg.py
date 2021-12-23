@@ -666,7 +666,7 @@ def build_package(
                     shutil.rmtree(build_dir)
                 os.makedirs(build_dir)
 
-            prepare_source(pkg_root, build_dir, srcpath, source_metadata)
+            srcpath = prepare_source(pkg_root, build_dir, srcpath, source_metadata)
             if build_metadata.get("script"):
                 run_script(build_dir, srcpath, build_metadata, bash_runner)
             if build_metadata.get("library"):
