@@ -19,7 +19,6 @@ source:
     - patches/gemm_-no-const.patch
     - patches/sasum-returns-double-not-float.patch
     - patches/disable-scipy-stats-mvn.patch
-    - patches/remove-sgeqrfp.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
