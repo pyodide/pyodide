@@ -1,38 +1,36 @@
-From a35a645a2d24015bd2a7baaf5bf81aac2b0c312c Mon Sep 17 00:00:00 2001
-From: Roman Yurchak <rth.yurchak@gmail.com>
-Date: Sat, 27 Feb 2021 13:49:06 +0100
+From c6ccd8e7d37aba06a4f233abc278fedca726d586 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 24 Dec 2021 11:02:07 -0800
 Subject: [PATCH] make int return values
 
 ---
- scipy/_build_utils/src/wrap_dummy_g77_abi.f   |  16 --
- scipy/interpolate/src/_fitpackmodule.c        |  24 +-
- scipy/linalg/cython_blas_signatures.txt       | 256 +++++++++---------
- scipy/linalg/cython_lapack_signatures.txt     |   7 +-
- scipy/linalg/fblas_l1.pyf.src                 |  78 ++++--
- scipy/linalg/setup.py                         |   7 +-
- scipy/optimize/_lsq/setup.py                  |   2 +-
- .../sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c |   7 -
- .../sparse/linalg/dsolve/SuperLU/SRC/dgscon.c |   3 -
- .../sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c |   7 -
- .../dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c    |   2 -
- .../linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c |   9 -
- .../dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c    |   1 -
- .../linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c |   7 -
- .../dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c    |   2 +-
- .../linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c |   7 -
- .../dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c    |   1 -
- .../linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c |   9 -
- .../dsolve/SuperLU/SRC/scipy_slu_config.h     |   8 +
- .../sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c |   7 -
- .../sparse/linalg/dsolve/SuperLU/SRC/sgssvx.c |   7 +-
- .../linalg/dsolve/SuperLU/SRC/slu_dcomplex.h  |   5 +-
- .../linalg/dsolve/SuperLU/SRC/slu_scomplex.h  |   5 +-
- .../linalg/dsolve/SuperLU/SRC/slu_util.h      |   1 -
- .../sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c |   7 -
- scipy/sparse/linalg/dsolve/_superlu_utils.c   |   4 +-
- .../linalg/eigen/arpack/ARPACK/SRC/debug.h    |  20 +-
- .../linalg/eigen/arpack/ARPACK/SRC/stat.h     |  26 +-
- 28 files changed, 250 insertions(+), 285 deletions(-)
+ scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
+ scipy/linalg/cython_lapack_signatures.txt     |  7 +-
+ scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
+ scipy/linalg/setup.py                         |  7 +-
+ scipy/optimize/_lsq/setup.py                  |  2 +-
+ .../sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c |  7 --
+ .../sparse/linalg/dsolve/SuperLU/SRC/dgscon.c |  3 -
+ .../sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c |  7 --
+ .../dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c    |  2 -
+ .../linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c |  9 ---
+ .../dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c    |  1 -
+ .../linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c |  7 --
+ .../dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c    |  2 +-
+ .../linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c |  7 --
+ .../dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c    |  1 -
+ .../linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c |  9 ---
+ .../dsolve/SuperLU/SRC/scipy_slu_config.h     |  8 ++
+ .../sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c |  7 --
+ .../sparse/linalg/dsolve/SuperLU/SRC/sgssvx.c |  7 +-
+ .../linalg/dsolve/SuperLU/SRC/slu_dcomplex.h  |  5 +-
+ .../linalg/dsolve/SuperLU/SRC/slu_scomplex.h  |  5 +-
+ .../linalg/dsolve/SuperLU/SRC/slu_util.h      |  1 -
+ .../sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c |  7 --
+ scipy/sparse/linalg/dsolve/_superlu_utils.c   |  4 +-
+ .../linalg/eigen/arpack/ARPACK/SRC/debug.h    | 20 ++---
+ .../linalg/eigen/arpack/ARPACK/SRC/stat.h     | 26 +++----
+ 26 files changed, 110 insertions(+), 145 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
