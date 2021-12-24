@@ -188,8 +188,7 @@ def patch_output(f2c_output_name):
             subprocess.run(
                 [
                     "patch",
-                    "-p1",
-                    "-i",
+                    str(f2c_output_name),
                     str(patch_file),
                 ]
             )
