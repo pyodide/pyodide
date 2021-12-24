@@ -96,3 +96,4 @@ test:
     - scipy.ndimage
     - scipy.spatial
     - scipy.special
+    - scipy.stats
