@@ -1,4 +1,4 @@
-diff --git a/src/packages/scipy/build/scipy-1.6.1/scipy/_build_utils/src/wrap_dummy_g77_abi.c b/src/packages/scipy/f2cpatches/wrap_dummy_g77_abi.c
+diff --git a/scipy/build/scipy-1.6.1/scipy/_build_utils/src/wrap_dummy_g77_abi.c b/scipy/f2cpatches/wrap_dummy_g77_abi.c
 index f25b5bd..dff9d59 100644
 --- a/src/packages/scipy/build/scipy-1.6.1/scipy/_build_utils/src/wrap_dummy_g77_abi.c
 +++ b/src/packages/scipy/f2cpatches/wrap_dummy_g77_abi.c
