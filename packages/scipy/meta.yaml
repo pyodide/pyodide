@@ -37,11 +37,30 @@ build:
     -L$(NUMPY_LIB)
     -Wl,--fatal-warnings
   script: |
+    # We get linker errors because the following 36 functions are missing
+    # Copying them from a more recent LAPACK seems to work fine.
+    wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
+    tar -xnf v3.10.0.tar.gz
+    cd lapack-3.10.0/SRC
+    cat \
+      cgemqrt.f cgeqrfp.f cgeqrt.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
+      dgemqrt.f dgeqrfp.f dgeqrt.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
+      sgemqrt.f sgeqrfp.f sgeqrt.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
+      zgemqrt.f zgeqrfp.f zgeqrt.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
+    >>  ../../scipy/_build_utils/src/wrap_dummy_g77_abi.f
+    cd ../..
+    # The additional four functions cuncsd, dorcsd, sorcsd, and zuncsd are also
+    # missing but they use features of Fortran that aren't Fortran 77 compatible
+    # so f2c can't handle them. We stub them with C definitions that do nothing.
+    # These stubs come from f2cpatches/wrap_dummy_g77_abi.patch
+
+    # Change all functions that return void into functions that return int
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
-    cat ../../lapack_extras/*.f >> scipy/_build_utils/src/wrap_dummy_g77_abi.f
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
+    
+    # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
 
 requirements:

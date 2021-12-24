@@ -206,7 +206,7 @@ jobs:
             pip install "pybind11[global]"
             pip install "pybind11[global]" -t packages/.artifacts/
             ccache -z
-            PYODIDE_PACKAGES='scipy, core' make -C packages
+            PYODIDE_PACKAGES='*' make -C packages
             ccache -s
           environment:
             PYODIDE_JOBS: 5
