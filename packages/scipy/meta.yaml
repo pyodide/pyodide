@@ -36,6 +36,11 @@ build:
   ldflags: |
     -L$(NUMPY_LIB)
     -Wl,--fatal-warnings
+  # IMPORTANT: Other locations important in scipy build process:
+  # There are two files built in the "capture" pass that need patching:
+  #    _blas_subroutines.h, and _cython
+  # Scipy has a bunch of custom logic implemented in
+  # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
@@ -56,12 +61,16 @@ build:
 
     # Change all functions that return void into functions that return int
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c scipy/linalg/_lapack_subroutines.h
+    sed -i 's/void F_FUNC/int F_FUNC/g'
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
-    
+
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
+
+  prereplay: |
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
+    sed -i 's/\(lsamewrp.*\));/\1, strlen(__pyx_v_ca), strlen(__pyx_v_cb));/' scipy/linalg/_blas_subroutines.h scipy/linalg/cython_blas.c
 
 requirements:
   run:

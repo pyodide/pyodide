@@ -383,16 +383,9 @@ def compile(
                 skip_host=skip_host,
                 env=bash_runner.env,
             )
-            if Path("../../prereplay_patches").exists():
-                for f in Path("../../prereplay_patches").glob("*.patch"):
-                    subprocess.run(
-                        [
-                            "patch",
-                            "-p1",
-                            "-i",
-                            str(f),
-                        ]
-                    )
+            prereplay = build_metadata.get("prereplay")
+            if prereplay:
+                bash_runner.run(prereplay)
         pywasmcross.replay_compile(
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
