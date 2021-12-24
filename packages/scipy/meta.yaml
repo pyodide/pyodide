@@ -71,6 +71,8 @@ build:
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
     sed -i 's/\(lsamewrp.*\));/\1, int ca_len, int cb_len);/' scipy/linalg/_blas_subroutines.h
     sed -i 's/\(lsamewrp.*\));/\1, strlen(__pyx_v_ca), strlen(__pyx_v_cb));/' scipy/linalg/cython_blas.c
+    sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
+    sed -i 's/void/int' scipy/linalg/cython_blas_signatures.txt
 
 requirements:
   run:
