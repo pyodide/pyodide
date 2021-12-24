@@ -1,26 +1,37 @@
-commit 335dcd46578a66d385973ea1630f01c2efdbd752
-Author: Roman Yurchak <rth.yurchak@gmail.com>
-Date:   Sat Feb 27 12:17:47 2021 +0100
+From 2ca229aa5ac814a7bc12ea3d30619958beb19f4e Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
+Date: Sat, 27 Feb 2021 12:17:47 +0100
+Subject: [PATCH] skip fortran fails to link
 
-    Skip Fortran files that fail to link
+---
+ scipy/integrate/_ode.py    | 11 +++--------
+ scipy/integrate/odepack.py |  2 +-
+ scipy/integrate/setup.py   | 24 ------------------------
+ scipy/io/setup.py          |  3 ---
+ 4 files changed, 4 insertions(+), 36 deletions(-)
 
 diff --git a/scipy/integrate/_ode.py b/scipy/integrate/_ode.py
-index d97370e14..2ad6caefb 100644
+index d97370e14..1835b1c11 100644
 --- a/scipy/integrate/_ode.py
 +++ b/scipy/integrate/_ode.py
-@@ -87,9 +87,9 @@ import warnings
+@@ -87,14 +87,9 @@ import warnings
  
  from numpy import asarray, array, zeros, isscalar, real, imag, vstack
  
 -from . import vode as _vode
 -from . import _dop
 -from . import lsoda as _lsoda
+-
+-
+-_dop_int_dtype = _dop.types.intvar.dtype
+-_vode_int_dtype = _vode.types.intvar.dtype
+-_lsoda_int_dtype = _lsoda.types.intvar.dtype
 +_vode = None
 +_dop = None
 +_lsoda = None
  
  
- _dop_int_dtype = _dop.types.intvar.dtype
+ # ------------------------------------------------------------------------------
 diff --git a/scipy/integrate/odepack.py b/scipy/integrate/odepack.py
 index 8119d2acc..be42392fa 100644
 --- a/scipy/integrate/odepack.py
@@ -105,3 +116,6 @@ index bec840e36..f3fb726c2 100644
      config.add_data_dir('tests')
      config.add_subpackage('matlab')
      config.add_subpackage('arff')
+-- 
+2.25.1
+
