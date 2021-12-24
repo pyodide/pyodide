@@ -569,12 +569,6 @@ def environment_substitute_args(
     return subbed_args
 
 
-# Hack to prevent mypy error:
-# "error: Single overload definition, multiple required"
-class _EmptyType:
-    __new__ = None  # type: ignore
-
-
 @overload
 def replay_compile(
     *,
@@ -589,7 +583,7 @@ def replay_compile(
 
 
 @overload
-def replay_compile(a: _EmptyType):
+def replay_compile(*, _this_is_just_here_to_appease_mypy: str):
     ...
 
 
