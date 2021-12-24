@@ -592,10 +592,7 @@ def replay_compile(
 
 
 @overload
-def replay_compile(
-    *,
-    _this_is_just_here_to_appease_mypy: str,
-):
+def replay_compile(*, _this_is_just_here_to_appease_mypy: str):
     ...
 
 

@@ -1,9 +1,6 @@
 export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/install/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/core/lib/
-
-
 ifeq ($(strip $(PYODIDE_PACKAGES)),)
 else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
