@@ -66,11 +66,11 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
     # fmt: on
     lapack_names = []
     for name in lapack_czds_names:
-        lapack_names.extend(f"{l}{name}_" for l in ['c', 'z', 'd', 's'])
+        lapack_names.extend(f"{l}{name}_" for l in ["c", "z", "d", "s"])
     for name in lapack_cz_names:
-        lapack_names.extend(f"{l}{name}_" for l in ['c', 'z'])
+        lapack_names.extend(f"{l}{name}_" for l in ["c", "z"])
     for name in lapack_ds_names:
-        lapack_names.extend(f"{l}{name}_" for l in ['d', 's'])
+        lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
     lapack_names.extend(lapack_other_names)
     code = None
     patch_output(f2c_output_name)
