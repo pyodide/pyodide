@@ -62,17 +62,15 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
         'unm2l', 'unm2r', 'unmbr', 'unmhr', 'unml2', 'unmlq', 'unmql', 'unmqr', 
         'unmr2', 'unmr3', 'unmrq', 'unmrz', 'unmtr', 'upgtr', 'upmtr',
     ]
-    lapack_other_names = ['lsame', 'ilaenv']
+    lapack_other_names = ['lsame_', 'ilaenv_']
     # fmt: on
-    lapack_names = []
+    lapack_names = lapack_other_names
     for name in lapack_czds_names:
         lapack_names.extend(f"{l}{name}_" for l in ["c", "z", "d", "s"])
     for name in lapack_cz_names:
         lapack_names.extend(f"{l}{name}_" for l in ["c", "z"])
     for name in lapack_ds_names:
         lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
-    lapack_names.extend(lapack_other_names)
-    code = None
     patch_output(f2c_output_name)
 
     with open(f2c_output_name, "r") as f:
