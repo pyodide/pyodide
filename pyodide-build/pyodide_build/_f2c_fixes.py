@@ -1,5 +1,4 @@
 import re
-import shutil
 from pathlib import Path
 import subprocess
 
@@ -174,7 +173,9 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
 
     for cur_name in lapack_names:
         code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
-    if f2c_output_name.endswith("_lapack_subroutine_wrappers.c") or f2c_output_name.endswith("wrap_dummy_g77_abi.c"):
+    if f2c_output_name.endswith(
+        "_lapack_subroutine_wrappers.c"
+    ) or f2c_output_name.endswith("wrap_dummy_g77_abi.c"):
         code = fix_lapack_subroutine_wrappers(code)
     with open(f2c_output_name, "w") as f:
         f.write(code)
@@ -219,3 +220,17 @@ if __name__ == "__main__":
     fix_f2c_clapack_calls(
         "/home/hood/pyodide/packages/scipy/f2cfixes/_lapack_subroutine_wrappers.c"
     )
+
+    # c_file_name = Path(f2c_output_name).name
+    # patch = (Path("../../f2cpatches/") / c_file_name).with_suffix(".patch")
+    # replacement_c_file = (Path("../../f2cpatches/") / c_file_name).resolve()
+    # if replacement_c_file.exists():
+    #     subprocess.run([
+    #         "git",
+    #         "diff",
+    #         "--no-index",
+    #         "--",
+    #         f2c_output_name,
+    #         str(replacement_c_file),
+    #     ], stdout=open(patch, "w"))
+    #     shutil.copy(replacement_c_file, f2c_output_name)

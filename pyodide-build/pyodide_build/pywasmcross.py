@@ -417,11 +417,12 @@ def replay_command_generate_args(
         An updated argument list suitable for use with emscripten.
     """
     replace_libs = parse_replace_libs(args.replace_libs)
-    if line[0] == "ar":
+    cmd = line[0]
+    if cmd == "ar":
         new_args = ["emar"]
-    elif line[0] == "c++" or line[0] == "g++":
+    elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
-    elif line[0] == "cc" or line[0] == "gcc":
+    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
@@ -519,6 +520,10 @@ def replay_command(
         if arg == "-print-multiarch":
             return None
         if arg.startswith("/tmp"):
+            return None
+        if arg.startswith("-print-file-name"):
+            return None
+        if arg == "/dev/null":
             return None
 
     library_output = get_library_output(line)
