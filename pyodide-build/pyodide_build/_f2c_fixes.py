@@ -181,7 +181,7 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
         f.write(code)
 
 
-def patch_output(f2c_output_name):
+def patch_output(f2c_output_name : str):
     if f2c_output_name:
         c_file_name = Path(f2c_output_name).name
         patch_file = (Path("../../f2cpatches/") / c_file_name).with_suffix(".patch")
@@ -195,7 +195,7 @@ def patch_output(f2c_output_name):
             )
 
 
-def fix_lapack_subroutine_wrappers(code):
+def fix_lapack_subroutine_wrappers(code : str) -> str:
     lines = code.split("\n")
     new_lines = []
     in_subroutine = False
