@@ -10,14 +10,14 @@ source:
     # these patches can be found as commits in
     #    https://github.com/rth/scipy/tree/1.6.1-pyodide
     # on top of the v1.6.1 tag
+    - patches/add-missing-extern.patch
+    - patches/disable-scipy-stats-mvn.patch
     - patches/fix-blas.patch
     - patches/fix-fortran-files-minpack.patch
-    - patches/skip-fortran-fails-to-link.patch
-    - patches/make-int-return-values.patch
-    - patches/add-missing-extern.patch
     - patches/gemm_-no-const.patch
+    - patches/make-int-return-values.patch
     - patches/sasum-returns-double-not-float.patch
-    - patches/disable-scipy-stats-mvn.patch
+    - patches/skip-fortran-fails-to-link.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
