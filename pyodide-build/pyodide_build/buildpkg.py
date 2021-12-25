@@ -19,9 +19,11 @@ from urllib import request
 import fnmatch
 from contextlib import contextmanager
 
+from . import pywasmcross
+
 
 @contextmanager
-def chdir(new_dir):
+def chdir(new_dir: "os.PathLike[str]"):
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
@@ -300,6 +302,27 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
         fd.write(b"\n")
 
 
+def install_for_distribution():
+    commands = [
+        sys.executable,
+        "setup.py",
+        "install",
+        "--skip-build",
+        "--prefix=install",
+        "--old-and-unmanageable",
+    ]
+    try:
+        subprocess.check_call(commands)
+    except Exception:
+        print(
+            f'Warning: {" ".join(str(arg) for arg in commands)} failed '
+            f"with distutils, possibly due to the use of distutils "
+            f"that does not support the --old-and-unmanageable "
+            "argument. Re-trying the install without this argument."
+        )
+        subprocess.check_call(commands[:-1])
+
+
 def compile(
     pkg_root: Path,
     srcpath: Path,
@@ -348,34 +371,25 @@ def compile(
     if (srcpath / ".built").is_file():
         return
 
-    if build_metadata.get("skip_host", True):
-        bash_runner.env["SKIP_HOST"] = ""
+    skip_host = build_metadata.get("skip_host", True)
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
     with chdir(srcpath):
-        subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pyodide_build",
-                "pywasmcross",
-                "--cflags",
-                build_metadata["cflags"],
-                "--cxxflags",
-                build_metadata["cxxflags"],
-                "--ldflags",
-                build_metadata["ldflags"],
-                "--target-install-dir",
-                target_install_dir,
-                "--host-install-dir",
-                host_install_dir,
-                "--replace-libs",
-                replace_libs,
-            ],
-            check=True,
+        pywasmcross.capture_compile(
+            host_install_dir=host_install_dir,
+            skip_host=skip_host,
             env=bash_runner.env,
         )
+        pywasmcross.replay_compile(
+            cflags=build_metadata["cflags"],
+            cxxflags=build_metadata["cxxflags"],
+            ldflags=build_metadata["ldflags"],
+            target_install_dir=target_install_dir,
+            host_install_dir=host_install_dir,
+            replace_libs=replace_libs,
+        )
+        install_for_distribution()
 
     post = build_metadata.get("post")
     if post:
@@ -703,7 +717,7 @@ def make_parser(parser: argparse.ArgumentParser):
         "--host-install-dir",
         type=str,
         nargs="?",
-        default="",
+        default=common.get_make_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "

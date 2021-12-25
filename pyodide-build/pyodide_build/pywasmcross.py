@@ -23,7 +23,7 @@ configuration with build.
 """
 
 
-import argparse
+from collections import namedtuple
 import importlib.machinery
 import json
 import os
@@ -34,7 +34,7 @@ import shutil
 import sys
 
 
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set, Optional, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
@@ -44,12 +44,17 @@ from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
 
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
-
-class EnvironmentRewritingArgument(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        for e_name, e_value in os.environ.items():
-            values = values.replace(f"$({e_name})", e_value)
-        setattr(namespace, self.dest, values)
+ReplayArgs = namedtuple(
+    "ReplayArgs",
+    [
+        "cflags",
+        "cxxflags",
+        "ldflags",
+        "host_install_dir",
+        "target_install_dir",
+        "replace_libs",
+    ],
+)
 
 
 def capture_command(command: str, args: List[str]) -> int:
@@ -136,24 +141,25 @@ def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
         env[var] = symlink
 
 
-def capture_compile(args: argparse.Namespace):
+def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, str]):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
-    env = dict(os.environ)
-    capture_make_command_wrapper_symlinks(env)
+    env["PYODIDE"] = "1"
     env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
+    capture_make_command_wrapper_symlinks(env)
 
     cmd = [sys.executable, "setup.py", "install"]
-    if args.host_install_dir == "skip":
-        cmd[-1] = "build"
-    elif args.host_install_dir != "":
-        cmd.extend(["--home", args.host_install_dir])
+    if skip_host:
+        env["SKIP_HOST"] = "1"
+    assert host_install_dir, "Missing host_install_dir"
+    cmd.extend(["--home", host_install_dir])
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
         build_log_path = Path("build.log")
         if build_log_path.exists():
             build_log_path.unlink()
-        sys.exit(result.returncode)
+        result.check_returncode()
+    clean_out_native_artifacts()
 
 
 def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
@@ -176,11 +182,11 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
     --------
 
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
-    ['gfortran', 'test.c']
+    ['gcc', 'test.c']
     """
-    new_args = []
+    new_args = ["gcc"]
     found_source = False
-    for arg in args:
+    for arg in args[1:]:
         if arg.endswith(".f"):
             filename = os.path.abspath(arg)
             if not dryrun:
@@ -311,6 +317,37 @@ def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> Optional[s
     return arg
 
 
+def replay_genargs_handle_linker_opts(arg):
+    """
+    ignore some link flags
+    it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
+    because arg may be something like "-Wl,-xxx,-yyy" where we only want
+    to ignore "-xxx" but not "-yyy".
+    """
+
+    assert arg.startswith("-Wl")
+    link_opts = arg.split(",")[1:]
+    new_link_opts = ["-Wl"]
+    for opt in link_opts:
+        if opt in [
+            "-Bsymbolic-functions",
+            # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
+            "--strip-all",
+            # wasm-ld does not regconize some link flags
+            "--sort-common",
+            "--as-needed",
+        ]:
+            continue
+        # ignore unsupported --sysroot compile argument used in conda
+        if opt.startswith("--sysroot="):
+            continue
+        new_link_opts.append(opt)
+    if len(new_link_opts) > 1:
+        return ",".join(new_link_opts)
+    else:
+        return None
+
+
 def replay_genargs_handle_argument(arg: str) -> Optional[str]:
     """
     Figure out how to replace a general argument.
@@ -326,32 +363,7 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
     """
     assert not arg.startswith("-I")  # should be handled by other functions
     assert not arg.startswith("-l")
-
-    # ignore some link flags
-    # it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
-    # because arg may be something like "-Wl,-xxx,-yyy" where we only want
-    # to ignore "-xxx" but not "-yyy".
-    if arg.startswith("-Wl"):
-        link_opts = arg.split(",")[1:]
-        new_link_opts = []
-        for opt in link_opts:
-            if opt in [
-                "-Bsymbolic-functions",
-                # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
-                "--strip-all",
-                # wasm-ld does not regconize some link flags
-                "--sort-common",
-                "--as-needed",
-            ]:
-                continue
-            # ignore unsupported --sysroot compile argument used in conda
-            if opt.startswith("--sysroot="):
-                continue
-            new_link_opts.append(opt)
-        if new_link_opts:
-            return "-Wl," + ",".join(new_link_opts)
-        else:
-            return None
+    assert not arg.startswith("-Wl,")
 
     # Don't include any system directories
     if arg.startswith("-L/usr"):
@@ -379,7 +391,7 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
 
 
 def replay_command_generate_args(
-    line: List[str], args: argparse.Namespace, is_link_command: bool
+    line: List[str], args: ReplayArgs, is_link_command: bool
 ) -> List[str]:
     """
     A helper command for `replay_command` that generates the new arguments for
@@ -404,13 +416,15 @@ def replay_command_generate_args(
     replace_libs = parse_replace_libs(args.replace_libs)
     if line[0] == "ar":
         new_args = ["emar"]
-    elif line[0] == "c++":
+    elif line[0] == "c++" or line[0] == "g++":
         new_args = ["em++"]
-    else:
+    elif line[0] == "cc" or line[0] == "gcc":
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
+    else:
+        assert False, f"Unexpected command {line[0]}"
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
@@ -455,6 +469,8 @@ def replay_command_generate_args(
             result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
         elif arg.startswith("-I"):
             result = replay_genargs_handle_dashI(arg, args.target_install_dir)
+        elif arg.startswith("-Wl"):
+            result = replay_genargs_handle_linker_opts(arg)
         else:
             result = replay_genargs_handle_argument(arg)
 
@@ -464,7 +480,7 @@ def replay_command_generate_args(
 
 
 def replay_command(
-    line: List[str], args: argparse.Namespace, dryrun: bool = False
+    line: List[str], args: ReplayArgs, dryrun: bool = False
 ) -> Optional[List[str]]:
     """Handle a compilation command
 
@@ -540,7 +556,39 @@ def replay_command(
     return new_args
 
 
-def replay_compile(args: argparse.Namespace):
+def environment_substitute_args(
+    args: Dict[str, str], env: Dict[str, str] = None
+) -> Dict[str, str]:
+    if env is None:
+        env = dict(os.environ)
+    subbed_args = {}
+    for arg, value in args.items():
+        for e_name, e_value in env.items():
+            value = value.replace(f"$({e_name})", e_value)
+        subbed_args[arg] = value
+    return subbed_args
+
+
+@overload
+def replay_compile(
+    *,
+    cflags: str,
+    cxxflags: str,
+    ldflags: str,
+    host_install_dir: str,
+    target_install_dir: str,
+    replace_libs: str,
+):
+    ...
+
+
+@overload
+def replay_compile(*, _this_is_just_here_to_appease_mypy: str):
+    ...
+
+
+def replay_compile(**kwargs):
+    args = ReplayArgs(**environment_substitute_args(kwargs))
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
     build_log_path = Path("build.log")
@@ -570,105 +618,9 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
-def install_for_distribution(args: argparse.Namespace):
-    commands = [
-        sys.executable,
-        "setup.py",
-        "install",
-        "--skip-build",
-        "--prefix=install",
-        "--old-and-unmanageable",
-    ]
-    try:
-        subprocess.check_call(commands)
-    except Exception:
-        print(
-            f'Warning: {" ".join(str(arg) for arg in commands)} failed '
-            f"with distutils, possibly due to the use of distutils "
-            f"that does not support the --old-and-unmanageable "
-            "argument. Re-trying the install without this argument."
-        )
-        subprocess.check_call(commands[:-1])
-
-
-def build_wrap(args: argparse.Namespace):
-    build_log_path = Path("build.log")
-    if not build_log_path.is_file():
-        capture_compile(args)
-    clean_out_native_artifacts()
-    replay_compile(args)
-    install_for_distribution(args)
-
-
-def make_parser(parser):
-    parser.description = (
-        "Cross compile a Python distutils package. "
-        "Run from the root directory of the package's source.\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the Pyodide Makefile."
-    )
-    parser.add_argument(
-        "--cflags",
-        type=str,
-        nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
-        help="Extra compiling flags",
-        action=EnvironmentRewritingArgument,
-    )
-    parser.add_argument(
-        "--cxxflags",
-        type=str,
-        nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-        help="Extra C++ specific compiling flags",
-        action=EnvironmentRewritingArgument,
-    )
-    parser.add_argument(
-        "--ldflags",
-        type=str,
-        nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
-        help="Extra linking flags",
-        action=EnvironmentRewritingArgument,
-    )
-    parser.add_argument(
-        "--target-install-dir",
-        type=str,
-        nargs="?",
-        default=common.get_make_flag("TARGETINSTALLDIR"),
-        help="The path to the target Python installation",
-    )
-    parser.add_argument(
-        "--host-install-dir",
-        type=str,
-        nargs="?",
-        default="",
-        help=(
-            "Directory for installing built host packages. Defaults to setup.py "
-            "default. Set to 'skip' to skip installation. Installation is "
-            "needed if you want to build other packages that depend on this one."
-        ),
-    )
-    parser.add_argument(
-        "--replace-libs",
-        type=str,
-        nargs="?",
-        default="",
-        help="Libraries to replace in final link",
-        action=EnvironmentRewritingArgument,
-    )
-    return parser
-
-
-def main(args: argparse.Namespace):
-    build_wrap(args)
-
-
 if __name__ == "__main__":
     basename = Path(sys.argv[0]).name
     if basename in symlinks:
         sys.exit(capture_command(basename, sys.argv[1:]))
     else:
-        parser = make_parser(argparse.ArgumentParser())
-        args = parser.parse_args()
-        main(args)
+        raise Exception(f"Unexpected invocation '{basename}'")

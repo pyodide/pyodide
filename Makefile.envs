@@ -28,6 +28,10 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
 
+# For packages that depend on numpy.
+# TODO: maybe move this somewhere else?
+export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/install/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/core/lib/
+
 # This environment variable is used for packages to detect if they are built
 # for pyodide during build time
 export PYODIDE=1
