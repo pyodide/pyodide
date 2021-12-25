@@ -1,9 +1,10 @@
 import re
 import subprocess
 from typing import List, Iterable, Iterator
+from pathlib import Path
 
 
-def fix_f2c_clapack_calls(f2c_output_name: str):
+def fix_f2c_clapack_calls(f2c_output_path: str):
     """Fix F2C CLAPACK calls
 
     f2c compiles code with fortran linkage, which means that
@@ -72,31 +73,44 @@ def fix_f2c_clapack_calls(f2c_output_name: str):
     for name in lapack_ds_names:
         lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
 
-    if f2c_output_name.endswith("wrap_dummy_g77_abi.c"):
-        subprocess.run(
+    f2c_output = Path(f2c_output_path)
+    if f2c_output.name in ["wrap_dummy_g77_abi.c", "intdy.c", "lsoda.c"]:
+        subprocess.check_call(
             [
                 "patch",
-                str(f2c_output_name),
-                "../../patches/wrap_dummy_g77_abi.patch",
+                str(f2c_output_path),
+                f"../../patches/{f2c_output.with_suffix('.patch').name}",
             ]
         )
 
-    with open(f2c_output_name, "r") as f:
+    with open(f2c_output, "r") as f:
         lines = f.readlines()
-    if "id_dist" in f2c_output_name:
+    if "id_dist" in f2c_output_path:
         lines = fix_inconsistent_decls(lines)
+    if "odepack" in f2c_output_path:
+        # Mark all but one declaration of each struct as extern.
+        if f2c_output.name == "blkdata000.c":
+            # extern marking in blkdata000.c doesn't work properly so we let it
+            # define the one copy of the structs. It doesn't talk about lsa001
+            # at all though, so we need to add a definition of it.
+            lines.append(
+                """
+                struct {    doublereal rownd2, pdest, pdlast, ratio, cm1[12], cm2[5], pdnorm;
+                    integer iownd2[3], icount, irflag, jtyp, mused, mxordn, mxords;
+                } lsa001_;
+                """
+            )
+        else:
+            add_externs_to_structs(lines)
 
-    if any(
-        f2c_output_name.endswith(x)
-        for x in ["wrap_dummy_g77_abi.c", "_lapack_subroutine_wrappers.c"]
-    ):
+    if f2c_output.name in ["wrap_dummy_g77_abi.c", "_lapack_subroutine_wrappers.c"]:
         lines = fix_lapack_subroutine_wrappers(lines)
 
     code = "".join(lines)
     for cur_name in lapack_names:
         code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
 
-    with open(f2c_output_name, "w") as f:
+    with open(f2c_output, "w") as f:
         f.write(code)
 
 
@@ -107,6 +121,12 @@ def fix_lapack_subroutine_wrappers(lines: List[str]) -> List[str]:
             line = re.sub(",\s*ftnlen [a-z]*_len", "", line)
         new_lines.append(line)
     return new_lines
+
+
+def add_externs_to_structs(lines: List[str]):
+    for idx, line in enumerate(lines):
+        if line.startswith("struct"):
+            lines[idx] = "extern struct {"
 
 
 def regroup_lines(lines: Iterable[str]) -> Iterator[str]:

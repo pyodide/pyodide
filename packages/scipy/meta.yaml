@@ -2,6 +2,7 @@ package:
   name: scipy
   version: 1.6.1
 
+# For future reference: if you
 source:
   url: https://files.pythonhosted.org/packages/26/68/84dbe18583e79e56e4cee8d00232a8dd7d4ae33bc3acf3be1c347991848f/scipy-1.6.1.tar.gz
   sha256: c4fceb864890b6168e79b0e714c585dbe2fd4222768ee90bc1aa0f8218691b11

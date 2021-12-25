@@ -3,6 +3,9 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 22 Dec 2021 21:36:10 -0800
 Subject: [PATCH] disable scipy stats mvn
 
+The mvn module uses features from newer versions of Fortran than Fortran 77. 
+We can't handle it with f2c.
+
 ---
  scipy/stats/_multivariate.py | 1 -
  scipy/stats/kde.py           | 5 ++++-
