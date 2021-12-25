@@ -1,11 +1,10 @@
-From c6ccd8e7d37aba06a4f233abc278fedca726d586 Mon Sep 17 00:00:00 2001
+From e25ba10aae01ee8414b2c623d86cecfdcd86c2fd Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 24 Dec 2021 11:02:07 -0800
 Subject: [PATCH] make int return values
 
 ---
  scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
- scipy/linalg/cython_lapack_signatures.txt     |  7 +-
  scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
  scipy/linalg/setup.py                         |  7 +-
  scipy/optimize/_lsq/setup.py                  |  2 +-
@@ -30,7 +29,7 @@ Subject: [PATCH] make int return values
  scipy/sparse/linalg/dsolve/_superlu_utils.c   |  4 +-
  .../linalg/eigen/arpack/ARPACK/SRC/debug.h    | 20 ++---
  .../linalg/eigen/arpack/ARPACK/SRC/stat.h     | 26 +++----
- 26 files changed, 110 insertions(+), 145 deletions(-)
+ 25 files changed, 106 insertions(+), 142 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
@@ -66,21 +65,6 @@ index caf99ac63..73cdebd96 100644
        COMPLEX FUNCTION WCLADIV( X, Y )
        COMPLEX            X, Y
        EXTERNAL           CLADIV
-diff --git a/scipy/linalg/cython_lapack_signatures.txt b/scipy/linalg/cython_lapack_signatures.txt
-index 1f3dc226a..05a4d30e9 100644
---- a/scipy/linalg/cython_lapack_signatures.txt
-+++ b/scipy/linalg/cython_lapack_signatures.txt
-@@ -1494,6 +1494,7 @@ void zunmr2(char *side, char *trans, int *m, int *n, int *k, z *a, int *lda, z *
- void zunmr3(char *side, char *trans, int *m, int *n, int *k, int *l, z *a, int *lda, z *tau, z *c, int *ldc, z *work, int *info)
- void zunmrq(char *side, char *trans, int *m, int *n, int *k, z *a, int *lda, z *tau, z *c, int *ldc, z *work, int *lwork, int *info)
- void zunmrz(char *side, char *trans, int *m, int *n, int *k, int *l, z *a, int *lda, z *tau, z *c, int *ldc, z *work, int *lwork, int *info)
--void zunmtr(char *side, char *uplo, char *trans, int *m, int *n, z *a, int *lda, z *tau, z *c, int *ldc, z *work, int *lwork, int *info)
--void zupgtr(char *uplo, int *n, z *ap, z *tau, z *q, int *ldq, z *work, int *info)
--void zupmtr(char *side, char *uplo, char *trans, int *m, int *n, z *ap, z *tau, z *c, int *ldc, z *work, int *info)
-+void zunmtr(char *side, char *uplo, char *trans, int *m, int *n, z *a, int *lda, z *tau, z *c, int *ldc, z *work, int *lwork, int *info)
-+void zupgtr(char *uplo, int *n, z *ap, z *tau, z *q, int *ldq, z *work, int *info)
-+void zupmtr(char *side, char *uplo, char *trans, int *m, int *n, z *ap, z *tau, z *c, int *ldc, z *work, int *info)
-+void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
 index 4803a4a97..5adc703a4 100644
 --- a/scipy/linalg/fblas_l1.pyf.src

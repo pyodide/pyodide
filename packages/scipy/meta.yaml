@@ -10,8 +10,8 @@ source:
     # these patches can be found as commits in
     #    https://github.com/rth/scipy/tree/1.6.1-pyodide
     # on top of the v1.6.1 tag
+    - patches/disable-blas-detection.patch
     - patches/disable-scipy-stats-mvn.patch
-    - patches/fix-blas.patch
     - patches/fix-fortran-files-minpack.patch
     - patches/gemm_-no-const.patch
     - patches/make-int-return-values.patch
@@ -62,6 +62,10 @@ build:
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+
+    # Missing declaration from cython_lapack_signatures.txt
+    echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
+      >>  scipy/linalg/cython_lapack_signatures.txt
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
