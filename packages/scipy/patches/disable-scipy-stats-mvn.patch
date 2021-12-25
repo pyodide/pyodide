@@ -1,13 +1,26 @@
-From 873c376629c93798166cee2009f364391d36ad37 Mon Sep 17 00:00:00 2001
+From fe8e57a36d168c4a2022aaec9df48e0550d9ab26 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 22 Dec 2021 21:36:10 -0800
 Subject: [PATCH] disable scipy stats mvn
 
 ---
- scipy/stats/kde.py   | 5 ++++-
- scipy/stats/setup.py | 6 +++---
- 2 files changed, 7 insertions(+), 4 deletions(-)
+ scipy/stats/_multivariate.py | 1 -
+ scipy/stats/kde.py           | 5 ++++-
+ scipy/stats/setup.py         | 6 +++---
+ 3 files changed, 7 insertions(+), 5 deletions(-)
 
+diff --git a/scipy/stats/_multivariate.py b/scipy/stats/_multivariate.py
+index 15bd108d8..7d1613bf9 100644
+--- a/scipy/stats/_multivariate.py
++++ b/scipy/stats/_multivariate.py
+@@ -13,7 +13,6 @@ from scipy.linalg.misc import LinAlgError
+ from scipy.linalg.lapack import get_lapack_funcs
+ 
+ from ._discrete_distns import binom
+-from . import mvn
+ 
+ __all__ = ['multivariate_normal',
+            'matrix_normal',
 diff --git a/scipy/stats/kde.py b/scipy/stats/kde.py
 index 3fc95931d..287c8e58d 100644
 --- a/scipy/stats/kde.py
