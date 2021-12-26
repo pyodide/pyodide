@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.6.1
+  version: 1.7.3
 
 # See extra explanation in info.md
 #
@@ -13,8 +13,8 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/26/68/84dbe18583e79e56e4cee8d00232a8dd7d4ae33bc3acf3be1c347991848f/scipy-1.6.1.tar.gz
-  sha256: c4fceb864890b6168e79b0e714c585dbe2fd4222768ee90bc1aa0f8218691b11
+  url: https://files.pythonhosted.org/packages/61/67/1a654b96309c991762ee9bc39c363fc618076b155fe52d295211cf2536c7/scipy-1.7.3.tar.gz
+  sha256: ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf
 
   patches:
     - patches/convert-xerrwv-message-arg-from-int-to-str.patch
@@ -26,6 +26,7 @@ source:
     - patches/remove-mvnun-not-fortran-77-compliant.patch
     - patches/sasum-returns-double-not-float.patch
     - patches/skip-fortran-fails-to-link.patch
+    - patches/0001-Remove-stats._boost.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
@@ -41,6 +42,7 @@ build:
     -Werror=mismatched-return-types
   ldflags: |
     -L$(NUMPY_LIB)
+    -L$(NUMPY_LIB_BASE)/random/lib
     -Wl,--fatal-warnings
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
@@ -48,6 +50,7 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
+    pip install scipy==1.7.3
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
@@ -67,7 +70,7 @@ build:
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c scipy/linalg/_lapack_subroutines.h
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
@@ -80,12 +83,8 @@ build:
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
 
   prereplay: |
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
-    sed -i 's/\(lsamewrp.*\));/\1, int ca_len, int cb_len);/' scipy/linalg/_blas_subroutines.h
-    sed -i 's/\(lsamewrp.*\));/\1, strlen(__pyx_v_ca), strlen(__pyx_v_cb));/' scipy/linalg/cython_blas.c
-
-  post: |
-    pip install scipy==1.6.1
 
 requirements:
   run:

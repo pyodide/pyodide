@@ -107,7 +107,11 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
         else:
             add_externs_to_structs(lines)
 
-    if f2c_output.name in ["wrap_dummy_g77_abi.c", "_lapack_subroutine_wrappers.c"]:
+    if f2c_output.name in [
+        "wrap_dummy_g77_abi.c",
+        "_lapack_subroutine_wrappers.c",
+        "_blas_subroutine_wrappers.c",
+    ]:
         lines = remove_ftnlen_args(lines)
 
     code = "".join(lines)

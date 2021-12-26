@@ -651,6 +651,7 @@ def build_package(
         if not needs_rebuild(pkg_root, build_dir, source_metadata):
             return
         if continue_from:
+            print(srcpath)
             assert srcpath.exists()
         else:
             if source_metadata:
