@@ -2,6 +2,8 @@ package:
   name: scipy
   version: 1.6.1
 
+# See extra explanation in info.md
+#
 # For future reference: if you see the following errors:
 #   Declaration error: adjustable dimension on non-argument
 # or:
@@ -15,9 +17,6 @@ source:
   sha256: c4fceb864890b6168e79b0e714c585dbe2fd4222768ee90bc1aa0f8218691b11
 
   patches:
-    # these patches can be found as commits in
-    #    https://github.com/rth/scipy/tree/1.6.1-pyodide
-    # on top of the v1.6.1 tag
     - patches/convert-xerrwv-message-arg-from-int-to-str.patch
     - patches/disable-blas-detection.patch
     - patches/fix-fortran-files-minpack.patch
