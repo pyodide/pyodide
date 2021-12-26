@@ -1,3 +1,8 @@
+This patch simplifies the compilation process for the pysolvers extension.
+As a result, all the solvers are compiled by em++, which makes lingeling
+difficult to compile. Solving this issue seems possible eventually but it
+requires more effort to put, which might be not worth it at this point.
+
 diff --git a/setup.py b/setup.py
 index 82dac9c..3fe102f 100644
 --- a/setup.py
