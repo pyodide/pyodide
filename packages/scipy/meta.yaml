@@ -26,7 +26,8 @@ source:
     - patches/remove-mvnun-not-fortran-77-compliant.patch
     - patches/sasum-returns-double-not-float.patch
     - patches/skip-fortran-fails-to-link.patch
-    - patches/0001-Remove-stats._boost.patch
+    - patches/remove-stats._boost.patch
+    - patches/rename-_page_trend_test.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
