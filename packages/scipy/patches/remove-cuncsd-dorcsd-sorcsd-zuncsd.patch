@@ -1,25 +1,12 @@
-From 76361e7db1eedaa8cebda088f5c211ad3e2be909 Mon Sep 17 00:00:00 2001
+From 7b56e1341c486422973dfa890158872200527b51 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 20:31:40 -0800
 Subject: [PATCH] Remove cuncsd, dorcsd, sorcsd, zuncsd
 
 ---
- .gitattributes           | 1 -
  scipy/linalg/__init__.py | 6 ++++++
- 2 files changed, 6 insertions(+), 1 deletion(-)
+ 1 file changed, 6 insertions(+)
 
-diff --git a/.gitattributes b/.gitattributes
-index c591750e1..15fd4eae3 100644
---- a/.gitattributes
-+++ b/.gitattributes
-@@ -21,7 +21,6 @@ scipy/linalg/cython_blas.pyx binary
- scipy/linalg/cython_blas_signatures.txt
- scipy/linalg/cython_lapack.pxd binary
- scipy/linalg/cython_lapack.pyx binary
--scipy/linalg/cython_lapack_signatures.txt
- 
- # SWIG-generated files
- scipy/sparse/sparsetools/bsr.py binary
 diff --git a/scipy/linalg/__init__.py b/scipy/linalg/__init__.py
 index e88479b48..746bf3dce 100644
 --- a/scipy/linalg/__init__.py
