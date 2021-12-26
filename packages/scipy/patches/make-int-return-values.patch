@@ -1,36 +1,21 @@
-From 68c7d55936d3fa388b28b4a4eeea7f6c36a45e11 Mon Sep 17 00:00:00 2001
-From: Hood Chatham <roberthoodchatham@gmail.com>
-Date: Fri, 24 Dec 2021 11:02:07 -0800
-Subject: [PATCH] make int return values
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
 
----
- scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
- scipy/integrate/_odepackmodule.c              |  2 +-
- scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
- scipy/linalg/setup.py                         |  7 +-
- scipy/optimize/_lsq/setup.py                  |  2 +-
- .../sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c |  7 --
- .../sparse/linalg/dsolve/SuperLU/SRC/dgscon.c |  3 -
- .../sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c |  7 --
- .../dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c    |  2 -
- .../linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c |  9 ---
- .../dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c    |  1 -
- .../linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c |  7 --
- .../dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c    |  2 +-
- .../linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c |  7 --
- .../dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c    |  1 -
- .../linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c |  9 ---
- .../dsolve/SuperLU/SRC/scipy_slu_config.h     |  8 ++
- .../sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c |  7 --
- .../sparse/linalg/dsolve/SuperLU/SRC/sgssvx.c |  7 +-
- .../linalg/dsolve/SuperLU/SRC/slu_dcomplex.h  |  5 +-
- .../linalg/dsolve/SuperLU/SRC/slu_scomplex.h  |  5 +-
- .../linalg/dsolve/SuperLU/SRC/slu_util.h      |  1 -
- .../sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c |  7 --
- scipy/sparse/linalg/dsolve/_superlu_utils.c   |  4 +-
- .../linalg/eigen/arpack/ARPACK/SRC/debug.h    | 20 ++---
- .../linalg/eigen/arpack/ARPACK/SRC/stat.h     | 26 +++----
- 26 files changed, 107 insertions(+), 143 deletions(-)
+There's a big change to scipy/linalg/_cython_wrapper_generators.py, which is
+called on build to generate python wrappers for lapack and BLAS. The change
+makes everything call direct to CLAPACK with the correct function signatures
+and also fixes some fortran -> c linking oddities that occur because f2py assumes
+different function signatures to f2c, which in turn creates different function 
+signatures compared to what has been done in CLAPACK. 
+
+f2py is patched in numpy to make subroutines return int.
+
+emscripten is very strict about void vs int returns and function signatures, so
+we change everything to return int from subroutines, and signatures are altered 
+to be consistent.
+
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644

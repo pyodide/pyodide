@@ -3,6 +3,9 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 16:02:23 -0800
 Subject: [PATCH] remove mvnun -- not fortran 77 compliant
 
+These two functions use features from newer fortran standards which won't work
+with f2c. This deletes them.
+
 ---
  scipy/stats/mvn.pyf  |  29 ----------
  scipy/stats/mvndst.f | 132 -------------------------------------------

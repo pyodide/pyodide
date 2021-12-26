@@ -74,12 +74,12 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
         lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
 
     f2c_output = Path(f2c_output_path)
-    if f2c_output.name in ["wrap_dummy_g77_abi.c"]:
+    if f2c_output.name == "dfft.c":
         subprocess.check_call(
             [
                 "patch",
                 str(f2c_output_path),
-                f"../../patches/{f2c_output.with_suffix('.patch').name}",
+                f"../../patches/fix-implicit-casts-functions-from-newer-lapack.patch",
             ]
         )
 
@@ -130,6 +130,10 @@ def add_externs_to_structs(lines: List[str]):
 
 
 def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
+    """
+    Make sure that functions and declarations have their argument list only on
+    one line.
+    """
     line_iter = iter(lines)
     for line in line_iter:
         if not "/* Subroutine */" in line:
@@ -152,6 +156,34 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
 
 
 def fix_inconsistent_decls(lines: List[str]) -> List[str]:
+    """
+    Fortran functions in id_dist use implicit casting of function args which f2c
+    doesn't support.
+
+    The fortran equivalent of the following code:
+
+        double f(double x){
+            return x + 5;
+        }
+        double g(int x){
+            return f(x);
+        }
+
+    gets f2c'd to:
+
+        double f(double x){
+            return x + 5;
+        }
+        double g(int x){
+            double f(int);
+            return f(x);
+        }
+
+    which fails to compile because the declaration of f type clashes with the
+    definition. Gather up all the definitions in each file and then gathers the
+    declarations and fixes them if necessary so that the declaration matches the
+    definition.
+    """
     func_types = {}
     lines = list(regroup_lines(lines))
     for line in lines:

@@ -3,6 +3,9 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 15:08:18 -0800
 Subject: [PATCH] skip fortran fails to link
 
+These are tests and they have both void vs int return value problems and implicit
+function argument cast problems. Not worth fixing for tests.
+
 ---
  scipy/integrate/setup.py | 6 ------
  scipy/io/setup.py        | 3 ---

@@ -1,7 +1,15 @@
-diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.c b/wrap_dummy_g77_abi.c
-index f25b5bd..a78352c 100644
---- a/scipy/_build_utils/src/wrap_dummy_g77_abi.c
-+++ b/wrap_dummy_g77_abi.c
+We are hijacking dfft.f to inject missing functions from future versions of LAPACK.
+
+This patch is applied to the generated dfft.c after f2c is applied to dfft.f. 
+This must be done in between when f2c is applied to dfft.f and when dfft.c is compiled.
+This is arranged in _f2c_fixes.py.
+
+f2c does not correctly handle implicit casts of function arguments. If the implicit casts 
+are between integer types then we can handle that automatically in _f2c_fixes.py. This 
+patch fixes implicit casts from char* to int, which we need to deal with manually.
+
+--- a/scipy/linalg/src/id_dist/src/dfft.c
++++ b/scipy/linalg/src/id_dist/src/dfft.c
 @@ -2855,8 +2855,7 @@ f_rook.f"> */
      extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), ctprfb_(
  	    char *, char *, char *, char *, integer *, integer *, integer *, 
