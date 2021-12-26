@@ -18,11 +18,12 @@ source:
     # these patches can be found as commits in
     #    https://github.com/rth/scipy/tree/1.6.1-pyodide
     # on top of the v1.6.1 tag
+    - patches/convert-xerrwv-message-arg-from-int-to-str.patch
     - patches/disable-blas-detection.patch
     - patches/fix-fortran-files-minpack.patch
-    - patches/remove-mvnun-not-fortran-77-compliant.patch
     - patches/gemm_-no-const.patch
     - patches/make-int-return-values.patch
+    - patches/remove-mvnun-not-fortran-77-compliant.patch
     - patches/sasum-returns-double-not-float.patch
     - patches/skip-fortran-fails-to-link.patch
 

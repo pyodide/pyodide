@@ -74,7 +74,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
         lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
 
     f2c_output = Path(f2c_output_path)
-    if f2c_output.name in ["wrap_dummy_g77_abi.c", "intdy.c", "lsoda.c"]:
+    if f2c_output.name in ["wrap_dummy_g77_abi.c"]:
         subprocess.check_call(
             [
                 "patch",
