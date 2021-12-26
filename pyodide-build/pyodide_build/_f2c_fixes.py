@@ -79,7 +79,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
             [
                 "patch",
                 str(f2c_output_path),
-                f"../../patches/fix-implicit-casts-functions-from-newer-lapack.patch",
+                f"../../patches/fix-implicit-cast-args-from-newer-lapack.patch",
             ]
         )
 
