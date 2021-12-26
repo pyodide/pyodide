@@ -19,8 +19,8 @@ Pyodide makes it possible to install and run Python packages in the browser with
 [micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html). Any pure
 Python package with a wheel available on PyPi is supported. Many packages with C
 extensions have also been ported for use with Pyodide. These include many
-general-purpose packages such as regex, pyyaml, lxml and scientific Python
-packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
+general-purpose packages such as regex, PyYAML, lxml and scientific Python
+packages including NumPy, pandas, SciPy, Matplotlib, and scikit-learn.
 
 Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
 that you can freely mix these two languages in your code with minimal
