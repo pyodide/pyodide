@@ -174,6 +174,9 @@ async function runPythonAsync(code, globals) {
 - {{ Enhancement }} upgraded numpy to 1.21.4
   {pr}`1934`
 
+- {{ Enhancement }} Upgraded scipy to 1.6.1
+  {pr}`2065`
+
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
