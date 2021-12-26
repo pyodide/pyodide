@@ -51,7 +51,8 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    pip install scipy==1.7.3
+    pip install scipy==1.7.3 pybind11[global]
+    pip install "pybind11[global]" -t packages/.artifacts/
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
