@@ -1,6 +1,6 @@
 import re
 import subprocess
-from typing import List, Iterable, Iterator
+from typing import List, Iterable, Iterator, Tuple
 from pathlib import Path
 
 
@@ -75,6 +75,9 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
 
     f2c_output = Path(f2c_output_path)
     if f2c_output.name == "dfft.c":
+        # dfft.c has a bunch of implicit cast args coming from functions copied
+        # out of future lapack versions. fix_inconsistent_decls will fix all
+        # except string to int.
         subprocess.check_call(
             [
                 "patch",
@@ -86,6 +89,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
     with open(f2c_output, "r") as f:
         lines = f.readlines()
     if "id_dist" in f2c_output_path:
+        # Fix implicit casts in id_dist.
         lines = fix_inconsistent_decls(lines)
     if "odepack" in f2c_output_path or f2c_output.name == "mvndst.c":
         # Mark all but one declaration of each struct as extern.
@@ -104,7 +108,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
             add_externs_to_structs(lines)
 
     if f2c_output.name in ["wrap_dummy_g77_abi.c", "_lapack_subroutine_wrappers.c"]:
-        lines = fix_lapack_subroutine_wrappers(lines)
+        lines = remove_ftnlen_args(lines)
 
     code = "".join(lines)
     for cur_name in lapack_names:
@@ -114,7 +118,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
         f.write(code)
 
 
-def fix_lapack_subroutine_wrappers(lines: List[str]) -> List[str]:
+def remove_ftnlen_args(lines: List[str]) -> List[str]:
     new_lines = []
     for line in regroup_lines(lines):
         if line.startswith("/* Subroutine */"):
@@ -209,7 +213,7 @@ def fix_inconsistent_decls(lines: List[str]) -> List[str]:
     return lines
 
 
-def get_subroutine_decl(sub: str):
+def get_subroutine_decl(sub: str) -> Tuple[str, List[str]]:
     func_name = sub.partition("(")[0].rpartition(" ")[2]
     args_str = sub.partition("(")[2].partition(")")[0]
     args = args_str.split(",")
@@ -221,7 +225,7 @@ def get_subroutine_decl(sub: str):
         else:
             type = arg.partition(" ")[0]
         types.append(type.strip())
-    return [func_name, types]
+    return (func_name, types)
 
 
 if __name__ == "__main__":
