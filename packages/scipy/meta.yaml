@@ -21,7 +21,6 @@ source:
     - patches/disable-blas-detection.patch
     - patches/fix-fortran-files-minpack.patch
     - patches/remove-mvnun-not-fortran-77-compliant.patch
-    - patches/remove-cuncsd-et-al-not-fortran-77-compliant.patch
     - patches/gemm_-no-const.patch
     - patches/make-int-return-values.patch
     - patches/sasum-returns-double-not-float.patch
@@ -71,6 +70,11 @@ build:
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+
+    sed -i '/cuncsd/d' scipy/linalg/cython_lapack_signatures.txt scipy/linalg/cython_lapack.pxd scipy/linalg/cython_lapack.pyx
+    sed -i '/dorcsd/d' scipy/linalg/cython_lapack_signatures.txt scipy/linalg/cython_lapack.pxd scipy/linalg/cython_lapack.pyx
+    sed -i '/sorcsd/d' scipy/linalg/cython_lapack_signatures.txt scipy/linalg/cython_lapack.pxd scipy/linalg/cython_lapack.pyx
+    sed -i '/zuncsd/d' scipy/linalg/cython_lapack_signatures.txt scipy/linalg/cython_lapack.pxd scipy/linalg/cython_lapack.pyx
 
     # Missing declaration from cython_lapack_signatures.txt
     echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
