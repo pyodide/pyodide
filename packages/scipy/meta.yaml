@@ -2,7 +2,14 @@ package:
   name: scipy
   version: 1.6.1
 
-# For future reference: if you
+# For future reference: if you see the following errors:
+#   Declaration error: adjustable dimension on non-argument
+# or:
+#   nonconstant array size
+# you are trying to compile code that isn't written to the fortran 77 standard.
+# f2c only handles fortran 77 code. The line number in the error points to the
+# last line of the problematic subroutine. Try deleting it.
+
 source:
   url: https://files.pythonhosted.org/packages/26/68/84dbe18583e79e56e4cee8d00232a8dd7d4ae33bc3acf3be1c347991848f/scipy-1.6.1.tar.gz
   sha256: c4fceb864890b6168e79b0e714c585dbe2fd4222768ee90bc1aa0f8218691b11
@@ -12,8 +19,9 @@ source:
     #    https://github.com/rth/scipy/tree/1.6.1-pyodide
     # on top of the v1.6.1 tag
     - patches/disable-blas-detection.patch
-    - patches/disable-scipy-stats-mvn.patch
     - patches/fix-fortran-files-minpack.patch
+    - patches/remove-mvnun-not-fortran-77-compliant.patch
+    - patches/remove-cuncsd-et-al-not-fortran-77-compliant.patch
     - patches/gemm_-no-const.patch
     - patches/make-int-return-values.patch
     - patches/sasum-returns-double-not-float.patch
