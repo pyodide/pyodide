@@ -26,7 +26,7 @@ index e88479b48..746bf3dce 100644
 +del lapack.dorcsd
 +del lapack.sorcsd
 +del lapack.zuncsd
-+
++del lapack
  
  from .misc import *
  from .basic import *
