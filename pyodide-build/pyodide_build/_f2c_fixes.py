@@ -89,7 +89,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
         lines = fix_inconsistent_decls(lines)
     if "odepack" in f2c_output_path or f2c_output.name == "mvndst.c":
         # Mark all but one declaration of each struct as extern.
-        if f2c_output.name == "blkdata000.c":
+        if f2c_output.name == "blkdta000.c":
             # extern marking in blkdata000.c doesn't work properly so we let it
             # define the one copy of the structs. It doesn't talk about lsa001
             # at all though, so we need to add a definition of it.
