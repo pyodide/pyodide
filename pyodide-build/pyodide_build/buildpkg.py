@@ -89,7 +89,7 @@ def get_bash_runner():
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
     b = BashRunnerWithSharedEnvironment(env=env)
-    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh")
+    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL)
     try:
         yield b
     finally:
