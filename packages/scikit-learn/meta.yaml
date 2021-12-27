@@ -8,6 +8,7 @@ source:
 
   patches:
     - patches/disable-openmp.patch
+    - patches/0001-Cythonize-_cython_blas.pyx-with-include-path-pointin.patch
 
 build:
   cflags: -Wno-implicit-function-declaration

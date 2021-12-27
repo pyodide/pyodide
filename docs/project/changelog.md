@@ -177,6 +177,12 @@ async function runPythonAsync(code, globals) {
 - {{ Enhancement }} Upgraded SciPy to 1.7.3
   {pr}`2065`
 
+- {{ Enhancement }} Upgraded scikit-learn to version 1.0.2
+  {pr}`2065`
+
+- {{ Enhancement }} Added threadpoolctl (a dependency of scikit-learn)
+  {pr}`2065`
+
 - {{ Fix }} The built-in pwd module of Python, which provides a Unix specific
   feature, is now unvendored.
   {pr}`1883`
