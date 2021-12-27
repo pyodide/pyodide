@@ -331,6 +331,7 @@ def compile(
     *,
     target_install_dir: str,
     host_install_dir: str,
+    continue_from: int = 0,
 ):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
@@ -376,11 +377,15 @@ def compile(
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
     with chdir(srcpath):
-        pywasmcross.capture_compile(
-            host_install_dir=host_install_dir,
-            skip_host=skip_host,
-            env=bash_runner.env,
-        )
+        if not continue_from:
+            pywasmcross.capture_compile(
+                host_install_dir=host_install_dir,
+                skip_host=skip_host,
+                env=bash_runner.env,
+            )
+            prereplay = build_metadata.get("prereplay")
+            if prereplay:
+                bash_runner.run(prereplay)
         pywasmcross.replay_compile(
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
@@ -388,6 +393,7 @@ def compile(
             target_install_dir=target_install_dir,
             host_install_dir=host_install_dir,
             replace_libs=replace_libs,
+            continue_from=continue_from,
         )
         install_for_distribution()
 
@@ -614,6 +620,7 @@ def build_package(
     target_install_dir: str,
     host_install_dir: str,
     compress_package: bool,
+    continue_from: int = 0,
 ):
     """
     Build the package. The main entrypoint in this module.
@@ -637,23 +644,28 @@ def build_package(
     name = pkg["package"]["name"]
     build_dir = pkg_root / "build"
     src_dir_name: str = name + "-" + pkg["package"]["version"]
-    src_path = build_dir / src_dir_name
+    srcpath = build_dir / src_dir_name
     source_metadata = pkg["source"]
     build_metadata = pkg["build"]
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         if not needs_rebuild(pkg_root, build_dir, source_metadata):
             return
-        if source_metadata:
-            if build_dir.resolve().is_dir():
-                shutil.rmtree(build_dir)
-            os.makedirs(build_dir)
+        if continue_from:
+            print(srcpath)
+            assert srcpath.exists()
+        else:
+            if source_metadata:
+                if build_dir.resolve().is_dir():
+                    shutil.rmtree(build_dir)
+                os.makedirs(build_dir)
 
-        srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata)
-        if build_metadata.get("script"):
-            run_script(build_dir, srcpath, build_metadata, bash_runner)
-        if build_metadata.get("library"):
-            create_packaged_token(build_dir)
-            return
+            srcpath = prepare_source(pkg_root, build_dir, srcpath, source_metadata)
+            if build_metadata.get("script"):
+                run_script(build_dir, srcpath, build_metadata, bash_runner)
+            if build_metadata.get("library"):
+                create_packaged_token(build_dir)
+                return
+
         # shared libraries get built by the script and put into install
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
@@ -665,6 +677,7 @@ def build_package(
                 bash_runner,
                 target_install_dir=target_install_dir,
                 host_install_dir=host_install_dir,
+                continue_from=continue_from,
             )
         should_unvendor_tests = build_metadata.get("unvendor-tests", True)
         package_files(
@@ -726,6 +739,12 @@ def make_parser(parser: argparse.ArgumentParser):
         ),
     )
     parser.add_argument(
+        "--continue-from",
+        type=int,
+        nargs="?",
+        default=0,
+    )
+    parser.add_argument(
         "--no-compress-package",
         action="store_false",
         default=True,
@@ -765,6 +784,7 @@ def main(args):
             target_install_dir=args.target_install_dir,
             host_install_dir=args.host_install_dir,
             compress_package=args.compress_package,
+            continue_from=args.continue_from,
         )
     except:
         success = False

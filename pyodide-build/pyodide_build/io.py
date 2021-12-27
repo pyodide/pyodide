@@ -26,6 +26,7 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
         "library": bool,
         "sharedlibrary": bool,
         "script": str,
+        "prereplay": str,
         "post": str,
         "replace-libs": list,
         "unvendor-tests": bool,
