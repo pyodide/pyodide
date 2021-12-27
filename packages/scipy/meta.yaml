@@ -26,7 +26,6 @@ source:
     - patches/remove-mvnun-not-fortran-77-compliant.patch
     - patches/sasum-returns-double-not-float.patch
     - patches/skip-fortran-fails-to-link.patch
-    - patches/remove-stats._boost.patch
     - patches/rename-_page_trend_test.patch
 
 build:
