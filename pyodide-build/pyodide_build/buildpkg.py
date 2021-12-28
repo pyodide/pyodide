@@ -95,7 +95,7 @@ def get_bash_runner():
         "PYODIDE_ROOT": PYODIDE_ROOT,
         "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
         "NUMPY_LIB": os.environ["NUMPY_LIB"],
-        "_PYTHON_HOST_PLATFORM" : "emscripten_wasm32",
+        "_PYTHON_HOST_PLATFORM": "emscripten_wasm32",
     }
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
@@ -308,6 +308,7 @@ def pack_wheel(path):
     os.chdir(path.parent)
     subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
     os.chdir(cwd)
+
 
 def install_for_distribution():
     commands = [
