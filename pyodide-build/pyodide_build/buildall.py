@@ -326,7 +326,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     t0 = perf_counter()
     for pkg_name in needs_build:
         pkg = pkg_map[pkg_name]
-        if len(pkg.dependencies) == 0:
+        if len(pkg.unbuilt_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
     built_queue: Queue = Queue()
