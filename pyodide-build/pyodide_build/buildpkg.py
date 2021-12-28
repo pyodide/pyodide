@@ -23,7 +23,7 @@ from . import pywasmcross
 
 
 @contextmanager
-def chdir(new_dir: "os.PathLike[str]"):
+def chdir(new_dir: Path):
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
@@ -85,6 +85,7 @@ def get_bash_runner():
         "PYODIDE_ROOT": PYODIDE_ROOT,
         "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
         "NUMPY_LIB": os.environ["NUMPY_LIB"],
+        "PYODIDE": "1",
     }
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
