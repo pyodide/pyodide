@@ -56,7 +56,7 @@ build:
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
-    tar -xnf v3.10.0.tar.gz
+    tar xzf v3.10.0.tar.gz
     cd lapack-3.10.0/SRC
     cat \
       cgemqrt.f cgeqrfp.f cgeqrt.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
