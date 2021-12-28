@@ -435,7 +435,7 @@ def test_console_html(console_html_fixture):
             TypeError: hi]
             """
         ).strip()
-    )
+    ) 
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
