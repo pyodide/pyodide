@@ -132,6 +132,9 @@ async function runPythonAsync(code, globals) {
   packages set `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed,
   since it is now equivalent to `make` without extra arguments. {pr}`1801`
 
+- It is now possible to use `pyodide-build buildall` and `pyodide-build buildpkg` directly.
+  {pr}`2063`
+
 - {{Enhancement}} Changes to environment variables in the build script are now
   seen in the compile and post build scripts.
   {pr}`1706`

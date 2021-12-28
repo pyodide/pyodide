@@ -19,9 +19,11 @@ from urllib import request
 import fnmatch
 from contextlib import contextmanager
 
+from . import pywasmcross
+
 
 @contextmanager
-def chdir(new_dir):
+def chdir(new_dir: "os.PathLike[str]"):
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
@@ -93,6 +95,7 @@ def get_bash_runner():
         "PYODIDE_ROOT": PYODIDE_ROOT,
         "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
         "NUMPY_LIB": os.environ["NUMPY_LIB"],
+        "_PYTHON_HOST_PLATFORM" : "emscripten_wasm32",
     }
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
@@ -306,6 +309,17 @@ def pack_wheel(path):
     subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
     os.chdir(cwd)
 
+def install_for_distribution():
+    commands = [
+        sys.executable,
+        "setup.py",
+        "bdist_wheel",
+        "--skip-build",
+    ]
+    env = dict(os.environ)
+    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
+    subprocess.check_call(commands, env=env)
+
 
 def compile(
     pkg_name: str,
@@ -359,34 +373,25 @@ def compile(
     if (srcpath / ".built").is_file():
         return
 
-    if build_metadata.get("skip_host", True):
-        bash_runner.env["SKIP_HOST"] = ""
+    skip_host = build_metadata.get("skip_host", True)
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
     with chdir(srcpath):
-        subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pyodide_build",
-                "pywasmcross",
-                "--cflags",
-                build_metadata["cflags"],
-                "--cxxflags",
-                build_metadata["cxxflags"],
-                "--ldflags",
-                build_metadata["ldflags"],
-                "--target-install-dir",
-                target_install_dir,
-                "--host-install-dir",
-                host_install_dir,
-                "--replace-libs",
-                replace_libs,
-            ],
-            check=True,
+        pywasmcross.capture_compile(
+            host_install_dir=host_install_dir,
+            skip_host=skip_host,
             env=bash_runner.env,
         )
+        pywasmcross.replay_compile(
+            cflags=build_metadata["cflags"],
+            cxxflags=build_metadata["cxxflags"],
+            ldflags=build_metadata["ldflags"],
+            target_install_dir=target_install_dir,
+            host_install_dir=host_install_dir,
+            replace_libs=replace_libs,
+        )
+        install_for_distribution()
 
     distdir = srcpath / "dist"
     wheel_path = next(distdir.glob("*.whl"))
@@ -645,7 +650,7 @@ def make_parser(parser: argparse.ArgumentParser):
         "--host-install-dir",
         type=str,
         nargs="?",
-        default="",
+        default=common.get_make_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "

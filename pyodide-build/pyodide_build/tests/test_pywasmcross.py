@@ -1,12 +1,10 @@
-import sys
-import argparse
 from dataclasses import dataclass
 
 import pytest
 
 from pyodide_build.pywasmcross import replay_command  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
-from pyodide_build.pywasmcross import make_parser
+from pyodide_build.pywasmcross import environment_substitute_args
 
 
 @dataclass
@@ -123,12 +121,12 @@ def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
 
 
 def test_f2c():
-    assert f2c_wrap("gfortran test.f") == "gfortran test.c"
+    assert f2c_wrap("gfortran test.f") == "gcc test.c"
     assert f2c_wrap("gcc test.c") is None
     assert f2c_wrap("gfortran --version") is None
     assert (
         f2c_wrap("gfortran --shared -c test.o -o test.so")
-        == "gfortran --shared -c test.o -o test.so"
+        == "gcc --shared -c test.o -o test.so"
     )
 
 
@@ -150,14 +148,17 @@ def test_environment_var_substitution(monkeypatch):
     monkeypatch.setenv("BOB", "Robert Mc Roberts")
     monkeypatch.setenv("FRED", "Frederick F. Freddertson Esq.")
     monkeypatch.setenv("JIM", "James Ignatius Morrison:Jimmy")
-    call_args = 'pywasmcross.py --ldflags "-l$(PYODIDE_BASE)" --cxxflags $(BOB) --cflags $(FRED) --replace-libs $(JIM)'
-    monkeypatch.setattr(sys, "argv", call_args.split(" "))
-    parser = argparse.ArgumentParser()
-    make_parser(parser)
-    args = parser.parse_args()
+    args = environment_substitute_args(
+        {
+            "ldflags": '"-l$(PYODIDE_BASE)"',
+            "cxxflags": "$(BOB)",
+            "cflags": "$(FRED)",
+            "replace_libs": "$(JIM)",
+        }
+    )
     assert (
-        args.cflags == "Frederick F. Freddertson Esq."
-        and args.cxxflags == "Robert Mc Roberts"
-        and args.ldflags == '"-lpyodide_build_dir"'
-        and args.replace_libs == "James Ignatius Morrison:Jimmy"
+        args["cflags"] == "Frederick F. Freddertson Esq."
+        and args["cxxflags"] == "Robert Mc Roberts"
+        and args["ldflags"] == '"-lpyodide_build_dir"'
+        and args["replace_libs"] == "James Ignatius Morrison:Jimmy"
     )
