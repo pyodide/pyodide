@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.7.3
+  version: 1.7.3 # when updating version make sure to update pip install scipy==1.7.3 below too.
 
 # See extra explanation in info.md
 #
