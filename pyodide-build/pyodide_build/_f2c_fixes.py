@@ -167,15 +167,9 @@ def add_externs_to_structs(lines: List[str]):
     ...     struct {    doublereal rls[218];
     ...         integer ils[39];
     ...     } ls0001_;
-    ...
-    ...     #define ls0001_1 ls0001_
-    ...
     ...     struct {    doublereal rlsa[22];
     ...         integer ilsa[9];
     ...     } lsa001_;
-    ...
-    ...     #define lsa001_1 lsa001_
-    ...
     ...     struct {    integer ieh[2];
     ...     } eh0001_;
     ... ''')
@@ -184,15 +178,9 @@ def add_externs_to_structs(lines: List[str]):
     extern struct {    doublereal rls[218];
         integer ils[39];
     } ls0001_;
-    <BLANKLINE>
-    #define ls0001_1 ls0001_
-    <BLANKLINE>
     extern struct {    doublereal rlsa[22];
         integer ilsa[9];
     } lsa001_;
-    <BLANKLINE>
-    #define lsa001_1 lsa001_
-    <BLANKLINE>
     extern struct {    integer ieh[2];
     } eh0001_;
     """
@@ -318,7 +306,9 @@ def fix_inconsistent_decls(lines: List[str]) -> List[str]:
 
 def get_subroutine_decl(sub: str) -> Tuple[str, List[str]]:
     """
-    >>> get_subroutine_decl("extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);")
+    >>> get_subroutine_decl(
+    ...     "extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);"
+    ... )
     ('dqelg_', ['integer *', 'doublereal *', 'doublereal *', 'doublereal *', 'doublereal *', 'integer *'])
     """
     func_name = sub.partition("(")[0].rpartition(" ")[2]
