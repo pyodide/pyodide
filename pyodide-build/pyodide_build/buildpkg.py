@@ -769,17 +769,18 @@ def make_parser(parser: argparse.ArgumentParser):
         help=(
             dedent(
                 """
-            Continue a build from the middle. For debugging. Implies "--force".
-            Possible arguments:
+                Continue a build from the middle. For debugging. Implies "--force".
+                Possible arguments:
 
-                'capture' : redo capture step and replay step (but don't prepare
-                            sources again, use existing source directory). Good for debug
-                            builds with hand-modified sources. This is the default.
+                    'capture' : redo capture step and replay step (but don't prepare
+                                sources again, use existing source directory). Good for debug
+                                builds with hand-modified sources. `--continue` with no argument
+                                has the same effect.
 
-                'replay' : Don't redo the capture step but redo the replay step.
+                    'replay' : Don't redo the capture step but redo the replay step.
 
-                'replay:15' : replay the capture step starting with the 15th compile command (any integer works)
-            """
+                    'replay:15' : replay the capture step starting with the 15th compile command (any integer works)
+                """
             ).strip()
         ),
     )
@@ -817,6 +818,8 @@ def main(args):
             "Terser is required to compress packages. Try `npm install -g terser` to install terser."
         )
     step_controls = parse_continue_arg(args.continue_from)
+    # --continue implies --force
+    force = args.force or not not args.continue_from
 
     meta_file = Path(args.package[0]).resolve()
 
@@ -845,7 +848,7 @@ def main(args):
             target_install_dir=args.target_install_dir,
             host_install_dir=args.host_install_dir,
             compress_package=args.compress_package,
-            force=args.force,
+            force=force,
             **step_controls,
         )
     except:
