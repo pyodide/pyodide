@@ -11,10 +11,12 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
-from typing import Any, Dict
+from textwrap import dedent
+from typing import Any, Dict, Optional
 from urllib import request
 import fnmatch
 from contextlib import contextmanager
@@ -332,7 +334,9 @@ def compile(
     *,
     target_install_dir: str,
     host_install_dir: str,
-    continue_from: int = 0,
+    should_capture_compile: bool,
+    should_replay_compile: bool,
+    replay_from: int = 0,
 ):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
@@ -378,7 +382,7 @@ def compile(
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
     with chdir(srcpath):
-        if not continue_from:
+        if should_capture_compile:
             pywasmcross.capture_compile(
                 host_install_dir=host_install_dir,
                 skip_host=skip_host,
@@ -387,15 +391,16 @@ def compile(
             prereplay = build_metadata.get("prereplay")
             if prereplay:
                 bash_runner.run(prereplay)
-        pywasmcross.replay_compile(
-            cflags=build_metadata["cflags"],
-            cxxflags=build_metadata["cxxflags"],
-            ldflags=build_metadata["ldflags"],
-            target_install_dir=target_install_dir,
-            host_install_dir=host_install_dir,
-            replace_libs=replace_libs,
-            continue_from=continue_from,
-        )
+        if should_replay_compile:
+            pywasmcross.replay_compile(
+                cflags=build_metadata["cflags"],
+                cxxflags=build_metadata["cxxflags"],
+                ldflags=build_metadata["ldflags"],
+                target_install_dir=target_install_dir,
+                host_install_dir=host_install_dir,
+                replace_libs=replace_libs,
+                replay_from=replay_from,
+            )
         install_for_distribution()
 
     post = build_metadata.get("post")
@@ -621,7 +626,11 @@ def build_package(
     target_install_dir: str,
     host_install_dir: str,
     compress_package: bool,
-    continue_from: int = 0,
+    force: bool,
+    should_prepare_source: bool,
+    should_capture_compile: bool,
+    should_replay_compile: bool,
+    replay_from: int,
 ):
     """
     Build the package. The main entrypoint in this module.
@@ -648,11 +657,12 @@ def build_package(
     srcpath = build_dir / src_dir_name
     source_metadata = pkg["source"]
     build_metadata = pkg["build"]
+
+    if not force and not needs_rebuild(pkg_root, build_dir, source_metadata):
+        return
+
     with chdir(pkg_root), get_bash_runner() as bash_runner:
-        if not needs_rebuild(pkg_root, build_dir, source_metadata):
-            return
-        if continue_from:
-            print(srcpath)
+        if not should_prepare_source:
             assert srcpath.exists()
         else:
             if source_metadata:
@@ -660,6 +670,8 @@ def build_package(
                     shutil.rmtree(build_dir)
                 os.makedirs(build_dir)
 
+            # TODO: figure out why srcpath needs to change sometimes.
+            # Until we fix this, --continue won't work on some packages.
             srcpath = prepare_source(pkg_root, build_dir, srcpath, source_metadata)
             if build_metadata.get("script"):
                 run_script(build_dir, srcpath, build_metadata, bash_runner)
@@ -678,7 +690,9 @@ def build_package(
                 bash_runner,
                 target_install_dir=target_install_dir,
                 host_install_dir=host_install_dir,
-                continue_from=continue_from,
+                should_capture_compile=should_capture_compile,
+                should_replay_compile=should_replay_compile,
+                replay_from=replay_from,
             )
         should_unvendor_tests = build_metadata.get("unvendor-tests", True)
         package_files(
@@ -747,10 +761,27 @@ def make_parser(parser: argparse.ArgumentParser):
         ),
     )
     parser.add_argument(
-        "--continue-from",
+        "--continue",
         type=int,
         nargs="?",
-        default=0,
+        dest="continue_from",
+        const="capture",
+        help=(
+            dedent(
+                """
+            Continue a build from the middle. For debugging. Implies "--force".
+            Possible arguments:
+
+                'capture' : redo capture step and replay step (but don't prepare
+                            sources again, use existing source directory). Good for debug
+                            builds with hand-modified sources. This is the default.
+
+                'replay' : Don't redo the capture step but redo the replay step.
+
+                'replay:15' : replay the capture step starting with the 15th compile command (any integer works)
+            """
+            ).strip()
+        ),
     )
     parser.add_argument(
         "--no-compress-package",
@@ -762,37 +793,60 @@ def make_parser(parser: argparse.ArgumentParser):
     return parser
 
 
+def parse_continue_arg(continue_from: Optional[str]) -> Dict[str, Any]:
+    assert (
+        continue_from is None
+        or continue_from == "capture"
+        or re.fullmatch("replay(:[0-9]*)?", continue_from)
+    )
+    result: Dict[str, Any] = {}
+    result["should_prepare_source"] = not continue_from
+    result["should_capture_compile"] = (
+        continue_from is None or continue_from == "capture"
+    )
+    result["should_replay_compile"] = True
+    result["replay_from"] = 1
+    if continue_from and continue_from.startswith("replay:"):
+        result["replay_from"] = int(continue_from.removeprefix("replay:"))
+    return result
+
+
 def main(args):
-    meta_file = Path(args.package[0]).resolve()
     if args.compress_package and not _have_terser():
         raise RuntimeError(
             "Terser is required to compress packages. Try `npm install -g terser` to install terser."
         )
+    step_controls = parse_continue_arg(args.continue_from)
+
+    meta_file = Path(args.package[0]).resolve()
 
     pkg_root = meta_file.parent
     pkg = parse_package_config(meta_file)
+
+    pkg["source"] = pkg.get("source", {})
+    pkg["build"] = pkg.get("build", {})
+    build_metadata = pkg["build"]
+    build_metadata["cflags"] = build_metadata.get("cflags", "")
+    build_metadata["cxxflags"] = build_metadata.get("cxxflags", "")
+    build_metadata["ldflags"] = build_metadata.get("ldflags", "")
+
+    build_metadata["cflags"] += f" {args.cflags}"
+    build_metadata["cxxflags"] += f" {args.cxxflags}"
+    build_metadata["ldflags"] += f" {args.ldflags}"
+
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     success = True
     try:
-        pkg["source"] = pkg.get("source", {})
-        pkg["build"] = pkg.get("build", {})
-        build_metadata = pkg["build"]
-        build_metadata["cflags"] = build_metadata.get("cflags", "")
-        build_metadata["cxxflags"] = build_metadata.get("cxxflags", "")
-        build_metadata["ldflags"] = build_metadata.get("ldflags", "")
-
-        build_metadata["cflags"] += f" {args.cflags}"
-        build_metadata["cxxflags"] += f" {args.cxxflags}"
-        build_metadata["ldflags"] += f" {args.ldflags}"
         build_package(
             pkg_root,
             pkg,
             target_install_dir=args.target_install_dir,
             host_install_dir=args.host_install_dir,
             compress_package=args.compress_package,
-            continue_from=args.continue_from,
+            force=args.force,
+            **step_controls,
         )
     except:
         success = False

@@ -587,7 +587,7 @@ def replay_compile(
     host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
-    continue_from: int = 0,
+    replay_from: int = 1,
 ):
     ...
 
@@ -597,7 +597,7 @@ def replay_compile(*, _this_is_just_here_to_appease_mypy: str):
     ...
 
 
-def replay_compile(continue_from: int = 0, **kwargs):
+def replay_compile(replay_from: int = 1, **kwargs):
     args = ReplayArgs(**environment_substitute_args(kwargs))
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
@@ -615,7 +615,7 @@ def replay_compile(continue_from: int = 0, **kwargs):
         num_lines = sum(1 for _1 in fd)  # type: ignore
         fd.seek(0)
         for idx, line_str in enumerate(fd):
-            if idx < continue_from - 1:
+            if idx < replay_from - 1:
                 continue
             line = json.loads(line_str)
             print(f"[line {idx + 1} of {num_lines}]")
