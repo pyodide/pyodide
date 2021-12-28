@@ -105,6 +105,11 @@ class Package(BasePackage):
                     args.target_install_dir,
                     "--host-install-dir",
                     args.host_install_dir,
+                    # Either this package has been updated and this doesn't
+                    # matter, or this package is dependent on a package that has
+                    # been updated and should be rebuilt even though its own
+                    # files haven't been updated.
+                    "--force",
                 ],
                 check=False,
                 stdout=f,

@@ -740,6 +740,13 @@ def make_parser(parser: argparse.ArgumentParser):
         ),
     )
     parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Force rebuild of package regardless of whether it appears to have been updated"
+        ),
+    )
+    parser.add_argument(
         "--continue-from",
         type=int,
         nargs="?",
