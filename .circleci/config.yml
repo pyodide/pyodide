@@ -202,7 +202,6 @@ jobs:
             # Set mtime for EM_CONFIG to avoid ccache cache misses
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
-            mkdir -p packages/.artifacts/
             ccache -z
             PYODIDE_PACKAGES='*' make -C packages
             ccache -s
