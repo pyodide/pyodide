@@ -54,7 +54,7 @@ pkg.do_something();
 await pyodide.runPythonAsync(`
     from pyodide.http import pyfetch
     response = await pyfetch("https://.../your_package.tar.gz")
-    response.unpack_archive()
+    await response.unpack_archive()
 `)
 pkg = pyodide.pyimport("your_package");
 pkg.do_something();
