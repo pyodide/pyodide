@@ -285,35 +285,35 @@ export function toPy(obj, { depth = -1 } = {}) {
 
 /**
  * Imports a module and returns it.
- * 
+ *
  * .. admonition:: Warning
  *    :class: warning
  *
  *    This function has a completely different behavior than the old removed pyimport function!
- * 
+ *
  *    ``pyimport`` is roughly equivalent to:
- * 
+ *
  *    .. code-block:: js
- * 
+ *
  *      pyodide.runPython(`import ${pkgname}; ${pkgname}`);
  *
  *    except that the global namespace will not change.
- *     
+ *
  *    Example:
- * 
+ *
  *    .. code-block:: js
- * 
+ *
  *      let sysmodule = pyodide.pyimport("sys");
  *      let recursionLimit = sys.getrecursionlimit();
  *
  * The best way to run Python code with Pyodide is:
- * 
+ *
  * 1. write a Python package
- * 
+ *
  * 2. load your Python package into the Pyodide (Emscripten) file system
- * 
+ *
  * 3. import the package with ``let mypkg = pyodide.pyimport("mypkgname")``
- * 
+ *
  * 4. call into your package with ``mypkg.some_api(some_args)``.
  *
  * @param {string} mod_name The name of the module to import
