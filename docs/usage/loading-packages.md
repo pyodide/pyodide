@@ -47,7 +47,7 @@ In general, loading a package twice is not permitted. However, one can override
 a dependency by loading a custom URL with the same package name before loading
 the dependent package.
 
-Multiple packages can also be loaded at the same time by passing a list to `loadPackage.
+Multiple packages can also be loaded at the same time by passing a list to {any}`pyodide.loadPackage`.
 
 ```js
 pyodide.loadPackage(["cycler", "pytz"]);

@@ -58,7 +58,7 @@ of the round trip conversion is the original object (in the sense that they live
 at the same memory address). There are a few exceptions:
 
 1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. `null` is converted to `undefined` after a round trip, and
+2. `null` is converted to `undefined` after a round trip
 3. a `BigInt` will be converted to a `Number` after a round trip unless its
    absolute value is greater than `Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
@@ -85,8 +85,8 @@ JavaScript:
 | `bool`  | `Boolean`              |
 | `None`  | `undefined`            |
 
-\* An `int` is converted to a `Number` if the `int` is between -2^{53} and
-2^{53} inclusive, otherwise it is converted to a `BigInt`. (If the browser does
+\* An `int` is converted to a `Number` if the `int` is between -2^53 and
+2^53 inclusive, otherwise it is converted to a `BigInt`. (If the browser does
 not support `BigInt` then a `Number` will be used instead. In this case,
 conversion of large integers from Python to JavaScript is lossy.)
 
@@ -106,7 +106,7 @@ Python:
 | `undefined` | `None`                            |
 | `null`      | `None`                            |
 
-\* A number is converted to an `int` if it is between -2^{53} and 2^{53}
+\* A number is converted to an `int` if it is between -2^53 and 2^53
 inclusive and its fractional part is zero. Otherwise, it is converted to a
 float.
 

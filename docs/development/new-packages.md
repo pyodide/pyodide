@@ -173,7 +173,7 @@ This section describes the structure of a pure Python package, and how our
 build system creates it. In general, it is not recommended, to construct these
 by hand; instead create a Python wheel and install it with micropip.
 
-Pyodide is obtained by compiling CPython into web assembly. As such, it loads
+Pyodide is obtained by compiling CPython into WebAssembly. As such, it loads
 packages the same way as CPython --- it looks for relevant files `.py` files in
 `/lib/python3.x/`. When creating and loading a package, our job is to put our
 `.py` files in the right location in emscripten's virtual filesystem.
