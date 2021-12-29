@@ -15,10 +15,34 @@ Two possible solutions are,
 In any case, files need to be served with a web server and cannot be loaded from
 local file system.
 
+## How can I download files from within Pyodide?
+
+To download a file from the internet to the [emscripten virtual file system](https://emscripten.org/docs/api_reference/Filesystem-API.html), we currently recommend using `from js import fetch`. A complete file downloader and converter is described below:
+```python
+from js import fetch
+
+async def js_fetch(url, path):
+    response = await fetch(url)
+    js_buffer = await response.arrayBuffer()
+    py_buffer = js_buffer.to_py()  # this is a memoryview
+    stream = py_buffer.tobytes()   # now we have a bytes object
+
+    with open(path, "wb") as fh:
+        fh.write(stream)
+```
+You can explore the virtual file system with `from pathlib import Path; Path.cwd().iterdir()`. The [pathlib](https://docs.python.org/3/library/pathlib.html) module works the same as in the native Python runtime.
+
+
 ## Why can't I load files from the local file system?
 
-For security reasons JavaScript in the browser is not allowed to load local data
-files. You need to serve them with a web-browser. There is a
+For security reasons Javascript in the browser is not allowed to load local data files
+(for example, `file:///path/to/local/file.data`).
+You will run into Network Errors, due to the [Same Origin Policy](https://en.wikipedia.org/wiki/Same-origin_policy).
+
+For development purposes, you can serve your files in a [web-server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
+Run `python3 -m http.server 8000` from your development directory and access the local web-server: `http://localhost:8000/`. You can choose a port number different from 8000.
+
+There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
 but not in Firefox or Safari.
 
