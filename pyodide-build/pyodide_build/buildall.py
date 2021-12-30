@@ -252,6 +252,14 @@ def get_progress_line(package_set):
 
 
 def format_name_list(l):
+    """
+    >>> format_name_list(["regex"])
+    'regex'
+    >>> format_name_list(["regex", "parso"])
+    'regex and parso'
+    >>> format_name_list(["regex", "parso", "jedi"])
+    'regex, parso, and jedi'
+    """
     if len(l) == 1:
         return l
     most = l[:-1]
