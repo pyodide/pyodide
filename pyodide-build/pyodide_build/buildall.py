@@ -271,10 +271,30 @@ def format_name_list(l):
 def mark_package_needs_build(
     pkg_map: Dict[str, BasePackage], pkg: BasePackage, needs_build: Set[str]
 ):
+    """
+    Helper for generate_needs_build_set. Modifies needs_build in place.
+    Recursively add pkg and all of its dependencies to needs_build.
+    """
     needs_build.add(pkg.name)
     for dep in pkg.dependents:
-        mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
+        if dep not in needs_build:
+            mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
+def generate_needs_build_set(pkg_map):
+    """
+    Generate the set of packages that need to be rebuilt. 
+
+    This consists of: 
+    1. packages whose source files have changed since they were last built
+       according to needs_rebuild, and
+    2. packages which depend on case 1 packages.
+    """
+    needs_build = set()
+    for pkg in pkg_map.values():
+        # Otherwise, rebuild packages that have been updated and their dependents.
+        if needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta):
+            mark_package_needs_build(pkg_map, pkg, needs_build)
+    return needs_build
 
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
@@ -303,24 +323,16 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
         needs_build = set(pkg_map.keys())
         already_built = set()
     else:
-        needs_build = set()
+        needs_build = generate_needs_build_set(pkg_map)
 
-        for pkg in pkg_map.values():
-            # Otherwise, rebuild packages that have been updated and their dependents.
-            if needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta):
-                mark_package_needs_build(pkg_map, pkg, needs_build)
 
-        # We won't rebuild the complement of the packages that we will build.
-        already_built = set(pkg_map.keys()).difference(needs_build)
-        for pkg_name in already_built:
-            # Hacky way to prevent these from being rebuilt: add a dependency
-            # that won't ever be satisfied
-            pkg_map[pkg_name].unbuilt_dependencies.add("!don't build this")
+    # We won't rebuild the complement of the packages that we will build.
+    already_built = set(pkg_map.keys()).difference(needs_build)
 
-        # Remove the packages we've already built from the dependency sets of
-        # the remaining ones
-        for pkg_name in needs_build:
-            pkg_map[pkg_name].unbuilt_dependencies.difference_update(already_built)
+    # Remove the packages we've already built from the dependency sets of
+    # the remaining ones
+    for pkg_name in needs_build:
+        pkg_map[pkg_name].unbuilt_dependencies.difference_update(already_built)
 
     if already_built:
         print(
