@@ -662,8 +662,8 @@ def build_package(
         return
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
-        if not should_prepare_source:
-            assert srcpath.exists()
+        if not should_prepare_source and not srcpath.exists():
+            raise IOError(f"Cannot find source for rebuild. Expected to find the source directory at the path {srcpath}, but that path does not exist.")
         else:
             if source_metadata:
                 if build_dir.resolve().is_dir():
