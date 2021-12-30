@@ -6,20 +6,21 @@ Builds a Pyodide package.
 
 import argparse
 import cgi
-from datetime import datetime
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
+import fnmatch
+
+from contextlib import contextmanager
+from datetime import datetime
+from pathlib import Path
 from textwrap import dedent
 from typing import Any, Dict
 from urllib import request
-import fnmatch
-from contextlib import contextmanager
 
 from . import pywasmcross
 
