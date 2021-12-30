@@ -243,10 +243,22 @@ def prepare_source(
     if buildpath.resolve().is_dir():
         shutil.rmtree(buildpath)
     os.makedirs(buildpath)
-    if "url" not in src_metadata:
+
+    if "url" in src_metadata:
+        download_and_extract(buildpath, srcpath, src_metadata)
+        patch(pkg_root, srcpath, src_metadata)
         return
-    download_and_extract(buildpath, srcpath, src_metadata)
-    patch(pkg_root, srcpath, src_metadata)
+    if "path" not in src_metadata:
+        raise ValueError(
+            "Incorrect source provided. Either a url or a path must be provided."
+        )
+
+    srcdir = Path(src_metadata["path"]).resolve()
+
+    if not srcdir.is_dir():
+        raise ValueError(f"path={srcdir} must point to a directory that exists")
+
+    shutil.copytree(srcdir, srcpath)
 
 
 def get_source_path(
@@ -265,8 +277,7 @@ def get_source_path(
             "Incorrect source provided. Either a url or a path must be provided."
         )
 
-    with chdir(pkg_root):
-        srcdir = Path(src_metadata["path"]).resolve()
+    srcdir = Path(src_metadata["path"]).resolve()
 
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
@@ -666,7 +677,8 @@ def build_package(
     build_metadata = pkg["build"]
     name = pkg_metadata["name"]
     build_dir = pkg_root / "build"
-    srcpath = get_source_path(pkg_root, pkg_metadata, source_metadata)
+    src_dir_name: str = f"{pkg_metadata['name']}-{pkg_metadata['version']}"
+    srcpath = build_dir / src_dir_name
 
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
@@ -677,7 +689,8 @@ def build_package(
                 "Cannot find source for rebuild. Expected to find the source "
                 f"directory at the path {srcpath}, but that path does not exist."
             )
-        else:
+
+        if should_prepare_source:
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
             if build_metadata.get("script"):
                 run_script(build_dir, srcpath, build_metadata, bash_runner)
