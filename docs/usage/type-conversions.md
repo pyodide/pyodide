@@ -58,7 +58,7 @@ of the round trip conversion is the original object (in the sense that they live
 at the same memory address). There are a few exceptions:
 
 1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. `null` is converted to `undefined` after a round trip
+2. `null` is converted to `undefined` after a round trip, and
 3. a `BigInt` will be converted to a `Number` after a round trip unless its
    absolute value is greater than `Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 

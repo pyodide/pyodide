@@ -7,10 +7,10 @@ Pyodide is a Python distribution for the browser and Node.js based on WebAssembl
 What is Pyodide?
 ----------------
 
-Pyodide is a port of CPython to WebAssembly/`Emscripten <https://emscripten.org/>`.
+Pyodide is a port of CPython to WebAssembly/`Emscripten <https://emscripten.org/>`_.
 
 Pyodide makes it possible to install and run Python packages in the browser with
-`micropip <https://pyodide.org/en/stable/usage/api/micropip-api.html>`. Any pure
+`micropip <https://pyodide.org/en/stable/usage/api/micropip-api.html>`_. Any pure
 Python package with a wheel available on PyPI is supported. Many packages with C
 extensions have also been ported for use with Pyodide. These include many
 general-purpose packages such as regex, pyyaml, lxml and scientific Python
@@ -28,7 +28,7 @@ Try Pyodide
 
 Try Pyodide in a
 `REPL <https://pyodide.org/en/stable/console.html>`_ directly in
-your browser. (no installation needed)
+your browser (no installation needed).
 
 
 Table of contents

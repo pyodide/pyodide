@@ -2,7 +2,7 @@
 (modularizing-python-codes)=
 # Modularizing Python codes
 
-Pyodide provides a simple API {any}`pyodide.runPython` to run Python codes.
+Pyodide provides a simple API {any}`pyodide.runPython` to run Python code.
 However, when your Python codes grow bigger, putting hundreds of lines inside `runPython` is not scalable.
 
 The best way to run Python code with Pyodide is:
@@ -12,7 +12,7 @@ The best way to run Python code with Pyodide is:
 1. import the package with ``let mypkg = pyodide.pyimport("mypkgname")``
 1. call into your package with ``mypkg.some_api(some_args)``.
 
-## How to load Python package into the virtual file system
+## How to load a Python package into the virtual file system
 
 If the package is built as a `wheel` file, use {any}`micropip.install` to
 install the package.
