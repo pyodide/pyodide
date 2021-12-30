@@ -251,7 +251,7 @@ def get_progress_line(package_set):
     return f"In progress: " + ", ".join(package_set.keys())
 
 
-def format_name_list(l):
+def format_name_list(l : List[str]) -> str:
     """
     >>> format_name_list(["regex"])
     'regex'
@@ -261,7 +261,7 @@ def format_name_list(l):
     'regex, parso, and jedi'
     """
     if len(l) == 1:
-        return l
+        return l[0]
     most = l[:-1]
     if len(most) > 1:
         most = [x + "," for x in most]
