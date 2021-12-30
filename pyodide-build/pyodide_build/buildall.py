@@ -251,7 +251,7 @@ def get_progress_line(package_set):
     return f"In progress: " + ", ".join(package_set.keys())
 
 
-def format_name_list(l : List[str]) -> str:
+def format_name_list(l: List[str]) -> str:
     """
     >>> format_name_list(["regex"])
     'regex'

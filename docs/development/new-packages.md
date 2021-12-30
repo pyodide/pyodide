@@ -72,12 +72,13 @@ not strictly compatible.
 
 ### 3. Building the package and investigating issues
 
-Once the `meta.yaml` is ready, we build the package with,
-
+Once the `meta.yaml` is ready, build the package with the following commands
+from inside the package directory `packages/<package-name>`:
 ```
-PYODIDE_PACKAGES="<package-name>" make
+export PYTHONPATH="$PYTHONPATH:/path/to/pyodide/pyodide-build/"
+python -m pyodide_build buildpkg meta.yaml
+cp build/*.data build/*.js ../../build/
 ```
-
 and see if there are any errors. The detailed build log can be found under
 `packages/<package-name>/build.log`.
 

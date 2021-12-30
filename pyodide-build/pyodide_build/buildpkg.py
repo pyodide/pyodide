@@ -251,7 +251,10 @@ def prepare_source(
         patch(pkg_root, srcpath, src_metadata)
         return
 
-def get_source_path(build_dir : str, pkg_metadata : Dict[str, Any], src_metadata : Dict[str, Any]) -> str:
+
+def get_source_path(
+    build_dir: str, pkg_metadata: Dict[str, Any], src_metadata: Dict[str, Any]
+) -> str:
     """
     Get the source path. It's either "build/<pkg_version>" if a url is provided
     or the path provided if it's an in-tree package. Raises an error if neither
@@ -805,7 +808,9 @@ def parse_continue_arg(continue_from: Optional[str]) -> Dict[str, Any]:
         or continue_from == "capture"
         or re.fullmatch(r"replay(:[0-9]+)?", continue_from)
     ):
-        raise IOError(f"Unexpected --continue argument '{continue_from}', should have been 'capture', 'replay', or 'replay:##'")
+        raise IOError(
+            f"Unexpected --continue argument '{continue_from}', should have been 'capture', 'replay', or 'replay:##'"
+        )
     result: Dict[str, Any] = {}
     result["should_prepare_source"] = not continue_from
     result["should_capture_compile"] = (
