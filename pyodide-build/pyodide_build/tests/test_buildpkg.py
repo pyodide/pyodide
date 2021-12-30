@@ -38,6 +38,7 @@ def test_prepare_source(monkeypatch):
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: True)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "unpack_archive", lambda *args, **kwargs: True)
+    monkeypatch.setattr(shutil, "move", lambda *args, **kwargs: True)
 
     test_pkgs = []
 
@@ -63,10 +64,8 @@ def test_prepare_source(monkeypatch):
         pkg_root = Path(pkg["package"]["name"])
         buildpath = pkg_root / "build"
         src_metadata = pkg["source"]
-        srcpath = buildpkg.get_source_path(buildpath, pkg["package"], src_metadata)
+        srcpath = buildpath / source_dir_name 
         buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
-
-        assert srcpath.name.lower().endswith(source_dir_name.lower())
 
 
 @pytest.mark.parametrize("is_library", [True, False])

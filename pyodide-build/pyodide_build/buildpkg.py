@@ -209,6 +209,7 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str,
     extract_dir_name = src_metadata.get("extract_dir")
     if not extract_dir_name:
         extract_dir_name = trim_archive_extension(tarballname)
+    print(srcpath)
     shutil.move(buildpath / extract_dir_name, srcpath)
 
 
@@ -260,30 +261,6 @@ def prepare_source(
         raise ValueError(f"path={srcdir} must point to a directory that exists")
 
     shutil.copytree(srcdir, srcpath)
-
-
-def get_source_path(
-    pkg_root: Path, pkg_metadata: Dict[str, Any], src_metadata: Dict[str, Any]
-) -> Path:
-    """
-    Get the source path. It's either "build/<pkg_version>" if a url is provided
-    or the path provided if it's an in-tree package. Raises an error if neither
-    a url nor a path is provided.
-    """
-    src_dir_name: str = f"{pkg_metadata['name']}-{pkg_metadata['version']}"
-    if "url" in src_metadata:
-        return pkg_root / "build" / src_dir_name
-    if "path" not in src_metadata:
-        raise ValueError(
-            "Incorrect source provided. Either a url or a path must be provided."
-        )
-
-    srcdir = Path(src_metadata["path"]).resolve()
-
-    if not srcdir.is_dir():
-        raise ValueError(f"path={srcdir} must point to a directory that exists")
-
-    return srcdir
 
 
 def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
