@@ -77,15 +77,37 @@ export PYTHONPATH="$PYTHONPATH:/path/to/pyodide/pyodide-build/"
 python -m pyodide_build buildpkg meta.yaml
 cp build/*.data build/*.js ../../build/
 ```
-and see if there are any errors. The detailed build log can be found under
-`packages/<package-name>/build.log`.
+and see if there are any errors.
 
 If there are errors you might need to
 
 - patch the package by adding `.patch` files to `packages/<package-name>/patches`
 - add the patch files to the `source/patches` field in the `meta.yaml` file
 
-then re-start the build. If the package is 
+then re-start the build. If the package is on github, the easiest way to make patches is:
+1. Clone the package from github. You might want to use the options `--depth 1
+   --branch v1.7.2`. Replace the branch with the appropriate tag given the
+   version of the package you are trying to modify.
+2. Make whatever changes you want. Commit them.
+3. git format-patch HEAD~1 -o <pyodide-root>/packages/<package-name>/patches/
+
+By default, each time you run `buildpkg`, `pyodide-build` will delete the entire
+source directory and replace it with a fresh copy from the download url. This is
+to ensure build repeatability. For debugging purposes, this is likely to be
+undesirable. If you want to try out a modified source tree, you can pass the
+flag `--continue` and `buildpkg` will try to build from the existing source
+tree. This can cause various issues, but if it works it is much more convenient.
+
+Using the `--continue` flag, you can modify the sources in tree to fix the
+build, then when it works, copy the modified sources into your checked out copy
+of the package source repository and use `git format-patch` to generate the
+patch.
+
+For very complicated builds, we also have a mechanism for repeating from the
+replay stage of the build. If the build is failing during the replay stage, you
+will see lines like `[line 766 of 1156]` labeling which command is being
+replayed. `--continue=replay` will start over from the begining of the replay
+stage, `--continue=replay:766` will start from step 766 of the replay stage.
 
 In general, it is recommended to look into how other similar packages are built
 in Pyodide. If you still encounter difficulties in building your package, open a
