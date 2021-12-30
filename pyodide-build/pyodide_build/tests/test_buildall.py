@@ -59,7 +59,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"lxml", "micropip"})
 
-    Args = namedtuple("args", ["n_jobs", "force"])
+    Args = namedtuple("args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs, force=True))
 
     assert set(build_list) == {
@@ -100,7 +100,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
 
-    Args = namedtuple("args", ["n_jobs", "force"])
+    Args = namedtuple("args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs, force=False))
 
 
@@ -117,5 +117,5 @@ def test_build_error(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"lxml"})
 
     with pytest.raises(ValueError, match="Failed build"):
-        Args = namedtuple("args", ["n_jobs", "force"])
+        Args = namedtuple("args", ["n_jobs", "force_rebuild"])
         buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs, force=True))

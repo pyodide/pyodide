@@ -211,7 +211,6 @@ def download_and_extract(
     extract_dir_name = src_metadata.get("extract_dir")
     if not extract_dir_name:
         extract_dir_name = trim_archive_extension(tarballname)
-    shutil.move(buildpath / extract_dir_name, srcpath)
 
 
 def prepare_source(
