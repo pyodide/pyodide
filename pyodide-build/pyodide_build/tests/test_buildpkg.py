@@ -62,11 +62,9 @@ def test_prepare_source(monkeypatch):
         source_dir_name = pkg["package"]["name"] + "-" + pkg["package"]["version"]
         pkg_root = Path(pkg["package"]["name"])
         buildpath = pkg_root / "build"
-        source_path = buildpath / source_dir_name
         src_metadata = pkg["source"]
-        srcpath = buildpkg.prepare_source(
-            pkg_root, buildpath, source_path, src_metadata
-        )
+        srcpath = buildpkg.get_source_path(buildpath, pkg["package"], src_metadata)
+        buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
 
         assert srcpath.name.lower().endswith(source_dir_name.lower())
 

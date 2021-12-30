@@ -166,9 +166,7 @@ def trim_archive_extension(tarballname):
     return tarballname
 
 
-def download_and_extract(
-    buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
-):
+def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]):
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
