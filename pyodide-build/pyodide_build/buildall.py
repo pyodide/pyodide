@@ -323,7 +323,6 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     if args.force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
-        already_built = set()
     else:
         needs_build = generate_needs_build_set(pkg_map)
 
