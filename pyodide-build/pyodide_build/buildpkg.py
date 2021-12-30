@@ -250,7 +250,7 @@ def prepare_source(
 
 
 def get_source_path(
-    build_dir: Path, pkg_metadata: Dict[str, Any], src_metadata: Dict[str, Any]
+    pkg_root: Path, pkg_metadata: Dict[str, Any], src_metadata: Dict[str, Any]
 ) -> Path:
     """
     Get the source path. It's either "build/<pkg_version>" if a url is provided
@@ -259,13 +259,14 @@ def get_source_path(
     """
     src_dir_name: str = f"{pkg_metadata['name']}-{pkg_metadata['version']}"
     if "url" in src_metadata:
-        return build_dir / src_dir_name
+        return pkg_root / "build" / src_dir_name
     if "path" not in src_metadata:
         raise ValueError(
             "Incorrect source provided. Either a url or a path must be provided."
         )
-
-    srcdir = Path(src_metadata["path"])
+    
+    with chdir(pkg_root):
+        srcdir = Path(src_metadata["path"]).resolve()
 
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
@@ -665,7 +666,7 @@ def build_package(
     build_metadata = pkg["build"]
     name = pkg_metadata["name"]
     build_dir = pkg_root / "build"
-    srcpath = get_source_path(build_dir, pkg_metadata, source_metadata)
+    srcpath = get_source_path(pkg_root, pkg_metadata, source_metadata)
 
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return

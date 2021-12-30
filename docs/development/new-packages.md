@@ -84,7 +84,8 @@ If there are errors you might need to
 - patch the package by adding `.patch` files to `packages/<package-name>/patches`
 - add the patch files to the `source/patches` field in the `meta.yaml` file
 
-then re-start the build. If the package is on github, the easiest way to make patches is:
+then re-start the build. If the package is on github, the easiest way to make
+patches is:
 1. Clone the package from github. You might want to use the options `--depth 1
    --branch v1.7.2`. Replace the branch with the appropriate tag given the
    version of the package you are trying to modify.
