@@ -132,8 +132,14 @@ async function runPythonAsync(code, globals) {
   packages set `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed,
   since it is now equivalent to `make` without extra arguments. {pr}`1801`
 
-- It is now possible to use `pyodide-build buildall` and `pyodide-build buildpkg` directly.
-  {pr}`2063`
+- {{Enhancement}} It is now possible to use `pyodide-build buildall` and
+  `pyodide-build buildpkg` directly. {pr}`2063`
+
+- {{Enhancement}} Added a `--force-rebuild` to `buildall` and `buildpkg` which
+  rebuilds the package even if it looks like it doesn't need to be rebuilt.
+  Added `--continue` flag which keeps the same source tree for the package and
+  can continue from the middle of a build.
+  {pr}`2069`
 
 - {{Enhancement}} Changes to environment variables in the build script are now
   seen in the compile and post build scripts.
@@ -148,6 +154,7 @@ async function runPythonAsync(code, globals) {
 - {{Fix}} Fix compile error `wasm-ld: error: unknown argument: --sort-common`
   and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
   {pr}`1965`
+
 
 ### micropip
 
