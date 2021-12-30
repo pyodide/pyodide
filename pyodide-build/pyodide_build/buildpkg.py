@@ -691,10 +691,13 @@ def build_package(
             replay_from=replay_from,
         )
 
+        should_unvendor_tests = build_metadata.get("unvendor-tests", True)
         package_files(
-            pkg_root,
-            pkg,
-            compress_package=args.compress_package,
+            name,
+            build_dir,
+            srcpath,
+            should_unvendor_tests=should_unvendor_tests,
+            compress=compress_package,
         )
         create_packaged_token(build_dir)
 
@@ -759,6 +762,7 @@ def make_parser(parser: argparse.ArgumentParser):
         type=str,
         nargs="?",
         dest="continue_from",
+        default="None",
         const="script",
         help=(
             dedent(
@@ -787,10 +791,10 @@ def make_parser(parser: argparse.ArgumentParser):
     return parser
 
 
-def parse_continue_arg(continue_from: Optional[str]) -> Dict[str, Any]:
+def parse_continue_arg(continue_from: str) -> Dict[str, Any]:
     from itertools import accumulate
 
-    is_none = continue_from is None
+    is_none = continue_from == "None"
     is_script = continue_from == "script"
     is_capture = continue_from == "capture"
     is_replay = continue_from == "replay" or re.fullmatch(
@@ -815,7 +819,7 @@ def parse_continue_arg(continue_from: Optional[str]) -> Dict[str, Any]:
     result["should_capture_compile"] = not should_capture_compile
     result["should_replay_compile"] = should_replay_compile
     result["replay_from"] = 1
-    if continue_from and continue_from.startswith("replay:"):
+    if continue_from.startswith("replay:"):
         result["replay_from"] = int(continue_from.removeprefix("replay:"))
     return result
 
