@@ -3,7 +3,7 @@
 ## How can I load external files in Pyodide?
 
 In order to use external files in Pyodide, you should download and save them
-to the [Emscripten virtual file system](https://emscripten.org/docs/api_reference/Filesystem-API.html).
+to the virtual file system.
 
 For that purpose, Pyodide provides {any}`pyodide.http.pyfetch`,
 which is a convenient wrapper of JavaScript `fetch`:

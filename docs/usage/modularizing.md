@@ -69,9 +69,25 @@ After fetching packages, Pyodide provides {any}`pyodide.unpackArchive()` to save
 into the Pyodide virtual file system.
 
 ```js
-let response = await fetch("https://.../your_package.tar.gz");
+let response = await fetch("https://.../your_package.tar.gz"); // .zip, .whl, ...
 let buffer = await response.arraybuffer();
 // ... initialize Pyodide
 await pyodide.unpackArchive(buffer);
-pyodide.pyimport("your_pakcage");
+pyodide.pyimport("your_package");
+```
+
+```{admonition} Warning on unpacking a wheel package
+:class: warning
+
+Since a wheel package is actually a zip archive,
+you can use {any}`pyodide.unpackArchive()`
+to unpack a wheel package, instead of using {any}`micropip.install`.
+
+However, {any}`micropip` does dependency resolution when installing packages,
+while {any}`pyodide.unpackArchive()` simply unpacks the archive.
+So you must be aware of that each dependencies of a package need to be installed manually
+before unpacking a wheel.
+
+> _Future plans:_ we are planning to support a method for a static dependency resolution
+(See: [pyodide#2045](https://github.com/pyodide/pyodide/issues/2045)).
 ```
