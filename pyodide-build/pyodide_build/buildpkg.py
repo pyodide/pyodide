@@ -661,7 +661,7 @@ def build_package(
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         if not should_prepare_source and not srcpath.exists():
             raise IOError(
-                "Cannot find source for rebuild. Expected to find the source"
+                "Cannot find source for rebuild. Expected to find the source "
                 f"directory at the path {srcpath}, but that path does not exist."
             )
         else:
@@ -760,7 +760,7 @@ def make_parser(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--continue",
-        type=int,
+        type=str,
         nargs="?",
         dest="continue_from",
         const="capture",
@@ -793,11 +793,12 @@ def make_parser(parser: argparse.ArgumentParser):
 
 
 def parse_continue_arg(continue_from: Optional[str]) -> Dict[str, Any]:
-    assert (
+    if not (
         continue_from is None
         or continue_from == "capture"
-        or re.fullmatch("replay(:[0-9]*)?", continue_from)
-    )
+        or re.fullmatch(r"replay(:[0-9]+)?", continue_from)
+    ):
+        raise IOError(f"Unexpected --continue argument '{continue_from}', should have been 'capture', 'replay', or 'replay:##'")
     result: Dict[str, Any] = {}
     result["should_prepare_source"] = not continue_from
     result["should_capture_compile"] = (
