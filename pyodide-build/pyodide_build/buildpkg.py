@@ -209,7 +209,6 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str,
     extract_dir_name = src_metadata.get("extract_dir")
     if not extract_dir_name:
         extract_dir_name = trim_archive_extension(tarballname)
-    print(srcpath)
     shutil.move(buildpath / extract_dir_name, srcpath)
 
 
@@ -373,6 +372,10 @@ def compile(
         default. Set to 'skip' to skip installation. Installation is
         needed if you want to build other packages that depend on this one.
     """
+    # This function runs setup.py. library and sharedlibrary don't have setup.py
+    if build_metadata.get("library") or build_metadata.get("sharedlibrary"):
+        return
+
     if (srcpath / ".built").is_file():
         return
 
@@ -568,15 +571,12 @@ def run_script(
         The runner we will use to execute our bash commands. Preserves environment
         variables from one invocation to the next.
     """
-    if build_metadata.get("library"):
-        # in libraries this  writes the packaged flag
-        # We don't really do packaging, but needs_rebuild checks .packaged to
-        # determine if it needs to rebuild
-        if (buildpath / ".packaged").is_file():
-            return
+    script = build_metadata.get("script")
+    if not script:
+        return
 
     with chdir(srcpath):
-        bash_runner.run(build_metadata["script"], check=True)
+        bash_runner.run(script, check=True)
 
 
 def needs_rebuild(
@@ -620,12 +620,13 @@ def needs_rebuild(
 
 def build_package(
     pkg_root: Path,
-    pkg: Dict,
+    pkg: Dict[str, Any],
     *,
     target_install_dir: str,
     host_install_dir: str,
     compress_package: bool,
     force_rebuild: bool,
+    should_run_script: bool,
     should_prepare_source: bool,
     should_capture_compile: bool,
     should_replay_compile: bool,
@@ -661,43 +662,39 @@ def build_package(
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
 
-    with chdir(pkg_root), get_bash_runner() as bash_runner:
-        if not should_prepare_source and not srcpath.exists():
-            raise IOError(
-                "Cannot find source for rebuild. Expected to find the source "
-                f"directory at the path {srcpath}, but that path does not exist."
-            )
+    if not should_prepare_source and not srcpath.exists():
+        raise IOError(
+            "Cannot find source for rebuild. Expected to find the source "
+            f"directory at the path {srcpath}, but that path does not exist."
+        )
 
+    with chdir(pkg_root), get_bash_runner() as bash_runner:
         if should_prepare_source:
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
-            if build_metadata.get("script"):
-                run_script(build_dir, srcpath, build_metadata, bash_runner)
-            if build_metadata.get("library"):
-                create_packaged_token(build_dir)
-                return
 
-        # shared libraries get built by the script and put into install
-        # subfolder, then packaged into a pyodide module
-        # i.e. they need package running, but not compile
-        if not build_metadata.get("sharedlibrary"):
-            compile(
-                pkg_root,
-                srcpath,
-                build_metadata,
-                bash_runner,
-                target_install_dir=target_install_dir,
-                host_install_dir=host_install_dir,
-                should_capture_compile=should_capture_compile,
-                should_replay_compile=should_replay_compile,
-                replay_from=replay_from,
-            )
-        should_unvendor_tests = build_metadata.get("unvendor-tests", True)
-        package_files(
-            name,
-            build_dir,
+        if should_run_script:
+            run_script(build_dir, srcpath, build_metadata, bash_runner)
+
+        if build_metadata.get("library"):
+            create_packaged_token(build_dir)
+            return
+
+        compile(
+            pkg_root,
             srcpath,
-            should_unvendor_tests=should_unvendor_tests,
-            compress=compress_package,
+            build_metadata,
+            bash_runner,
+            target_install_dir=target_install_dir,
+            host_install_dir=host_install_dir,
+            should_capture_compile=should_capture_compile,
+            should_replay_compile=should_replay_compile,
+            replay_from=replay_from,
+        )
+
+        package_files(
+            pkg_root,
+            pkg,
+            compress_package=args.compress_package,
         )
         create_packaged_token(build_dir)
 
@@ -762,21 +759,20 @@ def make_parser(parser: argparse.ArgumentParser):
         type=str,
         nargs="?",
         dest="continue_from",
-        const="capture",
+        const="script",
         help=(
             dedent(
                 """
-                Continue a build from the middle. For debugging. Implies "--force-rebuild".
-                Possible arguments:
+                Continue a build from the middle. For debugging. Implies
+                "--force-rebuild". Possible arguments:
 
-                    'capture' : redo capture step and replay step (but don't prepare
-                                sources again, use existing source directory). Good for debug
-                                builds with hand-modified sources. `--continue` with no argument
-                                has the same effect.
+                    'script' : Don't prepare source, start with running script. `--continue` with no argument has the same effect.
 
-                    'replay' : Don't redo the capture step but redo the replay step.
+                    'capture' : Start with capture step
 
-                    'replay:15' : replay the capture step starting with the 15th compile command (any integer works)
+                    'replay' : Start with replay step
+
+                    'replay:15' : Replay the capture step starting with the 15th compile command (any integer works)
                 """
             ).strip()
         ),
@@ -792,20 +788,32 @@ def make_parser(parser: argparse.ArgumentParser):
 
 
 def parse_continue_arg(continue_from: Optional[str]) -> Dict[str, Any]:
-    if not (
-        continue_from is None
-        or continue_from == "capture"
-        or re.fullmatch(r"replay(:[0-9]+)?", continue_from)
-    ):
-        raise IOError(
-            f"Unexpected --continue argument '{continue_from}', should have been 'capture', 'replay', or 'replay:##'"
-        )
-    result: Dict[str, Any] = {}
-    result["should_prepare_source"] = not continue_from
-    result["should_capture_compile"] = (
-        continue_from is None or continue_from == "capture"
+    from itertools import accumulate
+
+    is_none = continue_from is None
+    is_script = continue_from == "script"
+    is_capture = continue_from == "capture"
+    is_replay = continue_from == "replay" or re.fullmatch(
+        r"replay(:[0-9]+)?", continue_from
     )
-    result["should_replay_compile"] = True
+
+    [
+        should_prepare_source,
+        should_run_script,
+        should_capture_compile,
+        should_replay_compile,
+    ] = accumulate([is_none, is_script, is_capture, is_replay], lambda a, b: a or b)
+
+    if not should_replay_compile:
+        raise IOError(
+            f"Unexpected --continue argument '{continue_from}', should have been 'script', 'capture', 'replay', or 'replay:##'"
+        )
+
+    result: Dict[str, Any] = {}
+    result["should_prepare_source"] = should_prepare_source
+    result["should_run_script"] = should_run_script
+    result["should_capture_compile"] = not should_capture_compile
+    result["should_replay_compile"] = should_replay_compile
     result["replay_from"] = 1
     if continue_from and continue_from.startswith("replay:"):
         result["replay_from"] = int(continue_from.removeprefix("replay:"))
@@ -851,6 +859,7 @@ def main(args):
             force_rebuild=force_rebuild,
             **step_controls,
         )
+
     except:
         success = False
         raise
