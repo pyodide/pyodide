@@ -280,11 +280,12 @@ def mark_package_needs_build(
         if dep not in needs_build:
             mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
+
 def generate_needs_build_set(pkg_map):
     """
-    Generate the set of packages that need to be rebuilt. 
+    Generate the set of packages that need to be rebuilt.
 
-    This consists of: 
+    This consists of:
     1. packages whose source files have changed since they were last built
        according to needs_rebuild, and
     2. packages which depend on case 1 packages.
@@ -295,6 +296,7 @@ def generate_needs_build_set(pkg_map):
         if needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta):
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
+
 
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
@@ -324,7 +326,6 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
         already_built = set()
     else:
         needs_build = generate_needs_build_set(pkg_map)
-
 
     # We won't rebuild the complement of the packages that we will build.
     already_built = set(pkg_map.keys()).difference(needs_build)
