@@ -168,7 +168,7 @@ def trim_archive_extension(tarballname):
 
 def download_and_extract(
     buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
-) -> Path:
+):
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
@@ -215,7 +215,7 @@ def download_and_extract(
 
 def prepare_source(
     pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
-) -> Path:
+):
     """
     Figure out from the "source" key in the package metadata where to get the source
     from, then get the source into srcpath (or somewhere else, if it goes somewhere
@@ -245,15 +245,15 @@ def prepare_source(
     if buildpath.resolve().is_dir():
         shutil.rmtree(buildpath)
     os.makedirs(buildpath)
-    if "url" in src_metadata:
-        download_and_extract(buildpath, srcpath, src_metadata)
-        patch(pkg_root, srcpath, src_metadata)
+    if "url" not in src_metadata:
         return
+    download_and_extract(buildpath, srcpath, src_metadata)
+    patch(pkg_root, srcpath, src_metadata)
 
 
 def get_source_path(
-    build_dir: str, pkg_metadata: Dict[str, Any], src_metadata: Dict[str, Any]
-) -> str:
+    build_dir: Path, pkg_metadata: Dict[str, Any], src_metadata: Dict[str, Any]
+) -> Path:
     """
     Get the source path. It's either "build/<pkg_version>" if a url is provided
     or the path provided if it's an in-tree package. Raises an error if neither
