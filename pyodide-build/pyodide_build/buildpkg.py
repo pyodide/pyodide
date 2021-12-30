@@ -264,7 +264,7 @@ def get_source_path(
         raise ValueError(
             "Incorrect source provided. Either a url or a path must be provided."
         )
-    
+
     with chdir(pkg_root):
         srcdir = Path(src_metadata["path"]).resolve()
 
