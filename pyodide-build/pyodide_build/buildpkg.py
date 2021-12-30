@@ -243,11 +243,23 @@ def prepare_source(
     -------
         The location where the source ended up.
     """
+    if buildpath.resolve().is_dir():
+        shutil.rmtree(buildpath)
+    os.makedirs(buildpath)
     if "url" in src_metadata:
         download_and_extract(buildpath, srcpath, src_metadata)
         patch(pkg_root, srcpath, src_metadata)
         return
 
+def get_source_path(build_dir : str, pkg_metadata : Dict[str, Any], src_metadata : Dict[str, Any]) -> str:
+    """
+    Get the source path. It's either "build/<pkg_version>" if a url is provided
+    or the path provided if it's an in-tree package. Raises an error if neither
+    a url nor a path is provided.
+    """
+    src_dir_name: str = f"{pkg_metadata['name']}-{pkg_metadata['version']}"
+    if "url" in src_metadata:
+        return build_dir / src_dir_name
     if "path" not in src_metadata:
         raise ValueError(
             "Incorrect source provided. Either a url or a path must be provided."
@@ -258,7 +270,7 @@ def prepare_source(
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
 
-    return
+    return srcdir
 
 
 def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
@@ -648,12 +660,12 @@ def build_package(
     compress_package
         Should we compress the package?
     """
-    name = pkg["package"]["name"]
-    build_dir = pkg_root / "build"
-    src_dir_name: str = name + "-" + pkg["package"]["version"]
-    srcpath = build_dir / src_dir_name
+    pkg_metadata = pkg["package"]
     source_metadata = pkg["source"]
     build_metadata = pkg["build"]
+    name = pkg_metadata["name"]
+    build_dir = pkg_root / "build"
+    srcpath = get_source_path(build_dir, pkg_metadata, source_metadata)
 
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
@@ -665,11 +677,6 @@ def build_package(
                 f"directory at the path {srcpath}, but that path does not exist."
             )
         else:
-            if source_metadata:
-                if build_dir.resolve().is_dir():
-                    shutil.rmtree(build_dir)
-                os.makedirs(build_dir)
-
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
             if build_metadata.get("script"):
                 run_script(build_dir, srcpath, build_metadata, bash_runner)
