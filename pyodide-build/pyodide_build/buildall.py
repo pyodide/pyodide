@@ -109,7 +109,7 @@ class Package(BasePackage):
                     # matter, or this package is dependent on a package that has
                     # been updated and should be rebuilt even though its own
                     # files haven't been updated.
-                    "--force",
+                    "--force-rebuild",
                 ],
                 check=False,
                 stdout=f,
@@ -320,8 +320,8 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
 
-    if args.force:
-        # If "force" is set, just rebuild everything
+    if args.force_rebuild:
+        # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
         already_built = set()
     else:
@@ -551,7 +551,7 @@ def make_parser(parser):
         help=("Only build the specified packages, provided as a comma-separated list"),
     )
     parser.add_argument(
-        "--force",
+        "--force-rebuild",
         action="store_true",
         help=(
             "Force rebuild of all packages regardless of whether they appear to have been updated"

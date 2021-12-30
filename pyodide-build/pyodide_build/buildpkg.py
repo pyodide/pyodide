@@ -623,7 +623,7 @@ def build_package(
     target_install_dir: str,
     host_install_dir: str,
     compress_package: bool,
-    force: bool,
+    force_rebuild: bool,
     should_prepare_source: bool,
     should_capture_compile: bool,
     should_replay_compile: bool,
@@ -655,7 +655,7 @@ def build_package(
     source_metadata = pkg["source"]
     build_metadata = pkg["build"]
 
-    if not force and not needs_rebuild(pkg_root, build_dir, source_metadata):
+    if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
@@ -752,7 +752,7 @@ def make_parser(parser: argparse.ArgumentParser):
         ),
     )
     parser.add_argument(
-        "--force",
+        "--force-rebuild",
         action="store_true",
         help=(
             "Force rebuild of package regardless of whether it appears to have been updated"
@@ -767,7 +767,7 @@ def make_parser(parser: argparse.ArgumentParser):
         help=(
             dedent(
                 """
-                Continue a build from the middle. For debugging. Implies "--force".
+                Continue a build from the middle. For debugging. Implies "--force-rebuild".
                 Possible arguments:
 
                     'capture' : redo capture step and replay step (but don't prepare
@@ -817,8 +817,8 @@ def main(args):
             "Terser is required to compress packages. Try `npm install -g terser` to install terser."
         )
     step_controls = parse_continue_arg(args.continue_from)
-    # --continue implies --force
-    force = args.force or not not args.continue_from
+    # --continue implies --force-rebuild
+    force_rebuild = args.force_rebuild or not not args.continue_from
 
     meta_file = Path(args.package[0]).resolve()
 
@@ -847,7 +847,7 @@ def main(args):
             target_install_dir=args.target_install_dir,
             host_install_dir=args.host_install_dir,
             compress_package=args.compress_package,
-            force=force,
+            force_rebuild=force_rebuild,
             **step_controls,
         )
     except:
