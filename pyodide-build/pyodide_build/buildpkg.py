@@ -211,7 +211,7 @@ def download_and_extract(
     extract_dir_name = src_metadata.get("extract_dir")
     if not extract_dir_name:
         extract_dir_name = trim_archive_extension(tarballname)
-    return buildpath / extract_dir_name
+    shutil.move(buildpath / extract_dir_name, srcpath)
 
 
 def prepare_source(
@@ -244,9 +244,9 @@ def prepare_source(
         The location where the source ended up.
     """
     if "url" in src_metadata:
-        srcpath = download_and_extract(buildpath, srcpath, src_metadata)
+        download_and_extract(buildpath, srcpath, src_metadata)
         patch(pkg_root, srcpath, src_metadata)
-        return srcpath
+        return
 
     if "path" not in src_metadata:
         raise ValueError(
@@ -258,10 +258,7 @@ def prepare_source(
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
 
-    if not srcpath.is_dir():
-        shutil.copytree(srcdir, srcpath)
-
-    return srcpath
+    return
 
 
 def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
@@ -673,9 +670,7 @@ def build_package(
                     shutil.rmtree(build_dir)
                 os.makedirs(build_dir)
 
-            # TODO: figure out why srcpath needs to change sometimes.
-            # Until we fix this, --continue won't work on some packages.
-            srcpath = prepare_source(pkg_root, build_dir, srcpath, source_metadata)
+            prepare_source(pkg_root, build_dir, srcpath, source_metadata)
             if build_metadata.get("script"):
                 run_script(build_dir, srcpath, build_metadata, bash_runner)
             if build_metadata.get("library"):
