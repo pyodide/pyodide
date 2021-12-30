@@ -5,8 +5,8 @@
 ## Quickstart
 
 If you wish to use a package in Pyodide that is not already included, first you
-need to determine whether it is necessary to package it for Pyodide. Ideally, you
-should start this process with package dependencies.
+need to determine whether it is necessary to package it for Pyodide. Ideally,
+you should start this process with package dependencies.
 
 ### 1. Determining if creating a Pyodide package is necessary
 
@@ -23,14 +23,12 @@ preventing it (it is a Python package without C extensions):
   python -m pip install build
   python -m build
   ```
-  from within the package folder where the `setup.py`
-  are located. See the [Python packaging
-  guide](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
-  for more details.
-  Then upload the wheel file somewhere (not to PyPI) and install it with
-  micropip via its URL.
-- you can also open an issue in the package repository asking the
-  authors to upload the wheel.
+  from within the package folder where the `setup.py` are located. See the
+  [Python packaging guide](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
+  for more details. Then upload the wheel file somewhere (not to PyPI) and
+  install it with micropip via its URL.
+- you can also open an issue in the package repository asking the authors to
+  upload the wheel.
 
 If however the package has C extensions or its code requires patching, then
 continue to the next steps.
@@ -42,9 +40,9 @@ any compilation commands.
 
 ### 2. Creating the `meta.yaml` file
 
-If your package is on PyPI, the
-easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`.
-From the Pyodide root directory, install the tool with `pip install -e pyodide-build`, then run:
+If your package is on PyPI, the easiest place to start is with the 
+{ref}`mkpkg tool <pyodide-mkpkg>`. From the Pyodide root directory, install the
+tool with `pip install -e pyodide-build`, then run:
 
 `pyodide-build mkpkg <package-name>`
 
@@ -73,7 +71,7 @@ not strictly compatible.
 ### 3. Building the package and investigating issues
 
 Once the `meta.yaml` is ready, build the package with the following commands
-from inside the package directory `packages/<package-name>`:
+from inside the package directory `packages/<package-name>`
 ```
 export PYTHONPATH="$PYTHONPATH:/path/to/pyodide/pyodide-build/"
 python -m pyodide_build buildpkg meta.yaml
@@ -82,16 +80,16 @@ cp build/*.data build/*.js ../../build/
 and see if there are any errors. The detailed build log can be found under
 `packages/<package-name>/build.log`.
 
-If there are errors you might need to,
+If there are errors you might need to
 
 - patch the package by adding `.patch` files to `packages/<package-name>/patches`
 - add the patch files to the `source/patches` field in the `meta.yaml` file
 
-then re-start the build.
+then re-start the build. If the package is 
 
-In general, it is recommended to look into how other similar packages are built in Pyodide.
-If you still encounter difficulties in building your package, open a [new Pyodide
-issue](https://github.com/pyodide/pyodide/issues).
+In general, it is recommended to look into how other similar packages are built
+in Pyodide. If you still encounter difficulties in building your package, open a
+[new Pyodide issue](https://github.com/pyodide/pyodide/issues).
 
 To learn more about how packages are built in Pyodide, read the following
 sections.
@@ -121,18 +119,17 @@ libraries to the build. We automate the following steps:
     the virtual filesystem.
 
 Lastly, a `packages.json` file is output containing the dependency tree of all
-packages, so {any}`pyodide.loadPackage` can
-load a package's dependencies automatically.
+packages, so {any}`pyodide.loadPackage` can load a package's dependencies
+automatically.
 
 ## C library dependencies
 
 Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
 
-To package a C library, create a directory in `packages/` for the C library.
-In the directory, you should write `meta.yaml`
-that specifies metadata about the library.
-See {ref}`meta-yaml-spec` for more details.
+To package a C library, create a directory in `packages/` for the C library. In
+the directory, you should write `meta.yaml` that specifies metadata about the
+library. See {ref}`meta-yaml-spec` for more details.
 
 The minimal example of `meta.yaml` for a C library is:
 
@@ -160,19 +157,19 @@ You can use the `meta.yaml` of other C libraries such as
 [libxml](https://github.com/pyodide/pyodide/blob/main/packages/libxml/meta.yaml)
 as a starting point.
 
-After packaging a C library, it can be added as a dependency of a Python
-package like a normal dependency. See `lxml` and `libxml` for an example (and
-also `scipy` and `CLAPACK`).
+After packaging a C library, it can be added as a dependency of a Python package
+like a normal dependency. See `lxml` and `libxml` for an example (and also
+`scipy` and `CLAPACK`).
 
 _Remark:_ Certain C libraries come as emscripten ports, and do not have to be
-built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
-of the Python package. See e.g. `matplotlib` for an example.
+built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags` of
+the Python package. See e.g. `matplotlib` for an example.
 
 ## Structure of a Pyodide package
 
-This section describes the structure of a pure Python package, and how our
-build system creates it. In general, it is not recommended, to construct these
-by hand; instead create a Python wheel and install it with micropip.
+This section describes the structure of a pure Python package, and how our build
+system creates it. In general, it is not recommended, to construct these by
+hand; instead create a Python wheel and install it with micropip.
 
 Pyodide is obtained by compiling CPython into web assembly. As such, it loads
 packages the same way as CPython --- it looks for relevant files `.py` files in
@@ -181,17 +178,16 @@ packages the same way as CPython --- it looks for relevant files `.py` files in
 
 Suppose you have a Python library that consists of a single directory
 `/PATH/TO/LIB/` whose contents would go into
-`/lib/python3.9/site-packages/PACKAGE_NAME/` under a normal Python
-installation.
+`/lib/python3.9/site-packages/PACKAGE_NAME/` under a normal Python installation.
 
-The simplest version of the corresponding Pyodide package contains two files
---- `PACKAGE_NAME.data` and `PACKAGE_NAME.js`. The first file
-`PACKAGE_NAME.data` is a concatenation of all contents of `/PATH/TO/LIB`. When
-loading the package via `pyodide.loadPackage`, Pyodide will load and run
-`PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
-contents to emscripten's virtual filesystem. Afterwards, since the files are
-now in `/lib/python3.9/`, running `import PACKAGE_NAME` in Python will
-successfully import the module as usual.
+The simplest version of the corresponding Pyodide package contains two files ---
+`PACKAGE_NAME.data` and `PACKAGE_NAME.js`. The first file `PACKAGE_NAME.data` is
+a concatenation of all contents of `/PATH/TO/LIB`. When loading the package via
+`pyodide.loadPackage`, Pyodide will load and run `PACKAGE_NAME.js`. The script
+then fetches `PACKAGE_NAME.data` and extracts the contents to emscripten's
+virtual filesystem. Afterwards, since the files are now in `/lib/python3.9/`,
+running `import PACKAGE_NAME` in Python will successfully import the module as
+usual.
 
 To construct this bundle, we use the `file_packager.py` script from emscripten.
 We invoke it as follows:
@@ -207,16 +203,16 @@ The arguments can be explained as follows:
 
 - PACKAGE_NAME.data indicates where to put the data file
 - --js-output=PACKAGE_NAME.js indicates where to put the javascript file
-- `--preload` instructs the package to look for the
-  file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
-  it at the path after the `@` in the virtual filesystem (namely
+- `--preload` instructs the package to look for the file/directory before the
+  separator `@` (namely `/PATH/TO/LIB/`) and place it at the path after the `@`
+  in the virtual filesystem (namely
   `/lib/python3.9/site-packages/PACKAGE_NAME/`).
 
 `file_packager.sh` adds the following options:
 
 - `--lz4` to use LZ4 to compress the files
-- `--export-name=globalThis.__pyodide_module` tells `file_packager` where to find the main Emscripten
-  module for linking.
+- `--export-name=globalThis.__pyodide_module` tells `file_packager` where to
+  find the main Emscripten module for linking.
 - `--exclude *__pycache__*` to omit the pycache directories
 - `--use-preload-plugins` says to [automatically decode files based on their
   extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)
