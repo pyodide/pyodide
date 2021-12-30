@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 from textwrap import dedent
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from urllib import request
 import fnmatch
 from contextlib import contextmanager
