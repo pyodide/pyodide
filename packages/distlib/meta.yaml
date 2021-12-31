@@ -8,13 +8,12 @@ source:
 build:
   skip_build: true
   script: |
-    cd ../..
-    mkdir -p dist
-    cp build/distlib-0.3.4-py2.py3-none-any.whl dist
-    cd dist
+    cd ..
     python -m wheel unpack distlib-0.3.4-py2.py3-none-any.whl
     find distlib-0.3.4 -name '*.exe' -delete
     python -m wheel pack distlib-0.3.4
+    mkdir -p distlib-0.3.1/dist
+    cp distlib-0.3.4-py2.py3-none-any.whl distlib-0.3.1/dist
 
 test:
   imports:
