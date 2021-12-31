@@ -621,6 +621,7 @@ def build_package(
             return
 
         compile(
+            name,
             pkg_root,
             srcpath,
             build_metadata,
