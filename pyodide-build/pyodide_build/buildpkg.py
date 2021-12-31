@@ -632,7 +632,7 @@ def build_package(
             should_replay_compile=should_replay_compile,
             replay_from=replay_from,
         )
-        shutil.rmtree(srcpath / "dist", ignore_errors=True)
+        shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
 
         create_packaged_token(build_dir)
