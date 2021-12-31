@@ -2,6 +2,10 @@
 
 # Creating a Pyodide package
 
+It is recommended to look into how other similar packages are built in Pyodide.
+If you encounter difficulties in building your package after trying the steps
+listed here, open a [new Pyodide issue](https://github.com/pyodide/pyodide/issues).
+
 ## Quickstart
 
 If you wish to use a package in Pyodide that is not already included, first you
@@ -84,40 +88,27 @@ If there are errors you might need to
 - patch the package by adding `.patch` files to `packages/<package-name>/patches`
 - add the patch files to the `source/patches` field in the `meta.yaml` file
 
-then re-start the build. If the package is on github, the easiest way to make
-patches is:
-1. Clone the package from github. You might want to use the options `--depth 1
-   --branch v1.7.2`. Replace the branch with the appropriate tag given the
-   version of the package you are trying to modify.
+then restart the build. 
+
+#### Generating patches 
+
+If the package has a git repository, the easiest way to make a patch is usually:
+1. Clone the git repository. You might want to use the options `git clone
+   --depth 1 --branch <version-tag>`. Find the appropriate tag given the version
+   of the package you are trying to modify.
 2. Make whatever changes you want. Commit them.
-3. git format-patch HEAD~1 -o <pyodide-root>/packages/<package-name>/patches/
+3. Use `git format-patch HEAD~1 -o <pyodide-root>/packages/<package-name>/patches/` 
+   to generate a patch file for your changes and store it directly into the
+   patches folder.
 
-By default, each time you run `buildpkg`, `pyodide-build` will delete the entire
-source directory and replace it with a fresh copy from the download url. This is
-to ensure build repeatability. For debugging purposes, this is likely to be
-undesirable. If you want to try out a modified source tree, you can pass the
-flag `--continue` and `buildpkg` will try to build from the existing source
-tree. This can cause various issues, but if it works it is much more convenient.
+It is also possible to create a patch with `git diff --no-index old_file
+new_file > my_changes.patch`, but you will probably have to fix up the paths in
+the generated diff. If it is taking a large number of attempts, you can use the
+flags `--src-prefix` and `--dst-prefix` to try to ensure the patch file is
+generated with the correct paths.
 
-Using the `--continue` flag, you can modify the sources in tree to fix the
-build, then when it works, copy the modified sources into your checked out copy
-of the package source repository and use `git format-patch` to generate the
-patch.
 
-For very complicated builds, we also have a mechanism for repeating from the
-replay stage of the build. If the build is failing during the replay stage, you
-will see lines like `[line 766 of 1156]` labeling which command is being
-replayed. `--continue=replay` will start over from the begining of the replay
-stage, `--continue=replay:766` will start from step 766 of the replay stage.
-
-In general, it is recommended to look into how other similar packages are built
-in Pyodide. If you still encounter difficulties in building your package, open a
-[new Pyodide issue](https://github.com/pyodide/pyodide/issues).
-
-To learn more about how packages are built in Pyodide, read the following
-sections.
-
-## Build pipeline
+## The package build pipeline
 
 Pyodide includes a toolchain to make it easier to add new third-party Python
 libraries to the build. We automate the following steps:
@@ -144,6 +135,27 @@ libraries to the build. We automate the following steps:
 Lastly, a `packages.json` file is output containing the dependency tree of all
 packages, so {any}`pyodide.loadPackage` can load a package's dependencies
 automatically.
+
+#### Partial Rebuilds
+
+By default, each time you run `buildpkg`, `pyodide-build` will delete the entire
+source directory and replace it with a fresh copy from the download url. This is
+to ensure build repeatability. For debugging purposes, this is likely to be
+undesirable. If you want to try out a modified source tree, you can pass the
+flag `--continue` and `buildpkg` will try to build from the existing source
+tree. This can cause various issues, but if it works it is much more convenient.
+
+Using the `--continue` flag, you can modify the sources in tree to fix the
+build, then when it works, copy the modified sources into your checked out copy
+of the package source repository and use `git format-patch` to generate the
+patch.
+
+For very complicated builds, we also have a mechanism for repeating from the
+replay stage of the build. If the build is failing during the replay stage, you
+will see lines like `[line 766 of 1156]` labeling which command is being
+replayed. `--continue=replay` will start over from the begining of the replay
+stage, `--continue=replay:766` will start from step 766 of the replay stage.
+
 
 ## C library dependencies
 
@@ -186,15 +198,17 @@ like a normal dependency. See `lxml` and `libxml` for an example (and also
 
 _Remark:_ Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags` of
-the Python package. See e.g. `matplotlib` for an example.
+the Python package. See e.g. `matplotlib` for an example. [The full list of
+libraries with Emscripten ports is
+here.](https://github.com/orgs/emscripten-ports/repositories?type=all)
 
 ## Structure of a Pyodide package
 
 This section describes the structure of a pure Python package, and how our build
-system creates it. In general, it is not recommended, to construct these by
+system creates it. In general, it is not recommended to construct these by
 hand; instead create a Python wheel and install it with micropip.
 
-Pyodide is obtained by compiling CPython into web assembly. As such, it loads
+Pyodide is obtained by compiling CPython into WebAssembly. As such, it loads
 packages the same way as CPython --- it looks for relevant files `.py` files in
 `/lib/python3.x/`. When creating and loading a package, our job is to put our
 `.py` files in the right location in emscripten's virtual filesystem.
@@ -239,6 +253,8 @@ The arguments can be explained as follows:
 - `--exclude *__pycache__*` to omit the pycache directories
 - `--use-preload-plugins` says to [automatically decode files based on their
   extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)
+  The preload plugins are important if the package contains any `.so` files
+  because `WebAssembly.instantiate` is asynchronous.
 
 ```{eval-rst}
 .. toctree::
