@@ -817,7 +817,7 @@ def parse_continue_arg(continue_from: str) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
     result["should_prepare_source"] = should_prepare_source
     result["should_run_script"] = should_run_script
-    result["should_capture_compile"] = not should_capture_compile
+    result["should_capture_compile"] = should_capture_compile
     result["should_replay_compile"] = should_replay_compile
     result["replay_from"] = 1
     if continue_from.startswith("replay:"):
