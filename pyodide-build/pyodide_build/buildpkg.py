@@ -377,7 +377,11 @@ def compile(
         needed if you want to build other packages that depend on this one.
     """
     # This function runs setup.py. library and sharedlibrary don't have setup.py
-    if build_metadata.get("library") or build_metadata.get("sharedlibrary") or build_metadata.get("skip_build"):
+    if (
+        build_metadata.get("library")
+        or build_metadata.get("sharedlibrary")
+        or build_metadata.get("skip_build")
+    ):
         return
 
     if (srcpath / ".built").is_file():
