@@ -190,7 +190,6 @@ async function runPythonAsync(code, globals) {
 
 - New packages: `logbook`, `pyb2d`
 
-
 ### Uncategorized
 
 - {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
