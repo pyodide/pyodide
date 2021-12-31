@@ -20,6 +20,7 @@ import os
 from . import common
 from .io import parse_package_config
 from .common import UNVENDORED_STDLIB_MODULES
+from .buildpkg import needs_rebuild
 
 
 class BasePackage:
@@ -73,12 +74,15 @@ class Package(BasePackage):
         self.meta = parse_package_config(pkgpath)
         self.name = self.meta["package"]["name"]
         self.version = self.meta["package"]["version"]
-        self.library = self.meta.get("build", {}).get("library", False)
-        self.shared_library = self.meta.get("build", {}).get("sharedlibrary", False)
+        self.meta["build"] = self.meta.get("build", {})
+        self.meta["requirements"] = self.meta.get("requirements", {})
+
+        self.library = self.meta["build"].get("library", False)
+        self.shared_library = self.meta["build"].get("sharedlibrary", False)
 
         assert self.name == pkgdir.stem
 
-        self.dependencies = self.meta.get("requirements", {}).get("run", [])
+        self.dependencies = self.meta["requirements"].get("run", [])
         self.unbuilt_dependencies = set(self.dependencies)
         self.dependents = set()
 
@@ -101,6 +105,11 @@ class Package(BasePackage):
                     args.target_install_dir,
                     "--host-install-dir",
                     args.host_install_dir,
+                    # Either this package has been updated and this doesn't
+                    # matter, or this package is dependent on a package that has
+                    # been updated and should be rebuilt even though its own
+                    # files haven't been updated.
+                    "--force-rebuild",
                 ],
                 check=False,
                 stdout=f,
@@ -242,6 +251,53 @@ def get_progress_line(package_set):
     return f"In progress: " + ", ".join(package_set.keys())
 
 
+def format_name_list(l: List[str]) -> str:
+    """
+    >>> format_name_list(["regex"])
+    'regex'
+    >>> format_name_list(["regex", "parso"])
+    'regex and parso'
+    >>> format_name_list(["regex", "parso", "jedi"])
+    'regex, parso, and jedi'
+    """
+    if len(l) == 1:
+        return l[0]
+    most = l[:-1]
+    if len(most) > 1:
+        most = [x + "," for x in most]
+    return " ".join(most) + " and " + l[-1]
+
+
+def mark_package_needs_build(
+    pkg_map: Dict[str, BasePackage], pkg: BasePackage, needs_build: Set[str]
+):
+    """
+    Helper for generate_needs_build_set. Modifies needs_build in place.
+    Recursively add pkg and all of its dependencies to needs_build.
+    """
+    needs_build.add(pkg.name)
+    for dep in pkg.dependents:
+        if dep not in needs_build:
+            mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
+
+
+def generate_needs_build_set(pkg_map):
+    """
+    Generate the set of packages that need to be rebuilt.
+
+    This consists of:
+    1. packages whose source files have changed since they were last built
+       according to needs_rebuild, and
+    2. packages which depend on case 1 packages.
+    """
+    needs_build = set()
+    for pkg in pkg_map.values():
+        # Otherwise, rebuild packages that have been updated and their dependents.
+        if needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta):
+            mark_package_needs_build(pkg_map, pkg, needs_build)
+    return needs_build
+
+
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
@@ -264,10 +320,33 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
 
-    print("Building the following packages: " + ", ".join(sorted(pkg_map.keys())))
+    if args.force_rebuild:
+        # If "force_rebuild" is set, just rebuild everything
+        needs_build = set(pkg_map.keys())
+    else:
+        needs_build = generate_needs_build_set(pkg_map)
+
+    # We won't rebuild the complement of the packages that we will build.
+    already_built = set(pkg_map.keys()).difference(needs_build)
+
+    # Remove the packages we've already built from the dependency sets of
+    # the remaining ones
+    for pkg_name in needs_build:
+        pkg_map[pkg_name].unbuilt_dependencies.difference_update(already_built)
+
+    if already_built:
+        print(
+            f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
+        )
+    if not needs_build:
+        print("All packages already built. Quitting.")
+        return
+    print(f"Building the following packages: {format_name_list(sorted(needs_build))}")
+
     t0 = perf_counter()
-    for pkg in pkg_map.values():
-        if len(pkg.dependencies) == 0:
+    for pkg_name in needs_build:
+        pkg = pkg_map[pkg_name]
+        if len(pkg.unbuilt_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
     built_queue: Queue = Queue()
@@ -283,7 +362,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
             package_set[pkg.name] = None
-            msg = f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) building {pkg.name}"
+            msg = f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) building {pkg.name}"
             print_with_progress_line(msg, get_progress_line(package_set))
             t0 = perf_counter()
             success = True
@@ -297,7 +376,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 del package_set[pkg.name]
                 status = "built" if success else "failed"
                 msg = (
-                    f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
+                    f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) "
                     f"{status} {pkg.name} in {perf_counter() - t0:.2f} s"
                 )
                 print_with_progress_line(msg, get_progress_line(package_set))
@@ -308,7 +387,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     for n in range(0, args.n_jobs):
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
-    num_built = 0
+    num_built = len(already_built)
     while num_built < len(pkg_map):
         pkg = built_queue.get()
         if isinstance(pkg, Exception):
@@ -469,6 +548,13 @@ def make_parser(parser):
         nargs="?",
         default=None,
         help=("Only build the specified packages, provided as a comma-separated list"),
+    )
+    parser.add_argument(
+        "--force-rebuild",
+        action="store_true",
+        help=(
+            "Force rebuild of all packages regardless of whether they appear to have been updated"
+        ),
     )
     parser.add_argument(
         "--n-jobs",
