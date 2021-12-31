@@ -18,7 +18,7 @@ build:
         --disable-dependency-tracking \
         --disable-shared \
         --without-python \
-        --with-libxml-src="$PYODIDE_ROOT/packages/libxml/build/libxml2-2.9.10" \
+        --with-libxml-src="$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10" \
         --without-crypto
     emmake make -j ${PYODIDE_JOBS:-3}
     chmod 755 xslt-config
