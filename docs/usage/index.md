@@ -119,5 +119,5 @@ For this same reason, installing Pyodide packages from the CDN is explicitly not
    :hidden:
 
    webworker.md
-   modularizing.md
+   loading-custom-python-code.md
 ```

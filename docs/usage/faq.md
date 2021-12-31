@@ -36,7 +36,7 @@ There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
 but not in Firefox or Safari.
 
-For development purposes, you can serve your files in a
+For development purposes, you can serve your files with a
 [web server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
 
 
