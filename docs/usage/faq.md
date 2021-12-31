@@ -1,5 +1,6 @@
 # Frequently Asked Questions
 
+(load-external-files-in-pyodide)=
 ## How can I load external files in Pyodide?
 
 In order to use external files in Pyodide, you should download and save them

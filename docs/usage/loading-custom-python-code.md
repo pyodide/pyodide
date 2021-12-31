@@ -12,33 +12,39 @@ For larger projects, the best way to run Python code with Pyodide is:
 1. import the package with ``let mypkg = pyodide.pyimport("mypkgname")``
 1. call into your package with ``mypkg.some_api(some_args)``.
 
-## How to load a Python package into the virtual file system
+## Using wheel packages
 
-If the package is built as a `wheel` file, use {any}`micropip.install` to
-install the package.
+The most recommended way of serving custom Python code is making it a wheel package.
+If the package is built as a `wheel` file, you can use {any}`micropip.install` to
+install the package. See {ref}`loading_packages` for more information.
 
-```pyodide
-await pyodide.loadPackage("micropip");
-await pyodide.runPythonAsync(`
-  import micropip
-  await micropip.install("https://.../your_package.whl")
-`)
-let pkg = pyodide.pyimport("your_package");
-pkg.do_something(...);
+```{admonition} Packages with C extensions
+:class: warning
 
-// or
-
-pyodide.runPython(`
-    import your_package
-    your_package.do_something(...)
-`)
+If your Python code contains C extensions,
+it needs to be built in a specialized way (See {ref}`new-packages`).
 ```
 
-If the package is a single Python file or an archive, use {any}`pyodide.http.pyfetch` to
-download it.
+## Loading then importing Python code
+
+It is also possible to download and import Python code from an external source.
+We recommend you to serve whole code as an archive, instead of downloading each Python scripts.
+
+### Inside Pyodide
 
 ```pyodide
-// Single file
+// Downloading an archive
+await pyodide.runPythonAsync(`
+    from pyodide.http import pyfetch
+    response = await pyfetch("https://.../your_package.tar.gz") # .zip, .whl, ...
+    await response.unpack_archive() # by default, unpacks to the current dir
+`)
+pkg = pyodide.pyimport("your_package");
+pkg.do_something();
+```
+
+```pyodide
+// Downloading a single file
 await pyodide.runPythonAsync(`
     from pyodide.http import pyfetch
     response = await pyfetch("https://.../script.py")
@@ -49,15 +55,21 @@ pkg = pyodide.pyimport("script");
 pkg.do_something();
 ```
 
-```pyodide
-// Archive
-await pyodide.runPythonAsync(`
-    from pyodide.http import pyfetch
-    response = await pyfetch("https://.../your_package.tar.gz")
-    await response.unpack_archive() # by default, unpacks to the current dir
-`)
-pkg = pyodide.pyimport("your_package");
-pkg.do_something();
+```{admonition} What is pyfetch?
+:class: info
+
+Pyodide provides {any}`pyodide.http.pyfetch`,
+which is a convenient wrapper of JavaScript `fetch`.
+See {ref}`load-external-files-in-pyodide` for more information.
+```
+
+### In Javascript side
+
+```js
+let response = await fetch("https://.../your_package.tar.gz"); // .zip, .whl, ...
+let buffer = await response.arraybuffer();
+await pyodide.unpackArchive(buffer); // by default, unpacks to the current dir
+pyodide.pyimport("your_package");
 ```
 
 ```{admonition} Warning on unpacking a wheel package
@@ -74,4 +86,13 @@ before unpacking a wheel.
 
 > _Future plans:_ we are planning to support a method for a static dependency resolution
 (See: [pyodide#2045](https://github.com/pyodide/pyodide/issues/2045)).
+```
+
+## Running external code directly
+
+If you want to run a single Python script from an external source in a simplest way,
+you can:
+
+```js
+pyodide.runPython(await (await fetch("https://some_url/.../code.py")).text());
 ```
