@@ -1,0 +1,26 @@
+From 4f47dd8b301cc9cdb7f40dd1fa27984bcffacb1f Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 31 Dec 2021 22:27:07 -0800
+Subject: [PATCH] Add lapack_extras to linalg/setup.py
+
+---
+ scipy/linalg/setup.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/scipy/linalg/setup.py b/scipy/linalg/setup.py
+index 2f0ef0a48..9a62d196e 100644
+--- a/scipy/linalg/setup.py
++++ b/scipy/linalg/setup.py
+@@ -55,7 +55,8 @@ def configuration(parent_package='', top_path=None):
+                'flapack_pos_def_tri.pyf.src',
+                'flapack_sym_herm.pyf.src',
+                'flapack_other.pyf.src',
+-               'flapack_user.pyf.src']
++               'flapack_user.pyf.src',
++               'lapack_extras.f']
+ 
+     config.add_extension('_flapack',
+                          sources=sources,
+-- 
+2.25.1
+

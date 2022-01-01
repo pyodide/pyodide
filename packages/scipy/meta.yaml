@@ -17,6 +17,7 @@ source:
   sha256: ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf
 
   patches:
+    - patches/add-lapack_extras-to-flapack.patch
     - patches/convert-xerrwv-message-arg-from-int-to-str.patch
     - patches/disable-blas-detection.patch
     - patches/fix-fortran-files-minpack.patch
@@ -63,7 +64,7 @@ build:
       dgemqrt.f dgeqrfp.f dgeqrt.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
       sgemqrt.f sgeqrfp.f sgeqrt.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
       zgemqrt.f zgeqrfp.f zgeqrt.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
-    >>  ../../scipy/linalg/src/id_dist/src/dfft.f
+    >>  ../../scipy/linalg/lapack_extras.f
     cd ../..
     # The additional four functions cuncsd, dorcsd, sorcsd, and zuncsd are also
     # missing but they use features of Fortran that aren't Fortran 77 compatible
