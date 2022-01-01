@@ -471,8 +471,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     build_from_graph(pkg_map, outputdir, args)
     for pkg in pkg_map.values():
         if isinstance(pkg, StdLibPackage):
-            globstr = "*.tar"
-        elif pkg.shared_library:
+            pkg.file_name = pkg.name + ".tar"
+            continue
+        if pkg.shared_library:
             globstr = "*.zip"
         else:
             globstr = "*.whl"
