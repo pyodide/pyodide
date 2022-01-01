@@ -474,7 +474,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     build_from_graph(pkg_map, outputdir, args)
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
-            d = list(outputdir.glob(f"{name}*"))
+            d = list(outputdir.glob(f"{name}*.whl"))
             if d:
                 pkg.file_name = d[0].name
 
