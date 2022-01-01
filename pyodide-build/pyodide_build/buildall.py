@@ -474,10 +474,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
             pkg.file_name = pkg.name + ".tar"
             continue
         if pkg.shared_library:
-            globstr = "*.so"
-        else:
-            globstr = "*.whl"
-        for file in (pkg.pkgdir / "dist").glob(globstr):
+            pkg.file_name = f"{pkg.name}-{pkg.version}.zip"
+            continue
+        for file in (pkg.pkgdir / "dist").glob("*.whl"):
             pkg.file_name = file.name
 
     package_data = generate_packages_json(pkg_map)
