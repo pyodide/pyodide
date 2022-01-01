@@ -75,7 +75,7 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
         lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
 
     f2c_output = Path(f2c_output_path)
-    if f2c_output.name == "dfft.c":
+    if f2c_output.name == "lapack_extras.c":
         # dfft.c has a bunch of implicit cast args coming from functions copied
         # out of future lapack versions. fix_inconsistent_decls will fix all
         # except string to int.
