@@ -126,7 +126,7 @@ async function node_loadBinaryFile(indexURL, path) {
     return await response.arrayBuffer();
   } else {
     const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
-    return data.buffer;
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
 }
 
