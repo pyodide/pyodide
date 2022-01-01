@@ -469,7 +469,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
     build_from_graph(pkg_map, outputdir, args)
-    for pkg in pkg_map:
+    for pkg in pkg_map.values():
         if isinstance(pkg, StdLibPackage):
             globstr = "*.tar"
         elif pkg.shared_library:
