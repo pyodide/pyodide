@@ -88,6 +88,8 @@ build:
   prereplay: |
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
+    find -name '*.c' | xargs sed -i 's/extern void F_WRAPPEDFUNC/extern int F_WRAPPEDFUNC/g'
+    find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
 
 requirements:
   run:

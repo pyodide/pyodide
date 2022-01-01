@@ -31,6 +31,16 @@ build:
     sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
+    cat << "EOF" > wdlamch.c
+      #include "f2c.h"
+      doublereal dlamch_(char *);
+      doublereal wdlamch_(char *x, ftnlen y){
+        return dlamch_(x);
+      }
+    EOF
+    emcc -IINCLUDE -c wdlamch.c -o wdlamch.o
+
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
     mkdir -p install/lib
-    emcc blas_WA.a  lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so
+
+    emcc blas_WA.a lapack_WA.a wdlamch.o F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so
