@@ -61,7 +61,6 @@ class StdLibPackage(BasePackage):
         self.dependencies = []
         self.unbuilt_dependencies = set()
         self.dependents = set()
-        self.file_name = self.name + ".tar"
         self.install_dir = "lib"
 
     def build(self, outputdir: Path, args) -> None:
@@ -160,11 +159,9 @@ class Package(BasePackage):
                 f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
             )
             shutil.copy(file_path, outputdir)
-            self.file_name = Path(file_path).name
             return
         for file in (self.pkgdir / "dist").glob("*.whl"):
             shutil.copy(file, outputdir)
-            self.file_name = file.name
         for file in (self.pkgdir / "dist").glob("*-tests.tar"):
             shutil.copy(file, outputdir)
 
@@ -472,11 +469,15 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
     build_from_graph(pkg_map, outputdir, args)
-    for name, pkg in pkg_map.items():
-        if not pkg.file_name:
-            d = list(outputdir.glob(f"{name}*.whl"))
-            if d:
-                pkg.file_name = d[0].name
+    for pkg in pkg_map:
+        if isinstance(pkg, StdLibPackage):
+            globstr = "*.tar"
+        elif pkg.shared_library:
+            globstr = "*.zip"
+        else:
+            globstr = "*.whl"
+        for file in (pkg.pkgdir / "dist").glob(globstr):
+            pkg.file_name = file.name
 
     package_data = generate_packages_json(pkg_map)
 
