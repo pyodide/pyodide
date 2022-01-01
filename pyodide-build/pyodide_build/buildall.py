@@ -474,7 +474,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
             pkg.file_name = pkg.name + ".tar"
             continue
         if pkg.shared_library:
-            globstr = "*.zip"
+            globstr = "*.so"
         else:
             globstr = "*.whl"
         for file in (pkg.pkgdir / "dist").glob(globstr):
