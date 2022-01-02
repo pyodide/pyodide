@@ -49,6 +49,7 @@ def fix_f2c_output(f2c_output_path: str):
         "wrap_dummy_g77_abi.c",
         "_lapack_subroutine_wrappers.c",
         "_blas_subroutine_wrappers.c",
+        "_flapack-f2pywrappers.c",
     ]:
         lines = remove_ftnlen_args(lines)
 
