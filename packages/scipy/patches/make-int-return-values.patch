@@ -52,10 +52,10 @@ index caf99ac63..73cdebd96 100644
        COMPLEX            X, Y
        EXTERNAL           CLADIV
 diff --git a/scipy/integrate/_odepackmodule.c b/scipy/integrate/_odepackmodule.c
-index b296e6e30..eab6d1a90 100644
+index b296e6e30..f5029bee9 100644
 --- a/scipy/integrate/_odepackmodule.c
 +++ b/scipy/integrate/_odepackmodule.c
-@@ -158,7 +158,7 @@ typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
+@@ -158,13 +158,13 @@ typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
  typedef int lsoda_jac_t(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
                          double *pd, F_INT *nrowpd);
  
@@ -64,6 +64,22 @@ index b296e6e30..eab6d1a90 100644
             double *rtol, double *atol, F_INT *itask, F_INT *istate, F_INT *iopt,
             double *rwork, F_INT *lrw, F_INT *iwork, F_INT *liw, lsoda_jac_t *jac,
             F_INT *jt);
+ 
+ /*
+-void ode_function(int *n, double *t, double *y, double *ydot)
++int ode_function(int *n, double *t, double *y, double *ydot)
+ {
+   ydot[0] = -0.04*y[0] + 1e4*y[1]*y[2];
+   ydot[2] = 3e7*y[1]*y[1];
+@@ -173,7 +173,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
+ }
+ */
+ 
+-void
++int
+ ode_function(F_INT *n, double *t, double *y, double *ydot)
+ {
+     /*
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
 index 4803a4a97..5adc703a4 100644
 --- a/scipy/linalg/fblas_l1.pyf.src

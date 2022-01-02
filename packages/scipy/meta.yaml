@@ -42,6 +42,7 @@ build:
     -Werror=implicit-function-declaration
     -Werror=mismatched-parameter-types
     -Werror=mismatched-return-types
+    -Wno-return-type
   ldflags: |
     -L$(NUMPY_LIB)
     -L$(NUMPY_LIB_BASE)/random/lib
@@ -90,6 +91,8 @@ build:
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
     find -name '*.c' | xargs sed -i 's/extern void F_WRAPPEDFUNC/extern int F_WRAPPEDFUNC/g'
     find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
+    find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
+    find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
 
 requirements:
   run:
