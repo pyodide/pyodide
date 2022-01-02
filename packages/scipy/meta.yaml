@@ -61,10 +61,10 @@ build:
     tar xzf v3.10.0.tar.gz
     cd lapack-3.10.0/SRC
     cat \
-      cgemqrt.f cgeqrfp.f cgeqrt.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
-      dgemqrt.f dgeqrfp.f dgeqrt.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
-      sgemqrt.f sgeqrfp.f sgeqrt.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
-      zgemqrt.f zgeqrfp.f zgeqrt.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
+      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
+      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
+      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
+      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
     >>  ../../scipy/linalg/lapack_extras.f
     cd ../..
     # The additional four functions cuncsd, dorcsd, sorcsd, and zuncsd are also
@@ -85,6 +85,8 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
+    echo 'from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
+    echo 'loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
 
   prereplay: |
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
