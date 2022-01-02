@@ -85,8 +85,10 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
-    echo 'from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
-    echo 'loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
+    echo 'import sys' >> scipy/__init__.py
+    echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
+    echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
+    echo '   loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
 
   prereplay: |
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
@@ -97,6 +99,7 @@ build:
     find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
     sed -i 's/,size_t//' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
     sed -i 's/,slen([a-z]*))/)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
+    sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_fblasmodule.c
 
 requirements:
   run:
