@@ -21,7 +21,7 @@ and check that they are in your `PATH`.
 To run the pytest suite of tests, type on the command line:
 
 ```bash
-pytest src/ pyodide-build/ packages/*/test_*
+pytest
 ```
 
 There are 3 test locations that are collected by pytest,

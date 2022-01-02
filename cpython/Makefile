@@ -50,8 +50,11 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 
 
 clean:
-	-rm -fr $(BUILD)
-	-rm -fr $(INSTALL)
+	-rm -fr $(ROOT)/build
+	-rm -fr $(ROOT)/installs
+
+clean-all: clean
+	-rm -fr $(ROOT)/downloads
 
 
 $(TARBALL):
@@ -117,7 +120,7 @@ $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
 	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh --pyodide-fpcast && make install
+	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh && make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/

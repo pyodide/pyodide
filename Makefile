@@ -4,10 +4,6 @@ include Makefile.envs
 
 .PHONY=check
 
-
-CPYTHONROOT=cpython
-CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
-
 CC=emcc
 CXX=em++
 
@@ -16,9 +12,10 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/test.data \
 	build/distutils.data \
 	build/packages.json \
+	build/pyodide_py.tar \
+	build/test.data \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js
@@ -26,6 +23,9 @@ all: check \
 
 $(CPYTHONLIB)/tzdata :
 	pip install tzdata --target=$(CPYTHONLIB)
+
+build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
+	cd src/py && tar --exclude '*__pycache__*' -cvf ../../build/pyodide_py.tar pyodide _pyodide
 
 build/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -40,25 +40,12 @@ build/pyodide.asm.js: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	$(wildcard src/py/lib/*.py) \
-	$(wildcard src/py/pyodide/*.py) \
-	$(wildcard src/py/_pyodide/*.py) \
 	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
-		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
-		-lidbfs.js \
-		-lnodefs.js \
-		-lproxyfs.js \
-		-lworkerfs.js \
-		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
-		--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
-		--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
-		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*" \
-		--exclude-file "*/tests/*" \
-		--exclude-file "*/distutils/*"
+	$(CXX) -o build/pyodide.asm.js $(filter %.o,$^) \
+		$(MAIN_MODULE_LDFLAGS)
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
@@ -78,8 +65,8 @@ env:
 	env
 
 
-node_modules/.installed : src/js/package.json
-	cd src/js && npm install --save-dev
+node_modules/.installed : src/js/package.json src/js/package-lock.json
+	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
@@ -135,8 +122,6 @@ update_base_url: \
 	build/webworker.js
 
 
-test: all
-	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
@@ -152,10 +137,10 @@ lint: node_modules/.installed
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
-	# mypy gets upset about there being both: src/py/setup.py and
-	# packages/micropip/src/setup.py. There is no easy way to fix this right now
-	# see python/mypy#10428. This will also cause trouble with pre-commit if you
-	# modify both setup.py files in the same commit.
+#mypy gets upset about there being both : src / py / setup.py and
+#packages / micropip / src / setup.py.There is no easy way to fix this right now
+#see python / mypy #10428. This will also cause trouble with pre - commit if you
+#modify both setup.py files in the same commit.
 	mypy --ignore-missing-imports    \
 		packages/micropip/src/
 
@@ -173,11 +158,13 @@ clean:
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
-
-clean-all: clean
-	make -C emsdk clean
+clean-python: clean
 	make -C cpython clean
-	rm -fr cpython/build
+
+clean-all:
+	make -C emsdk clean
+	make -C cpython clean-all
+
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/python2js_buffer.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/

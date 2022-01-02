@@ -6,7 +6,7 @@ browser or a backend JavaScript environment.
 ## Web browsers
 
 To use Pyodide on a web page you need to load `pyodide.js` and initialize
-Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying a index URL for packages:
+Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL for packages:
 
 ```html-pyodide
 <!DOCTYPE html>
@@ -58,7 +58,7 @@ Latest browser versions generally provide more reliable WebAssembly support
 and will run Pyodide faster, so their use is recommended.
 ```
 
-**Tier 2** browsers are known to work but they are not systematically tested in
+**Tier 2** browsers are known to work, but they are not systematically tested in
 Pyodide,
 
 | Browser | Minimal supported version | Release date      |
@@ -71,8 +71,8 @@ officially supported.
 
 ## Web Workers
 
-By default, WebAssembly runs in the main browser thread, and it can make UI non
-responsive for long running computations.
+By default, WebAssembly runs in the main browser thread, and it can make UI
+non-responsive for long-running computations.
 
 To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
 
@@ -86,7 +86,7 @@ Install the [Pyodide npm package](https://www.npmjs.com/package/pyodide),
 npm install pyodide
 ```
 
-Download and extract Pyodide packages from [Github
+Download and extract Pyodide packages from [GitHub
 releases](https://github.com/pyodide/pyodide/releases)
 (**pyodide-build-\*.tar.bz2** file). The version of the release needs to match
 exactly the version of this package.
@@ -108,7 +108,7 @@ To start Node.js REPL with support for top level await, use `node --experimental
 ```
 
 ```{warning}
-Download of packages from PyPi is currently not cached when run in
+Download of packages from PyPI is currently not cached when run in
 Node.js. Packages will be re-downloaded each time `micropip.install` is run.
 
 For this same reason, installing Pyodide packages from the CDN is explicitly not supported for now.

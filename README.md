@@ -9,22 +9,25 @@
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=stable)](https://pyodide.readthedocs.io/?badge=stable)
 
-Python with the scientific stack, compiled to WebAssembly.
+Pyodide is a Python distribution for the browser and Node.js based on WebAssembly.
 
 ## What is Pyodide?
 
-Pyodide may be used in any context where you want to run Python inside a web
-browser.
+Pyodide is a port of CPython to WebAssembly/[Emscripten](https://emscripten.org/).
 
-Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
-[Emscripten](https://emscripten.org/).
-It build the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
-scikit-learn. The [packages directory](packages) lists over 75 packages which
-are currently available. In addition it's possible to install pure Python wheels
-from PyPi.
+Pyodide makes it possible to install and run Python packages in the browser with
+[micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html). Any pure
+Python package with a wheel available on PyPi is supported. Many packages with C
+extensions have also been ported for use with Pyodide. These include many
+general-purpose packages such as regex, PyYAML, lxml and scientific Python
+packages including NumPy, pandas, SciPy, Matplotlib, and scikit-learn.
 
-Pyodide provides transparent conversion of objects between JavaScript and
-Python. When used inside a browser, Python has full access to the Web APIs.
+Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
+that you can freely mix these two languages in your code with minimal
+friction. This includes full support for error handling (throw an error in one
+language, catch it in the other), async/await, and much more.
+
+When used inside a browser, Python has full access to the Web APIs.
 
 ## Try Pyodide (no installation needed)
 
@@ -67,12 +70,13 @@ environments](https://pyodide.org/en/stable/project/related-projects.html#notebo
 Please view the [contributing
 guide](https://pyodide.org/en/stable/development/contributing.html) for tips
 on filing issues, making changes, and submitting pull requests. Pyodide is an
-independent and community-driven open-source project. The decision making
+independent and community-driven open-source project. The decision-making
 process is outlined in the [Project
 governance](https://pyodide.org/en/stable/project/governance.html).
 
 ## Communication
 
+- Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)

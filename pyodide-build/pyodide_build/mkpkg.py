@@ -30,7 +30,9 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
 
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
-        if entry["filename"].endswith(sdist_extensions):
+        if entry["packagetype"] == "sdist" and entry["filename"].endswith(
+            sdist_extensions
+        ):
             return entry
 
     raise MkpkgFailedException(
@@ -43,7 +45,7 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
 
 
 def _get_metadata(package: str, version: Optional[str] = None) -> Dict:
-    """Download metadata for a package from PyPi"""
+    """Download metadata for a package from PyPI"""
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
 
@@ -99,7 +101,7 @@ def make_package(package: str, version: Optional[str] = None):
         "test": {"imports": [package]},
         "about": {
             "home": homepage,
-            "PyPi": pypi,
+            "PyPI": pypi,
             "summary": summary,
             "license": license,
         },
@@ -160,7 +162,7 @@ def update_package(package: str, update_patched: bool = True):
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
     if pypi_ver <= local_ver:
-        print(f"{package} already up to date. Local: {local_ver} PyPi: {pypi_ver}")
+        print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
         sys.exit(0)
 
     print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")

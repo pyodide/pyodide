@@ -37,12 +37,7 @@ function runPython(code) {
 
 ```javascript
 async function runPythonAsync(code) {
-  let coroutine = pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
-  try {
-    return await coroutine;
-  } finally {
-    coroutine.destroy();
-  }
+  return await pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
 }
 ```
 

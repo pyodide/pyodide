@@ -6,13 +6,13 @@ source:
   url: https://files.pythonhosted.org/packages/8f/7d/1e9c2d8989c209edfd10f878da1af956059a1caab498e5bc34fa11b83f71/Pillow-8.3.1.tar.gz
 
   patches:
-   - patches/setitup.patch
+    - patches/setitup.patch
   extras:
-   -
-      - src/setup.cfg
+    - - src/setup.cfg
       - ./setup.cfg
 build:
-  cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1
+  cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1 -s SIDE_MODULE=1
+  ldflags: -ljpeg
 test:
   imports:
-  - PIL
+    - PIL

@@ -49,25 +49,6 @@ def test_globals_get_multiple(selenium):
     )
 
 
-def test_open_url(selenium, httpserver):
-    if selenium.browser == "node":
-        pytest.xfail("XMLHttpRequest not available in node")
-    httpserver.expect_request("/data").respond_with_data(
-        b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
-    )
-    request_url = httpserver.url_for("/data")
-
-    assert (
-        selenium.run(
-            f"""
-        import pyodide
-        pyodide.open_url('{request_url}').read()
-        """
-        )
-        == "HELLO"
-    )
-
-
 def test_load_package_after_convert_string(selenium):
     """
     See #93.

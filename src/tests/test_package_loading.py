@@ -234,3 +234,44 @@ def test_test_unvendoring(selenium_standalone):
         return pyodide._module.packages['regex'].unvendored_tests
         """
     )
+
+
+def test_install_archive(selenium):
+    build_dir = Path(__file__).parents[2] / "build"
+    test_dir = Path(__file__).parent
+    shutil.make_archive(
+        test_dir / "test_pkg", "gztar", root_dir=test_dir, base_dir="test_pkg"
+    )
+    build_test_pkg = build_dir / "test_pkg.tar.gz"
+    if not build_test_pkg.exists():
+        build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
+    try:
+        for fmt_name in ["gztar", "tar.gz", "tgz", ".tar.gz", ".tgz"]:
+            selenium.run_js(
+                f"""
+                let resp = await fetch("test_pkg.tar.gz");
+                let buf = await resp.arrayBuffer();
+                pyodide.unpackArchive(buf, {fmt_name!r});
+                """
+            )
+            selenium.run_js(
+                """
+                let test_pkg = pyodide.pyimport("test_pkg");
+                let some_module = pyodide.pyimport("test_pkg.some_module");
+                try {
+                    assert(() => test_pkg.test1(5) === 26);
+                    assert(() => some_module.test1(5) === 26);
+                    assert(() => some_module.test2(5) === 24);
+                } finally {
+                    test_pkg.destroy();
+                    some_module.destroy();
+                    pyodide.runPython(`
+                        import shutil
+                        shutil.rmtree("test_pkg")
+                    `)
+                }
+                """
+            )
+    finally:
+        (build_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+        (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)

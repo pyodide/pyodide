@@ -12,3 +12,13 @@ def test_imageio():
     image_out = imageio.imread(filename)
     assert image_out.shape == (100, 36)
     np.testing.assert_equal(image_in, image_out)
+
+
+@run_in_pyodide(packages=["numpy", "imageio"])
+def test_jpg():
+    import numpy as np
+    import imageio
+
+    img = np.zeros((5, 5), dtype=np.uint8)
+    imageio.imsave("img.jpg", img)
+    assert (imageio.imread("img.jpg") == img).all()

@@ -1,17 +1,18 @@
 diff --git a/numpy/distutils/system_info.py b/numpy/distutils/system_info.py
-old mode 100644
-new mode 100755
-index bea120cf9..5b2ccb2c1
+index 7f41bb07e..c12d9b196 100644
 --- a/numpy/distutils/system_info.py
 +++ b/numpy/distutils/system_info.py
-@@ -406,8 +406,8 @@ def get_info(name, notfound_action=0):
+@@ -549,11 +549,11 @@ def get_info(name, notfound_action=0):
            'numeric': Numeric_info,
            'numarray': numarray_info,
            'numerix': numerix_info,
 -          'lapack_opt': lapack_opt_info,
--          'blas_opt': blas_opt_info,
 +          'lapack_opt': lapack_src_info,
+           'lapack_ilp64_opt': lapack_ilp64_opt_info,
+           'lapack_ilp64_plain_opt': lapack_ilp64_plain_opt_info,
+           'lapack64__opt': lapack64__opt_info,
+-          'blas_opt': blas_opt_info,
 +          'blas_opt': blas_src_info,
-           'boost_python': boost_python_info,
-           'agg2': agg2_info,
-           'wx': wx_info,
+           'blas_ilp64_opt': blas_ilp64_opt_info,
+           'blas_ilp64_plain_opt': blas_ilp64_plain_opt_info,
+           'blas64__opt': blas64__opt_info,

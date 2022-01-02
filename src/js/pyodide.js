@@ -1,10 +1,11 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, setStandardStreams } from "./module.js";
+import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
+  _fetchBinaryFile,
   loadPackage,
 } from "./load-pyodide.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
@@ -45,18 +46,23 @@ let fatal_error_occurred = false;
  * Dumps the Python traceback, shows a JavaScript traceback, and prints a clear
  * message indicating a fatal error. It then dummies out the public API so that
  * further attempts to use Pyodide will clearly indicate that Pyodide has failed
- * and can no longer be used. pyodide._module is left accessible and it is
+ * and can no longer be used. pyodide._module is left accessible, and it is
  * possible to continue using Pyodide for debugging purposes if desired.
  *
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
 Module.fatal_error = function (e) {
+  if (e.pyodide_fatal_error) {
+    return;
+  }
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
     return;
   }
+  // Mark e so we know not to handle it later in EM_JS wrappers
+  e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
   console.error(
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
@@ -107,28 +113,6 @@ Module.runPythonInternal = function (code) {
 };
 
 /**
- * The JavaScript/Wasm call stack is too small to handle the default Python call
- * stack limit of 1000 frames. We determine the JavaScript call stack depth
- * available, and then guess a value for the Python recursion depth based on the
- * depth of the JavaScript call stack.
- *
- * @private
- */
-function calculateRecursionLimit() {
-  let depth = 0;
-  function recurse() {
-    depth += 1;
-    recurse();
-  }
-  try {
-    recurse();
-  } catch (err) {}
-
-  const recursionLimit = Math.floor(Math.min(depth / 25, 500));
-  return recursionLimit;
-}
-
-/**
  * @private
  * A proxy around globals that falls back to checking for a builtin if has or
  * get fails to find a global with the given key. Note that this proxy is
@@ -155,6 +139,34 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
   });
 }
 
+function unpackPyodidePy(pyodide_py_tar) {
+  const fileName = "/pyodide_py.tar";
+  let stream = Module.FS.open(fileName, "w");
+  Module.FS.write(
+    stream,
+    new Uint8Array(pyodide_py_tar),
+    0,
+    pyodide_py_tar.byteLength,
+    undefined,
+    true
+  );
+  Module.FS.close(stream);
+  const code_ptr = Module.stringToNewUTF8(`
+import shutil
+shutil.unpack_archive("/pyodide_py.tar", "/lib/python3.9/site-packages/")
+del shutil
+import importlib
+importlib.invalidate_caches()
+del importlib
+    `);
+  let errcode = Module._PyRun_SimpleString(code_ptr);
+  if (errcode) {
+    throw new Error("OOPS!");
+  }
+  Module._free(code_ptr);
+  Module.FS.unlink(fileName);
+}
+
 /**
  * @private
  * This function is called after the emscripten module is finished initializing,
@@ -164,12 +176,14 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
  */
 function finalizeBootstrap(config) {
   // First make internal dict so that we can use runPythonInternal.
-  // runPythonInternal uses a separate namespace so we don't pollute the main
+  // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
   runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
+  Module.importlib = Module.runPythonInternal("import importlib; importlib");
+  let import_module = Module.importlib.import_module;
 
-  Module.sys = Module.runPythonInternal("import sys; sys");
-  Module.sys.setrecursionlimit(calculateRecursionLimit());
+  Module.sys = import_module("sys");
+  Module.sys.path.insert(0, config.homedir);
 
   // Set up globals
   let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
@@ -188,7 +202,7 @@ function finalizeBootstrap(config) {
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
-  Module.pyodide_py = Module.runPythonInternal("import pyodide; pyodide");
+  Module.pyodide_py = import_module("pyodide");
   Module.version = Module.pyodide_py.__version__;
 
   // copy some last constants onto public API.
@@ -209,6 +223,8 @@ function finalizeBootstrap(config) {
  *
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
+ * @param {string} config.homedir - The home directory which Pyodide will use inside virtual file system
+ * Default: /home/pyodide
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
@@ -223,41 +239,42 @@ function finalizeBootstrap(config) {
  * @async
  */
 export async function loadPyodide(config) {
+  if (globalThis.__pyodide_module) {
+    throw new Error("Pyodide is already loading.");
+  }
+  if (!config.indexURL) {
+    throw new Error("Please provide indexURL parameter to loadPyodide");
+  }
+
+  loadPyodide.inProgress = true;
+  // A global "mount point" for the package loaders to talk to pyodide
+  // See "--export-name=__pyodide_module" in buildpkg.py
+  globalThis.__pyodide_module = Module;
+
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
+    homedir: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
-  if (globalThis.__pyodide_module) {
-    if (globalThis.languagePluginURL) {
-      throw new Error(
-        "Pyodide is already loading because languagePluginURL is defined."
-      );
-    } else {
-      throw new Error("Pyodide is already loading.");
-    }
+
+  if (!config.indexURL.endsWith("/")) {
+    config.indexURL += "/";
   }
-  // A global "mount point" for the package loaders to talk to pyodide
-  // See "--export-name=__pyodide_module" in buildpkg.py
-  globalThis.__pyodide_module = Module;
-  loadPyodide.inProgress = true;
-  if (!config.indexURL) {
-    throw new Error("Please provide indexURL parameter to loadPyodide");
-  }
-  let baseURL = config.indexURL;
-  if (!baseURL.endsWith("/")) {
-    baseURL += "/";
-  }
-  Module.indexURL = baseURL;
-  let packageIndexReady = initializePackageIndex(baseURL);
+  Module.indexURL = config.indexURL;
+  let packageIndexReady = initializePackageIndex(config.indexURL);
+  let pyodide_py_tar_promise = _fetchBinaryFile(
+    config.indexURL,
+    "pyodide_py.tar"
+  );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
+  setHomeDirectory(config.homedir);
 
-  Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
-  const scriptSrc = `${baseURL}pyodide.asm.js`;
+  const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
@@ -267,6 +284,10 @@ export async function loadPyodide(config) {
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  const pyodide_py_tar = await pyodide_py_tar_promise;
+  unpackPyodidePy(pyodide_py_tar);
+  Module._pyodide_init();
 
   let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.

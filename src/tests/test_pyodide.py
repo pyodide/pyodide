@@ -28,6 +28,18 @@ def test_find_imports():
     assert res == []
 
 
+def test_pyimport(selenium):
+    selenium.run_js(
+        """
+        let platform = pyodide.pyimport("platform");
+        assert(() => platform.machine() === "wasm32");
+        assert(() => !pyodide.globals.has("platform"))
+        assertThrows(() => pyodide.pyimport("platform;"), "PythonError", "ModuleNotFoundError: No module named 'platform;'");
+        platform.destroy();
+        """
+    )
+
+
 def test_code_runner():
     assert should_quiet("1+1;")
     assert not should_quiet("1+1#;")
@@ -747,7 +759,7 @@ def test_fatal_error(selenium_standalone):
 def test_reentrant_error(selenium):
     caught = selenium.run_js(
         """
-        function a(){
+        function raisePythonKeyboardInterrupt(){
             pyodide.globals.get("pyfunc")();
         }
         let caught = false;
@@ -755,9 +767,9 @@ def test_reentrant_error(selenium):
             pyodide.runPython(`
                 def pyfunc():
                     raise KeyboardInterrupt
-                from js import a
+                from js import raisePythonKeyboardInterrupt
                 try:
-                    a()
+                    raisePythonKeyboardInterrupt()
                 except Exception as e:
                     pass
             `);
@@ -768,6 +780,31 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_reentrant_fatal(selenium_standalone):
+    selenium = selenium_standalone
+    assert selenium.run_js(
+        """
+        function f(){
+            pyodide.globals.get("trigger_fatal_error")();
+        }
+        self.success = true;
+        try {
+            pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                from js import f
+                try:
+                    f()
+                except Exception as e:
+                    # This code shouldn't be executed
+                    import js
+                    js.success = False
+            `);
+        } catch(e){}
+        return success;
+        """
+    )
 
 
 def test_restore_error(selenium):
@@ -873,3 +910,33 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
     )
     assert stdoutstrings == ["Python initialization complete", "something to stdout"]
     assert stderrstrings == ["something to stderr"]
+
+
+def test_home_directory(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    home = "/home/custom_home"
+    selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            indexURL : './',
+            homedir : "%s",
+        });
+        return pyodide.runPython(`
+            import os
+            os.getcwd() == "%s"
+        `)
+        """
+        % (home, home)
+    )
+
+
+def test_sys_path0(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            import sys
+            import os
+            assert os.getcwd() == sys.path[0]
+        `)
+        """
+    )

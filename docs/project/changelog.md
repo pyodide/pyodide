@@ -5,6 +5,7 @@ substitutions:
   Feature: "<span class='badge badge-success'>Feature</span>"
   Fix: "<span class='badge badge-danger'>Fix</span>"
   Update: "<span class='badge badge-success'>Update</span>"
+  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
@@ -12,6 +13,14 @@ substitutions:
 # Change Log
 
 ## Unreleased
+
+### Backward incompatible changes
+
+- {{Breaking}} Default working directory(home directory) inside Pyodide virtual
+  file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
+  - call `os.chdir("/")` to change working directory
+  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
+    {pr}`1936`
 
 ### Python package
 
@@ -25,6 +34,13 @@ substitutions:
   minimizing the number of times the data is copied.
   {pr}`1865`
 
+- {{Enhancement}} Added an {any}`unpack_archive` API to the {any}`FetchResponse`
+  object which treats the response body as an archive and uses `shutil` to
+  unpack it. {pr}`1935`
+
+- {{Fix}} The Pyodide event loop now works correctly with cancelled handles. In particular, `asyncio.wait_for` now functions as expected.
+  {pr}`2022`
+
 ### JavaScript package
 
 - {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
@@ -32,8 +48,22 @@ substitutions:
   {pr}`1849`
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
-  runtime issue due to webpack are solved. 
-  {pr}`1900`  
+  runtime issue due to webpack are solved.
+  {pr}`1900`
+
+- {{Enhancement}} Added a {any}`pyodide.pyimport` API to import a Python module
+  and return it as a `PyProxy`. Note that this does a different thing than the
+  original `pyimport` API: it imports a package and returns it without adding
+  the package to the global scope.
+  {pr}`1944`
+
+- {{Enhancement}} Added a {any}`pyodide.unpackArchive` API which unpacks an archive represented as an ArrayBuffer into the working directory.
+  This is intended as a way to install packages from a local application.
+  {pr}`1944`
+
+- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
+  parameter which sets home directory of Pyodide virtual file system.
+  {pr}`1936`
 
 ### Python / JavaScript type conversions
 
@@ -45,6 +75,10 @@ substitutions:
 - {{Enhancement}} Added {any}`JsProxy.to_string`, {any}`JsProxy.to_bytes`, and
   {any}`JsProxy.to_memoryview` to allow for conversion of `TypedArray` to
   standard Python types without unneeded copies. {pr}`1864`
+
+- {{Enhancement}} Added {any}`JsProxy.to_file` and {any}`JsProxy.from_file` to
+  allow reading and writing Javascript buffers to files as a byte stream without unneeded copies.
+  {pr}`1864`
 
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
@@ -66,11 +100,46 @@ substitutions:
   that looks up the name on `builtins` if lookup on `globals` fails.
   {pr}`1905`
 
+- {{Enhancement}} Coroutines have their memory managed in a more convenient way.
+  In particular, now it is only necessary to either `await` the coroutine or call
+  one of `.then`, `.except` or `.finally` to prevent a leak. It is no longer
+  necessary to manually destroy the coroutine. Example: before:
+
+```js
+async function runPythonAsync(code, globals) {
+  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
+  try {
+    return await coroutine;
+  } finally {
+    coroutine.destroy();
+  }
+}
+```
+
+After:
+
+```js
+async function runPythonAsync(code, globals) {
+  return await Module.pyodide_py.eval_code_async(code, globals);
+}
+```
+
+{pr}`2030`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
   packages set `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed,
   since it is now equivalent to `make` without extra arguments. {pr}`1801`
+
+- {{Enhancement}} It is now possible to use `pyodide-build buildall` and
+  `pyodide-build buildpkg` directly. {pr}`2063`
+
+- {{Enhancement}} Added a `--force-rebuild` to `buildall` and `buildpkg` which
+  rebuilds the package even if it looks like it doesn't need to be rebuilt.
+  Added `--continue` flag which keeps the same source tree for the package and
+  can continue from the middle of a build.
+  {pr}`2069`
 
 - {{Enhancement}} Changes to environment variables in the build script are now
   seen in the compile and post build scripts.
@@ -82,10 +151,24 @@ substitutions:
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
 
+- {{Fix}} Fix compile error `wasm-ld: error: unknown argument: --sort-common`
+  and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
+  {pr}`1965`
+
+
 ### micropip
 
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
   {pr}`1859`
+
+- {{Enhancement}} {func}`micropip.install` now accepts a `keep_going` parameter. If set to True,
+  micropip reports all identifiable dependencies that don't have pure Python wheels, instead of
+  failing after processing the first one.
+  {pr}`1976`
+
+- {{Enhancement}} Added a new API {func}`micropip.list` which returns the list of installed
+  packages by micropip.
+  {pr}`2012`
 
 ### packages
 
@@ -95,11 +178,21 @@ substitutions:
   pandas, scipy).
   {pr}`1832`
 
+- {{ Enhancement }} upgraded numpy to 1.21.4
+  {pr}`1934`
+
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
-  
-- New packages: `logbook`
+
+- {{Fix}} pillow and imageio now correctly encodes/decodes grayscale and
+  black-and-white JPEG image format.
+  {pr}`2028`
+
+- {{Fix}} numpy fft module now works correctly.
+  {pr}`2028`
+
+- New packages: `logbook`, `pyb2d`
 
 ### Uncategorized
 
@@ -112,6 +205,13 @@ substitutions:
 - {{Fix}} The `_` variable is now set by the Pyodide repl just like it is set in
   the native Python repl.
   {pr}`1904`
+
+- {{Fix}} The console now correctly handles it when an object's `__repr__` function raises an exception.
+  {pr}`2021`
+
+- {{ Enhancement }} Removed the `-s EMULATE_FUNCTION_POINTER_CASTS` flag,
+  yielding large benefits in speed, stack usage, and code size.
+  {pr}`2019`
 
 ## Version 0.18.1
 
@@ -151,7 +251,7 @@ substitutions:
 
 ### Packages
 
-- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+- {{Fix}} pillow now correctly encodes/decodes RGB JPEG image format. {pr}`1818`
 
 ### Micellaneous
 
@@ -567,7 +667,7 @@ by 0.16.1 with identical contents.
 - The `pyodide.py` file was transformed to a pyodide-py package. The imports
   remain the same so this change is transparent to the users
   {pr}`909`.
-- FIX Get last version from PyPi when installing a module via micropip
+- FIX Get last version from PyPI when installing a module via micropip
   {pr}`846`.
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   {pr}`876`.
@@ -648,7 +748,7 @@ _May 19, 2020_
 
 - Upgrades Pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
-  PyPi. Packages are now installed from PyPi directly.
+  PyPI. Packages are now installed from PyPI directly.
 - micropip can now be used from web workers.
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.

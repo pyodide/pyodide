@@ -27,7 +27,7 @@ pyproxy_Check(JsRef x);
 /**
  * Destroy a list of PyProxies. Steals the reference to the list.
  */
-errcode
+void
 destroy_proxies(JsRef proxies_id, char* msg);
 
 /**

@@ -3,7 +3,7 @@ package:
   version: 0.17.1
 
 source:
-  # We can't use the version from PyPi as it includes Cythonized files
+  # We can't use the version from PyPI as it includes Cythonized files
   # generated with an older Cython that does not support Python 3.7
   # This requires,
   #    pip install Cython Tempita

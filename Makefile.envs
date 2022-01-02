@@ -1,6 +1,5 @@
 export PYVERSION ?= 3.9.5
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
-export PYODIDE_BINARYEN_VERSION ?= version_100
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
 # environment variables. The next line instructs make to use bash to run each
@@ -17,11 +16,21 @@ export PYMICRO=$(word 3,$(version_tuple))
 
 export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
-export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+
+export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
+export CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
+
+export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
+
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
+
+# For packages that depend on numpy.
+# TODO: maybe move this somewhere else?
+export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/install/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/core/lib/
 
 # This environment variable is used for packages to detect if they are built
 # for pyodide during build time
@@ -29,18 +38,20 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
+# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+export DBGFLAGS=-g0
+
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
-	-g \
+	$(DBGFLAGS) \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
-	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	$(OPTFLAGS) \
+	$(DBGFLAGS) \
 	-s MODULARIZE=1 \
-	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \
@@ -52,32 +63,44 @@ export LDFLAGS_BASE=\
 export CXXFLAGS_BASE=
 
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
-export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
+export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+	-s MAIN_MODULE=1 \
+	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
 	-lbz2 \
 	-lstdc++ \
-	-s TOTAL_MEMORY=20971520 \
-	-s ALLOW_MEMORY_GROWTH=1 \
-    --use-preload-plugins \
+	-lidbfs.js \
+	-lnodefs.js \
+	-lproxyfs.js \
+	-lworkerfs.js \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
-	-s USE_LIBJPEG=1 \
-	--memory-init-file 0 \
+	-s FORCE_FILESYSTEM=1 \
+	-s TOTAL_MEMORY=20971520 \
+	-s ALLOW_MEMORY_GROWTH=1 \
+	--use-preload-plugins \
+	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
+	--exclude-file "*__pycache__*" \
+	--exclude-file "*/test/*" \
+	--exclude-file "*/tests/*" \
+	--exclude-file "*/distutils/*"
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
 export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE)
 export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
-    	-Wall \
-    	-Wno-warn-absolute-paths \
-    	-Werror=unused-variable \
-    	-Werror=sometimes-uninitialized \
-    	-Werror=int-conversion \
-    	-Werror=incompatible-pointer-types \
-		-I$(PYTHONINCLUDE)
+	-Wall \
+	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
+	-Werror=int-conversion \
+	-Werror=incompatible-pointer-types \
+	-Werror=unused-result \
+	-I$(PYTHONINCLUDE)
 
 
 .output_vars:

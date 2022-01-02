@@ -87,7 +87,7 @@ class _Compile(Compile):
     Instances of this class behave much like the built-in compile function,
     but if one is used to compile text containing a future statement, it
     "remembers" and compiles all subsequent program texts with the statement in
-    force. It uses CodeRunner instead of the built in compile.
+    force. It uses CodeRunner instead of the built-in compile.
     """
 
     def __init__(
