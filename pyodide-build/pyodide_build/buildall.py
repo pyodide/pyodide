@@ -472,7 +472,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
-    # build_from_graph(pkg_map, outputdir, args)
+    build_from_graph(pkg_map, outputdir, args)
 
     package_data = generate_packages_json(pkg_map)
 
