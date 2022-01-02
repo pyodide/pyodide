@@ -275,10 +275,13 @@ def mark_package_needs_build(
     Helper for generate_needs_build_set. Modifies needs_build in place.
     Recursively add pkg and all of its dependencies to needs_build.
     """
+    if isinstance(pkg, StdLibPackage):
+        return
+    if pkg.name in needs_build:
+        return
     needs_build.add(pkg.name)
     for dep in pkg.dependents:
-        if dep not in needs_build:
-            mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
+        mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
 def generate_needs_build_set(pkg_map):
