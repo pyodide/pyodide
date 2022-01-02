@@ -6,74 +6,11 @@ from pathlib import Path
 
 
 def fix_f2c_clapack_calls(f2c_output_path: str):
-    """Fix F2C CLAPACK calls
-
-    f2c compiles code with fortran linkage, which means that
-    strings are passed as char* plus extra length argument at
-    the end.
-
-    CLAPACK uses C null terminated strings.
-
-    In scipy, we build fortran linkage wrappers for all char* CLAPACK calls.
-    We just need to replace the calls and extern definitions in f2c generated code.
-
-    Annoyingly, we can't just patch the fortran code to use the wrapped names because f2c
-    has a limit of 6 character function names.
     """
-    # fmt: off
-    lapack_czds_names = [
-        'gbmv', 'gemm', 'gemv', 'symm', 'syr2k', 'syrk', 'tbmv', 'tbsv', 'tpmv',
-        'tpsv', 'trmm', 'trmv', 'trsm', 'trsv', 'spmv', 'spr', 'symv', 'syr',
-        'langb', 'lange', 'langt', 'lanhs', 'lansb', 'lansp', 'lansy', 'lantb',
-        'lantp', 'lantr', 'bdsqr', 'gbbrd', 'gbcon', 'gbrfs', 'gbsvx', 'gbtrs',
-        'gebak', 'gebal', 'gecon', 'gees', 'geesx', 'geev', 'geevx', 'gels',
-        'gerfs', 'gesdd', 'gesvd', 'gesvx', 'getrs', 'ggbak', 'ggbal', 'gges',
-        'ggesx', 'ggev', 'ggevx', 'gghrd', 'gtcon', 'gtrfs', 'gtsvx', 'gttrs',
-        'hgeqz', 'hsein', 'hseqr', 'lacpy', 'lagtm', 'lalsd', 'laqgb', 'laqge',
-        'laqsb', 'laqsp', 'laqsy', 'larf', 'larfb', 'larft', 'larfx', 'larz',
-        'larzb', 'larzt', 'lascl', 'laset', 'lasr', 'lasyf', 'latbs', 'latps',
-        'latrd', 'latrs', 'lauu2', 'lauum', 'pbcon', 'pbequ', 'pbrfs', 'pbstf',
-        'pbsv', 'pbsvx', 'pbtf2', 'pbtrf', 'pbtrs', 'pocon', 'porfs', 'posv',
-        'posvx', 'potf2', 'potrf', 'potri', 'potrs', 'ppcon', 'ppequ', 'pprfs',
-        'ppsv', 'ppsvx', 'pptrf', 'pptri', 'pptrs', 'pteqr', 'ptsvx', 'spcon',
-        'sprfs', 'spsv', 'spsvx', 'sptrf', 'sptri', 'sptrs', 'stedc', 'stegr',
-        'stemr', 'steqr', 'sycon', 'syrfs', 'sysv', 'sysvx', 'sytf2', 'sytrf',
-        'sytri', 'sytrs', 'tbcon', 'tbrfs', 'tbtrs', 'tgevc', 'tgsja', 'tgsna',
-        'tgsy2', 'tgsyl', 'tpcon', 'tprfs', 'tptri', 'tptrs', 'trcon', 'trevc',
-        'trexc', 'trrfs', 'trsen', 'trsna', 'trsyl', 'trti2', 'trtri', 'trtrs',
-    ]
-    lapack_ds_names = [
-        'sbmv', 'spr2', 'syr2', 'lamch', 'lanst', 'bdsdc', 'disna', 'larrc',
-        'larrd', 'larre', 'lasdq', 'lasrt', 'opgtr', 'opmtr', 'orgbr', 'orgtr',
-        'orm2l', 'orm2r', 'ormbr', 'ormhr', 'orml2', 'ormlq', 'ormql', 'ormqr',
-        'ormr2', 'ormr3', 'ormrq', 'ormrz', 'ormtr', 'sbev', 'sbevd', 'sbevx',
-        'sbgst', 'sbgv', 'sbgvd', 'sbgvx', 'sbtrd', 'spev', 'spevd', 'spevx',
-        'spgst', 'spgv', 'spgvd', 'spgvx', 'sptrd', 'stebz', 'stev', 'stevd',
-        'stevr', 'stevx', 'syev', 'syevd', 'syevr', 'syevx', 'sygs2', 'sygst',
-        'sygv', 'sygvd', 'sygvx', 'sytd2', 'sytrd'
-    ]
-    lapack_cz_names = [
-        'hbmv', 'hemm', 'hemv', 'her', 'her2', 'her2k', 'herk', 'hpmv', 'hpr',
-        'hpr2', 'lanhb', 'lanhe', 'lanhp', 'lanht', 'hbev', 'hbevd', 'hbevx',
-        'hbgst', 'hbgv', 'hbgvd', 'hbgvx', 'hbtrd', 'hecon', 'heev', 'heevd',
-        'heevr', 'heevx', 'hegs2', 'hegst', 'hegv', 'hegvd', 'hegvx', 'herfs',
-        'hesv', 'hesvx', 'hetd2', 'hetf2', 'hetrd', 'hetrf', 'hetri', 'hetrs',
-        'hpcon', 'hpev', 'hpevd', 'hpevx', 'hpgst', 'hpgv', 'hpgvd', 'hpgvx',
-        'hprfs', 'hpsv', 'hpsvx', 'hptrd', 'hptrf', 'hptri', 'hptrs', 'lacp2',
-        'lahef', 'laqhb', 'laqhe', 'laqhp', 'ptrfs', 'pttrs', 'ungbr', 'ungtr',
-        'unm2l', 'unm2r', 'unmbr', 'unmhr', 'unml2', 'unmlq', 'unmql', 'unmqr',
-        'unmr2', 'unmr3', 'unmrq', 'unmrz', 'unmtr', 'upgtr', 'upmtr',
-    ]
-    lapack_other_names = ['lsame_', 'ilaenv_']
-    # fmt: on
-    lapack_names = lapack_other_names
-    for name in lapack_czds_names:
-        lapack_names.extend(f"{l}{name}_" for l in ["c", "z", "d", "s"])
-    for name in lapack_cz_names:
-        lapack_names.extend(f"{l}{name}_" for l in ["c", "z"])
-    for name in lapack_ds_names:
-        lapack_names.extend(f"{l}{name}_" for l in ["d", "s"])
-
+    This function is called on the name of each C output file. It fixes up the C
+    output in various ways to compensate for the lack of f2c support for Fortan
+    90 and Fortran 95.
+    """
     f2c_output = Path(f2c_output_path)
     if f2c_output.name == "lapack_extras.c":
         # dfft.c has a bunch of implicit cast args coming from functions copied
@@ -115,12 +52,8 @@ def fix_f2c_clapack_calls(f2c_output_path: str):
     ]:
         lines = remove_ftnlen_args(lines)
 
-    code = "".join(lines)
-    for cur_name in lapack_names:
-        code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
-
     with open(f2c_output, "w") as f:
-        f.write(code)
+        f.writelines(lines)
 
 
 def prepare_doctest(x):
