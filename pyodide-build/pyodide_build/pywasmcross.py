@@ -39,7 +39,7 @@ from typing import List, Dict, Set, Optional, overload
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
+from pyodide_build._f2c_fixes import fix_f2c_output
 
 
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
@@ -193,7 +193,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
-                fix_f2c_clapack_calls(arg[:-2] + ".c")
+                fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:

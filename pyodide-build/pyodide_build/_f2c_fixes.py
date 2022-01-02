@@ -5,7 +5,7 @@ from typing import List, Iterable, Iterator, Tuple
 from pathlib import Path
 
 
-def fix_f2c_clapack_calls(f2c_output_path: str):
+def fix_f2c_output(f2c_output_path: str):
     """
     This function is called on the name of each C output file. It fixes up the C
     output in various ways to compensate for the lack of f2c support for Fortan
