@@ -343,3 +343,15 @@ def test_get_buffer_error_messages(selenium):
             }
             """
         )
+
+
+def test_fft(selenium):
+    selenium.run_js(
+        """
+        await pyodide.loadPackage(['numpy']);
+        pyodide.runPython(`
+            import numpy
+            assert all(numpy.fft.fft([1, 1]) == [2, 0])
+        `);
+        """
+    )
