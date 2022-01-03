@@ -619,6 +619,8 @@ directly (i.e., `jsfunc(obj)`) or as `jsfunc(create_proxy(obj))`.
 `create_proxy` is particularly helpful with `addEventListener`:
 
 ```py
+import pyodide
+
 def callback():
     print("clicked!")
 proxy = pyodide.create_proxy(callback)
