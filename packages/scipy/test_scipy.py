@@ -4,6 +4,8 @@ from conftest import selenium_context_manager
 
 @pytest.mark.driver_timeout(40)
 def test_scipy_linalg(selenium_module_scope):
+    if selenium_module_scope.browser == "chrome":
+        pytest.xfail("Times out in chrome")
     with selenium_context_manager(selenium_module_scope) as selenium:
         selenium.load_package("scipy")
         selenium.run(
