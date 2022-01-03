@@ -172,6 +172,9 @@ async function runPythonAsync(code, globals) {
 
 ### packages
 
+- {{ Enhancement }} upgraded msgpack to 1.0.3
+  {pr}`2071`
+
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
   included in a separate package `<package name>-tests`. This results in a
   20% size reduction on average for packages that vendor tests (e.g. numpy,
