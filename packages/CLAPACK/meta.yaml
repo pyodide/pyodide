@@ -31,11 +31,7 @@ build:
     sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
-    # We build BLAS/LAPACK only for target.
-    # On host we include -LCLAPACK-3.2.1 path which has no effect on host.
-    # On target it gets rewritten by pywasmcross to the full patch of
-    # blas_WA.a, lapack_WA.a which are linked statically in scipy
-    # in each module that needs them.
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
     mkdir -p install/lib
-    emcc blas_WA.a  lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so
+
+    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so
