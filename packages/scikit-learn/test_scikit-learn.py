@@ -31,6 +31,8 @@ def test_scikit_learn(selenium_module_scope):
 
 @pytest.mark.driver_timeout(40)
 def test_logistic_regression(selenium_module_scope):
+    if selenium_module_scope.browser == "chrome":
+        pytest.xfail("Times out in chrome")
     with selenium_context_manager(selenium_module_scope) as selenium:
         selenium.load_package("scikit-learn")
         selenium.run(
