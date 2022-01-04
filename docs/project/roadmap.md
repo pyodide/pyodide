@@ -85,6 +85,7 @@ Pyodide as a core feature.
 
 See issue {issue}`1503`.
 
+(http-client-limit)=
 ## Write http.client in terms of Web APIs
 
 Python packages make an extensive use of packages such as `requests` to

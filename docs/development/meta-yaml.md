@@ -4,7 +4,7 @@
 
 Packages are defined by writing a `meta.yaml` file. The format of these files is
 based on the `meta.yaml` files used to build [Conda
-packages](https://conda.io/docs/user-guide/tasks/build-packages/define-metadata.html),
+packages](https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html),
 though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
@@ -38,7 +38,7 @@ The URL of the source tarball.
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
-## `source/extract_dir`
+### `source/extract_dir`
 
 The top level directory name of the contents of the source tarball (i.e. once
 you extract the tarball, all the contents are in the directory named

@@ -402,7 +402,7 @@ def _list():
 
     Returns
     -------
-    packages : {class}`~micropip.package.PackageDict``
+    packages : :any:`micropip.package.PackageDict`
         A dictionary of installed packages.
 
         >>> import micropip
