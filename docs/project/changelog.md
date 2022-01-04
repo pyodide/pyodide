@@ -155,7 +155,6 @@ async function runPythonAsync(code, globals) {
   and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
   {pr}`1965`
 
-
 ### micropip
 
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
@@ -171,7 +170,8 @@ async function runPythonAsync(code, globals) {
   {pr}`2012`
 
 ### packages
-- {{ Update }} Upgrade `scikit-image` to v0.18.3
+
+- {{ Update }} Upgrade `scikit-image` to 0.19.1
   {pr}`2005`
 
 - {{ Enhancement }} upgraded msgpack to 1.0.3
@@ -186,8 +186,8 @@ async function runPythonAsync(code, globals) {
 - {{ Enhancement }} upgraded numpy to 1.21.4
   {pr}`1934`
 
-- {{ Enhancement }} Upgraded SciPy to 1.7.3. Note that there are still known issues with 
-  some SciPy components. 
+- {{ Enhancement }} Upgraded SciPy to 1.7.3. Note that there are still known issues with
+  some SciPy components.
   {pr}`2065`
 
 - {{ Enhancement }} Upgraded scikit-learn to version 1.0.2

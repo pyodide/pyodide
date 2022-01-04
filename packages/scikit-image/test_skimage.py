@@ -41,5 +41,5 @@ def test_skimage():
     segments_watershed = watershed(gradient, markers=250, compactness=0.001)
 
     assert len(np.unique(segments_fz)) == 194
-    assert len(np.unique(segments_slic)) == 190
+    assert len(np.unique(segments_slic)) == 196
     assert len(np.unique(segments_quick)) == 695
