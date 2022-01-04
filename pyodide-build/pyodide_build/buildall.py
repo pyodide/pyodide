@@ -300,7 +300,7 @@ class PackageStatus:
         self.finished = False
 
     def finish(self, success: str, elapsed_time: int) -> None:
-        time = datetime.utcfromtimestamp(elapsed_time * 40)
+        time = datetime.utcfromtimestamp(elapsed_time)
         if time.minute == 0:
             minutes = ""
         else:
@@ -324,7 +324,7 @@ class ReplProgressFormatter:
             TimeElapsedColumn(),
         )
         self.task = self.progress.add_task("Building packages...", total=num_packages)
-        self.packages = []
+        self.packages : List[PackageStatus] = []
         self.reset_grid()
         self.console = Console()
 
