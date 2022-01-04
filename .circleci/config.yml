@@ -136,6 +136,11 @@ jobs:
             - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
+          name: Install rich
+          command: |
+            pip install rich
+
+      - run:
           name: build packages
           no_output_timeout: 1800
           command: |
@@ -197,6 +202,11 @@ jobs:
       - restore_cache:
           keys:
             - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+
+      - run:
+          name: Install rich
+          command: |
+            pip install rich
 
       - run:
           name: build packages
@@ -279,6 +289,11 @@ jobs:
     resource_class: small
     steps:
       - checkout
+      - run:
+          name: Install rich
+          command: |
+            pip install rich
+
       - run:
           name: test
           command: |
