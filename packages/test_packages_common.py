@@ -50,9 +50,9 @@ def registered_packages_meta():
 
 
 UNSUPPORTED_PACKAGES: dict = {
-    "chrome": ["scikit-image", "statsmodels"],
+    "chrome": ["scikit-image"],
     "firefox": [],
-    "node": ["scikit-image", "statsmodels"],
+    "node": ["scikit-image"],
 }
 
 

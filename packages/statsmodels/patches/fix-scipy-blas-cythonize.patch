@@ -20,7 +20,7 @@ Make sure that Cython generates BLAS function signatures using our patched SciPy
          name,
          [source],
 -        include_dirs=["statsmodels/src"],
-+        include_dirs=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/", include_dirs],
++        include_dirs=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/", "statsmodels/src"],
          depends=[],
          libraries=[],
          library_dirs=[],
