@@ -5,18 +5,25 @@ Build all of the packages in a given directory.
 """
 
 import argparse
-from functools import total_ordering
 import json
-from pathlib import Path
-from queue import Queue, PriorityQueue
 import shutil
 import subprocess
 import sys
+
+from datetime import datetime
+from functools import total_ordering
+from pathlib import Path
+from queue import Queue, PriorityQueue
 from threading import Thread, Lock
 from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List, Any
-import os
+
+from rich.console import Console
 from rich.live import Live
+from rich.table import Table
+from rich.spinner import Spinner
+from rich.progress import Progress, BarColumn, TimeElapsedColumn
+
 from . import common
 from .io import parse_package_config
 from .common import UNVENDORED_STDLIB_MODULES
@@ -233,6 +240,7 @@ def job_priority(pkg: BasePackage):
     else:
         return 1
 
+
 def format_name_list(l: List[str]) -> str:
     """
     >>> format_name_list(["regex"])
@@ -279,14 +287,108 @@ def generate_needs_build_set(pkg_map):
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
 
-class InProgressSet:
-    def __init__(self, set):
-        self.set = set
+
+class PackageStatus:
+    def __init__(
+        self, *, name: str, idx: int, thread: int, total_packages: int
+    ) -> None:
+        self.pkg_name = name
+        self.prefix = f"[{idx}/{total_packages}] " f"(thread {thread})"
+        self.status = Spinner("dots", style="red")
+        self.table = Table.grid(padding=1)
+        self.table.add_row(f"{self.prefix} building {self.pkg_name}", self.status)
+        self.finished = False
+
+    def finish(self, success: str, elapsed_time: int) -> None:
+        time = datetime.utcfromtimestamp(elapsed_time * 40)
+        if time.minute == 0:
+            minutes = ""
+        else:
+            minutes = f"{time.minute}m "
+        timestr = f"{minutes}{time.second}s"
+        self.table = Table.grid()
+        self.table.add_row(f"{self.prefix} finished {self.pkg_name} in {timestr}")
+        self.finished = True
 
     def __rich__(self):
-        if self.set:
-            return f"In progress: " + ", ".join(self.set.keys())
-        return ""
+        return self.table
+
+
+class ReplProgressFormatter:
+    def __init__(self, num_packages) -> None:
+        self.progress = Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "{task.completed}/{task.total} [progress.percentage]{task.percentage:>3.0f}%",
+            "Time elapsed:",
+            TimeElapsedColumn(),
+        )
+        self.task = self.progress.add_task("Building packages...", total=num_packages)
+        self.packages = []
+        self.reset_grids()
+        self.console = Console()
+
+    def reset_grids(self):
+        """Empty out the rendered grids."""
+        self.top_grid = Table.grid()
+        self.main_grid = Table.grid()
+        self.main_grid.add_row(self.top_grid)
+        self.main_grid.add_row(self.progress)
+
+    def add_package(self, *, name: str, idx: int, thread: int, total_packages: int):
+        self.flush_rows()
+        status = PackageStatus(
+            name=name, idx=idx, thread=thread, total_packages=total_packages
+        )
+        self.packages.append(status)
+        self.top_grid.add_row(status)
+        return status
+
+    def flush_rows(self):
+        """Ensure that the 'live' part of the rendered grid fits on the screen"""
+        if not self.packages:
+            return
+        if len(self.packages) > self.console.size.height - 1:
+            # Out of space, move all active packages below inactive ones to make
+            # more room
+            finished = []
+            working = []
+            for pkg in self.packages:
+                if pkg.finished:
+                    finished.append(pkg)
+                else:
+                    working.append(pkg)
+            self.packages = finished + working
+        # Make a new table with all finished packages above the topmost working
+        # package
+        table = Table.grid()
+        it = iter(self.packages)
+        for pkg in it:
+            if not pkg.finished:
+                break
+            table.add_row(pkg)
+
+        # Update grid to only contain remaining packages (all packages below
+        # topmost working package)
+        self.packages = [pkg]
+        self.packages.extend(it)
+        self.reset_grid()
+        for pkg in self.packages:
+            self.top_grid.add_row(pkg)
+
+        # Print static copy of top segment of finished packages
+        if table.rows:
+            # sleep a bit before printing table to prevent jitter
+            sleep(0.05)
+            self.console.print(table)
+
+    def update_progress_bar(self):
+        """Step the progress bar by one (to show that a package finished)"""
+        self.progress.update(self.task, advance=1)
+
+    def __rich__(self):
+        return self.main_grid
+
 
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
@@ -342,7 +444,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set = {}
+    progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n):
         nonlocal queue_idx
@@ -351,11 +453,14 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             with thread_lock:
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
-            package_set[pkg.name] = None
-            msg = f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) building {pkg.name}"
-            print(msg)
-            t0 = perf_counter()
+            pkg_status = progress_formatter.add_package(
+                name=pkg.name,
+                idx=pkg._queue_idx,
+                thread=n,
+                total_packages=len(needs_build),
+            )
             success = True
+            t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
             except Exception as e:
@@ -363,13 +468,8 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 success = False
                 return
             finally:
-                del package_set[pkg.name]
                 status = "built" if success else "failed"
-                msg = (
-                    f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) "
-                    f"{status} {pkg.name} in {perf_counter() - t0:.2f} s"
-                )
-                print(msg)
+                pkg_status.finish(status, perf_counter() - t0)
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -378,13 +478,14 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    with Live(InProgressSet(package_set), transient=True):
+    with Live(progress_formatter, console=progress_formatter.console):
         while num_built < len(pkg_map):
             pkg = built_queue.get()
             if isinstance(pkg, Exception):
                 raise pkg
 
             num_built += 1
+            progress_formatter.update_progress_bar()
 
             for _dependent in pkg.dependents:
                 dependent = pkg_map[_dependent]
@@ -395,11 +496,6 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     for name in list(pkg_map):
         if (outputdir / (name + "-tests.js")).exists():
             pkg_map[name].unvendored_tests = True
-
-    print(
-        "\n===================================================\n"
-        f"built all packages in {perf_counter() - t0:.2f} s"
-    )
 
 
 def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
