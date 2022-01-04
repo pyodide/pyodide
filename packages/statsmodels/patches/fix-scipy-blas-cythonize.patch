@@ -1,0 +1,26 @@
+Make sure that Cython generates BLAS function signatures using our patched SciPy version
+
+--- a/setup.py    2021-11-13 00:19:44.000000000 +0100
++++ b/setup.py   2022-01-04 23:03:15.918897891 +0100
+@@ -320,7 +320,8 @@
+     source, ext = check_source(config["source"])
+     source = process_tempita(source)
+     name = source.replace("/", ".").replace(ext, "")
+-    include_dirs = config.get("include_dirs", [])
++    include_dirs = config.get("include_dirs", [])
++    include_dirs += [f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/"]
+     depends = config.get("depends", [])
+     libraries = config.get("libraries", [])
+     library_dirs = config.get("library_dirs", [])
+
+--- a/setup.py   2022-01-04 23:10:00.648270089 +0100
++++ b/setup.py  2022-01-04 23:18:11.466418243 +0100
+@@ -350,7 +350,7 @@
+     ext = Extension(
+         name,
+         [source],
+-        include_dirs=["statsmodels/src"],
++        include_dirs=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/", include_dirs],
+         depends=[],
+         libraries=[],
+         library_dirs=[],
