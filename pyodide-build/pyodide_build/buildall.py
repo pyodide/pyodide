@@ -16,7 +16,7 @@ from threading import Thread, Lock
 from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List, Any
 import os
-
+from rich.live import Live
 from . import common
 from .io import parse_package_config
 from .common import UNVENDORED_STDLIB_MODULES
@@ -233,18 +233,6 @@ def job_priority(pkg: BasePackage):
     else:
         return 1
 
-
-def print_with_progress_line(str, progress_line):
-    if not sys.stdout.isatty():
-        print(str)
-        return
-    twidth = os.get_terminal_size()[0]
-    print(" " * twidth, end="\r")
-    print(str)
-    if progress_line:
-        print(progress_line, end="\r")
-
-
 def get_progress_line(package_set):
     if not package_set:
         return None
@@ -297,6 +285,14 @@ def generate_needs_build_set(pkg_map):
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
 
+class InProgressSet:
+    def __init__(self, set):
+        self.set = set
+
+    def __rich__(self):
+        if self.set:
+            return f"In progress: " + ", ".join(self.set.keys())
+        return ""
 
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
@@ -363,7 +359,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 queue_idx += 1
             package_set[pkg.name] = None
             msg = f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) building {pkg.name}"
-            print_with_progress_line(msg, get_progress_line(package_set))
+            print(msg)
             t0 = perf_counter()
             success = True
             try:
@@ -379,7 +375,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                     f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) "
                     f"{status} {pkg.name} in {perf_counter() - t0:.2f} s"
                 )
-                print_with_progress_line(msg, get_progress_line(package_set))
+                print(msg)
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -388,18 +384,19 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    while num_built < len(pkg_map):
-        pkg = built_queue.get()
-        if isinstance(pkg, Exception):
-            raise pkg
+    with Live(InProgressSet(package_set), transient=True):
+        while num_built < len(pkg_map):
+            pkg = built_queue.get()
+            if isinstance(pkg, Exception):
+                raise pkg
 
-        num_built += 1
+            num_built += 1
 
-        for _dependent in pkg.dependents:
-            dependent = pkg_map[_dependent]
-            dependent.unbuilt_dependencies.remove(pkg.name)
-            if len(dependent.unbuilt_dependencies) == 0:
-                build_queue.put((job_priority(dependent), dependent))
+            for _dependent in pkg.dependents:
+                dependent = pkg_map[_dependent]
+                dependent.unbuilt_dependencies.remove(pkg.name)
+                if len(dependent.unbuilt_dependencies) == 0:
+                    build_queue.put((job_priority(dependent), dependent))
 
     for name in list(pkg_map):
         if (outputdir / (name + "-tests.js")).exists():

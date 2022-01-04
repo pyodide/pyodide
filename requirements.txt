@@ -2,6 +2,7 @@
   cython<3.0
   packaging
   pyyaml
+  rich
   ruamel.yaml
   # lint
   black
