@@ -4,11 +4,13 @@ package:
 source:
   patches:
     - patches/preferred_plugins.patch
+    - patches/make-tifffile-optional.patch
   sha256: ecae99f93f4c5e9b1bf34959f4dc596c41f2f6b2fc407d9d9ddf85aebd3137ca
   url: https://pypi.io/packages/source/s/scikit-image/scikit-image-0.18.3.tar.gz
 requirements:
   run:
     - distutils
+    - packaging
     - numpy
     - scipy
     - matplotlib
