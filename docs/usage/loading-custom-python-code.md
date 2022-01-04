@@ -12,9 +12,9 @@ For larger projects, the best way to run Python code with Pyodide is:
 1. import the package with ``let mypkg = pyodide.pyimport("mypkgname")``
 1. call into your package with ``mypkg.some_api(some_args)``.
 
-## Using wheel packages
+## Using wheels
 
-The most recommended way of serving custom Python code is making it a wheel package.
+The best way of serving custom Python code is making it a package in the wheel (.whl) format.
 If the package is built as a `wheel` file, you can use {any}`micropip.install` to
 install the package. See {ref}`loading_packages` for more information.
 
@@ -28,9 +28,9 @@ it needs to be built in a specialized way (See {ref}`new-packages`).
 ## Loading then importing Python code
 
 It is also possible to download and import Python code from an external source.
-We recommend you to serve whole code as an archive, instead of downloading each Python scripts.
+We recommend that you serve all files in an archive, instead of individually downloading each Python script.
 
-### Inside Pyodide
+### From Python
 
 ```pyodide
 // Downloading an archive
@@ -63,7 +63,7 @@ which is a convenient wrapper of JavaScript `fetch`.
 See {ref}`load-external-files-in-pyodide` for more information.
 ```
 
-### In Javascript side
+### From JavaScript
 
 ```js
 let response = await fetch("https://.../your_package.tar.gz"); // .zip, .whl, ...

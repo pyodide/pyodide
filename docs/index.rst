@@ -24,7 +24,7 @@ language, catch it in the other), async/await, and much more.
 When used inside a browser, Python has full access to the Web APIs.
 
 Try Pyodide
-------------------------------------
+-----------
 
 Try Pyodide in a
 `REPL <https://pyodide.org/en/stable/console.html>`_ directly in
