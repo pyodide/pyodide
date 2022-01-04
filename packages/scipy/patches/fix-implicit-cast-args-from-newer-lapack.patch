@@ -1,0 +1,317 @@
+We are hijacking dfft.f to inject missing functions from future versions of LAPACK.
+
+This patch is applied to the generated dfft.c after f2c is applied to dfft.f. 
+This must be done in between when f2c is applied to dfft.f and when dfft.c is compiled.
+This is arranged in _f2c_fixes.py.
+
+f2c does not correctly handle implicit casts of function arguments. If the implicit casts 
+are between integer types then we can handle that automatically in _f2c_fixes.py. This 
+patch fixes implicit casts from char* to int, which we need to deal with manually.
+
+--- a/scipy/linalg/src/id_dist/src/dfft.c
++++ b/scipy/linalg/src/id_dist/src/dfft.c
+@@ -2855,8 +2855,7 @@ f_rook.f"> */
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), ctprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, complex *, integer *, complex *, integer *, complex *, 
+-	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen);
++	    integer *, complex *, integer *, complex *, integer *);
+     static logical notran;
+ 
+ 
+@@ -2967,8 +2966,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("L", "C", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -2989,8 +2987,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -3011,8 +3008,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -3033,8 +3029,7 @@ f_rook.f"> */
+ 	    }
+ 	    ctprfb_("R", "C", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -3247,8 +3242,7 @@ f"> */
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), ctprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, complex *, integer *, complex *, integer *, complex *, 
+-	    integer *, complex *, integer *, complex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen), ctpqrt2_(integer *, integer *, integer *,
++	    integer *, complex *, integer *, complex *, integer *), ctpqrt2_(integer *, integer *, integer *,
+ 	     complex *, integer *, complex *, integer *, complex *, integer *,
+ 	     integer *);
+ 
+@@ -3342,7 +3336,7 @@ f"> */
+ 	    ctprfb_("L", "C", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
++		    , &ib);
+ 	}
+     }
+     return 0;
+@@ -6041,11 +6035,13 @@ f_rook.f"> */
+     static integer ldvq;
+     extern logical lsame_(char *, char *, ftnlen, ftnlen);
+     static logical right;
+-    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), dtprfb_(
++    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), 
++	
++	dtprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, doublereal *, integer *, doublereal *, integer *, 
+ 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, ftnlen, ftnlen, ftnlen, ftnlen);
++	    integer *);
+     static logical notran;
+ 
+ 
+@@ -6156,8 +6152,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("L", "T", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -6178,8 +6173,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -6200,8 +6194,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -6222,8 +6215,7 @@ f_rook.f"> */
+ 	    }
+ 	    dtprfb_("R", "T", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -6433,13 +6425,12 @@ f"> */
+ 
+     /* Local variables */
+     static integer i__, ib, lb, mb, iinfo;
+-    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), dtprfb_(
+-	    char *, char *, char *, char *, integer *, integer *, integer *, 
+-	    integer *, doublereal *, integer *, doublereal *, integer *, 
+-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, ftnlen, ftnlen, ftnlen, ftnlen), dtpqrt2_(integer *, 
+-	    integer *, integer *, doublereal *, integer *, doublereal *, 
+-	    integer *, doublereal *, integer *, integer *);
++    extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), 
++	
++dtprfb_(char *, char *, char *, char *, integer *, integer *, integer *, integer *, doublereal *, integer *, doublereal *, integer *, 
++	    doublereal *, integer *, doublereal *, integer *, doublereal *, integer *), 
++		
++		dtpqrt2_(integer *, integer *, integer *, doublereal *, integer *, doublereal *, integer *, doublereal *, integer *, integer *);
+ 
+ 
+ /*  -- LAPACK computational routine -- */
+@@ -6531,9 +6522,8 @@ f"> */
+ 	    dtprfb_("L", "T", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
+-	}
+-    }
++		    , &ib);
++	}}
+     return 0;
+ 
+ /*     End of DTPQRT */
+@@ -9226,8 +9216,7 @@ f_rook.f"> */
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), stprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, real *, integer *, real *, integer *, real *, integer *
+-	    , real *, integer *, real *, integer *, ftnlen, ftnlen, ftnlen, 
+-	    ftnlen);
++	    , real *, integer *, real *, integer *);
+     static logical notran;
+ 
+ 
+@@ -9338,8 +9327,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("L", "T", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -9360,8 +9348,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -9382,8 +9369,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -9404,8 +9390,7 @@ f_rook.f"> */
+ 	    }
+ 	    stprfb_("R", "T", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -9618,8 +9603,7 @@ f"> */
+     extern /* Subroutine */ int xerbla_(char *, integer *, ftnlen), stprfb_(
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, real *, integer *, real *, integer *, real *, integer *
+-	    , real *, integer *, real *, integer *, ftnlen, ftnlen, ftnlen, 
+-	    ftnlen), stpqrt2_(integer *, integer *, integer *, real *, 
++	    , real *, integer *, real *, integer *), stpqrt2_(integer *, integer *, integer *, real *, 
+ 	    integer *, real *, integer *, real *, integer *, integer *);
+ 
+ 
+@@ -9712,7 +9696,7 @@ f"> */
+ 	    stprfb_("L", "T", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
++		    , &ib);
+ 	}
+     }
+     return 0;
+@@ -12502,8 +12486,7 @@ f_rook.f"> */
+     extern /* Subroutine */ int ztprfb_(char *, char *, char *, char *, 
+ 	    integer *, integer *, integer *, integer *, doublecomplex *, 
+ 	    integer *, doublecomplex *, integer *, doublecomplex *, integer *,
+-	     doublecomplex *, integer *, doublecomplex *, integer *, ftnlen, 
+-	    ftnlen, ftnlen, ftnlen);
++	     doublecomplex *, integer *, doublecomplex *, integer *);
+ 
+ 
+ /*  -- LAPACK computational routine -- */
+@@ -12613,8 +12596,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("L", "C", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && notran) {
+@@ -12635,8 +12617,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("R", "N", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     } else if (left && notran) {
+@@ -12657,8 +12638,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("L", "N", "F", "C", &mb, n, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ + a_dim1], lda, &
+-		    b[b_offset], ldb, &work[1], &ib, (ftnlen)1, (ftnlen)1, (
+-		    ftnlen)1, (ftnlen)1);
++		    b[b_offset], ldb, &work[1], &ib);
+ 	}
+ 
+     } else if (right && tran) {
+@@ -12679,8 +12659,7 @@ f_rook.f"> */
+ 	    }
+ 	    ztprfb_("R", "C", "F", "C", m, &mb, &ib, &lb, &v[i__ * v_dim1 + 1]
+ 		    , ldv, &t[i__ * t_dim1 + 1], ldt, &a[i__ * a_dim1 + 1], 
+-		    lda, &b[b_offset], ldb, &work[1], m, (ftnlen)1, (ftnlen)1,
+-		     (ftnlen)1, (ftnlen)1);
++		    lda, &b[b_offset], ldb, &work[1], m);
+ 	}
+ 
+     }
+@@ -12894,7 +12873,7 @@ f"> */
+ 	    char *, char *, char *, char *, integer *, integer *, integer *, 
+ 	    integer *, doublecomplex *, integer *, doublecomplex *, integer *,
+ 	     doublecomplex *, integer *, doublecomplex *, integer *, 
+-	    doublecomplex *, integer *, ftnlen, ftnlen, ftnlen, ftnlen), 
++	    doublecomplex *, integer *), 
+ 	    ztpqrt2_(integer *, integer *, integer *, doublecomplex *, 
+ 	    integer *, doublecomplex *, integer *, doublecomplex *, integer *,
+ 	     integer *);
+@@ -12989,7 +12968,7 @@ f"> */
+ 	    ztprfb_("L", "C", "F", "C", &mb, &i__3, &ib, &lb, &b[i__ * b_dim1 
+ 		    + 1], ldb, &t[i__ * t_dim1 + 1], ldt, &a[i__ + (i__ + ib) 
+ 		    * a_dim1], lda, &b[(i__ + ib) * b_dim1 + 1], ldb, &work[1]
+-		    , &ib, (ftnlen)1, (ftnlen)1, (ftnlen)1, (ftnlen)1);
++		    , &ib);
+ 	}
+     }
+     return 0;
+@@ -12998,3 +12977,10 @@ f"> */
+ 
+ } /* ztpqrt_ */
+ 
++
++typedef struct { float real, imag; } npy_complex64;
++typedef struct { double real, imag; } npy_complex128;
++int sorcsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, float *x11, int *ldx11, float *x12, int *ldx12, float *x21, int *ldx21, float *x22, int *ldx22, float *theta, float *u1, int *ldu1, float *u2, int *ldu2, float *v1t, int *ldv1t, float *v2t, int *ldv2t, float *work, int *lwork, int *iwork, int *info){ return 0; }
++int dorcsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, double *x11, int *ldx11, double *x12, int *ldx12, double *x21, int *ldx21, double *x22, int *ldx22, double *theta, double *u1, int *ldu1, double *u2, int *ldu2, double *v1t, int *ldv1t, double *v2t, int *ldv2t, double *work, int *lwork, int *iwork, int *info){ return 0; }
++int zuncsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, npy_complex128 *x11, int *ldx11, npy_complex128 *x12, int *ldx12, npy_complex128 *x21, int *ldx21, npy_complex128 *x22, int *ldx22, double *theta, npy_complex128 *u1, int *ldu1, npy_complex128 *u2, int *ldu2, npy_complex128 *v1t, int *ldv1t, npy_complex128 *v2t, int *ldv2t, npy_complex128 *work, int *lwork, double *rwork, int *lrwork, int *iwork, int *info){ return 0; }
++int cuncsd_(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, npy_complex64 *x11, int *ldx11, npy_complex64 *x12, int *ldx12, npy_complex64 *x21, int *ldx21, npy_complex64 *x22, int *ldx22, float *theta, npy_complex64 *u1, int *ldu1, npy_complex64 *u2, int *ldu2, npy_complex64 *v1t, int *ldv1t, npy_complex64 *v2t, int *ldv2t, npy_complex64 *work, int *lwork, float *rwork, int *lrwork, int *iwork, int *info){ return 0; }

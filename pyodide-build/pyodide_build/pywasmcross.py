@@ -39,7 +39,7 @@ from typing import List, Dict, Set, Optional, overload
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
+from pyodide_build._f2c_fixes import fix_f2c_output
 
 
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
@@ -143,8 +143,8 @@ def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
 
 def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, str]):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
-    env["PYODIDE"] = "1"
-    env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
+    env = dict(env)
+    env["PATH"] = str(TOOLSDIR) + ":" + env["PATH"]
     capture_make_command_wrapper_symlinks(env)
 
     cmd = [sys.executable, "setup.py", "install"]
@@ -193,7 +193,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
-                fix_f2c_clapack_calls(arg[:-2] + ".c")
+                fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
@@ -333,6 +333,7 @@ def replay_genargs_handle_linker_opts(arg):
             "-Bsymbolic-functions",
             # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
             "--strip-all",
+            "-strip-all",
             # wasm-ld does not regconize some link flags
             "--sort-common",
             "--as-needed",
@@ -340,6 +341,8 @@ def replay_genargs_handle_linker_opts(arg):
             continue
         # ignore unsupported --sysroot compile argument used in conda
         if opt.startswith("--sysroot="):
+            continue
+        if opt.startswith("--version-script="):
             continue
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
@@ -384,6 +387,7 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
         "-mpopcnt",
         # gcc flag that clang does not support
         "-Bsymbolic-functions",
+        '-fno-second-underscore',
     ]:
         return None
     # fmt: on
@@ -414,17 +418,18 @@ def replay_command_generate_args(
         An updated argument list suitable for use with emscripten.
     """
     replace_libs = parse_replace_libs(args.replace_libs)
-    if line[0] == "ar":
+    cmd = line[0]
+    if cmd == "ar":
         new_args = ["emar"]
-    elif line[0] == "c++" or line[0] == "g++":
+    elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
-    elif line[0] == "cc" or line[0] == "gcc":
+    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     else:
-        assert False, f"Unexpected command {line[0]}"
+        raise AssertionError(f"Unexpected command {line[0]}")
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
@@ -437,9 +442,16 @@ def replay_command_generate_args(
     optflag = None
     # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
     # priority.
-    for arg in new_args[::-1]:
+    for arg in reversed(new_args):
         if arg in optflags_valid:
             optflag = arg
+            break
+    debugflag = None
+    # Identify the debug flag (e.g. -g0) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in reversed(new_args):
+        if arg.startswith("-g"):
+            debugflag = arg
             break
 
     used_libs: Set[str] = set()
@@ -451,6 +463,8 @@ def replay_command_generate_args(
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags
+            continue
+        if arg.startswith("-g") and debugflag is not None:
             continue
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.
@@ -517,6 +531,10 @@ def replay_command(
             return None
         if arg.startswith("/tmp"):
             return None
+        if arg.startswith("-print-file-name"):
+            return None
+        if arg == "/dev/null":
+            return None
 
     library_output = get_library_output(line)
     is_link_cmd = library_output is not None
@@ -578,6 +596,7 @@ def replay_compile(
     host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
+    replay_from: int = 1,
 ):
     ...
 
@@ -587,7 +606,7 @@ def replay_compile(*, _this_is_just_here_to_appease_mypy: str):
     ...
 
 
-def replay_compile(**kwargs):
+def replay_compile(replay_from: int = 1, **kwargs):
     args = ReplayArgs(**environment_substitute_args(kwargs))
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
@@ -605,6 +624,8 @@ def replay_compile(**kwargs):
         num_lines = sum(1 for _1 in fd)  # type: ignore
         fd.seek(0)
         for idx, line_str in enumerate(fd):
+            if idx < replay_from - 1:
+                continue
             line = json.loads(line_str)
             print(f"[line {idx + 1} of {num_lines}]")
             replay_command(line, args)
