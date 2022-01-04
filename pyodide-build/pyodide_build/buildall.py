@@ -233,12 +233,6 @@ def job_priority(pkg: BasePackage):
     else:
         return 1
 
-def get_progress_line(package_set):
-    if not package_set:
-        return None
-    return f"In progress: " + ", ".join(package_set.keys())
-
-
 def format_name_list(l: List[str]) -> str:
     """
     >>> format_name_list(["regex"])
