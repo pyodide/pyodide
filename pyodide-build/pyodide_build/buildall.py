@@ -325,10 +325,10 @@ class ReplProgressFormatter:
         )
         self.task = self.progress.add_task("Building packages...", total=num_packages)
         self.packages = []
-        self.reset_grids()
+        self.reset_grid()
         self.console = Console()
 
-    def reset_grids(self):
+    def reset_grid(self):
         """Empty out the rendered grids."""
         self.top_grid = Table.grid()
         self.main_grid = Table.grid()
