@@ -33,3 +33,5 @@
 - [wc-code](https://github.com/vanillawc/wc-code) is a library to run
   JavaScript, Python, and Theme in the browser with inline code blocks.
   It uses Pyodide to execute Python code.
+- [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
+  Gamma. It's an in-browser answer engine with a Pyodide backend.
