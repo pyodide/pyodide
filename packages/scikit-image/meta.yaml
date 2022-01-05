@@ -18,6 +18,13 @@ requirements:
     - pillow
     - imageio
     - pywavelets
+
+build:
+  cflags: |
+    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
+  script: |
+    pip install pythran
+    pip install --upgrade pythran -t $PYODIDE_ROOT/packages/.artifacts/
 test:
   imports:
     - skimage
