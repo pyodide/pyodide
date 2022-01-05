@@ -5,7 +5,7 @@ import json
 from io import IOBase
 
 try:
-    from js import XMLHttpRequest
+    from js import Object, XMLHttpRequest
 except ImportError:
     pass
 
@@ -68,6 +68,12 @@ class FetchResponse:
         (If so, attempting to retreive the body again will raise an OSError.)
         """
         return self.js_response.bodyUsed
+
+    @property
+    def headers(self) -> dict:
+        """Response headers as dictionary.
+        """
+        return Object.fromEntries(self.js_response.headers.entries()).to_py()
 
     @property
     def ok(self) -> bool:
