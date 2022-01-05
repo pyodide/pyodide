@@ -631,6 +631,19 @@ def selenium(request, selenium_module_scope):
             yield selenium
 
 
+@pytest.fixture(params=["firefox", "chrome"], scope="function")
+def console_html_fixture(request, web_server_main):
+    with selenium_common(request, web_server_main, False) as selenium:
+        selenium.driver.get(
+            f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+        )
+        selenium.javascript_setup()
+        try:
+            yield selenium
+        finally:
+            print(selenium.logs)
+
+
 @pytest.fixture(scope="session")
 def web_server_main(request):
     """Web server that serves files in the build/ directory"""
@@ -638,14 +651,14 @@ def web_server_main(request):
         yield output
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def web_server_secondary(request):
     """Secondary web server that serves files build/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def web_server_tst_data(request):
     """Web server that serves files in the src/tests/data/ directory"""
     with spawn_web_server(TEST_PATH / "data") as output:
@@ -729,11 +742,31 @@ def run_web_server(q, log_filepath, build_dir):
         httpd.serve_forever()
 
 
+def run_with_playwright():
+    import conftest_playwright as pw
+
+    global selenium, selenium_standalone, selenium_standalone_noload, selenium_standalone_noload_common
+    global selenium_webworker_standalone, console_html_fixture, selenium_context_manager, selenium_module_scope
+
+    # mypy doesn't like this assignment
+    selenium = playwright  # type: ignore
+    selenium_standalone = pw.playwright_standalone  # type: ignore
+    selenium_standalone_noload = pw.playwright_noload  # type: ignore
+    selenium_standalone_noload_common = pw.playwright_noload_common  # type: ignore
+    selenium_webworker_standalone = pw.playwright_webworker  # type: ignore
+    console_html_fixture = pw.playwright_console_html_fixture  # type: ignore
+    selenium_context_manager = pw.playwright_context_manager  # type: ignore
+    selenium_module_scope = pw.playwright_module_scope  # type: ignore
+
+
 if (
     __name__ == "__main__"
     and multiprocessing.current_process().name == "MainProcess"
     and not hasattr(sys, "_pytest_session")
 ):
+    if os.environ.get("PLAYWRIGHT"):
+        run_with_playwright()
+
     with spawn_web_server():
         # run forever
         while True:

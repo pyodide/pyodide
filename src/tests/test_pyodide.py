@@ -725,6 +725,8 @@ def test_fatal_error(selenium_standalone):
         x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
         x = re.sub(" +at .*\n", "", x)
         x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = re.sub(".*@debugger.*\n", "", x)
+        x = re.sub(".*@chrome.*\n", "", x)
         x = x.replace("\n\n", "\n")
         return x
 
