@@ -58,3 +58,15 @@ async def test_pyfetch_unpack_archive():
         "src",
         "tests",
     ]
+
+
+@run_in_pyodide
+async def test_pyfetch_unpack_archive():
+    from pyodide.http import pyfetch
+
+    response = await pyfetch(
+        "http://files.pythonhosted.org/packages/93/8d/e1e98360dc899e533cb3dd857494f2571b129bdffcee76365009b2bb507c/example_pypi_package-0.1.0.tar.gz"
+    )
+    headers = response.headers
+    assert headers['content-type'] == 'application/x-tar'
+    assert 'last-modified' in headers
