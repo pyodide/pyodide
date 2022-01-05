@@ -61,7 +61,7 @@ async def test_pyfetch_unpack_archive():
 
 
 @run_in_pyodide
-async def test_pyfetch_unpack_archive():
+async def test_pyfetch_headers():
     from pyodide.http import pyfetch
 
     response = await pyfetch(
