@@ -171,29 +171,19 @@ async function runPythonAsync(code, globals) {
 
 ### packages
 
-- {{ Update }} Upgrade `scikit-image` to 0.19.1
-  {pr}`2005`
-
-- {{ Enhancement }} upgraded msgpack to 1.0.3
-  {pr}`2071`
-
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
   included in a separate package `<package name>-tests`. This results in a
   20% size reduction on average for packages that vendor tests (e.g. numpy,
   pandas, scipy).
   {pr}`1832`
+  
+- {{ Enhancement }} Upgraded following packages: numpy (1.21.4) {pr}`1934`,
+  scikit-learn (1.0.2) {pr}`2065`, `scikit-image` (0.19.1) {pr}`2005`, msgpack (1.0.3) {pr}`2071`.
+  This list is not exhaustive please refer to `packages.json` for the full list.
 
-- {{ Enhancement }} upgraded numpy to 1.21.4
-  {pr}`1934`
 
 - {{ Enhancement }} Upgraded SciPy to 1.7.3. Note that there are still known issues with
   some SciPy components.
-  {pr}`2065`
-
-- {{ Enhancement }} Upgraded scikit-learn to version 1.0.2
-  {pr}`2065`
-
-- {{ Enhancement }} Added threadpoolctl (a dependency of scikit-learn)
   {pr}`2065`
 
 - {{ Fix }} The built-in pwd module of Python, which provides a Unix specific
@@ -207,7 +197,7 @@ async function runPythonAsync(code, globals) {
 - {{Fix}} numpy fft module now works correctly.
   {pr}`2028`
 
-- New packages: `logbook`, `pyb2d`
+- New packages: `logbook`, `pyb2d`, threadpoolctl (a dependency of scikit-learn) {pr}`2065`
 
 ### Uncategorized
 
@@ -233,6 +223,8 @@ async function runPythonAsync(code, globals) {
   {pr}`2019`
 
 ## Version 0.18.1
+
+_September 16, 2021_
 
 ### Console
 
