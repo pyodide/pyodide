@@ -251,12 +251,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run:
-          name: install playwright
-          when: << parameters.playwright >>
-          command: |
-            pip install playwright
-            playwright install
+      - when:
+          condition: << parameters.playwright >>
+          steps:
+            - run: pip install playwright && playwright install
       - run:
           name: test
           command: |
