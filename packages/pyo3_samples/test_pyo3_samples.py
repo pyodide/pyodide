@@ -2,7 +2,7 @@ from pyodide_build.testing import run_in_pyodide
 
 
 @run_in_pyodide(packages=["pyo3_samples"])
-def test_cffi_asprintf():
+def test_pyo3_samples():
     import pyo3_samples
     from unittest import TestCase
 
