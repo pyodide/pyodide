@@ -500,6 +500,50 @@ workflows:
             tags:
               only: /.*/
 
+      - test-main:
+          environment:
+            PLAYWRIGHT: true
+          name: test-core-chrome-playwright
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          environment:
+            PLAYWRIGHT: true
+          name: test-core-firefox-playwright
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          environment:
+            PLAYWRIGHT: true
+          name: test-packages-chrome-playwright
+          test-params: -k chrome packages/test* packages/*/test*
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          environment:
+            PLAYWRIGHT: true
+          name: test-packages-firefox-playwright
+          test-params: -k firefox packages/test* packages/*/test*
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - test-js:
           requires:
             - build-core
