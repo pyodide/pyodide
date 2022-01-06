@@ -1,3 +1,4 @@
+name: pyodide-env-docker
 on:
   workflow_dispatch:
     inputs:

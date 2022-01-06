@@ -1,3 +1,4 @@
+name: prebuilt-docker-image
 on:
   push:
     tags:
