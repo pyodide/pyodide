@@ -138,6 +138,10 @@ substitutions:
   the native Python repl.
   {pr}`1904`
 
+- {{ Enhancement }} `pyodide-env` and `pyodide` Docker images are now available from both
+  the [Docker Hub](https://hub.docker.com/repository/docker/pyodide/pyodide-env) and
+  from the [Github Package registry](https://github.com/orgs/pyodide/packages). {pr}`1995`
+
 ## Version 0.18.1
 
 ### Console

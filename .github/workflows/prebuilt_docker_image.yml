@@ -5,6 +5,8 @@ on:
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide
+  # Note: the following version needs updating after each pyodide-env image release
+  PYODIDE_ENV_VERSION: 19
 jobs:
   build_docker:
     runs-on: ubuntu-latest
@@ -29,7 +31,7 @@ jobs:
           file: ./Dockerfile-prebuilt
           push: true
           build-args: |
-            VERSION=${{ github.event.inputs.version }}
+            VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image digest
@@ -57,7 +59,7 @@ jobs:
           file: ./Dockerfile-prebuilt
           push: true
           build-args: |
-            VERSION=${{ github.event.inputs.version }}
+            VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image digest

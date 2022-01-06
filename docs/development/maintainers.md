@@ -64,13 +64,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    npm publish
    ```
 
-8. Build the pre-built Docker image locally and push,
-   ```bash
-   docker build -t pyodide/pyodide:X.Y.Z -f Dockerfile-prebuilt --build-arg VERSION=BB .
-   docker push
-   ```
-   where `BB` is the last version of the `pyodide-env` Docker image.
-9. Revert Step 1. and increment the version in
+8. Revert Step 1. and increment the version in
    `src/py/pyodide/__init__.py` to the next version specified by
    Semantic Versioning.
 
