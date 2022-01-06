@@ -31,8 +31,8 @@ def test_cffi_asprintf():
         ValueError,
         "Failed to parse human_data: missing field `age` at line 1 column 19",
     ):
-        assert pyo3_samples.human_says_hi('{"name" : "albert"}')
+        pyo3_samples.human_says_hi('{"name" : "albert"}')
     with raises(
         ValueError, "Failed to parse human_data: trailing comma at line 1 column 20"
     ):
-        assert pyo3_samples.human_says_hi('{"name" : "albert",}')
+        pyo3_samples.human_says_hi('{"name" : "albert",}')
