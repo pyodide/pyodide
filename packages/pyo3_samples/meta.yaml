@@ -9,6 +9,7 @@ build:
   script: |
     source $HOME/.cargo/env
     rustup update nightly
+    rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
     export RUSTFLAGS="\
       -C relocation-model=pic\
       -C target-feature=+mutable-globals\
