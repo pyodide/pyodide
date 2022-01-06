@@ -245,7 +245,7 @@ jobs:
       playwright:
         description: PLAYWRIGHT environment variable option.
         type: string
-        default: 0
+        default: ""
     <<: *defaults
     resource_class: medium+
     steps:
@@ -514,7 +514,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-          playwright: 1
+          playwright: "1"
 
       - test-main:
           name: test-core-firefox-playwright
@@ -524,7 +524,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-          playwright: 1
+          playwright: "1"
 
       - test-main:
           name: test-packages-chrome-playwright
@@ -534,7 +534,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-          playwright: 1
+          playwright: "1"
 
       - test-main:
           name: test-packages-firefox-playwright
@@ -544,7 +544,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-          playwright: 1
+          playwright: "1"
 
       - test-js:
           requires:
