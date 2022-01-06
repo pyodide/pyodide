@@ -155,7 +155,6 @@ async function runPythonAsync(code, globals) {
   and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
   {pr}`1965`
 
-
 ### micropip
 
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
@@ -184,8 +183,8 @@ async function runPythonAsync(code, globals) {
 - {{ Enhancement }} upgraded numpy to 1.21.4
   {pr}`1934`
 
-- {{ Enhancement }} Upgraded SciPy to 1.7.3. Note that there are still known issues with 
-  some SciPy components. 
+- {{ Enhancement }} Upgraded SciPy to 1.7.3. Note that there are still known issues with
+  some SciPy components.
   {pr}`2065`
 
 - {{ Enhancement }} Upgraded scikit-learn to version 1.0.2
@@ -218,6 +217,10 @@ async function runPythonAsync(code, globals) {
 - {{Fix}} The `_` variable is now set by the Pyodide repl just like it is set in
   the native Python repl.
   {pr}`1904`
+
+- {{ Enhancement }} `pyodide-env` and `pyodide` Docker images are now available from both
+  the [Docker Hub](https://hub.docker.com/repository/docker/pyodide/pyodide-env) and
+  from the [Github Package registry](https://github.com/orgs/pyodide/packages). {pr}`1995`
 
 - {{Fix}} The console now correctly handles it when an object's `__repr__` function raises an exception.
   {pr}`2021`

@@ -31,6 +31,11 @@ used for fast custom and partial builds. Note that building from the non
 pre-built Docker image is _very_ slow on Mac, building on the host machine
 is preferred if at all possible.
 
+```{note}
+These Docker images are also available from the Github packages at
+[`github.com/orgs/pyodide/packages`](https://github.com/orgs/pyodide/packages).
+```
+
 1. Install Docker
 
 1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
