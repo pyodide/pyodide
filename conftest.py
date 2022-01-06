@@ -743,30 +743,32 @@ def run_web_server(q, log_filepath, build_dir):
 
 
 def run_with_playwright():
-    import conftest_playwright as pw
-
     global selenium, selenium_standalone, selenium_standalone_noload, selenium_standalone_noload_common
     global selenium_webworker_standalone, console_html_fixture, selenium_context_manager, selenium_module_scope
 
     # mypy doesn't like this assignment
     selenium = playwright  # type: ignore
-    selenium_standalone = pw.playwright_standalone  # type: ignore
-    selenium_standalone_noload = pw.playwright_noload  # type: ignore
-    selenium_standalone_noload_common = pw.playwright_noload_common  # type: ignore
-    selenium_webworker_standalone = pw.playwright_webworker  # type: ignore
-    console_html_fixture = pw.playwright_console_html_fixture  # type: ignore
-    selenium_context_manager = pw.playwright_context_manager  # type: ignore
-    selenium_module_scope = pw.playwright_module_scope  # type: ignore
+    selenium_standalone = playwright_standalone  # type: ignore
+    selenium_standalone_noload = playwright_noload  # type: ignore
+    selenium_standalone_noload_common = playwright_noload_common  # type: ignore
+    selenium_webworker_standalone = playwright_webworker  # type: ignore
+    console_html_fixture = playwright_console_html_fixture  # type: ignore
+    selenium_context_manager = playwright_context_manager  # type: ignore
+    selenium_module_scope = playwright_module_scope  # type: ignore
 
+
+# Since there are circular imports between conftest.py and contest_playwright.py,
+# it needs to be imported after all functions are defined.
+from conftest_playwright import *
+
+if os.environ.get("PLAYWRIGHT"):
+    run_with_playwright()
 
 if (
     __name__ == "__main__"
     and multiprocessing.current_process().name == "MainProcess"
     and not hasattr(sys, "_pytest_session")
 ):
-    if os.environ.get("PLAYWRIGHT"):
-        run_with_playwright()
-
     with spawn_web_server():
         # run forever
         while True:

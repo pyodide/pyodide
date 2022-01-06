@@ -13,9 +13,7 @@ import sys
 import shutil
 
 import pytest
-from playwright.sync_api import sync_playwright
 
-from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 from conftest import (
     ROOT_PATH,
     TEST_PATH,
@@ -24,9 +22,13 @@ from conftest import (
     JavascriptException,
 )
 
+from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
+
 
 @pytest.fixture(scope="session")
 def playwright_browsers(request):
+    from playwright.sync_api import sync_playwright
+
     with sync_playwright() as p:
         chromium = p.chromium.launch(
             args=[
