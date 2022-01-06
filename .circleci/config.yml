@@ -245,7 +245,7 @@ jobs:
       playwright:
         description: PLAYWRIGHT environment variable option.
         type: string
-        defualt: 0
+        default: 0
     <<: *defaults
     resource_class: medium+
     steps:
