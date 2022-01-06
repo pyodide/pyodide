@@ -1,0 +1,26 @@
+package:
+  name: pyo3_samples
+  version: 0.1.0
+source:
+  url: https://github.com/hoodmane/pyo3_samples/tarball/main
+  sha256: 5a402fc5323365cd2fce3379a7a619e6dba28083bf7eed1ec554820c1551dce2
+build:
+  sharedlibrary: true
+  script: |
+    source $HOME/.cargo/env
+    rustup update nightly
+    export RUSTFLAGS="\
+      -C relocation-model=pic\
+      -C target-feature=+mutable-globals\
+      -C link-arg=-s\
+      -C link-arg=SIDE_MODULE=1\
+    "
+    export PYO3_CONFIG_FILE=$PYODIDE_ROOT/packages/pyo3_samples/pyo3_config.ini
+    cd pyo3
+    cargo +nightly -Z build-std build --target=wasm32-unknown-emscripten
+    mkdir -p ../install/lib/python3.9/site-packages
+    cp target/wasm32-unknown-emscripten/debug/pyo3_samples.wasm ../install/lib/python3.9/site-packages/pyo3_samples.so
+
+test:
+  imports:
+    - pyo3_samples

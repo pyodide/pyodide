@@ -131,6 +131,12 @@ jobs:
             - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
+          name: install rust
+          command: |
+            wget https://sh.rustup.rs -O /rustup.sh
+            sh /rustup.sh -y
+
+      - run:
           name: build packages
           no_output_timeout: 1800
           command: |

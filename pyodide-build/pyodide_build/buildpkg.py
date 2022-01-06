@@ -89,6 +89,7 @@ def get_bash_runner():
         "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
         "NUMPY_LIB": os.environ["NUMPY_LIB"],
         "PYODIDE": "1",
+        "HOME": os.environ["HOME"],
     }
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
