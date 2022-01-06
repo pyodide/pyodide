@@ -413,22 +413,6 @@ def test_await_pyproxy_eval_async(selenium):
         """
     )
 
-    assert selenium.run_js(
-        """
-        let c = pyodide.pyodide_py.eval_code_async("1+1");
-        await c;
-        c.destroy();
-        let err_occurred = false;
-        try {
-            // Triggers: cannot await already awaited coroutine
-            await c;
-        } catch(e){
-            err_occurred = true;
-        }
-        return err_occurred;
-        """
-    )
-
 
 def test_await_pyproxy_async_def(selenium):
     assert selenium.run_js(

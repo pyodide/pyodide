@@ -18,7 +18,6 @@ source:
     - patches/fix-install-with-skip-build.patch
     - patches/make-int-return-values.patch
     - patches/fix-ieee754.patch
-    - patches/fix-getters.patch
     - patches/disable-optimization.patch
     - patches/not-build-lapack-lite-as-64-bit.patch
     - patches/fix-invalid-asm-instruction.patch

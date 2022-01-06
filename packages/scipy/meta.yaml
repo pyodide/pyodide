@@ -1,60 +1,105 @@
 package:
   name: scipy
-  version: 0.17.1
+  version: 1.7.3 # when updating version make sure to update pip install scipy==1.7.3 below too.
+
+# See extra explanation in info.md
+#
+# For future reference: if you see the following errors:
+#   Declaration error: adjustable dimension on non-argument
+# or:
+#   nonconstant array size
+# you are trying to compile code that isn't written to the fortran 77 standard.
+# The line number in the error points to the last line of the problematic
+# subroutine. Try deleting it.
 
 source:
-  # We can't use the version from PyPI as it includes Cythonized files
-  # generated with an older Cython that does not support Python 3.7
-  # This requires,
-  #    pip install Cython Tempita
-  # on the host for the build
-  url: https://github.com/scipy/scipy/archive/v0.17.1.tar.gz
-  sha256: bf22383d9e2526ffdc53a6c7d3d66dab45a86291ed35d8e281bd1a5d2c34187b
+  url: https://files.pythonhosted.org/packages/61/67/1a654b96309c991762ee9bc39c363fc618076b155fe52d295211cf2536c7/scipy-1.7.3.tar.gz
+  sha256: ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf
 
   patches:
-    # these patches can be found as commits in
-    #    https://github.com/rth/scipy/tree/0.17.1-pyodide
-    # on top of the v0.17.1 tag
-    - patches/fix-blas.patch
-    - patches/fix-build-gcc5-a80460.patch
-    - patches/force_malloc.patch
-    - patches/disable_scipy_stats_mvn.patch
-    - patches/skip-fortran-fails-to-link.patch
-    - patches/skip_ellip_harm_2_pyx_ctypes.patch
+    - patches/add-lapack_extras-to-flapack.patch
+    - patches/convert-xerrwv-message-arg-from-int-to-str.patch
+    - patches/disable-blas-detection.patch
+    - patches/fix-fortran-files-minpack.patch
+    - patches/gemm_-no-const.patch
     - patches/make-int-return-values.patch
-    - patches/add-missing-extern.patch
-    - patches/fix-typo-flapack-pyf.patch
+    - patches/remove-cuncsd-dorcsd-sorcsd-zuncsd.patch
+    - patches/remove-mvnun-not-fortran-77-compliant.patch
+    - patches/sasum-returns-double-not-float.patch
+    - patches/skip-fortran-fails-to-link.patch
+    - patches/rename-_page_trend_test.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
   # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
   # will fail. Better to fail at compile or link time.
   cflags: |
-    -I $(PYODIDE_ROOT)/packages/numpy/config
+    -I$(PYODIDE_ROOT)/packages/numpy/config
     -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
+    -I$(PYODIDE_ROOT)/packages/.artifacts/include/
+    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
     -DUNDERSCORE_G77
     -Werror=implicit-function-declaration
     -Werror=mismatched-parameter-types
     -Werror=mismatched-return-types
+    -Wno-return-type
   ldflags: |
     -L$(NUMPY_LIB)
+    -L$(NUMPY_LIB_BASE)/random/lib
     -Wl,--fatal-warnings
+  # IMPORTANT: Other locations important in scipy build process:
+  # There are two files built in the "capture" pass that need patching:
+  #    _blas_subroutines.h, and _cython
+  # Scipy has a bunch of custom logic implemented in
+  # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    # Some fixes were extracted from patches/make-int-return-values.patch as regex.
+    pip install scipy==1.7.3 pybind11[global] pythran
+    pip install --upgrade pybind11[global] pythran -t $PYODIDE_ROOT/packages/.artifacts/
+    # We get linker errors because the following 36 functions are missing
+    # Copying them from a more recent LAPACK seems to work fine.
+    wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
+    tar xzf v3.10.0.tar.gz
+    cd lapack-3.10.0/SRC
+    cat \
+      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
+      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
+      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
+      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
+    >>  ../../scipy/linalg/lapack_extras.f
+    cd ../..
+    # The additional four functions cuncsd, dorcsd, sorcsd, and zuncsd are also
+    # missing but they use features of Fortran that aren't Fortran 77 compatible
+    # so f2c can't handle them. We stub them with C definitions that do nothing.
+    # These stubs come from f2cpatches/wrap_dummy_g77_abi.patch
+
+    # Change many functions that return void into functions that return int
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
-    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h scipy/fftpack/src/zfftnd.c scipy/fftpack/src/zrfft.c
-    sed -i 's/void f_/int f_/g' scipy/cluster/cluster_blas.pxd
-    sed -i 's/void @pref/int @pref/g' scipy/fftpack/src/dct.c.src scipy/fftpack/src/dst.c.src
-    sed -i 's/^void/int/g' scipy/interpolate/src/__fitpack.h scipy/integrate/__quadpack.h scipy/fftpack/src/drfft.c scipy/fftpack/src/zfft.c
-    sed -i 's/static void/static int/g' scipy/interpolate/src/__fitpack.h
-    sed -i 's/ILAENV/ILAENZ/g' scipy/linalg/src/calc_lwork.f
-    # Regenerate header files after make-int-return-values patch to fix return
-    # types of f2c functions.
-    echo "Regenerating cython wrappers"
-    cd scipy/linalg
-    python _cython_wrapper_generators.py
-    cd ../..
+    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
+    sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
+    sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+
+    # Missing declaration from cython_lapack_signatures.txt
+    echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
+      >>  scipy/linalg/cython_lapack_signatures.txt
+
+    # Input error causes "duplicate symbol" linker errors. Empty out the file.
+    echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
+    echo 'import sys' >> scipy/__init__.py
+    echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
+    echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
+    echo '   loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
+
+  prereplay: |
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
+    find -name '*.c' | xargs sed -i 's/extern void F_WRAPPEDFUNC/extern int F_WRAPPEDFUNC/g'
+    find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
+    find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
+    find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
+    sed -i 's/,size_t//' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
+    sed -i 's/,slen([a-z]*))/)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
+    sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_fblasmodule.c
 
 requirements:
   run:
@@ -65,14 +110,38 @@ test:
   imports:
     - scipy
     - scipy.cluster
+    - scipy.cluster.vq
+    - scipy.cluster.hierarchy
     - scipy.constants
+    - scipy.fft
     - scipy.fftpack
-    - scipy.odr
-    - scipy.sparse
-    - scipy.interpolate
     - scipy.integrate
+    - scipy.interpolate
+    - scipy.io
+    - scipy.io.arff
+    - scipy.io.matlab
+    - scipy.io.wavfile
     - scipy.linalg
+    - scipy.linalg.blas
+    - scipy.linalg.cython_blas
+    - scipy.linalg.lapack
+    - scipy.linalg.cython_lapack
+    - scipy.linalg.interpolative
     - scipy.misc
     - scipy.ndimage
+    - scipy.odr
+    - scipy.optimize
+    - scipy.signal
+    - scipy.signal.windows
+    - scipy.sparse
+    - scipy.sparse.linalg
+    - scipy.sparse.csgraph
     - scipy.spatial
+    - scipy.spatial.distance
+    - scipy.spatial.transform
     - scipy.special
+    - scipy.stats
+    - scipy.stats.contingency
+    - scipy.stats.distributions
+    - scipy.stats.mstats
+    - scipy.stats.qmc

@@ -31,12 +31,6 @@ There are 3 test locations that are collected by pytest,
   (do not require selenium to run)
 - `packages/*/test_*`: package specific tests.
 
-Additionally you can run emsdk specific tests with,
-
-```
-make -C emsdk test
-```
-
 ### Running the JavaScript test suite
 
 To run tests on the JavaScript Pyodide package using Mocha, run the following commands,
@@ -87,8 +81,9 @@ make benchmark
 
 ## Linting
 
-Python is linted with `flake8`. C and JavaScript are linted with
-`clang-format`.
+Python is linted with `flake8`, `black` and `mypy`.
+JavaScript is linted with `prettier`.
+C is linted with `clang-format`.
 
 To lint the code, run:
 

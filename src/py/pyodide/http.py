@@ -2,8 +2,6 @@ from io import StringIO
 from ._core import JsProxy, to_js
 from typing import Any
 import json
-from tempfile import NamedTemporaryFile
-import shutil
 from io import IOBase
 
 try:
@@ -12,7 +10,7 @@ except ImportError:
     pass
 
 from ._core import IN_BROWSER
-
+from ._util import unpack_buffer_archive
 
 __all__ = [
     "open_url",
@@ -25,7 +23,7 @@ def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
     The download of binary files is not supported. To download binary
-     files use :func:`pyodide.utils.fetch` which is asynchronous.
+    files use :func:`pyodide.http.pyfetch` which is asynchronous.
 
     Parameters
     ----------
@@ -182,7 +180,7 @@ class FetchResponse:
         with open(path, "x") as f:
             await self._into_file(f)  # type: ignore
 
-    async def unpack_archive(self, extract_dir=None, format=None):
+    async def unpack_archive(self, *, extract_dir=None, format=None):
         """Treat the data as an archive and unpack it into target directory.
 
         Assumes that the file is an archive in a format that shutil has an
@@ -202,10 +200,11 @@ class FetchResponse:
             and see if an unpacker was registered for that extension. In case
             none is found, a ``ValueError`` is raised.
         """
+        buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]
-        with NamedTemporaryFile(suffix=filename) as f:
-            await self._into_file(f)
-            shutil.unpack_archive(f.name, extract_dir, format)
+        unpack_buffer_archive(
+            buf, filename=filename, format=format, extract_dir=extract_dir
+        )
 
 
 async def pyfetch(url: str, **kwargs) -> FetchResponse:
@@ -214,7 +213,7 @@ async def pyfetch(url: str, **kwargs) -> FetchResponse:
     This functions provides a similar API to the JavaScript `fetch function
     <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
     designed to be convenient to use from Python. The
-    :class:`pyodide.utils.FetchResponse` has methods with the output types
+    :class:`pyodide.http.FetchResponse` has methods with the output types
     already converted to Python objects.
 
     Parameters

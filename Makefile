@@ -4,10 +4,6 @@ include Makefile.envs
 
 .PHONY=check
 
-
-CPYTHONROOT=cpython
-CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
-
 CC=emcc
 CXX=em++
 
@@ -18,6 +14,7 @@ all: check \
 	build/console.html \
 	build/distutils.data \
 	build/packages.json \
+	build/pyodide_py.tar \
 	build/test.data \
 	build/test.html \
 	build/webworker.js \
@@ -26,6 +23,9 @@ all: check \
 
 $(CPYTHONLIB)/tzdata :
 	pip install tzdata --target=$(CPYTHONLIB)
+
+build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
+	cd src/py && tar --exclude '*__pycache__*' -cvf ../../build/pyodide_py.tar pyodide _pyodide
 
 build/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -40,8 +40,6 @@ build/pyodide.asm.js: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	$(wildcard src/py/lib/*.py) \
-	$(wildcard src/py/pyodide/*.py) \
-	$(wildcard src/py/_pyodide/*.py) \
 	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -67,8 +65,8 @@ env:
 	env
 
 
-node_modules/.installed : src/js/package.json
-	cd src/js && npm install --save-dev
+node_modules/.installed : src/js/package.json src/js/package-lock.json
+	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
@@ -139,10 +137,10 @@ lint: node_modules/.installed
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
-	# mypy gets upset about there being both: src/py/setup.py and
-	# packages/micropip/src/setup.py. There is no easy way to fix this right now
-	# see python/mypy#10428. This will also cause trouble with pre-commit if you
-	# modify both setup.py files in the same commit.
+#mypy gets upset about there being both : src / py / setup.py and
+#packages / micropip / src / setup.py.There is no easy way to fix this right now
+#see python / mypy #10428. This will also cause trouble with pre - commit if you
+#modify both setup.py files in the same commit.
 	mypy --ignore-missing-imports    \
 		packages/micropip/src/
 

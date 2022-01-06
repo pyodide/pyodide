@@ -3,7 +3,9 @@ import { Module } from "./module.js";
 const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
-  process.release.name === "node";
+  process.release.name === "node" &&
+  typeof process.browser ===
+    "undefined"; /* This last condition checks if we run the browser shim of process */
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
@@ -38,6 +40,17 @@ export async function initializePackageIndex(indexURL) {
     for (let import_name of Module.packages[name].imports) {
       Module._import_name_to_package_name.set(import_name, name);
     }
+  }
+}
+
+export async function _fetchBinaryFile(indexURL, path) {
+  if (IN_NODE) {
+    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
+    const tar_buffer = await fsPromises.readFile(`${indexURL}${path}`);
+    return tar_buffer.buffer;
+  } else {
+    let response = await fetch(`${indexURL}${path}`);
+    return await response.arrayBuffer();
   }
 }
 
@@ -259,12 +272,9 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   messageCallback(resolveMsg);
 
-  // We have to invalidate Python's import caches, or it won't see the new
-  // files.
-  Module.runPythonInternal(`
-    import importlib
-    importlib.invalidate_caches();
-  `);
+  // We have to invalidate Python's import caches, or it won't
+  // see the new files.
+  Module.importlib.invalidate_caches();
 }
 
 // This is a promise that is resolved iff there are no pending package loads. It
