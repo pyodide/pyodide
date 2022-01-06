@@ -1,0 +1,67 @@
+name: prebuilt-docker-image
+on:
+  push:
+    tags:
+      - "*.*.*"
+env:
+  GHCR_REGISTRY: ghcr.io
+  IMAGE_NAME: pyodide/pyodide
+  # Note: the following version needs updating after each pyodide-env image release
+  PYODIDE_ENV_VERSION: 19
+jobs:
+  build_docker:
+    runs-on: ubuntu-latest
+    environment: Docker
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Log into Docker Hub registry
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.IMAGE_NAME }}
+      - name: Build and push Docker image to Docker Hub
+        id: build
+        uses: docker/build-push-action@v2
+        with:
+          file: ./Dockerfile-prebuilt
+          push: true
+          build-args: |
+            VERSION=${{ env.PYODIDE_ENV_VERSION }}
+          tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Image digest
+        run: echo ${{ steps.build.outputs.digest }}
+  build_ghcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Log into registry ${{ env.GHCR_REGISTRY }}
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Build and push Docker image to ${{ env.GHCR_REGISTRY }}
+        id: build
+        uses: docker/build-push-action@v2
+        with:
+          file: ./Dockerfile-prebuilt
+          push: true
+          build-args: |
+            VERSION=${{ env.PYODIDE_ENV_VERSION }}
+          tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Image digest
+        run: echo ${{ steps.build.outputs.digest }}
