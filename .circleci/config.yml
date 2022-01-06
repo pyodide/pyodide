@@ -252,6 +252,12 @@ jobs:
       - attach_workspace:
           at: .
       - run:
+          name: install playwright
+          when: << parameters.playwright >>
+          command: |
+            pip install playwright
+            playwright install
+      - run:
           name: test
           command: |
             mkdir test-results
@@ -262,7 +268,7 @@ jobs:
       - store_test_results:
           path: test-results
     environment:
-      PLAYWRIGHT: << parameters.test-params >>
+      PLAYWRIGHT: << parameters.playwright >>
 
   benchmark-stack-size:
     <<: *defaults
@@ -507,6 +513,7 @@ workflows:
               only: /.*/
 
       - test-main:
+          type: approval
           name: test-core-chrome-playwright
           test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
           requires:
@@ -517,6 +524,7 @@ workflows:
           playwright: "1"
 
       - test-main:
+          type: approval
           name: test-core-firefox-playwright
           test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
           requires:
@@ -527,6 +535,7 @@ workflows:
           playwright: "1"
 
       - test-main:
+          type: approval
           name: test-packages-chrome-playwright
           test-params: -k chrome packages/test* packages/*/test*
           requires:
@@ -537,6 +546,7 @@ workflows:
           playwright: "1"
 
       - test-main:
+          type: approval
           name: test-packages-firefox-playwright
           test-params: -k firefox packages/test* packages/*/test*
           requires:

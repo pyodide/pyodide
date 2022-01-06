@@ -18,3 +18,4 @@
   pytest-rerunfailures
   pytest-xdist
   selenium==4.0.0.b3
+  playwright
