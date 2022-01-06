@@ -171,6 +171,9 @@ async function runPythonAsync(code, globals) {
 
 ### packages
 
+- {{ Update }} Upgrade `scikit-image` to 0.19.1
+  {pr}`2005`
+
 - {{ Enhancement }} upgraded msgpack to 1.0.3
   {pr}`2071`
 

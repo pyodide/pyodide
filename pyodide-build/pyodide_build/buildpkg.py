@@ -83,13 +83,17 @@ class BashRunnerWithSharedEnvironment:
 def get_bash_runner():
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
     env = {
-        "PATH": os.environ["PATH"],
-        "PYTHONPATH": os.environ["PYTHONPATH"],
-        "PYODIDE_ROOT": PYODIDE_ROOT,
-        "PYTHONINCLUDE": os.environ["PYTHONINCLUDE"],
-        "NUMPY_LIB": os.environ["NUMPY_LIB"],
-        "PYODIDE": "1",
+        key: os.environ[key]
+        for key in [
+            "PATH",
+            "PYTHONPATH",
+            "PYODIDE_ROOT",
+            "PYTHONINCLUDE",
+            "NUMPY_LIB",
+            "PYODIDE_PACKAGE_ABI",
+        ]
     }
+    env["PYODIDE"] = "1"
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
     b = BashRunnerWithSharedEnvironment(env=env)
