@@ -15,7 +15,7 @@ index 4d18efa..7fa93ea 100644
          compiler_directives=COMPILER_DIRECTIVES,
          language_level=3,
          force=CYTHON_COVERAGE,
-+        include_dirs=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/"]
++        include_path=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/"]
      )
  
  ##############################################################################
