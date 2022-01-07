@@ -108,11 +108,9 @@ See issue {issue}`1504`.
 ## Synchronous IO
 
 The majority of existing I/O APIs are synchronous. Unless we can support
-synchronous IO, much of the existing Python ecosystem cannot be ported. Luckily
-{user}`joemarshall` has a solution for this involving rewinding the Python
-stack. He has [a prototype implementation
-here](https://github.com/joemarshall/unthrow). We would like to bring this into
-Pyodide as a core feature.
+synchronous IO, much of the existing Python ecosystem cannot be ported. There
+are several different approaches to this, we would like to support at least one
+method.
 
 See issue {issue}`1503`.
 
