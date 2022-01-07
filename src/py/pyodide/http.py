@@ -23,7 +23,7 @@ def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
     The download of binary files is not supported. To download binary
-     files use :func:`pyodide.utils.fetch` which is asynchronous.
+    files use :func:`pyodide.http.pyfetch` which is asynchronous.
 
     Parameters
     ----------
@@ -213,7 +213,7 @@ async def pyfetch(url: str, **kwargs) -> FetchResponse:
     This functions provides a similar API to the JavaScript `fetch function
     <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
     designed to be convenient to use from Python. The
-    :class:`pyodide.utils.FetchResponse` has methods with the output types
+    :class:`pyodide.http.FetchResponse` has methods with the output types
     already converted to Python objects.
 
     Parameters

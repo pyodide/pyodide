@@ -85,8 +85,8 @@ JavaScript:
 | `bool`  | `Boolean`              |
 | `None`  | `undefined`            |
 
-\* An `int` is converted to a `Number` if the `int` is between -2^{53} and
-2^{53} inclusive, otherwise it is converted to a `BigInt`. (If the browser does
+\* An `int` is converted to a `Number` if the `int` is between -2^53 and
+2^53 inclusive, otherwise it is converted to a `BigInt`. (If the browser does
 not support `BigInt` then a `Number` will be used instead. In this case,
 conversion of large integers from Python to JavaScript is lossy.)
 
@@ -106,7 +106,7 @@ Python:
 | `undefined` | `None`                            |
 | `null`      | `None`                            |
 
-\* A number is converted to an `int` if it is between -2^{53} and 2^{53}
+\* A number is converted to an `int` if it is between -2^53 and 2^53
 inclusive and its fractional part is zero. Otherwise, it is converted to a
 float.
 

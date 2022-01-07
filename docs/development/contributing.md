@@ -36,7 +36,7 @@ always passing. The unfortunate reality of software development is sometimes
 things break. As such, `main` cannot be expected to remain reliable at all
 times. We recommend using the latest stable version of Pyodide.
 
-Pyodide follows semantic versioning (http://semver.org/) - major versions for
+Pyodide follows [semantic versioning](http://semver.org/) - major versions for
 breaking changes (x.0.0), minor versions for new features (0.x.0), and patches
 for bug fixes (0.0.x).
 
@@ -96,9 +96,9 @@ everyone to assess. Take a moment and look through how we’ve written our tests
 and try to make your tests match. If you are having trouble, we can help you get
 started on our test-writing journey.
 
-All code submissions should pass `make lint`. Python is checked with the
-default settings of `flake8`. C and JavaScript are checked against the Mozilla
-style in `clang-format`.
+All code submissions should pass `make lint`. Python is checked with `flake8`,
+`black` and `mypy`. JavaScript is checked with `prettier`.
+C is checked against the Mozilla style in `clang-format`.
 
 ### Contributing to the “core” C Code
 

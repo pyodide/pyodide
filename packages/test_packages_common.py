@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 import functools
 
 from pyodide_build.io import parse_package_config
@@ -50,10 +50,13 @@ def registered_packages_meta():
 
 
 UNSUPPORTED_PACKAGES: dict = {
-    "chrome": ["scikit-image"],
+    "chrome": [],
     "firefox": [],
-    "node": ["scikit-image"],
+    "node": [],
 }
+if "CI" is os.environ:
+    UNSUPPORTED_PACKAGES["chrome"].extend(["scikit-image"])
+    UNSUPPORTED_PACKAGES["node"].extend(["scikit-image"])
 
 
 @pytest.mark.parametrize("name", registered_packages())
