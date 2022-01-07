@@ -8,4 +8,4 @@ build:
   script: "find . -name *.exe -delete"
 test:
   imports:
-  - distlib
+    - distlib

@@ -6,7 +6,7 @@ source:
   sha256: 773c781216f8c2900b42a7b638d5b517bb134ae1acbebe4d1e8f1f41ea60eb4b
 test:
   imports:
-  - pyrsistent
+    - pyrsistent
 about:
   home: http://github.com/tobgu/pyrsistent/
   PyPI: https://pypi.org/project/pyrsistent
