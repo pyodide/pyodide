@@ -1,26 +1,24 @@
-Make sure that Cython generates BLAS function signatures using our patched SciPy version
+From fe6ac9a05c6811e1f0d9e44d3b237e7ec7816c74 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 6 Jan 2022 21:56:10 -0800
+Subject: [PATCH] fix scipy blas cythonize
 
---- a/setup.py    2021-11-13 00:19:44.000000000 +0100
-+++ b/setup.py   2022-01-04 23:03:15.918897891 +0100
-@@ -320,7 +320,8 @@
-     source, ext = check_source(config["source"])
-     source = process_tempita(source)
-     name = source.replace("/", ".").replace(ext, "")
--    include_dirs = config.get("include_dirs", [])
-+    include_dirs = config.get("include_dirs", [])
-+    include_dirs += [f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/"]
-     depends = config.get("depends", [])
-     libraries = config.get("libraries", [])
-     library_dirs = config.get("library_dirs", [])
+---
+ setup.py | 1 +
+ 1 file changed, 1 insertion(+)
 
---- a/setup.py   2022-01-04 23:10:00.648270089 +0100
-+++ b/setup.py  2022-01-04 23:18:11.466418243 +0100
-@@ -350,7 +350,7 @@
-     ext = Extension(
-         name,
-         [source],
--        include_dirs=["statsmodels/src"],
-+        include_dirs=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/", "statsmodels/src"],
-         depends=[],
-         libraries=[],
-         library_dirs=[],
+diff --git a/setup.py b/setup.py
+index 4d18efa..7fa93ea 100644
+--- a/setup.py
++++ b/setup.py
+@@ -369,6 +369,7 @@ if HAS_CYTHON:
+         compiler_directives=COMPILER_DIRECTIVES,
+         language_level=3,
+         force=CYTHON_COVERAGE,
++        include_path=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/"]
+     )
+ 
+ ##############################################################################
+-- 
+2.25.1
+
