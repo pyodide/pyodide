@@ -153,41 +153,38 @@ def update_package(package: str, update_patched: bool = True):
         sys.exit(0)
 
     if "url" not in yaml_content["source"]:
-        sys.exit(0)
         print(f"Skipping: {package} is a local package!")
+        sys.exit(0)
 
     build_info = yaml_content.get("build", {})
     if build_info.get("library", False) or build_info.get("sharedlibrary", False):
-        sys.exit(0)
         print(f"Skipping: {package} is a library!")
+        sys.exit(0)
 
     pypi_metadata = _get_metadata(package)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
-    # if pypi_ver <= local_ver:
-    #     print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
-    #     sys.exit(0)
+    if pypi_ver <= local_ver:
+        print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
+        sys.exit(0)
 
-    # print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
+    print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
     if set(yaml_content.keys()).difference(
         ("package", "source", "test", "requirements")
     ):
-        sys.exit(0)
-        # abort(
-        #     f"{package}: Only pure python packages can be updated using this script. "
-        #     f"Aborting."
-        # )
+        abort(
+            f"{package}: Only pure python packages can be updated using this script. "
+            f"Aborting."
+        )
 
     if "patches" in yaml_content["source"]:
         if update_patched:
-            print(
+            warn(
                 f"Pyodide applies patches to {package}. Update the "
                 "patches (if needed) to avoid build failing."
             )
         else:
             abort(f"Pyodide applies patches to {package}. Skipping update.")
-
-    sys.exit(0)
 
     sdist_metadata = _extract_sdist(pypi_metadata)
 
