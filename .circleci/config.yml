@@ -508,47 +508,54 @@ workflows:
             - build-packages
           filters:
             tags:
+              only: /.*/\
+      
+      - run-playwright-tests:
+          name: run-playwright-tests
+          type: approval
+          filters:
+            tags:
               only: /.*/
 
       - test-main:
-          type: approval
           name: test-core-chrome-playwright
           test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
+            - run-playwright-tests
           filters:
             tags:
               only: /.*/
           playwright: "1"
 
       - test-main:
-          type: approval
           name: test-core-firefox-playwright
           test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
+            - run-playwright-tests
           filters:
             tags:
               only: /.*/
           playwright: "1"
 
       - test-main:
-          type: approval
           name: test-packages-chrome-playwright
           test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
+            - run-playwright-tests
           filters:
             tags:
               only: /.*/
           playwright: "1"
 
       - test-main:
-          type: approval
           name: test-packages-firefox-playwright
           test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
+            - run-playwright-tests
           filters:
             tags:
               only: /.*/

@@ -52,7 +52,7 @@ def playwright_browsers(request):
 class PlaywrightWrapper:
     browser = ""
     JavascriptException = JavascriptException
-    SETUP_CODE = pathlib.Path(ROOT_PATH / "tools/testsetup.js").read_text()
+    SETUP_CODE = pathlib.Path(ROOT_PATH / "tools/testsetup.js").read_text()  # type: ignore
 
     def __init__(
         self,
