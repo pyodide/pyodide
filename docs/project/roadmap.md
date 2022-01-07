@@ -71,7 +71,7 @@ See issue {pr}`655` and PR {pr}`2027`.
 
 Currently, we use f2c to cross compile Fortran to C. This does not work very
 well because f2c only fully supports Fortran 77 code. LAPACK has used more
-modern Fortrann features since 2008 and Scipy has adopted more recent Fortran as
+modern Fortran features since 2008 and Scipy has adopted more recent Fortran as
 well. f2c still successfully generates code for all but 6 functions in Scipy +
 LAPACK, but much of the generated code is slightly wrong and requires extensive
 patching. There are still a large number of fatal errors due to call signature
@@ -79,14 +79,13 @@ incompatibilities.
 
 If we could use an LLVM-based Fortran compiler as a part of the Emscripten
 toolchain, most of these problems would be solved. There are several promising
-projects heading in that direction including flang and lfortran, but none are
-ready yet. 
+projects heading in that direction including flang and lfortran.
 
 See {issue}`scipy/scipy#15290`.
 
 ## Support for Rust packages
 
-We have promising partial work toward compiling Rust packages for use with
+We have promising partial work toward compiling Python packages with Rust extensions for use with
 Pyodide. So far we have only compiled small toy examples. Currently the compiled
 Rust packages have various functional limitations and come out _very_ large.
 Hopefully we can work toward increasing functionality so we can compile real
