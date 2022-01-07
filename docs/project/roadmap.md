@@ -33,28 +33,66 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Simplification of the package loading system
+## Improvements to package loading system
 
 Currently, Pyodide has two ways of loading packages:
 
-- `loadPackage` for packages built with Pyodide and
-- `micropip.install` for pure Python packages from PyPI.
+- {any}`pyodide.loadPackage` for packages built with Pyodide and
+- {any}`micropip.install` for pure Python packages from PyPI.
 
-The relationship between these tools is confusing and could be simplified.
-Furthermore, the dependency resolution logic and packaging / build system could
-be improved.
+The relationship between these tools is currently confusing. 
 
-See issues {issue}`1470` and {issue}`1100`.
+Our goal is to have three ways to load packages: one with no dependency
+resolution at all, one with static dependency resolution which is done ahead of
+time, and one for dynamic dependency resolution. Ideally most applications can
+use static dependency resolution and repls can use dynamic dependency
+resolution. The no-dependency approach can be used in situations where our
+built-in logic is not helpful.
 
-## Update SciPy to a more recent version
+The plan is for {any}`pyodide.loadPackage` to do static dependency resolution
+and {any}`micropip.install` to do dynamic dependency resolution (this is more or
+less how it already works). For no dependency resolution, we can use
+{any}`pyodide.unpackArchive` or some variant.
 
-SciPy is a cornerstone of scientific computing in Python. It's a challenging
-package to build for WebAssembly because it is large, includes Fortran code, and
-requires BLAS and LAPACK libraries. Currently, Pyodide includes scipy 0.17.1 from 2016.
-Updating it is a blocker for using more recent versions of packages such
-as scikit-learn, scikit-image, statsmodels, and MNE.
+See issues {issue}`2045` and {issue}`1100`.
 
-See issue {issue}`549`.
+## Switch to using wheels for Python packages
+
+We are planning to switch from using Emscripten's file packager to packaging
+Python packages as wheels. Other shared libraries can be bundled as zip or tar
+archives. This makes us more compliant with the general Python ecosystem and
+makes the archive files easier to inspect. They could also be used more easily
+with systems other than Emscripten. Eventually, it is possible that packages
+will be able to upload wheels for Pyodide to PyPi.
+
+See issue {pr}`655` and PR {pr}`2027`.
+
+## Find a better way to compile Fortran
+
+Currently, we use f2c to cross compile Fortran to C. This does not work very
+well because f2c only fully supports Fortran 77 code. LAPACK has used more
+modern Fortrann features since 2008 and Scipy has adopted more recent Fortran as
+well. f2c still successfully generates code for all but 6 functions in Scipy +
+LAPACK, but much of the generated code is slightly wrong and requires extensive
+patching. There are still a large number of fatal errors due to call signature
+incompatibilities.
+
+If we could use an LLVM-based Fortran compiler as a part of the Emscripten
+toolchain, most of these problems would be solved. There are several promising
+projects heading in that direction including flang and lfortran, but none are
+ready yet. 
+
+See {issue}`scipy/scipy#15290`.
+
+## Support for Rust packages
+
+We have promising partial work toward compiling Rust packages for use with
+Pyodide. So far we have only compiled small toy examples. Currently the compiled
+Rust packages have various functional limitations and come out _very_ large.
+Hopefully we can work toward increasing functionality so we can compile real
+world Rust packages. It would also be good to reduce the Rust package sizes.
+
+See {issue}`1973` and {pr}`2081`.
 
 ## Better project sustainability
 
