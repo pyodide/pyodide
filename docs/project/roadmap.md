@@ -46,13 +46,7 @@ Our goal is to have three ways to load packages: one with no dependency
 resolution at all, one with static dependency resolution which is done ahead of
 time, and one for dynamic dependency resolution. Ideally most applications can
 use static dependency resolution and repls can use dynamic dependency
-resolution. The no-dependency approach can be used in situations where our
-built-in logic is not helpful.
-
-The plan is for {any}`pyodide.loadPackage` to do static dependency resolution
-and {any}`micropip.install` to do dynamic dependency resolution (this is more or
-less how it already works). For no dependency resolution, we can use
-{any}`pyodide.unpackArchive` or some variant.
+resolution.
 
 See issues {issue}`2045` and {issue}`1100`.
 
