@@ -49,7 +49,7 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES: dict = {
+UNSUPPORTED_PACKAGES: Dict[str, List[str]] = {
     "chrome": [],
     "firefox": [],
     "node": [],
