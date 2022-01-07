@@ -147,41 +147,47 @@ def update_package(package: str, update_patched: bool = True):
     yaml = YAML()
 
     meta_path = PACKAGES_ROOT / package / "meta.yaml"
-    yaml_content = parse_package_config(meta_path)
+    try:
+        yaml_content = parse_package_config(meta_path)
+    except:
+        sys.exit(0)
 
     if "url" not in yaml_content["source"]:
-        print(f"Skipping: {package} is a local package!")
         sys.exit(0)
+        print(f"Skipping: {package} is a local package!")
 
     build_info = yaml_content.get("build", {})
     if build_info.get("library", False) or build_info.get("sharedlibrary", False):
-        print(f"Skipping: {package} is a library!")
         sys.exit(0)
+        print(f"Skipping: {package} is a library!")
 
     pypi_metadata = _get_metadata(package)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
-    if pypi_ver <= local_ver:
-        print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
-        sys.exit(0)
+    # if pypi_ver <= local_ver:
+    #     print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
+    #     sys.exit(0)
 
-    print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
+    # print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
     if set(yaml_content.keys()).difference(
         ("package", "source", "test", "requirements")
     ):
-        abort(
-            f"{package}: Only pure python packages can be updated using this script. "
-            f"Aborting."
-        )
+        sys.exit(0)
+        # abort(
+        #     f"{package}: Only pure python packages can be updated using this script. "
+        #     f"Aborting."
+        # )
 
     if "patches" in yaml_content["source"]:
         if update_patched:
-            warn(
+            print(
                 f"Pyodide applies patches to {package}. Update the "
                 "patches (if needed) to avoid build failing."
             )
         else:
             abort(f"Pyodide applies patches to {package}. Skipping update.")
+
+    sys.exit(0)
 
     sdist_metadata = _extract_sdist(pypi_metadata)
 
