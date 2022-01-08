@@ -4,7 +4,7 @@ package:
   # I needed some dumb hacks to get this to work. TODO: fix build system after
   # 0.19 release.
 source:
-  path : "empty"
+  path: "empty"
 build:
   sharedlibrary: True
   script: |
