@@ -1,4 +1,5 @@
 import sys
+
 IN_BROWSER = False
 if "pyodide" in sys.modules:
     from pyodide import IN_BROWSER
