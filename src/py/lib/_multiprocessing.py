@@ -11,7 +11,9 @@ if not IN_BROWSER:
 def SemLock(*args, **kwargs):
     raise OSError("Not implemented")
 
+
 SemLock.SEM_VALUE_MAX = 0
+
 
 def sem_unlink(*args, **kwargs):
     raise OSError("Not implemented")
