@@ -1,9 +1,8 @@
 name: deploy-release
-on: push
-# on:
-#   push:
-#     tags:
-#       - "*.*.*"
+on:
+  push:
+    tags:
+      - "*.*.*"
 jobs:
   deploy-pyodide-build-pypi:
     runs-on: ubuntu-latest
@@ -33,6 +32,5 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          password: ${{ secrets.PYPI_API_TOKEN }}
           packages_dir: pyodide-build/dist/
