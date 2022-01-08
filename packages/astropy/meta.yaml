@@ -12,6 +12,7 @@ requirements:
   run:
     - distutils
     - numpy
+    - extension-helpers
 test:
   imports:
     - astropy
