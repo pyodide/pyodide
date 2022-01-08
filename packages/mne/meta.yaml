@@ -9,6 +9,7 @@ requirements:
     - distutils
     - numpy
     - scipy
+    - setuptools
 test:
   imports:
     - mne
