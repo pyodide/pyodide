@@ -284,7 +284,7 @@ jobs:
               --verbose \
               -k 'not (chrome or firefox or node)' \
               --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/
+              src/tests/ pyodide-build packages/micropip/
 
       - store_test_results:
           path: test-results
@@ -431,7 +431,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k "chrome and not webworker" src/tests/ packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
           filters:
@@ -440,7 +440,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k "firefox and not webworker" src/tests/ packages/micropip packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
           filters:
@@ -449,7 +449,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k node src/tests/ packages/micropip packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
           filters:
