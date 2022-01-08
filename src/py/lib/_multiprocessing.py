@@ -8,5 +8,10 @@ if not IN_BROWSER:
     raise Exception("This shouldn't happen!")
 
 # Prevent microprocessing.synchronize from raising an error at import time.
-SemLock = None
-sem_unlink = None
+def SemLock(*args, **kwargs):
+    raise OSError("Not implemented")
+
+SemLock.SEM_VALUE_MAX = 0
+
+def sem_unlink(*args, **kwargs):
+    raise OSError("Not implemented")
