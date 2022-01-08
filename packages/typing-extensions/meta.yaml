@@ -1,6 +1,8 @@
 package:
   name: typing-extensions
   version: 4.0.1
+  # I needed some dumb hacks to get this to work. TODO: fix build system after
+  # 0.19 release.
 source:
   path : "empty"
 build:
