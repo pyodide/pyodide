@@ -6,3 +6,7 @@ if "pyodide" in sys.modules:
 
 if not IN_BROWSER:
     raise Exception("This shouldn't happen!")
+
+# Prevent microprocessing.synchronize from raising an error at import time.
+SemLock = None
+sem_unlink = None
