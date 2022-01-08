@@ -1,21 +1,26 @@
 package:
   name: yt
-  version: 4.0.1
+  version: 3.6.1
+
 source:
-  url: https://files.pythonhosted.org/packages/1d/78/6dc73f61b7819de25682de80e21a02fb056eb12d3a0b49e7c4784e5dc9db/yt-4.0.1.tar.gz
-  sha256: 6219cbf971871320a13679a57722c0363e50db5e6d4d64ea9d197461b2a7f70f
-  # patches:
-  # - patches/skip-openmp.patch
+  url: https://files.pythonhosted.org/packages/1e/ce/e75e41f077e330f25d912eda4a1ba124e6b5f896f457ec5ca4e8c89b97c2/yt-3.6.1.tar.gz
+  sha256: be454f9d05dcbe0623328b4df43a1bfd1f0925e516be97399710452931a19bb0
+
+  patches:
+    - patches/skip-openmp.patch
+
 requirements:
   run:
     - numpy
     - matplotlib
     - sympy
     - setuptools
+
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false
+
 test:
   imports:
     - yt
