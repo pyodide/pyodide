@@ -13,6 +13,7 @@ build:
 requirements:
   run:
     - distutils
+    - packaging
     - numpy
 test:
   imports:
