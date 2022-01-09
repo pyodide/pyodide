@@ -15,6 +15,7 @@ requirements:
     - distutils
     - packaging
     - numpy
+    - pyerfa
 test:
   imports:
     - astropy
