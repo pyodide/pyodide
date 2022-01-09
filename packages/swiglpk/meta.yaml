@@ -3,14 +3,13 @@ package:
   version: 5.0.3
 
 source:
-  url: https://github.com/biosustain/swiglpk/tarball/5.0.3/
-  sha256: a3455cc544cb3c34e0aa48ee94d97b05acfa3045ac5ff5bbf79f41651bd7fbd2
-  extract_dir: biosustain-swiglpk-e668d8c
+  sha256: 32f9fa0a082d80e32234f060704b6d7f07843a7aefffa5008b315b0970bab199
+  url: https://github.com/biosustain/swiglpk/archive/refs/tags/5.0.3.tar.gz
   extras:
-    - [../glpk/build/glpk-4.65/src/glpk.h, ./glpk.h]
+    - [../glpk/build/glpk-5.0/src/glpk.h, ./glpk.h]
 
 build:
-  ldflags: -L$(PYODIDE_ROOT)/packages/glpk/build/glpk-4.65/src/.libs/
+  ldflags: -L$(PYODIDE_ROOT)/packages/glpk/build/glpk-5.0/src/.libs/
 
 requirements:
   run:
