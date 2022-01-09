@@ -17,6 +17,7 @@ requirements:
     - numpy
     - python-dateutil
     - pytz
+    - setuptools
 
 test:
   imports:
