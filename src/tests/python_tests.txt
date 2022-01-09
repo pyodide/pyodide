@@ -132,7 +132,7 @@ test_compare
 test_compile	crash
 test_compileall	multiprocessing
 test_complex
-test_concurrent_futures
+test_concurrent_futures multiprocessing
 test_configparser
 test_contains
 test_context
