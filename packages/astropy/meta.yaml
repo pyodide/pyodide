@@ -1,23 +1,21 @@
 package:
   name: astropy
-  version: 3.2.3
-
+  version: "5.0"
 source:
-  url: https://pypi.io/packages/source/a/astropy/astropy-3.2.3.tar.gz
-  sha256: 47f00816c2978fdd10f448c8f0337d6dca7b8cbeaab4bf272b5fd37cb4b890d3
-  patches:
-    - patches/fix_link_opts.patch
-
+  url: https://files.pythonhosted.org/packages/82/f0/fc3f6f250bb9d5e5aaa890469fb27c4edee66cf0e2ea4f8b0b287260c6f8/astropy-5.0.tar.gz
+  sha256: 70203e151e13292586a817b4069ce1aad4643567aff38b1d191c173bc54f3927
 build:
+  script: |
+    pip install extension-helpers
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false
-
 requirements:
   run:
     - distutils
+    - packaging
     - numpy
-
+    - pyerfa
 test:
   imports:
     - astropy
