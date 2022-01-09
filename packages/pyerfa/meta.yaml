@@ -9,7 +9,7 @@ requirements:
     - numpy
 test:
   imports:
-  - pyerfa
+    - erfa
 about:
   home: https://github.com/liberfa/pyerfa
   PyPI: https://pypi.org/project/pyerfa
