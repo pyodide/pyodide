@@ -1,0 +1,26 @@
+[package]
+name = "pyo3_samples"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "pyo3_samples"
+# "cdylib" is necessary to produce a shared library for Python to import from.
+#
+# Downstream Rust code (including code in `bin/`, `examples/`, and `tests/`) will not be able
+# to `use string_sum;` unless the "rlib" or "lib" crate type is also included, e.g.:
+# crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
+
+[dependencies.pyo3]
+version = "0.15.0"
+features = ["extension-module"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pyo3-log = "0.5.0"
+log = "0.4.14"
+
+[profile.release]
+lto = true
