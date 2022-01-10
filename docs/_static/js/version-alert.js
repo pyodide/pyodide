@@ -15,13 +15,15 @@ function warnOnLatestVersion() {
   warning.setAttribute('class', 'admonition danger');
   warning.innerHTML = "<p class='first admonition-title'>Note</p> " +
     "<p class='last'> " +
-    "This document is for an <strong>unreleased development version</strong>. " +
-    "Documentation is available for the <a href='/en/stable/'>current stable release</a>, " +
-    "or for older versions through the &ldquo;v:&rdquo; menu at bottom left." +
+    "This is <strong>unreleased documentation for Pyodide next version</strong>. " +
+    "For up-to-date documentation, see <a href='/en/stable/'>the stable version</a>." +
     "</p>";
   warning.querySelector('a').href = window.location.pathname.replace('/latest', '/stable');
 
   var parent = document.getElementById("main-content").firstChild;
+  while(parent != null && parent.nodeType == 3){ // skip TextNodes
+    parent = parent.nextSibling;
+  }
   parent.insertBefore(warning, parent.firstChild);
 }
 
