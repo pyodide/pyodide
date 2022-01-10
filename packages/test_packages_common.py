@@ -50,13 +50,12 @@ def registered_packages_meta():
 
 
 UNSUPPORTED_PACKAGES: Dict[str, List[str]] = {
-    "chrome": ["statsmodels"],
+    "chrome": [],
     "firefox": [],
-    "node": ["statsmodels"],
+    "node": [],
 }
-if "CI" is os.environ:
-    UNSUPPORTED_PACKAGES["chrome"].extend(["scikit-image"])
-    UNSUPPORTED_PACKAGES["node"].extend(["scikit-image"])
+if "CI" in os.environ:
+    UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
 
 @pytest.mark.parametrize("name", registered_packages())
