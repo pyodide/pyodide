@@ -42,7 +42,7 @@ editors, etc. It also may lead to passing "arguments" to code via string
 formatting, missing out on the type conversion utilities.
 
 Our goal is to develop and document a better workflow for users to develop
-Python code for use in Pyodide. 
+Python code for use in Pyodide.
 
 See issue {issue}`1940`.
 
