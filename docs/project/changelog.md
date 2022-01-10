@@ -182,10 +182,6 @@ async function runPythonAsync(code, globals) {
   20% size reduction on average for packages that vendor tests (e.g. numpy,
   pandas, scipy).
   {pr}`1832`
-- {{ Update }} Upgraded the following packages: numpy (1.21.4) {pr}`1934`,
-  scikit-learn (1.0.2) {pr}`2065`, scikit-image (0.19.1) {pr}`2005`, msgpack
-  (1.0.3) {pr}`2071`. This list is not exhaustive, refer to `packages.json` for
-  the full list.
 
 - {{ Update }} Upgraded SciPy to 1.7.3. There are known issues with some SciPy
   components, the current status of the scipy test suite is
@@ -205,6 +201,11 @@ async function runPythonAsync(code, globals) {
 
 - New packages: logbook {pr}`1920`, pyb2d {pr}`1968`, and threadpoolctl (a
   dependency of scikit-learn) {pr}`2065`
+
+- Upgraded packages: numpy (1.21.4) {pr}`1934`, scikit-learn (1.0.2) {pr}`2065`,
+  scikit-image (0.19.1) {pr}`2005`, msgpack (1.0.3) {pr}`2071`, astropy (5.0.3)
+  {pr}`2086`, statsmodels (0.13.1) {pr}`2073`, pillow (9.0.0) {pr}`2085`. This
+  list is not exhaustive, refer to `packages.json` for the full list.
 
 ### Uncategorized
 
