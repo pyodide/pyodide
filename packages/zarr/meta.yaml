@@ -5,12 +5,12 @@ source:
   sha256: 8aece33269ba3ee2af9320aa528d5fe93f76c30e4ad7fdbfb604b1db3f0d779f
   url: https://files.pythonhosted.org/packages/fe/35/e9b1abd0f842a475d9dbf06a9dd63e06fea6c4221bc9c455c2e25e9fe7bc/zarr-2.8.3.tar.gz
   patches:
-  - patches/fix-zarrsync.patch
+    - patches/fix-zarrsync.patch
 requirements:
   run:
-  - numpy
-  - asciitree
-  - numcodecs
+    - numpy
+    - asciitree
+    - numcodecs
 test:
   imports:
-  - zarr
+    - zarr

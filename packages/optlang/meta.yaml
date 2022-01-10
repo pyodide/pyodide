@@ -6,11 +6,11 @@ source:
   url: https://files.pythonhosted.org/packages/08/09/e87caa6d45be1bb5c787428822bc7694945d1bf2c9278939cbe5b2a11a2f/optlang-1.5.2.tar.gz
 requirements:
   run:
-  - sympy
-  - six
-  - swiglpk
+    - sympy
+    - six
+    - swiglpk
 test:
   imports:
-  - optlang
-  - optlang.glpk_interface
-  - optlang.symbolics
+    - optlang
+    - optlang.glpk_interface
+    - optlang.symbolics

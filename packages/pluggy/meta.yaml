@@ -1,9 +1,9 @@
 package:
   name: pluggy
-  version: 0.13.1
+  version: 1.0.0
 source:
-  sha256: 15b2acde666561e1298d71b523007ed7364de07029219b604cf808bfa1c765b0
-  url: https://files.pythonhosted.org/packages/f8/04/7a8542bed4b16a65c2714bf76cf5a0b026157da7f75e87cc88774aa10b14/pluggy-0.13.1.tar.gz
+  sha256: 4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159
+  url: https://files.pythonhosted.org/packages/a1/16/db2d7de3474b6e37cbb9c008965ee63835bba517e22cdb8c35b5116b5ce1/pluggy-1.0.0.tar.gz
 test:
   imports:
-  - pluggy
+    - pluggy

@@ -147,7 +147,10 @@ def update_package(package: str, update_patched: bool = True):
     yaml = YAML()
 
     meta_path = PACKAGES_ROOT / package / "meta.yaml"
-    yaml_content = parse_package_config(meta_path)
+    try:
+        yaml_content = parse_package_config(meta_path)
+    except:
+        sys.exit(0)
 
     if "url" not in yaml_content["source"]:
         print(f"Skipping: {package} is a local package!")

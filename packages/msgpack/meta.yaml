@@ -6,4 +6,4 @@ source:
   url: https://github.com/msgpack/msgpack-python/archive/refs/tags/v1.0.3.tar.gz
 test:
   imports:
-  - msgpack
+    - msgpack

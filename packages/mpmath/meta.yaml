@@ -6,4 +6,4 @@ source:
   url: https://files.pythonhosted.org/packages/95/ba/7384cb4db4ed474d4582944053549e02ec25da630810e4a23454bc9fa617/mpmath-1.2.1.tar.gz
 test:
   imports:
-  - mpmath
+    - mpmath
