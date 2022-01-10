@@ -39,33 +39,22 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    ```
 5. Create a tag `X.Y.Z` (without leading `v`) and push
    it to upstream,
+
    ```bash
    git tag X.Y.Z
    git push upstream X.Y.Z
    ```
+
    Create a new `stable` branch from this tag,
+
    ```bash
    git checkout -b stable
    git push upstream stable --force
    ```
+
    Wait for the CI to pass and create the release on GitHub.
-6. Release the `pyodide-build` package and `pyodide` package:
-   ```bash
-   pip install twine build
-   cd pyodide-build/
-   python -m build .
-   ls dist/   # check the produced files
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-   And to release the `pyodide` package:
-   ```bash
-   cd src/py/
-   python -m build .
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-7. Release the Pyodide JavaScript package:
+
+6. Release the Pyodide JavaScript package:
 
    ```bash
    cd src/js
@@ -73,7 +62,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
-8. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
+7. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
    the next version specified by Semantic Versioning.
 
 ### Making a minor release
