@@ -12,13 +12,13 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/v0.19.0/full/pyodide.js"></script>
+      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
   </head>
   <body>
     <script type="text/javascript">
       async function main(){
         let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/v0.19.0/full/"
+          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
         });
         console.log(pyodide.runPython("1 + 2"));
       }
@@ -39,7 +39,7 @@ application.
 ```{note}
 To avoid confusion, note that:
  - `cdn.jsdelivr.net/pyodide/` distributes Python packages built with Pyodide as well as `pyodide.js`
- - `cdn.jsdelivr.net/npm/pyodide@0.18.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
+ - `cdn.jsdelivr.net/npm/pyodide@0.19.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
 ```
 
 ### Supported browsers
