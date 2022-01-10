@@ -9,4 +9,4 @@ cpython
 .vscode
 .pytest_cache
 .clang-format 
-CLAPACK/make.inc
+packages/CLAPACK/make.inc
