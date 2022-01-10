@@ -40,7 +40,7 @@ Currently, Pyodide has two ways of loading packages:
 - {any}`pyodide.loadPackage` for packages built with Pyodide and
 - {any}`micropip.install` for pure Python packages from PyPI.
 
-The relationship between these tools is currently confusing. 
+The relationship between these tools is currently confusing.
 
 Our goal is to have three ways to load packages: one with no dependency
 resolution at all, one with static dependency resolution which is done ahead of
@@ -115,6 +115,7 @@ method.
 See issue {issue}`1503`.
 
 (http-client-limit)=
+
 ## Write http.client in terms of Web APIs
 
 Python packages make an extensive use of packages such as `requests` to

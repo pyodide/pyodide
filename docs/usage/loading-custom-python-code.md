@@ -1,5 +1,5 @@
-
 (loading-custom-python-code)=
+
 # Loading custom Python code
 
 Pyodide provides a simple API {any}`pyodide.runPython` to run Python code.
@@ -9,8 +9,8 @@ For larger projects, the best way to run Python code with Pyodide is:
 
 1. create a Python package
 1. load your Python package into the Pyodide (Emscripten) virtual file system
-1. import the package with ``let mypkg = pyodide.pyimport("mypkgname")``
-1. call into your package with ``mypkg.some_api(some_args)``.
+1. import the package with `let mypkg = pyodide.pyimport("mypkgname")`
+1. call into your package with `mypkg.some_api(some_args)`.
 
 ## Using wheels
 
