@@ -15,9 +15,21 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 1. Make a new PR and for all occurrences of
    `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
    the release version `vX.Y.Z` (note the presence of the leading `v`). This
-   also applies to `docs/conf.py`
-2. Set the version in `src/py/pyodide/__init__.py` in `src/js/package.json`, in
-   `src/py/setup.cfg` and in `pyodide-build/setup.cfg`.
+   also applies to `docs/conf.py`, but you should skip this file and
+   `docs/usage/downloading-and-deploying.md`.
+
+2. Set the version in:
+
+   - `docs/project/about.md`,
+   - `setup.cfg`,
+   - `src/js/package.json`,
+   - `src/py/pyodide/__init__.py`,
+   - `src/py/setup.cfg`,
+   - `pyodide-build/setup.cfg`,
+
+   After this, try using `ripgrep` to make sure there are no extra old versions
+   lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
+
 3. Make sure the change log is up-to-date.
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
