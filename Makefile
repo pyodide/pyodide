@@ -129,7 +129,7 @@ lint: node_modules/.installed
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
-	npx prettier --check src
+	npx prettier --check .
 	black --check .
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \

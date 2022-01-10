@@ -176,11 +176,9 @@ async function runPythonAsync(code, globals) {
   20% size reduction on average for packages that vendor tests (e.g. numpy,
   pandas, scipy).
   {pr}`1832`
-  
 - {{ Enhancement }} Upgraded following packages: numpy (1.21.4) {pr}`1934`,
   scikit-learn (1.0.2) {pr}`2065`, `scikit-image` (0.19.1) {pr}`2005`, msgpack (1.0.3) {pr}`2071`.
   This list is not exhaustive please refer to `packages.json` for the full list.
-
 
 - {{ Enhancement }} Upgraded SciPy to 1.7.3. Note that there are still known issues with
   some SciPy components.
