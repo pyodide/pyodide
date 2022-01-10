@@ -132,7 +132,7 @@ test_compare
 test_compile	crash
 test_compileall	multiprocessing
 test_complex
-test_concurrent_futures
+test_concurrent_futures multiprocessing
 test_configparser
 test_contains
 test_context
@@ -351,10 +351,10 @@ test_module
 test_modulefinder
 test_msilib
 test_multibytecodec
-test_multiprocessing_fork
-test_multiprocessing_forkserver
-test_multiprocessing_main_handling
-test_multiprocessing_spawn
+test_multiprocessing_fork multiprocessing
+test_multiprocessing_forkserver multiprocessing
+test_multiprocessing_main_handling multiprocessing
+test_multiprocessing_spawn multiprocessing
 test_named_expressions
 test_netrc
 test_nis
