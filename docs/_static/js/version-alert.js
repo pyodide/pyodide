@@ -21,9 +21,7 @@ function warnOnLatestVersion() {
     "</p>";
   warning.querySelector('a').href = window.location.pathname.replace('/latest', '/stable');
 
-  var parent = document.querySelector('div.body')
-    || document.querySelector('div.document')
-    || document.body;
+  var parent = document.getElementById("main-content").firstChild;
   parent.insertBefore(warning, parent.firstChild);
 }
 
