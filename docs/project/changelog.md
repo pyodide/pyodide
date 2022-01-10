@@ -14,6 +14,8 @@ substitutions:
 
 ## Version 0.19.0
 
+_January 10, 2021_
+
 ### Python package
 
 - {{Enhancement}} If `find_imports` is used on code that contains a syntax
