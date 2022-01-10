@@ -139,7 +139,7 @@ if "READTHEDOCS" in os.environ:
 
 
 def setup(app):
-    app.add_javascript("version-alert.js")
+    app.add_javascript("js/version-alert.js")
 
 
 # Prevent API docs for webloop methods: they are the same as for base event loop
