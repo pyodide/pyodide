@@ -6,7 +6,6 @@ source:
   url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.4.4.tar.gz
   sha256: 9e8d613bef2a5e0dc25da96ef23e5a3bf9f07eac9e07dfa632fee94df2a5273c
 
-
 build:
   script: python -m pip install pybind11
 

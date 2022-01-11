@@ -4,7 +4,7 @@ package:
 
 requirements:
   run:
-  - distutils
+    - distutils
 
 source:
   url: https://pypi.io/packages/source/j/joblib/joblib-0.11.tar.gz

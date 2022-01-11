@@ -1,7 +1,7 @@
 <!-- Thank you for contributing to Pyodide! All improvements are welcome,
      so don't be afraid to make a PR. -->
 
-<!-- [IMPORTANT] Note on CI failures: 
+<!-- [IMPORTANT] Note on CI failures:
      Currently, we are having issues with selenium-based tests.
      Don't panic if the CI fails on your PR because of timeouts.
      It's probably not your fault. We will investigate :) -->

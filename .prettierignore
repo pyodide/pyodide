@@ -1,2 +1,12 @@
 *.gen.*
 _build
+build
+.artifacts
+.docker_home
+.mypy_cache
+emsdk
+cpython
+.vscode
+.pytest_cache
+.clang-format 
+packages/CLAPACK/make.inc

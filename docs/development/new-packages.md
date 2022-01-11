@@ -44,7 +44,7 @@ any compilation commands.
 
 ### 2. Creating the `meta.yaml` file
 
-If your package is on PyPI, the easiest place to start is with the 
+If your package is on PyPI, the easiest place to start is with the
 {ref}`mkpkg tool <pyodide-mkpkg>`. From the Pyodide root directory, install the
 tool with `pip install -e pyodide-build`, then run:
 
@@ -76,11 +76,13 @@ not strictly compatible.
 
 Once the `meta.yaml` is ready, build the package with the following commands
 from inside the package directory `packages/<package-name>`
+
 ```
 export PYTHONPATH="$PYTHONPATH:/path/to/pyodide/pyodide-build/"
 python -m pyodide_build buildpkg meta.yaml
 cp build/*.data build/*.js ../../build/
 ```
+
 and see if there are any errors.
 
 If there are errors you might need to
@@ -88,25 +90,23 @@ If there are errors you might need to
 - patch the package by adding `.patch` files to `packages/<package-name>/patches`
 - add the patch files to the `source/patches` field in the `meta.yaml` file
 
-then restart the build. 
+then restart the build.
 
-#### Generating patches 
+#### Generating patches
 
 If the package has a git repository, the easiest way to make a patch is usually:
-1. Clone the git repository. You might want to use the options `git clone
-   --depth 1 --branch <version-tag>`. Find the appropriate tag given the version
+
+1. Clone the git repository. You might want to use the options `git clone --depth 1 --branch <version-tag>`. Find the appropriate tag given the version
    of the package you are trying to modify.
 2. Make whatever changes you want. Commit them.
-3. Use `git format-patch HEAD~1 -o <pyodide-root>/packages/<package-name>/patches/` 
+3. Use `git format-patch HEAD~1 -o <pyodide-root>/packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
 
-It is also possible to create a patch with `git diff --no-index old_file
-new_file > my_changes.patch`, but you will probably have to fix up the paths in
+It is also possible to create a patch with `git diff --no-index old_file new_file > my_changes.patch`, but you will probably have to fix up the paths in
 the generated diff. If it is taking a large number of attempts, you can use the
 flags `--src-prefix` and `--dst-prefix` to try to ensure the patch file is
 generated with the correct paths.
-
 
 ## The package build pipeline
 
@@ -155,7 +155,6 @@ replay stage of the build. If the build is failing during the replay stage, you
 will see lines like `[line 766 of 1156]` labeling which command is being
 replayed. `--continue=replay` will start over from the begining of the replay
 stage, `--continue=replay:766` will start from step 766 of the replay stage.
-
 
 ## C library dependencies
 

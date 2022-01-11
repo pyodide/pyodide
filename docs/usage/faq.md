@@ -1,6 +1,7 @@
 # Frequently Asked Questions
 
 (load-external-files-in-pyodide)=
+
 ## How can I load external files in Pyodide?
 
 In order to use external files in Pyodide, you should download and save them
@@ -26,8 +27,6 @@ We currently can’t use such packages since sockets are not available in Pyodid
 See {ref}`http-client-limit` for more information.
 ```
 
-
-
 ## Why can't I load files from the local file system?
 
 For security reasons JavaScript in the browser is not allowed to load local data files
@@ -39,7 +38,6 @@ but not in Firefox or Safari.
 
 For development purposes, you can serve your files with a
 [web server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
-
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
 
