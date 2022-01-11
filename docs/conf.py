@@ -53,7 +53,7 @@ extensions = [
     "sphinx_panels",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    #    "versionwarning.extension",
+    "versionwarning.extension",
     "sphinx_issues",
 ]
 
@@ -65,10 +65,10 @@ issues_github_path = "pyodide/pyodide"
 
 versionwarning_messages = {
     "latest": (
-        "This is the development version of the documentation. ",
+        "This is the development version of the documentation. "
         'See <a href="https://pyodide.org/">here</a> for latest stable '
         "documentation. Please do not use Pyodide with non "
-        "versioned (`dev`) URLs from the CDN for deployed applications!",
+        "versioned (`dev`) URLs from the CDN for deployed applications!"
     )
 }
 
@@ -136,10 +136,6 @@ if "READTHEDOCS" in os.environ:
         encoding="utf-8",
     )
     print(res)
-
-
-def setup(app):
-    app.add_javascript("js/version-alert.js")
 
 
 # Prevent API docs for webloop methods: they are the same as for base event loop
