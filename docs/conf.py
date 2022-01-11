@@ -71,6 +71,7 @@ versionwarning_messages = {
         "versioned (`dev`) URLs from the CDN for deployed applications!"
     )
 }
+versionwarning_body_selector = "#main-content > div"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
