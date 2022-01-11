@@ -1,26 +1,43 @@
 # Frequently Asked Questions
 
+(load-external-files-in-pyodide)=
+
 ## How can I load external files in Pyodide?
 
-Two possible solutions are,
+In order to use external files in Pyodide, you should download and save them
+to the virtual file system.
 
-- include the files in a Python package, build a pure Python wheel with
-  `python setup.py bdist_wheel` and
-  {ref}`load it with micropip <micropip-installing-from-arbitrary-urls>`.
-- fetch Python code as a string and evaluate it:
-  ```js
-  pyodide.runPython(await (await fetch("https://some_url/...")).text());
-  ```
+For that purpose, Pyodide provides {any}`pyodide.http.pyfetch`,
+which is a convenient wrapper of JavaScript `fetch`:
 
-In any case, files need to be served with a web server and cannot be loaded from
-local file system.
+```pyodide
+pyodide.runPython(`
+  from pyodide.http import pyfetch
+  response = await pyfetch("https://some_url/...")
+  if response.status == 200:
+      with open("<output_file>", "wb") as f:
+          f.write(await response.bytes())
+`)
+```
+
+```{admonition} Why can't I just use urllib or requests?
+:class: warning
+
+We currently can’t use such packages since sockets are not available in Pyodide.
+See {ref}`http-client-limit` for more information.
+```
 
 ## Why can't I load files from the local file system?
 
-For security reasons JavaScript in the browser is not allowed to load local data
-files. You need to serve them with a web-browser. There is a
+For security reasons JavaScript in the browser is not allowed to load local data files
+(for example, `file:///path/to/local/file.data`).
+You will run into Network Errors, due to the [Same Origin Policy](https://en.wikipedia.org/wiki/Same-origin_policy).
+There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
 but not in Firefox or Safari.
+
+For development purposes, you can serve your files with a
+[web server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
 

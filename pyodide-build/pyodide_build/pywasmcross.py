@@ -39,7 +39,7 @@ from typing import List, Dict, Set, Optional, overload
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
+from pyodide_build._f2c_fixes import fix_f2c_output
 
 
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
@@ -193,7 +193,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
-                fix_f2c_clapack_calls(arg[:-2] + ".c")
+                fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
@@ -442,9 +442,16 @@ def replay_command_generate_args(
     optflag = None
     # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
     # priority.
-    for arg in new_args[::-1]:
+    for arg in reversed(new_args):
         if arg in optflags_valid:
             optflag = arg
+            break
+    debugflag = None
+    # Identify the debug flag (e.g. -g0) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in reversed(new_args):
+        if arg.startswith("-g"):
+            debugflag = arg
             break
 
     used_libs: Set[str] = set()
@@ -456,6 +463,8 @@ def replay_command_generate_args(
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags
+            continue
+        if arg.startswith("-g") and debugflag is not None:
             continue
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.

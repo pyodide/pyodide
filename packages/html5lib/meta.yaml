@@ -1,13 +1,13 @@
 package:
   name: html5lib
-  version: '1.1'
+  version: "1.1"
 requirements:
   run:
-  - webencodings
-  - six
+    - webencodings
+    - six
 source:
   sha256: b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f
   url: https://files.pythonhosted.org/packages/ac/b6/b55c3f49042f1df3dcd422b7f224f939892ee94f22abcf503a9b7339eaf2/html5lib-1.1.tar.gz
 test:
   imports:
-  - html5lib
+    - html5lib

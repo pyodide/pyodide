@@ -1,0 +1,7 @@
+package:
+  name: threadpoolctl
+  version: 3.0.0
+
+source:
+  url: https://files.pythonhosted.org/packages/99/29/1a048829f9cdb14b98e676bf9970afb7c2b9d27e6403eb820322ba476d36/threadpoolctl-3.0.0.tar.gz
+  sha256: d03115321233d0be715f0d3a5ad1d6c065fe425ddc2d671ca8e45e9fd5d7a52a

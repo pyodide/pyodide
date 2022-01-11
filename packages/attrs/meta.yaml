@@ -1,12 +1,12 @@
 package:
   name: attrs
-  version: 21.2.0
+  version: 21.4.0
 source:
-  sha256: ef6aaac3ca6cd92904cdd0d83f629a15f18053ec84e6432106f7a4d04ae4f5fb
-  url: https://files.pythonhosted.org/packages/ed/d6/3ebca4ca65157c12bd08a63e20ac0bdc21ac7f3694040711f9fd073c0ffb/attrs-21.2.0.tar.gz
+  sha256: 626ba8234211db98e869df76230a137c4c40a12d72445c45d5f5b716f076e2fd
+  url: https://files.pythonhosted.org/packages/d7/77/ebb15fc26d0f815839ecd897b919ed6d85c050feeb83e100e020df9153d2/attrs-21.4.0.tar.gz
 requirements:
   run:
-  - six
+    - six
 test:
   imports:
-  - attr
+    - attr

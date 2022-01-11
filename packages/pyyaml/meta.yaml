@@ -1,28 +1,18 @@
 package:
   name: pyyaml
-  version: 5.4.1
-
+  version: "6.0"
 source:
-  url: https://github.com/yaml/pyyaml/archive/refs/tags/5.4.1.tar.gz
-  sha256: 75f966559c5f262dfc44da0f958cc2aa18953ae5021f2c3657b415c5a370045f
-
-  patches:
-    - patches/Makefile.patch
-    - patches/setup.cfg.patch
-
+  url: https://files.pythonhosted.org/packages/36/2b/61d51a2c4f25ef062ae3f74576b01638bebad5e045f747ff12643df63844/PyYAML-6.0.tar.gz
+  sha256: 68fb519c14306fec9720a2a5b45bc9f0c8d1b9c72adf45c37baedfcd949c35a2
 build:
-  skip_host: True
-  cflags: |
-    -I$(PYTHONINCLUDE)
-    -I$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/system/include/libc
-    -I$(PYODIDE_ROOT)/packages/libyaml/build/include
-  ldflags: |
-    -L$(PYODIDE_ROOT)/packages/libyaml/build/
-
+  skip_host: true
+  cflags:
+    "-I$(PYTHONINCLUDE)\n-I$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/system/include/libc\n\
+    -I$(PYODIDE_ROOT)/packages/libyaml/build/include\n"
+  ldflags: "-L$(PYODIDE_ROOT)/packages/libyaml/build/\n"
 requirements:
   run:
     - libyaml
-
 test:
   imports:
     - yaml

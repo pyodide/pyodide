@@ -31,6 +31,6 @@ requirements:
     - libiconv
 test:
   imports:
-  - lxml
-  - lxml.etree
-  - lxml.objectify
+    - lxml
+    - lxml.etree
+    - lxml.objectify

@@ -31,6 +31,11 @@ used for fast custom and partial builds. Note that building from the non
 pre-built Docker image is _very_ slow on Mac, building on the host machine
 is preferred if at all possible.
 
+```{note}
+These Docker images are also available from the Github packages at
+[`github.com/orgs/pyodide/packages`](https://github.com/orgs/pyodide/packages).
+```
+
 1. Install Docker
 
 1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
@@ -158,7 +163,7 @@ The following environment variables additionally impact the build:
 - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
   with a trailing `/`. Default: `./` to load Pyodide packages from the same
   base URL path as where `pyodide.js` is located. Example:
-  `https://cdn.jsdelivr.net/pyodide/v0.18.0/full/`
+  `https://cdn.jsdelivr.net/pyodide/v0.19.0/full/`
 - `EXTRA_CFLAGS` : Add extra compilation flags.
 - `EXTRA_LDFLAGS` : Add extra linker flags.
 

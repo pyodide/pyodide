@@ -1,9 +1,9 @@
 ---
 name: Code improvement
 about: Suggest a code improvement, i.e. refactoring, deprecation, etc.
-title: ''
+title: ""
 labels:
-assignees: ''
+assignees: ""
 ---
 
 ## Proposed refactoring or deprecation

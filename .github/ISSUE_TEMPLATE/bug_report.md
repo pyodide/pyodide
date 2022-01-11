@@ -1,9 +1,9 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: ""
 labels: bug
-assignees: ''
+assignees: ""
 ---
 
 ## 🐛 Bug
@@ -26,7 +26,7 @@ assignees: ''
 
 <!-- If you are building Pyodide by yourself, please also include these information: -->
 
-<!-- 
+<!--
 - Commit hash of Pyodide git repository:
 - Build environment<!--(e.g. Ubuntu 18.04, pyodide/pyodide-env:19 docker)- ->:
 -->

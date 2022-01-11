@@ -1,5 +1,5 @@
-
 (packages-in-pyodide)=
+
 # Packages built in Pyodide
 
 The list of prebuilt Python packages in the current version of Pyodide.

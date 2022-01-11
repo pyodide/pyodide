@@ -1,13 +1,14 @@
 package:
   name: scikit-learn
-  version: 0.22.2
+  version: 1.0.2
 
 source:
-  url: https://github.com/scikit-learn/scikit-learn/archive/0.22.2.tar.gz
-  sha256: 54ae27be30ef26718c9e517c4c8f23b6af26c66e52cf16d38799ba4262d4fd3b
+  url: https://files.pythonhosted.org/packages/75/44/074b780d8ac0b0899937e9b8ba6d5d8873a71b99aa915219251ef85a8890/scikit-learn-1.0.2.tar.gz
+  sha256: b5870959a5484b614f26d31ca4c17524b1b0317522199dc985c3b4256e030767
 
   patches:
     - patches/disable-openmp.patch
+    - patches/0001-Cythonize-_cython_blas.pyx-with-include-path-pointin.patch
 
 build:
   cflags: -Wno-implicit-function-declaration
@@ -17,6 +18,7 @@ requirements:
     - numpy
     - scipy
     - joblib
+    - threadpoolctl
 
 test:
   imports:

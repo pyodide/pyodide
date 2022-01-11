@@ -1,15 +1,12 @@
 package:
   name: jedi
-  version: 0.18.0
-
+  version: 0.18.1
 source:
-  sha256: 92550a404bad8afed881a137ec9a461fed49eca661414be45059329614ed0707
-  url: https://files.pythonhosted.org/packages/ac/11/5c542bf206efbae974294a61febc61e09d74cb5d90d8488793909db92537/jedi-0.18.0.tar.gz
-
+  sha256: 74137626a64a99c8eb6ae5832d99b3bdd7d29a3850fe2aa80a4126b2a7d949ab
+  url: https://files.pythonhosted.org/packages/c2/25/273288df952e07e3190446efbbb30b0e4871a0d63b4246475f3019d4f55e/jedi-0.18.1.tar.gz
 requirements:
   run:
     - parso
-
 test:
   imports:
-  - jedi
+    - jedi

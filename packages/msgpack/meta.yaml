@@ -1,9 +1,9 @@
 package:
   name: msgpack
-  version: 1.0.2
+  version: 1.0.3
 source:
-  sha256: fae04496f5bc150eefad4e9571d1a76c55d021325dcd484ce45065ebbdd00984
-  url: https://files.pythonhosted.org/packages/59/04/87fc6708659c2ed3b0b6d4954f270b6e931def707b227c4554f99bd5401e/msgpack-1.0.2.tar.gz
+  sha256: 576a1835a8b48d5861c883a6e10fd374065c6ae56287b221d1a4791e9529c71c
+  url: https://github.com/msgpack/msgpack-python/archive/refs/tags/v1.0.3.tar.gz
 test:
   imports:
-  - msgpack
+    - msgpack
