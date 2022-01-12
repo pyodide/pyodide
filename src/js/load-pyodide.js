@@ -409,7 +409,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
         .then(async (buffer) => {
           await installPackage(name, buffer);
           loaded.push(name);
-          loadedPackages[name] = "pyodide";
+          loadedPackages[name] = DEFAULT_CHANNEL;
         })
         .catch((err) => {
           failed[name] = err;
@@ -422,7 +422,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
         .then(async (buffer) => {
           await installPackage(name, buffer);
           loaded.push(name);
-          loadedPackages[name] = "pyodide";
+          loadedPackages[name] = DEFAULT_CHANNEL;
         })
         .catch((err) => {
           failed[name] = err;
