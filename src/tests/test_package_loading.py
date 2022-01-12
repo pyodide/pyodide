@@ -25,13 +25,12 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         fh_main.seek(0, 2)
         fh_backup.seek(0, 2)
 
-        selenium.load_package(f"http://{url}:{port}/pyparsing.js")
+        selenium.load_package(f"http://{url}:{port}/pyparsing-3.0.6-py3-none-any.whl")
         assert "Skipping unknown package" not in selenium.logs
 
         # check that all resources were loaded from the active server
         txt = fh_main.read()
-        assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
-        assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
+        assert '"GET /pyparsing-3.0.6-py3-none-any.whl HTTP/1.1" 200' in txt
 
         # no additional resources were loaded from the other server
         assert len(fh_backup.read()) == 0
@@ -43,12 +42,12 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         """
     )
 
-    selenium.load_package(f"http://{url}:{port}/pytz.js")
+    selenium.load_package(f"http://{url}:{port}/pytz-2021.3-py3-none-any.whl")
     selenium.run("import pytz")
 
 
 def test_load_relative_url(selenium_standalone):
-    selenium_standalone.load_package("./pytz.js")
+    selenium_standalone.load_package("./pytz-2021.3-py3-none-any.whl")
     selenium_standalone.run("import pytz")
 
 
@@ -67,7 +66,7 @@ def test_list_loaded_urls(selenium_standalone):
 
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package("pyparsing")
-    selenium_standalone.load_package("http://some_url/pyparsing.js")
+    selenium_standalone.load_package("http://some_url/pyparsing-3.0.6-py3-none-any.whl")
     assert (
         "URI mismatch, attempting to load package pyparsing" in selenium_standalone.logs
     )
@@ -152,14 +151,12 @@ def test_load_package_unknown(selenium_standalone):
     port = selenium_standalone.server_port
 
     build_dir = Path(__file__).parents[2] / "build"
-    shutil.copyfile(build_dir / "pyparsing.js", build_dir / "pyparsing-custom.js")
-    shutil.copyfile(build_dir / "pyparsing.data", build_dir / "pyparsing-custom.data")
+    shutil.copyfile(build_dir / "pyparsing-3.0.6-py3-none-any.whl", build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl")
 
     try:
-        selenium_standalone.load_package(f"./pyparsing-custom.js")
+        selenium_standalone.load_package(f"./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
-        (build_dir / "pyparsing-custom.js").unlink()
-        (build_dir / "pyparsing-custom.data").unlink()
+        (build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
     assert selenium_standalone.run_js(
         "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
@@ -173,15 +170,15 @@ def test_load_twice(selenium_standalone):
 
 
 def test_load_twice_different_source(selenium_standalone):
-    selenium_standalone.load_package(["https://foo/pytz.js", "https://bar/pytz.js"])
+    selenium_standalone.load_package(["https://foo/pytz-2021.3-py3-none-any.whl", "https://bar/pytz-2021.3-py3-none-any.whl"])
     assert (
-        "Loading same package pytz from https://bar/pytz.js and https://foo/pytz.js"
+        "Loading same package pytz from https://bar/pytz-2021.3-py3-none-any.whl and https://foo/pytz-2021.3-py3-none-any.whl"
         in selenium_standalone.logs
     )
 
 
 def test_load_twice_same_source(selenium_standalone):
-    selenium_standalone.load_package(["https://foo/pytz.js", "https://foo/pytz.js"])
+    selenium_standalone.load_package(["https://foo/pytz-2021.3-py3-none-any.whl", "https://foo/pytz-2021.3-py3-none-any.whl"])
     assert "Loading same package pytz" not in selenium_standalone.logs
 
 

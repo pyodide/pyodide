@@ -191,9 +191,9 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
     throw new Error(`No known package with name ${name}`);
   }
   if (pkg_info.shared_library) {
-    toLoadShared.add(name);
+    toLoadShared.set(name, DEFAULT_CHANNEL);
   } else {
-    toLoad.add(name);
+    toLoad.set(name, DEFAULT_CHANNEL);
   }
   for (let dep_name of pkg_info.depends) {
     addPackageToLoad(dep_name, toLoad, toLoadShared);
@@ -208,8 +208,8 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
  * @private
  */
 function recursiveDependencies(names) {
-  const toLoad = new Set();
-  const toLoadShared = new Set();
+  const toLoad = new Map();
+  const toLoadShared = new Map();
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
     if(pkgname === undefined){
@@ -240,8 +240,14 @@ function recursiveDependencies(names) {
  * @private
  */
 async function downloadPackage(name) {
-  const pkg = Module.packages[name];
-  return await _loadBinaryFile(baseURL, pkg.file_name);
+  let file_name;
+  if(name in Module.packages){
+    file_name = Module.packages[name].file_name;
+  } else {
+    file_name = name;
+  }
+  let result = await _loadBinaryFile(baseURL, file_name);
+  return result;
 }
 
 /**
@@ -375,7 +381,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     messageCallback(`Loading ${packageNames}`);
     const sharedLibraryPromises = {};
     const packagePromises = {};
-    for (const name of toLoadShared) {
+    for (const name of toLoadShared.keys()) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
@@ -384,7 +390,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       }
       sharedLibraryPromises[name] = downloadPackage(name);
     }
-    for (const name of toLoad) {
+    for (const name of toLoad.keys()) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
@@ -398,7 +404,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const failed = {};
     // TODO: add support for prefetching modules by awaiting on a promise right
     // here which resolves in loadPyodide when the bootstrap is done.
-    for (const name of toLoadShared) {
+    for (const name of toLoadShared.keys()) {
       sharedLibraryPromises[name] = sharedLibraryPromises[name]
         .then(async (buffer) => {
           await installPackage(name, buffer);
@@ -411,7 +417,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     }
 
     await Promise.all(Object.values(sharedLibraryPromises));
-    for (const name of toLoad) {
+    for (const name of toLoad.keys()) {
       packagePromises[name] = packagePromises[name]
         .then(async (buffer) => {
           await installPackage(name, buffer);
@@ -434,7 +440,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       messageCallback(`Failed to load ${failedNames}`);
       for (let [name, err] of Object.entries(failed)) {
         console.warn(`The following error occurred while loading ${name}:`);
-        console.error(err);
+        console.error(err.toString());
       }
     }
 
