@@ -33,7 +33,7 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ env.PYODIDE_ENV_VERSION }}
-          tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          tags: ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
@@ -61,7 +61,7 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ env.PYODIDE_ENV_VERSION }}
-          tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
