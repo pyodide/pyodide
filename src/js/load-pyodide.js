@@ -1,5 +1,10 @@
 import { Module } from "./module.js";
 
+//
+// Initialization code and node/browser shims
+//
+
+// Detect if we're in node
 const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
@@ -7,10 +12,33 @@ const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
+let nodePathMod;
+let nodeFetch;
+let nodeFsPromisesMod;
+let nodeVmMod;
+
+/**
+ * If we're in node, it's most convenient to import various node modules on
+ * initialization. Otherwise, this does nothing.
+ * @private
+ */
+export async function initNodeModules() {
+  if (!IN_NODE) {
+    return;
+  }
+  nodePathMod = (await import(/* webpackIgnore: true */ "path")).default;
+  nodeFsPromisesMod = await import(/* webpackIgnore: true */ "fs/promises");
+  nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
+  nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
+}
+
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
 /**
+ * Initialize the packages index. This is called as early as possible in
+ * loadPyodide so that fetching packages.json can occur in parallel with other
+ * operations.
  * @param {string} indexURL
  * @private
  */
@@ -18,8 +46,7 @@ export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
-    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
-    const package_string = await fsPromises.readFile(
+    const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}packages.json`
     );
     package_json = JSON.parse(package_string);
@@ -43,14 +70,32 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
+
 export async function _fetchBinaryFile(indexURL, path) {
   if (IN_NODE) {
-    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
-    const tar_buffer = await fsPromises.readFile(`${indexURL}${path}`);
+    const tar_buffer = await fsPromisesMod.readFile(`${indexURL}${path}`);
     return tar_buffer.buffer;
   } else {
     let response = await fetch(`${indexURL}${path}`);
     return await response.arrayBuffer();
+  }
+}
+
+/**
+ * Load a text file and executes it as Javascript
+ * @param {str} url The path to load. May be a url or a relative file system path.
+ * @private
+ */
+async function nodeLoadScript(url) {
+  if (url.includes("://")) {
+    // If it's a url, have to load it with fetch and then eval it.
+    const fetch = await fetchPromise;
+    const vm = await vmPromise;
+    nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
+  } else {
+    // Otherwise, hopefully it is a relative path we can load from the file
+    // system.
+    await import(nodePathMod.resolve(url));
   }
 }
 
@@ -74,6 +119,7 @@ function _uri_to_package_name(package_uri) {
  * @private
  */
 export let loadScript;
+
 if (globalThis.document) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
@@ -84,26 +130,7 @@ if (globalThis.document) {
     globalThis.importScripts(url);
   };
 } else if (IN_NODE) {
-  const pathPromise = import(/* webpackIgnore: true */ "path").then(
-    (M) => M.default
-  );
-  const fetchPromise = import("node-fetch").then((M) => M.default);
-  const vmPromise = import(/* webpackIgnore: true */ "vm").then(
-    (M) => M.default
-  );
-  loadScript = async (url) => {
-    if (url.includes("://")) {
-      // If it's a url, have to load it with fetch and then eval it.
-      const fetch = await fetchPromise;
-      const vm = await vmPromise;
-      vm.runInThisContext(await (await fetch(url)).text());
-    } else {
-      // Otherwise, hopefully it is a relative path we can load from the file
-      // system.
-      const path = await pathPromise;
-      await import(path.resolve(url));
-    }
-  };
+  loadScript = nodeLoadScript;
 } else {
   throw new Error("Cannot determine runtime environment");
 }

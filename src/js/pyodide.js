@@ -7,6 +7,7 @@ import {
   initializePackageIndex,
   _fetchBinaryFile,
   loadPackage,
+  initNodeModules,
 } from "./load-pyodide.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
@@ -263,6 +264,7 @@ export async function loadPyodide(config) {
     config.indexURL += "/";
   }
   Module.indexURL = config.indexURL;
+  await initNodeModules();
   let packageIndexReady = initializePackageIndex(config.indexURL);
   let pyodide_py_tar_promise = _fetchBinaryFile(
     config.indexURL,
