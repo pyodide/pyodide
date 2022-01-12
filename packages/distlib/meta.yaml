@@ -1,19 +1,13 @@
 package:
   name: distlib
-  version: 0.3.1
+  version: 0.3.4
 source:
   sha256: 6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b
   url: https://files.pythonhosted.org/packages/ac/a3/8ee4f54d5f12e16eeeda6b7df3dfdbda24e6cc572c86ff959a4ce110391b/distlib-0.3.4-py2.py3-none-any.whl
-  extract_dir: "distlib"
+  finished_wheel: True
 build:
-  skip_build: true
-  script: |
-    cd ..
-    python -m wheel unpack distlib-0.3.4-py2.py3-none-any.whl
-    find distlib-0.3.4 -name '*.exe' -delete
-    python -m wheel pack distlib-0.3.4
-    mkdir -p distlib-0.3.1/dist
-    cp distlib-0.3.4-py2.py3-none-any.whl distlib-0.3.1/dist
+  post: |
+    find dist -name '*.exe' -delete
 
 test:
   imports:

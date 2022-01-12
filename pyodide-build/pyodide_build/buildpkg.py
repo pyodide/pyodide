@@ -157,6 +157,7 @@ def trim_archive_extension(tarballname):
         ".tar.xz",
         ".txz",
         ".zip",
+        ".whl",
     ]:
         if tarballname.endswith(extension):
             return tarballname[: -len(extension)]
@@ -200,12 +201,18 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str,
             tarballpath.unlink()
             raise
 
+    if tarballpath.suffix == ".whl":
+        os.makedirs(srcpath / "dist")
+        shutil.copy(tarballpath, srcpath / "dist")
+        return
+
     if not srcpath.is_dir():
-        shutil.unpack_archive(str(tarballpath), str(buildpath))
+        shutil.unpack_archive(tarballpath, buildpath)
 
     extract_dir_name = src_metadata.get("extract_dir")
     if not extract_dir_name:
         extract_dir_name = trim_archive_extension(tarballname)
+
     shutil.move(buildpath / extract_dir_name, srcpath)
 
 
@@ -327,8 +334,6 @@ def install_for_distribution():
 
 
 def compile(
-    pkg_name: str,
-    pkg_root: Path,
     srcpath: Path,
     build_metadata: Dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
@@ -351,13 +356,6 @@ def compile(
 
     Parameters
     ----------
-    pkg_name
-        The name of the package
-
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
     srcpath
         The path to the source. We extract the source into the build directory, so it
         will be something like
@@ -379,14 +377,7 @@ def compile(
         needed if you want to build other packages that depend on this one.
     """
     # This function runs setup.py. library and sharedlibrary don't have setup.py
-    if (
-        build_metadata.get("library")
-        or build_metadata.get("sharedlibrary")
-        or build_metadata.get("skip_build")
-    ):
-        return
-
-    if (srcpath / ".built").is_file():
+    if build_metadata.get("sharedlibrary"):
         return
 
     skip_host = build_metadata.get("skip_host", True)
@@ -415,6 +406,32 @@ def compile(
             )
         install_for_distribution()
 
+def package_wheel(pkg_name, pkg_root, srcpath, build_metadata, bash_runner):
+    """
+    Parameters
+    ----------
+    pkg_name
+        The name of the package
+
+    pkg_root
+        The path to the root directory for the package. Generally
+        $PYODIDE_ROOT/packages/<PACKAGES>
+
+    srcpath
+        The path to the source. We extract the source into the build directory, so it
+        will be something like
+        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
+
+    build_metadata
+        The build section from meta.yaml.
+
+    bash_runner
+        The runner we will use to execute our bash commands. Preserves environment
+        variables from one invocation to the next.
+    """
+    if build_metadata.get("sharedlibrary"):
+        return
+
     distdir = srcpath / "dist"
     wheel_path = next(distdir.glob("*.whl"))
     unpack_wheel(wheel_path)
@@ -437,9 +454,6 @@ def compile(
     # wheel.
     shutil.rmtree(wheel_dir)
     shutil.rmtree(test_dir, ignore_errors=True)
-
-    with open(srcpath / ".built", "wb") as fd:
-        fd.write(b"\n")
 
 
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
@@ -626,18 +640,26 @@ def build_package(
             create_packaged_token(build_dir)
             return
 
-        compile(
-            name,
-            pkg_root,
-            srcpath,
-            build_metadata,
-            bash_runner,
-            target_install_dir=target_install_dir,
-            host_install_dir=host_install_dir,
-            should_capture_compile=should_capture_compile,
-            should_replay_compile=should_replay_compile,
-            replay_from=replay_from,
-        )
+        if not build_metadata.get("sharedlibrary") and not source_metadata.get("finished_wheel"):
+            compile(
+                srcpath,
+                build_metadata,
+                bash_runner,
+                target_install_dir=target_install_dir,
+                host_install_dir=host_install_dir,
+                should_capture_compile=should_capture_compile,
+                should_replay_compile=should_replay_compile,
+                replay_from=replay_from,
+            )
+        if not build_metadata.get("sharedlibrary"):
+            package_wheel(
+                name,
+                pkg_root,
+                srcpath,
+                build_metadata,
+                bash_runner,
+            )
+
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
 
