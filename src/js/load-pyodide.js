@@ -70,11 +70,14 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
-
 export async function _fetchBinaryFile(indexURL, path) {
   if (IN_NODE) {
     const tar_buffer = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
-    return new Uint8Array(tar_buffer.buffer, tar_buffer.byteOffset, tar_buffer.byteLength);
+    return new Uint8Array(
+      tar_buffer.buffer,
+      tar_buffer.byteOffset,
+      tar_buffer.byteLength
+    );
   } else {
     let response = await fetch(`${indexURL}${path}`);
     let buffer = await response.arrayBuffer();
