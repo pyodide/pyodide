@@ -159,6 +159,16 @@ if (globalThis.document) {
 //
 // Dependency resolution
 //
+const DEFAULT_CHANNEL = "default channel";
+const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
+
+function _uri_to_package_name(package_uri) {
+  let match = package_uri_regexp.exec(package_uri);
+  if (match) {
+    let wheel_name = match[1].toLowerCase();
+    return wheel_name.split("-").slice(0, -4).join("-");
+  }
+}
 
 /**
  * Recursively add a package and its dependencies to toLoad and toLoadShared.
@@ -201,7 +211,20 @@ function recursiveDependencies(names) {
   const toLoad = new Set();
   const toLoadShared = new Set();
   for (let name of names) {
-    addPackageToLoad(name, toLoad, toLoadShared);
+    const pkgname = _uri_to_package_name(name);
+    if(pkgname === undefined){
+      addPackageToLoad(name, toLoad, toLoadShared);
+      continue;
+    }
+    if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
+      errorCallback(
+        `Loading same package ${pkgname} from ${name} and ${toLoad.get(
+          pkgname
+        )}`
+      );
+      continue;
+    }
+    toLoad.set(pkgname, name);
   }
   return [toLoad, toLoadShared];
 }

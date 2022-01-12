@@ -1,8 +1,86 @@
 import pytest
-from pathlib import Path
 import shutil
+from pathlib import Path
 
-from conftest import JavascriptException
+
+@pytest.mark.parametrize("active_server", ["main", "secondary"])
+def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
+    selenium = selenium_standalone
+    if selenium.browser == "node":
+        pytest.xfail("Loading urls in node seems to time out right now")
+    if active_server == "secondary":
+        url, port, log_main = web_server_secondary
+        log_backup = selenium.server_log
+    elif active_server == "main":
+        _, _, log_backup = web_server_secondary
+        log_main = selenium.server_log
+        url = selenium.server_hostname
+        port = selenium.server_port
+    else:
+        raise AssertionError()
+
+    with log_backup.open("r") as fh_backup, log_main.open("r") as fh_main:
+
+        # skip existing log lines
+        fh_main.seek(0, 2)
+        fh_backup.seek(0, 2)
+
+        selenium.load_package(f"http://{url}:{port}/pyparsing.js")
+        assert "Skipping unknown package" not in selenium.logs
+
+        # check that all resources were loaded from the active server
+        txt = fh_main.read()
+        assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
+        assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
+
+        # no additional resources were loaded from the other server
+        assert len(fh_backup.read()) == 0
+
+    selenium.run(
+        """
+        from pyparsing import Word, alphas
+        repr(Word(alphas).parseString('hello'))
+        """
+    )
+
+    selenium.load_package(f"http://{url}:{port}/pytz.js")
+    selenium.run("import pytz")
+
+
+def test_load_relative_url(selenium_standalone):
+    selenium_standalone.load_package("./pytz.js")
+    selenium_standalone.run("import pytz")
+
+
+def test_list_loaded_urls(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.load_package("pyparsing")
+    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [
+        "pyparsing"
+    ]
+    assert (
+        selenium.run_js("return pyodide.loadedPackages['pyparsing']")
+        == "default channel"
+    )
+
+
+def test_uri_mismatch(selenium_standalone):
+    selenium_standalone.load_package("pyparsing")
+    selenium_standalone.load_package("http://some_url/pyparsing.js")
+    assert (
+        "URI mismatch, attempting to load package pyparsing" in selenium_standalone.logs
+    )
+
+
+def test_invalid_package_name(selenium):
+    selenium.load_package("wrong name+$")
+    assert "Skipping unknown package" in selenium.logs
+
+    selenium.clean_logs()
+
+    selenium.load_package("tcp://some_url")
+    assert "Skipping unknown package" in selenium.logs
 
 
 @pytest.mark.parametrize(
@@ -69,10 +147,42 @@ def test_load_failure_retry(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
 
 
+def test_load_package_unknown(selenium_standalone):
+    url = selenium_standalone.server_hostname
+    port = selenium_standalone.server_port
+
+    build_dir = Path(__file__).parents[2] / "build"
+    shutil.copyfile(build_dir / "pyparsing.js", build_dir / "pyparsing-custom.js")
+    shutil.copyfile(build_dir / "pyparsing.data", build_dir / "pyparsing-custom.data")
+
+    try:
+        selenium_standalone.load_package(f"./pyparsing-custom.js")
+    finally:
+        (build_dir / "pyparsing-custom.js").unlink()
+        (build_dir / "pyparsing-custom.data").unlink()
+
+    assert selenium_standalone.run_js(
+        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
+    )
+
+
 def test_load_twice(selenium_standalone):
     selenium_standalone.load_package("pytz")
     selenium_standalone.load_package("pytz")
     assert "No new packages to load" in selenium_standalone.logs
+
+
+def test_load_twice_different_source(selenium_standalone):
+    selenium_standalone.load_package(["https://foo/pytz.js", "https://bar/pytz.js"])
+    assert (
+        "Loading same package pytz from https://bar/pytz.js and https://foo/pytz.js"
+        in selenium_standalone.logs
+    )
+
+
+def test_load_twice_same_source(selenium_standalone):
+    selenium_standalone.load_package(["https://foo/pytz.js", "https://foo/pytz.js"])
+    assert "Loading same package pytz" not in selenium_standalone.logs
 
 
 def test_js_load_package_from_python(selenium_standalone):
