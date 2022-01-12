@@ -7,6 +7,8 @@ source:
   url: https://github.com/biosustain/swiglpk/archive/refs/tags/5.0.3.tar.gz
   extras:
     - [../glpk/build/glpk-5.0/src/glpk.h, ./glpk.h]
+  patches:
+    - patches/respect-skip-build-flag.patch
 
 build:
   ldflags: -L$(PYODIDE_ROOT)/packages/glpk/build/glpk-5.0/src/.libs/
