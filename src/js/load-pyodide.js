@@ -73,7 +73,7 @@ export async function initializePackageIndex(indexURL) {
 
 export async function _fetchBinaryFile(indexURL, path) {
   if (IN_NODE) {
-    const tar_buffer = await fsPromisesMod.readFile(`${indexURL}${path}`);
+    const tar_buffer = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
     return tar_buffer.buffer;
   } else {
     let response = await fetch(`${indexURL}${path}`);
@@ -89,8 +89,6 @@ export async function _fetchBinaryFile(indexURL, path) {
 async function nodeLoadScript(url) {
   if (url.includes("://")) {
     // If it's a url, have to load it with fetch and then eval it.
-    const fetch = await fetchPromise;
-    const vm = await vmPromise;
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
