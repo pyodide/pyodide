@@ -7,7 +7,7 @@ source:
   finished_wheel: True
 build:
   post: |
-    find dist -name '*.exe' -delete
+    find build/distlib-0.3.4/dist -name '*.exe' -delete
 
 test:
   imports:
