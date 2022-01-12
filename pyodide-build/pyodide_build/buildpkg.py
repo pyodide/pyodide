@@ -436,7 +436,7 @@ def compile(
     # micropip. To prevent these, we get rid of wheel_dir after repacking the
     # wheel.
     shutil.rmtree(wheel_dir)
-    shutil.rmtree(test_dir, True)
+    shutil.rmtree(test_dir, ignore_errors=True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
