@@ -204,7 +204,7 @@ function finalizeBootstrap(config) {
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
   Module.pyodide_py = import_module("pyodide");
-  Module.package_loader = import_module("pyodide.package_loader");
+  Module.package_loader = import_module("pyodide._package_loader");
   Module.version = Module.pyodide_py.__version__;
 
   // copy some last constants onto public API.
