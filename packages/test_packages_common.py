@@ -100,11 +100,23 @@ def test_import(name, selenium_standalone):
         assert (
             selenium_standalone.run(
                 """
-            len(list(glob.glob(
-                '/lib/python3.9/site-packages/**/*.pyc',
-                recursive=True)
-            ))
-            """
+                len(list(glob.glob(
+                    '/lib/python3.9/site-packages/**/*.pyc',
+                    recursive=True)
+                ))
+                """
             )
             == baseline_pyc
+        )
+        # Make sure no exe files were loaded!
+        assert (
+            selenium_standalone.run(
+                """
+                len(list(glob.glob(
+                    '/lib/python3.9/site-packages/**/*.exe',
+                    recursive=True)
+                ))
+                """
+            )
+            == 0
         )
