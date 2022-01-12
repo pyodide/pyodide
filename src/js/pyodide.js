@@ -145,7 +145,7 @@ function unpackPyodidePy(pyodide_py_tar) {
   let stream = Module.FS.open(fileName, "w");
   Module.FS.write(
     stream,
-    new Uint8Array(pyodide_py_tar),
+    pyodide_py_tar,
     0,
     pyodide_py_tar.byteLength,
     undefined,
