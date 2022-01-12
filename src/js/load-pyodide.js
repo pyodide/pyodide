@@ -70,19 +70,51 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
-export async function _fetchBinaryFile(indexURL, path) {
-  if (IN_NODE) {
-    const tar_buffer = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
-    return new Uint8Array(
-      tar_buffer.buffer,
-      tar_buffer.byteOffset,
-      tar_buffer.byteLength
-    );
+/**
+ * Load a binary file, only for use in Node. If the path explicitly is a URL,
+ * then fetch from a URL, else load from the file system.
+ * @param {str} indexURL base path to resolve relative paths
+ * @param {str} path the path to load
+ * @returns An ArrayBuffer containing the binary data
+ * @private
+ */
+ async function node_loadBinaryFile(indexURL, path) {
+  if (path.includes("://")) {
+    let response = await nodeFetch(path);
+    if (!response.ok) {
+      throw new Error(`Failed to load '${path}': request failed.`);
+    }
+    return await response.arrayBuffer();
   } else {
-    let response = await fetch(`${indexURL}${path}`);
-    let buffer = await response.arrayBuffer();
-    return new Uint8Array(buffer);
+    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
+}
+
+/**
+ * Load a binary file, only for use in browser. Resolves relative paths against
+ * indexURL.
+ *
+ * @param {str} indexURL base path to resolve relative paths
+ * @param {str} path the path to load
+ * @returns An ArrayBuffer containing the binary data
+ * @private
+ */
+ async function browser_loadBinaryFile(indexURL, path) {
+  const base = new URL(indexURL, location);
+  const url = new URL(path, base);
+  let response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load '${url}': request failed.`);
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+export let _loadBinaryFile;
+if (IN_NODE) {
+  _loadBinaryFile = node_loadBinaryFile;
+} else {
+  _loadBinaryFile = browser_loadBinaryFile;
 }
 
 /**
