@@ -406,6 +406,7 @@ def compile(
             )
         install_for_distribution()
 
+
 def package_wheel(pkg_name, pkg_root, srcpath, build_metadata, bash_runner):
     """
     Parameters
@@ -640,7 +641,9 @@ def build_package(
             create_packaged_token(build_dir)
             return
 
-        if not build_metadata.get("sharedlibrary") and not source_metadata.get("finished_wheel"):
+        if not build_metadata.get("sharedlibrary") and not source_metadata.get(
+            "finished_wheel"
+        ):
             compile(
                 srcpath,
                 build_metadata,
