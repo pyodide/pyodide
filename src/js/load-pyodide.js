@@ -156,7 +156,6 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
-
 //
 // Dependency resolution
 //
