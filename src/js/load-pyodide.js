@@ -78,7 +78,7 @@ export async function initializePackageIndex(indexURL) {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
- async function node_loadBinaryFile(indexURL, path) {
+async function node_loadBinaryFile(indexURL, path) {
   if (path.includes("://")) {
     let response = await nodeFetch(path);
     if (!response.ok) {
@@ -100,7 +100,7 @@ export async function initializePackageIndex(indexURL) {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
- async function browser_loadBinaryFile(indexURL, path) {
+async function browser_loadBinaryFile(indexURL, path) {
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
   let response = await fetch(url);
