@@ -8,10 +8,9 @@ source:
 build:
   sharedlibrary: True
   script: |
+    mkdir dist
+    cd dist
     wget https://files.pythonhosted.org/packages/05/e4/baf0031e39cf545f0c9edd5b1a2ea12609b7fcba2d58e118b11753d68cf0/typing_extensions-4.0.1-py3-none-any.whl
-    python -m wheel unpack typing_extensions-4.0.1-py3-none-any.whl
-    mkdir -p install/lib/python3.9/site-packages
-    cp typing_extensions-4.0.1/typing_extensions.py install/lib/python3.9/site-packages
 
 test:
   imports:
