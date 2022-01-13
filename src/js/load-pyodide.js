@@ -188,7 +188,7 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   }
   let pkg_info = Module.packages[name];
   if (!pkg_info) {
-    throw new Error(`No known package with name ${name}`);
+    throw new Error(`No known package with name '${name}'`);
   }
   if (pkg_info.shared_library) {
     toLoadShared.set(name, DEFAULT_CHANNEL);
@@ -207,7 +207,7 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
  * dependencies
  * @private
  */
-function recursiveDependencies(names) {
+function recursiveDependencies(names, errorCallback) {
   const toLoad = new Map();
   const toLoadShared = new Map();
   for (let name of names) {
@@ -257,7 +257,7 @@ async function downloadPackage(name) {
  * @private
  */
 async function installPackage(name, buffer) {
-  const pkg = Module.packages[name];
+  const pkg = Module.packages[name] || { file_name : ".whl", install_dir : "site", shared_library : false };
   const file_name = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
   const dynlibs = Module.package_loader.unpack_buffer(
@@ -367,7 +367,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
 
   const [toLoad, toLoadShared] = recursiveDependencies(
     names,
-    messageCallback,
     errorCallback
   );
   if (toLoad.size === 0 && toLoadShared.size == 0) {
@@ -416,7 +415,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
         toLoad.delete(name);
         continue;
       }
-      if (channel == DEFAULT_CHANNEL) {
+      if (channel === DEFAULT_CHANNEL) {
         packagePromises[name] = downloadPackage(name);
       } else {
         packagePromises[name] = downloadPackage(channel);
@@ -427,12 +426,12 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const failed = {};
     // TODO: add support for prefetching modules by awaiting on a promise right
     // here which resolves in loadPyodide when the bootstrap is done.
-    for (const name of toLoadShared.keys()) {
+    for (const [name, channel] of toLoadShared) {
       sharedLibraryPromises[name] = sharedLibraryPromises[name]
         .then(async (buffer) => {
           await installPackage(name, buffer);
           loaded.push(name);
-          loadedPackages[name] = DEFAULT_CHANNEL;
+          loadedPackages[name] = channel;
         })
         .catch((err) => {
           failed[name] = err;
@@ -440,12 +439,12 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     }
 
     await Promise.all(Object.values(sharedLibraryPromises));
-    for (const name of toLoad.keys()) {
+    for (const [name, channel] of toLoad) {
       packagePromises[name] = packagePromises[name]
         .then(async (buffer) => {
           await installPackage(name, buffer);
           loaded.push(name);
-          loadedPackages[name] = DEFAULT_CHANNEL;
+          loadedPackages[name] = channel;
         })
         .catch((err) => {
           failed[name] = err;
@@ -463,7 +462,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       messageCallback(`Failed to load ${failedNames}`);
       for (let [name, err] of Object.entries(failed)) {
         console.warn(`The following error occurred while loading ${name}:`);
-        console.error(err.toString());
+        console.error(err);
       }
     }
 

@@ -73,13 +73,10 @@ def test_uri_mismatch(selenium_standalone):
 
 
 def test_invalid_package_name(selenium):
-    selenium.load_package("wrong name+$")
-    assert "Skipping unknown package" in selenium.logs
-
-    selenium.clean_logs()
-
-    selenium.load_package("tcp://some_url")
-    assert "Skipping unknown package" in selenium.logs
+    with pytest.raises(selenium.JavascriptException, match=r"No known package with name 'wrong name\+\$'"):
+        selenium.load_package("wrong name+$")
+    with pytest.raises(selenium.JavascriptException, match="No known package with name 'tcp://some_url'"):
+        selenium.load_package("tcp://some_url")
 
 
 @pytest.mark.parametrize(
