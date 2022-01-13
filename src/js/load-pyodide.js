@@ -124,7 +124,7 @@ if (IN_NODE) {
  */
 async function nodeLoadScript(url) {
   if (url.includes("://")) {
-    // If it's a url, load it with fetch and then eval it.
+    // If it's a url, load it with fetch then eval it.
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
@@ -160,6 +160,7 @@ if (globalThis.document) {
 // Dependency resolution
 //
 const DEFAULT_CHANNEL = "default channel";
+// Regexp for validating package name and URI
 const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
 function _uri_to_package_name(package_uri) {
@@ -180,13 +181,10 @@ function _uri_to_package_name(package_uri) {
  */
 function addPackageToLoad(name, toLoad, toLoadShared) {
   name = name.toLowerCase();
-  if (name in loadedPackages) {
-    return;
-  }
   if (toLoad.has(name)) {
     return;
   }
-  let pkg_info = Module.packages[name];
+  const pkg_info = Module.packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -195,6 +193,13 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   } else {
     toLoad.set(name, DEFAULT_CHANNEL);
   }
+  // If the package is already loaded, we don't add dependencies, but warn
+  // the user later. This is especially important if the loaded package is
+  // from a custom url, in which case adding dependencies is wrong.
+  if (loadedPackages[name] !== undefined) {
+    return;
+  }
+
   for (let dep_name of pkg_info.depends) {
     addPackageToLoad(dep_name, toLoad, toLoadShared);
   }
@@ -343,6 +348,31 @@ async function loadDynlib(lib, shared) {
 const acquirePackageLock = createLock();
 
 /**
+ * @returns A new asynchronous lock
+ * @private
+ */
+function createLock() {
+  // This is a promise that is resolved when the lock is open, not resolved when lock is held.
+  let _lock = Promise.resolve();
+
+  /**
+   * Acquire the async lock
+   * @returns A zero argument function that releases the lock.
+   * @private
+   */
+  async function acquireLock() {
+    let old_lock = _lock;
+    let releaseLock;
+    _lock = new Promise((resolve) => (releaseLock = resolve));
+    await old_lock;
+    return releaseLock;
+  }
+  return acquireLock;
+}
+
+const acquirePackageLock = createLock();
+
+/**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
@@ -370,12 +400,12 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   }
 
   const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);
-  if (toLoad.size === 0 && toLoadShared.size == 0) {
+  if (toLoad.size === 0 && toLoadShared.size === 0) {
     messageCallback("No new packages to load");
     return;
   }
 
-  for (let [pkg, uri] of toLoad) {
+  for (let [pkg, uri] of [...toLoad, ...toLoadShared]) {
     let loaded = loadedPackages[pkg];
     if (loaded !== undefined) {
       // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
