@@ -169,20 +169,28 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
-function addPackageToLoad(name, toLoad) {
+function addPackageToLoad(name, toLoad, toLoadShared) {
   name = name.toLowerCase();
   if (toLoad.has(name)) {
     return;
   }
-  toLoad.set(name, DEFAULT_CHANNEL);
+  const pkg_info = Module.packages[name];
+  if (!pkg_info) {
+    throw new Error(`No known package with name '${name}'`);
+  }
+  if (pkg_info.shared_library) {
+    toLoadShared.set(name, DEFAULT_CHANNEL);
+  } else {
+    toLoad.set(name, DEFAULT_CHANNEL);
+  }
   // If the package is already loaded, we don't add dependencies, but warn
   // the user later. This is especially important if the loaded package is
   // from a custom url, in which case adding dependencies is wrong.
   if (loadedPackages[name] !== undefined) {
     return;
   }
-  for (let dep_name of Module.packages[name].depends) {
-    addPackageToLoad(dep_name, toLoad);
+  for (let dep_name of pkg_info.depends) {
+    addPackageToLoad(dep_name, toLoad, toLoadShared);
   }
 }
 
@@ -193,8 +201,13 @@ function recursiveDependencies(
   sharedLibsOnly
 ) {
   const toLoad = new Map();
+  const toLoadShared = new Map();
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
+    if(pkgname === undefined){
+      addPackageToLoad(name.toLowerCase(), toLoad, toLoadShared);
+      continue;
+    }
     if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
       errorCallback(
         `Loading same package ${pkgname} from ${name} and ${toLoad.get(
@@ -203,28 +216,9 @@ function recursiveDependencies(
       );
       continue;
     }
-    if (pkgname !== undefined) {
-      toLoad.set(pkgname, name);
-      continue;
-    }
-    name = name.toLowerCase();
-    if (name in Module.packages) {
-      addPackageToLoad(name, toLoad);
-      continue;
-    }
-    errorCallback(`Skipping unknown package '${name}'`);
+    toLoad.set(pkgname, name);
   }
-  if (sharedLibsOnly) {
-    let onlySharedLibs = new Map();
-    for (let c of toLoad) {
-      let name = c[0];
-      if (Module.packages[name].shared_library) {
-        onlySharedLibs.set(name, toLoad.get(name));
-      }
-    }
-    return onlySharedLibs;
-  }
-  return toLoad;
+  return [toLoad, toLoadShared];
 }
 
 // locateFile is the function used by the .js file to locate the .data file
@@ -260,82 +254,6 @@ function waitRunDependency() {
   Module.addRunDependency("dummy");
   Module.removeRunDependency("dummy");
   return promise;
-}
-
-async function _loadPackage(names, messageCallback, errorCallback) {
-  // toLoad is a map pkg_name => pkg_uri
-  let toLoad = recursiveDependencies(names, messageCallback, errorCallback);
-  // Tell Module.locateFile about the packages we're loading
-  Module.locateFile_packagesToLoad = toLoad;
-  if (toLoad.size === 0) {
-    return Promise.resolve("No new packages to load");
-  } else {
-    let packageNames = Array.from(toLoad.keys()).join(", ");
-    messageCallback(`Loading ${packageNames}`);
-  }
-
-  // This is a collection of promises that resolve when the package's JS file is
-  // loaded. The promises already handle error and never fail.
-  let scriptPromises = [];
-
-  for (let [pkg, uri] of toLoad) {
-    let loaded = loadedPackages[pkg];
-    if (loaded !== undefined) {
-      // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-      // depedency, which was previously overridden.
-      if (loaded === uri || uri === DEFAULT_CHANNEL) {
-        messageCallback(`${pkg} already loaded from ${loaded}`);
-        continue;
-      } else {
-        errorCallback(
-          `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
-            `while it is already loaded from ${loaded}. To override a dependency, ` +
-            `load the custom package first.`
-        );
-        continue;
-      }
-    }
-    let pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
-    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
-    messageCallback(`Loading ${pkg} from ${scriptSrc}`);
-    scriptPromises.push(
-      loadScript(scriptSrc).catch((e) => {
-        errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
-        toLoad.delete(pkg);
-      })
-    );
-  }
-
-  // We must start waiting for runDependencies *after* all the JS files are
-  // loaded, since the number of runDependencies may happen to equal zero
-  // between package files loading.
-  try {
-    await Promise.all(scriptPromises).then(waitRunDependency);
-  } finally {
-    delete Module.monitorRunDependencies;
-  }
-
-  let packageList = [];
-  for (let [pkg, uri] of toLoad) {
-    loadedPackages[pkg] = uri;
-    packageList.push(pkg);
-  }
-
-  let resolveMsg;
-  if (packageList.length > 0) {
-    let packageNames = packageList.join(", ");
-    resolveMsg = `Loaded ${packageNames}`;
-  } else {
-    resolveMsg = "No packages loaded";
-  }
-
-  Module.reportUndefinedSymbols();
-
-  messageCallback(resolveMsg);
-
-  // We have to invalidate Python's import caches, or it won't
-  // see the new files.
-  Module.importlib.invalidate_caches();
 }
 
 // This is a promise that is resolved iff there are no pending package loads. It
@@ -449,37 +367,101 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   if (!Array.isArray(names)) {
     names = [names];
   }
-  // get shared library packages and load those first
-  // otherwise bad things happen with linking them in firefox.
-  let sharedLibraryNames = [];
-  try {
-    let sharedLibraryPackagesToLoad = recursiveDependencies(
-      names,
-      messageCallback,
-      errorCallback,
-      true
-    );
-    for (let pkg of sharedLibraryPackagesToLoad) {
-      sharedLibraryNames.push(pkg[0]);
+
+
+  const [toLoad, toLoadShared] = recursiveDependencies(names, messageCallback, errorCallback);
+  const toLoadAll = [...toLoad, ...toLoadShared];
+  if (toLoad.size === 0 && toLoadShared.size === 0) {
+    return Promise.resolve("No new packages to load");
+  } else {
+    let packageNames = Array.from(toLoad.keys()).join(", ");
+    messageCallback(`Loading ${packageNames}`);
+  }
+
+  for (let [pkg, uri] of toLoadAll) {
+    let loaded = loadedPackages[pkg];
+    if (loaded === undefined) {
+      continue;
     }
-  } catch (e) {
-    // do nothing - let the main load throw any errors
+    toLoad.delete(pkg);
+    toLoadShared.delete(pkg);
+    // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
+    // depedency, which was previously overridden.
+    if (loaded === uri || uri === DEFAULT_CHANNEL) {
+      messageCallback(`${pkg} already loaded from ${loaded}`);
+    } else {
+      errorCallback(
+        `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
+          `while it is already loaded from ${loaded}. To override a dependency, ` +
+          `load the custom package first.`
+      );
+    }
   }
 
   let releaseLock = await acquirePackageLock();
   try {
+    let scriptPromises = [];
+    const loaded = [];
+
     useSharedLibraryWasmPlugin();
-    await _loadPackage(
-      sharedLibraryNames,
-      messageCallback || console.log,
-      errorCallback || console.error
-    );
+    for(const [pkg, uri] of toLoadShared){
+      const pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
+      const scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
+      messageCallback(`Loading ${pkg} from ${scriptSrc}`);
+      scriptPromises.push(
+        loadScript(scriptSrc).then(name => {
+          loaded.push(name);
+          loadedPackages[name] = uri;
+        }).catch((e) => {
+          errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
+        })
+      );
+    }
+
+    // We must start waiting for runDependencies *after* all the JS files are
+    // loaded, since the number of runDependencies may happen to equal zero
+    // between package files loading.
+    try {
+      await Promise.all(scriptPromises).then(waitRunDependency);
+    } finally {
+      delete Module.monitorRunDependencies;
+    }
     restoreOrigWasmPlugin();
-    await _loadPackage(
-      names,
-      messageCallback || console.log,
-      errorCallback || console.error
-    );
+
+    scriptPromises = [];
+    for(const [pkg, uri] of toLoad){
+      const pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
+      const scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
+      messageCallback(`Loading ${pkg} from ${scriptSrc}`);
+      scriptPromises.push(
+        loadScript(scriptSrc).then(name => {
+          loaded.push(name);
+          loadedPackages[name] = uri;
+        }).catch((e) => {
+          errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
+        })
+      );
+    }
+
+    try {
+      await Promise.all(scriptPromises).then(waitRunDependency);
+    } finally {
+      delete Module.monitorRunDependencies;
+    }
+
+    let resolveMsg;
+    if (packageList.length > 0) {
+      let packageNames = loaded.join(", ");
+      resolveMsg = `Loaded ${packageNames}`;
+    } else {
+      resolveMsg = "No packages loaded";
+    }
+    messageCallback(resolveMsg);
+
+    Module.reportUndefinedSymbols();
+    // We have to invalidate Python's import caches, or it won't
+    // see the new files.
+    Module.importlib.invalidate_caches();
   } finally {
     restoreOrigWasmPlugin();
     releaseLock();
