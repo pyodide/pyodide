@@ -124,7 +124,7 @@ def test_load_handle_failure(selenium_standalone):
     selenium.load_package("pytz")
     selenium.run("import pytz")
     with pytest.raises(
-        selenium.JavascriptException, match="No known package with name pytz2"
+        selenium.JavascriptException, match="No known package with name 'pytz2'"
     ):
         selenium.load_package("pytz2")
     selenium.load_package("pyparsing")
