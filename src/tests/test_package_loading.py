@@ -140,9 +140,6 @@ def test_load_failure_retry(selenium_standalone):
     assert selenium.logs.count("Loading pytz from") == 1
     assert selenium.logs.count("The following error occurred while loading pytz:") == 1
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
-    selenium.run_js(
-        """pyodide._module.packages["pytz"].file_name = self.orig_pytz_name"""
-    )
     selenium.load_package("pytz")
     selenium.run("import pytz")
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
