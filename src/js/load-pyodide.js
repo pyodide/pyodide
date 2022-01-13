@@ -212,7 +212,7 @@ function recursiveDependencies(names) {
   const toLoadShared = new Map();
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
-    if(pkgname === undefined){
+    if (pkgname === undefined) {
       addPackageToLoad(name, toLoad, toLoadShared);
       continue;
     }
@@ -241,7 +241,7 @@ function recursiveDependencies(names) {
  */
 async function downloadPackage(name) {
   let file_name;
-  if(name in Module.packages){
+  if (name in Module.packages) {
     file_name = Module.packages[name].file_name;
   } else {
     file_name = name;
@@ -390,14 +390,18 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       }
       sharedLibraryPromises[name] = downloadPackage(name);
     }
-    for (const name of toLoad.keys()) {
+    for (const [name, channel] of toLoad) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
         toLoad.delete(name);
         continue;
       }
-      packagePromises[name] = downloadPackage(name);
+      if (channel == DEFAULT_CHANNEL) {
+        packagePromises[name] = downloadPackage(name);
+      } else {
+        packagePromises[name] = downloadPackage(channel);
+      }
     }
 
     const loaded = [];
