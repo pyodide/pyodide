@@ -258,23 +258,6 @@ function waitRunDependency() {
   return promise;
 }
 
-// This is a promise that is resolved iff there are no pending package loads. It
-// never fails.
-let _package_lock = Promise.resolve();
-
-/**
- * An async lock for package loading. Prevents race conditions in loadPackage.
- * @returns A zero argument function that releases the lock.
- * @private
- */
-async function acquirePackageLock() {
-  let old_lock = _package_lock;
-  let releaseLock;
-  _package_lock = new Promise((resolve) => (releaseLock = resolve));
-  await old_lock;
-  return releaseLock;
-}
-
 let sharedLibraryWasmPlugin;
 let origWasmPlugin;
 let wasmPluginIndex;
@@ -326,6 +309,31 @@ function restoreOrigWasmPlugin() {
  * @returns {void}
  * @private
  */
+
+/**
+ * @returns A new asynchronous lock
+ * @private
+ */
+function createLock() {
+  // This is a promise that is resolved when the lock is open, not resolved when lock is held.
+  let _lock = Promise.resolve();
+
+  /**
+   * Acquire the async lock
+   * @returns A zero argument function that releases the lock.
+   * @private
+   */
+  async function acquireLock() {
+    let old_lock = _lock;
+    let releaseLock;
+    _lock = new Promise((resolve) => (releaseLock = resolve));
+    await old_lock;
+    return releaseLock;
+  }
+  return acquireLock;
+}
+
+const acquirePackageLock = createLock();
 
 /**
  * Load a package or a list of packages over the network. This installs the
