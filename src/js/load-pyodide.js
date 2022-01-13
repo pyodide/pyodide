@@ -414,9 +414,9 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       messageCallback(`Loading ${pkg} from ${scriptSrc}`);
       scriptPromises.push(
         loadScript(scriptSrc)
-          .then((name) => {
-            loaded.push(name);
-            loadedPackages[name] = uri;
+          .then(() => {
+            loaded.push(pkg);
+            loadedPackages[pkg] = uri;
           })
           .catch((e) => {
             failed[pkg] = e;
@@ -443,9 +443,9 @@ export async function loadPackage(names, messageCallback, errorCallback) {
       messageCallback(`Loading ${pkg} from ${scriptSrc}`);
       scriptPromises.push(
         loadScript(scriptSrc)
-          .then((name) => {
-            loaded.push(name);
-            loadedPackages[name] = uri;
+          .then(() => {
+            loaded.push(pkg);
+            loadedPackages[pkg] = uri;
           })
           .catch((e) => {
             failed[pkg] = e;
