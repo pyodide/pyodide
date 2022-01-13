@@ -124,7 +124,7 @@ if (IN_NODE) {
  */
 async function nodeLoadScript(url) {
   if (url.includes("://")) {
-    // If it's a url, have to load it with fetch and then eval it.
+    // If it's a url, load it with fetch then eval it.
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
@@ -194,17 +194,19 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   }
 }
 
-function recursiveDependencies(
-  names,
-  _messageCallback,
-  errorCallback,
-  sharedLibsOnly
-) {
+/**
+ * Calculate the dependencies of a set of packages
+ * @param names The list of names whose dependencies we need to calculate.
+ * @returns Two sets, the set of normal dependencies and the set of shared
+ * dependencies
+ * @private
+ */
+function recursiveDependencies(names, errorCallback) {
   const toLoad = new Map();
   const toLoadShared = new Map();
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
-    if(pkgname === undefined){
+    if (pkgname === undefined) {
       addPackageToLoad(name.toLowerCase(), toLoad, toLoadShared);
       continue;
     }
@@ -272,17 +274,6 @@ async function acquirePackageLock() {
   await old_lock;
   return releaseLock;
 }
-
-/**
- *
- * The list of packages that Pyodide has loaded.
- * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
- * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
- * install location for a particular ``package_name``.
- *
- * @type {object}
- */
-export let loadedPackages = {};
 
 let sharedLibraryWasmPlugin;
 let origWasmPlugin;
@@ -354,29 +345,29 @@ function restoreOrigWasmPlugin() {
  * @async
  */
 export async function loadPackage(names, messageCallback, errorCallback) {
+  messageCallback = messageCallback || console.log;
+  errorCallback = errorCallback || console.error;
   if (Module.isPyProxy(names)) {
-    let temp;
-    try {
-      temp = names.toJs();
-    } finally {
-      names.destroy();
-    }
-    names = temp;
+    names = names.toJs();
   }
 
   if (!Array.isArray(names)) {
     names = [names];
   }
 
-
-  const [toLoad, toLoadShared] = recursiveDependencies(names, messageCallback, errorCallback);
+  const [toLoad, toLoadShared] = recursiveDependencies(
+    names,
+    messageCallback,
+    errorCallback
+  );
   const toLoadAll = [...toLoad, ...toLoadShared];
   if (toLoad.size === 0 && toLoadShared.size === 0) {
-    return Promise.resolve("No new packages to load");
-  } else {
-    let packageNames = Array.from(toLoad.keys()).join(", ");
-    messageCallback(`Loading ${packageNames}`);
+    messageCallback("No new packages to load");
+    return;
   }
+
+  let packageNames = Array.from(toLoad.keys()).join(", ");
+  messageCallback(`Loading ${packageNames}`);
 
   for (let [pkg, uri] of toLoadAll) {
     let loaded = loadedPackages[pkg];
@@ -404,17 +395,21 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const loaded = [];
 
     useSharedLibraryWasmPlugin();
-    for(const [pkg, uri] of toLoadShared){
-      const pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
-      const scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
+    for (const [pkg, uri] of toLoadShared) {
+      const pkgname =
+        (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
+      const scriptSrc =
+        uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
       messageCallback(`Loading ${pkg} from ${scriptSrc}`);
       scriptPromises.push(
-        loadScript(scriptSrc).then(name => {
-          loaded.push(name);
-          loadedPackages[name] = uri;
-        }).catch((e) => {
-          errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
-        })
+        loadScript(scriptSrc)
+          .then((name) => {
+            loaded.push(name);
+            loadedPackages[name] = uri;
+          })
+          .catch((e) => {
+            errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
+          })
       );
     }
 
@@ -429,17 +424,21 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     restoreOrigWasmPlugin();
 
     scriptPromises = [];
-    for(const [pkg, uri] of toLoad){
-      const pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
-      const scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
+    for (const [pkg, uri] of toLoad) {
+      const pkgname =
+        (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
+      const scriptSrc =
+        uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
       messageCallback(`Loading ${pkg} from ${scriptSrc}`);
       scriptPromises.push(
-        loadScript(scriptSrc).then(name => {
-          loaded.push(name);
-          loadedPackages[name] = uri;
-        }).catch((e) => {
-          errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
-        })
+        loadScript(scriptSrc)
+          .then((name) => {
+            loaded.push(name);
+            loadedPackages[name] = uri;
+          })
+          .catch((e) => {
+            errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
+          })
       );
     }
 
@@ -467,3 +466,14 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     releaseLock();
   }
 }
+
+/**
+ *
+ * The list of packages that Pyodide has loaded.
+ * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
+ * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
+ * install location for a particular ``package_name``.
+ *
+ * @type {object}
+ */
+export let loadedPackages = {};
