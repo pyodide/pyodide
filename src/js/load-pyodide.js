@@ -348,31 +348,6 @@ async function loadDynlib(lib, shared) {
 const acquirePackageLock = createLock();
 
 /**
- * @returns A new asynchronous lock
- * @private
- */
-function createLock() {
-  // This is a promise that is resolved when the lock is open, not resolved when lock is held.
-  let _lock = Promise.resolve();
-
-  /**
-   * Acquire the async lock
-   * @returns A zero argument function that releases the lock.
-   * @private
-   */
-  async function acquireLock() {
-    let old_lock = _lock;
-    let releaseLock;
-    _lock = new Promise((resolve) => (releaseLock = resolve));
-    await old_lock;
-    return releaseLock;
-  }
-  return acquireLock;
-}
-
-const acquirePackageLock = createLock();
-
-/**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
