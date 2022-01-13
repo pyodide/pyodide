@@ -257,7 +257,11 @@ async function downloadPackage(name) {
  * @private
  */
 async function installPackage(name, buffer) {
-  const pkg = Module.packages[name] || { file_name : ".whl", install_dir : "site", shared_library : false };
+  const pkg = Module.packages[name] || {
+    file_name: ".whl",
+    install_dir: "site",
+    shared_library: false,
+  };
   const file_name = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
   const dynlibs = Module.package_loader.unpack_buffer(
@@ -365,10 +369,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     names = [names];
   }
 
-  const [toLoad, toLoadShared] = recursiveDependencies(
-    names,
-    errorCallback
-  );
+  const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);
   if (toLoad.size === 0 && toLoadShared.size == 0) {
     messageCallback("No new packages to load");
     return;

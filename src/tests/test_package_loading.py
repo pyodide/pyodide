@@ -3,6 +3,7 @@ import shutil
 
 from pathlib import Path
 
+
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
     selenium = selenium_standalone
@@ -73,9 +74,15 @@ def test_uri_mismatch(selenium_standalone):
 
 
 def test_invalid_package_name(selenium):
-    with pytest.raises(selenium.JavascriptException, match=r"No known package with name 'wrong name\+\$'"):
+    with pytest.raises(
+        selenium.JavascriptException,
+        match=r"No known package with name 'wrong name\+\$'",
+    ):
         selenium.load_package("wrong name+$")
-    with pytest.raises(selenium.JavascriptException, match="No known package with name 'tcp://some_url'"):
+    with pytest.raises(
+        selenium.JavascriptException,
+        match="No known package with name 'tcp://some_url'",
+    ):
         selenium.load_package("tcp://some_url")
 
 
@@ -116,7 +123,9 @@ def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
     selenium.run("import pytz")
-    with pytest.raises(selenium.JavascriptException, match="No known package with name pytz2"):
+    with pytest.raises(
+        selenium.JavascriptException, match="No known package with name pytz2"
+    ):
         selenium.load_package("pytz2")
     selenium.load_package("pyparsing")
     assert "Loaded pytz" in selenium.logs
@@ -148,7 +157,10 @@ def test_load_package_unknown(selenium_standalone):
     port = selenium_standalone.server_port
 
     build_dir = Path(__file__).parents[2] / "build"
-    shutil.copyfile(build_dir / "pyparsing-3.0.6-py3-none-any.whl", build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl")
+    shutil.copyfile(
+        build_dir / "pyparsing-3.0.6-py3-none-any.whl",
+        build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
+    )
 
     try:
         selenium_standalone.load_package(f"./pyparsing-custom-3.0.6-py3-none-any.whl")
@@ -167,7 +179,12 @@ def test_load_twice(selenium_standalone):
 
 
 def test_load_twice_different_source(selenium_standalone):
-    selenium_standalone.load_package(["https://foo/pytz-2021.3-py3-none-any.whl", "https://bar/pytz-2021.3-py3-none-any.whl"])
+    selenium_standalone.load_package(
+        [
+            "https://foo/pytz-2021.3-py3-none-any.whl",
+            "https://bar/pytz-2021.3-py3-none-any.whl",
+        ]
+    )
     assert (
         "Loading same package pytz from https://bar/pytz-2021.3-py3-none-any.whl and https://foo/pytz-2021.3-py3-none-any.whl"
         in selenium_standalone.logs
@@ -175,7 +192,12 @@ def test_load_twice_different_source(selenium_standalone):
 
 
 def test_load_twice_same_source(selenium_standalone):
-    selenium_standalone.load_package(["https://foo/pytz-2021.3-py3-none-any.whl", "https://foo/pytz-2021.3-py3-none-any.whl"])
+    selenium_standalone.load_package(
+        [
+            "https://foo/pytz-2021.3-py3-none-any.whl",
+            "https://foo/pytz-2021.3-py3-none-any.whl",
+        ]
+    )
     assert "Loading same package pytz" not in selenium_standalone.logs
 
 
