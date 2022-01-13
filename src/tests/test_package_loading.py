@@ -2,7 +2,6 @@ import pytest
 import shutil
 
 from pathlib import Path
-from selenium import JavascriptException
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
@@ -120,7 +119,7 @@ def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
     selenium.run("import pytz")
-    with pytest.raises(JavascriptException, match="No known package with name pytz2"):
+    with pytest.raises(selenium.JavascriptException, match="No known package with name pytz2"):
         selenium.load_package("pytz2")
     selenium.load_package("pyparsing")
     assert "Loaded pytz" in selenium.logs
