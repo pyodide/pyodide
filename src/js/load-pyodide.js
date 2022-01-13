@@ -155,7 +155,6 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
-
 //
 // Dependency resolution
 //
@@ -459,7 +458,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     } finally {
       delete Module.monitorRunDependencies;
     }
-    
+
     Module.reportUndefinedSymbols();
     if (loaded.length > 0) {
       const successNames = loaded.join(", ");
