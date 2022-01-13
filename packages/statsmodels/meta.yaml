@@ -9,7 +9,7 @@ source:
     - patches/fix-scipy-blas-cythonize.patch
 
 build:
-  ldflags: -L$(NUMPY_LIB)/core/lib/
+  ldflags: -L$(NUMPY_LIB)
 
 requirements:
   run:
