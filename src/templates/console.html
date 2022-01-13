@@ -75,9 +75,9 @@
             switch (fut.syntax_check) {
               case "syntax-error":
                 term.error(fut.formatted_error.trimEnd());
-                continue;
+                break;
               case "incomplete":
-                continue;
+                break;
               case "complete":
                 break;
               default:
