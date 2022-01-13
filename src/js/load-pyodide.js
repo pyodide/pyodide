@@ -377,7 +377,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     return;
   }
 
-  for (let [pkg, uri] of toLoadAll) {
+  for (let [pkg, uri] of [...toLoad, ...toLoadShared]) {
     let loaded = loadedPackages[pkg];
     if (loaded === undefined) {
       continue;
