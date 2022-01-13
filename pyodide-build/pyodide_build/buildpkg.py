@@ -308,17 +308,13 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
 
 
 def unpack_wheel(path):
-    cwd = Path.cwd()
-    os.chdir(path.parent)
-    subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
-    os.chdir(cwd)
+    with chdir(path.parent):
+        subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
 
 
 def pack_wheel(path):
-    cwd = Path.cwd()
-    os.chdir(path.parent)
-    subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
-    os.chdir(cwd)
+    with chdir(path.parent):
+        subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
 
 
 def install_for_distribution():
