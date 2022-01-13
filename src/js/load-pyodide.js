@@ -382,20 +382,19 @@ export async function loadPackage(names, messageCallback, errorCallback) {
 
   for (let [pkg, uri] of [...toLoad, ...toLoadShared]) {
     let loaded = loadedPackages[pkg];
-    if (loaded !== undefined) {
-      // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-      // depedency, which was previously overridden.
-      if (loaded === uri || uri === DEFAULT_CHANNEL) {
-        messageCallback(`${pkg} already loaded from ${loaded}`);
-        continue;
-      } else {
-        errorCallback(
-          `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
-            `while it is already loaded from ${loaded}. To override a dependency, ` +
-            `load the custom package first.`
-        );
-        continue;
-      }
+    if (loaded === undefined) {
+      continue;
+    }
+    // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
+    // depedency, which was previously overridden.
+    if (loaded === uri || uri === DEFAULT_CHANNEL) {
+      messageCallback(`${pkg} already loaded from ${loaded}`);
+    } else {
+      errorCallback(
+        `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
+          `while it is already loaded from ${loaded}. To override a dependency, ` +
+          `load the custom package first.`
+      );
     }
   }
 
