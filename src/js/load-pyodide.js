@@ -133,20 +133,6 @@ async function nodeLoadScript(url) {
   }
 }
 
-////////////////////////////////////////////////////////////
-// Package loading
-const DEFAULT_CHANNEL = "default channel";
-
-// Regexp for validating package name and URI
-const package_uri_regexp = /^.*?([^\/]*)\.js$/;
-
-function _uri_to_package_name(package_uri) {
-  let match = package_uri_regexp.exec(package_uri);
-  if (match) {
-    return match[1].toLowerCase();
-  }
-}
-
 /**
  * @param {string) url
  * @async
@@ -169,6 +155,30 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
+
+//
+// Dependency resolution
+//
+const DEFAULT_CHANNEL = "default channel";
+
+// Regexp for validating package name and URI
+const package_uri_regexp = /^.*?([^\/]*)\.js$/;
+
+function _uri_to_package_name(package_uri) {
+  let match = package_uri_regexp.exec(package_uri);
+  if (match) {
+    return match[1].toLowerCase();
+  }
+}
+
+/**
+ * Recursively add a package and its dependencies to toLoad and toLoadShared.
+ * A helper function for recursiveDependencies.
+ * @param {str} name The package to add
+ * @param {Set} toLoad The set of names of packages to load
+ * @param {Set} toLoadShared The set of names of shared libraries to load
+ * @private
+ */
 function addPackageToLoad(name, toLoad, toLoadShared) {
   name = name.toLowerCase();
   if (toLoad.has(name)) {
