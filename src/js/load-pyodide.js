@@ -251,8 +251,7 @@ async function downloadPackage(name) {
   } else {
     file_name = name;
   }
-  let result = await _loadBinaryFile(baseURL, file_name);
-  return result;
+  return await _loadBinaryFile(baseURL, file_name);
 }
 
 /**
