@@ -350,24 +350,15 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   if (Module.isPyProxy(names)) {
     names = names.toJs();
   }
-
   if (!Array.isArray(names)) {
     names = [names];
   }
 
-  const [toLoad, toLoadShared] = recursiveDependencies(
-    names,
-    messageCallback,
-    errorCallback
-  );
-  const toLoadAll = [...toLoad, ...toLoadShared];
+  const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);
   if (toLoad.size === 0 && toLoadShared.size === 0) {
     messageCallback("No new packages to load");
     return;
   }
-
-  let packageNames = Array.from(toLoad.keys()).join(", ");
-  messageCallback(`Loading ${packageNames}`);
 
   for (let [pkg, uri] of toLoadAll) {
     let loaded = loadedPackages[pkg];
@@ -389,10 +380,13 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     }
   }
 
+  const packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
   let releaseLock = await acquirePackageLock();
   try {
+    messageCallback(`Loading ${packageNames}`);
     let scriptPromises = [];
     const loaded = [];
+    const failed = {};
 
     useSharedLibraryWasmPlugin();
     for (const [pkg, uri] of toLoadShared) {
@@ -408,7 +402,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
             loadedPackages[name] = uri;
           })
           .catch((e) => {
-            errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
+            failed[pkg] = e;
           })
       );
     }
@@ -437,7 +431,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
             loadedPackages[name] = uri;
           })
           .catch((e) => {
-            errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
+            failed[pkg] = e;
           })
       );
     }
@@ -447,17 +441,21 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     } finally {
       delete Module.monitorRunDependencies;
     }
-
-    let resolveMsg;
-    if (packageList.length > 0) {
-      let packageNames = loaded.join(", ");
-      resolveMsg = `Loaded ${packageNames}`;
-    } else {
-      resolveMsg = "No packages loaded";
-    }
-    messageCallback(resolveMsg);
-
+    
     Module.reportUndefinedSymbols();
+    if (loaded.length > 0) {
+      const successNames = loaded.join(", ");
+      messageCallback(`Loaded ${successNames}`);
+    }
+    if (Object.keys(failed).length > 0) {
+      const failedNames = Object.keys(failed).join(", ");
+      messageCallback(`Failed to load ${failedNames}`);
+      for (let [name, err] of Object.entries(failed)) {
+        console.warn(`The following error occurred while loading ${name}:`);
+        console.error(err);
+      }
+    }
+
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
     Module.importlib.invalidate_caches();
