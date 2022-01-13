@@ -406,6 +406,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     const failed = {};
 
     useSharedLibraryWasmPlugin();
+    Module.locateFile_packagesToLoad = toLoadShared;
     for (const [pkg, uri] of toLoadShared) {
       const pkgname =
         (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
@@ -435,6 +436,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     restoreOrigWasmPlugin();
 
     scriptPromises = [];
+    Module.locateFile_packagesToLoad = toLoad;
     for (const [pkg, uri] of toLoad) {
       const pkgname =
         (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
