@@ -377,6 +377,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     return;
   }
 
+  let releaseLock = await acquirePackageLock();
   for (let [pkg, uri] of [...toLoad, ...toLoadShared]) {
     let loaded = loadedPackages[pkg];
     if (loaded === undefined) {
@@ -398,7 +399,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   }
 
   const packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
-  let releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
     let scriptPromises = [];
