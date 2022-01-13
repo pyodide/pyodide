@@ -5,8 +5,9 @@ import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
-  _fetchBinaryFile,
+  _loadBinaryFile,
   loadPackage,
+  initNodeModules,
 } from "./load-pyodide.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
@@ -144,7 +145,7 @@ function unpackPyodidePy(pyodide_py_tar) {
   let stream = Module.FS.open(fileName, "w");
   Module.FS.write(
     stream,
-    new Uint8Array(pyodide_py_tar),
+    pyodide_py_tar,
     0,
     pyodide_py_tar.byteLength,
     undefined,
@@ -263,8 +264,9 @@ export async function loadPyodide(config) {
     config.indexURL += "/";
   }
   Module.indexURL = config.indexURL;
+  await initNodeModules();
   let packageIndexReady = initializePackageIndex(config.indexURL);
-  let pyodide_py_tar_promise = _fetchBinaryFile(
+  let pyodide_py_tar_promise = _loadBinaryFile(
     config.indexURL,
     "pyodide_py.tar"
   );
