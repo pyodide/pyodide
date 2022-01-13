@@ -1,7 +1,8 @@
 import pytest
 import shutil
-from pathlib import Path
 
+from pathlib import Path
+from selenium import JavascriptException
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
