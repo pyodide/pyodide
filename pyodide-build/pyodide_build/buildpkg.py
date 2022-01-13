@@ -102,7 +102,7 @@ def get_bash_runner():
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
         ]
-    } | {"PYODIDE": "1", "_PYTHON_HOST_PLATFORM": "emscripten_wasm32"}
+    } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
     b = BashRunnerWithSharedEnvironment(env=env)
@@ -379,7 +379,7 @@ def compile(
     skip_host = build_metadata.get("skip_host", True)
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
-
+    bash_runner.env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(
@@ -401,6 +401,7 @@ def compile(
                 replay_from=replay_from,
             )
         install_for_distribution()
+    del bash_runner.env["_PYTHON_HOST_PLATFORM"]
 
 
 def package_wheel(pkg_name, pkg_root, srcpath, build_metadata, bash_runner):
