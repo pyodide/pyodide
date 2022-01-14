@@ -136,8 +136,8 @@ def test_load_handle_failure(selenium_standalone):
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone
-    selenium.load_package("http://invalidurl/pytz.js")
-    assert selenium.logs.count("Loading pytz from") == 1
+    selenium.load_package("http://invalidurl/pytz-2021.3-py3-none-any.whl")
+    assert selenium.logs.count("Loading pytz") == 1
     assert selenium.logs.count("The following error occurred while loading pytz:") == 1
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
     selenium.load_package("pytz")

@@ -273,7 +273,7 @@ async function installPackage(name, buffer) {
     buffer,
     pkg.install_dir
   );
-  for (let dynlib of dynlibs) {
+  for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
   loadedPackages[name] = pkg;
@@ -293,7 +293,7 @@ function createLock() {
    * @private
    */
   async function acquireLock() {
-    let old_lock = _lock;
+    const old_lock = _lock;
     let releaseLock;
     _lock = new Promise((resolve) => (releaseLock = resolve));
     await old_lock;
@@ -374,16 +374,14 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   }
 
   const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);
-  if (toLoad.size === 0 && toLoadShared.size === 0) {
-    messageCallback("No new packages to load");
-    return;
-  }
 
-  for (let [pkg, uri] of [...toLoad, ...toLoadShared]) {
-    let loaded = loadedPackages[pkg];
+  for (const [pkg, uri] of [...toLoad, ...toLoadShared]) {
+    const loaded = loadedPackages[pkg];
     if (loaded === undefined) {
       continue;
     }
+    toLoad.delete(pkg);
+    toLoadShared.delete(pkg);
     // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
     // depedency, which was previously overridden.
     if (loaded === uri || uri === DEFAULT_CHANNEL) {
@@ -395,6 +393,11 @@ export async function loadPackage(names, messageCallback, errorCallback) {
           `load the custom package first.`
       );
     }
+  }
+
+  if (toLoad.size === 0 && toLoadShared.size === 0) {
+    messageCallback("No new packages to load");
+    return;
   }
 
   const packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
@@ -464,7 +467,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     if (Object.keys(failed).length > 0) {
       const failedNames = Object.keys(failed).join(", ");
       messageCallback(`Failed to load ${failedNames}`);
-      for (let [name, err] of Object.entries(failed)) {
+      for (const [name, err] of Object.entries(failed)) {
         console.warn(`The following error occurred while loading ${name}:`);
         console.error(err);
       }
