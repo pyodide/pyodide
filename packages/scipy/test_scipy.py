@@ -40,7 +40,9 @@ def test_dlamch():
 
     lapack.dlamch("Epsilon-Machine")
 
+
 @run_in_pyodide
 def test_binom_ppf():
     from scipy.stats import binom
+
     assert binom.ppf(0.9, 1000, 0.1) == 112
