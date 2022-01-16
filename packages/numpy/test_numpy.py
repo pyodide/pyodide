@@ -362,7 +362,7 @@ def test_fft(selenium):
     )
 
 
-@run_in_pyodide
+@run_in_pyodide()
 def test_np_unique():
     """Numpy comparator functions formerly had a fatal error, see PR #2110"""
     import numpy as np
