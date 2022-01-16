@@ -1,8 +1,10 @@
 import pytest
 from pyodide_build.testing import run_in_pyodide as run_in_pyodide_orig
 
+
 def run_in_pyodide(**kwargs):
     return run_in_pyodide_orig(module_scope=True, packages=["numpy"])
+
 
 def test_numpy(selenium):
     selenium.load_package("numpy")
@@ -359,8 +361,10 @@ def test_fft(selenium):
         """
     )
 
+
 @run_in_pyodide
 def test_np_unique():
     """Numpy comparator functions formerly had a fatal error, see PR #2110"""
     import numpy as np
+
     np.unique(np.array([1.1, 1.1]), axis=-1)
