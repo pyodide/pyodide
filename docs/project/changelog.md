@@ -12,6 +12,13 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+### Uncategorized
+
+- {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
+  {pr}`2109`
+
 ## Version 0.19.0
 
 _January 10, 2021_
