@@ -1,0 +1,15 @@
+package:
+  name: modbampy
+  version: 0.4.0
+source:
+  url: https://files.pythonhosted.org/packages/0a/d7/6ca78462e83d645337b954991a7ba1fbb915b140879d2ea092d8f926a949/modbampy-0.4.0.tar.gz
+  sha256: e8a4fc807c544d73ef8c82d501ee2397e25c0380df5f96e9a6028158cfb773df
+  patches: pyodide.path
+test:
+  imports:
+  - modbampy
+about:
+  home: https://github.com/epi2me-labs/modbampy
+  PyPI: https://pypi.org/project/modbampy
+  summary: Accessing modified-base data from BAM files.
+  license: ''
