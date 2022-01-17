@@ -17,4 +17,4 @@ build:
 
 test:
   imports:
-  - logbook
+    - logbook

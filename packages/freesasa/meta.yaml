@@ -6,4 +6,4 @@ source:
   url: https://files.pythonhosted.org/packages/a8/af/66991b63b705cd1e1c77fdaec157747275ba5c27b5c9dff7a2e35a43477a/freesasa-2.1.0.tar.gz
 test:
   imports:
-  - freesasa
+    - freesasa

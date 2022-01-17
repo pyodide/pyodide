@@ -1,10 +1,9 @@
 package:
   name: pillow
-  version: 8.3.1
+  version: 9.0.0
 source:
-  sha256: 2cac53839bfc5cece8fdbe7f084d5e3ee61e1303cccc86511d351adcb9e2c792
-  url: https://files.pythonhosted.org/packages/8f/7d/1e9c2d8989c209edfd10f878da1af956059a1caab498e5bc34fa11b83f71/Pillow-8.3.1.tar.gz
-
+  sha256: ee6e2963e92762923956fe5d3479b1fdc3b76c83f290aad131a2f98c3df0593e
+  url: https://files.pythonhosted.org/packages/b0/43/3e286c93b9fa20e233d53532cc419b5aad8a468d91065dbef4c846058834/Pillow-9.0.0.tar.gz
   patches:
     - patches/setitup.patch
   extras:

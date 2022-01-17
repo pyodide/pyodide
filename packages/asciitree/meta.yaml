@@ -6,4 +6,4 @@ source:
   url: https://files.pythonhosted.org/packages/2d/6a/885bc91484e1aa8f618f6f0228d76d0e67000b0fdd6090673b777e311913/asciitree-0.3.3.tar.gz
 test:
   imports:
-  - asciitree
+    - asciitree

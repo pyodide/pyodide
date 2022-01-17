@@ -74,13 +74,16 @@ def test_uri_mismatch(selenium_standalone):
 
 
 def test_invalid_package_name(selenium):
-    selenium.load_package("wrong name+$")
-    assert "Skipping unknown package" in selenium.logs
-
-    selenium.clean_logs()
-
-    selenium.load_package("tcp://some_url")
-    assert "Skipping unknown package" in selenium.logs
+    with pytest.raises(
+        selenium.JavascriptException,
+        match=r"No known package with name 'wrong name\+\$'",
+    ):
+        selenium.load_package("wrong name+$")
+    with pytest.raises(
+        selenium.JavascriptException,
+        match="No known package with name 'tcp://some_url'",
+    ):
+        selenium.load_package("tcp://some_url")
 
 
 @pytest.mark.parametrize(
@@ -118,10 +121,12 @@ def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
     selenium.run("import pytz")
-    selenium.load_package("pytz2")
+    with pytest.raises(
+        selenium.JavascriptException, match="No known package with name 'pytz2'"
+    ):
+        selenium.load_package("pytz2")
     selenium.load_package("pyparsing")
     assert "Loading pytz" in selenium.logs
-    assert "Skipping unknown package 'pytz2'" in selenium.logs
     assert "Loading pyparsing" in selenium.logs
 
 
@@ -130,7 +135,7 @@ def test_load_failure_retry(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("http://invalidurl/pytz.js")
     assert selenium.logs.count("Loading pytz from") == 1
-    assert selenium.logs.count("Couldn't load package from URL") == 1
+    assert selenium.logs.count("The following error occurred while loading pytz:") == 1
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
 
     selenium.load_package("pytz")
