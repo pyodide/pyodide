@@ -24,17 +24,6 @@ from urllib import request
 
 from . import pywasmcross
 
-
-@contextmanager
-def chdir(new_dir: Path):
-    orig_dir = Path.cwd()
-    try:
-        os.chdir(new_dir)
-        yield
-    finally:
-        os.chdir(orig_dir)
-
-
 from . import common
 from .io import parse_package_config
 
@@ -294,7 +283,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
         return
 
     # Apply all the patches
-    with chdir(srcpath):
+    with common.chdir(srcpath):
         for patch in patches:
             subprocess.run(
                 ["patch", "-p1", "--binary", "-i", pkg_root / patch], check=True
@@ -388,6 +377,7 @@ def compile(
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
+    bash_runner.env["BUILD_ROOT"] = srcpath
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(

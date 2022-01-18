@@ -103,9 +103,11 @@ def capture_command(command: str, args: List[str]) -> int:
                 fh.write(b"")
             skip = True
 
-    with open("build.log", "a") as fd:
+    build_log = Path(env["BUILD_ROOT"]) / "build.log"
+    cur_dir = str(Path(".").resolve())
+    with open(build_log, "a") as fd:
         # TODO: store skip status in the build.log
-        json.dump([command] + args, fd)
+        json.dump([cur_dir, [command] + args], fd)
         fd.write("\n")
 
     if skip:
@@ -626,9 +628,10 @@ def replay_compile(replay_from: int = 1, **kwargs):
         for idx, line_str in enumerate(fd):
             if idx < replay_from - 1:
                 continue
-            line = json.loads(line_str)
+            curdir, line = json.loads(line_str)
             print(f"[line {idx + 1} of {num_lines}]")
-            replay_command(line, args)
+            with common.chdir(curdir):
+                replay_command(line, args)
 
 
 def clean_out_native_artifacts():

@@ -1,10 +1,22 @@
 from pathlib import Path
 from typing import Optional, Set
+from contextlib import contextmanager
 
 import functools
+import os
 import subprocess
 
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
+
+@contextmanager
+def chdir(new_dir: Path):
+    orig_dir = Path.cwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(orig_dir)
+
 
 
 def _parse_package_subset(query: Optional[str]) -> Set[str]:
