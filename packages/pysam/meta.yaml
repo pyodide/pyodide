@@ -8,11 +8,6 @@ source:
 test:
   imports:
     - pysam
-requirements:
-  run:
-    - htslib
-    - samtools
-    - bcftools
 build:
   script: |
     HTSLIB_CONFIGURE_OPTIONS='--disable-libcurl' python setup.py build
