@@ -14,6 +14,10 @@ substitutions:
 
 ## Unreleased
 
+### Packages
+
+- New packages: sqlalchemy {pr}`2112`
+
 ### Uncategorized
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
