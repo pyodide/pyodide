@@ -14,6 +14,10 @@ requirements:
 build:
   script: |
     HTSLIB_CONFIGURE_OPTIONS='--disable-libcurl' python setup.py build
+  cflags: |
+    -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/include
+  ldflags: |
+    -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/lib/
 about:
   home: https://github.com/pysam-developers/pysam
   PyPI: https://pypi.org/project/pysam
