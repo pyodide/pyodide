@@ -8,6 +8,7 @@ import subprocess
 
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
 
+
 @contextmanager
 def chdir(new_dir: Path):
     orig_dir = Path.cwd()
@@ -16,7 +17,6 @@ def chdir(new_dir: Path):
         yield
     finally:
         os.chdir(orig_dir)
-
 
 
 def _parse_package_subset(query: Optional[str]) -> Set[str]:
