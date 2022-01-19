@@ -250,8 +250,8 @@ function recursiveDependencies(names, errorCallback) {
  */
 async function downloadPackage(name, channel) {
   let file_name;
-  if(channel === DEFAULT_CHANNEL){
-    if(!(name in Module.packages)){
+  if (channel === DEFAULT_CHANNEL) {
+    if (!(name in Module.packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = Module.packages[name].file_name;
