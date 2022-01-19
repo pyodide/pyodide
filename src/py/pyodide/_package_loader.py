@@ -18,29 +18,31 @@ TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 
 
 def unpack_buffer(filename: str, buffer: JsProxy, target: str = "site") -> JsProxy:
-    """
-    Used to install a package either into sitepackages or into the standard library.
+    """Used to install a package either into sitepackages or into the standard
+    library.
+
     This is a helper method called from ``loadPackage``.
 
     Parameters
     ----------
     filename
-        The name of the file we are extracting. We only care about it to figure out
-        whether the buffer represents a tar file or a zip file.
+        The name of the file we are extracting. We only care about it to figure
+        out whether the buffer represents a tar file or a zip file.
 
     buffer
         A Javascript ``Uint8Array`` with the binary data for the archive.
 
     target
-        Controls which directory the package is installed into. Either "site" which
-        installs the package into the sitepackages directory or "lib" which installs
-        the package into the standard library.
+        Controls which directory the package is installed into. Either "site"
+        which installs the package into the sitepackages directory or "lib"
+        which installs the package into the standard library.
 
     Returns
     -------
-        A Javascript Array of paths to dynamic libraries ('.so' files) that were in
-        the archive. We need to precompile these Wasm binaries in `load-pyodide.js`.
-        These paths point to the unpacked locations of the .so files.
+        A Javascript Array of paths to dynamic libraries ('.so' files) that were
+        in the archive. We need to precompile these Wasm binaries in
+        `load-pyodide.js`. These paths point to the unpacked locations of the
+        .so files.
     """
     target_dir = TARGETS[target]
     with NamedTemporaryFile(suffix=filename) as f:
@@ -50,8 +52,7 @@ def unpack_buffer(filename: str, buffer: JsProxy, target: str = "site") -> JsPro
 
 
 def get_dynlibs(archive: IO[bytes], target_dir: Path) -> List[str]:
-    """
-    List out the paths to .so files in a zip or tar archive.
+    """List out the paths to .so files in a zip or tar archive.
 
     Parameters
     ----------

@@ -404,8 +404,18 @@ def compile(
     del bash_runner.env["_PYTHON_HOST_PLATFORM"]
 
 
-def package_wheel(pkg_name, pkg_root, srcpath, build_metadata, bash_runner):
-    """
+def package_wheel(
+    pkg_name: str,
+    pkg_root: Path,
+    srcpath: Path,
+    build_metadata: Dict[str, Any],
+    bash_runner: BashRunnerWithSharedEnvironment,
+):
+    """Package a wheel
+
+    This unpacks the wheel, unvendors tests if necessary, runs and "build.post"
+    script, and then repacks the wheel.
+
     Parameters
     ----------
     pkg_name
@@ -416,16 +426,16 @@ def package_wheel(pkg_name, pkg_root, srcpath, build_metadata, bash_runner):
         $PYODIDE_ROOT/packages/<PACKAGES>
 
     srcpath
-        The path to the source. We extract the source into the build directory, so it
-        will be something like
+        The path to the source. We extract the source into the build directory,
+        so it will be something like
         $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
 
     build_metadata
         The build section from meta.yaml.
 
     bash_runner
-        The runner we will use to execute our bash commands. Preserves environment
-        variables from one invocation to the next.
+        The runner we will use to execute our bash commands. Preserves
+        environment variables from one invocation to the next.
     """
     if build_metadata.get("sharedlibrary"):
         return
