@@ -239,17 +239,24 @@ function recursiveDependencies(names, errorCallback) {
 //
 
 /**
- * Download a package.
+ * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
+ * relative to baseURL from `packages.json`, otherwise use the URL specified by
+ * `channel`.
  * @param {str} name The name of the package
+ * @param {str} channel Either `DEFAULT_CHANNEL` or the absolute URL to the
+ * wheel or the path to the wheel relative to baseURL.
  * @returns {ArrayBuffer} The binary data for the package
  * @private
  */
-async function downloadPackage(name) {
+async function downloadPackage(name, channel) {
   let file_name;
-  if (name in Module.packages) {
+  if(channel === DEFAULT_CHANNEL){
+    if(!(name in Module.packages)){
+      throw new Error(`Internal error: no entry for package named ${name}`);
+    }
     file_name = Module.packages[name].file_name;
   } else {
-    file_name = name;
+    file_name = channel;
   }
   return await _loadBinaryFile(baseURL, file_name);
 }
@@ -406,14 +413,14 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     messageCallback(`Loading ${packageNames}`);
     const sharedLibraryPromises = {};
     const packagePromises = {};
-    for (const name of toLoadShared.keys()) {
+    for (const [name, channel] of toLoadShared) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
         toLoadShared.delete(name);
         continue;
       }
-      sharedLibraryPromises[name] = downloadPackage(name);
+      sharedLibraryPromises[name] = downloadPackage(name, channel);
     }
     for (const [name, channel] of toLoad) {
       if (loadedPackages[name]) {
@@ -422,11 +429,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
         toLoad.delete(name);
         continue;
       }
-      if (channel === DEFAULT_CHANNEL) {
-        packagePromises[name] = downloadPackage(name);
-      } else {
-        packagePromises[name] = downloadPackage(channel);
-      }
+      packagePromises[name] = downloadPackage(name, channel);
     }
 
     const loaded = [];
