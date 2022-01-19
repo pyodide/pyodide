@@ -2,11 +2,12 @@ package:
   name: pysam
   version: 0.18.0
 source:
-  url: https://files.pythonhosted.org/packages/15/79/00249a37089a6aecb70a4080f8af8d88e7005e2019c71e505c3ad3a0a018/pysam-0.18.0.tar.gz
+  url: "https://files.pythonhosted.org/packages/15/79/\
+        00249a37089a6aecb70a4080f8af8d88e7005e2019c71e505c3ad3a0a018/pysam-0.18.0.tar.gz"
   sha256: 1d6d49a0b3c626fae410a93d4c80583a8b5ddaacc9b46a080b250dbcebd30a59
 test:
   imports:
-  - pysam
+    - pysam
 build:
   script: |
     HTSLIB_CONFIGURE_OPTIONS='--disable-libcurl' python setup.py build
