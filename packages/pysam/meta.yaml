@@ -8,6 +8,9 @@ source:
 test:
   imports:
     - pysam
+requirements:
+  run:
+    - zlib
 build:
   script: |
     HTSLIB_CONFIGURE_OPTIONS='--disable-libcurl' python setup.py build
