@@ -25,6 +25,7 @@ from urllib import request
 from . import pywasmcross
 
 from . import common
+from .common import chdir
 from .io import parse_package_config
 
 
@@ -283,7 +284,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
         return
 
     # Apply all the patches
-    with common.chdir(srcpath):
+    with chdir(srcpath):
         for patch in patches:
             subprocess.run(
                 ["patch", "-p1", "--binary", "-i", pkg_root / patch], check=True
