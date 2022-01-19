@@ -378,7 +378,7 @@ def compile(
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
-    bash_runner.env["BUILD_ROOT"] = srcpath
+    bash_runner.env["BUILD_ROOT"] = str(srcpath)
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(
