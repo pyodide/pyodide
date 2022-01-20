@@ -92,6 +92,18 @@ class Package(BasePackage):
         self.unbuilt_dependencies = set(self.dependencies)
         self.dependents = set()
 
+    def wheel_path(self) -> Path:
+        wheels = list((self.pkgdir / "dist").glob("*.whl"))
+        assert len(wheels) == 1
+        return wheels[0]
+
+    def tests_path(self) -> Optional[Path]:
+        tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
+        assert len(tests) <= 1
+        if tests:
+            return tests[0]
+        return None
+
     def build(self, outputdir: Path, args) -> None:
         with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
@@ -160,10 +172,10 @@ class Package(BasePackage):
             )
             shutil.copy(file_path, outputdir)
             return
-        for file in (self.pkgdir / "dist").glob("*.whl"):
-            shutil.copy(file, outputdir)
-        for file in (self.pkgdir / "dist").glob("*-tests.tar"):
-            shutil.copy(file, outputdir)
+        shutil.copy(self.wheel_path(), outputdir)
+        test_path = self.tests_path()
+        if test_path:
+            shutil.copy(test_path, outputdir)
 
 
 def generate_dependency_graph(
@@ -402,11 +414,6 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put((job_priority(dependent), dependent))
 
-    for name, pkg in pkg_map.items():
-        tests_path = pkg.pkgdir / f"dist/{name}-tests.tar"
-        if tests_path.exists():
-            pkg.unvendored_tests = tests_path
-
     print(
         "\n===================================================\n"
         f"built all packages in {perf_counter() - t0:.2f} s"
@@ -479,8 +486,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         if pkg.shared_library:
             pkg.file_name = f"{pkg.name}-{pkg.version}.zip"
             continue
-        for file in (pkg.pkgdir / "dist").glob("*.whl"):
-            pkg.file_name = file.name
+        assert isinstance(pkg, Package)
+        pkg.file_name = pkg.wheel_path().name
+        pkg.unvendored_tests = pkg.tests_path()
 
     package_data = generate_packages_json(pkg_map)
 
