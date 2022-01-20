@@ -302,8 +302,8 @@ def test_xyz():
         f = open(file_name, "rb")
         libs = get_dynlibs(f, Path("/p"))
         result.append(libs)
-        assert '/p/scipy/optimize/_lbfgsb.so' in libs
-        assert '/p/scipy/signal/_upfirdn_apply.so' in libs
+        assert "/p/scipy/optimize/_lbfgsb.so" in libs
+        assert "/p/scipy/signal/_upfirdn_apply.so" in libs
         so_nums = {
             "_lib": 7,
             "fftpack": 1,

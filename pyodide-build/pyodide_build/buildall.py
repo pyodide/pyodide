@@ -48,6 +48,9 @@ class BasePackage:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
 
+    def needs_rebuild(self) -> bool:
+        return needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta)
+
 
 @total_ordering
 class StdLibPackage(BasePackage):
@@ -294,7 +297,7 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map):
+def generate_needs_build_set(pkg_map: Dict[str, BasePackage]) -> Set[BasePackage]:
     """
     Generate the set of packages that need to be rebuilt.
 
@@ -306,7 +309,7 @@ def generate_needs_build_set(pkg_map):
     needs_build = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
-        if needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta):
+        if pkg.needs_rebuild():
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
 
@@ -485,6 +488,8 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
             continue
         if pkg.shared_library:
             pkg.file_name = f"{pkg.name}-{pkg.version}.zip"
+            continue
+        if pkg.needs_rebuild():
             continue
         assert isinstance(pkg, Package)
         pkg.file_name = pkg.wheel_path().name
