@@ -648,9 +648,9 @@ def build_package(
             create_packaged_token(build_dir)
             return
 
-        if not build_metadata.get("sharedlibrary") and not source_metadata.get(
-            "finished_wheel"
-        ):
+        url = source_metadata.get("url")
+        finished_wheel = url and url.endswith(".whl")
+        if not build_metadata.get("sharedlibrary") and not finished_wheel:
             compile(
                 srcpath,
                 build_metadata,

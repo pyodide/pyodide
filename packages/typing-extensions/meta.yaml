@@ -4,7 +4,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/05/e4/baf0031e39cf545f0c9edd5b1a2ea12609b7fcba2d58e118b11753d68cf0/typing_extensions-4.0.1-py3-none-any.whl
   sha256: 7f001e5ac290a0c0401508864c7ec868be4e701886d5b573a9528ed3973d9d3b
-  finished_wheel: True
 
 test:
   imports:

@@ -17,7 +17,6 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
         "md5": str,
         "sha256": str,
         "extras": list,  # List[Tuple[str, str]],
-        "finished_wheel": bool,
     },
     "build": {
         "skip_host": bool,
