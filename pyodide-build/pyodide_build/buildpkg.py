@@ -441,8 +441,9 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
-    wheel_path = next(distdir.glob("*.whl"))
-    unpack_wheel(wheel_path)
+    wheel_paths = list(distdir.glob("*.whl"))
+    assert len(wheel_paths) == 1
+    unpack_wheel(wheel_paths[0])
     wheel_dir = Path(next(p for p in distdir.glob("*") if p.is_dir()))
     post = build_metadata.get("post")
     if post:
