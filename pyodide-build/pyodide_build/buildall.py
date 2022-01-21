@@ -309,7 +309,7 @@ def generate_needs_build_set(pkg_map: Dict[str, BasePackage]) -> Set[str]:
        according to needs_rebuild, and
     2. packages which depend on case 1 packages.
     """
-    needs_build : Set[str] = set()
+    needs_build: Set[str] = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
         if pkg.needs_rebuild():
