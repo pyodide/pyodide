@@ -2,7 +2,6 @@
   cython<3.0
   packaging
   pyyaml
-  ruamel.yaml
   # lint
   black
   flake8

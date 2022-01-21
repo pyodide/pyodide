@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 import warnings
+import yaml
 
 from .io import parse_package_config
 
@@ -61,27 +62,12 @@ def _get_metadata(package: str, version: Optional[str] = None) -> Dict:
     return pypi_metadata
 
 
-def _import_ruamel_yaml():
-    """Import ruamel.yaml with a better error message is not installed."""
-    try:
-        from ruamel.yaml import YAML
-    except ImportError as err:
-        raise ImportError(
-            "No module named 'ruamel'. "
-            "It can be installed with pip install ruamel.yaml"
-        ) from err
-    return YAML
-
-
 def make_package(package: str, version: Optional[str] = None):
     """
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
     """
     print(f"Creating meta.yaml package for {package}")
-    YAML = _import_ruamel_yaml()
-
-    yaml = YAML()
 
     pypi_metadata = _get_metadata(package, version)
     sdist_metadata = _extract_sdist(pypi_metadata)
@@ -111,7 +97,7 @@ def make_package(package: str, version: Optional[str] = None):
         os.makedirs(PACKAGES_ROOT / package)
     out_path = PACKAGES_ROOT / package / "meta.yaml"
     with open(out_path, "w") as fd:
-        yaml.dump(yaml_content, fd)
+        yaml.dump(yaml_content, fd, default_flow_style=False, sort_keys=False)
     success(f"Output written to {out_path}")
 
 
@@ -141,11 +127,6 @@ def success(msg):
 
 
 def update_package(package: str, update_patched: bool = True):
-
-    YAML = _import_ruamel_yaml()
-
-    yaml = YAML()
-
     meta_path = PACKAGES_ROOT / package / "meta.yaml"
     try:
         yaml_content = parse_package_config(meta_path)
@@ -193,7 +174,7 @@ def update_package(package: str, update_patched: bool = True):
     yaml_content["source"]["sha256"] = sdist_metadata["digests"]["sha256"]
     yaml_content["package"]["version"] = pypi_metadata["info"]["version"]
     with open(PACKAGES_ROOT / package / "meta.yaml", "w") as fd:
-        yaml.dump(yaml_content, fd)
+        yaml.dump(yaml_content, fd, default_flow_style=False, sort_keys=False)
     success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 

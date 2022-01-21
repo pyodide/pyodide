@@ -32,7 +32,6 @@ def test_mkpkg(tmpdir, monkeypatch, capsys):
 
 
 def test_mkpkg_update(tmpdir, monkeypatch):
-    pytest.importorskip("ruamel")
     base_dir = Path(str(tmpdir))
     monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
 
