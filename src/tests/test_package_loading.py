@@ -294,34 +294,34 @@ def test_install_archive(selenium):
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
-def test_xyz():
+def test_get_dynlibs():
     from pyodide._package_loader import get_dynlibs
+    import tarfile
+    from zipfile import ZipFile
+    from tempfile import NamedTemporaryFile
 
-    result = []
-    for file_name in ["data/test-scipy.whl", "data/test-scipy.tar.bz2"]:
-        f = open(file_name, "rb")
-        libs = get_dynlibs(f, Path("/p"))
-        result.append(libs)
-        assert "/p/scipy/optimize/_lbfgsb.so" in libs
-        assert "/p/scipy/signal/_upfirdn_apply.so" in libs
-        so_nums = {
-            "_lib": 7,
-            "fftpack": 1,
-            "cluster": 3,
-            "integrate": 6,
-            "interpolate": 6,
-            "linalg": 9,
-            "optimize": 16,
-            "signal": 7,
-            "sparse": 12,
-            "spatial": 7,
-            "special": 7,
-            "stats": 9,
-            "stats/_boost": 3,
-        }
-        for directory, num_sos in so_nums.items():
-            assert (
-                len([f for f in libs if f.startswith(f"/p/scipy/{directory}")])
-                == num_sos
-            )
-    assert sorted(result[0]) == sorted(result[1])
+    files = [
+        "a.so",
+        "a.py",
+        "a.txt",
+        "a/b.so",
+        "a/b.txt",
+        "a/b.py",
+        "b/a.py",
+        "b/b.so",
+        "a/b/c/d.so"
+    ]
+    with NamedTemporaryFile(suffix=".bz") as t:
+        x = tarfile.open(mode="x:bz2", fileobj=t)
+        for file in files:
+            x.addfile(tarfile.TarInfo(file))
+        x.close()
+        t.flush()
+        assert sorted(get_dynlibs(t, Path("/p"))) == sorted("/p/"+f for f in files if f.endswith(".so"))
+    with NamedTemporaryFile(suffix=".zip") as t:
+        x = ZipFile(t, mode="w")
+        for file in files:
+            x.writestr(file, "")
+        x.close()
+        t.flush()
+        assert sorted(get_dynlibs(t, Path("/p"))) == sorted("/p/"+f for f in files if f.endswith(".so"))
