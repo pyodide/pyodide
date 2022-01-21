@@ -49,7 +49,7 @@ class BasePackage:
         return f"{type(self).__name__}({self.name})"
 
     def needs_rebuild(self) -> bool:
-        return needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta)
+        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta)
 
 
 @total_ordering
