@@ -311,17 +311,18 @@ def test_get_dynlibs():
         "b/b.so",
         "a/b/c/d.so"
     ]
+    so_files = sorted("/p/"+f for f in files if f.endswith(".so"))
     with NamedTemporaryFile(suffix=".bz") as t:
         x = tarfile.open(mode="x:bz2", fileobj=t)
         for file in files:
             x.addfile(tarfile.TarInfo(file))
         x.close()
         t.flush()
-        assert sorted(get_dynlibs(t, Path("/p"))) == sorted("/p/"+f for f in files if f.endswith(".so"))
+        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
     with NamedTemporaryFile(suffix=".zip") as t:
         x = ZipFile(t, mode="w")
         for file in files:
             x.writestr(file, "")
         x.close()
         t.flush()
-        assert sorted(get_dynlibs(t, Path("/p"))) == sorted("/p/"+f for f in files if f.endswith(".so"))
+        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
