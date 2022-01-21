@@ -98,7 +98,9 @@ class Package(BasePackage):
     def wheel_path(self) -> Path:
         wheels = list((self.pkgdir / "dist").glob("*.whl"))
         if len(wheels) != 1:
-            raise Exception(f"Unexpected number of wheels {len(wheels)} when building {self.name}")
+            raise Exception(
+                f"Unexpected number of wheels {len(wheels)} when building {self.name}"
+            )
         return wheels[0]
 
     def tests_path(self) -> Optional[Path]:

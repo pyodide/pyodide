@@ -309,9 +309,9 @@ def test_get_dynlibs():
         "a/b.py",
         "b/a.py",
         "b/b.so",
-        "a/b/c/d.so"
+        "a/b/c/d.so",
     ]
-    so_files = sorted("/p/"+f for f in files if f.endswith(".so"))
+    so_files = sorted("/p/" + f for f in files if f.endswith(".so"))
     with NamedTemporaryFile(suffix=".bz") as t:
         x = tarfile.open(mode="x:bz2", fileobj=t)
         for file in files:
