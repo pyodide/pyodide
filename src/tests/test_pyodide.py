@@ -614,7 +614,7 @@ def test_return_destroyed_value(selenium):
             try:
                 f(p)
             except JsException as e:
-                assert str(e) == 
+                assert str(e) ==
                 (
                     "Error: Object has already been destroyed\n"
                     "The object was of type list and had repr []"
@@ -623,7 +623,7 @@ def test_return_destroyed_value(selenium):
         """
     )
 
-g
+
 def test_docstrings_a():
     from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
     from pyodide import JsProxy
