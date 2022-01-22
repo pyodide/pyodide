@@ -486,13 +486,15 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 
     build_from_graph(pkg_map, outputdir, args)
     for pkg in pkg_map.values():
+        if pkg.library:
+            continue
+        if pkg.needs_rebuild():
+            continue
         if isinstance(pkg, StdLibPackage):
             pkg.file_name = pkg.name + ".tar"
             continue
         if pkg.shared_library:
             pkg.file_name = f"{pkg.name}-{pkg.version}.zip"
-            continue
-        if pkg.needs_rebuild():
             continue
         assert isinstance(pkg, Package)
         pkg.file_name = pkg.wheel_path().name
