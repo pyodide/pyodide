@@ -762,6 +762,11 @@ def test_errors(selenium):
         assertThrowsAsync(async () => await t, "PythonError", "");
         assertThrows(() => t.toString(), "PythonError", "");
         assertThrows(() => Array.from(t), "PythonError", "");
+        t.destroy();
+        assertThrows(() => t.type, "Error",
+            "Uncaught Error: Object has already been destroyed\n" +
+            "The object was of type Temp and an error was raised when trying to generate its repr"
+        )
         """
     )
 
