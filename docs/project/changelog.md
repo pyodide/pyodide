@@ -26,8 +26,10 @@ substitutions:
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
 
-- {{Fix}} The error message that occurs when a destroyed `PyProxy` is used has 
-  been improved with some context information.
+- {{Fix}} The "PyProxy has already been destroyed" error message has been
+  improved with some context information.
+  {pr}`2121`
+
 
 ## Version 0.19.0
 
