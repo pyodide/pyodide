@@ -129,9 +129,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
 function _getPtr(jsobj) {
   let ptr = jsobj.$$.ptr;
   if (ptr === null) {
-    throw new Error(
-      jsobj.$$.destroyed_msg
-    );
+    throw new Error(jsobj.$$.destroyed_msg);
   }
   return ptr;
 }
@@ -219,8 +217,8 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   let proxy_repr;
   try {
     proxy_repr = proxy.toString();
-  } catch(e) {
-    if(e.pyodide_fatal_error){
+  } catch (e) {
+    if (e.pyodide_fatal_error) {
       throw e;
     }
   }
@@ -229,12 +227,12 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   // just in case!
   proxy.$$.ptr = null;
   destroyed_msg += "\n" + `The object was of type ${proxy_type} and `;
-  if(proxy_repr){
+  if (proxy_repr) {
     destroyed_msg += `had repr ${proxy_repr}`;
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
-  proxy.$$.destroyed_msg = destroyed_msg
+  proxy.$$.destroyed_msg = destroyed_msg;
   pyproxy_decref_cache(proxy.$$.cache);
   try {
     Module._Py_DecRef(ptrobj);
