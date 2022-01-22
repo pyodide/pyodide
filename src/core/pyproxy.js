@@ -130,7 +130,7 @@ function _getPtr(jsobj) {
   let ptr = jsobj.$$.ptr;
   if (ptr === null) {
     throw new Error(
-      jsobj.$$.destroyed_msg || "Object has already been destroyed"
+      jsobj.$$.destroyed_msg
     );
   }
   return ptr;
@@ -214,11 +214,27 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy);
+  destroyed_msg ||= "Object has already been destroyed";
+  let proxy_type = proxy.type;
+  let proxy_repr;
+  try {
+    proxy_repr = proxy.toString();
+  } catch(e) {
+    if(e.pyodide_fatal_error){
+      throw e;
+    }
+  }
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
   proxy.$$.ptr = null;
-  proxy.$$.destroyed_msg = destroyed_msg;
+  destroyed_msg += "\n" + `The object was of type ${proxy_type} and `;
+  if(proxy_repr){
+    destroyed_msg += `had repr ${proxy_repr}`;
+  } else {
+    destroyed_msg += "an error was raised when trying to generate its repr";
+  }
+  proxy.$$.destroyed_msg = destroyed_msg
   pyproxy_decref_cache(proxy.$$.cache);
   try {
     Module._Py_DecRef(ptrobj);
