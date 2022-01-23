@@ -765,7 +765,7 @@ def test_errors(selenium):
         t.destroy();
         assertThrows(() => t.type, "Error",
             "Object has already been destroyed\n" +
-            "The object was of type Temp and an error was raised when trying to generate its repr"
+            'The object was of type "Temp" and an error was raised when trying to generate its repr'
         )
         """
     )

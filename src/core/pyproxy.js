@@ -226,9 +226,9 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
   proxy.$$.ptr = null;
-  destroyed_msg += "\n" + `The object was of type ${proxy_type} and `;
+  destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
   if (proxy_repr) {
-    destroyed_msg += `had repr ${proxy_repr}`;
+    destroyed_msg += `had repr "${proxy_repr}"`;
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
