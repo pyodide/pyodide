@@ -615,7 +615,7 @@ def test_return_destroyed_value(selenium):
                 f(p)
             except JsException as e:
                 assert str(e) == (
-                    "Error: Object has already been destroyed\n"
+                    "Error: Object has already been destroyed\\n"
                     'The object was of type "list" and had repr "[]"'
                 )
         `);
