@@ -15,7 +15,7 @@ Module.handle_js_error = function (e) {
   let restored_error = false;
   if (e instanceof Module.PythonError) {
     // Try to restore the original Python exception.
-    restored_error = _restore_sys_last_exception(e.__error_address);
+    restored_error = Module._restore_sys_last_exception(e.__error_address);
   }
   if (!restored_error) {
     // Wrap the JavaScript error
