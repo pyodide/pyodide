@@ -12,6 +12,20 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+### Packages
+
+- New packages: sqlalchemy {pr}`2112`
+
+### Uncategorized
+
+- {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
+  {pr}`2109`
+
+- {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
+  {pr}`2110`
+
 ## Version 0.19.0
 
 _January 10, 2021_

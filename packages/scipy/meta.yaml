@@ -28,6 +28,7 @@ source:
     - patches/sasum-returns-double-not-float.patch
     - patches/skip-fortran-fails-to-link.patch
     - patches/rename-_page_trend_test.patch
+    - patches/USE_CPP14-branch-doesn-t-work-for-wasm.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
