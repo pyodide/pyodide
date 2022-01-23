@@ -17,6 +17,8 @@ import shutil
 import functools
 import pytest
 
+from typing import List
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
