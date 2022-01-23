@@ -7,7 +7,9 @@ import json
 
 from pyodide_build.io import parse_package_config
 from conftest import built_packages, ROOT_PATH
+
 PKG_DIR = ROOT_PATH / "packages"
+
 
 @functools.cache
 def registered_packages() -> List[str]:
@@ -17,6 +19,7 @@ def registered_packages() -> List[str]:
         if (PKG_DIR / name).is_dir() and (PKG_DIR / name / "meta.yaml").exists():
             packages.append(name)
     return packages
+
 
 def registered_packages_meta():
     """Returns a dictionary with the contents of `meta.yaml`
