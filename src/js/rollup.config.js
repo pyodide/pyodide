@@ -1,3 +1,5 @@
+import commonjs from "@rollup/plugin-commonjs";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 
 function config({ input, format, minify, ext = "js" }) {
@@ -12,7 +14,10 @@ function config({ input, format, minify, ext = "js" }) {
       format,
       sourcemap: true,
     },
+    external: ["path", "fs/promises", "node-fetch", "vm"],
     plugins: [
+      commonjs(),
+      nodeResolve(),
       minify
         ? terser({
             compress: true,
