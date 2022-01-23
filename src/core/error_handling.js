@@ -1,6 +1,36 @@
 import ErrorStackParser from "error-stack-parser";
 import { Module } from "./module.js";
 
+function isPyodideFrame(frame){
+  const fileName = frame.fileName || "";
+  if(fileName.includes("pyodide.asm")){
+    return true;
+  }
+  if(fileName.includes("wasm-function")){
+    return true;
+  }
+  if(!fileName.includes("pyodide.js")){
+    return false;
+  }
+  let funcName = frame.functionName || "";
+  if(funcName.startsWith("Object.")){
+    funcName = funcName.slice("Object.".length);
+  }
+  if(funcName in Module.public_api && funcName !== "PythonError"){
+    frame.functionName = funcName;
+    return false;
+  }
+  return true;
+}
+
+function isErrorStart(frame){
+  if(!isPyodideFrame(frame)){
+    return false;
+  }
+  const funcName = frame.functionName;
+  return funcName === "PythonError" || funcName === "new_error";
+}
+
 Module.handle_js_error = function (e) {
   if (e.pyodide_fatal_error) {
     throw e;
@@ -11,7 +41,6 @@ Module.handle_js_error = function (e) {
     // it. In this case we don't want to tamper with the traceback.
     return;
   }
-
   let restored_error = false;
   if (e instanceof Module.PythonError) {
     // Try to restore the original Python exception.
@@ -25,21 +54,30 @@ Module.handle_js_error = function (e) {
     Module._Py_DecRef(err);
     Module.hiwire.decref(eidx);
   }
+  let stack = ErrorStackParser.parse(e);
+  if(isErrorStart(stack[0])){
+    while(isPyodideFrame(stack[0])){
+      stack.shift();
+    }
+  }
   // Add the Javascript stack frames to the Python traceback
-  for (const stack of ErrorStackParser.parse(e)) {
-    const funcnameAddr = Module.stringToNewUTF8(stack.functionName || "???");
-    const fileNameAddr = Module.stringToNewUTF8(stack.fileName || "???.js");
-    if (stack.fileName && stack.fileName.includes("pyodide.asm")) {
+  for (const frame of stack) {
+    if(isPyodideFrame(frame)){
       break;
     }
-    Module.__PyTraceback_Add(funcnameAddr, fileNameAddr, stack.lineNumber);
+    const funcnameAddr = Module.stringToNewUTF8(frame.functionName || "???");
+    const fileNameAddr = Module.stringToNewUTF8(frame.fileName || "???.js");
+    Module.__PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
     Module._free(funcnameAddr);
     Module._free(fileNameAddr);
   }
 };
 class PythonError extends Error {
   constructor(message, error_address) {
+    const oldLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = Infinity;
     super(message);
+    Error.stackTraceLimit = oldLimit;
     this.name = this.constructor.name;
     // The address of the error we are wrapping. We may later compare this
     // against sys.last_value.
