@@ -1,30 +1,30 @@
 import ErrorStackParser from "error-stack-parser";
 import { Module } from "./module.js";
 
-function isPyodideFrame(frame){
+function isPyodideFrame(frame) {
   const fileName = frame.fileName || "";
-  if(fileName.includes("pyodide.asm")){
+  if (fileName.includes("pyodide.asm")) {
     return true;
   }
-  if(fileName.includes("wasm-function")){
+  if (fileName.includes("wasm-function")) {
     return true;
   }
-  if(!fileName.includes("pyodide.js")){
+  if (!fileName.includes("pyodide.js")) {
     return false;
   }
   let funcName = frame.functionName || "";
-  if(funcName.startsWith("Object.")){
+  if (funcName.startsWith("Object.")) {
     funcName = funcName.slice("Object.".length);
   }
-  if(funcName in Module.public_api && funcName !== "PythonError"){
+  if (funcName in Module.public_api && funcName !== "PythonError") {
     frame.functionName = funcName;
     return false;
   }
   return true;
 }
 
-function isErrorStart(frame){
-  if(!isPyodideFrame(frame)){
+function isErrorStart(frame) {
+  if (!isPyodideFrame(frame)) {
     return false;
   }
   const funcName = frame.functionName;
@@ -55,14 +55,14 @@ Module.handle_js_error = function (e) {
     Module.hiwire.decref(eidx);
   }
   let stack = ErrorStackParser.parse(e);
-  if(isErrorStart(stack[0])){
-    while(isPyodideFrame(stack[0])){
+  if (isErrorStart(stack[0])) {
+    while (isPyodideFrame(stack[0])) {
       stack.shift();
     }
   }
   // Add the Javascript stack frames to the Python traceback
   for (const frame of stack) {
-    if(isPyodideFrame(frame)){
+    if (isPyodideFrame(frame)) {
       break;
     }
     const funcnameAddr = Module.stringToNewUTF8(frame.functionName || "???");
