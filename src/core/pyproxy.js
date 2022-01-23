@@ -212,7 +212,7 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy);
-  destroyed_msg ||= "Object has already been destroyed";
+  destroyed_msg = destroyed_msg || "Object has already been destroyed";
   let proxy_type = proxy.type;
   let proxy_repr;
   try {
