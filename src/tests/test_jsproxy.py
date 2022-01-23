@@ -348,7 +348,7 @@ def test_call_pyproxy_destroy_args(selenium):
             f([])
         `);
         assertThrows(() => y.length, "Error",
-            "This borrowed proxy was automatically destroyed\n" +
+            "This borrowed proxy was automatically destroyed at the end of a function call.*" +
             "The object was of type list and had repr []"
         );
         """

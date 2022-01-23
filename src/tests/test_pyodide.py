@@ -604,7 +604,7 @@ def test_create_proxy(selenium):
 
 def test_return_destroyed_value(selenium):
     selenium.run_js(
-        """
+        r"""
         self.f = function(x){ return x };
         pyodide.runPython(`
             from pyodide import create_proxy, JsException
