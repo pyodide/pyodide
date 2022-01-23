@@ -729,7 +729,7 @@ def test_pyproxy_implicit_copy(selenium):
 @pytest.mark.skip_pyproxy_check
 def test_errors(selenium):
     selenium.run_js(
-        """
+        r"""
         let t = pyodide.runPython(`
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
@@ -764,7 +764,7 @@ def test_errors(selenium):
         assertThrows(() => Array.from(t), "PythonError", "");
         t.destroy();
         assertThrows(() => t.type, "Error",
-            "Uncaught Error: Object has already been destroyed\n" +
+            "Object has already been destroyed\n" +
             "The object was of type Temp and an error was raised when trying to generate its repr"
         )
         """

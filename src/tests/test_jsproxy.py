@@ -339,7 +339,7 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
 
 def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
-        """
+        r"""
         let y;
         self.f = function(x){ y = x; }
         pyodide.runPython(`
