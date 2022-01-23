@@ -73,11 +73,8 @@ def pytest_collection_modifyitems(config, items):
 
 
 @functools.cache
-def built_packages():
-    """Returns a list of built package names.
-
-    This function lists the names of the .whl files in the build/ directory.
-    """
+def built_packages() -> List[str]:
+    """Returns the list of built package names from packages.json"""
     packages_json_path = BUILD_PATH / "packages.json"
     if not packages_json_path.exists():
         return []

@@ -6,10 +6,8 @@ import functools
 import json
 
 from pyodide_build.io import parse_package_config
-
-PKG_DIR = Path(__file__).parent
-BUILD_DIR = PKG_DIR.parent / "build"
-
+from conftest import built_packages, ROOT_PATH
+PKG_DIR = ROOT_PATH / "packages"
 
 @functools.cache
 def registered_packages() -> List[str]:
@@ -19,19 +17,6 @@ def registered_packages() -> List[str]:
         if (PKG_DIR / name).is_dir() and (PKG_DIR / name / "meta.yaml").exists():
             packages.append(name)
     return packages
-
-
-@functools.cache
-def built_packages() -> List[str]:
-    """Returns a list of built package names.
-
-    This functions lists the names of the .data files in the build/ directory.
-    """
-    packages_json_path = BUILD_DIR / "packages.json"
-    if not packages_json_path.exists():
-        return []
-    return list(json.loads(packages_json_path.read_text())["packages"].keys())
-
 
 def registered_packages_meta():
     """Returns a dictionary with the contents of `meta.yaml`
