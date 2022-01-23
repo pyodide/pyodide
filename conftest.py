@@ -76,7 +76,7 @@ def pytest_collection_modifyitems(config, items):
 def built_packages():
     """Returns a list of built package names.
 
-    This functions lists the names of the .data files in the build/ directory.
+    This function lists the names of the .whl files in the build/ directory.
     """
     packages_json_path = BUILD_PATH / "packages.json"
     if not packages_json_path.exists():
