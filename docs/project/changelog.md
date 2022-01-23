@@ -18,6 +18,8 @@ substitutions:
 
 - New packages: sqlalchemy {pr}`2112`
 
+- Upgraded packages: distlib (0.3.4)
+
 ### Uncategorized
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
