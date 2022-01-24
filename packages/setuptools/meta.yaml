@@ -6,7 +6,7 @@ source:
   sha256: 68eb94073fc486091447fcb0501efd6560a0e5a1839ba249e5ff3c4c93f05f90
 build:
   post: |
-    find build/setuptools-60.3.1/dist -name '*.exe' -delete
+    find build/setuptools-*/dist -name '*.exe' -delete
 requirements:
   run:
     - distutils
