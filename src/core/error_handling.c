@@ -233,73 +233,6 @@ pythonexc2js()
   hiwire_throw_error(jserror);
 }
 
-char* error__js_funcname_string = "<javascript frames>";
-char* error__js_filename_string = "???.js";
-
-EM_JS_NUM(errcode, error_handling_init_js, (), {
-  Module.handle_js_error = function(e)
-  {
-    if (e.pyodide_fatal_error) {
-      throw e;
-    }
-    if (e instanceof Module._PropagatePythonError) {
-      // Python error indicator is already set in this case. If this branch is
-      // not taken, Python error indicator should be unset, and we have to set
-      // it. In this case we don't want to tamper with the traceback.
-      return;
-    }
-    let restored_error = false;
-    if (e instanceof Module.PythonError) {
-      // Try to restore the original Python exception.
-      restored_error = _restore_sys_last_exception(e.__error_address);
-    }
-    if (!restored_error) {
-      // Wrap the JavaScript error
-      let eidx = Module.hiwire.new_value(e);
-      let err = _JsProxy_create(eidx);
-      _set_error(err);
-      _Py_DecRef(err);
-      Module.hiwire.decref(eidx);
-    }
-    // Add a marker to the traceback to indicate that we passed through "native"
-    // frames.
-    // TODO? Use stacktracejs to add more detailed info here.
-    __PyTraceback_Add(HEAPU32[_error__js_funcname_string / 4],
-                      HEAPU32[_error__js_filename_string / 4],
-                      -1);
-  };
-  class PythonError extends Error
-  {
-    constructor(message, error_address)
-    {
-      super(message);
-      this.name = this.constructor.name;
-      // The address of the error we are wrapping. We may later compare this
-      // against sys.last_value.
-      // WARNING: we don't own a reference to this pointer, dereferencing it
-      // may be a use-after-free error!
-      this.__error_address = error_address;
-    }
-  };
-  Module.PythonError = PythonError;
-  // A special marker. If we call a CPython API from an EM_JS function and the
-  // CPython API sets an error, we might want to return an error status back to
-  // C keeping the current Python error flag. This signals to the EM_JS wrappers
-  // that the Python error flag is set and to leave it alone and return the
-  // appropriate error value (either NULL or -1).
-  class _PropagatePythonError extends Error
-  {
-    constructor()
-    {
-      Module.fail_test = true;
-      super("If you are seeing this message, an internal Pyodide error has " +
-            "occurred. Please report it to the Pyodide maintainers.");
-    }
-  };
-  Module._PropagatePythonError = _PropagatePythonError;
-  return 0;
-})
-
 PyObject*
 trigger_fatal_error(PyObject* mod, PyObject* _args)
 {
@@ -336,8 +269,6 @@ error_handling_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(
     PyObject_SetAttrString(core_module, "ConversionError", conversion_error));
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
-
-  FAIL_IF_MINUS_ONE(error_handling_init_js());
 
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);

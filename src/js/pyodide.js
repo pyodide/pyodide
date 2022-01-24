@@ -13,6 +13,7 @@ import {
 } from "./load-package.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
+import "./error_handling.gen.js";
 
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
