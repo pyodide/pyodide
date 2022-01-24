@@ -1,0 +1,25 @@
+From 35b23fa619869960ae449e12640670e03ee698a1 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 23 Jan 2022 17:01:36 -0800
+Subject: [PATCH] Use emconfigure
+
+---
+ setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index 63c9be7..d828797 100644
+--- a/setup.py
++++ b/setup.py
+@@ -106,7 +106,7 @@ def get_extensions():
+                 if not os.path.exists(configure):
+                     subprocess.run(
+                         ['./bootstrap.sh'], check=True, cwd=LIBERFADIR)
+-                subprocess.run(['./configure'], check=True, cwd=LIBERFADIR)
++                subprocess.run(['emconfigure', './configure'], check=True, cwd=LIBERFADIR)
+             except (subprocess.SubprocessError, OSError) as exc:
+                 warn(f'unable to configure liberfa: {exc}')
+ 
+-- 
+2.25.1
+
