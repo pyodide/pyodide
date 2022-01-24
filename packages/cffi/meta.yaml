@@ -2,6 +2,8 @@ package:
   name: cffi
   version: 1.14.6
 requirements:
+  host:
+    - pycparser
   run:
     - pycparser
 source:

@@ -21,6 +21,12 @@ build:
     -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/lib/
     -L$(PYODIDE_ROOT)/packages/libiconv/build/libiconv-1.16/lib/.libs/
 requirements:
+  host:
+    - libxml
+    - libxslt
+    - zlib
+    - libiconv
+
   run:
     - beautifulsoup4
     - cssselect

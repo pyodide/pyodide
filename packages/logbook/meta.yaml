@@ -7,7 +7,7 @@ source:
   sha256: 3eebcb13a41636004a2d03d875bc1c2ccc4afb02dc13f45320b147fee79c9739
 
 requirements:
-  run:
+  host:
     - distutils
     - setuptools
 

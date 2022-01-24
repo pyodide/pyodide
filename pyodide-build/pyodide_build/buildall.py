@@ -30,6 +30,9 @@ class BasePackage:
     meta: dict
     library: bool
     shared_library: bool
+    run_dependencies: List[str]
+    # All the following variables indicate host dependencies, meaning the dependencies
+    # that are needed at build time
     dependencies: List[str]
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
@@ -61,6 +64,7 @@ class StdLibPackage(BasePackage):
         self.version = "1.0"
         self.library = False
         self.shared_library = False
+        self.run_dependencies = []
         self.dependencies = []
         self.unbuilt_dependencies = set()
         self.dependents = set()
@@ -91,7 +95,8 @@ class Package(BasePackage):
 
         assert self.name == pkgdir.stem
 
-        self.dependencies = self.meta["requirements"].get("run", [])
+        self.run_dependencies = self.meta["requirements"].get("run", [])
+        self.dependencies = self.meta["requirements"].get("host", [])
         self.unbuilt_dependencies = set(self.dependencies)
         self.dependents = set()
 
@@ -448,7 +453,7 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
         pkg_entry["depends"] = [
-            x.lower() for x in pkg.dependencies if x not in libraries
+            x.lower() for x in pkg.run_dependencies if x not in libraries
         ]
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 

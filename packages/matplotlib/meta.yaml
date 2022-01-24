@@ -38,6 +38,8 @@ build:
     cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
+  host:
+    - numpy
   run:
     - distutils
     - cycler

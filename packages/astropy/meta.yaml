@@ -11,6 +11,9 @@ build:
   # so it cannot be unvendored
   unvendor-tests: false
 requirements:
+  host:
+    - packaging
+    - numpy
   run:
     - distutils
     - packaging

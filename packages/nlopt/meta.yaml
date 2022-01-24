@@ -11,6 +11,8 @@ source:
       - ./setup.py
 
 requirements:
+  host:
+    - numpy
   run:
     - numpy
 
