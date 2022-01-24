@@ -17,6 +17,9 @@ function config({ input, format, minify, ext = "js" }) {
     external: ["path", "fs/promises", "node-fetch", "vm"],
     plugins: [
       commonjs(),
+      // The nodeResolve plugin allows us to import packages from node_modules.
+      // We need to include node-only packages in `external` to ensure they
+      // aren't bundled for use in browser.
       nodeResolve(),
       minify
         ? terser({
