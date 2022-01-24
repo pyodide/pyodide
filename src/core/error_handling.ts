@@ -72,17 +72,47 @@ Module.handle_js_error = function (e) {
     Module._free(fileNameAddr);
   }
 };
-class PythonError extends Error {
-  constructor(message, error_address) {
+
+/**
+ * A JavaScript error caused by a Python exception.
+ *
+ * In order to reduce the risk of large memory leaks, the ``PythonError``
+ * contains no reference to the Python exception that caused it. You can find
+ * the actual Python exception that caused this error as `sys.last_value
+ * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+ *
+ * See :ref:`type-translations-errors` for more information.
+ *
+ * .. admonition:: Avoid Stack Frames
+ *    :class: warning
+ *
+ *    If you make a :any:`PyProxy` of ``sys.last_value``, you should be
+ *    especially careful to :any:`destroy() <PyProxy.destroy>` it when you are
+ *    done. You may leak a large amount of memory including the local
+ *    variables of all the stack frames in the traceback if you don't. The
+ *    easiest way is to only handle the exception in Python.
+ *
+ * @class
+ */
+export class PythonError extends Error {
+  /**
+   * The Python traceback.
+   */
+  message: string;
+  /**  The address of the error we are wrapping. We may later compare this
+   * against sys.last_value.
+   * WARNING: we don't own a reference to this pointer, dereferencing it
+   * may be a use-after-free error!
+   * @private
+   */
+  __error_address: number;
+
+  constructor(message: string, error_address: number) {
     const oldLimit = Error.stackTraceLimit;
     Error.stackTraceLimit = Infinity;
     super(message);
     Error.stackTraceLimit = oldLimit;
     this.name = this.constructor.name;
-    // The address of the error we are wrapping. We may later compare this
-    // against sys.last_value.
-    // WARNING: we don't own a reference to this pointer, dereferencing it
-    // may be a use-after-free error!
     this.__error_address = error_address;
   }
 }

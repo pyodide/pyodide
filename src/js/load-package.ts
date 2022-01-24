@@ -1,5 +1,6 @@
 import { Module } from "./module.js";
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
+import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
@@ -253,14 +254,18 @@ const acquirePackageLock = createLock();
  *    (optional)
  * @async
  */
-export async function loadPackage(names, messageCallback, errorCallback) {
+export async function loadPackage(
+  names: string | PyProxy | Array<string>,
+  messageCallback = undefined,
+  errorCallback = undefined
+) {
   messageCallback = messageCallback || console.log;
   errorCallback = errorCallback || console.error;
-  if (Module.isPyProxy(names)) {
+  if (isPyProxy(names)) {
     names = names.toJs();
   }
   if (!Array.isArray(names)) {
-    names = [names];
+    names = [names as string];
   }
 
   const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);

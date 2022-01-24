@@ -210,6 +210,8 @@ function finalizeBootstrap(config) {
   return pyodide;
 }
 
+declare function _createPyodideModule(Module: any): Promise<undefined>;
+
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
@@ -237,13 +239,13 @@ function finalizeBootstrap(config) {
  * @async
  */
 export async function loadPyodide(config) {
-  if (globalThis.__pyodide_module) {
+  if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
-  loadPyodide.inProgress = true;
+  (loadPyodide as any).inProgress = true;
 
   const default_config = {
     fullStdLib: true,

@@ -1,4 +1,6 @@
 // Detect if we're in node
+declare var process: any;
+
 export const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
@@ -20,9 +22,11 @@ export async function initNodeModules() {
   if (!IN_NODE) {
     return;
   }
+  // @ts-ignore
   nodePathMod = (await import(/* webpackIgnore: true */ "path")).default;
   nodeFsPromisesMod = await import(/* webpackIgnore: true */ "fs/promises");
   nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
+  // @ts-ignore
   nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
 }
 
@@ -34,7 +38,10 @@ export async function initNodeModules() {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
-async function node_loadBinaryFile(indexURL, path) {
+async function node_loadBinaryFile(
+  indexURL: string,
+  path: string
+): Promise<Uint8Array> {
   if (path.includes("://")) {
     let response = await nodeFetch(path);
     if (!response.ok) {
@@ -56,9 +63,14 @@ async function node_loadBinaryFile(indexURL, path) {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
-async function browser_loadBinaryFile(indexURL, path) {
+async function browser_loadBinaryFile(
+  indexURL: string,
+  path: string
+): Promise<Uint8Array> {
+  // @ts-ignore
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
+  // @ts-ignore
   let response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to load '${url}': request failed.`);
@@ -66,7 +78,10 @@ async function browser_loadBinaryFile(indexURL, path) {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-export let _loadBinaryFile;
+export let _loadBinaryFile: (
+  indexURL: string,
+  path: string
+) => Promise<Uint8Array>;
 if (IN_NODE) {
   _loadBinaryFile = node_loadBinaryFile;
 } else {
@@ -79,7 +94,7 @@ if (IN_NODE) {
  * @async
  * @private
  */
-export let loadScript;
+export let loadScript: (url: string) => void;
 
 if (globalThis.document) {
   // browser
@@ -101,7 +116,7 @@ if (globalThis.document) {
  * @param {str} url The path to load. May be a url or a relative file system path.
  * @private
  */
-async function nodeLoadScript(url) {
+async function nodeLoadScript(url: string) {
   if (url.includes("://")) {
     // If it's a url, load it with fetch then eval it.
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
