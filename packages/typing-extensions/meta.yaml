@@ -1,17 +1,9 @@
 package:
   name: typing-extensions
   version: 4.0.1
-  # I needed some dumb hacks to get this to work. TODO: fix build system after
-  # 0.19 release.
 source:
-  path: "empty"
-build:
-  sharedlibrary: True
-  script: |
-    wget https://files.pythonhosted.org/packages/05/e4/baf0031e39cf545f0c9edd5b1a2ea12609b7fcba2d58e118b11753d68cf0/typing_extensions-4.0.1-py3-none-any.whl
-    python -m wheel unpack typing_extensions-4.0.1-py3-none-any.whl
-    mkdir -p install/lib/python3.9/site-packages
-    cp typing_extensions-4.0.1/typing_extensions.py install/lib/python3.9/site-packages
+  url: https://files.pythonhosted.org/packages/05/e4/baf0031e39cf545f0c9edd5b1a2ea12609b7fcba2d58e118b11753d68cf0/typing_extensions-4.0.1-py3-none-any.whl
+  sha256: 7f001e5ac290a0c0401508864c7ec868be4e701886d5b573a9528ed3973d9d3b
 
 test:
   imports:

@@ -26,12 +26,13 @@ def test_generate_packages_json():
     pkg_map = buildall.generate_dependency_graph(
         PACKAGES_DIR, {"beautifulsoup4", "micropip"}
     )
+    for pkg in pkg_map.values():
+        pkg.file_name = pkg.file_name or pkg.name + ".file"
 
     package_data = buildall.generate_packages_json(pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
     assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
     assert set(package_data["packages"]) == {
-        "test",
         "distutils",
         "pyparsing",
         "packaging",
@@ -42,8 +43,10 @@ def test_generate_packages_json():
     assert package_data["packages"]["micropip"] == {
         "name": "micropip",
         "version": "0.1",
+        "file_name": "micropip.file",
         "depends": ["pyparsing", "packaging", "distutils"],
         "imports": ["micropip"],
+        "install_dir": "site",
     }
 
 

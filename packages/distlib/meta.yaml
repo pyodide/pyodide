@@ -1,11 +1,13 @@
 package:
   name: distlib
-  version: 0.3.1
+  version: 0.3.4
 source:
-  sha256: edf6116872c863e1aa9d5bb7cb5e05a022c519a4594dc703843343a9ddd9bff1
-  url: https://files.pythonhosted.org/packages/2f/83/1eba07997b8ba58d92b3e51445d5bf36f9fba9cb8166bcae99b9c3464841/distlib-0.3.1.zip
+  sha256: 6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b
+  url: https://files.pythonhosted.org/packages/ac/a3/8ee4f54d5f12e16eeeda6b7df3dfdbda24e6cc572c86ff959a4ce110391b/distlib-0.3.4-py2.py3-none-any.whl
 build:
-  script: "find . -name *.exe -delete"
+  post: |
+    find build/distlib-0.3.4/dist -name '*.exe' -delete
+
 test:
   imports:
     - distlib

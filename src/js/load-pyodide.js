@@ -134,6 +134,7 @@ async function nodeLoadScript(url) {
 }
 
 /**
+ * Currently loadScript is only used once to load `pyodide.asm.js`.
  * @param {string) url
  * @async
  * @private
@@ -159,14 +160,14 @@ if (globalThis.document) {
 // Dependency resolution
 //
 const DEFAULT_CHANNEL = "default channel";
-
 // Regexp for validating package name and URI
-const package_uri_regexp = /^.*?([^\/]*)\.js$/;
+const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
 function _uri_to_package_name(package_uri) {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
-    return match[1].toLowerCase();
+    let wheel_name = match[1].toLowerCase();
+    return wheel_name.split("-").slice(0, -4).join("-");
   }
 }
 
@@ -198,6 +199,7 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   if (loadedPackages[name] !== undefined) {
     return;
   }
+
   for (let dep_name of pkg_info.depends) {
     addPackageToLoad(dep_name, toLoad, toLoadShared);
   }
@@ -216,7 +218,7 @@ function recursiveDependencies(names, errorCallback) {
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
     if (pkgname === undefined) {
-      addPackageToLoad(name.toLowerCase(), toLoad, toLoadShared);
+      addPackageToLoad(name, toLoad, toLoadShared);
       continue;
     }
     if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
@@ -232,92 +234,57 @@ function recursiveDependencies(names, errorCallback) {
   return [toLoad, toLoadShared];
 }
 
-// locateFile is the function used by the .js file to locate the .data file
-// given the filename
-Module.locateFile = function (path) {
-  // handle packages loaded from custom URLs
-  let pkg = path.replace(/\.data$/, "");
-  const toLoad = Module.locateFile_packagesToLoad;
-  if (toLoad && toLoad.has(pkg)) {
-    let package_uri = toLoad.get(pkg);
-    if (package_uri != DEFAULT_CHANNEL) {
-      return package_uri.replace(/\.js$/, ".data");
+//
+// Dependency download and install
+//
+
+/**
+ * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
+ * relative to baseURL from `packages.json`, otherwise use the URL specified by
+ * `channel`.
+ * @param {str} name The name of the package
+ * @param {str} channel Either `DEFAULT_CHANNEL` or the absolute URL to the
+ * wheel or the path to the wheel relative to baseURL.
+ * @returns {ArrayBuffer} The binary data for the package
+ * @private
+ */
+async function downloadPackage(name, channel) {
+  let file_name;
+  if (channel === DEFAULT_CHANNEL) {
+    if (!(name in Module.packages)) {
+      throw new Error(`Internal error: no entry for package named ${name}`);
     }
+    file_name = Module.packages[name].file_name;
+  } else {
+    file_name = channel;
   }
-  return baseURL + path;
-};
-
-// When the JS loads, it synchronously adds a runDependency to emscripten. It
-// then loads the data file, and removes the runDependency from emscripten.
-// This function returns a promise that resolves when there are no pending
-// runDependencies.
-function waitRunDependency() {
-  const promise = new Promise((r) => {
-    Module.monitorRunDependencies = (n) => {
-      if (n === 0) {
-        r();
-      }
-    };
-  });
-  // If there are no pending dependencies left, monitorRunDependencies will
-  // never be called. Since we can't check the number of dependencies,
-  // manually trigger a call.
-  Module.addRunDependency("dummy");
-  Module.removeRunDependency("dummy");
-  return promise;
-}
-
-let sharedLibraryWasmPlugin;
-let origWasmPlugin;
-let wasmPluginIndex;
-function initSharedLibraryWasmPlugin() {
-  for (let p in Module.preloadPlugins) {
-    if (Module.preloadPlugins[p].canHandle("test.so")) {
-      origWasmPlugin = Module.preloadPlugins[p];
-      wasmPluginIndex = p;
-      break;
-    }
-  }
-  sharedLibraryWasmPlugin = {
-    canHandle: origWasmPlugin.canHandle,
-    handle(byteArray, name, onload, onerror) {
-      origWasmPlugin.handle(byteArray, name, onload, onerror);
-      origWasmPlugin.asyncWasmLoadPromise = (async () => {
-        await origWasmPlugin.asyncWasmLoadPromise;
-        Module.loadDynamicLibrary(name, {
-          global: true,
-          nodelete: true,
-        });
-      })();
-    },
-  };
-}
-
-// override the load plugin so that it calls "Module.loadDynamicLibrary" on any
-// .so files.
-// this only needs to be done for shared library packages because we assume that
-// if a package depends on a shared library it needs to have access to it. not
-// needed for .so in standard module because those are linked together
-// correctly, it is only where linking goes across modules that it needs to be
-// done. Hence, we only put this extra preload plugin in during the shared
-// library load
-function useSharedLibraryWasmPlugin() {
-  if (!sharedLibraryWasmPlugin) {
-    initSharedLibraryWasmPlugin();
-  }
-  Module.preloadPlugins[wasmPluginIndex] = sharedLibraryWasmPlugin;
-}
-
-function restoreOrigWasmPlugin() {
-  Module.preloadPlugins[wasmPluginIndex] = origWasmPlugin;
+  return await _loadBinaryFile(baseURL, file_name);
 }
 
 /**
- * @callback LogFn
- * @param {string} msg
- * @returns {void}
+ * Install the package into the file system.
+ * @param {str} name The name of the package
+ * @param {str} buffer The binary data returned by downloadPkgBuffer
  * @private
  */
+async function installPackage(name, buffer) {
+  const pkg = Module.packages[name] || {
+    file_name: ".whl",
+    install_dir: "site",
+    shared_library: false,
+  };
+  const file_name = pkg.file_name;
+  // This Python helper function unpacks the buffer and lists out any so files therein.
+  const dynlibs = Module.package_loader.unpack_buffer(
+    file_name,
+    buffer,
+    pkg.install_dir
+  );
+  for (const dynlib of dynlibs) {
+    await loadDynlib(dynlib, pkg.shared_library);
+  }
+  loadedPackages[name] = pkg;
+}
 
 /**
  * @returns A new asynchronous lock
@@ -333,7 +300,7 @@ function createLock() {
    * @private
    */
   async function acquireLock() {
-    let old_lock = _lock;
+    const old_lock = _lock;
     let releaseLock;
     _lock = new Promise((resolve) => (releaseLock = resolve));
     await old_lock;
@@ -341,6 +308,48 @@ function createLock() {
   }
   return acquireLock;
 }
+
+// Emscripten has a lock in the corresponding code in library_browser.js. I
+// don't know why we need it, but quite possibly bad stuff will happen without
+// it.
+const acquireDynlibLock = createLock();
+
+/**
+ * Load a dynamic library. This is an async operation and Python imports are
+ * synchronous so we have to do it ahead of time. When we add more support for
+ * synchronous I/O, we could consider doing this later as a part of a Python
+ * import hook.
+ *
+ * @param {str} lib The file system path to the library.
+ * @param {bool} shared Is this a shared library or not?
+ * @private
+ */
+async function loadDynlib(lib, shared) {
+  const byteArray = Module.FS.lookupPath(lib).node.contents;
+  const releaseDynlibLock = await acquireDynlibLock();
+  try {
+    const module = await Module.loadWebAssemblyModule(byteArray, {
+      loadAsync: true,
+      nodelete: true,
+    });
+    Module.preloadedWasm[lib] = module;
+    if (shared) {
+      Module.loadDynamicLibrary(lib, {
+        global: true,
+        nodelete: true,
+      });
+    }
+  } finally {
+    releaseDynlibLock();
+  }
+}
+
+/**
+ * @callback LogFn
+ * @param {string} msg
+ * @returns {void}
+ * @private
+ */
 
 const acquirePackageLock = createLock();
 
@@ -372,14 +381,9 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   }
 
   const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);
-  if (toLoad.size === 0 && toLoadShared.size === 0) {
-    messageCallback("No new packages to load");
-    return;
-  }
 
-  let releaseLock = await acquirePackageLock();
-  for (let [pkg, uri] of [...toLoad, ...toLoadShared]) {
-    let loaded = loadedPackages[pkg];
+  for (const [pkg, uri] of [...toLoad, ...toLoadShared]) {
+    const loaded = loadedPackages[pkg];
     if (loaded === undefined) {
       continue;
     }
@@ -398,68 +402,65 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     }
   }
 
+  if (toLoad.size === 0 && toLoadShared.size === 0) {
+    messageCallback("No new packages to load");
+    return;
+  }
+
   const packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
+  const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    let scriptPromises = [];
+    const sharedLibraryPromises = {};
+    const packagePromises = {};
+    for (const [name, channel] of toLoadShared) {
+      if (loadedPackages[name]) {
+        // Handle the race condition where the package was loaded between when
+        // we did dependency resolution and when we acquired the lock.
+        toLoadShared.delete(name);
+        continue;
+      }
+      sharedLibraryPromises[name] = downloadPackage(name, channel);
+    }
+    for (const [name, channel] of toLoad) {
+      if (loadedPackages[name]) {
+        // Handle the race condition where the package was loaded between when
+        // we did dependency resolution and when we acquired the lock.
+        toLoad.delete(name);
+        continue;
+      }
+      packagePromises[name] = downloadPackage(name, channel);
+    }
+
     const loaded = [];
     const failed = {};
-
-    useSharedLibraryWasmPlugin();
-    Module.locateFile_packagesToLoad = toLoadShared;
-    for (const [pkg, uri] of toLoadShared) {
-      const pkgname =
-        (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
-      const scriptSrc =
-        uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
-      messageCallback(`Loading ${pkg} from ${scriptSrc}`);
-      scriptPromises.push(
-        loadScript(scriptSrc)
-          .then(() => {
-            loaded.push(pkg);
-            loadedPackages[pkg] = uri;
-          })
-          .catch((e) => {
-            failed[pkg] = e;
-          })
-      );
+    // TODO: add support for prefetching modules by awaiting on a promise right
+    // here which resolves in loadPyodide when the bootstrap is done.
+    for (const [name, channel] of toLoadShared) {
+      sharedLibraryPromises[name] = sharedLibraryPromises[name]
+        .then(async (buffer) => {
+          await installPackage(name, buffer);
+          loaded.push(name);
+          loadedPackages[name] = channel;
+        })
+        .catch((err) => {
+          failed[name] = err;
+        });
     }
 
-    // We must start waiting for runDependencies *after* all the JS files are
-    // loaded, since the number of runDependencies may happen to equal zero
-    // between package files loading.
-    try {
-      await Promise.all(scriptPromises).then(waitRunDependency);
-    } finally {
-      delete Module.monitorRunDependencies;
+    await Promise.all(Object.values(sharedLibraryPromises));
+    for (const [name, channel] of toLoad) {
+      packagePromises[name] = packagePromises[name]
+        .then(async (buffer) => {
+          await installPackage(name, buffer);
+          loaded.push(name);
+          loadedPackages[name] = channel;
+        })
+        .catch((err) => {
+          failed[name] = err;
+        });
     }
-    restoreOrigWasmPlugin();
-
-    scriptPromises = [];
-    Module.locateFile_packagesToLoad = toLoad;
-    for (const [pkg, uri] of toLoad) {
-      const pkgname =
-        (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
-      const scriptSrc =
-        uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
-      messageCallback(`Loading ${pkg} from ${scriptSrc}`);
-      scriptPromises.push(
-        loadScript(scriptSrc)
-          .then(() => {
-            loaded.push(pkg);
-            loadedPackages[pkg] = uri;
-          })
-          .catch((e) => {
-            failed[pkg] = e;
-          })
-      );
-    }
-
-    try {
-      await Promise.all(scriptPromises).then(waitRunDependency);
-    } finally {
-      delete Module.monitorRunDependencies;
-    }
+    await Promise.all(Object.values(packagePromises));
 
     Module.reportUndefinedSymbols();
     if (loaded.length > 0) {
@@ -469,7 +470,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     if (Object.keys(failed).length > 0) {
       const failedNames = Object.keys(failed).join(", ");
       messageCallback(`Failed to load ${failedNames}`);
-      for (let [name, err] of Object.entries(failed)) {
+      for (const [name, err] of Object.entries(failed)) {
         console.warn(`The following error occurred while loading ${name}:`);
         console.error(err);
       }
@@ -479,7 +480,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     // see the new files.
     Module.importlib.invalidate_caches();
   } finally {
-    restoreOrigWasmPlugin();
     releaseLock();
   }
 }
