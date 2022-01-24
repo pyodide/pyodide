@@ -106,6 +106,7 @@ htmlhelp_basename = "Pyodidedoc"
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
+
 def delete_attrs(cls):
     for name in dir(cls):
         if not name.startswith("_"):
@@ -114,11 +115,13 @@ def delete_attrs(cls):
             except:
                 pass
 
+
 # Try not to cause side effects if we are imported incidentally.
 
 try:
     import sphinx
-    IN_SPHINX = hasattr(sphinx, 'application')
+
+    IN_SPHINX = hasattr(sphinx, "application")
 except ImportError:
     IN_SPHINX = False
 
@@ -166,16 +169,16 @@ if IN_SPHINX:
     def remove_pyproxy_gen_ts():
         Path("../src/js/pyproxy.gen.ts").unlink(missing_ok=True)
 
-
     atexit.register(remove_pyproxy_gen_ts)
-    
+
     os.environ["PATH"] += f':{str(Path("../src/js/node_modules/.bin").resolve())}'
     print(os.environ["PATH"])
     if IN_READTHEDOCS:
         subprocess.run(["npm", "ci"], cwd="../src/js")
     elif not shutil.which("typedoc"):
-        raise Exception("Before building the Pyodide docs you must run 'npm install' in 'src/js'.")
-
+        raise Exception(
+            "Before building the Pyodide docs you must run 'npm install' in 'src/js'."
+        )
 
     # Prevent API docs for webloop methods: they are the same as for base event loop
     # and it clutters api docs too much
