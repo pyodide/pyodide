@@ -266,8 +266,6 @@ jobs:
               << parameters.test-params >>
       - store_test_results:
           path: test-results
-    environment:
-      PLAYWRIGHT: << parameters.playwright >>
 
   benchmark-stack-size:
     <<: *defaults
@@ -510,7 +508,7 @@ workflows:
           filters:
             tags:
               only: /.*/\
-      
+
       - run-playwright-tests:
           name: run-playwright-tests
           type: approval
@@ -520,47 +518,43 @@ workflows:
 
       - test-main:
           name: test-core-chrome-playwright
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
+          test-params: --runner playwright -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
             - run-playwright-tests
           filters:
             tags:
               only: /.*/
-          playwright: "1"
 
       - test-main:
           name: test-core-firefox-playwright
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: --runner playwright -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
           requires:
             - build-core
             - run-playwright-tests
           filters:
             tags:
               only: /.*/
-          playwright: "1"
 
       - test-main:
           name: test-packages-chrome-playwright
-          test-params: -k chrome packages/test* packages/*/test*
+          test-params: --runner playwright -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
             - run-playwright-tests
           filters:
             tags:
               only: /.*/
-          playwright: "1"
 
       - test-main:
           name: test-packages-firefox-playwright
-          test-params: -k firefox packages/test* packages/*/test*
+          test-params: --runner playwright -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
             - run-playwright-tests
           filters:
             tags:
               only: /.*/
-          playwright: "1"
 
       - test-js:
           requires:
