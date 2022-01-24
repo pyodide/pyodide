@@ -16,7 +16,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * You can use this to call functions defined in the Pyodide Python package
  * from JavaScript.
  */
-let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.js)
+export let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -151,7 +151,7 @@ Module.runPythonAsync = runPythonAsync;
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
- * module from ``sys.modules``. This calls the ``pyodide_py`` API
+ * module from ``sys.modules``. This calls the {any}`pyodide_py` API
  * :func:`pyodide.register_js_module`.
  *
  * @param name Name of the JavaScript module to add
@@ -175,7 +175,7 @@ export function registerComlink(Comlink: any) {
  * :func:`pyodide.register_js_module`. If a JavaScript module with that name
  * does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete
- * the imported module from ``sys.modules``. This calls the ``pyodide_py`` API
+ * the imported module from ``sys.modules``. This calls the :any:`pyodide_py` API
  * :func:`pyodide.unregister_js_module`.
  *
  * @param name Name of the JavaScript module to remove
