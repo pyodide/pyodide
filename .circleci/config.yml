@@ -308,7 +308,7 @@ jobs:
             git clone https://github.com/pyodide/pyodide-webpack-example.git
             cd pyodide-webpack-example
             npm ci
-            cp ../src/js/* node_modules/pyodide/
+            cp ../src/js/*.js node_modules/pyodide/
             npx webpack
 
   benchmark:
