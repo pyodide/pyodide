@@ -7,11 +7,7 @@ import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./error_handling.gen.js";
 
-import {
-  PyProxy,
-  PyProxyDict,
-  Py2JsResult,
-} from "./pyproxy.gen";
+import { PyProxy, PyProxyDict, Py2JsResult } from "./pyproxy.gen";
 
 export {
   PyProxy,
@@ -29,8 +25,6 @@ export {
   TypedArray,
   PyBuffer,
 } from "./pyproxy.gen";
-
-
 
 /**
  * Dump the Python traceback to the browser console.
@@ -111,7 +105,7 @@ let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
  */
-Module.runPythonInternal = function (code : string) : Py2JsResult {
+Module.runPythonInternal = function (code: string): Py2JsResult {
   return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
@@ -122,11 +116,14 @@ Module.runPythonInternal = function (code : string) : Py2JsResult {
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(globals_dict : PyProxyDict, builtins_dict : PyProxyDict) {
+function wrapPythonGlobals(
+  globals_dict: PyProxyDict,
+  builtins_dict: PyProxyDict
+) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
       if (symbol === "get") {
-        return (key : any) => {
+        return (key: any) => {
           let result = target.get(key);
           if (result === undefined) {
             result = builtins_dict.get(key);
@@ -135,14 +132,14 @@ function wrapPythonGlobals(globals_dict : PyProxyDict, builtins_dict : PyProxyDi
         };
       }
       if (symbol === "has") {
-        return (key : any) => target.has(key) || builtins_dict.has(key);
+        return (key: any) => target.has(key) || builtins_dict.has(key);
       }
       return Reflect.get(target, symbol);
     },
   });
 }
 
-function unpackPyodidePy(pyodide_py_tar : Uint8Array) {
+function unpackPyodidePy(pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
   let stream = Module.FS.open(fileName, "w");
   Module.FS.write(
@@ -177,7 +174,7 @@ del importlib
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-function finalizeBootstrap(config : ConfigType) {
+function finalizeBootstrap(config: ConfigType) {
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
@@ -219,13 +216,13 @@ function finalizeBootstrap(config : ConfigType) {
 declare function _createPyodideModule(Module: any): Promise<undefined>;
 
 type ConfigType = {
-  indexURL : string,
-  homedir : string,
-  fullStdLib : boolean,
-  stdin? : () => string
-  stdout? : (msg : string) => void,
-  stderr? : (msg : string) => void,
-  jsglobals? : object
+  indexURL: string;
+  homedir: string;
+  fullStdLib: boolean;
+  stdin?: () => string;
+  stdout?: (msg: string) => void;
+  stderr?: (msg: string) => void;
+  jsglobals?: object;
 };
 
 /**
@@ -254,7 +251,7 @@ type ConfigType = {
  * @memberof globalThis
  * @async
  */
-export async function loadPyodide(config : ConfigType) {
+export async function loadPyodide(config: ConfigType) {
   if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
@@ -288,7 +285,7 @@ export async function loadPyodide(config : ConfigType) {
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
-  Module.locateFile = (path : string) => config.indexURL + path;
+  Module.locateFile = (path: string) => config.indexURL + path;
   const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
@@ -301,7 +298,7 @@ export async function loadPyodide(config : ConfigType) {
   await moduleLoaded;
 
   // Disable futher loading of Emscripten file_packager stuff.
-  Module.locateFile = (path : string) => {
+  Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
@@ -319,4 +316,4 @@ export async function loadPyodide(config : ConfigType) {
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
-(globalThis as any ).loadPyodide = loadPyodide;
+(globalThis as any).loadPyodide = loadPyodide;

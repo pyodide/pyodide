@@ -11,8 +11,6 @@
     "moduleResolution": "node",
     "noImplicitAny": true
   },
-  "include": [
-    "./*.ts"
-  ],
+  "include": ["./*.ts"],
   "exclude": ["rollup.config.js"]
 }
