@@ -23,11 +23,6 @@ from sphinx_js.renderers import (
 
 _orig_convert_node = TsAnalyzer._convert_node
 
-from rich import inspect as _inspect
-def inspect(x, **kwargs):
-    kwargs["docs"] = kwargs.get("docs", False)
-    _inspect(x, **kwargs)
-
 def _convert_node(self, node):
     kind = node.get("kindString")
     if kind in ["Function", "Constructor", "Method"] and not node.get("sources"):
@@ -105,9 +100,6 @@ def _type_name(self, type):
         ret_str = self._type_name(decl_sig["type"])
         return f"({params_str}) => {ret_str}"
     assert False
-
-
-    # pprint.pprint(self._type_name(type["declaration"]["children"][0]["type"]))
 
 
 TsAnalyzer._type_name = _type_name
@@ -200,7 +192,6 @@ class PyodideAnalyzer:
                 continue
             # Remove the part of the key corresponding to the file
             key = [x for x in key if "/" not in x]
-            print(key)
             filename = key[0]
             toplevelname = key[1]
             if key[-1].startswith("$"):
@@ -237,7 +228,6 @@ class PyodideAnalyzer:
 
         for key, value in items.items():
             for obj in sorted(value, key=attrgetter("name")):
-                print(obj.name)
                 obj.async_ = False
                 if isinstance(obj, Class):
                     obj.kind = "class"
