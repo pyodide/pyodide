@@ -12,8 +12,6 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import warnings
 
-from .io import parse_package_config
-
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 
 
