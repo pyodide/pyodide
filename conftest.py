@@ -105,7 +105,8 @@ class JavascriptException(Exception):
         return "\n\n".join(x for x in [self.msg, self.stack] if x)
 
 
-class SeleniumWrapper:
+class BrowserWrapper:
+    browser = ""
     JavascriptException = JavascriptException
 
     def __init__(
@@ -115,6 +116,8 @@ class SeleniumWrapper:
         server_log=None,
         load_pyodide=True,
         script_timeout=20,
+        *args,
+        **kwargs,
     ):
         self.server_port = server_port
         self.server_hostname = server_hostname
@@ -133,22 +136,30 @@ class SeleniumWrapper:
 
     SETUP_CODE = pathlib.Path(ROOT_PATH / "tools/testsetup.js").read_text()
 
+    def get_driver(self):
+        raise NotImplementedError()
+
     def prepare_driver(self):
-        self.driver.get(f"{self.base_url}/test.html")
+        raise NotImplementedError()
+
+    def goto(self, page):
+        raise NotImplementedError()
 
     def set_script_timeout(self, timeout):
-        self.driver.set_script_timeout(timeout)
+        raise NotImplementedError()
 
     def quit(self):
-        self.driver.quit()
+        raise NotImplementedError()
 
     def refresh(self):
-        self.driver.refresh()
-        self.javascript_setup()
+        raise NotImplementedError()
+
+    def run_js_inner(self, code, check_code):
+        raise NotImplementedError()
 
     def javascript_setup(self):
         self.run_js(
-            SeleniumWrapper.SETUP_CODE,
+            BrowserWrapper.SETUP_CODE,
             pyodide_checks=False,
         )
 
@@ -255,26 +266,6 @@ class SeleniumWrapper:
             check_code = ""
         return self.run_js_inner(code, check_code)
 
-    def run_js_inner(self, code, check_code):
-        wrapper = """
-            let cb = arguments[arguments.length - 1];
-            let run = async () => { %s }
-            (async () => {
-                try {
-                    let result = await run();
-                    %s
-                    cb([0, result]);
-                } catch (e) {
-                    cb([1, e.toString(), e.stack]);
-                }
-            })()
-        """
-        retval = self.driver.execute_async_script(wrapper % (code, check_code))
-        if retval[0] == 0:
-            return retval[1]
-        else:
-            raise JavascriptException(retval[1], retval[2])
-
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
@@ -336,6 +327,44 @@ class SeleniumWrapper:
     def load_package(self, packages):
         self.run_js("await pyodide.loadPackage({!r})".format(packages))
 
+
+class SeleniumWrapper(BrowserWrapper):
+    def goto(self, page):
+        self.driver.get(page)
+
+    def prepare_driver(self):
+        self.goto(f"{self.base_url}/test.html")
+
+    def set_script_timeout(self, timeout):
+        self.driver.set_script_timeout(timeout)
+
+    def quit(self):
+        self.driver.quit()
+
+    def refresh(self):
+        self.driver.refresh()
+        self.javascript_setup()
+
+    def run_js_inner(self, code, check_code):
+        wrapper = """
+            let cb = arguments[arguments.length - 1];
+            let run = async () => { %s }
+            (async () => {
+                try {
+                    let result = await run();
+                    %s
+                    cb([0, result]);
+                } catch (e) {
+                    cb([1, e.toString(), e.stack]);
+                }
+            })()
+        """
+        retval = self.driver.execute_async_script(wrapper % (code, check_code))
+        if retval[0] == 0:
+            return retval[1]
+        else:
+            raise JavascriptException(retval[1], retval[2])
+
     @property
     def urls(self):
         for handle in self.driver.window_handles:
@@ -343,7 +372,54 @@ class SeleniumWrapper:
             yield self.driver.current_url
 
 
-class FirefoxWrapper(SeleniumWrapper):
+class PlaywrightWrapper(BrowserWrapper):
+    def __init__(self, browsers, *args, **kwargs):
+        self.browsers = browsers
+        super().__init__(*args, **kwargs)
+
+    def goto(self, page):
+        self.driver.goto(page)
+
+    def get_driver(self):
+        return self.browsers[self.browser].new_page()
+
+    def prepare_driver(self):
+        self.goto(f"{self.base_url}/test.html")
+
+    def set_script_timeout(self, timeout):
+        # playwright uses milliseconds for timeout
+        self.driver.set_default_timeout(timeout * 1000)
+
+    def quit(self):
+        self.driver.close()
+
+    def refresh(self):
+        self.driver.reload()
+        self.javascript_setup()
+
+    def run_js_inner(self, code, check_code):
+        # playwright `evaluate` waits until primise to resolve,
+        # so we don't need to use a callback like selenium.
+        wrapper = """
+            let run = async () => { %s }
+            (async () => {
+                try {
+                    let result = await run();
+                    %s
+                    return [0, result];
+                } catch (e) {
+                    return [1, e.toString(), e.stack];
+                }
+            })()
+        """
+        retval = self.driver.evaluate(wrapper % (code, check_code))
+        if retval[0] == 0:
+            return retval[1]
+        else:
+            raise JavascriptException(retval[1], retval[2])
+
+
+class SeleniumFirefoxWrapper(SeleniumWrapper):
 
     browser = "firefox"
 
@@ -357,7 +433,7 @@ class FirefoxWrapper(SeleniumWrapper):
         return Firefox(executable_path="geckodriver", options=options)
 
 
-class ChromeWrapper(SeleniumWrapper):
+class SeleniumChromeWrapper(SeleniumWrapper):
 
     browser = "chrome"
 
@@ -375,7 +451,19 @@ class ChromeWrapper(SeleniumWrapper):
         self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
 
 
-class NodeWrapper(SeleniumWrapper):
+class PlaywrightChromeWrapper(PlaywrightWrapper):
+    browser = "chrome"
+
+    def collect_garbage(self):
+        client = self.driver.context.new_cdp_session(self.driver)
+        client.send("HeapProfiler.collectGarbage")
+
+
+class PlaywrightFirefoxWrapper(PlaywrightWrapper):
+    browser = "firefox"
+
+
+class NodeWrapper(BrowserWrapper):
     browser = "node"
 
     def init_node(self):
@@ -560,8 +648,36 @@ def _maybe_skip_test(item, delayed=False):
             pytest.skip(skip_msg)
 
 
+@pytest.fixture(scope="session")
+def playwright_browsers(request):
+    if request.config.option.runner.lower() != "playwright":
+        yield {}
+    else:
+        # import playwright here to allow running tests without playwright installation
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            chromium = p.chromium.launch(
+                args=[
+                    "--js-flags=--expose-gc",
+                ],
+            )
+            firefox = p.firefox.launch()
+            # webkit = p.webkit.launch()
+            try:
+                yield {
+                    "chrome": chromium,
+                    "firefox": firefox,
+                    # "webkit": webkit,
+                }
+            finally:
+                chromium.close()
+                firefox.close()
+                # webkit.close()
+
+
 @contextlib.contextmanager
-def selenium_common(request, web_server_main, load_pyodide=True):
+def selenium_common(request, web_server_main, load_pyodide=True, browsers=None):
     """Returns an initialized selenium object.
 
     If `_should_skip_test` indicate that the test will be skipped,
@@ -569,32 +685,45 @@ def selenium_common(request, web_server_main, load_pyodide=True):
     """
 
     server_hostname, server_port, server_log = web_server_main
-    if request.param == "firefox":
-        cls = FirefoxWrapper
-    elif request.param == "chrome":
-        cls = ChromeWrapper
-    elif request.param == "node":
-        cls = NodeWrapper
+    runner_type = request.config.option.runner.lower()
+    if runner_type == "selenium":
+        if request.param == "firefox":
+            cls = SeleniumFirefoxWrapper
+        elif request.param == "chrome":
+            cls = SeleniumChromeWrapper
+        elif request.param == "node":
+            cls = NodeWrapper
+    elif runner_type == "playwright":
+        if request.param == "firefox":
+            cls = PlaywrightFirefoxWrapper
+        elif request.param == "chrome":
+            cls = PlaywrightChromeWrapper
+        elif request.param == "node":
+            cls = NodeWrapper
     else:
-        assert False
-    selenium = cls(
+        raise ValueError(f"Unknown runner: {runner_type}")
+
+    runner = cls(
         server_port=server_port,
         server_hostname=server_hostname,
         server_log=server_log,
         load_pyodide=load_pyodide,
+        browsers=browsers,
     )
     try:
-        yield selenium
+        yield runner
     finally:
-        selenium.quit()
+        runner.quit()
 
 
 @pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
-def selenium_standalone(request, web_server_main):
+def selenium_standalone(request, web_server_main, playwright_browsers):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
 
-    with selenium_common(request, web_server_main) as selenium:
+    with selenium_common(
+        request, web_server_main, browsers=playwright_browsers
+    ) as selenium:
         with set_webdriver_script_timeout(
             selenium, script_timeout=parse_driver_timeout(request)
         ):
@@ -605,11 +734,13 @@ def selenium_standalone(request, web_server_main):
 
 
 @contextlib.contextmanager
-def selenium_standalone_noload_common(request, web_server_main):
+def selenium_standalone_noload_common(request, web_server_main, playwright_browsers):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
 
-    with selenium_common(request, web_server_main, load_pyodide=False) as selenium:
+    with selenium_common(
+        request, web_server_main, load_pyodide=False, browsers=playwright_browsers
+    ) as selenium:
         with set_webdriver_script_timeout(
             selenium, script_timeout=parse_driver_timeout(request)
         ):
@@ -620,27 +751,33 @@ def selenium_standalone_noload_common(request, web_server_main):
 
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
-def selenium_webworker_standalone(request, web_server_main):
+def selenium_webworker_standalone(request, web_server_main, playwright_browsers):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
-    with selenium_standalone_noload_common(request, web_server_main) as selenium:
+    with selenium_standalone_noload_common(
+        request, web_server_main, browsers=playwright_browsers
+    ) as selenium:
         yield selenium
 
 
 @pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
-def selenium_standalone_noload(request, web_server_main):
+def selenium_standalone_noload(request, web_server_main, playwright_browsers):
     """Only difference between this and selenium_webworker_standalone is that
     this also tests on node."""
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
-    with selenium_standalone_noload_common(request, web_server_main) as selenium:
+    with selenium_standalone_noload_common(
+        request, web_server_main, playwright_browsers
+    ) as selenium:
         yield selenium
 
 
 # selenium instance cached at the module level
 @pytest.fixture(params=["firefox", "chrome", "node"], scope="module")
-def selenium_module_scope(request, web_server_main):
-    with selenium_common(request, web_server_main) as selenium:
+def selenium_module_scope(request, web_server_main, playwright_browsers):
+    with selenium_common(
+        request, web_server_main, browsers=playwright_browsers
+    ) as selenium:
         yield selenium
 
 
@@ -666,9 +803,11 @@ def selenium(request, selenium_module_scope):
 
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
-def console_html_fixture(request, web_server_main):
-    with selenium_common(request, web_server_main, False) as selenium:
-        selenium.driver.get(
+def console_html_fixture(request, web_server_main, playwright_browsers):
+    with selenium_common(
+        request, web_server_main, load_pyodide=False, browsers=playwright_browsers
+    ) as selenium:
+        selenium.goto(
             f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
         )
         selenium.javascript_setup()
@@ -775,28 +914,6 @@ def run_web_server(q, log_filepath, build_dir):
         httpd.service_actions = service_actions
         httpd.serve_forever()
 
-
-def run_with_playwright():
-    global selenium, selenium_standalone, selenium_standalone_noload, selenium_standalone_noload_common
-    global selenium_webworker_standalone, console_html_fixture, selenium_context_manager, selenium_module_scope
-
-    # mypy doesn't like this assignment
-    selenium = playwright  # type: ignore
-    selenium_standalone = playwright_standalone  # type: ignore
-    selenium_standalone_noload = playwright_noload  # type: ignore
-    selenium_standalone_noload_common = playwright_noload_common  # type: ignore
-    selenium_webworker_standalone = playwright_webworker  # type: ignore
-    console_html_fixture = playwright_console_html_fixture  # type: ignore
-    selenium_context_manager = playwright_context_manager  # type: ignore
-    selenium_module_scope = playwright_module_scope  # type: ignore
-
-
-# Since there are circular imports between conftest.py and contest_playwright.py,
-# it needs to be imported after all functions are defined.
-from conftest_playwright import *
-
-if os.environ.get("PLAYWRIGHT"):
-    run_with_playwright()
 
 if (
     __name__ == "__main__"
