@@ -16,9 +16,12 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`
+- New packages: sqlalchemy {pr}`2112` pydantic {pr}`2117`
 
 ### Uncategorized
+
+- {{ Update }} Upgraded pyb2d to 0.7.2.
+  {pr}`2117`
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
   {pr}`2109`

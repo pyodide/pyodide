@@ -1,0 +1,12 @@
+package:
+  name: pydantic
+  version: 1.9.0
+source:
+  sha256: 742645059757a56ecd886faf4ed2441b9c0cd406079c2b4bee51bcc3fbcd510a
+  url: https://files.pythonhosted.org/packages/60/a3/23a8a9378ff06853bda6527a39fe317b088d760adf41cf70fc0f6110e485/pydantic-1.9.0.tar.gz
+test:
+  imports:
+    - pydantic
+requirements:
+  run:
+    - typing-extensions
