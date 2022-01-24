@@ -16,17 +16,17 @@
 
 import { Module } from "./module.js";
 
-declare var IS_CALLABLE : number;
-declare var HAS_LENGTH : number;
-declare var HAS_GET : number;
-declare var HAS_SET : number;
-declare var HAS_CONTAINS : number;
-declare var IS_ITERABLE : number;
-declare var IS_ITERATOR : number;
-declare var IS_AWAITABLE : number;
-declare var IS_BUFFER : number;
+declare var IS_CALLABLE: number;
+declare var HAS_LENGTH: number;
+declare var HAS_GET: number;
+declare var HAS_SET: number;
+declare var HAS_CONTAINS: number;
+declare var IS_ITERABLE: number;
+declare var IS_ITERATOR: number;
+declare var IS_AWAITABLE: number;
+declare var IS_BUFFER: number;
 
-declare function DEREF_U32(ptr : number, offset : number) : number;
+declare function DEREF_U32(ptr: number, offset: number): number;
 
 /**
  * Is the argument a :any:`PyProxy`?
@@ -309,7 +309,7 @@ export type PyProxy = PyProxyClass & { [x: string]: Py2JsResult };
 export class PyProxyClass {
   $$: { ptr: number; cache: PyProxyCache; destroyed_msg?: string };
   $$flags: number;
-  
+
   /** @private */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
@@ -322,7 +322,7 @@ export class PyProxyClass {
    * The name of the type of the object.
    * @type {string}
    */
-  get type() : string {
+  get type(): string {
     let ptrobj = _getPtr(this);
     return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
   }
@@ -446,49 +446,49 @@ export class PyProxyClass {
    * Check whether the :any:`PyProxy.get` method is available on this PyProxy. A
    * Typescript type guard.
    */
-  supportsGet() : this is PyProxyWithGet {
+  supportsGet(): this is PyProxyWithGet {
     return !!(this.$$flags & HAS_GET);
   }
   /**
    * Check whether the :any:`PyProxy.set` method is available on this PyProxy. A
    * Typescript type guard.
    */
-  supportsSet() : this is PyProxyWithSet {
+  supportsSet(): this is PyProxyWithSet {
     return !!(this.$$flags & HAS_SET);
   }
   /**
    * Check whether the :any:`PyProxy.has` method is available on this PyProxy. A
    * Typescript type guard.
    */
-  supportsHas() : this is PyProxyWithHas {
+  supportsHas(): this is PyProxyWithHas {
     return !!(this.$$flags & HAS_CONTAINS);
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.[Symbol.iterator]`.
    */
-  isIterable() : this is PyProxyIterable {
+  isIterable(): this is PyProxyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.next`.
    */
-  isIterator() : this is PyProxyIterator {
+  isIterator(): this is PyProxyIterator {
     return !!(this.$$flags & IS_ITERATOR);
   }
   /**
    * Check whether the PyProxy is awaitable. A Typescript type guard, if this
    * function returns true Typescript considers the PyProxy to be a ``Promise``.
    */
-  isAwaitable() : this is PyProxyAwaitable {
+  isAwaitable(): this is PyProxyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
   }
   /**
    * Check whether the PyProxy is a buffer. A Typescript type guard for
    * :any:`PyProxy.getBuffer`.
    */
-  isBuffer() : this is PyProxyBuffer {
+  isBuffer(): this is PyProxyBuffer {
     return !!(this.$$flags & IS_BUFFER);
   }
   /**
@@ -497,7 +497,7 @@ export class PyProxyClass {
    * signature ``(args... : any[]) => PyProxy | number | bigint | string |
    * boolean | undefined``.
    */
-  isCallable() : this is PyProxyCallable {
+  isCallable(): this is PyProxyCallable {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
@@ -1016,7 +1016,10 @@ export class PyProxyAwaitableMethods {
    * argument if the awaitable fails.
    * @returns The resulting Promise.
    */
-  then(onFulfilled: (value: any) => any, onRejected: (reason: any) => any) : Promise<any> {
+  then(
+    onFulfilled: (value: any) => any,
+    onRejected: (reason: any) => any
+  ): Promise<any> {
     let promise = this._ensure_future();
     return promise.then(onFulfilled, onRejected);
   }

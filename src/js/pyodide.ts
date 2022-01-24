@@ -261,9 +261,38 @@ type ConfigType = {
  * @memberof globalThis
  * @async
  */
-export async function loadPyodide(
-  config: ConfigType
-): Promise<PyodideInterface> {
+export async function loadPyodide(config: {
+  /**
+   * The URL from which Pyodide will load packages
+   */
+  indexURL: string;
+
+  /**
+   * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
+   */
+  homedir?: string;
+
+  /** Load the full Python standard library.
+   * Setting this to false excludes following modules: distutils.
+   * Default: true
+   */
+  fullStdLib?: boolean;
+  /**
+   * Override the standard input callback. Should ask the user for one line of input.
+   */
+  stdin?: () => string;
+  /**
+   * Override the standard output callback.
+   * Default: undefined
+   */
+  stdout?: (msg: string) => void;
+  /**
+   * Override the standard error output callback.
+   * Default: undefined
+   */
+  stderr?: (msg: string) => void;
+  jsglobals?: object;
+}): Promise<PyodideInterface> {
   if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
