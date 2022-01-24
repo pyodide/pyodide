@@ -27,6 +27,8 @@ import { Module } from "./module.js";
 // These declarations make Typescript accept the raw file. However, if we macro
 // preprocess these lines, we get a bunch of syntax errors so they need to be
 // removed from the preprocessed version.
+
+// This also has the benefit that it makes intelisense happy.
 declare var IS_CALLABLE: number;
 declare var HAS_LENGTH: number;
 declare var HAS_GET: number;
@@ -526,10 +528,6 @@ export class PyProxyClass {
 export type PyProxyWithLength = PyProxy & PyProxyLengthMethods;
 // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
 // or mp_length methods
-/**
- * Blah??
- * @interface
- */
 export class PyProxyLengthMethods {
   /**
    * The length of the object.
@@ -555,9 +553,6 @@ export type PyProxyWithGet = PyProxy & PyProxyGetItemMethods;
 
 // Controlled by HAS_GET, appears for any class with __getitem__,
 // mp_subscript, or sq_item methods
-/**
- * @interface
- */
 export class PyProxyGetItemMethods {
   /**
    * This translates to the Python code ``obj[key]``.

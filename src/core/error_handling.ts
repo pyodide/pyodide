@@ -91,8 +91,6 @@ Module.handle_js_error = function (e: any) {
  *    done. You may leak a large amount of memory including the local
  *    variables of all the stack frames in the traceback if you don't. The
  *    easiest way is to only handle the exception in Python.
- *
- * @class
  */
 export class PythonError extends Error {
   /**

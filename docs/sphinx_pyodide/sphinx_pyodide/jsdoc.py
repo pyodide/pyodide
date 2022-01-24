@@ -21,48 +21,95 @@ from sphinx_js.renderers import (
     AutoClassRenderer,
 )
 
+from typing import Any, Dict, List
+
 _orig_convert_node = TsAnalyzer._convert_node
+_orig_type_name = TsAnalyzer._type_name
 
+def destructure_param(param : Dict[str, Any]) -> List[Dict[str, Any]]:
+    """We want to document a destructured argument as if it were several
+    separate arguments. This finds complex inline object types in the arguments
+    list of a function and "destructures" them into separately documented arguments.
 
-def _convert_node(self, node):
+    E.g., a function 
+
+        /**
+        * @param options
+        */
+        function f({x , y } : {
+            /** The x value */
+            x : number, 
+            /** The y value */
+            y : string
+        }){ ... }
+    
+    should be documented like:
+    
+        options.x (number) The x value
+        options.y (number) The y value
+    """
+    decl = param["type"]["declaration"]
+    result = []
+    for child in decl["children"]:
+        child = dict(child)
+        if not "type" in child:
+            if "signatures" in child:
+                child["comment"] = child["signatures"][0]["comment"]
+                child["type"] = {
+                    "type": "reflection",
+                    "declaration": dict(child),
+                }
+            else:
+                assert False, "Didn't expect to get here..."
+        child["name"] = param["name"] + "." + child["name"]
+        result.append(child)
+    return result
+
+def fix_up_inline_object_signature(self : TsAnalyzer, node : Dict[str, Any]):
+    """Calls get_destructured_children on inline object types"""
     kind = node.get("kindString")
+    if kind not in ["Call signature", "Constructor signature"]:
+        return
+    params = node.get("parameters", [])
+    new_params = []
+    for param in params:
+        param_type = param["type"]
+        if param_type["type"] != "reflection" or "children" not in param_type["declaration"]:
+            new_params.append(param)
+        else:
+            new_params.extend(destructure_param(param))
+    node["parameters"] = new_params
+
+
+def _convert_node(self : TsAnalyzer, node : Dict[str, Any]):
+    """Monkey patch for TsAnalyzer._convert_node."""
+    kind = node.get("kindString")
+    # if a class has no documented constructor, don't crash
     if kind in ["Function", "Constructor", "Method"] and not node.get("sources"):
         return None, []
-    if kind in ["Call signature", "Constructor signature"]:
-        params = node.get("parameters", [])
-        new_params = []
-        for param in params:
-            param_type = param["type"]
-            if param_type["type"] != "reflection":
-                new_params.append(param)
-                continue
-            decl = param_type["declaration"]
-            if "children" not in decl:
-                new_params.append(param)
-                continue
-            for child in decl["children"]:
-                child = dict(child)
-                if not "type" in child:
-                    if "signatures" in child:
-                        child["comment"] = child["signatures"][0]["comment"]
-                        child["type"] = {
-                            "type": "reflection",
-                            "declaration": dict(child),
-                        }
-                    # child["type"]["type"] = "reflection"
-                child["name"] = param["name"] + "." + child["name"]
-                new_params.append(child)
-        node["parameters"] = new_params
+    # This fixes a crash, not really sure what it means.
     node["extendedTypes"] = [t for t in node.get("extendedTypes", []) if "id" in t]
+    # See docstring for destructure_param
+    fix_up_inline_object_signature(self, node)
     return _orig_convert_node(self, node)
-
 
 TsAnalyzer._convert_node = _convert_node
 
-_orig_type_name = TsAnalyzer._type_name
 
+def object_literal_type_name(self, decl):
+    """This renders the names of object literal types.
 
-def type_literal_name(self, decl):
+    They have zero or more "children" and zero or one "indexSignatures".
+    For example:
+
+        { 
+            [key: string]: string,
+            name : string,
+            id : string
+        }
+    
+    has children "name" and "id" and an indexSignature "[key: string]: string"
+    """
     children = []
     if "indexSignature" in decl:
         index_sig = decl["indexSignature"]
@@ -80,34 +127,39 @@ def type_literal_name(self, decl):
 
     return "{" + ", ".join(children) + "}"
 
+def reflection_type_name(self, type):
+    decl = type["declaration"]
+    if decl["kindString"] == "Type literal":
+        return object_literal_type_name(self, decl)
+    decl_sig = None
+    if "signatures" in decl:
+        decl_sig = decl["signatures"][0]
+    elif decl["kindString"] == "Call signature":
+        decl_sig = decl
+    assert decl_sig
+    params = [
+        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        for ty in decl_sig.get("parameters", [])
+    ]
+    params_str = ", ".join(params)
+    ret_str = self._type_name(decl_sig["type"])
+    return f"({params_str}) => {ret_str}"
 
 def _type_name(self, type):
+    """Monkey patch for sphinx-js type_name
+    
+    Rendering various types is left as TODO by _type_name. Fill these in. 
+    """
     res = _orig_type_name(self, type)
     if "TODO" not in res:
+        # _orig_type_name handled it, leave it alone.
         return res
     type_of_type = type.get("type")
     if type_of_type == "predicate":
         return f"boolean (typeguard for {self._type_name(type['targetType'])})"
-    if type_of_type != "reflection":
-        return res
-    decl = type["declaration"]
-    if decl["kindString"] == "Type literal":
-        return type_literal_name(self, decl)
-    decl_sig = None
-    if "signatures" in decl:
-        decl_sig = decl["signatures"][0]
-    if decl["kindString"] == "Call signature":
-        decl_sig = decl
-    if decl_sig:
-        params = [
-            f'{ty["name"]}: {self._type_name(ty["type"])}'
-            for ty in decl_sig.get("parameters", [])
-        ]
-        params_str = ", ".join(params)
-        ret_str = self._type_name(decl_sig["type"])
-        return f"({params_str}) => {ret_str}"
+    if type_of_type == "reflection":
+        return reflection_type_name(self, type)
     assert False
-
 
 TsAnalyzer._type_name = _type_name
 
@@ -238,10 +290,6 @@ class PyodideAnalyzer:
                 obj.async_ = False
                 if isinstance(obj, Class):
                     obj.kind = "class"
-                    # sphinx-jsdoc messes up array types. Fix them.
-                    for x in obj.members:
-                        if hasattr(x, "type") and x.type:
-                            x.type = re.sub("Array\.<([a-zA-Z_0-9]*)>", r"\1[]", x.type)
                 elif isinstance(obj, Function):
                     obj.kind = "function"
                     obj.async_ = obj.returns and obj.returns[0].type.startswith(
@@ -249,9 +297,6 @@ class PyodideAnalyzer:
                     )
                 else:
                     obj.kind = "attribute"
-                if obj.name == "iterator":
-                    # sphinx-jsdoc messes up Symbol attributes. Fix them.
-                    obj.name = "[Symbol.iterator]"
                 self.js_docs[key][obj.kind].append(obj)
 
 
