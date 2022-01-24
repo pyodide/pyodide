@@ -144,6 +144,9 @@ def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
 
 
 def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, str]):
+    build_log_path = Path("build.log")
+    build_log_path.unlink(missing_ok=True)
+
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(env)
     env["PATH"] = str(TOOLSDIR) + ":" + env["PATH"]
@@ -155,12 +158,7 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, st
     assert host_install_dir, "Missing host_install_dir"
     cmd.extend(["--home", host_install_dir])
 
-    result = subprocess.run(cmd, env=env)
-    if result.returncode != 0:
-        build_log_path = Path("build.log")
-        if build_log_path.exists():
-            build_log_path.unlink()
-        result.check_returncode()
+    result = subprocess.check_call(cmd, env=env)
     clean_out_native_artifacts()
 
 
