@@ -25,7 +25,7 @@ let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.js)
  * For example, to access a variable called ``foo`` in the Python global
  * scope, use ``pyodide.globals.get("foo")``
  */
-let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
+export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -338,7 +338,8 @@ export function checkInterrupt() {
   }
 }
 
-export function makePublicAPI() {
+export type PyodideInterface = {
+  globals: typeof globals;
   /**
    * An alias to the `Emscripten File System API
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
@@ -354,6 +355,31 @@ export function makePublicAPI() {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
+  FS: typeof FS;
+  pyodide_py: typeof pyodide_py;
+  version: typeof version;
+  loadPackage: typeof loadPackage;
+  loadPackagesFromImports: typeof loadPackagesFromImports;
+  loadedPackages: typeof loadedPackages;
+  isPyProxy: typeof isPyProxy;
+  runPython: typeof runPython;
+  runPythonAsync: typeof runPythonAsync;
+  registerJsModule: typeof registerJsModule;
+  unregisterJsModule: typeof unregisterJsModule;
+  setInterruptBuffer: typeof setInterruptBuffer;
+  checkInterrupt: typeof checkInterrupt;
+  toPy: typeof toPy;
+  pyimport: typeof pyimport;
+  unpackArchive: typeof unpackArchive;
+  registerComlink: typeof registerComlink;
+  PythonError: typeof PythonError;
+  PyBuffer: typeof PyBuffer;
+};
+
+/**
+ * @private
+ */
+export function makePublicAPI(): PyodideInterface {
   const FS = Module.FS;
   let namespace = {
     globals,

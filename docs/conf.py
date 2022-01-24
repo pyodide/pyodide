@@ -6,10 +6,11 @@
 import os
 import sys
 from typing import Dict, Any
-import pathlib
+from pathlib import Path
+import shutil
 import subprocess
 
-base_dir = pathlib.Path(__file__).resolve().parent.parent
+base_dir = Path(__file__).resolve().parent.parent
 path_dirs = [
     str(base_dir),
     str(base_dir / "pyodide-build"),
@@ -57,9 +58,13 @@ extensions = [
     "sphinx_issues",
 ]
 
+shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
+shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
+
 myst_enable_extensions = ["substitution"]
-js_source_path = ["../src/js", "../src/core"]
-jsdoc_config_path = "./jsdoc_conf.json"
+js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
+js_language = "typescript"
+jsdoc_config_path = "../src/js/tsconfig.json"
 root_for_relative_js_paths = "../src/"
 issues_github_path = "pyodide/pyodide"
 

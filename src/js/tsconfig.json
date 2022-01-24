@@ -11,6 +11,7 @@
     "moduleResolution": "node",
     "noImplicitAny": true
   },
-  "include": ["./*.ts"],
-  "exclude": ["rollup.config.js"]
+  "include": ["*.ts"],
+  "exclude": ["rollup.config.js", "*test*"],
+  "entryPoints": ["pyodide.ts", "xyz.ts"]
 }

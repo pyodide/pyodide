@@ -16,6 +16,18 @@
 
 import { Module } from "./module.js";
 
+declare var IS_CALLABLE: number;
+declare var HAS_LENGTH: number;
+declare var HAS_GET: number;
+declare var HAS_SET: number;
+declare var HAS_CONTAINS: number;
+declare var IS_ITERABLE: number;
+declare var IS_ITERATOR: number;
+declare var IS_AWAITABLE: number;
+declare var IS_BUFFER: number;
+
+declare function DEREF_U32(ptr: number, offset: number): number;
+
 /**
  * Is the argument a :any:`PyProxy`?
  * @param jsobj {any} Object to test.
@@ -294,9 +306,11 @@ export type Py2JsResult =
   | undefined;
 export type PyProxy = PyProxyClass & { [x: string]: Py2JsResult };
 
-class PyProxyClass {
+export class PyProxyClass {
   $$: { ptr: number; cache: PyProxyCache; destroyed_msg?: string };
   $$flags: number;
+
+  /** @private */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
   }
@@ -306,21 +320,9 @@ class PyProxyClass {
   }
   /**
    * The name of the type of the object.
-   *
-   * Usually the value is ``"module.name"`` but for builtins or
-   * interpreter-defined types it is just ``"name"``. As pseudocode this is:
-   *
-   * .. code-block:: python
-   *
-   *    ty = type(x)
-   *    if ty.__module__ == 'builtins' or ty.__module__ == "__main__":
-   *        return ty.__name__
-   *    else:
-   *        ty.__module__ + "." + ty.__name__
-   *
    * @type {string}
    */
-  get type() {
+  get type(): string {
     let ptrobj = _getPtr(this);
     return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
   }
@@ -436,7 +438,6 @@ class PyProxyClass {
   /**
    * Check whether the :any:`PyProxy.length` getter is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {}
    */
   supportsLength(): this is PyProxyWithLength {
     return !!(this.$$flags & HAS_LENGTH);
@@ -444,57 +445,50 @@ class PyProxyClass {
   /**
    * Check whether the :any:`PyProxy.get` method is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithGet}
    */
-  supportsGet() {
+  supportsGet(): this is PyProxyWithGet {
     return !!(this.$$flags & HAS_GET);
   }
   /**
    * Check whether the :any:`PyProxy.set` method is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithSet}
    */
-  supportsSet() {
+  supportsSet(): this is PyProxyWithSet {
     return !!(this.$$flags & HAS_SET);
   }
   /**
    * Check whether the :any:`PyProxy.has` method is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithHas}
    */
-  supportsHas() {
+  supportsHas(): this is PyProxyWithHas {
     return !!(this.$$flags & HAS_CONTAINS);
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.[Symbol.iterator]`.
-   * @returns {this is PyProxyIterable}
    */
-  isIterable() {
+  isIterable(): this is PyProxyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.next`.
-   * @returns {this is PyProxyIterator}
    */
-  isIterator() {
+  isIterator(): this is PyProxyIterator {
     return !!(this.$$flags & IS_ITERATOR);
   }
   /**
    * Check whether the PyProxy is awaitable. A Typescript type guard, if this
    * function returns true Typescript considers the PyProxy to be a ``Promise``.
-   * @returns {this is PyProxyAwaitable}
    */
-  isAwaitable() {
+  isAwaitable(): this is PyProxyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
   }
   /**
    * Check whether the PyProxy is a buffer. A Typescript type guard for
    * :any:`PyProxy.getBuffer`.
-   * @returns {this is PyProxyBuffer}
    */
-  isBuffer() {
+  isBuffer(): this is PyProxyBuffer {
     return !!(this.$$flags & IS_BUFFER);
   }
   /**
@@ -502,9 +496,8 @@ class PyProxyClass {
    * returns true then Typescript considers the Proxy to be callable of
    * signature ``(args... : any[]) => PyProxy | number | bigint | string |
    * boolean | undefined``.
-   * @returns {this is PyProxyCallable}
    */
-  isCallable() {
+  isCallable(): this is PyProxyCallable {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
@@ -512,7 +505,11 @@ class PyProxyClass {
 export type PyProxyWithLength = PyProxy & PyProxyLengthMethods;
 // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
 // or mp_length methods
-class PyProxyLengthMethods {
+/**
+ * Blah??
+ * @interface
+ */
+export class PyProxyLengthMethods {
   /**
    * The length of the object.
    *
@@ -541,7 +538,7 @@ export type PyProxyWithGet = PyProxy & PyProxyGetItemMethods;
 /**
  * @interface
  */
-class PyProxyGetItemMethods {
+export class PyProxyGetItemMethods {
   /**
    * This translates to the Python code ``obj[key]``.
    *
@@ -575,7 +572,7 @@ class PyProxyGetItemMethods {
 export type PyProxyWithSet = PyProxy & PyProxySetItemMethods;
 // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
 // mp_ass_subscript,  or sq_ass_item.
-class PyProxySetItemMethods {
+export class PyProxySetItemMethods {
   /**
    * This translates to the Python code ``obj[key] = value``.
    *
@@ -629,7 +626,7 @@ export type PyProxyWithHas = PyProxy & PyProxyContainsMethods;
 
 // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
 // sq_contains
-class PyProxyContainsMethods {
+export class PyProxyContainsMethods {
   /**
    * This translates to the Python code ``key in obj``.
    *
@@ -695,7 +692,7 @@ export type PyProxyIterable = PyProxy & PyProxyIterableMethods;
 // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
 // This avoids allocating a PyProxy wrapper for the temporary iterator.
-class PyProxyIterableMethods {
+export class PyProxyIterableMethods {
   /**
    * This translates to the Python code ``iter(obj)``. Return an iterator
    * associated to the proxy. See the documentation for `Symbol.iterator
@@ -731,7 +728,8 @@ export type PyProxyIterator = PyProxy & PyProxyIteratorMethods;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
 // tp_iternext method.
-class PyProxyIteratorMethods {
+export class PyProxyIteratorMethods {
+  /** @private */
   [Symbol.iterator]() {
     return this;
   }
@@ -957,7 +955,7 @@ export type PyProxyAwaitable = PyProxy & Promise<Py2JsResult>;
  * The Promise / JavaScript awaitable API.
  * @private
  */
-class PyProxyAwaitableMethods {
+export class PyProxyAwaitableMethods {
   $$: any;
   /**
    * This wraps __pyproxy_ensure_future and makes a function that converts a
@@ -1012,13 +1010,16 @@ class PyProxyAwaitableMethods {
    * Present only if the proxied Python object is `awaitable
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
    *
-   * @param {Function} onFulfilled A handler called with the result as an
+   * @param onFulfilled A handler called with the result as an
    * argument if the awaitable succeeds.
-   * @param {Function} onRejected A handler called with the error as an
+   * @param onRejected A handler called with the error as an
    * argument if the awaitable fails.
-   * @returns {Promise} The resulting Promise.
+   * @returns The resulting Promise.
    */
-  then(onFulfilled: (value: any) => any, onRejected: (reason: any) => any) {
+  then(
+    onFulfilled: (value: any) => any,
+    onRejected: (reason: any) => any
+  ): Promise<any> {
     let promise = this._ensure_future();
     return promise.then(onFulfilled, onRejected);
   }
@@ -1069,7 +1070,7 @@ export type PyProxyCallable = PyProxy &
   PyProxyCallableMethods &
   ((...args: any[]) => Py2JsResult);
 
-class PyProxyCallableMethods {
+export class PyProxyCallableMethods {
   apply(jsthis: PyProxyClass, jsargs: any) {
     return Module.callPyObject(_getPtr(this), ...jsargs);
   }
@@ -1120,7 +1121,8 @@ let type_to_array_map: Map<string, any> = new Map([
 ]);
 
 export type PyProxyBuffer = PyProxy & PyProxyBufferMethods;
-class PyProxyBufferMethods {
+
+export class PyProxyBufferMethods {
   /**
    * Get a view of the buffer data which is usable from JavaScript. No copy is
    * ever performed.
@@ -1433,6 +1435,9 @@ export class PyBuffer {
    */
   _view_ptr: number;
 
+  /**
+   * @private
+   */
   constructor() {
     throw new TypeError("PyBuffer is not a constructor");
   }

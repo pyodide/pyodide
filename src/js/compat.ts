@@ -8,10 +8,12 @@ export const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
-export let nodePathMod: any;
-export let nodeFetch: any;
+let nodePathMod: any;
+let nodeFetch: any;
+let nodeVmMod: any;
+/** @private */
 export let nodeFsPromisesMod: any;
-export let nodeVmMod: any;
+
 declare var globalThis: {
   importScripts: (url: string) => void;
   document?: any;
@@ -83,6 +85,7 @@ async function browser_loadBinaryFile(
   return new Uint8Array(await response.arrayBuffer());
 }
 
+/** @private */
 export let _loadBinaryFile: (
   indexURL: string,
   path: string
