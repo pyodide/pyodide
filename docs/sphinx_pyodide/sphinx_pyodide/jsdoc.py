@@ -134,6 +134,22 @@ def object_literal_type_name(self, decl):
 
 
 def reflection_type_name(self, type):
+    """Fill in the type names for type_of_type == "reflection"
+
+    This is left as a TODO in sphinx-js.
+
+    There are a couple of options: if
+
+        decl["kindString"] == "Type Literal"
+
+    then this is a literal object type. At least we assume it's a literal object
+    type, maybe there are other ways for that to happen.
+
+    Otherwise, we assume that it's a function type, which we want to format
+    like:
+
+        (a : string, b : number) => string
+    """
     decl = type["declaration"]
     if decl["kindString"] == "Type literal":
         return object_literal_type_name(self, decl)
