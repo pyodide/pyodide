@@ -30,6 +30,9 @@ substitutions:
   improved with some context information.
   {pr}`2121`
 
+- {{Enhancement}} Pressing TAB in REPL no longer triggers completion when input
+  is whitespace. {pr}`2125`
+
 ## Version 0.19.0
 
 _January 10, 2021_
