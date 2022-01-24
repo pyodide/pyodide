@@ -1,5 +1,5 @@
 import { Module } from "./module.js";
-import { IN_NODE, nodeFsPromisesMod } from "./compat.js"
+import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js"
 
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
