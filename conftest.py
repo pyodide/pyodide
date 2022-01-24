@@ -42,6 +42,12 @@ def pytest_addoption(parser):
         action="store_true",
         help="If provided, tests marked as xfail will be run",
     )
+    group.addoption(
+        "--runner",
+        default="selenium",
+        choices=["selenium", "playwright"],
+        help="Select testing frameworks, selenium or playwright (default: %(default)s)",
+    )
 
 
 def pytest_configure(config):
