@@ -349,7 +349,7 @@ export class PyProxyClass {
     let ptrobj = _getPtr(this);
     return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
   }
-  toString() : string {
+  toString(): string {
     let ptrobj = _getPtr(this);
     let jsref_repr;
     try {
@@ -382,7 +382,7 @@ export class PyProxyClass {
    * Make a new PyProxy pointing to the same Python object.
    * Useful if the PyProxy is destroyed somewhere else.
    */
-  copy() : PyProxy {
+  copy(): PyProxy {
     let ptrobj = _getPtr(this);
     return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
@@ -536,7 +536,7 @@ export class PyProxyLengthMethods {
    *
    * Present only if the proxied Python object has a ``__len__`` method.
    */
-  get length() : number {
+  get length(): number {
     let ptrobj = _getPtr(this);
     let length;
     try {
@@ -689,7 +689,7 @@ export class PyProxyContainsMethods {
  *
  * @private
  */
-function* iter_helper(iterptr: number, token: {}) : Generator<Py2JsResult> {
+function* iter_helper(iterptr: number, token: {}): Generator<Py2JsResult> {
   try {
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
@@ -723,7 +723,7 @@ export class PyProxyIterableMethods {
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    */
-  [Symbol.iterator]() : Iterator<Py2JsResult, Py2JsResult, Py2JsResult> {
+  [Symbol.iterator](): Iterator<Py2JsResult, Py2JsResult, Py2JsResult> {
     let ptrobj = _getPtr(this);
     let token = {};
     let iterptr;
@@ -1170,7 +1170,7 @@ export class PyProxyBufferMethods {
    * <https://docs.python.org/3/library/struct.html#format-strings>`_.
    * @returns :any:`PyBuffer <pyodide.PyBuffer>`
    */
-  getBuffer(type?: string) : PyBuffer {
+  getBuffer(type?: string): PyBuffer {
     let ArrayType = undefined;
     if (type) {
       ArrayType = type_to_array_map.get(type);
