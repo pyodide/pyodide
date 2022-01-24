@@ -30,6 +30,9 @@ substitutions:
   improved with some context information.
   {pr}`2121`
 
+- {{Fix}} Python tracebacks now include Javascript frames when Python calls a Javascript function.
+  {pr}`2123`
+
 ## Version 0.19.0
 
 _January 10, 2021_
