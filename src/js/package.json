@@ -26,16 +26,17 @@
     "rollup": "^2.48.0",
     "rollup-plugin-terser": "^7.0.2",
     "terser": "^5.7.0",
+    "ts-node": "^10.4.0",
     "tsd": "^0.15.1",
     "typescript": "^4.2.4"
   },
   "type": "module",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --loader node_modules/ts-node/dist/esm.js"
   },
   "mocha": {
     "timeout": 30000,
-    "file": "./test/conftest.js"
+    "file": "./test/conftest.mjs"
   },
   "tsd": {
     "compilerOptions": {
