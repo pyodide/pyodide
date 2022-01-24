@@ -25,8 +25,11 @@ sys.path = path_dirs + sys.path
 project = "Pyodide"
 copyright = "2019-2021, Pyodide contributors and Mozilla"
 
-import pyodide
+import atexit
+
 import micropip  # noqa
+import os
+import pyodide
 
 # We hacked it so that autodoc will look for submodules, but only if we import
 # them here. TODO: look these up in the source directory?
@@ -58,7 +61,9 @@ extensions = [
     "sphinx_issues",
 ]
 
-import atexit
+
+shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
+shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
 
 
 def remove_pyproxy_gen_ts():
@@ -67,8 +72,11 @@ def remove_pyproxy_gen_ts():
 
 atexit.register(remove_pyproxy_gen_ts)
 
-shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
-shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
+os.environ["PATH"] += f':{str(Path("../src/js/node_modules/.bin").resolve())}'
+
+if not shutil.which("typescipt") or not shutil.which("typedoc"):
+    subprocess.run(["npm", "ci"], cwd="../src/js")
+
 
 myst_enable_extensions = ["substitution"]
 js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]

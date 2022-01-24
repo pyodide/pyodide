@@ -29,7 +29,8 @@
     "terser": "^5.7.0",
     "ts-node": "^10.4.0",
     "tsd": "^0.15.1",
-    "typescript": "^4.2.4"
+    "typescript": "^4.2.4",
+    "typedoc": "^0.22.11"
   },
   "type": "module",
   "scripts": {
