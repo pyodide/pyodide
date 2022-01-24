@@ -97,6 +97,10 @@ def _import_ruamel_yaml():
     return YAML
 
 
+def run_prettier(meta_path):
+    subprocess.run(["npx", "prettier", "-w", meta_path])
+
+
 def make_package(
     package: str,
     version: Optional[str] = None,
@@ -145,6 +149,7 @@ def make_package(
     out_path = PACKAGES_ROOT / package / "meta.yaml"
     with open(out_path, "w") as fd:
         yaml.dump(yaml_content, fd)
+    run_prettier(meta_path)
     success(f"Output written to {out_path}")
 
 
@@ -231,7 +236,7 @@ def update_package(
     yaml_content["package"]["version"] = pypi_metadata["info"]["version"]
     with open(meta_path, "w") as fd:
         yaml.dump(yaml_content, fd)
-    subprocess.run(["npx", "prettier", "-w", meta_path])
+    run_prettier(meta_path)
     success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
