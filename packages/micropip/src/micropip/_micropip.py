@@ -6,7 +6,6 @@ import importlib
 import io
 import json
 import tempfile
-from importlib.metadata import version as get_version
 
 from packaging.requirements import Requirement
 from packaging.version import Version

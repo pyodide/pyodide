@@ -30,8 +30,7 @@ export PYODIDE_BASE_URL?=./
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
-export NUMPY_LIB_BASE=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/install/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/
-export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/install/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/core/lib/
+export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/build/temp.emscripten_wasm32-3.9
 
 # This environment variable is used for packages to detect if they are built
 # for pyodide during build time

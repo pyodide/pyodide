@@ -23,5 +23,5 @@ update-all:
 	done
 
 clean:
-	rm -rf ./*/build ./*/build.log
+	rm -rf ./*/build ./*/build.log ./*/dist
 	rm -rf ./.artifacts
