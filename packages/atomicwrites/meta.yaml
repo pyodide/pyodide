@@ -2,8 +2,8 @@ package:
   name: atomicwrites
   version: 1.4.0
 source:
-  sha256: ae70396ad1a434f9c7046fd2dd196fc04b12f9e91ffb859164193be8b6168a7a
-  url: https://files.pythonhosted.org/packages/55/8d/74a75635f2c3c914ab5b3850112fd4b0c8039975ecb320e4449aa363ba54/atomicwrites-1.4.0.tar.gz
+  sha256: 6d1784dea7c0c8d4a5172b6c620f40b6e4cbfdf96d783691f2e1302a7b88e197
+  url: https://files.pythonhosted.org/packages/2c/a0/da5f49008ec6e9a658dbf5d7310a4debd397bce0b4db03cf8a410066bb87/atomicwrites-1.4.0-py2.py3-none-any.whl
 test:
   imports:
     - atomicwrites

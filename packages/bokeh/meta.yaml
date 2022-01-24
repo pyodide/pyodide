@@ -12,8 +12,8 @@ requirements:
     - typing-extensions
     - pyyaml
 source:
-  sha256: f0a4b53364ed3b7eb936c5cb1a4f4132369e394c7ae0a8ef420459410958033d
-  url: https://files.pythonhosted.org/packages/8d/45/723c63620c66e953046d351c599ea14fae6f4d3a5c3af0c952846197b019/bokeh-2.4.2.tar.gz
+  sha256: 2a842d717feeee802e668054277c09054b6f1561557a16dddaf5f7c452f2728c
+  url: https://files.pythonhosted.org/packages/87/6c/c2b2911555d34c9fa24ad0f41cf42ba6887e279a521bca0cb3d091d77c17/bokeh-2.4.2-py3-none-any.whl
 test:
   imports:
     - bokeh

@@ -2,8 +2,8 @@ package:
   name: optlang
   version: 1.5.2
 source:
-  sha256: 5514364aa06bf24381c6777188b2df79b13def2743312bdb80277392cdbb6477
-  url: https://files.pythonhosted.org/packages/08/09/e87caa6d45be1bb5c787428822bc7694945d1bf2c9278939cbe5b2a11a2f/optlang-1.5.2.tar.gz
+  sha256: 14464cff638b58670c1a7f5896f19dd7b595a12c1d30a27c59074700833c1677
+  url: https://files.pythonhosted.org/packages/12/3e/9d0b72cf5a8ff660e5787a0797906e04942081f3ad4a95f860488affff2b/optlang-1.5.2-py2.py3-none-any.whl
 requirements:
   run:
     - sympy
