@@ -4,11 +4,13 @@
 import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
-  initializePackageIndex,
   _loadBinaryFile,
-  loadPackage,
   initNodeModules,
-} from "./load-pyodide.js";
+} from "./compat.js"
+import {
+  initializePackageIndex,
+  loadPackage,
+} from "./load-package.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
 
