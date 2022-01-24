@@ -320,7 +320,18 @@ export class PyProxyClass {
   }
   /**
    * The name of the type of the object.
-   * @type {string}
+   *
+   * Usually the value is ``"module.name"`` but for builtins or
+   * interpreter-defined types it is just ``"name"``. As pseudocode this is:
+   *
+   * .. code-block:: python
+   *
+   *    ty = type(x)
+   *    if ty.__module__ == 'builtins' or ty.__module__ == "__main__":
+   *        return ty.__name__
+   *    else:
+   *        ty.__module__ + "." + ty.__name__
+   *
    */
   get type(): string {
     let ptrobj = _getPtr(this);
@@ -352,7 +363,7 @@ export class PyProxyClass {
    * collected, however there is no guarantee that the finalizer will be run
    * in a timely manner so it is better to ``destroy`` the proxy explicitly.
    *
-   * @param {string} [destroyed_msg] The error message to print if use is
+   * @param destroyed_msg The error message to print if use is
    *        attempted after destroying. Defaults to "Object has already been
    *        destroyed".
    */
@@ -373,24 +384,8 @@ export class PyProxyClass {
    * default does a deep conversion, if a shallow conversion is desired, you can
    * use ``proxy.toJs({depth : 1})``. See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
-   *
-   * @param {object} options
-   * @param {number} [options.depth] How many layers deep to perform the
-   * conversion. Defaults to infinite.
-   * @param {array} [options.pyproxies] If provided, ``toJs`` will store all
-   * PyProxies created in this list. This allows you to easily destroy all the
-   * PyProxies by iterating the list without having to recurse over the
-   * generated structure. The most common use case is to create a new empty
-   * list, pass the list as `pyproxies`, and then later iterate over `pyproxies`
-   * to destroy all of created proxies.
-   * @param {boolean} [options.create_pyproxies] If false, ``toJs`` will throw a
-   * ``ConversionError`` rather than producing a ``PyProxy``.
-   * @param {boolean} [options.dict_converter] A function to be called on an
-   * iterable of pairs ``[key, value]``. Convert this iterable of pairs to the
-   * desired output. For instance, ``Object.fromEntries`` would convert the dict
-   * to an object, ``Array.from`` converts it to an array of entries, and ``(it) =>
-   * new Map(it)`` converts it to a ``Map`` (which is the default behavior).
-   * @return {any} The JavaScript object resulting from the conversion.
+   * @param options
+   * @return The JavaScript object resulting from the conversion.
    */
   toJs({
     depth = -1,
@@ -398,11 +393,30 @@ export class PyProxyClass {
     create_pyproxies = true,
     dict_converter = undefined,
   }: {
+    /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
+    /**
+     * If provided, ``toJs`` will store all PyProxies created in this list. This
+     * allows you to easily destroy all the PyProxies by iterating the list
+     * without having to recurse over the generated structure. The most common
+     * use case is to create a new empty list, pass the list as `pyproxies`, and
+     * then later iterate over `pyproxies` to destroy all of created proxies.
+     */
     pyproxies?: PyProxy[];
+    /**
+     * If false, ``toJs`` will throw a ``ConversionError`` rather than
+     * producing a ``PyProxy``.
+     */
     create_pyproxies?: boolean;
+    /**
+     * A function to be called on an iterable of pairs ``[key, value]``. Convert
+     * this iterable of pairs to the desired output. For instance,
+     * ``Object.fromEntries`` would convert the dict to an object, ``Array.from``
+     * converts it to an array of entries, and ``(it) => new Map(it)`` converts
+     * it to a ``Map`` (which is the default behavior).
+     */
     dict_converter?: any;
-  } = {}) {
+  } = {}): any {
     let ptrobj = _getPtr(this);
     let idresult;
     let proxies_id;
@@ -465,7 +479,7 @@ export class PyProxyClass {
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
-   * :any:`PyProxy.[Symbol.iterator]`.
+   * :any:`PyProxy.[iterator]`.
    */
   isIterable(): this is PyProxyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
@@ -734,25 +748,24 @@ export class PyProxyIteratorMethods {
     return this;
   }
   /**
-   * This translates to the Python code ``next(obj)``. Returns the next value
-   * of the generator. See the documentation for `Generator.prototype.next
+   * This translates to the Python code ``next(obj)``. Returns the next value of
+   * the generator. See the documentation for `Generator.prototype.next
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
    * The argument will be sent to the Python generator.
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    *
-   * Present only if the proxied Python object is a generator or iterator
-   * (i.e., has a ``send`` or ``__next__`` method).
+   * Present only if the proxied Python object is a generator or iterator (i.e.,
+   * has a ``send`` or ``__next__`` method).
    *
-   * @param {any=} [value] The value to send to the generator. The value will be
-   * assigned as a result of a yield expression.
-   * @returns {IteratorResult<Py2JsResult, Py2JsResult>} An Object with two properties: ``done`` and ``value``.
-   * When the generator yields ``some_value``, ``next`` returns ``{done :
-   * false, value : some_value}``. When the generator raises a
-   * ``StopIteration(result_value)`` exception, ``next`` returns ``{done :
-   * true, value : result_value}``.
+   * @param any The value to send to the generator. The value will be assigned
+   * as a result of a yield expression.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * generator yields ``some_value``, ``next`` returns ``{done : false, value :
+   * some_value}``. When the generator raises a ``StopIteration(result_value)``
+   * exception, ``next`` returns ``{done : true, value : result_value}``.
    */
-  next(arg: any = undefined) {
+  next(arg: any = undefined): IteratorResult<Py2JsResult, Py2JsResult> {
     let idresult;
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
@@ -1034,9 +1047,9 @@ export class PyProxyAwaitableMethods {
    * Present only if the proxied Python object is `awaitable
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
    *
-   * @param {Function} onRejected A handler called with the error as an
+   * @param onRejected A handler called with the error as an
    * argument if the awaitable fails.
-   * @returns {Promise} The resulting Promise.
+   * @returns The resulting Promise.
    */
   catch(onRejected: (reason: any) => any) {
     let promise = this._ensure_future();
@@ -1054,9 +1067,9 @@ export class PyProxyAwaitableMethods {
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
    *
    *
-   * @param {Function} onFinally A handler that is called with zero arguments
+   * @param onFinally A handler that is called with zero arguments
    * when the awaitable resolves.
-   * @returns {Promise} A Promise that resolves or rejects with the same
+   * @returns A Promise that resolves or rejects with the same
    * result as the original Promise, but only after executing the
    * ``onFinally`` handler.
    */
@@ -1144,14 +1157,14 @@ export class PyProxyBufferMethods {
    * have support for big endian data, so you might want to pass
    * ``'dataview'`` as the type argument in that case.
    *
-   * @param {string=} [type] The type of the :any:`PyBuffer.data <pyodide.PyBuffer.data>` field in the
+   * @param type The type of the :any:`PyBuffer.data <pyodide.PyBuffer.data>` field in the
    * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
    * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
    * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
    * optional, if absent ``getBuffer`` will try to determine the appropriate
    * output type based on the buffer `format string
    * <https://docs.python.org/3/library/struct.html#format-strings>`_.
-   * @returns {PyBuffer} :any:`PyBuffer <pyodide.PyBuffer>`
+   * @returns :any:`PyBuffer <pyodide.PyBuffer>`
    */
   getBuffer(type?: string) {
     let ArrayType = undefined;
@@ -1416,7 +1429,6 @@ export class PyBuffer {
 
   /**
    * Is it C contiguous?
-   * @type {boolean}
    */
   c_contiguous: boolean;
 

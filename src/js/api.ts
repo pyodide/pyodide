@@ -178,7 +178,7 @@ export function registerComlink(Comlink: any) {
  * the imported module from ``sys.modules``. This calls the ``pyodide_py`` API
  * :func:`pyodide.unregister_js_module`.
  *
- * @param {string} name Name of the JavaScript module to remove
+ * @param name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name: string) {
   Module.pyodide_py.unregister_js_module(name);
@@ -327,7 +327,7 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
  * via the interrupt buffer.
  *
  * This can be used to enable keyboard interrupts during execution of JavaScript
- * code, just as `PyErr_CheckSignals` is used to enable keyboard interrupts
+ * code, just as ``PyErr_CheckSignals`` is used to enable keyboard interrupts
  * during execution of C code.
  */
 export function checkInterrupt() {
@@ -340,21 +340,6 @@ export function checkInterrupt() {
 
 export type PyodideInterface = {
   globals: typeof globals;
-  /**
-   * An alias to the `Emscripten File System API
-   * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
-   *
-   * This provides a wide range of POSIX-`like` file/device operations, including
-   * `mount
-   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
-   * which can be used to extend the in-memory filesystem with features like `persistence
-   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
-   *
-   * While all the file systems implementations are enabled, only the default
-   * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
-   * are available as members of ``FS.filesystems``:
-   * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
-   */
   FS: typeof FS;
   pyodide_py: typeof pyodide_py;
   version: typeof version;
@@ -377,10 +362,27 @@ export type PyodideInterface = {
 };
 
 /**
+ * An alias to the `Emscripten File System API
+ * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
+ *
+ * This provides a wide range of POSIX-`like` file/device operations, including
+ * `mount
+ * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
+ * which can be used to extend the in-memory filesystem with features like `persistence
+ * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
+ *
+ * While all the file systems implementations are enabled, only the default
+ * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
+ * are available as members of ``FS.filesystems``:
+ * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
+ */
+export let FS: any;
+
+/**
  * @private
  */
 export function makePublicAPI(): PyodideInterface {
-  const FS = Module.FS;
+  FS = Module.FS;
   let namespace = {
     globals,
     FS,

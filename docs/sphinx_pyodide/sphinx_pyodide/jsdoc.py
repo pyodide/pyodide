@@ -31,11 +31,10 @@ def _convert_node(self, node):
         params = node.get('parameters', [])
         new_params = []
         for param in params:
-            new_params.append(param)
             param_type = param["type"]
             if param_type["type"] != "reflection":
+                new_params.append(param)
                 continue
-            param_type["skip"] = True
             decl = param_type["declaration"]
             if "children" not in decl:
                 continue
@@ -76,8 +75,6 @@ def _type_name(self, type):
     res = _orig_type_name(self, type)
     if "TODO" not in res:
         return res
-    if "skip" in type:
-        return ""
     type_of_type = type.get("type")
     if type_of_type == "predicate":
         return f"boolean (typeguard for {self._type_name(type['targetType'])})"

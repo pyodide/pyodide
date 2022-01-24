@@ -121,7 +121,7 @@ if (globalThis.document) {
 
 /**
  * Load a text file and executes it as Javascript
- * @param {str} url The path to load. May be a url or a relative file system path.
+ * @param url The path to load. May be a url or a relative file system path.
  * @private
  */
 async function nodeLoadScript(url: string) {

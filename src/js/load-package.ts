@@ -8,7 +8,7 @@ let baseURL: string;
  * Initialize the packages index. This is called as early as possible in
  * loadPyodide so that fetching packages.json can occur in parallel with other
  * operations.
- * @param {string} indexURL
+ * @param indexURL
  * @private
  */
 export async function initializePackageIndex(indexURL: string) {
@@ -156,8 +156,8 @@ async function downloadPackage(
 
 /**
  * Install the package into the file system.
- * @param {str} name The name of the package
- * @param {str} buffer The binary data returned by downloadPkgBuffer
+ * @param name The name of the package
+ * @param buffer The binary data returned by downloadPkgBuffer
  * @private
  */
 async function installPackage(name: string, buffer: Uint8Array) {
@@ -236,13 +236,6 @@ async function loadDynlib(lib: string, shared: boolean) {
     releaseDynlibLock();
   }
 }
-
-/**
- * @callback LogFn
- * @param {string} msg
- * @returns {void}
- * @private
- */
 
 const acquirePackageLock = createLock();
 
@@ -385,12 +378,9 @@ export async function loadPackage(
 }
 
 /**
- *
  * The list of packages that Pyodide has loaded.
  * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
  * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
  * install location for a particular ``package_name``.
- *
- * @type {object}
  */
 export let loadedPackages: { [key: string]: string } = {};

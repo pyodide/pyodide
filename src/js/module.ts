@@ -1,12 +1,7 @@
 /**
- * @typedef {import('emscripten').Module} Module
- */
-
-/**
  * The Emscripten Module.
  *
  * @private
- * @type {Module}
  */
 export let Module: any = {};
 Module.noImageDecoding = true;
@@ -93,7 +88,7 @@ function createStdinWrapper(stdin: () => string) {
  * Make the home directory inside the virtual file system,
  * then change the working directory to it.
  *
- * @param {string} path
+ * @param path
  * @private
  */
 export function setHomeDirectory(path: string) {
