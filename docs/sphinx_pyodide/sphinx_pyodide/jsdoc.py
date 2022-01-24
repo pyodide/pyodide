@@ -4,7 +4,6 @@ from docutils.statemachine import StringList
 from docutils.utils import new_document
 
 from collections import OrderedDict
-import re
 
 from sphinx import addnodes
 from sphinx.util import rst

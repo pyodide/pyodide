@@ -67,7 +67,7 @@ async function node_loadBinaryFile(
  *
  * @param indexURL base path to resolve relative paths
  * @param path the path to load
- * @returns An ArrayBuffer containing the binary data
+ * @returns A Uint8Array containing the binary data
  * @private
  */
 async function browser_loadBinaryFile(

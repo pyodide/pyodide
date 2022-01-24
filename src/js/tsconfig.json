@@ -12,6 +12,5 @@
     "noImplicitAny": true
   },
   "include": ["*.ts"],
-  "exclude": ["rollup.config.js", "*test*"],
-  "entryPoints": ["pyodide.ts", "xyz.ts"]
+  "exclude": ["rollup.config.js", "*test*"]
 }

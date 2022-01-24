@@ -213,37 +213,18 @@ function finalizeBootstrap(config: ConfigType) {
   return pyodide;
 }
 
-declare function _createPyodideModule(Module: any): Promise<undefined>;
+declare function _createPyodideModule(Module: any): Promise<void>;
 
+/**
+ * See documentation for loadPyodide.
+ * @private
+ */
 type ConfigType = {
-  /**
-   * The URL from which Pyodide will load packages
-   */
   indexURL: string;
-
-  /**
-   * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
-   */
   homedir?: string;
-
-  /** Load the full Python standard library.
-   * Setting this to false excludes following modules: distutils.
-   * Default: true
-   */
   fullStdLib?: boolean;
-  /**
-   * Override the standard input callback. Should ask the user for one line of input.
-   */
   stdin?: () => string;
-  /**
-   * Override the standard output callback.
-   * Default: undefined
-   */
   stdout?: (msg: string) => void;
-  /**
-   * Override the standard error output callback.
-   * Default: undefined
-   */
   stderr?: (msg: string) => void;
   jsglobals?: object;
 };
