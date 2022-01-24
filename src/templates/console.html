@@ -133,7 +133,7 @@
               term.set_command("");
               term.set_prompt(ps1);
             },
-            "TAB": (event, original) => {
+            TAB: (event, original) => {
               const command = term.before_cursor();
               // Disable completion for whitespaces.
               if (command.trim() === "") {
@@ -141,7 +141,7 @@
                 return false;
               }
               return original(event);
-            }
+            },
           },
         });
         window.term = term;
