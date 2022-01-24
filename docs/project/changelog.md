@@ -32,6 +32,10 @@ substitutions:
   rather than the emscripten `file_packager.py` format.
   {pr}`2027`
 
+- {{Fix}} The "PyProxy has already been destroyed" error message has been
+  improved with some context information.
+  {pr}`2121`
+
 ## Version 0.19.0
 
 _January 10, 2021_
