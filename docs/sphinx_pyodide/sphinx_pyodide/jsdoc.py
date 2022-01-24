@@ -23,13 +23,17 @@ from sphinx_js.renderers import (
 
 _orig_convert_node = TsAnalyzer._convert_node
 
+from rich import inspect as _inspect
+def inspect(x, **kwargs):
+    kwargs["docs"] = kwargs.get("docs", False)
+    _inspect(x, **kwargs)
 
 def _convert_node(self, node):
     kind = node.get("kindString")
     if kind in ["Function", "Constructor", "Method"] and not node.get("sources"):
         return None, []
-    if kind in ["Call signature", "Constructor signature"]:
-        params = node.get("parameters", [])
+    if kind in ['Call signature', 'Constructor signature']:
+        params = node.get('parameters', [])
         new_params = []
         for param in params:
             new_params.append(param)
@@ -45,10 +49,7 @@ def _convert_node(self, node):
                 if not "type" in child:
                     if "signatures" in child:
                         child["comment"] = child["signatures"][0]["comment"]
-                        child["type"] = {
-                            "type": "reflection",
-                            "declaration": dict(child),
-                        }
+                        child["type"] = {"type" : "reflection", "declaration" : dict(child)}
                     # child["type"]["type"] = "reflection"
                 child["name"] = param["name"] + "." + child["name"]
                 new_params.append(child)
@@ -61,6 +62,20 @@ TsAnalyzer._convert_node = _convert_node
 
 _orig_type_name = TsAnalyzer._type_name
 
+def type_literal_name(self, decl):
+    children = []
+    if "indexSignature" in decl:
+        index_sig = decl["indexSignature"]
+        assert len(index_sig["parameters"]) == 1
+        key = index_sig["parameters"][0]
+        keyname = key["name"]
+        keytype = self._type_name(key["type"])
+        valuetype = self._type_name(index_sig["type"])
+        children.append(f"[{keyname}: {keytype}]: {valuetype}")
+    if 'children' in decl:
+        children.extend(child["name"] + ": " + self._type_name(child["type"]) for child in decl["children"])
+
+    return "{" + ", ".join(children) + "}"
 
 def _type_name(self, type):
     res = _orig_type_name(self, type)
@@ -74,6 +89,8 @@ def _type_name(self, type):
     if type_of_type != "reflection":
         return res
     decl = type["declaration"]
+    if decl["kindString"] == 'Type literal':
+        return type_literal_name(self, decl)
     decl_sig = None
     if "signatures" in decl:
         decl_sig = decl["signatures"][0]
@@ -87,27 +104,10 @@ def _type_name(self, type):
         params_str = ", ".join(params)
         ret_str = self._type_name(decl_sig["type"])
         return f"({params_str}) => {ret_str}"
+    assert False
 
-    if decl["kindString"] != "Type literal":
-        return res
 
-    if "indexSignature" not in "decl" and "children" not in decl:
-        return res
-    children = []
-    if "indexSignature" in decl:
-        index_sig = decl["indexSignature"]
-        assert len(index_sig["parameters"]) == 1
-        key = index_sig["parameters"][0]
-        keyname = key["name"]
-        keytype = self._type_name(key["type"])
-        valuetype = self._type_name(index_sig["type"])
-        children.append(f"[{keyname}: {keytype}]: {valuetype}")
-    if "children" in decl:
-        children.extend(
-            child["name"] + ": " + self._type_name(child["type"])
-            for child in decl["children"]
-        )
-    return "{" + ", ".join(children) + "}"
+    # pprint.pprint(self._type_name(type["declaration"]["children"][0]["type"]))
 
 
 TsAnalyzer._type_name = _type_name
@@ -200,6 +200,7 @@ class PyodideAnalyzer:
                 continue
             # Remove the part of the key corresponding to the file
             key = [x for x in key if "/" not in x]
+            print(key)
             filename = key[0]
             toplevelname = key[1]
             if key[-1].startswith("$"):
@@ -236,6 +237,7 @@ class PyodideAnalyzer:
 
         for key, value in items.items():
             for obj in sorted(value, key=attrgetter("name")):
+                print(obj.name)
                 obj.async_ = False
                 if isinstance(obj, Class):
                     obj.kind = "class"
