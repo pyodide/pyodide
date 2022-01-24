@@ -2,15 +2,8 @@
  * The main bootstrap code for loading pyodide.
  */
 import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
-import {
-  loadScript,
-  _loadBinaryFile,
-  initNodeModules,
-} from "./compat.js"
-import {
-  initializePackageIndex,
-  loadPackage,
-} from "./load-package.js";
+import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
+import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
 import "./error_handling.gen.js";

@@ -1,4 +1,3 @@
-
 // Detect if we're in node
 export const IN_NODE =
   typeof process !== "undefined" &&
@@ -27,7 +26,6 @@ export async function initNodeModules() {
   nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
 }
 
-
 /**
  * Load a binary file, only for use in Node. If the path explicitly is a URL,
  * then fetch from a URL, else load from the file system.
@@ -36,45 +34,44 @@ export async function initNodeModules() {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
- async function node_loadBinaryFile(indexURL, path) {
-    if (path.includes("://")) {
-      let response = await nodeFetch(path);
-      if (!response.ok) {
-        throw new Error(`Failed to load '${path}': request failed.`);
-      }
-      return await response.arrayBuffer();
-    } else {
-      const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
-      return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-    }
-  }
-  
-  /**
-   * Load a binary file, only for use in browser. Resolves relative paths against
-   * indexURL.
-   *
-   * @param {str} indexURL base path to resolve relative paths
-   * @param {str} path the path to load
-   * @returns An ArrayBuffer containing the binary data
-   * @private
-   */
-  async function browser_loadBinaryFile(indexURL, path) {
-    const base = new URL(indexURL, location);
-    const url = new URL(path, base);
-    let response = await fetch(url);
+async function node_loadBinaryFile(indexURL, path) {
+  if (path.includes("://")) {
+    let response = await nodeFetch(path);
     if (!response.ok) {
-      throw new Error(`Failed to load '${url}': request failed.`);
+      throw new Error(`Failed to load '${path}': request failed.`);
     }
-    return new Uint8Array(await response.arrayBuffer());
-  }
-  
-  export let _loadBinaryFile;
-  if (IN_NODE) {
-    _loadBinaryFile = node_loadBinaryFile;
+    return await response.arrayBuffer();
   } else {
-    _loadBinaryFile = browser_loadBinaryFile;
+    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
+}
 
+/**
+ * Load a binary file, only for use in browser. Resolves relative paths against
+ * indexURL.
+ *
+ * @param {str} indexURL base path to resolve relative paths
+ * @param {str} path the path to load
+ * @returns An ArrayBuffer containing the binary data
+ * @private
+ */
+async function browser_loadBinaryFile(indexURL, path) {
+  const base = new URL(indexURL, location);
+  const url = new URL(path, base);
+  let response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load '${url}': request failed.`);
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+export let _loadBinaryFile;
+if (IN_NODE) {
+  _loadBinaryFile = node_loadBinaryFile;
+} else {
+  _loadBinaryFile = browser_loadBinaryFile;
+}
 
 /**
  * Currently loadScript is only used once to load `pyodide.asm.js`.
@@ -99,21 +96,18 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
-
 /**
  * Load a text file and executes it as Javascript
  * @param {str} url The path to load. May be a url or a relative file system path.
  * @private
  */
- async function nodeLoadScript(url) {
-    if (url.includes("://")) {
-      // If it's a url, load it with fetch then eval it.
-      nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
-    } else {
-      // Otherwise, hopefully it is a relative path we can load from the file
-      // system.
-      await import(nodePathMod.resolve(url));
-    }
+async function nodeLoadScript(url) {
+  if (url.includes("://")) {
+    // If it's a url, load it with fetch then eval it.
+    nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
+  } else {
+    // Otherwise, hopefully it is a relative path we can load from the file
+    // system.
+    await import(nodePathMod.resolve(url));
   }
-  
-
+}
