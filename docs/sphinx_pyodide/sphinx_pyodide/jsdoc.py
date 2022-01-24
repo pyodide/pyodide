@@ -259,6 +259,7 @@ class PyodideAnalyzer:
                 continue
             # Remove the part of the key corresponding to the file
             key = [x for x in key if "/" not in x]
+            print("key", key)
             filename = key[0]
             toplevelname = key[1]
             if key[-1].startswith("$"):
