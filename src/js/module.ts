@@ -17,12 +17,16 @@ Module.preRun = [];
 
 /**
  *
- * @param {undefined | function(): string} stdin
- * @param {undefined | function(string)} stdout
- * @param {undefined | function(string)} stderr
+ * @param stdin
+ * @param stdout
+ * @param stderr
  * @private
  */
-export function setStandardStreams(stdin, stdout, stderr) {
+export function setStandardStreams(
+  stdin?: () => string,
+  stdout?: (a: string) => void,
+  stderr?: (a: string) => void
+) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
   if (stdout) {
     Module.print = stdout;
@@ -40,7 +44,7 @@ export function setStandardStreams(stdin, stdout, stderr) {
   }
 }
 
-function createStdinWrapper(stdin) {
+function createStdinWrapper(stdin: () => string) {
   // When called, it asks the user for one whole line of input (stdin)
   // Then, it passes the individual bytes of the input to emscripten, one after another.
   // And finally, it terminates it with null.
@@ -92,7 +96,7 @@ function createStdinWrapper(stdin) {
  * @param {string} path
  * @private
  */
-export function setHomeDirectory(path) {
+export function setHomeDirectory(path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {

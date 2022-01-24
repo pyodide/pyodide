@@ -5,26 +5,32 @@ import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
-import "./pyproxy.gen.js";
 import "./error_handling.gen.js";
 
-/**
- * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
- * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
- * @typedef {import('./pyproxy.gen').PyProxyWithGet} PyProxyWithGet
- * @typedef {import('./pyproxy.gen').PyProxyWithSet} PyProxyWithSet
- * @typedef {import('./pyproxy.gen').PyProxyWithHas} PyProxyWithHas
- * @typedef {import('./pyproxy.gen').PyProxyIterable} PyProxyIterable
- * @typedef {import('./pyproxy.gen').PyProxyIterator} PyProxyIterator
- * @typedef {import('./pyproxy.gen').PyProxyAwaitable} PyProxyAwaitable
- * @typedef {import('./pyproxy.gen').PyProxyBuffer} PyProxyBuffer
- * @typedef {import('./pyproxy.gen').PyProxyCallable} PyProxyCallable
- *
- * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
- *
- * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
- * @typedef {import('./pyproxy.gen').PyBuffer} PyBuffer
- */
+import {
+  PyProxy,
+  PyProxyDict,
+  Py2JsResult,
+} from "./pyproxy.gen";
+
+export {
+  PyProxy,
+  PyProxyWithLength,
+  PyProxyDict,
+  PyProxyWithGet,
+  PyProxyWithSet,
+  PyProxyWithHas,
+  PyProxyIterable,
+  PyProxyIterator,
+  PyProxyAwaitable,
+  PyProxyBuffer,
+  PyProxyCallable,
+  Py2JsResult,
+  TypedArray,
+  PyBuffer,
+} from "./pyproxy.gen";
+
+
 
 /**
  * Dump the Python traceback to the browser console.
@@ -49,7 +55,7 @@ let fatal_error_occurred = false;
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
-Module.fatal_error = function (e) {
+Module.fatal_error = function (e: any) {
   if (e.pyodide_fatal_error) {
     return;
   }
@@ -99,13 +105,13 @@ Module.fatal_error = function (e) {
   throw e;
 };
 
-let runPythonInternal_dict; // Initialized in finalizeBootstrap
+let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
 /**
  * Just like `runPython` except uses a different globals dict and gets
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
  */
-Module.runPythonInternal = function (code) {
+Module.runPythonInternal = function (code : string) : Py2JsResult {
   return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
@@ -116,11 +122,11 @@ Module.runPythonInternal = function (code) {
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(globals_dict, builtins_dict) {
+function wrapPythonGlobals(globals_dict : PyProxyDict, builtins_dict : PyProxyDict) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
       if (symbol === "get") {
-        return (key) => {
+        return (key : any) => {
           let result = target.get(key);
           if (result === undefined) {
             result = builtins_dict.get(key);
@@ -129,14 +135,14 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
         };
       }
       if (symbol === "has") {
-        return (key) => target.has(key) || builtins_dict.has(key);
+        return (key : any) => target.has(key) || builtins_dict.has(key);
       }
       return Reflect.get(target, symbol);
     },
   });
 }
 
-function unpackPyodidePy(pyodide_py_tar) {
+function unpackPyodidePy(pyodide_py_tar : Uint8Array) {
   const fileName = "/pyodide_py.tar";
   let stream = Module.FS.open(fileName, "w");
   Module.FS.write(
@@ -171,7 +177,7 @@ del importlib
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-function finalizeBootstrap(config) {
+function finalizeBootstrap(config : ConfigType) {
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
@@ -212,6 +218,16 @@ function finalizeBootstrap(config) {
 
 declare function _createPyodideModule(Module: any): Promise<undefined>;
 
+type ConfigType = {
+  indexURL : string,
+  homedir : string,
+  fullStdLib : boolean,
+  stdin? : () => string
+  stdout? : (msg : string) => void,
+  stderr? : (msg : string) => void,
+  jsglobals? : object
+};
+
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
@@ -238,7 +254,7 @@ declare function _createPyodideModule(Module: any): Promise<undefined>;
  * @memberof globalThis
  * @async
  */
-export async function loadPyodide(config) {
+export async function loadPyodide(config : ConfigType) {
   if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
@@ -272,7 +288,7 @@ export async function loadPyodide(config) {
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
-  Module.locateFile = (path) => config.indexURL + path;
+  Module.locateFile = (path : string) => config.indexURL + path;
   const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
@@ -285,7 +301,7 @@ export async function loadPyodide(config) {
   await moduleLoaded;
 
   // Disable futher loading of Emscripten file_packager stuff.
-  Module.locateFile = (path) => {
+  Module.locateFile = (path : string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
@@ -303,4 +319,4 @@ export async function loadPyodide(config) {
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
-globalThis.loadPyodide = loadPyodide;
+(globalThis as any ).loadPyodide = loadPyodide;

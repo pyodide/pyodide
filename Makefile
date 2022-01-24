@@ -71,7 +71,6 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 build/pyodide.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	npx typescript --project src/js
 	npx rollup -c src/js/rollup.config.js
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts

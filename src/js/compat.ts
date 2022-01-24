@@ -8,10 +8,14 @@ export const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
-export let nodePathMod;
-export let nodeFetch;
-export let nodeFsPromisesMod;
-export let nodeVmMod;
+export let nodePathMod: any;
+export let nodeFetch: any;
+export let nodeFsPromisesMod: any;
+export let nodeVmMod: any;
+declare var globalThis: {
+  importScripts: (url: string) => void;
+  document?: any;
+};
 
 /**
  * If we're in node, it's most convenient to import various node modules on
@@ -25,6 +29,7 @@ export async function initNodeModules() {
   // @ts-ignore
   nodePathMod = (await import(/* webpackIgnore: true */ "path")).default;
   nodeFsPromisesMod = await import(/* webpackIgnore: true */ "fs/promises");
+  // @ts-ignore
   nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
   // @ts-ignore
   nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
@@ -33,8 +38,8 @@ export async function initNodeModules() {
 /**
  * Load a binary file, only for use in Node. If the path explicitly is a URL,
  * then fetch from a URL, else load from the file system.
- * @param {str} indexURL base path to resolve relative paths
- * @param {str} path the path to load
+ * @param indexURL base path to resolve relative paths
+ * @param path the path to load
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
@@ -58,8 +63,8 @@ async function node_loadBinaryFile(
  * Load a binary file, only for use in browser. Resolves relative paths against
  * indexURL.
  *
- * @param {str} indexURL base path to resolve relative paths
- * @param {str} path the path to load
+ * @param indexURL base path to resolve relative paths
+ * @param path the path to load
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
@@ -90,11 +95,11 @@ if (IN_NODE) {
 
 /**
  * Currently loadScript is only used once to load `pyodide.asm.js`.
- * @param {string) url
+ * @param url
  * @async
  * @private
  */
-export let loadScript: (url: string) => void;
+export let loadScript: (url: string) => Promise<void>;
 
 if (globalThis.document) {
   // browser

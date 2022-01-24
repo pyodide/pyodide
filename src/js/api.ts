@@ -1,6 +1,12 @@
 import { Module } from "./module.js";
 import { loadPackage, loadedPackages } from "./load-package";
-import { isPyProxy, PyBuffer, PyProxy, Py2JsResult, TypedArray } from "./pyproxy.gen";
+import {
+  isPyProxy,
+  PyBuffer,
+  PyProxy,
+  Py2JsResult,
+  TypedArray,
+} from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
 
@@ -10,7 +16,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * You can use this to call functions defined in the Pyodide Python package
  * from JavaScript.
  */
-let pyodide_py : PyProxy; // actually defined in loadPyodide (see pyodide.js)
+let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -19,7 +25,7 @@ let pyodide_py : PyProxy; // actually defined in loadPyodide (see pyodide.js)
  * For example, to access a variable called ``foo`` in the Python global
  * scope, use ``pyodide.globals.get("foo")``
  */
-let globals : PyProxy; // actually defined in loadPyodide (see pyodide.js)
+let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -29,7 +35,7 @@ let globals : PyProxy; // actually defined in loadPyodide (see pyodide.js)
  * the latest release version followed by the number of commits since, and
  * the git hash of the current commit (e.g. ``0.1.0-1-bd84646``).
  */
-export let version : string = ""; // actually defined in loadPyodide (see pyodide.js)
+export let version: string = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * Runs a string of Python code from JavaScript.
@@ -44,7 +50,10 @@ export let version : string = ""; // actually defined in loadPyodide (see pyodid
  * @returns The result of the Python code translated to JavaScript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
-export function runPython(code : string, globals : PyProxy = Module.globals) : Py2JsResult {
+export function runPython(
+  code: string,
+  globals: PyProxy = Module.globals
+): Py2JsResult {
   return Module.pyodide_py.eval_code(code, globals);
 }
 Module.runPython = runPython;
@@ -71,9 +80,9 @@ Module.runPython = runPython;
  * @async
  */
 export async function loadPackagesFromImports(
-  code : string,
-  messageCallback? : (string) => void,
-  errorCallback? : (string) => void
+  code: string,
+  messageCallback?: (msg: string) => void,
+  errorCallback?: (err: string) => void
 ) {
   let pyimports = Module.pyodide_py.find_imports(code);
   let imports;
@@ -129,7 +138,10 @@ export async function loadPackagesFromImports(
  * @returns The result of the Python code translated to JavaScript.
  * @async
  */
-export async function runPythonAsync(code : string, globals : PyProxy = Module.globals) : Promise<Py2JsResult> {
+export async function runPythonAsync(
+  code: string,
+  globals: PyProxy = Module.globals
+): Promise<Py2JsResult> {
   return await Module.pyodide_py.eval_code_async(code, globals);
 }
 Module.runPythonAsync = runPythonAsync;
@@ -145,7 +157,7 @@ Module.runPythonAsync = runPythonAsync;
  * @param name Name of the JavaScript module to add
  * @param module JavaScript object backing the module
  */
-export function registerJsModule(name : string, module : object) {
+export function registerJsModule(name: string, module: object) {
   Module.pyodide_py.register_js_module(name, module);
 }
 
@@ -153,7 +165,7 @@ export function registerJsModule(name : string, module : object) {
  * Tell Pyodide about Comlink.
  * Necessary to enable importing Comlink proxies into Python.
  */
-export function registerComlink(Comlink : any) {
+export function registerComlink(Comlink: any) {
   Module._Comlink = Comlink;
 }
 
@@ -168,7 +180,7 @@ export function registerComlink(Comlink : any) {
  *
  * @param {string} name Name of the JavaScript module to remove
  */
-export function unregisterJsModule(name : string) {
+export function unregisterJsModule(name: string) {
   Module.pyodide_py.unregister_js_module(name);
 }
 
@@ -181,13 +193,16 @@ export function unregisterJsModule(name : string) {
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
- * @param {*} obj
+ * @param obj
  * @param options
  * @param options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns The object converted to Python.
  */
-export function toPy(obj : any, { depth } : {depth : number} = { depth : -1}) : Py2JsResult {
+export function toPy(
+  obj: any,
+  { depth }: { depth: number } = { depth: -1 }
+): Py2JsResult {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {
@@ -256,7 +271,7 @@ export function toPy(obj : any, { depth } : {depth : number} = { depth : -1}) : 
  * @param mod_name The name of the module to import
  * @returns A PyProxy for the imported module
  */
-export function pyimport(mod_name : string) : PyProxy {
+export function pyimport(mod_name: string): PyProxy {
   return Module.importlib.import_module(mod_name);
 }
 
@@ -270,7 +285,11 @@ export function pyimport(mod_name : string) : PyProxy {
  *
  * @param extract_dir The directory to unpack the archive into. Defaults to the working directory.
  */
-export function unpackArchive(buffer : TypedArray, format : string, extract_dir? : string) {
+export function unpackArchive(
+  buffer: TypedArray,
+  format: string,
+  extract_dir?: string
+) {
   if (!Module._util_module) {
     Module._util_module = pyimport("pyodide._util");
   }
@@ -288,7 +307,8 @@ Module.saveState = () => Module.pyodide_py._state.save_state();
 /**
  * @private
  */
-Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
+Module.restoreState = (state: any) =>
+  Module.pyodide_py._state.restore_state(state);
 
 /**
  * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
@@ -297,7 +317,7 @@ Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
  * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
  * constant for SIGINT).
  */
-export function setInterruptBuffer(interrupt_buffer : TypedArray) {
+export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   Module.interrupt_buffer = interrupt_buffer;
   Module._set_pyodide_callback(!!interrupt_buffer);
 }
@@ -333,8 +353,6 @@ export function makePublicAPI() {
    * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
-   *
-   * @type {FS}
    */
   const FS = Module.FS;
   let namespace = {

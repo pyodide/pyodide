@@ -1,7 +1,7 @@
 import ErrorStackParser from "error-stack-parser";
 import { Module } from "./module.js";
 
-function isPyodideFrame(frame) {
+function isPyodideFrame(frame : ErrorStackParser.StackFrame) : boolean {
   const fileName = frame.fileName || "";
   if (fileName.includes("pyodide.asm")) {
     return true;
@@ -23,7 +23,7 @@ function isPyodideFrame(frame) {
   return true;
 }
 
-function isErrorStart(frame) {
+function isErrorStart(frame : ErrorStackParser.StackFrame) : boolean {
   if (!isPyodideFrame(frame)) {
     return false;
   }
@@ -31,7 +31,7 @@ function isErrorStart(frame) {
   return funcName === "PythonError" || funcName === "new_error";
 }
 
-Module.handle_js_error = function (e) {
+Module.handle_js_error = function (e : any) {
   if (e.pyodide_fatal_error) {
     throw e;
   }

@@ -1,24 +1,18 @@
 {
   "$schema": "http://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "allowJs": true,
     "declaration": true,
-    "emitDeclarationOnly": true,
     "lib": ["ES2021", "DOM"],
     "outDir": "../../build",
     "rootDir": ".",
     "esModuleInterop": true,
     "target": "ES6",
     "module": "ES2020",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "noImplicitAny": true
   },
   "include": [
-    "./*.js",
-    "pyodide.ts",
-    "module.ts",
-    "load-package.ts",
-    "compat.ts",
-    "api.ts"
+    "./*.ts"
   ],
   "exclude": ["rollup.config.js"]
 }

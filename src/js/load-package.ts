@@ -2,9 +2,8 @@ import { Module } from "./module.js";
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
-/** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
-let baseURL;
+let baseURL: string;
 /**
  * Initialize the packages index. This is called as early as possible in
  * loadPyodide so that fetching packages.json can occur in parallel with other
@@ -12,7 +11,7 @@ let baseURL;
  * @param {string} indexURL
  * @private
  */
-export async function initializePackageIndex(indexURL) {
+export async function initializePackageIndex(indexURL: string) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
@@ -47,7 +46,7 @@ const DEFAULT_CHANNEL = "default channel";
 // Regexp for validating package name and URI
 const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
-function _uri_to_package_name(package_uri) {
+function _uri_to_package_name(package_uri: string): string {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
     let wheel_name = match[1].toLowerCase();
@@ -58,12 +57,16 @@ function _uri_to_package_name(package_uri) {
 /**
  * Recursively add a package and its dependencies to toLoad and toLoadShared.
  * A helper function for recursiveDependencies.
- * @param {str} name The package to add
- * @param {Set} toLoad The set of names of packages to load
- * @param {Set} toLoadShared The set of names of shared libraries to load
+ * @param name The package to add
+ * @param toLoad The set of names of packages to load
+ * @param toLoadShared The set of names of shared libraries to load
  * @private
  */
-function addPackageToLoad(name, toLoad, toLoadShared) {
+function addPackageToLoad(
+  name: string,
+  toLoad: Map<string, string>,
+  toLoadShared: Map<string, string>
+) {
   name = name.toLowerCase();
   if (toLoad.has(name)) {
     return;
@@ -96,7 +99,10 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
  * dependencies
  * @private
  */
-function recursiveDependencies(names, errorCallback) {
+function recursiveDependencies(
+  names: string[],
+  errorCallback: (err: string) => void
+) {
   const toLoad = new Map();
   const toLoadShared = new Map();
   for (let name of names) {
@@ -126,13 +132,16 @@ function recursiveDependencies(names, errorCallback) {
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
  * relative to baseURL from `packages.json`, otherwise use the URL specified by
  * `channel`.
- * @param {str} name The name of the package
- * @param {str} channel Either `DEFAULT_CHANNEL` or the absolute URL to the
+ * @param name The name of the package
+ * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
  * wheel or the path to the wheel relative to baseURL.
- * @returns {ArrayBuffer} The binary data for the package
+ * @returns The binary data for the package
  * @private
  */
-async function downloadPackage(name, channel) {
+async function downloadPackage(
+  name: string,
+  channel: string
+): Promise<Uint8Array> {
   let file_name;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in Module.packages)) {
@@ -151,7 +160,7 @@ async function downloadPackage(name, channel) {
  * @param {str} buffer The binary data returned by downloadPkgBuffer
  * @private
  */
-async function installPackage(name, buffer) {
+async function installPackage(name: string, buffer: Uint8Array) {
   const pkg = Module.packages[name] || {
     file_name: ".whl",
     install_dir: "site",
@@ -185,7 +194,7 @@ function createLock() {
    */
   async function acquireLock() {
     const old_lock = _lock;
-    let releaseLock;
+    let releaseLock: () => void;
     _lock = new Promise((resolve) => (releaseLock = resolve));
     await old_lock;
     return releaseLock;
@@ -204,11 +213,11 @@ const acquireDynlibLock = createLock();
  * synchronous I/O, we could consider doing this later as a part of a Python
  * import hook.
  *
- * @param {str} lib The file system path to the library.
- * @param {bool} shared Is this a shared library or not?
+ * @param lib The file system path to the library.
+ * @param shared Is this a shared library or not?
  * @private
  */
-async function loadDynlib(lib, shared) {
+async function loadDynlib(lib: string, shared: boolean) {
   const byteArray = Module.FS.lookupPath(lib).node.contents;
   const releaseDynlibLock = await acquireDynlibLock();
   try {
@@ -242,22 +251,22 @@ const acquirePackageLock = createLock();
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
  *
- * @param {string | string[] | PyProxy} names Either a single package name or
+ * @param names Either a single package name or
  * URL or a list of them. URLs can be absolute or relative. The URLs must have
  * file name ``<package-name>.js`` and there must be a file called
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to JavaScript
  * and the ``PyProxy`` will be destroyed.
- * @param {LogFn=} messageCallback A callback, called with progress messages
+ * @param messageCallback A callback, called with progress messages
  *    (optional)
- * @param {LogFn=} errorCallback A callback, called with error/warning messages
+ * @param errorCallback A callback, called with error/warning messages
  *    (optional)
  * @async
  */
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
-  messageCallback = undefined,
-  errorCallback = undefined
+  messageCallback?: (msg: string) => void,
+  errorCallback?: (msg: string) => void
 ) {
   messageCallback = messageCallback || console.log;
   errorCallback = errorCallback || console.error;
@@ -299,8 +308,9 @@ export async function loadPackage(
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    const sharedLibraryPromises = {};
-    const packagePromises = {};
+    const sharedLibraryLoadPromises: { [name: string]: Promise<Uint8Array> } =
+      {};
+    const packageLoadPromises: { [name: string]: Promise<Uint8Array> } = {};
     for (const [name, channel] of toLoadShared) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
@@ -308,7 +318,7 @@ export async function loadPackage(
         toLoadShared.delete(name);
         continue;
       }
-      sharedLibraryPromises[name] = downloadPackage(name, channel);
+      sharedLibraryLoadPromises[name] = downloadPackage(name, channel);
     }
     for (const [name, channel] of toLoad) {
       if (loadedPackages[name]) {
@@ -317,15 +327,17 @@ export async function loadPackage(
         toLoad.delete(name);
         continue;
       }
-      packagePromises[name] = downloadPackage(name, channel);
+      packageLoadPromises[name] = downloadPackage(name, channel);
     }
 
-    const loaded = [];
-    const failed = {};
+    const loaded: string[] = [];
+    const failed: { [name: string]: any } = {};
     // TODO: add support for prefetching modules by awaiting on a promise right
     // here which resolves in loadPyodide when the bootstrap is done.
+    const sharedLibraryInstallPromises: { [name: string]: Promise<void> } = {};
+    const packageInstallPromises: { [name: string]: Promise<void> } = {};
     for (const [name, channel] of toLoadShared) {
-      sharedLibraryPromises[name] = sharedLibraryPromises[name]
+      sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
         .then(async (buffer) => {
           await installPackage(name, buffer);
           loaded.push(name);
@@ -336,9 +348,9 @@ export async function loadPackage(
         });
     }
 
-    await Promise.all(Object.values(sharedLibraryPromises));
+    await Promise.all(Object.values(sharedLibraryInstallPromises));
     for (const [name, channel] of toLoad) {
-      packagePromises[name] = packagePromises[name]
+      packageInstallPromises[name] = packageLoadPromises[name]
         .then(async (buffer) => {
           await installPackage(name, buffer);
           loaded.push(name);
@@ -348,7 +360,7 @@ export async function loadPackage(
           failed[name] = err;
         });
     }
-    await Promise.all(Object.values(packagePromises));
+    await Promise.all(Object.values(packageInstallPromises));
 
     Module.reportUndefinedSymbols();
     if (loaded.length > 0) {
@@ -381,4 +393,4 @@ export async function loadPackage(
  *
  * @type {object}
  */
-export let loadedPackages = {};
+export let loadedPackages: { [key: string]: string } = {};

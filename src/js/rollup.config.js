@@ -19,7 +19,7 @@ function config({ input, format, minify, ext = "js" }) {
     plugins: [
       commonjs(),
       ts({
-        tsconfig : "src/js/tsconfig.json"
+        tsconfig: "src/js/tsconfig.json",
       }),
       // The nodeResolve plugin allows us to import packages from node_modules.
       // We need to include node-only packages in `external` to ensure they

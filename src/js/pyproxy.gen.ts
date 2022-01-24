@@ -155,9 +155,6 @@ export function isPyProxy(jsobj: any): jsobj is PyProxy {
 }
 Module.isPyProxy = isPyProxy;
 
-declare class FinalizationRegistry {
-  constructor(handler : (arg : [number, any]) => void);
-};
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
     cache.leaked = (!!1);
@@ -189,22 +186,24 @@ if (globalThis.FinalizationRegistry) {
 
 let pyproxy_alloc_map = new Map();
 Module.pyproxy_alloc_map = pyproxy_alloc_map;
-let trace_pyproxy_alloc;
-let trace_pyproxy_dealloc;
+let trace_pyproxy_alloc : (proxy : any) => void;
+let trace_pyproxy_dealloc : (proxy : any) => void;
 
 Module.enable_pyproxy_allocation_tracing = function () {
-  trace_pyproxy_alloc = function (proxy) {
+  trace_pyproxy_alloc = function (proxy : any) {
     pyproxy_alloc_map.set(proxy, Error().stack);
   };
-  trace_pyproxy_dealloc = function (proxy) {
+  trace_pyproxy_dealloc = function (proxy : any) {
     pyproxy_alloc_map.delete(proxy);
   };
 };
 Module.disable_pyproxy_allocation_tracing = function () {
-  trace_pyproxy_alloc = function (proxy) {};
-  trace_pyproxy_dealloc = function (proxy) {};
+  trace_pyproxy_alloc = function (proxy : any) {};
+  trace_pyproxy_dealloc = function (proxy : any) {};
 };
 Module.disable_pyproxy_allocation_tracing();
+
+type PyProxyCache = {cacheId : number, refcnt : number, leaked? : boolean};
 
 /**
  * Create a new PyProxy wraping ptrobj which is a PyObject*.
@@ -219,7 +218,7 @@ Module.disable_pyproxy_allocation_tracing();
  * many as possible.
  * @private
  */
-Module.pyproxy_new = function (ptrobj, cache) {
+Module.pyproxy_new = function (ptrobj : number, cache? : PyProxyCache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
   // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -258,7 +257,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
   return proxy;
 };
 
-function _getPtr(jsobj) {
+function _getPtr(jsobj : any) {
   let ptr = jsobj.$$.ptr;
   if (ptr === null) {
     throw new Error(jsobj.$$.destroyed_msg);
@@ -275,7 +274,7 @@ let pyproxyClassMap = new Map();
  * PyProxy is minimal.
  * @private
  */
-Module.getPyProxyClass = function (flags) {
+Module.getPyProxyClass = function (flags : number) {
   const FLAG_TYPE_PAIRS: [number, any][] = [
     [(1 << 0), PyProxyLengthMethods],
     [(1 << 1), PyProxyGetItemMethods],
@@ -323,7 +322,7 @@ const pyproxy_cache_destroyed_msg =
   "This borrowed attribute proxy was automatically destroyed in the " +
   "process of destroying the proxy it was borrowed from. Try using the 'copy' method.";
 
-function pyproxy_decref_cache(cache) {
+function pyproxy_decref_cache(cache: PyProxyCache) {
   if (!cache) {
     return;
   }
@@ -339,7 +338,7 @@ function pyproxy_decref_cache(cache) {
   }
 }
 
-Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+Module.pyproxy_destroy = function (proxy : PyProxy, destroyed_msg : string) {
   if (proxy.$$.ptr === null) {
     return;
   }
@@ -378,7 +377,7 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in JavaScript functions.
 
-Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
+Module.callPyObjectKwargs = function (ptrobj : number, ...jsargs : any) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
   let kwargs = jsargs.pop();
@@ -411,7 +410,7 @@ Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
   return Module.hiwire.pop_value(idresult);
 };
 
-Module.callPyObject = function (ptrobj, ...jsargs) {
+Module.callPyObject = function (ptrobj : number, ...jsargs : any) {
   return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
 };
 
@@ -425,7 +424,7 @@ export type Py2JsResult =
 export type PyProxy = PyProxyClass & { [x: string]: Py2JsResult };
 
 class PyProxyClass {
-  $$: any;
+  $$: {ptr : number, cache : PyProxyCache, destroyed_msg? : string};
   $$flags: number;
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
@@ -484,7 +483,7 @@ class PyProxyClass {
    *        attempted after destroying. Defaults to "Object has already been
    *        destroyed".
    */
-  destroy(destroyed_msg) {
+  destroy(destroyed_msg : string) {
     Module.pyproxy_destroy(this, destroyed_msg);
   }
   /**
@@ -525,6 +524,11 @@ class PyProxyClass {
     pyproxies = undefined,
     create_pyproxies = (!!1),
     dict_converter = undefined,
+  } : {
+    depth? : number,
+    pyproxies? : PyProxy[],
+    create_pyproxies? : boolean,
+    dict_converter? : any,
   } = {}) {
     let ptrobj = _getPtr(this);
     let idresult;
@@ -561,9 +565,9 @@ class PyProxyClass {
   /**
    * Check whether the :any:`PyProxy.length` getter is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithLength}
+   * @returns {}
    */
-  supportsLength() {
+  supportsLength() : this is PyProxyWithLength {
     return !!(this.$$flags & (1 << 0));
   }
   /**
@@ -634,9 +638,7 @@ class PyProxyClass {
   }
 }
 
-/**
- * @typedef { PyProxy & PyProxyLengthMethods } PyProxyWithLength
- */
+export type PyProxyWithLength = PyProxy & PyProxyLengthMethods;
 // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
 // or mp_length methods
 class PyProxyLengthMethods {
@@ -661,9 +663,7 @@ class PyProxyLengthMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyGetItemMethods} PyProxyWithGet
- */
+export type PyProxyWithGet = PyProxy & PyProxyGetItemMethods;
 
 // Controlled by HAS_GET, appears for any class with __getitem__,
 // mp_subscript, or sq_item methods
@@ -676,10 +676,10 @@ class PyProxyGetItemMethods {
    *
    * Present only if the proxied Python object has a ``__getitem__`` method.
    *
-   * @param {any} key The key to look up.
-   * @returns {Py2JsResult} The corresponding value.
+   * @param key The key to look up.
+   * @returns The corresponding value.
    */
-  get(key) {
+  get(key: any) : Py2JsResult {
     let ptrobj = _getPtr(this);
     let idkey = Module.hiwire.new_value(key);
     let idresult;
@@ -701,9 +701,7 @@ class PyProxyGetItemMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxySetItemMethods} PyProxyWithSet
- */
+export type PyProxyWithSet = PyProxy & PyProxySetItemMethods;
 // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
 // mp_ass_subscript,  or sq_ass_item.
 class PyProxySetItemMethods {
@@ -712,10 +710,10 @@ class PyProxySetItemMethods {
    *
    * Present only if the proxied Python object has a ``__setitem__`` method.
    *
-   * @param {any} key The key to set.
-   * @param {any} value The value to set it to.
+   * @param key The key to set.
+   * @param value The value to set it to.
    */
-  set(key, value) {
+  set(key : any, value : any) {
     let ptrobj = _getPtr(this);
     let idkey = Module.hiwire.new_value(key);
     let idval = Module.hiwire.new_value(value);
@@ -737,9 +735,9 @@ class PyProxySetItemMethods {
    *
    * Present only if the proxied Python object has a ``__delitem__`` method.
    *
-   * @param {any} key The key to delete.
+   * @param key The key to delete.
    */
-  delete(key) {
+  delete(key : any) {
     let ptrobj = _getPtr(this);
     let idkey = Module.hiwire.new_value(key);
     let errcode;
@@ -756,9 +754,7 @@ class PyProxySetItemMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyContainsMethods} PyProxyWithHas
- */
+export type PyProxyWithHas = PyProxy & PyProxyContainsMethods;
 
 // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
 // sq_contains
@@ -768,10 +764,10 @@ class PyProxyContainsMethods {
    *
    * Present only if the proxied Python object has a ``__contains__`` method.
    *
-   * @param {*} key The key to check for.
-   * @returns {boolean} Is ``key`` present?
+   * @param key The key to check for.
+   * @returns Is ``key`` present?
    */
-  has(key) {
+  has(key : any) : boolean {
     let ptrobj = _getPtr(this);
     let idkey = Module.hiwire.new_value(key);
     let result;
@@ -805,7 +801,7 @@ class PyProxyContainsMethods {
  *
  * @private
  */
-function* iter_helper(iterptr, token) {
+function* iter_helper(iterptr : number, token : {}) {
   try {
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
@@ -822,9 +818,7 @@ function* iter_helper(iterptr, token) {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyIterableMethods} PyProxyIterable
- */
+export type PyProxyIterable = PyProxy & PyProxyIterableMethods;
 
 // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
 // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
@@ -862,9 +856,7 @@ class PyProxyIterableMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyIteratorMethods} PyProxyIterator
- */
+export type PyProxyIterator = PyProxy & PyProxyIteratorMethods;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
 // tp_iternext method.
@@ -891,7 +883,7 @@ class PyProxyIteratorMethods {
    * ``StopIteration(result_value)`` exception, ``next`` returns ``{done :
    * true, value : result_value}``.
    */
-  next(arg = undefined) {
+  next(arg : any = undefined) {
     let idresult;
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
@@ -920,7 +912,7 @@ class PyProxyIteratorMethods {
 // to deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
-function python_hasattr(jsobj, jskey) {
+function python_hasattr(jsobj : PyProxyClass, jskey : any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Module.hiwire.new_value(jskey);
   let result;
@@ -940,7 +932,7 @@ function python_hasattr(jsobj, jskey) {
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
 // Js_undefined).
-function python_getattr(jsobj, jskey) {
+function python_getattr(jsobj : PyProxyClass, jskey : any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Module.hiwire.new_value(jskey);
   let idresult;
@@ -960,7 +952,7 @@ function python_getattr(jsobj, jskey) {
   return idresult;
 }
 
-function python_setattr(jsobj, jskey, jsval) {
+function python_setattr(jsobj : PyProxyClass, jskey : any, jsval : any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Module.hiwire.new_value(jskey);
   let idval = Module.hiwire.new_value(jsval);
@@ -978,7 +970,7 @@ function python_setattr(jsobj, jskey, jsval) {
   }
 }
 
-function python_delattr(jsobj, jskey) {
+function python_delattr(jsobj : PyProxyClass, jskey : any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Module.hiwire.new_value(jskey);
   let errcode;
@@ -1001,7 +993,7 @@ let PyProxyHandlers = {
   isExtensible() {
     return (!!1);
   },
-  has(jsobj, jskey) {
+  has(jsobj : PyProxyClass, jskey : any) {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
     let objHasKey = Reflect.has(jsobj, jskey);
@@ -1017,7 +1009,7 @@ let PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj, jskey) {
+  get(jsobj : PyProxyClass, jskey : any) {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
@@ -1037,7 +1029,7 @@ let PyProxyHandlers = {
       return Module.hiwire.pop_value(idresult);
     }
   },
-  set(jsobj, jskey, jsval) {
+  set(jsobj : PyProxyClass, jskey : any, jsval : any) {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
@@ -1052,7 +1044,7 @@ let PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return (!!1);
   },
-  deleteProperty(jsobj, jskey) {
+  deleteProperty(jsobj : PyProxyClass, jskey : any) {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
@@ -1068,7 +1060,7 @@ let PyProxyHandlers = {
     // Otherwise JavaScript will throw a TypeError.
     return !descr || descr.configurable;
   },
-  ownKeys(jsobj) {
+  ownKeys(jsobj : PyProxyClass) {
     let ptrobj = _getPtr(jsobj);
     let idresult;
     try {
@@ -1083,14 +1075,12 @@ let PyProxyHandlers = {
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },
-  apply(jsobj, jsthis, jsargs) {
+  apply(jsobj : PyProxyClass & Function, jsthis : any, jsargs : any) {
     return jsobj.apply(jsthis, jsargs);
   },
 };
 
-/**
- * @typedef {PyProxy & Promise<Py2JsResult>} PyProxyAwaitable
- */
+export type PyProxyAwaitable = PyProxy & Promise<Py2JsResult>;
 
 /**
  * The Promise / JavaScript awaitable API.
@@ -1104,7 +1094,7 @@ class PyProxyAwaitableMethods {
    * event loop if necessary.
    * @private
    */
-  _ensure_future() {
+  _ensure_future() : Promise<any> {
     if (this.$$.promise) {
       return this.$$.promise;
     }
@@ -1157,7 +1147,7 @@ class PyProxyAwaitableMethods {
    * argument if the awaitable fails.
    * @returns {Promise} The resulting Promise.
    */
-  then(onFulfilled, onRejected) {
+  then(onFulfilled : (value : any) => any, onRejected : (reason : any) => any) {
     let promise = this._ensure_future();
     return promise.then(onFulfilled, onRejected);
   }
@@ -1176,7 +1166,7 @@ class PyProxyAwaitableMethods {
    * argument if the awaitable fails.
    * @returns {Promise} The resulting Promise.
    */
-  catch(onRejected) {
+  catch(onRejected : (reason : any) => any) {
     let promise = this._ensure_future();
     return promise.catch(onRejected);
   }
@@ -1198,27 +1188,26 @@ class PyProxyAwaitableMethods {
    * result as the original Promise, but only after executing the
    * ``onFinally`` handler.
    */
-  finally(onFinally) {
+  finally(onFinally : () => void) {
     let promise = this._ensure_future();
     return promise.finally(onFinally);
   }
 }
 
-/**
- * @typedef { PyProxy & PyProxyCallableMethods & ((...args : any[]) => Py2JsResult) } PyProxyCallable
- */
+export type PyProxyCallable = PyProxy & PyProxyCallableMethods & ((...args : any[]) => Py2JsResult);
+
 class PyProxyCallableMethods {
-  apply(jsthis, jsargs) {
+  apply(jsthis : PyProxyClass, jsargs : any) {
     return Module.callPyObject(_getPtr(this), ...jsargs);
   }
-  call(jsthis, ...jsargs) {
+  call(jsthis : PyProxyClass, ...jsargs : any) {
     return Module.callPyObject(_getPtr(this), ...jsargs);
   }
   /**
    * Call the function with key word arguments.
    * The last argument must be an object with the keyword arguments.
    */
-  callKwargs(...jsargs) {
+  callKwargs(...jsargs : any) {
     if (jsargs.length === 0) {
       throw new TypeError(
         "callKwargs requires at least one argument (the key word argument object)"
@@ -1257,9 +1246,8 @@ let type_to_array_map: Map<string, any> = new Map([
   ["dataview", DataView],
 ]);
 
-/**
- * @typedef {PyProxy & PyProxyBufferMethods} PyProxyBuffer
- */
+
+export type PyProxyBuffer = PyProxy & PyProxyBufferMethods;
 class PyProxyBufferMethods {
   /**
    * Get a view of the buffer data which is usable from JavaScript. No copy is
@@ -1291,7 +1279,7 @@ class PyProxyBufferMethods {
    * <https://docs.python.org/3/library/struct.html#format-strings>`_.
    * @returns {PyBuffer} :any:`PyBuffer <pyodide.PyBuffer>`
    */
-  getBuffer(type) {
+  getBuffer(type? : string) {
     let ArrayType = undefined;
     if (type) {
       ArrayType = type_to_array_map.get(type);
@@ -1411,6 +1399,7 @@ class PyProxyBufferMethods {
 }
 
 export type TypedArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array;
+export type PyProxyDict = PyProxyWithGet & PyProxyWithSet & PyProxyWithHas;
 
 /**
  * A class to allow access to a Python data buffers from JavaScript. These are
