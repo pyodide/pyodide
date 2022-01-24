@@ -654,7 +654,12 @@ def playwright_browsers(request):
         yield {}
     else:
         # import playwright here to allow running tests without playwright installation
-        from playwright.sync_api import sync_playwright
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            raise Exception(
+                "playwright not installed. try `pip install playwright && python -m playwright install`"
+            )
 
         with sync_playwright() as p:
             chromium = p.chromium.launch(
@@ -755,7 +760,7 @@ def selenium_webworker_standalone(request, web_server_main, playwright_browsers)
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
     with selenium_standalone_noload_common(
-        request, web_server_main, browsers=playwright_browsers
+        request, web_server_main, playwright_browsers
     ) as selenium:
         yield selenium
 
