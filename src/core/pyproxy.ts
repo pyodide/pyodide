@@ -42,8 +42,8 @@ declare function DEREF_U32(ptr: number, offset: number): number;
 
 /**
  * Is the argument a :any:`PyProxy`?
- * @param jsobj {any} Object to test.
- * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
+ * @param jsobj Object to test.
+ * @returns Is ``jsobj`` a :any:`PyProxy`?
  */
 export function isPyProxy(jsobj: any): jsobj is PyProxy {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
@@ -349,10 +349,7 @@ export class PyProxyClass {
     let ptrobj = _getPtr(this);
     return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
   }
-  /**
-   * @returns {string}
-   */
-  toString() {
+  toString() : string {
     let ptrobj = _getPtr(this);
     let jsref_repr;
     try {
@@ -366,28 +363,26 @@ export class PyProxyClass {
     return Module.hiwire.pop_value(jsref_repr);
   }
   /**
-   * Destroy the ``PyProxy``. This will release the memory. Any further
-   * attempt to use the object will raise an error.
+   * Destroy the ``PyProxy``. This will release the memory. Any further attempt
+   * to use the object will raise an error.
    *
    * In a browser supporting `FinalizationRegistry
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
    * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
-   * collected, however there is no guarantee that the finalizer will be run
-   * in a timely manner so it is better to ``destroy`` the proxy explicitly.
+   * collected, however there is no guarantee that the finalizer will be run in
+   * a timely manner so it is better to ``destroy`` the proxy explicitly.
    *
-   * @param destroyed_msg The error message to print if use is
-   *        attempted after destroying. Defaults to "Object has already been
-   *        destroyed".
+   * @param destroyed_msg The error message to print if use is attempted after
+   *        destroying. Defaults to "Object has already been destroyed".
    */
-  destroy(destroyed_msg: string) {
+  destroy(destroyed_msg?: string) {
     Module.pyproxy_destroy(this, destroyed_msg);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.
    * Useful if the PyProxy is destroyed somewhere else.
-   * @returns {PyProxy}
    */
-  copy() {
+  copy() : PyProxy {
     let ptrobj = _getPtr(this);
     return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
@@ -540,9 +535,8 @@ export class PyProxyLengthMethods {
    * The length of the object.
    *
    * Present only if the proxied Python object has a ``__len__`` method.
-   * @returns {number}
    */
-  get length() {
+  get length() : number {
     let ptrobj = _getPtr(this);
     let length;
     try {
@@ -695,7 +689,7 @@ export class PyProxyContainsMethods {
  *
  * @private
  */
-function* iter_helper(iterptr: number, token: {}) {
+function* iter_helper(iterptr: number, token: {}) : Generator<Py2JsResult> {
   try {
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
@@ -728,10 +722,8 @@ export class PyProxyIterableMethods {
    * ``__iter__`` method).
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
-   *
-   * @returns {Iterator<Py2JsResult, Py2JsResult, any>} An iterator for the proxied Python object.
    */
-  [Symbol.iterator]() {
+  [Symbol.iterator]() : Iterator<Py2JsResult, Py2JsResult, Py2JsResult> {
     let ptrobj = _getPtr(this);
     let token = {};
     let iterptr;
@@ -1178,7 +1170,7 @@ export class PyProxyBufferMethods {
    * <https://docs.python.org/3/library/struct.html#format-strings>`_.
    * @returns :any:`PyBuffer <pyodide.PyBuffer>`
    */
-  getBuffer(type?: string) {
+  getBuffer(type?: string) : PyBuffer {
     let ArrayType = undefined;
     if (type) {
       ArrayType = type_to_array_map.get(type);

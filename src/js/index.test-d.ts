@@ -80,7 +80,7 @@ async function main() {
   expectType<void>(pyodide.unregisterJsModule("blah"));
 
   pyodide.setInterruptBuffer(new Int32Array(1));
-  expectType<PyProxy>(pyodide.toPy({}));
+  expectType<Py2JsResult>(pyodide.toPy({}));
   expectType<string>(pyodide.version);
 
   expectType<Py2JsResult>(px.x);
