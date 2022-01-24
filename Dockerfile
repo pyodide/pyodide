@@ -33,7 +33,7 @@ COPY --from=node-image /usr/local/lib/node_modules /usr/local/lib/node_modules
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
-RUN npm install -g \
+RUN npm install -g --unsafe-perm \
   jsdoc \
   prettier \
   rollup \
