@@ -59,8 +59,12 @@ extensions = [
 ]
 
 import atexit
+
+
 def remove_pyproxy_gen_ts():
     Path("../src/js/pyproxy.gen.ts").unlink(missing_ok=True)
+
+
 atexit.register(remove_pyproxy_gen_ts)
 
 shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")

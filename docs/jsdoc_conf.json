@@ -7,12 +7,6 @@
   },
   "include": ["../**/*.ts"],
   "sourceType": "module",
-  "tags": {
-    "allowUnknownTags": true,
-    "dictionaries": ["jsdoc", "closure"]
-  },
-  "templates": {
-    "cleverLinks": false,
-    "monospaceLinks": false
-  }
+  "tags": { "allowUnknownTags": true, "dictionaries": ["jsdoc", "closure"] },
+  "templates": { "cleverLinks": false, "monospaceLinks": false }
 }

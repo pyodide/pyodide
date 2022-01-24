@@ -23,12 +23,13 @@ from sphinx_js.renderers import (
 
 _orig_convert_node = TsAnalyzer._convert_node
 
+
 def _convert_node(self, node):
     kind = node.get("kindString")
     if kind in ["Function", "Constructor", "Method"] and not node.get("sources"):
         return None, []
-    if kind in ['Call signature', 'Constructor signature']:
-        params = node.get('parameters', [])
+    if kind in ["Call signature", "Constructor signature"]:
+        params = node.get("parameters", [])
         new_params = []
         for param in params:
             param_type = param["type"]
@@ -37,13 +38,17 @@ def _convert_node(self, node):
                 continue
             decl = param_type["declaration"]
             if "children" not in decl:
+                new_params.append(param)
                 continue
             for child in decl["children"]:
                 child = dict(child)
                 if not "type" in child:
                     if "signatures" in child:
                         child["comment"] = child["signatures"][0]["comment"]
-                        child["type"] = {"type" : "reflection", "declaration" : dict(child)}
+                        child["type"] = {
+                            "type": "reflection",
+                            "declaration": dict(child),
+                        }
                     # child["type"]["type"] = "reflection"
                 child["name"] = param["name"] + "." + child["name"]
                 new_params.append(child)
@@ -56,6 +61,7 @@ TsAnalyzer._convert_node = _convert_node
 
 _orig_type_name = TsAnalyzer._type_name
 
+
 def type_literal_name(self, decl):
     children = []
     if "indexSignature" in decl:
@@ -66,10 +72,14 @@ def type_literal_name(self, decl):
         keytype = self._type_name(key["type"])
         valuetype = self._type_name(index_sig["type"])
         children.append(f"[{keyname}: {keytype}]: {valuetype}")
-    if 'children' in decl:
-        children.extend(child["name"] + ": " + self._type_name(child["type"]) for child in decl["children"])
+    if "children" in decl:
+        children.extend(
+            child["name"] + ": " + self._type_name(child["type"])
+            for child in decl["children"]
+        )
 
     return "{" + ", ".join(children) + "}"
+
 
 def _type_name(self, type):
     res = _orig_type_name(self, type)
@@ -81,7 +91,7 @@ def _type_name(self, type):
     if type_of_type != "reflection":
         return res
     decl = type["declaration"]
-    if decl["kindString"] == 'Type literal':
+    if decl["kindString"] == "Type literal":
         return type_literal_name(self, decl)
     decl_sig = None
     if "signatures" in decl:
