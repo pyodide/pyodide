@@ -26,25 +26,26 @@ from typing import Any, Dict, List
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_type_name = TsAnalyzer._type_name
 
-def destructure_param(param : Dict[str, Any]) -> List[Dict[str, Any]]:
+
+def destructure_param(param: Dict[str, Any]) -> List[Dict[str, Any]]:
     """We want to document a destructured argument as if it were several
     separate arguments. This finds complex inline object types in the arguments
     list of a function and "destructures" them into separately documented arguments.
 
-    E.g., a function 
+    E.g., a function
 
         /**
         * @param options
         */
         function f({x , y } : {
             /** The x value */
-            x : number, 
+            x : number,
             /** The y value */
             y : string
         }){ ... }
-    
+
     should be documented like:
-    
+
         options.x (number) The x value
         options.y (number) The y value
     """
@@ -65,7 +66,8 @@ def destructure_param(param : Dict[str, Any]) -> List[Dict[str, Any]]:
         result.append(child)
     return result
 
-def fix_up_inline_object_signature(self : TsAnalyzer, node : Dict[str, Any]):
+
+def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
     """Calls get_destructured_children on inline object types"""
     kind = node.get("kindString")
     if kind not in ["Call signature", "Constructor signature"]:
@@ -74,14 +76,17 @@ def fix_up_inline_object_signature(self : TsAnalyzer, node : Dict[str, Any]):
     new_params = []
     for param in params:
         param_type = param["type"]
-        if param_type["type"] != "reflection" or "children" not in param_type["declaration"]:
+        if (
+            param_type["type"] != "reflection"
+            or "children" not in param_type["declaration"]
+        ):
             new_params.append(param)
         else:
             new_params.extend(destructure_param(param))
     node["parameters"] = new_params
 
 
-def _convert_node(self : TsAnalyzer, node : Dict[str, Any]):
+def _convert_node(self: TsAnalyzer, node: Dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node."""
     kind = node.get("kindString")
     # if a class has no documented constructor, don't crash
@@ -93,6 +98,7 @@ def _convert_node(self : TsAnalyzer, node : Dict[str, Any]):
     fix_up_inline_object_signature(self, node)
     return _orig_convert_node(self, node)
 
+
 TsAnalyzer._convert_node = _convert_node
 
 
@@ -102,12 +108,12 @@ def object_literal_type_name(self, decl):
     They have zero or more "children" and zero or one "indexSignatures".
     For example:
 
-        { 
+        {
             [key: string]: string,
             name : string,
             id : string
         }
-    
+
     has children "name" and "id" and an indexSignature "[key: string]: string"
     """
     children = []
@@ -127,6 +133,7 @@ def object_literal_type_name(self, decl):
 
     return "{" + ", ".join(children) + "}"
 
+
 def reflection_type_name(self, type):
     decl = type["declaration"]
     if decl["kindString"] == "Type literal":
@@ -145,10 +152,11 @@ def reflection_type_name(self, type):
     ret_str = self._type_name(decl_sig["type"])
     return f"({params_str}) => {ret_str}"
 
+
 def _type_name(self, type):
     """Monkey patch for sphinx-js type_name
-    
-    Rendering various types is left as TODO by _type_name. Fill these in. 
+
+    Rendering various types is left as TODO by _type_name. Fill these in.
     """
     res = _orig_type_name(self, type)
     if "TODO" not in res:
@@ -160,6 +168,7 @@ def _type_name(self, type):
     if type_of_type == "reflection":
         return reflection_type_name(self, type)
     assert False
+
 
 TsAnalyzer._type_name = _type_name
 
