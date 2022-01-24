@@ -147,11 +147,13 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, st
     env["PATH"] = str(TOOLSDIR) + ":" + env["PATH"]
     capture_make_command_wrapper_symlinks(env)
 
-    cmd = [sys.executable, "setup.py", "install"]
+    cmd = [sys.executable, "setup.py"]
     if skip_host:
         env["SKIP_HOST"] = "1"
-    assert host_install_dir, "Missing host_install_dir"
-    cmd.extend(["--home", host_install_dir])
+        cmd.append("build")
+    else:
+        assert host_install_dir, "Missing host_install_dir"
+        cmd.extend(["install", "--home", host_install_dir])
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:

@@ -28,13 +28,14 @@ build:
   replace-libs:
     - png16=png
   post: |
-    wget -O $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
-    rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
-    rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
-    rm -rf $SITEPACKAGES/sphinxext
-    cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
+    cd build/matplotlib-3.3.3/dist/matplotlib-3.3.3/
+    wget -O matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
+    rm -rf matplotlib/backends/qt_editor
+    rm -rf matplotlib/backends/web_backend
+    rm -rf sphinxext
+    cp $PKGDIR/src/fontlist.json matplotlib
     mkdir -p $PKGDIR/../../build/fonts
-    cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
+    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
   run:

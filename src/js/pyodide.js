@@ -204,6 +204,7 @@ function finalizeBootstrap(config) {
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
   Module.pyodide_py = import_module("pyodide");
+  Module.package_loader = import_module("pyodide._package_loader");
   Module.version = Module.pyodide_py.__version__;
 
   // copy some last constants onto public API.
@@ -246,11 +247,7 @@ export async function loadPyodide(config) {
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
-
   loadPyodide.inProgress = true;
-  // A global "mount point" for the package loaders to talk to pyodide
-  // See "--export-name=__pyodide_module" in buildpkg.py
-  globalThis.__pyodide_module = Module;
 
   const default_config = {
     fullStdLib: true,
@@ -259,7 +256,6 @@ export async function loadPyodide(config) {
     homedir: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
-
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
@@ -276,6 +272,9 @@ export async function loadPyodide(config) {
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
+  // locateFile tells Emscripten where to find the data files that initialize
+  // the file system.
+  Module.locateFile = (path) => config.indexURL + path;
   const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
@@ -286,6 +285,11 @@ export async function loadPyodide(config) {
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  // Disable futher loading of Emscripten file_packager stuff.
+  Module.locateFile = (path) => {
+    throw new Error("Didn't expect to load any more file_packager files!");
+  };
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(pyodide_py_tar);

@@ -9,5 +9,5 @@ build:
   sharedlibrary: true
   script: |
     emcc -c main.c -o main.o -fPIC
-    mkdir install
-    emcc main.o -sSIDE_MODULE -o install/sharedlib-test.so
+    mkdir dist
+    emcc main.o -sSIDE_MODULE -o dist/sharedlib-test.so

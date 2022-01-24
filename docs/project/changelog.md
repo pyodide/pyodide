@@ -18,6 +18,8 @@ substitutions:
 
 - New packages: sqlalchemy {pr}`2112`
 
+- Upgraded packages: distlib (0.3.4)
+
 ### Uncategorized
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
@@ -25,6 +27,10 @@ substitutions:
 
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
+
+- {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
+  rather than the emscripten `file_packager.py` format.
+  {pr}`2027`
 
 - {{Fix}} The "PyProxy has already been destroyed" error message has been
   improved with some context information.

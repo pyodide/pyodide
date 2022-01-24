@@ -12,10 +12,10 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/distutils.data \
+	build/distutils.tar \
 	build/packages.json \
 	build/pyodide_py.tar \
-	build/test.data \
+	build/test.tar \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js
@@ -173,17 +173,11 @@ clean-all:
 # Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
-build/test.data: $(CPYTHONLIB) node_modules/.installed
-	./tools/file_packager.sh build/test.data --js-output=build/test.js \
-		--preload $(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test
-	npx terser build/test.js -o build/test.js
+build/test.tar: $(CPYTHONLIB) node_modules/.installed
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/test.tar test
 
-
-build/distutils.data: $(CPYTHONLIB) node_modules/.installed
-	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js \
-		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMAJOR).$(PYMINOR)/distutils \
-		--exclude tests
-	npx terser build/distutils.js -o build/distutils.js
+build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/distutils.tar distutils
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)

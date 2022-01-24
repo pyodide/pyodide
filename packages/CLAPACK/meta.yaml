@@ -32,6 +32,5 @@ build:
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
-    mkdir -p install/lib
-
-    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so
+    mkdir -p dist/lib
+    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o dist/lib/clapack_all.so
