@@ -146,11 +146,11 @@ def make_package(
 
     if not (PACKAGES_ROOT / package).is_dir():
         os.makedirs(PACKAGES_ROOT / package)
-    out_path = PACKAGES_ROOT / package / "meta.yaml"
-    with open(out_path, "w") as fd:
+    meta_path = PACKAGES_ROOT / package / "meta.yaml"
+    with open(meta_path, "w") as fd:
         yaml.dump(yaml_content, fd)
     run_prettier(meta_path)
-    success(f"Output written to {out_path}")
+    success(f"Output written to {meta_path}")
 
 
 class bcolors:
