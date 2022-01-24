@@ -11,11 +11,22 @@
  * any macros available in pyproxy.c are available here. We only need the flags
  * macros HAS_LENGTH, etc.
  *
- * See Makefile recipe for src/js/pyproxy.js
+ * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
 import { Module } from "./module.js";
 
+// pyodide-skip
+
+// Just for this file, we implement a special "skip" pragma. These lines are
+// skipped by the Makefile when producing pyproxy.gen.ts These are actually C
+// macros, but we declare them to make typescript okay with processing the raw
+// file. We need to process the raw file to generate the docs because the C
+// preprocessor deletes comments which kills all the docstrings.
+
+// These declarations make Typescript accept the raw file. However, if we macro
+// preprocess these lines, we get a bunch of syntax errors so they need to be
+// removed from the preprocessed version.
 declare var IS_CALLABLE: number;
 declare var HAS_LENGTH: number;
 declare var HAS_GET: number;
@@ -27,6 +38,7 @@ declare var IS_AWAITABLE: number;
 declare var IS_BUFFER: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
+// end-pyodide-skip
 
 /**
  * Is the argument a :any:`PyProxy`?
