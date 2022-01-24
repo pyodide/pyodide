@@ -28,6 +28,10 @@ substitutions:
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
 
+- {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
+  rather than the emscripten `file_packager.py` format.
+  {pr}`2027`
+
 ## Version 0.19.0
 
 _January 10, 2021_
