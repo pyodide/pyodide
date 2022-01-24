@@ -70,9 +70,12 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
+build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js src/js/error_handling.gen.js node_modules/.installed
 	npx typescript --project src/js
 	npx rollup -c src/js/rollup.config.js
+
+src/js/error_handling.gen.js : src/core/error_handling.js
+	cp $< $@
 
 src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file

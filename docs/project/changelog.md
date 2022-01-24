@@ -16,7 +16,13 @@ _February 19, 2022_
 
 ## Unreleased
 
+### Packages
 - Upgraded astropy (5.0.2) {pr}`2268`
+
+### Js Module
+
+- {{Fix}} Python tracebacks now include Javascript frames when Python calls a Javascript function.
+  {pr}`2123`
 
 ## Version 0.19.1
 

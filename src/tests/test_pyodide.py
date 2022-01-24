@@ -1,4 +1,6 @@
 import pytest
+import re
+
 from textwrap import dedent
 from pyodide_build.testing import run_in_pyodide
 from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
@@ -783,6 +785,75 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_js_stackframes(selenium):
+    res = selenium.run_js(
+        """
+        self.b = function b(){
+            pyodide.pyimport("???");
+        }
+        self.d1 = function d1(){
+            pyodide.runPython("c2()");
+        }
+        self.d2 = function d2(){
+            d1();
+        }
+        self.d3 = function d3(){
+            d2();
+        }
+        self.d4 = function d4(){
+            d3();
+        }
+        pyodide.runPython(`
+            def c1():
+                from js import b
+                b()
+            def c2():
+                c1()
+            def e():
+                from js import d4
+                from pyodide import to_js
+                from traceback import extract_tb
+                try:
+                    d4()
+                except Exception as ex:
+                    return to_js([[x.filename, x.name] for x in extract_tb(ex.__traceback__)])
+        `);
+        let e = pyodide.globals.get("e");
+        let res = e();
+        e.destroy();
+        return res;
+        """
+    )
+
+    def normalize_tb(t):
+        res = []
+        for [file, name] in t:
+            if file.endswith(".js") or file.endswith(".html"):
+                file = file.rpartition("/")[-1]
+            if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
+                file = "test.html"
+            res.append([file, name])
+        return res
+
+    frames = [
+        ["<exec>", "e"],
+        ["test.html", "d4"],
+        ["test.html", "d3"],
+        ["test.html", "d2"],
+        ["test.html", "d1"],
+        ["pyodide.js", "runPython"],
+        ["/lib/python3.9/site-packages/_pyodide/_base.py", "eval_code"],
+        ["/lib/python3.9/site-packages/_pyodide/_base.py", "run"],
+        ["<exec>", "<module>"],
+        ["<exec>", "c2"],
+        ["<exec>", "c1"],
+        ["test.html", "b"],
+        ["pyodide.js", "pyimport"],
+        ["/lib/python3.9/importlib/__init__.py", "import_module"],
+    ]
+    assert normalize_tb(res[: len(frames)]) == frames
 
 
 def test_reentrant_fatal(selenium_standalone):
