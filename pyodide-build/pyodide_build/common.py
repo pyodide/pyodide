@@ -54,6 +54,7 @@ def _parse_package_subset(query: Optional[str]) -> Set[str]:
     }
     packages = {el.strip() for el in query.split(",")}
     packages.update(["pyparsing", "packaging", "micropip"])
+    packages.update(UNVENDORED_STDLIB_MODULES)
     # handle meta-packages
     if "core" in packages:
         packages |= core_packages

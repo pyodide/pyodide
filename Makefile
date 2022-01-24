@@ -12,10 +12,10 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/distutils.data \
+	build/distutils.tar \
 	build/packages.json \
 	build/pyodide_py.tar \
-	build/test.data \
+	build/test.tar \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js
@@ -70,9 +70,12 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
+build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js src/js/error_handling.gen.js node_modules/.installed
 	npx typescript --project src/js
 	npx rollup -c src/js/rollup.config.js
+
+src/js/error_handling.gen.js : src/core/error_handling.js
+	cp $< $@
 
 src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
@@ -129,7 +132,7 @@ lint: node_modules/.installed
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
-	npx prettier --check src
+	npx prettier --check .
 	black --check .
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \
@@ -173,17 +176,11 @@ clean-all:
 # Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
-build/test.data: $(CPYTHONLIB) node_modules/.installed
-	./tools/file_packager.sh build/test.data --js-output=build/test.js \
-		--preload $(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test
-	npx terser build/test.js -o build/test.js
+build/test.tar: $(CPYTHONLIB) node_modules/.installed
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/test.tar test
 
-
-build/distutils.data: $(CPYTHONLIB) node_modules/.installed
-	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js \
-		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMAJOR).$(PYMINOR)/distutils \
-		--exclude tests
-	npx terser build/distutils.js -o build/distutils.js
+build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/distutils.tar distutils
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)

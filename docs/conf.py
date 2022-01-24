@@ -53,7 +53,7 @@ extensions = [
     "sphinx_panels",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    #    "versionwarning.extension",
+    "versionwarning.extension",
     "sphinx_issues",
 ]
 
@@ -65,12 +65,13 @@ issues_github_path = "pyodide/pyodide"
 
 versionwarning_messages = {
     "latest": (
-        "This is the development version of the documentation. ",
+        "This is the development version of the documentation. "
         'See <a href="https://pyodide.org/">here</a> for latest stable '
         "documentation. Please do not use Pyodide with non "
-        "versioned (`dev`) URLs from the CDN for deployed applications!",
+        "versioned (`dev`) URLs from the CDN for deployed applications!"
     )
 }
+versionwarning_body_selector = "#main-content > div"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]

@@ -1,19 +1,19 @@
 package:
   name: pytest
-  version: 6.2.4
+  version: 6.2.5
 source:
-  url: https://files.pythonhosted.org/packages/5b/98/92bbda5f83ed995ef8953349ef30c77c934abcc251c42ab3d7787a40c49c/pytest-6.2.4.tar.gz
-  sha256: 50bcad0a0b9c5a72c8e4e7c9855a3ad496ca6a881a3641b4260605450772c54b
+  url: https://files.pythonhosted.org/packages/4b/24/7d1f2d2537de114bdf1e6875115113ca80091520948d370c964b88070af2/pytest-6.2.5.tar.gz
+  sha256: 131b36680866a76e6781d13f101efb86cf674ebb9762eb70d3082b6f29889e89
 requirements:
   run:
-  - atomicwrites
-  - attrs
-  - more-itertools
-  - pluggy
-  - py
-  - setuptools
-  - six
-  - iniconfig
+    - atomicwrites
+    - attrs
+    - more-itertools
+    - pluggy
+    - py
+    - setuptools
+    - six
+    - iniconfig
 test:
   imports:
-  - pytest
+    - pytest

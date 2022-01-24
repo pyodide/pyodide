@@ -1,5 +1,6 @@
 import pytest
 import shutil
+
 from pathlib import Path
 
 
@@ -25,13 +26,12 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         fh_main.seek(0, 2)
         fh_backup.seek(0, 2)
 
-        selenium.load_package(f"http://{url}:{port}/pyparsing.js")
+        selenium.load_package(f"http://{url}:{port}/pyparsing-3.0.6-py3-none-any.whl")
         assert "Skipping unknown package" not in selenium.logs
 
         # check that all resources were loaded from the active server
         txt = fh_main.read()
-        assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
-        assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
+        assert '"GET /pyparsing-3.0.6-py3-none-any.whl HTTP/1.1" 200' in txt
 
         # no additional resources were loaded from the other server
         assert len(fh_backup.read()) == 0
@@ -43,12 +43,12 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         """
     )
 
-    selenium.load_package(f"http://{url}:{port}/pytz.js")
+    selenium.load_package(f"http://{url}:{port}/pytz-2021.3-py3-none-any.whl")
     selenium.run("import pytz")
 
 
 def test_load_relative_url(selenium_standalone):
-    selenium_standalone.load_package("./pytz.js")
+    selenium_standalone.load_package("./pytz-2021.3-py3-none-any.whl")
     selenium_standalone.run("import pytz")
 
 
@@ -67,20 +67,23 @@ def test_list_loaded_urls(selenium_standalone):
 
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package("pyparsing")
-    selenium_standalone.load_package("http://some_url/pyparsing.js")
+    selenium_standalone.load_package("http://some_url/pyparsing-3.0.6-py3-none-any.whl")
     assert (
         "URI mismatch, attempting to load package pyparsing" in selenium_standalone.logs
     )
 
 
 def test_invalid_package_name(selenium):
-    selenium.load_package("wrong name+$")
-    assert "Skipping unknown package" in selenium.logs
-
-    selenium.clean_logs()
-
-    selenium.load_package("tcp://some_url")
-    assert "Skipping unknown package" in selenium.logs
+    with pytest.raises(
+        selenium.JavascriptException,
+        match=r"No known package with name 'wrong name\+\$'",
+    ):
+        selenium.load_package("wrong name+$")
+    with pytest.raises(
+        selenium.JavascriptException,
+        match="No known package with name 'tcp://some_url'",
+    ):
+        selenium.load_package("tcp://some_url")
 
 
 @pytest.mark.parametrize(
@@ -94,8 +97,10 @@ def test_load_packages_multiple(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'packaging')
-    assert selenium.logs.count(f"Loading {packages[0]} from") == 1
-    assert selenium.logs.count(f"Loading {packages[1]} from") == 1
+    assert (
+        selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
+        or selenium.logs.count(f"Loaded {packages[1]}, {packages[0]}") == 1
+    )
 
 
 @pytest.mark.parametrize(
@@ -110,32 +115,33 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f"Loading {packages[0]} from") == 1
-    assert selenium.logs.count(f"Loading {packages[1]} from") == 1
+    assert selenium.logs.count(f"Loaded {packages[0]}") == 1
+    assert selenium.logs.count(f"Loaded {packages[1]}") == 1
 
 
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
     selenium.run("import pytz")
-    selenium.load_package("pytz2")
+    with pytest.raises(
+        selenium.JavascriptException, match="No known package with name 'pytz2'"
+    ):
+        selenium.load_package("pytz2")
     selenium.load_package("pyparsing")
-    assert "Loading pytz" in selenium.logs
-    assert "Skipping unknown package 'pytz2'" in selenium.logs
-    assert "Loading pyparsing" in selenium.logs
+    assert "Loaded pytz" in selenium.logs
+    assert "Loaded pyparsing" in selenium.logs
 
 
+@pytest.mark.skip_refcount_check
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone
-    selenium.load_package("http://invalidurl/pytz.js")
-    assert selenium.logs.count("Loading pytz from") == 1
-    assert selenium.logs.count("Couldn't load package from URL") == 1
+    selenium.load_package("http://invalidurl/pytz-2021.3-py3-none-any.whl")
+    assert selenium.logs.count("Loading pytz") == 1
+    assert selenium.logs.count("The following error occurred while loading pytz:") == 1
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
-
     selenium.load_package("pytz")
     selenium.run("import pytz")
-    assert selenium.logs.count("Loading pytz from") == 2
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
 
 
@@ -144,14 +150,15 @@ def test_load_package_unknown(selenium_standalone):
     port = selenium_standalone.server_port
 
     build_dir = Path(__file__).parents[2] / "build"
-    shutil.copyfile(build_dir / "pyparsing.js", build_dir / "pyparsing-custom.js")
-    shutil.copyfile(build_dir / "pyparsing.data", build_dir / "pyparsing-custom.data")
+    shutil.copyfile(
+        build_dir / "pyparsing-3.0.6-py3-none-any.whl",
+        build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
+    )
 
     try:
-        selenium_standalone.load_package(f"./pyparsing-custom.js")
+        selenium_standalone.load_package(f"./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
-        (build_dir / "pyparsing-custom.js").unlink()
-        (build_dir / "pyparsing-custom.data").unlink()
+        (build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
     assert selenium_standalone.run_js(
         "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
@@ -161,19 +168,29 @@ def test_load_package_unknown(selenium_standalone):
 def test_load_twice(selenium_standalone):
     selenium_standalone.load_package("pytz")
     selenium_standalone.load_package("pytz")
-    assert "pytz already loaded from default channel" in selenium_standalone.logs
+    assert "No new packages to load" in selenium_standalone.logs
 
 
 def test_load_twice_different_source(selenium_standalone):
-    selenium_standalone.load_package(["https://foo/pytz.js", "https://bar/pytz.js"])
+    selenium_standalone.load_package(
+        [
+            "https://foo/pytz-2021.3-py3-none-any.whl",
+            "https://bar/pytz-2021.3-py3-none-any.whl",
+        ]
+    )
     assert (
-        "Loading same package pytz from https://bar/pytz.js and https://foo/pytz.js"
+        "Loading same package pytz from https://bar/pytz-2021.3-py3-none-any.whl and https://foo/pytz-2021.3-py3-none-any.whl"
         in selenium_standalone.logs
     )
 
 
 def test_load_twice_same_source(selenium_standalone):
-    selenium_standalone.load_package(["https://foo/pytz.js", "https://foo/pytz.js"])
+    selenium_standalone.load_package(
+        [
+            "https://foo/pytz-2021.3-py3-none-any.whl",
+            "https://foo/pytz-2021.3-py3-none-any.whl",
+        ]
+    )
     assert "Loading same package pytz" not in selenium_standalone.logs
 
 
@@ -189,7 +206,7 @@ def test_js_load_package_from_python(selenium_standalone):
         `);
         """
     )
-    assert f"Loading {to_load[0]}" in selenium.logs
+    assert f"Loaded {to_load[0]}" in selenium.logs
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
@@ -216,7 +233,7 @@ def test_test_unvendoring(selenium_standalone):
             from pathlib import Path
             test_path =  Path(regex.__file__).parent / "test_regex.py"
             assert not test_path.exists()
-        `)
+        `);
         """
     )
 
@@ -225,13 +242,13 @@ def test_test_unvendoring(selenium_standalone):
         await pyodide.loadPackage("regex-tests");
         pyodide.runPython(`
             assert test_path.exists()
-        `)
+        `);
         """
     )
 
     assert selenium.run_js(
         """
-        return pyodide._module.packages['regex'].unvendored_tests
+        return pyodide._module.packages['regex'].unvendored_tests;
         """
     )
 
@@ -275,3 +292,37 @@ def test_install_archive(selenium):
     finally:
         (build_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+
+
+def test_get_dynlibs():
+    from pyodide._package_loader import get_dynlibs
+    import tarfile
+    from zipfile import ZipFile
+    from tempfile import NamedTemporaryFile
+
+    files = [
+        "a.so",
+        "a.py",
+        "a.txt",
+        "a/b.so",
+        "a/b.txt",
+        "a/b.py",
+        "b/a.py",
+        "b/b.so",
+        "a/b/c/d.so",
+    ]
+    so_files = sorted("/p/" + f for f in files if f.endswith(".so"))
+    with NamedTemporaryFile(suffix=".bz") as t:
+        x = tarfile.open(mode="x:bz2", fileobj=t)
+        for file in files:
+            x.addfile(tarfile.TarInfo(file))
+        x.close()
+        t.flush()
+        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
+    with NamedTemporaryFile(suffix=".zip") as t:
+        x = ZipFile(t, mode="w")
+        for file in files:
+            x.writestr(file, "")
+        x.close()
+        t.flush()
+        assert sorted(get_dynlibs(t, Path("/p"))) == so_files

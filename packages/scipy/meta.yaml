@@ -28,6 +28,7 @@ source:
     - patches/sasum-returns-double-not-float.patch
     - patches/skip-fortran-fails-to-link.patch
     - patches/rename-_page_trend_test.patch
+    - patches/USE_CPP14-branch-doesn-t-work-for-wasm.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
@@ -97,9 +98,10 @@ build:
     find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
     find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
     find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
-    sed -i 's/,size_t//' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
-    sed -i 's/,slen([a-z]*))/)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
-    sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_fblasmodule.c
+    cd build/src.emscripten_wasm32-3.9/build/src.emscripten_wasm32-3.9/scipy/linalg
+    sed -i 's/,size_t//' _flapackmodule.c
+    sed -i 's/,slen([a-z]*))/)/g' _flapackmodule.c
+    sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' _fblasmodule.c
 
 requirements:
   run:

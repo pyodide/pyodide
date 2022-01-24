@@ -14,8 +14,10 @@ import pexpect
 import queue
 import sys
 import shutil
-
+import functools
 import pytest
+
+from typing import List
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
@@ -72,8 +74,17 @@ def pytest_collection_modifyitems(config, items):
         _maybe_skip_test(item, delayed=True)
 
 
+@functools.cache
+def built_packages() -> List[str]:
+    """Returns the list of built package names from packages.json"""
+    packages_json_path = BUILD_PATH / "packages.json"
+    if not packages_json_path.exists():
+        return []
+    return list(json.loads(packages_json_path.read_text())["packages"].keys())
+
+
 def _package_is_built(package_name: str) -> bool:
-    return (BUILD_PATH / f"{package_name}.data").exists()
+    return package_name in built_packages()
 
 
 class JavascriptException(Exception):
@@ -109,24 +120,8 @@ class SeleniumWrapper:
         self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:
-            self.run_js(
-                """
-                let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
-                self.pyodide = pyodide;
-                globalThis.pyodide = pyodide;
-                pyodide._module.inTestHoist = true; // improve some error messages for tests
-                pyodide.globals.get;
-                pyodide.pyodide_py.eval_code;
-                pyodide.pyodide_py.eval_code_async;
-                pyodide.pyodide_py.register_js_module;
-                pyodide.pyodide_py.unregister_js_module;
-                pyodide.pyodide_py.find_imports;
-                pyodide._module._util_module = pyodide.pyimport("pyodide._util");
-                pyodide._module._util_module.unpack_buffer_archive;
-                pyodide._module.importlib.invalidate_caches;
-                pyodide.runPython("");
-                """,
-            )
+            self.load_pyodide()
+            self.initialize_global_hiwire_objects()
             self.save_state()
             self.restore_state()
 
@@ -149,6 +144,39 @@ class SeleniumWrapper:
         self.run_js(
             SeleniumWrapper.SETUP_CODE,
             pyodide_checks=False,
+        )
+
+    def load_pyodide(self):
+        self.run_js(
+            """
+            let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
+            self.pyodide = pyodide;
+            globalThis.pyodide = pyodide;
+            pyodide._module.inTestHoist = true; // improve some error messages for tests
+            """
+        )
+
+    def initialize_global_hiwire_objects(self):
+        """
+        There are a bunch of global objects that ocassionally enter the hiwire cache
+        but never leave. The refcount checks get angry about them if they aren't preloaded.
+        We need to go through and touch them all once to keep everything okay.
+        """
+        self.run_js(
+            """
+            pyodide.globals.get;
+            pyodide.pyodide_py.eval_code;
+            pyodide.pyodide_py.eval_code_async;
+            pyodide.pyodide_py.register_js_module;
+            pyodide.pyodide_py.unregister_js_module;
+            pyodide.pyodide_py.find_imports;
+            pyodide._module.importlib.invalidate_caches;
+            pyodide._module.package_loader.unpack_buffer;
+            pyodide._module.package_loader.get_dynlibs;
+            pyodide._module._util_module = pyodide.pyimport("pyodide._util");
+            pyodide._module._util_module.unpack_buffer_archive;
+            pyodide.runPython("");
+            """
         )
 
     @property

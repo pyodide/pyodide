@@ -33,7 +33,9 @@ class BasePackage:
     dependencies: List[str]
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
-    unvendored_tests: Optional[bool] = None
+    unvendored_tests: Optional[Path] = None
+    file_name: Optional[str] = None
+    install_dir: str = "site"
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -42,6 +44,12 @@ class BasePackage:
 
     def __eq__(self, other) -> bool:
         return len(self.dependents) == len(other.dependents)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.name})"
+
+    def needs_rebuild(self) -> bool:
+        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta)
 
 
 @total_ordering
@@ -56,6 +64,7 @@ class StdLibPackage(BasePackage):
         self.dependencies = []
         self.unbuilt_dependencies = set()
         self.dependents = set()
+        self.install_dir = "lib"
 
     def build(self, outputdir: Path, args) -> None:
         # All build / packaging steps are already done in the main Makefile
@@ -85,6 +94,21 @@ class Package(BasePackage):
         self.dependencies = self.meta["requirements"].get("run", [])
         self.unbuilt_dependencies = set(self.dependencies)
         self.dependents = set()
+
+    def wheel_path(self) -> Path:
+        wheels = list((self.pkgdir / "dist").glob("*.whl"))
+        if len(wheels) != 1:
+            raise Exception(
+                f"Unexpected number of wheels {len(wheels)} when building {self.name}"
+            )
+        return wheels[0]
+
+    def tests_path(self) -> Optional[Path]:
+        tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
+        assert len(tests) <= 1
+        if tests:
+            return tests[0]
+        return None
 
     def build(self, outputdir: Path, args) -> None:
         with open(self.pkgdir / "build.log.tmp", "w") as f:
@@ -129,13 +153,12 @@ class Package(BasePackage):
 
         if rebuilt:
             shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+            if args.log_dir and (self.pkgdir / "build.log").exists():
+                shutil.copy(
+                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
+                )
         else:
             (self.pkgdir / "build.log.tmp").unlink()
-
-        if args.log_dir and (self.pkgdir / "build.log").exists():
-            shutil.copy(
-                self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
-            )
 
         try:
             p.check_returncode()
@@ -149,23 +172,16 @@ class Package(BasePackage):
 
         if self.library:
             return
-        shutil.copyfile(
-            self.pkgdir / "build" / (self.name + ".data"),
-            outputdir / (self.name + ".data"),
-        )
-        shutil.copyfile(
-            self.pkgdir / "build" / (self.name + ".js"),
-            outputdir / (self.name + ".js"),
-        )
-        if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
-            shutil.copyfile(
-                self.pkgdir / "build" / (self.name + "-tests.data"),
-                outputdir / (self.name + "-tests.data"),
+        if self.shared_library:
+            file_path = shutil.make_archive(
+                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
             )
-            shutil.copyfile(
-                self.pkgdir / "build" / (self.name + "-tests.js"),
-                outputdir / (self.name + "-tests.js"),
-            )
+            shutil.copy(file_path, outputdir)
+            return
+        shutil.copy(self.wheel_path(), outputdir)
+        test_path = self.tests_path()
+        if test_path:
+            shutil.copy(test_path, outputdir)
 
 
 def generate_dependency_graph(
@@ -284,7 +300,7 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map):
+def generate_needs_build_set(pkg_map: Dict[str, BasePackage]) -> Set[str]:
     """
     Generate the set of packages that need to be rebuilt.
 
@@ -293,10 +309,10 @@ def generate_needs_build_set(pkg_map):
        according to needs_rebuild, and
     2. packages which depend on case 1 packages.
     """
-    needs_build = set()
+    needs_build: Set[str] = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
-        if needs_rebuild(pkg.pkgdir, pkg.pkgdir / "build", pkg.meta):
+        if pkg.needs_rebuild():
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
 
@@ -404,10 +420,6 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put((job_priority(dependent), dependent))
 
-    for name in list(pkg_map):
-        if (outputdir / (name + "-tests.js")).exists():
-            pkg_map[name].unvendored_tests = True
-
     print(
         "\n===================================================\n"
         f"built all packages in {perf_counter() - t0:.2f} s"
@@ -424,20 +436,15 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
 
-    # unvendored stdlib modules
-    for name in UNVENDORED_STDLIB_MODULES:
-        pkg_entry: Dict[str, Any] = {
-            "name": name,
-            "version": "1.0",
-            "depends": [],
-            "imports": [name],
-        }
-        package_data["packages"][name.lower()] = pkg_entry
-
     for name, pkg in pkg_map.items():
-        if pkg.library:
+        if not pkg.file_name:
             continue
-        pkg_entry = {"name": name, "version": pkg.version}
+        pkg_entry: Any = {
+            "name": name,
+            "version": pkg.version,
+            "file_name": pkg.file_name,
+            "install_dir": pkg.install_dir,
+        }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
         pkg_entry["depends"] = [
@@ -456,6 +463,8 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
                 "version": pkg.version,
                 "depends": [name.lower()],
                 "imports": [],
+                "file_name": pkg.unvendored_tests.name,
+                "install_dir": pkg.install_dir,
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
@@ -476,11 +485,26 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
     build_from_graph(pkg_map, outputdir, args)
+    for pkg in pkg_map.values():
+        if pkg.library:
+            continue
+        if isinstance(pkg, StdLibPackage):
+            pkg.file_name = pkg.name + ".tar"
+            continue
+        if pkg.needs_rebuild():
+            continue
+        if pkg.shared_library:
+            pkg.file_name = f"{pkg.name}-{pkg.version}.zip"
+            continue
+        assert isinstance(pkg, Package)
+        pkg.file_name = pkg.wheel_path().name
+        pkg.unvendored_tests = pkg.tests_path()
 
     package_data = generate_packages_json(pkg_map)
 
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
+        fd.write("\n")
 
 
 def make_parser(parser):

@@ -19,9 +19,9 @@ all: .artifacts/bin/pyodide-build
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
-		pyodide-build mkpkg "$${pkg}" --update; \
+		python -m pyodide_build mkpkg "$${pkg}" --update; \
 	done
 
 clean:
-	rm -rf ./*/build ./*/build.log
+	rm -rf ./*/build ./*/build.log ./*/dist
 	rm -rf ./.artifacts
