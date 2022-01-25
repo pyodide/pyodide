@@ -12,6 +12,12 @@ build:
   ldflags: -L$(NUMPY_LIB)
 
 requirements:
+  host:
+    - numpy
+    - scipy
+    # TODO: Check that pandas and patsy really host dependencies
+    - pandas
+    - patsy
   run:
     - distutils
     - numpy

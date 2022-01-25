@@ -9,7 +9,7 @@ test:
     - autograd
 requirements:
   host:
-    - scipy
+    - numpy
   run:
     - numpy
     - future

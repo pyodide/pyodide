@@ -10,6 +10,8 @@ source:
     - patches/skip-openmp.patch
 
 requirements:
+  host:
+    - numpy
   run:
     - numpy
     - matplotlib

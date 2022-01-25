@@ -11,6 +11,8 @@ build:
     -I$(PYODIDE_ROOT)/packages/libyaml/build/include\n"
   ldflags: "-L$(PYODIDE_ROOT)/packages/libyaml/build/\n"
 requirements:
+  host:
+    - libyaml
   run:
     - libyaml
 test:

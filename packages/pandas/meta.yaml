@@ -12,6 +12,8 @@ build:
     -Werror=mismatched-return-types
   ldflags: --Wl,--fatal-warnings
 requirements:
+  host:
+    - numpy
   run:
     - distutils
     - numpy

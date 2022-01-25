@@ -104,6 +104,9 @@ build:
     sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' _fblasmodule.c
 
 requirements:
+  host:
+    - numpy
+    - CLAPACK
   run:
     - numpy
     - CLAPACK
