@@ -25,7 +25,7 @@ $(CPYTHONLIB)/tzdata :
 	pip install tzdata --target=$(CPYTHONLIB)
 
 build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
-	cd src/py && tar --exclude '*__pycache__*' -cvf ../../build/pyodide_py.tar pyodide _pyodide
+	cd src/py && tar --exclude '*__pycache__*' -cf ../../build/pyodide_py.tar pyodide _pyodide
 
 build/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -179,10 +179,10 @@ clean-all:
 
 # TODO: also include test directories included in other stdlib modules
 build/test.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/test.tar test
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar test
 
 build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/distutils.tar distutils
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/distutils.tar distutils
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
