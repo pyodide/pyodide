@@ -1,14 +1,9 @@
 /**
- * @typedef {import('emscripten').Module} Module
- */
-
-/**
  * The Emscripten Module.
  *
  * @private
- * @type {Module}
  */
-export let Module = {};
+export let Module: any = {};
 Module.noImageDecoding = true;
 Module.noAudioDecoding = true;
 Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
@@ -17,12 +12,16 @@ Module.preRun = [];
 
 /**
  *
- * @param {undefined | function(): string} stdin
- * @param {undefined | function(string)} stdout
- * @param {undefined | function(string)} stderr
+ * @param stdin
+ * @param stdout
+ * @param stderr
  * @private
  */
-export function setStandardStreams(stdin, stdout, stderr) {
+export function setStandardStreams(
+  stdin?: () => string,
+  stdout?: (a: string) => void,
+  stderr?: (a: string) => void
+) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
   if (stdout) {
     Module.print = stdout;
@@ -40,7 +39,7 @@ export function setStandardStreams(stdin, stdout, stderr) {
   }
 }
 
-function createStdinWrapper(stdin) {
+function createStdinWrapper(stdin: () => string) {
   // When called, it asks the user for one whole line of input (stdin)
   // Then, it passes the individual bytes of the input to emscripten, one after another.
   // And finally, it terminates it with null.
@@ -89,10 +88,10 @@ function createStdinWrapper(stdin) {
  * Make the home directory inside the virtual file system,
  * then change the working directory to it.
  *
- * @param {string} path
+ * @param path
  * @private
  */
-export function setHomeDirectory(path) {
+export function setHomeDirectory(path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {
