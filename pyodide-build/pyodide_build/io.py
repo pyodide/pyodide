@@ -33,6 +33,7 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
     },
     "requirements": {
         "run": list,  # List[str],
+        "host": list,
     },
     "test": {
         "imports": list,  # List[str]
