@@ -86,7 +86,11 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
 
 
 def _convert_node(self: TsAnalyzer, node: Dict[str, Any]):
-    """Monkey patch for TsAnalyzer._convert_node."""
+    """Monkey patch for TsAnalyzer._convert_node.
+    
+    Fixes two crashes and separates documentation for destructured object
+    arguments into a series of separate arguement entires.
+    """
     kind = node.get("kindString")
     # if a class has no documented constructor, don't crash
     if kind in ["Function", "Constructor", "Method"] and not node.get("sources"):
@@ -275,7 +279,6 @@ class PyodideAnalyzer:
                 continue
             # Remove the part of the key corresponding to the file
             key = [x for x in key if "/" not in x]
-            print("key", key)
             filename = key[0]
             toplevelname = key[1]
             if key[-1].startswith("$"):
@@ -337,8 +340,7 @@ def get_jsdoc_content_directive(app):
         required_arguments = 1
 
         def get_rst(self, obj):
-            """Grab the appropriate renderer and render us to rst.
-            JsDoc also has an AutoClassRenderer which may be useful in the future."""
+            """Grab the appropriate renderer and render us to rst."""
             if isinstance(obj, Function):
                 renderer = AutoFunctionRenderer
             elif isinstance(obj, Class):
