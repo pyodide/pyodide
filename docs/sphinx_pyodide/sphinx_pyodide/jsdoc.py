@@ -87,7 +87,7 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
 
 def _convert_node(self: TsAnalyzer, node: Dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node.
-    
+
     Fixes two crashes and separates documentation for destructured object
     arguments into a series of separate arguement entires.
     """

@@ -9,6 +9,7 @@ from sphinx.ext.autodoc import ModuleDocumenter, ObjectMember  # type: ignore
 
 __all__ = ["monkeypatch_module_documenter"]
 
+
 def get_module_members(module: Any) -> List[Tuple[str, Any]]:
     members = {}  # type: Dict[str, Tuple[str, Any]]
     for name in dir(module):
@@ -44,8 +45,8 @@ def get_module_members(module: Any) -> List[Tuple[str, Any]]:
 def get_object_members(self, want_all: bool):
     """
     For some reason I was unable to monkey patch get_module_members so we monkey
-    patch get_object_members to call our updated `get_module_members`. 
-    
+    patch get_object_members to call our updated `get_module_members`.
+
     This is similar to the original function but I dropped the `want_all` branch
     for brevity because we don't use it.
     """
@@ -63,6 +64,7 @@ def get_object_members(self, want_all: bool):
                 ret.append(ObjectMember(name, value, skipped=True))
 
         return False, ret
+
 
 def monkeypatch_module_documenter():
     ModuleDocumenter.get_object_members = get_object_members  # type: ignore
