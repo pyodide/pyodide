@@ -17,9 +17,7 @@ JS_FILE(js2python_init, () => {
     }
 
     let result = _PyUnicode_New(num_code_points, max_code_point);
-    // clang-format off
     if (result === 0) {
-      // clang-format on
       throw new PropagateError();
     }
 
@@ -83,9 +81,7 @@ JS_FILE(js2python_init, () => {
   Module._js2python_convertImmutable = function(value)
   {
     let result = __js2python_convertImmutableInner(value);
-    // clang-format off
     if (result === 0) {
-      // clang-format on
       throw new PropagateError();
     }
     return result;
@@ -94,7 +90,6 @@ JS_FILE(js2python_init, () => {
   function __js2python_convertImmutableInner(value)
   {
     let type = typeof value;
-    // clang-format off
     if (type === 'string') {
       return __js2python_string(value);
     } else if (type === 'number') {
@@ -114,16 +109,13 @@ JS_FILE(js2python_init, () => {
     } else if (Module.isPyProxy(value)) {
       return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
-    // clang-format on
     return undefined;
   };
 
   function __js2python_convertList(obj, cache, depth)
   {
     let list = _PyList_New(obj.length);
-    // clang-format off
     if (list === 0) {
-      // clang-format on
       return 0;
     }
     let entryid = 0;
@@ -133,11 +125,9 @@ JS_FILE(js2python_init, () => {
       for (let i = 0; i < obj.length; i++) {
         entryid = Module.hiwire.new_value(obj[i]);
         item = Module.js2python_convert(entryid, cache, depth);
-        // clang-format off
         // PyList_SetItem steals a reference to item no matter what
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
-          // clang-format on
           throw new PropagateError();
         }
         Module.hiwire.decref(entryid);
@@ -158,9 +148,7 @@ JS_FILE(js2python_init, () => {
   function __js2python_convertMap(obj, entries, cache, depth)
   {
     let dict = _PyDict_New();
-    // clang-format off
     if (dict === 0) {
-      // clang-format on
       return 0;
     }
     let key_py = 0;
@@ -170,21 +158,15 @@ JS_FILE(js2python_init, () => {
       cache.set(obj, dict);
       for (let[key_js, value_js] of entries) {
         key_py = Module._js2python_convertImmutable(key_js);
-        // clang-format off
         if (key_py === undefined) {
-          // clang-format on
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-          // clang-format off
           throw new Error(`Cannot use key of type ${key_type} as a key to a Python dict`);
-          // clang-format on
         }
         value_id = Module.hiwire.new_value(value_js);
         value_py = Module.js2python_convert(value_id, cache, depth);
 
-        // clang-format off
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
-          // clang-format on
           throw new PropagateError();
         }
         _Py_DecRef(key_py);
@@ -207,9 +189,7 @@ JS_FILE(js2python_init, () => {
   function __js2python_convertSet(obj, cache, depth)
   {
     let set = _PySet_New(0);
-    // clang-format off
     if (set === 0) {
-      // clang-format on
       return 0;
     }
     let key_py = 0;
@@ -217,19 +197,13 @@ JS_FILE(js2python_init, () => {
       cache.set(obj, set);
       for (let key_js of obj) {
         key_py = Module._js2python_convertImmutable(key_js);
-        // clang-format off
         if (key_py === undefined) {
-          // clang-format on
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-          // clang-format off
           throw new Error(`Cannot use key of type ${key_type} as a key to a Python set`);
-          // clang-format on
         }
         let errcode = _PySet_Add(set, key_py);
-        // clang-format off
         if (errcode === -1) {
-          // clang-format on
           throw new PropagateError();
         }
         _Py_DecRef(key_py);
@@ -266,7 +240,6 @@ JS_FILE(js2python_init, () => {
   function __js2python_convertOther(id, value, cache, depth)
   {
     let toStringTag = Object.prototype.toString.call(value);
-    // clang-format off
     if (Array.isArray(value) || value === "[object HTMLCollection]" ||
                                            value === "[object NodeList]") {
       return __js2python_convertList(value, cache, depth);
@@ -286,7 +259,6 @@ JS_FILE(js2python_init, () => {
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
       return _JsBuffer_CopyIntoMemoryView(id, value.byteLength, format_utf8, itemsize);
     }
-    // clang-format on
     return _JsProxy_create(id);
   };
 
@@ -298,7 +270,6 @@ JS_FILE(js2python_init, () => {
   {
     let value = Module.hiwire.get_value(id);
     let result = Module._js2python_convertImmutable(value);
-    // clang-format off
     if (result !== undefined) {
       return result;
     }
@@ -309,9 +280,6 @@ JS_FILE(js2python_init, () => {
     if (result !== undefined) {
       return result;
     }
-    // clang-format on
     return __js2python_convertOther(id, value, cache, depth - 1);
   };
-
-  return 0;
 })
