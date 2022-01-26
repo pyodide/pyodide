@@ -1,8 +1,7 @@
 JS_FILE(js2python_init, () => {
-    0, 0; /* Magic, see include_js_file.h */
+  0, 0; /* Magic, see include_js_file.h */
   let PropagateError = Module._PropagatePythonError;
-  function __js2python_string(value)
-  {
+  function __js2python_string(value) {
     // The general idea here is to allocate a Python string and then
     // have JavaScript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
@@ -40,10 +39,9 @@ JS_FILE(js2python_init, () => {
     }
 
     return result;
-  };
+  }
 
-  function __js2python_bigint(value)
-  {
+  function __js2python_bigint(value) {
     let value_orig = value;
     let length = 0;
     if (value < 0) {
@@ -57,16 +55,18 @@ JS_FILE(js2python_init, () => {
     let ptr = stackAlloc(length * 4);
     value = value_orig;
     for (let i = 0; i < length; i++) {
-      DEREF_U32(ptr, i) = Number(value & BigInt(0xffffffff));
+      ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
       value >>= BigInt(32);
     }
-    let result = __PyLong_FromByteArray(ptr,
-                                        length * 4 /* length in bytes */,
-                                        true /* little endian */,
-                                        true /* signed? */);
+    let result = __PyLong_FromByteArray(
+      ptr,
+      length * 4 /* length in bytes */,
+      true /* little endian */,
+      true /* signed? */
+    );
     stackRestore(stackTop);
     return result;
-  };
+  }
 
   /**
    * This function converts immutable types. numbers, bigints, strings,
@@ -78,8 +78,7 @@ JS_FILE(js2python_init, () => {
    * we throw a PropagateError to propogate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
-  Module._js2python_convertImmutable = function(value)
-  {
+  Module._js2python_convertImmutable = function (value) {
     let result = __js2python_convertImmutableInner(value);
     if (result === 0) {
       throw new PropagateError();
@@ -87,18 +86,17 @@ JS_FILE(js2python_init, () => {
     return result;
   };
 
-  function __js2python_convertImmutableInner(value)
-  {
+  function __js2python_convertImmutableInner(value) {
     let type = typeof value;
-    if (type === 'string') {
+    if (type === "string") {
       return __js2python_string(value);
-    } else if (type === 'number') {
-      if(Number.isSafeInteger(value)){
+    } else if (type === "number") {
+      if (Number.isSafeInteger(value)) {
         return _PyLong_FromDouble(value);
       } else {
         return _PyFloat_FromDouble(value);
       }
-    } else if(type === "bigint"){
+    } else if (type === "bigint") {
       return __js2python_bigint(value);
     } else if (value === undefined || value === null) {
       return __js2python_none();
@@ -110,10 +108,9 @@ JS_FILE(js2python_init, () => {
       return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     return undefined;
-  };
+  }
 
-  function __js2python_convertList(obj, cache, depth)
-  {
+  function __js2python_convertList(obj, cache, depth) {
     let list = _PyList_New(obj.length);
     if (list === 0) {
       return 0;
@@ -143,10 +140,9 @@ JS_FILE(js2python_init, () => {
     }
 
     return list;
-  };
+  }
 
-  function __js2python_convertMap(obj, entries, cache, depth)
-  {
+  function __js2python_convertMap(obj, entries, cache, depth) {
     let dict = _PyDict_New();
     if (dict === 0) {
       return 0;
@@ -156,12 +152,14 @@ JS_FILE(js2python_init, () => {
     let value_py = 0;
     try {
       cache.set(obj, dict);
-      for (let[key_js, value_js] of entries) {
+      for (let [key_js, value_js] of entries) {
         key_py = Module._js2python_convertImmutable(key_js);
         if (key_py === undefined) {
           let key_type =
-            (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-          throw new Error(`Cannot use key of type ${key_type} as a key to a Python dict`);
+            (key_js.constructor && key_js.constructor.name) || typeof key_js;
+          throw new Error(
+            `Cannot use key of type ${key_type} as a key to a Python dict`
+          );
         }
         value_id = Module.hiwire.new_value(value_js);
         value_py = Module.js2python_convert(value_id, cache, depth);
@@ -184,10 +182,9 @@ JS_FILE(js2python_init, () => {
       throw e;
     }
     return dict;
-  };
+  }
 
-  function __js2python_convertSet(obj, cache, depth)
-  {
+  function __js2python_convertSet(obj, cache, depth) {
     let set = _PySet_New(0);
     if (set === 0) {
       return 0;
@@ -199,8 +196,10 @@ JS_FILE(js2python_init, () => {
         key_py = Module._js2python_convertImmutable(key_js);
         if (key_py === undefined) {
           let key_type =
-            (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-          throw new Error(`Cannot use key of type ${key_type} as a key to a Python set`);
+            (key_js.constructor && key_js.constructor.name) || typeof key_js;
+          throw new Error(
+            `Cannot use key of type ${key_type} as a key to a Python set`
+          );
         }
         let errcode = _PySet_Add(set, key_py);
         if (errcode === -1) {
@@ -215,19 +214,20 @@ JS_FILE(js2python_init, () => {
       throw e;
     }
     return set;
-  };
+  }
 
-  function checkBoolIntCollision(obj, ty)
-  {
+  function checkBoolIntCollision(obj, ty) {
     if (obj.has(1) && obj.has(true)) {
-      throw new Error(`Cannot faithfully convert ${
-                        ty } into Python since it ` +
-                      "contains both 1 and true as keys.");
+      throw new Error(
+        `Cannot faithfully convert ${ty} into Python since it ` +
+          "contains both 1 and true as keys."
+      );
     }
     if (obj.has(0) && obj.has(false)) {
-      throw new Error(`Cannot faithfully convert ${
-                        ty } into Python since it ` +
-                      "contains both 0 and false as keys.");
+      throw new Error(
+        `Cannot faithfully convert ${ty} into Python since it ` +
+          "contains both 0 and false as keys."
+      );
     }
   }
 
@@ -237,11 +237,13 @@ JS_FILE(js2python_init, () => {
    * should only be used on values for which __js2python_convertImmutable
    * returned `undefined`.
    */
-  function __js2python_convertOther(id, value, cache, depth)
-  {
+  function __js2python_convertOther(id, value, cache, depth) {
     let toStringTag = Object.prototype.toString.call(value);
-    if (Array.isArray(value) || value === "[object HTMLCollection]" ||
-                                           value === "[object NodeList]") {
+    if (
+      Array.isArray(value) ||
+      value === "[object HTMLCollection]" ||
+      value === "[object NodeList]"
+    ) {
       return __js2python_convertList(value, cache, depth);
     }
     if (toStringTag === "[object Map]" || value instanceof Map) {
@@ -252,22 +254,29 @@ JS_FILE(js2python_init, () => {
       checkBoolIntCollision(value, "Set");
       return __js2python_convertSet(value, cache, depth);
     }
-    if (toStringTag === "[object Object]" && (value.constructor === undefined || value.constructor.name === "Object")) {
+    if (
+      toStringTag === "[object Object]" &&
+      (value.constructor === undefined || value.constructor.name === "Object")
+    ) {
       return __js2python_convertMap(value, Object.entries(value), cache, depth);
     }
-    if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)){
+    if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
-      return _JsBuffer_CopyIntoMemoryView(id, value.byteLength, format_utf8, itemsize);
+      return _JsBuffer_CopyIntoMemoryView(
+        id,
+        value.byteLength,
+        format_utf8,
+        itemsize
+      );
     }
     return _JsProxy_create(id);
-  };
+  }
 
   /**
    * Convert a JavaScript object to Python to a given depth. The `cache`
    * argument should be a new empty map (it is needed for recursive calls).
    */
-  Module.js2python_convert = function(id, cache, depth)
-  {
+  Module.js2python_convert = function (id, cache, depth) {
     let value = Module.hiwire.get_value(id);
     let result = Module._js2python_convertImmutable(value);
     if (result !== undefined) {
@@ -282,4 +291,4 @@ JS_FILE(js2python_init, () => {
     }
     return __js2python_convertOther(id, value, cache, depth - 1);
   };
-})
+});
