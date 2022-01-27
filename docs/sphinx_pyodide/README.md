@@ -14,6 +14,7 @@ Javascript with embedded Python code, and for HTML with embedded Javascript that
 itself contains embedded Python.
 
 e.g., in
+
 ```pyodide
 await pyodide.loadPackage(numpy);
 pyodide.runPython(`
@@ -22,8 +23,10 @@ pyodide.runPython(`
     f(7)
 `);
 ```
+
 the code inside of `pyodide.runPython` is highlighted as Python, the other code
 is highlighted as Javascript. Similarly with `html-pyodide`:
+
 ```html-pyodide
 <div></div>
 <script type="text/javascript">
@@ -59,13 +62,16 @@ function f({x , y } : {
     y : string
 }){ ... }
 ```
+
 should be documented like:
+
 ```
 options.x (number) The x value
 options.y (number) The y value
 ```
 
 ### `js:function`
+
 We update the `js:function` directive to display `async` in front of async
 functions.
 
@@ -75,9 +81,9 @@ We compose `TsAnalyzer` into `PyodideAnalyzer`. This prunes out private
 functions, marks functions as `async` so we can display `async` in front of
 them, and organizes functions into our three categories:
 
-* `globalThis`: globaly exposed functions
-* `pyodide`: pyodide APIs
-* `PyProxy`: `PyProxy` APIs
+- `globalThis`: globaly exposed functions
+- `pyodide`: pyodide APIs
+- `PyProxy`: `PyProxy` APIs
 
 It also classifies them into three types: function, class, or attribute so we
 can separate them out in the summary.
@@ -90,7 +96,6 @@ makes a summary table for any category (`globalThis`, `pyodide` or `PyProxy`)
 and `js-doc-content` formats the main documentation content. These are used in
 `js-api.md`. A lot of this code is similar to the `autosummary` package, but
 there are enough differences that it was easier to copy the code in.
- 
 
 ## autodoc_submodules
 
