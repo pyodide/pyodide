@@ -302,14 +302,14 @@ jobs:
             npx tsd
             npm ci
             npm test
-      - run:
-          name: check if webpack cli works well with load-pyodide.js
-          command: |
-            git clone https://github.com/pyodide/pyodide-webpack-example.git
-            cd pyodide-webpack-example
-            npm ci
-            cp ../src/js/*.js node_modules/pyodide/
-            npx webpack
+      # - run:
+      #     name: check if webpack cli works well with load-pyodide.js
+      #     command: |
+      #       git clone https://github.com/pyodide/pyodide-webpack-example.git
+      #       cd pyodide-webpack-example
+      #       npm ci
+      #       cp ../src/js/*.js node_modules/pyodide/
+      #       npx webpack
 
   benchmark:
     <<: *defaults
