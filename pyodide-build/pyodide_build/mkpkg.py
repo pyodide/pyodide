@@ -26,7 +26,7 @@ SDIST_EXTENSIONS = tuple(
 )
 
 
-def _find_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
+def _find_sdist(pypi_metadata: Dict[str, Any]) -> Optional[Dict]:
     """Get sdist file path from the metadata"""
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
@@ -37,7 +37,7 @@ def _find_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
     return None
 
 
-def _find_wheel(pypi_metadata: Dict[str, Any]) -> Dict:
+def _find_wheel(pypi_metadata: Dict[str, Any]) -> Optional[Dict]:
     """Get wheel file path from the metadata"""
     for entry in pypi_metadata["urls"]:
         if entry["packagetype"] == "bdist_wheel" and entry["filename"].endswith(
@@ -228,11 +228,13 @@ def update_package(
     if not dist_metadata:
         dist_metadata = _find_dist(pypi_metadata, wheel, sdist)
 
+    assert dist_metadata
+
     yaml_content["source"]["url"] = dist_metadata["url"]
     yaml_content["source"].pop("md5", None)
     yaml_content["source"]["sha256"] = dist_metadata["digests"]["sha256"]
     yaml_content["package"]["version"] = pypi_metadata["info"]["version"]
-    with open(meta_path, "w") as fd:
+    with open(meta_path, "wb") as fd:
         yaml.dump(yaml_content, fd)
     run_prettier(meta_path)
     success(f"Updated {package} from {local_ver} to {pypi_ver}.")
