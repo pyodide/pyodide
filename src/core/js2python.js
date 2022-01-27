@@ -286,7 +286,8 @@ JS_FILE(js2python_init, () => {
    */
   function js2python_convert_with_context(id, context) {
     let value = Module.hiwire.get_value(id);
-    let result = js2python_convertImmutable(value);
+    let result;
+    result = js2python_convertImmutable(value);
     if (result !== undefined) {
       return result;
     }
@@ -298,14 +299,15 @@ JS_FILE(js2python_init, () => {
       return result;
     }
     context.depth--;
-    return js2python_convertOther(id, value, context);
+    result = js2python_convertOther(id, value, context);
+    context.depth++;
+    return result;
   }
 
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
   function js2python_convert(id, depth) {
-    depth = depth || -1;
     let context = {
       cache: new Map(),
       depth,
