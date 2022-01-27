@@ -61,6 +61,5 @@ EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
   return Module.js2python_convert(id, new Map(), depth);
 });
 
-
 #include "include_js_file.h"
 #include "js2python.js"
