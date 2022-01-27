@@ -12,6 +12,7 @@ from pyodide_build.io import parse_package_config
 # Since the response is fully cached, and small, it is very fast and is
 # unlikely to fail.
 
+
 @pytest.mark.parametrize("disttype", ["wheel", "sdist"])
 def test_mkpkg(tmpdir, monkeypatch, capsys, disttype):
     pytest.importorskip("ruamel")
@@ -36,6 +37,7 @@ def test_mkpkg(tmpdir, monkeypatch, capsys, disttype):
     else:
         assert db["source"]["url"].endswith(".tar.gz")
 
+
 @pytest.mark.parametrize("old_dist_type", ["wheel", "sdist"])
 @pytest.mark.parametrize("new_dist_type", ["wheel", "sdist", "same"])
 def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
@@ -49,7 +51,7 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
         "package": {"name": "idna", "version": "2.0"},
         "source": {
             "sha256": "b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6",
-            "url": old_url
+            "url": old_url,
         },
         "test": {"imports": ["idna"]},
     }
