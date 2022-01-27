@@ -12,6 +12,7 @@
 #define DEREF_F32(addr, offset) HEAPF32[(addr >> 2) + offset]
 #define DEREF_F64(addr, offset) HEAPF64[(addr >> 3) + offset]
 
+#define ASSIGN_U32(addr, offset, value) DEREF_U32(addr, offset) = value
 #if WASM_BIGINT
 // We have HEAPU64 / HEAPI64 in this case.
 #define DEREF_U64(addr, offset) HEAPU64[(addr >> 3) + offset]
