@@ -1,7 +1,7 @@
 *.a
 *.o
 *.pyc
-src/js/*.gen.js
+src/js/*.gen.*
 
 *.egg-info/
 

@@ -16,11 +16,14 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`
+- New packages: sqlalchemy {pr}`2112` pydantic {pr}`2117`
 
 - Upgraded packages: distlib (0.3.4)
 
 ### Uncategorized
+
+- {{ Update }} Upgraded pyb2d to 0.7.2.
+  {pr}`2117`
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
   {pr}`2109`
@@ -36,8 +39,12 @@ substitutions:
   improved with some context information.
   {pr}`2121`
 
-- {{Fix}} Python tracebacks now include Javascript frames when Python calls a Javascript function.
+- {{Fix}} Python tracebacks now include Javascript frames when Python calls a
+  Javascript function.
   {pr}`2123`
+
+- {{Enhancement}} The Javascript package was migrated to Typescript.
+  {pr}`2130` and {pr}`2133`
 
 ## Version 0.19.0
 
