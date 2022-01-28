@@ -15,6 +15,7 @@ pyodide_callback(void)
     int interrupt_buffer = EM_ASM_INT({
       let result = Module.interrupt_buffer[0];
       Module.interrupt_buffer[0] = 0;
+      Module.webloop_interrupt = !!result;
       return result;
     });
     if (interrupt_buffer == 2) {

@@ -36,6 +36,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
+        self._tasks: Dict[int, Task] = {}
+
+    def handle_interrupt(self):
+        for task in self._tasks.values():
+            task.cancel()
+        self._tasks = {}
 
     def get_debug(self):
         return False
@@ -145,9 +151,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         h = asyncio.Handle(callback, args, self, context=context)
 
         def run_handle():
-            if h.cancelled():
-                return
-            h._run()
+            try:
+                if h.cancelled():
+                    return
+                h._run()
+            except KeyboardInterrupt:
+                self.handle_interrupt()
 
         setTimeout(create_once_callable(run_handle), delay * 1000)
         return h
@@ -225,8 +234,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         else:
             task = self._task_factory(self, coro)
             asyncio.tasks._set_task_name(task, name)
-
+        self._tasks[id(task)] = task
+        task.add_done_callback(self.remove_task)
         return task
+
+    def remove_task(self, task):
+        self._tasks.pop(id(task), None)
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().

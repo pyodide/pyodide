@@ -310,6 +310,8 @@ Module.saveState = () => Module.pyodide_py._state.save_state();
 Module.restoreState = (state: any) =>
   Module.pyodide_py._state.restore_state(state);
 
+let cancelInterruptCheck: ReturnType<typeof setInterval>;
+
 /**
  * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
  * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
@@ -319,7 +321,28 @@ Module.restoreState = (state: any) =>
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   Module.interrupt_buffer = interrupt_buffer;
-  Module._set_pyodide_callback(!!interrupt_buffer);
+  let status = !!interrupt_buffer;
+  Module._set_pyodide_callback(status);
+  if (status && !cancelInterruptCheck) {
+    cancelInterruptCheck = setInterval(checkWebloopInterrupt, 100);
+  } else {
+    clearInterval(cancelInterruptCheck);
+    cancelInterruptCheck = undefined;
+  }
+}
+
+function checkWebloopInterrupt() {
+  let kbdInterrupt = Module.interrupt_buffer[0] || Module.webloop_interrupt;
+  Module.interrupt_buffer[0] = 0;
+  Module.webloop_interrupt = false;
+  if (!kbdInterrupt) {
+    return;
+  }
+  const asyncio = pyimport("asyncio") as any;
+  const loop = asyncio.get_event_loop();
+  loop.handle_interrupt();
+  loop.destroy();
+  asyncio.destroy();
 }
 
 /**
