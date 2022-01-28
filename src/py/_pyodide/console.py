@@ -10,7 +10,7 @@ from contextlib import (
 )
 from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
-import platform
+from platform import python_version, python_build
 import sys
 from tokenize import TokenError
 import traceback
@@ -29,9 +29,10 @@ from _pyodide._base import should_quiet, CodeRunner
 
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 
-
-BANNER = f"Python {platform.python_version()} ({', '.join(platform.python_build())}) on WebAssembly VM\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information."
-
+BANNER = f""" 
+Python {python_version()} ({', '.join(python_build())}) on WebAssembly VM
+Type "help", "copyright", "credits" or "license" for more information.
+""".strip()
 
 class redirect_stdin(_RedirectStream):
     _stream = "stdin"
