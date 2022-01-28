@@ -30,17 +30,7 @@ from _pyodide._base import should_quiet, CodeRunner
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 
 
-def _banner():
-    """A banner similar to the one printed by the real Python interpreter."""
-    # copied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
-    cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-    version = platform.python_version()
-    build = f"({', '.join(platform.python_build())})"
-    return f"Python {version} {build} on WebAssembly VM\n{cprt}"
-
-
-BANNER = _banner()
-del _banner
+BANNER = f"Python {platform.python_version()} ({', '.join(platform.python_build())}) on WebAssembly VM\nType \"help\", \"copyright\", \"credits\" or \"license\" for more information."
 
 
 class redirect_stdin(_RedirectStream):
