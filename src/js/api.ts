@@ -142,7 +142,9 @@ export async function runPythonAsync(
   code: string,
   globals: PyProxy = Module.globals
 ): Promise<Py2JsResult> {
-  return await Module.pyodide_py.eval_code_async(code, globals);
+  let cr = Module.pyodide_py.eval_code_async(code, globals);
+  cr.$$.no_cancel = true;
+  return await cr;
 }
 Module.runPythonAsync = runPythonAsync;
 
@@ -325,7 +327,8 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   Module._set_pyodide_callback(status);
   if (status && !cancelInterruptCheck) {
     cancelInterruptCheck = setInterval(checkWebloopInterrupt, 100);
-  } else {
+  }
+  if (!status && cancelInterruptCheck) {
     clearInterval(cancelInterruptCheck);
     cancelInterruptCheck = undefined;
   }
