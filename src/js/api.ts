@@ -10,7 +10,6 @@ import {
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
 
-
 /**
  * An alias to the Python :py:mod:`pyodide` package.
  *
