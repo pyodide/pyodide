@@ -137,10 +137,15 @@ update_base_url: \
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
-	find src -type f -regex '.*\.\(c\|h\)' \
-		| xargs clang-format-6.0 -output-replacements-xml \
-		| (! grep '<replacement ')
+	# flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
+	for file in src/core/*.c src/core/*.h ; do \
+		clang-format-6.0 -output-replacements-xml $$file | grep '<replacement ' > /dev/null ; \
+		if [ $$? -eq 0 ] ; then \
+			echo clang-format errors for $$file ; \
+			exit 1 ; \
+		fi ; \
+	done
+		
 	npx prettier --check .
 	black --check .
 	mypy --ignore-missing-imports    \
