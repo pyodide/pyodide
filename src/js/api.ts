@@ -142,9 +142,7 @@ export async function runPythonAsync(
   code: string,
   globals: PyProxy = Module.globals
 ): Promise<Py2JsResult> {
-  let cr = Module.pyodide_py.eval_code_async(code, globals);
-  cr.$$.no_cancel = true;
-  return await cr;
+  return await Module.pyodide_py.eval_code_async(code, globals);
 }
 Module.runPythonAsync = runPythonAsync;
 
@@ -341,12 +339,54 @@ function checkWebloopInterrupt() {
   if (!kbdInterrupt) {
     return;
   }
-  const asyncio = pyimport("asyncio") as any;
-  const loop = asyncio.get_event_loop();
-  loop.handle_interrupt();
-  loop.destroy();
-  asyncio.destroy();
+  const loop = Module.asyncio.get_event_loop();
+  try {
+    loop.handle_interrupt();
+  } finally {
+    loop.destroy();
+  }
 }
+
+let delayedSignals = false;
+function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
+  if (interruptable || delayedSignals) {
+    yield;
+    return;
+  }
+  const signal = Module.signal;
+  let signal_received: any[];
+  let old_handler;
+  delayedSignals = true;
+  old_handler = signal.signal(signal.SIGINT, (sig: number, frame: any) => {
+    signal_received = [sig, frame.copy()];
+  });
+  try {
+    yield;
+  } finally {
+    if (signal_received) {
+      try {
+        old_handler(...signal_received);
+      } catch (e) {}
+      signal_received[1].destroy();
+    }
+    signal.signal(signal.SIGINT, old_handler);
+    delayedSignals = false;
+    old_handler.destroy();
+  }
+}
+
+function webloopScheduleCallback(
+  callback: () => void,
+  interruptable: boolean,
+  delay: number
+) {
+  setTimeout(() => {
+    for (const _ of possiblyDelaySignals(interruptable)) {
+      callback();
+    }
+  }, delay);
+}
+Module.webloopScheduleCallback = webloopScheduleCallback;
 
 /**
  * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested

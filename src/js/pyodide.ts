@@ -206,6 +206,9 @@ function finalizeBootstrap(config: ConfigType) {
   Module.package_loader = import_module("pyodide._package_loader");
   Module.version = Module.pyodide_py.__version__;
 
+  Module.asyncio = import_module("asyncio");
+  Module.signal = import_module("signal");
+
   // copy some last constants onto public API.
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;

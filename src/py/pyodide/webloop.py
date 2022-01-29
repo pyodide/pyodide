@@ -1,15 +1,36 @@
 import asyncio
-import contextvars
 import sys
 import time
 import traceback
+
+from contextlib import contextmanager
+from contextvars import Context, ContextVar, copy_context
 from typing import Callable
+
+print("HI!!!!")
 
 
 from ._core import create_once_callable, IN_BROWSER
 
 if IN_BROWSER:
-    from js import setTimeout
+    from pyodide_js._module import webloopScheduleCallback
+
+is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
+
+
+@contextmanager
+def enable_interrupts():
+    orig_value = is_interruptable.get()
+    is_interruptable.set(True)
+    yield
+    is_interruptable.set(orig_value)
+
+
+def enable_interrupts():
+    orig_value = is_interruptable.get()
+    is_interruptable.set(True)
+    yield
+    is_interruptable.set(orig_value)
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -40,7 +61,8 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def handle_interrupt(self):
         for task in self._tasks.values():
-            task.cancel()
+            if task._context.get(is_interruptable, False):
+                task.cancel()
         self._tasks = {}
 
     def get_debug(self):
@@ -102,7 +124,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
 
-    def call_soon(self, callback: Callable, *args, context: contextvars.Context = None):
+    def call_soon(self, callback: Callable, *args, context: Context = None):
         """Arrange for a callback to be called as soon as possible.
 
         Any positional arguments after the callback will be passed to
@@ -113,9 +135,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay = 0
         return self.call_later(delay, callback, *args, context=context)
 
-    def call_soon_threadsafe(
-        self, callback: Callable, *args, context: contextvars.Context = None
-    ):
+    def call_soon_threadsafe(self, callback: Callable, *args, context: Context = None):
         """Like ``call_soon()``, but thread-safe.
 
         We have no threads so everything is "thread safe", and we just use ``call_soon``.
@@ -127,7 +147,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: Context = None,
     ):
         """Arrange for a callback to be called at a given time.
 
@@ -158,7 +178,13 @@ class WebLoop(asyncio.AbstractEventLoop):
             except KeyboardInterrupt:
                 self.handle_interrupt()
 
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        if not context:
+            context = copy_context()
+        webloopScheduleCallback(
+            create_once_callable(run_handle),
+            context.get(is_interruptable),
+            delay * 1000,
+        )
         return h
 
     def call_at(
@@ -166,7 +192,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         when: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: Context = None,
     ):
         """Like ``call_later()``, but uses an absolute time.
 

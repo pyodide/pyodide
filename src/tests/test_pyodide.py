@@ -335,6 +335,7 @@ def test_keyboard_interrupt(selenium):
     )
     assert 2000 < x < 2500
 
+
 def test_async_keyboard_interrupt(selenium):
     # Ideally we could add some tests with SharedArrayBuffer that mix sync and
     # async calls. But that would take a fair amount of extra work.
@@ -361,15 +362,15 @@ def test_async_keyboard_interrupt(selenium):
         """
     )
     assert x == {
-        "1" : "completed",
-        "2" : "completed",
-        "3" : "completed",
-        "4" : "completed",
-        "5" : "cancelled",
-        "6" : "cancelled",
-        "7" : "cancelled",
-        "8" : "cancelled",
-        "9" : "cancelled",
+        "1": "completed",
+        "2": "completed",
+        "3": "completed",
+        "4": "completed",
+        "5": "cancelled",
+        "6": "cancelled",
+        "7": "cancelled",
+        "8": "cancelled",
+        "9": "cancelled",
     }
 
 

@@ -54,8 +54,10 @@ Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
-    cache.leaked = true;
-    pyproxy_decref_cache(cache);
+    if (cache) {
+      cache.leaked = true;
+      pyproxy_decref_cache(cache);
+    }
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
