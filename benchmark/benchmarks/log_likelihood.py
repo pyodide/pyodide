@@ -7,7 +7,7 @@ import numpy
 
 
 def log_likelihood(data, mean, sigma):
-    s = (data - mean) ** 2 / (2 * (sigma ** 2))
+    s = (data - mean) ** 2 / (2 * (sigma**2))
     pdfs = numpy.exp(-s)
     pdfs /= numpy.sqrt(2 * numpy.pi) * sigma
     return numpy.log(pdfs).sum()

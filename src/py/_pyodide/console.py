@@ -34,6 +34,7 @@ Python {python_version()} ({', '.join(python_build())}) on WebAssembly VM
 Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
 
+
 class redirect_stdin(_RedirectStream):
     _stream = "stdin"
 
