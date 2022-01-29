@@ -7,9 +7,6 @@ from contextlib import contextmanager
 from contextvars import Context, ContextVar, copy_context
 from typing import Callable
 
-print("HI!!!!")
-
-
 from ._core import create_once_callable, IN_BROWSER
 
 if IN_BROWSER:
