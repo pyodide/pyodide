@@ -207,7 +207,9 @@ function finalizeBootstrap(config: ConfigType) {
   Module.version = Module.pyodide_py.__version__;
 
   Module.asyncio = import_module("asyncio");
-  Module.signal = import_module("signal");
+  // Have to use private _signal module because signal module has some Python
+  // wrapper code that can be interrupted by a KeyboardInterupt.
+  Module.signal = import_module("_signal");
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = Module.pyodide_py;

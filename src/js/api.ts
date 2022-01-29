@@ -365,13 +365,18 @@ function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
   } finally {
     if (signal_received) {
       try {
+        const loop = Module.asyncio.get_event_loop();
+        loop.handle_interrupt();
+        loop.destroy();
         old_handler(...signal_received);
       } catch (e) {}
       signal_received[1].destroy();
     }
     signal.signal(signal.SIGINT, old_handler);
     delayedSignals = false;
-    old_handler.destroy();
+    if(isPyProxy(old_handler)){
+      old_handler.destroy();
+    }
   }
 }
 
