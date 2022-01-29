@@ -335,6 +335,43 @@ def test_keyboard_interrupt(selenium):
     )
     assert 2000 < x < 2500
 
+def test_async_keyboard_interrupt(selenium):
+    # Ideally we could add some tests with SharedArrayBuffer that mix sync and
+    # async calls. But that would take a fair amount of extra work.
+    x = selenium.run_js(
+        """
+        t0 = performance.now();
+        interruptBuffer = new Uint8Array(new ArrayBuffer(1));
+        pyodide.setInterruptBuffer(interruptBuffer);
+        let result = {};
+        for(let n = 1; n < 10; n++){
+            pyodide.runPythonAsync(`
+                import asyncio
+                await asyncio.sleep(${(n+5)/10})
+            `).then(res => {
+                result[n] = "completed";
+            }, (err) => {
+                result[n] = "cancelled";
+            });
+        }
+        await sleep(950);
+        interruptBuffer[0] = 2
+        await sleep(700);
+        return result;
+        """
+    )
+    assert x == {
+        "1" : "completed",
+        "2" : "completed",
+        "3" : "completed",
+        "4" : "completed",
+        "5" : "cancelled",
+        "6" : "cancelled",
+        "7" : "cancelled",
+        "8" : "cancelled",
+        "9" : "cancelled",
+    }
+
 
 def test_run_python_async_toplevel_await(selenium):
     selenium.run_js(
