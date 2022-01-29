@@ -348,6 +348,9 @@ def test_async_keyboard_interrupt(selenium):
         for(let n = 1; n < 10; n++){
             pyodide.runPythonAsync(`
                 import asyncio
+                from pyodide.webloop import is_interruptable
+                if ${n} % 2:
+                    is_interruptable.set(True)
                 await asyncio.sleep(${(n+5)/10})
             `).then(res => {
                 result[n] = "completed";
@@ -367,9 +370,9 @@ def test_async_keyboard_interrupt(selenium):
         "3": "completed",
         "4": "completed",
         "5": "cancelled",
-        "6": "cancelled",
+        "6": "completed",
         "7": "cancelled",
-        "8": "cancelled",
+        "8": "completed",
         "9": "cancelled",
     }
 
