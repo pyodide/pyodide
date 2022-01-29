@@ -46,8 +46,7 @@ set_error(PyObject* err)
  * err - The error object
  */
 EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
-  return Module.hiwire.new_value(
-    new API.PythonError(UTF8ToString(msg), err));
+  return Module.hiwire.new_value(new API.PythonError(UTF8ToString(msg), err));
 });
 
 /**
