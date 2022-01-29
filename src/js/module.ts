@@ -10,6 +10,9 @@ Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
 Module.preloadedWasm = {};
 Module.preRun = [];
 
+export let API: any = {};
+Module.API = API;
+
 /**
  *
  * @param stdin

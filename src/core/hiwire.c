@@ -106,7 +106,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
-      Module.fail_test = true;
+      API.fail_test = true;
       // clang-format off
       // This might have happened because the error indicator is set. Let's
       // check.
@@ -627,7 +627,7 @@ EM_JS(bool, hiwire_get_bool, (JsRef idobj), {
 });
 
 EM_JS(bool, hiwire_is_pyproxy, (JsRef idobj), {
-  return Module.isPyProxy(Module.hiwire.get_value(idobj));
+  return API.isPyProxy(Module.hiwire.get_value(idobj));
 });
 
 EM_JS(bool, hiwire_is_function, (JsRef idobj), {
@@ -638,7 +638,7 @@ EM_JS(bool, hiwire_is_function, (JsRef idobj), {
 
 EM_JS(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
   let value = Module.hiwire.get_value(idobj);
-  return !!(Module.Comlink && value[Module.Comlink.createEndpoint]);
+  return !!(API.Comlink && value[API.Comlink.createEndpoint]);
 });
 
 EM_JS(bool, hiwire_is_error, (JsRef idobj), {

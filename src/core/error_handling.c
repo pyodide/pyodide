@@ -47,7 +47,7 @@ set_error(PyObject* err)
  */
 EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
   return Module.hiwire.new_value(
-    new Module.PythonError(UTF8ToString(msg), err));
+    new API.PythonError(UTF8ToString(msg), err));
 });
 
 /**
@@ -130,7 +130,7 @@ finally:
   return success;
 }
 
-EM_JS(void, fail_test, (), { Module.fail_test = true; })
+EM_JS(void, fail_test, (), { API.fail_test = true; })
 
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
@@ -217,7 +217,7 @@ EM_JS(void, log_python_error, (JsRef jserror), {
     let msg = Module.hiwire.get_value(jserror).message;
     console.warn("Python exception:\n" + msg + "\n");
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   }
 });
 

@@ -1,4 +1,4 @@
-import { Module } from "./module.js";
+import { Module, API } from "./module.js";
 import { loadPackage, loadedPackages } from "./load-package";
 import {
   isPyProxy,
@@ -9,6 +9,7 @@ import {
 } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
+
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -52,11 +53,11 @@ export let version: string = ""; // actually defined in loadPyodide (see pyodide
  */
 export function runPython(
   code: string,
-  globals: PyProxy = Module.globals
+  globals: PyProxy = API.globals
 ): Py2JsResult {
-  return Module.pyodide_py.eval_code(code, globals);
+  return API.pyodide_py.eval_code(code, globals);
 }
-Module.runPython = runPython;
+API.runPython = runPython;
 
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
@@ -84,7 +85,7 @@ export async function loadPackagesFromImports(
   messageCallback?: (msg: string) => void,
   errorCallback?: (err: string) => void
 ) {
-  let pyimports = Module.pyodide_py.find_imports(code);
+  let pyimports = API.pyodide_py.find_imports(code);
   let imports;
   try {
     imports = pyimports.toJs();
@@ -95,7 +96,7 @@ export async function loadPackagesFromImports(
     return;
   }
 
-  let packageNames = Module._import_name_to_package_name;
+  let packageNames = API._import_name_to_package_name;
   let packages: Set<string> = new Set();
   for (let name of imports) {
     if (packageNames.has(name)) {
@@ -140,11 +141,11 @@ export async function loadPackagesFromImports(
  */
 export async function runPythonAsync(
   code: string,
-  globals: PyProxy = Module.globals
+  globals: PyProxy = API.globals
 ): Promise<Py2JsResult> {
-  return await Module.pyodide_py.eval_code_async(code, globals);
+  return await API.pyodide_py.eval_code_async(code, globals);
 }
-Module.runPythonAsync = runPythonAsync;
+API.runPythonAsync = runPythonAsync;
 
 /**
  * Registers the JavaScript object ``module`` as a JavaScript module named
@@ -158,7 +159,7 @@ Module.runPythonAsync = runPythonAsync;
  * @param module JavaScript object backing the module
  */
 export function registerJsModule(name: string, module: object) {
-  Module.pyodide_py.register_js_module(name, module);
+  API.pyodide_py.register_js_module(name, module);
 }
 
 /**
@@ -166,7 +167,7 @@ export function registerJsModule(name: string, module: object) {
  * Necessary to enable importing Comlink proxies into Python.
  */
 export function registerComlink(Comlink: any) {
-  Module._Comlink = Comlink;
+  API._Comlink = Comlink;
 }
 
 /**
@@ -181,7 +182,7 @@ export function registerComlink(Comlink: any) {
  * @param name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name: string) {
-  Module.pyodide_py.unregister_js_module(name);
+  API.pyodide_py.unregister_js_module(name);
 }
 
 /**
@@ -213,7 +214,7 @@ export function toPy(
     case "undefined":
       return obj;
   }
-  if (!obj || Module.isPyProxy(obj)) {
+  if (!obj || API.isPyProxy(obj)) {
     return obj;
   }
   let obj_id = 0;
@@ -272,7 +273,7 @@ export function toPy(
  * @returns A PyProxy for the imported module
  */
 export function pyimport(mod_name: string): PyProxy {
-  return Module.importlib.import_module(mod_name);
+  return API.importlib.import_module(mod_name);
 }
 
 /**
@@ -290,10 +291,10 @@ export function unpackArchive(
   format: string,
   extract_dir?: string
 ) {
-  if (!Module._util_module) {
-    Module._util_module = pyimport("pyodide._util");
+  if (!API._util_module) {
+    API._util_module = pyimport("pyodide._util");
   }
-  Module._util_module.unpack_buffer_archive.callKwargs(buffer, {
+  API._util_module.unpack_buffer_archive.callKwargs(buffer, {
     format,
     extract_dir,
   });
@@ -302,13 +303,12 @@ export function unpackArchive(
 /**
  * @private
  */
-Module.saveState = () => Module.pyodide_py._state.save_state();
+API.saveState = () => API.pyodide_py._state.save_state();
 
 /**
  * @private
  */
-Module.restoreState = (state: any) =>
-  Module.pyodide_py._state.restore_state(state);
+API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 
 /**
  * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
@@ -318,7 +318,7 @@ Module.restoreState = (state: any) =>
  * constant for SIGINT).
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
-  Module.interrupt_buffer = interrupt_buffer;
+  API.interrupt_buffer = interrupt_buffer;
   Module._set_pyodide_callback(!!interrupt_buffer);
 }
 
@@ -331,10 +331,10 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
  * during execution of C code.
  */
 export function checkInterrupt() {
-  if (Module.interrupt_buffer[0] === 2) {
-    Module.interrupt_buffer[0] = 0;
+  if (API.interrupt_buffer[0] === 2) {
+    API.interrupt_buffer[0] = 0;
     Module._PyErr_SetInterrupt();
-    Module.runPython("");
+    API.runPython("");
   }
 }
 
@@ -405,8 +405,9 @@ export function makePublicAPI(): PyodideInterface {
     PythonError,
     PyBuffer,
     _module: Module,
+    _api: API,
   };
 
-  Module.public_api = namespace;
+  API.public_api = namespace;
   return namespace;
 }
