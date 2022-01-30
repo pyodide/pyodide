@@ -55,7 +55,7 @@ def test_write_stream():
 
 def test_repr():
     sep = "..."
-    for string in ("x" * 10**5, "x" * (10**5 + 1)):
+    for string in ("x" * 10 ** 5, "x" * (10 ** 5 + 1)):
         for limit in (9, 10, 100, 101):
             assert len(
                 console.repr_shorten(string, limit=limit, separator=sep)

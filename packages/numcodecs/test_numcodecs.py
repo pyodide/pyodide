@@ -113,20 +113,20 @@ def test_blosc():
         np.random.normal(loc=1000, scale=1, size=(100, 10)),
         np.random.randint(0, 2, size=1000, dtype=bool).reshape(100, 10, order="F"),
         np.random.choice([b"a", b"bb", b"ccc"], size=1000).reshape(10, 10, 10),
-        np.random.randint(0, 2**60, size=1000, dtype="u8").view("M8[ns]"),
-        np.random.randint(0, 2**60, size=1000, dtype="u8").view("m8[ns]"),
-        np.random.randint(0, 2**25, size=1000, dtype="u8").view("M8[m]"),
-        np.random.randint(0, 2**25, size=1000, dtype="u8").view("m8[m]"),
-        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
+        np.random.randint(0, 2 ** 60, size=1000, dtype="u8").view("M8[ns]"),
+        np.random.randint(0, 2 ** 60, size=1000, dtype="u8").view("m8[ns]"),
+        np.random.randint(0, 2 ** 25, size=1000, dtype="u8").view("M8[m]"),
+        np.random.randint(0, 2 ** 25, size=1000, dtype="u8").view("m8[m]"),
+        np.random.randint(-(2 ** 63), -(2 ** 63) + 20, size=1000, dtype="i8").view(
             "M8[ns]"
         ),
-        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
+        np.random.randint(-(2 ** 63), -(2 ** 63) + 20, size=1000, dtype="i8").view(
             "m8[ns]"
         ),
-        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
+        np.random.randint(-(2 ** 63), -(2 ** 63) + 20, size=1000, dtype="i8").view(
             "M8[m]"
         ),
-        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
+        np.random.randint(-(2 ** 63), -(2 ** 63) + 20, size=1000, dtype="i8").view(
             "m8[m]"
         ),
     ]
@@ -148,8 +148,8 @@ def test_blosc():
         Blosc(cname="zstd", clevel=1, shuffle=1),
         Blosc(cname="blosclz", clevel=1, shuffle=2),
         Blosc(shuffle=Blosc.SHUFFLE, blocksize=0),
-        Blosc(shuffle=Blosc.SHUFFLE, blocksize=2**8),
-        Blosc(cname="lz4", clevel=1, shuffle=Blosc.NOSHUFFLE, blocksize=2**8),
+        Blosc(shuffle=Blosc.SHUFFLE, blocksize=2 ** 8),
+        Blosc(cname="lz4", clevel=1, shuffle=Blosc.NOSHUFFLE, blocksize=2 ** 8),
     ]
     for codec in codecs:
         for arr in arrays:

@@ -57,7 +57,7 @@ def test_large_string_conversion(selenium):
 
 @given(
     n=strategies.one_of(
-        strategies.integers(min_value=-(2**53), max_value=2**53),
+        strategies.integers(min_value=-(2 ** 53), max_value=2 ** 53),
         strategies.floats(allow_nan=False),
     )
 )
@@ -491,12 +491,12 @@ def test_dict_converter(selenium):
 
 
 def test_python2js_long_ints(selenium):
-    assert selenium.run("2**30") == 2**30
-    assert selenium.run("2**31") == 2**31
-    assert selenium.run("2**30 - 1 + 2**30") == (2**30 - 1 + 2**30)
-    assert selenium.run("2**32 / 2**4") == (2**32 / 2**4)
-    assert selenium.run("-2**30") == -(2**30)
-    assert selenium.run("-2**31") == -(2**31)
+    assert selenium.run("2**30") == 2 ** 30
+    assert selenium.run("2**31") == 2 ** 31
+    assert selenium.run("2**30 - 1 + 2**30") == (2 ** 30 - 1 + 2 ** 30)
+    assert selenium.run("2**32 / 2**4") == (2 ** 32 / 2 ** 4)
+    assert selenium.run("-2**30") == -(2 ** 30)
+    assert selenium.run("-2**31") == -(2 ** 31)
     assert selenium.run_js(
         """
         return pyodide.runPython("2**64") === 2n**64n;
