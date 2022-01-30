@@ -178,7 +178,7 @@ clean-all:
 	make -C cpython clean-all
 
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/python2js_buffer.js)
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
