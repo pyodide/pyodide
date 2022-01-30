@@ -374,7 +374,7 @@ function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
     }
     signal.signal(signal.SIGINT, old_handler);
     delayedSignals = false;
-    if(isPyProxy(old_handler)){
+    if (isPyProxy(old_handler)) {
       old_handler.destroy();
     }
   }
