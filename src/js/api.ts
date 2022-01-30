@@ -222,7 +222,7 @@ export function toPy(
   try {
     obj_id = Module.hiwire.new_value(obj);
     try {
-      py_result = Module.js2python_convert(obj_id, new Map(), depth);
+      py_result = Module.js2python_convert(obj_id, depth);
     } catch (e) {
       if (e instanceof Module._PropagatePythonError) {
         Module._pythonexc2js();
