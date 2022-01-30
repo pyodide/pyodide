@@ -175,6 +175,7 @@ class SeleniumWrapper:
             pyodide._module.package_loader.get_dynlibs;
             pyodide._module._util_module = pyodide.pyimport("pyodide._util");
             pyodide._module._util_module.unpack_buffer_archive;
+            pyodide._module.signal.signal;
             pyodide.runPython("");
             """
         )
