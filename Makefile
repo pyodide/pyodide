@@ -152,9 +152,13 @@ lint: node_modules/.installed
 		packages/micropip/src/
 
 	# Format checks
-	find src -type f -regex '.*\.\(c\|h\)' \
-		| xargs clang-format-6.0 -output-replacements-xml \
-		| (! grep '<replacement ')
+	for file in src/core/*.c src/core/*.h ; do \
+		clang-format-6.0 -output-replacements-xml $$file | grep '<replacement ' > /dev/null ; \
+		if [ $$? -eq 0 ] ; then \
+			echo clang-format errors for $$file ; \
+			exit 1 ; \
+		fi ; \
+	done
 	npx prettier --check .
 	black --check .
 
