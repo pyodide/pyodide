@@ -278,7 +278,7 @@ JS_FILE(js2python_init, () => {
         itemsize
       );
     }
-    return _JsProxy_create(id);
+    return undefined;
   }
 
   /**
@@ -299,18 +299,47 @@ JS_FILE(js2python_init, () => {
       return result;
     }
     context.depth--;
-    result = js2python_convertOther(id, value, context);
-    context.depth++;
-    return result;
+    try {
+      result = js2python_convertOther(id, value, context);
+      if(result !== undefined){
+        return result;
+      }
+      if(context.defaultConverter !== undefined){
+        return _JsProxy_create(id);
+      }
+      let converter = (x) => {
+        let id = Module.hiwire.new_value(x);
+        try {
+          return js2python_convert_with_context(id, context);
+        } finally {
+          Module.hiwire.decref(id);
+        }
+      }
+      let result_js = context.defaultConverter(value, converter);
+      if(result_js === undefined){
+        return _JsProxy_create(id);
+      }
+      result = js2python_convertImmutable(result_js);
+      if(Module.isPyProxy(result_js)){
+        result_js.destroy();
+      }
+      if(result !== undefined){
+        return result;
+      }
+      throw new Error("defaultConverter returned invalid object. It must return a PyProxy, number, bigint, boolean, null, or undefined.");
+    } finally {
+      context.depth++;
+    }
   }
 
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
-  function js2python_convert(id, depth) {
+  function js2python_convert(id, {depth, defaultConverter}) {
     let context = {
       cache: new Map(),
       depth,
+      defaultConverter,
     };
     return js2python_convert_with_context(id, context);
   }
