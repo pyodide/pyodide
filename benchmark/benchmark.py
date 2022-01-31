@@ -22,6 +22,8 @@ def print_entry(name, res):
 
 
 def run_native(hostpython, code):
+    if '# non-native' in code:
+        return 0
     root = Path(__file__).resolve().parents[1]
     output = subprocess.check_output(
         [hostpython.resolve(), "-c", code],
@@ -43,6 +45,8 @@ def run_wasm(code, selenium, interrupt_buffer):
             pyodide.setInterruptBuffer(interrupt_buffer)
             """
         )
+    if 'matplotlib' in code:
+        selenium.load_package('matplotlib')
     selenium.run(code)
     try:
         runtime = float(selenium.logs.split("\n")[-1])
@@ -100,9 +104,32 @@ def get_numpy_benchmarks():
         yield name, content
 
 
+def get_matplotlib_benchmarks():
+    root = Path(__file__).resolve().parent / "benchmarks"
+    for filename in sorted(root.iterdir()):
+        name = filename.stem
+        if name in SKIP:
+            continue
+        if filename.startswith('canvas') or filename.startswith('wasm'):
+            content = parse_numpy_benchmark(filename)
+            content += (
+                "import numpy as np\n"
+                "_ = np.empty(())\n"
+                "setup = setup + '\\nfrom __main__ import {}'\n"
+                "from timeit import Timer\n"
+                "t = Timer(run, setup)\n"
+                "r = t.repeat(11, 40)\n"
+                "r.remove(min(r))\n"
+                "r.remove(max(r))\n"
+                "print(np.mean(r))\n".format(name)
+            )
+            yield name, content
+
+
 def get_benchmarks():
-    yield from get_pystone_benchmarks()
-    yield from get_numpy_benchmarks()
+    # yield from get_pystone_benchmarks()
+    # yield from get_numpy_benchmarks()
+    yield from get_matplotlib_benchmarks()
 
 
 def main(hostpython):
