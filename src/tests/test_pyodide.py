@@ -711,11 +711,11 @@ def test_restore_state(selenium):
         pyodide.registerJsModule("a", {somefield : 82});
         pyodide.registerJsModule("b", { otherfield : 3 });
         pyodide.runPython("x = 7; from a import somefield");
-        let state = pyodide._module.saveState();
+        let state = pyodide._api.saveState();
 
         pyodide.registerJsModule("c", { thirdfield : 9 });
         pyodide.runPython("y = 77; from b import otherfield; import c;");
-        pyodide._module.restoreState(state);
+        pyodide._api.restoreState(state);
         state.destroy();
         """
     )
@@ -797,7 +797,7 @@ def test_fatal_error(selenium_standalone):
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
-        assert(() => pyodide._module.runPython("1+1") === 2);
+        assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
 

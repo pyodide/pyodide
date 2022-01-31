@@ -87,7 +87,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--exclude-file "*__pycache__*" \
 	--exclude-file "*/test/*" \
 	--exclude-file "*/tests/*" \
-	--exclude-file "*/distutils/*"
+	--exclude-file "*/distutils/*" \
+	--pre-js src/core/pre.js
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 

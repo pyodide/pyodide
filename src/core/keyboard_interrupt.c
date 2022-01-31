@@ -14,10 +14,10 @@ pyodide_callback(void)
   if (unlikely(callback_clock == 0)) {
     callback_clock = 50;
     int interrupt_buffer = EM_ASM_INT({
-      let result = Module.interrupt_buffer[0];
-      Module.interrupt_buffer[0] = 0;
+      let result = API.interrupt_buffer[0];
+      API.interrupt_buffer[0] = 0;
       if (result) {
-        Module.webloopHandleInterrupt();
+        API.webloopHandleInterrupt();
       }
       return result;
     });

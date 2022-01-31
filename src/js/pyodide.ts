@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
+import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, PyodideInterface } from "./api.js";
@@ -31,7 +31,7 @@ export {
  *
  * @private
  */
-Module.dump_traceback = function () {
+API.dump_traceback = function () {
   const fd_stdout = 1;
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
@@ -49,7 +49,7 @@ let fatal_error_occurred = false;
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
-Module.fatal_error = function (e: any) {
+API.fatal_error = function (e: any) {
   if (e.pyodide_fatal_error) {
     return;
   }
@@ -65,7 +65,7 @@ Module.fatal_error = function (e: any) {
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
   );
   console.error("The cause of the fatal error was:");
-  if (Module.inTestHoist) {
+  if (API.inTestHoist) {
     // Test hoist won't print the error object in a useful way so convert it to
     // string.
     console.error(e.toString());
@@ -74,12 +74,12 @@ Module.fatal_error = function (e: any) {
     console.error(e);
   }
   try {
-    Module.dump_traceback();
-    for (let key of Object.keys(Module.public_api)) {
+    API.dump_traceback();
+    for (let key of Object.keys(API.public_api)) {
       if (key.startsWith("_") || key === "version") {
         continue;
       }
-      Object.defineProperty(Module.public_api, key, {
+      Object.defineProperty(API.public_api, key, {
         enumerable: true,
         configurable: true,
         get: () => {
@@ -89,8 +89,8 @@ Module.fatal_error = function (e: any) {
         },
       });
     }
-    if (Module.on_fatal) {
-      Module.on_fatal(e);
+    if (API.on_fatal) {
+      API.on_fatal(e);
     }
   } catch (err2) {
     console.error("Another error occurred while handling the fatal error:");
@@ -105,8 +105,8 @@ let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
  */
-Module.runPythonInternal = function (code: string): Py2JsResult {
-  return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
+API.runPythonInternal = function (code: string): Py2JsResult {
+  return API._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
 /**
@@ -178,20 +178,24 @@ function finalizeBootstrap(config: ConfigType) {
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
-  Module.importlib = Module.runPythonInternal("import importlib; importlib");
-  let import_module = Module.importlib.import_module;
+  runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
+  API.importlib = API.runPythonInternal("import importlib; importlib");
+  let import_module = API.importlib.import_module;
 
-  Module.sys = import_module("sys");
-  Module.sys.path.insert(0, config.homedir);
+  API.sys = import_module("sys");
+  API.sys.path.insert(0, config.homedir);
 
   // Set up globals
-  let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
-  let builtins = Module.runPythonInternal("import builtins; builtins.__dict__");
-  Module.globals = wrapPythonGlobals(globals, builtins);
+  let globals = API.runPythonInternal(
+    "import __main__; __main__.__dict__"
+  ) as PyProxyDict;
+  let builtins = API.runPythonInternal(
+    "import builtins; builtins.__dict__"
+  ) as PyProxyDict;
+  API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
-  let importhook = Module._pyodide._importhook;
+  let importhook = API._pyodide._importhook;
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
 
@@ -202,19 +206,19 @@ function finalizeBootstrap(config: ConfigType) {
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
-  Module.pyodide_py = import_module("pyodide");
-  Module.package_loader = import_module("pyodide._package_loader");
-  Module.version = Module.pyodide_py.__version__;
+  API.pyodide_py = import_module("pyodide");
+  API.package_loader = import_module("pyodide._package_loader");
+  API.version = API.pyodide_py.__version__;
 
-  Module.asyncio = import_module("asyncio");
+  API.asyncio = import_module("asyncio");
   // Have to use private _signal module because signal module has some Python
   // wrapper code that can be interrupted by a KeyboardInterupt.
-  Module.signal = import_module("_signal");
+  API.signal = import_module("_signal");
 
   // copy some last constants onto public API.
-  pyodide.pyodide_py = Module.pyodide_py;
-  pyodide.version = Module.version;
-  pyodide.globals = Module.globals;
+  pyodide.pyodide_py = API.pyodide_py;
+  pyodide.version = API.version;
+  pyodide.globals = API.globals;
   return pyodide;
 }
 
@@ -297,7 +301,6 @@ export async function loadPyodide(config: {
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
-  Module.indexURL = config.indexURL;
   await initNodeModules();
   let packageIndexReady = initializePackageIndex(config.indexURL);
   let pyodide_py_tar_promise = _loadBinaryFile(
