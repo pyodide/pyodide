@@ -323,22 +323,9 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   Module.interrupt_buffer = interrupt_buffer;
   let status = !!interrupt_buffer;
   Module._set_pyodide_callback(status);
-  if (status && !cancelInterruptCheck) {
-    cancelInterruptCheck = setInterval(checkWebloopInterrupt, 100);
-  }
-  if (!status && cancelInterruptCheck) {
-    clearInterval(cancelInterruptCheck);
-    cancelInterruptCheck = undefined;
-  }
 }
 
-function checkWebloopInterrupt() {
-  let kbdInterrupt = Module.interrupt_buffer[0] || Module.webloop_interrupt;
-  Module.interrupt_buffer[0] = 0;
-  Module.webloop_interrupt = false;
-  if (!kbdInterrupt) {
-    return;
-  }
+function webloopHandleInterrupt() {
   const loop = Module.asyncio.get_event_loop();
   try {
     loop.handle_interrupt();
@@ -346,6 +333,7 @@ function checkWebloopInterrupt() {
     loop.destroy();
   }
 }
+Module.webloopHandleInterrupt = webloopHandleInterrupt;
 
 let delayedSignals = false;
 function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
@@ -364,10 +352,8 @@ function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
     yield;
   } finally {
     if (signal_received) {
+      webloopHandleInterrupt();
       try {
-        const loop = Module.asyncio.get_event_loop();
-        loop.handle_interrupt();
-        loop.destroy();
         old_handler(...signal_received);
       } catch (e) {}
       signal_received[1].destroy();
