@@ -9,7 +9,7 @@ from typing import Callable
 from ._core import create_once_callable, IN_BROWSER
 
 if IN_BROWSER:
-    from pyodide_js._module import webloopScheduleCallback
+    from pyodide_js._api import webloopScheduleCallback
 
 _is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
 

@@ -363,12 +363,15 @@ def test_async_keyboard_interrupt(selenium):
         return result;
         """
     )
+    # 5 is on the boundary and it's inconsistent whether it comes back completed
+    # or cancelled.
+    del x["5"]
     assert x == {
         "1": "completed",
         "2": "completed",
         "3": "completed",
         "4": "completed",
-        "5": "completed",
+        # "5": "completed",
         "6": "completed",
         "7": "cancelled",
         "8": "completed",
