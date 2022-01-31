@@ -341,7 +341,6 @@ def test_async_keyboard_interrupt(selenium):
     # async calls. But that would take a fair amount of extra work.
     x = selenium.run_js(
         """
-        t0 = performance.now();
         interruptBuffer = new Uint8Array(new ArrayBuffer(1));
         pyodide.setInterruptBuffer(interruptBuffer);
         let result = {};
