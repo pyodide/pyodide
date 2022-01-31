@@ -1,8 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
-#include "keyboard_interrupt.h"
 #include "error_handling.h"
+#include "keyboard_interrupt.h"
 #include <emscripten.h>
 
 static int callback_clock = 50;
@@ -16,7 +16,7 @@ pyodide_callback(void)
     int interrupt_buffer = EM_ASM_INT({
       let result = Module.interrupt_buffer[0];
       Module.interrupt_buffer[0] = 0;
-      if(result){
+      if (result) {
         Module.webloopHandleInterrupt();
       }
       return result;
