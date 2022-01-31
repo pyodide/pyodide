@@ -324,16 +324,6 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   Module._set_pyodide_callback(status);
 }
 
-function webloopHandleInterrupt() {
-  const loop = API.asyncio.get_event_loop();
-  try {
-    loop.handle_interrupt();
-  } finally {
-    loop.destroy();
-  }
-}
-API.webloopHandleInterrupt = webloopHandleInterrupt;
-
 let delayedSignals = false;
 function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
   if (interruptable || delayedSignals) {
@@ -351,7 +341,6 @@ function* possiblyDelaySignals(interruptable: boolean): Generator<undefined> {
     yield;
   } finally {
     if (signal_received) {
-      webloopHandleInterrupt();
       try {
         old_handler(...signal_received);
       } catch (e) {}

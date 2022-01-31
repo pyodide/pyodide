@@ -40,6 +40,12 @@ wrap_exception();
 void _Py_NO_RETURN
 pythonexc2js();
 
+/**
+ * Raise the current Python exception as a fatal error
+ */
+void _Py_NO_RETURN
+fatal_python_exception(void);
+
 // Used by LOG_EM_JS_ERROR (behind DEBUG_F flag)
 void
 console_error(char* msg);
