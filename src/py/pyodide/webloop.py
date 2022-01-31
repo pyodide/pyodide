@@ -3,16 +3,16 @@ import sys
 import time
 import traceback
 
-from contextvars import Context, ContextVar
-from typing import Callable
+from asyncio.tasks import Task
+from contextvars import Context, ContextVar, copy_context
+from typing import Callable, Dict
 
 from ._core import create_once_callable, IN_BROWSER
 
 if IN_BROWSER:
-    from pyodide_js._api import webloopScheduleCallback
+    from pyodide_js._api import webloopScheduleHandle
 
 _is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
-
 
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
@@ -38,13 +38,18 @@ class WebLoop(asyncio.AbstractEventLoop):
         asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
-        self._tasks: Dict[int, Task] = {}
+        self._tasks: Dict[int, asyncio.tasks.Task] = {}
 
     def handle_interrupt(self):
+        """This is invoked from keyboard_interrupt.c when a keyboard interrupt
+        is detected.
+
+        Cancel all interruptable tasks. It is a fatal error if this raises an
+        exception.
+        """
         for task in self._tasks.values():
             if task._context.get(_is_interruptable, False):
                 task.cancel()
-        self._tasks = {}
 
     def get_debug(self):
         return False
@@ -150,26 +155,8 @@ class WebLoop(asyncio.AbstractEventLoop):
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
-
-        def run_handle():
-            nonlocal h
-            try:
-                if h.cancelled():
-                    return
-                h._run()
-            except KeyboardInterrupt:
-                self.handle_interrupt()
-            finally:
-                # Prevent memory leak (not really sure how this works to be honest)
-                h = None
-
-        if context:
-            interruptable = context.get(_is_interruptable, False)
-        else:
-            interruptable = _is_interruptable.get()
-        webloopScheduleCallback(
-            create_once_callable(run_handle),
-            interruptable,
+        webloopScheduleHandle(
+            h,
             delay * 1000,
         )
         return h
@@ -238,7 +225,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = asyncio.tasks.Task(coro, loop=self, name=name)
+            task = Task(coro, loop=self, name=name)
             if task._source_traceback:
                 # Added comment:
                 # this only happens if get_debug() returns True.

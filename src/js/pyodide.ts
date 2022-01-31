@@ -210,6 +210,7 @@ function finalizeBootstrap(config: ConfigType) {
   API.package_loader = import_module("pyodide._package_loader");
   API.version = API.pyodide_py.__version__;
 
+  API.webloop = import_module("pyodide.webloop");
   // Have to use private _signal module because signal module has some Python
   // wrapper code that can be interrupted by a KeyboardInterupt.
   API.signal = import_module("_signal");

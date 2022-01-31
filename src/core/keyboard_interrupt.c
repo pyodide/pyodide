@@ -17,7 +17,7 @@ webloop_handle_interrupts(void)
   PyObject* loop = NULL;
   PyObject* result = NULL;
 
-  asyncio = PyImport_ImportModule("pyodide.webloop");
+  asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   loop = _PyObject_CallMethodIdNoArgs(asyncio, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
