@@ -23,13 +23,6 @@ def enable_interrupts():
     is_interruptable.set(orig_value)
 
 
-def enable_interrupts():
-    orig_value = is_interruptable.get()
-    is_interruptable.set(True)
-    yield
-    is_interruptable.set(orig_value)
-
-
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
 
