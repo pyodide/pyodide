@@ -46,6 +46,10 @@ substitutions:
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
 
+- {{Fix}} The interaction between keyboard interrupts and asyncio has been
+  improved.
+  {pr}`2142`
+
 ## Version 0.19.0
 
 _January 10, 2021_
