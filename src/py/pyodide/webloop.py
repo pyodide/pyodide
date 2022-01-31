@@ -12,16 +12,7 @@ from ._core import create_once_callable, IN_BROWSER
 if IN_BROWSER:
     from pyodide_js._module import webloopScheduleCallback
 
-is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
-
-
-@contextmanager
-def enable_interrupts():
-    orig_value = is_interruptable.get()
-    is_interruptable.set(True)
-    yield
-    is_interruptable.set(orig_value)
-
+_is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
 
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
@@ -51,7 +42,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def handle_interrupt(self):
         for task in self._tasks.values():
-            if task._context.get(is_interruptable, False):
+            if task._context.get(_is_interruptable, False):
                 task.cancel()
         self._tasks = {}
 
@@ -176,7 +167,7 @@ class WebLoop(asyncio.AbstractEventLoop):
             context = copy_context()
         webloopScheduleCallback(
             create_once_callable(run_handle),
-            context.get(is_interruptable),
+            context.get(_is_interruptable),
             delay * 1000,
         )
         return h
