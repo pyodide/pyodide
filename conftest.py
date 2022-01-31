@@ -176,6 +176,7 @@ class SeleniumWrapper:
             pyodide._module._util_module = pyodide.pyimport("pyodide._util");
             pyodide._module._util_module.unpack_buffer_archive;
             pyodide._module.signal.signal;
+            pyodide._module.asyncio.get_event_loop;
             pyodide.runPython("");
             """
         )

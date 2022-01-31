@@ -369,7 +369,7 @@ def test_async_keyboard_interrupt(selenium):
         "2": "completed",
         "3": "completed",
         "4": "completed",
-        "5": "cancelled",
+        "5": "completed",
         "6": "completed",
         "7": "cancelled",
         "8": "completed",
