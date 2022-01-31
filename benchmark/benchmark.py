@@ -110,7 +110,7 @@ def get_matplotlib_benchmarks():
         name = filename.stem
         if name in SKIP:
             continue
-        if filename.startswith("canvas") or filename.startswith("wasm"):
+        if "canvas" in str(filename) or "wasm" in str(filename):
             content = parse_numpy_benchmark(filename)
             content += (
                 "import numpy as np\n"
