@@ -3,7 +3,6 @@ import sys
 import time
 import traceback
 
-from contextlib import contextmanager
 from contextvars import Context, ContextVar, copy_context
 from typing import Callable
 
