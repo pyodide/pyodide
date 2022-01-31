@@ -168,12 +168,16 @@ class WebLoop(asyncio.AbstractEventLoop):
         h = asyncio.Handle(callback, args, self, context=context)
 
         def run_handle():
+            nonlocal h
             try:
                 if h.cancelled():
                     return
                 h._run()
             except KeyboardInterrupt:
                 self.handle_interrupt()
+            finally:
+                # Prevent memory leak (not really sure how this works to be honest)
+                h = None
 
         if not context:
             context = copy_context()
