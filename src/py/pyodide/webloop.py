@@ -3,7 +3,7 @@ import sys
 import time
 import traceback
 
-from contextvars import Context, ContextVar, copy_context
+from contextvars import Context, ContextVar
 from typing import Callable
 
 from ._core import create_once_callable, IN_BROWSER
@@ -163,11 +163,13 @@ class WebLoop(asyncio.AbstractEventLoop):
                 # Prevent memory leak (not really sure how this works to be honest)
                 h = None
 
-        if not context:
-            context = copy_context()
+        if context:
+            interruptable = context.get(_is_interruptable, False)
+        else:
+            interruptable = _is_interruptable.get()
         webloopScheduleCallback(
             create_once_callable(run_handle),
-            context.get(_is_interruptable),
+            interruptable,
             delay * 1000,
         )
         return h
