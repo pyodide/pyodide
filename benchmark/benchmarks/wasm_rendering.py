@@ -5,7 +5,8 @@
 # pythran export wasm_rendering()
 import matplotlib
 import numpy as np
-matplotlib.use('module://matplotlib.backends.wasm_backend')
+
+matplotlib.use("module://matplotlib.backends.wasm_backend")
 from matplotlib import pyplot as plt  # noqa: E402
 
 

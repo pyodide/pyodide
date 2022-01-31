@@ -22,7 +22,7 @@ def print_entry(name, res):
 
 
 def run_native(hostpython, code):
-    if '# non-native' in code:
+    if "# non-native" in code:
         return 0
     root = Path(__file__).resolve().parents[1]
     output = subprocess.check_output(
@@ -45,8 +45,8 @@ def run_wasm(code, selenium, interrupt_buffer):
             pyodide.setInterruptBuffer(interrupt_buffer)
             """
         )
-    if 'matplotlib' in code:
-        selenium.load_package('matplotlib')
+    if "matplotlib" in code:
+        selenium.load_package("matplotlib")
     selenium.run(code)
     try:
         runtime = float(selenium.logs.split("\n")[-1])
@@ -110,7 +110,7 @@ def get_matplotlib_benchmarks():
         name = filename.stem
         if name in SKIP:
             continue
-        if filename.startswith('canvas') or filename.startswith('wasm'):
+        if filename.startswith("canvas") or filename.startswith("wasm"):
             content = parse_numpy_benchmark(filename)
             content += (
                 "import numpy as np\n"
