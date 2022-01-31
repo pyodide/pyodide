@@ -13,6 +13,7 @@ if IN_BROWSER:
 
 _is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
 
+
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
 
