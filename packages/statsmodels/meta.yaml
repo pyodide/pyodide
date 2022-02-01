@@ -4,7 +4,7 @@ package:
 
 source:
   url: https://github.com/statsmodels/statsmodels/archive/refs/tags/v0.13.1.tar.gz
-  sha256: 4bf899994549079aa91a6ee5e06f4c900b7eba22af6d2f27a26ab58dd4a7ccac
+  sha256: 428a60ade157172dc53a9987b134acc721dc15dcdf26ffd93af128157c0f8055
   patches:
     - patches/fix-scipy-blas-cythonize.patch
 
