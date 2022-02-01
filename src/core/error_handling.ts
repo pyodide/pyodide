@@ -1,5 +1,5 @@
 import ErrorStackParser from "error-stack-parser";
-import { Module } from "./module.js";
+import { Module, API } from "./module.js";
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
@@ -16,7 +16,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   if (funcName.startsWith("Object.")) {
     funcName = funcName.slice("Object.".length);
   }
-  if (funcName in Module.public_api && funcName !== "PythonError") {
+  if (funcName in API.public_api && funcName !== "PythonError") {
     frame.functionName = funcName;
     return false;
   }
@@ -42,7 +42,7 @@ Module.handle_js_error = function (e: any) {
     return;
   }
   let restored_error = false;
-  if (e instanceof Module.PythonError) {
+  if (e instanceof API.PythonError) {
     // Try to restore the original Python exception.
     restored_error = Module._restore_sys_last_exception(e.__error_address);
   }
@@ -114,7 +114,7 @@ export class PythonError extends Error {
     this.__error_address = error_address;
   }
 }
-Module.PythonError = PythonError;
+API.PythonError = PythonError;
 // A special marker. If we call a CPython API from an EM_JS function and the
 // CPython API sets an error, we might want to return an error status back to
 // C keeping the current Python error flag. This signals to the EM_JS wrappers
@@ -122,7 +122,7 @@ Module.PythonError = PythonError;
 // appropriate error value (either NULL or -1).
 class _PropagatePythonError extends Error {
   constructor() {
-    Module.fail_test = true;
+    API.fail_test = true;
     super(
       "If you are seeing this message, an internal Pyodide error has " +
         "occurred. Please report it to the Pyodide maintainers."

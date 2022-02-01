@@ -1176,7 +1176,7 @@ EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
     for (let px of proxies) {
       Module.pyproxy_destroy(px, msg);
     }
-    if (Module.isPyProxy(result)) {
+    if (API.isPyProxy(result)) {
       Module.pyproxy_destroy(result, msg);
     }
   });

@@ -83,7 +83,7 @@ def run_in_pyodide(
                         eval_code.callKwargs(
                             {{
                                 source : atob({encoded}.join("")),
-                                globals : pyodide._module.globals,
+                                globals : pyodide._api.globals,
                                 filename : {filename!r}
                             }}
                         );

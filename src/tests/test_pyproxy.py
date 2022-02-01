@@ -777,8 +777,8 @@ def test_fatal_error(selenium_standalone):
     selenium_standalone.run_js(
         """
         let fatal_error = false;
-        let old_fatal_error = pyodide._module.fatal_error;
-        pyodide._module.fatal_error = (e) => {
+        let old_fatal_error = pyodide._api.fatal_error;
+        pyodide._api.fatal_error = (e) => {
             fatal_error = true;
             throw e;
         }
@@ -838,7 +838,7 @@ def test_fatal_error(selenium_standalone):
             b._view_ptr = 1e10;
             expect_fatal(() => b.release());
         } finally {
-            pyodide._module.fatal_error = old_fatal_error;
+            pyodide._api.fatal_error = old_fatal_error;
         }
         """
     )

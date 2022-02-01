@@ -35,7 +35,7 @@ else:
     WHEEL_BASE = Path(tempfile.mkdtemp())
 
 if IN_BROWSER:
-    BUILTIN_PACKAGES = pyodide_js._module.packages.to_py()
+    BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
 else:
     BUILTIN_PACKAGES = {}
 
