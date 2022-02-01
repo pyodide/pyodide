@@ -5,6 +5,23 @@ on:
       version:
         description: "Version of the docker image to build."
         required: true
+      chrome_version:
+        description: "Version of the chrome browser."
+        required: false
+        default: "google-chrome-stable"
+      chrome_driver_version:
+        description: "Version of the chrome driver."
+        required: false
+        default: ""
+      firefox_version:
+        description: "Version of the firefox browser."
+        required: false
+        default: "latest"
+      firefox_driver_version:
+        description: "Version of the firefox geckodriver."
+        required: false
+        default: "0.30.0"
+
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide-env
@@ -33,6 +50,11 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            CHROME_DRIVER_VERSION=${{ github.event.inputs.chrome_driver_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
+            GECKODRIVER_VERSION=${{ github.event.inputs.firefox_driver_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:

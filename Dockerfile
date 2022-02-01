@@ -27,12 +27,12 @@ ARG GECKODRIVER_VERSION="0.30.0"
 #============================================
 # Firefox & gekcodriver
 #============================================
-# can specify Firefox versions by FIREFOX_VERSION;
+# can specify Firefox version by FIREFOX_VERSION;
 #  e.g. latest
 #       95.0b2
 #       96.0
 #
-# can specify Chrome webdriver versions by GECKODRIVER_VERSION;
+# can specify Firefox geckodriver version by GECKODRIVER_VERSION;
 #============================================
 
 RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" ] || [ $FIREFOX_VERSION = "devedition-latest" ] || [ $FIREFOX_VERSION = "esr-latest" ]; \
@@ -58,14 +58,14 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
 #============================================
 # Google Chrome & Chrome webdriver
 #============================================
-# can specify Chrome versions by CHROME_VERSION;
+# can specify Chrome version by CHROME_VERSION;
 #  e.g. google-chrome-stable=53.0.2785.101-1
 #       google-chrome-beta=53.0.2785.92-1
 #       google-chrome-unstable=54.0.2840.14-1
 #       latest (equivalent to google-chrome-stable)
 #       google-chrome-beta  (pull latest beta)
 #
-# can specify Chrome webdriver versions by CHROME_DRIVER_VERSION;
+# can specify Chrome webdriver version by CHROME_DRIVER_VERSION;
 # Latest released version will be used by default
 #============================================
 
