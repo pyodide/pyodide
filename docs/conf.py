@@ -164,7 +164,9 @@ if IN_SPHINX:
 
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
-    shutil.copy("../src/core/keyboard_interrupt.ts", "../src/js/keyboard_interrupt.gen.ts")
+    shutil.copy(
+        "../src/core/keyboard_interrupt.ts", "../src/js/keyboard_interrupt.gen.ts"
+    )
     js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
 
     def remove_pyproxy_gen_ts():
