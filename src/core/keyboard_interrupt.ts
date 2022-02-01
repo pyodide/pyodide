@@ -55,7 +55,8 @@ function scheduleWebloopHandle(handle: any, delay: number) {
     // scheduled callback (in webloopWrapCallback)
     API.interrupt_check_disabled = true;
     try {
-      if (handle.cancelled()) {
+      if (handle.$$.ptr === null) {
+        // was cancelled
         return;
       }
       handle._run();
@@ -66,6 +67,7 @@ function scheduleWebloopHandle(handle: any, delay: number) {
       API.interrupt_check_disabled = false;
     }
   }, delay);
+  handle._destroy_js_handle = () => handle.destroy();
 }
 API.scheduleWebloopHandle = scheduleWebloopHandle;
 

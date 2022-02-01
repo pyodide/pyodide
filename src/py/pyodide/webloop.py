@@ -43,6 +43,7 @@ class WebHandle(Handle):
             return
         # We need to do a little extra cleanup with the callback when we are
         # cancelled.
+        self._destroy_js_handle()
         self._callback.destroy()
         super().cancel()
 
