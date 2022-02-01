@@ -3,7 +3,7 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: sihadan/pyodide-env:20  # FIXME: revert before merge
+    - image: sihadan/pyodide-env:20 # FIXME: revert before merge
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
