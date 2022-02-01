@@ -339,6 +339,29 @@ def test_keyboard_interrupt(selenium):
 def test_async_keyboard_interrupt(selenium):
     # Ideally we could add some tests with SharedArrayBuffer that mix sync and
     # async calls. But that would take a fair amount of extra work.
+
+    assert selenium.run_js(
+        """
+        interruptBuffer = new Uint8Array(new ArrayBuffer(1));
+        pyodide.setInterruptBuffer(interruptBuffer);
+        pyodide.runPythonAsync(`
+            import asyncio
+            from pyodide.webloop import _is_interruptable
+            _is_interruptable.set(True)
+            caught = False
+            try:
+                await asyncio.sleep(0.3)
+            except KeyboardInterrupt:
+                caught = True
+        `);
+        await sleep(10);
+        interruptBuffer[0] = 2
+        await sleep(500);
+        return pyodide.globals.get("caught");
+        """
+    )
+
+def test_async_keyboard_interrupt2(selenium):
     x = selenium.run_js(
         """
         interruptBuffer = new Uint8Array(new ArrayBuffer(1));
@@ -348,8 +371,7 @@ def test_async_keyboard_interrupt(selenium):
             pyodide.runPythonAsync(`
                 import asyncio
                 from pyodide.webloop import _is_interruptable
-                if ${n} % 2:
-                    _is_interruptable.set(True)
+                _is_interruptable.set(bool(${n} % 2))
                 await asyncio.sleep(${(n+5)/10})
             `).then(res => {
                 result[n] = "completed";
@@ -377,6 +399,34 @@ def test_async_keyboard_interrupt(selenium):
         "8": "completed",
         "9": "cancelled",
     }
+
+
+
+def test_async_signal_handler(selenium):
+    assert selenium.run_js(
+        """
+        interruptBuffer = new Uint8Array(new ArrayBuffer(1));
+        pyodide.setInterruptBuffer(interruptBuffer);
+        pyodide.runPythonAsync(`
+            import asyncio
+            from pyodide.webloop import _is_interruptable
+            _is_interruptable.set(True)
+            import signal
+            interrupt_occurred = False
+            def signal_handler(*args):
+                global interrupt_occurred
+                interrupt_occurred = True
+            signal.signal(signal.SIGINT, signal_handler)
+            await asyncio.sleep(0.3)
+            finished = True
+        `);
+        await sleep(10);
+        interruptBuffer[0] = 2
+        await sleep(500);
+        pyodide.runPython("signal.signal(signal.SIGINT, signal.default_int_handler);")
+        return pyodide.globals.get("interrupt_occurred") && pyodide.globals.get("finished");
+        """
+    )
 
 
 def test_run_python_async_toplevel_await(selenium):
