@@ -11,7 +11,8 @@ _Py_IDENTIFIER(set_interrupt);
 
 /**
  * Calls WebLoop.handle_interrupt.
- * WebLoop.handle_interrupt raises KeyboardInterrupt into all Tasks that are marked as interruptable.
+ * WebLoop.handle_interrupt raises KeyboardInterrupt into all Tasks that are
+ * marked as interruptable.
  */
 void
 webloop_set_interrupt(void)
@@ -43,9 +44,11 @@ finally:
  * interrupts on the current thread and also on all tasks that are marked as
  * interruptable.
  */
-void pyodide_check_interrupt(){
+void
+pyodide_check_interrupt()
+{
   int interrupt_buffer = EM_ASM_INT({
-    if(API.interrupt_check_disabled){
+    if (API.interrupt_check_disabled) {
       return 0;
     }
     let result = API.interrupt_buffer[0];

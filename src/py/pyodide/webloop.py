@@ -7,7 +7,7 @@ from asyncio import Task, Handle
 from contextvars import Context, ContextVar, copy_context
 from typing import Callable, Dict
 
-from ._core import create_once_callable, IN_BROWSER
+from ._core import IN_BROWSER
 
 if IN_BROWSER:
     from pyodide_js._api import scheduleWebloopHandle, wrapWebloopCallback

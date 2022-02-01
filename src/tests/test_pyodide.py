@@ -361,6 +361,7 @@ def test_async_keyboard_interrupt(selenium):
         """
     )
 
+
 def test_async_keyboard_interrupt2(selenium):
     x = selenium.run_js(
         """
@@ -399,7 +400,6 @@ def test_async_keyboard_interrupt2(selenium):
         "8": "completed",
         "9": "cancelled",
     }
-
 
 
 def test_async_signal_handler(selenium):
