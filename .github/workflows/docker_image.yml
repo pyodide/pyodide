@@ -81,5 +81,10 @@ jobs:
           push: true
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            CHROME_DRIVER_VERSION=${{ github.event.inputs.chrome_driver_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
+            GECKODRIVER_VERSION=${{ github.event.inputs.firefox_driver_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
