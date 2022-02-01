@@ -7,6 +7,7 @@ import {
   Py2JsResult,
   TypedArray,
 } from "./pyproxy.gen";
+import { setInterruptBuffer, checkInterrupt } from "./keyboard_interrupt.gen";
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
 
@@ -308,102 +309,6 @@ API.saveState = () => API.pyodide_py._state.save_state();
  * @private
  */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
-
-/**
- * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
- * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
- * shared with the main browser thread (or another worker). To request an
- * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
- * constant for SIGINT).
- */
-export function setInterruptBuffer(interrupt_buffer: TypedArray) {
-  API.interrupt_buffer = interrupt_buffer;
-  let status = !!interrupt_buffer;
-  Module._set_pyodide_callback(status);
-}
-
-let blockedInterrupts = false;
-/**
- * Context manager to catch SIGINT and.
- *
- * It's important that we don't run any Python code until after swapping the
- * signal handler because sometimes when this runs there will be a
- * KeyboardInterrupt waiting.
- * @private
- */
-function* blockKeyboardInterrupts(): Generator<undefined> {
-  if (blockedInterrupts) {
-    // Nothing to do.
-    yield;
-    return;
-  }
-  const signal = API.signal;
-  blockedInterrupts = true;
-  // This is the private "_signal" module which is implemented in C.
-  // The public "signal" module has a bit of Python wrapper code which will get
-  // interrupted if there is a waiting KeyboardInterrupt.
-  const old_handler = signal.signal(signal.SIGINT, (sig: number, frame: any) => {
-    try {
-      old_handler(sig, frame);
-    } catch (e) {}
-  });
-  try {
-    yield;
-  } finally {
-    signal.signal(signal.SIGINT, old_handler);
-    blockedInterrupts = false;
-    if (isPyProxy(old_handler)) {
-      old_handler.destroy();
-    }
-  }
-}
-
-/**
- * This is a wrapper around setTimeout that runs `possiblyDelaySignals` first.
- *
- * This is used by webloop to schedule callbacks which are protected from
- * keyboard interrupts.
- *
- * @param callback
- * @param interruptable
- * @param delay
- */
-function webloopScheduleHandle(
-  handle : any,
-  delay: number
-) {
-  handle = handle.copy();
-  setTimeout(() => {
-    // Apparently this is how we do context managers in Javascript.
-    for (const _ of blockKeyboardInterrupts()) {
-      try {
-        if(handle.cancelled()){
-          return;
-        }
-        handle._run();
-      } finally {
-        handle.destroy();
-      }
-    }
-  }, delay);
-}
-API.webloopScheduleHandle = webloopScheduleHandle;
-
-/**
- * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
- * via the interrupt buffer.
- *
- * This can be used to enable keyboard interrupts during execution of JavaScript
- * code, just as ``PyErr_CheckSignals`` is used to enable keyboard interrupts
- * during execution of C code.
- */
-export function checkInterrupt() {
-  if (API.interrupt_buffer[0] === 2) {
-    API.interrupt_buffer[0] = 0;
-    Module._PyErr_SetInterrupt();
-    API.runPython("");
-  }
-}
 
 export type PyodideInterface = {
   globals: typeof globals;

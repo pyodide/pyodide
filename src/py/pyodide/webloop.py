@@ -3,16 +3,49 @@ import sys
 import time
 import traceback
 
-from asyncio.tasks import Task
+from asyncio import Task, Handle
 from contextvars import Context, ContextVar, copy_context
 from typing import Callable, Dict
 
 from ._core import create_once_callable, IN_BROWSER
 
 if IN_BROWSER:
-    from pyodide_js._api import webloopScheduleHandle
+    from pyodide_js._api import scheduleWebloopHandle, wrapWebloopCallback
 
 _is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
+_must_interrupt: ContextVar[bool] = ContextVar("_must_interrupt", default=False)
+_is_interruptable.set(False)
+
+
+def _set_must_interrupt():
+    _must_interrupt.set(True)
+
+
+class WebHandle(Handle):
+    """A subclass of Handle that deals with KeyboardInterrupts.
+
+    webloopWrapCallback will check the "_must_interrupt" context variable, and
+    if it is set, it raises a KeyboardInterrupt into the callback.
+
+    webloopWrapCallback cannot be implemented in Python because it requires a
+    critical section for KeyboardInterrupt and direct manipulation of
+    KeyboardInterrupt via the C API.
+    """
+
+    def __init__(self, callback, args, loop, context=None):
+        if not context:
+            context = copy_context()
+        callback = wrapWebloopCallback(callback, context)
+        super().__init__(callback, args, loop, context)
+
+    def cancel(self):
+        if self.cancelled():
+            return
+        # We need to do a little extra cleanup with the callback when we are
+        # cancelled.
+        self._callback.destroy()
+        super().cancel()
+
 
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
@@ -40,7 +73,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._current_handle = None
         self._tasks: Dict[int, asyncio.tasks.Task] = {}
 
-    def handle_interrupt(self):
+    def set_interrupt(self):
         """This is invoked from keyboard_interrupt.c when a keyboard interrupt
         is detected.
 
@@ -49,7 +82,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         for task in self._tasks.values():
             if task._context.get(_is_interruptable, False):
-                task.cancel()
+                task._context.run(_set_must_interrupt)
 
     def get_debug(self):
         return False
@@ -149,13 +182,13 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Any positional arguments after the callback will be passed to
         the callback when it is called.
-
-        This uses `setTimeout(callback, delay)`
         """
         if delay < 0:
             raise ValueError("Can't schedule in the past")
-        h = asyncio.Handle(callback, args, self, context=context)
-        webloopScheduleHandle(
+        h = WebHandle(callback, args, self, context=context)
+        # This uses `setTimeout(callback, delay)`, with extra logic for keyboard
+        # interrupts. Can't be implemented in Python.
+        scheduleWebloopHandle(
             h,
             delay * 1000,
         )

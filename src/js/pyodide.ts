@@ -5,7 +5,8 @@ import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, PyodideInterface } from "./api.js";
-import "./error_handling.gen.js";
+import "./error_handling.gen";
+import "./keyboard_interrupt.gen";
 
 import { PyProxy, PyProxyDict, Py2JsResult } from "./pyproxy.gen";
 
