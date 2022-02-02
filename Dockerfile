@@ -8,8 +8,7 @@ RUN apt-get update \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 \
-  && rm -rf /var/lib/apt/lists/*
+        gnupg2 libdbus-glib-1-2
 
 ADD docs/requirements-doc.txt requirements.txt /
 
@@ -28,7 +27,7 @@ ENV GECKODRIVER_VERSION="0.30.0"
 #============================================
 # can specify Firefox version by FIREFOX_VERSION;
 #  e.g. latest
-#       95.0b2
+#       95.0
 #       96.0
 #
 # can specify Firefox geckodriver version by GECKODRIVER_VERSION;
@@ -59,29 +58,28 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
 #============================================
 # can specify Chrome version by CHROME_VERSION;
 #  e.g. latest
-#       98.0.4758.9-1
-#
-# chrome webdriver will be automatically selected from the chrome version
+#       96
+#       97
 #============================================
 
-RUN if [ $CHROME_VERSION = "latest" ];
-  then CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
-  else CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_$CHROME_VERSION_amd64.deb" \
+RUN if [ $CHROME_VERSION = "latest" ]; \
+  then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"); \
+  else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}"); \
   fi \
-  && wget -q -O /tmp/google-chrome.deb $CHROME_DOWNLOAD_URL \
+  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
+  && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
   && apt install -qqy /tmp/google-chrome.deb \
   && rm -f /tmp/google-chrome.deb \
-  && CHROME_MAJOR_VERSION=$(google-chrome --version | sed -E "s/.* ([0-9]+)(\.[0-9]+){3}.*/\1/") \
-  && CHROME_DRIVER_VERSION=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}"); \
-  && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \
+  && rm -rf /var/lib/apt/lists/* \
+  && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_VERSION_FULL/chromedriver_linux64.zip \
   && rm -rf /opt/selenium/chromedriver \
   && unzip /tmp/chromedriver_linux64.zip -d /opt/selenium \
   && rm /tmp/chromedriver_linux64.zip \
-  && mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION \
-  && chmod 755 /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION \
-  && ln -fs /opt/selenium/chromedriver-$CHROME_DRIVER_VERSION /usr/local/bin/chromedriver \
+  && mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CHROME_VERSION_FULL \
+  && chmod 755 /opt/selenium/chromedriver-$CHROME_VERSION_FULL \
+  && ln -fs /opt/selenium/chromedriver-$CHROME_VERSION_FULL /usr/local/bin/chromedriver \
   && echo "Using Chrome version: $(google-chrome --version)" \
-  && echo "Using Chromedriver version: "$CHROME_DRIVER_VERSION
+  && echo "Using Chromedriver version: "$CHROME_VERSION_FULL
 
 COPY --from=node-image /usr/local/bin/node /usr/local/bin/
 COPY --from=node-image /usr/local/lib/node_modules /usr/local/lib/node_modules

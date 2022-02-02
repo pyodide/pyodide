@@ -6,11 +6,11 @@ on:
         description: "Version of the docker image to build."
         required: true
       chrome_version:
-        description: "Version of the chrome browser (e.g. 98.0.4758.9-1)"
+        description: "Version of the chrome browser (e.g. 97)."
         required: false
         default: "latest"
       firefox_version:
-        description: "Version of the firefox browser. (e.g. 96.0)"
+        description: "Version of the firefox browser (e.g. 96.0)."
         required: false
         default: "latest"
 
