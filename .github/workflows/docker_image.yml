@@ -17,8 +17,6 @@ on:
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide-env
-  CHROME_VERSION: ${{ github.event.inputs.chrome_version }}
-  FIREFOX_VERSION: ${{ github.event.inputs.firefox_version }}
 jobs:
   build_docker:
     runs-on: ubuntu-latest
@@ -44,6 +42,9 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:
@@ -70,5 +71,8 @@ jobs:
           push: true
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}

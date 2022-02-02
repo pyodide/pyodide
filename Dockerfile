@@ -17,10 +17,10 @@ RUN pip3 --no-cache-dir install -r /requirements.txt \
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
-ENV CHROME_VERSION=${CHROME_VERSION:-"latest"}
-ENV FIREFOX_VERSION=${FIREFOX_VERSION:-"latest"}
+ARG CHROME_VERSION="latest"
+ARG FIREFOX_VERSION="latest"
 # Note: geckodriver version needs to be updated manually
-ENV GECKODRIVER_VERSION="0.30.0"
+ARG GECKODRIVER_VERSION="0.30.0"
 
 #============================================
 # Firefox & gekcodriver
