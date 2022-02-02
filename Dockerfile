@@ -18,7 +18,7 @@ RUN pip3 --no-cache-dir install -r /requirements.txt \
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
-ENV CHROME_VERSION=${CHROME_VERSION:-"google-chrome-stable"}
+ENV CHROME_VERSION=${CHROME_VERSION:-"latest"}
 ENV FIREFOX_VERSION=${FIREFOX_VERSION:-"latest"}
 # Note: geckodriver version needs to be updated manually
 ENV GECKODRIVER_VERSION="0.30.0"
@@ -58,23 +58,19 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
 # Google Chrome & Chrome webdriver
 #============================================
 # can specify Chrome version by CHROME_VERSION;
-#  e.g. google-chrome-stable=53.0.2785.101-1
-#       google-chrome-beta=53.0.2785.92-1
-#       google-chrome-unstable=54.0.2840.14-1
-#       latest (equivalent to google-chrome-stable)
-#       google-chrome-beta  (pull latest beta)
+#  e.g. latest
+#       98.0.4758.9-1
 #
-# can specify Chrome webdriver version by CHROME_DRIVER_VERSION;
-# Latest released version will be used by default
+# chrome webdriver will be automatically selected from the chrome version
 #============================================
 
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-  && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list \
-  && apt-get update -qqy \
-  && apt-get -qqy install \
-    ${CHROME_VERSION:-google-chrome-stable} \
-  && rm /etc/apt/sources.list.d/google-chrome.list \
-  && rm -rf /var/lib/apt/lists/* /var/cache/apt/* \
+RUN if [ $CHROME_VERSION = "latest" ];
+  then CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
+  else CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_$CHROME_VERSION_amd64.deb" \
+  fi \
+  && wget -q -O /tmp/google-chrome.deb $CHROME_DOWNLOAD_URL \
+  && apt install -qqy /tmp/google-chrome.deb \
+  && rm -f /tmp/google-chrome.deb \
   && CHROME_MAJOR_VERSION=$(google-chrome --version | sed -E "s/.* ([0-9]+)(\.[0-9]+){3}.*/\1/") \
   && CHROME_DRIVER_VERSION=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_MAJOR_VERSION}"); \
   && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip \

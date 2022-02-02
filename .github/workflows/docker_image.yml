@@ -6,21 +6,13 @@ on:
         description: "Version of the docker image to build."
         required: true
       chrome_version:
-        description: "Version of the chrome browser."
-        required: false
-        default: "google-chrome-stable"
-      chrome_driver_version:
-        description: "Version of the chrome driver."
-        required: false
-        default: ""
-      firefox_version:
-        description: "Version of the firefox browser."
+        description: "Version of the chrome browser (e.g. 98.0.4758.9-1)"
         required: false
         default: "latest"
-      firefox_driver_version:
-        description: "Version of the firefox geckodriver."
+      firefox_version:
+        description: "Version of the firefox browser. (e.g. 96.0)"
         required: false
-        default: "0.30.0"
+        default: "latest"
 
 env:
   GHCR_REGISTRY: ghcr.io
@@ -52,9 +44,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             CHROME_VERSION=${{ github.event.inputs.chrome_version }}
-            CHROME_DRIVER_VERSION=${{ github.event.inputs.chrome_driver_version }}
             FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
-            GECKODRIVER_VERSION=${{ github.event.inputs.firefox_driver_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:
@@ -83,8 +73,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             CHROME_VERSION=${{ github.event.inputs.chrome_version }}
-            CHROME_DRIVER_VERSION=${{ github.event.inputs.chrome_driver_version }}
             FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
-            GECKODRIVER_VERSION=${{ github.event.inputs.firefox_driver_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
