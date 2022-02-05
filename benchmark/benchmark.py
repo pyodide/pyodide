@@ -144,7 +144,7 @@ def main(hostpython):
         ]
         for name, cls in browser_cls:
             t0 = time()
-            selenium_backends[name] = cls(port)
+            selenium_backends[name] = cls(port, script_timeout=600)
             b[name] = time() - t0
             # pre-load numpy for the selenium instance used in benchmarks
             selenium_backends[name].load_package("numpy")
