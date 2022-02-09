@@ -3,7 +3,7 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:19
+    - image: sihadan/pyodide-env-test:20-chrome97-firefox96 # Needs to be updated after #2152
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
