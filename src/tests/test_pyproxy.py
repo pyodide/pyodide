@@ -830,6 +830,10 @@ def test_fatal_error(selenium_standalone):
             expect_fatal(() => t.toString());
             expect_fatal(() => Array.from(t));
             t.destroy();
+            /*
+            // FIXME: Test `memory access out of bounds` error.
+            //        Testing this causes trouble on Chrome 97.0.4692.99 / ChromeDriver 97.0.4692.71.
+            //        (See: https://github.com/pyodide/pyodide/pull/2152)
             a = pyodide.runPython(`
                 from array import array
                 array("I", [1,2,3,4])
@@ -837,6 +841,7 @@ def test_fatal_error(selenium_standalone):
             b = a.getBuffer();
             b._view_ptr = 1e10;
             expect_fatal(() => b.release());
+            */
         } finally {
             pyodide._api.fatal_error = old_fatal_error;
         }

@@ -5,6 +5,15 @@ on:
       version:
         description: "Version of the docker image to build."
         required: true
+      chrome_version:
+        description: "Version of the chrome browser (e.g. 97, 96)."
+        required: false
+        default: "latest"
+      firefox_version:
+        description: "Version of the firefox browser (e.g. 96, 95)."
+        required: false
+        default: "latest"
+
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide-env
@@ -33,6 +42,9 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:
@@ -59,5 +71,8 @@ jobs:
           push: true
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
