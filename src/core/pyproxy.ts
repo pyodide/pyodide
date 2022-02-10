@@ -14,7 +14,7 @@
  * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
-import { Module } from "./module.js";
+import { Module, API } from "./module.js";
 
 // pyodide-skip
 
@@ -50,7 +50,7 @@ declare function DEREF_U32(ptr: number, offset: number): number;
 export function isPyProxy(jsobj: any): jsobj is PyProxy {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
 }
-Module.isPyProxy = isPyProxy;
+API.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
@@ -61,7 +61,7 @@ if (globalThis.FinalizationRegistry) {
     } catch (e) {
       // I'm not really sure what happens if an error occurs inside of a
       // finalizer...
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
   });
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
@@ -73,7 +73,7 @@ if (globalThis.FinalizationRegistry) {
   //     Module._PyBuffer_Release(ptr);
   //     Module._PyMem_Free(ptr);
   //   } catch (e) {
-  //     Module.fatal_error(e);
+  //     API.fatal_error(e);
   //   }
   // });
 } else {
@@ -267,7 +267,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
     Module._Py_DecRef(ptrobj);
     trace_pyproxy_dealloc(proxy);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   }
 };
 
@@ -296,7 +296,7 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
       num_kwargs
     );
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.hiwire.decref(idargs);
     Module.hiwire.decref(idkwnames);
@@ -357,7 +357,7 @@ export class PyProxyClass {
     try {
       jsref_repr = Module.__pyproxy_repr(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (jsref_repr === 0) {
       Module._pythonexc2js();
@@ -448,7 +448,7 @@ export class PyProxyClass {
         dict_converter_id
       );
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(proxies_id);
       Module.hiwire.decref(dict_converter_id);
@@ -540,7 +540,7 @@ export class PyProxyLengthMethods {
     try {
       length = Module._PyObject_Size(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (length === -1) {
       Module._pythonexc2js();
@@ -569,7 +569,7 @@ export class PyProxyGetItemMethods {
     try {
       idresult = Module.__pyproxy_getitem(ptrobj, idkey);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
     }
@@ -604,7 +604,7 @@ export class PyProxySetItemMethods {
     try {
       errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
       Module.hiwire.decref(idval);
@@ -627,7 +627,7 @@ export class PyProxySetItemMethods {
     try {
       errcode = Module.__pyproxy_delitem(ptrobj, idkey);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
     }
@@ -657,7 +657,7 @@ export class PyProxyContainsMethods {
     try {
       result = Module.__pyproxy_contains(ptrobj, idkey);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
     }
@@ -691,7 +691,7 @@ function* iter_helper(iterptr: number, token: {}): Generator<Py2JsResult> {
       yield Module.hiwire.pop_value(item);
     }
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
     Module._Py_DecRef(iterptr);
@@ -725,7 +725,7 @@ export class PyProxyIterableMethods {
     try {
       iterptr = Module._PyObject_GetIter(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (iterptr === 0) {
       Module._pythonexc2js();
@@ -777,7 +777,7 @@ export class PyProxyIteratorMethods {
         idresult = Module.__pyproxyGen_FetchStopIterationValue();
       }
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(idarg);
     }
@@ -800,7 +800,7 @@ function python_hasattr(jsobj: PyProxyClass, jskey: any) {
   try {
     result = Module.__pyproxy_hasattr(ptrobj, idkey);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.hiwire.decref(idkey);
   }
@@ -821,7 +821,7 @@ function python_getattr(jsobj: PyProxyClass, jskey: any) {
   try {
     idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.hiwire.decref(idkey);
   }
@@ -841,7 +841,7 @@ function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
   try {
     errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.hiwire.decref(idkey);
     Module.hiwire.decref(idval);
@@ -858,7 +858,7 @@ function python_delattr(jsobj: PyProxyClass, jskey: any) {
   try {
     errcode = Module.__pyproxy_delattr(ptrobj, idkey);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.hiwire.decref(idkey);
   }
@@ -947,7 +947,7 @@ let PyProxyHandlers = {
     try {
       idresult = Module.__pyproxy_ownKeys(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
@@ -996,7 +996,7 @@ export class PyProxyAwaitableMethods {
         reject_handle_id
       );
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
       Module.hiwire.decref(reject_handle_id);
       Module.hiwire.decref(resolve_handle_id);
@@ -1183,7 +1183,7 @@ export class PyProxyBufferMethods {
     try {
       errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -1277,7 +1277,7 @@ export class PyProxyBufferMethods {
           Module._PyBuffer_Release(view_ptr);
           Module._PyMem_Free(view_ptr);
         } catch (e) {
-          Module.fatal_error(e);
+          API.fatal_error(e);
         }
       }
     }
@@ -1465,7 +1465,7 @@ export class PyBuffer {
       Module._PyBuffer_Release(this._view_ptr);
       Module._PyMem_Free(this._view_ptr);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     this._released = true;
     this.data = null;

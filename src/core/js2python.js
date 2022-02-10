@@ -1,7 +1,7 @@
 JS_FILE(js2python_init, () => {
   0, 0; /* Magic, see include_js_file.h */
   let PropagateError = Module._PropagatePythonError;
-  function __js2python_string(value) {
+  function js2python_string(value) {
     // The general idea here is to allocate a Python string and then
     // have JavaScript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
@@ -41,7 +41,7 @@ JS_FILE(js2python_init, () => {
     return result;
   }
 
-  function __js2python_bigint(value) {
+  function js2python_bigint(value) {
     let value_orig = value;
     let length = 0;
     if (value < 0) {
@@ -78,18 +78,27 @@ JS_FILE(js2python_init, () => {
    * we throw a PropagateError to propogate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
-  Module._js2python_convertImmutable = function (value) {
-    let result = __js2python_convertImmutableInner(value);
+  function js2python_convertImmutable(value) {
+    let result = js2python_convertImmutableInner(value);
     if (result === 0) {
       throw new PropagateError();
     }
     return result;
-  };
+  }
+  // js2python_convertImmutable is used from js2python.c so we need to add it
+  // to Module.
+  Module.js2python_convertImmutable = js2python_convertImmutable;
 
-  function __js2python_convertImmutableInner(value) {
+  /**
+   * Returns a pointer to a Python object, 0, or undefined.
+   *
+   * If we return 0 it means we tried to convert but an error occurred, if we
+   * return undefined, no conversion was attempted.
+   */
+  function js2python_convertImmutableInner(value) {
     let type = typeof value;
     if (type === "string") {
-      return __js2python_string(value);
+      return js2python_string(value);
     } else if (type === "number") {
       if (Number.isSafeInteger(value)) {
         return _PyLong_FromDouble(value);
@@ -97,20 +106,20 @@ JS_FILE(js2python_init, () => {
         return _PyFloat_FromDouble(value);
       }
     } else if (type === "bigint") {
-      return __js2python_bigint(value);
+      return js2python_bigint(value);
     } else if (value === undefined || value === null) {
       return __js2python_none();
     } else if (value === true) {
       return __js2python_true();
     } else if (value === false) {
       return __js2python_false();
-    } else if (Module.isPyProxy(value)) {
+    } else if (API.isPyProxy(value)) {
       return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     return undefined;
   }
 
-  function __js2python_convertList(obj, cache, depth) {
+  function js2python_convertList(obj, context) {
     let list = _PyList_New(obj.length);
     if (list === 0) {
       return 0;
@@ -118,10 +127,10 @@ JS_FILE(js2python_init, () => {
     let entryid = 0;
     let item = 0;
     try {
-      cache.set(obj, list);
+      context.cache.set(obj, list);
       for (let i = 0; i < obj.length; i++) {
         entryid = Module.hiwire.new_value(obj[i]);
-        item = Module.js2python_convert(entryid, cache, depth);
+        item = js2python_convert_with_context(entryid, context);
         // PyList_SetItem steals a reference to item no matter what
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
@@ -142,7 +151,7 @@ JS_FILE(js2python_init, () => {
     return list;
   }
 
-  function __js2python_convertMap(obj, entries, cache, depth) {
+  function js2python_convertMap(obj, entries, context) {
     let dict = _PyDict_New();
     if (dict === 0) {
       return 0;
@@ -151,9 +160,9 @@ JS_FILE(js2python_init, () => {
     let value_id = 0;
     let value_py = 0;
     try {
-      cache.set(obj, dict);
+      context.cache.set(obj, dict);
       for (let [key_js, value_js] of entries) {
-        key_py = Module._js2python_convertImmutable(key_js);
+        key_py = js2python_convertImmutable(key_js);
         if (key_py === undefined) {
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof key_js;
@@ -162,7 +171,7 @@ JS_FILE(js2python_init, () => {
           );
         }
         value_id = Module.hiwire.new_value(value_js);
-        value_py = Module.js2python_convert(value_id, cache, depth);
+        value_py = js2python_convert_with_context(value_id, context);
 
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
           throw new PropagateError();
@@ -184,16 +193,16 @@ JS_FILE(js2python_init, () => {
     return dict;
   }
 
-  function __js2python_convertSet(obj, cache, depth) {
+  function js2python_convertSet(obj, context) {
     let set = _PySet_New(0);
     if (set === 0) {
       return 0;
     }
     let key_py = 0;
     try {
-      cache.set(obj, set);
+      context.cache.set(obj, set);
       for (let key_js of obj) {
-        key_py = Module._js2python_convertImmutable(key_js);
+        key_py = js2python_convertImmutable(key_js);
         if (key_py === undefined) {
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof key_js;
@@ -234,31 +243,31 @@ JS_FILE(js2python_init, () => {
   /**
    * Convert mutable types: Array, Map, Set, and Objects whose prototype is
    * either null or the default. Anything else is wrapped in a Proxy. This
-   * should only be used on values for which __js2python_convertImmutable
+   * should only be used on values for which js2python_convertImmutable
    * returned `undefined`.
    */
-  function __js2python_convertOther(id, value, cache, depth) {
+  function js2python_convertOther(id, value, context) {
     let toStringTag = Object.prototype.toString.call(value);
     if (
       Array.isArray(value) ||
       value === "[object HTMLCollection]" ||
       value === "[object NodeList]"
     ) {
-      return __js2python_convertList(value, cache, depth);
+      return js2python_convertList(value, context);
     }
     if (toStringTag === "[object Map]" || value instanceof Map) {
       checkBoolIntCollision(value, "Map");
-      return __js2python_convertMap(value, value.entries(), cache, depth);
+      return js2python_convertMap(value, value.entries(), context);
     }
     if (toStringTag === "[object Set]" || value instanceof Set) {
       checkBoolIntCollision(value, "Set");
-      return __js2python_convertSet(value, cache, depth);
+      return js2python_convertSet(value, context);
     }
     if (
       toStringTag === "[object Object]" &&
       (value.constructor === undefined || value.constructor.name === "Object")
     ) {
-      return __js2python_convertMap(value, Object.entries(value), cache, depth);
+      return js2python_convertMap(value, Object.entries(value), context);
     }
     if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
@@ -273,22 +282,38 @@ JS_FILE(js2python_init, () => {
   }
 
   /**
-   * Convert a JavaScript object to Python to a given depth. The `cache`
-   * argument should be a new empty map (it is needed for recursive calls).
+   * Convert a JavaScript object to Python to a given depth.
    */
-  Module.js2python_convert = function (id, cache, depth) {
+  function js2python_convert_with_context(id, context) {
     let value = Module.hiwire.get_value(id);
-    let result = Module._js2python_convertImmutable(value);
+    let result;
+    result = js2python_convertImmutable(value);
     if (result !== undefined) {
       return result;
     }
-    if (depth === 0) {
+    if (context.depth === 0) {
       return _JsProxy_create(id);
     }
-    result = cache.get(value);
+    result = context.cache.get(value);
     if (result !== undefined) {
       return result;
     }
-    return __js2python_convertOther(id, value, cache, depth - 1);
-  };
+    context.depth--;
+    result = js2python_convertOther(id, value, context);
+    context.depth++;
+    return result;
+  }
+
+  /**
+   * Convert a JavaScript object to Python to a given depth.
+   */
+  function js2python_convert(id, depth) {
+    let context = {
+      cache: new Map(),
+      depth,
+    };
+    return js2python_convert_with_context(id, context);
+  }
+
+  Module.js2python_convert = js2python_convert;
 });

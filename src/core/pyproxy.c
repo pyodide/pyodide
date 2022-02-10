@@ -22,7 +22,7 @@ EM_JS(int, pyproxy_Check, (JsRef x), {
     return false;
   }
   let val = Module.hiwire.get_value(x);
-  return Module.isPyProxy(val);
+  return API.isPyProxy(val);
 });
 
 EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {

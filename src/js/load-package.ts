@@ -1,4 +1,4 @@
-import { Module } from "./module.js";
+import { Module, API } from "./module.js";
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -28,13 +28,13 @@ export async function initializePackageIndex(indexURL: string) {
       "Loaded packages.json does not contain the expected key 'packages'."
     );
   }
-  Module.packages = package_json.packages;
+  API.packages = package_json.packages;
 
   // compute the inverted index for imports to package names
-  Module._import_name_to_package_name = new Map();
-  for (let name of Object.keys(Module.packages)) {
-    for (let import_name of Module.packages[name].imports) {
-      Module._import_name_to_package_name.set(import_name, name);
+  API._import_name_to_package_name = new Map();
+  for (let name of Object.keys(API.packages)) {
+    for (let import_name of API.packages[name].imports) {
+      API._import_name_to_package_name.set(import_name, name);
     }
   }
 }
@@ -71,7 +71,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info = Module.packages[name];
+  const pkg_info = API.packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -144,10 +144,10 @@ async function downloadPackage(
 ): Promise<Uint8Array> {
   let file_name;
   if (channel === DEFAULT_CHANNEL) {
-    if (!(name in Module.packages)) {
+    if (!(name in API.packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
-    file_name = Module.packages[name].file_name;
+    file_name = API.packages[name].file_name;
   } else {
     file_name = channel;
   }
@@ -161,14 +161,19 @@ async function downloadPackage(
  * @private
  */
 async function installPackage(name: string, buffer: Uint8Array) {
-  const pkg = Module.packages[name] || {
-    file_name: ".whl",
-    install_dir: "site",
-    shared_library: false,
-  };
+  let pkg = API.packages[name];
+  if (!pkg) {
+    pkg = {
+      file_name: ".whl",
+      install_dir: "site",
+      shared_library: false,
+      depends: [],
+      imports: [] as string[],
+    };
+  }
   const file_name = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
-  const dynlibs = Module.package_loader.unpack_buffer(
+  const dynlibs = API.package_loader.unpack_buffer(
     file_name,
     buffer,
     pkg.install_dir
@@ -371,7 +376,7 @@ export async function loadPackage(
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
-    Module.importlib.invalidate_caches();
+    API.importlib.invalidate_caches();
   } finally {
     releaseLock();
   }

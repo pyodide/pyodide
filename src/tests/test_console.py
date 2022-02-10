@@ -55,7 +55,7 @@ def test_write_stream():
 
 def test_repr():
     sep = "..."
-    for string in ("x" * 10 ** 5, "x" * (10 ** 5 + 1)):
+    for string in ("x" * 10**5, "x" * (10**5 + 1)):
         for limit in (9, 10, 100, 101):
             assert len(
                 console.repr_shorten(string, limit=limit, separator=sep)
@@ -429,7 +429,7 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 486, in repr_shorten
+              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 478, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]

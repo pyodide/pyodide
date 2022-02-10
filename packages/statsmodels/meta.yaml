@@ -3,8 +3,8 @@ package:
   version: 0.13.1
 
 source:
-  url: https://github.com/statsmodels/statsmodels/archive/refs/tags/v0.13.1.tar.gz
-  sha256: 4bf899994549079aa91a6ee5e06f4c900b7eba22af6d2f27a26ab58dd4a7ccac
+  url: https://files.pythonhosted.org/packages/e7/86/8c95a2f43d8d66837f52fc0a2d9b4ea491e564789ee94d28f642d9d47ebc/statsmodels-0.13.1.tar.gz
+  sha256: 006ec8d896d238873af8178d5475203844f2c391194ed8d42ddac37f5ff77a69
   patches:
     - patches/fix-scipy-blas-cythonize.patch
 

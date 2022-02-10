@@ -50,7 +50,7 @@ tool with `pip install -e pyodide-build`, then run:
 
 `pyodide-build mkpkg <package-name>`
 
-This will generate a `meta.yaml` under `package/<package-name>/` (see
+This will generate a `meta.yaml` under `packages/<package-name>/` (see
 {ref}`meta-yaml-spec`) that should work out of the box for many simple Python
 packages. This tool will populate the latest version, download link and sha256
 hash by querying PyPI. It doesn't currently handle package dependencies, so you
