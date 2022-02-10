@@ -13,7 +13,7 @@ def canvas_image_affine():
         delta = 0.25
         x = y = np.arange(-3.0, 3.0, delta)
         X, Y = np.meshgrid(x, y)
-        Z1 = np.exp(-(X ** 2) - Y ** 2)
+        Z1 = np.exp(-(X**2) - Y**2)
         Z2 = np.exp(-((X - 1) ** 2) - (Y - 1) ** 2)
         Z = Z1 - Z2
         return Z
