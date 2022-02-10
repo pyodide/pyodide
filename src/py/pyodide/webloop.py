@@ -1,15 +1,51 @@
 import asyncio
-import contextvars
 import sys
 import time
 import traceback
-from typing import Callable
 
+from asyncio import Task, Handle
+from contextvars import Context, ContextVar, copy_context
+from typing import Callable, Dict
 
-from ._core import create_once_callable, IN_BROWSER
+from ._core import IN_BROWSER
 
 if IN_BROWSER:
-    from js import setTimeout
+    from pyodide_js._api import scheduleWebloopHandle, wrapWebloopCallback
+
+_is_interruptable: ContextVar[bool] = ContextVar("is_interruptable", default=False)
+_must_interrupt: ContextVar[bool] = ContextVar("_must_interrupt", default=False)
+_is_interruptable.set(False)
+
+
+def _set_must_interrupt():
+    _must_interrupt.set(True)
+
+
+class WebHandle(Handle):
+    """A subclass of Handle that deals with KeyboardInterrupts.
+
+    webloopWrapCallback will check the "_must_interrupt" context variable, and
+    if it is set, it raises a KeyboardInterrupt into the callback.
+
+    webloopWrapCallback cannot be implemented in Python because it requires a
+    critical section for KeyboardInterrupt and direct manipulation of
+    KeyboardInterrupt via the C API.
+    """
+
+    def __init__(self, callback, args, loop, context=None):
+        if not context:
+            context = copy_context()
+        callback = wrapWebloopCallback(callback, context)
+        super().__init__(callback, args, loop, context)
+
+    def cancel(self):
+        if self.cancelled():
+            return
+        # We need to do a little extra cleanup with the callback when we are
+        # cancelled.
+        self._destroy_js_handle()
+        self._callback.destroy()
+        super().cancel()
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -36,6 +72,18 @@ class WebLoop(asyncio.AbstractEventLoop):
         asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
+        self._tasks: Dict[int, asyncio.tasks.Task] = {}
+
+    def set_interrupt(self):
+        """This is invoked from keyboard_interrupt.c when a keyboard interrupt
+        is detected.
+
+        Cancel all interruptable tasks. It is a fatal error if this raises an
+        exception.
+        """
+        for task in self._tasks.values():
+            if task._context.get(_is_interruptable, False):
+                task._context.run(_set_must_interrupt)
 
     def get_debug(self):
         return False
@@ -96,7 +144,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
 
-    def call_soon(self, callback: Callable, *args, context: contextvars.Context = None):
+    def call_soon(self, callback: Callable, *args, context: Context = None):
         """Arrange for a callback to be called as soon as possible.
 
         Any positional arguments after the callback will be passed to
@@ -107,9 +155,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay = 0
         return self.call_later(delay, callback, *args, context=context)
 
-    def call_soon_threadsafe(
-        self, callback: Callable, *args, context: contextvars.Context = None
-    ):
+    def call_soon_threadsafe(self, callback: Callable, *args, context: Context = None):
         """Like ``call_soon()``, but thread-safe.
 
         We have no threads so everything is "thread safe", and we just use ``call_soon``.
@@ -121,7 +167,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: Context = None,
     ):
         """Arrange for a callback to be called at a given time.
 
@@ -137,19 +183,16 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Any positional arguments after the callback will be passed to
         the callback when it is called.
-
-        This uses `setTimeout(callback, delay)`
         """
         if delay < 0:
             raise ValueError("Can't schedule in the past")
-        h = asyncio.Handle(callback, args, self, context=context)
-
-        def run_handle():
-            if h.cancelled():
-                return
-            h._run()
-
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        h = WebHandle(callback, args, self, context=context)
+        # This uses `setTimeout(callback, delay)`, with extra logic for keyboard
+        # interrupts. Can't be implemented in Python.
+        scheduleWebloopHandle(
+            h,
+            delay * 1000,
+        )
         return h
 
     def call_at(
@@ -157,7 +200,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         when: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: Context = None,
     ):
         """Like ``call_later()``, but uses an absolute time.
 
@@ -216,7 +259,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = asyncio.tasks.Task(coro, loop=self, name=name)
+            task = Task(coro, loop=self, name=name)
             if task._source_traceback:
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -225,8 +268,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         else:
             task = self._task_factory(self, coro)
             asyncio.tasks._set_task_name(task, name)
-
+        self._tasks[id(task)] = task
+        task.add_done_callback(self.remove_task)
         return task
+
+    def remove_task(self, task):
+        self._tasks.pop(id(task), None)
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().

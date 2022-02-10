@@ -70,11 +70,13 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-build/pyodide.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
+build/pyodide.js: src/js/error_handling.gen.ts \
+ src/js/*.ts \
+ src/js/pyproxy.gen.ts \
+ src/js/error_handling.gen.ts \
+ src/js/keyboard_interrupt.gen.ts \
+ node_modules/.installed
 	npx rollup -c src/js/rollup.config.js
-
-src/js/error_handling.gen.ts : src/core/error_handling.ts
-	cp $< $@
 
 src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
@@ -99,6 +101,9 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		sed '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
 		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - \
 		>> $@
+
+src/js/%.gen.ts : src/core/%.ts
+	cp $< $@
 
 build/test.html: src/templates/test.html
 	cp $< $@

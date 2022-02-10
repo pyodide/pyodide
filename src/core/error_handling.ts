@@ -56,7 +56,7 @@ Module.handle_js_error = function (e: any) {
   }
   let stack = ErrorStackParser.parse(e);
   if (isErrorStart(stack[0])) {
-    while (isPyodideFrame(stack[0])) {
+    while (isPyodideFrame(stack.length > 0 && stack[0])) {
       stack.shift();
     }
   }

@@ -232,6 +232,13 @@ pythonexc2js()
   hiwire_throw_error(jserror);
 }
 
+void _Py_NO_RETURN
+fatal_python_exception(void)
+{
+  JsRef jserror = wrap_exception();
+  EM_ASM({ API.fatal_error(Module.hiwire.pop_value($0)); }, jserror);
+}
+
 PyObject*
 trigger_fatal_error(PyObject* mod, PyObject* _args)
 {

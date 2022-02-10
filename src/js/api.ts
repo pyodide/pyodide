@@ -7,6 +7,7 @@ import {
   Py2JsResult,
   TypedArray,
 } from "./pyproxy.gen";
+import { setInterruptBuffer, checkInterrupt } from "./keyboard_interrupt.gen";
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
 
@@ -308,34 +309,6 @@ API.saveState = () => API.pyodide_py._state.save_state();
  * @private
  */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
-
-/**
- * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
- * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
- * shared with the main browser thread (or another worker). To request an
- * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
- * constant for SIGINT).
- */
-export function setInterruptBuffer(interrupt_buffer: TypedArray) {
-  API.interrupt_buffer = interrupt_buffer;
-  Module._set_pyodide_callback(!!interrupt_buffer);
-}
-
-/**
- * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
- * via the interrupt buffer.
- *
- * This can be used to enable keyboard interrupts during execution of JavaScript
- * code, just as ``PyErr_CheckSignals`` is used to enable keyboard interrupts
- * during execution of C code.
- */
-export function checkInterrupt() {
-  if (API.interrupt_buffer[0] === 2) {
-    API.interrupt_buffer[0] = 0;
-    Module._PyErr_SetInterrupt();
-    API.runPython("");
-  }
-}
 
 export type PyodideInterface = {
   globals: typeof globals;

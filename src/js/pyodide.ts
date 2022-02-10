@@ -5,7 +5,8 @@ import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, PyodideInterface } from "./api.js";
-import "./error_handling.gen.js";
+import "./error_handling.gen";
+import "./keyboard_interrupt.gen";
 
 import { PyProxy, PyProxyDict, Py2JsResult } from "./pyproxy.gen";
 
@@ -209,6 +210,8 @@ function finalizeBootstrap(config: ConfigType) {
   API.pyodide_py = import_module("pyodide");
   API.package_loader = import_module("pyodide._package_loader");
   API.version = API.pyodide_py.__version__;
+
+  API.webloop = import_module("pyodide.webloop");
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
