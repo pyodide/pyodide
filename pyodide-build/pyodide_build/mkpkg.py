@@ -66,7 +66,7 @@ def _find_dist(
         if result:
             return result
 
-    types_str = " or ".join(types)
+    types_str = " or ".join(source_types)
     name = pypi_metadata["info"].get("name")
     url = pypi_metadata["info"].get("package_url")
     raise MkpkgFailedException(f"No {types_str} found for package {name} ({url})")
