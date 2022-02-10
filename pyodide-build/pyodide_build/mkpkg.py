@@ -9,7 +9,7 @@ import urllib.error
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Literal
 import warnings
 
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
@@ -48,20 +48,24 @@ def _find_wheel(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def _find_dist(
-    pypi_metadata: Dict[str, Any], wheel: bool = True, sdist: bool = True
+    pypi_metadata: Dict[str, Any], source_types=List[Literal["wheel", "sdist"]]
 ) -> Dict[str, Any]:
+    """Find a wheel or sdist, as appropriate.
+
+    source_types controls which types (wheel and/or sdist) are accepted and also
+    the priority order.
+    E.g., ["wheel", "sdist"] means accept either wheel or sdist but prefer wheel.
+    ["sdist", "wheel"] means accept either wheel or sdist but prefer sdist.
+    """
     result = None
-    if wheel:
-        result = _find_wheel(pypi_metadata)
-    if not result and sdist:
-        result = _find_sdist(pypi_metadata)
-    if result:
-        return result
-    types = []
-    if wheel:
-        types.append("wheel")
-    if sdist:
-        types.append("sdist")
+    for source in source_types:
+        if source == "wheel":
+            result = _find_wheel(pypi_metadata)
+        if source == "sdist":
+            result = _find_sdist(pypi_metadata)
+        if result:
+            return result
+
     types_str = " or ".join(types)
     name = pypi_metadata["info"].get("name")
     url = pypi_metadata["info"].get("package_url")
@@ -104,8 +108,7 @@ def run_prettier(meta_path):
 def make_package(
     package: str,
     version: Optional[str] = None,
-    wheel: bool = False,
-    sdist: bool = False,
+    source_fmt: Optional[Literal["wheel", "sdist"]] = None,
 ):
     """
     Creates a template that will work for most pure Python packages,
@@ -118,10 +121,12 @@ def make_package(
 
     pypi_metadata = _get_metadata(package, version)
 
-    if not wheel and not sdist:
-        wheel = True
-        sdist = True
-    dist_metadata = _find_dist(pypi_metadata, wheel, sdist)
+    if source_fmt:
+        sources = [source_fmt]
+    else:
+        # Prefer wheel unless sdist is specifically requested.
+        sources = ["wheel", "sdist"]
+    dist_metadata = _find_dist(pypi_metadata, sources)
 
     url = dist_metadata["url"]
     sha256 = dist_metadata["digests"]["sha256"]
@@ -179,7 +184,9 @@ def success(msg):
 
 
 def update_package(
-    package: str, update_patched: bool = True, wheel: bool = True, sdist: bool = False
+    package: str,
+    update_patched: bool = True,
+    source_fmt: Optional[Literal["wheel", "sdist"]] = None,
 ):
 
     YAML = _import_ruamel_yaml()
@@ -201,10 +208,18 @@ def update_package(
         print(f"Skipping: {package} is a library!")
         sys.exit(0)
 
+    if yaml_content["source"]["url"].endswith("whl"):
+        old_fmt = "wheel"
+    else:
+        old_fmt = "sdist"
+
     pypi_metadata = _get_metadata(package)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
-    if not wheel and not sdist and pypi_ver <= local_ver:
+    already_up_to_date = pypi_ver <= local_ver and (
+        source_fmt is None or source_fmt == old_fmt
+    )
+    if already_up_to_date:
         print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
         sys.exit(0)
 
@@ -219,16 +234,17 @@ def update_package(
         else:
             abort(f"Pyodide applies patches to {package}. Skipping update.")
 
-    dist_metadata = None
-    if not wheel and not sdist:
-        wheel = True
-        sdist = True
-        if not yaml_content["source"]["url"].endswith("whl"):
-            # If it is currently an sdist, prefer to update to an sdist
-            dist_metadata = _find_sdist(pypi_metadata)
+    if source_fmt:
+        # require the type requested
+        sources = [source_fmt]
+    elif old_fmt == "wheel":
+        # prefer wheel to sdist
+        sources = ["wheel", "sdist"]
+    else:
+        # prefer sdist to wheel
+        sources = ["sdist", "wheel"]
 
-    if not dist_metadata:
-        dist_metadata = _find_dist(pypi_metadata, wheel, sdist)
+    dist_metadata = _find_dist(pypi_metadata, sources)
 
     yaml_content["source"]["url"] = dist_metadata["url"]
     yaml_content["source"].pop("md5", None)
@@ -253,14 +269,10 @@ complex things.""".strip()
         help="Update existing package if it has no patches",
     )
     parser.add_argument(
-        "--wheel",
-        action="store_true",
-        help="Use a wheel",
-    )
-    parser.add_argument(
-        "--sdist",
-        action="store_true",
-        help="Use an sdist",
+        "--source-format",
+        help="Which source format is prefered. Options are wheel or sdist. "
+        "If none is provided, then either a wheel or an sdist will be used. "
+        "When updating a package, the type will be kept the same if possible.",
     )
     parser.add_argument(
         "--version",

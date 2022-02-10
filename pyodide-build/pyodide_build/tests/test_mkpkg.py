@@ -13,16 +13,14 @@ from pyodide_build.io import parse_package_config
 # unlikely to fail.
 
 
-@pytest.mark.parametrize("disttype", ["wheel", "sdist"])
-def test_mkpkg(tmpdir, monkeypatch, capsys, disttype):
+@pytest.mark.parametrize("source_fmt", ["wheel", "sdist"])
+def test_mkpkg(tmpdir, monkeypatch, capsys, source_fmt):
     pytest.importorskip("ruamel")
     assert pyodide_build.mkpkg.PACKAGES_ROOT.exists()
     base_dir = Path(str(tmpdir))
     monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
 
-    wheel = disttype == "wheel"
-    sdist = disttype == "sdist"
-    pyodide_build.mkpkg.make_package("idna", None, wheel, sdist)
+    pyodide_build.mkpkg.make_package("idna", None, source_fmt)
     assert os.listdir(base_dir) == ["idna"]
     meta_path = base_dir / "idna" / "meta.yaml"
     assert meta_path.exists()
@@ -32,7 +30,7 @@ def test_mkpkg(tmpdir, monkeypatch, capsys, disttype):
     db = parse_package_config(meta_path)
 
     assert db["package"]["name"] == "idna"
-    if wheel:
+    if source_fmt == "wheel":
         assert db["source"]["url"].endswith(".whl")
     else:
         assert db["source"]["url"].endswith(".tar.gz")
@@ -60,9 +58,10 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
     meta_path = base_dir / "idna" / "meta.yaml"
     with open(meta_path, "w") as fh:
         yaml.dump(db_init, fh)
-    wheel = new_dist_type == "wheel"
-    sdist = new_dist_type == "sdist"
-    pyodide_build.mkpkg.update_package("idna", None, wheel, sdist)
+    source_fmt = new_dist_type
+    if new_dist_type == "same":
+        source_fmt = None
+    pyodide_build.mkpkg.update_package("idna", None, source_fmt)
 
     db = parse_package_config(meta_path)
     assert list(db.keys()) == list(db_init.keys())
