@@ -46,6 +46,10 @@ substitutions:
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
 
+- {{Enhancement}} Most pure Python packages were switched to use the wheels
+  directly from PyPI rather than rebuilding them.
+  {pr}`{2126}
+
 ## Version 0.19.0
 
 _January 10, 2021_
