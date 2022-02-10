@@ -39,3 +39,5 @@ def wasm_text_rotated():
     plt.setp(labels, rotation=30, fontsize=10)
 
     plt.show()
+    plt.close("all")
+    plt.clf()

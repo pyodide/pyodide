@@ -18,3 +18,5 @@ def wasm_rendering():
     plt.plot(t, t)
     plt.grid(True)
     plt.show()
+    plt.close("all")
+    plt.clf()

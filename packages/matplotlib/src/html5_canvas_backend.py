@@ -29,10 +29,7 @@ _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
 # The URLs of fonts that have already been loaded into the browser
 _font_set = set()
 
-if hasattr(window, "testing"):
-    _base_fonts_url = "/fonts/"
-else:
-    _base_fonts_url = "/pyodide/fonts/"
+_base_fonts_url = "/fonts/"
 
 interactive(True)
 

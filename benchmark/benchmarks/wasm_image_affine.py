@@ -60,3 +60,5 @@ def wasm_image_affine():
     )
 
     plt.show()
+    plt.close("all")
+    plt.clf()

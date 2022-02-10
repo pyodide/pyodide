@@ -61,6 +61,7 @@ def run_all(hostpython, selenium_backends, code):
     result = {"native": a}
     for browser_name, selenium in selenium_backends.items():
         for interrupt_buffer in [False, True]:
+            print(f"Running with: {browser_name} {interrupt_buffer}")
             dt = run_wasm(code, selenium, interrupt_buffer)
             if interrupt_buffer:
                 browser_name += "(w/ ib)"
@@ -118,7 +119,7 @@ def get_matplotlib_benchmarks():
                 "setup = setup + '\\nfrom __main__ import {}'\n"
                 "from timeit import Timer\n"
                 "t = Timer(run, setup)\n"
-                "r = t.repeat(11, 40)\n"
+                "r = t.repeat(11, 20)\n"
                 "r.remove(min(r))\n"
                 "r.remove(max(r))\n"
                 "print(np.mean(r))\n".format(name)
@@ -144,7 +145,7 @@ def main(hostpython):
         ]
         for name, cls in browser_cls:
             t0 = time()
-            selenium_backends[name] = cls(port, script_timeout=600)
+            selenium_backends[name] = cls(port, script_timeout=1000)
             b[name] = time() - t0
             # pre-load numpy for the selenium instance used in benchmarks
             selenium_backends[name].load_package("numpy")
@@ -155,7 +156,7 @@ def main(hostpython):
         for package_name in ["numpy"]:
             b = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
-                selenium = cls(port)
+                selenium = cls(port, script_timeout=1000)
                 try:
                     t0 = time()
                     selenium.load_package(package_name)

@@ -29,3 +29,5 @@ def wasm_image():
         vmin=-abs(Z).max(),
     )
     plt.show()
+    plt.close("all")
+    plt.clf()

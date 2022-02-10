@@ -17,3 +17,5 @@ def canvas_custom_font():
     plt.plot(t, t)
     plt.grid(True)
     plt.show()
+    plt.close("all")
+    plt.clf()
