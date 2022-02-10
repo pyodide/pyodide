@@ -1,11 +1,14 @@
 # non-native
-# setup: from matplotlib import pyplot as plt ; import numpy as np ; import matplotlib.cm as cm # noqa
+# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm # noqa
 # run: canvas_image()
 
 # pythran export canvas_image()
-from matplotlib import pyplot as plt
+import matplotlib
 import numpy as np
-import matplotlib.cm as cm
+
+matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+from matplotlib import pyplot as plt  # noqa: E402
+import matplotlib.cm as cm  # noqa: E402
 
 
 def canvas_image():

@@ -1,10 +1,13 @@
 # non-native
-# setup: import matplotlib.pyplot as plt ; import numpy as np ;  # noqa
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ;  # noqa
 # run: canvas_custom_font()
 
 # pythran export canvas_custom_font()
-import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
+
+matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+from matplotlib import pyplot as plt  # noqa: E402
 
 
 def canvas_custom_font():

@@ -1,12 +1,21 @@
 # non-native
-# setup: import matplotlib.pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import numpy as np ; import datetime  # noqa
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime  # noqa
 # run: canvas_text_rotated()
 
 # pythran export canvas_text_rotated()
-import matplotlib.pyplot as plt
-from matplotlib.dates import YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange
+import matplotlib
 import numpy as np
-import datetime
+
+matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+from matplotlib import pyplot as plt  # noqa: E402
+from matplotlib.dates import (  # noqa: E402
+    YEARLY,
+    DateFormatter,  # noqa: E402
+    rrulewrapper,
+    RRuleLocator,  # noqa: E402
+    drange,
+)  # noqa: E402
+import datetime  # noqa: E402
 
 
 def canvas_text_rotated():

@@ -1,11 +1,14 @@
 # non-native
-# setup: from matplotlib import pyplot as plt ; import matplotlib.transforms as mtransforms ; import numpy as np  # noqa
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ; import matplotlib.transforms as mtransforms  # noqa
 # run: canvas_image_affine()
 
 # pythran export canvas_image_affine()
-from matplotlib import pyplot as plt
-import matplotlib.transforms as mtransforms
+import matplotlib
 import numpy as np
+
+matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+from matplotlib import pyplot as plt  # noqa: E402
+import matplotlib.transforms as mtransforms  # noqa: E402
 
 
 def canvas_image_affine():
