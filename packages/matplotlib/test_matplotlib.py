@@ -49,6 +49,7 @@ def check_comparison(selenium, prefix, num_fonts):
     )
     wait = WebDriverWait(selenium.driver, timeout=200)
     wait.until(ResultLoaded())
+    assert selenium.run("window.font_counter") == num_fonts
     assert selenium.run("window.deviation") == 0
     assert selenium.run("window.result") is True
 

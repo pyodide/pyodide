@@ -384,6 +384,7 @@ class RendererHTMLCanvas(RendererBase):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face.result())
             window.font_counter += 1
+            print("hi", self.fig, window.font_counter, document.fonts.size, document.fonts.values().next().value.family)
             self.fig.draw_idle()
 
         if ismath:
