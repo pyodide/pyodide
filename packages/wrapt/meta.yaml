@@ -6,7 +6,7 @@ source:
   sha256: 1fea9cd438686e6682271d36f3481a9f3636195578bab9ca3382e2f5f01fc185
 test:
   imports:
-  - wrapt
+    - wrapt
 about:
   home: https://github.com/GrahamDumpleton/wrapt
   PyPI: https://pypi.org/project/wrapt
