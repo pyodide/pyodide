@@ -23,7 +23,7 @@ def print_entry(name, res):
 
 def run_native(hostpython, code):
     if "# non-native" in code:
-        return 0
+        return float("NaN")
     root = Path(__file__).resolve().parents[1]
     output = subprocess.check_output(
         [hostpython.resolve(), "-c", code],
