@@ -143,6 +143,7 @@ def test_rendering(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
         import matplotlib
@@ -178,6 +179,7 @@ def test_draw_image(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
         import matplotlib
@@ -221,6 +223,7 @@ def test_draw_image_affine_transform(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
         import matplotlib
@@ -296,6 +299,7 @@ def test_draw_text_rotated(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
         import matplotlib
@@ -353,6 +357,7 @@ def test_draw_math_text(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             r"""
         import matplotlib
@@ -476,6 +481,7 @@ def test_custom_font_text(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
             import matplotlib
@@ -515,6 +521,7 @@ def test_zoom_on_polar_plot(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
             import matplotlib
@@ -562,6 +569,7 @@ def test_transparency(selenium):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
+        selenium.get_driver().set_script_timeout(5000)
         selenium.run(
             """
         import matplotlib
