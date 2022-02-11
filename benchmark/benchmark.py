@@ -128,8 +128,8 @@ def get_matplotlib_benchmarks():
 
 
 def get_benchmarks():
-    # yield from get_pystone_benchmarks()
-    # yield from get_numpy_benchmarks()
+    yield from get_pystone_benchmarks()
+    yield from get_numpy_benchmarks()
     yield from get_matplotlib_benchmarks()
 
 
