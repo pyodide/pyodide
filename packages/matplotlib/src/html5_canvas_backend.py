@@ -382,7 +382,7 @@ class RendererHTMLCanvas(RendererBase):
 
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
-            document.fonts.add(loaded_face)
+            document.fonts.add(loaded_face.result())
             window.font_counter += 1
             self.fig.draw_idle()
 
