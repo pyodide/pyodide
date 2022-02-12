@@ -2,8 +2,8 @@ package:
   name: mne
   version: 0.24.1
 source:
-  sha256: 38cbffd03a6ad0e83ef4a964ac9910a37d164c37fcc84894e39ed0cdf805300d
-  url: https://files.pythonhosted.org/packages/b0/64/8cd2716407139822b268ed65662ec8ef0880aa0cd86c715b698b49a4c7e7/mne-0.24.1.tar.gz
+  sha256: 26f75fc0b468ed078f35a86a26fa75bab60887b914b90707000cbc0cb8b11e78
+  url: https://files.pythonhosted.org/packages/64/7b/14d15a1dd526411c426f3a7749076a3ef7d8c7c559d43fcb27d4d088db5f/mne-0.24.1-py3-none-any.whl
 requirements:
   run:
     - distutils

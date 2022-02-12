@@ -7,8 +7,8 @@ requirements:
     - packaging
     - six
 source:
-  sha256: 0900d8b37eba61a802ee40ac0061f8c2b5dee29c1927dd1d233e075ebf5a71da
-  url: https://files.pythonhosted.org/packages/6a/a3/217842324374fd3fb33db0eb4c2909ccf3ecc5a94f458088ac68581f8314/bleach-4.1.0.tar.gz
+  sha256: 4d2651ab93271d1129ac9cbc679f524565cc8a1b791909c4a51eac4446a15994
+  url: https://files.pythonhosted.org/packages/64/cc/74d634e1e5659742973a23bb441404c53a7bedb6cd3962109ca5efb703e8/bleach-4.1.0-py2.py3-none-any.whl
 test:
   imports:
     - bleach
