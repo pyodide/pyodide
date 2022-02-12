@@ -4,11 +4,14 @@ import shutil
 from pathlib import Path
 from conftest import BUILD_PATH
 
+
 def get_pyparsing_wheel_name():
     return list(BUILD_PATH.glob("pyparsing*.whl"))[0].name
 
+
 def get_pytz_wheel_name():
     return list(BUILD_PATH.glob("pytz*.whl"))[0].name
+
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
