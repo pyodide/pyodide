@@ -16,7 +16,7 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112` pydantic {pr}`2117`
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
 
 - Upgraded packages: distlib (0.3.4)
 
