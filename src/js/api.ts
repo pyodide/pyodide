@@ -195,8 +195,9 @@ export function unregisterJsModule(name: string) {
  *
  * @param obj
  * @param options
- * @param options.depth Optional argument to limit the depth of the
- * conversion.
+ * @param options.depth Optional argument to limit the depth of the conversion.
+ * @param options.default_converter Optional argument to convert objects with no
+ * default conversion. See the documentation of :any:`JsProxy.to_py`.
  * @returns The object converted to Python.
  */
 export function toPy(

@@ -48,13 +48,87 @@ class JsProxy:
     def new(self, *args, **kwargs) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
 
-    def to_py(self, *, depth: int = -1) -> Any:
+    def to_py(
+        self,
+        *,
+        depth: int = -1,
+        default_converter: Callable[
+            [JsProxy, Callable[[JsProxy], Any], Callable[[JsProxy, Any]]], Any
+        ] = None,
+    ) -> Any:
         """Convert the :class:`JsProxy` to a native Python object as best as
         possible.
 
-        By default, does a deep conversion, if a shallow conversion is
-        desired, you can use ``proxy.to_py(depth=1)``. See
+        By default, does a deep conversion, if a shallow conversion is desired,
+        you can use ``proxy.to_py(depth=1)``. See
         :ref:`type-translations-jsproxy-to-py` for more information.
+
+        ``default_converter`` if present will be invoked whenever Pyodide does
+        not have some built in conversion for the object. If
+        ``default_converter`` returns ``None``, then the object will be proxied.
+        If ``default_converter`` raises an error, the error will be allowed to
+        propagate. In other cases, the object returned will be used as the
+        conversion. ``default_converter`` takes three arguments. The first
+        argument is the value to be converted:
+
+        Here are a couple examples of converter functions. In addition to the
+        normal conversions, convert ``Date`` to ``datetime``:
+
+        .. code-block:: python
+
+            from datetime import datetime
+            def default_converter(value, _ignored1, _ignored2):
+                if value.constructor.name == "Date":
+                    return datetime.fromtimestamp(d.valueOf()/1000)
+
+        Don't create any JsProxies, require a complete conversion or raise an error:
+
+        .. code-block:: python
+
+            def default_converter(_value, _ignored1, _ignored2):
+                raise Exception("Failed to completely convert object")
+
+        The second and third arguments are only needed for converting
+        containers. The second argument is a conversion function which is used
+        to convert the elements of the container with the same settings. The
+        third argument is a "cache" function which is needed to handle self
+        referential containers. Consider the following example. Suppose we have
+        a Javascript ``Pair`` class:
+
+        .. code-block:: javascript
+
+            class Pair {
+                constructor(first, second){
+                    this.first = first;
+                    this.second = second;
+                }
+            }
+
+        We can use the following ``default_converter`` to convert ``Pair`` to ``list``:
+
+        .. code-block:: python
+
+            def default_converter(value, convert, cache):
+                if value.constructor.name != "Pair":
+                    return None
+                result = []
+                cache(value, result);
+                result.append(convert(value.first))
+                result.append(convert(value.second))
+                return result
+
+        Note that we have to cache the conversion of ``value`` before converting
+        ``value.first`` and ``value.second``. To see why, consider a self
+        referential pair:
+
+        .. code-block:: javascript
+
+            let p = new Pair(0, 0);
+            p.first = p;
+
+        Without ``cache(value, result);``, converting ``p`` would lead to an
+        infinite recurse. With it, we can successfully convert ``p`` to a list
+        such that ``l[0] is l``.
         """
         pass
 
