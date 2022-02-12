@@ -16,7 +16,7 @@ build:
     mkdir -p build;
     cd build \
         && LDFLAGS="-s NODERAWFS=1" emcmake cmake ../ \
-        -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.15.5_64bit/bin/node" \
+        -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node" \
         -DCMAKE_INSTALL_PREFIX=hdf5 \
         -DH5_HAVE_GETPWUID=0 \
         -DH5_HAVE_SIGNAL=0 \
@@ -28,6 +28,5 @@ build:
         -DHDF5_BUILD_TOOLS=0 \
         -DHDF5_ENABLE_Z_LIB_SUPPORT=1 \
         -DZLIB_INCLUDE_DIR="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/include" \
-        -DZLIB_LIBRARY="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/lib/libz.a";  
+        -DZLIB_LIBRARY="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/lib/libz.a";
     emmake make -j ${PYODIDE_JOBS:-3} install;
-    
