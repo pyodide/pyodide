@@ -1,5 +1,6 @@
 from pyodide_build.testing import run_in_pyodide
 
+
 @run_in_pyodide(packages=["wrapt"])
 def test_wrapt():
     import wrapt
@@ -9,18 +10,15 @@ def test_wrapt():
     def passthru_decorator(wrapped, instance, args, kwargs):
         return wrapped(*args, **kwargs)
 
-
     def function1(arg):
-        '''documentation'''
+        """documentation"""
         return arg
 
     function1o = function1
     function1d = passthru_decorator(function1)
-    assert(function1d is not function1o)
-
+    assert function1d is not function1o
 
     class TestNamingFunction(unittest.TestCase):
-
         def test_object_name(self):
             # Test preservation of function __name__ attribute.
 
@@ -63,10 +61,9 @@ def test_wrapt():
             self.assertTrue(isinstance(function1d, type(function1o)))
 
     class TestCallingFunction(unittest.TestCase):
-
         def test_call_function(self):
             _args = (1, 2)
-            _kwargs = {'one': 1, 'two': 2}
+            _kwargs = {"one": 1, "two": 2}
 
             @wrapt.decorator
             def _decorator(wrapped, instance, args, kwargs):
