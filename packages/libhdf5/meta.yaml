@@ -28,6 +28,5 @@ build:
         -DHDF5_BUILD_TOOLS=0 \
         -DHDF5_ENABLE_Z_LIB_SUPPORT=1 \
         -DZLIB_INCLUDE_DIR="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/include" \
-        -DZLIB_LIBRARY="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/lib/libz.a";  
+        -DZLIB_LIBRARY="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/lib/libz.a";
     emmake make -j ${PYODIDE_JOBS:-3} install;
-    
