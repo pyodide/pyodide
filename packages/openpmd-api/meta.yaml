@@ -1,0 +1,45 @@
+package:
+  name: openpmd-api
+  version: 0.14.4
+
+source:
+  url: https://github.com/openPMD/openPMD-api/archive/0.14.4.tar.gz
+  sha256: 42b7bcd043e772d63f0fe0e5e70da411f001db10096d5b8be797ffc88e786379
+
+requirements:
+  run:
+    - numpy
+    - libhdf5
+
+test:
+  imports:
+    - openpmd_api
+
+build:
+  library: true
+  script: |
+    pip install -U pipx pybind11[global]
+    python -m pipx install cmake
+    export PATH="$(python3 -c 'import site; print(site.USER_BASE)')/bin:${PATH}"
+    pip install --upgrade pybind11[global] -t $PYODIDE_ROOT/packages/.artifacts/
+
+    export CMAKE_PREFIX_PATH=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5/share/cmake/hdf5:${CMAKE_PREFIX_PATH}
+    export CMAKE_PREFIX_PATH=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5:${CMAKE_PREFIX_PATH}
+
+    emcmake cmake -S . -B build  \
+      -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DopenPMD_BUILD_SHARED_LIBS=OFF \
+      -DopenPMD_USE_MPI=OFF      \
+      -DopenPMD_USE_HDF5=OFF     \
+      -DopenPMD_USE_ADIOS1=OFF   \
+      -DopenPMD_USE_ADIOS2=OFF   \
+      -DopenPMD_USE_PYTHON=ON    \
+      -DPython_EXECUTABLE:FILEPATH=$(which python3) \
+      -DPython_INCLUDE_DIR=$(python3 -c "from sysconfig import get_paths as gp; print(gp()['include'])") \
+      -Dpybind11_DIR=$PYODIDE_ROOT/packages/.artifacts/pybind11/share/cmake/pybind11 \
+      -DopenPMD_USE_INTERNAL_PYBIND11=OFF \
+      -DopenPMD_BUILD_TESTING=OFF         \
+      -DopenPMD_BUILD_EXAMPLES=OFF        \
+      -DCMAKE_INSTALL_LIBDIR=lib
+    emmake cmake --build build -j ${PYODIDE_JOBS:-3} --target install
