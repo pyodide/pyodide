@@ -185,7 +185,7 @@ class JsProxy:
         """
 
     def to_memoryview(self) -> memoryview:
-        """Convert the buffer to a memoryview.
+        """Convert a buffer to a memoryview.
 
         Copies the data once. This currently has the same effect as :any:`to_py`.
         Present only if the wrapped Javascript object is an ArrayBuffer or
@@ -193,7 +193,7 @@ class JsProxy:
         """
 
     def to_bytes(self) -> bytes:
-        """Convert the buffer to a bytes object.
+        """Convert a buffer to a bytes object.
 
         Copies the data once.
         Present only if the wrapped Javascript object is an ArrayBuffer or
@@ -201,7 +201,7 @@ class JsProxy:
         """
 
     def to_file(self, file: IOBase):
-        """Writes the entire buffer to a file.
+        """Writes a buffer to a file.
 
         Will write the entire contents of the buffer to the current position of
         the file.
@@ -225,7 +225,7 @@ class JsProxy:
         """
 
     def from_file(self, file: IOBase):
-        """Reads from a file into the buffer.
+        """Reads from a file into a buffer.
 
         Will try to read a chunk of data the same size as the buffer from
         the current position of the file.
@@ -251,7 +251,7 @@ class JsProxy:
         """
 
     def _into_file(self, file: IOBase):
-        """Will write the entire contents of the buffer into a file using
+        """Will write the entire contents of a buffer into a file using
         ``canOwn : true`` without any copy. After this, the buffer cannot be
         used again.
 
@@ -279,7 +279,7 @@ class JsProxy:
         """
 
     def to_string(self, encoding=None) -> str:
-        """Convert the buffer to a string object.
+        """Convert a buffer to a string object.
 
         Copies the data twice.
 
