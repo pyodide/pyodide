@@ -707,16 +707,18 @@ JsProxy_toPy(PyObject* self,
   static const char* const _keywords[] = { "depth", "default_converter", 0 };
   static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
   int depth = -1;
-  PyObject *default_converter = NULL;
+  PyObject* default_converter = NULL;
   if (kwnames != NULL &&
-      !_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &depth, &default_converter)) {
+      !_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
   JsRef default_converter_js = NULL;
-  if(default_converter != NULL){
+  if (default_converter != NULL) {
     default_converter_js = python2js(default_converter);
   }
-  PyObject* result = js2python_convert(GET_JSREF(self), depth, default_converter_js);
+  PyObject* result =
+    js2python_convert(GET_JSREF(self), depth, default_converter_js);
   destroy_proxy(default_converter_js, NULL);
   hiwire_CLEAR(default_converter_js);
   return result;
