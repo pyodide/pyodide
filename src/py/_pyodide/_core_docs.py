@@ -53,7 +53,7 @@ class JsProxy:
         *,
         depth: int = -1,
         default_converter: Callable[
-            ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any]]], Any
+            ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any], None]], Any
         ] = None,
     ) -> Any:
         """Convert the :class:`JsProxy` to a native Python object as best as
