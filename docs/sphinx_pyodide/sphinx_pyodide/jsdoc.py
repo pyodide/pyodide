@@ -4,7 +4,6 @@ from docutils.statemachine import StringList
 from docutils.utils import new_document
 
 from collections import OrderedDict
-import re
 
 from sphinx import addnodes
 from sphinx.util import rst
@@ -12,7 +11,7 @@ from sphinx.util.docutils import switch_source_input
 from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.domains.javascript import JSCallable, JavaScriptDomain
 
-from sphinx_js.jsdoc import Analyzer as JsAnalyzer
+from sphinx_js.typedoc import Analyzer as TsAnalyzer
 from sphinx_js.ir import Class, Function
 from sphinx_js.parsers import path_and_formal_params, PathVisitor
 from sphinx_js.renderers import (
@@ -20,6 +19,177 @@ from sphinx_js.renderers import (
     AutoAttributeRenderer,
     AutoClassRenderer,
 )
+
+from typing import Any, Dict, List
+
+_orig_convert_node = TsAnalyzer._convert_node
+_orig_type_name = TsAnalyzer._type_name
+
+
+def destructure_param(param: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """We want to document a destructured argument as if it were several
+    separate arguments. This finds complex inline object types in the arguments
+    list of a function and "destructures" them into separately documented arguments.
+
+    E.g., a function
+
+        /**
+        * @param options
+        */
+        function f({x , y } : {
+            /** The x value */
+            x : number,
+            /** The y value */
+            y : string
+        }){ ... }
+
+    should be documented like:
+
+        options.x (number) The x value
+        options.y (number) The y value
+    """
+    decl = param["type"]["declaration"]
+    result = []
+    for child in decl["children"]:
+        child = dict(child)
+        if not "type" in child:
+            if "signatures" in child:
+                child["comment"] = child["signatures"][0]["comment"]
+                child["type"] = {
+                    "type": "reflection",
+                    "declaration": dict(child),
+                }
+            else:
+                assert False, "Didn't expect to get here..."
+        child["name"] = param["name"] + "." + child["name"]
+        result.append(child)
+    return result
+
+
+def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
+    """Calls get_destructured_children on inline object types"""
+    kind = node.get("kindString")
+    if kind not in ["Call signature", "Constructor signature"]:
+        return
+    params = node.get("parameters", [])
+    new_params = []
+    for param in params:
+        param_type = param["type"]
+        if (
+            param_type["type"] != "reflection"
+            or "children" not in param_type["declaration"]
+        ):
+            new_params.append(param)
+        else:
+            new_params.extend(destructure_param(param))
+    node["parameters"] = new_params
+
+
+def _convert_node(self: TsAnalyzer, node: Dict[str, Any]):
+    """Monkey patch for TsAnalyzer._convert_node.
+
+    Fixes two crashes and separates documentation for destructured object
+    arguments into a series of separate arguement entires.
+    """
+    kind = node.get("kindString")
+    # if a class has no documented constructor, don't crash
+    if kind in ["Function", "Constructor", "Method"] and not node.get("sources"):
+        return None, []
+    # This fixes a crash, not really sure what it means.
+    node["extendedTypes"] = [t for t in node.get("extendedTypes", []) if "id" in t]
+    # See docstring for destructure_param
+    fix_up_inline_object_signature(self, node)
+    return _orig_convert_node(self, node)
+
+
+TsAnalyzer._convert_node = _convert_node
+
+
+def object_literal_type_name(self, decl):
+    """This renders the names of object literal types.
+
+    They have zero or more "children" and zero or one "indexSignatures".
+    For example:
+
+        {
+            [key: string]: string,
+            name : string,
+            id : string
+        }
+
+    has children "name" and "id" and an indexSignature "[key: string]: string"
+    """
+    children = []
+    if "indexSignature" in decl:
+        index_sig = decl["indexSignature"]
+        assert len(index_sig["parameters"]) == 1
+        key = index_sig["parameters"][0]
+        keyname = key["name"]
+        keytype = self._type_name(key["type"])
+        valuetype = self._type_name(index_sig["type"])
+        children.append(f"[{keyname}: {keytype}]: {valuetype}")
+    if "children" in decl:
+        children.extend(
+            child["name"] + ": " + self._type_name(child["type"])
+            for child in decl["children"]
+        )
+
+    return "{" + ", ".join(children) + "}"
+
+
+def reflection_type_name(self, type):
+    """Fill in the type names for type_of_type == "reflection"
+
+    This is left as a TODO in sphinx-js.
+
+    There are a couple of options: if
+
+        decl["kindString"] == "Type Literal"
+
+    then this is a literal object type. At least we assume it's a literal object
+    type, maybe there are other ways for that to happen.
+
+    Otherwise, we assume that it's a function type, which we want to format
+    like:
+
+        (a : string, b : number) => string
+    """
+    decl = type["declaration"]
+    if decl["kindString"] == "Type literal":
+        return object_literal_type_name(self, decl)
+    decl_sig = None
+    if "signatures" in decl:
+        decl_sig = decl["signatures"][0]
+    elif decl["kindString"] == "Call signature":
+        decl_sig = decl
+    assert decl_sig
+    params = [
+        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        for ty in decl_sig.get("parameters", [])
+    ]
+    params_str = ", ".join(params)
+    ret_str = self._type_name(decl_sig["type"])
+    return f"({params_str}) => {ret_str}"
+
+
+def _type_name(self, type):
+    """Monkey patch for sphinx-js type_name
+
+    Rendering various types is left as TODO by _type_name. Fill these in.
+    """
+    res = _orig_type_name(self, type)
+    if "TODO" not in res:
+        # _orig_type_name handled it, leave it alone.
+        return res
+    type_of_type = type.get("type")
+    if type_of_type == "predicate":
+        return f"boolean (typeguard for {self._type_name(type['targetType'])})"
+    if type_of_type == "reflection":
+        return reflection_type_name(self, type)
+    assert False
+
+
+TsAnalyzer._type_name = _type_name
 
 
 class JSFuncMaybeAsync(JSCallable):
@@ -37,6 +207,37 @@ class JSFuncMaybeAsync(JSCallable):
 JavaScriptDomain.directives["function"] = JSFuncMaybeAsync
 
 
+def flatten_suffix_tree(tree):
+    """Flatten suffix tree into a dictionary.
+
+    self._doclets_by_class already has stuff in the correct layout but it
+    does not contain top level file attributes. They are contained in the
+    suffix tree, but the suffix tree is inconveniently shaped. So we flatten
+    it...
+    """
+    result = {}
+    path = []
+    iters = []
+    cur_iter = iter(tree.items())
+    while True:
+        try:
+            [key, val] = next(cur_iter)
+        except StopIteration:
+            if not iters:
+                return result
+            cur_iter = iters.pop()
+            path.pop()
+            continue
+        if isinstance(val, dict):
+            iters.append(cur_iter)
+            path.append(key)
+            cur_iter = iter(val.items())
+        else:
+            path.append(key)
+            result[tuple(reversed(path))] = val
+            path.pop()
+
+
 class PyodideAnalyzer:
     """JsDoc automatically instantiates the JsAnalyzer. Rather than subclassing
     or monkey patching it, we use composition (see getattr impl).
@@ -47,7 +248,7 @@ class PyodideAnalyzer:
     we access later.
     """
 
-    def __init__(self, analyzer: JsAnalyzer) -> None:
+    def __init__(self, analyzer: TsAnalyzer) -> None:
         self.inner = analyzer
         self.create_js_doclets()
 
@@ -61,67 +262,74 @@ class PyodideAnalyzer:
         """
         return PathVisitor().visit(path_and_formal_params["path"].parse(name))
 
-    def get_object_from_json(self, json):
-        """Look up the JsDoc IR object corresponding to this object. We use the
-        "kind" field to decide whether the object is a "function" or an
-        "attribute". We use longname_to_path to convert the path into a list of
-        path components which JsAnalyzer.get_object requires.
-        """
-        path = self.longname_to_path(json["longname"])
-        if json["kind"] == "function":
-            kind = "function"
-        elif json["kind"] == "class":
-            kind = "class"
-        else:
-            kind = "attribute"
-        obj = self.inner.get_object(path, kind)
-        obj.kind = kind
-        return obj
-
     def create_js_doclets(self):
         """Search through the doclets generated by JsDoc and categorize them by
         summary section. Skip docs labeled as "@private".
         """
+        self.doclets = flatten_suffix_tree(self._objects_by_path._tree)
 
         def get_val():
             return OrderedDict([["attribute", []], ["function", []], ["class", []]])
 
-        self.js_docs = {key: get_val() for key in ["globalThis", "pyodide", "PyProxy"]}
-        items = {"PyProxy": []}
-        for (key, group) in self._doclets_by_class.items():
-            key = [x for x in key if "/" not in x]
-            if key[-1] == "PyBuffer":
-                # PyBuffer stuff is documented as a class. Would be nice to have
-                # a less ad hoc way to deal with this...
+        modules = ["globalThis", "pyodide", "PyProxy"]
+        self.js_docs = {key: get_val() for key in modules}
+        items = {key: [] for key in modules}
+        for (key, doclet) in self.doclets.items():
+            if getattr(doclet.value, "is_private", False):
                 continue
-            if key[-1] == "globalThis":
-                items["globalThis"] = group
-            if key[0] == "pyodide." and key[-1] == "Module":
-                items["pyodide"] = group
-            if key[0] == "pyproxy.":
-                items["PyProxy"] += group
+            # Remove the part of the key corresponding to the file
+            key = [x for x in key if "/" not in x]
+            filename = key[0]
+            toplevelname = key[1]
+            if key[-1].startswith("$"):
+                doclet.value.is_private = True
+                continue
+            doclet.value.name = doclet.value.name.rpartition(".")[2]
+            if filename == "pyodide.":
+                # Might be named globalThis.something or exports.something.
+                # Trim off the prefix.
+                items["globalThis"] += doclet
+                continue
+            pyproxy_class_endings = ("Methods", "Class")
+            if toplevelname.endswith("#"):
+                # This is a class method.
+                if filename == "pyproxy.gen." and toplevelname[:-1].endswith(
+                    pyproxy_class_endings
+                ):
+                    # Merge all of the PyProxy methods into one API
+                    items["PyProxy"] += doclet
+                # If it's not part of a PyProxy class, the method will be
+                # documented as part of the class.
+                continue
+            if filename == "pyproxy.gen." and toplevelname.endswith(
+                pyproxy_class_endings
+            ):
+                continue
+            if filename.startswith("PyProxy"):
+                # Skip all PyProxy classes, they are documented as one merged
+                # API.
+                continue
+            items["pyodide"] += doclet
 
-        from operator import itemgetter
+        from operator import attrgetter
 
         for key, value in items.items():
-            for json in sorted(value, key=itemgetter("name")):
-                if json.get("access", None) == "private":
-                    continue
-                obj = self.get_object_from_json(json)
-                obj.async_ = json.get("async", False)
+            for obj in sorted(value, key=attrgetter("name")):
+                obj.async_ = False
                 if isinstance(obj, Class):
-                    # sphinx-jsdoc messes up array types. Fix them.
-                    for x in obj.members:
-                        if hasattr(x, "type"):
-                            x.type = re.sub("Array\.<([a-zA-Z_0-9]*)>", r"\1[]", x.type)
-                if obj.name[0] == '"' and obj.name[-1] == '"':
-                    # sphinx-jsdoc messes up Symbol attributes. Fix them.
-                    obj.name = "[" + obj.name[1:-1] + "]"
+                    obj.kind = "class"
+                elif isinstance(obj, Function):
+                    obj.kind = "function"
+                    obj.async_ = obj.returns and obj.returns[0].type.startswith(
+                        "Promise<"
+                    )
+                else:
+                    obj.kind = "attribute"
                 self.js_docs[key][obj.kind].append(obj)
 
 
 def get_jsdoc_content_directive(app):
-    """These directives need to close over app """
+    """These directives need to close over app"""
 
     class JsDocContent(Directive):
         """A directive that just dumps a summary table in place. There are no
@@ -132,8 +340,7 @@ def get_jsdoc_content_directive(app):
         required_arguments = 1
 
         def get_rst(self, obj):
-            """Grab the appropriate renderer and render us to rst.
-            JsDoc also has an AutoClassRenderer which may be useful in the future."""
+            """Grab the appropriate renderer and render us to rst."""
             if isinstance(obj, Function):
                 renderer = AutoFunctionRenderer
             elif isinstance(obj, Class):

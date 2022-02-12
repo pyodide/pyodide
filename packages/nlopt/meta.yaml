@@ -7,8 +7,7 @@ source:
   sha256: b881cc2a5face5139f1c5a30caf26b7d3cb43d69d5e423c9d78392f99844499f
 
   extras:
-    -
-      - src/setup.py
+    - - src/setup.py
       - ./setup.py
 
 requirements:

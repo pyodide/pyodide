@@ -1,14 +1,9 @@
 package:
   name: pytest
-  version: 3.6.3
-
+  version: 6.2.5
 source:
-  url: https://files.pythonhosted.org/packages/55/50/399419c03c39bf41faa7cbd5a8976c076037b2d76adf2535610919806d67/pytest-3.6.3.tar.gz
-  md5: 8ca6124a3a80f9555c50f5c09056ea02
-
-  patches:
-    - patches/named-tmp-and-rm-dup2.patch
-
+  url: https://files.pythonhosted.org/packages/4b/24/7d1f2d2537de114bdf1e6875115113ca80091520948d370c964b88070af2/pytest-6.2.5.tar.gz
+  sha256: 131b36680866a76e6781d13f101efb86cf674ebb9762eb70d3082b6f29889e89
 requirements:
   run:
     - atomicwrites
@@ -18,7 +13,7 @@ requirements:
     - py
     - setuptools
     - six
-
+    - iniconfig
 test:
   imports:
     - pytest

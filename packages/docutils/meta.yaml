@@ -1,9 +1,9 @@
 package:
   name: docutils
-  version: '0.17'
+  version: 0.18.1
 source:
-  sha256: e2ffeea817964356ba4470efba7c2f42b6b0de0b04e66378507e3e2504bbff4c
-  url: https://files.pythonhosted.org/packages/8e/5a/85e35f8692abd8dcd00a67e79c1e45caa6019b8d49d3bee5b2482583d81d/docutils-0.17.tar.gz
+  sha256: 679987caf361a7539d76e584cbeddc311e3aee937877c87346f31debc63e9d06
+  url: https://files.pythonhosted.org/packages/57/b1/b880503681ea1b64df05106fc7e3c4e3801736cf63deffc6fa7fc5404cf5/docutils-0.18.1.tar.gz
 test:
   imports:
-  - docutils
+    - docutils

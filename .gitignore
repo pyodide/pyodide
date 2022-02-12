@@ -1,6 +1,7 @@
 *.a
 *.o
 *.pyc
+src/js/*.gen.*
 
 *.egg-info/
 
@@ -18,9 +19,12 @@ build
 ccache
 cpython/downloads
 cpython/installs
+cpython/build.log
 docs/_build/
 emsdk/emsdk
 geckodriver.log
-node_modules/
+node_modules
 packages/.artifacts
-packages/*/build.log
+packages/*/build.log*
+packages/build-logs
+dist/

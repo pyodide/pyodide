@@ -13,11 +13,13 @@ source:
     - patches/fix-threading.patch
 
   extras:
-    -
-      - src/wasm_backend.py
+    - - src/browser_backend.py
+      - lib/matplotlib/backends/browser_backend.py
+    - - src/wasm_backend.py
       - lib/matplotlib/backends/wasm_backend.py
-    -
-      - src/setup.cfg
+    - - src/html5_canvas_backend.py
+      - lib/matplotlib/backends/html5_canvas_backend.py
+    - - src/setup.cfg
       - ./setup.cfg
 
 build:
@@ -26,14 +28,18 @@ build:
   replace-libs:
     - png16=png
   post: |
-    wget -O $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
-    rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
-    rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
-    rm -rf $SITEPACKAGES/sphinxext
-    cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
+    cd build/matplotlib-3.3.3/dist/matplotlib-3.3.3/
+    wget -O matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
+    rm -rf matplotlib/backends/qt_editor
+    rm -rf matplotlib/backends/web_backend
+    rm -rf sphinxext
+    cp $PKGDIR/src/fontlist.json matplotlib
+    mkdir -p $PKGDIR/../../build/fonts
+    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
   run:
+    - distutils
     - cycler
     - kiwisolver
     - numpy

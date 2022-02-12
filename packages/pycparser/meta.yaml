@@ -1,0 +1,14 @@
+package:
+  name: pycparser
+  version: "2.21"
+source:
+  url: https://files.pythonhosted.org/packages/5e/0b/95d387f5f4433cb0f53ff7ad859bd2c6051051cebbb564f139a999ab46de/pycparser-2.21.tar.gz
+  sha256: e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206
+test:
+  imports:
+    - pycparser
+about:
+  home: https://github.com/eliben/pycparser
+  PyPI: https://pypi.org/project/pycparser
+  summary: C parser in Python
+  license: BSD

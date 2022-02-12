@@ -6,19 +6,49 @@ return type checking is used which makes things fail when f2py code calls
 subroutines that were generated from fortran with f2c. To fix this we make
 everything, including f2c, return int from subroutines.
 
+diff --git a/numpy/f2py/src/fortranobject.h b/numpy/f2py/src/fortranobject.h
+index 5d0dcf6..d5f77b3 100644
+--- a/numpy/f2py/src/fortranobject.h
++++ b/numpy/f2py/src/fortranobject.h
+@@ -67,9 +67,9 @@ Author: Pearu Peterson <pearu@cens.ioc.ee>
+
+ #define F2PY_MAX_DIMS 40
+
+-typedef void (*f2py_set_data_func)(char*,npy_intp*);
+-typedef void (*f2py_void_func)(void);
+-typedef void (*f2py_init_func)(int*,npy_intp*,f2py_set_data_func,int*);
++typedef int (*f2py_set_data_func)(char*,npy_intp*);
++typedef int (*f2py_void_func)(void);
++typedef int (*f2py_init_func)(int*,npy_intp*,f2py_set_data_func,int*);
+
+   /*typedef void* (*f2py_c_func)(void*,...);*/
+ 
 diff --git a/numpy/f2py/common_rules.py b/numpy/f2py/common_rules.py
-index 62c1ba207..54a445d37 100644
+index 62c1ba2..5893683 100644
 --- a/numpy/f2py/common_rules.py
 +++ b/numpy/f2py/common_rules.py
-@@ -117,7 +117,7 @@ def buildhooks(m):
+@@ -108,7 +108,7 @@ def buildhooks(m):
+         cadd('\t{NULL}\n};')
+         inames1 = rmbadname(inames)
+         inames1_tps = ','.join(['char *' + s for s in inames1])
+-        cadd('static void f2py_setup_%s(%s) {' % (name, inames1_tps))
++        cadd('static int f2py_setup_%s(%s) {' % (name, inames1_tps))
+         cadd('\tint i_f2py=0;')
+         for n in inames1:
+             cadd('\tf2py_%s_def[i_f2py++].data = %s;' % (name, n))
+@@ -117,10 +117,10 @@ def buildhooks(m):
              F_FUNC = 'F_FUNC_US'
          else:
              F_FUNC = 'F_FUNC'
 -        cadd('extern void %s(f2pyinit%s,F2PYINIT%s)(void(*)(%s));'
-+        cadd('extern int %s(f2pyinit%s,F2PYINIT%s)(void(*)(%s));'
++        cadd('extern int %s(f2pyinit%s,F2PYINIT%s)(int(*)(%s));'
               % (F_FUNC, lower_name, name.upper(),
                  ','.join(['char*'] * len(inames1))))
-         cadd('static void f2py_init_%s(void) {' % name)
+-        cadd('static void f2py_init_%s(void) {' % name)
++        cadd('static int f2py_init_%s(void) {' % name)
+         cadd('\t%s(f2pyinit%s,F2PYINIT%s)(f2py_setup_%s);'
+              % (F_FUNC, lower_name, name.upper(), name))
+         cadd('}\n')
 diff --git a/numpy/f2py/rules.py b/numpy/f2py/rules.py
 index 1b41498ea..9419aeb16 100755
 --- a/numpy/f2py/rules.py

@@ -1,20 +1,17 @@
 package:
   name: setuptools
-  version: 40.0.0
-
+  version: 60.3.1
 source:
-  url: https://pypi.io/packages/source/s/setuptools/setuptools-40.0.0.zip
-  sha256: 012adb8e25fbfd64c652e99e7bab58799a3aaf05d39ab38561f69190a909015f
-
-  patches:
-    - patches/remove-ctypes.patch
-
+  url: https://files.pythonhosted.org/packages/d9/15/0c48951d6fe38d7b3396401f2cfc43c86bc32408ed6c637ce1a9c6df1bdd/setuptools-60.3.1.tar.gz
+  sha256: 2b62b3dbec1fe95585dadf3bd9a014c8c578624918190428c3a7994bb52ae2b8
+build:
+  post: |
+    find build/setuptools-60.3.1/dist -name '*.exe' -delete
 requirements:
   run:
+    - distutils
     - pyparsing
-
 test:
   imports:
     - setuptools
-    - easy_install
     - pkg_resources

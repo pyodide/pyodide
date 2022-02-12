@@ -1,0 +1,33 @@
+From f1d8f0b92b17765a2e8b6ac508cfa77a79fb73a0 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 26 Dec 2021 22:39:25 -0800
+Subject: [PATCH] Cythonize _cython_blas.pyx with include path pointing to
+ scipy
+
+---
+ sklearn/utils/setup.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sklearn/utils/setup.py b/sklearn/utils/setup.py
+index ed78ecc5d..ea1a61b40 100644
+--- a/sklearn/utils/setup.py
++++ b/sklearn/utils/setup.py
+@@ -2,6 +2,7 @@ import os
+ from os.path import join
+ 
+ from sklearn._build_utils import gen_from_templates
++from Cython.Build import cythonize
+ 
+ 
+ def configuration(parent_package="", top_path=None):
+@@ -18,6 +19,7 @@ def configuration(parent_package="", top_path=None):
+         "sparsefuncs_fast", sources=["sparsefuncs_fast.pyx"], libraries=libraries
+     )
+ 
++    cythonize("sklearn/utils/_cython_blas.pyx", include_path=[f"{os.environ['PYODIDE_ROOT']}/packages/scipy/build/scipy-1.7.3/"])
+     config.add_extension(
+         "_cython_blas", sources=["_cython_blas.pyx"], libraries=libraries
+     )
+-- 
+2.25.1
+
