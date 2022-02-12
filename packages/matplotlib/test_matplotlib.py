@@ -33,7 +33,7 @@ def get_canvas_data(selenium, prefix):
 
 
 def check_comparison(selenium, prefix, num_fonts):
-    font_wait = WebDriverWait(selenium.driver, timeout=200)
+    font_wait = WebDriverWait(selenium.driver, timeout=250)
     font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
@@ -47,7 +47,7 @@ def check_comparison(selenium, prefix, num_fonts):
     plt.gcf().canvas.compare_reference_image(url, threshold)
     """
     )
-    wait = WebDriverWait(selenium.driver, timeout=200)
+    wait = WebDriverWait(selenium.driver, timeout=250)
     wait.until(ResultLoaded())
     assert selenium.run("window.font_counter") == num_fonts
     assert selenium.run("window.deviation") == 0
@@ -145,7 +145,7 @@ def test_rendering(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
         import matplotlib
@@ -182,7 +182,7 @@ def test_draw_image(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
         import matplotlib
@@ -227,7 +227,7 @@ def test_draw_image_affine_transform(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
         import matplotlib
@@ -304,7 +304,7 @@ def test_draw_text_rotated(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
         import matplotlib
@@ -363,7 +363,7 @@ def test_draw_math_text(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             r"""
         import matplotlib
@@ -488,7 +488,7 @@ def test_custom_font_text(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
             import matplotlib
@@ -529,7 +529,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
             import matplotlib
@@ -578,7 +578,7 @@ def test_transparency(selenium_standalone):
         )
     TARGET_PATH.symlink_to(TEST_PATH, True)
     try:
-        selenium.get_driver().set_script_timeout(5000)
+        selenium.get_driver().set_script_timeout(5500)
         selenium.run(
             """
         import matplotlib
