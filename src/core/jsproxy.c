@@ -716,7 +716,10 @@ JsProxy_toPy(PyObject* self,
   if(default_converter != NULL){
     default_converter_js = python2js(default_converter);
   }
-  return js2python_convert(GET_JSREF(self), depth, default_converter_js);
+  PyObject* result = js2python_convert(GET_JSREF(self), depth, default_converter_js);
+  destroy_proxy(default_converter_js, NULL);
+  hiwire_CLEAR(default_converter_js);
+  return result;
 }
 
 static PyMethodDef JsProxy_toPy_MethodDef = {

@@ -36,6 +36,14 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
 });
 
+EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
+  let msg = undefined;
+  if (msg_ptr) {
+    msg = UTF8ToString(msg_ptr);
+  }
+  Module.pyproxy_destroy(Module.hiwire.get_value(proxy_id), msg);
+});
+
 static PyObject* asyncio;
 
 // Flags controlling presence or absence of many small mixins depending on which

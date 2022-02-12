@@ -301,32 +301,30 @@ JS_FILE(js2python_init, () => {
     context.depth--;
     try {
       result = js2python_convertOther(id, value, context);
-      if(result !== undefined){
+      if (result !== undefined) {
         return result;
       }
-      if(context.defaultConverter !== undefined){
+      if (context.defaultConverter === undefined) {
         return _JsProxy_create(id);
       }
-      let converter = (x) => {
-        let id = Module.hiwire.new_value(x);
-        try {
-          return js2python_convert_with_context(id, context);
-        } finally {
-          Module.hiwire.decref(id);
-        }
-      }
-      let result_js = context.defaultConverter(value, converter);
-      if(result_js === undefined){
+      let result_js = context.defaultConverter(
+        value,
+        context.converter,
+        context.cacheConversion
+      );
+      if (result_js === undefined) {
         return _JsProxy_create(id);
       }
       result = js2python_convertImmutable(result_js);
-      if(Module.isPyProxy(result_js)){
+      if (API.isPyProxy(result_js)) {
         result_js.destroy();
       }
-      if(result !== undefined){
+      if (result !== undefined) {
         return result;
       }
-      throw new Error("defaultConverter returned invalid object. It must return a PyProxy, number, bigint, boolean, null, or undefined.");
+      throw new Error(
+        "defaultConverter returned invalid object. It must return a PyProxy, number, bigint, boolean, null, or undefined."
+      );
     } finally {
       context.depth++;
     }
@@ -335,11 +333,29 @@ JS_FILE(js2python_init, () => {
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
-  function js2python_convert(id, {depth, defaultConverter}) {
+  function js2python_convert(id, { depth, defaultConverter }) {
     let context = {
       cache: new Map(),
       depth,
       defaultConverter,
+      // arguments for defaultConverter
+      converter(x) {
+        let id = Module.hiwire.new_value(x);
+        try {
+          return Module.pyproxy_new(
+            js2python_convert_with_context(id, context)
+          );
+        } finally {
+          Module.hiwire.decref(id);
+        }
+      },
+      cacheConversion(input, output) {
+        if (API.isPyProxy(output)) {
+          context.cache.set(input, Module.PyProxy_getPtr(output));
+        } else {
+          throw new Error("Second argument should be a PyProxy!");
+        }
+      },
     };
     return js2python_convert_with_context(id, context);
   }
