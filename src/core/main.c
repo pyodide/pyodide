@@ -39,6 +39,13 @@
     }                                                                          \
   } while (0)
 
+#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
+  do {                                                                         \
+    if (mod##_init(core_module)) {                                             \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+    }                                                                          \
+  } while (0)
+
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python()
@@ -62,12 +69,6 @@ finally:
     Py_ExitStatusException(status);
   }
 }
-#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
-  do {                                                                         \
-    if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
-    }                                                                          \
-  } while (0)
 
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
