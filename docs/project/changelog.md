@@ -46,6 +46,11 @@ substitutions:
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
 
+- {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
+  and {any}`pyodide.toPy` which is used to process any object that doesn't have
+  a built-in conversion to Python.
+  {pr}`2170`
+
 ## Version 0.19.0
 
 _January 10, 2021_
