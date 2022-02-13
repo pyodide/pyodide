@@ -208,8 +208,8 @@ export function toPy(
      */
     depth: number;
     /**
-     * Optional argument to convert objects with no
-     * default conversion. See the documentation of :any:`JsProxy.to_py`.
+     * Optional argument to convert objects with no default conversion. See the
+     * documentation of :any:`JsProxy.to_py`.
      */
     defaultConverter?: (
       value: any,

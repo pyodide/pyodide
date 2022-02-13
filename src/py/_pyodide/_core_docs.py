@@ -65,12 +65,11 @@ class JsProxy:
         :ref:`type-translations-jsproxy-to-py` for more information.
 
         ``default_converter`` if present will be invoked whenever Pyodide does
-        not have some built in conversion for the object. If
-        ``default_converter`` returns ``None``, then the object will be proxied.
+        not have some built in conversion for the object.
         If ``default_converter`` raises an error, the error will be allowed to
-        propagate. In other cases, the object returned will be used as the
+        propagate. Otherwise, the object returned will be used as the
         conversion. ``default_converter`` takes three arguments. The first
-        argument is the value to be converted:
+        argument is the value to be converted.
 
         Here are a couple examples of converter functions. In addition to the
         normal conversions, convert ``Date`` to ``datetime``:
@@ -81,6 +80,7 @@ class JsProxy:
             def default_converter(value, _ignored1, _ignored2):
                 if value.constructor.name == "Date":
                     return datetime.fromtimestamp(d.valueOf()/1000)
+                return value
 
         Don't create any JsProxies, require a complete conversion or raise an error:
 
@@ -111,7 +111,7 @@ class JsProxy:
 
             def default_converter(value, convert, cache):
                 if value.constructor.name != "Pair":
-                    return None
+                    return value
                 result = []
                 cache(value, result);
                 result.append(convert(value.first))

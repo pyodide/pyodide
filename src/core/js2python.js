@@ -322,9 +322,10 @@ JS_FILE(js2python_init, () => {
       if (result !== undefined) {
         return result;
       }
-      throw new Error(
-        "defaultConverter returned invalid object. It must return a PyProxy, number, bigint, boolean, null, or undefined."
-      );
+      let result_id = Module.hiwire.new_value(result_js);
+      result = _JsProxy_create(result_id);
+      Module.hiwire.decref(result_id);
+      return result;
     } finally {
       context.depth++;
     }

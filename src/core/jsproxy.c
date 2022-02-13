@@ -721,7 +721,7 @@ JsProxy_toPy(PyObject* self,
     js2python_convert(GET_JSREF(self), depth, default_converter_js);
   if (default_converter_js != NULL) {
     destroy_proxy(default_converter_js, NULL);
-    hiwire_CLEAR(default_converter_js);
+    hiwire_decref(default_converter_js);
   }
   return result;
 }
