@@ -76,13 +76,6 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
-int
-get_python_stack_depth()
-{
-  PyThreadState* tstate = PyThreadState_GET();
-  return tstate->recursion_depth;
-}
-
 /**
  * Bootstrap steps here:
  *  1. Import _pyodide package (we depend on this in _pyodide_core)
