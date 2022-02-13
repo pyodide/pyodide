@@ -12,6 +12,8 @@ Module.preRun = [];
 
 export let API: any = {};
 Module.API = API;
+export let Hiwire: any = {};
+Module.hiwire = Hiwire;
 
 /**
  *

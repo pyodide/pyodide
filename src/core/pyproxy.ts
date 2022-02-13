@@ -140,7 +140,7 @@ Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
   if (!cache) {
     // The cache needs to be accessed primarily from the C function
     // _pyproxy_getattr so we make a hiwire id.
-    let cacheId = Module.hiwire.new_value(new Map());
+    let cacheId = Hiwire.new_value(new Map());
     cache = { cacheId, refcnt: 0 };
   }
   cache.refcnt++;
@@ -225,9 +225,9 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
-    let cache_map = Module.hiwire.pop_value(cache.cacheId);
+    let cache_map = Hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
-      const cache_entry = Module.hiwire.pop_value(proxy_id);
+      const cache_entry = Hiwire.pop_value(proxy_id);
       if (!cache.leaked) {
         Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg);
       }
@@ -284,8 +284,8 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   let num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
-  let idargs = Module.hiwire.new_value(jsargs);
-  let idkwnames = Module.hiwire.new_value(kwargs_names);
+  let idargs = Hiwire.new_value(jsargs);
+  let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
   try {
     idresult = Module.__pyproxy_apply(
@@ -298,13 +298,13 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   } catch (e) {
     API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idargs);
-    Module.hiwire.decref(idkwnames);
+    Hiwire.decref(idargs);
+    Hiwire.decref(idkwnames);
   }
   if (idresult === 0) {
     Module._pythonexc2js();
   }
-  return Module.hiwire.pop_value(idresult);
+  return Hiwire.pop_value(idresult);
 };
 
 Module.callPyObject = function (ptrobj: number, ...jsargs: any) {
@@ -349,7 +349,7 @@ export class PyProxyClass {
    */
   get type(): string {
     let ptrobj = _getPtr(this);
-    return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
+    return Hiwire.pop_value(Module.__pyproxy_type(ptrobj));
   }
   toString(): string {
     let ptrobj = _getPtr(this);
@@ -362,7 +362,7 @@ export class PyProxyClass {
     if (jsref_repr === 0) {
       Module._pythonexc2js();
     }
-    return Module.hiwire.pop_value(jsref_repr);
+    return Hiwire.pop_value(jsref_repr);
   }
   /**
    * Destroy the ``PyProxy``. This will release the memory. Any further attempt
@@ -433,12 +433,12 @@ export class PyProxyClass {
     if (!create_pyproxies) {
       proxies_id = 0;
     } else if (pyproxies) {
-      proxies_id = Module.hiwire.new_value(pyproxies);
+      proxies_id = Hiwire.new_value(pyproxies);
     } else {
-      proxies_id = Module.hiwire.new_value([]);
+      proxies_id = Hiwire.new_value([]);
     }
     if (dict_converter) {
-      dict_converter_id = Module.hiwire.new_value(dict_converter);
+      dict_converter_id = Hiwire.new_value(dict_converter);
     }
     try {
       idresult = Module._python2js_custom_dict_converter(
@@ -450,13 +450,13 @@ export class PyProxyClass {
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(proxies_id);
-      Module.hiwire.decref(dict_converter_id);
+      Hiwire.decref(proxies_id);
+      Hiwire.decref(dict_converter_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
     }
-    return Module.hiwire.pop_value(idresult);
+    return Hiwire.pop_value(idresult);
   }
   /**
    * Check whether the :any:`PyProxy.length` getter is available on this PyProxy. A
@@ -564,14 +564,14 @@ export class PyProxyGetItemMethods {
    */
   get(key: any): Py2JsResult {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
+    let idkey = Hiwire.new_value(key);
     let idresult;
     try {
       idresult = Module.__pyproxy_getitem(ptrobj, idkey);
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
+      Hiwire.decref(idkey);
     }
     if (idresult === 0) {
       if (Module._PyErr_Occurred()) {
@@ -580,7 +580,7 @@ export class PyProxyGetItemMethods {
         return undefined;
       }
     }
-    return Module.hiwire.pop_value(idresult);
+    return Hiwire.pop_value(idresult);
   }
 }
 
@@ -598,16 +598,16 @@ export class PyProxySetItemMethods {
    */
   set(key: any, value: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
-    let idval = Module.hiwire.new_value(value);
+    let idkey = Hiwire.new_value(key);
+    let idval = Hiwire.new_value(value);
     let errcode;
     try {
       errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
-      Module.hiwire.decref(idval);
+      Hiwire.decref(idkey);
+      Hiwire.decref(idval);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -622,14 +622,14 @@ export class PyProxySetItemMethods {
    */
   delete(key: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
+    let idkey = Hiwire.new_value(key);
     let errcode;
     try {
       errcode = Module.__pyproxy_delitem(ptrobj, idkey);
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
+      Hiwire.decref(idkey);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -652,14 +652,14 @@ export class PyProxyContainsMethods {
    */
   has(key: any): boolean {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
+    let idkey = Hiwire.new_value(key);
     let result;
     try {
       result = Module.__pyproxy_contains(ptrobj, idkey);
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
+      Hiwire.decref(idkey);
     }
     if (result === -1) {
       Module._pythonexc2js();
@@ -688,7 +688,7 @@ function* iter_helper(iterptr: number, token: {}): Generator<Py2JsResult> {
   try {
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
-      yield Module.hiwire.pop_value(item);
+      yield Hiwire.pop_value(item);
     }
   } catch (e) {
     API.fatal_error(e);
@@ -768,7 +768,7 @@ export class PyProxyIteratorMethods {
     let idresult;
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
-    let idarg = Module.hiwire.new_value(arg);
+    let idarg = Hiwire.new_value(arg);
     let done;
     try {
       idresult = Module.__pyproxyGen_Send(_getPtr(this), idarg);
@@ -779,12 +779,12 @@ export class PyProxyIteratorMethods {
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idarg);
+      Hiwire.decref(idarg);
     }
     if (done && idresult === 0) {
       Module._pythonexc2js();
     }
-    let value = Module.hiwire.pop_value(idresult);
+    let value = Hiwire.pop_value(idresult);
     return { done, value };
   }
 }
@@ -795,14 +795,14 @@ export class PyProxyIteratorMethods {
 // invariants, and to deal with the mro
 function python_hasattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
+  let idkey = Hiwire.new_value(jskey);
   let result;
   try {
     result = Module.__pyproxy_hasattr(ptrobj, idkey);
   } catch (e) {
     API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
+    Hiwire.decref(idkey);
   }
   if (result === -1) {
     Module._pythonexc2js();
@@ -815,7 +815,7 @@ function python_hasattr(jsobj: PyProxyClass, jskey: any) {
 // Js_undefined).
 function python_getattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
+  let idkey = Hiwire.new_value(jskey);
   let idresult;
   let cacheId = jsobj.$$.cache.cacheId;
   try {
@@ -823,7 +823,7 @@ function python_getattr(jsobj: PyProxyClass, jskey: any) {
   } catch (e) {
     API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
+    Hiwire.decref(idkey);
   }
   if (idresult === 0) {
     if (Module._PyErr_Occurred()) {
@@ -835,16 +835,16 @@ function python_getattr(jsobj: PyProxyClass, jskey: any) {
 
 function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
-  let idval = Module.hiwire.new_value(jsval);
+  let idkey = Hiwire.new_value(jskey);
+  let idval = Hiwire.new_value(jsval);
   let errcode;
   try {
     errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
   } catch (e) {
     API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
-    Module.hiwire.decref(idval);
+    Hiwire.decref(idkey);
+    Hiwire.decref(idval);
   }
   if (errcode === -1) {
     Module._pythonexc2js();
@@ -853,14 +853,14 @@ function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
 
 function python_delattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
+  let idkey = Hiwire.new_value(jskey);
   let errcode;
   try {
     errcode = Module.__pyproxy_delattr(ptrobj, idkey);
   } catch (e) {
     API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
+    Hiwire.decref(idkey);
   }
   if (errcode === -1) {
     Module._pythonexc2js();
@@ -907,7 +907,7 @@ let PyProxyHandlers = {
     // 2. The result of getattr
     let idresult = python_getattr(jsobj, jskey);
     if (idresult !== 0) {
-      return Module.hiwire.pop_value(idresult);
+      return Hiwire.pop_value(idresult);
     }
   },
   set(jsobj: PyProxyClass, jskey: any, jsval: any) {
@@ -952,7 +952,7 @@ let PyProxyHandlers = {
     if (idresult === 0) {
       Module._pythonexc2js();
     }
-    let result = Module.hiwire.pop_value(idresult);
+    let result = Hiwire.pop_value(idresult);
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },
@@ -986,8 +986,8 @@ export class PyProxyAwaitableMethods {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let resolve_handle_id = Module.hiwire.new_value(resolveHandle);
-    let reject_handle_id = Module.hiwire.new_value(rejectHandle);
+    let resolve_handle_id = Hiwire.new_value(resolveHandle);
+    let reject_handle_id = Hiwire.new_value(rejectHandle);
     let errcode;
     try {
       errcode = Module.__pyproxy_ensure_future(
@@ -998,8 +998,8 @@ export class PyProxyAwaitableMethods {
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(reject_handle_id);
-      Module.hiwire.decref(resolve_handle_id);
+      Hiwire.decref(reject_handle_id);
+      Hiwire.decref(resolve_handle_id);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -1197,8 +1197,8 @@ export class PyProxyBufferMethods {
     let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
     let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
     let itemsize = DEREF_U32(buffer_struct_ptr, 5);
-    let shape = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
-    let strides = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
+    let shape = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
+    let strides = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
 
     let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
     let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);

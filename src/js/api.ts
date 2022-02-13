@@ -1,4 +1,4 @@
-import { Module, API } from "./module.js";
+import { Module, API, Hiwire } from "./module";
 import { loadPackage, loadedPackages } from "./load-package";
 import {
   isPyProxy,
@@ -220,7 +220,7 @@ export function toPy(
   let py_result = 0;
   let result = 0;
   try {
-    obj_id = Module.hiwire.new_value(obj);
+    obj_id = Hiwire.new_value(obj);
     try {
       py_result = Module.js2python_convert(obj_id, depth);
     } catch (e) {
@@ -239,10 +239,10 @@ export function toPy(
       Module._pythonexc2js();
     }
   } finally {
-    Module.hiwire.decref(obj_id);
+    Hiwire.decref(obj_id);
     Module._Py_DecRef(py_result);
   }
-  return Module.hiwire.pop_value(result);
+  return Hiwire.pop_value(result);
 }
 
 /**
