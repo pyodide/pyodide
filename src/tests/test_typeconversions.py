@@ -1196,7 +1196,7 @@ def test_to_py_default_converter2(selenium):
         pyodide.runPython(`
             from js import p
             def default_converter(value, converter, cache):
-                if value.constructor.name != "Pair:
+                if value.constructor.name != "Pair":
                     return value
                 l = []
                 cache(value, l)
