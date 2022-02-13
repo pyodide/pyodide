@@ -51,9 +51,6 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
-      - name: Get docker environment version
-        id: pyodide_env
-        run: echo "::set-output name=tag::$(cat .docker-env-version | tr -d " \t\n\r")"
       - name: Build and push Docker image to ${{ env.GHCR_REGISTRY }}
         id: build
         uses: docker/build-push-action@v2
