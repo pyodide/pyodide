@@ -2,8 +2,8 @@ package:
   name: mpmath
   version: 1.2.1
 source:
-  sha256: 79ffb45cf9f4b101a807595bcb3e72e0396202e0b1d25d689134b48c4216a81a
-  url: https://files.pythonhosted.org/packages/95/ba/7384cb4db4ed474d4582944053549e02ec25da630810e4a23454bc9fa617/mpmath-1.2.1.tar.gz
+  sha256: 604bc21bd22d2322a177c73bdb573994ef76e62edd595d17e00aff24b0667e5c
+  url: https://files.pythonhosted.org/packages/d4/cf/3965bddbb4f1a61c49aacae0e78fd1fe36b5dc36c797b31f30cf07dcbbb7/mpmath-1.2.1-py3-none-any.whl
 test:
   imports:
     - mpmath

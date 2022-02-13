@@ -5,7 +5,7 @@ from pyodide_build.testing import run_in_pyodide
 def test_cloudpickle():
     import cloudpickle
 
-    squared = lambda x: x ** 2
+    squared = lambda x: x**2
     pickled_lambda = cloudpickle.dumps(squared)
 
     import pickle

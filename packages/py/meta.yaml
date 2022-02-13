@@ -1,9 +1,9 @@
 package:
   name: py
-  version: 1.9.0
+  version: 1.11.0
 source:
-  sha256: 9ca6883ce56b4e8da7e79ac18787889fa5206c79dcc67fb065376cd2fe03f342
-  url: https://files.pythonhosted.org/packages/97/a6/ab9183fe08f69a53d06ac0ee8432bc0ffbb3989c575cc69b73a0229a9a99/py-1.9.0.tar.gz
+  sha256: 607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378
+  url: https://files.pythonhosted.org/packages/f6/f0/10642828a8dfb741e5f3fbaac830550a518a775c7fff6f04a007259b0548/py-1.11.0-py2.py3-none-any.whl
 test:
   imports:
     - py

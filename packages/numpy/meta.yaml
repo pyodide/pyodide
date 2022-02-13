@@ -23,6 +23,7 @@ source:
     - patches/fix-invalid-asm-instruction.patch
     - patches/fix-removed-decorators-module.patch
     - patches/fix-comparator-function-signatures.patch
+    - patches/fix-random_float_fill-return-type.patch
 
 build:
   skip_host: False

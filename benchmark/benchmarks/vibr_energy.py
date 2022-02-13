@@ -7,4 +7,4 @@ import numpy
 
 
 def vibr_energy(harmonic, anharmonic, i):
-    return numpy.exp(-harmonic * i - anharmonic * (i ** 2))
+    return numpy.exp(-harmonic * i - anharmonic * (i**2))

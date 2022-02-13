@@ -6,12 +6,11 @@ import os
 import shutil
 import urllib.request
 import urllib.error
+import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Literal
 import warnings
-
-from .io import parse_package_config
 
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 
@@ -20,28 +19,57 @@ class MkpkgFailedException(Exception):
     pass
 
 
-def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
-    """Get sdist file path from the meta-data"""
-    sdist_extensions = tuple(
-        extension
-        for (name, extensions, description) in shutil.get_unpack_formats()
-        for extension in extensions
-    )
+SDIST_EXTENSIONS = tuple(
+    extension
+    for (name, extensions, description) in shutil.get_unpack_formats()
+    for extension in extensions
+)
 
+
+def _find_sdist(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Get sdist file path from the metadata"""
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
         if entry["packagetype"] == "sdist" and entry["filename"].endswith(
-            sdist_extensions
+            SDIST_EXTENSIONS
         ):
             return entry
+    return None
 
-    raise MkpkgFailedException(
-        "No sdist URL found for package %s (%s)"
-        % (
-            pypi_metadata["info"].get("name"),
-            pypi_metadata["info"].get("package_url"),
-        )
-    )
+
+def _find_wheel(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Get wheel file path from the metadata"""
+    for entry in pypi_metadata["urls"]:
+        if entry["packagetype"] == "bdist_wheel" and entry["filename"].endswith(
+            "py3-none-any.whl"
+        ):
+            return entry
+    return None
+
+
+def _find_dist(
+    pypi_metadata: Dict[str, Any], source_types=List[Literal["wheel", "sdist"]]
+) -> Dict[str, Any]:
+    """Find a wheel or sdist, as appropriate.
+
+    source_types controls which types (wheel and/or sdist) are accepted and also
+    the priority order.
+    E.g., ["wheel", "sdist"] means accept either wheel or sdist but prefer wheel.
+    ["sdist", "wheel"] means accept either wheel or sdist but prefer sdist.
+    """
+    result = None
+    for source in source_types:
+        if source == "wheel":
+            result = _find_wheel(pypi_metadata)
+        if source == "sdist":
+            result = _find_sdist(pypi_metadata)
+        if result:
+            return result
+
+    types_str = " or ".join(source_types)
+    name = pypi_metadata["info"].get("name")
+    url = pypi_metadata["info"].get("package_url")
+    raise MkpkgFailedException(f"No {types_str} found for package {name} ({url})")
 
 
 def _get_metadata(package: str, version: Optional[str] = None) -> Dict:
@@ -73,7 +101,15 @@ def _import_ruamel_yaml():
     return YAML
 
 
-def make_package(package: str, version: Optional[str] = None):
+def run_prettier(meta_path):
+    subprocess.run(["npx", "prettier", "-w", meta_path])
+
+
+def make_package(
+    package: str,
+    version: Optional[str] = None,
+    source_fmt: Optional[Literal["wheel", "sdist"]] = None,
+):
     """
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
@@ -84,10 +120,16 @@ def make_package(package: str, version: Optional[str] = None):
     yaml = YAML()
 
     pypi_metadata = _get_metadata(package, version)
-    sdist_metadata = _extract_sdist(pypi_metadata)
 
-    url = sdist_metadata["url"]
-    sha256 = sdist_metadata["digests"]["sha256"]
+    if source_fmt:
+        sources = [source_fmt]
+    else:
+        # Prefer wheel unless sdist is specifically requested.
+        sources = ["wheel", "sdist"]
+    dist_metadata = _find_dist(pypi_metadata, sources)
+
+    url = dist_metadata["url"]
+    sha256 = dist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
 
     homepage = pypi_metadata["info"]["home_page"]
@@ -109,10 +151,11 @@ def make_package(package: str, version: Optional[str] = None):
 
     if not (PACKAGES_ROOT / package).is_dir():
         os.makedirs(PACKAGES_ROOT / package)
-    out_path = PACKAGES_ROOT / package / "meta.yaml"
-    with open(out_path, "w") as fd:
+    meta_path = PACKAGES_ROOT / package / "meta.yaml"
+    with open(meta_path, "w") as fd:
         yaml.dump(yaml_content, fd)
-    success(f"Output written to {out_path}")
+    run_prettier(meta_path)
+    success(f"Output written to {meta_path}")
 
 
 class bcolors:
@@ -140,17 +183,21 @@ def success(msg):
     print(bcolors.OKBLUE + msg + bcolors.ENDC)
 
 
-def update_package(package: str, update_patched: bool = True):
+def update_package(
+    package: str,
+    update_patched: bool = True,
+    source_fmt: Optional[Literal["wheel", "sdist"]] = None,
+):
 
     YAML = _import_ruamel_yaml()
-
     yaml = YAML()
 
     meta_path = PACKAGES_ROOT / package / "meta.yaml"
-    try:
-        yaml_content = parse_package_config(meta_path)
-    except:
+    if not meta_path.exists():
+        print(f"{meta_path} does not exist")
         sys.exit(0)
+    with open(meta_path, "rb") as fd:
+        yaml_content = yaml.load(fd)
 
     if "url" not in yaml_content["source"]:
         print(f"Skipping: {package} is a local package!")
@@ -161,21 +208,22 @@ def update_package(package: str, update_patched: bool = True):
         print(f"Skipping: {package} is a library!")
         sys.exit(0)
 
+    if yaml_content["source"]["url"].endswith("whl"):
+        old_fmt = "wheel"
+    else:
+        old_fmt = "sdist"
+
     pypi_metadata = _get_metadata(package)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
-    if pypi_ver <= local_ver:
+    already_up_to_date = pypi_ver <= local_ver and (
+        source_fmt is None or source_fmt == old_fmt
+    )
+    if already_up_to_date:
         print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
         sys.exit(0)
 
     print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
-    if set(yaml_content.keys()).difference(
-        ("package", "source", "test", "requirements")
-    ):
-        abort(
-            f"{package}: Only pure python packages can be updated using this script. "
-            f"Aborting."
-        )
 
     if "patches" in yaml_content["source"]:
         if update_patched:
@@ -186,14 +234,25 @@ def update_package(package: str, update_patched: bool = True):
         else:
             abort(f"Pyodide applies patches to {package}. Skipping update.")
 
-    sdist_metadata = _extract_sdist(pypi_metadata)
+    if source_fmt:
+        # require the type requested
+        sources = [source_fmt]
+    elif old_fmt == "wheel":
+        # prefer wheel to sdist
+        sources = ["wheel", "sdist"]
+    else:
+        # prefer sdist to wheel
+        sources = ["sdist", "wheel"]
 
-    yaml_content["source"]["url"] = sdist_metadata["url"]
+    dist_metadata = _find_dist(pypi_metadata, sources)
+
+    yaml_content["source"]["url"] = dist_metadata["url"]
     yaml_content["source"].pop("md5", None)
-    yaml_content["source"]["sha256"] = sdist_metadata["digests"]["sha256"]
+    yaml_content["source"]["sha256"] = dist_metadata["digests"]["sha256"]
     yaml_content["package"]["version"] = pypi_metadata["info"]["version"]
-    with open(PACKAGES_ROOT / package / "meta.yaml", "w") as fd:
+    with open(meta_path, "wb") as fd:
         yaml.dump(yaml_content, fd)
+    run_prettier(meta_path)
     success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
@@ -210,6 +269,12 @@ complex things.""".strip()
         help="Update existing package if it has no patches",
     )
     parser.add_argument(
+        "--source-format",
+        help="Which source format is prefered. Options are wheel or sdist. "
+        "If none is provided, then either a wheel or an sdist will be used. "
+        "When updating a package, the type will be kept the same if possible.",
+    )
+    parser.add_argument(
         "--version",
         type=str,
         default=None,
@@ -223,12 +288,16 @@ def main(args):
     try:
         package = args.package[0]
         if args.update:
-            update_package(package, update_patched=True)
+            update_package(
+                package, update_patched=True, wheel=args.wheel, sdist=args.sdist
+            )
             return
         if args.update_if_not_patched:
-            update_package(package, update_patched=False)
+            update_package(
+                package, update_patched=False, wheel=args.wheel, sdist=args.sdist
+            )
             return
-        make_package(package, args.version)
+        make_package(package, args.version, wheel=args.wheel, sdist=args.sdist)
     except MkpkgFailedException as e:
         # This produces two types of error messages:
         #

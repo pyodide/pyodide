@@ -2,8 +2,8 @@ package:
   name: docutils
   version: 0.18.1
 source:
-  sha256: 679987caf361a7539d76e584cbeddc311e3aee937877c87346f31debc63e9d06
-  url: https://files.pythonhosted.org/packages/57/b1/b880503681ea1b64df05106fc7e3c4e3801736cf63deffc6fa7fc5404cf5/docutils-0.18.1.tar.gz
+  sha256: 23010f129180089fbcd3bc08cfefccb3b890b0050e1ca00c867036e9d161b98c
+  url: https://files.pythonhosted.org/packages/8d/14/69b4bad34e3f250afe29a854da03acb6747711f3df06c359fa053fae4e76/docutils-0.18.1-py2.py3-none-any.whl
 test:
   imports:
     - docutils

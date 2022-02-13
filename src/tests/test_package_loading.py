@@ -2,6 +2,15 @@ import pytest
 import shutil
 
 from pathlib import Path
+from conftest import BUILD_PATH
+
+
+def get_pyparsing_wheel_name():
+    return list(BUILD_PATH.glob("pyparsing*.whl"))[0].name
+
+
+def get_pytz_wheel_name():
+    return list(BUILD_PATH.glob("pytz*.whl"))[0].name
 
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
@@ -26,12 +35,13 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         fh_main.seek(0, 2)
         fh_backup.seek(0, 2)
 
-        selenium.load_package(f"http://{url}:{port}/pyparsing-3.0.6-py3-none-any.whl")
+        pyparsing_wheel_name = get_pyparsing_wheel_name()
+        selenium.load_package(f"http://{url}:{port}/{pyparsing_wheel_name}")
         assert "Skipping unknown package" not in selenium.logs
 
         # check that all resources were loaded from the active server
         txt = fh_main.read()
-        assert '"GET /pyparsing-3.0.6-py3-none-any.whl HTTP/1.1" 200' in txt
+        assert f'"GET /{pyparsing_wheel_name} HTTP/1.1" 200' in txt
 
         # no additional resources were loaded from the other server
         assert len(fh_backup.read()) == 0
@@ -43,12 +53,14 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         """
     )
 
-    selenium.load_package(f"http://{url}:{port}/pytz-2021.3-py3-none-any.whl")
+    pytz_wheel_name = get_pytz_wheel_name()
+    selenium.load_package(f"http://{url}:{port}/{pytz_wheel_name}")
     selenium.run("import pytz")
 
 
 def test_load_relative_url(selenium_standalone):
-    selenium_standalone.load_package("./pytz-2021.3-py3-none-any.whl")
+    print(get_pytz_wheel_name())
+    selenium_standalone.load_package(f"./{get_pytz_wheel_name()}")
     selenium_standalone.run("import pytz")
 
 
@@ -150,8 +162,9 @@ def test_load_package_unknown(selenium_standalone):
     port = selenium_standalone.server_port
 
     build_dir = Path(__file__).parents[2] / "build"
+    pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
-        build_dir / "pyparsing-3.0.6-py3-none-any.whl",
+        build_dir / pyparsing_wheel_name,
         build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
     )
 
@@ -248,7 +261,7 @@ def test_test_unvendoring(selenium_standalone):
 
     assert selenium.run_js(
         """
-        return pyodide._module.packages['regex'].unvendored_tests;
+        return pyodide._api.packages['regex'].unvendored_tests;
         """
     )
 

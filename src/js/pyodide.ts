@@ -1,37 +1,37 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
+import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
-import { makePublicAPI, registerJsModule } from "./api.js";
-import "./pyproxy.gen.js";
+import { makePublicAPI, PyodideInterface } from "./api.js";
 import "./error_handling.gen.js";
 
-/**
- * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
- * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
- * @typedef {import('./pyproxy.gen').PyProxyWithGet} PyProxyWithGet
- * @typedef {import('./pyproxy.gen').PyProxyWithSet} PyProxyWithSet
- * @typedef {import('./pyproxy.gen').PyProxyWithHas} PyProxyWithHas
- * @typedef {import('./pyproxy.gen').PyProxyIterable} PyProxyIterable
- * @typedef {import('./pyproxy.gen').PyProxyIterator} PyProxyIterator
- * @typedef {import('./pyproxy.gen').PyProxyAwaitable} PyProxyAwaitable
- * @typedef {import('./pyproxy.gen').PyProxyBuffer} PyProxyBuffer
- * @typedef {import('./pyproxy.gen').PyProxyCallable} PyProxyCallable
- *
- * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
- *
- * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
- * @typedef {import('./pyproxy.gen').PyBuffer} PyBuffer
- */
+import { PyProxy, PyProxyDict, Py2JsResult } from "./pyproxy.gen";
+
+export {
+  PyProxy,
+  PyProxyWithLength,
+  PyProxyDict,
+  PyProxyWithGet,
+  PyProxyWithSet,
+  PyProxyWithHas,
+  PyProxyIterable,
+  PyProxyIterator,
+  PyProxyAwaitable,
+  PyProxyBuffer,
+  PyProxyCallable,
+  Py2JsResult,
+  TypedArray,
+  PyBuffer,
+} from "./pyproxy.gen";
 
 /**
  * Dump the Python traceback to the browser console.
  *
  * @private
  */
-Module.dump_traceback = function () {
+API.dump_traceback = function () {
   const fd_stdout = 1;
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
@@ -49,7 +49,7 @@ let fatal_error_occurred = false;
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
-Module.fatal_error = function (e) {
+API.fatal_error = function (e: any) {
   if (e.pyodide_fatal_error) {
     return;
   }
@@ -65,7 +65,7 @@ Module.fatal_error = function (e) {
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
   );
   console.error("The cause of the fatal error was:");
-  if (Module.inTestHoist) {
+  if (API.inTestHoist) {
     // Test hoist won't print the error object in a useful way so convert it to
     // string.
     console.error(e.toString());
@@ -74,12 +74,12 @@ Module.fatal_error = function (e) {
     console.error(e);
   }
   try {
-    Module.dump_traceback();
-    for (let key of Object.keys(Module.public_api)) {
+    API.dump_traceback();
+    for (let key of Object.keys(API.public_api)) {
       if (key.startsWith("_") || key === "version") {
         continue;
       }
-      Object.defineProperty(Module.public_api, key, {
+      Object.defineProperty(API.public_api, key, {
         enumerable: true,
         configurable: true,
         get: () => {
@@ -89,8 +89,8 @@ Module.fatal_error = function (e) {
         },
       });
     }
-    if (Module.on_fatal) {
-      Module.on_fatal(e);
+    if (API.on_fatal) {
+      API.on_fatal(e);
     }
   } catch (err2) {
     console.error("Another error occurred while handling the fatal error:");
@@ -99,14 +99,14 @@ Module.fatal_error = function (e) {
   throw e;
 };
 
-let runPythonInternal_dict; // Initialized in finalizeBootstrap
+let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
 /**
  * Just like `runPython` except uses a different globals dict and gets
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
  */
-Module.runPythonInternal = function (code) {
-  return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
+API.runPythonInternal = function (code: string): Py2JsResult {
+  return API._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
 /**
@@ -116,11 +116,14 @@ Module.runPythonInternal = function (code) {
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(globals_dict, builtins_dict) {
+function wrapPythonGlobals(
+  globals_dict: PyProxyDict,
+  builtins_dict: PyProxyDict
+) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
       if (symbol === "get") {
-        return (key) => {
+        return (key: any) => {
           let result = target.get(key);
           if (result === undefined) {
             result = builtins_dict.get(key);
@@ -129,14 +132,14 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
         };
       }
       if (symbol === "has") {
-        return (key) => target.has(key) || builtins_dict.has(key);
+        return (key: any) => target.has(key) || builtins_dict.has(key);
       }
       return Reflect.get(target, symbol);
     },
   });
 }
 
-function unpackPyodidePy(pyodide_py_tar) {
+function unpackPyodidePy(pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
   let stream = Module.FS.open(fileName, "w");
   Module.FS.write(
@@ -171,24 +174,28 @@ del importlib
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-function finalizeBootstrap(config) {
+function finalizeBootstrap(config: ConfigType) {
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
-  Module.importlib = Module.runPythonInternal("import importlib; importlib");
-  let import_module = Module.importlib.import_module;
+  runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
+  API.importlib = API.runPythonInternal("import importlib; importlib");
+  let import_module = API.importlib.import_module;
 
-  Module.sys = import_module("sys");
-  Module.sys.path.insert(0, config.homedir);
+  API.sys = import_module("sys");
+  API.sys.path.insert(0, config.homedir);
 
   // Set up globals
-  let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
-  let builtins = Module.runPythonInternal("import builtins; builtins.__dict__");
-  Module.globals = wrapPythonGlobals(globals, builtins);
+  let globals = API.runPythonInternal(
+    "import __main__; __main__.__dict__"
+  ) as PyProxyDict;
+  let builtins = API.runPythonInternal(
+    "import builtins; builtins.__dict__"
+  ) as PyProxyDict;
+  API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
-  let importhook = Module._pyodide._importhook;
+  let importhook = API._pyodide._importhook;
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
 
@@ -199,16 +206,32 @@ function finalizeBootstrap(config) {
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
-  Module.pyodide_py = import_module("pyodide");
-  Module.package_loader = import_module("pyodide._package_loader");
-  Module.version = Module.pyodide_py.__version__;
+  API.pyodide_py = import_module("pyodide");
+  API.package_loader = import_module("pyodide._package_loader");
+  API.version = API.pyodide_py.__version__;
 
   // copy some last constants onto public API.
-  pyodide.pyodide_py = Module.pyodide_py;
-  pyodide.version = Module.version;
-  pyodide.globals = Module.globals;
+  pyodide.pyodide_py = API.pyodide_py;
+  pyodide.version = API.version;
+  pyodide.globals = API.globals;
   return pyodide;
 }
+
+declare function _createPyodideModule(Module: any): Promise<void>;
+
+/**
+ * See documentation for loadPyodide.
+ * @private
+ */
+type ConfigType = {
+  indexURL: string;
+  homedir?: string;
+  fullStdLib?: boolean;
+  stdin?: () => string;
+  stdout?: (msg: string) => void;
+  stderr?: (msg: string) => void;
+  jsglobals?: object;
+};
 
 /**
  * Load the main Pyodide wasm module and initialize it.
@@ -219,31 +242,49 @@ function finalizeBootstrap(config) {
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
  * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
- * @param {string} config.indexURL - The URL from which Pyodide will load
- * packages
- * @param {string} config.homedir - The home directory which Pyodide will use inside virtual file system
- * Default: /home/pyodide
- * @param {boolean} config.fullStdLib - Load the full Python standard library.
- * Setting this to false excludes following modules: distutils.
- * Default: true
- * @param {undefined | function(): string} config.stdin - Override the standard input callback. Should ask the user for one line of input.
- * Default: undefined
- * @param {undefined | function(string)} config.stdout - Override the standard output callback.
- * Default: undefined
- * @param {undefined | function(string)} config.stderr - Override the standard error output callback.
- * Default: undefined
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
  */
-export async function loadPyodide(config) {
-  if (globalThis.__pyodide_module) {
+export async function loadPyodide(config: {
+  /**
+   * The URL from which Pyodide will load packages
+   */
+  indexURL: string;
+
+  /**
+   * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
+   */
+  homedir?: string;
+
+  /** Load the full Python standard library.
+   * Setting this to false excludes following modules: distutils.
+   * Default: true
+   */
+  fullStdLib?: boolean;
+  /**
+   * Override the standard input callback. Should ask the user for one line of input.
+   */
+  stdin?: () => string;
+  /**
+   * Override the standard output callback.
+   * Default: undefined
+   */
+  stdout?: (msg: string) => void;
+  /**
+   * Override the standard error output callback.
+   * Default: undefined
+   */
+  stderr?: (msg: string) => void;
+  jsglobals?: object;
+}): Promise<PyodideInterface> {
+  if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
-  loadPyodide.inProgress = true;
+  (loadPyodide as any).inProgress = true;
 
   const default_config = {
     fullStdLib: true,
@@ -255,7 +296,6 @@ export async function loadPyodide(config) {
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
-  Module.indexURL = config.indexURL;
   await initNodeModules();
   let packageIndexReady = initializePackageIndex(config.indexURL);
   let pyodide_py_tar_promise = _loadBinaryFile(
@@ -270,7 +310,7 @@ export async function loadPyodide(config) {
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
-  Module.locateFile = (path) => config.indexURL + path;
+  Module.locateFile = (path: string) => config.indexURL + path;
   const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
@@ -283,7 +323,7 @@ export async function loadPyodide(config) {
   await moduleLoaded;
 
   // Disable futher loading of Emscripten file_packager stuff.
-  Module.locateFile = (path) => {
+  Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
@@ -301,4 +341,4 @@ export async function loadPyodide(config) {
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
-globalThis.loadPyodide = loadPyodide;
+(globalThis as any).loadPyodide = loadPyodide;
