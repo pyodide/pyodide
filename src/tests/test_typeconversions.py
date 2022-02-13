@@ -1148,19 +1148,20 @@ def test_to_py_default_converter(selenium):
         l = [1,2,3];
         self.p = new Pair(l, [l]);
         const opts = {defaultConverter(value, converter, cache){
-            if(p.constructor.name === "Pair"){
-                let list = pyodide.globals.get("list");
-                l = list();
-                list.destroy();
-                cache(value, l);
-                const first = converter(value.first);
-                const second = converter(value.second);
-                l.append(first);
-                l.append(second);
-                first.destroy();
-                second.destroy();
-                return l;
+            if(p.constructor.name !== "Pair"){
+                return value;
             }
+            let list = pyodide.globals.get("list");
+            l = list();
+            list.destroy();
+            cache(value, l);
+            const first = converter(value.first);
+            const second = converter(value.second);
+            l.append(first);
+            l.append(second);
+            first.destroy();
+            second.destroy();
+            return l;
         }};
         self.r = pyodide.toPy(p, opts);
         pyodide.runPython(`
@@ -1195,11 +1196,13 @@ def test_to_py_default_converter2(selenium):
         pyodide.runPython(`
             from js import p
             def default_converter(value, converter, cache):
-               l = []
-               cache(value, l)
-               l.append(converter(value.first))
-               l.append(converter(value.second))
-               return l
+                if value.constructor.name != "Pair:
+                    return value
+                l = []
+                cache(value, l)
+                l.append(converter(value.first))
+                l.append(converter(value.second))
+                return l
             r = p.to_py(default_converter=default_converter)
             assert isinstance(r, list)
             assert r[0] is r[1][0]
