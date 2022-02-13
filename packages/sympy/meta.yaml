@@ -2,8 +2,6 @@ package:
   name: sympy
   version: "1.9"
 requirements:
-  host:
-    - mpmath
   run:
     - distutils
     - mpmath

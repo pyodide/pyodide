@@ -109,6 +109,15 @@ def check_package_config(
                     f"Wrong type for '{section_key}/{subsection_key}': "
                     f"expected {expected_type.__name__}, got {type(value).__name__}."
                 )
+    # Check that if sources is a wheel it shouldn't have host dependencies.
+    source_url = config.get("source", {}).get("url", "")
+    requirements_host = config.get("requirements", {}).get("host", [])
+
+    if source_url.endswith(".whl") and len(requirements_host):
+        errors_msg.append(
+            f"When source -> url is a wheel ({source_url}) the package cannot have host "
+            f"dependencies. Found {requirements_host}'"
+        )
 
     if raise_errors and errors_msg:
         if file_path is None:
