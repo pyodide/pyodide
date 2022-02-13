@@ -554,7 +554,7 @@ _JsArray_PushEntry(ConversionContext context,
 
 EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
   return Hiwire.new_value(
-    Hiwire.get_value(jscontext).dict_converter(Hiwire.get_value(array)));`
+    Hiwire.get_value(jscontext).dict_converter(Hiwire.get_value(array)));
 })
 
 static JsRef
