@@ -554,8 +554,7 @@ _JsArray_PushEntry(ConversionContext context,
 
 EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
   return Hiwire.new_value(
-    Hiwire.get_value(jscontext).dict_converter(
-      Hiwire.get_value(array)));
+    Hiwire.get_value(jscontext).dict_converter(Hiwire.get_value(array)));`
 })
 
 static JsRef
@@ -579,12 +578,14 @@ python2js_custom_dict_converter(PyObject* x,
     // No custom converter provided, go back to default convertion to Map.
     return python2js_with_depth(x, depth, proxies);
   }
+  // clang-format off
   JsRef jscontext = (JsRef)EM_ASM_INT(
     {
       return Hiwire.new_value(
         { dict_converter : Hiwire.get_value($0) });
     },
     dict_converter);
+  // clang-format on
   ConversionContext context = {
     .depth = depth,
     .proxies = proxies,
