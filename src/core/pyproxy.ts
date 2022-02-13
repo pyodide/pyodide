@@ -14,7 +14,7 @@
  * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
-import { Module, API } from "./module.js";
+import { Module, API, Hiwire } from "./module.js";
 
 // pyodide-skip
 
