@@ -1,2 +1,2 @@
-let API = Module.API;
-let Hiwire = Module.hiwire;
+const API = Module.API;
+const Hiwire = Module.hiwire;

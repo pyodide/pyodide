@@ -45,7 +45,6 @@ EM_JS_NUM(int, hiwire_init, (), {
     // conventions.
     counter : new Uint32Array([1])
   };
-  Hiwire = {};
   Hiwire.UNDEFINED = DEREF_U8(_Js_undefined, 0);
   Hiwire.JSNULL = DEREF_U8(_Js_null, 0);
   Hiwire.TRUE = DEREF_U8(_Js_true, 0);
