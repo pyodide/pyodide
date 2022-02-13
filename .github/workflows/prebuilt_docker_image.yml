@@ -5,6 +5,7 @@ on:
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide
+  PYODIDE_ENV_VERSION: 20220213-chrome97-firefox96
 jobs:
   build_docker:
     runs-on: ubuntu-latest
@@ -22,9 +23,6 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.IMAGE_NAME }}
-      - name: Get docker environment version
-        id: pyodide_env
-        run: echo "::set-output name=tag::$(cat .docker-env-version | tr -d " \t\n\r")"
       - name: Build and push Docker image to Docker Hub
         id: build
         uses: docker/build-push-action@v2
@@ -32,7 +30,7 @@ jobs:
           file: ./Dockerfile-prebuilt
           push: true
           build-args: |
-            VERSION=${{ steps.pyodide_env.outputs.tag }}
+            VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image digest
