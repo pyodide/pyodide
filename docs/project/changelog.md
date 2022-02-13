@@ -16,7 +16,7 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112` pydantic {pr}`2117`
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
 
 - Upgraded packages: distlib (0.3.4)
 
@@ -50,6 +50,10 @@ substitutions:
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
   a built-in conversion to Python.
   {pr}`2170`
+
+- {{Enhancement}} Most pure Python packages were switched to use the wheels
+  directly from PyPI rather than rebuilding them.
+  {pr}`{2126}
 
 ## Version 0.19.0
 
