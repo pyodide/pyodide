@@ -90,19 +90,20 @@ def get_numpy_benchmarks():
         name = filename.stem
         if name in SKIP:
             continue
-        content = parse_numpy_benchmark(filename)
-        content += (
-            "import numpy as np\n"
-            "_ = np.empty(())\n"
-            "setup = setup + '\\nfrom __main__ import {}'\n"
-            "from timeit import Timer\n"
-            "t = Timer(run, setup)\n"
-            "r = t.repeat(11, 40)\n"
-            "r.remove(min(r))\n"
-            "r.remove(max(r))\n"
-            "print(np.mean(r))\n".format(name)
-        )
-        yield name, content
+        if "canvas" not in str(filename) and "wasm" not in str(filename):
+            content = parse_numpy_benchmark(filename)
+            content += (
+                "import numpy as np\n"
+                "_ = np.empty(())\n"
+                "setup = setup + '\\nfrom __main__ import {}'\n"
+                "from timeit import Timer\n"
+                "t = Timer(run, setup)\n"
+                "r = t.repeat(11, 40)\n"
+                "r.remove(min(r))\n"
+                "r.remove(max(r))\n"
+                "print(np.mean(r))\n".format(name)
+            )
+            yield name, content
 
 
 def get_matplotlib_benchmarks():
@@ -167,6 +168,10 @@ def main(hostpython):
             print_entry("load " + package_name, b)
 
         for name, content in get_benchmarks():
+            for browser_name, cls in browser_cls:
+                selenium_backends[browser_name].driver.quit()
+                selenium_backends[browser_name] = cls(port, script_timeout=1000)
+                selenium_backends[browser_name].load_package("numpy")
             results[name] = run_all(hostpython, selenium_backends, content)
             print_entry(name, results[name])
         for selenium in selenium_backends.values():
