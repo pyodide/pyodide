@@ -24,9 +24,11 @@ hiwire_from_bool(bool boolean)
   return boolean ? Js_true : Js_false;
 }
 
+// clang-format off
 EM_JS(bool, hiwire_to_bool, (JsRef val), {
   return !!Hiwire.get_value(val);
 });
+// clang-format on
 
 EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
@@ -268,11 +270,17 @@ EM_JS(JsRef, hiwire_incref, (JsRef idval), {
   return idval;
 });
 
-EM_JS(void, hiwire_decref, (JsRef idval), { Hiwire.decref(idval); });
+// clang-format off
+EM_JS(void, hiwire_decref, (JsRef idval), {
+  Hiwire.decref(idval);
+});
+// clang-format on
 
+// clang-format off
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Hiwire.new_value(val);
 });
+// clang-format on
 
 // clang-format off
 EM_JS_REF(JsRef,
@@ -351,7 +359,11 @@ EM_JS(bool, JsArray_Check, (JsRef idobj), {
   return false;
 });
 
-EM_JS_REF(JsRef, JsArray_New, (), { return Hiwire.new_value([]); });
+// clang-format off
+EM_JS_REF(JsRef, JsArray_New, (), {
+  return Hiwire.new_value([]);
+});
+// clang-format on
 
 EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
@@ -361,7 +373,11 @@ EM_JS(void, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
 });
 
-EM_JS_REF(JsRef, JsObject_New, (), { return Hiwire.new_value({}); });
+// clang-format off
+EM_JS_REF(JsRef, JsObject_New, (), {
+  return Hiwire.new_value({});
+});
+// clang-format on
 
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
@@ -376,27 +392,22 @@ EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
 });
 
 // clang-format off
-EM_JS_NUM(
-errcode,
-JsObject_SetString,
-(JsRef idobj, const char* ptrkey, JsRef idval),
+EM_JS_NUM(errcode,
+          JsObject_SetString,
+          (JsRef idobj, const char* ptrkey, JsRef idval),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
   let jsval = Hiwire.get_value(idval);
   jsobj[jskey] = jsval;
 });
+// clang-format on
 
-EM_JS_NUM(
-errcode,
-JsObject_DeleteString,
-(JsRef idobj, const char* ptrkey),
-{
+EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
   delete jsobj[jskey];
 });
-// clang-format on
 
 EM_JS_REF(JsRef, JsArray_Get, (JsRef idobj, int idx), {
   let obj = Hiwire.get_value(idobj);
@@ -479,8 +490,8 @@ EM_JS_REF(JsRef, hiwire_call_OneArg, (JsRef idfunc, JsRef idarg), {
 
 // clang-format off
 EM_JS_REF(JsRef,
-hiwire_call_bound,
-(JsRef idfunc, JsRef idthis, JsRef idargs),
+          hiwire_call_bound,
+          (JsRef idfunc, JsRef idthis, JsRef idargs),
 {
   let func = Hiwire.get_value(idfunc);
   let this_;
@@ -508,10 +519,9 @@ hiwire_HasMethodId(JsRef obj, Js_Identifier* name)
 }
 
 // clang-format off
-EM_JS_REF(
-JsRef,
-hiwire_CallMethodString,
-(JsRef idobj, const char* name, JsRef idargs),
+EM_JS_REF(JsRef,
+          hiwire_CallMethodString,
+          (JsRef idobj, const char* name, JsRef idargs),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jsname = UTF8ToString(name);
@@ -528,10 +538,9 @@ EM_JS_REF(JsRef, hiwire_CallMethod, (JsRef idobj, JsRef name, JsRef idargs), {
 });
 
 // clang-format off
-EM_JS_REF(
-JsRef,
-hiwire_CallMethod_OneArg,
-(JsRef idobj, JsRef name, JsRef idarg),
+EM_JS_REF(JsRef,
+          hiwire_CallMethod_OneArg,
+          (JsRef idobj, JsRef name, JsRef idarg),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jsname = Hiwire.get_value(name);
@@ -779,8 +788,11 @@ EM_JS_NUM(errcode, hiwire_into_file, (JsRef idobj, int fd), {
 // clang-format off
 EM_JS_UNCHECKED(
 void,
-hiwire_get_buffer_info,
-(JsRef idobj, Py_ssize_t* byteLength_ptr, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
+hiwire_get_buffer_info, (JsRef idobj,
+                         Py_ssize_t* byteLength_ptr,
+                         char** format_ptr,
+                         Py_ssize_t* size_ptr,
+                         bool* checked_ptr),
 {
   let jsobj = Hiwire.get_value(idobj);
   let byteLength = jsobj.byteLength;
@@ -799,7 +811,11 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   return Hiwire.new_value(jssub);
 });
 
-EM_JS_REF(JsRef, JsMap_New, (), { return Hiwire.new_value(new Map()); })
+// clang-format off
+EM_JS_REF(JsRef, JsMap_New, (), {
+  return Hiwire.new_value(new Map());
+})
+// clang-format on
 
 EM_JS_NUM(errcode, JsMap_Set, (JsRef mapid, JsRef keyid, JsRef valueid), {
   let map = Hiwire.get_value(mapid);
@@ -808,7 +824,11 @@ EM_JS_NUM(errcode, JsMap_Set, (JsRef mapid, JsRef keyid, JsRef valueid), {
   map.set(key, value);
 })
 
-EM_JS_REF(JsRef, JsSet_New, (), { return Hiwire.new_value(new Set()); })
+// clang-format off
+EM_JS_REF(JsRef, JsSet_New, (), {
+  return Hiwire.new_value(new Set());
+})
+// clang-format on
 
 EM_JS_NUM(errcode, JsSet_Add, (JsRef mapid, JsRef keyid), {
   let set = Hiwire.get_value(mapid);
