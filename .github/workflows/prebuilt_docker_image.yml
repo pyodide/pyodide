@@ -61,7 +61,7 @@ jobs:
           file: ./Dockerfile-prebuilt
           push: true
           build-args: |
-            VERSION=${{ steps.pyodide_env.outputs.tag }}
+            VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Image digest
