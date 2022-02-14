@@ -288,16 +288,12 @@ def main(args):
     try:
         package = args.package[0]
         if args.update:
-            update_package(
-                package, update_patched=True, wheel=args.wheel, sdist=args.sdist
-            )
+            update_package(package, update_patched=True, source_fmt=args.source_format)
             return
         if args.update_if_not_patched:
-            update_package(
-                package, update_patched=False, wheel=args.wheel, sdist=args.sdist
-            )
+            update_package(package, update_patched=False, source_fmt=args.source_format)
             return
-        make_package(package, args.version, wheel=args.wheel, sdist=args.sdist)
+        make_package(package, args.version, source_fmt=args.source_format)
     except MkpkgFailedException as e:
         # This produces two types of error messages:
         #
