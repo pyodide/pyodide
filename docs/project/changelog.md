@@ -16,7 +16,8 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
+  boost-histogram {pr}`2174`
 
 - Upgraded packages: distlib (0.3.4)
 
