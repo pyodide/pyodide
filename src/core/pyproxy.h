@@ -25,10 +25,16 @@ int
 pyproxy_Check(JsRef x);
 
 /**
- * Destroy a list of PyProxies. Steals the reference to the list.
+ * Destroy a list of PyProxies.
  */
 void
 destroy_proxies(JsRef proxies_id, char* msg);
+
+/**
+ * Destroy a PyProxy.
+ */
+void
+destroy_proxy(JsRef proxy, char* msg);
 
 /**
  * Wrap a Python callable in a JavaScript function that can be called once.

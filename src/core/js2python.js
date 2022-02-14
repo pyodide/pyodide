@@ -278,7 +278,7 @@ JS_FILE(js2python_init, () => {
         itemsize
       );
     }
-    return _JsProxy_create(id);
+    return undefined;
   }
 
   /**
@@ -299,18 +299,64 @@ JS_FILE(js2python_init, () => {
       return result;
     }
     context.depth--;
-    result = js2python_convertOther(id, value, context);
-    context.depth++;
-    return result;
+    try {
+      result = js2python_convertOther(id, value, context);
+      if (result !== undefined) {
+        return result;
+      }
+      if (context.defaultConverter === undefined) {
+        return _JsProxy_create(id);
+      }
+      let result_js = context.defaultConverter(
+        value,
+        context.converter,
+        context.cacheConversion
+      );
+      if (result_js === undefined) {
+        return _JsProxy_create(id);
+      }
+      result = js2python_convertImmutable(result_js);
+      if (API.isPyProxy(result_js)) {
+        result_js.destroy();
+      }
+      if (result !== undefined) {
+        return result;
+      }
+      let result_id = Module.hiwire.new_value(result_js);
+      result = _JsProxy_create(result_id);
+      Module.hiwire.decref(result_id);
+      return result;
+    } finally {
+      context.depth++;
+    }
   }
 
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
-  function js2python_convert(id, depth) {
+  function js2python_convert(id, { depth, defaultConverter }) {
     let context = {
       cache: new Map(),
       depth,
+      defaultConverter,
+      // arguments for defaultConverter
+      converter(x) {
+        let id = Module.hiwire.new_value(x);
+        try {
+          return Module.pyproxy_new(
+            js2python_convert_with_context(id, context)
+          );
+        } finally {
+          Module.hiwire.decref(id);
+        }
+      },
+      cacheConversion(input, output) {
+        if (API.isPyProxy(output)) {
+          context.cache.set(input, Module.PyProxy_getPtr(output));
+        } else {
+          throw new Error("Second argument should be a PyProxy!");
+        }
+      },
     };
     return js2python_convert_with_context(id, context);
   }

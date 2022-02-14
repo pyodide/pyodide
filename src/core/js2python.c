@@ -57,9 +57,14 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
  * Convert a JavaScript object to Python to a given depth. This is the
  * implementation of `toJs`.
  */
-EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
-  return Module.js2python_convert(id, depth);
+// clang-format off
+EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth, JsRef default_converter), {
+  let defaultConverter = default_converter
+    ? Module.hiwire.get_value(default_converter)
+    : undefined;
+  return Module.js2python_convert(id, { depth, defaultConverter });
 });
+// clang-format on
 
 #include "include_js_file.h"
 #include "js2python.js"
