@@ -5,11 +5,14 @@ package:
 source:
   url: https://github.com/openPMD/openPMD-api/archive/0.14.4.tar.gz
   sha256: 42b7bcd043e772d63f0fe0e5e70da411f001db10096d5b8be797ffc88e786379
+  patches:
+    - 1199.patch
 
 requirements:
   run:
     - numpy
     - libhdf5
+    - zlib
 
 test:
   imports:
@@ -22,9 +25,11 @@ build:
     export PATH="$(python3 -c 'import site; print(site.USER_BASE)')/bin:${PATH}"
     pip install --upgrade pybind11[global] -t $PYODIDE_ROOT/packages/.artifacts/
 
-    export CMAKE_PREFIX_PATH=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5/share/cmake/hdf5:${CMAKE_PREFIX_PATH}
-    export CMAKE_PREFIX_PATH=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5:${CMAKE_PREFIX_PATH}
+    export CMAKE_PREFIX_PATH=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5:$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11:${CMAKE_PREFIX_PATH}
 
+    export PYLIBPATH=$PYODIDE_ROOT/cpython/installs/python-3.9.5/lib
+
+    export CXXFLAGS="${CXXFLAGS} -mmutable-globals"
     emcmake cmake -S . -B build  \
       -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node" \
       -DCMAKE_BUILD_TYPE=Release \
@@ -34,11 +39,15 @@ build:
       -DopenPMD_USE_ADIOS1=OFF   \
       -DopenPMD_USE_ADIOS2=OFF   \
       -DopenPMD_USE_PYTHON=ON    \
-      -DPython_EXECUTABLE:FILEPATH=$(which python3) \
+      -DPython_LIBRARY_DIRS=$PYLIBPATH \
+      -DPython_LIBRARY="$PYLIBPATH/libpython3.9.a" \
+      -DPython_LIBRARIES="$PYLIBPATH/libpython3.9.a;$PYLIBPATH/libsqlite3.a;$PYLIBPATH/libffi.a;$PYLIBPATH/libbz2.a" \
       -DPython_INCLUDE_DIR=$PYODIDE_ROOT/cpython/installs/python-3.9.5/include/python3.9/ \
       -Dpybind11_DIR=$PYODIDE_ROOT/packages/.artifacts/pybind11/share/cmake/pybind11 \
       -DopenPMD_USE_INTERNAL_PYBIND11=OFF \
       -DopenPMD_BUILD_TESTING=OFF         \
       -DopenPMD_BUILD_EXAMPLES=OFF        \
-      -DCMAKE_INSTALL_LIBDIR=lib
+      -DCMAKE_INSTALL_LIBDIR=lib          \
+      -DCMAKE_VERBOSE_MAKEFILE=ON
+
     emmake cmake --build build -j ${PYODIDE_JOBS:-3}

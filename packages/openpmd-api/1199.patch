@@ -1,0 +1,45 @@
+From c4128aba9f7946c2dbb0977ea4769823563f950e Mon Sep 17 00:00:00 2001
+From: Axel Huebl <axel.huebl@plasma.ninja>
+Date: Mon, 14 Feb 2022 01:42:59 -0800
+Subject: [PATCH] Python: add_library -> Python_add_library
+
+Using this function implements a fallback for systems where no static
+library support exists.
+
+Examples: old Cray systems and emscripten (WebAssembly).
+---
+ CMakeLists.txt | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 121d4a559..f45e5e7c9 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -118,7 +118,7 @@ if(DEFINED BUILD_SHARED_LIBS)
+ else()
+     set(openPMD_BUILD_SHARED_LIBS_DEFAULT ${SHARED_LIBS_SUPPORTED})
+ endif()
+-option(openPMD_BUILD_SHARED_LIBS "Build the openPMD tests"
++option(openPMD_BUILD_SHARED_LIBS "Build shared openPMD libraries"
+     ${openPMD_BUILD_SHARED_LIBS_DEFAULT})
+ if(openPMD_BUILD_SHARED_LIBS AND NOT SHARED_LIBS_SUPPORTED)
+     message(FATAL_ERROR "openPMD_BUILD_SHARED_LIBS requested but not supported by platform")
+@@ -375,6 +375,9 @@ if(CMAKE_VERSION VERSION_LESS 3.18.0)
+     #   https://cmake.org/cmake/help/v3.18/module/FindPython.html
+     set(_PY_DEV_MODULE Development)
+ endif()
++if(EMSCRIPTEN)
++    set(_PY_DEV_MODULE ${_PY_DEV_MODULE} Development.Embed)
++endif()
+ if(openPMD_USE_PYTHON STREQUAL AUTO)
+     find_package(Python 3.6.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
+     if(Python_FOUND)
+@@ -640,7 +643,7 @@ endif()
+ 
+ # python bindings
+ if(openPMD_HAVE_PYTHON)
+-    add_library(openPMD.py MODULE
++    Python_add_library(openPMD.py STATIC
+         src/binding/python/openPMD.cpp
+         src/binding/python/Access.cpp
+         src/binding/python/Attributable.cpp
