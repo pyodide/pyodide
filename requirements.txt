@@ -4,9 +4,7 @@
   pyyaml
   ruamel.yaml
   # lint
-  black
-  flake8
-  mypy==0.931
+  pre-commit
   # testing
   hypothesis
   pexpect
