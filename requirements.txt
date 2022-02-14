@@ -6,7 +6,7 @@
   # lint
   black
   flake8
-  mypy==0.812
+  mypy==0.931
   # testing
   hypothesis
   pexpect

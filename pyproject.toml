@@ -1,0 +1,7 @@
+[tool.mypy]
+warn_unused_configs = true
+python_version = "3.9"
+
+[[tool.mypy.overrides]]
+module = ["pyodide", "pyodide_js", "pyodide.http", "pytest", "ruamel.yaml", "docutils.parsers.rst"]
+ignore_missing_imports = true
