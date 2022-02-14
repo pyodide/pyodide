@@ -345,6 +345,22 @@ def test_install_keep_going(monkeypatch):
         )
 
 
+def test_fetch_wheel_fail(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    def _mock_fetch_bytes(*args, **kwargs):
+        raise Exception("Failed to fetch")
+
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    msg = "Access-Control-Allow-Origin"
+    with pytest.raises(ValueError, match=msg):
+        asyncio.get_event_loop().run_until_complete(
+            _micropip.install("htps://x.com/xxx-1.0.0-py3-none-any.whl")
+        )
+
+
 def test_list_pypi_package(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import _micropip
