@@ -1,45 +1,95 @@
-From c4128aba9f7946c2dbb0977ea4769823563f950e Mon Sep 17 00:00:00 2001
+From 6588e2b2ed362d6b3edd61f6448429bc87d20f3b Mon Sep 17 00:00:00 2001
 From: Axel Huebl <axel.huebl@plasma.ninja>
-Date: Mon, 14 Feb 2022 01:42:59 -0800
-Subject: [PATCH] Python: add_library -> Python_add_library
+Date: Mon, 14 Feb 2022 11:20:15 -0800
+Subject: [PATCH 1/2] `setup.py`: Extra CMake Arg Control
 
-Using this function implements a fallback for systems where no static
-library support exists.
-
-Examples: old Cray systems and emscripten (WebAssembly).
 ---
- CMakeLists.txt | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ README.md                       |  2 ++
+ docs/source/install/install.rst |  2 ++
+ setup.py                        | 12 ++++++++++++
+ 3 files changed, 16 insertions(+)
+
+diff --git a/README.md b/README.md
+index 62cce7aec..fbee6a2a1 100644
+--- a/README.md
++++ b/README.md
+@@ -212,6 +212,8 @@ export CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
+ python3 -m pip install openpmd-api --no-binary openpmd-api
+ ```
+ 
++Additional CMake options can be passed via individual environment variables, which need to be prefixed with `openPMD_CMAKE_`.
++
+ ### From Source
+ 
+ [![Source Use Case](https://img.shields.io/badge/use_case-development-brightgreen)](https://cmake.org)
+diff --git a/docs/source/install/install.rst b/docs/source/install/install.rst
+index 3b5f54dcd..6df73eaae 100644
+--- a/docs/source/install/install.rst
++++ b/docs/source/install/install.rst
+@@ -115,6 +115,8 @@ For some exotic architectures and compilers, you might need to disable a compile
+    # optional:                                                --user
+    python3 -m pip install openpmd-api --no-binary openpmd-api
+ 
++Additional CMake options can be passed via individual environment variables, which need to be prefixed with ``openPMD_CMAKE_``.
++
+ .. _install-cmake:
+ 
+ .. only:: html
+diff --git a/setup.py b/setup.py
+index 3ad2306b7..7a03e5b05 100644
+--- a/setup.py
++++ b/setup.py
+@@ -79,6 +79,8 @@ def build_extension(self, ext):
+             #   just as well win32 & cygwin (although Windows has no RPaths)
+             cmake_args.append('-DCMAKE_INSTALL_RPATH=$ORIGIN')
+ 
++        cmake_args += extra_cmake_args
++
+         cfg = 'Debug' if self.debug else 'Release'
+         build_args = ['--config', cfg]
+ 
+@@ -139,6 +141,16 @@ def build_extension(self, ext):
+ CMAKE_INTERPROCEDURAL_OPTIMIZATION = os.environ.get(
+     'CMAKE_INTERPROCEDURAL_OPTIMIZATION', None)
+ 
++# extra CMake arguments
++extra_cmake_args = []
++for k, v in os.environ.items():
++    extra_cmake_args_prefix = "openPMD_CMAKE_"
++    if k.startswith(extra_cmake_args_prefix) and \
++       len(k) > len(extra_cmake_args_prefix):
++        extra_cmake_args.append("-D{0}={1}".format(
++            k[len(extra_cmake_args_prefix):],
++            v))
++
+ # https://cmake.org/cmake/help/v3.0/command/if.html
+ if openPMD_USE_MPI.upper() in ['1', 'ON', 'TRUE', 'YES']:
+     openPMD_USE_MPI = "ON"
+
+From a7475164cf857c85d96338dd3e094487fcf0d18a Mon Sep 17 00:00:00 2001
+From: Axel Huebl <axel.huebl@plasma.ninja>
+Date: Mon, 14 Feb 2022 11:35:08 -0800
+Subject: [PATCH 2/2] EMSCRIPTEN: Skip Py Extension
+
+---
+ CMakeLists.txt | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 121d4a559..f45e5e7c9 100644
+index 121d4a559..0ec20798c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -118,7 +118,7 @@ if(DEFINED BUILD_SHARED_LIBS)
- else()
-     set(openPMD_BUILD_SHARED_LIBS_DEFAULT ${SHARED_LIBS_SUPPORTED})
- endif()
--option(openPMD_BUILD_SHARED_LIBS "Build the openPMD tests"
-+option(openPMD_BUILD_SHARED_LIBS "Build shared openPMD libraries"
-     ${openPMD_BUILD_SHARED_LIBS_DEFAULT})
- if(openPMD_BUILD_SHARED_LIBS AND NOT SHARED_LIBS_SUPPORTED)
-     message(FATAL_ERROR "openPMD_BUILD_SHARED_LIBS requested but not supported by platform")
-@@ -375,6 +375,9 @@ if(CMAKE_VERSION VERSION_LESS 3.18.0)
-     #   https://cmake.org/cmake/help/v3.18/module/FindPython.html
-     set(_PY_DEV_MODULE Development)
- endif()
-+if(EMSCRIPTEN)
-+    set(_PY_DEV_MODULE ${_PY_DEV_MODULE} Development.Embed)
-+endif()
- if(openPMD_USE_PYTHON STREQUAL AUTO)
-     find_package(Python 3.6.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
-     if(Python_FOUND)
-@@ -640,7 +643,7 @@ endif()
+@@ -686,7 +686,12 @@ if(openPMD_HAVE_PYTHON)
+     endif()
+     unset(_USE_PY_LTO)
  
- # python bindings
- if(openPMD_HAVE_PYTHON)
--    add_library(openPMD.py MODULE
-+    Python_add_library(openPMD.py STATIC
-         src/binding/python/openPMD.cpp
-         src/binding/python/Access.cpp
-         src/binding/python/Attributable.cpp
+-    pybind11_extension(openPMD.py)
++    if(EMSCRIPTEN)
++        set_target_properties(openPMD.py PROPERTIES
++            PREFIX "")
++    else()
++        pybind11_extension(openPMD.py)
++    endif()
+     pybind11_strip(openPMD.py)
+ 
+     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"

@@ -27,27 +27,14 @@ build:
 
     export CMAKE_PREFIX_PATH=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5:$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11:${CMAKE_PREFIX_PATH}
 
-    export PYLIBPATH=$PYODIDE_ROOT/cpython/installs/python-3.9.5/lib
-
+    export EMSCRIPTEN=/src/emsdk/emsdk/upstream/emscripten
     export CXXFLAGS="${CXXFLAGS} -mmutable-globals"
-    emcmake cmake -S . -B build  \
-      -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node" \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DopenPMD_BUILD_SHARED_LIBS=OFF \
-      -DopenPMD_USE_MPI=OFF      \
-      -DopenPMD_USE_HDF5=OFF     \
-      -DopenPMD_USE_ADIOS1=OFF   \
-      -DopenPMD_USE_ADIOS2=OFF   \
-      -DopenPMD_USE_PYTHON=ON    \
-      -DPython_LIBRARY_DIRS=$PYLIBPATH \
-      -DPython_LIBRARY="$PYLIBPATH/libpython3.9.a" \
-      -DPython_LIBRARIES="$PYLIBPATH/libpython3.9.a;$PYLIBPATH/libsqlite3.a;$PYLIBPATH/libffi.a;$PYLIBPATH/libbz2.a" \
-      -DPython_INCLUDE_DIR=$PYODIDE_ROOT/cpython/installs/python-3.9.5/include/python3.9/ \
-      -Dpybind11_DIR=$PYODIDE_ROOT/packages/.artifacts/pybind11/share/cmake/pybind11 \
-      -DopenPMD_USE_INTERNAL_PYBIND11=OFF \
-      -DopenPMD_BUILD_TESTING=OFF         \
-      -DopenPMD_BUILD_EXAMPLES=OFF        \
-      -DCMAKE_INSTALL_LIBDIR=lib          \
-      -DCMAKE_VERBOSE_MAKEFILE=ON
-
-    emmake cmake --build build -j ${PYODIDE_JOBS:-3}
+    export openPMD_CMAKE_CMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node"
+    export openPMD_CMAKE_Python_INCLUDE_DIR=$PYODIDE_ROOT/cpython/installs/python-3.9.5/include/python3.9/
+    export openPMD_CMAKE_Python_INCLUDE_DIR=$PYODIDE_ROOT/cpython/installs/python-3.9.5/include/python3.9/
+    export openPMD_CMAKE_pybind11_DIR=$PYODIDE_ROOT/packages/.artifacts/pybind11/share/cmake/pybind11
+    export openPMD_CMAKE_openPMD_USE_INTERNAL_PYBIND11=OFF
+    export openPMD_CMAKE_CMAKE_INSTALL_LIBDIR=lib
+    export openPMD_CMAKE_CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+    export openPMD_CMAKE_CMAKE_PROJECT_openPMD_INCLUDE=$PYODIDE_ROOT/packages/openpmd-api/overwriteProp.cmake
+    export openPMD_CMAKE_CMAKE_VERBOSE_MAKEFILE=ON
