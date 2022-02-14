@@ -137,7 +137,7 @@ update_base_url: \
 
 .PHONY: lint
 lint:
-	pre-commit run -a
+	pre-commit run -a --show-diff-on-failure
 
 benchmark: all
 	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
