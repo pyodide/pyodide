@@ -1,5 +1,5 @@
 import ErrorStackParser from "error-stack-parser";
-import { Module, API } from "./module.js";
+import { Module, API, Hiwire } from "./module.js";
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
@@ -48,11 +48,11 @@ Module.handle_js_error = function (e: any) {
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let eidx = Module.hiwire.new_value(e);
+    let eidx = Hiwire.new_value(e);
     let err = Module._JsProxy_create(eidx);
     Module._set_error(err);
     Module._Py_DecRef(err);
-    Module.hiwire.decref(eidx);
+    Hiwire.decref(eidx);
   }
   let stack = ErrorStackParser.parse(e);
   if (isErrorStart(stack[0])) {

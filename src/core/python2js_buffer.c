@@ -42,7 +42,7 @@ EM_JS_REF(JsRef, _python2js_buffer_inner, (
     suboffsets,
     converter,
   });
-  return Module.hiwire.new_value(result);
+  return Hiwire.new_value(result);
 });
 // clang-format on
 

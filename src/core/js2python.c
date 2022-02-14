@@ -43,7 +43,7 @@ _js2python_pyproxy(PyObject* val)
 }
 
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
-  let value = Module.hiwire.get_value(id);
+  let value = Hiwire.get_value(id);
   let result = Module.js2python_convertImmutable(value);
   // clang-format off
   if (result !== undefined) {
