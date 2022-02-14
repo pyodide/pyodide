@@ -16,7 +16,6 @@ test:
     - openpmd_api
 
 build:
-  library: true
   script: |
     pip install -U pipx pybind11[global]
     python -m pipx install cmake
@@ -36,10 +35,10 @@ build:
       -DopenPMD_USE_ADIOS2=OFF   \
       -DopenPMD_USE_PYTHON=ON    \
       -DPython_EXECUTABLE:FILEPATH=$(which python3) \
-      -DPython_INCLUDE_DIR=$(python3 -c "from sysconfig import get_paths as gp; print(gp()['include'])") \
+      -DPython_INCLUDE_DIR=$PYODIDE_ROOT/cpython/installs/python-3.9.5/include/python3.9/ \
       -Dpybind11_DIR=$PYODIDE_ROOT/packages/.artifacts/pybind11/share/cmake/pybind11 \
       -DopenPMD_USE_INTERNAL_PYBIND11=OFF \
       -DopenPMD_BUILD_TESTING=OFF         \
       -DopenPMD_BUILD_EXAMPLES=OFF        \
       -DCMAKE_INSTALL_LIBDIR=lib
-    emmake cmake --build build -j ${PYODIDE_JOBS:-3} --target install
+    emmake cmake --build build -j ${PYODIDE_JOBS:-3}
