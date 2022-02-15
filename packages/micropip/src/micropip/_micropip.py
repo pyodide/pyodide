@@ -304,7 +304,8 @@ class _PackageManager:
             else:
                 raise ValueError(
                     f"Couldn't fetch wheel from '{wheel['url']}'."
-                    "One common reason of this is when the server blocks cross-origin requests."
+                    "One common reason for this is when the server blocks "
+                    "Cross-Origin Requests Sharing (CORS)."
                     "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
                 ) from e
 
