@@ -305,7 +305,7 @@ class _PackageManager:
                 raise ValueError(
                     f"Couldn't fetch wheel from '{wheel['url']}'."
                     "One common reason for this is when the server blocks "
-                    "Cross-Origin Requests Sharing (CORS)."
+                    "Cross-Origin Resource Sharing (CORS)."
                     "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
                 ) from e
 
