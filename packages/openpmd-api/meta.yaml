@@ -20,16 +20,15 @@ test:
 
 build:
   script: |
-    pip install -U "setuptools>=57.4.0" pipx pybind11[global]
-    python -m pipx install "cmake==3.22"
-    export PATH="$(python3 -c 'import site; print(site.USER_BASE)')/bin:${PATH}"
-    pip install --upgrade pybind11[global] -t $PYODIDE_ROOT/packages/.artifacts/
+    pip install -U "setuptools>=57.4.0" pybind11[global]
+    pip install --upgrade pybind11[global] cmake==3.22 -t $PYODIDE_ROOT/packages/.artifacts/
+    export PATH="$PYODIDE_ROOT/packages/.artifacts/cmake/data/bin:${PATH}"
+    cp $PYODIDE_ROOT/packages/openpmd-api/FindHDF5.cmake \
+       $PYODIDE_ROOT/packages/.artifacts/cmake/data/share/cmake-3.22/Modules/FindHDF5.cmake
 
     export HDF5_ROOT=$PYODIDE_ROOT/packages/libhdf5/build/libhdf5-1.12.1/build/hdf5
     export ZLIB_ROOT=$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11
     export CMAKE_PREFIX_PATH=$HDF5_ROOT:$ZLIB_ROOT:${CMAKE_PREFIX_PATH}
-
-    cp $PYODIDE_ROOT/packages/openpmd-api/FindHDF5.cmake $PYODIDE_ROOT/.docker_home/.local/pipx/venvs/cmake/lib/python3.9/site-packages/cmake/data/share/cmake-3.22/Modules/FindHDF5.cmake
 
     export EMSCRIPTEN=$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten
     export CXXFLAGS="${CXXFLAGS} -mmutable-globals"
