@@ -1,0 +1,20 @@
+diff --git a/src/boost_histogram/_internal/hist.py b/src/boost_histogram/_internal/hist.py
+index ba8d0d5..992ad8a 100644
+--- a/src/boost_histogram/_internal/hist.py
++++ b/src/boost_histogram/_internal/hist.py
+@@ -764,11 +764,10 @@ class Histogram:
+
+         # If this is (now) all integers, return the bin contents
+         # But don't try *dict!
+-        if not hasattr(indexes, "items"):
+-            try:
+-                return self._hist.at(*indexes)  # type: ignore[no-any-return]
+-            except RuntimeError:
+-                pass
++        if not hasattr(indexes, "items") and all(
++            isinstance(a, SupportsIndex) for a in indexes
++        ):
++            return self._hist.at(*indexes)  # type: ignore[no-any-return]
+
+         integrations: Set[int] = set()
+         slices: List[_core.algorithm.reduce_command] = []
