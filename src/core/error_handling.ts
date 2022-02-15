@@ -1,6 +1,96 @@
 import ErrorStackParser from "error-stack-parser";
 import { Module, API, Hiwire } from "./module.js";
 
+/**
+ * Dump the Python traceback to the browser console.
+ *
+ * @private
+ */
+ API.dump_traceback = function () {
+  const fd_stdout = 1;
+  Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
+};
+
+let fatal_error_occurred = false;
+/**
+ * Signal a fatal error.
+ *
+ * Dumps the Python traceback, shows a JavaScript traceback, and prints a clear
+ * message indicating a fatal error. It then dummies out the public API so that
+ * further attempts to use Pyodide will clearly indicate that Pyodide has failed
+ * and can no longer be used. pyodide._module is left accessible, and it is
+ * possible to continue using Pyodide for debugging purposes if desired.
+ *
+ * @argument e {Error} The cause of the fatal error.
+ * @private
+ */
+API.fatal_error = function (e: any) {
+  if (e.pyodide_fatal_error) {
+    return;
+  }
+  if (fatal_error_occurred) {
+    console.error("Recursive call to fatal_error. Inner error was:");
+    console.error(e);
+    return;
+  }
+  if(typeof e === "number"){
+    // A C++ exception. Have to do some conversion work.
+    e = convertCppException(e);
+  }
+  // Mark e so we know not to handle it later in EM_JS wrappers
+  e.pyodide_fatal_error = true;
+  fatal_error_occurred = true;
+  console.error(
+    "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
+  );
+  console.error("The cause of the fatal error was:");
+  if (API.inTestHoist) {
+    // Test hoist won't print the error object in a useful way so convert it to
+    // string.
+    console.error(e.toString());
+    console.error(e.stack);
+  } else {
+    console.error(e);
+  }
+  try {
+    API.dump_traceback();
+    for (let key of Object.keys(API.public_api)) {
+      if (key.startsWith("_") || key === "version") {
+        continue;
+      }
+      Object.defineProperty(API.public_api, key, {
+        enumerable: true,
+        configurable: true,
+        get: () => {
+          throw new Error(
+            "Pyodide already fatally failed and can no longer be used."
+          );
+        },
+      });
+    }
+    if (API.on_fatal) {
+      API.on_fatal(e);
+    }
+  } catch (err2) {
+    console.error("Another error occurred while handling the fatal error:");
+    console.error(err2);
+  }
+  throw e;
+};
+
+class CppException extends Error {}
+Object.defineProperty(CppException.prototype, 'name', {
+  value: CppException.name,
+});
+
+function convertCppException(ptr : number): CppException {
+  const catchInfo = new Module.CatchInfo(ptr)
+  const msgPtr = catchInfo.get_adjusted_ptr();
+  const msg = Module.UTF8ToString(msgPtr);
+  return new CppException(msg)
+}
+
+
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
   if (fileName.includes("pyodide.asm")) {
@@ -110,10 +200,12 @@ export class PythonError extends Error {
     Error.stackTraceLimit = Infinity;
     super(message);
     Error.stackTraceLimit = oldLimit;
-    this.name = this.constructor.name;
     this.__error_address = error_address;
   }
 }
+Object.defineProperty(PythonError.prototype, 'name', {
+  value: PythonError.name,
+});
 API.PythonError = PythonError;
 // A special marker. If we call a CPython API from an EM_JS function and the
 // CPython API sets an error, we might want to return an error status back to
@@ -129,4 +221,7 @@ class _PropagatePythonError extends Error {
     );
   }
 }
+Object.defineProperty(_PropagatePythonError.prototype, 'name', {
+  value: _PropagatePythonError.name,
+});
 Module._PropagatePythonError = _PropagatePythonError;
