@@ -124,7 +124,6 @@ particularly since we are not able to check the file integrity, unlike with
 installs from PyPI.
 ```
 
-
 ## Example
 
 ```html
