@@ -86,10 +86,11 @@ index 121d4a559..0ec20798c 100644
 -    pybind11_extension(openPMD.py)
 +    if(EMSCRIPTEN)
 +        set_target_properties(openPMD.py PROPERTIES
-+            PREFIX "")
++            PREFIX ""  SUFFIX ".emscripten_wasm32.so")
 +    else()
 +        pybind11_extension(openPMD.py)
 +    endif()
      pybind11_strip(openPMD.py)
  
      set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
+

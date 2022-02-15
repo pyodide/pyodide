@@ -20,8 +20,8 @@ test:
 
 build:
   script: |
-    pip install -U pipx pybind11[global]
-    python -m pipx install cmake
+    pip install -U "setuptools>=57.4.0" pipx pybind11[global]
+    python -m pipx install "cmake==3.22"
     export PATH="$(python3 -c 'import site; print(site.USER_BASE)')/bin:${PATH}"
     pip install --upgrade pybind11[global] -t $PYODIDE_ROOT/packages/.artifacts/
 
@@ -31,7 +31,7 @@ build:
 
     cp $PYODIDE_ROOT/packages/openpmd-api/FindHDF5.cmake $PYODIDE_ROOT/.docker_home/.local/pipx/venvs/cmake/lib/python3.9/site-packages/cmake/data/share/cmake-3.22/Modules/FindHDF5.cmake
 
-    export EMSCRIPTEN=/src/emsdk/emsdk/upstream/emscripten
+    export EMSCRIPTEN=$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten
     export CXXFLAGS="${CXXFLAGS} -mmutable-globals"
     export openPMD_CMAKE_CMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node"
     export openPMD_CMAKE_Python_INCLUDE_DIR=$PYODIDE_ROOT/cpython/installs/python-3.9.5/include/python3.9/
@@ -43,21 +43,17 @@ build:
     export openPMD_CMAKE_CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
     export openPMD_CMAKE_CMAKE_PROJECT_openPMD_INCLUDE=$PYODIDE_ROOT/packages/openpmd-api/overwriteProp.cmake
     export openPMD_CMAKE_CMAKE_VERBOSE_MAKEFILE=ON
+    export openPMD_CMAKE_HDF5_FIND_DEBUG=TRUE
     export openPMD_CMAKE_HDF5_INCLUDE_DIRS=$HDF5_ROOT/include
     export openPMD_CMAKE_HDF5_LIBRARIES="$HDF5_ROOT/lib/libhdf5.a;$ZLIB_ROOT/lib/libz.a"
     export openPMD_CMAKE_HDF5_DIR=$HDF5_ROOT
-    export openPMD_CMAKE_HDF5_DEFINITIONS=""
-    export openPMD_CMAKE_HDF5_HL_LIBRARIES=""
     export openPMD_CMAKE_HDF5_IS_PARALLEL=FALSE
     export openPMD_CMAKE_HDF5_FOUND=ON
+    export openPMD_CMAKE_HDF5_VERSION=1.12.1
 
     export openPMD_CMAKE_HDF5_C_INCLUDE_DIRS=$HDF5_ROOT/include
     export openPMD_CMAKE_HDF5_C_LIBRARIES="$HDF5_ROOT/lib/libhdf5.a;$ZLIB_ROOT/lib/libz.a"
-    export openPMD_CMAKE_HDF5_C_DIR=$HDF5_ROOT
-    export openPMD_CMAKE_HDF5_C_DEFINITIONS=""
-    export openPMD_CMAKE_HDF5_C_HL_LIBRARIES=""
-    export openPMD_CMAKE_HDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON
-    export openPMD_CMAKE_HDF5_FIND_DEBUG=TRUE
     export openPMD_CMAKE_HDF5_C_COMPILER_NO_INTERROGATE=ON
-    export openPMD_CMAKE_HDF5_VERSION=1.12.1
     export openPMD_CMAKE_HDF5_C_FOUND=ON
+
+    export SETUPTOOLS_EXT_SUFFIX=".emscripten_wasm32.so"
