@@ -86,11 +86,60 @@ index 121d4a559..0ec20798c 100644
 -    pybind11_extension(openPMD.py)
 +    if(EMSCRIPTEN)
 +        set_target_properties(openPMD.py PROPERTIES
-+            PREFIX ""  SUFFIX ".emscripten_wasm32.so")
++            PREFIX "")
 +    else()
 +        pybind11_extension(openPMD.py)
 +    endif()
      pybind11_strip(openPMD.py)
  
      set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
+
+From ce811262b4f71fc9638e4a7a3c3386b4e43b9128 Mon Sep 17 00:00:00 2001
+From: Axel Huebl <axel.huebl@plasma.ninja>
+Date: Mon, 14 Feb 2022 17:44:51 -0800
+Subject: [PATCH] Wasm Setuptools: fix extension
+
+---
+ CMakeLists.txt |  2 +-
+ setup.py       | 12 ++++++++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0ec20798..5da81d2a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -688,7 +688,7 @@ if(openPMD_HAVE_PYTHON)
+ 
+     if(EMSCRIPTEN)
+         set_target_properties(openPMD.py PROPERTIES
+-            PREFIX "")
++            PREFIX "" SUFFIX ".emscripten_wasm32.so")
+     else()
+         pybind11_extension(openPMD.py)
+     endif()
+diff --git a/setup.py b/setup.py
+index 7a03e5b0..154d23e7 100644
+--- a/setup.py
++++ b/setup.py
+@@ -35,6 +35,18 @@ class CMakeBuild(build_ext):
+         for ext in self.extensions:
+             self.build_extension(ext)
+ 
++    def get_ext_filename(self, ext_name):
++        r"""Convert the name of an extension (eg. "foo.bar") into the name
++        of the file from which it will be loaded (eg. "foo/bar.so", or
++        "foo\bar.pyd").
++        """
++        so_ext = os.getenv('SETUPTOOLS_EXT_SUFFIX', '.emscripten_wasm32.so')
++        filename = os.path.join(*ext_name.split('.')) + so_ext
++        print("++++++++++")
++        print("get_ext_filename({}): {}".format(ext_name, filename))
++        print("++++++++++")
++        return filename
++
+     def build_extension(self, ext):
+         extdir = os.path.abspath(os.path.dirname(
+             self.get_ext_fullpath(ext.name)
+-- 
+2.25.1
 
