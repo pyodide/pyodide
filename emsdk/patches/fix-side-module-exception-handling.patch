@@ -3,6 +3,8 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 15 Feb 2022 23:27:03 -0500
 Subject: [PATCH] Fix side module exception handling
 
+See https://github.com/emscripten-core/emscripten/pull/16309
+
 Apparently compiled C++ code tries to call a bunch of functions with names like
 `__cxa_find_matching_catch_##` which all mean the same function. Emscripten
 statically defines the set of these that are used in the main module, but it is
