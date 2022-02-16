@@ -10,6 +10,8 @@ requirements:
   run:
     - numpy # runtime only
 build:
+  cxxflags: -fexceptions
+  ldflags: -fexceptions
   script: |
     pip install setuptools_scm[toml]
 test:
