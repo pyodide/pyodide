@@ -4,8 +4,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/0a/9a/1ebde600886eee433a99434e0ddb462630a0b25ab1f58efb91ffc385a0ff/boost_histogram-1.3.0.tar.gz
   sha256: 62240dae889cbf05f8b4f2203f0b7d6c7a2e029502723a377fc33226e425ce50
-  patches:
-    - patches/noexcept.patch
 requirements:
   run:
     - numpy # runtime only
