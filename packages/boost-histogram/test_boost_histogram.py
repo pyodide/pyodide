@@ -33,3 +33,8 @@ def test_boost_histogram():
     assert h[bh.loc("anger")] == 2
     assert h[bh.loc("hate")] == 2
     assert h[bh.loc("to")] == 3
+
+    # Test exception handling
+    mean = bh.accumulators.Mean()
+    with pytest.raises(KeyError):
+        mean["invalid"]
