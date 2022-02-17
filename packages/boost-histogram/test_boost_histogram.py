@@ -1,9 +1,9 @@
-import pytest
 from pyodide_build.testing import run_in_pyodide
 
 
 @run_in_pyodide(packages=["boost-histogram"])
 def test_boost_histogram():
+    import unittest
     import boost_histogram as bh
 
     h = bh.Histogram(bh.axis.Integer(0, 10))
@@ -37,5 +37,6 @@ def test_boost_histogram():
 
     # Test exception handling
     mean = bh.accumulators.Mean()
-    with pytest.raises(KeyError):
+
+    with unittest.TestCase().assertRaises(KeyError):
         mean["invalid"]
