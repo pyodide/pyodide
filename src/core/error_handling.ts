@@ -84,9 +84,14 @@ Object.defineProperty(CppException.prototype, 'name', {
 });
 
 function convertCppException(ptr : number): CppException {
-  const catchInfo = new Module.CatchInfo(ptr)
-  const msgPtr = catchInfo.get_adjusted_ptr();
-  const msg = Module.UTF8ToString(msgPtr);
+  let msg;
+  try {
+    const msgPtr = Module._exc_what(ptr);
+    msg = Module.UTF8ToString(msgPtr);
+  } catch(e){
+    // Presumably this happened because the thrown object ptr doesn't inherit from exception?
+    msg = `The pointer ${ptr} was thrown as a C++ exception, but it doesn't seem to inherit from std::exception.`;
+  }
   return new CppException(msg)
 }
 

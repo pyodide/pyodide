@@ -30,6 +30,7 @@ build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodid
 build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
+	src/core/error_handling_cpp.o \
 	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
