@@ -75,6 +75,7 @@ def test_parse_package_subset():
         "test",
         "distutils",
         "sharedlib-test-py",
+        "test_cpp_exceptions",
     }
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
