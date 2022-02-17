@@ -9,4 +9,3 @@ build:
     em++ -c main.cpp -o main.o -fPIC -fexceptions -O2
     mkdir dist
     em++ main.o -sSIDE_MODULE -o dist/test_cpp_exceptions.so -fexceptions
-
