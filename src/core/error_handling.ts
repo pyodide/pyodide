@@ -6,7 +6,7 @@ import { Module, API, Hiwire } from "./module.js";
  *
  * @private
  */
- API.dump_traceback = function () {
+API.dump_traceback = function () {
   const fd_stdout = 1;
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
@@ -33,7 +33,7 @@ API.fatal_error = function (e: any) {
     console.error(e);
     return;
   }
-  if(typeof e === "number"){
+  if (typeof e === "number") {
     // A C++ exception. Have to do some conversion work.
     e = convertCppException(e);
   }
@@ -79,22 +79,21 @@ API.fatal_error = function (e: any) {
 };
 
 class CppException extends Error {}
-Object.defineProperty(CppException.prototype, 'name', {
+Object.defineProperty(CppException.prototype, "name", {
   value: CppException.name,
 });
 
-function convertCppException(ptr : number): CppException {
+function convertCppException(ptr: number): CppException {
   let msg;
   try {
     const msgPtr = Module._exc_what(ptr);
     msg = Module.UTF8ToString(msgPtr);
-  } catch(e){
+  } catch (e) {
     // Presumably this happened because the thrown object ptr doesn't inherit from exception?
     msg = `The pointer ${ptr} was thrown as a C++ exception, but it doesn't seem to inherit from std::exception.`;
   }
-  return new CppException(msg)
+  return new CppException(msg);
 }
-
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
@@ -208,7 +207,7 @@ export class PythonError extends Error {
     this.__error_address = error_address;
   }
 }
-Object.defineProperty(PythonError.prototype, 'name', {
+Object.defineProperty(PythonError.prototype, "name", {
   value: PythonError.name,
 });
 API.PythonError = PythonError;
@@ -226,7 +225,7 @@ class _PropagatePythonError extends Error {
     );
   }
 }
-Object.defineProperty(_PropagatePythonError.prototype, 'name', {
+Object.defineProperty(_PropagatePythonError.prototype, "name", {
   value: _PropagatePythonError.name,
 });
 Module._PropagatePythonError = _PropagatePythonError;
