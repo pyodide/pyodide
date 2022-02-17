@@ -1,5 +1,3 @@
-
-
 def test_sharedlib(selenium):
     selenium.run_js(
         """
