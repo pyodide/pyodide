@@ -1,5 +1,5 @@
 package:
-  name: test_cpp_exceptions
+  name: cpp-exceptions-test
   version: "0.1"
 source:
   path: src
@@ -8,4 +8,4 @@ build:
   script: |
     em++ -c main.cpp -o main.o -fPIC -fexceptions -O2
     mkdir dist
-    em++ main.o -sSIDE_MODULE -o dist/test_cpp_exceptions.so -fexceptions
+    em++ main.o -sSIDE_MODULE -o dist/cpp-exceptions-test.so -fexceptions

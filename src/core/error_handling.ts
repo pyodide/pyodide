@@ -1,5 +1,5 @@
 import ErrorStackParser from "error-stack-parser";
-import { Module, API, Hiwire } from "./module.js";
+import { Module, API, Hiwire, Tests } from "./module.js";
 
 /**
  * Dump the Python traceback to the browser console.
@@ -78,23 +78,83 @@ API.fatal_error = function (e: any) {
   throw e;
 };
 
-class CppException extends Error {}
+class CppException extends Error {
+  ty: string;
+  constructor(ty: string, msg: string) {
+    super(msg);
+    this.ty = ty;
+  }
+}
 Object.defineProperty(CppException.prototype, "name", {
-  value: CppException.name,
+  get() {
+    return `${this.constructor.name} ${this.ty}`;
+  },
 });
 
-function convertCppException(ptr: number): CppException {
-  let msg;
-  try {
-    const msgPtr = Module._exc_what(ptr);
-    msg = Module.UTF8ToString(msgPtr);
-  } catch (e) {
-    // Presumably this happened because the thrown object ptr doesn't inherit from exception?
-    msg = `The pointer ${ptr} was thrown as a C++ exception, but it doesn't seem to inherit from std::exception.`;
-  }
-  return new CppException(msg);
+/**
+ *
+ * Return the type name, whether the pointer inherits from exception, and the
+ * vtable pointer for the type.
+ *
+ * This code is based on imitating:
+ * 1. the implementation of __cxa_find_matching_catch
+ * 2. the disassembly from:
+ * ```C++
+ * try {
+ *    ...
+ * } catch(exception e){
+ *    ...
+ * }
+ *
+ * @param ptr
+ * @returns
+ * exc_type_name : the type name of the exception, as would be reported by
+ * `typeid(type).name()` but also demangled.
+ *
+ * is_exception_subclass : true if the object is a subclass of exception. In
+ * this case we will use `exc.what()` to get an error message.
+ *
+ * adjusted_ptr : The adjusted vtable pointer for the exception to use to invoke
+ * exc.what().
+ *
+ * @private
+ */
+function cppExceptionInfo(ptr: number): [string, boolean, number] {
+  const base_exception_type = Module._exc_type();
+  const ei = new Module.ExceptionInfo(ptr);
+  const caught_exception_type = ei.get_type();
+  const stackTop = Module.stackSave();
+  const exceptionThrowBuf = Module.stackAlloc(4);
+  Module.HEAP32[exceptionThrowBuf / 4] = ptr;
+  const exc_type_name = Module.demangle(
+    Module.UTF8ToString(Module._exc_typename(caught_exception_type))
+  );
+  const is_exception_subclass = !!Module.___cxa_can_catch(
+    base_exception_type,
+    caught_exception_type,
+    exceptionThrowBuf
+  );
+  const adjusted_ptr = Module.HEAP32[exceptionThrowBuf / 4];
+  Module.stackRestore(stackTop);
+  return [exc_type_name, is_exception_subclass, adjusted_ptr];
 }
-Module.convertCppException = convertCppException;
+
+function convertCppException(ptr: number): CppException {
+  const [exc_type_name, is_exception_subclass, adjusted_ptr] =
+    cppExceptionInfo(ptr);
+  let msg;
+  if (is_exception_subclass) {
+    // If the ptr inherits from exception, we can use exception.what() to
+    // generate a message
+    const msgPtr = Module._exc_what(adjusted_ptr);
+    msg = Module.UTF8ToString(msgPtr);
+  } else {
+    msg = `The exception is an object of type ${exc_type_name} at address ${ptr} which does not inherit from std::exception`;
+  }
+  return new CppException(exc_type_name, msg);
+}
+// Expose for testing
+Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
