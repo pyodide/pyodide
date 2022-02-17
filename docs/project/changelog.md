@@ -48,7 +48,11 @@ substitutions:
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
-  {pr}`{2126}
+  {pr}`2126`
+
+- {{Enhancement}} Fixed a bug and improved the error message when an uncaught
+  C++ exception occurs.
+  {pr}`2178`
 
 ## Version 0.19.0
 
