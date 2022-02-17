@@ -52,6 +52,7 @@ def test_parse_package_subset():
         "test",
         "distutils",
         "sharedlib-test-py",
+        "test_cpp_exceptions",
     }
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
