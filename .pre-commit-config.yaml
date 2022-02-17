@@ -9,7 +9,6 @@ repos:
         exclude: .clang-format
       - id: end-of-file-fixer
       - id: trailing-whitespace
-        exclude: \.py$
 
   - repo: https://github.com/psf/black
     rev: "22.1.0"

@@ -29,7 +29,7 @@ from _pyodide._base import should_quiet, CodeRunner
 
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 
-BANNER = f""" 
+BANNER = f"""
 Python {python_version()} ({', '.join(python_build())}) on WebAssembly VM
 Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
