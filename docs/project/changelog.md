@@ -55,8 +55,10 @@ substitutions:
   directly from PyPI rather than rebuilding them.
   {pr}`2126`
 
-- {{Enhancement}} Fixed a bug and improved the error message when an uncaught
-  C++ exception occurs.
+- {{Enhancement}} Added support for C++ exceptions in packages. Now C++
+  extensions compiled and linked with `-fexceptions` can catch C++ exceptions.
+  Furthermore, uncaught C++ exceptions will be formatted in a human-readable
+  way.
   {pr}`2178`
 
 ## Version 0.19.0
