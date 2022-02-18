@@ -2,27 +2,30 @@
 #include <stdexcept>
 using namespace std;
 
-int g(int x){
-  if(x == 1){
+char*
+g(int x)
+{
+  if (x == 1) {
     throw 1000;
-  } else if(x == 2){
+  } else if (x == 2) {
     throw 'c';
-  } else if(x==3){
+  } else if (x == 3) {
     throw runtime_error("abc");
   } else {
     throw "abc";
   }
+  return "no exception here...";
 }
+
+class myexception : public exception
+{
+  virtual const char* what() const throw() { return "My exception happened"; }
+} myex;
 
 extern "C"
 {
 
   void throw_20() { throw 20; }
-
-  class myexception : public exception
-  {
-    virtual const char* what() const throw() { return "My exception happened"; }
-  } myex;
 
   int throw_my_exc() { throw myex; }
 

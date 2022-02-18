@@ -3,7 +3,7 @@ def test_uncaught_cpp_exceptions(selenium):
         """
         await pyodide.loadPackage("cpp-exceptions-test");
         const Tests = pyodide._api.tests;
-        const idx = pyodide._module.LDSO.loadedLibNames["/lib/python3.9/site-packages/cpp-exceptions-test.so"]
+        const idx = pyodide._module.LDSO.loadedLibNames["/lib/python3.9/site-packages/cpp-exceptions-test-throw.so"]
         const library = pyodide._module.LDSO.loadedLibs[idx];
         try {
             library.module.throw_20();
