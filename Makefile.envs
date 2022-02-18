@@ -67,7 +67,14 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
+	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-s DEMANGLE_SUPPORT=1 \
+	-s USE_FREETYPE=1 \
+	-s USE_LIBPNG=1 \
+	-s FORCE_FILESYSTEM=1 \
+	-s TOTAL_MEMORY=20971520 \
+	-s ALLOW_MEMORY_GROWTH=1 \
+	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
@@ -77,11 +84,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lnodefs.js \
 	-lproxyfs.js \
 	-lworkerfs.js \
-	-s USE_FREETYPE=1 \
-	-s USE_LIBPNG=1 \
-	-s FORCE_FILESYSTEM=1 \
-	-s TOTAL_MEMORY=20971520 \
-	-s ALLOW_MEMORY_GROWTH=1 \
+	\
 	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
 	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
@@ -90,6 +93,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--exclude-file "*/tests/*" \
 	--exclude-file "*/distutils/*" \
 	--pre-js src/core/pre.js
+
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
@@ -102,7 +106,8 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
-	-I$(PYTHONINCLUDE)
+	-I$(PYTHONINCLUDE) \
+	-sEXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 
 .output_vars:
