@@ -3,22 +3,22 @@ using namespace std;
 #include <stdexcept>
 #include <stdio.h>
 
-char*
-g(int x);
+extern "C" char*
+throw_exc(int x);
 
 extern "C" char*
-f(int x)
+catch_exc(int x)
 {
   char* msg;
   try {
-    char* res = g(x);
-    asprintf(&msg, "result was: %s\n", res);
+    char* res = throw_exc(x);
+    asprintf(&msg, "result was: %s", res);
   } catch (int param) {
-    asprintf(&msg, "caught int %d\n", param);
+    asprintf(&msg, "caught int %d", param);
   } catch (char param) {
-    asprintf(&msg, "caught char %d\n", param);
+    asprintf(&msg, "caught char %d", param);
   } catch (runtime_error& e) {
-    asprintf(&msg, "caught runtime_error %s\n", e.what());
+    asprintf(&msg, "caught runtime_error %s", e.what());
   } catch (...) {
     asprintf(&msg, "caught ????");
   }
