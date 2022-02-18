@@ -158,7 +158,7 @@ pyodide_init(void)
   if (_pyodide_proxy == NULL) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ Module._pyodide = Module.hiwire.pop_value($0); }, _pyodide_proxy);
+  EM_ASM({ API._pyodide = Hiwire.pop_value($0); }, _pyodide_proxy);
 
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);

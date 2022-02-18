@@ -3,7 +3,10 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:19
+    # Note: when updating the docker image version,
+    #       make sure there are no extra old versions lying around.
+    #       (e.g. `rg -F --hidden <old_tag>`)
+    - image: pyodide/pyodide-env:20220213-chrome97-firefox96
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -310,15 +313,14 @@ jobs:
             npx tsd
             npm ci
             npm test
-      - run:
-          name: check if webpack cli works well with load-pyodide.js
-          command: |
-            git clone https://github.com/pyodide/pyodide-webpack-example.git
-            cd pyodide-webpack-example
-            npm ci
-            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js
-            head -20 node_modules/pyodide/load-pyodide.js
-            npx webpack
+      # - run:
+      #     name: check if webpack cli works well with load-pyodide.js
+      #     command: |
+      #       git clone https://github.com/pyodide/pyodide-webpack-example.git
+      #       cd pyodide-webpack-example
+      #       npm ci
+      #       cp ../src/js/*.js node_modules/pyodide/
+      #       npx webpack
 
   benchmark:
     <<: *defaults

@@ -32,7 +32,7 @@ def periodic_dist(x, y, z, L, periodicX, periodicY, periodicZ):
         dz[dz < -L / 2] = dz[dz < -L / 2] + L
 
     # Total Distances
-    d = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+    d = np.sqrt(dx**2 + dy**2 + dz**2)
 
     # Mark zero entries with negative 1 to avoid divergences
     d[d == 0] = -1

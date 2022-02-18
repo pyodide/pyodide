@@ -22,7 +22,7 @@ EM_JS(void, console_error, (char* msg), {
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
 EM_JS(void, console_error_obj, (JsRef obj), {
-  console.error(Module.hiwire.get_value(obj));
+  console.error(Hiwire.get_value(obj));
 });
 
 /**
@@ -46,8 +46,7 @@ set_error(PyObject* err)
  * err - The error object
  */
 EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
-  return Module.hiwire.new_value(
-    new Module.PythonError(UTF8ToString(msg), err));
+  return Hiwire.new_value(new API.PythonError(UTF8ToString(msg), err));
 });
 
 /**
@@ -130,7 +129,7 @@ finally:
   return success;
 }
 
-EM_JS(void, fail_test, (), { Module.fail_test = true; })
+EM_JS(void, fail_test, (), { API.fail_test = true; })
 
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
@@ -214,10 +213,10 @@ EM_JS(void, log_python_error, (JsRef jserror), {
   // If a js error occurs in here, it's a weird edge case. This will probably
   // never happen, but for maximum paranoia let's double check.
   try {
-    let msg = Module.hiwire.get_value(jserror).message;
+    let msg = Hiwire.get_value(jserror).message;
     console.warn("Python exception:\n" + msg + "\n");
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   }
 });
 

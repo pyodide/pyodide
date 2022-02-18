@@ -1,7 +1,7 @@
 import ErrorStackParser from "error-stack-parser";
-import { Module } from "./module.js";
+import { Module, API, Hiwire } from "./module.js";
 
-function isPyodideFrame(frame) {
+function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
   if (fileName.includes("pyodide.asm")) {
     return true;
@@ -16,14 +16,14 @@ function isPyodideFrame(frame) {
   if (funcName.startsWith("Object.")) {
     funcName = funcName.slice("Object.".length);
   }
-  if (funcName in Module.public_api && funcName !== "PythonError") {
+  if (funcName in API.public_api && funcName !== "PythonError") {
     frame.functionName = funcName;
     return false;
   }
   return true;
 }
 
-function isErrorStart(frame) {
+function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
   if (!isPyodideFrame(frame)) {
     return false;
   }
@@ -31,7 +31,7 @@ function isErrorStart(frame) {
   return funcName === "PythonError" || funcName === "new_error";
 }
 
-Module.handle_js_error = function (e) {
+Module.handle_js_error = function (e: any) {
   if (e.pyodide_fatal_error) {
     throw e;
   }
@@ -42,17 +42,17 @@ Module.handle_js_error = function (e) {
     return;
   }
   let restored_error = false;
-  if (e instanceof Module.PythonError) {
+  if (e instanceof API.PythonError) {
     // Try to restore the original Python exception.
     restored_error = Module._restore_sys_last_exception(e.__error_address);
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let eidx = Module.hiwire.new_value(e);
+    let eidx = Hiwire.new_value(e);
     let err = Module._JsProxy_create(eidx);
     Module._set_error(err);
     Module._Py_DecRef(err);
-    Module.hiwire.decref(eidx);
+    Hiwire.decref(eidx);
   }
   let stack = ErrorStackParser.parse(e);
   if (isErrorStart(stack[0])) {
@@ -72,21 +72,49 @@ Module.handle_js_error = function (e) {
     Module._free(fileNameAddr);
   }
 };
-class PythonError extends Error {
-  constructor(message, error_address) {
+
+/**
+ * A JavaScript error caused by a Python exception.
+ *
+ * In order to reduce the risk of large memory leaks, the ``PythonError``
+ * contains no reference to the Python exception that caused it. You can find
+ * the actual Python exception that caused this error as `sys.last_value
+ * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+ *
+ * See :ref:`type-translations-errors` for more information.
+ *
+ * .. admonition:: Avoid Stack Frames
+ *    :class: warning
+ *
+ *    If you make a :any:`PyProxy` of ``sys.last_value``, you should be
+ *    especially careful to :any:`destroy() <PyProxy.destroy>` it when you are
+ *    done. You may leak a large amount of memory including the local
+ *    variables of all the stack frames in the traceback if you don't. The
+ *    easiest way is to only handle the exception in Python.
+ */
+export class PythonError extends Error {
+  /**
+   * The Python traceback.
+   */
+  message: string;
+  /**  The address of the error we are wrapping. We may later compare this
+   * against sys.last_value.
+   * WARNING: we don't own a reference to this pointer, dereferencing it
+   * may be a use-after-free error!
+   * @private
+   */
+  __error_address: number;
+
+  constructor(message: string, error_address: number) {
     const oldLimit = Error.stackTraceLimit;
     Error.stackTraceLimit = Infinity;
     super(message);
     Error.stackTraceLimit = oldLimit;
     this.name = this.constructor.name;
-    // The address of the error we are wrapping. We may later compare this
-    // against sys.last_value.
-    // WARNING: we don't own a reference to this pointer, dereferencing it
-    // may be a use-after-free error!
     this.__error_address = error_address;
   }
 }
-Module.PythonError = PythonError;
+API.PythonError = PythonError;
 // A special marker. If we call a CPython API from an EM_JS function and the
 // CPython API sets an error, we might want to return an error status back to
 // C keeping the current Python error flag. This signals to the EM_JS wrappers
@@ -94,7 +122,7 @@ Module.PythonError = PythonError;
 // appropriate error value (either NULL or -1).
 class _PropagatePythonError extends Error {
   constructor() {
-    Module.fail_test = true;
+    API.fail_test = true;
     super(
       "If you are seeing this message, an internal Pyodide error has " +
         "occurred. Please report it to the Pyodide maintainers."

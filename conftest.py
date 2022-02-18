@@ -169,7 +169,7 @@ class BrowserWrapper:
             let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
             self.pyodide = pyodide;
             globalThis.pyodide = pyodide;
-            pyodide._module.inTestHoist = true; // improve some error messages for tests
+            pyodide._api.inTestHoist = true; // improve some error messages for tests
             """
         )
 
@@ -187,11 +187,11 @@ class BrowserWrapper:
             pyodide.pyodide_py.register_js_module;
             pyodide.pyodide_py.unregister_js_module;
             pyodide.pyodide_py.find_imports;
-            pyodide._module.importlib.invalidate_caches;
-            pyodide._module.package_loader.unpack_buffer;
-            pyodide._module.package_loader.get_dynlibs;
-            pyodide._module._util_module = pyodide.pyimport("pyodide._util");
-            pyodide._module._util_module.unpack_buffer_archive;
+            pyodide._api.importlib.invalidate_caches;
+            pyodide._api.package_loader.unpack_buffer;
+            pyodide._api.package_loader.get_dynlibs;
+            pyodide._api._util_module = pyodide.pyimport("pyodide._util");
+            pyodide._api._util_module.unpack_buffer_archive;
             pyodide.runPython("");
             """
         )
@@ -271,19 +271,19 @@ class BrowserWrapper:
 
     @property
     def force_test_fail(self) -> bool:
-        return self.run_js("return !!pyodide._module.fail_test;")
+        return self.run_js("return !!pyodide._api.fail_test;")
 
     def clear_force_test_fail(self):
-        self.run_js("pyodide._module.fail_test = false;")
+        self.run_js("pyodide._api.fail_test = false;")
 
     def save_state(self):
-        self.run_js("self.__savedState = pyodide._module.saveState();")
+        self.run_js("self.__savedState = pyodide._api.saveState();")
 
     def restore_state(self):
         self.run_js(
             """
             if(self.__savedState){
-                pyodide._module.restoreState(self.__savedState)
+                pyodide._api.restoreState(self.__savedState)
             }
             """
         )

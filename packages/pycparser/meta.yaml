@@ -2,8 +2,8 @@ package:
   name: pycparser
   version: "2.21"
 source:
-  url: https://files.pythonhosted.org/packages/5e/0b/95d387f5f4433cb0f53ff7ad859bd2c6051051cebbb564f139a999ab46de/pycparser-2.21.tar.gz
-  sha256: e644fdec12f7872f86c58ff790da456218b10f863970249516d60a5eaca77206
+  url: https://files.pythonhosted.org/packages/62/d5/5f610ebe421e85889f2e55e33b7f9a6795bd982198517d912eb1c76e1a53/pycparser-2.21-py2.py3-none-any.whl
+  sha256: 8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9
 test:
   imports:
     - pycparser

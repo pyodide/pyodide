@@ -11,20 +11,46 @@
  * any macros available in pyproxy.c are available here. We only need the flags
  * macros HAS_LENGTH, etc.
  *
- * See Makefile recipe for src/js/pyproxy.js
+ * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
-import { Module } from "./module.js";
+import { Module, API, Hiwire } from "./module.js";
+
+// pyodide-skip
+
+// Just for this file, we implement a special "skip" pragma. These lines are
+// skipped by the Makefile when producing pyproxy.gen.ts These are actually C
+// macros, but we declare them to make typescript okay with processing the raw
+// file. We need to process the raw file to generate the docs because the C
+// preprocessor deletes comments which kills all the docstrings.
+
+// These declarations make Typescript accept the raw file. However, if we macro
+// preprocess these lines, we get a bunch of syntax errors so they need to be
+// removed from the preprocessed version.
+
+// This also has the benefit that it makes intelisense happy.
+declare var IS_CALLABLE: number;
+declare var HAS_LENGTH: number;
+declare var HAS_GET: number;
+declare var HAS_SET: number;
+declare var HAS_CONTAINS: number;
+declare var IS_ITERABLE: number;
+declare var IS_ITERATOR: number;
+declare var IS_AWAITABLE: number;
+declare var IS_BUFFER: number;
+
+declare function DEREF_U32(ptr: number, offset: number): number;
+// end-pyodide-skip
 
 /**
  * Is the argument a :any:`PyProxy`?
- * @param jsobj {any} Object to test.
- * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
+ * @param jsobj Object to test.
+ * @returns Is ``jsobj`` a :any:`PyProxy`?
  */
-export function isPyProxy(jsobj) {
+export function isPyProxy(jsobj: any): jsobj is PyProxy {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
 }
-Module.isPyProxy = isPyProxy;
+API.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
@@ -35,7 +61,7 @@ if (globalThis.FinalizationRegistry) {
     } catch (e) {
       // I'm not really sure what happens if an error occurs inside of a
       // finalizer...
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
   });
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
@@ -47,7 +73,7 @@ if (globalThis.FinalizationRegistry) {
   //     Module._PyBuffer_Release(ptr);
   //     Module._PyMem_Free(ptr);
   //   } catch (e) {
-  //     Module.fatal_error(e);
+  //     API.fatal_error(e);
   //   }
   // });
 } else {
@@ -57,22 +83,24 @@ if (globalThis.FinalizationRegistry) {
 
 let pyproxy_alloc_map = new Map();
 Module.pyproxy_alloc_map = pyproxy_alloc_map;
-let trace_pyproxy_alloc;
-let trace_pyproxy_dealloc;
+let trace_pyproxy_alloc: (proxy: any) => void;
+let trace_pyproxy_dealloc: (proxy: any) => void;
 
 Module.enable_pyproxy_allocation_tracing = function () {
-  trace_pyproxy_alloc = function (proxy) {
+  trace_pyproxy_alloc = function (proxy: any) {
     pyproxy_alloc_map.set(proxy, Error().stack);
   };
-  trace_pyproxy_dealloc = function (proxy) {
+  trace_pyproxy_dealloc = function (proxy: any) {
     pyproxy_alloc_map.delete(proxy);
   };
 };
 Module.disable_pyproxy_allocation_tracing = function () {
-  trace_pyproxy_alloc = function (proxy) {};
-  trace_pyproxy_dealloc = function (proxy) {};
+  trace_pyproxy_alloc = function (proxy: any) {};
+  trace_pyproxy_dealloc = function (proxy: any) {};
 };
 Module.disable_pyproxy_allocation_tracing();
+
+type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
 
 /**
  * Create a new PyProxy wraping ptrobj which is a PyObject*.
@@ -87,7 +115,7 @@ Module.disable_pyproxy_allocation_tracing();
  * many as possible.
  * @private
  */
-Module.pyproxy_new = function (ptrobj, cache) {
+Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
   // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -112,7 +140,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
   if (!cache) {
     // The cache needs to be accessed primarily from the C function
     // _pyproxy_getattr so we make a hiwire id.
-    let cacheId = Module.hiwire.new_value(new Map());
+    let cacheId = Hiwire.new_value(new Map());
     cache = { cacheId, refcnt: 0 };
   }
   cache.refcnt++;
@@ -126,7 +154,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
   return proxy;
 };
 
-function _getPtr(jsobj) {
+function _getPtr(jsobj: any) {
   let ptr = jsobj.$$.ptr;
   if (ptr === null) {
     throw new Error(jsobj.$$.destroyed_msg);
@@ -143,13 +171,8 @@ let pyproxyClassMap = new Map();
  * PyProxy is minimal.
  * @private
  */
-Module.getPyProxyClass = function (flags) {
-  let result = pyproxyClassMap.get(flags);
-  if (result) {
-    return result;
-  }
-  let descriptors = {};
-  for (let [feature_flag, methods] of [
+Module.getPyProxyClass = function (flags: number) {
+  const FLAG_TYPE_PAIRS: [number, any][] = [
     [HAS_LENGTH, PyProxyLengthMethods],
     [HAS_GET, PyProxyGetItemMethods],
     [HAS_SET, PyProxySetItemMethods],
@@ -159,7 +182,13 @@ Module.getPyProxyClass = function (flags) {
     [IS_AWAITABLE, PyProxyAwaitableMethods],
     [IS_BUFFER, PyProxyBufferMethods],
     [IS_CALLABLE, PyProxyCallableMethods],
-  ]) {
+  ];
+  let result = pyproxyClassMap.get(flags);
+  if (result) {
+    return result;
+  }
+  let descriptors: any = {};
+  for (let [feature_flag, methods] of FLAG_TYPE_PAIRS) {
     if (flags & feature_flag) {
       Object.assign(
         descriptors,
@@ -190,15 +219,15 @@ const pyproxy_cache_destroyed_msg =
   "This borrowed attribute proxy was automatically destroyed in the " +
   "process of destroying the proxy it was borrowed from. Try using the 'copy' method.";
 
-function pyproxy_decref_cache(cache) {
+function pyproxy_decref_cache(cache: PyProxyCache) {
   if (!cache) {
     return;
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
-    let cache_map = Module.hiwire.pop_value(cache.cacheId);
+    let cache_map = Hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
-      const cache_entry = Module.hiwire.pop_value(proxy_id);
+      const cache_entry = Hiwire.pop_value(proxy_id);
       if (!cache.leaked) {
         Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg);
       }
@@ -206,7 +235,7 @@ function pyproxy_decref_cache(cache) {
   }
 }
 
-Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   if (proxy.$$.ptr === null) {
     return;
   }
@@ -238,14 +267,14 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
     Module._Py_DecRef(ptrobj);
     trace_pyproxy_dealloc(proxy);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   }
 };
 
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in JavaScript functions.
 
-Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
+Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
   let kwargs = jsargs.pop();
@@ -255,8 +284,8 @@ Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
   let num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
-  let idargs = Module.hiwire.new_value(jsargs);
-  let idkwnames = Module.hiwire.new_value(kwargs_names);
+  let idargs = Hiwire.new_value(jsargs);
+  let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
   try {
     idresult = Module.__pyproxy_apply(
@@ -267,26 +296,35 @@ Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
       num_kwargs
     );
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idargs);
-    Module.hiwire.decref(idkwnames);
+    Hiwire.decref(idargs);
+    Hiwire.decref(idkwnames);
   }
   if (idresult === 0) {
     Module._pythonexc2js();
   }
-  return Module.hiwire.pop_value(idresult);
+  return Hiwire.pop_value(idresult);
 };
 
-Module.callPyObject = function (ptrobj, ...jsargs) {
+Module.callPyObject = function (ptrobj: number, ...jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
 };
 
-/**
- * @typedef {(PyProxyClass & {[x : string] : Py2JsResult})} PyProxy
- * @typedef { PyProxy | number | bigint | string | boolean | undefined } Py2JsResult
- */
-class PyProxyClass {
+export type Py2JsResult =
+  | PyProxy
+  | number
+  | bigint
+  | string
+  | boolean
+  | undefined;
+export type PyProxy = PyProxyClass & { [x: string]: Py2JsResult };
+
+export class PyProxyClass {
+  $$: { ptr: number; cache: PyProxyCache; destroyed_msg?: string };
+  $$flags: number;
+
+  /** @private */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
   }
@@ -308,51 +346,45 @@ class PyProxyClass {
    *    else:
    *        ty.__module__ + "." + ty.__name__
    *
-   * @type {string}
    */
-  get type() {
+  get type(): string {
     let ptrobj = _getPtr(this);
-    return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
+    return Hiwire.pop_value(Module.__pyproxy_type(ptrobj));
   }
-  /**
-   * @returns {string}
-   */
-  toString() {
+  toString(): string {
     let ptrobj = _getPtr(this);
     let jsref_repr;
     try {
       jsref_repr = Module.__pyproxy_repr(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (jsref_repr === 0) {
       Module._pythonexc2js();
     }
-    return Module.hiwire.pop_value(jsref_repr);
+    return Hiwire.pop_value(jsref_repr);
   }
   /**
-   * Destroy the ``PyProxy``. This will release the memory. Any further
-   * attempt to use the object will raise an error.
+   * Destroy the ``PyProxy``. This will release the memory. Any further attempt
+   * to use the object will raise an error.
    *
    * In a browser supporting `FinalizationRegistry
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
    * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
-   * collected, however there is no guarantee that the finalizer will be run
-   * in a timely manner so it is better to ``destroy`` the proxy explicitly.
+   * collected, however there is no guarantee that the finalizer will be run in
+   * a timely manner so it is better to ``destroy`` the proxy explicitly.
    *
-   * @param {string} [destroyed_msg] The error message to print if use is
-   *        attempted after destroying. Defaults to "Object has already been
-   *        destroyed".
+   * @param destroyed_msg The error message to print if use is attempted after
+   *        destroying. Defaults to "Object has already been destroyed".
    */
-  destroy(destroyed_msg) {
+  destroy(destroyed_msg?: string) {
     Module.pyproxy_destroy(this, destroyed_msg);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.
    * Useful if the PyProxy is destroyed somewhere else.
-   * @returns {PyProxy}
    */
-  copy() {
+  copy(): PyProxy {
     let ptrobj = _getPtr(this);
     return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
@@ -361,31 +393,39 @@ class PyProxyClass {
    * default does a deep conversion, if a shallow conversion is desired, you can
    * use ``proxy.toJs({depth : 1})``. See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
-   *
-   * @param {object} options
-   * @param {number} [options.depth] How many layers deep to perform the
-   * conversion. Defaults to infinite.
-   * @param {array} [options.pyproxies] If provided, ``toJs`` will store all
-   * PyProxies created in this list. This allows you to easily destroy all the
-   * PyProxies by iterating the list without having to recurse over the
-   * generated structure. The most common use case is to create a new empty
-   * list, pass the list as `pyproxies`, and then later iterate over `pyproxies`
-   * to destroy all of created proxies.
-   * @param {boolean} [options.create_pyproxies] If false, ``toJs`` will throw a
-   * ``ConversionError`` rather than producing a ``PyProxy``.
-   * @param {boolean} [options.dict_converter] A function to be called on an
-   * iterable of pairs ``[key, value]``. Convert this iterable of pairs to the
-   * desired output. For instance, ``Object.fromEntries`` would convert the dict
-   * to an object, ``Array.from`` converts it to an array of entries, and ``(it) =>
-   * new Map(it)`` converts it to a ``Map`` (which is the default behavior).
-   * @return {any} The JavaScript object resulting from the conversion.
+   * @param options
+   * @return The JavaScript object resulting from the conversion.
    */
   toJs({
     depth = -1,
-    pyproxies,
+    pyproxies = undefined,
     create_pyproxies = true,
-    dict_converter,
-  } = {}) {
+    dict_converter = undefined,
+  }: {
+    /** How many layers deep to perform the conversion. Defaults to infinite */
+    depth?: number;
+    /**
+     * If provided, ``toJs`` will store all PyProxies created in this list. This
+     * allows you to easily destroy all the PyProxies by iterating the list
+     * without having to recurse over the generated structure. The most common
+     * use case is to create a new empty list, pass the list as `pyproxies`, and
+     * then later iterate over `pyproxies` to destroy all of created proxies.
+     */
+    pyproxies?: PyProxy[];
+    /**
+     * If false, ``toJs`` will throw a ``ConversionError`` rather than
+     * producing a ``PyProxy``.
+     */
+    create_pyproxies?: boolean;
+    /**
+     * A function to be called on an iterable of pairs ``[key, value]``. Convert
+     * this iterable of pairs to the desired output. For instance,
+     * ``Object.fromEntries`` would convert the dict to an object, ``Array.from``
+     * converts it to an array of entries, and ``(it) => new Map(it)`` converts
+     * it to a ``Map`` (which is the default behavior).
+     */
+    dict_converter?: any;
+  } = {}): any {
     let ptrobj = _getPtr(this);
     let idresult;
     let proxies_id;
@@ -393,12 +433,12 @@ class PyProxyClass {
     if (!create_pyproxies) {
       proxies_id = 0;
     } else if (pyproxies) {
-      proxies_id = Module.hiwire.new_value(pyproxies);
+      proxies_id = Hiwire.new_value(pyproxies);
     } else {
-      proxies_id = Module.hiwire.new_value([]);
+      proxies_id = Hiwire.new_value([]);
     }
     if (dict_converter) {
-      dict_converter_id = Module.hiwire.new_value(dict_converter);
+      dict_converter_id = Hiwire.new_value(dict_converter);
     }
     try {
       idresult = Module._python2js_custom_dict_converter(
@@ -408,78 +448,70 @@ class PyProxyClass {
         dict_converter_id
       );
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(proxies_id);
-      Module.hiwire.decref(dict_converter_id);
+      Hiwire.decref(proxies_id);
+      Hiwire.decref(dict_converter_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
     }
-    return Module.hiwire.pop_value(idresult);
+    return Hiwire.pop_value(idresult);
   }
   /**
    * Check whether the :any:`PyProxy.length` getter is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithLength}
    */
-  supportsLength() {
+  supportsLength(): this is PyProxyWithLength {
     return !!(this.$$flags & HAS_LENGTH);
   }
   /**
    * Check whether the :any:`PyProxy.get` method is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithGet}
    */
-  supportsGet() {
+  supportsGet(): this is PyProxyWithGet {
     return !!(this.$$flags & HAS_GET);
   }
   /**
    * Check whether the :any:`PyProxy.set` method is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithSet}
    */
-  supportsSet() {
+  supportsSet(): this is PyProxyWithSet {
     return !!(this.$$flags & HAS_SET);
   }
   /**
    * Check whether the :any:`PyProxy.has` method is available on this PyProxy. A
    * Typescript type guard.
-   * @returns {this is PyProxyWithHas}
    */
-  supportsHas() {
+  supportsHas(): this is PyProxyWithHas {
     return !!(this.$$flags & HAS_CONTAINS);
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
-   * :any:`PyProxy.[Symbol.iterator]`.
-   * @returns {this is PyProxyIterable}
+   * :any:`PyProxy.[iterator]`.
    */
-  isIterable() {
+  isIterable(): this is PyProxyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
    * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.next`.
-   * @returns {this is PyProxyIterator}
    */
-  isIterator() {
+  isIterator(): this is PyProxyIterator {
     return !!(this.$$flags & IS_ITERATOR);
   }
   /**
    * Check whether the PyProxy is awaitable. A Typescript type guard, if this
    * function returns true Typescript considers the PyProxy to be a ``Promise``.
-   * @returns {this is PyProxyAwaitable}
    */
-  isAwaitable() {
+  isAwaitable(): this is PyProxyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
   }
   /**
    * Check whether the PyProxy is a buffer. A Typescript type guard for
    * :any:`PyProxy.getBuffer`.
-   * @returns {this is PyProxyBuffer}
    */
-  isBuffer() {
+  isBuffer(): this is PyProxyBuffer {
     return !!(this.$$flags & IS_BUFFER);
   }
   /**
@@ -487,32 +519,28 @@ class PyProxyClass {
    * returns true then Typescript considers the Proxy to be callable of
    * signature ``(args... : any[]) => PyProxy | number | bigint | string |
    * boolean | undefined``.
-   * @returns {this is PyProxyCallable}
    */
-  isCallable() {
+  isCallable(): this is PyProxyCallable {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
 
-/**
- * @typedef { PyProxy & PyProxyLengthMethods } PyProxyWithLength
- */
+export type PyProxyWithLength = PyProxy & PyProxyLengthMethods;
 // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
 // or mp_length methods
-class PyProxyLengthMethods {
+export class PyProxyLengthMethods {
   /**
    * The length of the object.
    *
    * Present only if the proxied Python object has a ``__len__`` method.
-   * @returns {number}
    */
-  get length() {
+  get length(): number {
     let ptrobj = _getPtr(this);
     let length;
     try {
       length = Module._PyObject_Size(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (length === -1) {
       Module._pythonexc2js();
@@ -521,34 +549,29 @@ class PyProxyLengthMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyGetItemMethods} PyProxyWithGet
- */
+export type PyProxyWithGet = PyProxy & PyProxyGetItemMethods;
 
 // Controlled by HAS_GET, appears for any class with __getitem__,
 // mp_subscript, or sq_item methods
-/**
- * @interface
- */
-class PyProxyGetItemMethods {
+export class PyProxyGetItemMethods {
   /**
    * This translates to the Python code ``obj[key]``.
    *
    * Present only if the proxied Python object has a ``__getitem__`` method.
    *
-   * @param {any} key The key to look up.
-   * @returns {Py2JsResult} The corresponding value.
+   * @param key The key to look up.
+   * @returns The corresponding value.
    */
-  get(key) {
+  get(key: any): Py2JsResult {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
+    let idkey = Hiwire.new_value(key);
     let idresult;
     try {
       idresult = Module.__pyproxy_getitem(ptrobj, idkey);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
+      Hiwire.decref(idkey);
     }
     if (idresult === 0) {
       if (Module._PyErr_Occurred()) {
@@ -557,36 +580,34 @@ class PyProxyGetItemMethods {
         return undefined;
       }
     }
-    return Module.hiwire.pop_value(idresult);
+    return Hiwire.pop_value(idresult);
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxySetItemMethods} PyProxyWithSet
- */
+export type PyProxyWithSet = PyProxy & PyProxySetItemMethods;
 // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
 // mp_ass_subscript,  or sq_ass_item.
-class PyProxySetItemMethods {
+export class PyProxySetItemMethods {
   /**
    * This translates to the Python code ``obj[key] = value``.
    *
    * Present only if the proxied Python object has a ``__setitem__`` method.
    *
-   * @param {any} key The key to set.
-   * @param {any} value The value to set it to.
+   * @param key The key to set.
+   * @param value The value to set it to.
    */
-  set(key, value) {
+  set(key: any, value: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
-    let idval = Module.hiwire.new_value(value);
+    let idkey = Hiwire.new_value(key);
+    let idval = Hiwire.new_value(value);
     let errcode;
     try {
       errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
-      Module.hiwire.decref(idval);
+      Hiwire.decref(idkey);
+      Hiwire.decref(idval);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -597,18 +618,18 @@ class PyProxySetItemMethods {
    *
    * Present only if the proxied Python object has a ``__delitem__`` method.
    *
-   * @param {any} key The key to delete.
+   * @param key The key to delete.
    */
-  delete(key) {
+  delete(key: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
+    let idkey = Hiwire.new_value(key);
     let errcode;
     try {
       errcode = Module.__pyproxy_delitem(ptrobj, idkey);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
+      Hiwire.decref(idkey);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -616,31 +637,29 @@ class PyProxySetItemMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyContainsMethods} PyProxyWithHas
- */
+export type PyProxyWithHas = PyProxy & PyProxyContainsMethods;
 
 // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
 // sq_contains
-class PyProxyContainsMethods {
+export class PyProxyContainsMethods {
   /**
    * This translates to the Python code ``key in obj``.
    *
    * Present only if the proxied Python object has a ``__contains__`` method.
    *
-   * @param {*} key The key to check for.
-   * @returns {boolean} Is ``key`` present?
+   * @param key The key to check for.
+   * @returns Is ``key`` present?
    */
-  has(key) {
+  has(key: any): boolean {
     let ptrobj = _getPtr(this);
-    let idkey = Module.hiwire.new_value(key);
+    let idkey = Hiwire.new_value(key);
     let result;
     try {
       result = Module.__pyproxy_contains(ptrobj, idkey);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idkey);
+      Hiwire.decref(idkey);
     }
     if (result === -1) {
       Module._pythonexc2js();
@@ -665,14 +684,14 @@ class PyProxyContainsMethods {
  *
  * @private
  */
-function* iter_helper(iterptr, token) {
+function* iter_helper(iterptr: number, token: {}): Generator<Py2JsResult> {
   try {
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
-      yield Module.hiwire.pop_value(item);
+      yield Hiwire.pop_value(item);
     }
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
     Module._Py_DecRef(iterptr);
@@ -682,15 +701,13 @@ function* iter_helper(iterptr, token) {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyIterableMethods} PyProxyIterable
- */
+export type PyProxyIterable = PyProxy & PyProxyIterableMethods;
 
 // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
 // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
 // This avoids allocating a PyProxy wrapper for the temporary iterator.
-class PyProxyIterableMethods {
+export class PyProxyIterableMethods {
   /**
    * This translates to the Python code ``iter(obj)``. Return an iterator
    * associated to the proxy. See the documentation for `Symbol.iterator
@@ -700,17 +717,15 @@ class PyProxyIterableMethods {
    * ``__iter__`` method).
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
-   *
-   * @returns {Iterator<Py2JsResult, Py2JsResult, any>} An iterator for the proxied Python object.
    */
-  [Symbol.iterator]() {
+  [Symbol.iterator](): Iterator<Py2JsResult, Py2JsResult, Py2JsResult> {
     let ptrobj = _getPtr(this);
     let token = {};
     let iterptr;
     try {
       iterptr = Module._PyObject_GetIter(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (iterptr === 0) {
       Module._pythonexc2js();
@@ -722,40 +737,38 @@ class PyProxyIterableMethods {
   }
 }
 
-/**
- * @typedef {PyProxy & PyProxyIteratorMethods} PyProxyIterator
- */
+export type PyProxyIterator = PyProxy & PyProxyIteratorMethods;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
 // tp_iternext method.
-class PyProxyIteratorMethods {
+export class PyProxyIteratorMethods {
+  /** @private */
   [Symbol.iterator]() {
     return this;
   }
   /**
-   * This translates to the Python code ``next(obj)``. Returns the next value
-   * of the generator. See the documentation for `Generator.prototype.next
+   * This translates to the Python code ``next(obj)``. Returns the next value of
+   * the generator. See the documentation for `Generator.prototype.next
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
    * The argument will be sent to the Python generator.
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    *
-   * Present only if the proxied Python object is a generator or iterator
-   * (i.e., has a ``send`` or ``__next__`` method).
+   * Present only if the proxied Python object is a generator or iterator (i.e.,
+   * has a ``send`` or ``__next__`` method).
    *
-   * @param {any=} [value] The value to send to the generator. The value will be
-   * assigned as a result of a yield expression.
-   * @returns {IteratorResult<Py2JsResult, Py2JsResult>} An Object with two properties: ``done`` and ``value``.
-   * When the generator yields ``some_value``, ``next`` returns ``{done :
-   * false, value : some_value}``. When the generator raises a
-   * ``StopIteration(result_value)`` exception, ``next`` returns ``{done :
-   * true, value : result_value}``.
+   * @param any The value to send to the generator. The value will be assigned
+   * as a result of a yield expression.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * generator yields ``some_value``, ``next`` returns ``{done : false, value :
+   * some_value}``. When the generator raises a ``StopIteration(result_value)``
+   * exception, ``next`` returns ``{done : true, value : result_value}``.
    */
-  next(arg = undefined) {
+  next(arg: any = undefined): IteratorResult<Py2JsResult, Py2JsResult> {
     let idresult;
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
-    let idarg = Module.hiwire.new_value(arg);
+    let idarg = Hiwire.new_value(arg);
     let done;
     try {
       idresult = Module.__pyproxyGen_Send(_getPtr(this), idarg);
@@ -764,14 +777,14 @@ class PyProxyIteratorMethods {
         idresult = Module.__pyproxyGen_FetchStopIterationValue();
       }
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(idarg);
+      Hiwire.decref(idarg);
     }
     if (done && idresult === 0) {
       Module._pythonexc2js();
     }
-    let value = Module.hiwire.pop_value(idresult);
+    let value = Hiwire.pop_value(idresult);
     return { done, value };
   }
 }
@@ -780,16 +793,16 @@ class PyProxyIteratorMethods {
 // to deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
-function python_hasattr(jsobj, jskey) {
+function python_hasattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
+  let idkey = Hiwire.new_value(jskey);
   let result;
   try {
     result = Module.__pyproxy_hasattr(ptrobj, idkey);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
+    Hiwire.decref(idkey);
   }
   if (result === -1) {
     Module._pythonexc2js();
@@ -800,17 +813,17 @@ function python_hasattr(jsobj, jskey) {
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
 // Js_undefined).
-function python_getattr(jsobj, jskey) {
+function python_getattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
+  let idkey = Hiwire.new_value(jskey);
   let idresult;
   let cacheId = jsobj.$$.cache.cacheId;
   try {
     idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
+    Hiwire.decref(idkey);
   }
   if (idresult === 0) {
     if (Module._PyErr_Occurred()) {
@@ -820,34 +833,34 @@ function python_getattr(jsobj, jskey) {
   return idresult;
 }
 
-function python_setattr(jsobj, jskey, jsval) {
+function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
-  let idval = Module.hiwire.new_value(jsval);
+  let idkey = Hiwire.new_value(jskey);
+  let idval = Hiwire.new_value(jsval);
   let errcode;
   try {
     errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
-    Module.hiwire.decref(idval);
+    Hiwire.decref(idkey);
+    Hiwire.decref(idval);
   }
   if (errcode === -1) {
     Module._pythonexc2js();
   }
 }
 
-function python_delattr(jsobj, jskey) {
+function python_delattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Module.hiwire.new_value(jskey);
+  let idkey = Hiwire.new_value(jskey);
   let errcode;
   try {
     errcode = Module.__pyproxy_delattr(ptrobj, idkey);
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   } finally {
-    Module.hiwire.decref(idkey);
+    Hiwire.decref(idkey);
   }
   if (errcode === -1) {
     Module._pythonexc2js();
@@ -861,7 +874,7 @@ let PyProxyHandlers = {
   isExtensible() {
     return true;
   },
-  has(jsobj, jskey) {
+  has(jsobj: PyProxyClass, jskey: any) {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
     let objHasKey = Reflect.has(jsobj, jskey);
@@ -877,7 +890,7 @@ let PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj, jskey) {
+  get(jsobj: PyProxyClass, jskey: any) {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
@@ -894,10 +907,10 @@ let PyProxyHandlers = {
     // 2. The result of getattr
     let idresult = python_getattr(jsobj, jskey);
     if (idresult !== 0) {
-      return Module.hiwire.pop_value(idresult);
+      return Hiwire.pop_value(idresult);
     }
   },
-  set(jsobj, jskey, jsval) {
+  set(jsobj: PyProxyClass, jskey: any, jsval: any) {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
@@ -912,7 +925,7 @@ let PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
-  deleteProperty(jsobj, jskey) {
+  deleteProperty(jsobj: PyProxyClass, jskey: any) {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
@@ -928,42 +941,41 @@ let PyProxyHandlers = {
     // Otherwise JavaScript will throw a TypeError.
     return !descr || descr.configurable;
   },
-  ownKeys(jsobj) {
+  ownKeys(jsobj: PyProxyClass) {
     let ptrobj = _getPtr(jsobj);
     let idresult;
     try {
       idresult = Module.__pyproxy_ownKeys(ptrobj);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
     }
-    let result = Module.hiwire.pop_value(idresult);
+    let result = Hiwire.pop_value(idresult);
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },
-  apply(jsobj, jsthis, jsargs) {
+  apply(jsobj: PyProxyClass & Function, jsthis: any, jsargs: any) {
     return jsobj.apply(jsthis, jsargs);
   },
 };
 
-/**
- * @typedef {PyProxy & Promise<Py2JsResult>} PyProxyAwaitable
- */
+export type PyProxyAwaitable = PyProxy & Promise<Py2JsResult>;
 
 /**
  * The Promise / JavaScript awaitable API.
  * @private
  */
-class PyProxyAwaitableMethods {
+export class PyProxyAwaitableMethods {
+  $$: any;
   /**
    * This wraps __pyproxy_ensure_future and makes a function that converts a
    * Python awaitable to a promise, scheduling the awaitable on the Python
    * event loop if necessary.
    * @private
    */
-  _ensure_future() {
+  _ensure_future(): Promise<any> {
     if (this.$$.promise) {
       return this.$$.promise;
     }
@@ -974,8 +986,8 @@ class PyProxyAwaitableMethods {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let resolve_handle_id = Module.hiwire.new_value(resolveHandle);
-    let reject_handle_id = Module.hiwire.new_value(rejectHandle);
+    let resolve_handle_id = Hiwire.new_value(resolveHandle);
+    let reject_handle_id = Hiwire.new_value(rejectHandle);
     let errcode;
     try {
       errcode = Module.__pyproxy_ensure_future(
@@ -984,15 +996,16 @@ class PyProxyAwaitableMethods {
         reject_handle_id
       );
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     } finally {
-      Module.hiwire.decref(reject_handle_id);
-      Module.hiwire.decref(resolve_handle_id);
+      Hiwire.decref(reject_handle_id);
+      Hiwire.decref(resolve_handle_id);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
     }
     this.$$.promise = promise;
+    // @ts-ignore
     this.destroy();
     return promise;
   }
@@ -1009,13 +1022,16 @@ class PyProxyAwaitableMethods {
    * Present only if the proxied Python object is `awaitable
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
    *
-   * @param {Function} onFulfilled A handler called with the result as an
+   * @param onFulfilled A handler called with the result as an
    * argument if the awaitable succeeds.
-   * @param {Function} onRejected A handler called with the error as an
+   * @param onRejected A handler called with the error as an
    * argument if the awaitable fails.
-   * @returns {Promise} The resulting Promise.
+   * @returns The resulting Promise.
    */
-  then(onFulfilled, onRejected) {
+  then(
+    onFulfilled: (value: any) => any,
+    onRejected: (reason: any) => any
+  ): Promise<any> {
     let promise = this._ensure_future();
     return promise.then(onFulfilled, onRejected);
   }
@@ -1030,11 +1046,11 @@ class PyProxyAwaitableMethods {
    * Present only if the proxied Python object is `awaitable
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
    *
-   * @param {Function} onRejected A handler called with the error as an
+   * @param onRejected A handler called with the error as an
    * argument if the awaitable fails.
-   * @returns {Promise} The resulting Promise.
+   * @returns The resulting Promise.
    */
-  catch(onRejected) {
+  catch(onRejected: (reason: any) => any) {
     let promise = this._ensure_future();
     return promise.catch(onRejected);
   }
@@ -1050,33 +1066,34 @@ class PyProxyAwaitableMethods {
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
    *
    *
-   * @param {Function} onFinally A handler that is called with zero arguments
+   * @param onFinally A handler that is called with zero arguments
    * when the awaitable resolves.
-   * @returns {Promise} A Promise that resolves or rejects with the same
+   * @returns A Promise that resolves or rejects with the same
    * result as the original Promise, but only after executing the
    * ``onFinally`` handler.
    */
-  finally(onFinally) {
+  finally(onFinally: () => void) {
     let promise = this._ensure_future();
     return promise.finally(onFinally);
   }
 }
 
-/**
- * @typedef { PyProxy & PyProxyCallableMethods & ((...args : any[]) => Py2JsResult) } PyProxyCallable
- */
-class PyProxyCallableMethods {
-  apply(jsthis, jsargs) {
+export type PyProxyCallable = PyProxy &
+  PyProxyCallableMethods &
+  ((...args: any[]) => Py2JsResult);
+
+export class PyProxyCallableMethods {
+  apply(jsthis: PyProxyClass, jsargs: any) {
     return Module.callPyObject(_getPtr(this), ...jsargs);
   }
-  call(jsthis, ...jsargs) {
+  call(jsthis: PyProxyClass, ...jsargs: any) {
     return Module.callPyObject(_getPtr(this), ...jsargs);
   }
   /**
    * Call the function with key word arguments.
    * The last argument must be an object with the keyword arguments.
    */
-  callKwargs(...jsargs) {
+  callKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
       throw new TypeError(
         "callKwargs requires at least one argument (the key word argument object)"
@@ -1092,9 +1109,11 @@ class PyProxyCallableMethods {
     return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
   }
 }
+// @ts-ignore
 PyProxyCallableMethods.prototype.prototype = Function.prototype;
 
-let type_to_array_map = new Map([
+// @ts-ignore
+let type_to_array_map: Map<string, any> = new Map([
   ["i8", Int8Array],
   ["u8", Uint8Array],
   ["u8clamped", Uint8ClampedArray],
@@ -1113,10 +1132,9 @@ let type_to_array_map = new Map([
   ["dataview", DataView],
 ]);
 
-/**
- * @typedef {PyProxy & PyProxyBufferMethods} PyProxyBuffer
- */
-class PyProxyBufferMethods {
+export type PyProxyBuffer = PyProxy & PyProxyBufferMethods;
+
+export class PyProxyBufferMethods {
   /**
    * Get a view of the buffer data which is usable from JavaScript. No copy is
    * ever performed.
@@ -1138,16 +1156,16 @@ class PyProxyBufferMethods {
    * have support for big endian data, so you might want to pass
    * ``'dataview'`` as the type argument in that case.
    *
-   * @param {string=} [type] The type of the :any:`PyBuffer.data <pyodide.PyBuffer.data>` field in the
+   * @param type The type of the :any:`PyBuffer.data <pyodide.PyBuffer.data>` field in the
    * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
    * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
    * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
    * optional, if absent ``getBuffer`` will try to determine the appropriate
    * output type based on the buffer `format string
    * <https://docs.python.org/3/library/struct.html#format-strings>`_.
-   * @returns {PyBuffer} :any:`PyBuffer <pyodide.PyBuffer>`
+   * @returns :any:`PyBuffer <pyodide.PyBuffer>`
    */
-  getBuffer(type) {
+  getBuffer(type?: string): PyBuffer {
     let ArrayType = undefined;
     if (type) {
       ArrayType = type_to_array_map.get(type);
@@ -1165,7 +1183,7 @@ class PyProxyBufferMethods {
     try {
       errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     if (errcode === -1) {
       Module._pythonexc2js();
@@ -1179,8 +1197,8 @@ class PyProxyBufferMethods {
     let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
     let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
     let itemsize = DEREF_U32(buffer_struct_ptr, 5);
-    let shape = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
-    let strides = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
+    let shape = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
+    let strides = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
 
     let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
     let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
@@ -1259,16 +1277,24 @@ class PyProxyBufferMethods {
           Module._PyBuffer_Release(view_ptr);
           Module._PyMem_Free(view_ptr);
         } catch (e) {
-          Module.fatal_error(e);
+          API.fatal_error(e);
         }
       }
     }
   }
 }
 
-/**
- * @typedef {Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array} TypedArray;
- */
+export type TypedArray =
+  | Int8Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Uint8ClampedArray
+  | Float32Array
+  | Float64Array;
+export type PyProxyDict = PyProxyWithGet & PyProxyWithSet & PyProxyWithHas;
 
 /**
  * A class to allow access to a Python data buffers from JavaScript. These are
@@ -1337,90 +1363,93 @@ class PyProxyBufferMethods {
  *        );
  */
 export class PyBuffer {
+  /**
+   * The offset of the first entry of the array. For instance if our array
+   * is 3d, then you will find ``array[0,0,0]`` at
+   * ``pybuf.data[pybuf.offset]``
+   */
+  offset: number;
+
+  /**
+   * If the data is readonly, you should not modify it. There is no way
+   * for us to enforce this, but it may cause very weird behavior.
+   */
+  readonly: boolean;
+
+  /**
+   * The format string for the buffer. See `the Python documentation on
+   * format strings
+   * <https://docs.python.org/3/library/struct.html#format-strings>`_.
+   */
+  format: string;
+
+  /**
+   * How large is each entry (in bytes)?
+   */
+  itemsize: number;
+
+  /**
+   * The number of dimensions of the buffer. If ``ndim`` is 0, the buffer
+   * represents a single scalar or struct. Otherwise, it represents an
+   * array.
+   */
+  ndim: number;
+
+  /**
+   * The total number of bytes the buffer takes up. This is equal to
+   * ``buff.data.byteLength``.
+   */
+  nbytes: number;
+
+  /**
+   * The shape of the buffer, that is how long it is in each dimension.
+   * The length will be equal to ``ndim``. For instance, a 2x3x4 array
+   * would have shape ``[2, 3, 4]``.
+   */
+  shape: number[];
+
+  /**
+   * An array of of length ``ndim`` giving the number of elements to skip
+   * to get to a new element in each dimension. See the example definition
+   * of a ``multiIndexToIndex`` function above.
+   */
+  strides: number[];
+
+  /**
+   * The actual data. A typed array of an appropriate size backed by a
+   * segment of the WASM memory.
+   *
+   * The ``type`` argument of :any:`PyProxy.getBuffer`
+   * determines which sort of ``TypedArray`` this is. By default
+   * :any:`PyProxy.getBuffer` will look at the format string to determine the most
+   * appropriate option.
+   */
+  data: TypedArray;
+
+  /**
+   * Is it C contiguous?
+   */
+  c_contiguous: boolean;
+
+  /**
+   * Is it Fortran contiguous?
+   */
+  f_contiguous: boolean;
+
+  /**
+   * @private
+   */
+  _released: boolean;
+
+  /**
+   * @private
+   */
+  _view_ptr: number;
+
+  /**
+   * @private
+   */
   constructor() {
-    /**
-     * The offset of the first entry of the array. For instance if our array
-     * is 3d, then you will find ``array[0,0,0]`` at
-     * ``pybuf.data[pybuf.offset]``
-     * @type {number}
-     */
-    this.offset;
-
-    /**
-     * If the data is readonly, you should not modify it. There is no way
-     * for us to enforce this, but it may cause very weird behavior.
-     * @type {boolean}
-     */
-    this.readonly;
-
-    /**
-     * The format string for the buffer. See `the Python documentation on
-     * format strings
-     * <https://docs.python.org/3/library/struct.html#format-strings>`_.
-     * @type {string}
-     */
-    this.format;
-
-    /**
-     * How large is each entry (in bytes)?
-     * @type {number}
-     */
-    this.itemsize;
-
-    /**
-     * The number of dimensions of the buffer. If ``ndim`` is 0, the buffer
-     * represents a single scalar or struct. Otherwise, it represents an
-     * array.
-     * @type {number}
-     */
-    this.ndim;
-
-    /**
-     * The total number of bytes the buffer takes up. This is equal to
-     * ``buff.data.byteLength``.
-     * @type {number}
-     */
-    this.nbytes;
-
-    /**
-     * The shape of the buffer, that is how long it is in each dimension.
-     * The length will be equal to ``ndim``. For instance, a 2x3x4 array
-     * would have shape ``[2, 3, 4]``.
-     * @type {number[]}
-     */
-    this.shape;
-
-    /**
-     * An array of of length ``ndim`` giving the number of elements to skip
-     * to get to a new element in each dimension. See the example definition
-     * of a ``multiIndexToIndex`` function above.
-     * @type {number[]}
-     */
-    this.strides;
-
-    /**
-     * The actual data. A typed array of an appropriate size backed by a
-     * segment of the WASM memory.
-     *
-     * The ``type`` argument of :any:`PyProxy.getBuffer`
-     * determines which sort of ``TypedArray`` this is. By default
-     * :any:`PyProxy.getBuffer` will look at the format string to determine the most
-     * appropriate option.
-     * @type {TypedArray}
-     */
-    this.data;
-
-    /**
-     * Is it C contiguous?
-     * @type {boolean}
-     */
-    this.c_contiguous;
-
-    /**
-     * Is it Fortran contiguous?
-     * @type {boolean}
-     */
-    this.f_contiguous;
     throw new TypeError("PyBuffer is not a constructor");
   }
 
@@ -1436,7 +1465,7 @@ export class PyBuffer {
       Module._PyBuffer_Release(this._view_ptr);
       Module._PyMem_Free(this._view_ptr);
     } catch (e) {
-      Module.fatal_error(e);
+      API.fatal_error(e);
     }
     this._released = true;
     this.data = null;

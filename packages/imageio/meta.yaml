@@ -1,9 +1,9 @@
 package:
   name: imageio
-  version: 2.9.0
+  version: 2.14.0
 source:
-  sha256: 52ddbaeca2dccf53ba2d6dec5676ca7bc3b2403ef8b37f7da78b7654bb3e10f0
-  url: https://files.pythonhosted.org/packages/c3/73/f37f428748c4f10a7991ac5bff00f113a34bcc0d0a78957d6e1cdc29a94e/imageio-2.9.0.tar.gz
+  sha256: af6c7c89947ee9d81eab2caee3726f61e1a0d861e87e856904868d0fe7c0aa15
+  url: https://files.pythonhosted.org/packages/88/1e/62f8088805f7eb9cc9ce2b8ae7528a4083014f223c4e55d268dc48ac06c6/imageio-2.14.0-py3-none-any.whl
 requirements:
   run:
     - numpy

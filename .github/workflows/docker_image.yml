@@ -2,9 +2,18 @@ name: pyodide-env-docker
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version of the docker image to build."
-        required: true
+      chrome_version:
+        description: "Version of the chrome browser (e.g. 97, 96, latest)."
+        required: false
+        default: "97"
+      firefox_version:
+        description: "Version of the firefox browser (e.g. 96, 95, latest)."
+        required: false
+        default: "96"
+      tag:
+        description: "Tag of the docker image to build (If not set, <release-date>-chrome[version]-firefox[version] will be used)"
+        required: false
+        default: ""
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide-env
@@ -25,14 +34,26 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.IMAGE_NAME }}
+      - name: Set tag
+        id: tag
+        run: |
+          TAG=${{ github.event.inputs.tag }}
+          if [ -z "$TAG" ]; then
+            DATE=$(date +'%Y%m%d')
+            TAG="$DATE-chrome${{ github.event.inputs.chrome_version }}-firefox${{ github.event.inputs.firefox_version }}"
+          fi
+          echo "::set-output name=tag::$TAG"
       - name: Build and push Docker image to Docker Hub
         id: build
         uses: docker/build-push-action@v2
         with:
           file: ./Dockerfile
           push: true
-          tags: ${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          tags: ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:
@@ -51,13 +72,25 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Set tag
+        id: tag
+        run: |
+          TAG=${{ github.event.inputs.tag }}
+          if [ -z "$TAG" ]; then
+            DATE=$(date +'%Y%m%d')
+            TAG="$DATE-chrome${{ github.event.inputs.chrome_version }}-firefox${{ github.event.inputs.firefox_version }}"
+          fi
+          echo "::set-output name=tag::$TAG"
       - name: Build and push Docker image to ${{ env.GHCR_REGISTRY }}
         id: build
         uses: docker/build-push-action@v2
         with:
           file: ./Dockerfile
           push: true
-          tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }}
+          tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CHROME_VERSION=${{ github.event.inputs.chrome_version }}
+            FIREFOX_VERSION=${{ github.event.inputs.firefox_version }}
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
