@@ -295,7 +295,20 @@ class _PackageManager:
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = PackageMetadata(name=name, version=version)
-        wheel_bytes = await fetch_bytes(wheel["url"])
+
+        try:
+            wheel_bytes = await fetch_bytes(wheel["url"])
+        except Exception as e:
+            if wheel["url"].startswith("https://files.pythonhosted.org/"):
+                raise e
+            else:
+                raise ValueError(
+                    f"Couldn't fetch wheel from '{wheel['url']}'."
+                    "One common reason for this is when the server blocks "
+                    "Cross-Origin Resource Sharing (CORS)."
+                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
+                ) from e
+
         wheel["wheel_bytes"] = wheel_bytes
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore

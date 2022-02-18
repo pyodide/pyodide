@@ -46,6 +46,11 @@ substitutions:
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
 
+- {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
+  and {any}`pyodide.toPy` which is used to process any object that doesn't have
+  a built-in conversion to Python.
+  {pr}`2170`
+
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
   {pr}`2126`

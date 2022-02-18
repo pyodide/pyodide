@@ -195,13 +195,28 @@ export function unregisterJsModule(name: string) {
  *
  * @param obj
  * @param options
- * @param options.depth Optional argument to limit the depth of the
- * conversion.
  * @returns The object converted to Python.
  */
 export function toPy(
   obj: any,
-  { depth }: { depth: number } = { depth: -1 }
+  {
+    depth,
+    defaultConverter,
+  }: {
+    /**
+     *  Optional argument to limit the depth of the conversion.
+     */
+    depth: number;
+    /**
+     * Optional argument to convert objects with no default conversion. See the
+     * documentation of :any:`JsProxy.to_py`.
+     */
+    defaultConverter?: (
+      value: any,
+      converter: (value: any) => any,
+      cacheConversion: (input: any, output: any) => any
+    ) => any;
+  } = { depth: -1 }
 ): Py2JsResult {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
@@ -222,7 +237,7 @@ export function toPy(
   try {
     obj_id = Hiwire.new_value(obj);
     try {
-      py_result = Module.js2python_convert(obj_id, depth);
+      py_result = Module.js2python_convert(obj_id, { depth, defaultConverter });
     } catch (e) {
       if (e instanceof Module._PropagatePythonError) {
         Module._pythonexc2js();

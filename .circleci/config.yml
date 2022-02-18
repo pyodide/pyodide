@@ -3,7 +3,10 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:latest
+    # Note: when updating the docker image version,
+    #       make sure there are no extra old versions lying around.
+    #       (e.g. `rg -F --hidden <old_tag>`)
+    - image: pyodide/pyodide-env:20220213-chrome97-firefox96
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
