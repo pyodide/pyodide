@@ -113,8 +113,8 @@ def main(hostpython):
 
         b = {"native": float("NaN")}
         browser_cls = [
-            ("firefox", conftest.FirefoxWrapper),
-            ("chrome", conftest.ChromeWrapper),
+            ("firefox", conftest.SeleniumFirefoxWrapper),
+            ("chrome", conftest.SeleniumChromeWrapper),
         ]
         for name, cls in browser_cls:
             t0 = time()
