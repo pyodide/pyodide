@@ -91,6 +91,7 @@ jobs:
 
     needs: build-core
     strategy:
+      fail-fast: false
       matrix:
         runner: [playwright]
         browser: [firefox, chrome]
