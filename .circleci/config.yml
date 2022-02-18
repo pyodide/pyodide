@@ -245,19 +245,11 @@ jobs:
       test-params:
         description: The tests to run.
         type: string
-      playwright:
-        description: PLAYWRIGHT environment variable option.
-        type: string
-        default: ""
     <<: *defaults
     resource_class: medium+
     steps:
       - attach_workspace:
           at: .
-      - when:
-          condition: << parameters.playwright >>
-          steps:
-            - run: pip install playwright && playwright install
       - run:
           name: test
           command: |
@@ -510,57 +502,6 @@ workflows:
           filters:
             tags:
               only: /.*/\
-
-      - run-playwright-tests:
-          name: run-playwright-tests
-          type: approval
-          filters:
-            tags:
-              only: /.*/
-
-      - test-main:
-          name: test-core-chrome-playwright
-          test-params: --runner playwright -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
-          playwright: true
-          requires:
-            - build-core
-            - run-playwright-tests
-          filters:
-            tags:
-              only: /.*/
-
-      - test-main:
-          name: test-core-firefox-playwright
-          test-params: --runner playwright -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
-          playwright: true
-          requires:
-            - build-core
-            - run-playwright-tests
-          filters:
-            tags:
-              only: /.*/
-
-      - test-main:
-          name: test-packages-chrome-playwright
-          test-params: --runner playwright -k chrome packages/test* packages/*/test*
-          playwright: true
-          requires:
-            - build-packages
-            - run-playwright-tests
-          filters:
-            tags:
-              only: /.*/
-
-      - test-main:
-          name: test-packages-firefox-playwright
-          test-params: --runner playwright -k firefox packages/test* packages/*/test*
-          playwright: true
-          requires:
-            - build-packages
-            - run-playwright-tests
-          filters:
-            tags:
-              only: /.*/
 
       - test-js:
           requires:
