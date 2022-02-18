@@ -521,6 +521,7 @@ workflows:
       - test-main:
           name: test-core-chrome-playwright
           test-params: --runner playwright -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
+          playwright: true
           requires:
             - build-core
             - run-playwright-tests
@@ -531,6 +532,7 @@ workflows:
       - test-main:
           name: test-core-firefox-playwright
           test-params: --runner playwright -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          playwright: true
           requires:
             - build-core
             - run-playwright-tests
@@ -541,6 +543,7 @@ workflows:
       - test-main:
           name: test-packages-chrome-playwright
           test-params: --runner playwright -k chrome packages/test* packages/*/test*
+          playwright: true
           requires:
             - build-packages
             - run-playwright-tests
@@ -551,6 +554,7 @@ workflows:
       - test-main:
           name: test-packages-firefox-playwright
           test-params: --runner playwright -k firefox packages/test* packages/*/test*
+          playwright: true
           requires:
             - build-packages
             - run-playwright-tests
