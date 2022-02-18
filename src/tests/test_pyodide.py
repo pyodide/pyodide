@@ -832,9 +832,14 @@ def test_js_stackframes(selenium):
     def normalize_tb(t):
         res = []
         for [file, name] in t:
+            print(file)
             if file.endswith(".js") or file.endswith(".html"):
                 file = file.rpartition("/")[-1]
-            if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
+            if (
+                re.fullmatch(r"\:[0-9]*", file)
+                or file == "evalmachine.<anonymous>"
+                or file == "debugger eval code"
+            ):
                 file = "test.html"
             res.append([file, name])
         return res
