@@ -8,5 +8,5 @@ emsdk
 cpython
 .vscode
 .pytest_cache
-.clang-format 
+.clang-format
 packages/CLAPACK/make.inc

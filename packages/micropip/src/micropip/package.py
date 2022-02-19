@@ -14,8 +14,8 @@ def _format_table(headers: List[str], table: List[Iterable]) -> str:
     >>> print(_format_table(["Header1", "Header2"], [["val1", "val2"], ["val3", "val4"]]))
     Header1 | Header2
     ------- | -------
-    val1    | val2   
-    val3    | val4   
+    val1    | val2
+    val3    | val4
     """
     # fmt: on
 
