@@ -15,6 +15,10 @@ Module.API = API;
 export let Hiwire: any = {};
 Module.hiwire = Hiwire;
 
+// Put things that are exposed only for testing purposes here.
+export let Tests: any = {};
+API.tests = Tests;
+
 /**
  *
  * @param stdin

@@ -1,7 +1,6 @@
 from collections import UserDict
-from dataclasses import dataclass, field, astuple
-from pathlib import Path
-from typing import List, Dict, Iterable
+from dataclasses import dataclass, astuple
+from typing import List, Iterable
 
 __all__ = ["PackageDict"]
 

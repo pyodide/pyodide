@@ -1,9 +1,7 @@
 import pytest
 import os
-from pathlib import Path
 from typing import List, Dict
 import functools
-import json
 
 from pyodide_build.io import parse_package_config
 from conftest import built_packages, ROOT_PATH

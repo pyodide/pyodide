@@ -16,7 +16,8 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
+  boost-histogram {pr}`2174`
 
 - Upgraded packages: distlib (0.3.4)
 
@@ -53,7 +54,13 @@ substitutions:
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
-  {pr}`{2126}
+  {pr}`2126`
+
+- {{Enhancement}} Added support for C++ exceptions in packages. Now C++
+  extensions compiled and linked with `-fexceptions` can catch C++ exceptions.
+  Furthermore, uncaught C++ exceptions will be formatted in a human-readable
+  way.
+  {pr}`2178`
 
 ## Version 0.19.0
 

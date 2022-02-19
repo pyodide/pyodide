@@ -30,6 +30,7 @@ build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodid
 build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
+	src/core/error_handling_cpp.o \
 	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
@@ -135,33 +136,9 @@ update_base_url: \
 
 
 
-lint: node_modules/.installed
-	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
-	mypy --ignore-missing-imports    \
-		pyodide-build/pyodide_build/ \
-		src/ 					     \
-		packages/*/test* 			 \
-		conftest.py 				 \
-		docs
-#mypy gets upset about there being both : src / py / setup.py and
-#packages / micropip / src / setup.py.There is no easy way to fix this right now
-#see python / mypy #10428. This will also cause trouble with pre - commit if you
-#modify both setup.py files in the same commit.
-	mypy --ignore-missing-imports    \
-		packages/micropip/src/
-
-	# Format checks
-	for file in src/core/*.c src/core/*.h ; do \
-		clang-format-6.0 -output-replacements-xml $$file | grep '<replacement ' > /dev/null ; \
-		if [ $$? -eq 0 ] ; then \
-			echo clang-format errors for $$file ; \
-			exit 1 ; \
-		fi ; \
-	done
-	npx prettier --check .
-	black --check .
-
+.PHONY: lint
+lint:
+	pre-commit run -a --show-diff-on-failure
 
 benchmark: all
 	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
@@ -182,6 +159,8 @@ clean-all:
 	make -C emsdk clean
 	make -C cpython clean-all
 
+src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
+	$(CXX) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/

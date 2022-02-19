@@ -1,5 +1,6 @@
 from docutils import nodes
-from docutils.parsers.rst import Directive, Parser as RstParser, directives
+from docutils.parsers.rst import Directive, Parser as RstParser
+import docutils.parsers.rst.directives as directives
 from docutils.statemachine import StringList
 from docutils.utils import new_document
 
