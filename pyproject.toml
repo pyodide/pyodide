@@ -33,3 +33,36 @@ known_first_party = [
   "pyodide_build",
   "_pyodide",
 ]
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+norecursedirs = [
+  "build",
+  "cpython",
+  "emsdk",
+  ".artifacts",
+]
+addopts = [
+  "--doctest-modules",
+  "--ignore='packages/matplotlib/src'",
+  "--strict-markers",
+  "--strict-config",
+]
+markers = [
+  "skip_refcount_check: Dont run refcount checks",
+  "skip_pyproxy_check: Dont run pyproxy allocation checks",
+  "driver_timeout: Set script timeout in WebDriver",
+]
+testpaths = [
+  "src",
+  "pyodide-build",
+  "packages",
+]
+filterwarnings = [
+    "error",
+    "ignore:desired_capabilities has been deprecated, please pass in an Options object with options kwarg:DeprecationWarning",
+]
+log_cli_level = "info"
+xfail_strict = true
+asyncio_mode = "auto"
