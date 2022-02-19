@@ -23,6 +23,11 @@ jobs:
       - checkout
 
       - run:
+          name: Install lint requirements
+          command: |
+            python -m pip install pre-commit
+
+      - run:
           name: lint
           command: make lint
 

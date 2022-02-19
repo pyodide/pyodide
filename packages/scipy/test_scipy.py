@@ -1,5 +1,3 @@
-import pytest
-from conftest import selenium_context_manager
 from pyodide_build import testing
 
 run_in_pyodide = testing.run_in_pyodide(
@@ -13,7 +11,6 @@ run_in_pyodide = testing.run_in_pyodide(
 @run_in_pyodide
 def test_scipy_linalg():
     import numpy as np
-    import scipy as sp
     import scipy.linalg
     from numpy.testing import assert_allclose
 
