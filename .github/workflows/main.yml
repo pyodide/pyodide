@@ -115,7 +115,9 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install playwright && python -m playwright install
+          # FIXME: playwright>=1.18.0 fails in testing `test_isinstance` due to the
+          #        'Maximum call stack size exceeded' error
+          pip install "playwright<1.18.0" && python -m playwright install
 
       - name: run core tests
         env:
