@@ -1,0 +1,13 @@
+package:
+  name: cpp-exceptions-test
+  version: "0.1"
+source:
+  path: src
+build:
+  sharedlibrary: true
+  script: |
+    em++ -c throw.cpp -o throw.o -fPIC -fexceptions -O2
+    em++ -c catch.cpp -o catch.o -fPIC -fexceptions -O2
+    mkdir dist
+    em++ throw.o -sSIDE_MODULE -o dist/cpp-exceptions-test-throw.so -fexceptions
+    em++ catch.o -sSIDE_MODULE -o dist/cpp-exceptions-test-catch.so -fexceptions

@@ -53,7 +53,13 @@ substitutions:
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
-  {pr}`{2126}
+  {pr}`2126`
+
+- {{Enhancement}} Added support for C++ exceptions in packages. Now C++
+  extensions compiled and linked with `-fexceptions` can catch C++ exceptions.
+  Furthermore, uncaught C++ exceptions will be formatted in a human-readable
+  way.
+  {pr}`2178`
 
 ## Version 0.19.0
 
