@@ -68,6 +68,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
+	-sEXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
@@ -101,7 +102,8 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
-	-I$(PYTHONINCLUDE)
+	-I$(PYTHONINCLUDE) \
+	-sEXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 
 .output_vars:
