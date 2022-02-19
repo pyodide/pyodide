@@ -12,16 +12,15 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+_February 19, 2022_
+
+## Version 0.19.1
 
 ### Packages
 
 - New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
 
-### Uncategorized
-
-- {{ Update }} Upgraded pyb2d to 0.7.2.
-  {pr}`2117`
+- {{ Update }} Upgraded packages: pyb2d (0.7.2), {pr}`2117`
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
   {pr}`2109`
@@ -29,16 +28,25 @@ substitutions:
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
 
+## Type translations
+
 - {{Fix}} The "PyProxy has already been destroyed" error message has been
   improved with some context information.
   {pr}`2121`
 
+### REPL
+
 - {{Enhancement}} Pressing TAB in REPL no longer triggers completion when input
   is whitespace. {pr}`2125`
 
+### List of contributors
+
+Christian Staudt, Gyeongjae Choi, Hood Chatham, Liumeo, Paul Korzhyk, Roman
+Yurchak, Seungmin Kim, Thorsten Beier
+
 ## Version 0.19.0
 
-_January 10, 2021_
+_January 10, 2022_
 
 ### Python package
 
