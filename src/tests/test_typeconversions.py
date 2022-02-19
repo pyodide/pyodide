@@ -1,4 +1,6 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
+from typing import Any
+
 import pytest
 from hypothesis import assume, given, settings, strategies
 from hypothesis.strategies import from_type, text
@@ -667,7 +669,7 @@ def assert_py_to_js_to_py(selenium, name):
 
 @run_in_pyodide
 def test_recursive_list_to_js():
-    x = []
+    x: Any = []
     x.append(x)
     from pyodide import to_js
 
@@ -676,7 +678,7 @@ def test_recursive_list_to_js():
 
 @run_in_pyodide
 def test_recursive_dict_to_js():
-    x = {}
+    x: Any = {}
     x[0] = x
     from pyodide import to_js
 
@@ -1236,25 +1238,25 @@ def test_buffer_format_string(selenium):
             )
 
     format_tests = [
-        ["c", "Uint8"],
-        ["b", "Int8"],
-        ["B", "Uint8"],
-        ["?", "Uint8"],
-        ["h", "Int16"],
-        ["H", "Uint16"],
-        ["i", "Int32"],
-        ["I", "Uint32"],
-        ["l", "Int32"],
-        ["L", "Uint32"],
-        ["n", "Int32"],
-        ["N", "Uint32"],
-        ["q", "BigInt64"],
-        ["Q", "BigUint64"],
-        ["f", "Float32"],
-        ["d", "Float64"],
-        ["s", "Uint8"],
-        ["p", "Uint8"],
-        ["P", "Uint32"],
+        ("c", "Uint8"),
+        ("b", "Int8"),
+        ("B", "Uint8"),
+        ("?", "Uint8"),
+        ("h", "Int16"),
+        ("H", "Uint16"),
+        ("i", "Int32"),
+        ("I", "Uint32"),
+        ("l", "Int32"),
+        ("L", "Uint32"),
+        ("n", "Int32"),
+        ("N", "Uint32"),
+        ("q", "BigInt64"),
+        ("Q", "BigUint64"),
+        ("f", "Float32"),
+        ("d", "Float64"),
+        ("s", "Uint8"),
+        ("p", "Uint8"),
+        ("P", "Uint32"),
     ]
 
     def process_fmt_string(fmt):
@@ -1275,11 +1277,11 @@ def test_buffer_format_string(selenium):
         assert array_name == expected_array_name
 
     endian_tests = [
-        ["@h", "Int16", False],
-        ["=H", "Uint16", False],
-        ["<i", "Int32", False],
-        [">I", "Uint32", True],
-        ["!l", "Int32", True],
+        ("@h", "Int16", False),
+        ("=H", "Uint16", False),
+        ("<i", "Int32", False),
+        (">I", "Uint32", True),
+        ("!l", "Int32", True),
     ]
 
     for fmt, expected_array_name, expected_is_big_endian in endian_tests:

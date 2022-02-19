@@ -214,9 +214,9 @@ def flatten_suffix_tree(tree):
     suffix tree, but the suffix tree is inconveniently shaped. So we flatten
     it...
     """
-    result = {}
-    path = []
-    iters = []
+    result: dict[tuple[str, ...], Any] = {}
+    path: list[str] = []
+    iters: list[Any] = []
     cur_iter = iter(tree.items())
     while True:
         try:
@@ -268,11 +268,11 @@ class PyodideAnalyzer:
         self.doclets = flatten_suffix_tree(self._objects_by_path._tree)
 
         def get_val():
-            return OrderedDict([["attribute", []], ["function", []], ["class", []]])
+            return OrderedDict([("attribute", []), ("function", []), ("class", [])])
 
         modules = ["globalThis", "pyodide", "PyProxy"]
         self.js_docs = {key: get_val() for key in modules}
-        items = {key: [] for key in modules}
+        items = {key: list[Any]() for key in modules}
         for (key, doclet) in self.doclets.items():
             if getattr(doclet.value, "is_private", False):
                 continue

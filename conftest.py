@@ -113,7 +113,7 @@ class SeleniumWrapper:
         self.server_hostname = server_hostname
         self.base_url = f"http://{self.server_hostname}:{self.server_port}"
         self.server_log = server_log
-        self.driver = self.get_driver()
+        self.driver = self.get_driver()  # type: ignore[attr-defined]
         self.set_script_timeout(script_timeout)
         self.script_timeout = script_timeout
         self.prepare_driver()
@@ -562,6 +562,7 @@ def selenium_common(request, web_server_main, load_pyodide=True):
     """
 
     server_hostname, server_port, server_log = web_server_main
+    cls: type[SeleniumWrapper]
     if request.param == "firefox":
         cls = FirefoxWrapper
     elif request.param == "chrome":
@@ -569,7 +570,7 @@ def selenium_common(request, web_server_main, load_pyodide=True):
     elif request.param == "node":
         cls = NodeWrapper
     else:
-        assert False
+        raise AssertionError(f"Unknown browser: {request.param}")
     selenium = cls(
         server_port=server_port,
         server_hostname=server_hostname,
@@ -687,7 +688,7 @@ def spawn_web_server(build_dir=None):
 
     tmp_dir = tempfile.mkdtemp()
     log_path = pathlib.Path(tmp_dir) / "http-server.log"
-    q = multiprocessing.Queue()
+    q: multiprocessing.Queue[str] = multiprocessing.Queue()
     p = multiprocessing.Process(target=run_web_server, args=(q, log_path, build_dir))
 
     try:
@@ -740,8 +741,8 @@ def run_web_server(q, log_filepath, build_dir):
     with socketserver.TCPServer(("", 0), Handler) as httpd:
         host, port = httpd.server_address
         print(f"Starting webserver at http://{host}:{port}")
-        httpd.server_name = "test-server"
-        httpd.server_port = port
+        httpd.server_name = "test-server"  # type: ignore[attr-defined]
+        httpd.server_port = port  # type: ignore[attr-defined]
         q.put(port)
 
         def service_actions():
@@ -752,7 +753,7 @@ def run_web_server(q, log_filepath, build_dir):
             except queue.Empty:
                 pass
 
-        httpd.service_actions = service_actions
+        httpd.service_actions = service_actions  # type: ignore[assignment]
         httpd.serve_forever()
 
 

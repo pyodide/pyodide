@@ -35,7 +35,7 @@ def dummy_decorator(*args, **kwargs):
         "chrome": "nlopt set_min_objective triggers a fatal runtime error in chrome 89 see #1493",
     },
 )
-def some_func():
+def some_func(f):
     import nlopt
     import numpy as np
 
@@ -49,7 +49,7 @@ def test_run_in_pyodide_multiline_decorator():
         _run_in_pyodide_get_source(some_func).strip()
         == dedent(
             """
-            def some_func():
+            def some_func(f):
                 import nlopt
                 import numpy as np
 

@@ -127,7 +127,9 @@ def run_in_pyodide(
 
 
 @contextlib.contextmanager
-def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, float]]):
+def set_webdriver_script_timeout(
+    selenium, script_timeout: Optional[Union[int, float, str]]
+):
     """Set selenium script timeout
 
     Parameters

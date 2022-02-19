@@ -270,8 +270,10 @@ def test_test_unvendoring(selenium_standalone):
 def test_install_archive(selenium):
     build_dir = Path(__file__).parents[2] / "build"
     test_dir = Path(__file__).parent
+    # TODO: first arguement actually works as a path due to implementation,
+    # maybe it can be proposed to typeshed?
     shutil.make_archive(
-        test_dir / "test_pkg", "gztar", root_dir=test_dir, base_dir="test_pkg"
+        str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
     build_test_pkg = build_dir / "test_pkg.tar.gz"
     if not build_test_pkg.exists():
@@ -335,9 +337,9 @@ def test_get_dynlibs():
         t.flush()
         assert sorted(get_dynlibs(t, Path("/p"))) == so_files
     with NamedTemporaryFile(suffix=".zip") as t:
-        x = ZipFile(t, mode="w")
+        x2 = ZipFile(t, mode="w")
         for file in files:
-            x.writestr(file, "")
-        x.close()
+            x2.writestr(file, "")
+        x2.close()
         t.flush()
         assert sorted(get_dynlibs(t, Path("/p"))) == so_files

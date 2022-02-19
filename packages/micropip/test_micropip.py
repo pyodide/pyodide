@@ -3,6 +3,7 @@ import io
 import sys
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -190,7 +191,10 @@ def test_add_requirement(web_server_tst_data):
     base_url = f"http://{server_hostname}:{server_port}/"
     url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-    transaction = {"wheels": [], "locked": {}}
+    transaction: dict[str, Any] = {
+        "wheels": [],
+        "locked": {},
+    }
     asyncio.get_event_loop().run_until_complete(
         _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
     )
@@ -258,7 +262,7 @@ def test_install_non_pure_python_wheel():
     msg = "not a pure Python 3 wheel"
     with pytest.raises(ValueError, match=msg):
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
-        transaction = {"wheels": [], "locked": {}}
+        transaction = {"wheels": list[Any](), "locked": dict[str, Any]()}
         asyncio.get_event_loop().run_until_complete(
             _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
         )

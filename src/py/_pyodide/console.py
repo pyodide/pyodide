@@ -259,6 +259,7 @@ class Console:
         if self._stream_generator:
             return
         self._stream_generator = self._stdstreams_redirections_inner()
+        assert self._stream_generator is not None
         next(self._stream_generator)  # trigger stream redirection
         # streams will be reverted to normal when self._stream_generator is destroyed.
 
@@ -280,7 +281,7 @@ class Console:
         if self._streams_redirected:
             yield
             return
-        redirects = []
+        redirects: list[Any] = []
         if self.stdin_callback:
             stdin_name = getattr(sys.stdin, "name", "<stdin>")
             stdin_stream = _ReadStream(self.stdin_callback, name=stdin_name)
@@ -456,7 +457,7 @@ def repr_shorten(
     if necessary.
 
     If it is longer than ``limit`` then return the firsts ``split``
-    characters and the last ``split`` characters seperated by '...'.
+    characters and the last ``split`` characters separated by '...'.
     Default value for ``split`` is `limit // 2`.
     """
     if split is None:
