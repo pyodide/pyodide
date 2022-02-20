@@ -17,6 +17,13 @@ repos:
         args: ["--py39-plus"]
         exclude: ^packages/micropip/src/micropip/externals
 
+  - repo: https://github.com/hadialqattan/pycln
+    rev: "v1.1.0"
+    hooks:
+      - id: pycln
+        args: [--config=pyproject.toml]
+        stages: [manual]
+
   - repo: https://github.com/psf/black
     rev: "22.1.0"
     hooks:

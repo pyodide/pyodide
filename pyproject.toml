@@ -13,3 +13,6 @@ module = [
   "ruamel.yaml",
 ]
 ignore_missing_imports = true
+
+[tool.pycln]
+all = true
