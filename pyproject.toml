@@ -60,8 +60,9 @@ testpaths = [
   "packages",
 ]
 filterwarnings = [
-    "error",
-    "ignore:desired_capabilities has been deprecated, please pass in an Options object with options kwarg:DeprecationWarning",
+  "error",
+  "ignore:desired_capabilities has been deprecated, please pass in an Options object with options kwarg:DeprecationWarning",
+  "ignore:Raising unittest.SkipTest to skip tests:pytest.PytestRemovedIn8Warning",
 ]
 log_cli_level = "info"
 xfail_strict = true
