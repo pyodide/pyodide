@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
 # flake8: noqa
 
 """
@@ -44,7 +43,6 @@ Version History:
 
 """
 
-from __future__ import print_function
 
 LOOPS = 50000
 

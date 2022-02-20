@@ -17,7 +17,6 @@ import shutil
 import functools
 import pytest
 
-from typing import List
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
@@ -75,7 +74,7 @@ def pytest_collection_modifyitems(config, items):
 
 
 @functools.cache
-def built_packages() -> List[str]:
+def built_packages() -> list[str]:
     """Returns the list of built package names from packages.json"""
     packages_json_path = BUILD_PATH / "packages.json"
     if not packages_json_path.exists():
@@ -328,7 +327,7 @@ class SeleniumWrapper:
         )
 
     def load_package(self, packages):
-        self.run_js("await pyodide.loadPackage({!r})".format(packages))
+        self.run_js(f"await pyodide.loadPackage({packages!r})")
 
     @property
     def urls(self):
@@ -418,10 +417,10 @@ class NodeWrapper(SeleniumWrapper):
     def run_js_inner(self, code, check_code):
         check_code = ""
         wrapped = """
-            let result = await (async () => { %s })();
-            %s
+            let result = await (async () => {{ {} }})();
+            {}
             return result;
-        """ % (
+        """.format(
             code,
             check_code,
         )

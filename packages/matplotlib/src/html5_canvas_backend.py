@@ -163,7 +163,7 @@ class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
                 mimetype, base64.b64encode(data.getvalue()).decode("ascii")
             ),
         )
-        element.setAttribute("download", "plot.{}".format(format))
+        element.setAttribute("download", f"plot.{format}")
         element.style.display = "none"
 
         document.body.appendChild(element)
@@ -185,7 +185,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
             self._capstyle = cs
             self.renderer.ctx.lineCap = _capstyle_d[cs]
         else:
-            raise ValueError("Unrecognized cap style. Found {0}".format(cs))
+            raise ValueError(f"Unrecognized cap style. Found {cs}")
 
     def set_clip_rectangle(self, rectangle):
         self.renderer.ctx.save()
@@ -223,7 +223,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
             self._joinstyle = js
             self.renderer.ctx.lineJoin = js
         else:
-            raise ValueError("Unrecognized join style. Found {0}".format(js))
+            raise ValueError(f"Unrecognized join style. Found {js}")
 
     def set_linewidth(self, w):
         self.stroke = w != 0
@@ -266,11 +266,9 @@ class RendererHTMLCanvas(RendererBase):
             G = int(color[1] * 255)
             B = int(color[2] * 255)
             if len(color) == 3 or alpha_overrides:
-                CSS_color = """rgba({0:d}, {1:d}, {2:d}, {3:.3g})""".format(
-                    R, G, B, alpha
-                )
+                CSS_color = f"""rgba({R:d}, {G:d}, {B:d}, {alpha:.3g})"""
             else:
-                CSS_color = """rgba({0:d}, {1:d}, {2:d}, {3:.3g})""".format(
+                CSS_color = """rgba({:d}, {:d}, {:d}, {:.3g})""".format(
                     R, G, B, color[3]
                 )
 
@@ -409,7 +407,7 @@ class RendererHTMLCanvas(RendererBase):
 
         font_face_arguments = (
             prop.get_name(),
-            "url({0})".format(_base_fonts_url + font_file_name),
+            f"url({_base_fonts_url + font_file_name})",
         )
 
         # The following snippet loads a font into the browser's
@@ -423,7 +421,7 @@ class RendererHTMLCanvas(RendererBase):
             f = FontFace.new(*font_face_arguments)
             f.load().then(_load_font_into_web)
 
-        font_property_string = "{0} {1} {2:.3g}px {3}, {4}".format(
+        font_property_string = "{} {} {:.3g}px {}, {}".format(
             prop.get_style(),
             prop.get_weight(),
             font_size,

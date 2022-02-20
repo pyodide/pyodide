@@ -957,7 +957,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         globalThis.pyodide = pyodide;
         """
     )
-    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    outstrings = sum((s.removesuffix("\n").split("\n") for s in strings), [])
     print(outstrings)
     assert (
         selenium.run_js(

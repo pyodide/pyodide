@@ -111,8 +111,7 @@ class FigureCanvasWasm(FigureCanvasBase):
         div.addEventListener("contextmenu", ignore)
         div.setAttribute(
             "style",
-            "margin: 0 auto; text-align: center;"
-            + "width: {}px".format(width / self._ratio),
+            "margin: 0 auto; text-align: center;" + f"width: {width / self._ratio}px",
         )
         div.id = self._id
 

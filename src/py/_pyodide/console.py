@@ -19,10 +19,7 @@ from typing import (
     Optional,
     Callable,
     Any,
-    List,
-    Tuple,
     Union,
-    Tuple,
 )
 
 from _pyodide._base import should_quiet, CodeRunner
@@ -254,7 +251,7 @@ class Console:
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.filename = filename
-        self.buffer: List[str] = []
+        self.buffer: list[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator = None  # track persistent stream redirection
@@ -427,7 +424,7 @@ class Console:
             self.buffer = []
         return result
 
-    def complete(self, source: str) -> Tuple[List[str], int]:
+    def complete(self, source: str) -> tuple[list[str], int]:
         """Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
 
         Finds last "word" in the source string and completes it with rlcompleter. Word

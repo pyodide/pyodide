@@ -26,7 +26,7 @@ def mock_get_pypi_json(pkg_map):
         A mock function of ``_get_pypi_json`` which returns dummy JSON data of PyPI API.
     """
 
-    class Wildcard(object):
+    class Wildcard:
         def __eq__(self, other):
             return True
 

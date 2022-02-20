@@ -42,7 +42,7 @@ def main(args):
     port = args.port
     httpd = server(port)
     os.chdir(build_dir)
-    print("serving from {0} at localhost:".format(build_dir) + str(port))
+    print(f"serving from {build_dir} at localhost:" + str(port))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

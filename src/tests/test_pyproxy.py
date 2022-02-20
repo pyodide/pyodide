@@ -30,42 +30,37 @@ def test_pyproxy_class(selenium):
         f.destroy();
         """
     )
-    assert (
-        set(
-            [
-                "__class__",
-                "__delattr__",
-                "__dict__",
-                "__dir__",
-                "__doc__",
-                "__eq__",
-                "__format__",
-                "__ge__",
-                "__getattribute__",
-                "__gt__",
-                "__hash__",
-                "__init__",
-                "__init_subclass__",
-                "__le__",
-                "__lt__",
-                "__module__",
-                "__ne__",
-                "__new__",
-                "__reduce__",
-                "__reduce_ex__",
-                "__repr__",
-                "__setattr__",
-                "__sizeof__",
-                "__str__",
-                "__subclasshook__",
-                "__weakref__",
-                "bar",
-                "baz",
-                "get_value",
-            ]
-        ).difference(selenium.run_js("return f_props"))
-        == set()
-    )
+    assert {
+        "__class__",
+        "__delattr__",
+        "__dict__",
+        "__dir__",
+        "__doc__",
+        "__eq__",
+        "__format__",
+        "__ge__",
+        "__getattribute__",
+        "__gt__",
+        "__hash__",
+        "__init__",
+        "__init_subclass__",
+        "__le__",
+        "__lt__",
+        "__module__",
+        "__ne__",
+        "__new__",
+        "__reduce__",
+        "__reduce_ex__",
+        "__repr__",
+        "__setattr__",
+        "__sizeof__",
+        "__str__",
+        "__subclasshook__",
+        "__weakref__",
+        "bar",
+        "baz",
+        "get_value",
+    }.difference(selenium.run_js("return f_props")) == set()
 
 
 def test_del_builtin(selenium):
@@ -205,7 +200,7 @@ def test_pyproxy_iter(selenium):
         """
     )
     assert ty == "ChainMap"
-    assert set(l) == set(["a", "b"])
+    assert set(l) == {"a", "b"}
 
     [result, result2] = selenium.run_js(
         """

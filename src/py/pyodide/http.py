@@ -208,7 +208,7 @@ class FetchResponse:
 
 
 async def pyfetch(url: str, **kwargs) -> FetchResponse:
-    """Fetch the url and return the response.
+    r"""Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function
     <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is

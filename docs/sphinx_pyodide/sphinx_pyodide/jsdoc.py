@@ -21,13 +21,13 @@ from sphinx_js.renderers import (
     AutoClassRenderer,
 )
 
-from typing import Any, Dict, List
+from typing import Any
 
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_type_name = TsAnalyzer._type_name
 
 
-def destructure_param(param: Dict[str, Any]) -> List[Dict[str, Any]]:
+def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     """We want to document a destructured argument as if it were several
     separate arguments. This finds complex inline object types in the arguments
     list of a function and "destructures" them into separately documented arguments.
@@ -67,7 +67,7 @@ def destructure_param(param: Dict[str, Any]) -> List[Dict[str, Any]]:
     return result
 
 
-def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
+def fix_up_inline_object_signature(self: TsAnalyzer, node: dict[str, Any]):
     """Calls get_destructured_children on inline object types"""
     kind = node.get("kindString")
     if kind not in ["Call signature", "Constructor signature"]:
@@ -86,7 +86,7 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
     node["parameters"] = new_params
 
 
-def _convert_node(self: TsAnalyzer, node: Dict[str, Any]):
+def _convert_node(self: TsAnalyzer, node: dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node.
 
     Fixes two crashes and separates documentation for destructured object
@@ -508,7 +508,7 @@ def get_jsdoc_summary_directive(app):
             for prefix, name, sig, summary, real_name in items:
                 qualifier = "any"  # <== Only thing changed from autosummary version
                 if "nosignatures" not in self.options:
-                    col1 = "%s:%s:`%s <%s>`\\ %s" % (
+                    col1 = "{}:{}:`{} <{}>`\\ {}".format(
                         prefix,
                         qualifier,
                         name,
@@ -516,7 +516,7 @@ def get_jsdoc_summary_directive(app):
                         rst.escape(sig),
                     )
                 else:
-                    col1 = "%s:%s:`%s <%s>`" % (prefix, qualifier, name, real_name)
+                    col1 = f"{prefix}:{qualifier}:`{name} <{real_name}>`"
                 col2 = summary
                 append_row(col1, col2)
 

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Set
+from typing import Optional
 
 import functools
 import subprocess
@@ -7,7 +7,7 @@ import subprocess
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
 
 
-def _parse_package_subset(query: Optional[str]) -> Set[str]:
+def _parse_package_subset(query: Optional[str]) -> set[str]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
     Also add the list of mandatory packages: ["pyparsing", "packaging",
@@ -127,7 +127,7 @@ def get_make_flag(name):
     return get_make_environment_vars()[name]
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def get_make_environment_vars():
     """Load environment variables from Makefile.envs
 

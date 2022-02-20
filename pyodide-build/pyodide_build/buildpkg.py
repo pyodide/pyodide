@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict
+from typing import Any
 from urllib import request
 
 from . import pywasmcross
@@ -59,7 +59,7 @@ class BashRunnerWithSharedEnvironment:
     def __init__(self, env=None):
         if env is None:
             env = dict(os.environ)
-        self.env: Dict[str, str] = env
+        self.env: dict[str, str] = env
         self._fd_read, self._fd_write = os.pipe()
         self._reader = os.fdopen(self._fd_read, "r")
 
@@ -113,7 +113,7 @@ def get_bash_runner():
         b.close()
 
 
-def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
+def check_checksum(archive: Path, source_metadata: dict[str, Any]):
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -144,7 +144,7 @@ def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
             if len(chunk) < CHUNK_SIZE:
                 break
     if h.hexdigest() != checksum:
-        raise ValueError("Invalid {} checksum".format(checksum_algorithm))
+        raise ValueError(f"Invalid {checksum_algorithm} checksum")
 
 
 def trim_archive_extension(tarballname):
@@ -164,7 +164,7 @@ def trim_archive_extension(tarballname):
     return tarballname
 
 
-def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]):
+def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]):
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
@@ -217,7 +217,7 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str,
 
 
 def prepare_source(
-    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
+    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
 ):
     """
     Figure out from the "source" key in the package metadata where to get the source
@@ -266,7 +266,7 @@ def prepare_source(
     shutil.copytree(srcdir, srcpath)
 
 
-def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
+def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
     """
     Apply patches to the source.
 
@@ -331,7 +331,7 @@ def install_for_distribution():
 
 def compile(
     srcpath: Path,
-    build_metadata: Dict[str, Any],
+    build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
     target_install_dir: str,
@@ -408,7 +408,7 @@ def package_wheel(
     pkg_name: str,
     pkg_root: Path,
     srcpath: Path,
-    build_metadata: Dict[str, Any],
+    build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
 ):
     """Package a wheel
@@ -522,7 +522,7 @@ def create_packaged_token(buildpath: Path):
 def run_script(
     buildpath: Path,
     srcpath: Path,
-    build_metadata: Dict[str, Any],
+    build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
 ):
     """
@@ -553,7 +553,7 @@ def run_script(
 
 
 def needs_rebuild(
-    pkg_root: Path, buildpath: Path, source_metadata: Dict[str, Any]
+    pkg_root: Path, buildpath: Path, source_metadata: dict[str, Any]
 ) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
@@ -593,7 +593,7 @@ def needs_rebuild(
 
 def build_package(
     pkg_root: Path,
-    pkg: Dict[str, Any],
+    pkg: dict[str, Any],
     *,
     target_install_dir: str,
     host_install_dir: str,
@@ -633,7 +633,7 @@ def build_package(
         return
 
     if not should_prepare_source and not srcpath.exists():
-        raise IOError(
+        raise OSError(
             "Cannot find source for rebuild. Expected to find the source "
             f"directory at the path {srcpath}, but that path does not exist."
         )
@@ -759,7 +759,7 @@ def make_parser(parser: argparse.ArgumentParser):
     return parser
 
 
-def parse_continue_arg(continue_from: str) -> Dict[str, Any]:
+def parse_continue_arg(continue_from: str) -> dict[str, Any]:
     from itertools import accumulate
 
     is_none = continue_from == "None"
@@ -777,11 +777,11 @@ def parse_continue_arg(continue_from: str) -> Dict[str, Any]:
     ] = accumulate([is_none, is_script, is_capture, is_replay], lambda a, b: a or b)
 
     if not should_replay_compile:
-        raise IOError(
+        raise OSError(
             f"Unexpected --continue argument '{continue_from}', should have been 'script', 'capture', 'replay', or 'replay:##'"
         )
 
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
     result["should_prepare_source"] = should_prepare_source
     result["should_run_script"] = should_run_script
     result["should_capture_compile"] = should_capture_compile
@@ -833,7 +833,7 @@ def main(args):
     finally:
         t1 = datetime.now()
         datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
-        total_seconds = "{:.1f}".format((t1 - t0).total_seconds())
+        total_seconds = f"{(t1 - t0).total_seconds():.1f}"
         status = "Succeeded" if success else "Failed"
         print(
             f"{datestamp} {status} building package {name} in {total_seconds} seconds."
