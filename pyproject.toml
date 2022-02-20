@@ -61,8 +61,9 @@ testpaths = [
 ]
 filterwarnings = [
   "error",
-  "ignore:desired_capabilities has been deprecated, please pass in an Options object with options kwarg:DeprecationWarning",
-  "ignore:Raising unittest.SkipTest to skip tests:pytest.PytestRemovedIn8Warning",
+  "ignore:desired_capabilities has been deprecated, please pass in an Options object with options kwarg:DeprecationWarning", # internal to selenium, I think
+  "ignore:Raising unittest.SkipTest to skip tests:pytest.PytestRemovedIn8Warning", # https://github.com/pytest-dev/pytest/pull/8242
+  "ignore:Using or importing the ABCs from 'collections' instead of:DeprecationWarning", # sphinx_js -> parsimonious
 ]
 log_cli_level = "info"
 xfail_strict = true
