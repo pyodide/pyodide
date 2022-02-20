@@ -1,6 +1,5 @@
 import pytest
 import os
-from typing import List, Dict
 import functools
 
 from pyodide_build.io import parse_package_config
@@ -10,7 +9,7 @@ PKG_DIR = ROOT_PATH / "packages"
 
 
 @functools.cache
-def registered_packages() -> List[str]:
+def registered_packages() -> list[str]:
     """Returns a list of registered package names"""
     packages = []
     for name in os.listdir(PKG_DIR):
@@ -29,7 +28,7 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES: Dict[str, List[str]] = {
+UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],
     "node": [],

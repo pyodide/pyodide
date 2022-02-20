@@ -1,7 +1,7 @@
 import re
 import subprocess
 from textwrap import dedent  # for doctests
-from typing import List, Iterable, Iterator, Tuple
+from typing import Iterable, Iterator
 from pathlib import Path
 
 
@@ -24,7 +24,7 @@ def fix_f2c_output(f2c_output_path: str):
             ]
         )
 
-    with open(f2c_output, "r") as f:
+    with open(f2c_output) as f:
         lines = f.readlines()
     if "id_dist" in f2c_output_path:
         # Fix implicit casts in id_dist.
@@ -61,7 +61,7 @@ def prepare_doctest(x):
     return dedent(x).strip().split("\n")
 
 
-def remove_ftnlen_args(lines: List[str]) -> List[str]:
+def remove_ftnlen_args(lines: list[str]) -> list[str]:
     """
     Functions with "character" arguments have these extra ftnlen arguments at
     the end (which are never used). Other places declare these arguments as
@@ -89,7 +89,7 @@ def remove_ftnlen_args(lines: List[str]) -> List[str]:
     return new_lines
 
 
-def add_externs_to_structs(lines: List[str]):
+def add_externs_to_structs(lines: list[str]):
     """
     The fortran "common" keyword is supposed to share variables between a bunch
     of files. f2c doesn't handle this correctly (it isn't possible for it to
@@ -167,7 +167,7 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
             yield from (x + ";" for x in joined_line.split(";")[:-1])
 
 
-def fix_inconsistent_decls(lines: List[str]) -> List[str]:
+def fix_inconsistent_decls(lines: list[str]) -> list[str]:
     """
     Fortran functions in id_dist use implicit casting of function args which f2c
     doesn't support.
@@ -238,7 +238,7 @@ def fix_inconsistent_decls(lines: List[str]) -> List[str]:
     return lines
 
 
-def get_subroutine_decl(sub: str) -> Tuple[str, List[str]]:
+def get_subroutine_decl(sub: str) -> tuple[str, list[str]]:
     """
     >>> get_subroutine_decl(
     ...     "extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);"

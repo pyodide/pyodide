@@ -82,7 +82,7 @@ class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
                 mimetype, base64.b64encode(data.getvalue()).decode("ascii")
             ),
         )
-        element.setAttribute("download", "plot.{}".format(format))
+        element.setAttribute("download", f"plot.{format}")
         element.style.display = "none"
         document.body.appendChild(element)
         element.click()

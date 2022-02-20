@@ -5,20 +5,20 @@ import subprocess
 import sys
 from time import time
 
-sys.path.insert(0, str((Path(__file__).resolve().parents[1] / "test")))
-sys.path.insert(0, str((Path(__file__).resolve().parents[1])))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "test"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import conftest  # noqa: E402
 
 
-SKIP = set(["fft", "hyantes", "README"])
+SKIP = {"fft", "hyantes", "README"}
 
 
 def print_entry(name, res):
     print(" - ", name)
     print(" " * 4, end="")
     for name, dt in res.items():
-        print("{}: {:.6f}  ".format(name, dt), end="")
+        print(f"{name}: {dt:.6f}  ", end="")
     print("")
 
 
@@ -75,7 +75,7 @@ def parse_numpy_benchmark(filename):
         for line in fp:
             m = re.match(r"^#\s*(setup|run): (.*)$", line)
             if m:
-                line = "{} = {!r}\n".format(m.group(1), m.group(2))
+                line = f"{m.group(1)} = {m.group(2)!r}\n"
             lines.append(line)
     return "".join(lines)
 

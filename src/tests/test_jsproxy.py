@@ -18,21 +18,19 @@ def test_jsproxy_dir(selenium):
         return result;
         """
     )
-    jsproxy_items = set(
-        [
-            "__bool__",
-            "__class__",
-            "__defineGetter__",
-            "__defineSetter__",
-            "__delattr__",
-            "constructor",
-            "toString",
-            "typeof",
-            "valueOf",
-        ]
-    )
-    a_items = set(["x", "y"])
-    callable_items = set(["__call__", "new"])
+    jsproxy_items = {
+        "__bool__",
+        "__class__",
+        "__defineGetter__",
+        "__defineSetter__",
+        "__delattr__",
+        "constructor",
+        "toString",
+        "typeof",
+        "valueOf",
+    }
+    a_items = {"x", "y"}
+    callable_items = {"__call__", "new"}
     set0 = set(result[0])
     set1 = set(result[1])
     assert set0.issuperset(jsproxy_items)
@@ -606,8 +604,8 @@ def test_mount_object(selenium_standalone):
         """
     )
     assert result[:3] == ["x1", "x2", 3]
-    assert set([x for x in result[3] if len(x) == 1]) == set(["x", "y", "s", "t"])
-    assert set([x for x in result[4] if len(x) == 1]) == set(["x", "y", "u", "t"])
+    assert {x for x in result[3] if len(x) == 1} == {"x", "y", "s", "t"}
+    assert {x for x in result[4] if len(x) == 1} == {"x", "y", "u", "t"}
     selenium.run_js(
         """
         pyodide.unregisterJsModule("a");

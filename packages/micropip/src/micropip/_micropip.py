@@ -12,7 +12,7 @@ from packaging.version import Version
 from packaging.markers import default_environment
 
 from pathlib import Path
-from typing import Dict, Any, Union, List, Tuple, Optional
+from typing import Any, Union, Optional
 from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
@@ -91,7 +91,7 @@ def _is_pure_python_wheel(filename: str):
     return filename.endswith("py3-none-any.whl")
 
 
-def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
+def _parse_wheel_url(url: str) -> tuple[str, dict[str, Any], str]:
     """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
@@ -149,7 +149,7 @@ class _PackageManager:
 
     async def gather_requirements(
         self,
-        requirements: Union[str, List[str]],
+        requirements: Union[str, list[str]],
         ctx=None,
         keep_going: bool = False,
     ):
@@ -158,7 +158,7 @@ class _PackageManager:
         if isinstance(requirements, str):
             requirements = [requirements]
 
-        transaction: Dict[str, Any] = {
+        transaction: dict[str, Any] = {
             "wheels": [],
             "pyodide_packages": [],
             "locked": copy.deepcopy(self.installed_packages),
@@ -175,7 +175,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
+        self, requirements: Union[str, list[str]], ctx=None, keep_going: bool = False
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -319,8 +319,8 @@ class _PackageManager:
         transaction["wheels"].append((name, wheel, version))
 
     def find_wheel(
-        self, metadata: Dict[str, Any], req: Requirement
-    ) -> Tuple[Any, Optional[Version]]:
+        self, metadata: dict[str, Any], req: Requirement
+    ) -> tuple[Any, Optional[Version]]:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
@@ -356,7 +356,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, List[str]], keep_going: bool = False):
+def install(requirements: Union[str, list[str]], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
