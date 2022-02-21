@@ -50,8 +50,8 @@ def test_run_in_pyodide_multiline_decorator():
         == dedent(
             """
             def some_func():
-                import numpy as np
                 import nlopt
+                import numpy as np
 
                 opt = nlopt.opt(nlopt.LD_SLSQP, 2)
                 opt.set_min_objective(f)
