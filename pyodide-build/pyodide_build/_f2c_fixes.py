@@ -1,8 +1,8 @@
 import re
 import subprocess
+from pathlib import Path
 from textwrap import dedent  # for doctests
 from typing import Iterable, Iterator
-from pathlib import Path
 
 
 def fix_f2c_output(f2c_output_path: str):

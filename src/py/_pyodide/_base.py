@@ -6,10 +6,10 @@ A library of helper utilities for connecting Python to the browser environment.
 
 import ast
 import builtins
+import tokenize
 from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
-import tokenize
 from types import CodeType
 from typing import Any, Generator, Optional
 

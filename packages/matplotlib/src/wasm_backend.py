@@ -12,18 +12,15 @@ this primarily is just overriding methods in the base class.
 
 # TODO: Figure resizing support
 
-from matplotlib.backends.browser_backend import FigureCanvasWasm, NavigationToolbar2Wasm
-
 import base64
 import io
 
-from matplotlib.backends import backend_agg
-from matplotlib.backend_bases import _Backend, FigureManagerBase
 from matplotlib import interactive
+from matplotlib.backend_bases import FigureManagerBase, _Backend
+from matplotlib.backends import backend_agg
+from matplotlib.backends.browser_backend import FigureCanvasWasm, NavigationToolbar2Wasm
 
-from js import document
-from js import ImageData
-
+from js import ImageData, document
 
 interactive(True)
 

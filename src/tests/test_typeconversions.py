@@ -1,9 +1,10 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
-from pyodide_build.testing import run_in_pyodide
-from hypothesis import given, settings, assume, strategies
-from hypothesis.strategies import text, from_type
+from hypothesis import assume, given, settings, strategies
+from hypothesis.strategies import from_type, text
+
 from conftest import selenium_context_manager
+from pyodide_build.testing import run_in_pyodide
 
 
 @given(s=text())

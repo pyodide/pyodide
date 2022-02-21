@@ -6,6 +6,7 @@ Builds a Pyodide package.
 
 import argparse
 import cgi
+import fnmatch
 import hashlib
 import json
 import os
@@ -13,8 +14,6 @@ import re
 import shutil
 import subprocess
 import sys
-import fnmatch
-
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path

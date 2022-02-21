@@ -3,7 +3,7 @@ from pyodide_build.testing import run_in_pyodide
 
 @run_in_pyodide(packages=["sqlalchemy"])
 def test_sqlalchemy():
-    from sqlalchemy import text, create_engine
+    from sqlalchemy import create_engine, text
 
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     with engine.connect() as conn:

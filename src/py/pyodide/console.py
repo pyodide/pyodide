@@ -1,5 +1,5 @@
-from _pyodide.console import Console, repr_shorten, ConsoleFuture
 import _pyodide.console
+from _pyodide.console import Console, ConsoleFuture, repr_shorten
 
 BANNER = _pyodide.console.BANNER
 from _pyodide._base import CodeRunner

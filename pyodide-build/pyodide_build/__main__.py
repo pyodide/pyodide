@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 import argparse
-import pathlib
 import os
+import pathlib
 import sys
 
-from . import buildall
-from . import buildpkg
-from . import serve
-from . import mkpkg
+from . import buildall, buildpkg, mkpkg, serve
 from .common import get_make_environment_vars
 
 

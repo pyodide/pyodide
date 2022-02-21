@@ -1,9 +1,8 @@
+import math
+
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
-from js import document
-from js import window
-
-import math
+from js import document, window
 
 
 class FigureCanvasWasm(FigureCanvasBase):

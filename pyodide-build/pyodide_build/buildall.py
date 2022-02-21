@@ -5,22 +5,22 @@ Build all of the packages in a given directory.
 """
 
 import argparse
-from functools import total_ordering
 import json
-from pathlib import Path
-from queue import Queue, PriorityQueue
+import os
 import shutil
 import subprocess
 import sys
-from threading import Thread, Lock
-from time import sleep, perf_counter
-from typing import Optional, Any
-import os
+from functools import total_ordering
+from pathlib import Path
+from queue import PriorityQueue, Queue
+from threading import Lock, Thread
+from time import perf_counter, sleep
+from typing import Any, Optional
 
 from . import common
-from .io import parse_package_config
-from .common import UNVENDORED_STDLIB_MODULES
 from .buildpkg import needs_rebuild
+from .common import UNVENDORED_STDLIB_MODULES
+from .io import parse_package_config
 
 
 class BasePackage:

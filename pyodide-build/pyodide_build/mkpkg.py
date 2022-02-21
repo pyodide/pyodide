@@ -4,13 +4,13 @@ import argparse
 import json
 import os
 import shutil
-import urllib.request
-import urllib.error
 import subprocess
 import sys
-from pathlib import Path
-from typing import Any, Optional, Literal
+import urllib.error
+import urllib.request
 import warnings
+from pathlib import Path
+from typing import Any, Literal, Optional
 
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 

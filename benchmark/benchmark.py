@@ -1,15 +1,14 @@
 import json
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 from time import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "test"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import conftest  # noqa: E402
-
 
 SKIP = {"fft", "hyantes", "README"}
 

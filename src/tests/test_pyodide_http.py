@@ -1,4 +1,5 @@
 import pytest
+
 from pyodide_build.testing import run_in_pyodide
 
 
@@ -23,8 +24,9 @@ def test_open_url(selenium, httpserver):
 
 @run_in_pyodide
 async def test_pyfetch_create_file():
-    from pyodide.http import pyfetch
     import pathlib
+
+    from pyodide.http import pyfetch
 
     resp = await pyfetch("console.html")
     await resp._create_file("console.html")
@@ -36,8 +38,9 @@ async def test_pyfetch_create_file():
 
 @run_in_pyodide
 async def test_pyfetch_unpack_archive():
-    from pyodide.http import pyfetch
     import pathlib
+
+    from pyodide.http import pyfetch
 
     resp = await pyfetch(
         "https://files.pythonhosted.org/packages/93/8d/e1e98360dc899e533cb3dd857494f2571b129bdffcee76365009b2bb507c/example_pypi_package-0.1.0.tar.gz"

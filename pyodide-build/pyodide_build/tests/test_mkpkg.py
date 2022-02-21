@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-import pytest
 
+import pytest
 import yaml
 from pkg_resources import parse_version
 

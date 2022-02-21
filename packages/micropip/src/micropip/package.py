@@ -1,5 +1,5 @@
 from collections import UserDict
-from dataclasses import dataclass, astuple
+from dataclasses import astuple, dataclass
 from typing import Iterable
 
 __all__ = ["PackageDict"]
