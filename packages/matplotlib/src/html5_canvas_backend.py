@@ -1,33 +1,28 @@
-import numpy as np
-from matplotlib.backends.browser_backend import FigureCanvasWasm, NavigationToolbar2Wasm
-from matplotlib.backend_bases import (
-    GraphicsContextBase,
-    RendererBase,
-    FigureManagerBase,
-    _Backend,
-)
-
-from PIL import Image
-from PIL.PngImagePlugin import PngInfo
-
-from matplotlib import __version__
-from matplotlib.colors import colorConverter, rgb2hex
-from matplotlib.transforms import Affine2D
-from matplotlib.path import Path
-from matplotlib import interactive
-
-from matplotlib.cbook import maxdict
-from matplotlib.font_manager import findfont
-from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
-from matplotlib.mathtext import MathTextParser
-
-from pyodide import create_proxy
-
-from js import document, window, XMLHttpRequest, ImageData, FontFace
-
 import base64
 import io
 import math
+
+import numpy as np
+from matplotlib import __version__, interactive
+from matplotlib.backend_bases import (
+    FigureManagerBase,
+    GraphicsContextBase,
+    RendererBase,
+    _Backend,
+)
+from matplotlib.backends.browser_backend import FigureCanvasWasm, NavigationToolbar2Wasm
+from matplotlib.cbook import maxdict
+from matplotlib.colors import colorConverter, rgb2hex
+from matplotlib.font_manager import findfont
+from matplotlib.ft2font import LOAD_NO_HINTING, FT2Font
+from matplotlib.mathtext import MathTextParser
+from matplotlib.path import Path
+from matplotlib.transforms import Affine2D
+from PIL import Image
+from PIL.PngImagePlugin import PngInfo
+
+from js import FontFace, ImageData, XMLHttpRequest, document, window
+from pyodide import create_proxy
 
 _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
 

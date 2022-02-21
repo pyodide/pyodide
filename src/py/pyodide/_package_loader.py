@@ -1,14 +1,13 @@
-from ._core import to_js, JsProxy
-
 import shutil
 import sysconfig
 import tarfile
-
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
 from typing import IO, Iterable
 from zipfile import ZipFile
+
+from ._core import JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 STD_LIB = Path(sysconfig.get_path("stdlib"))  # type: ignore

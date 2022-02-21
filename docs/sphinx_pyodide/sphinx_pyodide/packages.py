@@ -1,11 +1,10 @@
-from docutils import nodes
-from docutils.parsers.rst import Directive
-import sys
 import pathlib
+import sys
 from typing import Any
 
+from docutils import nodes
+from docutils.parsers.rst import Directive
 from sphinx import addnodes
-
 
 base_dir = pathlib.Path(__file__).resolve().parents[3]
 sys.path.append(str(base_dir / "pyodide-build"))

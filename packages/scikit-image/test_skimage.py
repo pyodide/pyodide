@@ -13,9 +13,7 @@ else:
 )
 def test_skimage():
     import numpy as np
-
-    from skimage import data
-    from skimage import color
+    from skimage import color, data
     from skimage.util import view_as_blocks
 
     # get astronaut from skimage.data in grayscale
@@ -35,10 +33,10 @@ def test_skimage():
     to = threshold_otsu(l)
     assert to.hex() == "0x1.8e00000000000p-2"
 
-    from skimage.data import astronaut
     from skimage.color import rgb2gray
+    from skimage.data import astronaut
     from skimage.filters import sobel
-    from skimage.segmentation import felzenszwalb, slic, quickshift, watershed
+    from skimage.segmentation import felzenszwalb, quickshift, slic, watershed
     from skimage.util import img_as_float
 
     img = img_as_float(astronaut()[::2, ::2])

@@ -1,6 +1,7 @@
-import pytest
 import os
 import pathlib
+
+import pytest
 from selenium.webdriver.support.wait import WebDriverWait
 
 ROOT_PATH = pathlib.Path(__file__).resolve().parents[2]

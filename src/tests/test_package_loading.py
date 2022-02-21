@@ -1,7 +1,8 @@
-import pytest
 import shutil
-
 from pathlib import Path
+
+import pytest
+
 from conftest import BUILD_PATH
 
 
@@ -308,10 +309,11 @@ def test_install_archive(selenium):
 
 
 def test_get_dynlibs():
-    from pyodide._package_loader import get_dynlibs
     import tarfile
-    from zipfile import ZipFile
     from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import get_dynlibs
 
     files = [
         "a.so",

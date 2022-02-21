@@ -5,8 +5,7 @@ import time
 import traceback
 from typing import Callable
 
-
-from ._core import create_once_callable, IN_BROWSER
+from ._core import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout

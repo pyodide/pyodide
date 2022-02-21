@@ -23,24 +23,21 @@ configuration with build.
 """
 
 
-from collections import namedtuple
 import importlib.machinery
 import json
 import os
-from pathlib import Path, PurePosixPath
 import re
-import subprocess
 import shutil
+import subprocess
 import sys
-
-
+from collections import namedtuple
+from pathlib import Path, PurePosixPath
 from typing import Optional, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_output
-
 
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 

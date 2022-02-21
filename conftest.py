@@ -1,22 +1,22 @@
 """
 Various common utilities for testing.
 """
-import re
 import contextlib
+import functools
 import json
 import multiprocessing
-import textwrap
-import tempfile
-import time
 import os
 import pathlib
-import pexpect
 import queue
-import sys
+import re
 import shutil
-import functools
-import pytest
+import sys
+import tempfile
+import textwrap
+import time
 
+import pexpect
+import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
@@ -25,7 +25,7 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
+from pyodide_build.testing import parse_driver_timeout, set_webdriver_script_timeout
 
 
 def pytest_addoption(parser):

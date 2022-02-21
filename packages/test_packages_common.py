@@ -1,9 +1,10 @@
-import pytest
-import os
 import functools
+import os
 
+import pytest
+
+from conftest import ROOT_PATH, built_packages
 from pyodide_build.io import parse_package_config
-from conftest import built_packages, ROOT_PATH
 
 PKG_DIR = ROOT_PATH / "packages"
 

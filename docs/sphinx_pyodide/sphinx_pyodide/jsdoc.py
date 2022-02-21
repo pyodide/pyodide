@@ -1,27 +1,25 @@
-from docutils import nodes
-from docutils.parsers.rst import Directive, Parser as RstParser
+from collections import OrderedDict
+from typing import Any
+
 import docutils.parsers.rst.directives as directives
+from docutils import nodes
+from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Parser as RstParser
 from docutils.statemachine import StringList
 from docutils.utils import new_document
-
-from collections import OrderedDict
-
 from sphinx import addnodes
+from sphinx.domains.javascript import JavaScriptDomain, JSCallable
+from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
-from sphinx.ext.autosummary import autosummary_table, extract_summary
-from sphinx.domains.javascript import JSCallable, JavaScriptDomain
-
-from sphinx_js.typedoc import Analyzer as TsAnalyzer
 from sphinx_js.ir import Class, Function
-from sphinx_js.parsers import path_and_formal_params, PathVisitor
+from sphinx_js.parsers import PathVisitor, path_and_formal_params
 from sphinx_js.renderers import (
-    AutoFunctionRenderer,
     AutoAttributeRenderer,
     AutoClassRenderer,
+    AutoFunctionRenderer,
 )
-
-from typing import Any
+from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_type_name = TsAnalyzer._type_name

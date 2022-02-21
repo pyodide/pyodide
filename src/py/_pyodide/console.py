@@ -1,28 +1,17 @@
 import ast
 import asyncio
-from asyncio import ensure_future, Future
-from codeop import Compile, CommandCompiler, _features  # type: ignore
-from contextlib import (
-    contextmanager,
-    redirect_stdout,
-    redirect_stderr,
-    ExitStack,
-)
-from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
-from platform import python_version, python_build
 import sys
-from tokenize import TokenError
 import traceback
-from typing import Literal
-from typing import (
-    Optional,
-    Callable,
-    Any,
-    Union,
-)
+from asyncio import Future, ensure_future
+from codeop import CommandCompiler, Compile, _features  # type: ignore
+from contextlib import _RedirectStream  # type: ignore
+from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
+from platform import python_build, python_version
+from tokenize import TokenError
+from typing import Any, Callable, Literal, Optional, Union
 
-from _pyodide._base import should_quiet, CodeRunner
+from _pyodide._base import CodeRunner, should_quiet
 
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 

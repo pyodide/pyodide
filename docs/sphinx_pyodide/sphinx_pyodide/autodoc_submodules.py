@@ -4,8 +4,9 @@ import the submodules for it to find them.
 """
 
 from typing import Any, Dict, Tuple
-from sphinx.util.inspect import safe_getattr
+
 from sphinx.ext.autodoc import ModuleDocumenter, ObjectMember  # type: ignore
+from sphinx.util.inspect import safe_getattr
 
 __all__ = ["monkeypatch_module_documenter"]
 

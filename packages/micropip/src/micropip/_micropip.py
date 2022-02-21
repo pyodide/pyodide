@@ -6,19 +6,18 @@ import importlib
 import io
 import json
 import tempfile
+from pathlib import Path
+from typing import Any, Optional, Union
+from zipfile import ZipFile
 
+from packaging.markers import default_environment
 from packaging.requirements import Requirement
 from packaging.version import Version
-from packaging.markers import default_environment
 
-from pathlib import Path
-from typing import Any, Union, Optional
-from zipfile import ZipFile
+from pyodide import IN_BROWSER, to_js
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
-
-from pyodide import IN_BROWSER, to_js
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -59,7 +58,7 @@ if IN_BROWSER:
         return await (await pyfetch(url, **kwargs)).string()
 
 else:
-    from urllib.request import urlopen, Request
+    from urllib.request import Request, urlopen
 
     async def fetch_bytes(url: str, **kwargs) -> bytes:
         return urlopen(Request(url, headers=kwargs)).read()

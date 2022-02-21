@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+
 from pyodide_build.testing import run_in_pyodide
 
 
@@ -560,7 +561,7 @@ def test_destroy_attribute(selenium):
 @run_in_pyodide
 def test_window_isnt_super_weird_anymore():
     import js
-    from js import self, Array
+    from js import Array, self
 
     assert self.Array != self
     assert self.Array == Array
@@ -1052,8 +1053,8 @@ def test_buffer_into_file():
 @run_in_pyodide
 def test_buffer_into_file2():
     """Check that no copy occurred."""
-    from js import Uint8Array
     import pyodide_js
+    from js import Uint8Array
 
     a = Uint8Array.new(range(10))
     from tempfile import TemporaryFile

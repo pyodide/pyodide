@@ -1,6 +1,7 @@
 # See also test_typeconversions, and test_python.
-import pytest
 import time
+
+import pytest
 
 
 def test_pyproxy_class(selenium):

@@ -1,8 +1,7 @@
-from pathlib import Path
-from typing import Optional
-
 import functools
 import subprocess
+from pathlib import Path
+from typing import Optional
 
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
 
