@@ -18,8 +18,7 @@ _February 19, 2022_
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
-  boost-histogram {pr}`2174`
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
 
 - {{ Update }} Upgraded packages: pyb2d (0.7.2), {pr}`2117`
 

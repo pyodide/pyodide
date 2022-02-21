@@ -59,6 +59,7 @@ if IN_BROWSER:
     async def fetch_string(url: str, **kwargs) -> str:
         return await (await pyfetch(url, **kwargs)).string()
 
+
 else:
     from urllib.request import urlopen, Request
 
