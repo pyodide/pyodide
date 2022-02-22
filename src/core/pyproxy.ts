@@ -425,7 +425,7 @@ export class PyProxyClass {
      * converts it to an array of entries, and ``(it) => new Map(it)`` converts
      * it to a ``Map`` (which is the default behavior).
      */
-    dict_converter?: (array : Iterable<[key : string, value : any]>) => any;
+    dict_converter?: (array: Iterable<[key: string, value: any]>) => any;
     default_converter?: any;
   } = {}): any {
     let ptrobj = _getPtr(this);
@@ -443,7 +443,7 @@ export class PyProxyClass {
     if (dict_converter) {
       dict_converter_id = Hiwire.new_value(dict_converter);
     }
-    if(default_converter){
+    if (default_converter) {
       default_converter_id = Hiwire.new_value(default_converter);
     }
     try {
@@ -452,7 +452,7 @@ export class PyProxyClass {
         depth,
         proxies_id,
         dict_converter_id,
-        default_converter_id,
+        default_converter_id
       );
     } catch (e) {
       API.fatal_error(e);

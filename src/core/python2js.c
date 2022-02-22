@@ -306,7 +306,8 @@ _python2js_proxy(PyObject* x)
   return Js_novalue;
 }
 
-JsRef python2js__default_converter(JsRef jscontext, PyObject* object);
+JsRef
+python2js__default_converter(JsRef jscontext, PyObject* object);
 
 /**
  * This function is a helper function for _python2js which handles the case when
@@ -404,7 +405,7 @@ _python2js(ConversionContext context, PyObject* x)
   if (context.depth == 0) {
     RETURN_IF_HAS_VALUE(_python2js_immutable(x));
     RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-    if(context.default_converter){
+    if (context.default_converter) {
       return python2js__default_converter(context.jscontext, x);
     }
     return python2js_track_proxies(x, context.proxies);
@@ -524,13 +525,23 @@ EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
     Hiwire.get_value(jscontext).dict_converter(Hiwire.get_value(array)));
 })
 
-EM_JS_REF(JsRef, python2js__default_converter, (JsRef jscontext, PyObject* object), {
+// clang-format off
+EM_JS_REF(
+JsRef,
+python2js__default_converter,
+(JsRef jscontext, PyObject* object),
+{
   let context = Hiwire.get_value(jscontext);
   let proxy = Module.pyproxy_new(object);
-  let result = context.default_converter(proxy, context.converter, context.cacheConversion);
+  let result = context.default_converter(
+    proxy,
+    context.converter,
+    context.cacheConversion
+  );
   proxy.destroy();
   return Hiwire.new_value(result);
 })
+// clang-format on
 
 static JsRef
 _JsArray_PostProcess(ConversionContext context, JsRef array)
@@ -538,33 +549,43 @@ _JsArray_PostProcess(ConversionContext context, JsRef array)
   return _JsArray_PostProcess_helper(context.jscontext, array);
 }
 
-EM_JS_REF(JsRef, python2js_custom__create_jscontext, (ConversionContext context, PyObject *cache, JsRef dict_converter, JsRef default_converter), {
+// clang-format off
+EM_JS_REF(
+JsRef,
+python2js_custom__create_jscontext,
+(ConversionContext context,
+  PyObject* cache,
+  JsRef dict_converter,
+  JsRef default_converter),
+{
   let jscontext = {};
-  if(dict_converter !== 0){
+  if (dict_converter !== 0) {
     jscontext.dict_converter = Hiwire.get_value(dict_converter);
   }
-  if(default_converter !== 0){
+  if (default_converter !== 0) {
     jscontext.default_converter = Hiwire.get_value(default_converter);
-    jscontext.cacheConversion = function(input, output){
-      // input should be a PyProxy, output should be a Javascript object
-      if(!API.isPyProxy(input)){
+    jscontext.cacheConversion = function (input, output) {
+      // input should be a PyProxy, output should be a Javascript
+      // object
+      if (!API.isPyProxy(input)) {
         throw new Error("Oops!");
       }
       let input_ptr = Module.PyProxy_getPtr(input);
       let output_key = Hiwire.new_value(output);
       __python2js_add_to_cache(cache, input_ptr, output_key);
     };
-    jscontext.converter = function(x){
-      if(!API.isPyProxy(x)){
+    jscontext.converter = function (x) {
+      if (!API.isPyProxy(x)) {
         return x;
       }
       let ptr = Module.PyProxy_getPtr(x);
       let res = __python2js(context, ptr);
       return Hiwire.pop_value(res);
-    }
+    };
   }
   return Hiwire.new_value(jscontext);
 })
+// clang-format on
 
 /**
  * dict_converter should be a JavaScript function that converts an Iterable of
@@ -573,10 +594,10 @@ EM_JS_REF(JsRef, python2js_custom__create_jscontext, (ConversionContext context,
  */
 JsRef
 python2js_custom(PyObject* x,
-                  int depth,
-                  JsRef proxies,
-                  JsRef dict_converter,
-                  JsRef default_converter)
+                 int depth,
+                 JsRef proxies,
+                 JsRef dict_converter,
+                 JsRef default_converter)
 {
   PyObject* cache = PyDict_New();
   if (cache == NULL) {
@@ -599,14 +620,15 @@ python2js_custom(PyObject* x,
     context.dict_add_keyvalue = _JsArray_PushEntry;
     context.dict_postprocess = _JsArray_PostProcess;
   }
-  if(default_converter){
+  if (default_converter) {
     context.default_converter = true;
   }
-  if(dict_converter || default_converter){
-    context.jscontext = python2js_custom__create_jscontext(context, cache, dict_converter, default_converter);
+  if (dict_converter || default_converter) {
+    context.jscontext = python2js_custom__create_jscontext(
+      context, cache, dict_converter, default_converter);
   }
   JsRef result = _python2js(context, x);
-  if(context.jscontext){
+  if (context.jscontext) {
     hiwire_CLEAR(context.jscontext);
   }
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
@@ -705,8 +727,7 @@ to_js(PyObject* self,
   if (py_dict_converter) {
     js_dict_converter = python2js(py_dict_converter);
   }
-  js_result =
-    python2js_custom(obj, depth, proxies, js_dict_converter, NULL);
+  js_result = python2js_custom(obj, depth, proxies, js_dict_converter, NULL);
   FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?

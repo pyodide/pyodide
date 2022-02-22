@@ -47,10 +47,10 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies);
  */
 JsRef
 python2js_custom(PyObject* x,
-                  int depth,
-                  JsRef proxies,
-                  JsRef dict_converter,
-                  JsRef default_converter);
+                 int depth,
+                 JsRef proxies,
+                 JsRef dict_converter,
+                 JsRef default_converter);
 
 int
 python2js_init(PyObject* core);
