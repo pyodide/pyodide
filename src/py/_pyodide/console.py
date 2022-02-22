@@ -1,46 +1,24 @@
 import ast
 import asyncio
-from asyncio import ensure_future, Future
-from codeop import Compile, CommandCompiler, _features  # type: ignore
-from contextlib import (
-    contextmanager,
-    redirect_stdout,
-    redirect_stderr,
-    ExitStack,
-)
-from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
-import platform
 import sys
-from tokenize import TokenError
 import traceback
-from typing import Literal
-from typing import (
-    Optional,
-    Callable,
-    Any,
-    List,
-    Tuple,
-    Union,
-    Tuple,
-)
+from asyncio import Future, ensure_future
+from codeop import CommandCompiler, Compile, _features  # type: ignore
+from contextlib import _RedirectStream  # type: ignore
+from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
+from platform import python_build, python_version
+from tokenize import TokenError
+from typing import Any, Callable, Literal, Optional, Union
 
-from _pyodide._base import should_quiet, CodeRunner
+from _pyodide._base import CodeRunner, should_quiet
 
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 
-
-def _banner():
-    """A banner similar to the one printed by the real Python interpreter."""
-    # copied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
-    cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-    version = platform.python_version()
-    build = f"({', '.join(platform.python_build())})"
-    return f"Python {version} {build} on WebAssembly VM\n{cprt}"
-
-
-BANNER = _banner()
-del _banner
+BANNER = f"""
+Python {python_version()} ({', '.join(python_build())}) on WebAssembly VM
+Type "help", "copyright", "credits" or "license" for more information.
+""".strip()
 
 
 class redirect_stdin(_RedirectStream):
@@ -262,7 +240,7 @@ class Console:
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.filename = filename
-        self.buffer: List[str] = []
+        self.buffer: list[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator = None  # track persistent stream redirection
@@ -435,7 +413,7 @@ class Console:
             self.buffer = []
         return result
 
-    def complete(self, source: str) -> Tuple[List[str], int]:
+    def complete(self, source: str) -> tuple[list[str], int]:
         """Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
 
         Finds last "word" in the source string and completes it with rlcompleter. Word

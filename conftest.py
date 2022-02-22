@@ -1,20 +1,21 @@
 """
 Various common utilities for testing.
 """
-import re
 import contextlib
+import functools
 import json
 import multiprocessing
-import textwrap
-import tempfile
-import time
 import os
 import pathlib
-import pexpect
 import queue
-import sys
+import re
 import shutil
+import sys
+import tempfile
+import textwrap
+import time
 
+import pexpect
 import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
@@ -24,7 +25,7 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
+from pyodide_build.testing import parse_driver_timeout, set_webdriver_script_timeout
 
 
 def pytest_addoption(parser):
@@ -72,8 +73,17 @@ def pytest_collection_modifyitems(config, items):
         _maybe_skip_test(item, delayed=True)
 
 
+@functools.cache
+def built_packages() -> list[str]:
+    """Returns the list of built package names from packages.json"""
+    packages_json_path = BUILD_PATH / "packages.json"
+    if not packages_json_path.exists():
+        return []
+    return list(json.loads(packages_json_path.read_text())["packages"].keys())
+
+
 def _package_is_built(package_name: str) -> bool:
-    return (BUILD_PATH / f"{package_name}.data").exists()
+    return package_name in built_packages()
 
 
 class JavascriptException(Exception):
@@ -109,24 +119,8 @@ class SeleniumWrapper:
         self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:
-            self.run_js(
-                """
-                let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
-                self.pyodide = pyodide;
-                globalThis.pyodide = pyodide;
-                pyodide._module.inTestHoist = true; // improve some error messages for tests
-                pyodide.globals.get;
-                pyodide.pyodide_py.eval_code;
-                pyodide.pyodide_py.eval_code_async;
-                pyodide.pyodide_py.register_js_module;
-                pyodide.pyodide_py.unregister_js_module;
-                pyodide.pyodide_py.find_imports;
-                pyodide._module._util_module = pyodide.pyimport("pyodide._util");
-                pyodide._module._util_module.unpack_buffer_archive;
-                pyodide._module.importlib.invalidate_caches;
-                pyodide.runPython("");
-                """,
-            )
+            self.load_pyodide()
+            self.initialize_global_hiwire_objects()
             self.save_state()
             self.restore_state()
 
@@ -149,6 +143,39 @@ class SeleniumWrapper:
         self.run_js(
             SeleniumWrapper.SETUP_CODE,
             pyodide_checks=False,
+        )
+
+    def load_pyodide(self):
+        self.run_js(
+            """
+            let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
+            self.pyodide = pyodide;
+            globalThis.pyodide = pyodide;
+            pyodide._api.inTestHoist = true; // improve some error messages for tests
+            """
+        )
+
+    def initialize_global_hiwire_objects(self):
+        """
+        There are a bunch of global objects that ocassionally enter the hiwire cache
+        but never leave. The refcount checks get angry about them if they aren't preloaded.
+        We need to go through and touch them all once to keep everything okay.
+        """
+        self.run_js(
+            """
+            pyodide.globals.get;
+            pyodide.pyodide_py.eval_code;
+            pyodide.pyodide_py.eval_code_async;
+            pyodide.pyodide_py.register_js_module;
+            pyodide.pyodide_py.unregister_js_module;
+            pyodide.pyodide_py.find_imports;
+            pyodide._api.importlib.invalidate_caches;
+            pyodide._api.package_loader.unpack_buffer;
+            pyodide._api.package_loader.get_dynlibs;
+            pyodide._api._util_module = pyodide.pyimport("pyodide._util");
+            pyodide._api._util_module.unpack_buffer_archive;
+            pyodide.runPython("");
+            """
         )
 
     @property
@@ -246,19 +273,19 @@ class SeleniumWrapper:
 
     @property
     def force_test_fail(self) -> bool:
-        return self.run_js("return !!pyodide._module.fail_test;")
+        return self.run_js("return !!pyodide._api.fail_test;")
 
     def clear_force_test_fail(self):
-        self.run_js("pyodide._module.fail_test = false;")
+        self.run_js("pyodide._api.fail_test = false;")
 
     def save_state(self):
-        self.run_js("self.__savedState = pyodide._module.saveState();")
+        self.run_js("self.__savedState = pyodide._api.saveState();")
 
     def restore_state(self):
         self.run_js(
             """
             if(self.__savedState){
-                pyodide._module.restoreState(self.__savedState)
+                pyodide._api.restoreState(self.__savedState)
             }
             """
         )
@@ -300,7 +327,7 @@ class SeleniumWrapper:
         )
 
     def load_package(self, packages):
-        self.run_js("await pyodide.loadPackage({!r})".format(packages))
+        self.run_js(f"await pyodide.loadPackage({packages!r})")
 
     @property
     def urls(self):
@@ -390,10 +417,10 @@ class NodeWrapper(SeleniumWrapper):
     def run_js_inner(self, code, check_code):
         check_code = ""
         wrapped = """
-            let result = await (async () => { %s })();
-            %s
+            let result = await (async () => {{ {} }})();
+            {}
             return result;
-        """ % (
+        """.format(
             code,
             check_code,
         )

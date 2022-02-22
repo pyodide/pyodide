@@ -3,36 +3,77 @@ default_language_version:
   python: "3.9"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: "v4.1.0"
     hooks:
       - id: check-yaml
+        exclude: .clang-format
       - id: end-of-file-fixer
       - id: trailing-whitespace
+
+  - repo: https://github.com/PyCQA/isort
+    rev: "5.10.1"
+    hooks:
+      - id: isort
+        exclude: ^packages/micropip/src/micropip/externals
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: "v2.31.0"
+    hooks:
+      - id: pyupgrade
+        args: ["--py39-plus"]
+        exclude: ^packages/micropip/src/micropip/externals
+
+  - repo: https://github.com/hadialqattan/pycln
+    rev: "v1.1.0"
+    hooks:
+      - id: pycln
+        args: [--config=pyproject.toml]
+        stages: [manual]
+
   - repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: "22.1.0"
     hooks:
       - id: black
+
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.8
+    rev: 3.9.2
     hooks:
       - id: flake8
         types: [file, python]
         # only check for unused imports, as the rest is done by black
         args: [--select=F401]
+
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.812
+    rev: v0.931
     hooks:
       - id: mypy
         args:
+          - --show-error-codes
           - --ignore-missing-imports
-  - repo: local
+        files: ^(src/|packages/.*/test|conftest.py|docs/)
+        additional_dependencies: &mypy-deps
+          - packaging
+          - types-docutils
+          - types-pyyaml
+          - types-setuptools
+      - id: mypy
+        name: mypy-micropip
+        files: ^packages/micropip/src/
+        args: &mypy-args
+          - --show-error-codes
+        additional_dependencies: *mypy-deps
+      - id: mypy
+        name: mypy-pyodide-build
+        files: ^pyodide-build/pyodide_build/
+        args: *mypy-args
+        additional_dependencies: *mypy-deps
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: "v13.0.0"
     hooks:
       - id: clang-format
-        name: clang-format-6.0
-        language: system
-        entry: ./tools/clang-format-precommit.sh
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.3.2" # Use the sha / tag you want to point at
+    rev: "v2.5.1"
     hooks:
       - id: prettier

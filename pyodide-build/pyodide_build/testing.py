@@ -1,8 +1,9 @@
-import pytest
-import inspect
-from typing import Callable, Dict, List, Optional, Union
 import contextlib
+import inspect
 from base64 import b64encode
+from typing import Callable, Optional, Union
+
+import pytest
 
 
 def _run_in_pyodide_get_source(f):
@@ -30,8 +31,8 @@ def run_in_pyodide(
     *,
     standalone: bool = False,
     module_scope: bool = False,
-    packages: List[str] = [],
-    xfail_browsers: Dict[str, str] = {},
+    packages: list[str] = [],
+    xfail_browsers: dict[str, str] = {},
     driver_timeout: Optional[Union[str, int]] = None,
 ) -> Callable:
     """
@@ -83,7 +84,7 @@ def run_in_pyodide(
                         eval_code.callKwargs(
                             {{
                                 source : atob({encoded}.join("")),
-                                globals : pyodide._module.globals,
+                                globals : pyodide._api.globals,
                                 filename : {filename!r}
                             }}
                         );

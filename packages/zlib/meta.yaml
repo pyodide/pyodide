@@ -9,5 +9,5 @@ source:
 build:
   library: true
   script: |
-     CFLAGS="-fPIC" emconfigure ./configure --prefix=$PWD
-     emmake make install -j ${PYODIDE_JOBS:-3}
+    CFLAGS="-fPIC" emconfigure ./configure --prefix=$PWD
+    emmake make install -j ${PYODIDE_JOBS:-3}

@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+
 from pyodide_build.testing import run_in_pyodide
 
 
@@ -18,21 +19,19 @@ def test_jsproxy_dir(selenium):
         return result;
         """
     )
-    jsproxy_items = set(
-        [
-            "__bool__",
-            "__class__",
-            "__defineGetter__",
-            "__defineSetter__",
-            "__delattr__",
-            "constructor",
-            "toString",
-            "typeof",
-            "valueOf",
-        ]
-    )
-    a_items = set(["x", "y"])
-    callable_items = set(["__call__", "new"])
+    jsproxy_items = {
+        "__bool__",
+        "__class__",
+        "__defineGetter__",
+        "__defineSetter__",
+        "__delattr__",
+        "constructor",
+        "toString",
+        "typeof",
+        "valueOf",
+    }
+    a_items = {"x", "y"}
+    callable_items = {"__call__", "new"}
     set0 = set(result[0])
     set1 = set(result[1])
     assert set0.issuperset(jsproxy_items)
@@ -339,7 +338,7 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
 
 def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
-        """
+        r"""
         let y;
         self.f = function(x){ y = x; }
         pyodide.runPython(`
@@ -347,7 +346,10 @@ def test_call_pyproxy_destroy_args(selenium):
             f({})
             f([])
         `);
-        assertThrows(() => y.length, "Error", "This borrowed proxy was automatically destroyed");
+        assertThrows(() => y.length, "Error",
+            "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
+            'The object was of type "list" and had repr "\\[\\]"'
+        );
         """
     )
 
@@ -559,7 +561,7 @@ def test_destroy_attribute(selenium):
 @run_in_pyodide
 def test_window_isnt_super_weird_anymore():
     import js
-    from js import self, Array
+    from js import Array, self
 
     assert self.Array != self
     assert self.Array == Array
@@ -603,8 +605,8 @@ def test_mount_object(selenium_standalone):
         """
     )
     assert result[:3] == ["x1", "x2", 3]
-    assert set([x for x in result[3] if len(x) == 1]) == set(["x", "y", "s", "t"])
-    assert set([x for x in result[4] if len(x) == 1]) == set(["x", "y", "u", "t"])
+    assert {x for x in result[3] if len(x) == 1} == {"x", "y", "s", "t"}
+    assert {x for x in result[4] if len(x) == 1} == {"x", "y", "u", "t"}
     selenium.run_js(
         """
         pyodide.unregisterJsModule("a");
@@ -1051,8 +1053,8 @@ def test_buffer_into_file():
 @run_in_pyodide
 def test_buffer_into_file2():
     """Check that no copy occurred."""
-    from js import Uint8Array
     import pyodide_js
+    from js import Uint8Array
 
     a = Uint8Array.new(range(10))
     from tempfile import TemporaryFile

@@ -1,9 +1,10 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
-from pyodide_build.testing import run_in_pyodide
-from hypothesis import given, settings, assume, strategies
-from hypothesis.strategies import text, from_type
+from hypothesis import assume, given, settings, strategies
+from hypothesis.strategies import from_type, text
+
 from conftest import selenium_context_manager
+from pyodide_build.testing import run_in_pyodide
 
 
 @given(s=text())
@@ -57,7 +58,7 @@ def test_large_string_conversion(selenium):
 
 @given(
     n=strategies.one_of(
-        strategies.integers(min_value=-(2 ** 53), max_value=2 ** 53),
+        strategies.integers(min_value=-(2**53), max_value=2**53),
         strategies.floats(allow_nan=False),
     )
 )
@@ -491,12 +492,12 @@ def test_dict_converter(selenium):
 
 
 def test_python2js_long_ints(selenium):
-    assert selenium.run("2**30") == 2 ** 30
-    assert selenium.run("2**31") == 2 ** 31
-    assert selenium.run("2**30 - 1 + 2**30") == (2 ** 30 - 1 + 2 ** 30)
-    assert selenium.run("2**32 / 2**4") == (2 ** 32 / 2 ** 4)
-    assert selenium.run("-2**30") == -(2 ** 30)
-    assert selenium.run("-2**31") == -(2 ** 31)
+    assert selenium.run("2**30") == 2**30
+    assert selenium.run("2**31") == 2**31
+    assert selenium.run("2**30 - 1 + 2**30") == (2**30 - 1 + 2**30)
+    assert selenium.run("2**32 / 2**4") == (2**32 / 2**4)
+    assert selenium.run("-2**30") == -(2**30)
+    assert selenium.run("-2**31") == -(2**31)
     assert selenium.run_js(
         """
         return pyodide.runPython("2**64") === 2n**64n;
@@ -1134,6 +1135,88 @@ def test_to_py(selenium):
             `);
             """
         )
+
+
+def test_to_py_default_converter(selenium):
+    selenium.run_js(
+        """
+        class Pair {
+            constructor(first, second){
+                this.first = first;
+                this.second = second;
+            }
+        }
+        l = [1,2,3];
+        self.p = new Pair(l, [l]);
+        const opts = {defaultConverter(value, converter, cache){
+            if(p.constructor.name !== "Pair"){
+                return value;
+            }
+            let list = pyodide.globals.get("list");
+            l = list();
+            list.destroy();
+            cache(value, l);
+            const first = converter(value.first);
+            const second = converter(value.second);
+            l.append(first);
+            l.append(second);
+            first.destroy();
+            second.destroy();
+            return l;
+        }};
+        self.r = pyodide.toPy(p, opts);
+        pyodide.runPython(`
+            from js import r
+            assert isinstance(r, list)
+            assert r[0] is r[1][0]
+            assert r[0] == [1,2,3]
+        `);
+        r.destroy();
+        self.p.first = p;
+        self.r = pyodide.toPy(p, opts);
+        pyodide.runPython(`
+            from js import r
+            assert r[0] is r
+        `);
+        r.destroy();
+        """
+    )
+
+
+def test_to_py_default_converter2(selenium):
+    selenium.run_js(
+        """
+        class Pair {
+            constructor(first, second){
+                this.first = first;
+                this.second = second;
+            }
+        }
+        l = [1,2,3];
+        self.p = new Pair(l, [l]);
+        pyodide.runPython(`
+            from js import p
+            def default_converter(value, converter, cache):
+                if value.constructor.name != "Pair":
+                    return value
+                l = []
+                cache(value, l)
+                l.append(converter(value.first))
+                l.append(converter(value.second))
+                return l
+            r = p.to_py(default_converter=default_converter)
+            assert isinstance(r, list)
+            assert r[0] is r[1][0]
+            assert r[0] == [1,2,3]
+        `);
+        self.p.first = p;
+        pyodide.runPython(`
+            r = p.to_py(default_converter=default_converter)
+            assert r[0] is r
+            del r
+        `);
+        """
+    )
 
 
 def test_buffer_format_string(selenium):

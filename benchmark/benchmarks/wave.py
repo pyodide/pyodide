@@ -16,7 +16,7 @@ def physics(masspoints, dt, plunk, which):
     force = np.zeros((N, 2))
     for i in range(1, N):
         dx, dy = cpos[i] - cpos[i - 1]
-        dist = np.sqrt(dx ** 2 + dy ** 2)
+        dist = np.sqrt(dx**2 + dy**2)
         assert dist != 0
         fmag = -HOOKE_K * dist
         cosine = dx / dist
@@ -30,7 +30,7 @@ def physics(masspoints, dt, plunk, which):
     accel = force / MASS
 
     # verlet integration
-    npos = (2 - DAMPING) * cpos - (1 - DAMPING) * ppos + accel * (dt ** 2)
+    npos = (2 - DAMPING) * cpos - (1 - DAMPING) * ppos + accel * (dt**2)
 
     masspoints[1] = cpos
     masspoints[0] = npos

@@ -13,8 +13,8 @@ pyodide_callback(void)
   if (callback_clock == 0) {
     callback_clock = 50;
     int interrupt_buffer = EM_ASM_INT({
-      let result = Module.interrupt_buffer[0];
-      Module.interrupt_buffer[0] = 0;
+      let result = API.interrupt_buffer[0];
+      API.interrupt_buffer[0] = 0;
       return result;
     });
     if (interrupt_buffer == 2) {

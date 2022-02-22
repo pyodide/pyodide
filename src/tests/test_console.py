@@ -1,18 +1,14 @@
 import asyncio
-import pytest
 import sys
 import time
 
-from pyodide_build.testing import run_in_pyodide
-from conftest import selenium_common
+import pytest
 
-from pyodide import CodeRunner  # noqa: E402
-from _pyodide.console import (
-    Console,
-    _Compile,
-    _CommandCompiler,
-)  # noqa: E402
 from _pyodide import console
+from _pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
+from conftest import selenium_common
+from pyodide import CodeRunner  # noqa: E402
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_command_compiler():
@@ -55,7 +51,7 @@ def test_write_stream():
 
 def test_repr():
     sep = "..."
-    for string in ("x" * 10 ** 5, "x" * (10 ** 5 + 1)):
+    for string in ("x" * 10**5, "x" * (10**5 + 1)):
         for limit in (9, 10, 100, 101):
             assert len(
                 console.repr_shorten(string, limit=limit, separator=sep)
@@ -429,7 +425,7 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 486, in repr_shorten
+              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 464, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]

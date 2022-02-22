@@ -5,7 +5,6 @@ Generate a list of test modules in the CPython distribution.
 import os
 from pathlib import Path
 
-
 TEST_DIR = (
     Path(__file__).parents[2] / "cpython/installs/python-3.9.5/lib/python3.9/test/"
 )

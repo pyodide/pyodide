@@ -5,8 +5,7 @@ import time
 import traceback
 from typing import Callable
 
-
-from ._core import create_once_callable, IN_BROWSER
+from ._core import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
@@ -143,7 +142,13 @@ class WebLoop(asyncio.AbstractEventLoop):
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
-        setTimeout(create_once_callable(h._run), delay * 1000)
+
+        def run_handle():
+            if h.cancelled():
+                return
+            h._run()
+
+        setTimeout(create_once_callable(run_handle), delay * 1000)
         return h
 
     def call_at(

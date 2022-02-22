@@ -6,16 +6,16 @@ source:
   url: https://files.pythonhosted.org/packages/c4/43/3f1e7d742e2a7925be180b6af5e0f67d38de2f37560365ac1a0b9a04c015/lxml-4.4.1.tar.gz
 build:
   script: |
-    export WITH_XML2_CONFIG=$PYODIDE_ROOT/packages/libxml/build/libxml2-2.9.10/xml2-config
+    export WITH_XML2_CONFIG=$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10/xml2-config
     export WITH_XSLT_CONFIG=$PYODIDE_ROOT/packages/libxslt/build/libxslt-1.1.33/xslt-config
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/libxml/build/libxml2-2.9.10/include
+    -I$(PYODIDE_ROOT)/packages/libxml/build/libxml-2.9.10/include
     -I$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/
     -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/include
     -I$(PYODIDE_ROOT)/packages/libiconv/build/libiconv-1.16/include
     -Wno-implicit-function-declaration
   ldflags: |
-    -L$(PYODIDE_ROOT)/packages/libxml/build/libxml2-2.9.10/.libs/
+    -L$(PYODIDE_ROOT)/packages/libxml/build/libxml-2.9.10/.libs/
     -L$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/libxslt/.libs/
     -L$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/libexslt/.libs/
     -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/lib/
@@ -31,6 +31,6 @@ requirements:
     - libiconv
 test:
   imports:
-  - lxml
-  - lxml.etree
-  - lxml.objectify
+    - lxml
+    - lxml.etree
+    - lxml.objectify

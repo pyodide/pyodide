@@ -4,9 +4,7 @@
   pyyaml
   ruamel.yaml
   # lint
-  black
-  flake8
-  mypy==0.812
+  pre-commit
   # testing
   hypothesis
   pexpect
@@ -17,4 +15,4 @@
   pytest-instafail
   pytest-rerunfailures
   pytest-xdist
-  selenium==4.0.0.b3
+  selenium==4.1.0

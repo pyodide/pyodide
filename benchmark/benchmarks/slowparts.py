@@ -4,7 +4,7 @@
 
 # pythran export slowparts(int, int, float [][][], float [][][], float
 # [][], float [][], float [][][], float [][][], int)
-from numpy import zeros, power, tanh
+from numpy import power, tanh, zeros
 
 
 def slowparts(d, re, preDz, preWz, SRW, RSW, yxV, xyU, resid):

@@ -1,6 +1,7 @@
 # See also test_typeconversions, and test_python.
-import pytest
 import time
+
+import pytest
 
 
 def test_pyproxy_class(selenium):
@@ -30,42 +31,37 @@ def test_pyproxy_class(selenium):
         f.destroy();
         """
     )
-    assert (
-        set(
-            [
-                "__class__",
-                "__delattr__",
-                "__dict__",
-                "__dir__",
-                "__doc__",
-                "__eq__",
-                "__format__",
-                "__ge__",
-                "__getattribute__",
-                "__gt__",
-                "__hash__",
-                "__init__",
-                "__init_subclass__",
-                "__le__",
-                "__lt__",
-                "__module__",
-                "__ne__",
-                "__new__",
-                "__reduce__",
-                "__reduce_ex__",
-                "__repr__",
-                "__setattr__",
-                "__sizeof__",
-                "__str__",
-                "__subclasshook__",
-                "__weakref__",
-                "bar",
-                "baz",
-                "get_value",
-            ]
-        ).difference(selenium.run_js("return f_props"))
-        == set()
-    )
+    assert {
+        "__class__",
+        "__delattr__",
+        "__dict__",
+        "__dir__",
+        "__doc__",
+        "__eq__",
+        "__format__",
+        "__ge__",
+        "__getattribute__",
+        "__gt__",
+        "__hash__",
+        "__init__",
+        "__init_subclass__",
+        "__le__",
+        "__lt__",
+        "__module__",
+        "__ne__",
+        "__new__",
+        "__reduce__",
+        "__reduce_ex__",
+        "__repr__",
+        "__setattr__",
+        "__sizeof__",
+        "__str__",
+        "__subclasshook__",
+        "__weakref__",
+        "bar",
+        "baz",
+        "get_value",
+    }.difference(selenium.run_js("return f_props")) == set()
 
 
 def test_del_builtin(selenium):
@@ -205,7 +201,7 @@ def test_pyproxy_iter(selenium):
         """
     )
     assert ty == "ChainMap"
-    assert set(l) == set(["a", "b"])
+    assert set(l) == {"a", "b"}
 
     [result, result2] = selenium.run_js(
         """
@@ -729,7 +725,7 @@ def test_pyproxy_implicit_copy(selenium):
 @pytest.mark.skip_pyproxy_check
 def test_errors(selenium):
     selenium.run_js(
-        """
+        r"""
         let t = pyodide.runPython(`
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
@@ -759,9 +755,14 @@ def test_errors(selenium):
         assertThrows(() => t.delete(1), "PythonError", "");
         assertThrows(() => t.has(1), "PythonError", "");
         assertThrows(() => t.length, "PythonError", "");
-        assertThrowsAsync(async () => await t, "PythonError", "");
         assertThrows(() => t.toString(), "PythonError", "");
         assertThrows(() => Array.from(t), "PythonError", "");
+        await assertThrowsAsync(async () => await t, "PythonError", "");
+        t.destroy();
+        assertThrows(() => t.type, "Error",
+            "Object has already been destroyed\n" +
+            'The object was of type "Temp" and an error was raised when trying to generate its repr'
+        );
         """
     )
 
@@ -772,8 +773,8 @@ def test_fatal_error(selenium_standalone):
     selenium_standalone.run_js(
         """
         let fatal_error = false;
-        let old_fatal_error = pyodide._module.fatal_error;
-        pyodide._module.fatal_error = (e) => {
+        let old_fatal_error = pyodide._api.fatal_error;
+        pyodide._api.fatal_error = (e) => {
             fatal_error = true;
             throw e;
         }
@@ -825,6 +826,10 @@ def test_fatal_error(selenium_standalone):
             expect_fatal(() => t.toString());
             expect_fatal(() => Array.from(t));
             t.destroy();
+            /*
+            // FIXME: Test `memory access out of bounds` error.
+            //        Testing this causes trouble on Chrome 97.0.4692.99 / ChromeDriver 97.0.4692.71.
+            //        (See: https://github.com/pyodide/pyodide/pull/2152)
             a = pyodide.runPython(`
                 from array import array
                 array("I", [1,2,3,4])
@@ -832,8 +837,9 @@ def test_fatal_error(selenium_standalone):
             b = a.getBuffer();
             b._view_ptr = 1e10;
             expect_fatal(() => b.release());
+            */
         } finally {
-            pyodide._module.fatal_error = old_fatal_error;
+            pyodide._api.fatal_error = old_fatal_error;
         }
         """
     )

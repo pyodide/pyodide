@@ -1,6 +1,7 @@
-import pytest
 import os
 import pathlib
+
+import pytest
 from selenium.webdriver.support.wait import WebDriverWait
 
 ROOT_PATH = pathlib.Path(__file__).resolve().parents[2]
@@ -27,9 +28,7 @@ def get_canvas_data(selenium, prefix):
     img_script = "return arguments[0].toDataURL('image/png').substring(21)"
     canvas_base64 = selenium.driver.execute_script(img_script, canvas_element)
     canvas_png = base64.b64decode(canvas_base64)
-    with open(
-        r"{0}/{1}-{2}.png".format(TEST_PATH, prefix, selenium.browser), "wb"
-    ) as f:
+    with open(rf"{TEST_PATH}/{prefix}-{selenium.browser}.png", "wb") as f:
         f.write(canvas_png)
 
 
@@ -38,9 +37,7 @@ def check_comparison(selenium, prefix, num_fonts):
     font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
-    if not os.path.isfile(
-        "{0}/{1}-{2}.png".format(TEST_PATH, prefix, selenium.browser)
-    ):
+    if not os.path.isfile(f"{TEST_PATH}/{prefix}-{selenium.browser}.png"):
         get_canvas_data(selenium, prefix)
 
     selenium.run(

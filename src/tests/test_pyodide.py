@@ -1,7 +1,10 @@
-import pytest
+import re
 from textwrap import dedent
+
+import pytest
+
+from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.testing import run_in_pyodide
-from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
@@ -604,7 +607,7 @@ def test_create_proxy(selenium):
 
 def test_return_destroyed_value(selenium):
     selenium.run_js(
-        """
+        r"""
         self.f = function(x){ return x };
         pyodide.runPython(`
             from pyodide import create_proxy, JsException
@@ -614,14 +617,17 @@ def test_return_destroyed_value(selenium):
             try:
                 f(p)
             except JsException as e:
-                assert str(e) == "Error: Object has already been destroyed"
+                assert str(e) == (
+                    "Error: Object has already been destroyed\\n"
+                    'The object was of type "list" and had repr "[]"'
+                )
         `);
         """
     )
 
 
 def test_docstrings_a():
-    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
+    from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
     from pyodide import JsProxy
 
     jsproxy = JsProxy()
@@ -632,8 +638,8 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
-    from pyodide import create_once_callable, JsProxy
     from _pyodide.docstring import dedent_docstring
+    from pyodide import JsProxy, create_once_callable
 
     jsproxy = JsProxy()
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
@@ -665,11 +671,11 @@ def test_restore_state(selenium):
         pyodide.registerJsModule("a", {somefield : 82});
         pyodide.registerJsModule("b", { otherfield : 3 });
         pyodide.runPython("x = 7; from a import somefield");
-        let state = pyodide._module.saveState();
+        let state = pyodide._api.saveState();
 
         pyodide.registerJsModule("c", { thirdfield : 9 });
         pyodide.runPython("y = 77; from b import otherfield; import c;");
-        pyodide._module.restoreState(state);
+        pyodide._api.restoreState(state);
         state.destroy();
         """
     )
@@ -751,7 +757,7 @@ def test_fatal_error(selenium_standalone):
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
-        assert(() => pyodide._module.runPython("1+1") === 2);
+        assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
 
@@ -759,7 +765,7 @@ def test_fatal_error(selenium_standalone):
 def test_reentrant_error(selenium):
     caught = selenium.run_js(
         """
-        function a(){
+        function raisePythonKeyboardInterrupt(){
             pyodide.globals.get("pyfunc")();
         }
         let caught = false;
@@ -767,9 +773,9 @@ def test_reentrant_error(selenium):
             pyodide.runPython(`
                 def pyfunc():
                     raise KeyboardInterrupt
-                from js import a
+                from js import raisePythonKeyboardInterrupt
                 try:
-                    a()
+                    raisePythonKeyboardInterrupt()
                 except Exception as e:
                     pass
             `);
@@ -780,6 +786,75 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_js_stackframes(selenium):
+    res = selenium.run_js(
+        """
+        self.b = function b(){
+            pyodide.pyimport("???");
+        }
+        self.d1 = function d1(){
+            pyodide.runPython("c2()");
+        }
+        self.d2 = function d2(){
+            d1();
+        }
+        self.d3 = function d3(){
+            d2();
+        }
+        self.d4 = function d4(){
+            d3();
+        }
+        pyodide.runPython(`
+            def c1():
+                from js import b
+                b()
+            def c2():
+                c1()
+            def e():
+                from js import d4
+                from pyodide import to_js
+                from traceback import extract_tb
+                try:
+                    d4()
+                except Exception as ex:
+                    return to_js([[x.filename, x.name] for x in extract_tb(ex.__traceback__)])
+        `);
+        let e = pyodide.globals.get("e");
+        let res = e();
+        e.destroy();
+        return res;
+        """
+    )
+
+    def normalize_tb(t):
+        res = []
+        for [file, name] in t:
+            if file.endswith(".js") or file.endswith(".html"):
+                file = file.rpartition("/")[-1]
+            if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
+                file = "test.html"
+            res.append([file, name])
+        return res
+
+    frames = [
+        ["<exec>", "e"],
+        ["test.html", "d4"],
+        ["test.html", "d3"],
+        ["test.html", "d2"],
+        ["test.html", "d1"],
+        ["pyodide.js", "runPython"],
+        ["/lib/python3.9/site-packages/_pyodide/_base.py", "eval_code"],
+        ["/lib/python3.9/site-packages/_pyodide/_base.py", "run"],
+        ["<exec>", "<module>"],
+        ["<exec>", "c2"],
+        ["<exec>", "c1"],
+        ["test.html", "b"],
+        ["pyodide.js", "pyimport"],
+        ["/lib/python3.9/importlib/__init__.py", "import_module"],
+    ]
+    assert normalize_tb(res[: len(frames)]) == frames
 
 
 def test_reentrant_fatal(selenium_standalone):
@@ -883,7 +958,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         globalThis.pyodide = pyodide;
         """
     )
-    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    outstrings = sum((s.removesuffix("\n").split("\n") for s in strings), [])
     print(outstrings)
     assert (
         selenium.run_js(

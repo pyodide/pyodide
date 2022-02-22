@@ -1,0 +1,28 @@
+[tool.mypy]
+warn_unused_configs = true
+python_version = "3.9"
+mypy_path = "src/py"
+
+[[tool.mypy.overrides]]
+module = [
+  "_pyodide_core",
+  "docutils.parsers.rst",
+  "js",
+  "pyodide_js",
+  "pytest",
+  "ruamel.yaml",
+]
+ignore_missing_imports = true
+
+[tool.pycln]
+all = true
+
+[tool.isort]
+profile = "black"
+known_first_party = [
+  "pyodide",
+  "pyodide_js",
+  "micropip",
+  "pyodide_build",
+  "_pyodide",
+]

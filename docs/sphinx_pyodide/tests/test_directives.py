@@ -1,31 +1,35 @@
+import gzip
+import json
 import pathlib
 import sys
-import json
-import gzip
 
-from docutils.utils import new_document
 from docutils.frontend import OptionParser
-from sphinx_js.jsdoc import Analyzer as JsAnalyzer
+from docutils.utils import new_document
 from sphinx_js.suffix_tree import SuffixTree
+from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
 test_directory = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
 
-# jsdoc_dump.json.gz is the source file for the test docs.
-# It can be updated as follows:
-# jsdoc -c ./docs/jsdoc_conf.json -X ./src/js/ ./src/core/ | gzip > docs/sphinx_pyodide/tests/jsdoc_dump.json.gz
-with gzip.open(test_directory / "jsdoc_dump.json.gz") as fh:
+
+# tsdoc_dump.json.gz is the source file for the test docs. It can be updated as follows:
+#
+# cp src/core/pyproxy.ts src/js/pyproxy.gen.ts
+# typedoc src/js/*.ts --tsconfig src/js/tsconfig.json --json docs/sphinx_pyodide/tests/
+# gzip docs/sphinx_pyodide/tests/
+# rm src/js/pyproxy.gen.ts
+with gzip.open(test_directory / "tsdoc_dump.json.gz") as fh:
     jsdoc_json = json.load(fh)
 settings_json = json.loads((test_directory / "app_settings.json").read_text())
 
 from sphinx_pyodide.jsdoc import (
     PyodideAnalyzer,
+    flatten_suffix_tree,
     get_jsdoc_content_directive,
     get_jsdoc_summary_directive,
-    flatten_suffix_tree,
 )
 
-inner_analyzer = JsAnalyzer(jsdoc_json, "/home/hood/pyodide/src")
+inner_analyzer = TsAnalyzer(jsdoc_json, "/home/hood/pyodide/src")
 settings = OptionParser().get_default_values()
 settings.update(settings_json, OptionParser())
 
@@ -68,15 +72,17 @@ def test_pyodide_analyzer():
         "loadPackage",
         "runPythonAsync",
         "loadPackagesFromImports",
+        "pyimport",
         "registerJsModule",
         "isPyProxy",
         "toPy",
         "setInterruptBuffer",
-        "setStandardStreams",
         "checkInterrupt",
+        "unpackArchive",
         "registerComlink",
     }
     assert attribute_names == {
+        "IN_NODE",
         "FS",
         "loadedPackages",
         "globals",
@@ -122,7 +128,7 @@ def test_content():
 
     rp = results["runPython"]
     assert rp["directive"] == "function"
-    assert rp["sig"] == "code, globals)"
+    assert rp["sig"] == "code, globals=Module.globals)"
     assert "Runs a string of Python code from JavaScript." in rp["body"]
 
 
@@ -157,7 +163,7 @@ def test_summary():
     assert globals["loadPyodide"] == (
         "*async* ",
         "loadPyodide",
-        "(config, )",
+        "(config)",
         "Load the main Pyodide wasm module and initialize it.",
         "globalThis.loadPyodide",
     )

@@ -22,6 +22,8 @@ source:
     - patches/not-build-lapack-lite-as-64-bit.patch
     - patches/fix-invalid-asm-instruction.patch
     - patches/fix-removed-decorators-module.patch
+    - patches/fix-comparator-function-signatures.patch
+    - patches/fix-random_float_fill-return-type.patch
 
 build:
   skip_host: False
@@ -39,8 +41,8 @@ build:
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-linux-x86_64.egg/numpy/core/include/numpy
-    cp -r $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-linux-x86_64.egg/numpy $PKGDIR/../.artifacts/lib/python
+    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-emscripten_wasm32.egg/numpy/core/include/numpy
+    cp -r $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-emscripten_wasm32.egg/numpy $PKGDIR/../.artifacts/lib/python
 
 test:
   imports:

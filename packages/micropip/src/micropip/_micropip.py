@@ -6,20 +6,18 @@ import importlib
 import io
 import json
 import tempfile
-from importlib.metadata import version as get_version
+from pathlib import Path
+from typing import Any, Optional, Union
+from zipfile import ZipFile
 
+from packaging.markers import default_environment
 from packaging.requirements import Requirement
 from packaging.version import Version
-from packaging.markers import default_environment
 
-from pathlib import Path
-from typing import Dict, Any, Union, List, Tuple, Optional
-from zipfile import ZipFile
+from pyodide import IN_BROWSER, to_js
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
-
-from pyodide import IN_BROWSER, to_js
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -36,7 +34,7 @@ else:
     WHEEL_BASE = Path(tempfile.mkdtemp())
 
 if IN_BROWSER:
-    BUILTIN_PACKAGES = pyodide_js._module.packages.to_py()
+    BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
 else:
     BUILTIN_PACKAGES = {}
 
@@ -59,9 +57,8 @@ if IN_BROWSER:
     async def fetch_string(url: str, **kwargs) -> str:
         return await (await pyfetch(url, **kwargs)).string()
 
-
 else:
-    from urllib.request import urlopen, Request
+    from urllib.request import Request, urlopen
 
     async def fetch_bytes(url: str, **kwargs) -> bytes:
         return urlopen(Request(url, headers=kwargs)).read()
@@ -93,7 +90,7 @@ def _is_pure_python_wheel(filename: str):
     return filename.endswith("py3-none-any.whl")
 
 
-def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
+def _parse_wheel_url(url: str) -> tuple[str, dict[str, Any], str]:
     """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
@@ -151,7 +148,7 @@ class _PackageManager:
 
     async def gather_requirements(
         self,
-        requirements: Union[str, List[str]],
+        requirements: Union[str, list[str]],
         ctx=None,
         keep_going: bool = False,
     ):
@@ -160,7 +157,7 @@ class _PackageManager:
         if isinstance(requirements, str):
             requirements = [requirements]
 
-        transaction: Dict[str, Any] = {
+        transaction: dict[str, Any] = {
             "wheels": [],
             "pyodide_packages": [],
             "locked": copy.deepcopy(self.installed_packages),
@@ -177,7 +174,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
+        self, requirements: Union[str, list[str]], ctx=None, keep_going: bool = False
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -297,7 +294,20 @@ class _PackageManager:
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = PackageMetadata(name=name, version=version)
-        wheel_bytes = await fetch_bytes(wheel["url"])
+
+        try:
+            wheel_bytes = await fetch_bytes(wheel["url"])
+        except Exception as e:
+            if wheel["url"].startswith("https://files.pythonhosted.org/"):
+                raise e
+            else:
+                raise ValueError(
+                    f"Couldn't fetch wheel from '{wheel['url']}'."
+                    "One common reason for this is when the server blocks "
+                    "Cross-Origin Resource Sharing (CORS)."
+                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
+                ) from e
+
         wheel["wheel_bytes"] = wheel_bytes
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
@@ -308,8 +318,8 @@ class _PackageManager:
         transaction["wheels"].append((name, wheel, version))
 
     def find_wheel(
-        self, metadata: Dict[str, Any], req: Requirement
-    ) -> Tuple[Any, Optional[Version]]:
+        self, metadata: dict[str, Any], req: Requirement
+    ) -> tuple[Any, Optional[Version]]:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
@@ -345,7 +355,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, List[str]], keep_going: bool = False):
+def install(requirements: Union[str, list[str]], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
@@ -402,7 +412,7 @@ def _list():
 
     Returns
     -------
-    packages : {class}`~micropip.package.PackageDict``
+    packages : :any:`micropip.package.PackageDict`
         A dictionary of installed packages.
 
         >>> import micropip

@@ -1,13 +1,13 @@
 package:
   name: sympy
-  version: '1.8'
+  version: "1.9"
 requirements:
   run:
-  - distutils
-  - mpmath
+    - distutils
+    - mpmath
 source:
-  sha256: 1ca588a9f6ce6a323c5592f9635159c2093572826668a1022c75c75bdf0297cb
-  url: https://files.pythonhosted.org/packages/88/b1/e4e620f45949a4cc7c935a0c711f6aac24e875810b68c37148c7402d838f/sympy-1.8.tar.gz
+  sha256: 8bc5de4608b7aa4e7ffd1b25452ae87ccc5f6ca667c661aafb854a1ade337d0c
+  url: https://files.pythonhosted.org/packages/78/43/33c5a5e7fbafbf51520f4e09cb0634a1ca1d4cd5469c57967e43183d7a42/sympy-1.9-py3-none-any.whl
 test:
   imports:
-  - sympy
+    - sympy

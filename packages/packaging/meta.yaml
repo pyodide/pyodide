@@ -1,12 +1,12 @@
 package:
   name: packaging
-  version: '21.0'
+  version: "21.3"
 source:
-  sha256: 7dc96269f53a4ccec5c0670940a4281106dd0bb343f47b7471f779df49c2fbe7
-  url: https://files.pythonhosted.org/packages/df/86/aef78bab3afd461faecf9955a6501c4999933a48394e90f03cd512aad844/packaging-21.0.tar.gz
+  sha256: ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522
+  url: https://files.pythonhosted.org/packages/05/8e/8de486cbd03baba4deef4142bd643a3e7bbe954a784dc1bb17142572d127/packaging-21.3-py3-none-any.whl
 requirements:
   run:
-  - pyparsing
+    - pyparsing
 test:
   imports:
-  - packaging
+    - packaging

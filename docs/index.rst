@@ -1,28 +1,34 @@
 Pyodide
 =======
 
-Python with the scientific stack, compiled to WebAssembly.
 
-Pyodide may be used in any context where you want to run Python inside a web
-browser.
+Pyodide is a Python distribution for the browser and Node.js based on WebAssembly.
 
-Pyodide brings the Python 3.9 runtime to the browser via WebAssembly, thanks to
-`Emscripten <https://emscripten.org/>`_.
-It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
-scikit-learn. Over 75 packages are currently available. In addition, it's
-possible to install pure Python wheels from PyPI.
+What is Pyodide?
+----------------
 
-Pyodide provides transparent conversion of objects between JavaScript and
-Python. When used inside a browser, Python has full access to the Web APIs.
+Pyodide is a port of CPython to WebAssembly/`Emscripten <https://emscripten.org/>`_.
 
-Pyodide development happens on GitHub: `github.com/pyodide/pyodide <https://github.com/pyodide/pyodide>`_
+Pyodide makes it possible to install and run Python packages in the browser with
+`micropip <https://pyodide.org/en/stable/usage/api/micropip-api.html>`_. Any pure
+Python package with a wheel available on PyPI is supported. Many packages with C
+extensions have also been ported for use with Pyodide. These include many
+general-purpose packages such as regex, pyyaml, lxml and scientific Python
+packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
 
-Try Pyodide (no installation needed)
-------------------------------------
+Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
+that you can freely mix these two languages in your code with minimal
+friction. This includes full support for error handling (throw an error in one
+language, catch it in the other), async/await, and much more.
+
+When used inside a browser, Python has full access to the Web APIs.
+
+Try Pyodide
+-----------
 
 Try Pyodide in a
 `REPL <https://pyodide.org/en/stable/console.html>`_ directly in
-your browser.
+your browser (no installation needed).
 
 
 Table of contents

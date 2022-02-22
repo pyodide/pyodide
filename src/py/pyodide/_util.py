@@ -1,5 +1,6 @@
-from tempfile import NamedTemporaryFile
 import shutil
+from tempfile import NamedTemporaryFile
+
 from ._core import IN_BROWSER
 
 

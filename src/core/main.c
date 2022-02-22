@@ -117,7 +117,13 @@ main(int argc, char** argv)
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
+  emscripten_exit_with_live_runtime();
+  return 0;
+}
 
+int
+pyodide_init(void)
+{
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
   JsRef _pyodide_proxy = NULL;
@@ -152,10 +158,9 @@ main(int argc, char** argv)
   if (_pyodide_proxy == NULL) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ Module._pyodide = Module.hiwire.pop_value($0); }, _pyodide_proxy);
+  EM_ASM({ API._pyodide = Hiwire.pop_value($0); }, _pyodide_proxy);
 
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  emscripten_exit_with_live_runtime();
   return 0;
 }

@@ -39,7 +39,7 @@ application.
 ```{note}
 To avoid confusion, note that:
  - `cdn.jsdelivr.net/pyodide/` distributes Python packages built with Pyodide as well as `pyodide.js`
- - `cdn.jsdelivr.net/npm/pyodide@0.18.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
+ - `cdn.jsdelivr.net/npm/pyodide@0.19.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
 ```
 
 ### Supported browsers
@@ -119,4 +119,5 @@ For this same reason, installing Pyodide packages from the CDN is explicitly not
    :hidden:
 
    webworker.md
+   loading-custom-python-code.md
 ```
