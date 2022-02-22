@@ -146,7 +146,7 @@ def main(hostpython):
         ]
         for name, cls in browser_cls:
             t0 = time()
-            selenium_backends[name] = cls(port, script_timeout=1000)
+            selenium_backends[name] = cls(port, script_timeout=1200)
             b[name] = time() - t0
             # pre-load numpy for the selenium instance used in benchmarks
             selenium_backends[name].load_package("numpy")
@@ -157,7 +157,7 @@ def main(hostpython):
         for package_name in ["numpy"]:
             b = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
-                selenium = cls(port, script_timeout=1000)
+                selenium = cls(port, script_timeout=1200)
                 try:
                     t0 = time()
                     selenium.load_package(package_name)
@@ -170,7 +170,7 @@ def main(hostpython):
         for name, content in get_benchmarks():
             for browser_name, cls in browser_cls:
                 selenium_backends[browser_name].driver.quit()
-                selenium_backends[browser_name] = cls(port, script_timeout=1000)
+                selenium_backends[browser_name] = cls(port, script_timeout=1200)
                 selenium_backends[browser_name].load_package("numpy")
             results[name] = run_all(hostpython, selenium_backends, content)
             print_entry(name, results[name])
