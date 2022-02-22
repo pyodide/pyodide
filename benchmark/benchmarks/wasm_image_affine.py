@@ -7,8 +7,9 @@ import matplotlib
 import numpy as np
 
 matplotlib.use("module://matplotlib.backends.wasm_backend")
-from matplotlib import pyplot as plt  # noqa: E402
+
 import matplotlib.transforms as mtransforms  # noqa: E402
+from matplotlib import pyplot as plt  # noqa: E402
 
 
 def wasm_image_affine():

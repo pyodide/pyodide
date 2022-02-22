@@ -7,8 +7,9 @@ import matplotlib
 import numpy as np
 
 matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-from matplotlib import pyplot as plt  # noqa: E402
+
 import matplotlib.cm as cm  # noqa: E402
+from matplotlib import pyplot as plt  # noqa: E402
 
 
 def canvas_image():
