@@ -22,7 +22,7 @@ repos:
         args: ["--py39-plus"]
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v1.1.0"
+    rev: "v1.2.0"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml]
@@ -67,9 +67,10 @@ repos:
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v13.0.0"
+    rev: "v13.0.1"
     hooks:
       - id: clang-format
+        types_or: [c++, c, cuda]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: "v2.5.1"
