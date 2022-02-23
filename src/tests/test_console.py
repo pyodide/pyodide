@@ -6,7 +6,6 @@ import pytest
 
 from _pyodide import console
 from _pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
-from conftest import selenium_common
 from pyodide import CodeRunner  # noqa: E402
 from pyodide_build.testing import run_in_pyodide
 
