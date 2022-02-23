@@ -667,30 +667,36 @@ to_js(PyObject* self,
   PyObject* pyproxies = NULL;
   bool create_proxies = true;
   PyObject* py_dict_converter = NULL;
-  static const char* const _keywords[] = {
-    "", "depth", "pyproxies", "create_pyproxies", "dict_converter", 0
-  };
+  PyObject* py_default_converter = NULL;
+  static const char* const _keywords[] = { "",
+                                           "depth",
+                                           "create_pyproxies",
+                                           "pyproxies",
+                                           "dict_converter",
+                                           "default_converter",
+                                           0 };
   // See argparse docs on format strings:
   // https://docs.python.org/3/c-api/arg.html?highlight=pyarg_parse#parsing-arguments
-  // O|$iOpO:to_js
-  // O             - Object
-  //  |            - start of optional args
-  //   $           - start of kwonly args
-  //    i          - signed integer
-  //     O         - Object
-  //      p        - predicate (ie bool)
-  //       O       - Object
-  //        :to_js - name of this function for error messages
-  static struct _PyArg_Parser _parser = { "O|$iOpO:to_js", _keywords, 0 };
+  // O|$iOpOO:to_js
+  // O              - self -- Object
+  //  |             - start of optional args
+  //   $            - start of kwonly args
+  //    i           - depth -- signed integer
+  //     p          - create_pyproxies -- predicate (ie bool)
+  //      OOO       - PyObject* arguments for pyproxies, dict_converter, and
+  //      default_converter.
+  //         :to_js - name of this function for error messages
+  static struct _PyArg_Parser _parser = { "O|$ipOOO:to_js", _keywords, 0 };
   if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args,
                                                        nargs,
                                                        kwnames,
                                                        &_parser,
                                                        &obj,
                                                        &depth,
-                                                       &pyproxies,
                                                        &create_proxies,
-                                                       &py_dict_converter)) {
+                                                       &pyproxies,
+                                                       &py_dict_converter,
+                                                       &py_default_converter)) {
     return NULL;
   }
 
@@ -704,6 +710,7 @@ to_js(PyObject* self,
   }
   JsRef proxies = NULL;
   JsRef js_dict_converter = NULL;
+  JsRef js_default_converter = NULL;
   JsRef js_result = NULL;
   PyObject* py_result = NULL;
 
@@ -727,7 +734,11 @@ to_js(PyObject* self,
   if (py_dict_converter) {
     js_dict_converter = python2js(py_dict_converter);
   }
-  js_result = python2js_custom(obj, depth, proxies, js_dict_converter, NULL);
+  if (py_default_converter) {
+    js_default_converter = python2js(py_default_converter);
+  }
+  js_result = python2js_custom(
+    obj, depth, proxies, js_dict_converter, js_default_converter);
   FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
@@ -738,6 +749,7 @@ to_js(PyObject* self,
 finally:
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(js_dict_converter);
+  hiwire_CLEAR(js_default_converter);
   hiwire_CLEAR(js_result);
   return py_result;
 }
