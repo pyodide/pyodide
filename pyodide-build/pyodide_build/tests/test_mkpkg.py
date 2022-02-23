@@ -15,7 +15,6 @@ from pyodide_build.io import parse_package_config
 
 @pytest.mark.parametrize("source_fmt", ["wheel", "sdist"])
 def test_mkpkg(tmpdir, monkeypatch, capsys, source_fmt):
-    pytest.importorskip("ruamel")
     assert pyodide_build.mkpkg.PACKAGES_ROOT.exists()
     base_dir = Path(str(tmpdir))
     monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
@@ -39,7 +38,6 @@ def test_mkpkg(tmpdir, monkeypatch, capsys, source_fmt):
 @pytest.mark.parametrize("old_dist_type", ["wheel", "sdist"])
 @pytest.mark.parametrize("new_dist_type", ["wheel", "sdist", "same"])
 def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
-    pytest.importorskip("ruamel")
     base_dir = Path(str(tmpdir))
     monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
 

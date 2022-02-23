@@ -12,6 +12,8 @@ import warnings
 from pathlib import Path
 from typing import Any, Literal, Optional
 
+from ruamel.yaml import YAML
+
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 
 
@@ -89,18 +91,6 @@ def _get_metadata(package: str, version: Optional[str] = None) -> dict:
     return pypi_metadata
 
 
-def _import_ruamel_yaml():
-    """Import ruamel.yaml with a better error message is not installed."""
-    try:
-        from ruamel.yaml import YAML
-    except ImportError as err:
-        raise ImportError(
-            "No module named 'ruamel'. "
-            "It can be installed with pip install ruamel.yaml"
-        ) from err
-    return YAML
-
-
 def run_prettier(meta_path):
     subprocess.run(["npx", "prettier", "-w", meta_path])
 
@@ -115,7 +105,6 @@ def make_package(
     but will have to be edited for more complex things.
     """
     print(f"Creating meta.yaml package for {package}")
-    YAML = _import_ruamel_yaml()
 
     yaml = YAML()
 
@@ -188,8 +177,6 @@ def update_package(
     update_patched: bool = True,
     source_fmt: Optional[Literal["wheel", "sdist"]] = None,
 ):
-
-    YAML = _import_ruamel_yaml()
     yaml = YAML()
 
     meta_path = PACKAGES_ROOT / package / "meta.yaml"
