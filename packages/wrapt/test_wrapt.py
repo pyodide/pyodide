@@ -80,3 +80,7 @@ def test_wrapt():
             result = _function(*_args, **_kwargs)
 
             self.assertEqual(result, (_args, _kwargs))
+
+    # Run tests
+    with unittest.TestCase().assertRaisesRegex(SystemExit, "False"):
+        unittest.main()
