@@ -33,7 +33,7 @@ def run_in_pyodide(
     module_scope: bool = False,
     packages: list[str] = [],
     xfail_browsers: dict[str, str] = {},
-    driver_timeout: Optional[Union[str, int]] = None,
+    driver_timeout: Optional[int] = None,
 ) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
@@ -49,7 +49,7 @@ def run_in_pyodide(
         Whether to use a standalone selenium instance to run the test or not
     packages : List[str]
         List of packages to load before running the test
-    driver_timeout : Optional[Union[str, int]]
+    driver_timeout : Optional[int]
         selenium driver timeout (in seconds)
     """
 
@@ -127,9 +127,7 @@ def run_in_pyodide(
 
 
 @contextlib.contextmanager
-def set_webdriver_script_timeout(
-    selenium, script_timeout: Optional[Union[int, float, str]]
-):
+def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, float]]):
     """Set selenium script timeout
 
     Parameters
