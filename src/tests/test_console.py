@@ -229,14 +229,14 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
-    def stdin_callback(string):
-        pass
+    def stdin_callback() -> str:
+        return ""
 
-    def stdout_callback(string):
+    def stdout_callback(string: str) -> None:
         nonlocal my_stdout
         my_stdout += string
 
-    def stderr_callback(string):
+    def stderr_callback(string: str) -> None:
         nonlocal my_stderr
         my_stderr += string
 

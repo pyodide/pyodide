@@ -137,7 +137,7 @@ def Proc0(loops=LOOPS):
                 EnumLoc = Proc6(Ident1)
             CharIndex = chr(ord(CharIndex) + 1)
         IntLoc3 = IntLoc2 * IntLoc1
-        IntLoc2 = IntLoc3 // IntLoc1
+        IntLoc2 = IntLoc3 / IntLoc1
         IntLoc2 = 7 * (IntLoc3 - IntLoc2) - IntLoc1
         IntLoc1 = Proc2(IntLoc1)
 
@@ -150,7 +150,6 @@ def Proc0(loops=LOOPS):
 
 
 def Proc1(PtrParIn):
-    assert PtrGlb is not None
     PtrParIn.PtrComp = NextRecord = PtrGlb.copy()
     PtrParIn.IntComp = 5
     NextRecord.IntComp = PtrParIn.IntComp
@@ -184,9 +183,9 @@ def Proc3(PtrParOut):
 
     if PtrGlb is not None:
         PtrParOut = PtrGlb.PtrComp
-        PtrGlb.IntComp = Proc7(10, IntGlob)
     else:
         IntGlob = 100
+    PtrGlb.IntComp = Proc7(10, IntGlob)
     return PtrParOut
 
 
@@ -194,7 +193,7 @@ def Proc4():
     global Char2Glob
 
     BoolLoc = Char1Glob == "A"
-    BoolLoc = BoolLoc or BoolGlob  # type: ignore[assignment]
+    BoolLoc = BoolLoc or BoolGlob
     Char2Glob = "B"
 
 

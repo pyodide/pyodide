@@ -1,4 +1,4 @@
-exclude: '^.*patches|.*\.cgi$'
+exclude: (^.*patches|.*\.cgi$|^packages/micropip/src/micropip/externals|^src/py/lib/pystone.py$)
 default_language_version:
   python: "3.9"
 repos:
@@ -14,14 +14,12 @@ repos:
     rev: "5.10.1"
     hooks:
       - id: isort
-        exclude: ^packages/micropip/src/micropip/externals
 
   - repo: https://github.com/asottile/pyupgrade
     rev: "v2.31.0"
     hooks:
       - id: pyupgrade
         args: ["--py39-plus"]
-        exclude: ^packages/micropip/src/micropip/externals
 
   - repo: https://github.com/hadialqattan/pycln
     rev: "v1.1.0"
@@ -59,7 +57,6 @@ repos:
       - id: mypy
         name: mypy-micropip
         files: ^packages/micropip/src/
-        exclude: ^packages/micropip/src/micropip/externals
         args: &mypy-args
           - --show-error-codes
         additional_dependencies: *mypy-deps
