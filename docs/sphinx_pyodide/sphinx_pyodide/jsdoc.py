@@ -1,33 +1,31 @@
-from docutils import nodes
-from docutils.parsers.rst import Directive, Parser as RstParser
+from collections import OrderedDict
+from typing import Any
+
 import docutils.parsers.rst.directives as directives
+from docutils import nodes
+from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Parser as RstParser
 from docutils.statemachine import StringList
 from docutils.utils import new_document
-
-from collections import OrderedDict
-
 from sphinx import addnodes
+from sphinx.domains.javascript import JavaScriptDomain, JSCallable
+from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
-from sphinx.ext.autosummary import autosummary_table, extract_summary
-from sphinx.domains.javascript import JSCallable, JavaScriptDomain
-
-from sphinx_js.typedoc import Analyzer as TsAnalyzer
 from sphinx_js.ir import Class, Function
-from sphinx_js.parsers import path_and_formal_params, PathVisitor
+from sphinx_js.parsers import PathVisitor, path_and_formal_params
 from sphinx_js.renderers import (
-    AutoFunctionRenderer,
     AutoAttributeRenderer,
     AutoClassRenderer,
+    AutoFunctionRenderer,
 )
-
-from typing import Any, Dict, List
+from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_type_name = TsAnalyzer._type_name
 
 
-def destructure_param(param: Dict[str, Any]) -> List[Dict[str, Any]]:
+def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     """We want to document a destructured argument as if it were several
     separate arguments. This finds complex inline object types in the arguments
     list of a function and "destructures" them into separately documented arguments.
@@ -67,7 +65,7 @@ def destructure_param(param: Dict[str, Any]) -> List[Dict[str, Any]]:
     return result
 
 
-def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
+def fix_up_inline_object_signature(self: TsAnalyzer, node: dict[str, Any]):
     """Calls get_destructured_children on inline object types"""
     kind = node.get("kindString")
     if kind not in ["Call signature", "Constructor signature"]:
@@ -86,7 +84,7 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: Dict[str, Any]):
     node["parameters"] = new_params
 
 
-def _convert_node(self: TsAnalyzer, node: Dict[str, Any]):
+def _convert_node(self: TsAnalyzer, node: dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node.
 
     Fixes two crashes and separates documentation for destructured object
@@ -508,7 +506,7 @@ def get_jsdoc_summary_directive(app):
             for prefix, name, sig, summary, real_name in items:
                 qualifier = "any"  # <== Only thing changed from autosummary version
                 if "nosignatures" not in self.options:
-                    col1 = "%s:%s:`%s <%s>`\\ %s" % (
+                    col1 = "{}:{}:`{} <{}>`\\ {}".format(
                         prefix,
                         qualifier,
                         name,
@@ -516,7 +514,7 @@ def get_jsdoc_summary_directive(app):
                         rst.escape(sig),
                     )
                 else:
-                    col1 = "%s:%s:`%s <%s>`" % (prefix, qualifier, name, real_name)
+                    col1 = f"{prefix}:{qualifier}:`{name} <{real_name}>`"
                 col2 = summary
                 append_row(col1, col2)
 

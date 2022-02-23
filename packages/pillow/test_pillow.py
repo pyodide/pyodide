@@ -5,8 +5,9 @@ from pyodide_build.testing import run_in_pyodide
     packages=["pillow"],
 )
 def test_pillow():
-    from PIL import Image, ImageDraw, ImageOps
     import io
+
+    from PIL import Image, ImageDraw, ImageOps
 
     img = Image.new("RGB", (4, 4), color=(0, 0, 0))
     ctx = ImageDraw.Draw(img)

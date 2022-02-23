@@ -1,8 +1,8 @@
 import asyncio
 import io
 import sys
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -26,7 +26,7 @@ def mock_get_pypi_json(pkg_map):
         A mock function of ``_get_pypi_json`` which returns dummy JSON data of PyPI API.
     """
 
-    class Wildcard(object):
+    class Wildcard:
         def __eq__(self, other):
             return True
 
@@ -230,8 +230,9 @@ def test_add_requirement_marker():
 
 def test_last_version_from_pypi():
     pytest.importorskip("packaging")
-    from micropip import _micropip
     from packaging.requirements import Requirement
+
+    from micropip import _micropip
 
     requirement = Requirement("dummy_module")
     versions = ["0.0.1", "0.15.5", "0.9.1"]

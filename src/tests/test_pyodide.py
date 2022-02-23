@@ -1,9 +1,10 @@
-import pytest
 import re
-
 from textwrap import dedent
+
+import pytest
+
+from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.testing import run_in_pyodide
-from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
@@ -626,7 +627,7 @@ def test_return_destroyed_value(selenium):
 
 
 def test_docstrings_a():
-    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
+    from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
     from pyodide import JsProxy
 
     jsproxy = JsProxy()
@@ -637,8 +638,8 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
-    from pyodide import create_once_callable, JsProxy
     from _pyodide.docstring import dedent_docstring
+    from pyodide import JsProxy, create_once_callable
 
     jsproxy = JsProxy()
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
@@ -964,7 +965,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         globalThis.pyodide = pyodide;
         """
     )
-    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    outstrings = sum((s.removesuffix("\n").split("\n") for s in strings), [])
     print(outstrings)
     assert (
         selenium.run_js(

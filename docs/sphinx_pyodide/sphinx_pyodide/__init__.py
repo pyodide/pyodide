@@ -1,8 +1,11 @@
-from .jsdoc import PyodideAnalyzer
-from .lexers import PyodideLexer, HtmlPyodideLexer
-from .jsdoc import get_jsdoc_summary_directive, get_jsdoc_content_directive
-from .packages import get_packages_summary_directive
 from .autodoc_submodules import monkeypatch_module_documenter
+from .jsdoc import (
+    PyodideAnalyzer,
+    get_jsdoc_content_directive,
+    get_jsdoc_summary_directive,
+)
+from .lexers import HtmlPyodideLexer, PyodideLexer
+from .packages import get_packages_summary_directive
 
 
 def wrap_analyzer(app):

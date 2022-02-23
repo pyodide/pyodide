@@ -3,8 +3,9 @@ from pyodide_build.testing import run_in_pyodide
 
 @run_in_pyodide(packages=["wrapt"])
 def test_wrapt():
-    import wrapt
     import unittest
+
+    import wrapt
 
     @wrapt.decorator
     def passthru_decorator(wrapped, instance, args, kwargs):

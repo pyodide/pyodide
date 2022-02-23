@@ -1,8 +1,8 @@
-from pyodide_build.common import (
+from pyodide_build.common import (  # noqa
     _parse_package_subset,
-    get_make_flag,
     get_make_environment_vars,
-)  # noqa
+    get_make_flag,
+)
 
 
 def test_parse_package_subset():

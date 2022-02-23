@@ -1,23 +1,22 @@
 """
 Various common utilities for testing.
 """
-import re
 import contextlib
+import functools
 import json
 import multiprocessing
-import textwrap
-import tempfile
-import time
 import os
 import pathlib
-import pexpect
 import queue
-import sys
+import re
 import shutil
-import functools
-import pytest
+import sys
+import tempfile
+import textwrap
+import time
 
-from typing import List
+import pexpect
+import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
@@ -26,7 +25,7 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
+from pyodide_build.testing import parse_driver_timeout, set_webdriver_script_timeout
 
 
 def pytest_addoption(parser):
@@ -81,7 +80,7 @@ def pytest_collection_modifyitems(config, items):
 
 
 @functools.cache
-def built_packages() -> List[str]:
+def built_packages() -> list[str]:
     """Returns the list of built package names from packages.json"""
     packages_json_path = BUILD_PATH / "packages.json"
     if not packages_json_path.exists():
@@ -325,7 +324,7 @@ class BrowserWrapper:
         )
 
     def load_package(self, packages):
-        self.run_js("await pyodide.loadPackage({!r})".format(packages))
+        self.run_js(f"await pyodide.loadPackage({packages!r})")
 
 
 class SeleniumWrapper(BrowserWrapper):
@@ -512,10 +511,10 @@ class NodeWrapper(BrowserWrapper):
     def run_js_inner(self, code, check_code):
         check_code = ""
         wrapped = """
-            let result = await (async () => { %s })();
-            %s
+            let result = await (async () => {{ {} }})();
+            {}
             return result;
-        """ % (
+        """.format(
             code,
             check_code,
         )

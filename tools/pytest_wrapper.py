@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import subprocess
-from typing import List
 import sys
 
 args = sys.argv[1:]
 
 
-def remove_num_threads_option(args: List[str]) -> None:
+def remove_num_threads_option(args: list[str]) -> None:
     """Remove -n <n> from argument list"""
     for i in range(0, len(args)):
         if args[i] == "-n":

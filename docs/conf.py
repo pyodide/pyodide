@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
 # Configuration file for the Sphinx documentation builder.
 
 # -- Path setup --------------------------------------------------------------
 
 import atexit
 import os
-import sys
 import shutil
 import subprocess
-
+import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 # -- Project information -----------------------------------------------------
 
@@ -84,7 +82,7 @@ html_theme = "sphinx_book_theme"
 html_logo = "_static/img/pyodide-logo.png"
 
 # theme-specific options
-html_theme_options: Dict[str, Any] = {}
+html_theme_options: dict[str, Any] = {}
 
 # paths that contain custom static files (such as style sheets)
 html_static_path = ["_static"]
