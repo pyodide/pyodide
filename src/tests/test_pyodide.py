@@ -1,5 +1,6 @@
 import re
 from textwrap import dedent
+from typing import Any
 
 import pytest
 
@@ -57,8 +58,8 @@ def test_code_runner():
     # Ast transform
     import ast
 
-    l = cr.ast.body[0].value.left
-    cr.ast.body[0].value.left = ast.BinOp(
+    l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
+    cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
         left=l, op=ast.Mult(), right=ast.Constant(value=2)
     )
     assert cr.compile().run({"x": 3}) == 13
@@ -69,7 +70,7 @@ def test_code_runner():
 
 
 def test_code_runner_mode():
-    from codeop import PyCF_DONT_IMPLY_DEDENT
+    from codeop import PyCF_DONT_IMPLY_DEDENT  # type: ignore[attr-defined]
 
     assert CodeRunner("1+1\n1+1", mode="exec").compile().run() == 2
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -86,7 +87,7 @@ def test_code_runner_mode():
 
 
 def test_eval_code():
-    ns = {}
+    ns: dict[str, Any] = {}
     assert (
         eval_code(
             """
@@ -150,12 +151,12 @@ def test_eval_code():
 
 
 def test_eval_code_locals():
-    globals = {}
+    globals: dict[str, Any] = {}
     eval_code("x=2", globals, {})
     with pytest.raises(NameError):
         eval_code("x", globals, {})
 
-    locals = {}
+    locals: dict[str, Any] = {}
     eval_code("import sys; sys.getrecursionlimit()", globals, locals)
     with pytest.raises(NameError):
         eval_code("sys.getrecursionlimit()", globals, {})
@@ -958,17 +959,16 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         globalThis.pyodide = pyodide;
         """
     )
-    outstrings = sum((s.removesuffix("\n").split("\n") for s in strings), [])
+    outstrings: list[str] = sum((s.removesuffix("\n").split("\n") for s in strings), [])
     print(outstrings)
     assert (
         selenium.run_js(
-            """
+            f"""
         return pyodide.runPython(`
-            [input() for x in range(%s)]
+            [input() for x in range({len(outstrings)})]
             # ... test more stuff
         `).toJs();
         """
-            % len(outstrings)
         )
         == outstrings
     )

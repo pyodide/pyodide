@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Any
+from typing import Any, Optional
 from urllib import request
 
 from . import pywasmcross
@@ -55,6 +55,9 @@ class BashRunnerWithSharedEnvironment:
     directly to adjust the environment, or read to get variables.
     """
 
+    _fd_read: Optional[int]
+    _fd_write: Optional[int]
+
     def __init__(self, env=None):
         if env is None:
             env = dict(os.environ)
@@ -81,7 +84,7 @@ class BashRunnerWithSharedEnvironment:
 
     def close(self):
         """Free the file descriptors."""
-        if self._fd_read:
+        if self._fd_read and self._fd_write:
             os.close(self._fd_read)
             os.close(self._fd_write)
             self._fd_read = None

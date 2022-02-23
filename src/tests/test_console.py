@@ -23,15 +23,15 @@ def test_command_compiler():
     )
     assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
 
-    c = _CommandCompiler()
-    assert c("def test():\n   1", "<input>", "single") is None
-    assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
+    c2 = _CommandCompiler()
+    assert c2("def test():\n   1", "<input>", "single") is None
+    assert isinstance(c2("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
-        c("1<>2", "<input>", "single")
+        c2("1<>2", "<input>", "single")
     assert isinstance(
-        c("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
+        c2("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
     )
-    assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
+    assert isinstance(c2("1<>2", "<input>", "single"), CodeRunner)
 
 
 def test_write_stream():
@@ -142,7 +142,7 @@ def test_interactive_console():
 def test_top_level_await():
     from asyncio import Queue, sleep
 
-    q = Queue()
+    q: Queue[int] = Queue()
     shell = Console(locals())
     fut = shell.push("await q.get()")
 
@@ -229,14 +229,14 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
-    def stdin_callback():
-        pass
+    def stdin_callback() -> str:
+        return ""
 
-    def stdout_callback(string):
+    def stdout_callback(string: str) -> None:
         nonlocal my_stdout
         my_stdout += string
 
-    def stderr_callback(string):
+    def stderr_callback(string: str) -> None:
         nonlocal my_stderr
         my_stderr += string
 
@@ -425,7 +425,7 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 464, in repr_shorten
+              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 465, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]

@@ -3,6 +3,7 @@ from pyodide_build.testing import run_in_pyodide
 
 @run_in_pyodide(packages=["wrapt"])
 def test_wrapt():
+    import inspect
     import unittest
 
     import wrapt

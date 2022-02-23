@@ -1,7 +1,7 @@
 import contextlib
 import inspect
 from base64 import b64encode
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 import pytest
 
@@ -33,7 +33,7 @@ def run_in_pyodide(
     module_scope: bool = False,
     packages: list[str] = [],
     xfail_browsers: dict[str, str] = {},
-    driver_timeout: Optional[Union[str, int]] = None,
+    driver_timeout: Optional[float] = None,
 ) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
@@ -49,7 +49,7 @@ def run_in_pyodide(
         Whether to use a standalone selenium instance to run the test or not
     packages : List[str]
         List of packages to load before running the test
-    driver_timeout : Optional[Union[str, int]]
+    driver_timeout : Optional[float]
         selenium driver timeout (in seconds)
     """
 
@@ -127,7 +127,7 @@ def run_in_pyodide(
 
 
 @contextlib.contextmanager
-def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, float]]):
+def set_webdriver_script_timeout(selenium, script_timeout: Optional[float]):
     """Set selenium script timeout
 
     Parameters
@@ -145,7 +145,7 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, f
         selenium.set_script_timeout(selenium.script_timeout)
 
 
-def parse_driver_timeout(request) -> Optional[Union[int, float]]:
+def parse_driver_timeout(request) -> Optional[float]:
     """Parse driver timeout value from pytest request object"""
     mark = request.node.get_closest_marker("driver_timeout")
     if mark is None:

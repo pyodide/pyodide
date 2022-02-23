@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Union
 
 import pytest
 import yaml
@@ -45,7 +46,7 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
 
     old_ext = ".tar.gz" if old_dist_type == "sdist" else ".whl"
     old_url = "https://<some>/idna-2.0" + old_ext
-    db_init = {
+    db_init: dict[str, dict[str, Union[str, list[str]]]] = {
         "package": {"name": "idna", "version": "2.0"},
         "source": {
             "sha256": "b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6",
@@ -61,12 +62,12 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
     source_fmt = new_dist_type
     if new_dist_type == "same":
         source_fmt = None
-    pyodide_build.mkpkg.update_package("idna", None, source_fmt)
+    pyodide_build.mkpkg.update_package("idna", False, source_fmt)
 
     db = parse_package_config(meta_path)
     assert list(db.keys()) == list(db_init.keys())
     assert parse_version(db["package"]["version"]) > parse_version(
-        db_init["package"]["version"]
+        db_init["package"]["version"]  # type: ignore[arg-type]
     )
     if new_dist_type == "wheel":
         assert db["source"]["url"].endswith(".whl")

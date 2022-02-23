@@ -371,7 +371,9 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set = {}
+    package_set: dict[
+        str, None
+    ] = {}  # using dict keys for insertion order preservation
 
     def builder(n):
         nonlocal queue_idx
