@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 # flake8: noqa
 
+# setup: pass
+# run: pystone()
+
 """
 "PYSTONE" Benchmark Program
 
@@ -279,22 +282,26 @@ def Func3(EnumParIn):
     return FALSE
 
 
-if __name__ == "__main__":
-    import sys
+# if __name__ == "__main__":
+#     import sys
 
-    def error(msg):
-        print(msg, end=" ", file=sys.stderr)
-        print("usage: %s [number_of_loops]" % sys.argv[0], file=sys.stderr)
-        sys.exit(100)
+#     def error(msg):
+#         print(msg, end=" ", file=sys.stderr)
+#         print("usage: %s [number_of_loops]" % sys.argv[0], file=sys.stderr)
+#         sys.exit(100)
 
-    nargs = len(sys.argv) - 1
-    if nargs > 1:
-        error("%d arguments are too many;" % nargs)
-    elif nargs == 1:
-        try:
-            loops = int(sys.argv[1])
-        except ValueError:
-            error("Invalid argument %r;" % sys.argv[1])
-    else:
-        loops = LOOPS
-    main(loops)
+#     nargs = len(sys.argv) - 1
+#     if nargs > 1:
+#         error("%d arguments are too many;" % nargs)
+#     elif nargs == 1:
+#         try:
+#             loops = int(sys.argv[1])
+#         except ValueError:
+#             error("Invalid argument %r;" % sys.argv[1])
+#     else:
+#         loops = LOOPS
+#     main(loops)
+
+
+def pystone():
+    main(LOOPS)

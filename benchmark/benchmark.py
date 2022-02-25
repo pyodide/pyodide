@@ -79,7 +79,7 @@ def parse_benchmark(filename):
     return "".join(lines)
 
 
-def get_benchmark_scripts(scripts_dir="benchmarks/numpy"):
+def get_benchmark_scripts(scripts_dir="benchmarks/numpy", repeat=11, number=5):
     root = Path(__file__).resolve().parent / scripts_dir
     for filename in sorted(root.iterdir()):
         name = filename.stem
@@ -94,7 +94,7 @@ def get_benchmark_scripts(scripts_dir="benchmarks/numpy"):
             f"setup = setup + '\\nfrom __main__ import {name}'\n"
             "from timeit import Timer\n"
             "t = Timer(run, setup)\n"
-            "r = t.repeat(11, 10)\n"
+            f"r = t.repeat({repeat}, {number})\n"
             "r.remove(min(r))\n"
             "r.remove(max(r))\n"
             "print(np.mean(r))\n"
@@ -104,7 +104,7 @@ def get_benchmark_scripts(scripts_dir="benchmarks/numpy"):
 
 
 def get_pystone_benchmarks():
-    yield "pystone", ("import pystone\n" "pystone.main(pystone.LOOPS)\n")
+    return get_benchmark_scripts("benchmarks/pystone_benchmarks", repeat=5, number=1)
 
 
 def get_numpy_benchmarks():
