@@ -74,7 +74,7 @@ def collect_tests(base_dir):
     # collection.
     tests = []
 
-    for root, dirs, files in os.walk(base_dir):
+    for root, _dirs, files in os.walk(base_dir):
         root = Path(root).relative_to(base_dir)
 
         if str(root) == ".":

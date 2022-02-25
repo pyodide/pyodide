@@ -631,7 +631,7 @@ def replay_compile(replay_from: int = 1, **kwargs):
 
 
 def clean_out_native_artifacts():
-    for root, dirs, files in os.walk("."):
+    for root, _dirs, files in os.walk("."):
         for file in files:
             path = Path(root) / file
             if path.suffix in (".o", ".so", ".a"):

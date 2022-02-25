@@ -251,7 +251,7 @@ class CodeRunner:
             # generator must return, which raises StopIteration
             self.code = e.value
         else:
-            assert False
+            raise AssertionError()
         return self
 
     def run(self, globals: dict[str, Any] = None, locals: dict[str, Any] = None):

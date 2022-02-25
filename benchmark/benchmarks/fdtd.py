@@ -14,7 +14,7 @@ def fdtd(input_grid, steps):
     l_x = grid.shape[0]
     l_y = grid.shape[1]
 
-    for i in range(steps):
+    for _ in range(steps):
         np.copyto(previous_grid, old_grid)
         np.copyto(old_grid, grid)
 

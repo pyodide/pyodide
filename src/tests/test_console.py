@@ -60,7 +60,7 @@ def test_repr():
 
 def test_completion():
     shell = Console({"a_variable": 7})
-    shell.complete("a") == (
+    assert shell.complete("a") == (
         [
             "and ",
             "as ",
