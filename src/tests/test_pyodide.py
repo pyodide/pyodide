@@ -197,7 +197,7 @@ def test_dup_temp_file():
 
     tf = TemporaryFile(buffering=0)
     fd1 = os.dup(tf.fileno())
-    fd2 = os.dup2(tf.fileno(), 50)
+    os.dup2(tf.fileno(), 50)
     s = b"hello there!"
     tf.write(s)
     tf2 = open(fd1, "w+")
@@ -290,7 +290,7 @@ def test_hiwire_is_promise(selenium):
 
     if not selenium.browser == "node":
         assert selenium.run_js(
-            f"return pyodide._module.hiwire.isPromise(document.all) === false;"
+            "return pyodide._module.hiwire.isPromise(document.all) === false;"
         )
 
     assert selenium.run_js(

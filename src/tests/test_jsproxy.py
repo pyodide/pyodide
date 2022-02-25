@@ -730,7 +730,7 @@ def test_object_entries_keys_values(selenium):
 
 
 def test_mixins_feature_presence(selenium):
-    result = selenium.run_js(
+    selenium.run_js(
         """
         let fields = [
             [{ [Symbol.iterator](){} }, "__iter__"],
@@ -1082,7 +1082,7 @@ def test_buffer_assign_back(selenium):
 
 def test_buffer_conversions(selenium):
     selenium.run_js(
-        f"""
+        """
         self.s = "abcဴ";
         self.jsbytes = new TextEncoder().encode(s);
         pyodide.runPython(`

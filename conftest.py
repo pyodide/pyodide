@@ -434,7 +434,7 @@ class NodeWrapper(SeleniumWrapper):
         self.p.expect_exact(f"{cmd_id}:UUID\r\n")
         if self.p.before:
             self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
-        self.p.expect(f"[01]\r\n")
+        self.p.expect("[01]\r\n")
         success = int(self.p.match[0].decode()[0]) == 0
         self.p.expect_exact(f"\r\n{cmd_id}:UUID\r\n")
         if success:

@@ -51,7 +51,7 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     result = []
     for child in decl["children"]:
         child = dict(child)
-        if not "type" in child:
+        if "type" not in child:
             if "signatures" in child:
                 child["comment"] = child["signatures"][0]["comment"]
                 child["type"] = {

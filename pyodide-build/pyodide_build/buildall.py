@@ -264,7 +264,7 @@ def print_with_progress_line(str, progress_line):
 def get_progress_line(package_set):
     if not package_set:
         return None
-    return f"In progress: " + ", ".join(package_set.keys())
+    return "In progress: " + ", ".join(package_set.keys())
 
 
 def format_name_list(l: list[str]) -> str:

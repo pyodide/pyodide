@@ -159,8 +159,8 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    url = selenium_standalone.server_hostname
-    port = selenium_standalone.server_port
+    selenium_standalone.server_hostname
+    selenium_standalone.server_port
 
     build_dir = Path(__file__).parents[2] / "build"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
@@ -170,7 +170,7 @@ def test_load_package_unknown(selenium_standalone):
     )
 
     try:
-        selenium_standalone.load_package(f"./pyparsing-custom-3.0.6-py3-none-any.whl")
+        selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
         (build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 

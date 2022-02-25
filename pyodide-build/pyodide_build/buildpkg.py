@@ -829,7 +829,7 @@ def main(args):
             **step_controls,
         )
 
-    except:
+    except Exception:
         success = False
         raise
     finally:

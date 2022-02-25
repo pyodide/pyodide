@@ -99,13 +99,13 @@ def test_interactive_console():
         return await res
 
     async def test():
-        assert await get_result("x = 5") == None
+        assert await get_result("x = 5") is None
         assert await get_result("x") == 5
         assert await get_result("x ** 2") == 25
 
         assert_incomplete("def f(x):")
         assert_incomplete("    return x*x + 1")
-        assert await get_result("") == None
+        assert await get_result("") is None
         assert await get_result("[f(x) for x in range(5)]") == [1, 2, 5, 10, 17]
 
         assert_incomplete("def factorial(n):")
@@ -113,10 +113,10 @@ def test_interactive_console():
         assert_incomplete("        return 1")
         assert_incomplete("    else:")
         assert_incomplete("        return n * factorial(n - 1)")
-        assert await get_result("") == None
+        assert await get_result("") is None
         assert await get_result("factorial(10)") == 3628800
 
-        assert await get_result("import pytz") == None
+        assert await get_result("import pytz") is None
         assert await get_result("pytz.utc.zone") == "UTC"
 
         fut = shell.push("1+")
@@ -130,7 +130,7 @@ def test_interactive_console():
         fut = shell.push("raise Exception('hi')")
         try:
             await fut
-        except:
+        except Exception:
             assert (
                 fut.formatted_error
                 == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
@@ -201,10 +201,10 @@ def test_persistent_redirection(safe_sys_redirections):
         return await res
 
     async def test():
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foo\nfoobar\n"
 
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foo\nfoobar\nfoobar\n"
 
         assert await get_result("1+1") == 2
@@ -256,17 +256,17 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     assert my_stdout == ""
 
     async def test():
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foobar\n"
 
         print("bar")
         assert my_stdout == "foobar\n"
 
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foobar\nfoobar\n"
 
-        assert await get_result("import sys") == None
-        assert await get_result("print('foobar', file=sys.stderr)") == None
+        assert await get_result("import sys") is None
+        assert await get_result("print('foobar', file=sys.stderr)") is None
         assert my_stderr == "foobar\n"
 
         assert await get_result("1+1") == 2
@@ -290,7 +290,7 @@ async def test_console_imports():
         assert res.syntax_check == "complete"
         return await res
 
-    assert await get_result("import pytz") == None
+    assert await get_result("import pytz") is None
     assert await get_result("pytz.utc.zone") == "UTC"
 
 
@@ -330,7 +330,7 @@ def test_console_html(console_html_fixture):
 
     def get_result():
         return selenium.run_js(
-            f"""
+            """
             await term.ready;
             return term.get_output().trim();
             """
