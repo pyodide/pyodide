@@ -112,8 +112,10 @@ if (globalThis.document) {
   loadScript = async (url) => {
     // This is async only for consistency
     try {
+      // use importScripts in classic web worker
       globalThis.importScripts(url);
     } catch (err) {
+      // use import in module type web worker
       await import(url)
     }
   };
