@@ -67,11 +67,11 @@ def test_completion():
             "assert ",
             "async ",
             "await ",
+            "a_variable",
             "abs(",
             "all(",
             "any(",
             "ascii(",
-            "a_variable",
         ],
         0,
     )
