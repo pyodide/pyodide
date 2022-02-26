@@ -114,9 +114,11 @@ if (globalThis.document) {
     try {
       // use importScripts in classic web worker
       globalThis.importScripts(url);
-    } catch (err) {
-      // use import in module type web worker
-      await import(url)
+    } catch (e) {
+      // importScripts throws TypeError in a module type web worker, use import instead
+      if (e instanceof TypeError) {
+        await import(url)
+      }
     }
   };
 } else if (IN_NODE) {
