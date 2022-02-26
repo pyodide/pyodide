@@ -114,7 +114,7 @@ if (globalThis.document) {
     try {
       globalThis.importScripts(url);
     } catch (err) {
-      return await import(url)
+      await import(url)
     }
   };
 } else if (IN_NODE) {
