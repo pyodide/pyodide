@@ -53,10 +53,6 @@ def test_wrapt():
             function1d_argspec = inspect.getargspec(function1d)
             self.assertEqual(function1o_argspec, function1d_argspec)
 
-        def test_getmembers(self):
-            inspect.getmembers(function1o)
-            inspect.getmembers(function1d)
-
         def test_isinstance(self):
             # Test preservation of isinstance() checks.
 

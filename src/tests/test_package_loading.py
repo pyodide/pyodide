@@ -159,9 +159,6 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    selenium_standalone.server_hostname
-    selenium_standalone.server_port
-
     build_dir = Path(__file__).parents[2] / "build"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
