@@ -26,6 +26,9 @@ substitutions:
 - {{ Update }} Upgraded pyb2d to 0.7.2.
   {pr}`2117`
 
+- {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
+  {pr}`2220`
+
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
   {pr}`2109`
 
