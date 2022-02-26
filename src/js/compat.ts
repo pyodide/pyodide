@@ -118,6 +118,8 @@ if (globalThis.document) {
       // importScripts throws TypeError in a module type web worker, use import instead
       if (e instanceof TypeError) {
         await import(url);
+      } else {
+        throw e;
       }
     }
   };
