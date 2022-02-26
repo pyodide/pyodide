@@ -111,7 +111,11 @@ if (globalThis.document) {
   // webworker
   loadScript = async (url) => {
     // This is async only for consistency
-    globalThis.importScripts(url);
+    try {
+      globalThis.importScripts(url);
+    } catch (err) {
+      return await import(url)
+    }
   };
 } else if (IN_NODE) {
   loadScript = nodeLoadScript;
