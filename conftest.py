@@ -134,7 +134,7 @@ class SeleniumWrapper:
         elif self.script_type == 'module':
             self.driver.get(f"{self.base_url}/module_test.html")
         else:
-            throw Exception('Unknown script type to load!')
+            raise Exception('Unknown script type to load!')
 
     def set_script_timeout(self, timeout):
         self.driver.set_script_timeout(timeout)
