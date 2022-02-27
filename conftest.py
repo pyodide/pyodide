@@ -265,7 +265,7 @@ class SeleniumWrapper:
                     %s
                     cb([0, result]);
                 } catch (e) {
-                    cb([1, e.toString(), e.stack]);
+                    cb([1, e.message, e.stack]);
                 }
             })()
         """
