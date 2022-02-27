@@ -101,8 +101,11 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
-#ifdef HW_TRACE_REFS
-  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#ifdef DEBUG_F
+  extern bool tracerefs;
+  if (tracerefs) {
+    printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+  }
 #endif
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
@@ -992,8 +995,11 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
-#ifdef HW_TRACE_REFS
-  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#ifdef DEBUG_F
+  extern bool tracerefs;
+  if (tracerefs) {
+    printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+  }
 #endif
   return 0;
 }
