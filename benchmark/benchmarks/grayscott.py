@@ -19,7 +19,7 @@ def grayscott(counts, Du, Dv, F, k):
     u += 0.15 * np.random.random((n, n))
     v += 0.15 * np.random.random((n, n))
 
-    for i in range(counts):
+    for _ in range(counts):
         Lu = (
             U[0:-2, 1:-1]
             + U[1:-1, 0:-2]

@@ -110,7 +110,7 @@ def delete_attrs(cls):
         if not name.startswith("_"):
             try:
                 delattr(cls, name)
-            except:
+            except Exception:
                 pass
 
 

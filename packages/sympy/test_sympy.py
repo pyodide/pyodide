@@ -8,4 +8,4 @@ def test_sympy():
     a, b = sympy.symbols("a,b")
     c = sympy.sqrt(a**2 + b**2)
 
-    c.subs({a: 3, b: 4}) == 5
+    assert c.subs({a: 3, b: 4}) == 5
