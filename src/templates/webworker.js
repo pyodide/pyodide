@@ -1,4 +1,12 @@
-importScripts("./pyodide.js");
+try {
+  importScripts("./pyodide.js");
+} catch (e) {
+  if (e instanceof TypeError) {
+    import { loadPyodide } from './pyodide.mjs';
+  } else {
+    throw e;
+  }
+}
 
 onmessage = async function (e) {
   try {

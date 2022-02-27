@@ -17,6 +17,7 @@ all: check \
 	build/pyodide_py.tar \
 	build/test.tar \
 	build/test.html \
+	build/module_test.html \
 	build/webworker.js \
 	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
@@ -104,6 +105,8 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 build/test.html: src/templates/test.html
 	cp $< $@
 
+build/module_test.html: src/templates/module_test.html
+	cp $< $@
 
 .PHONY: build/console.html
 build/console.html: src/templates/console.html
