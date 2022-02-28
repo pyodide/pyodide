@@ -380,6 +380,35 @@ def compile(
 
     skip_host = build_metadata.get("skip_host", True)
 
+<<<<<<< HEAD
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pyodide_build",
+                "pywasmcross",
+                "--cflags",
+                args.cflags + " " + pkg.get("build", {}).get("cflags", ""),
+                "--cxxflags",
+                args.cxxflags + " " + pkg.get("build", {}).get("cxxflags", ""),
+                "--ldflags",
+                args.ldflags + " " + pkg.get("build", {}).get("ldflags", ""),
+                "--setupflags",
+                args.ldflags + " " + pkg.get("build", {}).get("setupflags", ""),
+                "--target",
+                args.target,
+                "--install-dir",
+                args.install_dir,
+                "--replace-libs",
+                ";".join(pkg.get("build", {}).get("replace-libs", [])),
+            ],
+            check=True,
+            env=bash_runner.env,
+        )
+    finally:
+        os.chdir(orig_dir)
+=======
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
     bash_runner.env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
     with chdir(srcpath):
@@ -404,6 +433,7 @@ def compile(
             )
         install_for_distribution()
     del bash_runner.env["_PYTHON_HOST_PLATFORM"]
+>>>>>>> 66856a74273dfc6634809fecfc80412bea6c600a
 
 
 def package_wheel(

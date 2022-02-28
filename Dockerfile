@@ -1,7 +1,7 @@
 FROM node:14.16.1-buster-slim AS node-image
 FROM python:3.9.5-slim-buster
 
-RUN apt-get update \
+RUN apt-get update && apt-get upgrade\
   && apt-get install -y --no-install-recommends \
         # building packages
         bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \

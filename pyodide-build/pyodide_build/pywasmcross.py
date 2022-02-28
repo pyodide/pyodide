@@ -140,6 +140,18 @@ def capture_make_command_wrapper_symlinks(env: dict[str, str]):
 
 def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, str]):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
+<<<<<<< HEAD
+    env = dict(os.environ)
+    make_symlinks(env)
+    env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
+
+    cmd = [sys.executable, "setup.py", "install"]
+    if args.install_dir == "skip":
+        cmd[-1] = "build"
+    elif args.install_dir != "":
+        cmd.extend(["--home", args.install_dir])
+    cmd.extend(args.setupflags.split())
+=======
     env = dict(env)
     env["PATH"] = str(TOOLSDIR) + ":" + env["PATH"]
     capture_make_command_wrapper_symlinks(env)
@@ -151,6 +163,7 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, st
     else:
         assert host_install_dir, "Missing host_install_dir"
         cmd.extend(["install", "--home", host_install_dir])
+>>>>>>> 66856a74273dfc6634809fecfc80412bea6c600a
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
@@ -632,6 +645,120 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
+<<<<<<< HEAD
+def install_for_distribution(args):
+    commands = [
+        sys.executable,
+        "setup.py",
+        "install",
+        "--skip-build",
+        "--prefix=install",
+        "--old-and-unmanageable",
+    ]
+    try:
+        subprocess.check_call(commands)
+    except Exception:
+        print(
+            f'Warning: {" ".join(str(arg) for arg in commands)} failed '
+            f"with distutils, possibly due to the use of distutils "
+            f"that does not support the --old-and-unmanageable "
+            "argument. Re-trying the install without this argument."
+        )
+        subprocess.check_call(commands[:-1])
+
+
+def build_wrap(args):
+    build_log_path = Path("build.log")
+    if not build_log_path.is_file():
+        capture_compile(args)
+    clean_out_native_artifacts()
+    replay_compile(args)
+    install_for_distribution(args)
+
+
+def make_parser(parser):
+    basename = Path(sys.argv[0]).name
+    if basename in symlinks:
+        # skip parsing of all arguments
+        parser._actions = []
+    else:
+        parser.description = (
+            "Cross compile a Python distutils package. "
+            "Run from the root directory of the package's source.\n\n"
+            "Note: this is a private endpoint that should not be used "
+            "outside of the Pyodide Makefile."
+        )
+        parser.add_argument(
+            "--setupflags",
+            type=str,
+            nargs="?",
+            default="",
+            help="Extra flags to pass to setup.py",
+            action=EnvironmentRewritingArgument,
+        )
+        parser.add_argument(
+            "--cflags",
+            type=str,
+            nargs="?",
+            default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
+            help="Extra compiling flags",
+            action=EnvironmentRewritingArgument,
+        )
+        parser.add_argument(
+            "--cxxflags",
+            type=str,
+            nargs="?",
+            default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
+            help="Extra C++ specific compiling flags",
+            action=EnvironmentRewritingArgument,
+        )
+        parser.add_argument(
+            "--ldflags",
+            type=str,
+            nargs="?",
+            default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
+            help="Extra linking flags",
+            action=EnvironmentRewritingArgument,
+        )
+        parser.add_argument(
+            "--target",
+            type=str,
+            nargs="?",
+            default=common.get_make_flag("TARGETPYTHONROOT"),
+            help="The path to the target Python installation",
+        )
+        parser.add_argument(
+            "--install-dir",
+            type=str,
+            nargs="?",
+            default="",
+            help=(
+                "Directory for installing built host packages. Defaults to setup.py "
+                "default. Set to 'skip' to skip installation. Installation is "
+                "needed if you want to build other packages that depend on this one."
+            ),
+        )
+        parser.add_argument(
+            "--replace-libs",
+            type=str,
+            nargs="?",
+            default="",
+            help="Libraries to replace in final link",
+            action=EnvironmentRewritingArgument,
+        )
+    return parser
+
+
+def main(args):
+    basename = Path(sys.argv[0]).name
+    if basename in symlinks:
+        collect_args(basename)
+    else:
+        build_wrap(args)
+
+
+=======
+>>>>>>> 66856a74273dfc6634809fecfc80412bea6c600a
 if __name__ == "__main__":
     basename = Path(sys.argv[0]).name
     if basename in symlinks:
