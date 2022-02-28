@@ -765,26 +765,29 @@ export class PyProxyIteratorMethods {
    * exception, ``next`` returns ``{done : true, value : result_value}``.
    */
   next(arg: any = undefined): IteratorResult<Py2JsResult, Py2JsResult> {
-    let idresult;
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
     let idarg = Hiwire.new_value(arg);
+    let status;
     let done;
+    let stackTop = Module.stackSave();
+    let res_ptr = Module.stackAlloc(4);
     try {
-      idresult = Module.__pyproxyGen_Send(_getPtr(this), idarg);
-      done = idresult === 0;
-      if (done) {
-        idresult = Module.__pyproxyGen_FetchStopIterationValue();
-      }
+      status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
+      done = status !== 1;
     } catch (e) {
       API.fatal_error(e);
     } finally {
       Hiwire.decref(idarg);
     }
-    if (done && idresult === 0) {
+    let HEAPU32 = Module.HEAPU32;
+    let idresult = DEREF_U32(res_ptr, 0);
+    Module.stackRestore(stackTop);
+    if (status === -1) {
       Module._pythonexc2js();
     }
     let value = Hiwire.pop_value(idresult);
+    done = status === 0;
     return { done, value };
   }
 }
