@@ -60,11 +60,9 @@ def test_load_package_after_convert_string(selenium):
 
 
 def test_version_info(selenium):
-    from distutils.version import LooseVersion
-
     version_py_str = selenium.run("import pyodide; pyodide.__version__")
-    version_py = LooseVersion(version_py_str)
-    assert version_py > LooseVersion("0.0.1")
+    version_py = tuple(int(v) for v in version_py_str.split(".")[:2])
+    assert version_py > (0, 1)
 
     version_js_str = selenium.run_js("return pyodide.version;")
     assert version_py_str == version_js_str
