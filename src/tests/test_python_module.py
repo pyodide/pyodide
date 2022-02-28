@@ -3,7 +3,7 @@ import pytest
 
 def test_init(selenium_module_standalone):
     assert (
-      "Python initialization complete" in selenium_module_standalone.logs.splitlines()
+        "Python initialization complete" in selenium_module_standalone.logs.splitlines()
     )
 
 

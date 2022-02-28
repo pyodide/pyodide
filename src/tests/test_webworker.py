@@ -1,9 +1,11 @@
 import pytest
 
 
-def test_runwebworker_different_package_name(selenium_webworker_standalone, script_type):
+def test_runwebworker_different_package_name(
+    selenium_webworker_standalone, script_type
+):
     selenium = selenium_webworker_standalone
-    if selenium.browser == "firefox" and script_type == 'module':
+    if selenium.browser == "firefox" and script_type == "module":
         pytest.xfail("firefox doesnot support module type web worker")
     output = selenium.run_webworker(
         """
@@ -16,7 +18,7 @@ def test_runwebworker_different_package_name(selenium_webworker_standalone, scri
 
 def test_runwebworker_no_imports(selenium_webworker_standalone, script_type):
     selenium = selenium_webworker_standalone
-    if selenium.browser == "firefox" and script_type == 'module':
+    if selenium.browser == "firefox" and script_type == "module":
         pytest.xfail("firefox doesnot support module type web worker")
     output = selenium.run_webworker(
         """
@@ -28,7 +30,7 @@ def test_runwebworker_no_imports(selenium_webworker_standalone, script_type):
 
 def test_runwebworker_missing_import(selenium_webworker_standalone, script_type):
     selenium = selenium_webworker_standalone
-    if selenium.browser == "firefox" and script_type == 'module':
+    if selenium.browser == "firefox" and script_type == "module":
         pytest.xfail("firefox doesnot support module type web worker")
     msg = "ModuleNotFoundError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -41,7 +43,7 @@ def test_runwebworker_missing_import(selenium_webworker_standalone, script_type)
 
 def test_runwebworker_exception(selenium_webworker_standalone, script_type):
     selenium = selenium_webworker_standalone
-    if selenium.browser == "firefox" and script_type == 'module':
+    if selenium.browser == "firefox" and script_type == "module":
         pytest.xfail("firefox doesnot support module type web worker")
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -52,9 +54,11 @@ def test_runwebworker_exception(selenium_webworker_standalone, script_type):
         )
 
 
-def test_runwebworker_exception_after_import(selenium_webworker_standalone, script_type):
+def test_runwebworker_exception_after_import(
+    selenium_webworker_standalone, script_type
+):
     selenium = selenium_webworker_standalone
-    if selenium.browser == "firefox" and script_type == 'module':
+    if selenium.browser == "firefox" and script_type == "module":
         pytest.xfail("firefox doesnot support module type web worker")
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -68,7 +72,7 @@ def test_runwebworker_exception_after_import(selenium_webworker_standalone, scri
 
 def test_runwebworker_micropip(selenium_webworker_standalone, script_type):
     selenium = selenium_webworker_standalone
-    if selenium.browser == "firefox" and script_type == 'module':
+    if selenium.browser == "firefox" and script_type == "module":
         pytest.xfail("firefox doesnot support module type web worker")
     output = selenium.run_webworker(
         """

@@ -108,7 +108,7 @@ class SeleniumWrapper:
         server_log=None,
         load_pyodide=True,
         script_timeout=20,
-        script_type='classic'
+        script_type="classic"
     ):
         self.server_port = server_port
         self.server_hostname = server_hostname
@@ -129,12 +129,12 @@ class SeleniumWrapper:
     SETUP_CODE = pathlib.Path(ROOT_PATH / "tools/testsetup.js").read_text()
 
     def prepare_driver(self):
-        if self.script_type == 'classic':
+        if self.script_type == "classic":
             self.driver.get(f"{self.base_url}/test.html")
-        elif self.script_type == 'module':
+        elif self.script_type == "module":
             self.driver.get(f"{self.base_url}/module_test.html")
         else:
-            raise Exception('Unknown script type to load!')
+            raise Exception("Unknown script type to load!")
 
     def set_script_timeout(self, timeout):
         self.driver.set_script_timeout(timeout)
@@ -312,7 +312,11 @@ class SeleniumWrapper:
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
 
-        worker_file = 'webworker_dev.js' if self.script_type == 'classic' else 'module_webworker_dev.js'
+        worker_file = (
+            "webworker_dev.js"
+            if self.script_type == "classic"
+            else "module_webworker_dev.js"
+        )
 
         return self.run_js(
             """
@@ -587,7 +591,7 @@ def selenium_common(request, web_server_main, load_pyodide=True, script_type="cl
         server_hostname=server_hostname,
         server_log=server_log,
         load_pyodide=load_pyodide,
-        script_type=script_type
+        script_type=script_type,
     )
     try:
         yield selenium
@@ -614,7 +618,9 @@ def selenium_module_standalone(request, web_server_main):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
 
-    with selenium_common(request, web_server_main, load_pyodide=True, script_type='module') as selenium:
+    with selenium_common(
+        request, web_server_main, load_pyodide=True, script_type="module"
+    ) as selenium:
         with set_webdriver_script_timeout(
             selenium, script_timeout=parse_driver_timeout(request)
         ):
@@ -624,11 +630,13 @@ def selenium_module_standalone(request, web_server_main):
                 print(selenium.logs)
 
 @contextlib.contextmanager
-def selenium_standalone_noload_common(request, web_server_main, script_type='classic'):
+def selenium_standalone_noload_common(request, web_server_main, script_type="classic"):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
 
-    with selenium_common(request, web_server_main, load_pyodide=False, script_type=script_type) as selenium:
+    with selenium_common(
+        request, web_server_main, load_pyodide=False, script_type=script_type
+    ) as selenium:
         with set_webdriver_script_timeout(
             selenium, script_timeout=parse_driver_timeout(request)
         ):
@@ -641,7 +649,9 @@ def selenium_standalone_noload_common(request, web_server_main, script_type='cla
 def selenium_webworker_standalone(request, web_server_main, script_type):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
-    with selenium_standalone_noload_common(request, web_server_main, script_type=script_type) as selenium:
+    with selenium_standalone_noload_common(
+        request, web_server_main, script_type=script_type
+    ) as selenium:
         yield selenium
 
 @pytest.fixture(params=["classic", "module"], scope="module")
