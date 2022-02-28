@@ -311,6 +311,8 @@ class SeleniumWrapper:
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
 
+        worker_file = 'webworker_dev.js' if self.script_type == 'classic' else 'module_webworker.js'
+
         return self.run_js(
             """
             let worker = new Worker('{}', {{ type: '{}' }});
@@ -327,7 +329,7 @@ class SeleniumWrapper:
             }});
             return await res
             """.format(
-                f"http://{self.server_hostname}:{self.server_port}/webworker_dev.js",
+                f"http://{self.server_hostname}:{self.server_port}/{worker_file}",
                 self.script_type,
                 code,
             ),

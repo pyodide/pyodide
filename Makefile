@@ -126,6 +126,10 @@ build/webworker.js: src/templates/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+.PHONY: build/module_webworker.js
+build/module_webworker.js: src/templates/module_webworker.js
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 .PHONY: build/webworker_dev.js
 build/webworker_dev.js: src/templates/webworker.js

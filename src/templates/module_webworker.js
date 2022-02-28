@@ -1,4 +1,4 @@
-importScripts("./pyodide.js");
+import { loadPyodide } from "./pyodide.mjs";
 
 onmessage = async function (e) {
   try {
