@@ -645,15 +645,8 @@ def selenium_webworker_standalone(request, web_server_main, script_type):
         yield selenium
 
 @pytest.fixture(params=["classic", "module"], scope="module")
-def script_type():
+def script_type(request):
     return request.param
-
-@pytest.fixture(params=["chrome"], scope="function")
-def selenium_module_webworker_standalone(request, web_server_main):
-    # Avoid loading the fixture if the test is going to be skipped
-    _maybe_skip_test(request.node)
-    with selenium_standalone_noload_common(request, web_server_main, script_type='module') as selenium:
-        yield selenium
 
 @pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
 def selenium_standalone_noload(request, web_server_main):
