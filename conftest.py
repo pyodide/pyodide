@@ -265,7 +265,7 @@ class SeleniumWrapper:
                     %s
                     cb([0, result]);
                 } catch (e) {
-                    cb([1, e.message, e.stack]);
+                    cb([1, e.toString(), e.stack, e.message]);
                 }
             })()
         """
@@ -273,6 +273,7 @@ class SeleniumWrapper:
         if retval[0] == 0:
             return retval[1]
         else:
+            print("JavascriptException message: ", retval[3])
             raise JavascriptException(retval[1], retval[2])
 
     def get_num_hiwire_keys(self):
