@@ -613,12 +613,6 @@ def replay_compile(replay_from: int = 1, **kwargs):
     if not build_log_path.is_file():
         return
 
-    lines_str = (
-        subprocess.check_output(["wc", "-l", str(build_log_path)])
-        .decode()
-        .split(" ")[0]
-    )
-    num_lines = str(lines_str)
     with open(build_log_path) as fd:
         num_lines = sum(1 for _1 in fd)  # type: ignore
         fd.seek(0)
@@ -631,7 +625,7 @@ def replay_compile(replay_from: int = 1, **kwargs):
 
 
 def clean_out_native_artifacts():
-    for root, dirs, files in os.walk("."):
+    for root, _dirs, files in os.walk("."):
         for file in files:
             path = Path(root) / file
             if path.suffix in (".o", ".so", ".a"):

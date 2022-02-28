@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable
 _save_name = __name__
 __name__ = "pyodide"
 
+
 # From jsproxy.c
 class JsException(Exception):
     """

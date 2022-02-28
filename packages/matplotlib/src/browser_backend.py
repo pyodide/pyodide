@@ -430,7 +430,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
             span.textContent = "\u00a0"
             div.appendChild(span)
 
-        for text, tooltip_text, image_file, name_of_method in self.toolitems:
+        for _text, _tooltip_text, image_file, name_of_method in self.toolitems:
             if image_file in _FONTAWESOME_ICONS:
                 if image_file is None:
                     add_spacer()
@@ -442,7 +442,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
                     button.addEventListener("click", getattr(self, name_of_method))
                     div.appendChild(button)
 
-        for format, mimetype in sorted(list(FILE_TYPES.items())):
+        for format, _mimetype in sorted(list(FILE_TYPES.items())):
             button = document.createElement("button")
             button.classList.add("fa")
             button.textContent = format

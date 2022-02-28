@@ -20,7 +20,7 @@ def fix_f2c_output(f2c_output_path: str):
             [
                 "patch",
                 str(f2c_output_path),
-                f"../../patches/fix-implicit-cast-args-from-newer-lapack.patch",
+                "../../patches/fix-implicit-cast-args-from-newer-lapack.patch",
             ]
         )
 
@@ -145,7 +145,7 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
     """
     line_iter = iter(lines)
     for line in line_iter:
-        if not "/* Subroutine */" in line:
+        if "/* Subroutine */" not in line:
             yield line
             continue
 
@@ -222,7 +222,7 @@ def fix_inconsistent_decls(lines: list[str]) -> list[str]:
         func_types[func_name] = types
 
     for idx, line in enumerate(lines):
-        if not "extern /* Subroutine */" in line:
+        if "extern /* Subroutine */" not in line:
             continue
         decls = line.split(")")[:-1]
         for decl in decls:

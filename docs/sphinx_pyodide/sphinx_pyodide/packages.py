@@ -83,7 +83,7 @@ def get_packages_summary_directive(app):
             group += thead
 
             rows = []
-            for name, pkg_info in packages.items():
+            for pkg_info in packages.values():
                 row = nodes.row()
                 rows.append(row)
                 for column in columns:

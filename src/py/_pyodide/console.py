@@ -13,7 +13,7 @@ from typing import Any, Callable, Literal, Optional, Union
 
 from _pyodide._base import CodeRunner, should_quiet
 
-__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
+__all__ = ["repr_shorten", "BANNER", "Console", "ConsoleFuture"]
 
 BANNER = f"""
 Python {python_version()} ({', '.join(python_build())}) on WebAssembly VM
