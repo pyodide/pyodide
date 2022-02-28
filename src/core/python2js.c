@@ -748,6 +748,12 @@ to_js(PyObject* self,
     py_result = js2python(js_result);
   }
 finally:
+  if (pyproxy_Check(js_dict_converter)) {
+    destroy_proxy(js_dict_converter, NULL);
+  }
+  if (pyproxy_Check(js_default_converter)) {
+    destroy_proxy(js_default_converter, NULL);
+  }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(js_dict_converter);
   hiwire_CLEAR(js_default_converter);
