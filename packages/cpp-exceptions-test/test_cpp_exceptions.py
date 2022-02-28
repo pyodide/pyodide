@@ -4,7 +4,7 @@ def test_uncaught_cpp_exceptions(selenium):
             """
             await pyodide.loadPackage("cpp-exceptions-test");
             const Tests = pyodide._api.tests;
-            const idx = pyodide._module.LDSO.loadedLibNames["/lib/python3.9/site-packages/cpp-exceptions-test-throw.so"]
+            const idx = pyodide._module.LDSO.loadedLibNames["/lib/python3.10/site-packages/cpp-exceptions-test-throw.so"]
             const throwlib = pyodide._module.LDSO.loadedLibs[idx].module;
             function t(x){
                 try {
@@ -37,7 +37,7 @@ def test_cpp_exception_catching(selenium):
             """
         await pyodide.loadPackage("cpp-exceptions-test");
         const Module = pyodide._module;
-        const idx = Module.LDSO.loadedLibNames["/lib/python3.9/site-packages/cpp-exceptions-test-catch.so"]
+        const idx = Module.LDSO.loadedLibNames["/lib/python3.10/site-packages/cpp-exceptions-test-catch.so"]
         const catchlib = Module.LDSO.loadedLibs[idx].module;
         function t(x){
             const ptr = catchlib.catch_exc(x);

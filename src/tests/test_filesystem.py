@@ -17,8 +17,8 @@ def test_idbfs_persist_code(selenium_standalone):
     # create mount
     selenium.run_js(
         f"""
-        pyodide.FS.mkdir('/lib/python3.9/site-packages/test_idbfs');
-        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/python3.9/site-packages/test_idbfs");
+        pyodide.FS.mkdir('/lib/python3.10/site-packages/test_idbfs');
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/python3.10/site-packages/test_idbfs");
         """
     )
     # create file in mount
@@ -26,7 +26,7 @@ def test_idbfs_persist_code(selenium_standalone):
         """
         pyodide.runPython(`
             import pathlib
-            p = pathlib.Path('/lib/python3.9/site-packages/test_idbfs/__init__.py')
+            p = pathlib.Path('/lib/python3.10/site-packages/test_idbfs/__init__.py')
             p.write_text("def test(): return 7")
             from importlib import invalidate_caches
             invalidate_caches()
@@ -69,8 +69,8 @@ def test_idbfs_persist_code(selenium_standalone):
     # re-mount
     selenium.run_js(
         f"""
-        pyodide.FS.mkdir('/lib/python3.9/site-packages/test_idbfs');
-        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/python3.9/site-packages/test_idbfs");
+        pyodide.FS.mkdir('/lib/python3.10/site-packages/test_idbfs');
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/python3.10/site-packages/test_idbfs");
         """
     )
     # sync FROM idbfs
@@ -95,5 +95,5 @@ def test_idbfs_persist_code(selenium_standalone):
     )
     # remove file
     selenium.run_js(
-        """pyodide.FS.unlink("/lib/python3.9/site-packages/test_idbfs/__init__.py")"""
+        """pyodide.FS.unlink("/lib/python3.10/site-packages/test_idbfs/__init__.py")"""
     )

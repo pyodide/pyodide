@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 TEST_DIR = (
-    Path(__file__).parents[2] / "cpython/installs/python-3.9.5/lib/python3.9/test/"
+    Path(__file__).parents[2] / "cpython/installs/python-3.10.2/lib/python3.10/test/"
 )
 
 

@@ -1,5 +1,5 @@
 FROM node:14.16.1-buster-slim AS node-image
-FROM python:3.9.5-slim-buster
+FROM python:3.10.2-slim-buster
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \

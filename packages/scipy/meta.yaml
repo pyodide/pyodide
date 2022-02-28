@@ -89,7 +89,7 @@ build:
     echo 'import sys' >> scipy/__init__.py
     echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
     echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
-    echo '   loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
+    echo '   loadDynamicLibrary("/lib/python3.10/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
 
   prereplay: |
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
@@ -98,7 +98,7 @@ build:
     find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
     find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
     find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
-    cd build/src.emscripten_wasm32-3.9/build/src.emscripten_wasm32-3.9/scipy/linalg
+    cd build/src.emscripten_wasm32-3.10/build/src.emscripten_wasm32-3.10/scipy/linalg
     sed -i 's/,size_t//' _flapackmodule.c
     sed -i 's/,slen([a-z]*))/)/g' _flapackmodule.c
     sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' _fblasmodule.c

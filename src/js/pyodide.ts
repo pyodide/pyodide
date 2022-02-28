@@ -80,7 +80,7 @@ function unpackPyodidePy(pyodide_py_tar: Uint8Array) {
   Module.FS.close(stream);
   const code_ptr = Module.stringToNewUTF8(`
 import shutil
-shutil.unpack_archive("/pyodide_py.tar", "/lib/python3.9/site-packages/")
+shutil.unpack_archive("/pyodide_py.tar", "/lib/python3.10/site-packages/")
 del shutil
 import importlib
 importlib.invalidate_caches()
