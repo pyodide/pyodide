@@ -113,7 +113,8 @@ pyproxy_getflags(PyObject* pyobj)
     result |= HAS_GET;
   } else if (PyType_Check(pyobj)) {
     _Py_IDENTIFIER(__class_getitem__);
-    if (_PyObject_HasAttrId(pyobj, &PyId___class_getitem__)) {
+    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
+    if (PyObject_HasAttr(pyobj, oname)) {
       result |= HAS_GET;
     }
   }
