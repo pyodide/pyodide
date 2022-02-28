@@ -170,7 +170,12 @@ src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
 
 # TODO: also include test directories included in other stdlib modules
 build/test.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar test
+	cd $(CPYTHONBUILD) && emcc Modules/_testcapimodule.c -I Include/ -I . -s SIDE_MODULE -o _testcapi.so
+	cd $(CPYTHONBUILD) && emcc Modules/_testinternalcapi.c -I Include/ -I Include/internal/ -I . -s SIDE_MODULE -o _testinternalcapi.so -DPy_BUILD_CORE_MODULE
+	ln -s $(CPYTHONBUILD)/_testcapi.so $(CPYTHONLIB)/_testcapi.so
+	ln -s $(CPYTHONBUILD)/_testinternalcapi.so $(CPYTHONLIB)/_testinternalcapi.so
+	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar test _testcapi.so _testinternalcapi.so
+	rm $(CPYTHONLIB)/_testcapi.so $(CPYTHONLIB)/_testinternalcapi.so
 
 build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/distutils.tar distutils

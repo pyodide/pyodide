@@ -19,6 +19,7 @@ export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
 export CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
+export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
