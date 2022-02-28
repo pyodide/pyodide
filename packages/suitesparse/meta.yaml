@@ -1,0 +1,34 @@
+package:
+  name: suitesparse
+  version: 1.0.0
+
+source:
+  sha256: eeb7af00bf9e7154d5e422eda73035ef58ecc41d2afa284dd697ca2c1ce04e7b
+  url: https://gabrielfougeron.github.io/files/suitesparse.zip
+  extract_dir: suitesparse
+
+requirements:
+  #build:
+    #- CLAPACK
+  run:
+    - CLAPACK
+
+build:
+  sharedlibrary: true
+  # set linker and C flags to error on anything to do with function declarations being wrong.
+  # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
+  # will fail. Better to fail at compile or link time.
+  ldflags: |
+    -Wl,--fatal-warnings
+  script: |
+    emmake make BLAS="-L$PYODIDE_ROOT/packages/CLAPACK/dist/lib -lblas" LAPACK="-L$PYODIDE_ROOT/packages/CLAPACK/dist/lib/ -llapack"
+    mkdir -p dist/lib
+    mkdir -p dist/include
+    mkdir -p dist/bin
+    cp -R bin/* dist/bin
+    cp -R include/* dist/include
+    cp -R lib/*  dist/lib
+
+
+
+

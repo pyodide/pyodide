@@ -1,0 +1,23 @@
+package:
+  name: sparseqr
+  version: 1.1.2
+
+source:
+  sha256: 45aebf21d48f8b6581194d79661b693711841084b72470b96f31873184214e30     
+  url: https://gabrielfougeron.github.io/files/sparseqr.zip
+  extract_dir: sparseqr
+
+requirements:
+  #build:
+    #- suitesparse
+  run:
+    - suitesparse
+    - cffi
+    - numpy
+    - scipy
+
+test:
+  imports:
+    - sparseqr
+
+
