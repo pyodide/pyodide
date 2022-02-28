@@ -51,7 +51,7 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     result = []
     for child in decl["children"]:
         child = dict(child)
-        if not "type" in child:
+        if "type" not in child:
             if "signatures" in child:
                 child["comment"] = child["signatures"][0]["comment"]
                 child["type"] = {
@@ -59,7 +59,7 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
                     "declaration": dict(child),
                 }
             else:
-                assert False, "Didn't expect to get here..."
+                raise AssertionError("Didn't expect to get here...")
         child["name"] = param["name"] + "." + child["name"]
         result.append(child)
     return result
@@ -185,7 +185,7 @@ def _type_name(self, type):
         return f"boolean (typeguard for {self._type_name(type['targetType'])})"
     if type_of_type == "reflection":
         return reflection_type_name(self, type)
-    assert False
+    raise AssertionError()
 
 
 TsAnalyzer._type_name = _type_name
@@ -353,12 +353,13 @@ def get_jsdoc_content_directive(app):
                 rst = self.add_async_option_to_rst(rst)
             return rst
 
-        def add_async_option_to_rst(self, rst):
+        def add_async_option_to_rst(self, rst: str) -> str:
             rst_lines = rst.split("\n")
-            for i, line in enumerate(rst_lines):
-                if line.startswith(".."):
-                    break
-            rst_lines.insert(i + 1, "   :async:")
+            try:
+                index = next(i for i, ln in enumerate(rst_lines) if ln.startswith(".."))
+            except StopIteration:
+                index = len(rst_lines) - 1
+            rst_lines.insert(index + 1, "   :async:")
             return "\n".join(rst_lines)
 
         def get_rst_for_group(self, objects):

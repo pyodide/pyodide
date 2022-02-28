@@ -1,7 +1,7 @@
 import contextlib
 import inspect
 from base64 import b64encode
-from typing import Callable, Optional
+from typing import Callable, Collection, Optional
 
 import pytest
 
@@ -31,8 +31,8 @@ def run_in_pyodide(
     *,
     standalone: bool = False,
     module_scope: bool = False,
-    packages: list[str] = [],
-    xfail_browsers: dict[str, str] = {},
+    packages: Collection[str] = (),
+    xfail_browsers: Optional[dict[str, str]] = None,
     driver_timeout: Optional[float] = None,
 ) -> Callable:
     """
@@ -53,10 +53,12 @@ def run_in_pyodide(
         selenium driver timeout (in seconds)
     """
 
+    xfail_browsers_local = xfail_browsers or {}
+
     def decorator(f):
         def inner(selenium):
-            if selenium.browser in xfail_browsers:
-                xfail_message = xfail_browsers[selenium.browser]
+            if selenium.browser in xfail_browsers_local:
+                xfail_message = xfail_browsers_local[selenium.browser]
                 pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if len(packages) > 0:

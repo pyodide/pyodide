@@ -22,6 +22,8 @@ def print_entry(name, res):
 
 
 def run_native(hostpython, code):
+    if "# non-native" in code:
+        return float("NaN")
     root = Path(__file__).resolve().parents[1]
     output = subprocess.check_output(
         [hostpython.resolve(), "-c", code],
@@ -43,6 +45,8 @@ def run_wasm(code, selenium, interrupt_buffer):
             pyodide.setInterruptBuffer(interrupt_buffer)
             """
         )
+    if "matplotlib" in code:
+        selenium.load_package("matplotlib")
     selenium.run(code)
     try:
         runtime = float(selenium.logs.split("\n")[-1])
@@ -57,6 +61,7 @@ def run_all(hostpython, selenium_backends, code):
     result = {"native": a}
     for browser_name, selenium in selenium_backends.items():
         for interrupt_buffer in [False, True]:
+            print(f"Running with: {browser_name} {interrupt_buffer}")
             dt = run_wasm(code, selenium, interrupt_buffer)
             if interrupt_buffer:
                 browser_name += "(w/ ib)"
@@ -85,24 +90,48 @@ def get_numpy_benchmarks():
         name = filename.stem
         if name in SKIP:
             continue
-        content = parse_numpy_benchmark(filename)
-        content += (
-            "import numpy as np\n"
-            "_ = np.empty(())\n"
-            "setup = setup + '\\nfrom __main__ import {}'\n"
-            "from timeit import Timer\n"
-            "t = Timer(run, setup)\n"
-            "r = t.repeat(11, 40)\n"
-            "r.remove(min(r))\n"
-            "r.remove(max(r))\n"
-            "print(np.mean(r))\n".format(name)
-        )
-        yield name, content
+        if "canvas" not in str(filename) and "wasm" not in str(filename):
+            content = parse_numpy_benchmark(filename)
+            content += (
+                "import numpy as np\n"
+                "_ = np.empty(())\n"
+                "setup = setup + '\\nfrom __main__ import {}'\n"
+                "from timeit import Timer\n"
+                "t = Timer(run, setup)\n"
+                "r = t.repeat(11, 40)\n"
+                "r.remove(min(r))\n"
+                "r.remove(max(r))\n"
+                "print(np.mean(r))\n".format(name)
+            )
+            yield name, content
+
+
+def get_matplotlib_benchmarks():
+    root = Path(__file__).resolve().parent / "benchmarks"
+    for filename in sorted(root.iterdir()):
+        name = filename.stem
+        if name in SKIP:
+            continue
+        if "canvas" in str(filename) or "wasm" in str(filename):
+            content = parse_numpy_benchmark(filename)
+            content += (
+                "import numpy as np\n"
+                "_ = np.empty(())\n"
+                "setup = setup + '\\nfrom __main__ import {}'\n"
+                "from timeit import Timer\n"
+                "t = Timer(run, setup)\n"
+                "r = t.repeat(11, 20)\n"
+                "r.remove(min(r))\n"
+                "r.remove(max(r))\n"
+                "print(np.mean(r))\n".format(name)
+            )
+            yield name, content
 
 
 def get_benchmarks():
     yield from get_pystone_benchmarks()
     yield from get_numpy_benchmarks()
+    yield from get_matplotlib_benchmarks()
 
 
 def main(hostpython):
@@ -117,7 +146,7 @@ def main(hostpython):
         ]
         for name, cls in browser_cls:
             t0 = time()
-            selenium_backends[name] = cls(port)
+            selenium_backends[name] = cls(port, script_timeout=1200)
             b[name] = time() - t0
             # pre-load numpy for the selenium instance used in benchmarks
             selenium_backends[name].load_package("numpy")
@@ -128,7 +157,7 @@ def main(hostpython):
         for package_name in ["numpy"]:
             b = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
-                selenium = cls(port)
+                selenium = cls(port, script_timeout=1200)
                 try:
                     t0 = time()
                     selenium.load_package(package_name)
@@ -139,6 +168,10 @@ def main(hostpython):
             print_entry("load " + package_name, b)
 
         for name, content in get_benchmarks():
+            for browser_name, cls in browser_cls:
+                selenium_backends[browser_name].driver.quit()
+                selenium_backends[browser_name] = cls(port, script_timeout=1200)
+                selenium_backends[browser_name].load_package("numpy")
             results[name] = run_all(hostpython, selenium_backends, content)
             print_entry(name, results[name])
         for selenium in selenium_backends.values():

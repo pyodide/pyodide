@@ -22,7 +22,7 @@ def test_string_conversion(selenium_module_scope, s):
             pyodide.runPython('spy = bytes({sbytes}).decode()');
             """
         )
-        assert selenium.run_js(f"""return pyodide.runPython('spy') === sjs;""")
+        assert selenium.run_js("""return pyodide.runPython('spy') === sjs;""")
         assert selenium.run(
             """
             from js import sjs
@@ -79,7 +79,7 @@ def test_number_conversions(selenium_module_scope, n):
             `);
             """
         )
-        assert selenium.run_js(f"""return pyodide.runPython('x_py') === x_js;""")
+        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
         assert selenium.run(
             """
             from js import x_js
@@ -162,11 +162,11 @@ def test_hyp_py2js2py(selenium_module_scope, obj):
         # have to defend against them here.
         try:
             assume(obj == obj)
-        except:
+        except Exception:
             assume(False)
         try:
             obj_bytes = list(pickle.dumps(obj))
-        except:
+        except Exception:
             assume(False)
         selenium.run(
             f"""
@@ -224,7 +224,7 @@ def test_hyp_tojs_no_crash(selenium_module_scope, obj):
 
         try:
             obj_bytes = list(pickle.dumps(obj))
-        except:
+        except Exception:
             assume(False)
         selenium.run(
             f"""

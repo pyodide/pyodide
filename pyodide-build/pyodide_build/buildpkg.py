@@ -490,7 +490,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     n_moved = 0
     out_files = []
     shutil.rmtree(test_install_prefix, ignore_errors=True)
-    for root, dirs, files in os.walk(install_prefix):
+    for root, _dirs, files in os.walk(install_prefix):
         root_rel = Path(root).relative_to(install_prefix)
         if root_rel.name == "__pycache__" or root_rel.name.endswith(".egg_info"):
             continue
@@ -829,7 +829,7 @@ def main(args):
             **step_controls,
         )
 
-    except:
+    except Exception:
         success = False
         raise
     finally:

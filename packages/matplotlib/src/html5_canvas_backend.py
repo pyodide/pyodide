@@ -29,10 +29,7 @@ _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
 # The URLs of fonts that have already been loaded into the browser
 _font_set = set()
 
-if hasattr(window, "testing"):
-    _base_fonts_url = "/fonts/"
-else:
-    _base_fonts_url = "/pyodide/fonts/"
+_base_fonts_url = "/fonts/"
 
 interactive(True)
 
@@ -385,9 +382,9 @@ class RendererHTMLCanvas(RendererBase):
 
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
-            document.fonts.add(loaded_face)
+            document.fonts.add(loaded_face.result())
             window.font_counter += 1
-            self.fig.draw_idle()
+            self.fig.draw()
 
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
@@ -414,7 +411,7 @@ class RendererHTMLCanvas(RendererBase):
         if font_face_arguments not in _font_set:
             _font_set.add(font_face_arguments)
             f = FontFace.new(*font_face_arguments)
-            f.load().then(_load_font_into_web)
+            f.load().add_done_callback(_load_font_into_web)
 
         font_property_string = "{} {} {:.3g}px {}, {}".format(
             prop.get_style(),

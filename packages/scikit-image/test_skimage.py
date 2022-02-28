@@ -50,3 +50,4 @@ def test_skimage():
     assert len(np.unique(segments_fz)) == 194
     assert len(np.unique(segments_slic)) == 196
     assert len(np.unique(segments_quick)) == 695
+    assert len(np.unique(segments_watershed)) == 256
