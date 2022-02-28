@@ -1,7 +1,6 @@
 import pytest
 
 
-@pytest.mark.parametrize('selenium_webworker_standalone', ['classic', 'module'], indirect=True)
 def test_runwebworker_different_package_name(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
@@ -13,7 +12,6 @@ def test_runwebworker_different_package_name(selenium_webworker_standalone):
     assert isinstance(output, str)
 
 
-@pytest.mark.parametrize('selenium_webworker_standalone', ['classic', 'module'], indirect=True)
 def test_runwebworker_no_imports(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
@@ -24,7 +22,6 @@ def test_runwebworker_no_imports(selenium_webworker_standalone):
     assert output == 42
 
 
-@pytest.mark.parametrize('selenium_webworker_standalone', ['classic', 'module'], indirect=True)
 def test_runwebworker_missing_import(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     msg = "ModuleNotFoundError"
@@ -36,7 +33,6 @@ def test_runwebworker_missing_import(selenium_webworker_standalone):
         )
 
 
-@pytest.mark.parametrize('selenium_webworker_standalone', ['classic', 'module'], indirect=True)
 def test_runwebworker_exception(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     msg = "ZeroDivisionError"
@@ -48,7 +44,6 @@ def test_runwebworker_exception(selenium_webworker_standalone):
         )
 
 
-@pytest.mark.parametrize('selenium_webworker_standalone', ['classic', 'module'], indirect=True)
 def test_runwebworker_exception_after_import(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     msg = "ZeroDivisionError"
@@ -61,7 +56,6 @@ def test_runwebworker_exception_after_import(selenium_webworker_standalone):
         )
 
 
-@pytest.mark.parametrize('selenium_webworker_standalone', ['classic', 'module'], indirect=True)
 def test_runwebworker_micropip(selenium_webworker_standalone):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
