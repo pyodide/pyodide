@@ -426,7 +426,15 @@ export class PyProxyClass {
      * it to a ``Map`` (which is the default behavior).
      */
     dict_converter?: (array: Iterable<[key: string, value: any]>) => any;
-    default_converter?: any;
+    /**
+     * Optional argument to convert objects with no default conversion. See the
+     * documentation of :any:`pyodide.to_js`.
+     */
+    default_converter?: (
+      obj: PyProxy,
+      convert: (obj: PyProxy) => any,
+      cacheConversion: (obj: PyProxy, result: any) => void
+    ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
     let idresult;
