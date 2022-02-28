@@ -1,8 +1,9 @@
 import pytest
 
 
-def test_runwebworker_different_package_name(selenium_webworker_standalone):
-    selenium = selenium_webworker_standalone
+@pytest.mark.parametrize('selenium_webworker', ['selenium_webworker_standalone', 'selenium_module_webworker_standalone'])
+def test_runwebworker_different_package_name(selenium_webworker, request):
+    selenium = request.getfixturevalue(selenium_webworker)
     output = selenium.run_webworker(
         """
         import pyparsing
@@ -12,8 +13,9 @@ def test_runwebworker_different_package_name(selenium_webworker_standalone):
     assert isinstance(output, str)
 
 
-def test_runwebworker_no_imports(selenium_webworker_standalone):
-    selenium = selenium_webworker_standalone
+@pytest.mark.parametrize('selenium_webworker', ['selenium_webworker_standalone', 'selenium_module_webworker_standalone'])
+def test_runwebworker_no_imports(selenium_webworker, request):
+    selenium = request.getfixturevalue(selenium_webworker)
     output = selenium.run_webworker(
         """
         42
@@ -22,8 +24,9 @@ def test_runwebworker_no_imports(selenium_webworker_standalone):
     assert output == 42
 
 
-def test_runwebworker_missing_import(selenium_webworker_standalone):
-    selenium = selenium_webworker_standalone
+@pytest.mark.parametrize('selenium_webworker', ['selenium_webworker_standalone', 'selenium_module_webworker_standalone'])
+def test_runwebworker_missing_import(selenium_webworker, request):
+    selenium = request.getfixturevalue(selenium_webworker)
     msg = "ModuleNotFoundError"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_webworker(
@@ -33,8 +36,9 @@ def test_runwebworker_missing_import(selenium_webworker_standalone):
         )
 
 
-def test_runwebworker_exception(selenium_webworker_standalone):
-    selenium = selenium_webworker_standalone
+@pytest.mark.parametrize('selenium_webworker', ['selenium_webworker_standalone', 'selenium_module_webworker_standalone'])
+def test_runwebworker_exception(selenium_webworker, request):
+    selenium = request.getfixturevalue(selenium_webworker)
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_webworker(
@@ -44,8 +48,9 @@ def test_runwebworker_exception(selenium_webworker_standalone):
         )
 
 
-def test_runwebworker_exception_after_import(selenium_webworker_standalone):
-    selenium = selenium_webworker_standalone
+@pytest.mark.parametrize('selenium_webworker', ['selenium_webworker_standalone', 'selenium_module_webworker_standalone'])
+def test_runwebworker_exception_after_import(selenium_webworker, request):
+    selenium = request.getfixturevalue(selenium_webworker)
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_webworker(
@@ -56,8 +61,9 @@ def test_runwebworker_exception_after_import(selenium_webworker_standalone):
         )
 
 
-def test_runwebworker_micropip(selenium_webworker_standalone):
-    selenium = selenium_webworker_standalone
+@pytest.mark.parametrize('selenium_webworker', ['selenium_webworker_standalone', 'selenium_module_webworker_standalone'])
+def test_runwebworker_micropip(selenium_webworker, request):
+    selenium = request.getfixturevalue(selenium_webworker)
     output = selenium.run_webworker(
         """
         import micropip
