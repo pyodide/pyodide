@@ -641,7 +641,8 @@ def selenium_standalone_noload_common(request, web_server_main, script_type='cla
 def selenium_webworker_standalone(request, web_server_main):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
-    with selenium_standalone_noload_common(request, web_server_main, script_type=request.param) as selenium:
+    script_type = 'classic' if not request.param else request.param
+    with selenium_standalone_noload_common(request, web_server_main, script_type=script_type) as selenium:
         yield selenium
 
 @pytest.fixture(params=["chrome"], scope="function")
