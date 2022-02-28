@@ -25,7 +25,6 @@ _ctypes_test _ctypes/_ctypes_test.c
 
 unicodedata unicodedata.c
 _pickle _pickle.c
-parser parsermodule.c
 
 _socket socketmodule.c
 select selectmodule.c
