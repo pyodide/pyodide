@@ -312,7 +312,7 @@ class SeleniumWrapper:
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
 
-        worker_file = 'webworker_dev.js' if self.script_type == 'classic' else 'module_webworker.js'
+        worker_file = 'webworker_dev.js' if self.script_type == 'classic' else 'module_webworker_dev.js'
 
         return self.run_js(
             """
