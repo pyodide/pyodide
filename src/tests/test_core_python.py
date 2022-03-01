@@ -47,6 +47,7 @@ def test_cpython_core(python_test, selenium, request):
             with (
                 patch("subprocess.Popen", new=Mock(side_effect=SkipTest('Cannot start a subprocess in Pyodide'))),
                 patch("threading.Thread.start", new=Mock(side_effect=SkipTest('Cannot start a thread in Pyodide'))),
+                patch("signal.setitimer", new=Mock(side_effect=SkipTest('setitimer is not implemented in Emscripten')))
             ):
                 try:
                     libregrtest.main(['{}'], verbose=True, verbose3=True)
