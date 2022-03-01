@@ -1,18 +1,19 @@
 Proper Freetype linking.
 
 diff --git a/setupext.py b/setupext.py
+index d0e26d484d..82829f7984 100644
 --- a/setupext.py
 +++ b/setupext.py
-@@ -522,6 +522,9 @@ class FreeType(SetupPackage):
-     name = "freetype"
+@@ -555,6 +555,9 @@ class FreeType(SetupPackage):
  
-     def add_flags(self, ext):
+     @classmethod
+     def add_flags(cls, ext):
 +        if "PYODIDE" in os.environ:
 +            ext.libraries.append('freetype')
 +            return
-         ext.sources.insert(0, 'src/checkdep_freetype2.c')
-         if options.get('system_freetype'):
-             pkg_config_setup_extension(
+         # checkdep_freetype2.c immediately aborts the compilation either with
+         # "foo.h: No such file or directory" if the header is not found, or an
+         # appropriate error message if the header indicates a too-old version.
 -- 
-2.20.1
+2.35.1
 
