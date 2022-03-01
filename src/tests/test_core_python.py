@@ -36,13 +36,18 @@ def test_cpython_core(python_test, selenium, request):
             """
             from unittest.mock import Mock, patch
             from unittest import SkipTest, TestCase, main
-            import subprocess
             from test import libregrtest
+
+            import subprocess
             import platform
+            import threading
 
             platform.platform(aliased=True)
 
-            with patch("subprocess.Popen", new=Mock(side_effect=SkipTest('Cannot start a subprocess in Pyodide'))):
+            with (
+                patch("subprocess.Popen", new=Mock(side_effect=SkipTest('Cannot start a subprocess in Pyodide'))),
+                patch("threading.Thread.start", new=Mock(side_effect=SkipTest('Cannot start a thread in Pyodide'))),
+            ):
                 try:
                     libregrtest.main(['{}'], verbose=True, verbose3=True)
                 except SystemExit as e:

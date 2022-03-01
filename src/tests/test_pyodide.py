@@ -80,7 +80,7 @@ def test_code_runner_mode():
         match="multiple statements found while compiling a single statement",
     ):
         CodeRunner("1+1\n1+1", mode="single").compile().run()
-    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+    with pytest.raises(SyntaxError, match="invalid syntax"):
         CodeRunner(
             "def f():\n  1", mode="single", flags=PyCF_DONT_IMPLY_DEDENT
         ).compile().run()
