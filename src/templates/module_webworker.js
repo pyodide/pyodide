@@ -24,4 +24,3 @@ onmessage = async function (e) {
     // setTimeout(() => { throw err; });
   }
 };
-

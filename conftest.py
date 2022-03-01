@@ -108,7 +108,7 @@ class SeleniumWrapper:
         server_log=None,
         load_pyodide=True,
         script_timeout=20,
-        script_type="classic"
+        script_type="classic",
     ):
         self.server_port = server_port
         self.server_hostname = server_hostname
@@ -613,6 +613,7 @@ def selenium_standalone(request, web_server_main):
             finally:
                 print(selenium.logs)
 
+
 @pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
 def selenium_module_standalone(request, web_server_main):
     # Avoid loading the fixture if the test is going to be skipped
@@ -628,6 +629,7 @@ def selenium_module_standalone(request, web_server_main):
                 yield selenium
             finally:
                 print(selenium.logs)
+
 
 @contextlib.contextmanager
 def selenium_standalone_noload_common(request, web_server_main, script_type="classic"):
@@ -645,6 +647,7 @@ def selenium_standalone_noload_common(request, web_server_main, script_type="cla
             finally:
                 print(selenium.logs)
 
+
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_webworker_standalone(request, web_server_main, script_type):
     # Avoid loading the fixture if the test is going to be skipped
@@ -654,9 +657,11 @@ def selenium_webworker_standalone(request, web_server_main, script_type):
     ) as selenium:
         yield selenium
 
+
 @pytest.fixture(params=["classic", "module"], scope="module")
 def script_type(request):
     return request.param
+
 
 @pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
 def selenium_standalone_noload(request, web_server_main):
