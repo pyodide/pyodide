@@ -431,7 +431,7 @@ test_select    networking segfault-newselect
 test_selectors    networking segfault-newselect
 test_set
 test_setcomps
-test_shelve
+test_shelve dbm
 test_shlex
 test_shutil    crash
 test_signal
@@ -441,8 +441,8 @@ test_smtpd
 test_smtplib    bad ioctl syscall 21537
 test_smtpnet
 test_sndhdr
-test_socket
-test_socketserver
+test_socket networking
+test_socketserver networking
 test_sort
 test_source_encoding    subprocess,
 test_spwd
