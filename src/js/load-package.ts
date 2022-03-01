@@ -225,7 +225,7 @@ const acquireDynlibLock = createLock();
 async function loadDynlib(lib: string, shared: boolean) {
   const node = Module.FS.lookupPath(lib).node;
   let byteArray;
-  if (node.mount.type == Module.FS.Module.FS.filesystems.MEMFS) {
+  if (node.mount.type == Module.FS.filesystems.MEMFS) {
     byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
       Module.FS.lookupPath(lib).node
     );
