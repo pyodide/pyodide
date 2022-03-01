@@ -77,7 +77,7 @@ test_asyncio.test_unix_events    async
 test_asyncio.test_windows_events
 test_asyncio.test_windows_utils
 test_asyncore    bad ioctl syscall async
-test_atexit
+test_atexit fs hits emscripten bug where it's impossible to read from pipe once write end is closed
 test_audioop
 test_audit    subprocess
 test_augassign
