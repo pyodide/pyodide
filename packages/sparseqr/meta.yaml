@@ -11,7 +11,7 @@ requirements:
   #build:
     #- suitesparse
   run:
-    - suitesparse
+    - pycparser
     - cffi
     - numpy
     - scipy
