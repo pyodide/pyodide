@@ -609,8 +609,7 @@ finally:
   Py_CLEAR(v);
   Py_CLEAR(retval);
   if (!success) {
-    status = -1;
-    hiwire_CLEAR(*result);
+    status = PYGEN_ERROR;
   }
   return status;
 }
