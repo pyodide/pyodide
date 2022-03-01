@@ -34,12 +34,20 @@ def test_cpython_core(python_test, selenium, request):
     try:
         selenium.run(
             """
-            from test.libregrtest import main
-            try:
-                main(['{}'], verbose=True, verbose3=True)
-            except SystemExit as e:
-                if e.code != 0:
-                    raise RuntimeError(f'Failed with code: {{e.code}}')
+            from unittest.mock import Mock, patch
+            from unittest import SkipTest, TestCase, main
+            import subprocess
+            from test import libregrtest
+            import platform
+
+            platform.platform(aliased=True)
+
+            with patch("subprocess.Popen", new=Mock(side_effect=SkipTest('Cannot start a subprocess in Pyodide'))):
+                try:
+                    libregrtest.main(['{}'], verbose=True, verbose3=True)
+                except SystemExit as e:
+                    if e.code != 0:
+                        raise RuntimeError(f'Failed with code: {{e.code}}')
             """.format(
                 name
             )
