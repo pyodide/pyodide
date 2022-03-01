@@ -434,7 +434,7 @@ test_setcomps
 test_shelve dbm
 test_shlex
 test_shutil some file system problems
-test_signal
+test_signal emscripten signals implementation isn't very complete
 test_site  TypeError: unhashable type: 'pyodide.JsProxy'
 test_slice
 test_smtpd
