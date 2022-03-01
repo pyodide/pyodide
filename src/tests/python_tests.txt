@@ -99,7 +99,7 @@ test_bz2    threading
 test_c_locale_coercion
 test_calendar
 test_call
-test_capi
+test_capi hangs
 test_cgi
 test_cgitb
 test_charmapcodec
