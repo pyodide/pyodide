@@ -34,31 +34,42 @@ def test_cpython_core(python_test, selenium, request):
     try:
         selenium.run(
             """
-            from unittest.mock import Mock, patch
-            from unittest import SkipTest, TestCase, main
-            from test import libregrtest
+import asyncio
+import os
+import platform
+import subprocess
+import threading
+from test import libregrtest
+from unittest import SkipTest, TestCase, main
+from unittest.mock import Mock, patch
 
-            import subprocess
-            import platform
-            import threading
-            import os
-            import asyncio
+platform.platform(aliased=True)
 
-            platform.platform(aliased=True)
-
-            with (
-                patch("subprocess.Popen", new=Mock(side_effect=SkipTest('Cannot start a subprocess in Pyodide'))),
-                patch("threading.Thread.start", new=Mock(side_effect=SkipTest('Cannot start a thread in Pyodide'))),
-                patch("signal.setitimer", new=Mock(side_effect=SkipTest('setitimer is not implemented in Emscripten'))),
-                patch("os.fork", new=Mock(side_effect=SkipTest("Can't fork"))),
-                patch("os.get_inheritable", new=Mock(side_effect=SkipTest("os.get_inheritable doesn't seem to work"))),
-                patch("asyncio.run", new=Mock(side_effect=SkipTest("asyncio.run doesn't work"))),
-            ):
-                try:
-                    libregrtest.main(['{}'], verbose=True, verbose3=True)
-                except SystemExit as e:
-                    if e.code != 0:
-                        raise RuntimeError(f'Failed with code: {{e.code}}')
+with (
+    patch(
+        "subprocess.Popen",
+        new=Mock(side_effect=SkipTest("Cannot start a subprocess in Pyodide")),
+    ),
+    patch(
+        "threading.Thread.start",
+        new=Mock(side_effect=SkipTest("Cannot start a thread in Pyodide")),
+    ),
+    patch(
+        "signal.setitimer",
+        new=Mock(side_effect=SkipTest("setitimer is not implemented in Emscripten")),
+    ),
+    patch("os.fork", new=Mock(side_effect=SkipTest("Can't fork"))),
+    patch(
+        "os.get_inheritable",
+        new=Mock(side_effect=SkipTest("os.get_inheritable doesn't seem to work")),
+    ),
+    patch("asyncio.run", new=Mock(side_effect=SkipTest("asyncio.run doesn't work"))),
+):
+    try:
+        libregrtest.main(["{}"], verbose=True, verbose3=True)
+    except SystemExit as e:
+        if e.code != 0:
+            raise RuntimeError(f"Failed with code: {{e.code}}")
             """.format(
                 name
             )
