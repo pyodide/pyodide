@@ -40,11 +40,11 @@ test___future__
 test__locale    locale
 test__opcode
 test__osx_support    platform-specific
-test__xxsubinterpreters
+test__xxsubinterpreters hits Py_FatalError("not the last thread") inside Py_EndInterpreter
 test_abc
 test_abstract_numbers
 test_aifc
-test_argparse
+test_argparse slow, sometimes times out
 test_array
 test_asdl_parser
 test_ast
@@ -500,7 +500,7 @@ test_tools.test_pdeps
 test_tools.test_pindent
 test_tools.test_reindent
 test_tools.test_sundry
-test_trace
+test_trace slow, sometimes times out
 test_traceback
 test_tracemalloc
 test_ttk_guionly
@@ -515,7 +515,7 @@ test_typing
 test_ucn
 test_unary
 test_unicode
-test_unicode_file
+test_unicode_file fs MEMFS doesn't work as expected with unencodable file names
 test_unicode_file_functions
 test_unicode_identifiers
 test_unicodedata
@@ -542,7 +542,7 @@ test_venv    nonsense
 test_wait3    threading
 test_wait4    threading
 test_wave
-test_weakref
+test_weakref slow, sometimes times out
 test_weakset
 test_webbrowser    replaced
 test_winconsoleio
