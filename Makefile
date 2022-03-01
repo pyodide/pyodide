@@ -168,14 +168,34 @@ src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
 
 # Stdlib modules that we repackage as standalone packages
 
+TEST_EXTENSIONS= \
+		_testinternalcapi.so \
+		_testcapi.so \
+		_testbuffer.so \
+		_testimportmultiple.so \
+		_testmultiphase.so
+TEST_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
+
 # TODO: also include test directories included in other stdlib modules
 build/test.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONBUILD) && emcc Modules/_testcapimodule.c -I Include/ -I . -s SIDE_MODULE -o _testcapi.so
-	cd $(CPYTHONBUILD) && emcc Modules/_testinternalcapi.c -I Include/ -I Include/internal/ -I . -s SIDE_MODULE -o _testinternalcapi.so -DPy_BUILD_CORE_MODULE
-	ln -s $(CPYTHONBUILD)/_testcapi.so $(CPYTHONLIB)/_testcapi.so
-	ln -s $(CPYTHONBUILD)/_testinternalcapi.so $(CPYTHONLIB)/_testinternalcapi.so
-	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar test _testcapi.so _testinternalcapi.so
-	rm $(CPYTHONLIB)/_testcapi.so $(CPYTHONLIB)/_testinternalcapi.so
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
+							   -I Include/internal/ -DPy_BUILD_CORE_MODULE
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testcapimodule.c -o Modules/_testcapi.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testbuffer.c -o Modules/_testbuffer.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
+
+	for testname in $(TEST_EXTENSIONS); do \
+		cd $(CPYTHONBUILD) && \
+		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
+		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
+	done
+
+	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar \
+		test $(TEST_EXTENSIONS)
+
+	cd $(CPYTHONLIB) && rm $(TEST_EXTENSIONS)
+
 
 build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/distutils.tar distutils
