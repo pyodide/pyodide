@@ -1,9 +1,9 @@
 package:
   name: setuptools
-  version: 60.5.0
+  version: 60.9.3
 source:
-  url: https://files.pythonhosted.org/packages/eb/53/0dd4c7960579da8be13fa9b2c2591643d37f323e3d79f8bc8b1b6c8e6217/setuptools-60.5.0-py3-none-any.whl
-  sha256: 68eb94073fc486091447fcb0501efd6560a0e5a1839ba249e5ff3c4c93f05f90
+  url: https://files.pythonhosted.org/packages/3b/02/8d4d27b1cacaac2d129a27d17a22d92a2a5eedcb7817d4ed8ab0d4daf5c4/setuptools-60.9.3-py3-none-any.whl
+  sha256: e4f30b9f84e5ab3decf945113119649fec09c1fc3507c6ebffec75646c56e62b
 build:
   post: |
     find build/setuptools-*/dist -name '*.exe' -delete

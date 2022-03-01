@@ -1,10 +1,10 @@
 package:
   name: logbook
-  version: 1.5.2
+  version: 1.5.3
 
 source:
-  url: https://github.com/getlogbook/logbook/archive/refs/tags/1.5.2.tar.gz
-  sha256: 3eebcb13a41636004a2d03d875bc1c2ccc4afb02dc13f45320b147fee79c9739
+  url: https://files.pythonhosted.org/packages/2f/d9/16ac346f7c0102835814cc9e5b684aaadea101560bb932a2403bd26b2320/Logbook-1.5.3.tar.gz
+  sha256: 66f454ada0f56eae43066f604a222b09893f98c1adc18df169710761b8f32fe8
 
 requirements:
   run:
