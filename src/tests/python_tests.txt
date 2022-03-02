@@ -40,11 +40,11 @@ test___future__
 test__locale    locale
 test__opcode
 test__osx_support    platform-specific
-test__xxsubinterpreters hits Py_FatalError("not the last thread") inside Py_EndInterpreter
+test__xxsubinterpreters    hits Py_FatalError("not the last thread") inside Py_EndInterpreter
 test_abc
 test_abstract_numbers
 test_aifc
-test_argparse slow, sometimes times out
+test_argparse    slow, sometimes times out
 test_array
 test_asdl_parser
 test_ast
@@ -99,7 +99,7 @@ test_bz2
 test_c_locale_coercion
 test_calendar
 test_call
-test_capi hangs
+test_capi    hangs
 test_cgi
 test_cgitb
 test_charmapcodec
@@ -148,11 +148,11 @@ test_csv
 test_ctypes
 test_curses
 test_dataclasses
-test_datetime strftime
+test_datetime    strftime
 test_dbm    dbm
 test_dbm_dumb    permissions
-test_dbm_gnu dbm
-test_dbm_ndbm dbm
+test_dbm_gnu    dbm
+test_dbm_ndbm    dbm
 test_decimal    floating point
 test_decorators
 test_defaultdict
@@ -197,7 +197,7 @@ test_epoll
 test_errno
 test_exception_hierarchy
 test_exception_variations
-test_exceptions BaseException_dealloc and BaseException_clear enter an infinite recurse
+test_exceptions    BaseException_dealloc and BaseException_clear enter an infinite recurse
 test_extcall
 test_faulthandler
 test_fcntl
@@ -235,7 +235,7 @@ test_getargs2
 test_getopt
 test_getpass
 test_gettext
-test_glob fails on self symlink test
+test_glob    fails on self symlink test
 test_global
 test_grammar
 test_graphlib
@@ -328,7 +328,7 @@ test_json.test_unicode
 test_keyword
 test_keywordonlyarg
 test_kqueue
-test_largefile  RangeError: Array buffer allocation failed
+test_largefile    RangeError: Array buffer allocation failed
 test_lib2to3    nonsense
 test_linecache
 test_list
@@ -431,22 +431,22 @@ test_select    networking segfault-newselect
 test_selectors    networking segfault-newselect
 test_set
 test_setcomps
-test_shelve dbm
+test_shelve    dbm
 test_shlex
-test_shutil some file system problems
-test_signal emscripten signals implementation isn't very complete
-test_site  TypeError: unhashable type: 'pyodide.JsProxy'
+test_shutil    some file system problems
+test_signal    emscripten signals implementation isn't very complete
+test_site    TypeError: unhashable type: 'pyodide.JsProxy'
 test_slice
 test_smtpd
 test_smtplib    bad ioctl syscall 21537
 test_smtpnet
 test_sndhdr
-test_socket networking
-test_socketserver networking
+test_socket    networking
+test_socketserver    networking
 test_sort
 test_source_encoding
 test_spwd
-test_sqlite No module named 'sqlite3.test'
+test_sqlite    No module named 'sqlite3.test'
 test_ssl
 test_startfile
 test_stat
@@ -461,7 +461,7 @@ test_struct
 test_structmembers
 test_structseq
 test_subclassinit
-test_subprocess subprocess
+test_subprocess    subprocess
 test_sunau
 test_sundry
 test_super
@@ -484,7 +484,7 @@ test_threadedtempfile    threading
 test_threading    threading
 test_threading_local    threading
 test_threadsignals    threading
-test_time strftime
+test_time    strftime
 test_timeit
 test_timeout
 test_tix
@@ -500,7 +500,7 @@ test_tools.test_pdeps
 test_tools.test_pindent
 test_tools.test_reindent
 test_tools.test_sundry
-test_trace slow, sometimes times out
+test_trace    slow, sometimes times out
 test_traceback
 test_tracemalloc
 test_ttk_guionly
@@ -515,11 +515,11 @@ test_typing
 test_ucn
 test_unary
 test_unicode
-test_unicode_file fs MEMFS doesn't work as expected with unencodable file names
+test_unicode_file    fs MEMFS doesn't work as expected with unencodable file names
 test_unicode_file_functions
 test_unicode_identifiers
 test_unicodedata
-test_unittest  No module named 'unittest.test'
+test_unittest    No module named 'unittest.test'
 test_univnewlines
 test_unpack
 test_unpack_ex
@@ -542,7 +542,7 @@ test_venv    nonsense
 test_wait3    threading
 test_wait4    threading
 test_wave
-test_weakref slow, sometimes times out
+test_weakref    slow, sometimes times out
 test_weakset
 test_webbrowser    replaced
 test_winconsoleio
