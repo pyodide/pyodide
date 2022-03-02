@@ -36,8 +36,6 @@ API.fatal_error = function (e: any) {
   if (typeof e === "number") {
     // A C++ exception. Have to do some conversion work.
     e = convertCppException(e);
-  } else if (typeof e === "string") {
-    e = new Error(e);
   }
   // Mark e so we know not to handle it later in EM_JS wrappers
   e.pyodide_fatal_error = true;
