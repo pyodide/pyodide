@@ -1,31 +1,33 @@
-From 92903d1a88fdb10dcd19f3ce1b02620dbc619426 Mon Sep 17 00:00:00 2001
+From 7e18b47f92cae8ed815a5f56cb30d9af3b89f345 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 1 Mar 2022 17:06:53 -0800
 Subject: [PATCH 10/10] Fix _PyImport_LoadDynamicModuleWithSpec fpcast
 
 ---
- Python/importdl.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ Python/importdl.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/Python/importdl.c b/Python/importdl.c
-index 6d2554741f..64f8dc6251 100644
+index 6d2554741f..d07bd9cd3c 100644
 --- a/Python/importdl.c
 +++ b/Python/importdl.c
-@@ -89,6 +89,13 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
+@@ -89,6 +89,15 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
      return NULL;
  }
  
 +#include <emscripten.h>
 +// Sometimes these init functions expect one argument, sometimes zero arguments
 +// so they need a trampoline.
-+EM_JS(PyObject*, em_call_init_function, (PyObject *(*f)(void)), {
++typedef (PyObject *(*PyInitFunctionType)(void);
++
++EM_JS(PyObject*, em_call_init_function, (PyInitFunctionType f)), {
 +    return Module.wasmTable.get(f)();
 +});
 +
  PyObject *
  _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
  {
-@@ -164,7 +171,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
+@@ -164,7 +173,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
          _Py_PackageContext = oldcontext;
          goto error;
      }
