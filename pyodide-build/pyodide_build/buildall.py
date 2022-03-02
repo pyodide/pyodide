@@ -23,6 +23,12 @@ from .common import UNVENDORED_STDLIB_MODULES
 from .io import parse_package_config
 
 
+class BuildError(Exception):
+    def __init__(self, returncode):
+        self.returncode = returncode
+        super().__init__()
+
+
 class BasePackage:
     pkgdir: Path
     name: str
@@ -160,15 +166,14 @@ class Package(BasePackage):
         else:
             (self.pkgdir / "build.log.tmp").unlink()
 
-        try:
-            p.check_returncode()
-        except subprocess.CalledProcessError:
+        if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
 
             with open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
 
-            raise
+            print("ERROR: cancelling buildall")
+            raise BuildError(p.returncode)
 
         if self.library:
             return
@@ -411,6 +416,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     num_built = len(already_built)
     while num_built < len(pkg_map):
         pkg = built_queue.get()
+        if isinstance(pkg, BuildError):
+            raise SystemExit(pkg.returncode)
         if isinstance(pkg, Exception):
             raise pkg
 

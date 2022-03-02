@@ -297,9 +297,13 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
     # Apply all the patches
     with chdir(srcpath):
         for patch in patches:
-            subprocess.run(
-                ["patch", "-p1", "--binary", "-i", pkg_root / patch], check=True
+            result = subprocess.run(
+                ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
+                check=False,
             )
+            if result.returncode != 0:
+                print(f"ERROR: Patch {pkg_root/patch} failed")
+                raise SystemExit(result.returncode)
 
     # Add any extra files
     for src, dst in extras:
