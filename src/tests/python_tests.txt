@@ -254,7 +254,7 @@ test_httpservers
 test_idle
 test_imaplib    socket
 test_imghdr
-test_imp missing _testimportmultiple
+test_imp
 test_importlib.builtin.test_finder
 test_importlib.builtin.test_loader
 test_importlib.extension.test_case_sensitivity
