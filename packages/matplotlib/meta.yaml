@@ -38,8 +38,9 @@ build:
 
 requirements:
   run:
-    - distutils
     - cycler
+    - distutils
+    - fonttools
     - kiwisolver
     - numpy
     - packaging
