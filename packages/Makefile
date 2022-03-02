@@ -6,8 +6,8 @@ else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
 endif
 
-SP1=$(HOSTINSTALLDIR)/lib/$(PY_MAJOR).$(PY_MINOR)/site-packages/
-SP2=$(HOSTINSTALLDIR)/usr/local/lib/$(PY_MAJOR_MINOR)/site-packages/
+SP1=$(HOSTINSTALLDIR)/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/
+SP2=$(HOSTINSTALLDIR)/usr/local/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/
 SPBOTH=$(SP1):$(SP2)
 
 all: .artifacts/bin/pyodide-build
