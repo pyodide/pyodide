@@ -4,6 +4,9 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/82/f0/fc3f6f250bb9d5e5aaa890469fb27c4edee66cf0e2ea4f8b0b287260c6f8/astropy-5.0.tar.gz
   sha256: 70203e151e13292586a817b4069ce1aad4643567aff38b1d191c173bc54f3927
+  patches:
+    - patches/0001-Move-ssl-import-into-functions-to-avoid-import-error.patch
+    - patches/0002-Move-concurrent.futures-import-into-function-to-avoi.patch
 build:
   script: |
     pip install extension-helpers
@@ -16,6 +19,26 @@ requirements:
     - packaging
     - numpy
     - pyerfa
+    - pyyaml
 test:
   imports:
     - astropy
+    - astropy.config
+    - astropy.constants
+    - astropy.convolution
+    - astropy.coordinates
+    - astropy.cosmology
+    - astropy.extern
+    - astropy.io
+    - astropy.modeling
+    - astropy.nddata
+    - astropy.samp
+    - astropy.stats
+    - astropy.table
+    - astropy.time
+    - astropy.timeseries
+    - astropy.uncertainty
+    - astropy.units
+    - astropy.utils
+    - astropy.visualization
+    - astropy.wcs
