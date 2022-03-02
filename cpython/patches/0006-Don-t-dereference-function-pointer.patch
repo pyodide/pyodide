@@ -1,7 +1,7 @@
 From d9b55121e5e0671efaa850096d3f816cee18479a Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 23 Jun 2021 13:47:30 -0700
-Subject: [PATCH 6/9] Don't dereference function pointer
+Subject: [PATCH 06/10] Don't dereference function pointer
 
 Ctypes thinks that the result of dlsym is a pointer to the function pointer, so
 it should call it like `result = (*f)(args)`. Probably this is true for the
