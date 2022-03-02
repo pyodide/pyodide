@@ -319,18 +319,6 @@ def pack_wheel(path):
         subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
 
 
-def install_for_distribution():
-    commands = [
-        sys.executable,
-        "setup.py",
-        "bdist_wheel",
-        "--skip-build",
-    ]
-    env = dict(os.environ)
-    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
-    subprocess.check_call(commands, env=env)
-
-
 def compile(
     srcpath: Path,
     build_metadata: dict[str, Any],
@@ -381,7 +369,6 @@ def compile(
     skip_host = build_metadata.get("skip_host", True)
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
-    bash_runner.env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(
@@ -402,8 +389,35 @@ def compile(
                 replace_libs=replace_libs,
                 replay_from=replay_from,
             )
-        install_for_distribution()
-    del bash_runner.env["_PYTHON_HOST_PLATFORM"]
+
+
+def set_host_platform(wheel_dir: Path, platform: str):
+    dist_info = next(wheel_dir.glob("*.dist-info"))
+    WHEEL = dist_info / "WHEEL"
+    lines = WHEEL.read_text().splitlines()
+    result_lines = []
+    for line in lines:
+        if line.startswith("Tag:"):
+            line = line.rpartition("-")[0] + "-" + platform
+        result_lines.append(line)
+    WHEEL.write_text("\n".join(result_lines))
+
+
+def update_wheel_platform(build_dir: Path, wheel_dir: Path):
+    set_host_platform(wheel_dir, "emscripten_wasm32")
+    for p in wheel_dir.glob("*"):
+        if not p.suffix == ".dist-info":
+            if p.is_dir():
+                shutil.rmtree(p)
+            else:
+                p.unlink()
+
+    lib_dir = next(build_dir.glob("lib*"))
+    for p in lib_dir.glob("*"):
+        if p.is_dir():
+            shutil.copytree(p, wheel_dir / p.name)
+        else:
+            shutil.copy(p, wheel_dir)
 
 
 def package_wheel(
@@ -443,10 +457,15 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
+    build_dir = srcpath / "build"
     wheel_paths = list(distdir.glob("*.whl"))
     assert len(wheel_paths) == 1
     unpack_wheel(wheel_paths[0])
-    wheel_dir = Path(next(p for p in distdir.glob("*") if p.is_dir()))
+    wheel_paths[0].unlink()
+    wheel_dir = next(p for p in distdir.glob("*") if p.is_dir())
+    if not wheel_paths[0].name.endswith("any.whl"):
+        update_wheel_platform(build_dir, wheel_dir)
+
     post = build_metadata.get("post")
     if post:
         bash_runner.env.update({"PKGDIR": str(pkg_root)})
