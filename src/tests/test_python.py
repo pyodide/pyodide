@@ -1,7 +1,7 @@
 import pytest
 
 
-def test_init(selenium_standalone):
+def test_init(selenium):
     assert "Python initialization complete" in selenium_standalone.logs.splitlines()
 
 

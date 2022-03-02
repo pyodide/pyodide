@@ -614,8 +614,8 @@ def selenium_standalone(request, web_server_main):
                 print(selenium.logs)
 
 
-@pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
-def selenium_module_standalone(request, web_server_main):
+@pytest.fixture(params=["firefox", "chrome", "node"], scope="module")
+def selenium_esm(request, web_server_main):
     # Avoid loading the fixture if the test is going to be skipped
     _maybe_skip_test(request.node)
 
@@ -651,6 +651,8 @@ def selenium_standalone_noload_common(request, web_server_main, script_type="cla
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_webworker_standalone(request, web_server_main, script_type):
     # Avoid loading the fixture if the test is going to be skipped
+    if request.param == "firefox" and script_type == "module":
+        pytest.skip("firefox does not support module type web worker")
     _maybe_skip_test(request.node)
     with selenium_standalone_noload_common(
         request, web_server_main, script_type=script_type
