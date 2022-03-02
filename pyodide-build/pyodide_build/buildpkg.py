@@ -49,7 +49,7 @@ shutil.register_unpack_format(
 
 
 class BashRunnerWithSharedEnvironment:
-    """Run multiple bash scripts with persisent environment.
+    """Run multiple bash scripts with persistent environment.
 
     Environment is stored to "env" member between runs. This can be updated
     directly to adjust the environment, or read to get variables.
@@ -315,12 +315,22 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
 
 def unpack_wheel(path):
     with chdir(path.parent):
-        subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "wheel", "unpack", path.name], check=False
+        )
+        if result.returncode != 0:
+            print(f"ERROR: Unpacking wheel {path.name} failed")
+            raise SystemExit(result.returncode)
 
 
 def pack_wheel(path):
     with chdir(path.parent):
-        subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "wheel", "pack", path.name], check=False
+        )
+        if result.returncode != 0:
+            print(f"ERROR: Packing wheel {path} failed")
+            raise SystemExit(result.returncode)
 
 
 def install_for_distribution():
@@ -332,7 +342,10 @@ def install_for_distribution():
     ]
     env = dict(os.environ)
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
-    subprocess.check_call(commands, env=env)
+    result = subprocess.run(commands, env=env, check=False)
+    if result.returncode != 0:
+        print("ERROR: Running bdist_wheel failed")
+        raise SystemExit(result.returncode)
 
 
 def compile(
@@ -395,7 +408,10 @@ def compile(
             )
             prereplay = build_metadata.get("prereplay")
             if prereplay:
-                bash_runner.run(prereplay)
+                result = bash_runner.run(prereplay)
+                if result.returncode != 0:
+                    print("ERROR: prereplay failed")
+                    raise SystemExit(result.returncode)
         if should_replay_compile:
             pywasmcross.replay_compile(
                 cflags=build_metadata["cflags"],
@@ -454,7 +470,10 @@ def package_wheel(
     post = build_metadata.get("post")
     if post:
         bash_runner.env.update({"PKGDIR": str(pkg_root)})
-        bash_runner.run(post, check=True)
+        result = bash_runner.run(post)
+        if result.returncode != 0:
+            print("ERROR: post ({post}) failed")
+            raise SystemExit(result.returncode)
 
     test_dir = distdir / "tests"
     nmoved = 0
@@ -555,7 +574,10 @@ def run_script(
         return
 
     with chdir(srcpath):
-        bash_runner.run(script, check=True)
+        result = bash_runner.run(script)
+        if result.returncode != 0:
+            print("ERROR: script failed")
+            raise SystemExit(result.returncode)
 
 
 def needs_rebuild(
