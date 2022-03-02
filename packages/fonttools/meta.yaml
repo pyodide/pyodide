@@ -6,7 +6,7 @@ source:
   sha256: 1933415e0fbdf068815cb1baaa1f159e17830215f7e8624e5731122761627557
 test:
   imports:
-    - fonttools
+    - fontTools
 about:
   home: http://github.com/fonttools/fonttools
   PyPI: https://pypi.org/project/fontTools

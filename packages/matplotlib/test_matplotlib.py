@@ -83,7 +83,7 @@ def test_svg(selenium):
     selenium.run("fd = io.BytesIO()")
     selenium.run("plt.savefig(fd, format='svg')")
     content = selenium.run("fd.getvalue().decode('utf8')")
-    assert len(content) == 16283
+    assert len(content) == 14998
     assert content.startswith("<?xml")
 
 

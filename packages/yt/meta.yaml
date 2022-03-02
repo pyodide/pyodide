@@ -15,6 +15,8 @@ requirements:
     - matplotlib
     - sympy
     - setuptools
+    - packaging
+    - unyt
 
 build:
   # The test module is imported from the top level `__init__.py`
