@@ -2,9 +2,7 @@ import pytest
 
 
 def test_init(selenium_esm):
-    assert (
-        "Python initialization complete" in selenium_esm.logs.splitlines()
-    )
+    assert "Python initialization complete" in selenium_esm.logs.splitlines()
 
 
 def test_print(selenium_esm):
