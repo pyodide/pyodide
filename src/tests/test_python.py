@@ -2,9 +2,7 @@ import pytest
 
 
 def test_init(selenium_standalone):
-    assert (
-        "Python initialization complete" in selenium_standalone.logs.splitlines()
-    )
+    assert "Python initialization complete" in selenium_standalone.logs.splitlines()
 
 
 def test_webbrowser(selenium):
