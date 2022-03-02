@@ -22,6 +22,9 @@ jobs:
     steps:
       - checkout
 
+      - restore_cache:
+          key: pre-commit-{{ checksum ".pre-commit-config.yaml" }}
+
       - run:
           name: Install lint requirements
           command: |
@@ -30,6 +33,11 @@ jobs:
       - run:
           name: lint
           command: make lint
+
+      - save_cache:
+          key: pre-commit-{{ checksum ".pre-commit-config.yaml" }}
+          paths:
+            - "/root/.cache"
 
   test-docs:
     <<: *defaults
