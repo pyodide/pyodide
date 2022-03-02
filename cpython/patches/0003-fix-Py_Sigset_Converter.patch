@@ -1,5 +1,5 @@
-From 15c20c05c579f26fb95250af588ff6c0b827ec02 Mon Sep 17 00:00:00 2001
-From: Hood Chatham <roberthoodchatham@gmail.com>
+From 88529d19154fae757a58229e76c0fb849d279725 Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Mon, 28 Feb 2022 00:53:53 -0500
 Subject: [PATCH 3/9] fix Py_Sigset_Converter
 

@@ -1,4 +1,4 @@
-From 127d179d50a31e44bc5f1175c6a0a1c3eaf97718 Mon Sep 17 00:00:00 2001
+From d94b4b85f87cb2c0c83f605028acbe2de4ab028a Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Fri, 3 Sep 2021 18:08:26 -0700
 Subject: [PATCH 7/9] Patch in keyboard interrupt handling
@@ -32,12 +32,12 @@ Lastly, we patched PyErr_CheckSignals to check our custom source of keyboard int
 so that C extensions that use PyErr_CheckSignals to allow keyboard interrupts will be
 interruptable in pyodide too.
 ---
- Include/cpython/ceval.h   |  1 +
- Include/cpython/pystate.h |  3 +++
- Modules/signalmodule.c    |  3 +++
- Python/ceval.c            | 15 ++++++++++++---
- Python/pystate.c          |  2 ++
- 5 files changed, 21 insertions(+), 3 deletions(-)
+ Include/cpython/ceval.h   | 1 +
+ Include/cpython/pystate.h | 3 +++
+ Modules/signalmodule.c    | 4 ++++
+ Python/ceval.c            | 8 ++++++++
+ Python/pystate.c          | 2 ++
+ 5 files changed, 18 insertions(+)
 
 diff --git a/Include/cpython/ceval.h b/Include/cpython/ceval.h
 index 06338928f6..4e5720889d 100644
@@ -52,14 +52,14 @@ index 06338928f6..4e5720889d 100644
  PyAPI_FUNC(int) _PyEval_SetAsyncGenFirstiter(PyObject *);
  PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);
 diff --git a/Include/cpython/pystate.h b/Include/cpython/pystate.h
-index 7c995b9307..89fa09fc82 100644
+index 7c995b9307..c3598ed028 100644
 --- a/Include/cpython/pystate.h
 +++ b/Include/cpython/pystate.h
 @@ -11,6 +11,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
  
  /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
  typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
-+typedef int (*PyPyodide_callback)(void);
++typedef void (*PyPyodide_callback)(void);
  
  /* The following values are used for 'what' for tracefunc functions
   *
@@ -73,49 +73,35 @@ index 7c995b9307..89fa09fc82 100644
      PyObject *curexc_type;
      PyObject *curexc_value;
 diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
-index 96881d4a49..26e86d9676 100644
+index 96881d4a49..7847b693f3 100644
 --- a/Modules/signalmodule.c
 +++ b/Modules/signalmodule.c
-@@ -1773,6 +1773,9 @@ PyErr_CheckSignals(void)
+@@ -1773,6 +1773,10 @@ PyErr_CheckSignals(void)
  int
  _PyErr_CheckSignalsTstate(PyThreadState *tstate)
  {
-+    if (tstate->pyodide_callback != NULL && tstate->pyodide_callback() == -1)
-+        return -1;
++    if (tstate->pyodide_callback != NULL){
++        tstate->pyodide_callback();
++    }
 +
      if (!_Py_atomic_load(&is_tripped)) {
          return 0;
      }
 diff --git a/Python/ceval.c b/Python/ceval.c
-index ab10b4166d..5e10b384e3 100644
+index ab10b4166d..c03e664b75 100644
 --- a/Python/ceval.c
 +++ b/Python/ceval.c
-@@ -1749,8 +1749,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
-            event needs attention (e.g. a signal handler or
+@@ -1750,6 +1750,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             async I/O handler); see Py_AddPendingCall() and
             Py_MakePendingCalls() above. */
--
--        if (_Py_atomic_load_relaxed(eval_breaker)) {
-+        // if (_Py_atomic_load_relaxed(eval_breaker)) {
+ 
++        if(tstate->pyodide_callback != NULL){
++            tstate->pyodide_callback();
++        }
+         if (_Py_atomic_load_relaxed(eval_breaker)) {
              opcode = _Py_OPCODE(*next_instr);
              if (opcode != SETUP_FINALLY &&
-                 opcode != SETUP_WITH &&
-@@ -1775,8 +1774,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
-                 if (eval_frame_handle_pending(tstate) != 0) {
-                     goto error;
-                 }
-+                if(tstate->pyodide_callback != NULL){
-+                    if(tstate->pyodide_callback() != 0){
-+                        goto error;
-+                    }
-+                }
-              }
--        }
-+        // }
- 
-     tracing_dispatch:
-     {
-@@ -5600,6 +5604,11 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
+@@ -5600,6 +5603,11 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
      }
  }
  
