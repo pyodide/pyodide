@@ -337,7 +337,8 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py all --output build/benchmarks.json
+
       - store_artifacts:
           path: /root/repo/build/benchmarks.json
 

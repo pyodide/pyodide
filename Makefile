@@ -149,7 +149,7 @@ lint:
 	pre-commit run -a --show-diff-on-failure
 
 benchmark: all
-	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
+	$(HOSTPYTHON) benchmark/benchmark.py all --output build/benchmarks.json
 	$(HOSTPYTHON) benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 
 
