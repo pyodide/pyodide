@@ -8,7 +8,6 @@ source:
 
   patches:
     - patches/disable_macosx_backend.patch
-    - patches/fix-freetype.patch
     - patches/hardcoded-font-cache.patch
     - patches/fix-threading.patch
 
@@ -43,6 +42,7 @@ requirements:
     - cycler
     - kiwisolver
     - numpy
+    - packaging
     - pillow
     - pyparsing
     - python-dateutil
