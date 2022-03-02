@@ -1,9 +1,9 @@
 package:
   name: astropy
-  version: "5.0"
+  version: 5.0.1
 source:
-  url: https://files.pythonhosted.org/packages/82/f0/fc3f6f250bb9d5e5aaa890469fb27c4edee66cf0e2ea4f8b0b287260c6f8/astropy-5.0.tar.gz
-  sha256: 70203e151e13292586a817b4069ce1aad4643567aff38b1d191c173bc54f3927
+  url: https://files.pythonhosted.org/packages/91/a8/619de6e60fe461e3c7e908ec6fa04333b91249e7877a42485b2df981fdcb/astropy-5.0.1.tar.gz
+  sha256: 6382cde6a205aa0b16a0d5e61c0c0131ebd4f0174d6c73e2964f4bee132a9027
   patches:
     - patches/0001-Move-ssl-import-into-functions-to-avoid-import-error.patch
     - patches/0002-Move-concurrent.futures-import-into-function-to-avoi.patch
