@@ -62,6 +62,9 @@ substitutions:
   way.
   {pr}`2178`
 
+- {{ Update }} Pyodide now runs Python 3.10.2.
+  {pr}`2225`
+
 ## Version 0.19.0
 
 _January 10, 2021_
