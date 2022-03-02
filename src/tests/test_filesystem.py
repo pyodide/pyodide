@@ -25,7 +25,7 @@ def test_idbfs_persist_code(selenium_standalone):
     )
     # create file in mount
     selenium.run_js(
-        """
+        f"""
         pyodide.runPython(`
             import pathlib
             p = pathlib.Path('/lib/{PYVERSION}/site-packages/test_idbfs/__init__.py')
