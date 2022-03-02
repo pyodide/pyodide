@@ -44,6 +44,10 @@ from unittest import SkipTest, TestCase, main
 from unittest.mock import Mock, patch
 
 platform.platform(aliased=True)
+import _testcapi
+if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
+    # This uses raise() which doesn't work.
+    del _testcapi.raise_SIGINT_then_send_None
 
 with (
     patch(

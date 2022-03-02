@@ -14,8 +14,6 @@ pyodide_callback(void)
     callback_clock = 50;
     int interrupt_buffer = EM_ASM_INT({
       let result = API.interrupt_buffer[0];
-      console.log(
-        { result, interrupt_buffer : API.interrupt_buffer.toString() });
       API.interrupt_buffer[0] = 0;
       return result;
     });
