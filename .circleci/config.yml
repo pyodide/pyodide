@@ -16,29 +16,6 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
 
 jobs:
-  lint:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-
-      - restore_cache:
-          key: pre-commit-{{ checksum ".pre-commit-config.yaml" }}
-
-      - run:
-          name: Install lint requirements
-          command: |
-            python -m pip install pre-commit
-
-      - run:
-          name: lint
-          command: make lint
-
-      - save_cache:
-          key: pre-commit-{{ checksum ".pre-commit-config.yaml" }}
-          paths:
-            - "/root/.cache"
-
   test-docs:
     <<: *defaults
     resource_class: small
@@ -411,11 +388,6 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-
       - test-docs:
           filters:
             tags:
@@ -540,7 +512,6 @@ workflows:
 
       - deploy-release:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
@@ -551,7 +522,6 @@ workflows:
               only: /^\d+\.\d+\.\w+$/
       - deploy-dev:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox

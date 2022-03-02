@@ -7,7 +7,17 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+      - uses: pre-commit/action@v2.0.3
+
   build-core:
+    needs: [lint]
     runs-on: ubuntu-latest
     env:
       EMSDK_NUM_CORES: 3
@@ -89,7 +99,7 @@ jobs:
     env:
       DISPLAY: :99
 
-    needs: build-core
+    needs: [lint, build-core]
     strategy:
       matrix:
         selenium_runner: [firefox]
