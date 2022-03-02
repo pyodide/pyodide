@@ -6,10 +6,14 @@ else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
 endif
 
+SP1=$(HOSTINSTALLDIR)/lib/$(PY_MAJOR).$(PY_MINOR)/site-packages/
+SP2=$(HOSTINSTALLDIR)/usr/local/lib/$(PY_MAJOR_MINOR)/site-packages/
+SPBOTH=$(SP1):$(SP2)
+
 all: .artifacts/bin/pyodide-build
 	mkdir -p build-logs
-	echo PYTHONPATH="$(HOSTINSTALLDIR)/lib/python:$(PYODIDE_ROOT)/pyodide-build/"
-	PYTHONPATH="$(HOSTINSTALLDIR)/lib/python:$(PYODIDE_ROOT)/pyodide-build/" python -m pyodide_build buildall . ../build \
+	PYTHONPATH="$(SPBOTH):$(PYODIDE_ROOT)/pyodide-build/"\
+		python -m pyodide_build buildall . ../build \
 		$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
 		--log-dir=build-logs
 

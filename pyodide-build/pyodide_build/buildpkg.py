@@ -103,6 +103,9 @@ def get_bash_runner():
             "PYTHONINCLUDE",
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
+            "HOSTINSTALLDIR",
+            "PYMAJOR",
+            "PYMINOR",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
