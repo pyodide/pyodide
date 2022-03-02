@@ -6,17 +6,17 @@ failure_exit() {
 }
 
 check_python_version() {
-  if ! command -v python3.10 &> /dev/null; then
-    echo >&2 "Must compile with python 3.10."
+  if ! command -v python$PYMAJOR.$PYMINOR &> /dev/null; then
+    echo >&2 "Must compile with python $PYMAJOR.$PYMINOR."
     exit 1
   fi
 }
 check_python_headers() {
   local python_headers_present
-  python_headers_present="$(pkg-config --libs python-3.10)"
+  python_headers_present="$(pkg-config --libs python-$PYMAJOR.$PYMINOR)"
 
   if [ ! "${python_headers_present}" ]; then
-    failure_exit "Python 3.10 headers"
+    failure_exit "Python $PYMAJOR.$PYMINOR headers"
   fi
 }
 

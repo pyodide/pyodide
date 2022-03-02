@@ -4,9 +4,12 @@ Generate a list of test modules in the CPython distribution.
 
 import os
 from pathlib import Path
+from sys import version_info
 
 TEST_DIR = (
-    Path(__file__).parents[2] / "cpython/installs/python-3.10.2/lib/python3.10/test/"
+    Path(__file__).parents[2] / "cpython/installs"
+    f"/python-{version_info.major}.{version_info.minor}.{version_info.micro}"
+    f"/lib/python{version_info.major}.{version_info.minor}/test/"
 )
 
 

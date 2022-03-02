@@ -1,0 +1,35 @@
+From 77517841878c92eb29ea2e29cb4c37f2ff7d0f43 Mon Sep 17 00:00:00 2001
+From: Jo Bovy <bovy@astro.utoronto.ca>
+Date: Tue, 1 Mar 2022 21:19:17 -0500
+Subject: [PATCH] Move concurrent.futures import into function to avoid import
+ error
+
+---
+ astropy/utils/console.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/astropy/utils/console.py b/astropy/utils/console.py
+index f2bd22a24..5db50e0f9 100644
+--- a/astropy/utils/console.py
++++ b/astropy/utils/console.py
+@@ -14,7 +14,6 @@ import struct
+ import sys
+ import threading
+ import time
+-from concurrent.futures import ProcessPoolExecutor, as_completed
+ 
+ try:
+     import fcntl
+@@ -805,7 +804,8 @@ class ProgressBar:
+             else:
+                 ctx = multiprocessing.get_context(multiprocessing_start_method)
+                 kwargs = dict(mp_context=ctx)
+-
++                
++                from concurrent.futures import ProcessPoolExecutor, as_completed
+                 with ProcessPoolExecutor(
+                         max_workers=(int(multiprocess)
+                                      if multiprocess is not True
+-- 
+2.32.0 (Apple Git-132)
+

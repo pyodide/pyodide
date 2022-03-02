@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
-from pyodide_build.testing import run_in_pyodide
+from pyodide_build.testing import PYVERSION, run_in_pyodide
 
 
 def test_find_imports():
@@ -849,14 +849,14 @@ def test_js_stackframes(selenium):
         ["test.html", "d2"],
         ["test.html", "d1"],
         ["pyodide.js", "runPython"],
-        ["/lib/python3.10/site-packages/_pyodide/_base.py", "eval_code"],
-        ["/lib/python3.10/site-packages/_pyodide/_base.py", "run"],
+        [f"/lib/{PYVERSION}/site-packages/_pyodide/_base.py", "eval_code"],
+        [f"/lib/{PYVERSION}/site-packages/_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
         ["test.html", "b"],
         ["pyodide.js", "pyimport"],
-        ["/lib/python3.10/importlib/__init__.py", "import_module"],
+        [f"/lib/{PYVERSION}/importlib/__init__.py", "import_module"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 

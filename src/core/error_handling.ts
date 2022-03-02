@@ -36,6 +36,12 @@ API.fatal_error = function (e: any) {
   if (typeof e === "number") {
     // A C++ exception. Have to do some conversion work.
     e = convertCppException(e);
+  } else if (typeof e === "string") {
+    e = new Error(e);
+  } else if (typeof e !== "object") {
+    e = new Error(
+      `An object of type ${typeof e} was thrown as an error. toString returns ${e.toString()}`
+    );
   }
   // Mark e so we know not to handle it later in EM_JS wrappers
   e.pyodide_fatal_error = true;
