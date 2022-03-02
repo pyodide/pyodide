@@ -326,9 +326,12 @@ def test_keyboard_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
+                def f():
+                    pass
                 for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
+                    f()
             `);
         } catch(e){}
         pyodide.setInterruptBuffer(undefined);
