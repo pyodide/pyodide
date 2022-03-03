@@ -352,10 +352,15 @@ def test_draw_text_rotated(selenium_standalone):
 @pytest.mark.skip_pyproxy_check
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
+    xfail_msg = None
     if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
-    if selenium.browser == "chrome":
-        pytest.xfail(f"high recursion limit not supported for {selenium.browser}")
+        xfail_msg = "No supported matplotlib backends on node"
+    elif selenium.browser == "chrome":
+        xfail_msg = f"high recursion limit not supported for {selenium.browser}"
+    elif selenium.browser == "firefox":
+        xfail_msg = "Fails sometimes with selenium.common.exceptions.TimeoutException"
+    if xfail_msg:
+        pytest.xfail(xfail_msg)
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         print(
