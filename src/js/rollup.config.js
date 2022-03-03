@@ -39,5 +39,5 @@ export default [
   // { input: "pyodide", format: "esm", minify: false, ext: "mjs" },
   { input: "pyodide", format: "esm", minify: true, ext: "mjs" },
   // { input: "pyodide", format: "umd", minify: false },
-  { input: "pyodide", format: "umd", minify: true },
+  { input: "pyodide.umd", format: "umd", minify: true },
 ].map(config);

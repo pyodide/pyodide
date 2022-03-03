@@ -268,4 +268,3 @@ export async function loadPyodide(config: {
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
-(globalThis as any).loadPyodide = loadPyodide;
