@@ -4,34 +4,7 @@ Date: Thu, 3 Mar 2022 12:47:23 +0100
 Subject: [PATCH] Merge pull request #3831 from neutrinoceros/migrate2tomli
 
 MNT: migrate from toml to tomli + tomli_w
----
- setup.cfg    |  5 ++++-
- yt/config.py | 14 +++++++++-----
- 2 files changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/setup.cfg b/setup.cfg
-index f7644a2e42..36d1139bb6 100644
---- a/setup.cfg
-+++ b/setup.cfg
-@@ -47,7 +47,8 @@ install_requires =
-     pyyaml>=4.2b1
-     setuptools>=19.6
-     sympy!=1.9,>=1.2  # see https://github.com/sympy/sympy/issues/22241
--    toml>=0.10.2
-+    tomli>=1.2.3
-+    tomli-w>=0.4.0
-     tqdm>=3.4.0
-     unyt>=2.8.0
- python_requires = >=3.6,<3.12
-@@ -103,6 +104,8 @@ minimal =
-     more-itertools==8.4
-     numpy==1.13.3
-     sympy==1.2
-+    tomli==1.2.3
-+    tomli-w==0.4.0
-     unyt==2.8.0
- test =
-     codecov~=2.0.15
 diff --git a/yt/config.py b/yt/config.py
 index 5dfc809a56..c5da7ad93a 100644
 --- a/yt/config.py
