@@ -17,7 +17,6 @@ jobs:
       - uses: pre-commit/action@v2.0.3
 
   build-core:
-    needs: [lint]
     runs-on: ubuntu-latest
     env:
       EMSDK_NUM_CORES: 3
@@ -99,7 +98,7 @@ jobs:
     env:
       DISPLAY: :99
 
-    needs: [lint, build-core]
+    needs: [build-core]
     strategy:
       matrix:
         selenium_runner: [firefox]
