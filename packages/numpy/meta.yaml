@@ -41,8 +41,12 @@ build:
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $HOSTINSTALLDIR/usr/local/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
-
+    export NUMPY_INSTALLED_PATH=$HOSTINSTALLDIR/usr/local/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
+    cp config/* $NUMPY_INSTALLED_PATH
+    python$PYMAJOR.$PYMINOR -c '\
+        from numpy.core.setup_common import C_API_VERSION as API, C_ABI_VERSION as ABI;\
+        print(f"#define NPY_API_VERSION {API:08x}\n#define NPY_ABI_VERSION {ABI:08x}")' \
+    >> $NUMPY_INSTALLED_PATH/_numpyconfig.h
 test:
   imports:
     - numpy
