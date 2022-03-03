@@ -44,9 +44,8 @@ build:
     cp -r config $SRC_DIR
     python$PYMAJOR.$PYMINOR -c '\
         from numpy.core.setup_common import C_API_VERSION as API, C_ABI_VERSION as ABI;\
-        print(f"#define NPY_API_VERSION {API:08x}\n#define NPY_ABI_VERSION {ABI:08x}")' \
+        print(f"#define NPY_API_VERSION 0x{API:08x}\n#define NPY_ABI_VERSION 0x{ABI:08x}")' \
     >> $SRC_DIR/config/_numpyconfig.h
-    exit 1
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
