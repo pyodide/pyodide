@@ -136,7 +136,9 @@ jobs:
 
       - restore_cache:
           keys:
+            - -pkg-v20210911-{{ checksum "Makefile.envs" }}
             - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+            - -pkg-
 
       - run:
           name: build packages
@@ -160,7 +162,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+          key: -pkg-v20210911-{{ checksum "Makefile.envs" }}
 
       - persist_to_workspace:
           root: .
@@ -199,7 +201,9 @@ jobs:
 
       - restore_cache:
           keys:
+            - -pkg-v20210911-{{ checksum "Makefile.envs" }}
             - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+            - -pkg-
 
       - run:
           name: build packages
@@ -223,7 +227,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+          key: -pkg-v20210911-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Zip build directory
