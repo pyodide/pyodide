@@ -1,0 +1,28 @@
+Make tifffile (and imagecodecs) dependencies optional since the latter
+is difficult to build
+
+diff --git a/skimage/io/collection.py b/skimage/io/collection.py
+index 5905ff0d0..299eb59c5 100644
+--- a/skimage/io/collection.py
++++ b/skimage/io/collection.py
+@@ -21,7 +21,10 @@ if LooseVersion(pil_version) < LooseVersion('7.1.0'):
+          'We recommend to upgrade this library.',
+          stacklevel=2)
+ 
+-from tifffile import TiffFile
++try:
++    from tifffile import TiffFile
++except ImportError:
++    TiffFile = None
+ 
+ 
+ __all__ = ['MultiImage', 'ImageCollection', 'concatenate_images',
+@@ -225,6 +228,8 @@ class ImageCollection(object):
+         index = []
+         for fname in self._files:
+             if fname.lower().endswith(('.tiff', '.tif')):
++                if TiffFile is None:
++                    raise ValueError('tifffile dependency is not available in Pyodide')
+                 with open(fname, 'rb') as f:
+                     img = TiffFile(f)
+                     index += [(fname, i) for i in range(len(img.pages))]

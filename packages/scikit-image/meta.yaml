@@ -1,0 +1,30 @@
+package:
+  name: scikit-image
+  version: 0.19.1
+source:
+  patches:
+    - patches/preferred_plugins.patch
+    - patches/make-tifffile-optional.patch
+  sha256: 48f00ee1e8ec2818ae6a152c72df15f4db7f566e839f5c34e1a0c3c9e5210138
+  url: https://pypi.io/packages/source/s/scikit-image/scikit-image-0.19.1.tar.gz
+requirements:
+  run:
+    - distutils
+    - packaging
+    - numpy
+    - scipy
+    - matplotlib
+    - networkx
+    - pillow
+    - imageio
+    - pywavelets
+
+build:
+  cflags: |
+    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
+  script: |
+    pip install pythran
+    pip install --upgrade pythran -t $PYODIDE_ROOT/packages/.artifacts/
+test:
+  imports:
+    - skimage

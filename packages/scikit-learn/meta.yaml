@@ -1,0 +1,61 @@
+package:
+  name: scikit-learn
+  version: 1.0.2
+
+source:
+  url: https://files.pythonhosted.org/packages/75/44/074b780d8ac0b0899937e9b8ba6d5d8873a71b99aa915219251ef85a8890/scikit-learn-1.0.2.tar.gz
+  sha256: b5870959a5484b614f26d31ca4c17524b1b0317522199dc985c3b4256e030767
+
+  patches:
+    - patches/disable-openmp.patch
+    - patches/0001-Cythonize-_cython_blas.pyx-with-include-path-pointin.patch
+
+build:
+  cflags: -Wno-implicit-function-declaration
+
+requirements:
+  run:
+    - numpy
+    - scipy
+    - joblib
+    - threadpoolctl
+
+test:
+  imports:
+    - sklearn
+    - sklearn.calibration
+    - sklearn.cluster
+    - sklearn.compose
+    - sklearn.covariance
+    - sklearn.cross_decomposition
+    - sklearn.datasets
+    - sklearn.decomposition
+    - sklearn.discriminant_analysis
+    - sklearn.dummy
+    - sklearn.ensemble
+    - sklearn.exceptions
+    - sklearn.externals
+    - sklearn.feature_extraction
+    - sklearn.feature_selection
+    - sklearn.gaussian_process
+    - sklearn.impute
+    - sklearn.isotonic
+    - sklearn.kernel_approximation
+    - sklearn.kernel_ridge
+    - sklearn.linear_model
+    - sklearn.manifold
+    - sklearn.metrics
+    - sklearn.mixture
+    - sklearn.model_selection
+    - sklearn.multiclass
+    - sklearn.multioutput
+    - sklearn.naive_bayes
+    - sklearn.neighbors
+    - sklearn.neural_network
+    - sklearn.pipeline
+    - sklearn.preprocessing
+    - sklearn.random_projection
+    - sklearn.semi_supervised
+    - sklearn.svm
+    - sklearn.tree
+    - sklearn.utils
