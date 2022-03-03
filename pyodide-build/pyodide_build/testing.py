@@ -1,12 +1,15 @@
 import contextlib
 import inspect
 from base64 import b64encode
-from sys import version_info
 from typing import Callable, Collection, Optional
 
 import pytest
 
-PYVERSION = f"python{version_info.major}.{version_info.minor}"
+from .common import get_make_flag
+
+PYMAJOR = get_make_flag("PYMAJOR")
+PYMINOR = get_make_flag("PYMINOR")
+PYVERSION = f"python{PYMAJOR}.{PYMINOR}"
 
 
 def _run_in_pyodide_get_source(f):
