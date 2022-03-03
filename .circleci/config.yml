@@ -211,7 +211,7 @@ jobs:
 
       - run:
           name: build packages
-          no_output_timeout: 1800
+          no_output_timeout: 60m
           command: |
             source pyodide_env.sh
 
