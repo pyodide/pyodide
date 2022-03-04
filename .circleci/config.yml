@@ -16,29 +16,6 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
 
 jobs:
-  lint:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-
-      - restore_cache:
-          key: pre-commit-{{ checksum ".pre-commit-config.yaml" }}
-
-      - run:
-          name: Install lint requirements
-          command: |
-            python -m pip install pre-commit
-
-      - run:
-          name: lint
-          command: make lint
-
-      - save_cache:
-          key: pre-commit-{{ checksum ".pre-commit-config.yaml" }}
-          paths:
-            - "/root/.cache"
-
   test-docs:
     <<: *defaults
     resource_class: small
@@ -144,8 +121,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg1-v20220303
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
           name: build packages
@@ -169,7 +145,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - persist_to_workspace:
           root: .
@@ -208,12 +184,11 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg2-v20220303
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
           name: build packages
-          no_output_timeout: 60m
+          no_output_timeout: 1800
           command: |
             source pyodide_env.sh
 
@@ -233,7 +208,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
           name: Zip build directory
@@ -413,11 +388,6 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-
       - test-docs:
           filters:
             tags:
@@ -542,7 +512,6 @@ workflows:
 
       - deploy-release:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
@@ -553,7 +522,6 @@ workflows:
               only: /^\d+\.\d+\.\w+$/
       - deploy-dev:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
