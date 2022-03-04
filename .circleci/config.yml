@@ -209,6 +209,9 @@ jobs:
           keys:
             - -pkg-v20220303-{{ checksum "Makefile.envs" }}
 
+      - restore_cache:
+          keys: -pkg-e6JtjUyJqzEXcGob0Bb+UFu7qo+2041r8J53u4V_GCA=-v20210911-
+
       - run:
           name: build packages
           no_output_timeout: 60m
