@@ -10,27 +10,27 @@ from pyodide_build.io import parse_package_config
 
 
 def test_subprocess_with_shared_env():
-    p = buildpkg.BashRunnerWithSharedEnvironment()
-    p.env.pop("A", None)
+    with buildpkg.BashRunnerWithSharedEnvironment() as p:
+        p.env.pop("A", None)
 
-    res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"6\n"
-    assert p.env.get("A", None) is None
+        res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"6\n"
+        assert p.env.get("A", None) is None
 
-    p.run("export A=2")
-    assert p.env["A"] == "2"
+        p.run("export A=2")
+        assert p.env["A"] == "2"
 
-    res = p.run("echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"2\n"
+        res = p.run("echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"2\n"
 
-    res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"6\n"
-    assert p.env.get("A", None) == "6"
+        res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"6\n"
+        assert p.env.get("A", None) == "6"
 
-    p.env["A"] = "7"
-    res = p.run("echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"7\n"
-    assert p.env["A"] == "7"
+        p.env["A"] = "7"
+        res = p.run("echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"7\n"
+        assert p.env["A"] == "7"
 
 
 def test_prepare_source(monkeypatch):
@@ -73,9 +73,9 @@ def test_run_script(is_library, tmpdir):
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
     build_metadata = {"script": script, "library": is_library}
-    shared_env = buildpkg.BashRunnerWithSharedEnvironment()
-    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
-    assert (src_dir / "out.txt").exists()
+    with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
+        buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
+        assert (src_dir / "out.txt").exists()
 
 
 def test_run_script_environment(tmpdir):
@@ -83,10 +83,10 @@ def test_run_script_environment(tmpdir):
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
     build_metadata = {"script": script, "library": False}
-    shared_env = buildpkg.BashRunnerWithSharedEnvironment()
-    shared_env.env.pop("A", None)
-    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
-    assert shared_env.env["A"] == "2"
+    with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
+        shared_env.env.pop("A", None)
+        buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
+        assert shared_env.env["A"] == "2"
 
 
 def test_unvendor_tests(tmpdir):

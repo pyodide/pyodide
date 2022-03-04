@@ -14,11 +14,13 @@ import re
 import shutil
 import subprocess
 import sys
+import textwrap
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Optional
+from types import TracebackType
+from typing import Any, NoReturn, Optional, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -48,6 +50,16 @@ shutil.register_unpack_format(
 )
 
 
+def exit_with_stdio(result: subprocess.CompletedProcess) -> NoReturn:
+    if result.stdout:
+        print("  stdout:")
+        print(textwrap.indent(result.stdout, "    "))
+    if result.stderr:
+        print("  stderr:")
+        print(textwrap.indent(result.stderr, "    "))
+    raise SystemExit(result.returncode)
+
+
 class BashRunnerWithSharedEnvironment:
     """Run multiple bash scripts with persistent environment.
 
@@ -55,18 +67,24 @@ class BashRunnerWithSharedEnvironment:
     directly to adjust the environment, or read to get variables.
     """
 
-    _fd_read: Optional[int]
-    _fd_write: Optional[int]
-
     def __init__(self, env=None):
         if env is None:
             env = dict(os.environ)
+
+        self._reader: Optional[TextIO]
+        self._fd_write: Optional[int]
         self.env: dict[str, str] = env
-        self._fd_read, self._fd_write = os.pipe()
-        self._reader = os.fdopen(self._fd_read, "r")
+
+    def __enter__(self) -> "BashRunnerWithSharedEnvironment":
+        fd_read, self._fd_write = os.pipe()
+        self._reader = os.fdopen(fd_read, "r")
+        return self
 
     def run(self, cmd, **opts):
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+        assert self._fd_write is not None
+        assert self._reader is not None
+
         write_env_pycode = ";".join(
             [
                 "import os",
@@ -75,20 +93,32 @@ class BashRunnerWithSharedEnvironment:
             ]
         )
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
-        cmd += "\n" + write_env_shell_cmd
+        full_cmd = f"{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
-            ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
+            ["bash", "-ce", full_cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
+        if result.returncode != 0:
+            print("ERROR: bash commmand failed")
+            print(textwrap.indent(cmd, "    "))
+            exit_with_stdio(result)
+
         self.env = json.loads(self._reader.readline())
         return result
 
-    def close(self):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         """Free the file descriptors."""
-        if self._fd_read and self._fd_write:
-            os.close(self._fd_read)
+
+        if self._fd_write:
             os.close(self._fd_write)
-            self._fd_read = None
             self._fd_write = None
+        if self._reader:
+            self._reader.close()
+            self._reader = None
 
 
 @contextmanager
@@ -107,12 +137,11 @@ def get_bash_runner():
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-    b = BashRunnerWithSharedEnvironment(env=env)
-    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL)
-    try:
+    with BashRunnerWithSharedEnvironment(env=env) as b:
+        b.run(
+            f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL
+        )
         yield b
-    finally:
-        b.close()
 
 
 def check_checksum(archive: Path, source_metadata: dict[str, Any]):
@@ -303,7 +332,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
             )
             if result.returncode != 0:
                 print(f"ERROR: Patch {pkg_root/patch} failed")
-                raise SystemExit(result.returncode)
+                exit_with_stdio(result)
 
     # Add any extra files
     for src, dst in extras:
@@ -320,7 +349,7 @@ def unpack_wheel(path):
         )
         if result.returncode != 0:
             print(f"ERROR: Unpacking wheel {path.name} failed")
-            raise SystemExit(result.returncode)
+            exit_with_stdio(result)
 
 
 def pack_wheel(path):
@@ -330,7 +359,7 @@ def pack_wheel(path):
         )
         if result.returncode != 0:
             print(f"ERROR: Packing wheel {path} failed")
-            raise SystemExit(result.returncode)
+            exit_with_stdio(result)
 
 
 def install_for_distribution():
@@ -345,7 +374,7 @@ def install_for_distribution():
     result = subprocess.run(commands, env=env, check=False)
     if result.returncode != 0:
         print("ERROR: Running bdist_wheel failed")
-        raise SystemExit(result.returncode)
+        exit_with_stdio(result)
 
 
 def compile(
@@ -411,7 +440,7 @@ def compile(
                 result = bash_runner.run(prereplay)
                 if result.returncode != 0:
                     print("ERROR: prereplay failed")
-                    raise SystemExit(result.returncode)
+                    exit_with_stdio(result)
         if should_replay_compile:
             pywasmcross.replay_compile(
                 cflags=build_metadata["cflags"],
@@ -472,8 +501,8 @@ def package_wheel(
         bash_runner.env.update({"PKGDIR": str(pkg_root)})
         result = bash_runner.run(post)
         if result.returncode != 0:
-            print("ERROR: post ({post}) failed")
-            raise SystemExit(result.returncode)
+            print("ERROR: post failed")
+            exit_with_stdio(result)
 
     test_dir = distdir / "tests"
     nmoved = 0
@@ -577,7 +606,7 @@ def run_script(
         result = bash_runner.run(script)
         if result.returncode != 0:
             print("ERROR: script failed")
-            raise SystemExit(result.returncode)
+            exit_with_stdio(result)
 
 
 def needs_rebuild(
