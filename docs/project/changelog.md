@@ -16,7 +16,8 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
+  boost-histogram {pr}`2174`
 
 - Upgraded packages: distlib (0.3.4)
 
@@ -24,6 +25,9 @@ substitutions:
 
 - {{ Update }} Upgraded pyb2d to 0.7.2.
   {pr}`2117`
+
+- {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
+  {pr}`2220`
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
   {pr}`2109`
@@ -45,6 +49,21 @@ substitutions:
 
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
+
+- {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
+  and {any}`pyodide.toPy` which is used to process any object that doesn't have
+  a built-in conversion to Python.
+  {pr}`2170`
+
+- {{Enhancement}} Most pure Python packages were switched to use the wheels
+  directly from PyPI rather than rebuilding them.
+  {pr}`2126`
+
+- {{Enhancement}} Added support for C++ exceptions in packages. Now C++
+  extensions compiled and linked with `-fexceptions` can catch C++ exceptions.
+  Furthermore, uncaught C++ exceptions will be formatted in a human-readable
+  way.
+  {pr}`2178`
 
 ## Version 0.19.0
 

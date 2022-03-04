@@ -8,8 +8,8 @@ requirements:
     - matplotlib
     - numpy
 source:
-  sha256: c0946ed31d71f1b732b5aaa6da5a0388a345019af232ce2f49c766e2d6795c51
-  url: https://files.pythonhosted.org/packages/97/ae/7497bc5e1c84af95e585e3f98585c9f06c627fac6340984c4243053e8f44/networkx-2.6.3.tar.gz
+  sha256: 80b6b89c77d1dfb64a4c7854981b60aeea6360ac02c6d4e4913319e0a313abef
+  url: https://files.pythonhosted.org/packages/e9/93/aa6613aa70d6eb4868e667068b5a11feca9645498fd31b954b6c4bb82fa5/networkx-2.6.3-py3-none-any.whl
 test:
   imports:
     - networkx

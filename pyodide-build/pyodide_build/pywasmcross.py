@@ -23,26 +23,23 @@ configuration with build.
 """
 
 
-from collections import namedtuple
 import importlib.machinery
 import json
 import os
-from pathlib import Path, PurePosixPath
 import re
-import subprocess
 import shutil
+import subprocess
 import sys
-
-
-from typing import List, Dict, Set, Optional, overload
+from collections import namedtuple
+from pathlib import Path, PurePosixPath
+from typing import Optional, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_output
 
-
-symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
 ReplayArgs = namedtuple(
     "ReplayArgs",
@@ -57,7 +54,7 @@ ReplayArgs = namedtuple(
 )
 
 
-def capture_command(command: str, args: List[str]) -> int:
+def capture_command(command: str, args: list[str]) -> int:
     """
     This is called when this script is called through a symlink that looks like
     a compiler or linker.
@@ -118,7 +115,7 @@ def capture_command(command: str, args: List[str]) -> int:
     return subprocess.run(compiler_command + args, env=env).returncode
 
 
-def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
+def capture_make_command_wrapper_symlinks(env: dict[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -141,7 +138,7 @@ def capture_make_command_wrapper_symlinks(env: Dict[str, str]):
         env[var] = symlink
 
 
-def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, str]):
+def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, str]):
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(env)
     env["PATH"] = str(TOOLSDIR) + ":" + env["PATH"]
@@ -164,7 +161,7 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: Dict[str, st
     clean_out_native_artifacts()
 
 
-def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
+def replay_f2c(args: list[str], dryrun: bool = False) -> Optional[list[str]]:
     """Apply f2c to compilation arguments
 
     Parameters
@@ -211,7 +208,7 @@ def replay_f2c(args: List[str], dryrun: bool = False) -> Optional[List[str]]:
     return new_args
 
 
-def get_library_output(line: List[str]) -> Optional[str]:
+def get_library_output(line: list[str]) -> Optional[str]:
     """
     Check if the command is a linker invocation. If so, return the name of the
     output file.
@@ -222,7 +219,7 @@ def get_library_output(line: List[str]) -> Optional[str]:
     return None
 
 
-def parse_replace_libs(replace_libs: str) -> Dict[str, str]:
+def parse_replace_libs(replace_libs: str) -> dict[str, str]:
     """
     Parameters
     ----------
@@ -249,7 +246,7 @@ def parse_replace_libs(replace_libs: str) -> Dict[str, str]:
 
 
 def replay_genargs_handle_dashl(
-    arg: str, replace_libs: Dict[str, str], used_libs: Set[str]
+    arg: str, replace_libs: dict[str, str], used_libs: set[str]
 ) -> Optional[str]:
     """
     Figure out how to replace a `-lsomelib` argument.
@@ -397,8 +394,8 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
 
 
 def replay_command_generate_args(
-    line: List[str], args: ReplayArgs, is_link_command: bool
-) -> List[str]:
+    line: list[str], args: ReplayArgs, is_link_command: bool
+) -> list[str]:
     """
     A helper command for `replay_command` that generates the new arguments for
     the compilation.
@@ -456,7 +453,7 @@ def replay_command_generate_args(
             debugflag = arg
             break
 
-    used_libs: Set[str] = set()
+    used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
         # The native build is possibly multithreaded, but the emscripten one
@@ -496,8 +493,8 @@ def replay_command_generate_args(
 
 
 def replay_command(
-    line: List[str], args: ReplayArgs, dryrun: bool = False
-) -> Optional[List[str]]:
+    line: list[str], args: ReplayArgs, dryrun: bool = False
+) -> Optional[list[str]]:
     """Handle a compilation command
 
     Parameters
@@ -577,8 +574,8 @@ def replay_command(
 
 
 def environment_substitute_args(
-    args: Dict[str, str], env: Dict[str, str] = None
-) -> Dict[str, str]:
+    args: dict[str, str], env: dict[str, str] = None
+) -> dict[str, str]:
     if env is None:
         env = dict(os.environ)
     subbed_args = {}
@@ -616,13 +613,7 @@ def replay_compile(replay_from: int = 1, **kwargs):
     if not build_log_path.is_file():
         return
 
-    lines_str = (
-        subprocess.check_output(["wc", "-l", str(build_log_path)])
-        .decode()
-        .split(" ")[0]
-    )
-    num_lines = str(lines_str)
-    with open(build_log_path, "r") as fd:
+    with open(build_log_path) as fd:
         num_lines = sum(1 for _1 in fd)  # type: ignore
         fd.seek(0)
         for idx, line_str in enumerate(fd):
@@ -634,7 +625,7 @@ def replay_compile(replay_from: int = 1, **kwargs):
 
 
 def clean_out_native_artifacts():
-    for root, dirs, files in os.walk("."):
+    for root, _dirs, files in os.walk("."):
         for file in files:
             path = Path(root) / file
             if path.suffix in (".o", ".so", ".a"):

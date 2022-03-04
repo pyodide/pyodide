@@ -129,20 +129,20 @@ JS_FILE(js2python_init, () => {
     try {
       context.cache.set(obj, list);
       for (let i = 0; i < obj.length; i++) {
-        entryid = Module.hiwire.new_value(obj[i]);
+        entryid = Hiwire.new_value(obj[i]);
         item = js2python_convert_with_context(entryid, context);
         // PyList_SetItem steals a reference to item no matter what
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
           throw new PropagateError();
         }
-        Module.hiwire.decref(entryid);
+        Hiwire.decref(entryid);
         entryid = 0;
         _Py_DecRef(item);
         item = 0;
       }
     } catch (e) {
-      Module.hiwire.decref(entryid);
+      Hiwire.decref(entryid);
       _Py_DecRef(item);
       _Py_DecRef(list);
       throw e;
@@ -170,7 +170,7 @@ JS_FILE(js2python_init, () => {
             `Cannot use key of type ${key_type} as a key to a Python dict`
           );
         }
-        value_id = Module.hiwire.new_value(value_js);
+        value_id = Hiwire.new_value(value_js);
         value_py = js2python_convert_with_context(value_id, context);
 
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
@@ -178,14 +178,14 @@ JS_FILE(js2python_init, () => {
         }
         _Py_DecRef(key_py);
         key_py = 0;
-        Module.hiwire.decref(value_id);
+        Hiwire.decref(value_id);
         value_id = 0;
         _Py_DecRef(value_py);
         value_py = 0;
       }
     } catch (e) {
       _Py_DecRef(key_py);
-      Module.hiwire.decref(value_id);
+      Hiwire.decref(value_id);
       _Py_DecRef(value_py);
       _Py_DecRef(dict);
       throw e;
@@ -278,14 +278,14 @@ JS_FILE(js2python_init, () => {
         itemsize
       );
     }
-    return _JsProxy_create(id);
+    return undefined;
   }
 
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
   function js2python_convert_with_context(id, context) {
-    let value = Module.hiwire.get_value(id);
+    let value = Hiwire.get_value(id);
     let result;
     result = js2python_convertImmutable(value);
     if (result !== undefined) {
@@ -299,18 +299,64 @@ JS_FILE(js2python_init, () => {
       return result;
     }
     context.depth--;
-    result = js2python_convertOther(id, value, context);
-    context.depth++;
-    return result;
+    try {
+      result = js2python_convertOther(id, value, context);
+      if (result !== undefined) {
+        return result;
+      }
+      if (context.defaultConverter === undefined) {
+        return _JsProxy_create(id);
+      }
+      let result_js = context.defaultConverter(
+        value,
+        context.converter,
+        context.cacheConversion
+      );
+      if (result_js === undefined) {
+        return _JsProxy_create(id);
+      }
+      result = js2python_convertImmutable(result_js);
+      if (API.isPyProxy(result_js)) {
+        result_js.destroy();
+      }
+      if (result !== undefined) {
+        return result;
+      }
+      let result_id = Module.hiwire.new_value(result_js);
+      result = _JsProxy_create(result_id);
+      Module.hiwire.decref(result_id);
+      return result;
+    } finally {
+      context.depth++;
+    }
   }
 
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
-  function js2python_convert(id, depth) {
+  function js2python_convert(id, { depth, defaultConverter }) {
     let context = {
       cache: new Map(),
       depth,
+      defaultConverter,
+      // arguments for defaultConverter
+      converter(x) {
+        let id = Module.hiwire.new_value(x);
+        try {
+          return Module.pyproxy_new(
+            js2python_convert_with_context(id, context)
+          );
+        } finally {
+          Module.hiwire.decref(id);
+        }
+      },
+      cacheConversion(input, output) {
+        if (API.isPyProxy(output)) {
+          context.cache.set(input, Module.PyProxy_getPtr(output));
+        } else {
+          throw new Error("Second argument should be a PyProxy!");
+        }
+      },
     };
     return js2python_convert_with_context(id, context);
   }

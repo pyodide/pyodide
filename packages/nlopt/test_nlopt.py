@@ -8,8 +8,8 @@ from pyodide_build.testing import run_in_pyodide
     },
 )
 def test_nlopt():
-    import numpy as np
     import nlopt
+    import numpy as np
 
     # objective function
     def f(x, grad):

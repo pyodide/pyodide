@@ -223,7 +223,15 @@ const acquireDynlibLock = createLock();
  * @private
  */
 async function loadDynlib(lib: string, shared: boolean) {
-  const byteArray = Module.FS.lookupPath(lib).node.contents;
+  const node = Module.FS.lookupPath(lib).node;
+  let byteArray;
+  if (node.mount.type == Module.FS.filesystems.MEMFS) {
+    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
+      Module.FS.lookupPath(lib).node
+    );
+  } else {
+    byteArray = Module.FS.readFile(lib);
+  }
   const releaseDynlibLock = await acquireDynlibLock();
   try {
     const module = await Module.loadWebAssemblyModule(byteArray, {

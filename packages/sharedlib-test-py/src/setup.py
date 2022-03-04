@@ -2,7 +2,6 @@
 
 from setuptools import Extension, setup
 
-
 setup(
     name="sharedlib-test-py",
     version="1.0",

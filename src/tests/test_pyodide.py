@@ -1,9 +1,11 @@
-import pytest
 import re
-
 from textwrap import dedent
-from pyodide_build.testing import run_in_pyodide
-from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
+from typing import Any
+
+import pytest
+
+from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide_build.testing import PYVERSION, run_in_pyodide
 
 
 def test_find_imports():
@@ -56,8 +58,8 @@ def test_code_runner():
     # Ast transform
     import ast
 
-    l = cr.ast.body[0].value.left
-    cr.ast.body[0].value.left = ast.BinOp(
+    l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
+    cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
         left=l, op=ast.Mult(), right=ast.Constant(value=2)
     )
     assert cr.compile().run({"x": 3}) == 13
@@ -68,7 +70,7 @@ def test_code_runner():
 
 
 def test_code_runner_mode():
-    from codeop import PyCF_DONT_IMPLY_DEDENT
+    from codeop import PyCF_DONT_IMPLY_DEDENT  # type: ignore[attr-defined]
 
     assert CodeRunner("1+1\n1+1", mode="exec").compile().run() == 2
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -85,7 +87,7 @@ def test_code_runner_mode():
 
 
 def test_eval_code():
-    ns = {}
+    ns: dict[str, Any] = {}
     assert (
         eval_code(
             """
@@ -149,12 +151,12 @@ def test_eval_code():
 
 
 def test_eval_code_locals():
-    globals = {}
+    globals: dict[str, Any] = {}
     eval_code("x=2", globals, {})
     with pytest.raises(NameError):
         eval_code("x", globals, {})
 
-    locals = {}
+    locals: dict[str, Any] = {}
     eval_code("import sys; sys.getrecursionlimit()", globals, locals)
     with pytest.raises(NameError):
         eval_code("sys.getrecursionlimit()", globals, {})
@@ -195,7 +197,7 @@ def test_dup_temp_file():
 
     tf = TemporaryFile(buffering=0)
     fd1 = os.dup(tf.fileno())
-    fd2 = os.dup2(tf.fileno(), 50)
+    os.dup2(tf.fileno(), 50)
     s = b"hello there!"
     tf.write(s)
     tf2 = open(fd1, "w+")
@@ -288,7 +290,7 @@ def test_hiwire_is_promise(selenium):
 
     if not selenium.browser == "node":
         assert selenium.run_js(
-            f"return pyodide._module.hiwire.isPromise(document.all) === false;"
+            "return pyodide._module.hiwire.isPromise(document.all) === false;"
         )
 
     assert selenium.run_js(
@@ -626,7 +628,7 @@ def test_return_destroyed_value(selenium):
 
 
 def test_docstrings_a():
-    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
+    from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
     from pyodide import JsProxy
 
     jsproxy = JsProxy()
@@ -637,8 +639,8 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
-    from pyodide import create_once_callable, JsProxy
     from _pyodide.docstring import dedent_docstring
+    from pyodide import JsProxy, create_once_callable
 
     jsproxy = JsProxy()
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
@@ -844,14 +846,14 @@ def test_js_stackframes(selenium):
         ["test.html", "d2"],
         ["test.html", "d1"],
         ["pyodide.js", "runPython"],
-        ["/lib/python3.9/site-packages/_pyodide/_base.py", "eval_code"],
-        ["/lib/python3.9/site-packages/_pyodide/_base.py", "run"],
+        [f"/lib/{PYVERSION}/site-packages/_pyodide/_base.py", "eval_code"],
+        [f"/lib/{PYVERSION}/site-packages/_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
         ["test.html", "b"],
         ["pyodide.js", "pyimport"],
-        ["/lib/python3.9/importlib/__init__.py", "import_module"],
+        [f"/lib/{PYVERSION}/importlib/__init__.py", "import_module"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 
@@ -957,17 +959,16 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         globalThis.pyodide = pyodide;
         """
     )
-    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    outstrings: list[str] = sum((s.removesuffix("\n").split("\n") for s in strings), [])
     print(outstrings)
     assert (
         selenium.run_js(
-            """
+            f"""
         return pyodide.runPython(`
-            [input() for x in range(%s)]
+            [input() for x in range({len(outstrings)})]
             # ... test more stuff
         `).toJs();
         """
-            % len(outstrings)
         )
         == outstrings
     )

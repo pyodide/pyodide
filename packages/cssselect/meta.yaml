@@ -2,8 +2,8 @@ package:
   name: cssselect
   version: 1.1.0
 source:
-  sha256: f95f8dedd925fd8f54edb3d2dfb44c190d9d18512377d3c1e2388d16126879bc
-  url: https://files.pythonhosted.org/packages/70/54/37630f6eb2c214cdee2ae56b7287394c8aa2f3bafb8b4eb8c3791aae7a14/cssselect-1.1.0.tar.gz
+  sha256: f612ee47b749c877ebae5bb77035d8f4202c6ad0f0fc1271b3c18ad6c4468ecf
+  url: https://files.pythonhosted.org/packages/3b/d4/3b5c17f00cce85b9a1e6f91096e1cc8e8ede2e1be8e96b87ce1ed09e92c5/cssselect-1.1.0-py2.py3-none-any.whl
 test:
   imports:
     - cssselect

@@ -1,18 +1,17 @@
-import pytest
-import os
-from pathlib import Path
-from typing import List, Dict
 import functools
-import json
+import os
 
+import pytest
+
+from conftest import ROOT_PATH, built_packages
 from pyodide_build.io import parse_package_config
-from conftest import built_packages, ROOT_PATH
+from pyodide_build.testing import PYVERSION
 
 PKG_DIR = ROOT_PATH / "packages"
 
 
 @functools.cache
-def registered_packages() -> List[str]:
+def registered_packages() -> list[str]:
     """Returns a list of registered package names"""
     packages = []
     for name in os.listdir(PKG_DIR):
@@ -31,7 +30,7 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES: Dict[str, List[str]] = {
+UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],
     "node": [],
@@ -74,9 +73,9 @@ def test_import(name, selenium_standalone):
     selenium_standalone.run("import glob, os")
 
     baseline_pyc = selenium_standalone.run(
-        """
+        f"""
         len(list(glob.glob(
-            '/lib/python3.9/site-packages/**/*.pyc',
+            '/lib/{PYVERSION}/site-packages/**/*.pyc',
             recursive=True)
         ))
         """
@@ -87,9 +86,9 @@ def test_import(name, selenium_standalone):
         # files
         assert (
             selenium_standalone.run(
-                """
+                f"""
                 len(list(glob.glob(
-                    '/lib/python3.9/site-packages/**/*.pyc',
+                    '/lib/{PYVERSION}/site-packages/**/*.pyc',
                     recursive=True)
                 ))
                 """
@@ -99,9 +98,9 @@ def test_import(name, selenium_standalone):
         # Make sure no exe files were loaded!
         assert (
             selenium_standalone.run(
-                """
+                f"""
                 len(list(glob.glob(
-                    '/lib/python3.9/site-packages/**/*.exe',
+                    '/lib/{PYVERSION}/site-packages/**/*.exe',
                     recursive=True)
                 ))
                 """

@@ -3,7 +3,10 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:latest
+    # Note: when updating the docker image version,
+    #       make sure there are no extra old versions lying around.
+    #       (e.g. `rg -F --hidden <old_tag>`)
+    - image: pyodide/pyodide-env:20220213-chrome97-firefox96
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -13,16 +16,6 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
 
 jobs:
-  lint:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-
-      - run:
-          name: lint
-          command: make lint
-
   test-docs:
     <<: *defaults
     resource_class: small
@@ -321,7 +314,8 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py all --output build/benchmarks.json
+
       - store_artifacts:
           path: /root/repo/build/benchmarks.json
 
@@ -394,11 +388,6 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-
       - test-docs:
           filters:
             tags:
@@ -430,7 +419,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -439,7 +428,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -448,7 +437,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -523,7 +512,6 @@ workflows:
 
       - deploy-release:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
@@ -534,7 +522,6 @@ workflows:
               only: /^\d+\.\d+\.\w+$/
       - deploy-dev:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox

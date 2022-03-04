@@ -10,7 +10,7 @@ def diffusion(u, tempU, iterNum):
     """
     mu = 0.1
 
-    for n in range(iterNum):
+    for _ in range(iterNum):
         tempU[1:-1, 1:-1] = u[1:-1, 1:-1] + mu * (
             u[2:, 1:-1]
             - 2 * u[1:-1, 1:-1]

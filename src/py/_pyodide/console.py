@@ -1,35 +1,21 @@
 import ast
 import asyncio
-from asyncio import ensure_future, Future
-from codeop import Compile, CommandCompiler, _features  # type: ignore
-from contextlib import (
-    contextmanager,
-    redirect_stdout,
-    redirect_stderr,
-    ExitStack,
-)
-from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
-from platform import python_version, python_build
 import sys
-from tokenize import TokenError
 import traceback
-from typing import Literal
-from typing import (
-    Optional,
-    Callable,
-    Any,
-    List,
-    Tuple,
-    Union,
-    Tuple,
-)
+from asyncio import Future, ensure_future
+from codeop import CommandCompiler, Compile, _features  # type: ignore
+from contextlib import _RedirectStream  # type: ignore
+from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
+from platform import python_build, python_version
+from tokenize import TokenError
+from typing import Any, Callable, Literal, Optional, Union
 
-from _pyodide._base import should_quiet, CodeRunner
+from _pyodide._base import CodeRunner, should_quiet
 
-__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
+__all__ = ["repr_shorten", "BANNER", "Console", "ConsoleFuture"]
 
-BANNER = f""" 
+BANNER = f"""
 Python {python_version()} ({', '.join(python_build())}) on WebAssembly VM
 Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
@@ -198,7 +184,7 @@ class Console:
     globals : ``dict``
         The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
 
-    stdin_callback : ``Callable[[str], None]``
+    stdin_callback : ``Callable[[], str]``
         Function to call at each read from ``sys.stdin``. Defaults to ``None``.
 
     stdout_callback : ``Callable[[str], None]``
@@ -219,7 +205,7 @@ class Console:
         globals : ``Dict[str, Any]``
             The namespace used as the global
 
-        stdin_callback : ``Callback[[str], None]``
+        stdin_callback : ``Callback[[], str]``
             Function to call at each read from ``sys.stdin``.
 
         stdout_callback : ``Callback[[str], None]``
@@ -239,7 +225,7 @@ class Console:
         self,
         globals: Optional[dict] = None,
         *,
-        stdin_callback: Optional[Callable[[str], None]] = None,
+        stdin_callback: Optional[Callable[[], str]] = None,
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
@@ -254,7 +240,7 @@ class Console:
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.filename = filename
-        self.buffer: List[str] = []
+        self.buffer: list[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator = None  # track persistent stream redirection
@@ -273,6 +259,7 @@ class Console:
         if self._stream_generator:
             return
         self._stream_generator = self._stdstreams_redirections_inner()
+        assert self._stream_generator is not None
         next(self._stream_generator)  # trigger stream redirection
         # streams will be reverted to normal when self._stream_generator is destroyed.
 
@@ -294,7 +281,7 @@ class Console:
         if self._streams_redirected:
             yield
             return
-        redirects = []
+        redirects: list[Any] = []
         if self.stdin_callback:
             stdin_name = getattr(sys.stdin, "name", "<stdin>")
             stdin_stream = _ReadStream(self.stdin_callback, name=stdin_name)
@@ -427,7 +414,7 @@ class Console:
             self.buffer = []
         return result
 
-    def complete(self, source: str) -> Tuple[List[str], int]:
+    def complete(self, source: str) -> tuple[list[str], int]:
         """Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
 
         Finds last "word" in the source string and completes it with rlcompleter. Word
@@ -470,7 +457,7 @@ def repr_shorten(
     if necessary.
 
     If it is longer than ``limit`` then return the firsts ``split``
-    characters and the last ``split`` characters seperated by '...'.
+    characters and the last ``split`` characters separated by '...'.
     Default value for ``split`` is `limit // 2`.
     """
     if split is None:

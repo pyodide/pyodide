@@ -1,9 +1,12 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
+from typing import Any
+
 import pytest
-from pyodide_build.testing import run_in_pyodide
-from hypothesis import given, settings, assume, strategies
-from hypothesis.strategies import text, from_type
+from hypothesis import assume, given, settings, strategies
+from hypothesis.strategies import from_type, text
+
 from conftest import selenium_context_manager
+from pyodide_build.testing import run_in_pyodide
 
 
 @given(s=text())
@@ -19,7 +22,7 @@ def test_string_conversion(selenium_module_scope, s):
             pyodide.runPython('spy = bytes({sbytes}).decode()');
             """
         )
-        assert selenium.run_js(f"""return pyodide.runPython('spy') === sjs;""")
+        assert selenium.run_js("""return pyodide.runPython('spy') === sjs;""")
         assert selenium.run(
             """
             from js import sjs
@@ -76,7 +79,7 @@ def test_number_conversions(selenium_module_scope, n):
             `);
             """
         )
-        assert selenium.run_js(f"""return pyodide.runPython('x_py') === x_js;""")
+        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
         assert selenium.run(
             """
             from js import x_js
@@ -159,11 +162,11 @@ def test_hyp_py2js2py(selenium_module_scope, obj):
         # have to defend against them here.
         try:
             assume(obj == obj)
-        except:
+        except Exception:
             assume(False)
         try:
             obj_bytes = list(pickle.dumps(obj))
-        except:
+        except Exception:
             assume(False)
         selenium.run(
             f"""
@@ -221,7 +224,7 @@ def test_hyp_tojs_no_crash(selenium_module_scope, obj):
 
         try:
             obj_bytes = list(pickle.dumps(obj))
-        except:
+        except Exception:
             assume(False)
         selenium.run(
             f"""
@@ -666,7 +669,7 @@ def assert_py_to_js_to_py(selenium, name):
 
 @run_in_pyodide
 def test_recursive_list_to_js():
-    x = []
+    x: Any = []
     x.append(x)
     from pyodide import to_js
 
@@ -675,7 +678,7 @@ def test_recursive_list_to_js():
 
 @run_in_pyodide
 def test_recursive_dict_to_js():
-    x = {}
+    x: Any = {}
     x[0] = x
     from pyodide import to_js
 
@@ -1136,6 +1139,88 @@ def test_to_py(selenium):
         )
 
 
+def test_to_py_default_converter(selenium):
+    selenium.run_js(
+        """
+        class Pair {
+            constructor(first, second){
+                this.first = first;
+                this.second = second;
+            }
+        }
+        l = [1,2,3];
+        self.p = new Pair(l, [l]);
+        const opts = {defaultConverter(value, converter, cache){
+            if(p.constructor.name !== "Pair"){
+                return value;
+            }
+            let list = pyodide.globals.get("list");
+            l = list();
+            list.destroy();
+            cache(value, l);
+            const first = converter(value.first);
+            const second = converter(value.second);
+            l.append(first);
+            l.append(second);
+            first.destroy();
+            second.destroy();
+            return l;
+        }};
+        self.r = pyodide.toPy(p, opts);
+        pyodide.runPython(`
+            from js import r
+            assert isinstance(r, list)
+            assert r[0] is r[1][0]
+            assert r[0] == [1,2,3]
+        `);
+        r.destroy();
+        self.p.first = p;
+        self.r = pyodide.toPy(p, opts);
+        pyodide.runPython(`
+            from js import r
+            assert r[0] is r
+        `);
+        r.destroy();
+        """
+    )
+
+
+def test_to_py_default_converter2(selenium):
+    selenium.run_js(
+        """
+        class Pair {
+            constructor(first, second){
+                this.first = first;
+                this.second = second;
+            }
+        }
+        l = [1,2,3];
+        self.p = new Pair(l, [l]);
+        pyodide.runPython(`
+            from js import p
+            def default_converter(value, converter, cache):
+                if value.constructor.name != "Pair":
+                    return value
+                l = []
+                cache(value, l)
+                l.append(converter(value.first))
+                l.append(converter(value.second))
+                return l
+            r = p.to_py(default_converter=default_converter)
+            assert isinstance(r, list)
+            assert r[0] is r[1][0]
+            assert r[0] == [1,2,3]
+        `);
+        self.p.first = p;
+        pyodide.runPython(`
+            r = p.to_py(default_converter=default_converter)
+            assert r[0] is r
+            del r
+        `);
+        """
+    )
+
+
 def test_buffer_format_string(selenium):
     errors = [
         ["aaa", "Expected format string to have length <= 2, got 'aaa'"],
@@ -1153,25 +1238,25 @@ def test_buffer_format_string(selenium):
             )
 
     format_tests = [
-        ["c", "Uint8"],
-        ["b", "Int8"],
-        ["B", "Uint8"],
-        ["?", "Uint8"],
-        ["h", "Int16"],
-        ["H", "Uint16"],
-        ["i", "Int32"],
-        ["I", "Uint32"],
-        ["l", "Int32"],
-        ["L", "Uint32"],
-        ["n", "Int32"],
-        ["N", "Uint32"],
-        ["q", "BigInt64"],
-        ["Q", "BigUint64"],
-        ["f", "Float32"],
-        ["d", "Float64"],
-        ["s", "Uint8"],
-        ["p", "Uint8"],
-        ["P", "Uint32"],
+        ("c", "Uint8"),
+        ("b", "Int8"),
+        ("B", "Uint8"),
+        ("?", "Uint8"),
+        ("h", "Int16"),
+        ("H", "Uint16"),
+        ("i", "Int32"),
+        ("I", "Uint32"),
+        ("l", "Int32"),
+        ("L", "Uint32"),
+        ("n", "Int32"),
+        ("N", "Uint32"),
+        ("q", "BigInt64"),
+        ("Q", "BigUint64"),
+        ("f", "Float32"),
+        ("d", "Float64"),
+        ("s", "Uint8"),
+        ("p", "Uint8"),
+        ("P", "Uint32"),
     ]
 
     def process_fmt_string(fmt):
@@ -1192,11 +1277,11 @@ def test_buffer_format_string(selenium):
         assert array_name == expected_array_name
 
     endian_tests = [
-        ["@h", "Int16", False],
-        ["=H", "Uint16", False],
-        ["<i", "Int32", False],
-        [">I", "Uint32", True],
-        ["!l", "Int32", True],
+        ("@h", "Int16", False),
+        ("=H", "Uint16", False),
+        ("<i", "Int32", False),
+        (">I", "Uint32", True),
+        ("!l", "Int32", True),
     ]
 
     for fmt, expected_array_name, expected_is_big_endian in endian_tests:

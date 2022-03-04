@@ -1,0 +1,34 @@
+From 6d668a693154374809707b598bc658b3162c79c4 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 15 Feb 2022 23:27:03 -0500
+Subject: [PATCH] Fix side module exception handling
+
+See https://github.com/emscripten-core/emscripten/pull/16309
+
+Apparently compiled C++ code tries to call a bunch of functions with names like
+`__cxa_find_matching_catch_##` which all mean the same function. Emscripten
+statically defines the set of these that are used in the main module, but it is
+possible that a side module will need extra ones. This fixes the problem by updating
+`resolveGlobalSymbol` so that every `__cxa_find_matching_catch_##` will resolve to
+`__cxa_find_matching_catch`.
+---
+ emsdk/upstream/emscripten/src/library_dylink.js | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
+index 3c5d84314..65c436456 100644
+--- a/emsdk/upstream/emscripten/src/library_dylink.js
++++ b/emsdk/upstream/emscripten/src/library_dylink.js
+@@ -33,6 +33,9 @@ var LibraryDylink = {
+       sym = createInvokeFunction(symName.split('_')[1]);
+     }
+ 
++    if(!sym && symName.startsWith("__cxa_find_matching_catch")){
++      sym = Module.___cxa_find_matching_catch;
++    }
+     return sym;
+   },
+ 
+-- 
+2.25.1
+

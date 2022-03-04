@@ -7,7 +7,7 @@
 import numpy as np
 
 
-def check_mask(db, mask=[1, 0, 1]):
+def check_mask(db, mask=(1, 0, 1)):
     out = np.zeros(db.shape[0], dtype=bool)
     for idx, line in enumerate(db):
         target, vector = line[0], line[1:]
