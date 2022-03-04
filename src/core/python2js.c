@@ -568,7 +568,7 @@ python2js_custom__create_jscontext,
       // input should be a PyProxy, output should be a Javascript
       // object
       if (!API.isPyProxy(input)) {
-        throw new Error("Oops!");
+        throw new TypeError("The first argument to cacheConversion must be a PyProxy.");
       }
       let input_ptr = Module.PyProxy_getPtr(input);
       let output_key = Hiwire.new_value(output);
