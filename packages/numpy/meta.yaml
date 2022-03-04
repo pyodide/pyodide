@@ -51,6 +51,8 @@ build:
     # from the build computer and bad things will happen
     export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/usr/local/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
     cp $SRC_DIR/config/* $NUMPY_INSTALL_PATH
+    mkdir -p $NUMPY_LIB
+    find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
 test:
   imports:
     - numpy

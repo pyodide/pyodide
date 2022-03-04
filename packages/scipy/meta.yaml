@@ -46,7 +46,6 @@ build:
     -Wno-return-type
   ldflags: |
     -L$(NUMPY_LIB)
-    -L$(NUMPY_LIB_BASE)/random/lib
     -Wl,--fatal-warnings
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
