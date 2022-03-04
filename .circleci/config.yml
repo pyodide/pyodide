@@ -144,7 +144,8 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg1-v20220303
 
       - run:
           name: build packages
@@ -168,7 +169,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-v20220303-{{ checksum "Makefile.envs" }}
+          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
 
       - persist_to_workspace:
           root: .
@@ -207,10 +208,8 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-v20220303-{{ checksum "Makefile.envs" }}
-
-      - restore_cache:
-          keys: -pkg-e6JtjUyJqzEXcGob0Bb+UFu7qo+2041r8J53u4V_GCA=-v20210911-
+            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg2-v20220303
 
       - run:
           name: build packages
@@ -234,7 +233,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-v20220303-{{ checksum "Makefile.envs" }}
+          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Zip build directory

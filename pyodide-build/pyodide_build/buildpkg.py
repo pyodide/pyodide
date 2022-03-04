@@ -47,6 +47,12 @@ shutil.register_unpack_format(
     "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore
 )
 
+from fcntl import F_GETFL, F_SETFL, fcntl
+
+
+def make_nonblocking(fd):
+    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | os.O_NONBLOCK)
+
 
 class BashRunnerWithSharedEnvironment:
     """Run multiple bash scripts with persisent environment.
@@ -64,6 +70,7 @@ class BashRunnerWithSharedEnvironment:
         self.env: dict[str, str] = env
         self._fd_read, self._fd_write = os.pipe()
         self._reader = os.fdopen(self._fd_read, "r")
+        make_nonblocking(self._reader)
 
     def run(self, cmd, **opts):
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
@@ -79,7 +86,9 @@ class BashRunnerWithSharedEnvironment:
         result = subprocess.run(
             ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
-        self.env = json.loads(self._reader.readline())
+        res = self._reader.readline()
+        if res:
+            self.env = json.loads(res)
         return result
 
     def close(self):
