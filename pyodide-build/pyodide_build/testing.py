@@ -5,6 +5,12 @@ from typing import Callable, Collection, Optional
 
 import pytest
 
+from .common import get_make_flag
+
+PYMAJOR = get_make_flag("PYMAJOR")
+PYMINOR = get_make_flag("PYMINOR")
+PYVERSION = f"python{PYMAJOR}.{PYMINOR}"
+
 
 def _run_in_pyodide_get_source(f):
     lines, start_line = inspect.getsourcelines(f)
