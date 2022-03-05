@@ -107,7 +107,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-I$(PYTHONINCLUDE) \
-	-sEXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 
 .output_vars:
