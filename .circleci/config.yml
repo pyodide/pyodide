@@ -157,6 +157,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide-build.tar.gz  build
+            tar cjf build-logs.tar.gz  packages/build-logs
 
       - persist_to_workspace:
           root: .
@@ -171,6 +172,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
 
   build-packages:
     <<: *defaults
@@ -214,6 +218,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide-build.tar.gz  build
+            tar cjf build-logs.tar.gz  packages/build-logs
 
       - persist_to_workspace:
           root: .
@@ -229,6 +234,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
 
   test-main:
     parameters:
