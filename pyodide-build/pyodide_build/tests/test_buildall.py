@@ -10,14 +10,13 @@ PACKAGES_DIR = (Path(__file__).parents[3] / "packages").resolve()
 
 
 def test_generate_dependency_graph():
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"beautifulsoup4"})
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"scikit-learn"})
 
-    assert set(pkg_map.keys()) == {
-        "soupsieve",
-        "beautifulsoup4",
-    }
-    assert pkg_map["soupsieve"].dependencies == []
-    assert pkg_map["soupsieve"].dependents == {"beautifulsoup4"}
+    # Joblib is not part of host dependencies, it should still be included in
+    # the built packages
+    assert set(pkg_map.keys()) == {"scikit-learn" "numpy", "scipy", "CLAPACK" "joblib"}
+    assert pkg_map["scipy"].dependencies == []
+    assert pkg_map["numpy"].dependents == {"beautifulsoup4"}
     assert pkg_map["beautifulsoup4"].dependencies == ["soupsieve"]
     assert pkg_map["beautifulsoup4"].dependents == set()
 
