@@ -144,21 +144,31 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, st
     env["PATH"] = str(TOOLSDIR) + ":" + env["PATH"]
     capture_make_command_wrapper_symlinks(env)
 
-    cmd = [sys.executable, "setup.py"]
     if skip_host:
         env["SKIP_HOST"] = "1"
-        cmd.append("build")
-    else:
-        assert host_install_dir, "Missing host_install_dir"
-        cmd.extend(["install", "--home", host_install_dir])
 
-    result = subprocess.run(cmd, env=env)
-    if result.returncode != 0:
+    try:
+        subprocess.check_call([sys.executable, "setup.py", "bdist_wheel"], env=env)
+        if not skip_host:
+            assert host_install_dir, "Missing host_install_dir"
+            result_wheel = str(list(Path("dist").glob("*.whl"))[0])
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--prefix",
+                    host_install_dir,
+                    result_wheel,
+                ]
+            )
+        clean_out_native_artifacts(".")
+    except Exception:
         build_log_path = Path("build.log")
         if build_log_path.exists():
             build_log_path.unlink()
-        result.check_returncode()
-    clean_out_native_artifacts()
+        raise
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> Optional[list[str]]:
@@ -624,8 +634,8 @@ def replay_compile(replay_from: int = 1, **kwargs):
             replay_command(line, args)
 
 
-def clean_out_native_artifacts():
-    for root, _dirs, files in os.walk("."):
+def clean_out_native_artifacts(directory):
+    for root, _dirs, files in os.walk(directory):
         for file in files:
             path = Path(root) / file
             if path.suffix in (".o", ".so", ".a"):
