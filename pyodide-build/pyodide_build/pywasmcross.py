@@ -163,7 +163,7 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, st
                     result_wheel,
                 ]
             )
-        clean_out_native_artifacts()
+        clean_out_native_artifacts(".")
     except Exception:
         build_log_path = Path("build.log")
         if build_log_path.exists():
@@ -634,8 +634,8 @@ def replay_compile(replay_from: int = 1, **kwargs):
             replay_command(line, args)
 
 
-def clean_out_native_artifacts():
-    for root, _dirs, files in os.walk("."):
+def clean_out_native_artifacts(directory):
+    for root, _dirs, files in os.walk(directory):
         for file in files:
             path = Path(root) / file
             if path.suffix in (".o", ".so", ".a"):

@@ -416,20 +416,19 @@ def set_host_platform(wheel_dir: Path, platform: str):
 
 
 def update_wheel_platform(build_dir: Path, wheel_dir: Path):
-    set_host_platform(wheel_dir, "emscripten_wasm32")
-    for p in wheel_dir.glob("*"):
-        if not p.suffix == ".dist-info":
-            if p.is_dir():
-                shutil.rmtree(p)
-            else:
-                p.unlink()
+    import distutils.dir_util
 
+    # for some reason the .so name and the wheel name swap order of architecture
+    # and OS?
+    set_host_platform(wheel_dir, "emscripten_wasm32")
+    pywasmcross.clean_out_native_artifacts(wheel_dir)
     lib_dir = next(build_dir.glob("lib*"))
-    for p in lib_dir.glob("*"):
-        if p.is_dir():
-            shutil.copytree(p, wheel_dir / p.name)
-        else:
-            shutil.copy(p, wheel_dir)
+    distutils.dir_util.copy_tree(str(lib_dir), str(wheel_dir))
+    # TODO: Platform tag the .so files.
+    # Currently we leave the platform triplet unset so if we set a platform tag
+    # the files will fail to load.
+    # for file in wheel_dir.glob("**/*.so"):
+    #     file.rename(file.with_suffix(".cpython-39-wasm32-emscripten.so"))
 
 
 def package_wheel(
