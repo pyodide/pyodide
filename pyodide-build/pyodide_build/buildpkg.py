@@ -6,6 +6,7 @@ Builds a Pyodide package.
 
 import argparse
 import cgi
+import fnmatch
 import hashlib
 import json
 import os
@@ -13,13 +14,13 @@ import re
 import shutil
 import subprocess
 import sys
-import fnmatch
-
+import textwrap
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Dict
+from types import TracebackType
+from typing import Any, NoReturn, Optional, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -49,8 +50,18 @@ shutil.register_unpack_format(
 )
 
 
+def exit_with_stdio(result: subprocess.CompletedProcess) -> NoReturn:
+    if result.stdout:
+        print("  stdout:")
+        print(textwrap.indent(result.stdout, "    "))
+    if result.stderr:
+        print("  stderr:")
+        print(textwrap.indent(result.stderr, "    "))
+    raise SystemExit(result.returncode)
+
+
 class BashRunnerWithSharedEnvironment:
-    """Run multiple bash scripts with persisent environment.
+    """Run multiple bash scripts with persistent environment.
 
     Environment is stored to "env" member between runs. This can be updated
     directly to adjust the environment, or read to get variables.
@@ -59,12 +70,21 @@ class BashRunnerWithSharedEnvironment:
     def __init__(self, env=None):
         if env is None:
             env = dict(os.environ)
-        self.env: Dict[str, str] = env
-        self._fd_read, self._fd_write = os.pipe()
-        self._reader = os.fdopen(self._fd_read, "r")
+
+        self._reader: Optional[TextIO]
+        self._fd_write: Optional[int]
+        self.env: dict[str, str] = env
+
+    def __enter__(self) -> "BashRunnerWithSharedEnvironment":
+        fd_read, self._fd_write = os.pipe()
+        self._reader = os.fdopen(fd_read, "r")
+        return self
 
     def run(self, cmd, **opts):
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+        assert self._fd_write is not None
+        assert self._reader is not None
+
         write_env_pycode = ";".join(
             [
                 "import os",
@@ -73,20 +93,32 @@ class BashRunnerWithSharedEnvironment:
             ]
         )
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
-        cmd += "\n" + write_env_shell_cmd
+        full_cmd = f"{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
-            ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
+            ["bash", "-ce", full_cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
+        if result.returncode != 0:
+            print("ERROR: bash commmand failed")
+            print(textwrap.indent(cmd, "    "))
+            exit_with_stdio(result)
+
         self.env = json.loads(self._reader.readline())
         return result
 
-    def close(self):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         """Free the file descriptors."""
-        if self._fd_read:
-            os.close(self._fd_read)
+
+        if self._fd_write:
             os.close(self._fd_write)
-            self._fd_read = None
             self._fd_write = None
+        if self._reader:
+            self._reader.close()
+            self._reader = None
 
 
 @contextmanager
@@ -105,15 +137,14 @@ def get_bash_runner():
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-    b = BashRunnerWithSharedEnvironment(env=env)
-    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL)
-    try:
+    with BashRunnerWithSharedEnvironment(env=env) as b:
+        b.run(
+            f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL
+        )
         yield b
-    finally:
-        b.close()
 
 
-def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
+def check_checksum(archive: Path, source_metadata: dict[str, Any]):
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -144,7 +175,7 @@ def check_checksum(archive: Path, source_metadata: Dict[str, Any]):
             if len(chunk) < CHUNK_SIZE:
                 break
     if h.hexdigest() != checksum:
-        raise ValueError("Invalid {} checksum".format(checksum_algorithm))
+        raise ValueError(f"Invalid {checksum_algorithm} checksum")
 
 
 def trim_archive_extension(tarballname):
@@ -164,7 +195,7 @@ def trim_archive_extension(tarballname):
     return tarballname
 
 
-def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]):
+def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]):
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
@@ -217,7 +248,7 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: Dict[str,
 
 
 def prepare_source(
-    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: Dict[str, Any]
+    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
 ):
     """
     Figure out from the "source" key in the package metadata where to get the source
@@ -266,7 +297,7 @@ def prepare_source(
     shutil.copytree(srcdir, srcpath)
 
 
-def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
+def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
     """
     Apply patches to the source.
 
@@ -295,9 +326,13 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
     # Apply all the patches
     with chdir(srcpath):
         for patch in patches:
-            subprocess.run(
-                ["patch", "-p1", "--binary", "-i", pkg_root / patch], check=True
+            result = subprocess.run(
+                ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
+                check=False,
             )
+            if result.returncode != 0:
+                print(f"ERROR: Patch {pkg_root/patch} failed")
+                exit_with_stdio(result)
 
     # Add any extra files
     for src, dst in extras:
@@ -309,12 +344,22 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any]):
 
 def unpack_wheel(path):
     with chdir(path.parent):
-        subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "wheel", "unpack", path.name], check=False
+        )
+        if result.returncode != 0:
+            print(f"ERROR: Unpacking wheel {path.name} failed")
+            exit_with_stdio(result)
 
 
 def pack_wheel(path):
     with chdir(path.parent):
-        subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "wheel", "pack", path.name], check=False
+        )
+        if result.returncode != 0:
+            print(f"ERROR: Packing wheel {path} failed")
+            exit_with_stdio(result)
 
 
 def install_for_distribution():
@@ -326,12 +371,15 @@ def install_for_distribution():
     ]
     env = dict(os.environ)
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
-    subprocess.check_call(commands, env=env)
+    result = subprocess.run(commands, env=env, check=False)
+    if result.returncode != 0:
+        print("ERROR: Running bdist_wheel failed")
+        exit_with_stdio(result)
 
 
 def compile(
     srcpath: Path,
-    build_metadata: Dict[str, Any],
+    build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
     target_install_dir: str,
@@ -389,7 +437,10 @@ def compile(
             )
             prereplay = build_metadata.get("prereplay")
             if prereplay:
-                bash_runner.run(prereplay)
+                result = bash_runner.run(prereplay)
+                if result.returncode != 0:
+                    print("ERROR: prereplay failed")
+                    exit_with_stdio(result)
         if should_replay_compile:
             pywasmcross.replay_compile(
                 cflags=build_metadata["cflags"],
@@ -408,7 +459,7 @@ def package_wheel(
     pkg_name: str,
     pkg_root: Path,
     srcpath: Path,
-    build_metadata: Dict[str, Any],
+    build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
 ):
     """Package a wheel
@@ -448,7 +499,10 @@ def package_wheel(
     post = build_metadata.get("post")
     if post:
         bash_runner.env.update({"PKGDIR": str(pkg_root)})
-        bash_runner.run(post, check=True)
+        result = bash_runner.run(post)
+        if result.returncode != 0:
+            print("ERROR: post failed")
+            exit_with_stdio(result)
 
     test_dir = distdir / "tests"
     nmoved = 0
@@ -488,7 +542,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     n_moved = 0
     out_files = []
     shutil.rmtree(test_install_prefix, ignore_errors=True)
-    for root, dirs, files in os.walk(install_prefix):
+    for root, _dirs, files in os.walk(install_prefix):
         root_rel = Path(root).relative_to(install_prefix)
         if root_rel.name == "__pycache__" or root_rel.name.endswith(".egg_info"):
             continue
@@ -522,7 +576,7 @@ def create_packaged_token(buildpath: Path):
 def run_script(
     buildpath: Path,
     srcpath: Path,
-    build_metadata: Dict[str, Any],
+    build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
 ):
     """
@@ -549,11 +603,14 @@ def run_script(
         return
 
     with chdir(srcpath):
-        bash_runner.run(script, check=True)
+        result = bash_runner.run(script)
+        if result.returncode != 0:
+            print("ERROR: script failed")
+            exit_with_stdio(result)
 
 
 def needs_rebuild(
-    pkg_root: Path, buildpath: Path, source_metadata: Dict[str, Any]
+    pkg_root: Path, buildpath: Path, source_metadata: dict[str, Any]
 ) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
@@ -593,7 +650,7 @@ def needs_rebuild(
 
 def build_package(
     pkg_root: Path,
-    pkg: Dict[str, Any],
+    pkg: dict[str, Any],
     *,
     target_install_dir: str,
     host_install_dir: str,
@@ -633,7 +690,7 @@ def build_package(
         return
 
     if not should_prepare_source and not srcpath.exists():
-        raise IOError(
+        raise OSError(
             "Cannot find source for rebuild. Expected to find the source "
             f"directory at the path {srcpath}, but that path does not exist."
         )
@@ -759,7 +816,7 @@ def make_parser(parser: argparse.ArgumentParser):
     return parser
 
 
-def parse_continue_arg(continue_from: str) -> Dict[str, Any]:
+def parse_continue_arg(continue_from: str) -> dict[str, Any]:
     from itertools import accumulate
 
     is_none = continue_from == "None"
@@ -777,11 +834,11 @@ def parse_continue_arg(continue_from: str) -> Dict[str, Any]:
     ] = accumulate([is_none, is_script, is_capture, is_replay], lambda a, b: a or b)
 
     if not should_replay_compile:
-        raise IOError(
+        raise OSError(
             f"Unexpected --continue argument '{continue_from}', should have been 'script', 'capture', 'replay', or 'replay:##'"
         )
 
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
     result["should_prepare_source"] = should_prepare_source
     result["should_run_script"] = should_run_script
     result["should_capture_compile"] = should_capture_compile
@@ -827,13 +884,13 @@ def main(args):
             **step_controls,
         )
 
-    except:
+    except Exception:
         success = False
         raise
     finally:
         t1 = datetime.now()
         datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
-        total_seconds = "{:.1f}".format((t1 - t0).total_seconds())
+        total_seconds = f"{(t1 - t0).total_seconds():.1f}"
         status = "Succeeded" if success else "Failed"
         print(
             f"{datestamp} {status} building package {name} in {total_seconds} seconds."

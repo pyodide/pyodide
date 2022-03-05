@@ -1,6 +1,6 @@
-from importlib.abc import MetaPathFinder, Loader
-from importlib.util import spec_from_loader
 import sys
+from importlib.abc import Loader, MetaPathFinder
+from importlib.util import spec_from_loader
 
 
 class JsFinder(MetaPathFinder):

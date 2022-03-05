@@ -1,7 +1,9 @@
-import pytest  # type: ignore
-import time
-from pyodide import eval_code_async
 import asyncio
+import time
+
+import pytest  # type: ignore
+
+from pyodide import eval_code_async
 
 
 def test_await_jsproxy(selenium):

@@ -1,7 +1,8 @@
-import pytest
 import shutil
-
 from pathlib import Path
+
+import pytest
+
 from conftest import BUILD_PATH
 
 
@@ -120,8 +121,8 @@ def test_load_packages_multiple(selenium_standalone, packages):
 )
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
-    promises = ",".join('pyodide.loadPackage("{}")'.format(x) for x in packages)
-    selenium.run_js("return Promise.all([{}])".format(promises))
+    promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
+    selenium.run_js(f"return Promise.all([{promises}])")
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
@@ -158,9 +159,6 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    url = selenium_standalone.server_hostname
-    port = selenium_standalone.server_port
-
     build_dir = Path(__file__).parents[2] / "build"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
@@ -169,7 +167,7 @@ def test_load_package_unknown(selenium_standalone):
     )
 
     try:
-        selenium_standalone.load_package(f"./pyparsing-custom-3.0.6-py3-none-any.whl")
+        selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
         (build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
@@ -269,8 +267,10 @@ def test_test_unvendoring(selenium_standalone):
 def test_install_archive(selenium):
     build_dir = Path(__file__).parents[2] / "build"
     test_dir = Path(__file__).parent
+    # TODO: first arguement actually works as a path due to implementation,
+    # maybe it can be proposed to typeshed?
     shutil.make_archive(
-        test_dir / "test_pkg", "gztar", root_dir=test_dir, base_dir="test_pkg"
+        str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
     build_test_pkg = build_dir / "test_pkg.tar.gz"
     if not build_test_pkg.exists():
@@ -308,10 +308,11 @@ def test_install_archive(selenium):
 
 
 def test_get_dynlibs():
-    from pyodide._package_loader import get_dynlibs
     import tarfile
-    from zipfile import ZipFile
     from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import get_dynlibs
 
     files = [
         "a.so",
@@ -333,9 +334,9 @@ def test_get_dynlibs():
         t.flush()
         assert sorted(get_dynlibs(t, Path("/p"))) == so_files
     with NamedTemporaryFile(suffix=".zip") as t:
-        x = ZipFile(t, mode="w")
+        x2 = ZipFile(t, mode="w")
         for file in files:
-            x.writestr(file, "")
-        x.close()
+            x2.writestr(file, "")
+        x2.close()
         t.flush()
         assert sorted(get_dynlibs(t, Path("/p"))) == so_files

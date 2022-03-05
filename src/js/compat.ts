@@ -111,7 +111,17 @@ if (globalThis.document) {
   // webworker
   loadScript = async (url) => {
     // This is async only for consistency
-    globalThis.importScripts(url);
+    try {
+      // use importScripts in classic web worker
+      globalThis.importScripts(url);
+    } catch (e) {
+      // importScripts throws TypeError in a module type web worker, use import instead
+      if (e instanceof TypeError) {
+        await import(url);
+      } else {
+        throw e;
+      }
+    }
   };
 } else if (IN_NODE) {
   loadScript = nodeLoadScript;

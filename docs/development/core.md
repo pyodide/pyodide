@@ -13,7 +13,7 @@ The primary purpose of `core` is to implement {ref}`type translations <type-tran
 
 ### Backend utilities
 
-- `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to JavaScript objects. The primary purpose of hiwire is to act as a surrogate owner for JavaScript references by holding the references in a JavaScript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do JavaScript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from JavaScript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from JavaScript with `Module.hiwire.decref`.
+- `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to JavaScript objects. The primary purpose of hiwire is to act as a surrogate owner for JavaScript references by holding the references in a JavaScript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do JavaScript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Hiwire.new_value` (only can be done from JavaScript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from JavaScript with `Hiwire.decref`.
 - `error_handling` -- defines macros useful for error propagation and for adapting JavaScript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
 
 ### Type conversion from JavaScript to Python
@@ -89,9 +89,9 @@ Use `EM_JS_REF` when return value is a `JsRef`:
 
 ```javascript
 EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
-  let jsfunc = Module.hiwire.get_value(idfunc);
-  let jsargs = Module.hiwire.get_value(idargs);
-  return Module.hiwire.new_value(jsfunc(... jsargs));
+  let jsfunc = Hiwire.get_value(idfunc);
+  let jsargs = Hiwire.get_value(idargs);
+  return Hiwire.new_value(jsfunc(... jsargs));
 });
 ```
 
@@ -107,7 +107,7 @@ If the function returns `void`, use `EM_JS_NUM` with return type `errcode`. `err
 
 ```javascript
 EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
-  Module.hiwire.get_value(idobj)[idx] = Module.hiwire.get_value(idval);
+  Hiwire.get_value(idobj)[idx] = Hiwire.get_value(idval);
 });
 ```
 
@@ -115,7 +115,7 @@ If the function returns `int` or `bool` use `EM_JS_NUM`:
 
 ```javascript
 EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
-  return Module.hiwire.get_value(idobj).length;
+  return Hiwire.get_value(idobj).length;
 });
 ```
 

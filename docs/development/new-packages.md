@@ -174,7 +174,7 @@ package:
 
 source:
   url: <url>
-  sha265: <sha256>
+  sha256: <sha256>
 
 requirements:
   run:

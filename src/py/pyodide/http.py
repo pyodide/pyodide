@@ -1,8 +1,8 @@
-from io import StringIO
-from ._core import JsProxy, to_js
-from typing import Any
 import json
-from io import IOBase
+from io import IOBase, StringIO
+from typing import Any
+
+from ._core import JsProxy, to_js
 
 try:
     from js import XMLHttpRequest
@@ -208,7 +208,7 @@ class FetchResponse:
 
 
 async def pyfetch(url: str, **kwargs) -> FetchResponse:
-    """Fetch the url and return the response.
+    r"""Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function
     <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
@@ -226,7 +226,8 @@ async def pyfetch(url: str, **kwargs) -> FetchResponse:
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
     if IN_BROWSER:
-        from js import fetch as _jsfetch, Object
+        from js import Object
+        from js import fetch as _jsfetch
 
     return FetchResponse(
         url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))

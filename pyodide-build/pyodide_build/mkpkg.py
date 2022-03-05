@@ -4,13 +4,13 @@ import argparse
 import json
 import os
 import shutil
-import urllib.request
-import urllib.error
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, Any, Optional, List, Literal
+import urllib.error
+import urllib.request
 import warnings
+from pathlib import Path
+from typing import Any, Literal, Optional
 
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 
@@ -26,7 +26,7 @@ SDIST_EXTENSIONS = tuple(
 )
 
 
-def _find_sdist(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _find_sdist(pypi_metadata: dict[str, Any]) -> Optional[dict[str, Any]]:
     """Get sdist file path from the metadata"""
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
@@ -37,7 +37,7 @@ def _find_sdist(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _find_wheel(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _find_wheel(pypi_metadata: dict[str, Any]) -> Optional[dict[str, Any]]:
     """Get wheel file path from the metadata"""
     for entry in pypi_metadata["urls"]:
         if entry["packagetype"] == "bdist_wheel" and entry["filename"].endswith(
@@ -48,8 +48,8 @@ def _find_wheel(pypi_metadata: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def _find_dist(
-    pypi_metadata: Dict[str, Any], source_types=List[Literal["wheel", "sdist"]]
-) -> Dict[str, Any]:
+    pypi_metadata: dict[str, Any], source_types=list[Literal["wheel", "sdist"]]
+) -> dict[str, Any]:
     """Find a wheel or sdist, as appropriate.
 
     source_types controls which types (wheel and/or sdist) are accepted and also
@@ -72,7 +72,7 @@ def _find_dist(
     raise MkpkgFailedException(f"No {types_str} found for package {name} ({url})")
 
 
-def _get_metadata(package: str, version: Optional[str] = None) -> Dict:
+def _get_metadata(package: str, version: Optional[str] = None) -> dict:
     """Download metadata for a package from PyPI"""
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
@@ -288,16 +288,12 @@ def main(args):
     try:
         package = args.package[0]
         if args.update:
-            update_package(
-                package, update_patched=True, wheel=args.wheel, sdist=args.sdist
-            )
+            update_package(package, update_patched=True, source_fmt=args.source_format)
             return
         if args.update_if_not_patched:
-            update_package(
-                package, update_patched=False, wheel=args.wheel, sdist=args.sdist
-            )
+            update_package(package, update_patched=False, source_fmt=args.source_format)
             return
-        make_package(package, args.version, wheel=args.wheel, sdist=args.sdist)
+        make_package(package, args.version, source_fmt=args.source_format)
     except MkpkgFailedException as e:
         # This produces two types of error messages:
         #

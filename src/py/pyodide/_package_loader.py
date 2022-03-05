@@ -1,14 +1,13 @@
-from ._core import to_js, JsProxy
-
 import shutil
 import sysconfig
 import tarfile
-
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import List, IO, Iterable
+from typing import IO, Iterable
 from zipfile import ZipFile
+
+from ._core import JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 STD_LIB = Path(sysconfig.get_path("stdlib"))  # type: ignore
@@ -51,7 +50,7 @@ def unpack_buffer(filename: str, buffer: JsProxy, target: str = "site") -> JsPro
         return to_js(get_dynlibs(f, target_dir))
 
 
-def get_dynlibs(archive: IO[bytes], target_dir: Path) -> List[str]:
+def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
     """List out the paths to .so files in a zip or tar archive.
 
     Parameters

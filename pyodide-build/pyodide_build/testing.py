@@ -1,8 +1,15 @@
-import pytest
-import inspect
-from typing import Callable, Dict, List, Optional, Union
 import contextlib
+import inspect
 from base64 import b64encode
+from typing import Callable, Collection, Optional
+
+import pytest
+
+from .common import get_make_flag
+
+PYMAJOR = get_make_flag("PYMAJOR")
+PYMINOR = get_make_flag("PYMINOR")
+PYVERSION = f"python{PYMAJOR}.{PYMINOR}"
 
 
 def _run_in_pyodide_get_source(f):
@@ -30,9 +37,9 @@ def run_in_pyodide(
     *,
     standalone: bool = False,
     module_scope: bool = False,
-    packages: List[str] = [],
-    xfail_browsers: Dict[str, str] = {},
-    driver_timeout: Optional[Union[str, int]] = None,
+    packages: Collection[str] = (),
+    xfail_browsers: Optional[dict[str, str]] = None,
+    driver_timeout: Optional[float] = None,
 ) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
@@ -48,14 +55,16 @@ def run_in_pyodide(
         Whether to use a standalone selenium instance to run the test or not
     packages : List[str]
         List of packages to load before running the test
-    driver_timeout : Optional[Union[str, int]]
+    driver_timeout : Optional[float]
         selenium driver timeout (in seconds)
     """
 
+    xfail_browsers_local = xfail_browsers or {}
+
     def decorator(f):
         def inner(selenium):
-            if selenium.browser in xfail_browsers:
-                xfail_message = xfail_browsers[selenium.browser]
+            if selenium.browser in xfail_browsers_local:
+                xfail_message = xfail_browsers_local[selenium.browser]
                 pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if len(packages) > 0:
@@ -126,7 +135,7 @@ def run_in_pyodide(
 
 
 @contextlib.contextmanager
-def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, float]]):
+def set_webdriver_script_timeout(selenium, script_timeout: Optional[float]):
     """Set selenium script timeout
 
     Parameters
@@ -144,7 +153,7 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, f
         selenium.set_script_timeout(selenium.script_timeout)
 
 
-def parse_driver_timeout(request) -> Optional[Union[int, float]]:
+def parse_driver_timeout(request) -> Optional[float]:
     """Parse driver timeout value from pytest request object"""
     mark = request.node.get_closest_marker("driver_timeout")
     if mark is None:

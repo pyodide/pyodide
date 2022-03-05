@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-
+from typing import Any, Optional, Union
 
 # TODO: support more complex types for validation
 
-PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
+PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
     "package": {
         "name": str,
         "version": str,
@@ -48,8 +47,10 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
 
 
 def check_package_config(
-    config: Dict[str, Any], raise_errors: bool = True, file_path: Optional[Path] = None
-) -> List[str]:
+    config: dict[str, Any],
+    raise_errors: bool = True,
+    file_path: Optional[Union[Path, str]] = None,
+) -> list[str]:
     """Check the validity of a loaded meta.yaml file
 
     Currently the following checks are applied:
@@ -129,7 +130,7 @@ def check_package_config(
     return errors_msg
 
 
-def parse_package_config(path: Path, check: bool = True) -> Dict[str, Any]:
+def parse_package_config(path: Union[Path, str], check: bool = True) -> dict[str, Any]:
     """Load a meta.yaml file
 
     Parameters

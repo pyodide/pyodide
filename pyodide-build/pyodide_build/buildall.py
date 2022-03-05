@@ -5,22 +5,28 @@ Build all of the packages in a given directory.
 """
 
 import argparse
-from functools import total_ordering
 import json
-from pathlib import Path
-from queue import Queue, PriorityQueue
+import os
 import shutil
 import subprocess
 import sys
-from threading import Thread, Lock
-from time import sleep, perf_counter
-from typing import Dict, Set, Optional, List, Any
-import os
+from functools import total_ordering
+from pathlib import Path
+from queue import PriorityQueue, Queue
+from threading import Lock, Thread
+from time import perf_counter, sleep
+from typing import Any, Optional
 
 from . import common
-from .io import parse_package_config
-from .common import UNVENDORED_STDLIB_MODULES
 from .buildpkg import needs_rebuild
+from .common import UNVENDORED_STDLIB_MODULES
+from .io import parse_package_config
+
+
+class BuildError(Exception):
+    def __init__(self, returncode):
+        self.returncode = returncode
+        super().__init__()
 
 
 class BasePackage:
@@ -30,12 +36,12 @@ class BasePackage:
     meta: dict
     library: bool
     shared_library: bool
-    run_dependencies: List[str]
+    run_dependencies: list[str]
     # All the following variables indicate host dependencies, meaning the dependencies
     # that are needed at build time
-    dependencies: List[str]
-    unbuilt_dependencies: Set[str]
-    dependents: Set[str]
+    dependencies: list[str]
+    unbuilt_dependencies: set[str]
+    dependents: set[str]
     unvendored_tests: Optional[Path] = None
     file_name: Optional[str] = None
     install_dir: str = "site"
@@ -148,7 +154,7 @@ class Package(BasePackage):
         # Don't overwrite build log if we didn't build the file.
         # If the file didn't need to be rebuilt, the log will have exactly two lines.
         rebuilt = True
-        with open(self.pkgdir / "build.log.tmp", "r") as f:
+        with open(self.pkgdir / "build.log.tmp") as f:
             try:
                 next(f)
                 next(f)
@@ -165,15 +171,14 @@ class Package(BasePackage):
         else:
             (self.pkgdir / "build.log.tmp").unlink()
 
-        try:
-            p.check_returncode()
-        except subprocess.CalledProcessError:
+        if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
 
-            with open(self.pkgdir / "build.log", "r") as f:
+            with open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
 
-            raise
+            print("ERROR: cancelling buildall")
+            raise BuildError(p.returncode)
 
         if self.library:
             return
@@ -190,8 +195,8 @@ class Package(BasePackage):
 
 
 def generate_dependency_graph(
-    packages_dir: Path, packages: Set[str]
-) -> Dict[str, BasePackage]:
+    packages_dir: Path, packages: set[str]
+) -> dict[str, BasePackage]:
     """This generates a dependency graph for listed packages.
 
     A node in the graph is a BasePackage object defined above, which maintains
@@ -212,7 +217,7 @@ def generate_dependency_graph(
      - pkg_map: dictionary mapping package names to BasePackage objects
     """
 
-    pkg_map: Dict[str, BasePackage] = {}
+    pkg_map: dict[str, BasePackage] = {}
 
     if "*" in packages:
         packages.discard("*")
@@ -269,10 +274,10 @@ def print_with_progress_line(str, progress_line):
 def get_progress_line(package_set):
     if not package_set:
         return None
-    return f"In progress: " + ", ".join(package_set.keys())
+    return "In progress: " + ", ".join(package_set.keys())
 
 
-def format_name_list(l: List[str]) -> str:
+def format_name_list(l: list[str]) -> str:
     """
     >>> format_name_list(["regex"])
     'regex'
@@ -290,7 +295,7 @@ def format_name_list(l: List[str]) -> str:
 
 
 def mark_package_needs_build(
-    pkg_map: Dict[str, BasePackage], pkg: BasePackage, needs_build: Set[str]
+    pkg_map: dict[str, BasePackage], pkg: BasePackage, needs_build: set[str]
 ):
     """
     Helper for generate_needs_build_set. Modifies needs_build in place.
@@ -305,7 +310,7 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map: Dict[str, BasePackage]) -> Set[str]:
+def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     """
     Generate the set of packages that need to be rebuilt.
 
@@ -314,7 +319,7 @@ def generate_needs_build_set(pkg_map: Dict[str, BasePackage]) -> Set[str]:
        according to needs_rebuild, and
     2. packages which depend on case 1 packages.
     """
-    needs_build: Set[str] = set()
+    needs_build: set[str] = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
         if pkg.needs_rebuild():
@@ -322,7 +327,7 @@ def generate_needs_build_set(pkg_map: Dict[str, BasePackage]) -> Set[str]:
     return needs_build
 
 
-def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
+def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
     packages at once.
@@ -376,7 +381,9 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set = {}
+    package_set: dict[
+        str, None
+    ] = {}  # using dict keys for insertion order preservation
 
     def builder(n):
         nonlocal queue_idx
@@ -414,6 +421,8 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     num_built = len(already_built)
     while num_built < len(pkg_map):
         pkg = built_queue.get()
+        if isinstance(pkg, BuildError):
+            raise SystemExit(pkg.returncode)
         if isinstance(pkg, Exception):
             raise pkg
 
@@ -431,10 +440,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
+def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
     """Generate the package.json file"""
     # Build package.json data.
-    package_data: Dict[str, Dict[str, Any]] = {
+    package_data: dict[str, dict[str, Any]] = {
         "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
         "packages": {},
     }

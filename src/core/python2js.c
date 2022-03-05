@@ -539,8 +539,8 @@ EM_JS_NUM(int,
           _JsArray_PushEntry_helper,
           (JsRef array, JsRef key, JsRef value),
           {
-            Module.hiwire.get_value(array).push(
-              [ Module.hiwire.get_value(key), Module.hiwire.get_value(value) ]);
+            Hiwire.get_value(array).push(
+              [ Hiwire.get_value(key), Hiwire.get_value(value) ]);
           })
 
 static int
@@ -553,9 +553,8 @@ _JsArray_PushEntry(ConversionContext context,
 }
 
 EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
-  return Module.hiwire.new_value(
-    Module.hiwire.get_value(jscontext).dict_converter(
-      Module.hiwire.get_value(array)));
+  return Hiwire.new_value(
+    Hiwire.get_value(jscontext).dict_converter(Hiwire.get_value(array)));
 })
 
 static JsRef
@@ -579,12 +578,14 @@ python2js_custom_dict_converter(PyObject* x,
     // No custom converter provided, go back to default convertion to Map.
     return python2js_with_depth(x, depth, proxies);
   }
+  // clang-format off
   JsRef jscontext = (JsRef)EM_ASM_INT(
     {
-      return Module.hiwire.new_value(
-        { dict_converter : Module.hiwire.get_value($0) });
+      return Hiwire.new_value(
+        { dict_converter : Hiwire.get_value($0) });
     },
     dict_converter);
+  // clang-format on
   ConversionContext context = {
     .depth = depth,
     .proxies = proxies,
@@ -686,7 +687,7 @@ finally:
 }
 
 EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
-  for (let proxy of Module.hiwire.get_value(proxies_id)) {
+  for (let proxy of Hiwire.get_value(proxies_id)) {
     proxy.destroy();
   }
 })
