@@ -579,15 +579,6 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
-/**
- * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
- * so in v3.10 this would be a simple API call wrapper like the rest of the code
- * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c).
- *
- * When the iterator is done, it returns NULL and sets StopIteration. We'll use
- * _pyproxyGen_FetchStopIterationValue below to get the return value of the
- * generator (again copying from YIELD_FROM).
- */
 PySendResult
 _pyproxyGen_Send(PyObject* receiver, JsRef jsval, JsRef* result)
 {
