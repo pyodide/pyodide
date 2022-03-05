@@ -44,7 +44,6 @@ def main():
         PYVERSION = f"python{version_info.major}.{version_info.minor}"
         pythonpath = [
             f"{HOSTINSTALLDIR}/lib/{PYVERSION}/site-packages/",
-            f"{HOSTINSTALLDIR}/usr/local/lib/{PYVERSION}/site-packages/",
             f"{PYODIDE_ROOT}/pyodide-build/",
         ]
         os.environ["PYTHONPATH"] = ":".join(pythonpath)

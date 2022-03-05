@@ -158,7 +158,7 @@ def capture_compile(*, host_install_dir: str, skip_host: bool, env: dict[str, st
                     "-m",
                     "pip",
                     "install",
-                    "--root",
+                    "--prefix",
                     host_install_dir,
                     result_wheel,
                 ]
