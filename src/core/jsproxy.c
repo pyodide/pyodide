@@ -291,8 +291,7 @@ JsProxy_GetIter(PyObject* o)
 
 /**
  * next overload. Controlled by IS_ITERATOR.
- * TODO: Should add a similar send method for generator support.
- * Python 3.10 has a different way to handle this.
+ * TODO: Implement Py_am_send method for generator support
  */
 static PyObject*
 JsProxy_IterNext(PyObject* o)
