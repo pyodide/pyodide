@@ -33,12 +33,6 @@ def test_subprocess_with_shared_env():
         assert p.env["A"] == "7"
 
 
-def test_subprocess_with_shared_env_err():
-    # Test that error doesn't hang
-    p = buildpkg.BashRunnerWithSharedEnvironment()
-    p.run("cd xxxx")
-
-
 def test_prepare_source(monkeypatch):
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: True)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
