@@ -7,8 +7,6 @@ source:
   sha256: e6c76a87633aa3fa16614b61ccedfae45b91df2767cf097aa9c933932a7ed1e0
 
   patches:
-    - patches/segfault-PyArray_Broadcast.patch
-    - patches/segfault-PyArray_PyIntAsIntp.patch
     - patches/disable-maybe-uninitialized.patch
     - patches/dont-include-execinfo.patch
     - patches/fix-longdouble.patch
