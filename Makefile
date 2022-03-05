@@ -33,7 +33,6 @@ build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/error_handling_cpp.o \
-	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -149,7 +148,7 @@ lint:
 	pre-commit run -a --show-diff-on-failure
 
 benchmark: all
-	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
+	$(HOSTPYTHON) benchmark/benchmark.py all --output build/benchmarks.json
 	$(HOSTPYTHON) benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 
 

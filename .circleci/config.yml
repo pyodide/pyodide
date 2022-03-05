@@ -16,21 +16,6 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
 
 jobs:
-  lint:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-
-      - run:
-          name: Install lint requirements
-          command: |
-            python -m pip install pre-commit
-
-      - run:
-          name: lint
-          command: make lint
-
   test-docs:
     <<: *defaults
     resource_class: small
@@ -52,11 +37,13 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
+            - -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220303-{{ checksum "cpython/Makefile" }}
+            - -core-v20220303
 
       - run:
           name: build emsdk
-          no_output_timeout: 1200
+          no_output_timeout: 20m
           command: |
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
@@ -70,7 +57,7 @@ jobs:
 
       - run:
           name: build cpython
-          no_output_timeout: 1200
+          no_output_timeout: 20m
           command: |
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
@@ -81,7 +68,7 @@ jobs:
 
       - run:
           name: build pyodide core
-          no_output_timeout: 1200
+          no_output_timeout: 20m
           command: |
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
@@ -97,7 +84,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
+          key: -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -136,11 +123,12 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg1-v20220303
 
       - run:
           name: build packages
-          no_output_timeout: 1800
+          no_output_timeout: 30m
           command: |
             source pyodide_env.sh
 
@@ -160,7 +148,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
 
       - persist_to_workspace:
           root: .
@@ -172,6 +160,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide-build.tar.gz  build
+            tar cjf build-logs.tar.gz  packages/build-logs
 
       - persist_to_workspace:
           root: .
@@ -187,6 +176,9 @@ jobs:
       - store_artifacts:
           path: /root/repo/packages/build-logs
 
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
+
   build-packages:
     <<: *defaults
     resource_class: large
@@ -199,11 +191,12 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg2-v20220303
 
       - run:
           name: build packages
-          no_output_timeout: 1800
+          no_output_timeout: 30m
           command: |
             source pyodide_env.sh
 
@@ -223,12 +216,13 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Zip build directory
           command: |
             tar cjf pyodide-build.tar.gz  build
+            tar cjf build-logs.tar.gz  packages/build-logs
 
       - persist_to_workspace:
           root: .
@@ -244,6 +238,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
 
   test-main:
     parameters:
@@ -329,7 +326,8 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py all --output build/benchmarks.json
+
       - store_artifacts:
           path: /root/repo/build/benchmarks.json
 
@@ -402,11 +400,6 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-
       - test-docs:
           filters:
             tags:
@@ -531,7 +524,6 @@ workflows:
 
       - deploy-release:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
@@ -542,7 +534,6 @@ workflows:
               only: /^\d+\.\d+\.\w+$/
       - deploy-dev:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
