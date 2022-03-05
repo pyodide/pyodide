@@ -39,6 +39,13 @@
     }                                                                          \
   } while (0)
 
+#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
+  do {                                                                         \
+    if (mod##_init(core_module)) {                                             \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+    }                                                                          \
+  } while (0)
+
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python()
@@ -62,12 +69,6 @@ finally:
     Py_ExitStatusException(status);
   }
 }
-#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
-  do {                                                                         \
-    if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
-    }                                                                          \
-  } while (0)
 
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
@@ -75,17 +76,6 @@ static struct PyModuleDef core_module_def = {
   .m_doc = "Pyodide C builtins",
   .m_size = -1,
 };
-
-// from numpy_patch.c (no need for a header just for this)
-int
-numpy_patch_init();
-
-int
-get_python_stack_depth()
-{
-  PyThreadState* tstate = PyThreadState_GET();
-  return tstate->recursion_depth;
-}
 
 /**
  * Bootstrap steps here:
@@ -141,7 +131,6 @@ pyodide_init(void)
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
-  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
