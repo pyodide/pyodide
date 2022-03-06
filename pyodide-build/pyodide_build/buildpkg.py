@@ -418,18 +418,6 @@ def compile(
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(
-                host_install_dir=host_install_dir,
-                skip_host=skip_host,
-                env=bash_runner.env,
-            )
-            prereplay = build_metadata.get("prereplay")
-            if prereplay:
-                result = bash_runner.run(prereplay)
-                if result.returncode != 0:
-                    print("ERROR: prereplay failed")
-                    exit_with_stdio(result)
-        if should_replay_compile:
-            pywasmcross.replay_compile(
                 cflags=build_metadata["cflags"],
                 cxxflags=build_metadata["cxxflags"],
                 ldflags=build_metadata["ldflags"],
@@ -437,35 +425,9 @@ def compile(
                 host_install_dir=host_install_dir,
                 replace_libs=replace_libs,
                 replay_from=replay_from,
+                env=bash_runner.env,
             )
 
-
-def set_host_platform(wheel_dir: Path, platform: str):
-    dist_info = next(wheel_dir.glob("*.dist-info"))
-    WHEEL = dist_info / "WHEEL"
-    lines = WHEEL.read_text().splitlines()
-    result_lines = []
-    for line in lines:
-        if line.startswith("Tag:"):
-            line = line.rpartition("-")[0] + "-" + platform
-        result_lines.append(line)
-    WHEEL.write_text("\n".join(result_lines))
-
-
-def update_wheel_platform(build_dir: Path, wheel_dir: Path):
-    import distutils.dir_util
-
-    # for some reason the .so name and the wheel name swap order of architecture
-    # and OS?
-    set_host_platform(wheel_dir, "emscripten_wasm32")
-    pywasmcross.clean_out_native_artifacts(wheel_dir)
-    lib_dir = next(build_dir.glob("lib*"))
-    distutils.dir_util.copy_tree(str(lib_dir), str(wheel_dir))
-    # TODO: Platform tag the .so files.
-    # Currently we leave the platform triplet unset so if we set a platform tag
-    # the files will fail to load.
-    # for file in wheel_dir.glob("**/*.so"):
-    #     file.rename(file.with_suffix(".cpython-39-wasm32-emscripten.so"))
 
 
 def package_wheel(
@@ -511,8 +473,6 @@ def package_wheel(
     unpack_wheel(wheel_paths[0])
     wheel_paths[0].unlink()
     wheel_dir = next(p for p in distdir.glob("*") if p.is_dir())
-    if not wheel_paths[0].name.endswith("any.whl"):
-        update_wheel_platform(build_dir, wheel_dir)
 
     post = build_metadata.get("post")
     if post:

@@ -22,9 +22,9 @@ source:
     - patches/fix-removed-decorators-module.patch
     - patches/fix-comparator-function-signatures.patch
     - patches/fix-random_float_fill-return-type.patch
+    - patches/0001-Fix-feature-detection-sigs.patch
 
 build:
-  skip_host: False
   # set linker and C flags to error on anything to do with function declarations being wrong.
   # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
   # will fail. Better to fail at compile or link time.
@@ -36,21 +36,24 @@ build:
     -Werror=mismatched-return-types
   ldflags: |
     -Wl,--fatal-warnings
-  prereplay: |
-    export SRC_DIR=$(pwd)
+  script: |
+    MATHLIB=m
+    SRC_DIR=$(pwd)
     cd ../.. # Need to move out of source directory to import numpy
     cp -r config $SRC_DIR
     python$PYMAJOR.$PYMINOR -c '\
         from numpy.core.setup_common import C_API_VERSION as API, C_ABI_VERSION as ABI;\
         print(f"#define NPY_API_VERSION 0x{API:08x}\n#define NPY_ABI_VERSION 0x{ABI:08x}")' \
     >> $SRC_DIR/config/_numpyconfig.h
+    cd $SRC_DIR
   post: |
+    echo post
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
-    cp $SRC_DIR/config/* $NUMPY_INSTALL_PATH
-    mkdir -p $NUMPY_LIB
-    find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
+    # export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
+    # cp $SRC_DIR/config/* $NUMPY_INSTALL_PATH
+    # mkdir -p $NUMPY_LIB
+    # find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
 test:
   imports:
     - numpy

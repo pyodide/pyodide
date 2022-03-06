@@ -1,0 +1,205 @@
+From cbdb5d2fba5fe0883e8036a70ca1a1331c90859b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 5 Mar 2022 16:00:54 -0800
+Subject: [PATCH] Fix feature detection sigs
+
+---
+ numpy/core/setup.py               | 28 ++++++-------
+ numpy/core/setup_common.py        | 65 +++++++++++++++++++++++++++++++
+ numpy/distutils/command/config.py |  6 ++-
+ 3 files changed, 84 insertions(+), 15 deletions(-)
+
+diff --git a/numpy/core/setup.py b/numpy/core/setup.py
+index c97747606..77c146328 100644
+--- a/numpy/core/setup.py
++++ b/numpy/core/setup.py
+@@ -125,25 +125,27 @@ def win32_checks(deflist):
+         deflist.append('FORCE_NO_LONG_DOUBLE_FORMATTING')
+ 
+ def check_math_capabilities(config, ext, moredefs, mathlibs):
+-    def check_func(func_name):
++    def check_func(func_name, decl=True, call_args=True):
+         return config.check_func(func_name, libraries=mathlibs,
+-                                 decl=True, call=True)
++                                 decl=decl, call=True, call_args=call_args, headers=["stddef.h"])
+ 
+-    def check_funcs_once(funcs_name):
+-        decl = dict([(f, True) for f in funcs_name])
++    def check_funcs_once(funcs_name, func_decls, func_calls):
++        decl = dict([(f, func_decls[f]) for f in funcs_name])
++        call = dict([(f, True) for f in funcs_name])
++        call_args = dict([(f, func_calls[f]) for f in funcs_name])
+         st = config.check_funcs_once(funcs_name, libraries=mathlibs,
+-                                     decl=decl, call=decl)
++                                     decl=decl, call=call, call_args=call_args, headers=["stddef.h"])
+         if st:
+             moredefs.extend([(fname2def(f), 1) for f in funcs_name])
+         return st
+ 
+-    def check_funcs(funcs_name):
++    def check_funcs(funcs_name, func_decls, func_calls):
+         # Use check_funcs_once first, and if it does not work, test func per
+         # func. Return success only if all the functions are available
+-        if not check_funcs_once(funcs_name):
++        if not check_funcs_once(funcs_name, func_decls, func_calls):
+             # Global check failed, check func per func
+             for f in funcs_name:
+-                if check_func(f):
++                if check_func(f, func_decls[f], func_calls[f]):
+                     moredefs.append((fname2def(f), 1))
+             return 0
+         else:
+@@ -151,7 +153,7 @@ def check_funcs(funcs_name):
+ 
+     #use_msvc = config.check_decl("_MSC_VER")
+ 
+-    if not check_funcs_once(MANDATORY_FUNCS):
++    if not check_funcs_once(MANDATORY_FUNCS, MANDATORY_FUNC_SIGS, MANDATORY_FUNC_CALLS ):
+         raise SystemError("One of the required function to build numpy is not"
+                 " available (the list is %s)." % str(MANDATORY_FUNCS))
+ 
+@@ -167,7 +169,7 @@ def check_funcs(funcs_name):
+                     headers=["Python.h", "math.h"]):
+             OPTIONAL_STDFUNCS.remove(f)
+ 
+-    check_funcs(OPTIONAL_STDFUNCS)
++    check_funcs(OPTIONAL_STDFUNCS,OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS)
+ 
+     for h in OPTIONAL_HEADERS:
+         if config.check_func("", decl=False, call=False, headers=[h]):
+@@ -209,8 +211,8 @@ def check_funcs(funcs_name):
+             moredefs.append((fname2def(m), 1))
+ 
+     # C99 functions: float and long double versions
+-    check_funcs(C99_FUNCS_SINGLE)
+-    check_funcs(C99_FUNCS_EXTENDED)
++    check_funcs(C99_FUNCS_SINGLE, C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS)
++    check_funcs(C99_FUNCS_EXTENDED, C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS)
+ 
+ def check_complex(config, mathlibs):
+     priv = []
+@@ -399,7 +401,7 @@ def check_mathlib(config_cmd):
+     if mathlib:
+         mathlibs_choices.insert(0, mathlib.split(','))
+     for libs in mathlibs_choices:
+-        if config_cmd.check_func("exp", libraries=libs, decl=True, call=True):
++        if config_cmd.check_func("exp", libraries=libs, call_args="0", decl="double exp(double);", call=True):
+             mathlibs = libs
+             break
+     else:
+diff --git a/numpy/core/setup_common.py b/numpy/core/setup_common.py
+index 772c87c96..93c629a9b 100644
+--- a/numpy/core/setup_common.py
++++ b/numpy/core/setup_common.py
+@@ -102,11 +102,28 @@ def check_api_version(apiversion, codegen_dir):
+         warnings.warn(msg % (apiversion, curapi_hash, apiversion, api_hash,
+                              __file__),
+                       MismatchCAPIWarning, stacklevel=2)
++
++def set_sig(sigs, calls, func, ret, args):
++    sigs[func] = "%s %s(%s);" % (ret, func, ", ".join(args))
++    calls[func] = ", ".join("(%s) 0" % arg for arg in args)
++
+ # Mandatory functions: if not found, fail the build
+ MANDATORY_FUNCS = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "fabs",
+         "floor", "ceil", "sqrt", "log10", "log", "exp", "asin",
+         "acos", "atan", "fmod", 'modf', 'frexp', 'ldexp']
+ 
++MANDATORY_FUNC_SIGS = {}
++MANDATORY_FUNC_CALLS = {}
++
++
++for func in MANDATORY_FUNCS:
++    set_sig(MANDATORY_FUNC_SIGS, MANDATORY_FUNC_CALLS, func, "double", ["double"])
++
++set_sig(MANDATORY_FUNC_SIGS, MANDATORY_FUNC_CALLS, 'fmod', "double", ["double", "double"])
++set_sig(MANDATORY_FUNC_SIGS, MANDATORY_FUNC_CALLS, 'modf', "double", ["double", "double*"])
++set_sig(MANDATORY_FUNC_SIGS, MANDATORY_FUNC_CALLS, 'frexp', "double", ["double", "int*"])
++set_sig(MANDATORY_FUNC_SIGS, MANDATORY_FUNC_CALLS, 'ldexp', "double", ["double", "int"])
++
+ # Standard functions which may not be available and for which we have a
+ # replacement implementation. Note that some of these are C99 functions.
+ OPTIONAL_STDFUNCS = ["expm1", "log1p", "acosh", "asinh", "atanh",
+@@ -115,6 +132,24 @@ def check_api_version(apiversion, codegen_dir):
+         "strtoll", "strtoull", "cbrt", "strtold_l", "fallocate",
+         "backtrace", "madvise"]
+ 
++OPTIONAL_STDFUNCS_SIGS = {}
++OPTIONAL_STDFUNCS_CALLS = {}
++
++for func in OPTIONAL_STDFUNCS:
++    set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, func, "double", ["double"])
++
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "strtoull", "unsigned long long", ["const char*", "char**", "int"])
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "strtoll", "long long", ["const char*", "char**", "int"])
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "strtold_l", "long double", ["const char*", "char**", "int /* locale_t */"])
++
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "pow", "double", ["double", "double"])
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "atan2", "double", ["double", "double"])
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "nextafter", "double", ["double", "double"])
++
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "madvise", "int", ["void *", "size_t", "int"])
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "backtrace", "int", ["void **", "int"])
++set_sig(OPTIONAL_STDFUNCS_SIGS, OPTIONAL_STDFUNCS_CALLS, "fallocate", "int", ["int", "int", "int /* off_t */", "int /* off_t */"])
++
+ 
+ OPTIONAL_HEADERS = [
+ # sse headers only enabled automatically on amd64/x32 builds
+@@ -221,7 +256,37 @@ def check_api_version(apiversion, codegen_dir):
+     "nextafter", "cbrt"
+     ]
+ C99_FUNCS_SINGLE = [f + 'f' for f in C99_FUNCS]
++C99_FUNCS_SINGLE_SIGS = {}
++C99_FUNCS_SINGLE_CALLS = {}
++for func in C99_FUNCS_SINGLE:
++    set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, func, "float", ["float"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'ldexpf', "float", ["float", "int"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'hypotf', "float", ["float", "float"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'powf', "float", ["float", "float"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'fmodf', "float", ["float", "float"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'atan2f', "float", ["float", "float"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'modff', "float", ["float", "float*"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'copysignf', "float", ["float", "float"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'frexpf', "float", ["float", "int*"])
++set_sig(C99_FUNCS_SINGLE_SIGS, C99_FUNCS_SINGLE_CALLS, 'nextafterf', "float", ["float", "float"])
++
++
+ C99_FUNCS_EXTENDED = [f + 'l' for f in C99_FUNCS]
++C99_FUNCS_EXTENDED_SIGS = {}
++C99_FUNCS_EXTENDED_CALLS = {}
++for func in C99_FUNCS_EXTENDED:
++    set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, func, "long double", ["long double"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'ldexpl', "long double", ["long double", "int"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'hypotl', "long double", ["long double", "long double"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'powl', "long double", ["long double", "long double"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'fmodl', "long double", ["long double", "long double"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'atan2l', "long double", ["long double", "long double"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'modfl', "long double", ["long double", "long double*"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'copysignl', "long double", ["long double", "long double"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'frexpl', "long double", ["long double", "int*"])
++set_sig(C99_FUNCS_EXTENDED_SIGS, C99_FUNCS_EXTENDED_CALLS, 'nextafterl', "long double", ["long double", "long double"])
++
++
+ C99_COMPLEX_TYPES = [
+     'complex double', 'complex float', 'complex long double'
+     ]
+diff --git a/numpy/distutils/command/config.py b/numpy/distutils/command/config.py
+index 1f4037bb5..3b9beb6e2 100644
+--- a/numpy/distutils/command/config.py
++++ b/numpy/distutils/command/config.py
+@@ -379,8 +379,10 @@ def check_funcs_once(self, funcs,
+         if decl:
+             for f, v in decl.items():
+                 if v:
+-                    body.append("int %s (void);" % f)
+-
++                    if isinstance(v, str):
++                        body.append(v)
++                    else:
++                        body.append("int %s (void);" % f)
+         # Handle MS intrinsics. See check_func for more info.
+         body.append("#ifdef _MSC_VER")
+         for func in funcs:
+-- 
+2.25.1
+
