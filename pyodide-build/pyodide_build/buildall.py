@@ -238,6 +238,8 @@ def generate_dependency_graph(
             pkg = Package(packages_dir / pkgname)
         if no_numpy_dependents and "numpy" in pkg.dependencies:
             continue
+        # if pkg.name == "scipy" or "scipy" in pkg.dependencies:
+        #     continue
         pkg_map[pkg.name] = pkg
 
         for dep in pkg.dependencies:
