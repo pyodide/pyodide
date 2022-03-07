@@ -416,7 +416,7 @@ def handle_command_generate_args(
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
-    ['emcc', 'test.c']
+    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=mismatched-return-types', 'test.c']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
@@ -458,7 +458,6 @@ def handle_command_generate_args(
         ]
     )
 
-    print("new_args", new_args)
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
     # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
@@ -552,6 +551,7 @@ def handle_command(
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
 
+    print(" ".join(new_args))
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:
         sys.exit(returncode)

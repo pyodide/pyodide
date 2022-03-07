@@ -43,6 +43,17 @@ f2c_wrap = _args_wrapper(replay_f2c)
 def generate_args(line: str, args, is_link_cmd=False) -> str:
     splitline = line.split()
     res = handle_command_generate_args(splitline, args, is_link_cmd)
+    for arg in [
+        "-Werror=implicit-function-declaration",
+        "-Werror=mismatched-parameter-types",
+        "-Werror=mismatched-return-types",
+    ]:
+        assert arg in res
+        res.remove(arg)
+    if is_link_cmd:
+        arg = "-Wl,--fatal-warnings"
+        assert arg in res
+        res.remove(arg)
     return " ".join(res)
 
 
@@ -98,6 +109,7 @@ def test_handle_command_ldflags():
         generate_args(
             "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so",
             args,
+            True,
         )
         == "emcc -Wl,-z,now -c test.o -o test.so"
     )
