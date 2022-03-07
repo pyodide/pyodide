@@ -416,7 +416,7 @@ def handle_command_generate_args(
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
-    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=mismatched-return-types', 'test.c']
+    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', 'test.c']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
