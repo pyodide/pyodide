@@ -33,7 +33,7 @@ def registered_packages_meta():
 UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],
-    "node": ["cmyt"],
+    "node": ["cmyt", "yt"],
 }
 if "CI" in os.environ:
     UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
