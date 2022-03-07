@@ -76,16 +76,6 @@ source tree (the expanded tarball).
 
 ## `build`
 
-### `build/skip_host`
-
-Skip building C extensions for the host environment. Default: `True`.
-
-Setting this to `False` will result in ~2x slower builds for packages that
-include C extensions. It should only be needed when a package is a build
-time dependency for other packages. For instance, numpy is imported during
-installation of matplotlib, importing numpy also imports included C extensions,
-therefore it is built both for host and target.
-
 ### `build/cflags`
 
 Extra arguments to pass to the compiler when building for WebAssembly.

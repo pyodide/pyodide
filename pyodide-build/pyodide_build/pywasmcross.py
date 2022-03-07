@@ -37,9 +37,9 @@ from typing import Optional, overload
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_output
+from pyodide_build._f2c_fixes import fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "g77", "f77"}
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
 def symlink_dir():
     return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
@@ -48,6 +48,7 @@ def symlink_dir():
 ReplayArgs = namedtuple(
     "ReplayArgs",
     [
+        "pkgname",
         "cflags",
         "cxxflags",
         "ldflags",
@@ -78,6 +79,7 @@ def capture_command(args: list[str]) -> int:
         path = path.replace(f"{SYMLINKDIR}:", "")
     os.environ["PATH"] = path
     replay_args = ReplayArgs(
+        pkgname=os.environ.get("PYWASMCROSS_PKGNAME"),
         cflags=os.environ.get("PYWASMCROSS_CFLAGS"),
         cxxflags=os.environ["PYWASMCROSS_CXXFLAGS"],
         ldflags=os.environ["PYWASMCROSS_LDFLAGS"],
@@ -117,6 +119,7 @@ def capture_compile(env, **kwargs):
     
 
 def capture_compile_inner(*, 
+    name,
     cflags,
     cxxflags,
     ldflags,
@@ -131,12 +134,14 @@ def capture_compile_inner(*,
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
     capture_make_command_wrapper_symlinks(env)
 
+    env["PYWASMCROSS_PKGNAME"] = name
     env["PYWASMCROSS_CFLAGS"] = cflags
     env["PYWASMCROSS_CXXFLAGS"] = cxxflags
     env["PYWASMCROSS_LDFLAGS"] = ldflags
     env["PYWASMCROSS_HOSTINSTALLDIR"] = host_install_dir
     env["PYWASMCROSS_TARGETINSTALLDIR"] = target_install_dir
     env["PYWASMCROSS_REPLACELIBS"] = replace_libs
+    env["PYWASMCROSS_BUILDDIR"] = str(Path(".").absolute())
     
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 
@@ -526,6 +531,13 @@ def replay_command(
     new_args = replay_command_generate_args(line, args, is_link_cmd)
     if dryrun:
         return new_args
+
+    BUILDDIR = Path(os.environ["PYWASMCROSS_BUILDDIR"])
+    CURDIR = str(Path(".").absolute())
+    with open(BUILDDIR/"log.txt", "a") as f:
+        print(CURDIR, " ".join(new_args), file=f)
+    if args.pkgname == "scipy":
+        scipy_fixes(new_args)
 
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:

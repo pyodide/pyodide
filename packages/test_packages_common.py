@@ -43,12 +43,7 @@ if "CI" in os.environ:
 def test_parse_package(name):
     # check that we can parse the meta.yaml
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
-
-    skip_host = meta.get("build", {}).get("skip_host", True)
-    if name == "numpy":
-        assert skip_host is False
-    elif name == "pandas":
-        assert skip_host is True
+    
 
 
 @pytest.mark.skip_refcount_check

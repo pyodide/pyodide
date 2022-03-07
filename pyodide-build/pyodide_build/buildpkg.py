@@ -366,6 +366,7 @@ def pack_wheel(path):
 
 
 def compile(
+    name : str,
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
@@ -412,12 +413,12 @@ def compile(
     if build_metadata.get("sharedlibrary"):
         return
 
-    skip_host = build_metadata.get("skip_host", True)
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(
+                name=name,
                 cflags=build_metadata["cflags"],
                 cxxflags=build_metadata["cxxflags"],
                 ldflags=build_metadata["ldflags"],
@@ -688,6 +689,7 @@ def build_package(
         finished_wheel = url and url.endswith(".whl")
         if not build_metadata.get("sharedlibrary") and not finished_wheel:
             compile(
+                name,
                 srcpath,
                 build_metadata,
                 bash_runner,

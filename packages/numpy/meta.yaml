@@ -22,7 +22,7 @@ source:
     - patches/fix-removed-decorators-module.patch
     - patches/fix-comparator-function-signatures.patch
     - patches/fix-random_float_fill-return-type.patch
-    - patches/0001-Fix-feature-detection-sigs.patch
+    - patches/0001-BUG-numpy-core-setup.py-math-feature-detection-on-wa.patch
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
@@ -47,12 +47,12 @@ build:
     >> $SRC_DIR/config/_numpyconfig.h
     cd $SRC_DIR
   post: |
+    export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
+    cp $SRC_DIR/config/* $NUMPY_INSTALL_PATH
+    mkdir -p $NUMPY_LIB
     echo post
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    # export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
-    # cp $SRC_DIR/config/* $NUMPY_INSTALL_PATH
-    # mkdir -p $NUMPY_LIB
     # find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
 test:
   imports:
