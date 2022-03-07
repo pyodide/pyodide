@@ -1,32 +1,35 @@
-From 8b5d55d785e0425df79dde8f73293f083730b951 Mon Sep 17 00:00:00 2001
+From c262dd95d67a74fca281685458b4cadd94dc580d Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 5 Mar 2022 16:00:54 -0800
 Subject: [PATCH] MAINT, BLD Fix math feature detection for wasm
 
-The web assembly linker is strict about function types, it is unwilling
-to link a function defined with signature say `double f(double, double)`
-to an invocation with signature `void f(void)`. This causes trouble in
-`numpy/core/setup.py` in the functions `check_math_capabilities` and
-`check_mathlib`.
+The web assembly linker is strict about function types, it is
+unwilling to link a function defined with signature say double
+f(double, double) to an invocation with signature void f(void). This
+causes trouble in numpy/core/setup.py in the functions
+check_math_capabilities and check_mathlib.
 
 This patch fixes the problem by giving config.try_link the correct
-function signatures for these functions. In particular I added a separate
-header file with all the math declarations. It would be be possible to
-just include 'math.h' but we also need to parse the declarations to figure
-out how to call the functions. If f has arguments type1, type2, type3, we
-want to call it like f((type1)0, (type2)0, (type3)0). Anyways it is easier
-to parse the arguments out of our feature_detection_math.h than to worry
-about the possibility that someone will have a differently formatted system
-math.h. We do a test where we include both math.h and feature_detection_math.h
-to ensure consistency between the signatures.
+function signatures for these functions. In particular I added a
+separate header file with all the math declarations. It would be be
+possible to just include 'math.h' but we also need to parse the
+declarations to figure out how to call the functions. If f has
+arguments type1, type2, type3, we want to call it like f((type1)0,
+(type2)0, (type3)0). Anyways it is easier to parse the arguments out
+of our feature_detection_math.h than to worry about the possibility
+that someone will have a differently formatted system math.h. We do a
+test where we include both math.h and feature_detection_math.h to
+ensure consistency between the signatures.
 
-I also separated out the fcntl functions, backtrace and madvise, and strtold_l.
-This is because they require separate headers. strtold_l requires testing both
-with the locale.h header and with the xlocale.h header (this seems to vary even
-among different linuxes). All of the functions I moved out of OPTIONAL_STDFUNCS
-are absent on windows and some are absent on OSX so separating them out of the
-OPTIONAL_STDFUNCS should mildly improve the speed of feature detection on mac
-and windows (since they have all the functions remaining in OPTIONAL_STDFUNCS).
+I also separated out the fcntl functions, backtrace and madvise, and
+strtold_l. This is because they require separate headers. strtold_l
+requires testing both with the locale.h header and with the xlocale.h
+header (this seems to vary even among different linuxes). All of the
+functions I moved out of OPTIONAL_STDFUNCS are absent on windows and
+some are absent on OSX so separating them out of the
+OPTIONAL_STDFUNCS should mildly improve the speed of feature
+detection on mac and windows (since they have all the functions
+remaining in OPTIONAL_STDFUNCS).
 ---
  numpy/core/feature_detection_locale.h |   1 +
  numpy/core/feature_detection_math.h   | 107 ++++++++++++++++++++++++++
@@ -183,7 +186,7 @@ index 000000000..bc14d16d0
 +int fseeko(FILE *stream, off_t offset, int whence);
 +int fallocate(int, int, off_t, off_t);
 diff --git a/numpy/core/setup.py b/numpy/core/setup.py
-index b03e9f990..25cbea936 100644
+index b03e9f990..17569e1c3 100644
 --- a/numpy/core/setup.py
 +++ b/numpy/core/setup.py
 @@ -103,32 +103,48 @@ def win32_checks(deflist):
@@ -316,7 +319,7 @@ index b03e9f990..25cbea936 100644
  
 +            # include both math.h and feature_detection_math.h at the same time
 +            # to make sure we aren't wrong about any function signatures
-+            if not config.check_func("", decl=False, call=False,
++            if not config_cmd.check_func("", decl=False, call=False,
 +                headers=["math.h", "feature_detection_math.h"]):
 +                raise SystemError(
 +                    "There is a type mismatch between the signatures declared "
