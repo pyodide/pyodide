@@ -164,7 +164,7 @@ class SeleniumWrapper:
 
     def initialize_global_hiwire_objects(self):
         """
-        There are a bunch of global objects that ocassionally enter the hiwire cache
+        There are a bunch of global objects that occasionally enter the hiwire cache
         but never leave. The refcount checks get angry about them if they aren't preloaded.
         We need to go through and touch them all once to keep everything okay.
         """
@@ -465,7 +465,7 @@ def pytest_runtest_call(item):
     not possible to "Fail" a test from a fixture (no matter what you do, pytest
     sets the test status to "Error"). The approach suggested there is hook
     pytest_runtest_call as we do here. To get access to the selenium fixture, we
-    immitate the definition of pytest_pyfunc_call:
+    imitate the definition of pytest_pyfunc_call:
     https://github.com/pytest-dev/pytest/blob/6.2.2/src/_pytest/python.py#L177
 
     Pytest issue #5044:

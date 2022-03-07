@@ -164,7 +164,7 @@ class CodeRunner:
     It is primarily intended for REPLs and other sophisticated consumers that
     may wish to add their own AST transformations, separately signal to the user
     when parsing is complete, etc. The simpler :any:`eval_code` and
-    :any:`eval_code_async` apis should be prefered when their flexibility
+    :any:`eval_code_async` apis should be preferred when their flexibility
     suffices.
 
     Parameters
@@ -211,7 +211,7 @@ class CodeRunner:
               modify this variable before calling :any:`CodeRunner.compile`.
 
         code : Once you call :any:`CodeRunner.compile` the compiled code will
-               be avaible in the code field. You can modify this variable
+               be available in the code field. You can modify this variable
                before calling :any:`CodeRunner.run` to do a code transform.
     """
 

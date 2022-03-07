@@ -94,3 +94,10 @@ repos:
       - id: rst-backticks
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: "v2.1.0"
+    hooks:
+      - id: codespell
+        args: ["-L", "te,slowy,aray,ba,nd,classs"]
+        exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$

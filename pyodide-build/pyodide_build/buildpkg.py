@@ -98,7 +98,7 @@ class BashRunnerWithSharedEnvironment:
             ["bash", "-ce", full_cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
         if result.returncode != 0:
-            print("ERROR: bash commmand failed")
+            print("ERROR: bash command failed")
             print(textwrap.indent(cmd, "    "))
             exit_with_stdio(result)
 

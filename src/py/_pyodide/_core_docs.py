@@ -360,7 +360,7 @@ def to_js(
         If you set this to False, :any:`to_js` will raise an error
 
     dict_converter: Callable[[Iterable[JsProxy]], JsProxy], default = None
-        This converter if provided recieves a (JavaScript) iterable of
+        This converter if provided receives a (JavaScript) iterable of
         (JavaScript) pairs [key, value]. It is expected to return the
         desired result of the dict conversion. Some suggested values for
         this argument:

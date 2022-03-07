@@ -68,7 +68,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.new_value = function(jsval)
   {
     // Should we guard against duplicating standard values?
-    // Probably not worth it for performance: it's harmless to ocassionally
+    // Probably not worth it for performance: it's harmless to occasionally
     // duplicate. Maybe in test builds we could raise if jsval is a standard
     // value?
     while (_hiwire.objects.has(_hiwire.counter[0])) {

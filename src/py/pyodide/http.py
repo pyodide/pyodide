@@ -65,7 +65,7 @@ class FetchResponse:
     def body_used(self) -> bool:
         """Has the response been used yet?
 
-        (If so, attempting to retreive the body again will raise an OSError.)
+        (If so, attempting to retrieve the body again will raise an OSError.)
         """
         return self.js_response.bodyUsed
 

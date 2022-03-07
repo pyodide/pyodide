@@ -3,7 +3,7 @@ initialization-time (or import-time) dependencies.
 
 1. CPython
 2. The py/\_pyodide package which is a Python package with pure Python code
-   avaiable in the inner stage of the Pyodide bootstrap process.
+   available in the inner stage of the Pyodide bootstrap process.
 3. The core/pyodide code, implemented in a mix of C and JavaScript, which embeds
    the CPython interpreter in an emscripten application. This relies on
    py/pyodide and js/pyodide at runtime. The final stage of initialization is to

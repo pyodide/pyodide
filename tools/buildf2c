@@ -212,7 +212,7 @@ echo "... done."
 
 # 3. Eliminate '-u MAIN__' at the bottom of the 'fc' script.   #
 
-#    You will have to explitly load FORTRAN MAIN programs      #
+#    You will have to explicitly load FORTRAN MAIN programs      #
 
 #    (explicitly mention the relevant .f or .o file).          #
 

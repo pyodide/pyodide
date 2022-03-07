@@ -44,7 +44,7 @@ def run_in_pyodide(
     """
     This decorator can be called in two ways --- with arguments and without
     arguments. If it is called without arguments, then the `_function` kwarg
-    catches the function the decorator is applied to. Otherewise, standalone
+    catches the function the decorator is applied to. Otherwise, standalone
     and packages are the actual arguments to the decorator.
 
     See docs/testing.md for details on how to use this.
