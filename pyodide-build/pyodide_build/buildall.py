@@ -157,17 +157,27 @@ class Package(BasePackage):
             except StopIteration:
                 rebuilt = False
 
-        if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
-            if args.log_dir and (self.pkgdir / "build.log").exists():
-                shutil.copy(
-                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
-                )
-        else:
-            (self.pkgdir / "build.log.tmp").unlink()
+        log_trouble = False
+        try:
+            if rebuilt:
+                shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+                if args.log_dir and (self.pkgdir / "build.log").exists():
+                    shutil.copy(
+                        self.pkgdir / "build.log",
+                        Path(args.log_dir) / f"{self.name}.log",
+                    )
+            else:
+                (self.pkgdir / "build.log.tmp").unlink()
+        except FileNotFoundError:
+            # This is a common source of flakiness in CI for some reason.
+            log_trouble = True
 
         if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
+            if log_trouble:
+                print(
+                    "Something went mysteriously awry with the build logs, so the logs may be stale or printing the logs may fail."
+                )
 
             with open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
