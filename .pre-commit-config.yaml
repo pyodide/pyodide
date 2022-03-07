@@ -95,6 +95,11 @@ repos:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
 
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: "v0.8.0.4"
+    hooks:
+      - id: shellcheck
+
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.1.0"
     hooks:
