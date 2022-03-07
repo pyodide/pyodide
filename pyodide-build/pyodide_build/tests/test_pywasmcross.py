@@ -59,7 +59,10 @@ def generate_args(line: str, args, is_link_cmd=False) -> str:
 
 def test_handle_command():
     args = BuildArgs()
-    assert generate_args("gcc -print-multiarch", args) == "echo wasm32-emscripten"
+    assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [  # type: ignore
+        "echo",
+        "wasm32-emscripten",
+    ]
     assert generate_args("gcc test.c", args) == "emcc test.c"
     assert (
         generate_args("gcc -shared -c test.o -o test.so", args, True)

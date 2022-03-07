@@ -426,7 +426,8 @@ def handle_command_generate_args(
 
     cmd = line[0]
     if cmd == "ar":
-        new_args = ["emar"]
+        line[0] = "emar"
+        return line
     elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
     elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
