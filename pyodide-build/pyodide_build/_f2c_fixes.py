@@ -277,6 +277,9 @@ def scipy_fix_cfile(path):
 
     if path.endswith("_arpackmodule.c"):
         text = text.replace("void(*)", "int(*)")
+        text = text.replace(
+            "static void f2py_setup_debug", "static int f2py_setup_debug"
+        )
 
     source_path.write_text(text)
 
