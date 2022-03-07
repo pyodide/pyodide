@@ -22,7 +22,7 @@ source:
     - patches/fix-removed-decorators-module.patch
     - patches/fix-comparator-function-signatures.patch
     - patches/fix-random_float_fill-return-type.patch
-    - patches/0001-BUG-numpy-core-setup.py-math-feature-detection-on-wa.patch
+    - patches/fix-math-feature-detection-for-wasm.patch
 
 build:
   cflags: |
