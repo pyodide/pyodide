@@ -23,7 +23,7 @@ The primary purpose of `core` is to implement {ref}`type translations <type-tran
 
 ### Type conversion from Python to JavaScript
 
-- `python2js` -- Translates types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicitly conversion from Python to JavaScript (the `toJs` method).
+- `python2js` -- Translates types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicit conversion from Python to JavaScript (the `toJs` method).
 - `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a JavaScript `TypedArray`, but JavaScript does not have native support for pointers, so higher dimensional arrays are more complicated.
 - `pyproxy` -- Defines a JavaScript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
 
