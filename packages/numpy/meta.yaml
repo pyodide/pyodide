@@ -35,7 +35,7 @@ build:
   ldflags: |
     -Wl,--fatal-warnings
   post: |
-    python -m pip install --prefix $HOSTINSTALLDIR numpy==1.21.4
+    python -m pip install --prefix $HOSTINSTALLDIR numpy==$PKG_VERSION
     export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen

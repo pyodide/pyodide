@@ -10,7 +10,6 @@ import fnmatch
 import hashlib
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -366,16 +365,13 @@ def pack_wheel(path):
 
 
 def compile(
-    name : str,
+    name: str,
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
     target_install_dir: str,
     host_install_dir: str,
-    should_capture_compile: bool,
-    should_replay_compile: bool,
-    replay_from: int = 0,
 ):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
@@ -413,22 +409,18 @@ def compile(
     if build_metadata.get("sharedlibrary"):
         return
 
-
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
     with chdir(srcpath):
-        if should_capture_compile:
-            pywasmcross.capture_compile(
-                name=name,
-                cflags=build_metadata["cflags"],
-                cxxflags=build_metadata["cxxflags"],
-                ldflags=build_metadata["ldflags"],
-                target_install_dir=target_install_dir,
-                host_install_dir=host_install_dir,
-                replace_libs=replace_libs,
-                replay_from=replay_from,
-                env=bash_runner.env,
-            )
-
+        pywasmcross.compile(
+            name=name,
+            cflags=build_metadata["cflags"],
+            cxxflags=build_metadata["cxxflags"],
+            ldflags=build_metadata["ldflags"],
+            target_install_dir=target_install_dir,
+            host_install_dir=host_install_dir,
+            replace_libs=replace_libs,
+            env=bash_runner.env,
+        )
 
 
 def package_wheel(
@@ -468,7 +460,6 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
-    build_dir = srcpath / "build"
     wheel_paths = list(distdir.glob("*.whl"))
     assert len(wheel_paths) == 1
     unpack_wheel(wheel_paths[0])
@@ -634,11 +625,7 @@ def build_package(
     target_install_dir: str,
     host_install_dir: str,
     force_rebuild: bool,
-    should_run_script: bool,
-    should_prepare_source: bool,
-    should_capture_compile: bool,
-    should_replay_compile: bool,
-    replay_from: int,
+    continue_: bool,
 ):
     """
     Build the package. The main entrypoint in this module.
@@ -668,18 +655,18 @@ def build_package(
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
 
-    if not should_prepare_source and not srcpath.exists():
+    if continue_ and not srcpath.exists():
         raise OSError(
             "Cannot find source for rebuild. Expected to find the source "
             f"directory at the path {srcpath}, but that path does not exist."
         )
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
-        if should_prepare_source:
+        bash_runner.env["PKG_VERSION"] = version
+        if not continue_:
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
 
-        if should_run_script:
-            run_script(build_dir, srcpath, build_metadata, bash_runner)
+        run_script(build_dir, srcpath, build_metadata, bash_runner)
 
         if build_metadata.get("library"):
             create_packaged_token(build_dir)
@@ -695,9 +682,6 @@ def build_package(
                 bash_runner,
                 target_install_dir=target_install_dir,
                 host_install_dir=host_install_dir,
-                should_capture_compile=should_capture_compile,
-                should_replay_compile=should_replay_compile,
-                replay_from=replay_from,
             )
         if not build_metadata.get("sharedlibrary"):
             package_wheel(
@@ -773,22 +757,13 @@ def make_parser(parser: argparse.ArgumentParser):
         "--continue",
         type=str,
         nargs="?",
-        dest="continue_from",
+        dest="continue_",
         default="None",
         const="script",
         help=(
             dedent(
                 """
-                Continue a build from the middle. For debugging. Implies
-                "--force-rebuild". Possible arguments:
-
-                    'script' : Don't prepare source, start with running script. `--continue` with no argument has the same effect.
-
-                    'capture' : Start with capture step
-
-                    'replay' : Start with replay step
-
-                    'replay:15' : Replay the capture step starting with the 15th compile command (any integer works)
+                Continue a build from the middle. For debugging. Implies "--force-rebuild".
                 """
             ).strip()
         ),
@@ -796,43 +771,10 @@ def make_parser(parser: argparse.ArgumentParser):
     return parser
 
 
-def parse_continue_arg(continue_from: str) -> dict[str, Any]:
-    from itertools import accumulate
-
-    is_none = continue_from == "None"
-    is_script = continue_from == "script"
-    is_capture = continue_from == "capture"
-    is_replay = continue_from == "replay" or re.fullmatch(
-        r"replay(:[0-9]+)?", continue_from
-    )
-
-    [
-        should_prepare_source,
-        should_run_script,
-        should_capture_compile,
-        should_replay_compile,
-    ] = accumulate([is_none, is_script, is_capture, is_replay], lambda a, b: a or b)
-
-    if not should_replay_compile:
-        raise OSError(
-            f"Unexpected --continue argument '{continue_from}', should have been 'script', 'capture', 'replay', or 'replay:##'"
-        )
-
-    result: dict[str, Any] = {}
-    result["should_prepare_source"] = should_prepare_source
-    result["should_run_script"] = should_run_script
-    result["should_capture_compile"] = should_capture_compile
-    result["should_replay_compile"] = should_replay_compile
-    result["replay_from"] = 1
-    if continue_from.startswith("replay:"):
-        result["replay_from"] = int(continue_from.removeprefix("replay:"))
-    return result
-
-
 def main(args):
-    step_controls = parse_continue_arg(args.continue_from)
+    continue_ = not not args.continue_
     # --continue implies --force-rebuild
-    force_rebuild = args.force_rebuild or not not args.continue_from
+    force_rebuild = args.force_rebuild or continue_
 
     meta_file = Path(args.package[0]).resolve()
 
@@ -861,7 +803,7 @@ def main(args):
             target_install_dir=args.target_install_dir,
             host_install_dir=args.host_install_dir,
             force_rebuild=force_rebuild,
-            **step_controls,
+            continue_=continue_,
         )
 
     except Exception:

@@ -24,15 +24,13 @@ configuration with build.
 
 
 import importlib.machinery
-import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Optional, overload
+from typing import NoReturn, Optional
 
 # absolute import is necessary as this file will be symlinked
 # under tools
@@ -40,6 +38,7 @@ from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_output, scipy_fixes
 
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
+
 
 def symlink_dir():
     return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
@@ -59,7 +58,7 @@ ReplayArgs = namedtuple(
 )
 
 
-def capture_command(args: list[str]) -> int:
+def capture_command(args: list[str]) -> NoReturn:
     """
     This is called when this script is called through a symlink that looks like
     a compiler or linker.
@@ -87,10 +86,10 @@ def capture_command(args: list[str]) -> int:
         target_install_dir=os.environ["PYWASMCROSS_TARGETINSTALLDIR"],
         replace_libs=os.environ["PYWASMCROSS_REPLACELIBS"],
     )
-    replay_command(args, replay_args)
+    handle_command(args, replay_args)
 
 
-def capture_make_command_wrapper_symlinks(env: dict[str, str]):
+def make_command_wrapper_symlinks(env: dict[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -113,12 +112,13 @@ def capture_make_command_wrapper_symlinks(env: dict[str, str]):
         env[var] = symlink
 
 
-def capture_compile(env, **kwargs):
+def compile(env, **kwargs):
     new_args = environment_substitute_args(kwargs, env)
-    capture_compile_inner(env=env, **new_args)
-    
+    compile_inner(env=env, **new_args)
 
-def capture_compile_inner(*, 
+
+def compile_inner(
+    *,
     name,
     cflags,
     cxxflags,
@@ -126,13 +126,12 @@ def capture_compile_inner(*,
     target_install_dir,
     host_install_dir,
     replace_libs,
-    replay_from,
     env,
 ):
     env = dict(env)
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-    capture_make_command_wrapper_symlinks(env)
+    make_command_wrapper_symlinks(env)
 
     env["PYWASMCROSS_PKGNAME"] = name
     env["PYWASMCROSS_CFLAGS"] = cflags
@@ -142,7 +141,7 @@ def capture_compile_inner(*,
     env["PYWASMCROSS_TARGETINSTALLDIR"] = target_install_dir
     env["PYWASMCROSS_REPLACELIBS"] = replace_libs
     env["PYWASMCROSS_BUILDDIR"] = str(Path(".").absolute())
-    
+
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 
     try:
@@ -386,14 +385,14 @@ def replay_genargs_handle_argument(arg: str) -> Optional[str]:
     return arg
 
 
-def replay_command_generate_args(
+def handle_command_generate_args(
     line: list[str], args: ReplayArgs, is_link_command: bool
 ) -> list[str]:
     """
-    A helper command for `replay_command` that generates the new arguments for
+    A helper command for `handle_command` that generates the new arguments for
     the compilation.
 
-    Unlike `replay_command` this avoids I/O: it doesn't sys.exit, it doesn't run
+    Unlike `handle_command` this avoids I/O: it doesn't sys.exit, it doesn't run
     subprocesses, it doesn't create any files, and it doesn't write to stdout.
 
     Parameters
@@ -430,11 +429,13 @@ def replay_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
-    elif new_args[0] == "emcc":
-        new_args.extend(args.cflags.split())
-    elif new_args[0] == "em++":
-        new_args.extend(args.cflags.split() + args.cxxflags.split())
+    if "-c" in line:
+        if new_args[0] == "emcc":
+            new_args.extend(args.cflags.split())
+        elif new_args[0] == "em++":
+            new_args.extend(args.cflags.split() + args.cxxflags.split())
 
+    print("new_args", new_args)
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
     # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
@@ -491,9 +492,10 @@ def replay_command_generate_args(
     return new_args
 
 
-def replay_command(
-    line: list[str], args: ReplayArgs, dryrun: bool = False
-) -> Optional[list[str]]:
+def handle_command(
+    line: list[str],
+    args: ReplayArgs,
+) -> NoReturn:
     """Handle a compilation command
 
     Parameters
@@ -512,7 +514,7 @@ def replay_command(
     >>> from collections import namedtuple
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
-    >>> replay_command(['gcc', 'test.c'], args, dryrun=True)
+    >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
     """
@@ -525,16 +527,14 @@ def replay_command(
             sys.exit(subprocess.run(line).returncode)
         tmp = replay_f2c(line)
         if tmp is None:
-            return None
+            sys.exit(0)
         line = tmp
 
-    new_args = replay_command_generate_args(line, args, is_link_cmd)
-    if dryrun:
-        return new_args
+    new_args = handle_command_generate_args(line, args, is_link_cmd)
 
     BUILDDIR = Path(os.environ["PYWASMCROSS_BUILDDIR"])
     CURDIR = str(Path(".").absolute())
-    with open(BUILDDIR/"log.txt", "a") as f:
+    with open(BUILDDIR / "log.txt", "a") as f:
         print(CURDIR, " ".join(new_args), file=f)
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
@@ -580,10 +580,9 @@ def clean_out_native_artifacts(directory):
 
 
 if __name__ == "__main__":
-    import sys
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
-    args[0] = basename    
+    args[0] = basename
     with open("blah.txt", "a") as blah:
         print(" ".join(args), file=blah)
     if basename in symlinks:
