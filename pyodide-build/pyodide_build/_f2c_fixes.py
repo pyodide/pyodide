@@ -258,6 +258,7 @@ def get_subroutine_decl(sub: str) -> tuple[str, list[str]]:
         types.append(type.strip())
     return (func_name, types)
 
+
 def scipy_fix_cfile(path):
     source_path = Path(path)
     text = source_path.read_text()
@@ -270,10 +271,10 @@ def scipy_fix_cfile(path):
     if path.endswith("_flapackmodule.c"):
         text = text.replace(",size_t", "")
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
-    
+
     if path.endswith("_fblasmodule.c"):
         text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
-    
+
     source_path.write_text(text)
 
     for lib in ["lapack", "blas"]:
@@ -282,12 +283,9 @@ def scipy_fix_cfile(path):
             header_text = header_path.read_text()
             header_text = header_text.replace("void F_FUNC", "int F_FUNC")
             header_path.write_text(header_text)
-    
+
 
 def scipy_fixes(args):
     for arg in args:
         if arg.endswith(".c"):
             scipy_fix_cfile(arg)
-
-        
-

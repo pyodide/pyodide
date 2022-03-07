@@ -407,6 +407,16 @@ def handle_command_generate_args(
     Returns
     -------
         An updated argument list suitable for use with emscripten.
+
+
+    Examples
+    --------
+
+    >>> from collections import namedtuple
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
+    >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
+    ['emcc', 'test.c']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
@@ -520,16 +530,6 @@ def handle_command(
        in particular containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
     dryrun : bool, default=False
        if True do not run the resulting command, only return it
-
-    Examples
-    --------
-
-    >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
-    >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
-    emcc test.c
-    ['emcc', 'test.c']
     """
     # some libraries have different names on wasm e.g. png16 = png
     library_output = get_library_output(line)

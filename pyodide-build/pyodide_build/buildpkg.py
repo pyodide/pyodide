@@ -755,11 +755,8 @@ def make_parser(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--continue",
-        type=str,
-        nargs="?",
         dest="continue_",
-        default="None",
-        const="script",
+        action="store_true",
         help=(
             dedent(
                 """
