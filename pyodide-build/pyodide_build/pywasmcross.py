@@ -435,6 +435,19 @@ def handle_command_generate_args(
         elif new_args[0] == "em++":
             new_args.extend(args.cflags.split() + args.cxxflags.split())
 
+    # set linker and C flags to error on anything to do with function declarations being wrong.
+    # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
+    # will fail. Better to fail at compile or link time.
+    if is_link_command:
+        new_args.append("-Wl,--fatal-warnings")
+    new_args.extend(
+        [
+            "-Werror=implicit-function-declaration",
+            "-Werror=mismatched-parameter-types",
+            "-Werror=mismatched-return-types",
+        ]
+    )
+
     print("new_args", new_args)
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
