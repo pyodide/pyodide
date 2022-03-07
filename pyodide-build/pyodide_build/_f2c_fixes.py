@@ -275,6 +275,9 @@ def scipy_fix_cfile(path):
     if path.endswith("_fblasmodule.c"):
         text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
 
+    if path.endswith("_arpackmodule.c"):
+        text = text.replace("void(*)", "int(*)")
+
     source_path.write_text(text)
 
     for lib in ["lapack", "blas"]:
