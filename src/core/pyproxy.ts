@@ -401,6 +401,7 @@ export class PyProxyClass {
     pyproxies = undefined,
     create_pyproxies = true,
     dict_converter = undefined,
+    default_converter = undefined,
   }: {
     /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
@@ -424,12 +425,22 @@ export class PyProxyClass {
      * converts it to an array of entries, and ``(it) => new Map(it)`` converts
      * it to a ``Map`` (which is the default behavior).
      */
-    dict_converter?: any;
+    dict_converter?: (array: Iterable<[key: string, value: any]>) => any;
+    /**
+     * Optional argument to convert objects with no default conversion. See the
+     * documentation of :any:`pyodide.to_js`.
+     */
+    default_converter?: (
+      obj: PyProxy,
+      convert: (obj: PyProxy) => any,
+      cacheConversion: (obj: PyProxy, result: any) => void
+    ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
     let idresult;
     let proxies_id;
     let dict_converter_id = 0;
+    let default_converter_id = 0;
     if (!create_pyproxies) {
       proxies_id = 0;
     } else if (pyproxies) {
@@ -440,18 +451,23 @@ export class PyProxyClass {
     if (dict_converter) {
       dict_converter_id = Hiwire.new_value(dict_converter);
     }
+    if (default_converter) {
+      default_converter_id = Hiwire.new_value(default_converter);
+    }
     try {
-      idresult = Module._python2js_custom_dict_converter(
+      idresult = Module._python2js_custom(
         ptrobj,
         depth,
         proxies_id,
-        dict_converter_id
+        dict_converter_id,
+        default_converter_id
       );
     } catch (e) {
       API.fatal_error(e);
     } finally {
       Hiwire.decref(proxies_id);
       Hiwire.decref(dict_converter_id);
+      Hiwire.decref(default_converter_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();

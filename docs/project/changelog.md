@@ -52,8 +52,9 @@ substitutions:
 
 - {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
-  a built-in conversion to Python.
-  {pr}`2170`
+  a built-in conversion to Python. Also added a `default_converter` argument to
+  {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
+  {pr}`2170` and {pr}`2208`
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
