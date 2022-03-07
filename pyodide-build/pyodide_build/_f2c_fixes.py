@@ -267,6 +267,8 @@ def scipy_fix_cfile(path):
     text = text.replace("void (*f2py_func)", "int (*f2py_func)")
     text = text.replace("static void cb_", "static int cb_")
     text = text.replace("typedef void(*cb_", "typedef int(*cb_")
+    text = text.replace("void(*)", "int(*)")
+    text = text.replace("static void f2py_setup_", "static int f2py_setup_")
 
     if path.endswith("_flapackmodule.c"):
         text = text.replace(",size_t", "")
@@ -274,10 +276,6 @@ def scipy_fix_cfile(path):
 
     if path.endswith("_fblasmodule.c"):
         text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
-
-    if path.endswith("_arpackmodule.c"):
-        text = text.replace("void(*)", "int(*)")
-        text = text.replace("static void f2py_setup_", "static int f2py_setup_")
 
     source_path.write_text(text)
 
