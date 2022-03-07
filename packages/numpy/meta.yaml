@@ -25,6 +25,8 @@ source:
     - patches/0001-BUG-numpy-core-setup.py-math-feature-detection-on-wa.patch
 
 build:
+  cflags: |
+    -Wno-return-type
   post: |
     python -m pip install --prefix $HOSTINSTALLDIR numpy==$PKG_VERSION
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
