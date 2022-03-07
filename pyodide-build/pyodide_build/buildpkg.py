@@ -41,12 +41,12 @@ from .io import parse_package_config
 
 
 def _make_whlfile(*args, owner=None, group=None, **kwargs):
-    return shutil._make_zipfile(*args, **kwargs)  # type: ignore
+    return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
 shutil.register_archive_format("whl", _make_whlfile, description="Wheel file")
 shutil.register_unpack_format(
-    "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore
+    "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore[attr-defined]
 )
 
 

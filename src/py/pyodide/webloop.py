@@ -373,7 +373,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                     traceback.print_exc()
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
+# Type issue fixed in next release of mypy (0.940)
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[misc, valid-type]
     """
     A simple event loop policy for managing WebLoop based event loops.
     """

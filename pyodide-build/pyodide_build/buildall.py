@@ -158,7 +158,7 @@ class Package(BasePackage):
                 rebuilt = False
 
         if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
             if args.log_dir and (self.pkgdir / "build.log").exists():
                 shutil.copy(
                     self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"

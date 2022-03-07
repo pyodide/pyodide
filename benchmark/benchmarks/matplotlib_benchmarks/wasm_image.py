@@ -1,5 +1,5 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm # noqa
+# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm
 # run: wasm_image()
 
 # pythran export wasm_image()

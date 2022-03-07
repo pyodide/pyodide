@@ -113,17 +113,17 @@ def run_in_pyodide(
 
         if standalone:
 
-            def wrapped(selenium_standalone):  # type: ignore
+            def wrapped(selenium_standalone):
                 inner(selenium_standalone)
 
         elif module_scope:
 
-            def wrapped(selenium_module_scope):  # type: ignore
+            def wrapped(selenium_module_scope):  # type: ignore[misc]
                 inner(selenium_module_scope)
 
         else:
 
-            def wrapped(selenium):  # type: ignore
+            def wrapped(selenium):  # type: ignore[misc]
                 inner(selenium)
 
         return wrapped

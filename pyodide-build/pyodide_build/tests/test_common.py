@@ -1,4 +1,4 @@
-from pyodide_build.common import (  # noqa
+from pyodide_build.common import (
     _parse_package_subset,
     get_make_environment_vars,
     get_make_flag,

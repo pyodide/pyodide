@@ -305,7 +305,7 @@ def create_once_callable(obj: Callable) -> JsProxy:
     of the Callable. The JavaScript function also has a ``destroy`` API that
     can be used to release the proxy without calling it.
     """
-    return obj  # type: ignore
+    return obj  # type: ignore[return-value]
 
 
 def create_proxy(obj: Any) -> JsProxy:
