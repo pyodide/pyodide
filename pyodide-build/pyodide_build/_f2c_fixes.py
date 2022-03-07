@@ -263,7 +263,7 @@ def scipy_fix_cfile(path):
     source_path = Path(path)
     text = source_path.read_text()
     text = text.replace("extern void F_WRAPPEDFUNC", "extern int F_WRAPPEDFUNC")
-    text = text.replace("extern void F_WRAPPEDFUNC", "extern int F_WRAPPEDFUNC")
+    text = text.replace("extern void F_FUNC", "extern int F_FUNC")
     text = text.replace("void (*f2py_func)", "int (*f2py_func)")
     text = text.replace("static void cb_", "static int cb_")
     text = text.replace("typedef void(*cb_", "typedef int(*cb_")

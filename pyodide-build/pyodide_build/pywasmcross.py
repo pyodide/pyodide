@@ -416,7 +416,7 @@ def handle_command_generate_args(
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
-    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', 'test.c']
+    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
@@ -438,14 +438,6 @@ def handle_command_generate_args(
     else:
         return line
 
-    if is_link_command:
-        new_args.extend(args.ldflags.split())
-    if "-c" in line:
-        if new_args[0] == "emcc":
-            new_args.extend(args.cflags.split())
-        elif new_args[0] == "em++":
-            new_args.extend(args.cflags.split() + args.cxxflags.split())
-
     # set linker and C flags to error on anything to do with function declarations being wrong.
     # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
     # will fail. Better to fail at compile or link time.
@@ -455,8 +447,17 @@ def handle_command_generate_args(
         [
             "-Werror=implicit-function-declaration",
             "-Werror=mismatched-parameter-types",
+            "-Werror=return-type",
         ]
     )
+
+    if is_link_command:
+        new_args.extend(args.ldflags.split())
+    if "-c" in line:
+        if new_args[0] == "emcc":
+            new_args.extend(args.cflags.split())
+        elif new_args[0] == "em++":
+            new_args.extend(args.cflags.split() + args.cxxflags.split())
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None

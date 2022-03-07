@@ -46,6 +46,7 @@ def generate_args(line: str, args, is_link_cmd=False) -> str:
     for arg in [
         "-Werror=implicit-function-declaration",
         "-Werror=mismatched-parameter-types",
+        "-Werror=return-type",
     ]:
         assert arg in res
         res.remove(arg)
