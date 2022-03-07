@@ -455,7 +455,6 @@ def handle_command_generate_args(
         [
             "-Werror=implicit-function-declaration",
             "-Werror=mismatched-parameter-types",
-            "-Werror=mismatched-return-types",
         ]
     )
 
