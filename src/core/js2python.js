@@ -75,7 +75,7 @@ JS_FILE(js2python_init, () => {
    * If `value` is of any other type then `undefined` is returned.
    *
    * If `value` is one of those types but an error is raised during conversion,
-   * we throw a PropagateError to propogate the error out to C. This causes
+   * we throw a PropagateError to propagate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
   function js2python_convertImmutable(value) {

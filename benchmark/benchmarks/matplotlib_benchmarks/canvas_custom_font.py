@@ -1,5 +1,5 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ;  # noqa
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ;
 # run: canvas_custom_font()
 
 # pythran export canvas_custom_font()

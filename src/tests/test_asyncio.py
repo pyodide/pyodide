@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-import pytest  # type: ignore
+import pytest
 
 from pyodide import eval_code_async
 

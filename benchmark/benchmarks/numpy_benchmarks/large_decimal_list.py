@@ -1,4 +1,4 @@
-# setup: from decimal import Decimal ; A = [Decimal('2.1') for i in range(1000)] ; B = [Decimal('3.2') for i in range(1000)]  # noqa
+# setup: from decimal import Decimal ; A = [Decimal('2.1') for i in range(1000)] ; B = [Decimal('3.2') for i in range(1000)]
 # run: large_decimal_list(A, B)
 
 

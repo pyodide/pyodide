@@ -1,4 +1,4 @@
-# setup: import numpy as np ; N = 20 ; x = y = z = np.arange(0., N, 0.1) ; L = 4 ; periodic = True  # noqa
+# setup: import numpy as np ; N = 20 ; x = y = z = np.arange(0., N, 0.1) ; L = 4 ; periodic = True
 # run: periodic_dist(x, x, x, L,periodic, periodic, periodic)
 
 # pythran export periodic_dist(float [], float[], float[], int, bool,

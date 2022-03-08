@@ -21,7 +21,7 @@ PLAT = _WA
 #  and desired load options for your machine.
 #
 #######################################################
-# This is used to compile C libary
+# This is used to compile C library
 #CC        = gcc  # inherit $CC from emmake
 # if no wrapping of the blas library is needed, uncomment next line
 #CC        = gcc -DNO_BLAS_WRAP

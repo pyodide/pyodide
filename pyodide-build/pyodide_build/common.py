@@ -12,7 +12,7 @@ def _parse_package_subset(query: Optional[str]) -> set[str]:
     Also add the list of mandatory packages: ["pyparsing", "packaging",
     "micropip"]
 
-    Supports folowing meta-packages,
+    Supports following meta-packages,
      - 'core': corresponds to packages needed to run the core test suite
        {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "fpcast-test"}. This is the default option
        if query is None.
