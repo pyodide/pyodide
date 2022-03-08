@@ -499,7 +499,7 @@ _August 3rd, 2021_
 
 ### List of contributors
 
-Albertas Gimbutas, Andreas Klostermann, arfy slowy, daoxian,
+Albertas Gimbutas, Andreas Klostermann, Arfy Slowy, daoxian,
 Devin Neal, fuyutarow, Grimmer, Guido Zuidhof, Gyeongjae Choi, Hood
 Chatham, Ian Clester, Itay Dafna, Jeremy Tuloup, jmsmdy, LinasNas, Madhur
 Tandon, Michael Christensen, Nicholas Bollweg, Ondřej Staněk, Paul m. p. P,
@@ -628,7 +628,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   {pr}`1083`
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a
-  `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running
+  `SharedArrayBuffer` to be the keyboard interrupt buffer. If Pyodide is running
   on a webworker, the main thread can signal to the webworker that it should
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   {pr}`1148` and {pr}`1173`
@@ -793,7 +793,7 @@ by 0.16.1 with identical contents.
 
 ### Other improvements
 
-- Modifiy MEMFS timestamp handling to support better caching. This in
+- Modify MEMFS timestamp handling to support better caching. This in
   particular allows to import newly created Python modules without invalidating
   import caches {pr}`893`
 

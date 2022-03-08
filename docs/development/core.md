@@ -23,7 +23,7 @@ The primary purpose of `core` is to implement {ref}`type translations <type-tran
 
 ### Type conversion from Python to JavaScript
 
-- `python2js` -- Translates types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to JavaScript (the `toJs` method).
+- `python2js` -- Translates types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicit conversion from Python to JavaScript (the `toJs` method).
 - `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a JavaScript `TypedArray`, but JavaScript does not have native support for pointers, so higher dimensional arrays are more complicated.
 - `pyproxy` -- Defines a JavaScript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
 
@@ -146,7 +146,7 @@ def f():
     decref(c)
 ```
 
-Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propogation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above psuedocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a Python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.
+Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propagation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above pseudocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a Python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.
 
 To do this, we divide any function that produces more than a couple of owned `PyObject*`s or `JsRef`s into several "segments".
 The more owned references there are in a function and the longer it is, the more important it becomes to follow this style carefully.

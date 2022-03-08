@@ -44,7 +44,7 @@ def run_in_pyodide(
     """
     This decorator can be called in two ways --- with arguments and without
     arguments. If it is called without arguments, then the `_function` kwarg
-    catches the function the decorator is applied to. Otherewise, standalone
+    catches the function the decorator is applied to. Otherwise, standalone
     and packages are the actual arguments to the decorator.
 
     See docs/testing.md for details on how to use this.
@@ -113,17 +113,17 @@ def run_in_pyodide(
 
         if standalone:
 
-            def wrapped(selenium_standalone):  # type: ignore
+            def wrapped(selenium_standalone):
                 inner(selenium_standalone)
 
         elif module_scope:
 
-            def wrapped(selenium_module_scope):  # type: ignore
+            def wrapped(selenium_module_scope):  # type: ignore[misc]
                 inner(selenium_module_scope)
 
         else:
 
-            def wrapped(selenium):  # type: ignore
+            def wrapped(selenium):  # type: ignore[misc]
                 inner(selenium)
 
         return wrapped

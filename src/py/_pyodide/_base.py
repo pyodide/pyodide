@@ -98,7 +98,7 @@ class EvalCodeResultException(Exception):
 # Put it into a list to avoid breaking CPython test test_inheritance
 # (test.test_baseexception.ExceptionClassTests) which examines all Exceptions in
 # builtins.
-builtins.___EvalCodeResultException = [EvalCodeResultException]  # type: ignore
+builtins.___EvalCodeResultException = [EvalCodeResultException]  # type: ignore[attr-defined]
 
 # We will substitute in the value of x we are trying to return.
 _raise_template_ast = ast.parse("raise ___EvalCodeResultException[0](x)").body[0]
@@ -115,7 +115,7 @@ def _last_expr_to_raise(mod: ast.Module):
         return
     raise_expr = deepcopy(_raise_template_ast)
     # Replace x with our value in _raise_template_ast.
-    raise_expr.exc.args[0] = last_node.value  # type: ignore
+    raise_expr.exc.args[0] = last_node.value  # type: ignore[attr-defined]
     mod.body[-1] = raise_expr
 
 
@@ -164,7 +164,7 @@ class CodeRunner:
     It is primarily intended for REPLs and other sophisticated consumers that
     may wish to add their own AST transformations, separately signal to the user
     when parsing is complete, etc. The simpler :any:`eval_code` and
-    :any:`eval_code_async` apis should be prefered when their flexibility
+    :any:`eval_code_async` apis should be preferred when their flexibility
     suffices.
 
     Parameters
@@ -211,7 +211,7 @@ class CodeRunner:
               modify this variable before calling :any:`CodeRunner.compile`.
 
         code : Once you call :any:`CodeRunner.compile` the compiled code will
-               be avaible in the code field. You can modify this variable
+               be available in the code field. You can modify this variable
                before calling :any:`CodeRunner.run` to do a code transform.
     """
 
@@ -489,7 +489,7 @@ async def eval_code_async(
         expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
     """
-    flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
+    flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
         await CodeRunner(
             source,

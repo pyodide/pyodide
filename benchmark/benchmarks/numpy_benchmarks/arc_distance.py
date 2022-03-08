@@ -1,4 +1,4 @@
-# setup: N = 5000 ; import numpy as np ; t0, p0, t1, p1 = np.random.randn(N), np.random.randn(N), np.random.randn(N), np.random.randn(N)  # noqa
+# setup: N = 5000 ; import numpy as np ; t0, p0, t1, p1 = np.random.randn(N), np.random.randn(N), np.random.randn(N), np.random.randn(N)
 # run: arc_distance(t0, p0, t1, p1)
 
 # pythran export arc_distance(float64 [], float64[], float64[], float64[])

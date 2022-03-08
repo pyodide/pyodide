@@ -4,9 +4,14 @@ import rlcompleter
 import sys
 import traceback
 from asyncio import Future, ensure_future
-from codeop import CommandCompiler, Compile, _features  # type: ignore
-from contextlib import _RedirectStream  # type: ignore
-from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
+from codeop import CommandCompiler, Compile, _features  # type: ignore[attr-defined]
+from contextlib import (  # type: ignore[attr-defined]
+    ExitStack,
+    _RedirectStream,
+    contextmanager,
+    redirect_stderr,
+    redirect_stdout,
+)
 from platform import python_build, python_version
 from tokenize import TokenError
 from typing import Any, Callable, Literal, Optional, Union
@@ -80,7 +85,7 @@ class _Compile(Compile):
         self.return_mode = return_mode
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
 
-    def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
+    def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore[override]
         return_mode = self.return_mode
         try:
             if self.quiet_trailing_semicolon and should_quiet(source):
@@ -128,8 +133,10 @@ class _CommandCompiler(CommandCompiler):
             flags=flags,
         )
 
-    def __call__(self, source, filename="<console>", symbol="single") -> Optional[CodeRunner]:  # type: ignore
-        return super().__call__(source, filename, symbol)  # type: ignore
+    def __call__(  # type: ignore[override]
+        self, source, filename="<console>", symbol="single"
+    ) -> Optional[CodeRunner]:
+        return super().__call__(source, filename, symbol)  # type: ignore[return-value]
 
 
 INCOMPLETE: Literal["incomplete"] = "incomplete"
@@ -246,13 +253,13 @@ class Console:
         self._stream_generator = None  # track persistent stream redirection
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
-        self._completer = rlcompleter.Completer(self.globals)  # type: ignore
+        self._completer = rlcompleter.Completer(self.globals)
         # all nonalphanums except '.'
         # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
-        self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
+        self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""
@@ -311,6 +318,8 @@ class Console:
             :any:`ConsoleFuture`
 
         """
+        res: Optional[ConsoleFuture]
+
         try:
             code = self._compile(source, filename, "single")
         except (OverflowError, SyntaxError, ValueError) as e:
@@ -331,6 +340,7 @@ class Console:
 
         def done_cb(fut):
             nonlocal res
+            assert res is not None
             exc = fut.exception()
             if exc:
                 res.formatted_error = self.formattraceback(exc)
@@ -338,7 +348,7 @@ class Console:
                 exc = None
             else:
                 res.set_result(fut.result())
-            res = None  # type: ignore
+            res = None
 
         ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
         return res
@@ -362,10 +372,7 @@ class Console:
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = None
-        try:
-            return "".join(traceback.format_exception_only(type(e), e))
-        finally:
-            e = None  # type: ignore
+        return "".join(traceback.format_exception_only(type(e), e))
 
     def num_frames_to_keep(self, tb):
         keep_frames = False
@@ -383,16 +390,13 @@ class Console:
 
         The actual error object is stored into `sys.last_value`.
         """
-        try:
-            sys.last_type = type(e)
-            sys.last_value = e
-            sys.last_traceback = e.__traceback__
-            nframes = self.num_frames_to_keep(e.__traceback__)
-            return "".join(
-                traceback.format_exception(type(e), e, e.__traceback__, -nframes)
-            )
-        finally:
-            e = None  # type: ignore
+        sys.last_type = type(e)
+        sys.last_value = e
+        sys.last_traceback = e.__traceback__
+        nframes = self.num_frames_to_keep(e.__traceback__)
+        return "".join(
+            traceback.format_exception(type(e), e, e.__traceback__, -nframes)
+        )
 
     def push(self, line: str) -> ConsoleFuture:
         """Push a line to the interpreter.
@@ -444,9 +448,9 @@ class Console:
         start = max(map(source.rfind, self.completer_word_break_characters)) + 1
         source = source[start:]
         if "." in source:
-            completions = self._completer.attr_matches(source)  # type: ignore
+            completions = self._completer.attr_matches(source)  # type: ignore[attr-defined]
         else:
-            completions = self._completer.global_matches(source)  # type: ignore
+            completions = self._completer.global_matches(source)  # type: ignore[attr-defined]
         return completions, start
 
 

@@ -612,7 +612,7 @@ python2js_custom(PyObject* x,
     .default_converter = false,
   };
   if (dict_converter == NULL) {
-    // No custom converter provided, go back to default convertion to Map.
+    // No custom converter provided, go back to default conversion to Map.
     context.dict_new = _JsMap_New;
     context.dict_add_keyvalue = _JsMap_Set;
     context.dict_postprocess = NULL;

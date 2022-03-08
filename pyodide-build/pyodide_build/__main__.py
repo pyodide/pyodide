@@ -28,8 +28,8 @@ def make_parser() -> argparse.ArgumentParser:
         ]:
             # Likely building documentation, skip private API
             continue
-        parser = module.make_parser(subparsers.add_parser(command_name))  # type: ignore
-        parser.set_defaults(func=module.main)  # type: ignore
+        parser = module.make_parser(subparsers.add_parser(command_name))
+        parser.set_defaults(func=module.main)
     return main_parser
 
 

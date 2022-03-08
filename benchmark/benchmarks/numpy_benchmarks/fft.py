@@ -1,4 +1,4 @@
-# setup: N = 2**11 ; import numpy ; a = numpy.array(numpy.random.rand(N), dtype=complex)  # noqa
+# setup: N = 2**11 ; import numpy ; a = numpy.array(numpy.random.rand(N), dtype=complex)
 # run: fft(a)
 
 # pythran export fft(complex [])

@@ -8,7 +8,7 @@ from typing import Iterable, Iterator
 def fix_f2c_output(f2c_output_path: str):
     """
     This function is called on the name of each C output file. It fixes up the C
-    output in various ways to compensate for the lack of f2c support for Fortan
+    output in various ways to compensate for the lack of f2c support for Fortran
     90 and Fortran 95.
     """
     f2c_output = Path(f2c_output_path)

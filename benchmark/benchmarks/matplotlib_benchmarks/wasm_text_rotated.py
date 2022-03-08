@@ -1,5 +1,5 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime  # noqa
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime
 # run: wasm_text_rotated()
 
 # pythran export wasm_text_rotated()

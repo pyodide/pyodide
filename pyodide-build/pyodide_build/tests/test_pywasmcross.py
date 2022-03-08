@@ -59,7 +59,7 @@ def generate_args(line: str, args, is_link_cmd=False) -> str:
 
 def test_handle_command():
     args = BuildArgs()
-    assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [  # type: ignore
+    assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [  # type: ignore[arg-type]
         "echo",
         "wasm32-emscripten",
     ]
@@ -148,7 +148,7 @@ def test_f2c():
 
 
 def test_conda_unsupported_args():
-    # Check that compile arguments that are not suported by emcc and are sometimes
+    # Check that compile arguments that are not supported by emcc and are sometimes
     # used in conda are removed.
     args = BuildArgs()
     assert generate_args(

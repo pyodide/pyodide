@@ -91,7 +91,7 @@ do
         error
       ;;
       *)
-        DOCKER_COMMAND="$@"
+        DOCKER_COMMAND="$*"
         break
       ;;
   esac
@@ -121,9 +121,9 @@ mkdir -p .docker_home
 # then run forever
 CONTAINER=$(\
   docker run \
-    $PORT_CONFIGURATION_LINE \
+    "$PORT_CONFIGURATION_LINE" \
     -d --rm \
-    -v $PWD:/src \
+    -v "$PWD":/src \
     --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
@@ -136,10 +136,10 @@ CONTAINER=$(\
 EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
 docker exec \
-  $DOCKER_INTERACTIVE --tty \
-  $USER_FLAG \
-  $CONTAINER \
+  "$DOCKER_INTERACTIVE" --tty \
+  "$USER_FLAG" \
+  "$CONTAINER" \
   /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
-docker kill $CONTAINER > /dev/null
+docker kill "$CONTAINER" > /dev/null
 exit $EXIT_STATUS

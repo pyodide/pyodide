@@ -1,4 +1,4 @@
-# setup: import numpy as np ; N = 500000 ; X, Y = np.random.rand(N), np.random.rand(N)  # noqa
+# setup: import numpy as np ; N = 500000 ; X, Y = np.random.rand(N), np.random.rand(N)
 # run: lstsqr(X, Y)
 # from:
 # http://nbviewer.ipython.org/github/rasbt/One-Python-benchmark-per-day/blob/master/ipython_nbs/day10_fortran_lstsqr.ipynb
