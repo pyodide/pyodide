@@ -10,7 +10,7 @@ from zipfile import ZipFile
 from ._core import JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
-STD_LIB = Path(sysconfig.get_path("stdlib"))  # type: ignore
+STD_LIB = Path(sysconfig.get_path("stdlib"))
 TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}

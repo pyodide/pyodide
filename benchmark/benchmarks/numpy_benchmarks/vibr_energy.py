@@ -1,5 +1,5 @@
-# from: http://stackoverflow.com/questions/17112550/python-and-numba-for-vectorized-functions # noqa
-# setup: import numpy as np ; N = 100000 ; a, b, c = np.random.rand(N), np.random.rand(N), np.random.rand(N)  # noqa
+# from: http://stackoverflow.com/questions/17112550/python-and-numba-for-vectorized-functions
+# setup: import numpy as np ; N = 100000 ; a, b, c = np.random.rand(N), np.random.rand(N), np.random.rand(N)
 # run: vibr_energy(a, b, c)
 
 # pythran export vibr_energy(float64[], float64[], float64[])

@@ -23,7 +23,7 @@
 // I checked and
 //  alignof(JsRef) = alignof(int) = 4
 //  sizeof(JsRef) = sizeof(int) = 4
-// Just to be extra future proof, I added assertions about this to the begining
+// Just to be extra future proof, I added assertions about this to the beginning
 // of main.c So we are all good for using JsRef as a newtype for int. I also
 // added
 //  -Werror=int-conversion -Werror=incompatible-pointer-types

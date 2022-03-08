@@ -79,8 +79,10 @@ function unpackPyodidePy(pyodide_py_tar: Uint8Array) {
   );
   Module.FS.close(stream);
   const code_ptr = Module.stringToNewUTF8(`
+from sys import version_info
+pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
-shutil.unpack_archive("/pyodide_py.tar", "/lib/python3.9/site-packages/")
+shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/site-packages/")
 del shutil
 import importlib
 importlib.invalidate_caches()
@@ -249,7 +251,7 @@ export async function loadPyodide(config: {
   // being called.
   await moduleLoaded;
 
-  // Disable futher loading of Emscripten file_packager stuff.
+  // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };

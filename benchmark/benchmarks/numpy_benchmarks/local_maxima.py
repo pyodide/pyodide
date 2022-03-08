@@ -1,5 +1,5 @@
 # https://github.com/iskandr/parakeet/blob/master/benchmarks/nd_local_maxima.py
-# setup: import numpy as np ; shape = (3,2,3,2) ; x = np.arange(36, dtype=np.float64).reshape(*shape)  # noqa
+# setup: import numpy as np ; shape = (3,2,3,2) ; x = np.arange(36, dtype=np.float64).reshape(*shape)
 # run: local_maxima(x)
 
 # pythran export local_maxima(float [][][][])

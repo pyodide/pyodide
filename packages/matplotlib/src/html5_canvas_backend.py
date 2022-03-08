@@ -355,7 +355,8 @@ class RendererHTMLCanvas(RendererBase):
     def get_text_width_height_descent(self, s, prop, ismath):
         if ismath:
             image, d = self.mathtext_parser.parse(s, self.dpi, prop)
-            w, h = image.get_width(), image.get_height()
+            image_arr = np.asarray(image)
+            h, w = image_arr.shape
         else:
             font, _ = self._get_font(prop)
             font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
