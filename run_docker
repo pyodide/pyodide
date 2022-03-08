@@ -119,9 +119,10 @@ mkdir -p .docker_home
 
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
+# shellcheck disable=2086 # Intended splitting
 CONTAINER=$(\
   docker run \
-    "$PORT_CONFIGURATION_LINE" \
+    $PORT_CONFIGURATION_LINE \
     -d --rm \
     -v "$PWD":/src \
     --user root \
@@ -135,9 +136,10 @@ CONTAINER=$(\
 
 EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
+# shellcheck disable=2086 # Intended splitting
 docker exec \
   "$DOCKER_INTERACTIVE" --tty \
-  "$USER_FLAG" \
+  $USER_FLAG \
   "$CONTAINER" \
   /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
