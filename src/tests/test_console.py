@@ -415,10 +415,10 @@ def test_console_html(console_html_fixture):
             """
         ).strip()
     )
+    result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
 
-    assert result.startswith(
-        dedent(
-            f"""\
+    answer = dedent(
+        f"""
             >>> class Test:
             ...     def __repr__(self):
             ...         raise TypeError(\"hi\")
@@ -426,20 +426,14 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/{PYVERSION}/site-packages/_pyodide/console.py\", line """
-        )
-    )
-
-    assert result.endswith(
-        dedent(
-            """
-            , in repr_shorten
+              File \"/lib/{PYVERSION}/site-packages/_pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """
-        )
-    )
+    ).strip()
+
+    assert result == answer
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
