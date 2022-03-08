@@ -231,7 +231,7 @@ export async function loadPyodide(config: {
   );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(config.homedir);
+  setHomeDirectory(config.homedir!);
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 

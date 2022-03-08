@@ -14,7 +14,7 @@ import {
   PyProxyCallable,
   PyBuffer,
   TypedArray,
-} from "../../build/pyodide";
+} from "./pyodide";
 
 async function main() {
   let pyodide = await loadPyodide({ indexURL: "blah" });

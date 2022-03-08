@@ -52,18 +52,23 @@ export function isPyProxy(jsobj: any): jsobj is PyProxy {
 }
 API.isPyProxy = isPyProxy;
 
+declare var FinalizationRegistry: any;
+declare var globalThis: any;
+
 if (globalThis.FinalizationRegistry) {
-  Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
-    cache.leaked = true;
-    pyproxy_decref_cache(cache);
-    try {
-      Module._Py_DecRef(ptr);
-    } catch (e) {
-      // I'm not really sure what happens if an error occurs inside of a
-      // finalizer...
-      API.fatal_error(e);
+  Module.finalizationRegistry = new FinalizationRegistry(
+    ([ptr, cache]: [ptr: number, cache: PyProxyCache]) => {
+      cache.leaked = true;
+      pyproxy_decref_cache(cache);
+      try {
+        Module._Py_DecRef(ptr);
+      } catch (e) {
+        // I'm not really sure what happens if an error occurs inside of a
+        // finalizer...
+        API.fatal_error(e);
+      }
     }
-  });
+  );
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
   // fine in chrome and when I test it in browser. It seems to be sensitive to
   // changes that don't make a difference to the semantics.
@@ -155,8 +160,8 @@ Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
 };
 
 function _getPtr(jsobj: any) {
-  let ptr = jsobj.$$.ptr;
-  if (ptr === null) {
+  let ptr: number = jsobj.$$.ptr;
+  if (ptr === 0) {
     throw new Error(jsobj.$$.destroyed_msg);
   }
   return ptr;
@@ -236,7 +241,7 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
 }
 
 Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
-  if (proxy.$$.ptr === null) {
+  if (proxy.$$.ptr === 0) {
     return;
   }
   let ptrobj = _getPtr(proxy);
@@ -254,7 +259,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
-  proxy.$$.ptr = null;
+  proxy.$$.ptr = 0;
   destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
   if (proxy_repr) {
     destroyed_msg += `had repr "${proxy_repr}"`;
@@ -925,7 +930,7 @@ let PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
-  deleteProperty(jsobj: PyProxyClass, jskey: any) {
+  deleteProperty(jsobj: PyProxyClass, jskey: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
@@ -1468,6 +1473,7 @@ export class PyBuffer {
       API.fatal_error(e);
     }
     this._released = true;
+    // @ts-ignore
     this.data = null;
   }
 }
