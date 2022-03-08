@@ -960,7 +960,7 @@ let PyProxyHandlers = {
     python_delattr(jsobj, jskey);
     // Must return "false" if "jskey" is a nonconfigurable own property.
     // Otherwise JavaScript will throw a TypeError.
-    return !descr || descr.configurable;
+    return !descr || !!descr.configurable;
   },
   ownKeys(jsobj: PyProxyClass) {
     let ptrobj = _getPtr(jsobj);
