@@ -273,7 +273,7 @@ loadPyodide({
 ```
 
 then every time a line is written to `stdout` (resp. `stderr`), `stdout_func`
-(resp `stderr_func`) will be called on the line. Everytime `stdin` is read,
+(resp `stderr_func`) will be called on the line. Every time `stdin` is read,
 `stdin_func` will be called with zero arguments. It is expected to return a
 string which is interpreted as a line of text.
 

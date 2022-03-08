@@ -1,5 +1,5 @@
 # from: https://groups.google.com/forum/#!topic/parakeet-python/p-flp2kdE4U
-# setup: import numpy as np ;d = 10 ;re = 5 ;params = (d, re, np.ones((2*d, d+1, re)), np.ones((d, d+1, re)),  np.ones((d, 2*d)), np.ones((d, 2*d)), np.ones((d+1, re, d)), np.ones((d+1, re, d)), 1) # noqa
+# setup: import numpy as np ;d = 10 ;re = 5 ;params = (d, re, np.ones((2*d, d+1, re)), np.ones((d, d+1, re)),  np.ones((d, 2*d)), np.ones((d, 2*d)), np.ones((d+1, re, d)), np.ones((d+1, re, d)), 1)
 # run: slowparts(*params)
 
 # pythran export slowparts(int, int, float [][][], float [][][], float

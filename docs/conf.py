@@ -154,7 +154,7 @@ if IN_SPHINX:
     ]
     sys.path = path_dirs + sys.path
 
-    import micropip  # noqa
+    import micropip  # noqa: F401
     import pyodide
 
     # We hacked it so that autodoc will look for submodules, but only if we import

@@ -787,7 +787,7 @@ def test_fatal_error(selenium_standalone):
                     // pass
                 } finally {
                     if(!fatal_error){
-                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                        throw new Error(`No fatal error occurred: ${func.toString().slice(6)}`);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 # from: http://continuum.io/blog/numba_performance
-# setup: N = 10 ; import numpy as np ; image = np.random.rand(N, N, 3) ; state = np.zeros((N, N, 2)) ; state_next = np.empty_like(state) ; state[0, 0, 0] = state[0, 0, 1] = 1   # noqa
+# setup: N = 10 ; import numpy as np ; image = np.random.rand(N, N, 3) ; state = np.zeros((N, N, 2)) ; state_next = np.empty_like(state) ; state[0, 0, 0] = state[0, 0, 1] = 1
 # run: growcut(image, state, state_next, 2)
 
 # pythran export growcut(float[][][], float[][][], float[][][], int)

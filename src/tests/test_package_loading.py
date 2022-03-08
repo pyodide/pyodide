@@ -267,7 +267,7 @@ def test_test_unvendoring(selenium_standalone):
 def test_install_archive(selenium):
     build_dir = Path(__file__).parents[2] / "build"
     test_dir = Path(__file__).parent
-    # TODO: first arguement actually works as a path due to implementation,
+    # TODO: first argument actually works as a path due to implementation,
     # maybe it can be proposed to typeshed?
     shutil.make_archive(
         str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"

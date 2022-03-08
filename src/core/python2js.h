@@ -40,6 +40,18 @@ python2js_track_proxies(PyObject* x, JsRef proxies);
 JsRef
 python2js_with_depth(PyObject* x, int depth, JsRef proxies);
 
+/**
+ * dict_converter should be a JavaScript function that converts an Iterable of
+ * pairs into the desired JavaScript object. If dict_converter is NULL, we use
+ * python2js_with_depth which converts dicts to Map (the default)
+ */
+JsRef
+python2js_custom(PyObject* x,
+                 int depth,
+                 JsRef proxies,
+                 JsRef dict_converter,
+                 JsRef default_converter);
+
 int
 python2js_init(PyObject* core);
 

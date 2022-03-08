@@ -55,7 +55,7 @@ Pyodide works in any modern web browser with WebAssembly support.
 
 Chrome 89 and 90 have bugs in the webassembly compiler which makes using Pyodide
 with them unstable. Known problems occur in numpy and have been observed
-ocassionally in other packages. See {issue}`1384`.
+occasionally in other packages. See {issue}`1384`.
 
 ```{note}
 Latest browser versions generally provide more reliable WebAssembly support

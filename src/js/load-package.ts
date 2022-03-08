@@ -293,7 +293,7 @@ export async function loadPackage(
     toLoad.delete(pkg);
     toLoadShared.delete(pkg);
     // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-    // depedency, which was previously overridden.
+    // dependency, which was previously overridden.
     if (loaded === uri || uri === DEFAULT_CHANNEL) {
       messageCallback(`${pkg} already loaded from ${loaded}`);
     } else {

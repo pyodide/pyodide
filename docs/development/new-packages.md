@@ -153,7 +153,7 @@ patch.
 For very complicated builds, we also have a mechanism for repeating from the
 replay stage of the build. If the build is failing during the replay stage, you
 will see lines like `[line 766 of 1156]` labeling which command is being
-replayed. `--continue=replay` will start over from the begining of the replay
+replayed. `--continue=replay` will start over from the beginning of the replay
 stage, `--continue=replay:766` will start from step 766 of the replay stage.
 
 ## C library dependencies
