@@ -1,5 +1,5 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm # noqa
+# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm
 # run: canvas_image()
 
 # pythran export canvas_image()

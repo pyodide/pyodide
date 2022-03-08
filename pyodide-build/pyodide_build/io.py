@@ -101,7 +101,7 @@ def check_package_config(
             try:
                 expected_type = PACKAGE_CONFIG_SPEC[section_key][subsection_key]
             except KeyError:
-                # Unkown key, which was already reported previously, don't
+                # Unknown key, which was already reported previously, don't
                 # check types
                 continue
             if not isinstance(value, expected_type):
@@ -128,7 +128,7 @@ def parse_package_config(path: Union[Path, str], check: bool = True) -> dict[str
     path
        path to the meta.yaml file
     check
-       check the consitency of the config file
+       check the consistency of the config file
 
     Returns
     -------

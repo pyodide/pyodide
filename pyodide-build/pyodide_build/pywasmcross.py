@@ -614,7 +614,7 @@ def replay_compile(replay_from: int = 1, **kwargs):
         return
 
     with open(build_log_path) as fd:
-        num_lines = sum(1 for _1 in fd)  # type: ignore
+        num_lines = sum(1 for _1 in fd)
         fd.seek(0)
         for idx, line_str in enumerate(fd):
             if idx < replay_from - 1:

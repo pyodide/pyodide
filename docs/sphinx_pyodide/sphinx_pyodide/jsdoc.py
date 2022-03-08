@@ -88,7 +88,7 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node.
 
     Fixes two crashes and separates documentation for destructured object
-    arguments into a series of separate arguement entires.
+    arguments into a series of separate argument entries.
     """
     kind = node.get("kindString")
     # if a class has no documented constructor, don't crash

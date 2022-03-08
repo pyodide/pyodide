@@ -1,6 +1,6 @@
 # from: http://stackoverflow.com/questions/2196693/improving-numpy-performance
 # pythran export specialconvolve(uint32 [][])
-# setup: import numpy as np ; r = np.arange(100*10000, dtype=np.uint32).reshape(1000,1000)  # noqa
+# setup: import numpy as np ; r = np.arange(100*10000, dtype=np.uint32).reshape(1000,1000)
 # run: specialconvolve(r)
 
 
