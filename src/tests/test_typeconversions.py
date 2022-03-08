@@ -322,7 +322,7 @@ def test_python2js_track_proxies(selenium):
         function check(l){
             for(let x of l){
                 if(pyodide.isPyProxy(x)){
-                    assert(() => x.$$.ptr === null);
+                    assert(() => x.$$.ptr === 0);
                 } else {
                     check(x);
                 }
