@@ -9,7 +9,7 @@ build:
   sharedlibrary: true
   script: |
     emconfigure ./Configure gcc -no-sock -no-ui-console -DHAVE_FORK=0 -DOPENSSL_NO_SECURE_MEMORY -DNO_SYSLOG -fPIC
-    sed -i 's!CROSS_COMPILE=/src/emsdk/emsdk/upstream/emscripten/em!!g' Makefile
+    sed -i 's!^CROSS_COMPILE=.*!!g' Makefile
     make build_generated
     make -j ${PYODIDE_JOBS:-3} libcrypto.a
     make -j ${PYODIDE_JOBS:-3} libssl.a
