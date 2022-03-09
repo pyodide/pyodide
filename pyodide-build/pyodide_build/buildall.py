@@ -15,7 +15,7 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from . import common
 from .buildpkg import needs_rebuild
@@ -79,6 +79,8 @@ class StdLibPackage(BasePackage):
 
 @total_ordering
 class Package(BasePackage):
+    lock: ClassVar[Lock] = Lock()
+
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
 
@@ -151,28 +153,30 @@ class Package(BasePackage):
 
         # Don't overwrite build log if we didn't build the file.
         # If the file didn't need to be rebuilt, the log will have exactly two lines.
-        rebuilt = True
-        with open(self.pkgdir / "build.log.tmp") as f:
-            try:
-                next(f)
-                next(f)
-                next(f)
-            except StopIteration:
-                rebuilt = False
+        with self.__class__.lock:
+            rebuilt = True
+            with open(self.pkgdir / "build.log.tmp") as f:
+                try:
+                    next(f)
+                    next(f)
+                    next(f)
+                except StopIteration:
+                    rebuilt = False
 
-        if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
-            if args.log_dir and (self.pkgdir / "build.log").exists():
-                shutil.copy(
-                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
-                )
-        else:
-            (self.pkgdir / "build.log.tmp").unlink()
+            if rebuilt:
+                shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
+                if args.log_dir and (self.pkgdir / "build.log").exists():
+                    shutil.copy(
+                        self.pkgdir / "build.log",
+                        Path(args.log_dir) / f"{self.name}.log",
+                    )
+            else:
+                (self.pkgdir / "build.log.tmp").unlink()
 
         if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
 
-            with open(self.pkgdir / "build.log") as f:
+            with self.__class__.lock, open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
 
             print("ERROR: cancelling buildall")
@@ -181,11 +185,12 @@ class Package(BasePackage):
         if self.library:
             return
         if self.shared_library:
-            file_path = shutil.make_archive(
-                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
-            )
-            shutil.copy(file_path, outputdir)
-            Path(file_path).unlink()
+            with self.__class__.lock:
+                file_path = shutil.make_archive(
+                    f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
+                )
+                shutil.copy(file_path, outputdir)
+                Path(file_path).unlink()
             return
         shutil.copy(self.wheel_path(), outputdir)
         test_path = self.tests_path()
@@ -380,9 +385,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set: dict[
-        str, None
-    ] = {}  # using dict keys for insertion order preservation
+    # Using dict keys for insertion order preservation
+    package_set: dict[str, None] = {}
 
     def builder(n):
         nonlocal queue_idx
