@@ -133,6 +133,9 @@ def get_bash_runner():
             "PYTHONINCLUDE",
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
+            "CPYTHONBUILD",
+            "STDLIB_MODULE_CFLAGS",
+            "SIDE_MODULE_LDFLAGS",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
