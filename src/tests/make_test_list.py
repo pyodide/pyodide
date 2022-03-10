@@ -20,45 +20,6 @@ LIB_DIR = (
 
 PYTHON_TESTS_YAML = Path(__file__).parent / "python_tests.yaml"
 
-explanation = """\
-This list is generated with test/make_test_list.py script, which needs
-to be re-run after each CPython update.
-
-Test modules with a failure reason after their name are either skipped
-or marked as a known failure in pytest.
-
-Following reason codes are skipped, as they lead to segfaults:
-- segfault-<syscall>: segfault in the corresponding system call.
-
-While the below reason codes are marked as a known failure. By default, they
-are also skipped. To run them, provide --run-xfail argument to pytest,
-- platform-specific: This is testing something about a particular platform
-  that isn't relevant here
-- async: relies on async
-- floating point: Failures caused by floating-point differences
-- threading: Failures due to lack of a threading implementation
-- subprocess: Failures caused by no subprocess module. Some of these are
-  because the underlying functionality depends on subprocess, and others are
-  just a side-effect of the way the test is written. The latter should
-  probably be marked as "skip" or rearchitected so we don't have to skip the
-  whole module.
-- networking: Fails because it tests low-level networking.
-- dbm: Failures due to no dbm module
-- strftime: Failures due to differences / shortcomings in WebAssembly's
-  implementation of date/time formatting in strftime and strptime
-- permissions: Issues with the test writing to the virtual filesystem
-- locale: Fails due to limitations in the included locale implementation.
-- multiprocessing: Fails due to no multiprocessing implementation.
-- fs: Fails due to virtual filesystem issues.
-- nonsense: This functionality doesn't make sense in this context. Includes
-  things like `pip`, `distutils`
-- crash: The Python interpreter just stopped without a traceback. Will require
-  further investigation. This usually seems to be caused by calling into a
-  system function that doesn't behave as one would expect.
-- crash-chrome: Same as crash but only affecting Chrome
-- crash-firefox: Same as crash but only affecting Firefox
-"""
-
 
 def get_old_yaml():
     try:
@@ -66,7 +27,6 @@ def get_old_yaml():
             result = yaml.load(fp)
     except FileNotFoundError:
         result = yaml.seq()
-    result.yaml_set_start_comment(explanation)
     return result
 
 
