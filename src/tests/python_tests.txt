@@ -56,9 +56,9 @@ test_asyncio.test_buffered_proto	async
 test_asyncio.test_context	async
 test_asyncio.test_events	async
 test_asyncio.test_futures	async
-test_asyncio.test_futures2    async
+test_asyncio.test_futures2	async
 test_asyncio.test_locks	async
-test_asyncio.test_pep492    async
+test_asyncio.test_pep492	async
 test_asyncio.test_proactor_events	async
 test_asyncio.test_protocols
 test_asyncio.test_queues	async
@@ -95,7 +95,7 @@ test_buffer
 test_bufio
 test_builtin	os.get_inheritable
 test_bytes
-test_bz2    threads
+test_bz2	threading
 test_c_locale_coercion
 test_calendar
 test_call
@@ -179,7 +179,7 @@ test_email.test__header_value_parser
 test_email.test_asian_codecs
 test_email.test_contentmanager
 test_email.test_defect_handling
-test_email.test_email	threads
+test_email.test_email	threading
 test_email.test_generator
 test_email.test_headerregistry
 test_email.test_inversion
@@ -190,7 +190,7 @@ test_email.test_policy
 test_email.test_utils
 test_embed	fork
 test_ensurepip	nonsense
-test_enum	threads
+test_enum	threading
 test_enumerate
 test_eof
 test_epoll
@@ -202,7 +202,7 @@ test_extcall
 test_faulthandler	fork
 test_fcntl
 test_file
-test_file_eintr	fork
+test_file_eintr	subprocess
 test_filecmp
 test_fileinput
 test_fileio
@@ -210,7 +210,7 @@ test_finalization
 test_float
 test_flufl
 test_fnmatch
-test_fork1    threading
+test_fork1	threading
 test_format
 test_fractions
 test_frame
@@ -218,7 +218,7 @@ test_frozen
 test_fstring
 test_ftplib	socket
 test_funcattrs
-test_functools	threads
+test_functools	threading
 test_future
 test_future3
 test_future4
@@ -235,14 +235,14 @@ test_getargs2
 test_getopt
 test_getpass
 test_gettext
-test_glob	fails on self symlink test
+test_glob	fs
 test_global
 test_grammar
 test_graphlib
 test_grp
 test_gzip
 test_hash
-test_hashlib	threads
+test_hashlib	threading
 test_heapq
 test_hmac
 test_html
@@ -250,7 +250,7 @@ test_htmlparser
 test_http_cookiejar
 test_http_cookies
 test_httplib	socket segfault-socketcall
-test_httpservers	threads
+test_httpservers	threading
 test_idle
 test_imaplib	socket
 test_imghdr
@@ -297,7 +297,7 @@ test_importlib.test_util
 test_importlib.test_windows
 test_importlib.test_zip
 test_index
-test_inspect	??? async?
+test_inspect	async
 test_int
 test_int_literal
 test_interpreters	threads
@@ -329,7 +329,7 @@ test_keyword
 test_keywordonlyarg
 test_kqueue
 test_largefile	RangeError: Array buffer allocation failed
-test_lib2to3    nonsense
+test_lib2to3	nonsense
 test_linecache
 test_list
 test_listcomps
@@ -348,7 +348,7 @@ test_memoryview
 test_metaclass
 test_mimetypes
 test_minidom
-test_mmap	crash "RangeError: Invalid typed array length: 6442450944"
+test_mmap	crash
 test_module
 test_modulefinder
 test_msilib
@@ -372,7 +372,7 @@ test_ordered_dict
 test_os	mmap
 test_ossaudiodev
 test_osx_env
-test_pathlib	fs another symlink_loop
+test_pathlib	fs
 test_patma
 test_pdb	subprocess
 test_peepholer
@@ -386,7 +386,7 @@ test_pickletools	dbm
 test_pipes
 test_pkg
 test_pkgutil
-test_platform	fork
+test_platform	subprocess
 test_plistlib
 test_poll	subprocess
 test_popen	subprocess
@@ -403,27 +403,27 @@ test_pstats
 test_pty
 test_pulldom
 test_pwd
-test_py_compile	fork
+test_py_compile	subprocess
 test_pyclbr
-test_pydoc	expects a pycache
+test_pydoc	threading
 test_pyexpat
-test_queue	thread
-test_quopri	fork
+test_queue	threading
+test_quopri	subprocess
 test_raise
-test_random	fork
+test_random	subprocess
 test_range
 test_re	locale
 test_readline
-test_regrtest	fork
-test_repl	fork
+test_regrtest	subprocess
+test_repl	subprocess
 test_reprlib
 test_resource
 test_richcmp
 test_rlcompleter
 test_robotparser	socket
-test_runpy	fork
+test_runpy	subprocess
 test_sax
-test_sched	fork
+test_sched	subprocess
 test_scope
 test_script_helper
 test_secrets
@@ -433,7 +433,7 @@ test_set
 test_setcomps
 test_shelve	dbm
 test_shlex
-test_shutil	some file system problems
+test_shutil	crash
 test_signal	emscripten signals implementation isn't very complete
 test_site	TypeError: unhashable type: 'pyodide.JsProxy'
 test_slice
@@ -444,9 +444,9 @@ test_sndhdr
 test_socket	networking
 test_socketserver	networking
 test_sort
-test_source_encoding	fork
+test_source_encoding	subprocess
 test_spwd
-test_sqlite	No module named 'sqlite3.test'
+test_sqlite	threading
 test_ssl
 test_startfile
 test_stat
@@ -468,7 +468,7 @@ test_super
 test_support	socket
 test_symtable
 test_syntax
-test_sys	self.assertEqual(os.path.abspath(sys.executable), sys.executable) fails with '/tmp/test_python_42æ' != ''
+test_sys	subprocess
 test_sys_setprofile
 test_sys_settrace	async
 test_sysconfig	nonsense
@@ -501,7 +501,7 @@ test_tools.test_pindent
 test_tools.test_reindent
 test_tools.test_sundry
 test_trace	slow, sometimes times out
-test_traceback	fork
+test_traceback	subprocess
 test_tracemalloc
 test_ttk_guionly
 test_ttk_textonly
@@ -519,14 +519,14 @@ test_unicode_file	fs MEMFS doesn't work as expected with unencodable file names
 test_unicode_file_functions
 test_unicode_identifiers
 test_unicodedata
-test_unittest	No module named 'unittest.test'
+test_unittest	os.kill
 test_univnewlines
 test_unpack
 test_unpack_ex
 test_unparse
 test_urllib
-test_urllib2    fork
-test_urllib2_localnet    socket
+test_urllib2	subprocess
+test_urllib2_localnet	socket
 test_urllib2net
 test_urllib_response
 test_urllibnet
@@ -539,10 +539,10 @@ test_utf8source
 test_uu
 test_uuid	fork
 test_venv	nonsense
-test_wait3    threading
-test_wait4    threading
+test_wait3	threading
+test_wait4	threading
 test_wave
-test_weakref	slow, sometimes times out
+test_weakref	threading
 test_weakset
 test_webbrowser	replaced
 test_winconsoleio
