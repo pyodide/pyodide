@@ -79,7 +79,8 @@ class StdLibPackage(BasePackage):
 
 @total_ordering
 class Package(BasePackage):
-    lock: ClassVar[Lock] = Lock()
+    # If the CWD matters, hold this lock
+    cwd_lock: ClassVar[Lock] = Lock()
 
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
@@ -122,6 +123,9 @@ class Package(BasePackage):
         return None
 
     def build(self, outputdir: Path, args) -> None:
+        with self.__class__.cwd_lock:
+            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+
         with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
                 [
@@ -153,30 +157,29 @@ class Package(BasePackage):
 
         # Don't overwrite build log if we didn't build the file.
         # If the file didn't need to be rebuilt, the log will have exactly two lines.
-        with self.__class__.lock:
-            rebuilt = True
-            with open(self.pkgdir / "build.log.tmp") as f:
-                try:
-                    next(f)
-                    next(f)
-                    next(f)
-                except StopIteration:
-                    rebuilt = False
+        rebuilt = True
+        with open(self.pkgdir / "build.log.tmp") as f:
+            try:
+                next(f)
+                next(f)
+                next(f)
+            except StopIteration:
+                rebuilt = False
 
-            if rebuilt:
-                shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
-                if args.log_dir and (self.pkgdir / "build.log").exists():
-                    shutil.copy(
-                        self.pkgdir / "build.log",
-                        Path(args.log_dir) / f"{self.name}.log",
-                    )
-            else:
-                (self.pkgdir / "build.log.tmp").unlink()
+        if rebuilt:
+            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
+            if log_dir and (self.pkgdir / "build.log").exists():
+                shutil.copy(
+                    self.pkgdir / "build.log",
+                    log_dir / f"{self.name}.log",
+                )
+        else:
+            (self.pkgdir / "build.log.tmp").unlink()
 
         if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
 
-            with self.__class__.lock, open(self.pkgdir / "build.log") as f:
+            with open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
 
             print("ERROR: cancelling buildall")
@@ -185,7 +188,7 @@ class Package(BasePackage):
         if self.library:
             return
         if self.shared_library:
-            with self.__class__.lock:
+            with self.__class__.cwd_lock:
                 file_path = shutil.make_archive(
                     f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
                 )
