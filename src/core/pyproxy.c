@@ -480,7 +480,7 @@ finally:
 }
 
 /**
- * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * This sets up a call to _PyObject_Vectorcall. It's a helper function for
  * callPyObjectKwargs. This is the primary entrypoint from JavaScript into
  * Python code.
  *
@@ -579,15 +579,6 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
-/**
- * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
- * so in v3.10 this would be a simple API call wrapper like the rest of the code
- * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c).
- *
- * When the iterator is done, it returns NULL and sets StopIteration. We'll use
- * _pyproxyGen_FetchStopIterationValue below to get the return value of the
- * generator (again copying from YIELD_FROM).
- */
 PySendResult
 _pyproxyGen_Send(PyObject* receiver, JsRef jsval, JsRef* result)
 {
@@ -820,7 +811,7 @@ size_t buffer_struct_size = sizeof(buffer_struct);
  *
  * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
  * determine the locations of: the first element of the buffer, the earliest
- * element of the buffer in memory the lastest element of the buffer in memory
+ * element of the buffer in memory the latest element of the buffer in memory
  * (plus one itemsize).
  *
  * We will use this information to slice out a subarray of the wasm heap that

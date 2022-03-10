@@ -68,7 +68,7 @@
         async function interpreter(command) {
           let unlock = await lock();
           term.pause();
-          // multiline should be splitted (useful when pasting)
+          // multiline should be split (useful when pasting)
           for (const c of command.split("\n")) {
             let fut = pyconsole.push(c);
             term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);

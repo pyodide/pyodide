@@ -273,7 +273,7 @@ loadPyodide({
 ```
 
 then every time a line is written to `stdout` (resp. `stderr`), `stdout_func`
-(resp `stderr_func`) will be called on the line. Everytime `stdin` is read,
+(resp `stderr_func`) will be called on the line. Every time `stdin` is read,
 `stdin_func` will be called with zero arguments. It is expected to return a
 string which is interpreted as a line of text.
 
@@ -303,7 +303,7 @@ with redirect_stdin(StringIO("\n".join(["eval", "asyncio.ensure_future", "functo
 it will print:
 
 ```
-Welcome to Python 3.9's help utility!
+Welcome to Python 3.10's help utility!
 <...OMITTED LINES>
 Help on built-in function eval in module builtins:
 eval(source, globals=None, locals=None, /)

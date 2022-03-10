@@ -1,6 +1,6 @@
 import json
-from io import IOBase, StringIO
-from typing import Any
+from io import StringIO
+from typing import Any, BinaryIO, TextIO, Union
 
 from ._core import JsProxy, to_js
 
@@ -65,7 +65,7 @@ class FetchResponse:
     def body_used(self) -> bool:
         """Has the response been used yet?
 
-        (If so, attempting to retreive the body again will raise an OSError.)
+        (If so, attempting to retrieve the body again will raise an OSError.)
         """
         return self.js_response.bodyUsed
 
@@ -149,7 +149,7 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
-    async def _into_file(self, f: IOBase):
+    async def _into_file(self, f: Union[TextIO, BinaryIO]):
         """Write the data into an empty file with no copy.
 
         Warning: should only be used when f is an empty file, otherwise it may
@@ -178,7 +178,7 @@ class FetchResponse:
             an ``OSError``
         """
         with open(path, "x") as f:
-            await self._into_file(f)  # type: ignore
+            await self._into_file(f)
 
     async def unpack_archive(self, *, extract_dir=None, format=None):
         """Treat the data as an archive and unpack it into target directory.

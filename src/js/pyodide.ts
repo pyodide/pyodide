@@ -251,7 +251,7 @@ export async function loadPyodide(config: {
   // being called.
   await moduleLoaded;
 
-  // Disable futher loading of Emscripten file_packager stuff.
+  // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };

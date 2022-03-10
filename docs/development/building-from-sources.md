@@ -67,8 +67,8 @@ Make sure the prerequisites for
 build a custom, patched version of emsdk, so there is no need to build it
 yourself prior.
 
-You would need Python 3.9.5 to run the build scripts. To make sure that the
-correct Python is used during build it is recommended to use a [Python virtual
+You need Python 3.10.2 to run the build scripts. To make sure that the correct
+Python is used during the build it is recommended to use a [virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
 
 ```{tabbed} Linux
