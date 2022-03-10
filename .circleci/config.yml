@@ -324,6 +324,10 @@ jobs:
       - attach_workspace:
           at: .
       - run:
+          name: install requirements
+          command: |
+            pip3 install numpy matplotlib
+      - run:
           name: benchmark
           command: |
             python benchmark/benchmark.py all --output build/benchmarks.json

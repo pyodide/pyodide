@@ -102,7 +102,10 @@ class Package(BasePackage):
         self.dependents = set()
 
     def wheel_path(self) -> Path:
-        wheels = list((self.pkgdir / "dist").glob("*.whl"))
+        dist_dir = self.pkgdir / "dist"
+        wheels = list(dist_dir.glob("*emscripten_wasm32.whl")) + list(
+            dist_dir.glob("*py3-none-any.whl")
+        )
         if len(wheels) != 1:
             raise Exception(
                 f"Unexpected number of wheels {len(wheels)} when building {self.name}"
@@ -182,6 +185,7 @@ class Package(BasePackage):
                 f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
             )
             shutil.copy(file_path, outputdir)
+            Path(file_path).unlink()
             return
         shutil.copy(self.wheel_path(), outputdir)
         test_path = self.tests_path()
