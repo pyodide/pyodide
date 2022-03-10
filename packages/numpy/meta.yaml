@@ -13,7 +13,6 @@ source:
     - patches/fix-static-init-of-nditer-pywrap.patch
     - patches/init-alloc-cache.patch
     - patches/use-local-blas-lapack.patch
-    - patches/fix-install-with-skip-build.patch
     - patches/make-int-return-values.patch
     - patches/fix-ieee754.patch
     - patches/disable-optimization.patch
@@ -29,18 +28,27 @@ build:
   # will fail. Better to fail at compile or link time.
   cflags: |
     -include math.h
-    -I $(PYODIDE_ROOT)/packages/numpy/config
+    -I config
     -Werror=implicit-function-declaration
     -Werror=mismatched-parameter-types
     -Werror=mismatched-return-types
   ldflags: |
     -Wl,--fatal-warnings
+  prereplay: |
+    export SRC_DIR=$(pwd)
+    cd ../.. # Need to move out of source directory to import numpy
+    cp -r config $SRC_DIR
+    python$PYMAJOR.$PYMINOR -c '\
+        from numpy.core.setup_common import C_API_VERSION as API, C_ABI_VERSION as ABI;\
+        print(f"#define NPY_API_VERSION 0x{API:08x}\n#define NPY_ABI_VERSION 0x{ABI:08x}")' \
+    >> $SRC_DIR/config/_numpyconfig.h
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-emscripten_wasm32.egg/numpy/core/include/numpy
-    cp -r $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-emscripten_wasm32.egg/numpy $PKGDIR/../.artifacts/lib/python
-
+    export NUMPY_INSTALL_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/
+    cp $SRC_DIR/config/* $NUMPY_INSTALL_PATH
+    mkdir -p $NUMPY_LIB
+    find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
 test:
   imports:
     - numpy
