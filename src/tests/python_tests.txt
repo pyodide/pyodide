@@ -50,30 +50,30 @@ test_asdl_parser
 test_ast
 test_asyncgen	async
 test_asynchat	async
-test_asyncio.test_asyncio_waitfor    async
-test_asyncio.test_base_events    async
-test_asyncio.test_buffered_proto    async
-test_asyncio.test_context    async
-test_asyncio.test_events    async
-test_asyncio.test_futures    async
+test_asyncio.test_asyncio_waitfor	async
+test_asyncio.test_base_events	async
+test_asyncio.test_buffered_proto	async
+test_asyncio.test_context	async
+test_asyncio.test_events	async
+test_asyncio.test_futures	async
 test_asyncio.test_futures2    async
-test_asyncio.test_locks    async
+test_asyncio.test_locks	async
 test_asyncio.test_pep492    async
-test_asyncio.test_proactor_events    async
+test_asyncio.test_proactor_events	async
 test_asyncio.test_protocols
-test_asyncio.test_queues    async
-test_asyncio.test_runners    async
-test_asyncio.test_selector_events    async segfault-socketcall
-test_asyncio.test_sendfile    async
-test_asyncio.test_server    async
-test_asyncio.test_sock_lowlevel    async
+test_asyncio.test_queues	async
+test_asyncio.test_runners	async
+test_asyncio.test_selector_events	async segfault-socketcall
+test_asyncio.test_sendfile	async
+test_asyncio.test_server	async
+test_asyncio.test_sock_lowlevel	async
 test_asyncio.test_sslproto
-test_asyncio.test_streams    async
-test_asyncio.test_subprocess    async
-test_asyncio.test_tasks    async
-test_asyncio.test_threads    async
+test_asyncio.test_streams	async
+test_asyncio.test_subprocess	async
+test_asyncio.test_tasks	async
+test_asyncio.test_threads	async
 test_asyncio.test_transports
-test_asyncio.test_unix_events    async
+test_asyncio.test_unix_events	async
 test_asyncio.test_windows_events
 test_asyncio.test_windows_utils
 test_asyncore	bad ioctl syscall async
@@ -179,7 +179,7 @@ test_email.test__header_value_parser
 test_email.test_asian_codecs
 test_email.test_contentmanager
 test_email.test_defect_handling
-test_email.test_email threads
+test_email.test_email	threads
 test_email.test_generator
 test_email.test_headerregistry
 test_email.test_inversion
@@ -259,7 +259,7 @@ test_importlib.builtin.test_finder
 test_importlib.builtin.test_loader
 test_importlib.extension.test_case_sensitivity
 test_importlib.extension.test_finder
-test_importlib.extension.test_loader    fs
+test_importlib.extension.test_loader	fs
 test_importlib.extension.test_path_hook
 test_importlib.frozen.test_finder
 test_importlib.frozen.test_loader
@@ -281,7 +281,7 @@ test_importlib.test_abc
 test_importlib.test_api
 test_importlib.test_files
 test_importlib.test_lazy
-test_importlib.test_locks    threading
+test_importlib.test_locks	threading
 test_importlib.test_main
 test_importlib.test_metadata_api
 test_importlib.test_namespace_pkgs
@@ -292,7 +292,7 @@ test_importlib.test_read
 test_importlib.test_reader
 test_importlib.test_resource
 test_importlib.test_spec
-test_importlib.test_threaded_import    threading
+test_importlib.test_threaded_import	threading
 test_importlib.test_util
 test_importlib.test_windows
 test_importlib.test_zip
@@ -323,7 +323,7 @@ test_json.test_recursion
 test_json.test_scanstring
 test_json.test_separators
 test_json.test_speedups
-test_json.test_tool    subprocess
+test_json.test_tool	subprocess
 test_json.test_unicode
 test_keyword
 test_keywordonlyarg
