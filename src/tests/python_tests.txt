@@ -77,9 +77,9 @@ test_asyncio.test_unix_events	async
 test_asyncio.test_windows_events
 test_asyncio.test_windows_utils
 test_asyncore	bad ioctl syscall async
-test_atexit	fork
+test_atexit	subprocess
 test_audioop
-test_audit	fork
+test_audit	subprocess
 test_augassign
 test_base64
 test_baseexception
@@ -173,7 +173,7 @@ test_docxmlrpc	socket
 test_dtrace	platform
 test_dynamic
 test_dynamicclassattribute
-test_eintr	fork
+test_eintr	subprocess
 test_email.test__encoded_words
 test_email.test__header_value_parser
 test_email.test_asian_codecs
@@ -188,7 +188,7 @@ test_email.test_parser
 test_email.test_pickleable
 test_email.test_policy
 test_email.test_utils
-test_embed	fork
+test_embed	subprocess
 test_ensurepip	nonsense
 test_enum	threading
 test_enumerate
@@ -199,7 +199,7 @@ test_exception_hierarchy
 test_exception_variations
 test_exceptions	BaseException_dealloc and BaseException_clear enter an infinite recurse
 test_extcall
-test_faulthandler	fork
+test_faulthandler	subprocess
 test_fcntl
 test_file
 test_file_eintr	subprocess
@@ -210,7 +210,7 @@ test_finalization
 test_float
 test_flufl
 test_fnmatch
-test_fork1	threading
+test_subprocess1	threading
 test_format
 test_fractions
 test_frame
@@ -353,8 +353,8 @@ test_module
 test_modulefinder
 test_msilib
 test_multibytecodec
-test_multiprocessing_fork
-test_multiprocessing_forkserver
+test_multiprocessing_subprocess
+test_multiprocessing_subprocessserver
 test_multiprocessing_main_handling
 test_multiprocessing_spawn
 test_named_expressions
@@ -537,7 +537,7 @@ test_userstring
 test_utf8_mode
 test_utf8source
 test_uu
-test_uuid	fork
+test_uuid	subprocess
 test_venv	nonsense
 test_wait3	threading
 test_wait4	threading
