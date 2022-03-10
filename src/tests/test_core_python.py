@@ -17,63 +17,32 @@ def test_cpython_core(python_test, selenium, request):
             error_flags.remove("crash-" + flag)
 
     if any(flag.startswith("segfault") for flag in error_flags):
-        pytest.skip('known segfault with code: "{}"'.format(",".join(error_flags)))
+        pytest.skip('known segfault: "{}"'.format(" ".join(error_flags)))
 
     if error_flags:
         if request.config.option.run_xfail:
             request.applymarker(
                 pytest.mark.xfail(
                     run=False,
-                    reason='known failure with code "{}"'.format(",".join(error_flags)),
+                    reason='known failure: "{}"'.format(" ".join(error_flags)),
                 )
             )
         else:
-            pytest.xfail('known failure with code "{}"'.format(",".join(error_flags)))
+            pytest.xfail('known failure: "{}"'.format(" ".join(error_flags)))
 
     selenium.load_package(UNVENDORED_STDLIB_MODULES)
     try:
         selenium.run(
             """
-import asyncio
-import os
-import platform
-import subprocess
-import threading
-from test import libregrtest
-from unittest import SkipTest, TestCase, main
-from unittest.mock import Mock, patch
-
-platform.platform(aliased=True)
-import _testcapi
-if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
-    # This uses raise() which doesn't work.
-    del _testcapi.raise_SIGINT_then_send_None
-
-with (
-    patch(
-        "subprocess.Popen",
-        new=Mock(side_effect=SkipTest("Cannot start a subprocess in Pyodide")),
-    ),
-    patch(
-        "threading.Thread.start",
-        new=Mock(side_effect=SkipTest("Cannot start a thread in Pyodide")),
-    ),
-    patch(
-        "signal.setitimer",
-        new=Mock(side_effect=SkipTest("setitimer is not implemented in Emscripten")),
-    ),
-    patch("os.fork", new=Mock(side_effect=SkipTest("Can't fork"))),
-    patch(
-        "os.get_inheritable",
-        new=Mock(side_effect=SkipTest("os.get_inheritable doesn't seem to work")),
-    ),
-    patch("asyncio.run", new=Mock(side_effect=SkipTest("asyncio.run doesn't work"))),
-):
-    try:
-        libregrtest.main(["{}"], verbose=True, verbose3=True)
-    except SystemExit as e:
-        if e.code != 0:
-            raise RuntimeError(f"Failed with code: {{e.code}}")
+            from test.libregrtest import main
+            import unittest.case
+            try:
+                main(['{}'], verbose=True, verbose3=True)
+            except SystemExit as e:
+                if e.code != 0:
+                    raise RuntimeError(f'Failed with code: {{e.code}}')
+            except unittest.case.SkipTest:
+                pass
             """.format(
                 name
             )
