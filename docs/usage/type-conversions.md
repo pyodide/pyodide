@@ -437,7 +437,7 @@ from pyodide import create_proxy
 from js import document
 def my_callback():
     print("hi")
-proxy = document.create_proxy(my_callback)
+proxy = pyodide.create_proxy(my_callback)
 document.body.addEventListener("click", proxy)
 # ...
 # make sure to hold on to proxy
