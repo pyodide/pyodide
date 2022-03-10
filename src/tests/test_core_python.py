@@ -48,19 +48,15 @@ def test_cpython_core(main_test, selenium, request):
     possibly_skip_test(request, info)
 
     ignore_tests = info.get("skip", [])
+    if not isinstance(ignore_tests, list):
+        raise Exception("Invalid python_tests.yaml entry: 'skip' should be a list")
 
     selenium.load_package(UNVENDORED_STDLIB_MODULES)
     try:
         selenium.run(
             f"""
-import asyncio
-import os
 import platform
-import subprocess
-import threading
 from test import libregrtest
-from unittest import SkipTest, TestCase, main
-from unittest.mock import Mock, patch
 
 platform.platform(aliased=True)
 import _testcapi

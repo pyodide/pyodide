@@ -463,14 +463,7 @@
     skip:
       - "*diacritic*"
 - test_logging:
-    skip: |
-      - "*ModuleLevelMiscTest*"
-      - "*Handler*"
-      - ConfigFileTest
-      - ConfigDictTest
-      - QueueListenerTest
-      - test_multiprocessing
-
+    xfail: threading
 - test_long
 - test_longexp
 - test_lzma
@@ -511,6 +504,7 @@
       - test_exists_fd
       - test_samestat_on_link
       - test_samefile_on_link
+      - test_sameopenfile
       - test_nonascii_abspath
 - test_numeric_tower
 - test_opcache
@@ -601,7 +595,8 @@
       - test_after_fork
 - test_range
 - test_re:
-    skip: "*locale*"
+    skip:
+      - "*locale*"
 - test_readline
 - test_regrtest:
     xfail: All tests fork
@@ -624,7 +619,8 @@
 - test_script_helper
 - test_secrets
 - test_select:
-    skip: test_select # fork
+    skip:
+      - test_select # fork
 - test_selectors:
     xfail: networking
 - test_set
@@ -738,7 +734,9 @@
       - test_thread_time # setup failure: OSError: [Errno 28] Invalid argument
       - test_time_ns_type # setup failure: OSError: [Errno 28] Invalid argument
       - test_localtime_timezone # pyodide.asm.js:4222 AssertionError: 'Pacific Standard Time' != 'Pacific S'
-
+      - test_4dyear # '%4Y' != '0001'
+      - test_ctime # '1941' != '-100'
+      - test_monotonic # self.assertTrue(0.450 <= dt) fails
 - test_timeit
 - test_timeout
 - test_tix
