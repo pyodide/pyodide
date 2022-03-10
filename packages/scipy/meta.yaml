@@ -46,7 +46,6 @@ build:
     -Wno-return-type
   ldflags: |
     -L$(NUMPY_LIB)
-    -L$(NUMPY_LIB_BASE)/random/lib
     -Wl,--fatal-warnings
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
@@ -98,7 +97,7 @@ build:
     find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
     find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
     find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
-    cd build/src.emscripten_wasm32-3.9/build/src.emscripten_wasm32-3.9/scipy/linalg
+    cd build/src.linux-x86_64-$PYMAJOR.$PYMINOR/build/src.linux-x86_64-$PYMAJOR.$PYMINOR/scipy/linalg
     sed -i 's/,size_t//' _flapackmodule.c
     sed -i 's/,slen([a-z]*))/)/g' _flapackmodule.c
     sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' _fblasmodule.c
