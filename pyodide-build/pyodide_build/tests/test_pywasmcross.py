@@ -131,7 +131,7 @@ def test_f2c():
 
 
 def test_conda_unsupported_args():
-    # Check that compile arguments that are not suported by emcc and are sometimes
+    # Check that compile arguments that are not supported by emcc and are sometimes
     # used in conda are removed.
     args = BuildArgs()
     assert replay_command_wrap(

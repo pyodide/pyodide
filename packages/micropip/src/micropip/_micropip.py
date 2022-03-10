@@ -42,7 +42,7 @@ if IN_BROWSER:
     from pyodide_js import loadedPackages
 else:
 
-    class loadedPackages:  # type: ignore
+    class loadedPackages:  # type: ignore[no-redef]
         @staticmethod
         def to_py():
             return {}
@@ -74,7 +74,7 @@ else:
     # we want to avoid using the event loop at all. Instead just run the
     # coroutines in sequence.
     # TODO: Use an asyncio testing framework to avoid this
-    async def gather(*coroutines):  # type: ignore
+    async def gather(*coroutines):  # type: ignore[no-redef]
         result = []
         for coroutine in coroutines:
             result.append(await coroutine)
@@ -310,7 +310,7 @@ class _PackageManager:
 
         wheel["wheel_bytes"] = wheel_bytes
 
-        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
+        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
             dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
@@ -338,7 +338,7 @@ class _PackageManager:
         """
         releases = metadata.get("releases", {})
         candidate_versions = sorted(
-            (Version(v) for v in req.specifier.filter(releases)),  # type: ignore
+            (Version(v) for v in req.specifier.filter(releases)),
             reverse=True,
         )
         for ver in candidate_versions:

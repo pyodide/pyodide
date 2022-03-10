@@ -3,16 +3,16 @@ Monkey patch autodoc to recursively include submodules as well. We have to
 import the submodules for it to find them.
 """
 
-from typing import Any, Dict, Tuple
+from typing import Any
 
-from sphinx.ext.autodoc import ModuleDocumenter, ObjectMember  # type: ignore
+from sphinx.ext.autodoc import ModuleDocumenter, ObjectMember
 from sphinx.util.inspect import safe_getattr
 
 __all__ = ["monkeypatch_module_documenter"]
 
 
 def get_module_members(module: Any) -> list[tuple[str, Any]]:
-    members = {}  # type: Dict[str, Tuple[str, Any]]
+    members: dict[str, tuple[str, Any]] = {}
     for name in dir(module):
         try:
             value = safe_getattr(module, name, None)
@@ -68,4 +68,4 @@ def get_object_members(self, want_all: bool):
 
 
 def monkeypatch_module_documenter():
-    ModuleDocumenter.get_object_members = get_object_members  # type: ignore
+    ModuleDocumenter.get_object_members = get_object_members

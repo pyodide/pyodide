@@ -13,13 +13,11 @@ source:
     - patches/fix-static-init-of-nditer-pywrap.patch
     - patches/init-alloc-cache.patch
     - patches/use-local-blas-lapack.patch
-    - patches/fix-install-with-skip-build.patch
     - patches/make-int-return-values.patch
     - patches/fix-ieee754.patch
     - patches/disable-optimization.patch
     - patches/not-build-lapack-lite-as-64-bit.patch
     - patches/fix-invalid-asm-instruction.patch
-    - patches/fix-removed-decorators-module.patch
     - patches/fix-comparator-function-signatures.patch
     - patches/fix-random_float_fill-return-type.patch
 

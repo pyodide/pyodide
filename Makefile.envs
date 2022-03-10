@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.9.5
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
 
-# BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
+# BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each
 # command.
 export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
@@ -107,7 +107,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-I$(PYTHONINCLUDE) \
-	-sEXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 
 .output_vars:

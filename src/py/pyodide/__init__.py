@@ -20,7 +20,7 @@ from _pyodide._base import (
 )
 from _pyodide._importhook import register_js_module, unregister_js_module
 
-from . import _state  # noqa
+from . import _state  # noqa: F401
 from ._core import (
     IN_BROWSER,
     ConversionError,

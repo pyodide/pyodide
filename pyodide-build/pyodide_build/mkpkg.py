@@ -270,7 +270,7 @@ complex things.""".strip()
     )
     parser.add_argument(
         "--source-format",
-        help="Which source format is prefered. Options are wheel or sdist. "
+        help="Which source format is preferred. Options are wheel or sdist. "
         "If none is provided, then either a wheel or an sdist will be used. "
         "When updating a package, the type will be kept the same if possible.",
     )
