@@ -1,9 +1,9 @@
 package:
   name: lxml
-  version: 4.4.1
+  version: 4.8.0
 source:
-  sha256: c81cb40bff373ab7a7446d6bbca0190bccc5be3448b47b51d729e37799bb5692
-  url: https://files.pythonhosted.org/packages/c4/43/3f1e7d742e2a7925be180b6af5e0f67d38de2f37560365ac1a0b9a04c015/lxml-4.4.1.tar.gz
+  sha256: f63f62fc60e6228a4ca9abae28228f35e1bd3ce675013d1dfb828688d50c6e23
+  url: https://files.pythonhosted.org/packages/3b/94/e2b1b3bad91d15526c7e38918795883cee18b93f6785ea8ecf13f8ffa01e/lxml-4.8.0.tar.gz
 build:
   script: |
     export WITH_XML2_CONFIG=$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10/xml2-config
