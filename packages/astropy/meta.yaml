@@ -1,9 +1,9 @@
 package:
   name: astropy
-  version: "5.0"
+  version: 5.0.2
 source:
-  url: https://files.pythonhosted.org/packages/82/f0/fc3f6f250bb9d5e5aaa890469fb27c4edee66cf0e2ea4f8b0b287260c6f8/astropy-5.0.tar.gz
-  sha256: 70203e151e13292586a817b4069ce1aad4643567aff38b1d191c173bc54f3927
+  url: https://files.pythonhosted.org/packages/10/3d/87d1dc421e369540184de23c31f2c2e60e18750322919552aba09f05f7be/astropy-5.0.2.tar.gz
+  sha256: 449f0ba5e7292457eed37550b047444751a606e7b8a34f93b1c28d0bb63e7f40
 build:
   script: |
     pip install extension-helpers

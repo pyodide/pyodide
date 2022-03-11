@@ -14,6 +14,10 @@ substitutions:
 
 _February 19, 2022_
 
+## Unreleased
+
+- Upgraded astropy (5.0.2) {pr}`2268`
+
 ## Version 0.19.1
 
 ### Packages
