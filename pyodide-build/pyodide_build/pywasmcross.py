@@ -143,8 +143,6 @@ def compile(env, **kwargs):
                 "-m",
                 "build",
                 "--wheel",
-                "--no-isolation",
-                "--skip-dependency-check",
             ],
             env=env,
         )
@@ -460,6 +458,7 @@ def handle_command_generate_args(
             new_args.extend(args.cflags.split())
         elif new_args[0] == "em++":
             new_args.extend(args.cflags.split() + args.cxxflags.split())
+        new_args.extend(["-I", os.environ["PYTHONINCLUDE"]])
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
