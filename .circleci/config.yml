@@ -74,7 +74,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            PYODIDE_PACKAGES="core, ssl" make
+            PYODIDE_PACKAGES="core" make
             ccache -s
 
       - run:
