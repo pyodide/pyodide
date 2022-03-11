@@ -136,6 +136,7 @@ jobs:
             # Set mtime for EM_CONFIG to avoid ccache cache misses
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
+            pip install build
             ccache -z
             PYODIDE_PACKAGES='*, no-numpy-dependents' make -C packages
             ccache -s
@@ -204,6 +205,7 @@ jobs:
             # Set mtime for EM_CONFIG to avoid ccache cache misses
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
+            pip install build
             ccache -z
             PYODIDE_PACKAGES='*' make -C packages
             ccache -s
