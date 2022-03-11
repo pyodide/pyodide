@@ -412,14 +412,14 @@ def compile(
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
     with chdir(srcpath):
         pywasmcross.compile(
-            name=name,
+            env=bash_runner.env,
+            pkgname=name,
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
             ldflags=build_metadata["ldflags"],
-            target_install_dir=target_install_dir,
             host_install_dir=host_install_dir,
+            target_install_dir=target_install_dir,
             replace_libs=replace_libs,
-            env=bash_runner.env,
         )
 
 

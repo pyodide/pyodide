@@ -24,13 +24,14 @@ configuration with build.
 
 
 import importlib.machinery
+import json
 import os
 import re
 import subprocess
 import sys
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import NoReturn, Optional
+from typing import NoReturn, Optional, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
@@ -54,6 +55,7 @@ ReplayArgs = namedtuple(
         "host_install_dir",
         "target_install_dir",
         "replace_libs",
+        "builddir",
     ],
 )
 
@@ -77,15 +79,7 @@ def capture_command(args: list[str]) -> NoReturn:
     while f"{SYMLINKDIR}:" in path:
         path = path.replace(f"{SYMLINKDIR}:", "")
     os.environ["PATH"] = path
-    replay_args = ReplayArgs(
-        pkgname=os.environ.get("PYWASMCROSS_PKGNAME"),
-        cflags=os.environ.get("PYWASMCROSS_CFLAGS"),
-        cxxflags=os.environ["PYWASMCROSS_CXXFLAGS"],
-        ldflags=os.environ["PYWASMCROSS_LDFLAGS"],
-        host_install_dir=os.environ["PYWASMCROSS_HOSTINSTALLDIR"],
-        target_install_dir=os.environ["PYWASMCROSS_TARGETINSTALLDIR"],
-        replace_libs=os.environ["PYWASMCROSS_REPLACELIBS"],
-    )
+    replay_args = ReplayArgs(**json.loads(os.environ["PYWASMCROSS_ARGS"]))
     handle_command(args, replay_args)
 
 
@@ -112,36 +106,34 @@ def make_command_wrapper_symlinks(env: dict[str, str]):
         env[var] = symlink
 
 
-def compile(env, **kwargs):
-    new_args = environment_substitute_args(kwargs, env)
-    compile_inner(env=env, **new_args)
-
-
-def compile_inner(
+@overload
+def compile(
+    env: dict[str, str],
     *,
-    name,
-    cflags,
-    cxxflags,
-    ldflags,
-    target_install_dir,
-    host_install_dir,
-    replace_libs,
-    env,
+    pkgname: str,
+    cflags: str,
+    cxxflags: str,
+    ldflags: str,
+    host_install_dir: str,
+    target_install_dir: str,
+    replace_libs: str,
 ):
+    ...
+
+
+@overload
+def compile(*, mypy__Single_overload_definition_multiple_required: int):
+    ...
+
+
+def compile(env, **kwargs):
+    args = environment_substitute_args(kwargs, env)
     env = dict(env)
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
     make_command_wrapper_symlinks(env)
-
-    env["PYWASMCROSS_PKGNAME"] = name
-    env["PYWASMCROSS_CFLAGS"] = cflags
-    env["PYWASMCROSS_CXXFLAGS"] = cxxflags
-    env["PYWASMCROSS_LDFLAGS"] = ldflags
-    env["PYWASMCROSS_HOSTINSTALLDIR"] = host_install_dir
-    env["PYWASMCROSS_TARGETINSTALLDIR"] = target_install_dir
-    env["PYWASMCROSS_REPLACELIBS"] = replace_libs
-    env["PYWASMCROSS_BUILDDIR"] = str(Path(".").absolute())
-
+    args["builddir"] = str(Path(".").absolute())
+    env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 
     try:
@@ -545,10 +537,6 @@ def handle_command(
 
     new_args = handle_command_generate_args(line, args, is_link_cmd)
 
-    BUILDDIR = Path(os.environ["PYWASMCROSS_BUILDDIR"])
-    CURDIR = str(Path(".").absolute())
-    with open(BUILDDIR / "log.txt", "a") as f:
-        print(CURDIR, " ".join(new_args), file=f)
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
 
