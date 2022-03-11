@@ -3,7 +3,7 @@ package:
   version: 1.0.0
 
 source:
-  sha256: eeb7af00bf9e7154d5e422eda73035ef58ecc41d2afa284dd697ca2c1ce04e7b
+  sha256: 1480acb174081599604f5e894bbe8a1a551de5904eef6ea67f33b25f884cd74f
   url: https://gabrielfougeron.github.io/files/suitesparse.zip
   extract_dir: suitesparse
 

@@ -38,8 +38,8 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
-# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
-export DBGFLAGS=-g0
+ export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+#export DBGFLAGS=-g0
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\

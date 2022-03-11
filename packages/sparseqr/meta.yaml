@@ -15,6 +15,7 @@ requirements:
     - cffi
     - numpy
     - scipy
+    - suitesparse
 
 test:
   imports:
