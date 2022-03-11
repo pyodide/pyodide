@@ -137,7 +137,17 @@ def compile(env, **kwargs):
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 
     try:
-        subprocess.check_call([sys.executable, "setup.py", "bdist_wheel"], env=env)
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-m",
+                "build",
+                "--wheel",
+                "--no-isolation",
+                "--skip-dependency-check",
+            ],
+            env=env,
+        )
     except Exception:
         build_log_path = Path("build.log")
         if build_log_path.exists():

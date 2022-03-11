@@ -73,6 +73,7 @@ jobs:
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
 
+            pip install build
             ccache -z
             PYODIDE_PACKAGES="core" make
             ccache -s
