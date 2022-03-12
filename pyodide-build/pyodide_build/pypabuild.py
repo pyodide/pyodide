@@ -31,16 +31,11 @@ class _IsolatedEnvBuilder(IsolatedEnvBuilder):
     def log(message: str) -> None:
         print("{bold}* {}{reset}".format(message, **_STYLES))
 
+    def __exit__(self, *args):
+        print("EXITING ISOLATED ENV!", self._path)
 
-def unisolate_numpy_and_scipy(env, requires: set[str]) -> set[str]:
-    for reqstr in list(requires):
-        req = Requirement(reqstr)
-        for avoid_name in ["scipy", "numpy"]:
-            if avoid_name in req.name:
-                requires.remove(reqstr)
-    print("\n\nrequires", requires)
-    print("\n\n")
-    return requires
+
+UNISOLATED_PACKAGES = ["cffi", "numpy", "scipy"]
 
 
 def symlink_unisolated_packages(env):
@@ -49,12 +44,21 @@ def symlink_unisolated_packages(env):
     env_site_packages = Path(env._path) / site_packages_path
     host_installdir = Path(get_make_flag("HOSTINSTALLDIR"))
     host_site_packages = host_installdir / site_packages_path
-    for path in host_site_packages.glob("numpy*"):
-        (env_site_packages / path.name).unlink(missing_ok=True)
-        (env_site_packages / path.name).symlink_to(path)
-    for path in host_site_packages.glob("scipy*"):
-        (env_site_packages / path.name).unlink(missing_ok=True)
-        (env_site_packages / path.name).symlink_to(path)
+    for name in UNISOLATED_PACKAGES:
+        for path in host_site_packages.glob(name + "*"):
+            (env_site_packages / path.name).unlink(missing_ok=True)
+            (env_site_packages / path.name).symlink_to(path)
+
+
+def remove_unisolated_requirements(env, requires: set[str]) -> set[str]:
+    for reqstr in list(requires):
+        req = Requirement(reqstr)
+        for avoid_name in UNISOLATED_PACKAGES:
+            if avoid_name in req.name:
+                requires.remove(reqstr)
+    print("\n\nrequires", requires)
+    print("\n\n")
+    return requires
 
 
 def _build_in_isolated_env(
@@ -65,9 +69,11 @@ def _build_in_isolated_env(
         builder.scripts_dir = env.scripts_dir
         # first install the build dependencies
         symlink_unisolated_packages(env)
-        env.install(unisolate_numpy_and_scipy(env, builder.build_system_requires))
+        env.install(remove_unisolated_requirements(env, builder.build_system_requires))
         env.install(
-            unisolate_numpy_and_scipy(env, builder.get_requires_for_build(distribution))
+            remove_unisolated_requirements(
+                env, builder.get_requires_for_build(distribution)
+            )
         )
 
         builder.build(distribution, outdir, config_settings or {})
