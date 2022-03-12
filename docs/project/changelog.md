@@ -17,7 +17,7 @@ substitutions:
 ### Packages
 
 - New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
-  boost-histogram {pr}`2174`
+  boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the standard library ssl module {pr}`2263`
 
 - Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 

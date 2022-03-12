@@ -3,7 +3,36 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
+UNVENDORED_STDLIB_MODULES = {"test", "distutils"}
+
+ALWAYS_PACKAGES = {
+    "pyparsing",
+    "packaging",
+    "micropip",
+}
+
+CORE_PACKAGES = {
+    "micropip",
+    "pyparsing",
+    "pytz",
+    "packaging",
+    "Jinja2",
+    "regex",
+    "fpcast-test",
+    "sharedlib-test-py",
+    "cpp-exceptions-test",
+    "ssl",
+}
+
+CORE_SCIPY_PACKAGES = {
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",
+    "joblib",
+    "pytest",
+}
 
 
 def _parse_package_subset(query: Optional[str]) -> set[str]:
@@ -32,35 +61,15 @@ def _parse_package_subset(query: Optional[str]) -> set[str]:
     if query is None:
         query = "core"
 
-    core_packages = {
-        "micropip",
-        "pyparsing",
-        "pytz",
-        "packaging",
-        "Jinja2",
-        "regex",
-        "fpcast-test",
-        "sharedlib-test-py",
-        "cpp-exceptions-test",
-    }
-    core_scipy_packages = {
-        "numpy",
-        "scipy",
-        "pandas",
-        "matplotlib",
-        "scikit-learn",
-        "joblib",
-        "pytest",
-    }
     packages = {el.strip() for el in query.split(",")}
-    packages.update(["pyparsing", "packaging", "micropip"])
+    packages.update(ALWAYS_PACKAGES)
     packages.update(UNVENDORED_STDLIB_MODULES)
     # handle meta-packages
     if "core" in packages:
-        packages |= core_packages
+        packages |= CORE_PACKAGES
         packages.discard("core")
     if "min-scipy-stack" in packages:
-        packages |= core_packages | core_scipy_packages
+        packages |= CORE_PACKAGES | CORE_SCIPY_PACKAGES
         packages.discard("min-scipy-stack")
 
     # Hack to deal with the circular dependence between soupsieve and
