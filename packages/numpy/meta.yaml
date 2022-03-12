@@ -29,7 +29,7 @@ build:
     python -m pip install --upgrade -t $HOSTINSTALLDIR numpy==$PKG_VERSION
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    export NUMPY_LIB_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/numpy/
+    export NUMPY_LIB_PATH=$HOSTINSTALLDIR/numpy/core/include/numpy/
     cp build/numpy-$PKG_VERSION/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/numpy/core/include/numpy/*config.h $NUMPY_LIB_PATH
     # static libraries for other packages to link
     mkdir -p $NUMPY_LIB
