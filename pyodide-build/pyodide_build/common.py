@@ -141,6 +141,10 @@ def get_pyversion():
     return f"python{PYMAJOR}.{PYMINOR}"
 
 
+def get_hostsitepackages():
+    return get_make_flag("HOSTSITEPACKAGES")
+
+
 @functools.cache
 def get_make_environment_vars():
     """Load environment variables from Makefile.envs

@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.7.3 # when updating version make sure to update pip install scipy==1.7.3 below too.
+  version: 1.7.3
 
 # See extra explanation in info.md
 #
@@ -46,7 +46,7 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    pip install --upgrade pythran scipy==$PKG_VERSION -t $HOSTINSTALLDIR
+    pip install --upgrade pythran scipy==$PKG_VERSION --prefix $HOSTINSTALLDIR
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz

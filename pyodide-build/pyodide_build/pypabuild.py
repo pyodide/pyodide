@@ -16,19 +16,19 @@ from packaging.requirements import Requirement
 
 from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
 
-from .common import get_make_flag, get_pyversion
+from .common import get_hostsitepackages, get_pyversion
 
-UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser"]
+UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser", "pythran"]
 
 
 def symlink_unisolated_packages(env):
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env._path) / site_packages_path
-    host_installdir = Path(get_make_flag("HOSTINSTALLDIR"))
+    host_site_packages = Path(get_hostsitepackages())
     for name in UNISOLATED_PACKAGES:
         for path in chain(
-            host_installdir.glob(f"{name}*"), host_installdir.glob(f"_{name}*")
+            host_site_packages.glob(f"{name}*"), host_site_packages.glob(f"_{name}*")
         ):
             (env_site_packages / path.name).unlink(missing_ok=True)
             (env_site_packages / path.name).symlink_to(path)

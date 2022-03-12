@@ -10,7 +10,7 @@ source:
   patches:
     - patches/libffi-config.patch
 build:
-  script: pip install --upgrade pythran cffi==$PKG_VERSION -t $HOSTINSTALLDIR
+  script: pip install --upgrade pythran cffi==$PKG_VERSION --prefix $HOSTINSTALLDIR
 test:
   imports:
     - cffi

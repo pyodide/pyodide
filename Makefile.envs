@@ -23,6 +23,7 @@ export CPYTHONBUILD=$(PYODIDE_ROOT)/cpython/build/Python-$(PYVERSION)
 
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
+export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
