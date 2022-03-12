@@ -31,9 +31,6 @@ class _IsolatedEnvBuilder(IsolatedEnvBuilder):
     def log(message: str) -> None:
         print("{bold}* {}{reset}".format(message, **_STYLES))
 
-    def __exit__(self, *args):
-        print("EXITING ISOLATED ENV!", self._path)
-
 
 def unisolate_numpy_and_scipy(env, requires: set[str]) -> set[str]:
     for reqstr in list(requires):
