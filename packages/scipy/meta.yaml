@@ -32,10 +32,8 @@ source:
 
 build:
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/numpy/config
     -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
-    -I$(PYODIDE_ROOT)/packages/.artifacts/include/
-    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
+    -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
   ldflags: |
