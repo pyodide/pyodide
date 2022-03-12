@@ -67,7 +67,6 @@ def _build_in_isolated_env(
         builder.scripts_dir = env.scripts_dir
         # first install the build dependencies
         symlink_unisolated_packages(env)
-        print("1")
         install_reqs(env, builder.build_system_requires)
         installed_requires_for_build = False
         try:
