@@ -30,8 +30,9 @@ import re
 import subprocess
 import sys
 from collections import namedtuple
+from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
-from typing import NoReturn, Optional, overload
+from typing import MutableMapping, NoReturn, Optional, overload
 
 if __name__ == "__main__":
     PYODIDE_ROOT = Path(__file__).parents[2]
@@ -88,7 +89,7 @@ def capture_command(args: list[str]) -> NoReturn:
     handle_command(args, replay_args)
 
 
-def make_command_wrapper_symlinks(env: dict[str, str]):
+def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -111,12 +112,21 @@ def make_command_wrapper_symlinks(env: dict[str, str]):
         env[var] = symlink
 
 
+@contextmanager
+def save_env():
+    old_environ = dict(os.environ)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)
+
+
 @overload
 def compile(
     env: dict[str, str],
     *,
     pkgname: str,
-    pypabuildflags: str,
     cflags: str,
     cxxflags: str,
     ldflags: str,
@@ -134,28 +144,19 @@ def compile(*, mypy__Single_overload_definition_multiple_required: int):
 
 def compile(env, **kwargs):
     args = environment_substitute_args(kwargs, env)
-    env = dict(env)
-    SYMLINKDIR = symlink_dir()
-    env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-    make_command_wrapper_symlinks(env)
-    pypabuildflags = filter(
-        lambda x: x, map(lambda x: x.strip(), args.pop("pypabuildflags").split())
-    )
     args["builddir"] = str(Path(".").absolute())
-    env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
-
-    command = [
-        sys.executable,
-        "-m",
-        "build",
-        "--wheel",
-        "--no-build-isolation",
-    ]
-    command.extend(pypabuildflags)
 
     try:
-        subprocess.check_call(command, env=env)
+        with save_env():
+            make_command_wrapper_symlinks(os.environ)
+            SYMLINKDIR = symlink_dir()
+            os.environ["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
+            os.environ["PYWASMCROSS_ARGS"] = json.dumps(args)
+            os.environ["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
+
+            from pyodide_build.pypabuild import build
+
+            build()
     except Exception:
         build_log_path = Path("build.log")
         if build_log_path.exists():
@@ -559,7 +560,10 @@ def handle_command(
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
 
-    print(" ".join(new_args))
+    CURDIR = Path(".").absolute()
+    with open(CURDIR / "log.txt", "a") as f:
+        print(str(CURDIR), " ".join(new_args), file=f)
+
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:
         sys.exit(returncode)
@@ -590,14 +594,6 @@ def environment_substitute_args(
                 value = value.replace(f"$({e_name})", e_value)
         subbed_args[arg] = value
     return subbed_args
-
-
-def clean_out_native_artifacts(directory):
-    for root, _dirs, files in os.walk(directory):
-        for file in files:
-            path = Path(root) / file
-            if path.suffix in (".o", ".so", ".a"):
-                path.unlink()
 
 
 if __name__ == "__main__":

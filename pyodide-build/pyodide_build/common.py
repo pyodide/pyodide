@@ -126,6 +126,12 @@ def get_make_flag(name):
     return get_make_environment_vars()[name]
 
 
+def get_pyversion():
+    PYMAJOR = get_make_flag("PYMAJOR")
+    PYMINOR = get_make_flag("PYMINOR")
+    return f"python{PYMAJOR}.{PYMINOR}"
+
+
 @functools.cache
 def get_make_environment_vars():
     """Load environment variables from Makefile.envs
