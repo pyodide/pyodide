@@ -62,6 +62,7 @@ ReplayArgs = namedtuple(
         "target_install_dir",
         "replace_libs",
         "builddir",
+        "pythoninclude",
     ],
 )
 
@@ -85,7 +86,9 @@ def capture_command(args: list[str]) -> NoReturn:
     while f"{SYMLINKDIR}:" in path:
         path = path.replace(f"{SYMLINKDIR}:", "")
     os.environ["PATH"] = path
-    replay_args = ReplayArgs(**json.loads(os.environ["PYWASMCROSS_ARGS"]))
+    env_args = json.loads(os.environ["PYWASMCROSS_ARGS"])
+    env_args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+    replay_args = ReplayArgs(**env_args)
     handle_command(args, replay_args)
 
 
@@ -469,7 +472,7 @@ def handle_command_generate_args(
             new_args.extend(args.cflags.split())
         elif new_args[0] == "em++":
             new_args.extend(args.cflags.split() + args.cxxflags.split())
-        new_args.extend(["-I", os.environ["PYTHONINCLUDE"]])
+        new_args.extend(["-I", args.pythoninclude])
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
