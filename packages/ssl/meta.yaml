@@ -1,0 +1,22 @@
+package:
+  name: ssl
+  version: 1.0.0 # Nonesense
+source:
+  path: empty
+build:
+  sharedlibrary: true
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD
+    emcc $STDLIB_MODULE_CFLAGS -c Modules/socketmodule.c -o Modules/socketmodule.o
+    emcc $STDLIB_MODULE_CFLAGS -c Modules/_ssl.c -o Modules/_ssl.o -I$PYODIDE_ROOT/packages/openssl/build/openssl-1.1.1m/include/ \
+      -DOPENSSL_THREADS # This declares that OPENSSL is threadsafe. We are single threaded so everything is threadsafe.
+    emcc Modules/_ssl.o -o $DISTDIR/_ssl.so $SIDE_MODULE_LDFLAGS
+    emcc Modules/socketmodule.o -o $DISTDIR/socketmodule.so $SIDE_MODULE_LDFLAGS
+requirements:
+  run:
+    - openssl
+test:
+  imports:
+    - ssl

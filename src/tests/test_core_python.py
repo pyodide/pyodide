@@ -30,7 +30,7 @@ def test_cpython_core(python_test, selenium, request):
         else:
             pytest.xfail('known failure with code "{}"'.format(",".join(error_flags)))
 
-    selenium.load_package(UNVENDORED_STDLIB_MODULES)
+    selenium.load_package(list(UNVENDORED_STDLIB_MODULES))
     try:
         selenium.run(
             """
