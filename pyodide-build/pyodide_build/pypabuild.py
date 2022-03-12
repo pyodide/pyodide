@@ -2,6 +2,7 @@ import contextlib
 import os
 import sys
 import traceback
+from itertools import chain
 from pathlib import Path
 
 from build.__main__ import (  # type: ignore[import]
@@ -17,7 +18,7 @@ from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
 
 from .common import get_make_flag, get_pyversion
 
-UNISOLATED_PACKAGES = ["numpy", "scipy"]
+UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser"]
 
 
 def symlink_unisolated_packages(env):
@@ -25,9 +26,10 @@ def symlink_unisolated_packages(env):
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env._path) / site_packages_path
     host_installdir = Path(get_make_flag("HOSTINSTALLDIR"))
-    host_site_packages = host_installdir / site_packages_path
     for name in UNISOLATED_PACKAGES:
-        for path in host_site_packages.glob(name + "*"):
+        for path in chain(
+            host_installdir.glob(f"{name}*"), host_installdir.glob(f"_{name}*")
+        ):
             (env_site_packages / path.name).unlink(missing_ok=True)
             (env_site_packages / path.name).symlink_to(path)
 
