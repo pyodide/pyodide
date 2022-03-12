@@ -151,6 +151,7 @@ def compile(env, **kwargs):
 
     try:
         with save_env():
+            os.environ.update(env)
             make_command_wrapper_symlinks(os.environ)
             SYMLINKDIR = symlink_dir()
             os.environ["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
