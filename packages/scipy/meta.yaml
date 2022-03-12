@@ -40,6 +40,9 @@ build:
     -DUNDERSCORE_G77
   ldflags: |
     -L$(NUMPY_LIB)
+  pypabuildflags: |
+    --no-isolation
+    --skip-dependency-check
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython

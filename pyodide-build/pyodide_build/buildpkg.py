@@ -413,6 +413,7 @@ def compile(
     with chdir(srcpath):
         pywasmcross.compile(
             env=bash_runner.env,
+            pypabuildflags=build_metadata.get("pypabuildflags", ""),
             pkgname=name,
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],

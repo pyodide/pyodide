@@ -33,6 +33,11 @@ from collections import namedtuple
 from pathlib import Path, PurePosixPath
 from typing import NoReturn, Optional, overload
 
+if __name__ == "__main__":
+    PYODIDE_ROOT = Path(__file__).parents[2]
+    PYODIDE_BUILD_PATH = PYODIDE_ROOT / "pyodide-build"
+    sys.path.append(str(PYODIDE_BUILD_PATH))
+
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
@@ -111,6 +116,7 @@ def compile(
     env: dict[str, str],
     *,
     pkgname: str,
+    pypabuildflags: str,
     cflags: str,
     cxxflags: str,
     ldflags: str,
@@ -132,20 +138,23 @@ def compile(env, **kwargs):
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
     make_command_wrapper_symlinks(env)
+    pypabuildflags = filter(
+        lambda x: x, map(lambda x: x.strip(), args.pop("pypabuildflags").split())
+    )
     args["builddir"] = str(Path(".").absolute())
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 
+    command = [
+        sys.executable,
+        "-m",
+        "build",
+        "--wheel",
+    ]
+    command.extend(pypabuildflags)
+
     try:
-        subprocess.check_call(
-            [
-                sys.executable,
-                "-m",
-                "build",
-                "--wheel",
-            ],
-            env=env,
-        )
+        subprocess.check_call(command, env=env)
     except Exception:
         build_log_path = Path("build.log")
         if build_log_path.exists():
