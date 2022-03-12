@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-UNVENDORED_STDLIB_MODULES = {"test", "distutils", "ssl"}
+UNVENDORED_STDLIB_MODULES = {"test", "distutils"}
 
 ALWAYS_PACKAGES = {
     "pyparsing",
@@ -21,6 +21,7 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
+    "ssl",
 }
 
 CORE_SCIPY_PACKAGES = {
