@@ -149,9 +149,10 @@ def compile(env, **kwargs):
 
     from pyodide_build.pypabuild import build
 
+    print("hi?")
     try:
         build(env)
-    except Exception:
+    except BaseException:
         build_log_path = Path("build.log")
         if build_log_path.exists():
             build_log_path.unlink()
