@@ -26,7 +26,7 @@ build:
   cflags: |
     -Wno-return-type
   post: |
-    python -m pip install --prefix $HOSTINSTALLDIR numpy==$PKG_VERSION
+    python -m pip install --upgrade -t $HOSTINSTALLDIR numpy==$PKG_VERSION
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
     export NUMPY_LIB_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/numpy/
