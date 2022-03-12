@@ -1,4 +1,8 @@
 from pyodide_build.common import (
+    ALWAYS_PACKAGES,
+    CORE_PACKAGES,
+    CORE_SCIPY_PACKAGES,
+    UNVENDORED_STDLIB_MODULES,
     _parse_package_subset,
     get_make_environment_vars,
     get_make_flag,
@@ -6,77 +10,54 @@ from pyodide_build.common import (
 
 
 def test_parse_package_subset():
-    # micropip is always included
-    assert _parse_package_subset("numpy,pandas") == {
-        "pyparsing",
-        "packaging",
-        "micropip",
-        "numpy",
-        "pandas",
-        "test",
-        "distutils",
-    }
+    assert (
+        _parse_package_subset("numpy,pandas")
+        == {
+            "numpy",
+            "pandas",
+        }
+        | UNVENDORED_STDLIB_MODULES
+        | ALWAYS_PACKAGES
+    )
 
     # duplicates are removed
-    assert _parse_package_subset("numpy,numpy") == {
-        "pyparsing",
-        "packaging",
-        "micropip",
-        "numpy",
-        "test",
-        "distutils",
-    }
+    assert (
+        _parse_package_subset("numpy,numpy")
+        == {
+            "numpy",
+        }
+        | UNVENDORED_STDLIB_MODULES
+        | ALWAYS_PACKAGES
+    )
 
     # no empty package name included, spaces are handled
-    assert _parse_package_subset("x,  a, b, c   ,,, d,,") == {
-        "pyparsing",
-        "packaging",
-        "micropip",
-        "test",
-        "distutils",
-        "x",
-        "a",
-        "b",
-        "c",
-        "d",
-    }
+    assert (
+        _parse_package_subset("x,  a, b, c   ,,, d,,")
+        == {
+            "x",
+            "a",
+            "b",
+            "c",
+            "d",
+        }
+        | UNVENDORED_STDLIB_MODULES
+        | ALWAYS_PACKAGES
+    )
 
-    assert _parse_package_subset("core") == {
-        "pyparsing",
-        "packaging",
-        "pytz",
-        "Jinja2",
-        "micropip",
-        "regex",
-        "fpcast-test",
-        "test",
-        "distutils",
-        "sharedlib-test-py",
-        "cpp-exceptions-test",
-    }
+    assert (
+        _parse_package_subset("core")
+        == CORE_PACKAGES | UNVENDORED_STDLIB_MODULES | ALWAYS_PACKAGES
+    )
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
 
-    assert _parse_package_subset("min-scipy-stack") == {
-        "pyparsing",
-        "packaging",
-        "pytz",
-        "Jinja2",
-        "micropip",
-        "regex",
-        "fpcast-test",
-        "numpy",
-        "scipy",
-        "pandas",
-        "matplotlib",
-        "scikit-learn",
-        "joblib",
-        "pytest",
-        "test",
-        "distutils",
-        "sharedlib-test-py",
-        "cpp-exceptions-test",
-    }
+    assert (
+        _parse_package_subset("min-scipy-stack")
+        == CORE_SCIPY_PACKAGES
+        | CORE_PACKAGES
+        | UNVENDORED_STDLIB_MODULES
+        | ALWAYS_PACKAGES
+    )
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
         "unknown"

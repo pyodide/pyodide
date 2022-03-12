@@ -136,6 +136,9 @@ def get_bash_runner():
             "HOSTINSTALLDIR",
             "PYMAJOR",
             "PYMINOR",
+            "CPYTHONBUILD",
+            "STDLIB_MODULE_CFLAGS",
+            "SIDE_MODULE_LDFLAGS",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
