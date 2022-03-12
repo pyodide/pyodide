@@ -63,7 +63,7 @@ class _IsolatedEnvBuilder(IsolatedEnvBuilder):
         print("EXITING ISOLATED ENV!", self._path)
 
 
-UNISOLATED_PACKAGES = ["cffi", "numpy", "scipy"]
+UNISOLATED_PACKAGES = ["numpy", "scipy"]
 
 
 def symlink_unisolated_packages(env):
