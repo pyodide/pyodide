@@ -149,7 +149,6 @@ def compile(env, **kwargs):
 
     from pyodide_build.pypabuild import build
 
-    print("hi?")
     try:
         build(env)
     except BaseException:
