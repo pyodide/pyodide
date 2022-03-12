@@ -286,6 +286,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install build
             mkdir test-results
             pytest \
               --junitxml=test-results/junit.xml \
