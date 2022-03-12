@@ -35,7 +35,6 @@ build:
     -I$(PYODIDE_ROOT)/packages/numpy/config
     -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
     -I$(PYODIDE_ROOT)/packages/.artifacts/include/
-    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
   ldflags: |
@@ -47,7 +46,7 @@ build:
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
     pip install -t $HOSTSITEPACKAGES --upgrade \
-      pythran scipy==$PKG_VERSION
+      scipy==$PKG_VERSION
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz

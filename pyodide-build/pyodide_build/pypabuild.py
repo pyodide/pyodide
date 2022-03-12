@@ -18,7 +18,7 @@ from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
 
 from .common import get_hostsitepackages, get_pyversion
 
-UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser", "pythran"]
+UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser"]
 
 
 def symlink_unisolated_packages(env):

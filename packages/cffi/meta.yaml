@@ -12,7 +12,7 @@ source:
 build:
   script: |
     pip install -t $HOSTSITEPACKAGES --upgrade \
-      pythran cffi==$PKG_VERSION
+      cffi==$PKG_VERSION
 test:
   imports:
     - cffi
