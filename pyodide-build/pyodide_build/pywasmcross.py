@@ -116,8 +116,10 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
 
 
 @contextmanager
-def save_env():
+def replace_env(env):
     old_environ = dict(os.environ)
+    os.environ.clear()
+    os.environ.update(env)
     try:
         yield
     finally:
@@ -149,17 +151,19 @@ def compile(env, **kwargs):
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
 
+    args = environment_substitute_args(kwargs, env)
+    env = dict(env)
+    SYMLINKDIR = symlink_dir()
+    env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
+    make_command_wrapper_symlinks(env)
+    args["builddir"] = str(Path(".").absolute())
+    env["PYWASMCROSS_ARGS"] = json.dumps(args)
+    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
+
+    from pyodide_build.pypabuild import build
+
     try:
-        with save_env():
-            os.environ.update(env)
-            make_command_wrapper_symlinks(os.environ)
-            SYMLINKDIR = symlink_dir()
-            os.environ["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-            os.environ["PYWASMCROSS_ARGS"] = json.dumps(args)
-            os.environ["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
-
-            from pyodide_build.pypabuild import build
-
+        with replace_env(env):
             build()
     except Exception:
         build_log_path = Path("build.log")
