@@ -23,8 +23,8 @@ build:
   cflags: |
     -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
   script: |
-    pip install pythran
-    pip install --upgrade pythran --prefix $HOSTINSTALLDIR
+    pip install -t $HOSTSITEPACKAGES --upgrade \
+      pythran
 test:
   imports:
     - skimage
