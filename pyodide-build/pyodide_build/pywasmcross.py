@@ -30,7 +30,6 @@ import re
 import subprocess
 import sys
 from collections import namedtuple
-from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from typing import MutableMapping, NoReturn, Optional, overload
 
@@ -115,18 +114,6 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
         env[var] = symlink
 
 
-@contextmanager
-def replace_env(env):
-    old_environ = dict(os.environ)
-    os.environ.clear()
-    os.environ.update(env)
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(old_environ)
-
-
 @overload
 def compile(
     env: dict[str, str],
@@ -163,8 +150,7 @@ def compile(env, **kwargs):
     from pyodide_build.pypabuild import build
 
     try:
-        with replace_env(env):
-            build()
+        build(env)
     except Exception:
         build_log_path = Path("build.log")
         if build_log_path.exists():

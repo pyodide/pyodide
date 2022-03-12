@@ -1,10 +1,18 @@
+import contextlib
+import os
+import subprocess
+import sys
+import traceback
 from pathlib import Path
-from typing import Sequence
 
 from build.env import IsolatedEnvBuilder  # type: ignore[import]
 from packaging.requirements import Requirement
 
-from build import ProjectBuilder  # type: ignore[import]
+from build import (  # type: ignore[import]
+    BuildBackendException,
+    BuildException,
+    ProjectBuilder,
+)
 
 from .common import get_make_flag, get_pyversion
 
@@ -17,7 +25,27 @@ _COLORS = {
     "underline": "\33[4m",
     "reset": "\33[0m",
 }
-_STYLES = _COLORS
+_NO_COLORS = {color: "" for color in _COLORS}
+
+
+def _init_colors() -> dict[str, str]:
+    if sys.stdout.isatty():
+        return _COLORS
+    return _NO_COLORS
+
+
+_STYLES = _init_colors()
+
+
+def _error(msg: str, code: int = 1) -> None:  # pragma: no cover
+    """
+    Print an error message and exit. Will color the output when writing to a TTY.
+
+    :param msg: Error message
+    :param code: Error code
+    """
+    print("{red}ERROR{reset} {}".format(msg, **_STYLES))
+    exit(code)
 
 
 class _ProjectBuilder(ProjectBuilder):
@@ -61,9 +89,21 @@ def remove_unisolated_requirements(env, requires: set[str]) -> set[str]:
     return requires
 
 
+@contextlib.contextmanager
+def replace_env(env):
+    old_environ = dict(os.environ)
+    os.environ.clear()
+    os.environ.update(env)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)
+
+
 def _build_in_isolated_env(
-    builder: ProjectBuilder, outdir, distribution: str, config_settings
-):
+    build_env, builder: ProjectBuilder, outdir, distribution: str, config_settings
+) -> str:
     with _IsolatedEnvBuilder() as env:
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir
@@ -76,33 +116,48 @@ def _build_in_isolated_env(
             )
         )
 
-        builder.build(distribution, outdir, config_settings or {})
+        with replace_env(build_env):
+            return builder.build(distribution, outdir, config_settings or {})
 
 
-def build_package(
-    srcdir,
-    outdir,
-    distributions: Sequence[str],
-    config_settings=None,
-    skip_dependency_check: bool = False,
-):
-    """
-    Run the build process.
+@contextlib.contextmanager
+def _handle_build_error():
+    try:
+        yield
+    except BuildException as e:
+        _error(str(e))
+    except BuildBackendException as e:
+        if isinstance(e.exception, subprocess.CalledProcessError):
+            print()
+        else:
+            if e.exc_info:
+                tb_lines = traceback.format_exception(
+                    e.exc_info[0],
+                    e.exc_info[1],
+                    e.exc_info[2],
+                    limit=-1,
+                )
+                tb = "".join(tb_lines)
+            else:
+                tb = traceback.format_exc(-1)
+            print("\n{dim}{}{reset}\n".format(tb.strip("\n"), **_STYLES))
+        _error(str(e))
+        sys.exit(1)
 
-    :param srcdir: Source directory
-    :param outdir: Output directory
-    :param distribution: Distribution to build (sdist or wheel)
-    :param config_settings: Configuration settings to be passed to the backend
-    :param isolation: Isolate the build in a separate environment
-    :param skip_dependency_check: Do not perform the dependency check
-    """
-    builder = _ProjectBuilder(srcdir)
-    for distribution in distributions:
-        _build_in_isolated_env(builder, outdir, distribution, config_settings)
 
-
-def build():
+def build(build_env):
     srcdir = Path.cwd()
     outdir = srcdir / "dist"
-    distributions = ["wheel"]
-    build_package(srcdir, outdir, distributions)
+    builder = _ProjectBuilder(srcdir)
+    distribution = "wheel"
+    try:
+        with _handle_build_error():
+            built = _build_in_isolated_env(
+                build_env, builder, outdir, distribution, None
+            )
+            print("{bold}{green}Successfully built {}{reset}".format(built, **_STYLES))
+    except Exception as e:  # pragma: no cover
+        tb = traceback.format_exc().strip("\n")
+        print("\n{dim}{}{reset}\n".format(tb, **_STYLES))
+        _error(str(e))
+        sys.exit(1)
