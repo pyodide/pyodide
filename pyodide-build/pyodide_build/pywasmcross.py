@@ -150,6 +150,7 @@ def compile(env, **kwargs):
         "-m",
         "build",
         "--wheel",
+        "--no-build-isolation",
     ]
     command.extend(pypabuildflags)
 
