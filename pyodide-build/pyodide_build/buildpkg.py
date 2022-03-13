@@ -126,6 +126,7 @@ def get_bash_runner():
     env = {
         key: os.environ[key]
         for key in [
+            # TODO: Stabilize and document more of these in meta-yaml.md
             "PATH",
             "PYTHONPATH",
             "PYODIDE_ROOT",
@@ -135,9 +136,11 @@ def get_bash_runner():
             "HOSTINSTALLDIR",
             "PYMAJOR",
             "PYMINOR",
+            "PYMICRO",
             "CPYTHONBUILD",
-            "STDLIB_MODULE_CFLAGS",
+            "SIDE_MODULE_CFLAGS",
             "SIDE_MODULE_LDFLAGS",
+            "STDLIB_MODULE_CFLAGS",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
