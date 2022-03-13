@@ -22,7 +22,12 @@ from matplotlib.transforms import Affine2D
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
-from js import FontFace, ImageData, document
+try:
+    from js import FontFace, ImageData, document
+except ImportError:
+    raise ImportError(
+        "html5_canvas_backend is only supported in the browser in the main thread"
+    )
 from pyodide import create_proxy
 
 _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
