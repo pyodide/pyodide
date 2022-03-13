@@ -66,11 +66,8 @@ def capture_command(args: list[str]) -> NoReturn:
     a compiler or linker.
 
     It writes the arguments to the build.log, and then delegates to the real
-    native compiler or linker (unless it decides to skip host compilation).
-
-    Returns
-    -------
-        The exit code of the real native compiler invocation
+    native compiler or linker (unless it decides to skip host compilation). It
+    will exit with an appropriate return code when done.
     """
     # Remove the symlink compiler from the PATH, so we can delegate to the
     # native compiler
@@ -511,17 +508,15 @@ def handle_command(
     line: list[str],
     args: ReplayArgs,
 ) -> NoReturn:
-    """Handle a compilation command
+    """Handle a compilation command. Exit with an appropriate exit code when done.
 
     Parameters
     ----------
     line : iterable
        an iterable with the compilation arguments
     args : {object, namedtuple}
-       an container with additional compilation options,
-       in particular containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
-    dryrun : bool, default=False
-       if True do not run the resulting command, only return it
+       an container with additional compilation options, in particular
+       containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
     """
     # some libraries have different names on wasm e.g. png16 = png
     library_output = get_library_output(line)
