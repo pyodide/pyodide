@@ -615,7 +615,8 @@ def needs_rebuild(
             pkg_root / patch_path for patch_path in source_metadata.get("patches", [])
         )
         yield from (
-            pkg_root / patch_path for patch_path in source_metadata.get("extras", [])
+            pkg_root / patch_path
+            for [patch_path, _] in source_metadata.get("extras", [])
         )
         src_path = source_metadata.get("path")
         if src_path:
