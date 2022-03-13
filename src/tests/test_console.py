@@ -8,7 +8,7 @@ from _pyodide import console
 from _pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 from conftest import selenium_common
 from pyodide import CodeRunner  # noqa: E402
-from pyodide_build.testing import run_in_pyodide
+from pyodide_build.testing import PYVERSION, run_in_pyodide
 
 
 def test_command_compiler():
@@ -404,20 +404,21 @@ def test_console_html(console_html_fixture):
         ).strip()
     )
 
-    assert (
-        exec_and_get_result(
-            dedent(
-                """
+    result = exec_and_get_result(
+        dedent(
+            """
             class Test:
                 def __repr__(self):
                     raise TypeError("hi")
 
             Test()
             """
-            ).strip()
-        )
-        == dedent(
-            """
+        ).strip()
+    )
+    result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
+
+    answer = dedent(
+        f"""
             >>> class Test:
             ...     def __repr__(self):
             ...         raise TypeError(\"hi\")
@@ -425,13 +426,14 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 465, in repr_shorten
+              File \"/lib/{PYVERSION}/site-packages/_pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """
-        ).strip()
-    )
+    ).strip()
+
+    assert result == answer
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4

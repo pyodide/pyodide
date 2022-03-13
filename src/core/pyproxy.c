@@ -479,7 +479,7 @@ finally:
 }
 
 /**
- * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * This sets up a call to _PyObject_Vectorcall. It's a helper function for
  * callPyObjectKwargs. This is the primary entrypoint from JavaScript into
  * Python code.
  *
@@ -846,7 +846,7 @@ size_t buffer_struct_size = sizeof(buffer_struct);
  *
  * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
  * determine the locations of: the first element of the buffer, the earliest
- * element of the buffer in memory the lastest element of the buffer in memory
+ * element of the buffer in memory the latest element of the buffer in memory
  * (plus one itemsize).
  *
  * We will use this information to slice out a subarray of the wasm heap that

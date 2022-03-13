@@ -76,7 +76,7 @@ To run common benchmarks to understand Pyodide's performance, begin by
 installing the same prerequisites as for testing. Then run:
 
 ```bash
-make benchmark
+PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 ```
 
 ## Linting

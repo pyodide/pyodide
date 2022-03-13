@@ -17,8 +17,10 @@ all: check \
 	build/pyodide_py.tar \
 	build/test.tar \
 	build/test.html \
+	build/module_test.html \
 	build/webworker.js \
-	build/webworker_dev.js
+	build/webworker_dev.js \
+	build/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
 $(CPYTHONLIB)/tzdata :
@@ -31,7 +33,6 @@ build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/error_handling_cpp.o \
-	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -104,6 +105,8 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 build/test.html: src/templates/test.html
 	cp $< $@
 
+build/module_test.html: src/templates/module_test.html
+	cp $< $@
 
 .PHONY: build/console.html
 build/console.html: src/templates/console.html
@@ -123,6 +126,10 @@ build/webworker.js: src/templates/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+.PHONY: build/module_webworker_dev.js
+build/module_webworker_dev.js: src/templates/module_webworker.js
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 .PHONY: build/webworker_dev.js
 build/webworker_dev.js: src/templates/webworker.js
@@ -141,7 +148,7 @@ lint:
 	pre-commit run -a --show-diff-on-failure
 
 benchmark: all
-	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
+	$(HOSTPYTHON) benchmark/benchmark.py all --output build/benchmarks.json
 	$(HOSTPYTHON) benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 
 

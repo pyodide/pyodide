@@ -17,14 +17,17 @@ substitutions:
 ### Packages
 
 - New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
-  boost-histogram {pr}`2174`
+  boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the standard library ssl module {pr}`2263`
 
-- Upgraded packages: distlib (0.3.4)
+- Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
 ### Uncategorized
 
 - {{ Update }} Upgraded pyb2d to 0.7.2.
   {pr}`2117`
+
+- {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
+  {pr}`2220`
 
 - {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
   {pr}`2109`
@@ -49,8 +52,9 @@ substitutions:
 
 - {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
-  a built-in conversion to Python.
-  {pr}`2170`
+  a built-in conversion to Python. Also added a `default_converter` argument to
+  {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
+  {pr}`2170` and {pr}`2208`
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
@@ -495,7 +499,7 @@ _August 3rd, 2021_
 
 ### List of contributors
 
-Albertas Gimbutas, Andreas Klostermann, arfy slowy, daoxian,
+Albertas Gimbutas, Andreas Klostermann, Arfy Slowy, daoxian,
 Devin Neal, fuyutarow, Grimmer, Guido Zuidhof, Gyeongjae Choi, Hood
 Chatham, Ian Clester, Itay Dafna, Jeremy Tuloup, jmsmdy, LinasNas, Madhur
 Tandon, Michael Christensen, Nicholas Bollweg, Ondřej Staněk, Paul m. p. P,
@@ -624,7 +628,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   {pr}`1083`
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a
-  `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running
+  `SharedArrayBuffer` to be the keyboard interrupt buffer. If Pyodide is running
   on a webworker, the main thread can signal to the webworker that it should
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   {pr}`1148` and {pr}`1173`
@@ -789,7 +793,7 @@ by 0.16.1 with identical contents.
 
 ### Other improvements
 
-- Modifiy MEMFS timestamp handling to support better caching. This in
+- Modify MEMFS timestamp handling to support better caching. This in
   particular allows to import newly created Python modules without invalidating
   import caches {pr}`893`
 

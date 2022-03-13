@@ -1,6 +1,7 @@
 import sys
 from importlib.abc import Loader, MetaPathFinder
 from importlib.util import spec_from_loader
+from typing import Optional
 
 
 class JsFinder(MetaPathFinder):
@@ -8,6 +9,7 @@ class JsFinder(MetaPathFinder):
         self.jsproxies = {}
 
     def find_spec(self, fullname, path, target=None):
+        assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
@@ -49,6 +51,7 @@ class JsFinder(MetaPathFinder):
         jsproxy : JsProxy
             JavaScript object backing the module
         """
+        assert JsProxy is not None
         if not isinstance(name, str):
             raise TypeError(
                 f"Argument 'name' must be a str, not {type(name).__name__!r}"
@@ -97,7 +100,7 @@ class JsLoader(Loader):
         return True
 
 
-JsProxy: type = None  # type: ignore
+JsProxy: Optional[type] = None
 jsfinder: JsFinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
@@ -115,8 +118,8 @@ def register_js_finder():
 
     This needs to be a function to allow the late import from ``_pyodide_core``.
     """
-    import _pyodide_core  # type: ignore
+    import _pyodide_core
 
     global JsProxy
     JsProxy = _pyodide_core.JsProxy
-    sys.meta_path.append(jsfinder)  # type: ignore
+    sys.meta_path.append(jsfinder)

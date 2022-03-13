@@ -15,12 +15,18 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from . import common
 from .buildpkg import needs_rebuild
 from .common import UNVENDORED_STDLIB_MODULES
 from .io import parse_package_config
+
+
+class BuildError(Exception):
+    def __init__(self, returncode):
+        self.returncode = returncode
+        super().__init__()
 
 
 class BasePackage:
@@ -73,6 +79,9 @@ class StdLibPackage(BasePackage):
 
 @total_ordering
 class Package(BasePackage):
+    # If the CWD matters, hold this lock
+    cwd_lock: ClassVar[Lock] = Lock()
+
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
 
@@ -96,7 +105,10 @@ class Package(BasePackage):
         self.dependents = set()
 
     def wheel_path(self) -> Path:
-        wheels = list((self.pkgdir / "dist").glob("*.whl"))
+        dist_dir = self.pkgdir / "dist"
+        wheels = list(dist_dir.glob("*emscripten_wasm32.whl")) + list(
+            dist_dir.glob("*py3-none-any.whl")
+        )
         if len(wheels) != 1:
             raise Exception(
                 f"Unexpected number of wheels {len(wheels)} when building {self.name}"
@@ -111,6 +123,9 @@ class Package(BasePackage):
         return None
 
     def build(self, outputdir: Path, args) -> None:
+        with self.__class__.cwd_lock:
+            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+
         with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
                 [
@@ -152,31 +167,33 @@ class Package(BasePackage):
                 rebuilt = False
 
         if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
-            if args.log_dir and (self.pkgdir / "build.log").exists():
+            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
+            if log_dir and (self.pkgdir / "build.log").exists():
                 shutil.copy(
-                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
+                    self.pkgdir / "build.log",
+                    log_dir / f"{self.name}.log",
                 )
         else:
             (self.pkgdir / "build.log.tmp").unlink()
 
-        try:
-            p.check_returncode()
-        except subprocess.CalledProcessError:
+        if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
 
             with open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
 
-            raise
+            print("ERROR: cancelling buildall")
+            raise BuildError(p.returncode)
 
         if self.library:
             return
         if self.shared_library:
-            file_path = shutil.make_archive(
-                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
-            )
-            shutil.copy(file_path, outputdir)
+            with self.__class__.cwd_lock:
+                file_path = shutil.make_archive(
+                    f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
+                )
+                shutil.copy(file_path, outputdir)
+                Path(file_path).unlink()
             return
         shutil.copy(self.wheel_path(), outputdir)
         test_path = self.tests_path()
@@ -371,9 +388,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set: dict[
-        str, None
-    ] = {}  # using dict keys for insertion order preservation
+    # Using dict keys for insertion order preservation
+    package_set: dict[str, None] = {}
 
     def builder(n):
         nonlocal queue_idx
@@ -411,6 +427,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     num_built = len(already_built)
     while num_built < len(pkg_map):
         pkg = built_queue.get()
+        if isinstance(pkg, BuildError):
+            raise SystemExit(pkg.returncode)
         if isinstance(pkg, Exception):
             raise pkg
 

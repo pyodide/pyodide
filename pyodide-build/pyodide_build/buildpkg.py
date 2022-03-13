@@ -14,11 +14,13 @@ import re
 import shutil
 import subprocess
 import sys
+import textwrap
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Optional
+from types import TracebackType
+from typing import Any, NoReturn, Optional, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -39,34 +41,50 @@ from .io import parse_package_config
 
 
 def _make_whlfile(*args, owner=None, group=None, **kwargs):
-    return shutil._make_zipfile(*args, **kwargs)  # type: ignore
+    return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
 shutil.register_archive_format("whl", _make_whlfile, description="Wheel file")
 shutil.register_unpack_format(
-    "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore
+    "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore[attr-defined]
 )
 
 
+def exit_with_stdio(result: subprocess.CompletedProcess) -> NoReturn:
+    if result.stdout:
+        print("  stdout:")
+        print(textwrap.indent(result.stdout, "    "))
+    if result.stderr:
+        print("  stderr:")
+        print(textwrap.indent(result.stderr, "    "))
+    raise SystemExit(result.returncode)
+
+
 class BashRunnerWithSharedEnvironment:
-    """Run multiple bash scripts with persisent environment.
+    """Run multiple bash scripts with persistent environment.
 
     Environment is stored to "env" member between runs. This can be updated
     directly to adjust the environment, or read to get variables.
     """
 
-    _fd_read: Optional[int]
-    _fd_write: Optional[int]
-
     def __init__(self, env=None):
         if env is None:
             env = dict(os.environ)
+
+        self._reader: Optional[TextIO]
+        self._fd_write: Optional[int]
         self.env: dict[str, str] = env
-        self._fd_read, self._fd_write = os.pipe()
-        self._reader = os.fdopen(self._fd_read, "r")
+
+    def __enter__(self) -> "BashRunnerWithSharedEnvironment":
+        fd_read, self._fd_write = os.pipe()
+        self._reader = os.fdopen(fd_read, "r")
+        return self
 
     def run(self, cmd, **opts):
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+        assert self._fd_write is not None
+        assert self._reader is not None
+
         write_env_pycode = ";".join(
             [
                 "import os",
@@ -75,20 +93,32 @@ class BashRunnerWithSharedEnvironment:
             ]
         )
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
-        cmd += "\n" + write_env_shell_cmd
+        full_cmd = f"{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
-            ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
+            ["bash", "-ce", full_cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
+        if result.returncode != 0:
+            print("ERROR: bash command failed")
+            print(textwrap.indent(cmd, "    "))
+            exit_with_stdio(result)
+
         self.env = json.loads(self._reader.readline())
         return result
 
-    def close(self):
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         """Free the file descriptors."""
-        if self._fd_read and self._fd_write:
-            os.close(self._fd_read)
+
+        if self._fd_write:
             os.close(self._fd_write)
-            self._fd_read = None
             self._fd_write = None
+        if self._reader:
+            self._reader.close()
+            self._reader = None
 
 
 @contextmanager
@@ -103,16 +133,21 @@ def get_bash_runner():
             "PYTHONINCLUDE",
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
+            "HOSTINSTALLDIR",
+            "PYMAJOR",
+            "PYMINOR",
+            "CPYTHONBUILD",
+            "STDLIB_MODULE_CFLAGS",
+            "SIDE_MODULE_LDFLAGS",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-    b = BashRunnerWithSharedEnvironment(env=env)
-    b.run(f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL)
-    try:
+    with BashRunnerWithSharedEnvironment(env=env) as b:
+        b.run(
+            f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL
+        )
         yield b
-    finally:
-        b.close()
 
 
 def check_checksum(archive: Path, source_metadata: dict[str, Any]):
@@ -297,9 +332,13 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
     # Apply all the patches
     with chdir(srcpath):
         for patch in patches:
-            subprocess.run(
-                ["patch", "-p1", "--binary", "-i", pkg_root / patch], check=True
+            result = subprocess.run(
+                ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
+                check=False,
             )
+            if result.returncode != 0:
+                print(f"ERROR: Patch {pkg_root/patch} failed")
+                exit_with_stdio(result)
 
     # Add any extra files
     for src, dst in extras:
@@ -311,24 +350,22 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
 
 def unpack_wheel(path):
     with chdir(path.parent):
-        subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
+        result = subprocess.run(
+            [sys.executable, "-m", "wheel", "unpack", path.name], check=False
+        )
+        if result.returncode != 0:
+            print(f"ERROR: Unpacking wheel {path.name} failed")
+            exit_with_stdio(result)
 
 
 def pack_wheel(path):
     with chdir(path.parent):
-        subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
-
-
-def install_for_distribution():
-    commands = [
-        sys.executable,
-        "setup.py",
-        "bdist_wheel",
-        "--skip-build",
-    ]
-    env = dict(os.environ)
-    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
-    subprocess.check_call(commands, env=env)
+        result = subprocess.run(
+            [sys.executable, "-m", "wheel", "pack", path.name], check=False
+        )
+        if result.returncode != 0:
+            print(f"ERROR: Packing wheel {path} failed")
+            exit_with_stdio(result)
 
 
 def compile(
@@ -381,7 +418,6 @@ def compile(
     skip_host = build_metadata.get("skip_host", True)
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
-    bash_runner.env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
     with chdir(srcpath):
         if should_capture_compile:
             pywasmcross.capture_compile(
@@ -391,7 +427,10 @@ def compile(
             )
             prereplay = build_metadata.get("prereplay")
             if prereplay:
-                bash_runner.run(prereplay)
+                result = bash_runner.run(prereplay)
+                if result.returncode != 0:
+                    print("ERROR: prereplay failed")
+                    exit_with_stdio(result)
         if should_replay_compile:
             pywasmcross.replay_compile(
                 cflags=build_metadata["cflags"],
@@ -402,8 +441,34 @@ def compile(
                 replace_libs=replace_libs,
                 replay_from=replay_from,
             )
-        install_for_distribution()
-    del bash_runner.env["_PYTHON_HOST_PLATFORM"]
+
+
+def set_host_platform(wheel_dir: Path, platform: str):
+    dist_info = next(wheel_dir.glob("*.dist-info"))
+    WHEEL = dist_info / "WHEEL"
+    lines = WHEEL.read_text().splitlines()
+    result_lines = []
+    for line in lines:
+        if line.startswith("Tag:"):
+            line = line.rpartition("-")[0] + "-" + platform
+        result_lines.append(line)
+    WHEEL.write_text("\n".join(result_lines))
+
+
+def update_wheel_platform(build_dir: Path, wheel_dir: Path):
+    import distutils.dir_util
+
+    # for some reason the .so name and the wheel name swap order of architecture
+    # and OS?
+    set_host_platform(wheel_dir, "emscripten_wasm32")
+    pywasmcross.clean_out_native_artifacts(wheel_dir)
+    lib_dir = next(build_dir.glob("lib*"))
+    distutils.dir_util.copy_tree(str(lib_dir), str(wheel_dir))
+    # TODO: Platform tag the .so files.
+    # Currently we leave the platform triplet unset so if we set a platform tag
+    # the files will fail to load.
+    # for file in wheel_dir.glob("**/*.so"):
+    #     file.rename(file.with_suffix(".cpython-39-wasm32-emscripten.so"))
 
 
 def package_wheel(
@@ -443,14 +508,22 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
+    build_dir = srcpath / "build"
     wheel_paths = list(distdir.glob("*.whl"))
     assert len(wheel_paths) == 1
     unpack_wheel(wheel_paths[0])
-    wheel_dir = Path(next(p for p in distdir.glob("*") if p.is_dir()))
+    wheel_paths[0].unlink()
+    wheel_dir = next(p for p in distdir.glob("*") if p.is_dir())
+    if not wheel_paths[0].name.endswith("any.whl"):
+        update_wheel_platform(build_dir, wheel_dir)
+
     post = build_metadata.get("post")
     if post:
         bash_runner.env.update({"PKGDIR": str(pkg_root)})
-        bash_runner.run(post, check=True)
+        result = bash_runner.run(post)
+        if result.returncode != 0:
+            print("ERROR: post failed")
+            exit_with_stdio(result)
 
     test_dir = distdir / "tests"
     nmoved = 0
@@ -551,7 +624,10 @@ def run_script(
         return
 
     with chdir(srcpath):
-        bash_runner.run(script, check=True)
+        result = bash_runner.run(script)
+        if result.returncode != 0:
+            print("ERROR: script failed")
+            exit_with_stdio(result)
 
 
 def needs_rebuild(

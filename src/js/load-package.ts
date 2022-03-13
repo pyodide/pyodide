@@ -223,12 +223,21 @@ const acquireDynlibLock = createLock();
  * @private
  */
 async function loadDynlib(lib: string, shared: boolean) {
-  const byteArray = Module.FS.lookupPath(lib).node.contents;
+  const node = Module.FS.lookupPath(lib).node;
+  let byteArray;
+  if (node.mount.type == Module.FS.filesystems.MEMFS) {
+    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
+      Module.FS.lookupPath(lib).node
+    );
+  } else {
+    byteArray = Module.FS.readFile(lib);
+  }
   const releaseDynlibLock = await acquireDynlibLock();
   try {
     const module = await Module.loadWebAssemblyModule(byteArray, {
       loadAsync: true,
       nodelete: true,
+      allowUndefined: true,
     });
     Module.preloadedWasm[lib] = module;
     if (shared) {
@@ -285,7 +294,7 @@ export async function loadPackage(
     toLoad.delete(pkg);
     toLoadShared.delete(pkg);
     // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-    // depedency, which was previously overridden.
+    // dependency, which was previously overridden.
     if (loaded === uri || uri === DEFAULT_CHANNEL) {
       messageCallback(`${pkg} already loaded from ${loaded}`);
     } else {
