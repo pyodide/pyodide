@@ -9,9 +9,16 @@ though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
 install. Despite the limitations, it is recommended to use existing conda
-package definitions as a starting point to create Pyodide packages. In
-general, however, one should not
-expect Conda packages to "just work" with Pyodide, see {pr}`795`
+package definitions as a starting point to create Pyodide packages. In general,
+however, one should not expect Conda packages to "just work" with Pyodide, see
+{pr}`795`
+
+```{admonition} This is unstable
+:class: warning
+
+The Pyodide build system is under fairly active development (as of 2022/03/13).
+The next couple of releases are likely to include breaking changes.
+```
 
 The supported keys in the `meta.yaml` file are described below.
 
@@ -143,3 +150,19 @@ A list of required packages.
 ### `test/imports`
 
 List of imports to test after the package is built.
+
+## Supported Environment Variables
+
+The following environment variables can be used in the scripts in the meta.yaml
+files:
+
+- PYODIDE_ROOT: The path to the base Pyodide directory
+- PYMAJOR: Current major Python version
+- PYMINOR: Current minor Python version
+- PYMICRO: Current micro Python version
+- SIDE_MODULE_CFLAGS: The standard CFLAGS for a side module. Use when compiling
+  libraries or shared libraries.
+- SIDE_MODULE_LDFLAGS: The standard LDFLAGS for a side module. Use when linking
+  a shared library.
+- NUMPY_LIB: Use `-L$NUMPY_LIB` as a ldflag when linking `-lnpymath` or
+  `-lnpyrandom`.
