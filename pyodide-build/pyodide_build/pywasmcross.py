@@ -585,8 +585,6 @@ if __name__ == "__main__":
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename
-    with open("blah.txt", "a") as blah:
-        print(" ".join(args), file=blah)
     if basename in symlinks:
         sys.exit(capture_command(args))
     else:
