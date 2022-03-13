@@ -611,10 +611,12 @@ def needs_rebuild(
         yield from (
             pkg_root / patch_path for patch_path in source_metadata.get("patches", [])
         )
-        yield from (x[0] for x in source_metadata.get("extras", []))
+        yield from (
+            pkg_root / patch_path for patch_path in source_metadata.get("extras", [])
+        )
         src_path = source_metadata.get("path")
         if src_path:
-            yield from Path(src_path).glob("**/*")
+            yield from Path(src_path).resolve().glob("**/*")
 
     for source_file in source_files():
         source_file = Path(source_file)
