@@ -26,8 +26,7 @@ build:
   cflags: |
     -Wno-return-type
   post: |
-    pip install -t $HOSTSITEPACKAGES --upgrade \
-      numpy==$PKG_VERSION
+    pip install -t $HOSTSITEPACKAGES numpy==$PKG_VERSION
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
     export NUMPY_CORE_INCLUDE=numpy/core/include/numpy

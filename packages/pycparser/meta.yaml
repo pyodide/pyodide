@@ -6,8 +6,7 @@ source:
   sha256: 8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9
 build:
   script: |
-    pip install -t $HOSTSITEPACKAGES --upgrade \
-      pycparser==$PKG_VERSION
+    pip install -t $HOSTSITEPACKAGES pycparser==$PKG_VERSION
 test:
   imports:
     - pycparser

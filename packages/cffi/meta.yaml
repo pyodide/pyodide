@@ -11,8 +11,7 @@ source:
     - patches/libffi-config.patch
 build:
   script: |
-    pip install -t $HOSTSITEPACKAGES --upgrade \
-      cffi==$PKG_VERSION
+    pip install -t $HOSTSITEPACKAGES cffi==$PKG_VERSION
 test:
   imports:
     - cffi

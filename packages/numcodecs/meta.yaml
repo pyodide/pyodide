@@ -11,8 +11,7 @@ source:
 build:
   script: |
     rm numcodecs/blosc.c
-    pip install -t $HOSTSITEPACKAGES --upgrade \
-      cython
+    pip install -t $HOSTSITEPACKAGES cython
 requirements:
   run:
     - numpy

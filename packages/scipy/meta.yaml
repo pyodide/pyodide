@@ -44,8 +44,7 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    pip install -t $HOSTSITEPACKAGES --upgrade \
-      pythran scipy==$PKG_VERSION
+    pip install -t $HOSTSITEPACKAGES pythran scipy==$PKG_VERSION
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
