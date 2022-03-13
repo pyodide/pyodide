@@ -554,10 +554,6 @@ def handle_command(
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
 
-    CURDIR = Path(".").absolute()
-    with open(CURDIR / "log.txt", "a") as f:
-        print(str(CURDIR), " ".join(new_args), file=f)
-
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:
         sys.exit(returncode)
