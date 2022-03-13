@@ -53,6 +53,9 @@ substitutions:
   way.
   {pr}`2178`
 
+- {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
+  needed, install a host copy of the package with pip instead. {pr}`2256`
+
 _February 19, 2022_
 
 ## Version 0.19.1
@@ -84,7 +87,6 @@ _February 19, 2022_
 
 Christian Staudt, Gyeongjae Choi, Hood Chatham, Liumeo, Paul Korzhyk, Roman
 Yurchak, Seungmin Kim, Thorsten Beier
-
 
 ## Version 0.19.0
 
