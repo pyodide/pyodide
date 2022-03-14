@@ -237,6 +237,7 @@ async function loadDynlib(lib: string, shared: boolean) {
     const module = await Module.loadWebAssemblyModule(byteArray, {
       loadAsync: true,
       nodelete: true,
+      allowUndefined: true,
     });
     Module.preloadedWasm[lib] = module;
     if (shared) {
