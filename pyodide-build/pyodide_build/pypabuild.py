@@ -6,6 +6,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Mapping
 
+from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
 from build.__main__ import (  # type: ignore[import]
     _STYLES,
     _error,
@@ -15,8 +16,6 @@ from build.__main__ import (  # type: ignore[import]
 )
 from build.env import IsolatedEnv  # type: ignore[import]
 from packaging.requirements import Requirement
-
-from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
 
 from .common import get_hostsitepackages, get_pyversion
 
