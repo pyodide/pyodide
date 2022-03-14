@@ -33,3 +33,6 @@ known_first_party = [
   "pyodide_build",
   "_pyodide",
 ]
+known_third_party = [
+  "build",
+]
