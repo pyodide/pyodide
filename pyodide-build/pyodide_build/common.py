@@ -10,10 +10,9 @@ PLATFORM = "emscripten_wasm32"
 
 def pyodide_tags() -> Iterator[Tag]:
     """
-    Returns the sequence of tag triples for the running interpreter.
+    Returns the sequence of tag triples for the Pyodide interpreter.
 
-    The order of the sequence corresponds to priority order for the
-    interpreter, from most to least important.
+    The sequence is ordered in decreasing specificity.
     """
 
     yield from cpython_tags(platforms=[PLATFORM])
@@ -21,6 +20,18 @@ def pyodide_tags() -> Iterator[Tag]:
 
 
 def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
+    """
+    Returns the sequence wheels whose tags match the Pyodide interpreter.
+
+    Parameters
+    ----------
+    wheel_paths
+        A list of paths to wheels
+
+    Returns
+    -------
+    The subset of wheel_paths that have tags that match the Pyodide interpreter.
+    """
     wheel_tags_list: list[tuple[Path, frozenset[Tag]]] = [
         (wheel, parse_tag(wheel.stem.split("-", 2)[-1])) for wheel in wheel_paths
     ]

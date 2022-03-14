@@ -4,6 +4,7 @@ from pyodide_build.common import (
     CORE_SCIPY_PACKAGES,
     UNVENDORED_STDLIB_MODULES,
     _parse_package_subset,
+    find_matching_wheels,
     get_make_environment_vars,
     get_make_flag,
 )
@@ -77,3 +78,34 @@ def test_get_make_environment_vars():
     assert "SIDE_MODULE_CFLAGS" in vars
     assert "SIDE_MODULE_CXXFLAGS" in vars
     assert "TOOLSDIR" in vars
+
+
+def test_wheel_paths():
+    from pathlib import Path
+
+    old_version = "cp38"
+    current_version = "cp39"
+    strings = [
+        "threadpoolctl-3.1.0-py3-none-any.whl",
+        "parso-0.8.3-py2.py3-none-any.whl",
+        "distlib-0.3.4-py2-none-any.whl",
+        "bcrypt-3.2.0-cp36-abi3-manylinux2010_x86_64.whl",
+        "bcrypt-3.2.0-cp36-abi3-emscripten_wasm32.whl",
+    ]
+
+    for arch in ["emscripten_wasm32", "linux_x86_64", "none"]:
+        strings.extend(
+            [
+                f"wrapt-1.13.3-{old_version}-{old_version}-{arch}.whl",
+                f"wrapt-1.13.3-{old_version}-abi3-{arch}.whl",
+                f"wrapt-1.13.3-{current_version}-{current_version}-{arch}.whl",
+            ]
+        )
+    paths = [Path(x) for x in strings]
+    assert [x.name for x in find_matching_wheels(paths)] == [
+        "wrapt-1.13.3-cp39-cp39-emscripten_wasm32.whl",
+        "wrapt-1.13.3-cp38-abi3-emscripten_wasm32.whl",
+        "bcrypt-3.2.0-cp36-abi3-emscripten_wasm32.whl",
+        "threadpoolctl-3.1.0-py3-none-any.whl",
+        "parso-0.8.3-py2.py3-none-any.whl",
+    ]
