@@ -1,4 +1,4 @@
-from pyodide_build.common import (
+from pyodide_build.common import (  # type: ignore[import]
     ALWAYS_PACKAGES,
     CORE_PACKAGES,
     CORE_SCIPY_PACKAGES,
@@ -85,27 +85,29 @@ def test_wheel_paths():
 
     old_version = "cp38"
     current_version = "cp39"
-    strings = [
-        "threadpoolctl-3.1.0-py3-none-any.whl",
-        "parso-0.8.3-py2.py3-none-any.whl",
-        "distlib-0.3.4-py2-none-any.whl",
-        "bcrypt-3.2.0-cp36-abi3-manylinux2010_x86_64.whl",
-        "bcrypt-3.2.0-cp36-abi3-emscripten_wasm32.whl",
-    ]
+    future_version = "cp317"
+    strings = []
 
-    for arch in ["emscripten_wasm32", "linux_x86_64", "none"]:
-        strings.extend(
-            [
-                f"wrapt-1.13.3-{old_version}-{old_version}-{arch}.whl",
-                f"wrapt-1.13.3-{old_version}-abi3-{arch}.whl",
-                f"wrapt-1.13.3-{current_version}-{current_version}-{arch}.whl",
-            ]
-        )
+    for interp in [
+        old_version,
+        current_version,
+        future_version,
+        "py3",
+        "py2",
+        "py2.py3",
+    ]:
+        for abi in [interp, "abi3", "none"]:
+            for arch in ["emscripten_wasm32", "linux_x86_64", "any"]:
+                strings.append(f"wrapt-1.13.3-{interp}-{abi}-{arch}.whl")
+
     paths = [Path(x) for x in strings]
-    assert [x.name for x in find_matching_wheels(paths)] == [
-        "wrapt-1.13.3-cp39-cp39-emscripten_wasm32.whl",
-        "wrapt-1.13.3-cp38-abi3-emscripten_wasm32.whl",
-        "bcrypt-3.2.0-cp36-abi3-emscripten_wasm32.whl",
-        "threadpoolctl-3.1.0-py3-none-any.whl",
-        "parso-0.8.3-py2.py3-none-any.whl",
+    assert [x.stem.split("-", 2)[-1] for x in find_matching_wheels(paths)] == [
+        "cp39-cp39-emscripten_wasm32",
+        "cp39-abi3-emscripten_wasm32",
+        "cp39-none-emscripten_wasm32",
+        "cp38-abi3-emscripten_wasm32",
+        "py3-none-emscripten_wasm32",
+        "py2.py3-none-emscripten_wasm32",
+        "py3-none-any",
+        "py2.py3-none-any",
     ]
