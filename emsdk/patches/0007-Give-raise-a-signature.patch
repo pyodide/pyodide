@@ -1,0 +1,27 @@
+From bbe1d0ab9a2c13cba7cfa8fca7e121bcb22db3f4 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 15 Mar 2022 13:07:13 -0700
+Subject: [PATCH 7/7] Give raise a signature
+
+Fixes a dynamic linker error for suitesparse. Not sure how correct this is --
+it's possible that suitesparse meant a different 'raise' function. In any case,
+it gets suitesparse running.
+---
+ src/library_signals.js | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/library_signals.js b/src/library_signals.js
+index 65f00be95..c2baaf29a 100644
+--- a/src/library_signals.js
++++ b/src/library_signals.js
+@@ -108,6 +108,7 @@ var funs = {
+ #endif
+     return -1;
+   },
++  raise__sig: "ii",
+ 
+   // http://pubs.opengroup.org/onlinepubs/000095399/functions/alarm.html
+   alarm__deps: ['_sigalrm_handler'],
+-- 
+2.25.1
+

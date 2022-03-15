@@ -1,7 +1,7 @@
 From 7befaa4c7b3c396df807d88ff8c61d003a28e930 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 15 Mar 2022 12:05:57 -0700
-Subject: [PATCH 6/6] Respect the shared flag
+Subject: [PATCH 6/7] Respect the shared flag
 
 emcc normally discards the -shared flag and builds a executable instead.
 Generally, though, we mean it when we say -shared. This makes emcc respect
