@@ -9,9 +9,16 @@ though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
 install. Despite the limitations, it is recommended to use existing conda
-package definitions as a starting point to create Pyodide packages. In
-general, however, one should not
-expect Conda packages to "just work" with Pyodide, see {pr}`795`
+package definitions as a starting point to create Pyodide packages. In general,
+however, one should not expect Conda packages to "just work" with Pyodide, see
+{pr}`795`
+
+```{admonition} This is unstable
+:class: warning
+
+The Pyodide build system is under fairly active development (as of 2022/03/13).
+The next couple of releases are likely to include breaking changes.
+```
 
 The supported keys in the `meta.yaml` file are described below.
 
@@ -75,16 +82,6 @@ which the `meta.yaml` file resides. The `dst` path is relative to the root of
 source tree (the expanded tarball).
 
 ## `build`
-
-### `build/skip_host`
-
-Skip building C extensions for the host environment. Default: `True`.
-
-Setting this to `False` will result in ~2x slower builds for packages that
-include C extensions. It should only be needed when a package is a build
-time dependency for other packages. For instance, numpy is imported during
-installation of matplotlib, importing numpy also imports included C extensions,
-therefore it is built both for host and target.
 
 ### `build/cflags`
 
@@ -153,3 +150,19 @@ A list of required packages.
 ### `test/imports`
 
 List of imports to test after the package is built.
+
+## Supported Environment Variables
+
+The following environment variables can be used in the scripts in the meta.yaml
+files:
+
+- PYODIDE_ROOT: The path to the base Pyodide directory
+- PYMAJOR: Current major Python version
+- PYMINOR: Current minor Python version
+- PYMICRO: Current micro Python version
+- SIDE_MODULE_CFLAGS: The standard CFLAGS for a side module. Use when compiling
+  libraries or shared libraries.
+- SIDE_MODULE_LDFLAGS: The standard LDFLAGS for a side module. Use when linking
+  a shared library.
+- NUMPY_LIB: Use `-L$NUMPY_LIB` as a ldflag when linking `-lnpymath` or
+  `-lnpyrandom`.
