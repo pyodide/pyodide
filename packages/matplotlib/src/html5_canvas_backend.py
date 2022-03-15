@@ -1,7 +1,6 @@
 import base64
 import io
 import math
-import os
 
 import numpy as np
 from matplotlib import __version__, interactive
@@ -49,12 +48,6 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         document.body.appendChild(root_element)
         return root_element
 
-    def get_dpi_ratio(self, context):
-        if os.environ.get("TESTING_MATPLOTLIB"):
-            return 2.0
-        else:
-            return super().get_dpi_ratio(context)
-
     def draw(self):
         # Render the figure using custom renderer
         self._idle_scheduled = True
@@ -69,6 +62,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             ctx = canvas.getContext("2d")
             renderer = RendererHTMLCanvas(ctx, width, height, self.figure.dpi, self)
             self.figure.draw(renderer)
+        except Exception as e:
+            raise RuntimeError("Rendering failed") from e
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
@@ -365,28 +360,20 @@ class RendererHTMLCanvas(RendererBase):
         if angle != 0:
             self.ctx.restore()
 
+    def load_font_into_web(self, loaded_face, font_url):
+        fontface = loaded_face.result()
+        document.fonts.add(fontface)
+        self.fonts_loading.pop(font_url, None)
+
+        # Redraw figure after font has loaded
+        self.fig.draw()
+        return fontface
+
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
-        def _load_font_into_web(loaded_face, font_url):
-            fontface = loaded_face.result()
-            document.fonts.add(fontface)
-            self.fonts_loading.pop(font_url, None)
-
-            self.fig.draw()
-
-            # For font load testing
-            if os.environ.get("TESTING_MATPLOTLIB"):
-                target_font = os.environ.get("TESTING_MATPLOTLIB_FONT")
-                if not target_font or target_font == fontface.family:
-                    try:
-                        from js import resolve
-
-                        resolve()
-                    except Exception as e:
-                        raise ValueError("unable to resolve") from e
-
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
             return
+
         angle = math.radians(angle)
         width, height, descent = self.get_text_width_height_descent(s, prop, ismath)
         x -= math.sin(angle) * descent
@@ -413,7 +400,7 @@ class RendererHTMLCanvas(RendererBase):
             font_url = font_face_arguments[1]
             self.fonts_loading[font_url] = f
             f.load().add_done_callback(
-                lambda result: _load_font_into_web(result, font_url)
+                lambda result: self.load_font_into_web(result, font_url)
             )
 
         font_property_string = "{} {} {:.3g}px {}, {}".format(

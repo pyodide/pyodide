@@ -1,5 +1,6 @@
 import base64
 import pathlib
+import textwrap
 
 import pytest
 
@@ -16,6 +17,29 @@ def run_with_resolve(selenium, code):
         }} finally {{
             delete self.resolve;
         }}
+        """
+    )
+
+
+def patch_font_loading_and_dpi(target_font=""):
+    """Monkey-patches font loading and dpi to allow testing"""
+    return textwrap.dedent(
+        f"""from matplotlib.backends.html5_canvas_backend import RendererHTMLCanvas
+        from matplotlib.backends.html5_canvas_backend import FigureCanvasHTMLCanvas
+        FigureCanvasHTMLCanvas.get_dpi_ratio = lambda self, context: 2.0
+        load_font_into_web = RendererHTMLCanvas.load_font_into_web
+        def load_font_into_web_wrapper(self, loaded_font, font_url, orig_function=load_font_into_web):
+            fontface = orig_function(self, loaded_font, font_url)
+
+            target_font = {target_font!r}
+            if not target_font or target_font == fontface.family:
+                try:
+                    from js import resolve
+                    resolve()
+                except Exception as e:
+                    raise ValueError("unable to resolve") from e
+
+        RendererHTMLCanvas.load_font_into_web = load_font_into_web_wrapper
         """
     )
 
@@ -153,10 +177,8 @@ def test_rendering(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
-        import os
-        os.environ["TESTING_MATPLOTLIB"] = "1"
-
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         import numpy as np
@@ -187,10 +209,8 @@ def test_draw_image(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
-        import os
-        os.environ["TESTING_MATPLOTLIB"] = "1"
-
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         import numpy as np
@@ -229,10 +249,8 @@ def test_draw_image_affine_transform(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
-        import os
-        os.environ["TESTING_MATPLOTLIB"] = "1"
-
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         import numpy as np
@@ -300,7 +318,8 @@ def test_draw_text_rotated(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
+        f"""
+        {patch_font_loading_and_dpi()}
         import os
         os.environ["TESTING_MATPLOTLIB"] = "1"
 
@@ -354,7 +373,10 @@ def test_draw_math_text(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        r"""
+        f"""
+        {patch_font_loading_and_dpi()}
+        """
+        + r"""
         import os
         os.environ["TESTING_MATPLOTLIB"] = "1"
 
@@ -478,17 +500,14 @@ def test_custom_font_text(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
-        import os
-        os.environ["TESTING_MATPLOTLIB"] = "1"
-        os.environ["TESTING_MATPLOTLIB_FONT"] = "cmsy10"
-
+        f"""
+        {patch_font_loading_and_dpi(target_font='cmsy10')}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         import matplotlib.pyplot as plt
         import numpy as np
 
-        f = {'fontname': 'cmsy10'}
+        f = {{'fontname': 'cmsy10'}}
 
         t = np.arange(0.0, 2.0, 0.01)
         s = 1 + np.sin(2 * np.pi * t)
@@ -518,10 +537,8 @@ def test_zoom_on_polar_plot(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
-        import os
-        os.environ["TESTING_MATPLOTLIB"] = "1"
-
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         import numpy as np
@@ -563,10 +580,8 @@ def test_transparency(selenium_standalone):
     selenium.set_script_timeout(60)
     run_with_resolve(
         selenium,
-        """
-        import os
-        os.environ["TESTING_MATPLOTLIB"] = "1"
-
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         import numpy as np
