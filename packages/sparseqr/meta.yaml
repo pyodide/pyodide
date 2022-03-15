@@ -3,8 +3,7 @@ package:
   version: 1.1.2
 
 source:
-  sha256: 10090126e6d12ed80e548541c78f4e681f5bf0f344d9d1e89cc15b499f0b5bf4     
-  url: https://gabrielfougeron.github.io/files/sparseqr.zip
+  url: https://github.com/gabrielfougeron/PySPQR
   extract_dir: sparseqr
 
 requirements:
