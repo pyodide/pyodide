@@ -3,7 +3,7 @@ package:
   version: 1.0.0
 
 source:
-  url: https://github.com/gabrielfougeron/SuiteSparse
+  url: https://github.com/gabrielfougeron/SuiteSparse/archive/refs/heads/master.zip
   extract_dir: suitesparse
 
 requirements:
