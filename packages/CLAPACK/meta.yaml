@@ -34,5 +34,3 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
     mkdir -p dist/lib
     emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE=1 -o dist/lib/clapack_all.so
-    emcc blas_WA.a -sSIDE_MODULE=1 -o dist/lib/libblas.so
-    emcc lapack_WA.a -sSIDE_MODULE=1 -o dist/lib/liblapack.so
