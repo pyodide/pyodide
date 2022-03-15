@@ -1,4 +1,4 @@
-From 3a52cf1d4b26233c196cc23c6c1e40aa0cc232bc Mon Sep 17 00:00:00 2001
+From 219542cd30d08ef48bd5a0af2f6ac00f204c9cb1 Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Mon, 12 Apr 2021 09:27:04 -0700
 Subject: [PATCH 5/5] Update upstream URL for libjpeg. NFC (#13869)

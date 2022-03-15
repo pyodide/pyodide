@@ -1,4 +1,4 @@
-From 694ad9e2e70a5557075c3bb589c5f265b4de27a5 Mon Sep 17 00:00:00 2001
+From e318976944f3e7916912d52b003583c91ffa0b18 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 15 Feb 2022 23:27:03 -0500
 Subject: [PATCH 4/5] Fix side module exception handling
