@@ -1,7 +1,7 @@
-From 6d668a693154374809707b598bc658b3162c79c4 Mon Sep 17 00:00:00 2001
+From 694ad9e2e70a5557075c3bb589c5f265b4de27a5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 15 Feb 2022 23:27:03 -0500
-Subject: [PATCH] Fix side module exception handling
+Subject: [PATCH 4/5] Fix side module exception handling
 
 See https://github.com/emscripten-core/emscripten/pull/16309
 
@@ -16,10 +16,10 @@ possible that a side module will need extra ones. This fixes the problem by upda
  1 file changed, 3 insertions(+)
 
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index 3c5d84314..65c436456 100644
+index 4a711296c..394342292 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
-@@ -33,6 +33,9 @@ var LibraryDylink = {
+@@ -41,6 +41,9 @@ var LibraryDylink = {
        sym = createInvokeFunction(symName.split('_')[1]);
      }
  
