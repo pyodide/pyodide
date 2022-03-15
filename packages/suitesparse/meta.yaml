@@ -4,11 +4,10 @@ package:
 
 source:
   url: https://github.com/gabrielfougeron/SuiteSparse/archive/refs/heads/master.zip
-  extract_dir: suitesparse
 
 requirements:
   #build:
-    #- CLAPACK
+  #- CLAPACK
   run:
     - CLAPACK
 
@@ -25,7 +24,3 @@ build:
     cp -R bin/* dist/bin
     cp -R include/* dist/include
     cp -R lib/*  dist/lib
-
-
-
-

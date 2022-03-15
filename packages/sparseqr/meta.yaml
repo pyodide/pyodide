@@ -4,11 +4,10 @@ package:
 
 source:
   url: https://github.com/gabrielfougeron/PySPQR/archive/refs/heads/master.zip
-  extract_dir: sparseqr
 
 requirements:
   #build:
-    #- suitesparse
+  #- suitesparse
   run:
     - pycparser
     - cffi
@@ -19,5 +18,3 @@ requirements:
 test:
   imports:
     - sparseqr
-
-
