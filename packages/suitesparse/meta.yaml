@@ -17,7 +17,7 @@ build:
   # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
   # will fail. Better to fail at compile or link time.
   script: |
-    emmake make BLAS="-L$PYODIDE_ROOT/packages/CLAPACK/dist/lib -l:clapack_all.so" LAPACK="-L$PYODIDE_ROOT/packages/CLAPACK/dist/lib/ -l:clapack_all.so"
+    emmake make BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so"
     mkdir -p dist/lib
     mkdir -p dist/include
     mkdir -p dist/bin
