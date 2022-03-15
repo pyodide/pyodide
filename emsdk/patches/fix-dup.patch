@@ -18,10 +18,10 @@ https://github.com/emscripten-core/emscripten/pull/9396/files
 This patch is simpler than the upstream one but leaves NODERAWFS broken.
 
 
-diff --git a/emsdk/upstream/emscripten/src/library_fs.js b/emsdk/upstream/emscripten/src/library_fs.js
+diff --git a/src/library_fs.js b/src/library_fs.js
 index 4ca59469c..519fab972 100644
---- a/emsdk/upstream/emscripten/src/library_fs.js
-+++ b/emsdk/upstream/emscripten/src/library_fs.js
+--- a/src/library_fs.js
++++ b/src/library_fs.js
 @@ -425,11 +425,16 @@ FS.staticInit();` +
            },
            isAppend: {
@@ -40,10 +40,10 @@ index 4ca59469c..519fab972 100644
        for (var p in stream) {
          newStream[p] = stream[p];
        }
-diff --git a/emsdk/upstream/emscripten/src/library_syscall.js b/emsdk/upstream/emscripten/src/library_syscall.js
+diff --git a/src/library_syscall.js b/src/library_syscall.js
 index 96d2ec0c3..0001624ec 100644
---- a/emsdk/upstream/emscripten/src/library_syscall.js
-+++ b/emsdk/upstream/emscripten/src/library_syscall.js
+--- a/src/library_syscall.js
++++ b/src/library_syscall.js
 @@ -137,10 +137,10 @@ var SyscallsLibrary = {
        }
        return 0;

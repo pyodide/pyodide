@@ -11,10 +11,10 @@ this kind of thing.
  tools/ports/libjpeg.py | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/emsdk/upstream/emscripten/tools/ports/libjpeg.py b/emsdk/upstream/emscripten/tools/ports/libjpeg.py
+diff --git a/tools/ports/libjpeg.py b/tools/ports/libjpeg.py
 index f0deb7f4a7d..563ef7fd09f 100644
---- a/emsdk/upstream/emscripten/tools/ports/libjpeg.py
-+++ b/emsdk/upstream/emscripten/tools/ports/libjpeg.py
+--- a/tools/ports/libjpeg.py
++++ b/tools/ports/libjpeg.py
 @@ -8,7 +8,7 @@
  import logging
  

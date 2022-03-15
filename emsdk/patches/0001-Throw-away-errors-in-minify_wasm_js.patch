@@ -7,10 +7,10 @@ Subject: [PATCH] Throw away errors in minify_wasm_js
  emcc.py | 13 ++++++++-----
  1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
+diff --git a/emcc.py b/emcc.py
 index 839f791b3..5653470dd 100755
---- a/emsdk/upstream/emscripten/emcc.py
-+++ b/emsdk/upstream/emscripten/emcc.py
+--- a/emcc.py
++++ b/emcc.py
 @@ -2901,11 +2901,14 @@ def do_binaryen(target, options, wasm_target):
        # Closure can print out readable error messages (Closure will then
        # minify whitespace afterwards)
