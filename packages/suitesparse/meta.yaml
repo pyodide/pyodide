@@ -17,9 +17,6 @@ build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
   # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
   # will fail. Better to fail at compile or link time.
-  ldflags: |
-    -Wl,--fatal-warnings
-    -sSIDE_MODULE=1
   script: |
     emmake make BLAS="-L$PYODIDE_ROOT/packages/CLAPACK/dist/lib -l:clapack_all.so" LAPACK="-L$PYODIDE_ROOT/packages/CLAPACK/dist/lib/ -l:clapack_all.so"
     mkdir -p dist/lib
