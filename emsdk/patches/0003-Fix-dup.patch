@@ -1,8 +1,16 @@
-From 114ed52906d1afc6fceca7f54f728af2daf1c098 Mon Sep 17 00:00:00 2001
+From 64ad57cc02d9ce10ed71ba1a35e38c88369570c1 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
 Subject: [PATCH 3/5] Fix dup
 
+This fixes two problems with the `dup` system calls:
+1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
+   files that have been unlinked (https://github.com/emscripten-core/emscripten/issues/15012) cannot be duplicated ).
+2. The dup'd file descriptor does not share flags and position with the original file desciptor.
+
+This is a simplification of an upstream pull request that would fix this problem.
+https://github.com/emscripten-core/emscripten/pull/9396/files
+This patch is simpler than the upstream one but leaves NODERAWFS broken.
 ---
  src/library_fs.js      |  7 ++++++-
  src/library_syscall.js | 12 ++++++------
