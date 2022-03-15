@@ -135,12 +135,10 @@ def compile(env, **kwargs):
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
 
-    args = environment_substitute_args(kwargs, env)
     env = dict(env)
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
     make_command_wrapper_symlinks(env)
-    args["builddir"] = str(Path(".").absolute())
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 

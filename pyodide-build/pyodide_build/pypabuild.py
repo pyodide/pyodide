@@ -56,9 +56,6 @@ def replace_env(build_env: Mapping[str, str]):
         os.environ.update(old_environ)
 
 
-None
-
-
 def install_reqs(env: IsolatedEnv, reqs: set[str]):
     env.install(remove_unisolated_requirements(reqs))
 

@@ -6,8 +6,8 @@ source:
   url: https://files.pythonhosted.org/packages/3b/94/e2b1b3bad91d15526c7e38918795883cee18b93f6785ea8ecf13f8ffa01e/lxml-4.8.0.tar.gz
 build:
   script: |
-    export XML2_CONFIG=$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10/xml2-config
-    export XSLT_CONFIG=$PYODIDE_ROOT/packages/libxslt/build/libxslt-1.1.33/xslt-config
+    export WITH_XML2_CONFIG=$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10/xml2-config
+    export WITH_XSLT_CONFIG=$PYODIDE_ROOT/packages/libxslt/build/libxslt-1.1.33/xslt-config
   cflags: |
     -I$(PYODIDE_ROOT)/packages/libxml/build/libxml-2.9.10/include
     -I$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/
