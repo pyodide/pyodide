@@ -66,6 +66,11 @@ substitutions:
   way.
   {pr}`2178`
 
+- {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
+  `loadPyodide` variable is created (instead, it should be accessed as an
+  attribute on the module).
+  {pr}`2249`
+
 ## Version 0.19.0
 
 _January 10, 2021_
