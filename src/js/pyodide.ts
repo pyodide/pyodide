@@ -233,7 +233,7 @@ export async function loadPyodide(config: {
   );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(config.homedir);
+  setHomeDirectory(config.homedir!);
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -270,4 +270,3 @@ export async function loadPyodide(config: {
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
-(globalThis as any).loadPyodide = loadPyodide;

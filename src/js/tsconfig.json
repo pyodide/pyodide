@@ -4,7 +4,6 @@
     "declaration": true,
     "lib": ["ES2021", "DOM"],
     "outDir": "../../build",
-    "rootDir": ".",
     "esModuleInterop": true,
     "target": "ES6",
     "module": "ES2020",
