@@ -38,7 +38,7 @@ async function main() {
   if (pyodide.isPyProxy(x)) {
     expectType<PyProxy>(x);
   } else {
-    expectType<number | string | boolean | bigint | undefined>(x);
+    expectType<any>(x);
   }
 
   let px: PyProxy = <PyProxy>{};
