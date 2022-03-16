@@ -169,6 +169,7 @@ class Package(BasePackage):
         if rebuilt:
             shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
             if log_dir and (self.pkgdir / "build.log").exists():
+                log_dir.mkdir(exist_ok=True, parents=True)
                 shutil.copy(
                     self.pkgdir / "build.log",
                     log_dir / f"{self.name}.log",
