@@ -55,6 +55,11 @@ substitutions:
   way.
   {pr}`2178`
 
+- {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
+  `loadPyodide` variable is created (instead, it should be accessed as an
+  attribute on the module).
+  {pr}`2249`
+
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
   needed, install a host copy of the package with pip instead. {pr}`2256`
 
