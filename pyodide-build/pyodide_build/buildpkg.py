@@ -23,6 +23,7 @@ from typing import Any, NoReturn, Optional, TextIO
 from urllib import request
 
 from . import pywasmcross
+from .common import find_matching_wheels
 
 
 @contextmanager
@@ -466,11 +467,16 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
-    wheel_paths = list(distdir.glob("*.whl"))
-    assert len(wheel_paths) == 1
-    unpack_wheel(wheel_paths[0])
-    wheel_paths[0].unlink()
-    wheel_dir = next(p for p in distdir.glob("*") if p.is_dir())
+    wheel, *rest = find_matching_wheels(distdir.glob("*.whl"))
+    if rest:
+        raise Exception(
+            f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
+        )
+    unpack_wheel(wheel)
+    wheel.unlink()
+    name, ver, _ = wheel.name.split("-", 2)
+    wheel_dir_name = f"{name}-{ver}"
+    wheel_dir = distdir / wheel_dir_name
 
     post = build_metadata.get("post")
     if post:
