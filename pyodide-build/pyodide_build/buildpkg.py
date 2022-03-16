@@ -22,6 +22,8 @@ from types import TracebackType
 from typing import Any, NoReturn, Optional, TextIO
 from urllib import request
 
+from packaging.utils import parse_wheel_filename
+
 from . import pywasmcross
 from .common import find_matching_wheels
 
@@ -474,7 +476,8 @@ def package_wheel(
         )
     unpack_wheel(wheel)
     wheel.unlink()
-    wheel_dir_name = "-".join(wheel.stem.split("-", 2)[:-1])
+    name, ver, *_ = parse_wheel_filename(wheel.name)
+    wheel_dir_name = f"{name}-{ver}"
     wheel_dir = distdir / wheel_dir_name
 
     post = build_metadata.get("post")

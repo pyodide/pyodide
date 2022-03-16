@@ -3,7 +3,8 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, Iterator, Optional
 
-from packaging.tags import Tag, compatible_tags, cpython_tags, parse_tag
+from packaging.tags import Tag, compatible_tags, cpython_tags
+from packaging.utils import parse_wheel_filename
 
 PLATFORM = "emscripten_wasm32"
 
@@ -32,13 +33,14 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
     -------
     The subset of wheel_paths that have tags that match the Pyodide interpreter.
     """
-    wheel_tags_list: list[tuple[Path, frozenset[Tag]]] = [
-        (wheel, parse_tag(wheel.stem.split("-", 2)[-1])) for wheel in wheel_paths
-    ]
+    wheel_tags_list: list[frozenset[Tag]] = []
+    for wheel in wheel_paths:
+        _, _, _, tags = parse_wheel_filename(wheel.name)
+        wheel_tags_list.append(tags)
     for supported_tag in pyodide_tags():
-        for wheel, wheel_tags in wheel_tags_list:
+        for wheel_path, wheel_tags in zip(wheel_paths, wheel_tags_list):
             if supported_tag in wheel_tags:
-                yield wheel
+                yield wheel_path
 
 
 UNVENDORED_STDLIB_MODULES = {"test", "distutils"}
