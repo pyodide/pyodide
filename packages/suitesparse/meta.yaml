@@ -20,7 +20,5 @@ build:
     emmake make BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so"
     mkdir -p dist/lib
     mkdir -p dist/include
-    mkdir -p dist/bin
-    cp -R bin/* dist/bin
     cp -R include/* dist/include
     cp -R lib/*  dist/lib
