@@ -31,23 +31,15 @@ source:
     - patches/USE_CPP14-branch-doesn-t-work-for-wasm.patch
 
 build:
-  # set linker and C flags to error on anything to do with function declarations being wrong.
-  # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
-  # will fail. Better to fail at compile or link time.
   cflags: |
     -I$(PYODIDE_ROOT)/packages/numpy/config
     -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
     -I$(PYODIDE_ROOT)/packages/.artifacts/include/
     -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
-    -DUNDERSCORE_G77
-    -Werror=implicit-function-declaration
-    -Werror=mismatched-parameter-types
-    -Werror=mismatched-return-types
     -Wno-return-type
+    -DUNDERSCORE_G77
   ldflags: |
     -L$(NUMPY_LIB)
-    -L$(NUMPY_LIB_BASE)/random/lib
-    -Wl,--fatal-warnings
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
@@ -90,18 +82,6 @@ build:
     echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
     echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
     echo '   loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
-
-  prereplay: |
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
-    find -name '*.c' | xargs sed -i 's/extern void F_WRAPPEDFUNC/extern int F_WRAPPEDFUNC/g'
-    find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
-    find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
-    find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
-    cd build/src.emscripten_wasm32-3.9/build/src.emscripten_wasm32-3.9/scipy/linalg
-    sed -i 's/,size_t//' _flapackmodule.c
-    sed -i 's/,slen([a-z]*))/)/g' _flapackmodule.c
-    sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' _fblasmodule.c
 
 requirements:
   run:

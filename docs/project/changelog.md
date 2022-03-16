@@ -16,32 +16,21 @@ substitutions:
 
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
-  boost-histogram {pr}`2174`
+- {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
 
-- Upgraded packages: distlib (0.3.4)
+- New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
+  standard library ssl module {pr}`2263`
+
+- Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
 ### Uncategorized
-
-- {{ Update }} Upgraded pyb2d to 0.7.2.
-  {pr}`2117`
 
 - {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
   {pr}`2220`
 
-- {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
-  {pr}`2109`
-
-- {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
-  {pr}`2110`
-
 - {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
   rather than the emscripten `file_packager.py` format.
   {pr}`2027`
-
-- {{Fix}} The "PyProxy has already been destroyed" error message has been
-  improved with some context information.
-  {pr}`2121`
 
 - {{Fix}} Python tracebacks now include Javascript frames when Python calls a
   Javascript function.
@@ -70,6 +59,41 @@ substitutions:
   `loadPyodide` variable is created (instead, it should be accessed as an
   attribute on the module).
   {pr}`2249`
+
+- {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
+  needed, install a host copy of the package with pip instead. {pr}`2256`
+
+_February 19, 2022_
+
+## Version 0.19.1
+
+### Packages
+
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
+
+- {{ Update }} Upgraded packages: pyb2d (0.7.2), {pr}`2117`
+
+- {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
+  {pr}`2109`
+
+- {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
+  {pr}`2110`
+
+## Type translations
+
+- {{Fix}} The "PyProxy has already been destroyed" error message has been
+  improved with some context information.
+  {pr}`2121`
+
+### REPL
+
+- {{Enhancement}} Pressing TAB in REPL no longer triggers completion when input
+  is whitespace. {pr}`2125`
+
+### List of contributors
+
+Christian Staudt, Gyeongjae Choi, Hood Chatham, Liumeo, Paul Korzhyk, Roman
+Yurchak, Seungmin Kim, Thorsten Beier
 
 ## Version 0.19.0
 
