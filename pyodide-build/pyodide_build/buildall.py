@@ -15,7 +15,7 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, ClassVar, Optional
+from typing import Any, Optional
 
 from . import common
 from .buildpkg import needs_rebuild
@@ -79,9 +79,6 @@ class StdLibPackage(BasePackage):
 
 @total_ordering
 class Package(BasePackage):
-    # If the CWD matters, hold this lock
-    cwd_lock: ClassVar[Lock] = Lock()
-
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
 
@@ -123,8 +120,6 @@ class Package(BasePackage):
         return None
 
     def build(self, outputdir: Path, args) -> None:
-        with self.__class__.cwd_lock:
-            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
 
         with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
@@ -168,7 +163,10 @@ class Package(BasePackage):
 
         if rebuilt:
             shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
+            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+
             if log_dir and (self.pkgdir / "build.log").exists():
+                log_dir.mkdir(exist_ok=True, parents=True)
                 shutil.copy(
                     self.pkgdir / "build.log",
                     log_dir / f"{self.name}.log",
@@ -188,13 +186,11 @@ class Package(BasePackage):
         if self.library:
             return
         if self.shared_library:
-            with self.__class__.cwd_lock:
-                file_path = shutil.make_archive(
-                    f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
-                )
-                shutil.copy(file_path, outputdir)
-                Path(file_path).unlink()
+            file_path = Path(self.pkgdir / f"{self.name}-{self.version}.zip")
+            shutil.copy(file_path, outputdir)
+            file_path.unlink()
             return
+
         shutil.copy(self.wheel_path(), outputdir)
         test_path = self.tests_path()
         if test_path:

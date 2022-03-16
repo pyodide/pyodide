@@ -8,11 +8,10 @@ endif
 
 
 all: .artifacts/bin/pyodide-build
-	mkdir -p build-logs
 	PYTHONPATH="$(PYODIDE_ROOT)/pyodide-build/"\
 		python -m pyodide_build buildall . ../build \
 		$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
-		--log-dir=build-logs
+		--log-dir=./build-logs
 
 .artifacts/bin/pyodide-build: ../pyodide-build/pyodide_build/**
 	mkdir -p $(HOSTINSTALLDIR)
