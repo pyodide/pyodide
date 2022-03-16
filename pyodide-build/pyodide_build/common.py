@@ -33,6 +33,7 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
     -------
     The subset of wheel_paths that have tags that match the Pyodide interpreter.
     """
+    wheel_paths = list(wheel_paths)
     wheel_tags_list: list[frozenset[Tag]] = []
     for wheel in wheel_paths:
         _, _, _, tags = parse_wheel_filename(wheel.name)
