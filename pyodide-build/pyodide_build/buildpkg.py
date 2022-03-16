@@ -706,6 +706,9 @@ def build_package(
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
 
+        if build_metadata.get("sharedlibrary"):
+            shutil.make_archive(f"{name}-{version}", "zip", pkg_root / "dist")
+
         create_packaged_token(build_dir)
 
 
