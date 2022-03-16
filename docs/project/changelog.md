@@ -16,6 +16,8 @@ substitutions:
 
 ### Packages
 
+- {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
+
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
   standard library ssl module {pr}`2263`
 
