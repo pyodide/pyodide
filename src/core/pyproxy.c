@@ -8,6 +8,7 @@
 #include "js2python.h"
 #include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
+#include "pyproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
