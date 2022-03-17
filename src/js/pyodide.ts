@@ -7,7 +7,7 @@ import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, PyodideInterface } from "./api.js";
 import "./error_handling.gen.js";
 
-import { PyProxy, PyProxyDict, Py2JsResult } from "./pyproxy.gen";
+import { PyProxy, PyProxyDict } from "./pyproxy.gen";
 
 export {
   PyProxy,
@@ -21,10 +21,11 @@ export {
   PyProxyAwaitable,
   PyProxyBuffer,
   PyProxyCallable,
-  Py2JsResult,
   TypedArray,
   PyBuffer,
 } from "./pyproxy.gen";
+
+export type Py2JsResult = any;
 
 let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
 /**
@@ -32,7 +33,7 @@ let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
  */
-API.runPythonInternal = function (code: string): Py2JsResult {
+API.runPythonInternal = function (code: string): any {
   return API._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
@@ -233,7 +234,7 @@ export async function loadPyodide(config: {
   );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(config.homedir);
+  setHomeDirectory(config.homedir!);
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -270,4 +271,3 @@ export async function loadPyodide(config: {
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
-(globalThis as any).loadPyodide = loadPyodide;

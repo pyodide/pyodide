@@ -1,57 +1,83 @@
-import os
+import base64
 import pathlib
+import textwrap
 
 import pytest
-from selenium.webdriver.support.wait import WebDriverWait
 
-ROOT_PATH = pathlib.Path(__file__).resolve().parents[2]
-
-TEST_PATH = ROOT_PATH / "packages" / "matplotlib" / "reference-images"
-TARGET_PATH = ROOT_PATH / "build" / "matplotlib-test"
+REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
 
 
-def get_backend(selenium_standalone):
-    selenium = selenium_standalone
-    return selenium.run(
-        """
-        import matplotlib
-        matplotlib.get_backend()
-        """
-    )
-
-
-def get_canvas_data(selenium, prefix):
-    import base64
-
-    canvas_tag_property = "//canvas[starts-with(@id, 'matplotlib')]"
-    canvas_element = selenium.driver.find_element_by_xpath(canvas_tag_property)
-    img_script = "return arguments[0].toDataURL('image/png').substring(21)"
-    canvas_base64 = selenium.driver.execute_script(img_script, canvas_element)
-    canvas_png = base64.b64decode(canvas_base64)
-    with open(rf"{TEST_PATH}/{prefix}-{selenium.browser}.png", "wb") as f:
-        f.write(canvas_png)
-
-
-def check_comparison(selenium, prefix, num_fonts):
-    font_wait = WebDriverWait(selenium.driver, timeout=350)
-    font_wait.until(FontsLoaded(num_fonts))
-
-    # If we don't have a reference image, write one to disk
-    if not os.path.isfile(f"{TEST_PATH}/{prefix}-{selenium.browser}.png"):
-        get_canvas_data(selenium, prefix)
-
-    selenium.run(
+def run_with_resolve(selenium, code):
+    selenium.run_js(
         f"""
-    url = 'http://{selenium.server_hostname}:{selenium.server_port}/matplotlib-test/{prefix}-{selenium.browser}.png'
-    threshold = 0
-    plt.gcf().canvas.compare_reference_image(url, threshold)
-    """
+        try {{
+            let promise = new Promise((resolve) => self.resolve = resolve);
+            pyodide.runPython({code!r});
+            await promise;
+        }} finally {{
+            delete self.resolve;
+        }}
+        """
     )
-    wait = WebDriverWait(selenium.driver, timeout=350)
-    wait.until(ResultLoaded())
-    assert selenium.run("window.font_counter") == num_fonts
-    assert selenium.run("window.deviation") == 0
-    assert selenium.run("window.result") is True
+
+
+def patch_font_loading_and_dpi(target_font=""):
+    """Monkey-patches font loading and dpi to allow testing"""
+    return textwrap.dedent(
+        f"""from matplotlib.backends.html5_canvas_backend import RendererHTMLCanvas
+        from matplotlib.backends.html5_canvas_backend import FigureCanvasHTMLCanvas
+        FigureCanvasHTMLCanvas.get_dpi_ratio = lambda self, context: 2.0
+        load_font_into_web = RendererHTMLCanvas.load_font_into_web
+        def load_font_into_web_wrapper(self, loaded_font, font_url, orig_function=load_font_into_web):
+            fontface = orig_function(self, loaded_font, font_url)
+
+            target_font = {target_font!r}
+            if not target_font or target_font == fontface.family:
+                try:
+                    from js import resolve
+                    resolve()
+                except Exception as e:
+                    raise ValueError("unable to resolve") from e
+
+        RendererHTMLCanvas.load_font_into_web = load_font_into_web_wrapper
+        """
+    )
+
+
+def save_canvas_data(selenium, output_path):
+    canvas_data = selenium.run(
+        """
+        import base64
+        canvas = plt.gcf().canvas.get_element("canvas")
+        canvas_data = canvas.toDataURL("image/png")[21:]
+        canvas_data
+        """
+    )
+
+    canvas_png = base64.b64decode(canvas_data)
+    output_path.write_bytes(canvas_png)
+
+
+def compare_with_reference_image(selenium, reference_image):
+    reference_image_encoded = base64.b64encode(reference_image.read_bytes())
+    deviation = selenium.run(
+        f"""
+        import io
+        import base64
+        import numpy as np
+        from PIL import Image
+        canvas_data = plt.gcf().canvas.get_pixel_data()
+        ref_data = np.asarray(Image.open(io.BytesIO(base64.b64decode({reference_image_encoded!r}))))
+
+        deviation = np.mean(np.abs(canvas_data - ref_data))
+        float(deviation)
+        """
+    )
+
+    # Note: uncomment this line if you want to save the output canvas image (for comparison).
+    # save_canvas_data(selenium, reference_image.with_name(f"output-{reference_image.name}"))
+
+    return deviation == 0.0
 
 
 @pytest.mark.skip_refcount_check
@@ -76,13 +102,17 @@ def test_svg(selenium):
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
-    selenium.run("from matplotlib import pyplot as plt")
-    selenium.run("plt.figure(); pass")
-    selenium.run("x = plt.plot([1,2,3])")
-    selenium.run("import io")
-    selenium.run("fd = io.BytesIO()")
-    selenium.run("plt.savefig(fd, format='svg')")
-    content = selenium.run("fd.getvalue().decode('utf8')")
+    content = selenium.run(
+        """
+        from matplotlib import pyplot as plt
+        import io
+        plt.figure()
+        x = plt.plot([1,2,3])
+        fd = io.BytesIO()
+        plt.savefig(fd, format='svg')
+        fd.getvalue().decode('utf8')
+        """
+    )
     assert len(content) == 14998
     assert content.startswith("<?xml")
 
@@ -92,12 +122,16 @@ def test_pdf(selenium):
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
-    selenium.run("from matplotlib import pyplot as plt")
-    selenium.run("plt.figure(); pass")
-    selenium.run("x = plt.plot([1,2,3])")
-    selenium.run("import io")
-    selenium.run("fd = io.BytesIO()")
-    selenium.run("plt.savefig(fd, format='pdf')")
+    selenium.run(
+        """
+        from matplotlib import pyplot as plt
+        plt.figure()
+        x = plt.plot([1,2,3])
+        import io
+        fd = io.BytesIO()
+        plt.savefig(fd, format='pdf')
+        """
+    )
 
 
 def test_font_manager(selenium):
@@ -138,22 +172,17 @@ def test_rendering(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-        from js import window
-        window.testing = True
-        from matplotlib import pyplot as plt
         import numpy as np
+        from matplotlib import pyplot as plt
         t = np.arange(0.0, 2.0, 0.01)
         s = 1 + np.sin(2 * np.pi * t)
         plt.figure()
@@ -161,12 +190,12 @@ def test_rendering(selenium_standalone):
         plt.plot(t, t)
         plt.grid(True)
         plt.show()
-        """
-        )
+        """,
+    )
 
-        check_comparison(selenium, "canvas", 1)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-{selenium.browser}.png"
+    )
 
 
 @pytest.mark.skip_refcount_check
@@ -175,20 +204,15 @@ def test_draw_image(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-        from js import window
-        window.testing = True
         import numpy as np
         import matplotlib.cm as cm
         import matplotlib.pyplot as plt
@@ -206,12 +230,12 @@ def test_draw_image(selenium_standalone):
                 origin='lower', extent=[-3, 3, -3, 3],
                 vmax=abs(Z).max(), vmin=-abs(Z).max())
         plt.show()
-        """
-        )
+        """,
+    )
 
-        check_comparison(selenium, "canvas-image", 1)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png"
+    )
 
 
 @pytest.mark.skip_refcount_check
@@ -220,21 +244,15 @@ def test_draw_image_affine_transform(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-        from js import window
-        window.testing = True
-
         import numpy as np
         import matplotlib.pyplot as plt
         import matplotlib.transforms as mtransforms
@@ -281,12 +299,12 @@ def test_draw_image_affine_transform(selenium_standalone):
                 rotate_deg(30).skew_deg(30, 15).scale(-1, .5).translate(.5, -1))
 
         plt.show()
-        """
-        )
+        """,
+    )
 
-        check_comparison(selenium, "canvas-image-affine", 1)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
+    )
 
 
 @pytest.mark.skip_refcount_check
@@ -295,22 +313,18 @@ def test_draw_text_rotated(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
-    if selenium.browser == "chrome":
-        pytest.xfail(f"high recursion limit not supported for {selenium.browser}")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
+        import os
+        os.environ["TESTING_MATPLOTLIB"] = "1"
+
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-        from js import window
-        window.testing = True
         import matplotlib.pyplot as plt
         from matplotlib.dates import (
             YEARLY, DateFormatter,
@@ -340,41 +354,36 @@ def test_draw_text_rotated(selenium_standalone):
         plt.setp(labels, rotation=30, fontsize=10)
 
         plt.show()
-        """
-        )
+        """,
+    )
 
-        check_comparison(selenium, "canvas-text-rotated", 1)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
+    )
 
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
-    xfail_msg = None
     if selenium.browser == "node":
-        xfail_msg = "No supported matplotlib backends on node"
-    elif selenium.browser == "chrome":
-        xfail_msg = f"high recursion limit not supported for {selenium.browser}"
-    elif selenium.browser == "firefox":
-        xfail_msg = "Fails sometimes with selenium.common.exceptions.TimeoutException"
-    if xfail_msg:
-        pytest.xfail(xfail_msg)
+        pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            r"""
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
+        """
+        + r"""
+        import os
+        os.environ["TESTING_MATPLOTLIB"] = "1"
+
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
         from js import window
-        window.testing = True
+        window.testingMatplotlib = True
         import matplotlib.pyplot as plt
         import sys
         import re
@@ -472,12 +481,12 @@ def test_draw_math_text(selenium_standalone):
                 print(i, s)
             plt.show()
         doall()
-        """
-        )
+        """,
+    )
 
-        check_comparison(selenium, "canvas-math-text", 1)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
+    )
 
 
 @pytest.mark.skip_refcount_check
@@ -486,39 +495,35 @@ def test_custom_font_text(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
-            import matplotlib
-            matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-            from js import window
-            window.testing = True
-            import matplotlib.pyplot as plt
-            import numpy as np
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi(target_font='cmsy10')}
+        import matplotlib
+        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        import matplotlib.pyplot as plt
+        import numpy as np
 
-            f = {'fontname': 'cmsy10'}
+        f = {{'fontname': 'cmsy10'}}
 
-            t = np.arange(0.0, 2.0, 0.01)
-            s = 1 + np.sin(2 * np.pi * t)
-            plt.figure()
-            plt.title('A simple Sine Curve', **f)
-            plt.plot(t, s, linewidth=1.0, marker=11)
-            plt.plot(t, t)
-            plt.grid(True)
-            plt.show()
-            """
-        )
+        t = np.arange(0.0, 2.0, 0.01)
+        s = 1 + np.sin(2 * np.pi * t)
+        plt.figure()
+        plt.title('A simple Sine Curve', **f)
+        plt.plot(t, s, linewidth=1.0, marker=11)
+        plt.plot(t, t)
+        plt.grid(True)
+        plt.show()
+        """,
+    )
 
-        check_comparison(selenium, "canvas-custom-font-text", 2)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium,
+        REFERENCE_IMAGES_PATH / f"canvas-custom-font-text-{selenium.browser}.png",
+    )
 
 
 @pytest.mark.skip_refcount_check
@@ -527,47 +532,41 @@ def test_zoom_on_polar_plot(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
-            import matplotlib
-            matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-            from js import window
-            window.testing = True
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
+        import matplotlib
+        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        import numpy as np
+        import matplotlib.pyplot as plt
+        np.random.seed(42)
 
-            import numpy as np
-            import matplotlib.pyplot as plt
-            np.random.seed(42)
+        # Compute pie slices
+        N = 20
+        theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
+        radii = 10 * np.random.rand(N)
+        width = np.pi / 4 * np.random.rand(N)
 
-            # Compute pie slices
-            N = 20
-            theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
-            radii = 10 * np.random.rand(N)
-            width = np.pi / 4 * np.random.rand(N)
+        ax = plt.subplot(111, projection='polar')
+        bars = ax.bar(theta, radii, width=width, bottom=0.0)
 
-            ax = plt.subplot(111, projection='polar')
-            bars = ax.bar(theta, radii, width=width, bottom=0.0)
+        # Use custom colors and opacity
+        for r, bar in zip(radii, bars):
+            bar.set_facecolor(plt.cm.viridis(r / 10.))
+            bar.set_alpha(0.5)
 
-            # Use custom colors and opacity
-            for r, bar in zip(radii, bars):
-                bar.set_facecolor(plt.cm.viridis(r / 10.))
-                bar.set_alpha(0.5)
+        ax.set_rlim([0,5])
+        plt.show()
+        """,
+    )
 
-            ax.set_rlim([0,5])
-            plt.show()
-            """
-        )
-
-        check_comparison(selenium, "canvas-polar-zoom", 1)
-    finally:
-        TARGET_PATH.unlink()
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
+    )
 
 
 @pytest.mark.skip_refcount_check
@@ -576,21 +575,15 @@ def test_transparency(selenium_standalone):
     selenium = selenium_standalone
     if selenium.browser == "node":
         pytest.xfail("No supported matplotlib backends on node")
+
     selenium.load_package("matplotlib")
-    if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
-        print(
-            "test supported only for html5 canvas backend. wasm backend is currently used. switching to html5 canvas backend"
-        )
-    TARGET_PATH.symlink_to(TEST_PATH, True)
-    try:
-        selenium.get_driver().set_script_timeout(7000)
-        selenium.run(
-            """
+    selenium.set_script_timeout(60)
+    run_with_resolve(
+        selenium,
+        f"""
+        {patch_font_loading_and_dpi()}
         import matplotlib
         matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
-        from js import window
-        window.testing = True
-
         import numpy as np
         np.random.seed(19680801)
         import matplotlib.pyplot as plt
@@ -607,24 +600,9 @@ def test_transparency(selenium_standalone):
         ax.grid(True)
 
         plt.show()
-        """
-        )
+        """,
+    )
 
-        check_comparison(selenium, "canvas-transparency", 1)
-    finally:
-        TARGET_PATH.unlink()
-
-
-class ResultLoaded:
-    def __call__(self, driver):
-        inited = driver.execute_script("return window.result")
-        return inited is not None
-
-
-class FontsLoaded:
-    def __init__(self, num_fonts):
-        self.num_fonts = num_fonts
-
-    def __call__(self, driver):
-        font_inited = driver.execute_script("return window.font_counter")
-        return font_inited is not None and font_inited == self.num_fonts
+    assert compare_with_reference_image(
+        selenium, REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"
+    )

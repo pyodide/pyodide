@@ -140,7 +140,7 @@ def compile(env, **kwargs):
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
     make_command_wrapper_symlinks(env)
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
+    env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
 
     from pyodide_build.pypabuild import build
 

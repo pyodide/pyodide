@@ -16,6 +16,8 @@ substitutions:
 
 ### Packages
 
+- {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
+
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
   standard library ssl module {pr}`2263`
 
@@ -53,8 +55,21 @@ substitutions:
   way.
   {pr}`2178`
 
+- {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
+  `loadPyodide` variable is created (instead, it should be accessed as an
+  attribute on the module).
+  {pr}`2249`
+
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
   needed, install a host copy of the package with pip instead. {pr}`2256`
+
+- {{ Update }} Pyodide now runs Python 3.10.2.
+  {pr}`2225`
+
+- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
+  accurate. For backwards compatibility, we still export `Py2JsResult` as an
+  alias for `any`.
+  {pr}`2277`
 
 _February 19, 2022_
 

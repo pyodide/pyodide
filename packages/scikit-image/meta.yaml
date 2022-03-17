@@ -15,7 +15,7 @@ requirements:
     - scipy
     - matplotlib
     - networkx
-    - pillow
+    - Pillow
     - imageio
     - pywavelets
 

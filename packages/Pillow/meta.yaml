@@ -1,5 +1,5 @@
 package:
-  name: pillow
+  name: Pillow
   version: 9.0.0
 source:
   sha256: ee6e2963e92762923956fe5d3479b1fdc3b76c83f290aad131a2f98c3df0593e

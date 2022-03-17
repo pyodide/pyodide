@@ -13,7 +13,7 @@ from pyodide_build.testing import PYVERSION, run_in_pyodide
 
 def test_command_compiler():
     c = _Compile()
-    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+    with pytest.raises(SyntaxError, match="invalid syntax"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -72,6 +72,8 @@ def test_completion():
             "all(",
             "any(",
             "ascii(",
+            "aiter(",
+            "anext(",
         ],
         0,
     )

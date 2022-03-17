@@ -254,10 +254,6 @@ Module.handle_js_error = function (e: any) {
  *    easiest way is to only handle the exception in Python.
  */
 export class PythonError extends Error {
-  /**
-   * The Python traceback.
-   */
-  message: string;
   /**  The address of the error we are wrapping. We may later compare this
    * against sys.last_value.
    * WARNING: we don't own a reference to this pointer, dereferencing it

@@ -78,7 +78,7 @@ build:
     echo 'import sys' >> scipy/__init__.py
     echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
     echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
-    echo '   loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
+    echo "   loadDynamicLibrary('/lib/python$PYMAJOR.$PYMINOR/site-packages/scipy/linalg/_flapack.so')" >> scipy/__init__.py
 
 requirements:
   run:
