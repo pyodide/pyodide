@@ -1,12 +1,6 @@
 import { Module, API, Hiwire } from "./module";
 import { loadPackage, loadedPackages } from "./load-package";
-import {
-  isPyProxy,
-  PyBuffer,
-  PyProxy,
-  Py2JsResult,
-  TypedArray,
-} from "./pyproxy.gen";
+import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
 
@@ -50,10 +44,7 @@ export let version: string = ""; // actually defined in loadPyodide (see pyodide
  * @returns The result of the Python code translated to JavaScript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
-export function runPython(
-  code: string,
-  globals: PyProxy = API.globals
-): Py2JsResult {
+export function runPython(code: string, globals: PyProxy = API.globals): any {
   return API.pyodide_py.eval_code(code, globals);
 }
 API.runPython = runPython;
@@ -141,7 +132,7 @@ export async function loadPackagesFromImports(
 export async function runPythonAsync(
   code: string,
   globals: PyProxy = API.globals
-): Promise<Py2JsResult> {
+): Promise<any> {
   return await API.pyodide_py.eval_code_async(code, globals);
 }
 API.runPythonAsync = runPythonAsync;
@@ -217,7 +208,7 @@ export function toPy(
       cacheConversion: (input: any, output: any) => any
     ) => any;
   } = { depth: -1 }
-): Py2JsResult {
+): any {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {

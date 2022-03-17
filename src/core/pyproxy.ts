@@ -320,14 +320,7 @@ Module.callPyObject = function (ptrobj: number, ...jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
 };
 
-export type Py2JsResult =
-  | PyProxy
-  | number
-  | bigint
-  | string
-  | boolean
-  | undefined;
-export type PyProxy = PyProxyClass & { [x: string]: Py2JsResult };
+export type PyProxy = PyProxyClass & { [x: string]: any };
 
 export class PyProxyClass {
   $$: { ptr: number; cache: PyProxyCache; destroyed_msg?: string };
@@ -587,7 +580,7 @@ export class PyProxyGetItemMethods {
    * @param key The key to look up.
    * @returns The corresponding value.
    */
-  get(key: any): Py2JsResult {
+  get(key: any): any {
     let ptrobj = _getPtr(this);
     let idkey = Hiwire.new_value(key);
     let idresult;
@@ -709,7 +702,7 @@ export class PyProxyContainsMethods {
  *
  * @private
  */
-function* iter_helper(iterptr: number, token: {}): Generator<Py2JsResult> {
+function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
@@ -743,7 +736,7 @@ export class PyProxyIterableMethods {
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    */
-  [Symbol.iterator](): Iterator<Py2JsResult, Py2JsResult, Py2JsResult> {
+  [Symbol.iterator](): Iterator<any, any, any> {
     let ptrobj = _getPtr(this);
     let token = {};
     let iterptr;
@@ -789,7 +782,7 @@ export class PyProxyIteratorMethods {
    * some_value}``. When the generator raises a ``StopIteration(result_value)``
    * exception, ``next`` returns ``{done : true, value : result_value}``.
    */
-  next(arg: any = undefined): IteratorResult<Py2JsResult, Py2JsResult> {
+  next(arg: any = undefined): IteratorResult<any, any> {
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
     let idarg = Hiwire.new_value(arg);
@@ -988,7 +981,7 @@ let PyProxyHandlers = {
   },
 };
 
-export type PyProxyAwaitable = PyProxy & Promise<Py2JsResult>;
+export type PyProxyAwaitable = PyProxy & Promise<any>;
 
 /**
  * The Promise / JavaScript awaitable API.
@@ -1107,7 +1100,7 @@ export class PyProxyAwaitableMethods {
 
 export type PyProxyCallable = PyProxy &
   PyProxyCallableMethods &
-  ((...args: any[]) => Py2JsResult);
+  ((...args: any[]) => any);
 
 export class PyProxyCallableMethods {
   apply(jsthis: PyProxyClass, jsargs: any) {

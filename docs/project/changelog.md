@@ -66,6 +66,11 @@ substitutions:
 - {{ Update }} Pyodide now runs Python 3.10.2.
   {pr}`2225`
 
+- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
+  accurate. For backwards compatibility, we still export `Py2JsResult` as an
+  alias for `any`.
+  {pr}`2277`
+
 _February 19, 2022_
 
 ## Version 0.19.1

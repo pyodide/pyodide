@@ -44,7 +44,7 @@ requirements:
     - kiwisolver
     - numpy
     - packaging
-    - pillow
+    - Pillow
     - pyparsing
     - python-dateutil
     - pytz
