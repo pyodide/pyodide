@@ -7,7 +7,7 @@ source:
 requirements:
   run:
     - numpy
-    - pillow
+    - Pillow
 test:
   imports:
     - imageio

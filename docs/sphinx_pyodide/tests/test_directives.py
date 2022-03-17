@@ -3,13 +3,15 @@ import gzip
 import json
 import pathlib
 import sys
-from typing import Mapping
+import types
+from typing import Mapping, Union
 
 from docutils.frontend import OptionParser
 from docutils.utils import new_document
 
 # Shim sphinx-js Python 3.10 compatibility
 collections.Mapping = Mapping  # type: ignore[attr-defined]
+types.Union = Union  # type: ignore[attr-defined]
 from sphinx_js.suffix_tree import SuffixTree
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 

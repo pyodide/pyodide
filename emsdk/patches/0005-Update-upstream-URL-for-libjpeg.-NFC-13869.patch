@@ -1,7 +1,7 @@
-From 2b49ba503a0fd0be14e71ea831c06503b543ecb0 Mon Sep 17 00:00:00 2001
+From 3b8024dd9ebe6c1161c99c9cc96ab20c8912eb4d Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Mon, 12 Apr 2021 09:27:04 -0700
-Subject: [PATCH] Update upstream URL for libjpeg. NFC (#13869)
+Subject: [PATCH 5/8] Update upstream URL for libjpeg. NFC (#13869)
 
 The old URL seems to be generating `Forbidden!`.
 
@@ -11,11 +11,11 @@ this kind of thing.
  tools/ports/libjpeg.py | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/emsdk/upstream/emscripten/tools/ports/libjpeg.py b/emsdk/upstream/emscripten/tools/ports/libjpeg.py
-index f0deb7f4a7d..563ef7fd09f 100644
---- a/emsdk/upstream/emscripten/tools/ports/libjpeg.py
-+++ b/emsdk/upstream/emscripten/tools/ports/libjpeg.py
-@@ -8,7 +8,7 @@
+diff --git a/tools/ports/libjpeg.py b/tools/ports/libjpeg.py
+index f0deb7f4a..56926c841 100644
+--- a/tools/ports/libjpeg.py
++++ b/tools/ports/libjpeg.py
+@@ -8,7 +8,7 @@ import shutil
  import logging
  
  VERSION = '9c'
@@ -33,3 +33,6 @@ index f0deb7f4a7d..563ef7fd09f 100644
  
    def create(final):
      logging.info('building port: libjpeg')
+-- 
+2.25.1
+

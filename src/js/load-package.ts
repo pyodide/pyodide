@@ -46,7 +46,7 @@ const DEFAULT_CHANNEL = "default channel";
 // Regexp for validating package name and URI
 const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
-function _uri_to_package_name(package_uri: string): string {
+function _uri_to_package_name(package_uri: string): string | undefined {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
     let wheel_name = match[1].toLowerCase();
@@ -202,6 +202,7 @@ function createLock() {
     let releaseLock: () => void;
     _lock = new Promise((resolve) => (releaseLock = resolve));
     await old_lock;
+    // @ts-ignore
     return releaseLock;
   }
   return acquireLock;
@@ -237,6 +238,7 @@ async function loadDynlib(lib: string, shared: boolean) {
     const module = await Module.loadWebAssemblyModule(byteArray, {
       loadAsync: true,
       nodelete: true,
+      allowUndefined: true,
     });
     Module.preloadedWasm[lib] = module;
     if (shared) {

@@ -19,7 +19,7 @@ from typing import Any, Optional
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import UNVENDORED_STDLIB_MODULES
+from .common import UNVENDORED_STDLIB_MODULES, find_matching_wheels
 from .io import parse_package_config
 
 
@@ -103,14 +103,12 @@ class Package(BasePackage):
 
     def wheel_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        wheels = list(dist_dir.glob("*emscripten_wasm32.whl")) + list(
-            dist_dir.glob("*py3-none-any.whl")
-        )
-        if len(wheels) != 1:
+        wheel, *rest = find_matching_wheels(dist_dir.glob("*.whl"))
+        if rest:
             raise Exception(
-                f"Unexpected number of wheels {len(wheels)} when building {self.name}"
+                f"Unexpected number of wheels {len(rest) + 1} when building {self.name}"
             )
-        return wheels[0]
+        return wheel
 
     def tests_path(self) -> Optional[Path]:
         tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
@@ -120,6 +118,7 @@ class Package(BasePackage):
         return None
 
     def build(self, outputdir: Path, args) -> None:
+
         with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
                 [
@@ -162,9 +161,13 @@ class Package(BasePackage):
 
         if rebuilt:
             shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
-            if args.log_dir and (self.pkgdir / "build.log").exists():
+            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+
+            if log_dir and (self.pkgdir / "build.log").exists():
+                log_dir.mkdir(exist_ok=True, parents=True)
                 shutil.copy(
-                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
+                    self.pkgdir / "build.log",
+                    log_dir / f"{self.name}.log",
                 )
         else:
             (self.pkgdir / "build.log.tmp").unlink()
@@ -181,12 +184,11 @@ class Package(BasePackage):
         if self.library:
             return
         if self.shared_library:
-            file_path = shutil.make_archive(
-                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
-            )
+            file_path = Path(self.pkgdir / f"{self.name}-{self.version}.zip")
             shutil.copy(file_path, outputdir)
-            Path(file_path).unlink()
+            file_path.unlink()
             return
+
         shutil.copy(self.wheel_path(), outputdir)
         test_path = self.tests_path()
         if test_path:
@@ -380,9 +382,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set: dict[
-        str, None
-    ] = {}  # using dict keys for insertion order preservation
+    # Using dict keys for insertion order preservation
+    package_set: dict[str, None] = {}
 
     def builder(n):
         nonlocal queue_idx
