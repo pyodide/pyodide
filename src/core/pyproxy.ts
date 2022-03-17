@@ -39,6 +39,10 @@ declare var IS_ITERATOR: number;
 declare var IS_AWAITABLE: number;
 declare var IS_BUFFER: number;
 
+declare var PYGEN_NEXT: number;
+declare var PYGEN_RETURN: number;
+declare var PYGEN_ERROR: number;
+
 declare function DEREF_U32(ptr: number, offset: number): number;
 // end-pyodide-skip
 
@@ -779,26 +783,28 @@ export class PyProxyIteratorMethods {
    * exception, ``next`` returns ``{done : true, value : result_value}``.
    */
   next(arg: any = undefined): IteratorResult<any, any> {
-    let idresult;
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
     let idarg = Hiwire.new_value(arg);
+    let status;
     let done;
+    let stackTop = Module.stackSave();
+    let res_ptr = Module.stackAlloc(4);
     try {
-      idresult = Module.__pyproxyGen_Send(_getPtr(this), idarg);
-      done = idresult === 0;
-      if (done) {
-        idresult = Module.__pyproxyGen_FetchStopIterationValue();
-      }
+      status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
     } catch (e) {
       API.fatal_error(e);
     } finally {
       Hiwire.decref(idarg);
     }
-    if (done && idresult === 0) {
+    let HEAPU32 = Module.HEAPU32;
+    let idresult = DEREF_U32(res_ptr, 0);
+    Module.stackRestore(stackTop);
+    if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
     let value = Hiwire.pop_value(idresult);
+    done = status === PYGEN_RETURN;
     return { done, value };
   }
 }

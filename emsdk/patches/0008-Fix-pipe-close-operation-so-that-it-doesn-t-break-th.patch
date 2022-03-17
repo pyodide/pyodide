@@ -1,0 +1,39 @@
+From c77f3ef38584de5f41ba11b6821a905493100c47 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Sat, 17 Jul 2021 16:54:40 -0700
+Subject: [PATCH 8/8] Fix pipe close operation so that it doesn't break the
+ other side of the pipe
+
+---
+ src/library_pipefs.js | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/src/library_pipefs.js b/src/library_pipefs.js
+index c1a92ff13..e9f661ab9 100644
+--- a/src/library_pipefs.js
++++ b/src/library_pipefs.js
+@@ -18,7 +18,8 @@ mergeInto(LibraryManager.library, {
+     },
+     createPipe: function () {
+       var pipe = {
+-        buckets: []
++        buckets: [],
++        closed_ends : 0,
+       };
+ 
+       pipe.buckets.push({
+@@ -215,7 +216,10 @@ mergeInto(LibraryManager.library, {
+       },
+       close: function (stream) {
+         var pipe = stream.node.pipe;
+-        pipe.buckets = null;
++        pipe.closed_ends ++;
++        if(pipe.closed_ends === 2){
++          pipe.buckets = null;
++        }
+       }
+     },
+     nextname: function () {
+-- 
+2.25.1
+

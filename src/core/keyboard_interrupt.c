@@ -6,7 +6,7 @@
 
 static int callback_clock = 50;
 
-int
+void
 pyodide_callback(void)
 {
   callback_clock--;
@@ -21,7 +21,6 @@ pyodide_callback(void)
       PyErr_SetInterrupt();
     }
   }
-  return 0;
 }
 
 void

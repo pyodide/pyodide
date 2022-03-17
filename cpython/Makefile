@@ -60,7 +60,7 @@ clean-all: clean
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(URL)
-	md5sum --quiet --check checksums || (rm $@; false)
+	shasum --algorithm 256 --check checksums --quiet || (rm $@; false)
 
 
 $(ZLIBTARBALL):
