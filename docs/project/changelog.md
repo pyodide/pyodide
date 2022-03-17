@@ -63,6 +63,11 @@ substitutions:
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
   needed, install a host copy of the package with pip instead. {pr}`2256`
 
+- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
+  accurate. For backwards compatibility, we still export `Py2JsResult` as an
+  alias for `any`.
+  {pr}`2277`
+
 _February 19, 2022_
 
 ## Version 0.19.1
