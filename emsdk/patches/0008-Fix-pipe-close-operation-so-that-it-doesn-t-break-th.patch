@@ -1,17 +1,15 @@
-From 915b63517ae4b128fa5507a70dc6aa96d18e4f8b Mon Sep 17 00:00:00 2001
+From c77f3ef38584de5f41ba11b6821a905493100c47 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Sat, 17 Jul 2021 16:54:40 -0700
-Subject: [PATCH 01/11] Fix pipe close operation so that it doesn't break the
+Subject: [PATCH 8/8] Fix pipe close operation so that it doesn't break the
  other side of the pipe
 
 ---
- src/library_pipefs.js      |  8 +++--
- tests/other/test_fd_pipe.c | 73 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 79 insertions(+), 2 deletions(-)
- create mode 100644 tests/other/test_fd_pipe.c
+ src/library_pipefs.js | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/src/library_pipefs.js b/src/library_pipefs.js
-index c1a92ff135f..e9f661ab946 100644
+index c1a92ff13..e9f661ab9 100644
 --- a/src/library_pipefs.js
 +++ b/src/library_pipefs.js
 @@ -18,7 +18,8 @@ mergeInto(LibraryManager.library, {
@@ -36,3 +34,6 @@ index c1a92ff135f..e9f661ab946 100644
        }
      },
      nextname: function () {
+-- 
+2.25.1
+

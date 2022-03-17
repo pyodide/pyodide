@@ -1,7 +1,7 @@
 From 3b8024dd9ebe6c1161c99c9cc96ab20c8912eb4d Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Mon, 12 Apr 2021 09:27:04 -0700
-Subject: [PATCH 5/5] Update upstream URL for libjpeg. NFC (#13869)
+Subject: [PATCH 5/8] Update upstream URL for libjpeg. NFC (#13869)
 
 The old URL seems to be generating `Forbidden!`.
 

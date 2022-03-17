@@ -1,7 +1,7 @@
 From ac2fc760dd5eda8f999bcf4c40490ebe4442304f Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Thu, 3 Jun 2021 09:42:51 -0700
-Subject: [PATCH 2/5] Add support for `--preload-file` in Node.js (#11785)
+Subject: [PATCH 2/8] Add support for `--preload-file` in Node.js (#11785)
 
 Note: this is included in emscripten 2.O.24
 ---
