@@ -39,6 +39,10 @@ declare var IS_ITERATOR: number;
 declare var IS_AWAITABLE: number;
 declare var IS_BUFFER: number;
 
+declare var PYGEN_NEXT: number;
+declare var PYGEN_RETURN: number;
+declare var PYGEN_ERROR: number;
+
 declare function DEREF_U32(ptr: number, offset: number): number;
 // end-pyodide-skip
 
@@ -790,7 +794,6 @@ export class PyProxyIteratorMethods {
     let res_ptr = Module.stackAlloc(4);
     try {
       status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
-      done = status !== 1;
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -799,11 +802,11 @@ export class PyProxyIteratorMethods {
     let HEAPU32 = Module.HEAPU32;
     let idresult = DEREF_U32(res_ptr, 0);
     Module.stackRestore(stackTop);
-    if (status === -1) {
+    if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
     let value = Hiwire.pop_value(idresult);
-    done = status === 0;
+    done = status === PYGEN_RETURN;
     return { done, value };
   }
 }
