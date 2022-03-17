@@ -1,0 +1,32 @@
+From 0af28113a35d68434dabc8103174e66ceac0db3a Mon Sep 17 00:00:00 2001
+From: Jeffrey Bouas <ignirtoq@gmail.com>
+Date: Mon, 27 Aug 2018 11:53:00 -0500
+Subject: [PATCH 06/17] Update README with economy decomposition example.
+
+---
+ README.md | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/README.md b/README.md
+index 7103898..f66dee4 100644
+--- a/README.md
++++ b/README.md
+@@ -47,6 +47,15 @@ r = rank  # r could be min(M.shape) if M is full-rank
+ # The system is only solvable if the lower part of Q.T @ B is all zero:
+ print( "System is solvable if this is zero:", abs( (( Q.tocsc()[:,r:] ).T ).dot( B ) ).sum() )
+ 
++# Systems with large non-square matrices can benefit from "economy" decomposition.
++M = scipy.sparse.rand( 20, 5, density=0.1 )
++Q, R, E, rank = sparseqr.qr( M )
++print("Q shape:", Q.shape)  # Q shape: (20, 20)
++print("R shape:", R.shape)  # R shape: (20, 5)
++Q, R, E, rank = sparseqr.qr( M, economy=True )
++print("Q shape:", Q.shape)  # Q shape: (20, 5)
++print("R shape:", R.shape)  # R shape: (5, 5)
++
+ # Use CSC format for fast indexing of columns.
+ R = R.tocsc()[:r,:r]
+ Q = Q.tocsc()[:,:r]
+-- 
+2.25.1
+

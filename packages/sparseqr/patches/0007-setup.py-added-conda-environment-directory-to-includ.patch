@@ -1,0 +1,39 @@
+From eeb35eda3f876140367eb4c3b28f2dd770e2ae17 Mon Sep 17 00:00:00 2001
+From: Ben Smith <bsmith@apl.washington.edu>
+Date: Fri, 7 Aug 2020 17:11:26 -0600
+Subject: [PATCH 07/17] setup.py: added conda environment directory to includes
+
+---
+ setup.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/setup.py b/setup.py
+index 138fc06..5b0c83b 100644
+--- a/setup.py
++++ b/setup.py
+@@ -3,6 +3,13 @@
+ from __future__ import division, print_function, absolute_import
+ 
+ from setuptools import setup
++import numpy
++import os
++
++try:
++    include_dirs=[numpy.get_include(), os.path.join(os.environ['CONDA_PREFIX'], 'include')]
++except Exception:
++    include_dirs=None
+ 
+ setup(
+     name = "sparseqr",
+@@ -54,7 +61,7 @@ Supports Python 2.7 and 3.4.
+     cffi_modules = ["sparseqr/sparseqr_gen.py:ffibuilder"],
+     install_requires = ["numpy", "scipy", "cffi>=1.0.0"],
+     provides = ["sparseqr"],
+-
++    include_dirs=include_dirs,
+     # keywords for PyPI (in case you upload your project)
+     #
+     # e.g. the keywords your project uses as topics on GitHub, minus "python" (if there)
+-- 
+2.25.1
+

@@ -1,0 +1,40 @@
+From b213399a7a45ccaec1f814515803478fb7c09ce7 Mon Sep 17 00:00:00 2001
+From: Jeffrey Bouas <ignirtoq@gmail.com>
+Date: Sun, 26 Aug 2018 06:46:27 -0500
+Subject: [PATCH 04/17] Added support for "economy" decomposition.
+
+---
+ sparseqr/sparseqr.py | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/sparseqr/sparseqr.py b/sparseqr/sparseqr.py
+index 0f5e3a9..401270f 100644
+--- a/sparseqr/sparseqr.py
++++ b/sparseqr/sparseqr.py
+@@ -200,7 +200,7 @@ def cholmod_free_dense( A ):
+ 
+ ## Solvers
+ 
+-def qr( A, tolerance = None ):
++def qr( A, tolerance = None, economy = False ):
+     '''
+     Given a sparse matrix A,
+     returns Q, R, E, rank such that:
+@@ -254,11 +254,13 @@ def qr( A, tolerance = None ):
+ 
+     if tolerance is None: tolerance = lib.SPQR_DEFAULT_TOL
+ 
++    econ = A.shape[1] if economy else A.shape[0]
++
+     rank = lib.SuiteSparseQR_C_QR(
+         ## Input
+         lib.SPQR_ORDERING_DEFAULT,
+         tolerance,
+-        A.shape[0],
++        econ,
+         chol_A,
+         ## Output
+         chol_Q,
+-- 
+2.25.1
+
