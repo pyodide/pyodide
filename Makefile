@@ -59,6 +59,10 @@ build/pyodide.asm.js: \
 		let clearImmediate = globalThis.clearImmediate;\
 		let baseName, fpcGOT, dyncallGOT, fpVal, dcVal;\
 	' build/pyodide.asm.js
+	# Remove last 6 lines of pyodide.asm.js, see issue #2282
+	for _ in {1..6} ; do \
+		sed -i '$$d' build/pyodide.asm.js ; \
+	done
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
