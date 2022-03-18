@@ -1,16 +1,6 @@
 import ErrorStackParser from "error-stack-parser";
 import { Module, API, Hiwire, Tests } from "./module.js";
 
-/**
- * Dump the Python traceback to the browser console.
- *
- * @private
- */
-API.dump_traceback = function () {
-  const fd_stdout = 1;
-  Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
-};
-
 let fatal_error_occurred = false;
 /**
  * Signal a fatal error.
@@ -59,7 +49,7 @@ API.fatal_error = function (e: any) {
     console.error(e);
   }
   try {
-    API.dump_traceback();
+    Module._dump_traceback();
     for (let key of Object.keys(API.public_api)) {
       if (key.startsWith("_") || key === "version") {
         continue;
