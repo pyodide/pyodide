@@ -103,12 +103,12 @@ class Package(BasePackage):
 
     def wheel_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        wheel, *rest = find_matching_wheels(dist_dir.glob("*.whl"))
-        if rest:
+        wheels = list(find_matching_wheels(dist_dir.glob("*.whl")))
+        if len(wheels) != 1:
             raise Exception(
-                f"Unexpected number of wheels {len(rest) + 1} when building {self.name}"
+                f"Unexpected number of wheels {len(wheels)} when building {self.name}"
             )
-        return wheel
+        return wheels[0]
 
     def tests_path(self) -> Optional[Path]:
         tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
