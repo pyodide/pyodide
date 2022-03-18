@@ -29,4 +29,3 @@
 #include "src/Core/util/ReenableStupidWarnings.h"
 
 #endif // EIGEN_JACOBI_MODULE_H
-

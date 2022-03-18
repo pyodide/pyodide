@@ -17,7 +17,10 @@ source:
     - [Eigen/Jacobi, python_solvespace/include/Eigen/Jacobi]
     - [Eigen/KLUSupport, python_solvespace/include/Eigen/KLUSupport]
     - [Eigen/LU, python_solvespace/include/Eigen/LU]
-    - [Eigen/MetisSupport, python_solvespace/include/Eigen/MetisSupport]
+    - [
+        Eigen/MetisSupport,
+        python_solvespace/include/Eigen/MetisSupport
+      ]
     - [Eigen/OrderingMethods, python_solvespace/include/Eigen/OrderingMethods]
     - [Eigen/PardisoSupport, python_solvespace/include/Eigen/PardisoSupport]
     - [Eigen/PaStiXSupport, python_solvespace/include/Eigen/PaStiXSupport]
@@ -37,7 +40,7 @@ source:
     - [Eigen/UmfPackSupport, python_solvespace/include/Eigen/UmfPackSupport]
 test:
   imports:
-  - python_solvespace
+    - python_solvespace
 about:
   home: https://github.com/KmolYuan/solvespace/tree/python
   PyPI: https://pypi.org/project/python_solvespace
