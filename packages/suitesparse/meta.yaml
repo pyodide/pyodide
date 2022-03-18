@@ -9,8 +9,6 @@ source:
     - patches/0001-Changed-a-few-files.patch
 
 requirements:
-  #build:
-  #- CLAPACK
   run:
     - CLAPACK
 
