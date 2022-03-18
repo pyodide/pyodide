@@ -69,7 +69,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
-	-s ERROR_ON_UNDEFINED_SYMBOLS=0 \
 	-s DEMANGLE_SUPPORT=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
