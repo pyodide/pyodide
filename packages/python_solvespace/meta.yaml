@@ -13,14 +13,14 @@ source:
     - [Eigen/Eigenvalues, python_solvespace/include/Eigen/Eigenvalues]
     - [Eigen/Geometry, python_solvespace/include/Eigen/Geometry]
     - [Eigen/Householder, python_solvespace/include/Eigen/Householder]
-    - [Eigen/IterativeLinearSolvers, python_solvespace/include/Eigen/IterativeLinearSolvers]
+    - [
+        Eigen/IterativeLinearSolvers,
+        python_solvespace/include/Eigen/IterativeLinearSolvers,
+      ]
     - [Eigen/Jacobi, python_solvespace/include/Eigen/Jacobi]
     - [Eigen/KLUSupport, python_solvespace/include/Eigen/KLUSupport]
     - [Eigen/LU, python_solvespace/include/Eigen/LU]
-    - [
-        Eigen/MetisSupport,
-        python_solvespace/include/Eigen/MetisSupport
-      ]
+    - [Eigen/MetisSupport, python_solvespace/include/Eigen/MetisSupport]
     - [Eigen/OrderingMethods, python_solvespace/include/Eigen/OrderingMethods]
     - [Eigen/PardisoSupport, python_solvespace/include/Eigen/PardisoSupport]
     - [Eigen/PaStiXSupport, python_solvespace/include/Eigen/PaStiXSupport]
