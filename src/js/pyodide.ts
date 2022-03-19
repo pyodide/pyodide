@@ -155,8 +155,8 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  * @private
  */
 type ConfigType = {
-  indexURL?: string;
-  homedir?: string;
+  indexURL: string;
+  homedir: string;
   fullStdLib?: boolean;
   stdin?: () => string;
   stdout?: (msg: string) => void;
@@ -177,7 +177,7 @@ type ConfigType = {
  * @memberof globalThis
  * @async
  */
-export async function loadPyodide(config: {
+export async function loadPyodide(options: {
   /**
    * The URL from which Pyodide will load packages
    */
@@ -212,15 +212,15 @@ export async function loadPyodide(config: {
   if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
-  if (!config.indexURL) {
+  if (!options.indexURL) {
     let err;
     try {
       throw new Error();
     } catch (e) {
       err = e;
     }
-    const fileName = ErrorStackParser.parse(err)[0].fileName;
-    config.indexURL = fileName.slice(0, fileName.lastIndexOf("/"));
+    const fileName = ErrorStackParser.parse(err)[0].fileName!;
+    options.indexURL = fileName.slice(0, fileName.lastIndexOf("/"));
   }
   (loadPyodide as any).inProgress = true;
 
@@ -230,7 +230,7 @@ export async function loadPyodide(config: {
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
   };
-  config = Object.assign(default_config, config);
+  let config = Object.assign(default_config, options) as ConfigType;
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
@@ -242,7 +242,7 @@ export async function loadPyodide(config: {
   );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(config.homedir!);
+  setHomeDirectory(config.homedir);
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -269,7 +269,6 @@ export async function loadPyodide(config: {
   unpackPyodidePy(pyodide_py_tar);
   Module._pyodide_init();
 
-  config.indexURL!;
   let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.
 
