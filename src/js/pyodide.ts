@@ -1,6 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
+import ErrorStackParser from "error-stack-parser";
 import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
@@ -180,7 +181,7 @@ export async function loadPyodide(config: {
   /**
    * The URL from which Pyodide will load packages
    */
-  indexURL: string;
+  indexURL?: string;
 
   /**
    * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
@@ -212,7 +213,14 @@ export async function loadPyodide(config: {
     throw new Error("Pyodide is already loading.");
   }
   if (!config.indexURL) {
-    throw new Error("Please provide indexURL parameter to loadPyodide");
+    let err;
+    try {
+      throw new Error();
+    } catch (e) {
+      err = e;
+    }
+    const fileName = ErrorStackParser.parse(err)[0].fileName;
+    config.indexURL = fileName.slice(0, fileName.lastIndexOf("/"));
   }
   (loadPyodide as any).inProgress = true;
 
