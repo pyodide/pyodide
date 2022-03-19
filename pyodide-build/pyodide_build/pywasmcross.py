@@ -36,7 +36,7 @@ from typing import NoReturn, Optional, overload
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_output, scipy_fixes
+from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
@@ -170,6 +170,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> Optional[list[str]]:
         if arg.endswith(".f"):
             filename = os.path.abspath(arg)
             if not dryrun:
+                fix_f2c_input(arg)
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )

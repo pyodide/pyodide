@@ -1,0 +1,32 @@
+From 9aeab0fdc80d21b5a9a88402fdcbdf4c6e0589bc Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 18 Mar 2022 16:25:39 -0700
+Subject: [PATCH] Fix dstevr in special/lapack_defs.h
+
+---
+ scipy/special/lapack_defs.h | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/scipy/special/lapack_defs.h b/scipy/special/lapack_defs.h
+index 0d20ba1ca..d4325f71f 100644
+--- a/scipy/special/lapack_defs.h
++++ b/scipy/special/lapack_defs.h
+@@ -8,13 +8,12 @@ extern void BLAS_FUNC(dstevr)(char *jobz, char *range, CBLAS_INT *n, double *d,
+                               double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
+                               CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
+                               double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork,
+-                              CBLAS_INT *info, size_t jobz_len, size_t range_len);
++                              CBLAS_INT *info);
+ 
+ static void c_dstevr(char *jobz, char *range, CBLAS_INT *n, double *d, double *e,
+                      double *vl, double *vu, CBLAS_INT *il, CBLAS_INT *iu, double *abstol,
+                      CBLAS_INT *m, double *w, double *z, CBLAS_INT *ldz, CBLAS_INT *isuppz,
+                      double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *liwork, CBLAS_INT *info) {
+     BLAS_FUNC(dstevr)(jobz, range, n, d, e, vl, vu, il, iu, abstol, m,
+-                      w, z, ldz, isuppz, work, lwork, iwork, liwork, info,
+-                      1, 1);
++                      w, z, ldz, isuppz, work, lwork, iwork, liwork, info);
+ }
+-- 
+2.25.1
+
