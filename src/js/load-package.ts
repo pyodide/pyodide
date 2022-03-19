@@ -241,6 +241,7 @@ async function loadDynlib(lib: string, shared: boolean) {
       allowUndefined: true,
     });
     Module.preloadedWasm[lib] = module;
+    Module.preloadedWasm[lib.split("/").pop()] = module;
     if (shared) {
       Module.loadDynamicLibrary(lib, {
         global: true,
