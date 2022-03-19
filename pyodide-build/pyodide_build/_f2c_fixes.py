@@ -5,6 +5,122 @@ from textwrap import dedent  # for doctests
 from typing import Iterable, Iterator
 
 
+def prepare_doctest(x):
+    return dedent(x).strip().splitlines(True)
+
+
+def fix_f2c_input(f2c_input_path: str):
+    f2c_input = Path(f2c_input_path)
+    with open(f2c_input) as f:
+        lines = f.readlines()
+    new_lines = []
+    lines = char1_args_to_int(lines)
+
+    for line in lines:
+        line = fix_string_args(line)
+
+        if f2c_input_path.endswith("_flapack-f2pywrappers.f"):
+            line = line.replace("character cmach", "integer cmach")
+            line = line.replace("character norm", "integer norm")
+        if "id_dist" in str(f2c_input):
+            line = line.replace("character*1 jobz", "integer jobz")
+            if "jobz =" in line:
+                line = re.sub("'(.)'", lambda r: str(ord(r.group(1))), line)
+
+        if f2c_input.name in [
+            "_lapack_subroutine_wrappers.f",
+            "_blas_subroutine_wrappers.f",
+        ]:
+            line = line.replace("character", "integer")
+            line = line.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
+
+        new_lines.append(line)
+
+    with open(f2c_input_path, "w") as f:
+        f.writelines(new_lines)
+
+
+def fix_string_args(line):
+    line = re.sub("ilaenv", "ilaenvf2pt", line, flags=re.I)
+    if not re.search("call", line, re.I):
+        return line
+    if re.search("xerbla", line, re.I):
+        return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
+    else:
+        return re.sub("'[A-Za-z0-9]'", lambda y: str(ord(y.group(0)[1])), line)
+
+
+def char1_to_int(x):
+    """
+    >>> char1_to_int("CALL sTRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )")
+    'CALL sTRSV( 85, 78, 78, J, H, LDH, Y, 1 )'
+    """
+    return re.sub("'(.)[A-Za-z -]*'", lambda r: str(ord(r.group(1))), x)
+
+
+def char1_args_to_int(lines):
+    """
+    >>> print(char1_args_to_int(["CALL sTRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )"]))
+    ['CALL sTRSV( 85, 78, 78, J, H, LDH, Y, 1 )']
+
+    >>> print("".join(char1_args_to_int(prepare_doctest('''
+    ...               call cvout (logfil, nconv, workl(ihbds), ndigit,
+    ...     &            '_neupd: Last row of the eigenvector matrix for T')
+    ...     call ctrmm('Right'   , 'Upper'      , 'No transpose',
+    ...     &                  'Non-unit', n            , nconv         ,
+    ...     &                  one       , workl(invsub), ldq           ,
+    ...     &                  z         , ldz)
+    ... '''))))
+    call cvout (logfil, nconv, workl(ihbds), ndigit,
+    &            '_neupd: Last row of the eigenvector matrix for T')
+    call ctrmm(82   , 85      , 78,
+    &                  78, n            , nconv         ,
+    &                  one       , workl(invsub), ldq           ,
+    &                  z         , ldz)
+    """
+    fncstems = [
+        "gemm",
+        "ggbak",
+        "gghrd",
+        "lacpy",
+        "lamch",
+        "lanhs",
+        "lanst",
+        "larf",
+        "lascl",
+        "laset",
+        "lasr",
+        "ormqr",
+        "orm2r",
+        "steqr",
+        "stevr",
+        "trevc",
+        "trmm",
+        "trsen",
+        "trsv",
+        "unm2r",
+        "unmqr",
+    ]
+    fncnames = []
+    for c in "cdsz":
+        for stem in fncstems:
+            fncnames.append(c + stem)
+    fncnames += ["lsame"]
+
+    funcs_pattern = "|".join(fncnames)
+    new_lines = []
+    replace = False
+    for line in lines:
+        if re.search(funcs_pattern, line, re.IGNORECASE):
+            replace = True
+        if replace:
+            line = char1_to_int(line)
+        if not re.search(r",\s*$", line):
+            replace = False
+        new_lines.append(line)
+    return new_lines
+
+
 def fix_f2c_output(f2c_output_path: str):
     """
     This function is called on the name of each C output file. It fixes up the C
@@ -53,12 +169,14 @@ def fix_f2c_output(f2c_output_path: str):
     ]:
         lines = remove_ftnlen_args(lines)
 
+    if f2c_output.name == "_lapack_subroutine_wrappers.c":
+        lines = [
+            line.replace("integer chla_transtype__", "void chla_transtype__")
+            for line in lines
+        ]
+
     with open(f2c_output, "w") as f:
         f.writelines(lines)
-
-
-def prepare_doctest(x):
-    return dedent(x).strip().split("\n")
 
 
 def remove_ftnlen_args(lines: list[str]) -> list[str]:
@@ -68,13 +186,13 @@ def remove_ftnlen_args(lines: list[str]) -> list[str]:
     "integer" which don't get length arguments. This automates the removal of
     the problematic arguments.
 
-    >>> print("\\n".join(remove_ftnlen_args(prepare_doctest('''
+    >>> print("".join(remove_ftnlen_args(prepare_doctest('''
     ...     /* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans, ftnlen
     ...     	ret_len)
     ... '''))))
     /* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans)
 
-    >>> print("\\n".join(remove_ftnlen_args(prepare_doctest('''
+    >>> print("".join(remove_ftnlen_args(prepare_doctest('''
     ...     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
     ...     	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen
     ...     	transr_len, ftnlen uplo_len)
@@ -108,7 +226,7 @@ def add_externs_to_structs(lines: list[str]):
     ...     } eh0001_;
     ... ''')
     >>> add_externs_to_structs(lines)
-    >>> print("\\n".join(lines))
+    >>> print("".join(lines))
     extern struct {    doublereal rls[218];
         integer ils[39];
     } ls0001_;
@@ -128,7 +246,7 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
     Make sure that functions and declarations have their argument list only on
     one line.
 
-    >>> print("\\n".join(regroup_lines(prepare_doctest('''
+    >>> print("".join(regroup_lines(prepare_doctest('''
     ...     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
     ...     	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen
     ...     	transr_len, ftnlen uplo_len)
@@ -137,8 +255,7 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
     ...        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *,
     ...            doublereal *, doublereal *, integer *);
     ... '''))))
-    /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen transr_len, ftnlen uplo_len)
-    {
+    /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen transr_len, ftnlen uplo_len){
        static doublereal psum[52];
        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);
 
@@ -196,7 +313,7 @@ def fix_inconsistent_decls(lines: list[str]) -> list[str]:
     declarations and fixes them if necessary so that the declaration matches the
     definition.
 
-    >>> print("\\n".join(fix_inconsistent_decls(prepare_doctest('''
+    >>> print("".join(fix_inconsistent_decls(prepare_doctest('''
     ...    /* Subroutine */ double f(double x){
     ...        return x + 5;
     ...    }

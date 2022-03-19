@@ -1,14 +1,23 @@
+From 78ff0cec961d9eb4e94193995fe151e1ecdae9df Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
+Date: Fri, 18 Mar 2022 20:01:39 -0700
+Subject: [PATCH 5/7] remove redundant symbols
+
 Remove a few symbols from LAPACK that are redundantly defined with BLAS or are
 ported in scipy. It wouldn't be an issue if we were linking dynamically, but
 because of static linking otherwise we get errors at link time about symbols
 defined twice.
 
  - Roman Yurchak (https://github.com/pyodide/pyodide/pull/238)
-diff --git a/Makefile.orig b/Makefile
-index 223f4da..69ac630 100644
+---
+ SRC/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SRC/Makefile b/SRC/Makefile
+index 5f1eb22..32e669b 100644
 --- a/SRC/Makefile
 +++ b/SRC/Makefile
-@@ -50,9 +50,9 @@ include $(TOPDIR)/make.inc
+@@ -48,9 +48,9 @@ include ../make.inc
  #
  #######################################################################
  
@@ -20,39 +29,6 @@ index 223f4da..69ac630 100644
  
  ALLXAUX =
  
-@@ -104,7 +104,7 @@ SLASRC = \
-    sggrqf.o sggsvd.o sggsvp.o sgtcon.o sgtrfs.o sgtsv.o  \
-    sgtsvx.o sgttrf.o sgttrs.o sgtts2.o shgeqz.o \
-    shsein.o shseqr.o slabrd.o slacon.o slacn2.o \
--   slaein.o slaexc.o slag2.o  slags2.o slagtm.o slagv2.o slahqr.o \
-+   slaein.o slaexc.o slag2.o  slags2.o slagtm.o slagv2.o \
-    slahrd.o slahr2.o slaic1.o slaln2.o slals0.o slalsa.o slalsd.o \
-    slangb.o slange.o slangt.o slanhs.o slansb.o slansp.o \
-    slansy.o slantb.o slantp.o slantr.o slanv2.o \
-@@ -176,7 +176,7 @@ CLASRC = \
-    clacgv.o clacon.o clacn2.o clacp2.o clacpy.o clacrm.o clacrt.o cladiv.o \
-    claed0.o claed7.o claed8.o \
-    claein.o claesy.o claev2.o clags2.o clagtm.o \
--   clahef.o clahqr.o \
-+   clahef.o \
-    clahrd.o clahr2.o claic1.o clals0.o clalsa.o clalsd.o clangb.o clange.o clangt.o \
-    clanhb.o clanhe.o \
-    clanhp.o clanhs.o clanht.o clansb.o clansp.o clansy.o clantb.o \
-@@ -236,7 +236,7 @@ DLASRC = \
-    dggrqf.o dggsvd.o dggsvp.o dgtcon.o dgtrfs.o dgtsv.o  \
-    dgtsvx.o dgttrf.o dgttrs.o dgtts2.o dhgeqz.o \
-    dhsein.o dhseqr.o dlabrd.o dlacon.o dlacn2.o \
--   dlaein.o dlaexc.o dlag2.o  dlags2.o dlagtm.o dlagv2.o dlahqr.o \
-+   dlaein.o dlaexc.o dlag2.o  dlags2.o dlagtm.o dlagv2.o \
-    dlahrd.o dlahr2.o dlaic1.o dlaln2.o dlals0.o dlalsa.o dlalsd.o \
-    dlangb.o dlange.o dlangt.o dlanhs.o dlansb.o dlansp.o \
-    dlansy.o dlantb.o dlantp.o dlantr.o dlanv2.o \
-@@ -310,7 +310,7 @@ ZLASRC = \
-    zlacgv.o zlacon.o zlacn2.o zlacp2.o zlacpy.o zlacrm.o zlacrt.o zladiv.o \
-    zlaed0.o zlaed7.o zlaed8.o \
-    zlaein.o zlaesy.o zlaev2.o zlags2.o zlagtm.o \
--   zlahef.o zlahqr.o \
-+   zlahef.o \
-    zlahrd.o zlahr2.o zlaic1.o zlals0.o zlalsa.o zlalsd.o zlangb.o zlange.o \
-    zlangt.o zlanhb.o \
-    zlanhe.o \
+-- 
+2.25.1
+
