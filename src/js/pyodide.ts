@@ -155,7 +155,7 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  * @private
  */
 type ConfigType = {
-  indexURL: string;
+  indexURL?: string;
   homedir?: string;
   fullStdLib?: boolean;
   stdin?: () => string;
@@ -269,6 +269,7 @@ export async function loadPyodide(config: {
   unpackPyodidePy(pyodide_py_tar);
   Module._pyodide_init();
 
+  config.indexURL!;
   let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.
 
