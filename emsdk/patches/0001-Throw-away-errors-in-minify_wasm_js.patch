@@ -1,4 +1,4 @@
-From 7b3ec4d7bfe4bd3b71fac9d9fedeee2fd3686391 Mon Sep 17 00:00:00 2001
+From acc53eab1eb264bb098abfdc1162fe98d94cd6a0 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Thu, 24 Jun 2021 04:08:02 -0700
 Subject: [PATCH 1/5] Throw away errors in minify_wasm_js
@@ -8,10 +8,10 @@ Subject: [PATCH 1/5] Throw away errors in minify_wasm_js
  1 file changed, 8 insertions(+), 5 deletions(-)
 
 diff --git a/emcc.py b/emcc.py
-index 2653a23f2..e3ee515fc 100755
+index 999314afc..3f0fa12ab 100755
 --- a/emcc.py
 +++ b/emcc.py
-@@ -3088,11 +3088,14 @@ def phase_binaryen(target, options, wasm_target):
+@@ -3129,11 +3129,14 @@ def phase_binaryen(target, options, wasm_target):
        # Closure can print out readable error messages (Closure will then
        # minify whitespace afterwards)
        save_intermediate_with_wasm('preclean', wasm_target)

@@ -1,4 +1,4 @@
-From 3c19f54ad98ffa0143794986f001aedf8d7ca5e5 Mon Sep 17 00:00:00 2001
+From 19ba480c602a32ec10712dd582ea44f07d02b3e2 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
 Subject: [PATCH 2/5] Fix dup
@@ -17,7 +17,7 @@ This patch is simpler than the upstream one but leaves NODERAWFS broken.
  2 files changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index cb077adbf..35cd816d2 100644
+index 50b06c264..fc8d0193a 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
 @@ -429,11 +429,16 @@ FS.staticInit();` +
@@ -39,7 +39,7 @@ index cb077adbf..35cd816d2 100644
          newStream[p] = stream[p];
        }
 diff --git a/src/library_syscall.js b/src/library_syscall.js
-index cb0e758c4..9b094a556 100644
+index e9eb9134b..66c6f5e76 100644
 --- a/src/library_syscall.js
 +++ b/src/library_syscall.js
 @@ -137,10 +137,10 @@ var SyscallsLibrary = {
@@ -55,7 +55,7 @@ index cb0e758c4..9b094a556 100644
      },
      doReadv: function(stream, iov, iovcnt, offset) {
        var ret = 0;
-@@ -380,7 +380,7 @@ var SyscallsLibrary = {
+@@ -374,7 +374,7 @@ var SyscallsLibrary = {
    },
    __sys_dup: function(fd) {
      var old = SYSCALLS.getStreamFromFD(fd);
@@ -64,7 +64,7 @@ index cb0e758c4..9b094a556 100644
    },
    __sys_pipe__deps: ['$PIPEFS'],
    __sys_pipe: function(fdPtr) {
-@@ -472,7 +472,7 @@ var SyscallsLibrary = {
+@@ -461,7 +461,7 @@ var SyscallsLibrary = {
    __sys_dup2: function(oldfd, suggestFD) {
      var old = SYSCALLS.getStreamFromFD(oldfd);
      if (old.fd === suggestFD) return suggestFD;
@@ -73,7 +73,7 @@ index cb0e758c4..9b094a556 100644
    },
    __sys_getppid__nothrow: true,
    __sys_getppid__proxy: false,
-@@ -1167,7 +1167,7 @@ var SyscallsLibrary = {
+@@ -1108,7 +1108,7 @@ var SyscallsLibrary = {
            return -{{{ cDefine('EINVAL') }}};
          }
          var newStream;
@@ -82,15 +82,15 @@ index cb0e758c4..9b094a556 100644
          return newStream.fd;
        }
        case {{{ cDefine('F_GETFD') }}}:
-@@ -1403,7 +1403,7 @@ var SyscallsLibrary = {
+@@ -1329,7 +1329,7 @@ var SyscallsLibrary = {
      assert(!flags);
  #endif
      if (old.fd === suggestFD) return -{{{ cDefine('EINVAL') }}};
 -    return SYSCALLS.doDup(old.path, old.flags, suggestFD);
 +    return SYSCALLS.doDup(old, suggestFD);
    },
-   __sys_pipe2__nothrow: true,
-   __sys_pipe2__proxy: false,
+ 
+   __sys_prlimit64: function(pid, resource, new_limit, old_limit) {
 -- 
 2.25.1
 

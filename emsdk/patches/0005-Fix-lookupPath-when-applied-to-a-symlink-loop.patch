@@ -1,4 +1,4 @@
-From 04a77fda1137c39bd068901ecb939dc0bff3e8e1 Mon Sep 17 00:00:00 2001
+From cc7b304d30e5eaaf82ce12dd3038c09680035d5e Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 2 Mar 2022 13:44:14 -0800
 Subject: [PATCH 5/5] Fix lookupPath when applied to a symlink loop
@@ -14,7 +14,7 @@ This patch fixes it.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index 35cd816d2..d8eac9206 100644
+index fc8d0193a..294361b09 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
 @@ -173,7 +173,7 @@ FS.staticInit();` +

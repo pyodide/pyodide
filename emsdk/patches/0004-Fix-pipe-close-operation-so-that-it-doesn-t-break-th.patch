@@ -1,4 +1,4 @@
-From 452f4ae206b1c73a1288c028be64988f7ea82fde Mon Sep 17 00:00:00 2001
+From c90d5c0c74b86a373fd37211c89862b6da993097 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Sat, 17 Jul 2021 16:54:40 -0700
 Subject: [PATCH 4/5] Fix pipe close operation so that it doesn't break the
@@ -9,7 +9,7 @@ Subject: [PATCH 4/5] Fix pipe close operation so that it doesn't break the
  1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/src/library_pipefs.js b/src/library_pipefs.js
-index c1a92ff13..e9f661ab9 100644
+index a9e32f99e..20280a3cc 100644
 --- a/src/library_pipefs.js
 +++ b/src/library_pipefs.js
 @@ -18,7 +18,8 @@ mergeInto(LibraryManager.library, {
