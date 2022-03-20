@@ -235,7 +235,7 @@ Module.handle_js_error = function (e: any) {
     // Try to restore the original Python exception.
     restored_error = Module._restore_sys_last_exception(e.__error_address);
   }
-  let stack;
+  let stack: any;
   let weirdCatch;
   try {
     stack = ErrorStackParser.parse(e);
