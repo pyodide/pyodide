@@ -71,6 +71,9 @@ substitutions:
   alias for `any`.
   {pr}`2277`
 
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
 _February 19, 2022_
 
 ## Version 0.19.1
