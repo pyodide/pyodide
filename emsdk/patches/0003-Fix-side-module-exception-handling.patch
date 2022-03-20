@@ -1,7 +1,7 @@
-From 147b79b9e1c5b329559912f75f79fc216e1b9288 Mon Sep 17 00:00:00 2001
+From 4e89c2c1f24a7055fd3aeff93fd3a0de4bbb3f71 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 15 Feb 2022 23:27:03 -0500
-Subject: [PATCH 3/4] Fix side module exception handling
+Subject: [PATCH 3/3] Fix side module exception handling
 
 See https://github.com/emscripten-core/emscripten/pull/16309
 

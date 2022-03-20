@@ -1,7 +1,7 @@
-From a345737ab44368a638ba0df1f8c54fbdbe712326 Mon Sep 17 00:00:00 2001
+From 06fdf39b4bb0ad8fa7f433be61b3b431bff37efe Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
-Subject: [PATCH 2/4] Fix dup
+Subject: [PATCH 2/3] Fix dup
 
 This fixes two problems with the `dup` system calls:
 1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
@@ -39,10 +39,10 @@ index ec2f48970..530cf7c87 100644
          newStream[p] = stream[p];
        }
 diff --git a/src/library_syscall.js b/src/library_syscall.js
-index 9080655e2..030ac13e7 100644
+index 82a745497..8ea76d8e0 100644
 --- a/src/library_syscall.js
 +++ b/src/library_syscall.js
-@@ -134,10 +134,10 @@ var SyscallsLibrary = {
+@@ -133,10 +133,10 @@ var SyscallsLibrary = {
        }
        return 0;
      },
@@ -55,7 +55,7 @@ index 9080655e2..030ac13e7 100644
      },
      doReadv: function(stream, iov, iovcnt, offset) {
        var ret = 0;
-@@ -346,7 +346,7 @@ var SyscallsLibrary = {
+@@ -345,7 +345,7 @@ var SyscallsLibrary = {
    },
    __syscall_dup: function(fd) {
      var old = SYSCALLS.getStreamFromFD(fd);
@@ -64,7 +64,7 @@ index 9080655e2..030ac13e7 100644
    },
    __syscall_pipe__deps: ['$PIPEFS'],
    __syscall_pipe: function(fdPtr) {
-@@ -901,7 +901,7 @@ var SyscallsLibrary = {
+@@ -904,7 +904,7 @@ var SyscallsLibrary = {
            return -{{{ cDefine('EINVAL') }}};
          }
          var newStream;
@@ -73,7 +73,7 @@ index 9080655e2..030ac13e7 100644
          return newStream.fd;
        }
        case {{{ cDefine('F_GETFD') }}}:
-@@ -1120,7 +1120,7 @@ var SyscallsLibrary = {
+@@ -1123,7 +1123,7 @@ var SyscallsLibrary = {
      assert(!flags);
  #endif
      if (old.fd === suggestFD) return -{{{ cDefine('EINVAL') }}};
