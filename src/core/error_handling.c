@@ -239,6 +239,9 @@ trigger_fatal_error(PyObject* mod, PyObject* _args)
   Py_UNREACHABLE();
 }
 
+/**
+ * This is for testing fatal errors in test_pyodide
+ */
 PyObject*
 raw_call(PyObject* mod, PyObject* jsproxy)
 {
