@@ -926,15 +926,12 @@ def test_weird_throws(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@pytest.mark.parametrize(
-    "to_throw", ["Object.create(null);", "'Some message'", "null", "undefined"]
-)
+@pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
 def test_weird_fatals(selenium_standalone, to_throw):
     expected_message = {
         "Object.create(null);": "Error: A value of type object with tag [object Object] was thrown as an error!",
         "'Some message'": "Error: Some message",
         "null": "Error: A value of type object with tag [object Null] was thrown as an error!",
-        "undefined": "Error: A value of type undefined with tag [object Undefined] was thrown as an error!",
     }[to_throw]
     msg = selenium_standalone.run_js(
         f"""
