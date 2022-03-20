@@ -60,9 +60,8 @@ build/pyodide.asm.js: \
 		let baseName, fpcGOT, dyncallGOT, fpVal, dcVal;\
 	' build/pyodide.asm.js
 	# Remove last 6 lines of pyodide.asm.js, see issue #2282
-	for _ in {1..6} ; do \
-		sed -i '$$d' build/pyodide.asm.js ; \
-	done
+	# Sed nonsense from https://stackoverflow.com/a/13383331
+	sed -i -n -e :a -e '1,6!{P;N;D;};N;ba' build/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
