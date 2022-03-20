@@ -1,4 +1,4 @@
-From f0c34f238a8227d6e60161077dac455c87f751c3 Mon Sep 17 00:00:00 2001
+From e0ba175f2295bb6f21a804d8783b857b0fc806fd Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
 Subject: [PATCH 2/2] Fix dup
@@ -17,7 +17,7 @@ This patch is simpler than the upstream one but leaves NODERAWFS broken.
  2 files changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index bc5cc412c..c6634fd29 100644
+index bc5cc412c..7006d1d77 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
 @@ -418,11 +418,16 @@ FS.staticInit();` +
@@ -34,7 +34,7 @@ index bc5cc412c..c6634fd29 100644
        }
        // clone it, so we can return an instance of FSStream
        stream = Object.assign(new FS.FSStream(), stream);
-++     stream.shared = {};
++      stream.shared = {};
        var fd = FS.nextfd(fd_start, fd_end);
        stream.fd = fd;
        FS.streams[fd] = stream;
