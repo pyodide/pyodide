@@ -239,12 +239,21 @@ trigger_fatal_error(PyObject* mod, PyObject* _args)
   Py_UNREACHABLE();
 }
 
+PyObject*
+raw_call(PyObject* mod, PyObject* jsproxy)
+{
+  JsRef func = JsProxy_AsJs(jsproxy);
+  EM_ASM(Hiwire.get_value($0)(), func);
+  Py_RETURN_NONE;
+}
+
 static PyMethodDef methods[] = {
   {
     "trigger_fatal_error",
     trigger_fatal_error,
     METH_NOARGS,
   },
+  { "raw_call", raw_call, METH_O },
   { NULL } /* Sentinel */
 };
 
