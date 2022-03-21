@@ -119,58 +119,41 @@ class Package(BasePackage):
 
     def build(self, outputdir: Path, args) -> None:
 
-        with open(self.pkgdir / "build.log.tmp", "w") as f:
-            p = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pyodide_build",
-                    "buildpkg",
-                    str(self.pkgdir / "meta.yaml"),
-                    "--cflags",
-                    args.cflags,
-                    "--cxxflags",
-                    args.cxxflags,
-                    "--ldflags",
-                    args.ldflags,
-                    "--target-install-dir",
-                    args.target_install_dir,
-                    "--host-install-dir",
-                    args.host_install_dir,
-                    # Either this package has been updated and this doesn't
-                    # matter, or this package is dependent on a package that has
-                    # been updated and should be rebuilt even though its own
-                    # files haven't been updated.
-                    "--force-rebuild",
-                ],
-                check=False,
-                stdout=f,
-                stderr=subprocess.STDOUT,
+        p = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pyodide_build",
+                "buildpkg",
+                str(self.pkgdir / "meta.yaml"),
+                "--cflags",
+                args.cflags,
+                "--cxxflags",
+                args.cxxflags,
+                "--ldflags",
+                args.ldflags,
+                "--target-install-dir",
+                args.target_install_dir,
+                "--host-install-dir",
+                args.host_install_dir,
+                # Either this package has been updated and this doesn't
+                # matter, or this package is dependent on a package that has
+                # been updated and should be rebuilt even though its own
+                # files haven't been updated.
+                "--force-rebuild",
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+        if log_dir and (self.pkgdir / "build.log").exists():
+            log_dir.mkdir(exist_ok=True, parents=True)
+            shutil.copy(
+                self.pkgdir / "build.log",
+                log_dir / f"{self.name}.log",
             )
-
-        # Don't overwrite build log if we didn't build the file.
-        # If the file didn't need to be rebuilt, the log will have exactly two lines.
-        rebuilt = True
-        with open(self.pkgdir / "build.log.tmp") as f:
-            try:
-                next(f)
-                next(f)
-                next(f)
-            except StopIteration:
-                rebuilt = False
-
-        if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
-            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
-
-            if log_dir and (self.pkgdir / "build.log").exists():
-                log_dir.mkdir(exist_ok=True, parents=True)
-                shutil.copy(
-                    self.pkgdir / "build.log",
-                    log_dir / f"{self.name}.log",
-                )
-        else:
-            (self.pkgdir / "build.log.tmp").unlink()
 
         if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
