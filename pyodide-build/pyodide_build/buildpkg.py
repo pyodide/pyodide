@@ -693,7 +693,7 @@ def build_package(
         if not continue_:
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
 
-            run_script(build_dir, srcpath, build_metadata, bash_runner)
+        run_script(build_dir, srcpath, build_metadata, bash_runner)
 
         if build_metadata.get("library"):
             create_packaged_token(build_dir)
