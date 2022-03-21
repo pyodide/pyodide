@@ -54,7 +54,7 @@
   * \note Some of these methods (like AMD or METIS), need the sparsity pattern
   * of the input matrix to be symmetric. When the matrix is structurally unsymmetric,
   * Eigen computes internally the pattern of \f$A^T*A\f$ before calling the method.
-  * If your matrix is already symmetric (at leat in structure), you can avoid that
+  * If your matrix is already symmetric (at least in structure), you can avoid that
   * by calling the method with a SelfAdjointView type.
   *
   * \code

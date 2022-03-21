@@ -23,7 +23,7 @@
   *  - translation, scaling, 2D and 3D rotations
   *  - \link Quaternion quaternions \endlink
   *  - cross products (\ref MatrixBase::cross, \ref MatrixBase::cross3)
-  *  - orthognal vector generation (\ref MatrixBase::unitOrthogonal)
+  *  - orthogonal vector generation (\ref MatrixBase::unitOrthogonal)
   *  - some linear components: \link ParametrizedLine parametrized-lines \endlink and \link Hyperplane hyperplanes \endlink
   *  - \link AlignedBox axis aligned bounding boxes \endlink
   *  - \link umeyama least-square transformation fitting \endlink
