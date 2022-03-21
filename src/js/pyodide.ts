@@ -209,7 +209,11 @@ type ConfigType = {
 export async function loadPyodide(
   options: {
     /**
-     * The URL from which Pyodide will load packages
+     * The URL from which Pyodide will load the main Pyodide runtime and
+     * packages. Defaults to the url that pyodide is loaded from with the file
+     * name (pyodide.js or pyodide.mjs) removed. It is recommended that you
+     * leave this undefined, providing an incorrect value can cause broken
+     * behavior.
      */
     indexURL?: string;
 

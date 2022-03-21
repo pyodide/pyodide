@@ -71,6 +71,10 @@ substitutions:
   alias for `any`.
   {pr}`2277`
 
+- {{Enhancement}} It is no longer necessary to provide `indexURL` to
+  `loadPyodide`.
+  {pr}`2292`
+
 _February 19, 2022_
 
 ## Version 0.19.1
