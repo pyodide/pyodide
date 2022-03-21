@@ -24,7 +24,7 @@
       }
 
       async function main() {
-        globalThis.pyodide = await loadPyodide({});
+        globalThis.pyodide = await loadPyodide();
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
           `

@@ -12,7 +12,7 @@ onmessage = async function (e) {
     }
 
     if (!loadPyodide.inProgress) {
-      self.pyodide = await loadPyodide({});
+      self.pyodide = await loadPyodide();
     }
     await self.pyodide.loadPackagesFromImports(data.python);
     let results = await self.pyodide.runPythonAsync(data.python);
