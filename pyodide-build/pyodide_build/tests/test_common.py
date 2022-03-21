@@ -84,8 +84,10 @@ def test_wheel_paths():
     from pathlib import Path
 
     old_version = "cp38"
-    current_version = "cp39"
-    future_version = "cp317"
+    PYMAJOR = int(get_make_flag("PYMAJOR"))
+    PYMINOR = int(get_make_flag("PYMINOR"))
+    current_version = f"cp{PYMAJOR}{PYMINOR}"
+    future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
     strings = []
 
     for interp in [
@@ -102,10 +104,10 @@ def test_wheel_paths():
 
     paths = [Path(x) for x in strings]
     assert [x.stem.split("-", 2)[-1] for x in find_matching_wheels(paths)] == [
-        "cp39-cp39-emscripten_wasm32",
-        "cp39-abi3-emscripten_wasm32",
-        "cp39-none-emscripten_wasm32",
-        "cp38-abi3-emscripten_wasm32",
+        f"{current_version}-{current_version}-emscripten_wasm32",
+        f"{current_version}-abi3-emscripten_wasm32",
+        f"{current_version}-none-emscripten_wasm32",
+        f"{old_version}-abi3-emscripten_wasm32",
         "py3-none-emscripten_wasm32",
         "py2.py3-none-emscripten_wasm32",
         "py3-none-any",

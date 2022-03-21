@@ -3,6 +3,7 @@
   packaging
   pyyaml
   ruamel.yaml
+  build==0.7.0
   # lint
   pre-commit
   # testing

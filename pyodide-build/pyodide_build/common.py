@@ -15,9 +15,11 @@ def pyodide_tags() -> Iterator[Tag]:
 
     The sequence is ordered in decreasing specificity.
     """
-
-    yield from cpython_tags(platforms=[PLATFORM])
-    yield from compatible_tags(platforms=[PLATFORM])
+    PYMAJOR = get_make_flag("PYMAJOR")
+    PYMINOR = get_make_flag("PYMINOR")
+    python_version = (int(PYMAJOR), int(PYMINOR))
+    yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
+    yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
 
 
 def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:

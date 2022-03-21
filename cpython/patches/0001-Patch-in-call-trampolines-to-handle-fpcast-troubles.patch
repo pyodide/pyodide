@@ -1,7 +1,7 @@
-From a608eb640f151f08ffd810e53eb29f58ef68f493 Mon Sep 17 00:00:00 2001
+From 9e3b5aacb71deb2870ab589ca88aa126e1acc86a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
-Date: Fri, 3 Dec 2021 20:55:40 -0800
-Subject: [PATCH] call trampolines to handle fpcast troubles
+Date: Mon, 28 Feb 2022 00:44:13 -0500
+Subject: [PATCH 01/10] Patch in call trampolines to handle fpcast troubles
 
 The wasm call_indirect instruction takes a function signature as an immediate
 argument (an immediate argument is one which is determined statically at compile
@@ -42,7 +42,6 @@ no issue (this mimics Javascript's typical function call semantics). So at the
 locations where the bad calls occur, we patch in a trampoline which calls out to
 Javascript to make the call for us. Like magic, the problem is gone. Research
 shows that the performance cost of this is surprisingly low too.
-
 ---
  Objects/call.c         |  5 ++++-
  Objects/descrobject.c  | 28 +++++++++++++++++++---------
@@ -50,10 +49,10 @@ shows that the performance cost of this is surprisingly low too.
  3 files changed, 32 insertions(+), 13 deletions(-)
 
 diff --git a/Objects/call.c b/Objects/call.c
-index 87dc0dbbdb..f8c7811521 100644
+index 960c37e196..98861e8b87 100644
 --- a/Objects/call.c
 +++ b/Objects/call.c
-@@ -143,6 +143,9 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
+@@ -167,6 +167,9 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
  }
  
  
@@ -63,7 +62,7 @@ index 87dc0dbbdb..f8c7811521 100644
  PyObject *
  _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
                       PyObject *const *args, Py_ssize_t nargs,
-@@ -188,7 +191,7 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+@@ -212,7 +215,7 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
      PyObject *result = NULL;
      if (_Py_EnterRecursiveCall(tstate, " while calling a Python object") == 0)
      {
@@ -73,10 +72,10 @@ index 87dc0dbbdb..f8c7811521 100644
      }
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index fce9cdd309..326844f569 100644
+index 97669bef36..2a30c050a9 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
-@@ -174,6 +174,11 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
+@@ -172,6 +172,11 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
      return PyMember_GetOne((char *)obj, descr->d_member);
  }
  
@@ -89,15 +88,15 @@ index fce9cdd309..326844f569 100644
  getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
  {
 @@ -182,7 +187,7 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
-     if (descr_check((PyDescrObject *)descr, obj, &res))
-         return res;
+         return NULL;
+     }
      if (descr->d_getset->get != NULL)
 -        return descr->d_getset->get(obj, descr->d_getset->closure);
 +        return getter_call_trampoline(descr->d_getset->get, obj, descr->d_getset->closure);
      PyErr_Format(PyExc_AttributeError,
                   "attribute '%V' of '%.100s' objects is not readable",
                   descr_name((PyDescrObject *)descr), "?",
-@@ -228,6 +233,10 @@ member_set(PyMemberDescrObject *descr, PyObject *obj, PyObject *value)
+@@ -227,6 +232,10 @@ member_set(PyMemberDescrObject *descr, PyObject *obj, PyObject *value)
      return PyMember_SetOne((char *)obj, descr->d_member, value);
  }
  
@@ -108,17 +107,17 @@ index fce9cdd309..326844f569 100644
  static int
  getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
  {
-@@ -236,8 +245,7 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
-     if (descr_setcheck((PyDescrObject *)descr, obj, value, &res))
-         return res;
-     if (descr->d_getset->set != NULL)
+@@ -234,8 +243,7 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
+         return -1;
+     }
+     if (descr->d_getset->set != NULL) {
 -        return descr->d_getset->set(obj, value,
 -                                    descr->d_getset->closure);
 +        return setter_call_trampoline(descr->d_getset->set, obj, value, descr->d_getset->closure);
+     }
      PyErr_Format(PyExc_AttributeError,
                   "attribute '%V' of '%.100s' objects is not writable",
-                  descr_name((PyDescrObject *)descr), "?",
-@@ -291,6 +299,9 @@ method_enter_call(PyThreadState *tstate, PyObject *func)
+@@ -289,6 +297,9 @@ method_enter_call(PyThreadState *tstate, PyObject *func)
      return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
  }
  
@@ -128,7 +127,7 @@ index fce9cdd309..326844f569 100644
  /* Now the actual vectorcall functions */
  static PyObject *
  method_vectorcall_VARARGS(
-@@ -310,7 +321,7 @@ method_vectorcall_VARARGS(
+@@ -308,7 +319,7 @@ method_vectorcall_VARARGS(
          Py_DECREF(argstuple);
          return NULL;
      }
@@ -137,7 +136,7 @@ index fce9cdd309..326844f569 100644
      Py_DECREF(argstuple);
      _Py_LeaveRecursiveCall(tstate);
      return result;
-@@ -338,12 +349,11 @@ method_vectorcall_VARARGS_KEYWORDS(
+@@ -336,12 +347,11 @@ method_vectorcall_VARARGS_KEYWORDS(
              goto exit;
          }
      }
@@ -152,7 +151,7 @@ index fce9cdd309..326844f569 100644
      _Py_LeaveRecursiveCall(tstate);
  exit:
      Py_DECREF(argstuple);
-@@ -431,7 +441,7 @@ method_vectorcall_NOARGS(
+@@ -429,7 +439,7 @@ method_vectorcall_NOARGS(
      if (meth == NULL) {
          return NULL;
      }
@@ -161,7 +160,7 @@ index fce9cdd309..326844f569 100644
      _Py_LeaveRecursiveCall(tstate);
      return result;
  }
-@@ -459,7 +469,7 @@ method_vectorcall_O(
+@@ -457,7 +467,7 @@ method_vectorcall_O(
      if (meth == NULL) {
          return NULL;
      }
@@ -171,10 +170,10 @@ index fce9cdd309..326844f569 100644
      return result;
  }
 diff --git a/Objects/methodobject.c b/Objects/methodobject.c
-index 7b430416c5..b57d7a37b2 100644
+index 2df63cfdf6..978d62cd67 100644
 --- a/Objects/methodobject.c
 +++ b/Objects/methodobject.c
-@@ -460,6 +460,12 @@ cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
+@@ -464,6 +464,12 @@ cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
      return result;
  }
  
@@ -187,7 +186,7 @@ index 7b430416c5..b57d7a37b2 100644
  static PyObject *
  cfunction_vectorcall_NOARGS(
      PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
-@@ -482,7 +488,7 @@ cfunction_vectorcall_NOARGS(
+@@ -486,7 +492,7 @@ cfunction_vectorcall_NOARGS(
      if (meth == NULL) {
          return NULL;
      }
@@ -196,7 +195,7 @@ index 7b430416c5..b57d7a37b2 100644
      _Py_LeaveRecursiveCall(tstate);
      return result;
  }
-@@ -536,7 +542,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
+@@ -540,7 +546,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
  
      PyObject *result;
      if (flags & METH_KEYWORDS) {
@@ -205,7 +204,7 @@ index 7b430416c5..b57d7a37b2 100644
      }
      else {
          if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-@@ -545,7 +551,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
+@@ -549,7 +555,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
                            ((PyCFunctionObject*)func)->m_ml->ml_name);
              return NULL;
          }

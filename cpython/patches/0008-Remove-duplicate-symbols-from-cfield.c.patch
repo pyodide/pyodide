@@ -1,7 +1,7 @@
-From fc3b69f9afa779185a60834cf1817c22706edcd1 Mon Sep 17 00:00:00 2001
+From c1072b871866ac92abf18f159420dbf424902702 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Tue, 22 Jun 2021 20:12:45 -0700
-Subject: [PATCH] Remove duplicate symbols from cfield.c
+Subject: [PATCH 08/10] Remove duplicate symbols from cfield.c
 
 These symbols are already defined by libffi.
 ---
@@ -9,10 +9,10 @@ These symbols are already defined by libffi.
  1 file changed, 26 deletions(-)
 
 diff --git a/Modules/_ctypes/cfield.c b/Modules/_ctypes/cfield.c
-index 7ebd4ba..7a63ab7 100644
+index ec6feca8b0..244c3399a5 100644
 --- a/Modules/_ctypes/cfield.c
 +++ b/Modules/_ctypes/cfield.c
-@@ -1635,31 +1635,5 @@ typedef struct _ffi_type
+@@ -1599,31 +1599,5 @@ typedef struct _ffi_type
  } ffi_type;
  */
  
@@ -45,5 +45,5 @@ index 7ebd4ba..7a63ab7 100644
  
  /*---------------- EOF ----------------*/
 -- 
-2.17.1
+2.25.1
 

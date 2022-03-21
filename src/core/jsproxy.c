@@ -294,8 +294,7 @@ JsProxy_GetIter(PyObject* o)
 
 /**
  * next overload. Controlled by IS_ITERATOR.
- * TODO: Should add a similar send method for generator support.
- * Python 3.10 has a different way to handle this.
+ * TODO: Implement Py_am_send method for generator support
  */
 static PyObject*
 JsProxy_IterNext(PyObject* o)
@@ -1941,8 +1940,8 @@ JsProxy_create_subtype(int flags)
   FAIL_IF_NULL(result);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
-    // member __vectorcall_offset__ but it doesn't work in 3.8. I like this
-    // approach better.
+    // member __vectorcall_offset__, we might consider switching to using that
+    // approach.
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }

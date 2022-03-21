@@ -17,29 +17,32 @@ def test_cpython_core(python_test, selenium, request):
             error_flags.remove("crash-" + flag)
 
     if any(flag.startswith("segfault") for flag in error_flags):
-        pytest.skip('known segfault with code: "{}"'.format(",".join(error_flags)))
+        pytest.skip('known segfault: "{}"'.format(" ".join(error_flags)))
 
     if error_flags:
         if request.config.option.run_xfail:
             request.applymarker(
                 pytest.mark.xfail(
                     run=False,
-                    reason='known failure with code "{}"'.format(",".join(error_flags)),
+                    reason='known failure: "{}"'.format(" ".join(error_flags)),
                 )
             )
         else:
-            pytest.xfail('known failure with code "{}"'.format(",".join(error_flags)))
+            pytest.xfail('known failure: "{}"'.format(" ".join(error_flags)))
 
     selenium.load_package(list(UNVENDORED_STDLIB_MODULES))
     try:
         selenium.run(
             """
             from test.libregrtest import main
+            import unittest.case
             try:
                 main(['{}'], verbose=True, verbose3=True)
             except SystemExit as e:
                 if e.code != 0:
                     raise RuntimeError(f'Failed with code: {{e.code}}')
+            except unittest.case.SkipTest:
+                pass
             """.format(
                 name
             )

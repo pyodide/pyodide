@@ -63,6 +63,17 @@ substitutions:
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
   needed, install a host copy of the package with pip instead. {pr}`2256`
 
+- {{ Update }} Pyodide now runs Python 3.10.2.
+  {pr}`2225`
+
+- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
+  accurate. For backwards compatibility, we still export `Py2JsResult` as an
+  alias for `any`.
+  {pr}`2277`
+
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
 _February 19, 2022_
 
 ## Version 0.19.1

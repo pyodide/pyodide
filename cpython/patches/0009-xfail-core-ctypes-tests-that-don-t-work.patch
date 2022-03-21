@@ -1,19 +1,18 @@
-From a4aec920c76ebcb8360350ff0046c7a0c74c0cf2 Mon Sep 17 00:00:00 2001
+From 16abd462459b36c73db23b776f1eb5ab2c0c7813 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Thu, 24 Jun 2021 14:55:10 -0700
-Subject: [PATCH] xfail core ctypes tests that don't work
+Subject: [PATCH 09/10] xfail core ctypes tests that don't work
 
 PyCode_SetExtra doesn't work and ctypes doesn't seem to work with variadic functions including PyUnicode_FromFormat/
 ---
- Lib/test/test_code.py    | 7 +++++--
- Lib/test/test_unicode.py | 1 +
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ Lib/test/test_code.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/Lib/test/test_code.py b/Lib/test/test_code.py
-index ac3dde7..d91a350 100644
+index b9c4f8bdcb..31cb8876c8 100644
 --- a/Lib/test/test_code.py
 +++ b/Lib/test/test_code.py
-@@ -389,6 +389,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
+@@ -396,6 +396,7 @@ def test_bad_index(self):
                                ctypes.c_voidp(100)), 0)
  
          def test_free_called(self):
@@ -21,7 +20,7 @@ index ac3dde7..d91a350 100644
              # Verify that the provided free function gets invoked
              # when the code object is cleaned up.
              f = self.get_func()
-@@ -398,6 +399,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
+@@ -405,6 +406,7 @@ def test_free_called(self):
              self.assertEqual(LAST_FREED, 100)
  
          def test_get_set(self):
@@ -29,7 +28,7 @@ index ac3dde7..d91a350 100644
              # Test basic get/set round tripping.
              f = self.get_func()
  
-@@ -414,6 +416,7 @@ if check_impl_detail(cpython=True) and ctypes is not None:
+@@ -421,6 +423,7 @@ def test_get_set(self):
              del f
  
          def test_free_different_thread(self):
@@ -37,7 +36,7 @@ index ac3dde7..d91a350 100644
              # Freeing a code object on a different thread then
              # where the co_extra was set should be safe.
              f = self.get_func()
-@@ -438,8 +441,8 @@ def test_main(verbose=None):
+@@ -445,8 +448,8 @@ def test_main(verbose=None):
      from test import test_code
      run_doctest(test_code, verbose)
      tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
@@ -48,3 +47,6 @@ index ac3dde7..d91a350 100644
      run_unittest(*tests)
  
  if __name__ == "__main__":
+-- 
+2.25.1
+

@@ -40,29 +40,29 @@ test___future__
 test__locale	locale
 test__opcode
 test__osx_support	platform-specific
-test__xxsubinterpreters
+test__xxsubinterpreters	hits Py_FatalError("not the last thread") inside Py_EndInterpreter
 test_abc
 test_abstract_numbers
 test_aifc
-test_argparse	crash-chrome
+test_argparse	slow, sometimes times out
 test_array
 test_asdl_parser
 test_ast
 test_asyncgen	async
 test_asynchat	async
-test_asyncio.test_asyncio_waitfor   async
+test_asyncio.test_asyncio_waitfor	async
 test_asyncio.test_base_events	async
 test_asyncio.test_buffered_proto	async
 test_asyncio.test_context	async
 test_asyncio.test_events	async
 test_asyncio.test_futures	async
-test_asyncio.test_futures2  async
+test_asyncio.test_futures2	async
 test_asyncio.test_locks	async
 test_asyncio.test_pep492	async
 test_asyncio.test_proactor_events	async
 test_asyncio.test_protocols
 test_asyncio.test_queues	async
-test_asyncio.test_runners   async
+test_asyncio.test_runners	async
 test_asyncio.test_selector_events	async segfault-socketcall
 test_asyncio.test_sendfile	async
 test_asyncio.test_server	async
@@ -71,13 +71,13 @@ test_asyncio.test_sslproto
 test_asyncio.test_streams	async
 test_asyncio.test_subprocess	async
 test_asyncio.test_tasks	async
-test_asyncio.test_threads   async
+test_asyncio.test_threads	async
 test_asyncio.test_transports
 test_asyncio.test_unix_events	async
 test_asyncio.test_windows_events
 test_asyncio.test_windows_utils
 test_asyncore	bad ioctl syscall async
-test_atexit
+test_atexit	subprocess
 test_audioop
 test_audit	subprocess
 test_augassign
@@ -93,13 +93,13 @@ test_bisect
 test_bool
 test_buffer
 test_bufio
-test_builtin	floating point
+test_builtin	os.get_inheritable
 test_bytes
 test_bz2	threading
 test_c_locale_coercion
 test_calendar
 test_call
-test_capi
+test_capi	hangs
 test_cgi
 test_cgitb
 test_charmapcodec
@@ -129,13 +129,13 @@ test_codeop
 test_collections
 test_colorsys
 test_compare
-test_compile	crash
+test_compile
 test_compileall	multiprocessing
 test_complex
 test_concurrent_futures
 test_configparser
 test_contains
-test_context
+test_context	threads
 test_contextlib
 test_contextlib_async	async
 test_copy
@@ -148,11 +148,11 @@ test_csv
 test_ctypes
 test_curses
 test_dataclasses
-test_datetime
-test_dbm
+test_datetime	strftime
+test_dbm	dbm
 test_dbm_dumb	permissions
-test_dbm_gnu
-test_dbm_ndbm
+test_dbm_gnu	dbm
+test_dbm_ndbm	dbm
 test_decimal	floating point
 test_decorators
 test_defaultdict
@@ -188,7 +188,7 @@ test_email.test_parser
 test_email.test_pickleable
 test_email.test_policy
 test_email.test_utils
-test_embed
+test_embed	subprocess
 test_ensurepip	nonsense
 test_enum	threading
 test_enumerate
@@ -197,9 +197,9 @@ test_epoll
 test_errno
 test_exception_hierarchy
 test_exception_variations
-test_exceptions
+test_exceptions	BaseException_dealloc and BaseException_clear enter an infinite recurse
 test_extcall
-test_faulthandler
+test_faulthandler	subprocess
 test_fcntl
 test_file
 test_file_eintr	subprocess
@@ -207,10 +207,10 @@ test_filecmp
 test_fileinput
 test_fileio
 test_finalization
-test_float	floating point
+test_float
 test_flufl
 test_fnmatch
-test_fork1	threading
+test_subprocess1	threading
 test_format
 test_fractions
 test_frame
@@ -223,17 +223,17 @@ test_future
 test_future3
 test_future4
 test_future5
-test_gc
+test_gc	threads
 test_gdb
 test_generator_stop
-test_generators
-test_genericalias   multiprocessing
+test_generators	keyboard interrupt handling differences
+test_genericalias	multiprocessing
 test_genericclass
 test_genericpath	permissions
 test_genexps
 test_getargs2
 test_getopt
-test_getpass	permissions
+test_getpass
 test_gettext
 test_glob	fs
 test_global
@@ -254,11 +254,11 @@ test_httpservers	threading
 test_idle
 test_imaplib	socket
 test_imghdr
-test_imp	fs
+test_imp
 test_importlib.builtin.test_finder
 test_importlib.builtin.test_loader
 test_importlib.extension.test_case_sensitivity
-test_importlib.extension.test_finder	fs
+test_importlib.extension.test_finder
 test_importlib.extension.test_loader	fs
 test_importlib.extension.test_path_hook
 test_importlib.frozen.test_finder
@@ -289,17 +289,19 @@ test_importlib.test_open
 test_importlib.test_path
 test_importlib.test_pkg_import
 test_importlib.test_read
+test_importlib.test_reader
 test_importlib.test_resource
 test_importlib.test_spec
-test_importlib.test_threaded_import threading
+test_importlib.test_threaded_import	threading
 test_importlib.test_util
 test_importlib.test_windows
 test_importlib.test_zip
 test_index
-test_inspect    async
+test_inspect	async
 test_int
 test_int_literal
-test_io	segfault-unknown
+test_interpreters	threads
+test_io	segfault-unknown in test_large_file_ops
 test_ioctl
 test_ipaddress
 test_isinstance
@@ -323,10 +325,10 @@ test_json.test_separators
 test_json.test_speedups
 test_json.test_tool	subprocess
 test_json.test_unicode
-test_keyword	subprocess
+test_keyword
 test_keywordonlyarg
 test_kqueue
-test_largefile	fs
+test_largefile	RangeError: Array buffer allocation failed
 test_lib2to3	nonsense
 test_linecache
 test_list
@@ -338,9 +340,9 @@ test_long
 test_longexp
 test_lzma
 test_mailbox	fs
-test_mailcap    not sure why it fails...
+test_mailcap	not sure why it fails...
 test_marshal
-test_math	floating point
+test_math
 test_memoryio
 test_memoryview
 test_metaclass
@@ -351,8 +353,8 @@ test_module
 test_modulefinder
 test_msilib
 test_multibytecodec
-test_multiprocessing_fork
-test_multiprocessing_forkserver
+test_multiprocessing_subprocess subprocess
+test_multiprocessing_subprocessserver   subprocess
 test_multiprocessing_main_handling
 test_multiprocessing_spawn
 test_named_expressions
@@ -361,6 +363,7 @@ test_nis
 test_nntplib
 test_ntpath	platform
 test_numeric_tower
+test_opcache
 test_opcodes
 test_openpty	platform-specific
 test_operator
@@ -369,18 +372,18 @@ test_ordered_dict
 test_os	mmap
 test_ossaudiodev
 test_osx_env
-test_parser
 test_pathlib	fs
+test_patma
 test_pdb	subprocess
 test_peepholer
 test_peg_generator.test_c_parser
 test_peg_generator.test_first_sets
+test_peg_generator.test_grammar_validator
 test_peg_generator.test_pegen
-test_peg_parser
 test_pickle	dbm
 test_picklebuffer
 test_pickletools	dbm
-test_pipes	platform-specific
+test_pipes
 test_pkg
 test_pkgutil
 test_platform	subprocess
@@ -399,8 +402,8 @@ test_property
 test_pstats
 test_pty
 test_pulldom
-test_pwd	crash
-test_py_compile subprocess
+test_pwd
+test_py_compile	subprocess
 test_pyclbr
 test_pydoc	threading
 test_pyexpat
@@ -416,11 +419,11 @@ test_repl	subprocess
 test_reprlib
 test_resource
 test_richcmp
-test_rlcompleter	crash
+test_rlcompleter
 test_robotparser	socket
-test_runpy  subprocess
+test_runpy	subprocess
 test_sax
-test_sched	threading
+test_sched	subprocess
 test_scope
 test_script_helper
 test_secrets
@@ -428,20 +431,20 @@ test_select	networking segfault-newselect
 test_selectors	networking segfault-newselect
 test_set
 test_setcomps
-test_shelve
+test_shelve	dbm
 test_shlex
 test_shutil	crash
-test_signal
-test_site	subprocess
+test_signal	emscripten signals implementation isn't very complete
+test_site	TypeError: unhashable type: 'pyodide.JsProxy'
 test_slice
 test_smtpd
 test_smtplib	bad ioctl syscall 21537
 test_smtpnet
 test_sndhdr
-test_socket
-test_socketserver
+test_socket	networking
+test_socketserver	networking
 test_sort
-test_source_encoding	subprocess,
+test_source_encoding	subprocess
 test_spwd
 test_sqlite	threading
 test_ssl
@@ -458,12 +461,11 @@ test_struct
 test_structmembers
 test_structseq
 test_subclassinit
-test_subprocess
+test_subprocess	subprocess
 test_sunau
 test_sundry
 test_super
-test_support	multiprocessing
-test_symbol
+test_support	socket
 test_symtable
 test_syntax
 test_sys	subprocess
@@ -482,7 +484,7 @@ test_threadedtempfile	threading
 test_threading	threading
 test_threading_local	threading
 test_threadsignals	threading
-test_time
+test_time	strftime
 test_timeit
 test_timeout
 test_tix
@@ -498,13 +500,14 @@ test_tools.test_pdeps
 test_tools.test_pindent
 test_tools.test_reindent
 test_tools.test_sundry
-test_trace
+test_trace	slow, sometimes times out
 test_traceback	subprocess
 test_tracemalloc
 test_ttk_guionly
 test_ttk_textonly
 test_tuple
 test_turtle
+test_type_annotations
 test_type_comments
 test_typechecks
 test_types
@@ -512,7 +515,7 @@ test_typing
 test_ucn
 test_unary
 test_unicode
-test_unicode_file
+test_unicode_file	fs MEMFS doesn't work as expected with unencodable file names
 test_unicode_file_functions
 test_unicode_identifiers
 test_unicodedata
@@ -521,7 +524,7 @@ test_univnewlines
 test_unpack
 test_unpack_ex
 test_unparse
-test_urllib	segfault-socketcall
+test_urllib
 test_urllib2	subprocess
 test_urllib2_localnet	socket
 test_urllib2net
@@ -553,10 +556,11 @@ test_xml_etree
 test_xml_etree_c
 test_xmlrpc	networking
 test_xmlrpc_net
+test_xxlimited
 test_xxtestfuzz
 test_yield_from
 test_zipapp
-test_zipfile	crash-chrome
+test_zipfile	fs
 test_zipfile64
 test_zipimport
 test_zipimport_support
