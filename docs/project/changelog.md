@@ -71,6 +71,9 @@ substitutions:
   alias for `any`.
   {pr}`2277`
 
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
 - {{Enhancement}} It is no longer necessary to provide `indexURL` to
   `loadPyodide`.
   {pr}`2292`

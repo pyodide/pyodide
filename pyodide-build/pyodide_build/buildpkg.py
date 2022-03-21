@@ -678,6 +678,16 @@ def build_package(
             f"directory at the path {srcpath}, but that path does not exist."
         )
 
+    import os
+    import subprocess
+    import sys
+
+    tee = subprocess.Popen(["tee", pkg_root / "build.log"], stdin=subprocess.PIPE)
+    # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+    # of any child processes we spawn)
+    os.dup2(tee.stdin.fileno(), sys.stdout.fileno())  # type: ignore[union-attr]
+    os.dup2(tee.stdin.fileno(), sys.stderr.fileno())  # type: ignore[union-attr]
+
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         bash_runner.env["PKG_VERSION"] = version
         if not continue_:
