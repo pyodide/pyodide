@@ -74,6 +74,10 @@ substitutions:
 - {{Fix}} Pyodide now loads correctly even if requirejs is included.
   {pr}`2283`
 
+- {{Enhancement}} It is no longer necessary to provide `indexURL` to
+  `loadPyodide`.
+  {pr}`2292`
+
 _February 19, 2022_
 
 ## Version 0.19.1
