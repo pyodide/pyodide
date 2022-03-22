@@ -31,6 +31,7 @@ export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
  */
 export let version: string = ""; // actually defined in loadPyodide (see pyodide.js)
 
+let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
  * Runs a string of Python code from JavaScript.
  *
@@ -38,14 +39,30 @@ export let version: string = ""; // actually defined in loadPyodide (see pyodide
  * returned.
  *
  * @param code Python code to evaluate
- * @param globals An optional Python dictionary to use as the globals. Defaults
- *        to :any:`pyodide.globals`. Uses the Python API
+ * @param options
+ * @param options.globals An optional Python dictionary to use as the globals.
+ *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
  * @returns The result of the Python code translated to JavaScript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
-export function runPython(code: string, globals: PyProxy = API.globals): any {
-  return API.pyodide_py.eval_code(code, globals);
+export function runPython(
+  code: string,
+  options: { globals?: PyProxy } = {}
+): any {
+  if (API.isPyProxy(options)) {
+    options = { globals: options as PyProxy };
+    if (!runPythonPositionalGlobalsDeprecationWarned) {
+      console.warn(
+        "Passing a PyProxy as the second argument to runPython is deprecated. Use 'runPython(code, {globals : some_dict})' instead."
+      );
+      runPythonPositionalGlobalsDeprecationWarned = true;
+    }
+  }
+  if (!options.globals) {
+    options.globals = API.globals;
+  }
+  return API.pyodide_py.eval_code(code, options.globals);
 }
 API.runPython = runPython;
 
@@ -102,38 +119,48 @@ export async function loadPackagesFromImports(
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
  *
- * .. admonition:: Python imports
- *    :class: warning
+ * .. admonition:: Python imports :class: warning
  *
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
- *    import any python packages referenced via `import` statements in your code.
- *    This function will no longer do it for you.
+ *    import any python packages referenced via `import` statements in your
+ *    code. This function will no longer do it for you.
  *
  * For example:
  *
  * .. code-block:: pyodide
  *
- *    let result = await pyodide.runPythonAsync(`
- *        from js import fetch
- *        response = await fetch("./packages.json")
- *        packages = await response.json()
- *        # If final statement is an expression, its value is returned to JavaScript
+ *    let result = await pyodide.runPythonAsync(` from js import fetch response
+ *        = await fetch("./packages.json") packages = await response.json() # If
+ *        final statement is an expression, its value is returned to JavaScript
  *        len(packages.packages.object_keys())
  *    `);
  *    console.log(result); // 79
  *
  * @param code Python code to evaluate
- * @param globals An optional Python dictionary to use as the globals.
- *        Defaults to :any:`pyodide.globals`. Uses the Python API
- *        :any:`pyodide.eval_code_async` to evaluate the code.
+ * @param options
+ * @param options.globals An optional Python dictionary to use as the globals.
+ * Defaults to :any:`pyodide.globals`. Uses the Python API
+ * :any:`pyodide.eval_code_async` to evaluate the code.
  * @returns The result of the Python code translated to JavaScript.
  * @async
  */
 export async function runPythonAsync(
   code: string,
-  globals: PyProxy = API.globals
+  options: { globals?: PyProxy } = {}
 ): Promise<any> {
-  return await API.pyodide_py.eval_code_async(code, globals);
+  if (API.isPyProxy(options)) {
+    options = { globals: options as PyProxy };
+    if (!runPythonPositionalGlobalsDeprecationWarned) {
+      console.warn(
+        "Passing a PyProxy as the second argument to runPython is deprecated. Use 'runPython(code, {globals : some_dict})' instead."
+      );
+      runPythonPositionalGlobalsDeprecationWarned = true;
+    }
+  }
+  if (!options.globals) {
+    options.globals = API.globals;
+  }
+  return await API.pyodide_py.eval_code_async(code, options.globals);
 }
 API.runPythonAsync = runPythonAsync;
 
