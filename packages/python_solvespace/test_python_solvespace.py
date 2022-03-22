@@ -4,6 +4,8 @@ from pyodide_build.testing import run_in_pyodide
 @run_in_pyodide(packages=["python_solvespace"])
 def test_regex():
     from python_solvespace import ResultFlag, SolverSystem
+
+
     sys = SolverSystem()
     wp = sys.create_2d_base()
     p0 = sys.add_point_2d(0, 0, wp)
