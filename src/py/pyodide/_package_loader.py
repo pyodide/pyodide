@@ -64,6 +64,8 @@ def unpack_buffer(filename: str, buffer: JsProxy, target: str = "site") -> JsPro
 
 def should_load_dynlib(path: str):
     suffixes = Path(path).suffixes
+    if not suffixes:
+        return False
     if suffixes[-1] != ".so":
         return False
     if len(suffixes) == 1:

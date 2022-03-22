@@ -341,6 +341,7 @@ def test_should_load_dynlib():
         f"x.{ext_suffix}",
     ]
     should_not_load = [
+        "a",
         "a.py",
         "a.txt",
         "a/b.txt",
@@ -366,6 +367,7 @@ def test_get_dynlibs():
     from pyodide._package_loader import get_dynlibs
 
     files = [
+        "a",
         "a.so",
         "a.py",
         "a.txt",
