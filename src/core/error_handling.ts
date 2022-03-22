@@ -239,7 +239,7 @@ Module.handle_js_error = function (e: any) {
   let weirdCatch;
   try {
     stack = ErrorStackParser.parse(e);
-  } catch (e) {
+  } catch (_) {
     weirdCatch = true;
   }
   if (weirdCatch) {
