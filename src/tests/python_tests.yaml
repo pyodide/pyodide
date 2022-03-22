@@ -218,6 +218,7 @@
 - test_dbm_ndbm:
     xfail: dbm
 - test_decimal:
+    xfail-chrome: times out
     skip:
       - test_context_subclassing # floating point
       - test_none_args # Some context issue?
@@ -760,7 +761,8 @@
 - test_tracemalloc
 - test_ttk_guionly
 - test_ttk_textonly
-- test_tuple
+- test_tuple:
+    xfail-chrome: times out
 - test_turtle
 - test_type_annotations
 - test_type_comments
@@ -837,7 +839,8 @@
 - test_xxtestfuzz
 - test_yield_from
 - test_zipapp
-- test_zipfile
+- test_zipfile:
+    xfail-chrome: times out
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support
