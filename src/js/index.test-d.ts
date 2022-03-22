@@ -16,10 +16,9 @@ import {
 } from "./pyodide";
 
 async function main() {
-  let pyodide = await loadPyodide({ indexURL: "blah" });
-  expectType<Promise<typeof pyodide>>(
-    loadPyodide({ indexURL: "blah", fullStdLib: true })
-  );
+  let pyodide = await loadPyodide();
+  expectType<Promise<typeof pyodide>>(loadPyodide({ indexURL: "blah" }));
+  expectType<Promise<typeof pyodide>>(loadPyodide({ fullStdLib: true }));
 
   expectType<Promise<typeof pyodide>>(
     loadPyodide({

@@ -304,7 +304,7 @@ test_interpreters	threads
 test_io	segfault-unknown in test_large_file_ops
 test_ioctl
 test_ipaddress
-test_isinstance
+test_isinstance crash-chrome
 test_iter
 test_iterlen
 test_itertools

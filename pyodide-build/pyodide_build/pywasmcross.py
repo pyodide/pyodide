@@ -4,39 +4,34 @@
 distutils has never had a proper cross-compilation story. This is a hack, which
 miraculously works, to get around that.
 
-The gist is:
-
-- Compile the package natively, replacing calls to the compiler and linker with
-  wrappers that store the arguments in a log, and then delegate along to the
-  real native compiler and linker.
-
-- Remove all the native build products.
-
-- Play back the log, replacing the native compiler with emscripten and
-  adjusting include paths and flags as necessary for cross-compiling to
-  emscripten. This overwrites the results from the original native compilation.
-
-While this results in more work than strictly necessary (it builds a native
-version of the package, even though we then throw it away), it seems to be the
-only reliable way to automatically build a package that interleaves
-configuration with build.
+The gist is we compile the package replacing calls to the compiler and linker
+with wrappers that adjusting include paths and flags as necessary for
+cross-compiling and then pass the command long to emscripten.
 """
-
-
-import importlib.machinery
 import json
 import os
+import sys
+
+IS_MAIN = __name__ == "__main__"
+if IS_MAIN:
+    PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
+    # restore __name__ so that relative imports work as we expect
+    __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
+    sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
+
+    PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+
+import importlib.machinery
 import re
 import subprocess
-import sys
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import NoReturn, Optional, overload
+from typing import Any, MutableMapping, NoReturn, Optional, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
-from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_output, scipy_fixes
+from . import common
+from ._f2c_fixes import fix_f2c_output, scipy_fixes
 
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
@@ -56,31 +51,12 @@ ReplayArgs = namedtuple(
         "target_install_dir",
         "replace_libs",
         "builddir",
+        "pythoninclude",
     ],
 )
 
 
-def capture_command(args: list[str]) -> NoReturn:
-    """
-    This is called when this script is called through a symlink that looks like
-    a compiler or linker.
-
-    It writes the arguments to the build.log, and then delegates to the real
-    native compiler or linker (unless it decides to skip host compilation). It
-    will exit with an appropriate return code when done.
-    """
-    # Remove the symlink compiler from the PATH, so we can delegate to the
-    # native compiler
-    path = os.environ["PATH"]
-    SYMLINKDIR = symlink_dir()
-    while f"{SYMLINKDIR}:" in path:
-        path = path.replace(f"{SYMLINKDIR}:", "")
-    os.environ["PATH"] = path
-    replay_args = ReplayArgs(**json.loads(os.environ["PYWASMCROSS_ARGS"]))
-    handle_command(args, replay_args)
-
-
-def make_command_wrapper_symlinks(env: dict[str, str]):
+def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -125,17 +101,22 @@ def compile(*, mypy__Single_overload_definition_multiple_required: int):
 
 def compile(env, **kwargs):
     args = environment_substitute_args(kwargs, env)
+    args["builddir"] = str(Path(".").absolute())
+
     env = dict(env)
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
+    args["PYTHONPATH"] = sys.path
+    args["orig__name__"] = __name__
     make_command_wrapper_symlinks(env)
-    args["builddir"] = str(Path(".").absolute())
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
 
+    from pyodide_build.pypabuild import build
+
     try:
-        subprocess.check_call([sys.executable, "setup.py", "bdist_wheel"], env=env)
-    except Exception:
+        build(env)
+    except BaseException:
         build_log_path = Path("build.log")
         if build_log_path.exists():
             build_log_path.unlink()
@@ -447,6 +428,7 @@ def handle_command_generate_args(
             new_args.extend(args.cflags.split())
         elif new_args[0] == "em++":
             new_args.extend(args.cflags.split() + args.cxxflags.split())
+        new_args.extend(["-I", args.pythoninclude])
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
@@ -535,7 +517,6 @@ def handle_command(
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
 
-    print(" ".join(new_args))
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:
         sys.exit(returncode)
@@ -556,7 +537,7 @@ def handle_command(
 
 def environment_substitute_args(
     args: dict[str, str], env: dict[str, str] = None
-) -> dict[str, str]:
+) -> dict[str, Any]:
     if env is None:
         env = dict(os.environ)
     subbed_args = {}
@@ -568,19 +549,19 @@ def environment_substitute_args(
     return subbed_args
 
 
-def clean_out_native_artifacts(directory):
-    for root, _dirs, files in os.walk(directory):
-        for file in files:
-            path = Path(root) / file
-            if path.suffix in (".o", ".so", ".a"):
-                path.unlink()
+if IS_MAIN:
+    path = os.environ["PATH"]
+    SYMLINKDIR = symlink_dir()
+    while f"{SYMLINKDIR}:" in path:
+        path = path.replace(f"{SYMLINKDIR}:", "")
+    os.environ["PATH"] = path
 
+    REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
-if __name__ == "__main__":
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename
     if basename in symlinks:
-        sys.exit(capture_command(args))
+        sys.exit(handle_command(args, REPLAY_ARGS))
     else:
         raise Exception(f"Unexpected invocation '{basename}'")
