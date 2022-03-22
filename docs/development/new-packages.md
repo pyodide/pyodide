@@ -16,8 +16,7 @@ you should start this process with package dependencies.
 
 Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
-case by going to the `pypi.org/project/<package-name>` URL and checking if the
-"Download files" tab contains a file that ends with `*py3-none-any.whl`.
+case by trying `micropip.install("package-name")`.
 
 If the wheel is not on PyPI, but nevertheless you believe there is nothing
 preventing it (it is a Python package without C extensions):
@@ -31,8 +30,8 @@ preventing it (it is a Python package without C extensions):
   [Python packaging guide](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
   for more details. Then upload the wheel file somewhere (not to PyPI) and
   install it with micropip via its URL.
-- you can also open an issue in the package repository asking the authors to
-  upload the wheel.
+- please open an issue in the package repository asking the authors to upload
+  the wheel.
 
 If however the package has C extensions or its code requires patching, then
 continue to the next steps.
@@ -50,7 +49,7 @@ tool with `pip install -e pyodide-build`, then run:
 
 `pyodide-build mkpkg <package-name>`
 
-This will generate a `meta.yaml` under `packages/<package-name>/` (see
+This will generate a `meta.yaml` file under `packages/<package-name>/` (see
 {ref}`meta-yaml-spec`) that should work out of the box for many simple Python
 packages. This tool will populate the latest version, download link and sha256
 hash by querying PyPI. It doesn't currently handle package dependencies, so you
@@ -68,16 +67,16 @@ file. This can be done either by checking if the URL
 exists, or by searching the [conda-forge GitHub
 org](https://github.com/conda-forge/) for the package name.
 
-The `meta.yaml` in Pyodide was inspired by the one in conda, however it is
+The Pyodide `meta.yaml` file format was inspired by the one in conda, however it is
 not strictly compatible.
 ```
 
 ### 3. Building the package and investigating issues
 
-Once the `meta.yaml` is ready, build the package with the following commands
-from inside the package directory `packages/<package-name>`
+Once the `meta.yaml` file is ready, build the package with the following
+commands from inside the package directory `packages/<package-name>`
 
-```
+```sh
 export PYTHONPATH="$PYTHONPATH:/path/to/pyodide/pyodide-build/"
 python -m pyodide_build buildpkg meta.yaml
 cp build/*.data build/*.js ../../build/
@@ -96,14 +95,16 @@ then restart the build.
 
 If the package has a git repository, the easiest way to make a patch is usually:
 
-1. Clone the git repository of the package. You might want to use the options `git clone --depth 1 --branch <version>`. Find the appropriate tag given the version
-   of the package you are trying to modify.
-2. Make a new branch with `git checkout -b pyodide-version` (e.g., `pyodide-1.21.4`).
+1. Clone the git repository of the package. You might want to use the options
+   `git clone --depth 1 --branch <version>`. Find the appropriate tag given the
+   version of the package you are trying to modify.
+2. Make a new branch with `git checkout -b pyodide-version` (e.g.,
+   `pyodide-1.21.4`).
 3. Make whatever changes you want. Commit them. Please split your changes up
    into focused commits. Write detailed commit messages! People will read them
    in the future, particularly when migrating patches or trying to decide if
-   they are no longer needed. The first line of each commit message will also
-   be used in the patch file name.
+   they are no longer needed. The first line of each commit message will also be
+   used in the patch file name.
 4. Use `git format-patch <version> -o <pyodide-root>/packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
@@ -113,12 +114,15 @@ If the package has a git repository, the easiest way to make a patch is usually:
 When you want to upgrade the version of a package, you will need to migrate the
 patches. To do this:
 
-1. Clone the git repository of the package. You might want to use the options `git clone --depth 1 --branch <version-tag>`.
-2. Make a new branch with `git checkout -b pyodide-old-version` (e.g., `pyodide-1.21.4`).
+1. Clone the git repository of the package. You might want to use the options
+   `git clone --depth 1 --branch <version-tag>`.
+2. Make a new branch with `git checkout -b pyodide-old-version` (e.g.,
+   `pyodide-1.21.4`).
 3. Apply the current patches with `git am <pyodide-root>/packages/<package-name>/patches/*`.
-4. Make a new branch `git checkout -b pyodide-new-version` (e.g., `pyodide-1.22.0`)
-5. Rebase the patches with `git rebase old-version --onto new-version`
-   (e.g., `git rebase pyodide-1.21.4 --onto pyodide-1.22.0`). Resolve any rebase
+4. Make a new branch `git checkout -b pyodide-new-version` (e.g.,
+   `pyodide-1.22.0`)
+5. Rebase the patches with `git rebase old-version --onto new-version` (e.g.,
+   `git rebase pyodide-1.21.4 --onto pyodide-1.22.0`). Resolve any rebase
    conflicts. If a patch has been upstreamed, you can drop it with `git rebase --skip`.
 6. Remove old patches with `rm <pyodide-root>/packages/<package-name>/patches/*`.
 7. Use `git format-patch <version-tag> -o <pyodide-root>/packages/<package-name>/patches/`
@@ -126,10 +130,10 @@ patches. To do this:
 
 #### Upstream your patches!
 
-Please create PRs or issues to discuss with the package to try to find ways to
-include your patches into the package. Many package authors are very receptive
-to including Pyodide-related patches and they reduce future maintenance work for
-us.
+Please create PRs or issues to discuss with the package maintainers to try to
+find ways to include your patches into the package. Many package maintainers are
+very receptive to including Pyodide-related patches and they reduce future
+maintenance work for us.
 
 ## The package build pipeline
 
@@ -145,9 +149,9 @@ build. We automate the following steps:
 - If the source is not a wheel (building from a source archive or an in-tree
   source):
   - Run `build/script` if present
-  - Install wrappers for `gfortran`, `gcc`, `g++`, `ar`, and `ld` to intercept
-    the calls, rewrite the arguments, and pass them to the appropriate
-    emscripten tools.
+  - Modify the `PATH` to point to wrappers for `gfortran`, `gcc`, `g++`, `ar`,
+    and `ld` that preempt compiler calls, rewrite the arguments, and pass them
+    to the appropriate emscripten compiler tools.
   - Using `pypa/build`:
     - Create an isolated build environment. Install symbolic links from this
       isolated environment to "host" copies of certain unisolated packages.

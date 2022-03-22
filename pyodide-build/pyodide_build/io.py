@@ -42,7 +42,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
 }
 
 
-def _cpc_keys(config: dict[str, Any]) -> Iterator[str]:
+def _check_config_keys(config: dict[str, Any]) -> Iterator[str]:
     # Check top level sections
     wrong_keys = set(config.keys()).difference(PACKAGE_CONFIG_SPEC.keys())
     if wrong_keys:
@@ -69,7 +69,7 @@ def _cpc_keys(config: dict[str, Any]) -> Iterator[str]:
             )
 
 
-def _cpc_types(config: dict[str, Any]) -> Iterator[str]:
+def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
     # Check value types
     for section_key, section in config.items():
         for subsection_key, value in section.items():
@@ -86,7 +86,7 @@ def _cpc_types(config: dict[str, Any]) -> Iterator[str]:
                 )
 
 
-def _cpc_source(config: dict[str, Any]) -> Iterator[str]:
+def _check_config_source(config: dict[str, Any]) -> Iterator[str]:
     if "source" not in config:
         yield "Missing source section"
         return
@@ -114,7 +114,7 @@ def _cpc_source(config: dict[str, Any]) -> Iterator[str]:
             yield "If source is downloaded from url, it must have a 'source/sha256' hash."
 
 
-def _cpc_build(config: dict[str, Any]) -> Iterator[str]:
+def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
     if "build" not in config:
         return
     build_metadata = config["build"]
@@ -134,7 +134,7 @@ def _cpc_build(config: dict[str, Any]) -> Iterator[str]:
             yield f"If building a {typ}, 'build/{key}' key is not allowed."
 
 
-def _cpc_wheel_build(config: dict[str, Any]) -> Iterator[str]:
+def _check_config_wheel_build(config: dict[str, Any]) -> Iterator[str]:
     if "source" not in config:
         return
     src_metadata = config["source"]
@@ -178,11 +178,11 @@ def check_package_config_generate_errors(
         optional meta.yaml file path. Only used for more explicit error output,
         when raise_errors = True.
     """
-    yield from _cpc_keys(config)
-    yield from _cpc_types(config)
-    yield from _cpc_source(config)
-    yield from _cpc_build(config)
-    yield from _cpc_wheel_build(config)
+    yield from _check_config_keys(config)
+    yield from _check_config_types(config)
+    yield from _check_config_source(config)
+    yield from _check_config_build(config)
+    yield from _check_config_wheel_build(config)
 
 
 def check_package_config(
