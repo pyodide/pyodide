@@ -17,8 +17,8 @@ pyodide_callback(void)
       API.interrupt_buffer[0] = 0;
       return result;
     });
-    if (interrupt_buffer == 2) {
-      PyErr_SetInterrupt();
+    if (interrupt_buffer != 0) {
+      PyErr_SetInterruptEx(interrupt_buffer);
     }
   }
 }
