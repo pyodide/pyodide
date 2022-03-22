@@ -1,5 +1,6 @@
 from functools import cache
 from pathlib import Path
+from textwrap import dedent
 from typing import Any
 
 import pytest
@@ -54,46 +55,48 @@ def test_cpython_core(main_test, selenium, request):
     selenium.load_package(list(UNVENDORED_STDLIB_MODULES))
     try:
         selenium.run(
-            f"""
-import platform
-from test import libregrtest
+            dedent(
+                f"""
+            import platform
+            from test import libregrtest
 
-platform.platform(aliased=True)
-import _testcapi
-if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
-    # This uses raise() which doesn't work.
-    del _testcapi.raise_SIGINT_then_send_None
+            platform.platform(aliased=True)
+            import _testcapi
+            if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
+                # This uses raise() which doesn't work.
+                del _testcapi.raise_SIGINT_then_send_None
 
-try:
-    libregrtest.main(["{name}"], ignore_tests={ignore_tests}, verbose=True, verbose3=True)
-except SystemExit as e:
-    if e.code != 0:
-        raise RuntimeError(f"Failed with code: {{e.code}}")
+            try:
+                libregrtest.main(["{name}"], ignore_tests={ignore_tests}, verbose=True, verbose3=True)
+            except SystemExit as e:
+                if e.code != 0:
+                    raise RuntimeError(f"Failed with code: {{e.code}}")
             """
+            )
         )
     except selenium.JavascriptException:
         print(selenium.logs)
         raise
 
 
-def get_test_info(test):
+def get_test_info(test) -> tuple[str, dict[str, Any]]:
     if isinstance(test, dict):
-        [name, info] = next(iter(test.items()))
+        (name, info) = next(iter(test.items()))
     else:
         name = test
         info = {}
-    return [name, info]
+    return (name, info)
 
 
 @cache
-def get_tests():
+def get_tests() -> list[tuple[str, dict[str, Any]]]:
     with open(Path(__file__).parent / "python_tests.yaml") as file:
         data = yaml.load(file, Loader)
 
-    return {name: info for test in data for [name, info] in [get_test_info(test)]}
+    return [get_test_info(test) for test in data]
 
 
 def pytest_generate_tests(metafunc):
     if "main_test" in metafunc.fixturenames:
         tests = get_tests()
-        metafunc.parametrize("main_test", tests.items(), ids=tests.keys())
+        metafunc.parametrize("main_test", tests, ids=[t[0] for t in tests])
