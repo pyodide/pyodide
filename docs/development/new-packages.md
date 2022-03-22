@@ -99,8 +99,11 @@ If the package has a git repository, the easiest way to make a patch is usually:
 1. Clone the git repository of the package. You might want to use the options `git clone --depth 1 --branch <version>`. Find the appropriate tag given the version
    of the package you are trying to modify.
 2. Make a new branch with `git checkout -b pyodide-version` (e.g., `pyodide-1.21.4`).
-3. Make whatever changes you want. Commit them. Write a detailed commit
-   message!!
+3. Make whatever changes you want. Commit them. Please split your changes up
+   into focused commits. Write detailed commit messages! People will read them
+   in the future, particularly when migrating patches or trying to decide if
+   they are no longer needed. The first line of each commit message will also
+   be used in the patch file name.
 4. Use `git format-patch <version> -o <pyodide-root>/packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
