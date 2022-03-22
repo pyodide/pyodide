@@ -4,40 +4,10 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/50/a6/4e01d2c90de41a431041f813aebada874d05d6d578ce25b2462872d2a3e6/python_solvespace-3.0.6.tar.gz
   sha256: 951b4cf3858dc337bbfa9f6d9efe9fd6e8dfa7fed022556196add1ba5a56b045
-  extras:
-    - [Eigen/Cholesky, python_solvespace/include/Eigen/Cholesky]
-    - [Eigen/CholmodSupport, python_solvespace/include/Eigen/CholmodSupport]
-    - [Eigen/Core, python_solvespace/include/Eigen/Core]
-    - [Eigen/Dense, python_solvespace/include/Eigen/Dense]
-    - [Eigen/Eigen, python_solvespace/include/Eigen/Eigen]
-    - [Eigen/Eigenvalues, python_solvespace/include/Eigen/Eigenvalues]
-    - [Eigen/Geometry, python_solvespace/include/Eigen/Geometry]
-    - [Eigen/Householder, python_solvespace/include/Eigen/Householder]
-    - [
-        Eigen/IterativeLinearSolvers,
-        python_solvespace/include/Eigen/IterativeLinearSolvers,
-      ]
-    - [Eigen/Jacobi, python_solvespace/include/Eigen/Jacobi]
-    - [Eigen/KLUSupport, python_solvespace/include/Eigen/KLUSupport]
-    - [Eigen/LU, python_solvespace/include/Eigen/LU]
-    - [Eigen/MetisSupport, python_solvespace/include/Eigen/MetisSupport]
-    - [Eigen/OrderingMethods, python_solvespace/include/Eigen/OrderingMethods]
-    - [Eigen/PardisoSupport, python_solvespace/include/Eigen/PardisoSupport]
-    - [Eigen/PaStiXSupport, python_solvespace/include/Eigen/PaStiXSupport]
-    - [Eigen/QR, python_solvespace/include/Eigen/QR]
-    - [Eigen/QtAlignedMalloc, python_solvespace/include/Eigen/QtAlignedMalloc]
-    - [Eigen/Sparse, python_solvespace/include/Eigen/Sparse]
-    - [Eigen/SparseCholesky, python_solvespace/include/Eigen/SparseCholesky]
-    - [Eigen/SparseCore, python_solvespace/include/Eigen/SparseCore]
-    - [Eigen/SparseLU, python_solvespace/include/Eigen/SparseLU]
-    - [Eigen/SparseQR, python_solvespace/include/Eigen/SparseQR]
-    - [Eigen/SPQRSupport, python_solvespace/include/Eigen/SPQRSupport]
-    - [Eigen/StdDeque, python_solvespace/include/Eigen/StdDeque]
-    - [Eigen/StdList, python_solvespace/include/Eigen/StdList]
-    - [Eigen/StdVector, python_solvespace/include/Eigen/StdVector]
-    - [Eigen/SuperLUSupport, python_solvespace/include/Eigen/SuperLUSupport]
-    - [Eigen/SVD, python_solvespace/include/Eigen/SVD]
-    - [Eigen/UmfPackSupport, python_solvespace/include/Eigen/UmfPackSupport]
+build:
+  script: |
+    git clone https://gitlab.com/libeigen/eigen.git --depth 1 --branch 3.4
+    cp -rn eigen/Eigen python_solvespace/include
 test:
   imports:
     - python_solvespace
