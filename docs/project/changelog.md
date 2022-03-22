@@ -78,6 +78,12 @@ substitutions:
   `loadPyodide`.
   {pr}`2292`
 
+- {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
+  Javascript code. This mostly should never happen since well behaved Javascript
+  code ought to throw errors. But it's better not to completely crash if it
+  throws something else.
+  {pr}`2294`
+
 _February 19, 2022_
 
 ## Version 0.19.1
