@@ -24,7 +24,7 @@ def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
 
 def possibly_skip_test(request, info: dict[str, Any]) -> dict[str, Any]:
     for reason in (
-        reason for [flag, reason] in info.items() if flag.startswith("segfault")
+        reason for (flag, reason) in info.items() if flag.startswith("segfault")
     ):
         pytest.skip(f"known segfault: {reason}")
 
