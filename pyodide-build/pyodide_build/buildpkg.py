@@ -135,6 +135,7 @@ def get_bash_runner():
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
             "HOSTINSTALLDIR",
+            "HOSTSITEPACKAGES",
             "PYMAJOR",
             "PYMINOR",
             "PYMICRO",
