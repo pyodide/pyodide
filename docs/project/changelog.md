@@ -87,7 +87,8 @@ substitutions:
 - {{ Enhancement }} The interrupt buffer can be used to raise all 64 signals
   now, not just `SIGINT`. Write a number between `1<= signum <= 64` into the
   interrupt buffer to trigger the corresponding signal. By default everything
-  but `SIGINT` will be ignored.
+  but `SIGINT` will be ignored. Any value written into the interrupt buffer
+  outside of the range from 1 to 64 will be silently discarded.
   {pr}`2301`
 
 _February 19, 2022_
