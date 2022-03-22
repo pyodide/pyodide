@@ -24,9 +24,7 @@
       }
 
       async function main() {
-        globalThis.pyodide = await loadPyodide({
-          indexURL: "{{ PYODIDE_BASE_URL }}",
-        });
+        globalThis.pyodide = await loadPyodide();
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
           `
