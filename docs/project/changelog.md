@@ -71,6 +71,13 @@ substitutions:
   alias for `any`.
   {pr}`2277`
 
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
+- {{Enhancement}} It is no longer necessary to provide `indexURL` to
+  `loadPyodide`.
+  {pr}`2292`
+
 - {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
   Javascript code. This mostly should never happen since well behaved Javascript
   code ought to throw errors. But it's better not to completely crash if it

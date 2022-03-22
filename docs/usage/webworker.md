@@ -108,9 +108,7 @@ shown below:
 importScripts("https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js");
 
 async function loadPyodideAndPackages() {
-  self.pyodide = await loadPyodide({
-    indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
-  });
+  self.pyodide = await loadPyodide();
   await self.pyodide.loadPackage(["numpy", "pytz"]);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();

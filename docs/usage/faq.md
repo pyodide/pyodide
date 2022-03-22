@@ -268,7 +268,7 @@ you say
 
 ```
 loadPyodide({
-  ..., stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
+  stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
 });
 ```
 

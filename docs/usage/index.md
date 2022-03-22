@@ -17,9 +17,7 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
   <body>
     <script type="text/javascript">
       async function main(){
-        let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
-        });
+        let pyodide = await loadPyodide();
         console.log(pyodide.runPython("1 + 2"));
       }
       main();
@@ -100,9 +98,7 @@ Then you can load Pyodide in Node.js as follows,
 ```js
 let pyodide_pkg = await import("pyodide/pyodide.js");
 
-let pyodide = await pyodide_pkg.loadPyodide({
-  indexURL: "<pyodide artifacts folder>",
-});
+let pyodide = await pyodide_pkg.loadPyodide();
 
 await pyodide.runPythonAsync("1+1");
 ```
