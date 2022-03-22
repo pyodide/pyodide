@@ -185,7 +185,8 @@ TEST_EXTENSIONS= \
 		_testcapi.so \
 		_testbuffer.so \
 		_testimportmultiple.so \
-		_testmultiphase.so
+		_testmultiphase.so \
+		_ctypes_test.so
 TEST_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
 
 # TODO: also include test directories included in other stdlib modules
@@ -196,6 +197,7 @@ build/test.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testbuffer.c -o Modules/_testbuffer.o
 	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
 	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
 
 	for testname in $(TEST_EXTENSIONS); do \
 		cd $(CPYTHONBUILD) && \
@@ -204,7 +206,7 @@ build/test.tar: $(CPYTHONLIB) node_modules/.installed
 	done
 
 	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar \
-		test $(TEST_EXTENSIONS)
+		test $(TEST_EXTENSIONS) unittest/test sqlite3/test ctypes/test
 
 	cd $(CPYTHONLIB) && rm $(TEST_EXTENSIONS)
 

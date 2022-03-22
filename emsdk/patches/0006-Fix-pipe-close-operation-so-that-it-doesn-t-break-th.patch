@@ -1,7 +1,7 @@
-From c77f3ef38584de5f41ba11b6821a905493100c47 Mon Sep 17 00:00:00 2001
+From 9dd481f6aed10fe4e6048b15c87b5bc91f225074 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Sat, 17 Jul 2021 16:54:40 -0700
-Subject: [PATCH 8/8] Fix pipe close operation so that it doesn't break the
+Subject: [PATCH 6/7] Fix pipe close operation so that it doesn't break the
  other side of the pipe
 
 ---
