@@ -322,21 +322,42 @@ export function pyimport(mod_name: string): PyProxy {
   return API.importlib.import_module(mod_name);
 }
 
+let unpackArchivePositionalExtractDirDeprecationWarned = false;
 /**
  * Unpack an archive into a target directory.
  *
- * @param buffer The archive as an ArrayBuffer or TypedArray.
- * @param format The format of the archive. Should be one of the formats recognized by `shutil.unpack_archive`.
- * By default the options are 'bztar', 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each format, e.g.,
- * for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or 'tgz' are considered to be synonyms.
+ * .. admonition:: Positional globals argument :class: warning
  *
- * @param extract_dir The directory to unpack the archive into. Defaults to the working directory.
+ *    In Pyodide v0.19, this function took the extract_dir parameter as a
+ *    positional argument rather than as a named argument. In v0.20 this will
+ *    still work  but it is deprecated. It will be removed in v0.21.
+ *
+ * @param buffer The archive as an ArrayBuffer or TypedArray.
+ * @param format The format of the archive. Should be one of the formats
+ * recognized by `shutil.unpack_archive`. By default the options are 'bztar',
+ * 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each
+ * format, e.g., for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or
+ * 'tgz' are considered to be synonyms.
+ *
+ * @param options
+ * @param options.extract_dir The directory to unpack the archive into. Defaults
+ * to the working directory.
  */
 export function unpackArchive(
   buffer: TypedArray,
   format: string,
-  extract_dir?: string
+  options: {
+    extract_dir?: string;
+  } = {}
 ) {
+  if (typeof options === "string") {
+    console.warn(
+      "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
+    );
+    unpackArchivePositionalExtractDirDeprecationWarned = true;
+    options = { extract_dir: options };
+  }
+  let extract_dir = options.extract_dir;
   if (!API._util_module) {
     API._util_module = pyimport("pyodide._util");
   }
