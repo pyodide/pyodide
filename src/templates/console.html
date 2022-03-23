@@ -43,7 +43,7 @@
             def clear_console():
               pyconsole.buffer = []
         `,
-          namespace
+          { globals: namespace }
         );
         let repr_shorten = namespace.get("repr_shorten");
         let banner = namespace.get("BANNER");

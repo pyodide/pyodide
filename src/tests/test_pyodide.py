@@ -170,6 +170,35 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
+def test_deprecations(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.run_js(
+        """
+        let d = pyodide.runPython("{}");
+        pyodide.runPython("x=2", d);
+        assert(() => d.get("x") === 2);
+        d.destroy();
+        """
+    )
+    assert (
+        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
+        in selenium.logs
+    )
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            import shutil
+            shutil.make_archive("blah", "zip")
+        `);
+        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
+        """
+    )
+    assert (
+        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
+        in selenium.logs
+    )
+
+
 @run_in_pyodide
 def test_dup_pipe():
     # See https://github.com/emscripten-core/emscripten/issues/14640

@@ -60,7 +60,7 @@ export function runPython(
     options = { globals: options as PyProxy };
     if (!runPythonPositionalGlobalsDeprecationWarned) {
       console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated. Use 'runPython(code, {globals : some_dict})' instead."
+        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
       );
       runPythonPositionalGlobalsDeprecationWarned = true;
     }
@@ -166,7 +166,7 @@ export async function runPythonAsync(
     options = { globals: options as PyProxy };
     if (!runPythonPositionalGlobalsDeprecationWarned) {
       console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated. Use 'runPythonAsync(code, {globals : some_dict})' instead."
+        "Passing a PyProxy as the second argument to runPythonAsync is deprecated and will be removed in v0.21. Use 'runPythonAsync(code, {globals : some_dict})' instead."
       );
       runPythonPositionalGlobalsDeprecationWarned = true;
     }
