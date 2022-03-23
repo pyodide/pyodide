@@ -16,6 +16,7 @@ USER_GID="$(id -g)"
 USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
 USER_INTERPRETER="/sbin/nologin"
 USER_FLAG=("--user" "$USER_ID:$USER_GID")
+HEALTHCHECK_MESSAGE="Done initialization"
 
 set -eo pipefail
 
@@ -137,9 +138,15 @@ CONTAINER=$(\
         $USER_NAME \
       ; \
       echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+      echo '$HEALTHCHECK_MESSAGE'; \
       tail -f /dev/null \
     " \
 )
+
+until docker logs "$CONTAINER" 2>&1 | grep -q "$HEALTHCHECK_MESSAGE"; do
+  echo "Waiting for initialization to finish..."
+  sleep 0.2
+done
 
 EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
