@@ -176,14 +176,13 @@ def test_deprecations(selenium_standalone):
         """
         let d = pyodide.runPython("{}");
         pyodide.runPython("x=2", d);
+        pyodide.runPython("y=2", d);
         assert(() => d.get("x") === 2);
         d.destroy();
         """
     )
-    assert (
-        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-        in selenium.logs
-    )
+    dep_msg = "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
+    assert selenium.logs.count(dep_msg) == 1
     selenium.run_js(
         """
         pyodide.runPython(`
@@ -191,12 +190,11 @@ def test_deprecations(selenium_standalone):
             shutil.make_archive("blah", "zip")
         `);
         pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
+        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
         """
     )
-    assert (
-        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-        in selenium.logs
-    )
+    dep_msg = "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
+    assert selenium.logs.count(dep_msg) == 1
 
 
 @run_in_pyodide

@@ -351,10 +351,12 @@ export function unpackArchive(
   } = {}
 ) {
   if (typeof options === "string") {
-    console.warn(
-      "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-    );
-    unpackArchivePositionalExtractDirDeprecationWarned = true;
+    if (!unpackArchivePositionalExtractDirDeprecationWarned) {
+      console.warn(
+        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
+      );
+      unpackArchivePositionalExtractDirDeprecationWarned = true;
+    }
     options = { extract_dir: options };
   }
   let extract_dir = options.extract_dir;
