@@ -84,6 +84,11 @@ substitutions:
   throws something else.
   {pr}`2294`
 
+- {{ Breaking }} The `globals` argument to `runPython` and `runPythonAsync` is
+  now passed as a named argument. The old usage still works with a deprecation
+  warning.
+  {pr}`2300`
+
 _February 19, 2022_
 
 ## Version 0.19.1
