@@ -1,0 +1,146 @@
+From a3234c18a42ca8347765dc847c488dc8e9d3b4bc Mon Sep 17 00:00:00 2001
+From: Yotam Gingold <yotam@yotamgingold.com>
+Date: Mon, 9 Aug 2021 03:29:19 -0400
+Subject: [PATCH 09/17] Compiles with and without conda. Added pyproject.toml
+
+---
+ README.md                |  1 +
+ pyproject.toml           | 18 ++++++++++++++++++
+ setup.py                 | 29 ++++++++++++++++++++---------
+ sparseqr/sparseqr_gen.py | 20 +++++++++++---------
+ 4 files changed, 50 insertions(+), 18 deletions(-)
+ create mode 100644 pyproject.toml
+
+diff --git a/README.md b/README.md
+index f66dee4..a013f86 100644
+--- a/README.md
++++ b/README.md
+@@ -49,6 +49,7 @@ print( "System is solvable if this is zero:", abs( (( Q.tocsc()[:,r:] ).T ).dot(
+ 
+ # Systems with large non-square matrices can benefit from "economy" decomposition.
+ M = scipy.sparse.rand( 20, 5, density=0.1 )
++B = scipy.sparse.rand( 20, 5, density = 0.1 )
+ Q, R, E, rank = sparseqr.qr( M )
+ print("Q shape:", Q.shape)  # Q shape: (20, 20)
+ print("R shape:", R.shape)  # R shape: (20, 5)
+diff --git a/pyproject.toml b/pyproject.toml
+new file mode 100644
+index 0000000..e2fa308
+--- /dev/null
++++ b/pyproject.toml
+@@ -0,0 +1,18 @@
++[tool.poetry]
++name = "sparseqr"
++version = "1.1.0"
++description = "Python wrapper for SuiteSparseQR"
++authors = ["Yotam Gingold <yotam@yotamgingold.com> and Juha Jeronen <juha.jeronen@tut.fi>"]
++license = "Public Domain CC0"
++
++[tool.poetry.dependencies]
++python = "^3.7"
++numpy = "^1.21"
++scipy = "^1.0"
++cffi = "^1.0"
++
++[tool.poetry.dev-dependencies]
++
++[build-system]
++requires = ["poetry-core>=1.0.0"]
++build-backend = "poetry.core.masonry.api"
+diff --git a/setup.py b/setup.py
+index 5b0c83b..e647185 100644
+--- a/setup.py
++++ b/setup.py
+@@ -2,19 +2,30 @@
+ #
+ from __future__ import division, print_function, absolute_import
+ 
+-from setuptools import setup
+-import numpy
++from setuptools import setup #, dist
+ import os
+ 
+-try:
+-    include_dirs=[numpy.get_include(), os.path.join(os.environ['CONDA_PREFIX'], 'include')]
+-except Exception:
+-    include_dirs=None
++## Following https://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py/60740731#60740731
++## I am skeptical that this approach will work on conda.
++# dist.Distribution().fetch_build_eggs(['numpy'])
++# import numpy
++
++## Following: https://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py/62724864#62724864
++class get_numpy_include(object):
++    """Defer numpy.get_include() until after numpy is installed."""
++
++    def __str__(self):
++        import numpy
++        return numpy.get_include()
++
++include_dirs = [get_numpy_include()]
++if 'CONDA_PREFIX' in os.environ:
++    include_dirs.append( os.path.join(os.environ['CONDA_PREFIX'], 'include') )
+ 
+ setup(
+     name = "sparseqr",
+-    version = "1.0.0",
+-    author = "Yotam Gingold and Juha Jeronen",
++    version = "1.1.0",
++    author = "Yotam Gingold <yotam@yotamgingold.com> and Juha Jeronen <juha.jeronen@tut.fi>",
+     url = "https://github.com/yig/PySPQR",
+ 
+     description = "Python wrapper for SuiteSparseQR",
+@@ -57,7 +68,7 @@ Supports Python 2.7 and 3.4.
+     # See
+     #    http://setuptools.readthedocs.io/en/latest/setuptools.html
+     #
+-    setup_requires = ["cffi>=1.0.0"],
++    setup_requires = ["numpy", "cffi>=1.0.0"],
+     cffi_modules = ["sparseqr/sparseqr_gen.py:ffibuilder"],
+     install_requires = ["numpy", "scipy", "cffi>=1.0.0"],
+     provides = ["sparseqr"],
+diff --git a/sparseqr/sparseqr_gen.py b/sparseqr/sparseqr_gen.py
+index c5288ea..cbddbca 100644
+--- a/sparseqr/sparseqr_gen.py
++++ b/sparseqr/sparseqr_gen.py
+@@ -11,17 +11,19 @@ import platform
+ 
+ from cffi import FFI
+ 
++include_dirs = [ '/usr/include/suitesparse', join('C:', 'Program Files', 'Python', 'suitesparse') ]
++libraries = ['spqr']
++
+ # for compatibility with conda envs
+-homedir = expanduser("~")
+-envdir1 = join(homedir, 'anaconda3', 'envs', os.environ['CONDA_DEFAULT_ENV'], 'Library', 'include', 'suitesparse')
+-envdir2 = join(homedir, 'miniconda3', 'envs', os.environ['CONDA_DEFAULT_ENV'], 'Library', 'include', 'suitesparse')
++if 'CONDA_DEFAULT_ENV' in os.environ:
++    homedir = expanduser("~")
++    include_dirs.append( join(homedir, 'anaconda3', 'envs', os.environ['CONDA_DEFAULT_ENV'], 'Library', 'include', 'suitesparse') )
++    include_dirs.append( join(homedir, 'miniconda3', 'envs', os.environ['CONDA_DEFAULT_ENV'], 'Library', 'include', 'suitesparse') )
+ 
+ if platform.system() == 'Windows':
+-    libraries = ['amd','btf','camd','ccolamd','cholmod','colamd','cxsparse'
+-'klu','lapack','ldl','lumfpack','metis','suitesparseconfig','spqr','libblas']
+     # https://github.com/yig/PySPQR/issues/6
+-else:
+-    libraries = ['spqr']
++    libraries.extend( ['amd','btf','camd','ccolamd','cholmod','colamd','cxsparse'
++'klu','lapack','ldl','lumfpack','metis','suitesparseconfig','libblas'] )
+ 
+ ffibuilder = FFI()
+ 
+@@ -30,8 +32,8 @@ ffibuilder.set_source( "sparseqr._sparseqr",
+ """,
+     ## You may need to modify the following line,
+     ## which is needed on Ubuntu and harmless on Mac OS.
+-    include_dirs = [ '/usr/include/suitesparse', join('C:', 'Program Files', 'Python', 'suitesparse') , envdir1, envdir2 ],
+-    libraries=libraries) #libraries=['spqr']
++    include_dirs = include_dirs,
++    libraries = libraries )
+ 
+ ffibuilder.cdef("""
+ // The int... is a magic thing which tells the compiler to figure out what the right
+-- 
+2.25.1
+

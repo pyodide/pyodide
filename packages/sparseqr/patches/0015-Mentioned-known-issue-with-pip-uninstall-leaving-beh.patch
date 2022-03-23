@@ -1,0 +1,28 @@
+From 4ec9b21799d9f10ffd21bb621a65aa64c196f451 Mon Sep 17 00:00:00 2001
+From: Yotam Gingold <yotam@yotamgingold.com>
+Date: Mon, 9 Aug 2021 05:10:37 -0400
+Subject: [PATCH 15/17] Mentioned known issue with pip uninstall leaving behind
+ some files.
+
+---
+ README.md | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/README.md b/README.md
+index 6b7cf65..49739a0 100644
+--- a/README.md
++++ b/README.md
+@@ -124,6 +124,10 @@ Run:
+     poetry build -f sdist
+     poetry publish
+ 
++# Known issues
++
++`pip uninstall sparseqr` won't remove the generated libraries. It will list them with a warning.
++
+ # Tested on
+ 
+  - Python 2.7, 3.4, 3.5, and 3.9.
+-- 
+2.25.1
+

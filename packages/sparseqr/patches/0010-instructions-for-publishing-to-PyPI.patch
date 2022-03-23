@@ -1,0 +1,76 @@
+From 7e63b0135ebfe24e06d2449038662d4e46718483 Mon Sep 17 00:00:00 2001
+From: Yotam Gingold <yotam@yotamgingold.com>
+Date: Mon, 9 Aug 2021 03:44:32 -0400
+Subject: [PATCH 10/17] instructions for publishing to PyPI
+
+---
+ README.md      | 16 +++++++++++++++-
+ pyproject.toml |  2 +-
+ setup.py       |  2 +-
+ 3 files changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/README.md b/README.md
+index a013f86..1238462 100644
+--- a/README.md
++++ b/README.md
+@@ -77,6 +77,14 @@ x.row = E[ x.row ]
+ 
+ ## Via `pip`
+ 
++From PyPI:
++
++```bash
++pip install sparseqr
++```
++
++From GitHub:
++
+ ```bash
+ pip install git+https://github.com/yig/PySPQR.git
+ ```
+@@ -103,9 +111,15 @@ Copy the three `sparseqr/*.py` files next to your source code,
+ or leave them in their directory and call it as a module.
+ 
+ 
++# Deploy
++
++    poetry publish --build
++
++
+ # Tested on
+ 
+- - Python 2.7, 3.4 and 3.5.
++ - Python 2.7, 3.4, 3.5, and 3.9.
++ - Conda and not conda.
+  - Mac OS X, Ubuntu Linux and Linux Mint.
+ 
+ 
+diff --git a/pyproject.toml b/pyproject.toml
+index e2fa308..9300cc5 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -2,7 +2,7 @@
+ name = "sparseqr"
+ version = "1.1.0"
+ description = "Python wrapper for SuiteSparseQR"
+-authors = ["Yotam Gingold <yotam@yotamgingold.com> and Juha Jeronen <juha.jeronen@tut.fi>"]
++authors = ["Yotam Gingold <yotam@yotamgingold.com>", "Juha Jeronen <juha.jeronen@tut.fi>"]
+ license = "Public Domain CC0"
+ 
+ [tool.poetry.dependencies]
+diff --git a/setup.py b/setup.py
+index e647185..cb9ecf8 100644
+--- a/setup.py
++++ b/setup.py
+@@ -25,7 +25,7 @@ if 'CONDA_PREFIX' in os.environ:
+ setup(
+     name = "sparseqr",
+     version = "1.1.0",
+-    author = "Yotam Gingold <yotam@yotamgingold.com> and Juha Jeronen <juha.jeronen@tut.fi>",
++    author = "Yotam Gingold <yotam@yotamgingold.com>",
+     url = "https://github.com/yig/PySPQR",
+ 
+     description = "Python wrapper for SuiteSparseQR",
+-- 
+2.25.1
+

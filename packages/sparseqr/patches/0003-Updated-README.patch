@@ -1,0 +1,25 @@
+From 575047086e924d12ed20be2fee91ff5fe6f5b138 Mon Sep 17 00:00:00 2001
+From: Yotam Gingold <yotam@yotamgingold.com>
+Date: Mon, 20 Aug 2018 23:36:30 -0400
+Subject: [PATCH 03/17] Updated README
+
+---
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index fc33a63..7103898 100644
+--- a/README.md
++++ b/README.md
+@@ -102,7 +102,7 @@ or leave them in their directory and call it as a module.
+ # Dependencies
+ 
+ * [SciPy/NumPy](http://www.scipy.org)
+-* [SuiteSparseQR](http://faculty.cse.tamu.edu/davis/suitesparse.html) (`brew install suitesparse`)
++* [SuiteSparseQR](http://faculty.cse.tamu.edu/davis/suitesparse.html) (macOS: `brew install suitesparse`; debian/ubuntu linux: `apt-get install libsuitesparse-dev`)
+ * [cffi](http://cffi.readthedocs.io/) (`pip install cffi`)
+ 
+ # License
+-- 
+2.25.1
+
