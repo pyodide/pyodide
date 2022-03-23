@@ -171,13 +171,14 @@ async function installPackage(name: string, buffer: Uint8Array) {
       imports: [] as string[],
     };
   }
-  const file_name = pkg.file_name;
+  const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
-  const dynlibs = API.package_loader.unpack_buffer(
-    file_name,
+  const dynlibs = API.package_loader.unpack_buffer.call_kwargs({
     buffer,
-    pkg.install_dir
-  );
+    filename,
+    target: pkg.install_dir,
+    calculate_dynlibs: true,
+  });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
