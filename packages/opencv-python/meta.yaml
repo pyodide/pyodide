@@ -21,8 +21,7 @@ build:
 
   # Note: CMake args are adopted from https://github.com/opencv/opencv/blob/4.x/platforms/js/build_js.py
   # We don't want to use toolchain file provided by Emscripten,
-  # because instead of calling emcc, em++, ... directly, we hijack gcc, c++, ... and replace it.
-  # -DCMAKE_PROJECT_INCLUDE=$PYODIDE_ROOT/packages/opencv-python/overwrite_config.cmake \
+  # because we hijack gcc, c++, ... and replace it with emcc, em++, ..., instead of calling them directly,
   script: |
     pip install scikit-build
     export VERBOSE=1
