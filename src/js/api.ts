@@ -38,6 +38,12 @@ let runPythonPositionalGlobalsDeprecationWarned = false;
  * The last part of the string may be an expression, in which case, its value is
  * returned.
  *
+ * .. admonition:: Positional globals argument :class: warning
+ *
+ *    In Pyodide v0.19, this function took the globals parameter as a
+ *    positional argument rather than as a named argument. In v0.20 this will
+ *    still work  but it is deprecated. It will be removed in v0.21.
+ *
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
@@ -119,22 +125,30 @@ export async function loadPackagesFromImports(
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
  *
+ * For example:
+ *
+ * .. code-block:: pyodide
+ *
+ *    let result = await pyodide.runPythonAsync(`
+ *        from js import fetch
+ *        response = await fetch("./packages.json")
+ *        packages = await response.json()
+ *        # If final statement is an expression, its value is returned to JavaScript
+ *        len(packages.packages.object_keys())
+ *    `);
+ *    console.log(result); // 79
+ *
  * .. admonition:: Python imports :class: warning
  *
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
  *    import any python packages referenced via `import` statements in your
  *    code. This function will no longer do it for you.
  *
- * For example:
+ * .. admonition:: Positional globals argument :class: warning
  *
- * .. code-block:: pyodide
- *
- *    let result = await pyodide.runPythonAsync(` from js import fetch response
- *        = await fetch("./packages.json") packages = await response.json() # If
- *        final statement is an expression, its value is returned to JavaScript
- *        len(packages.packages.object_keys())
- *    `);
- *    console.log(result); // 79
+ *    In Pyodide v0.19, this function took the globals parameter as a
+ *    positional argument rather than as a named argument. In v0.20 this will
+ *    still work  but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
