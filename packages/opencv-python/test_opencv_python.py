@@ -18,10 +18,16 @@ def test_extensions():
     shape = (16, 16, 3)
     img = np.zeros(shape, np.uint8)
 
-    cv2.imwrite("img.bmp", img)
-    cv2.imwrite("img.jpg", img)
-    cv2.imwrite("img.jpeg", img)
-    cv2.imwrite("img.png", img)
+    extensions = [
+        "bmp",
+        "jpg",
+        "jpeg",
+        "png",
+        "webp",
+    ]
+
+    for ext in extensions:
+        cv2.imwrite(f"test.{ext}", img)
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
