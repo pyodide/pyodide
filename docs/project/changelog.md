@@ -23,6 +23,11 @@ substitutions:
 
 - Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
+- Many more scipy linking errors were fixed, mostly related to the Fortran f2c
+  ABI for string arguments. There are still some fatal errors in the Scipy test
+  suite, but none seem to be simple linker errors.
+  {pr}`2289`
+
 ### Uncategorized
 
 - {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
