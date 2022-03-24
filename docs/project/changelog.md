@@ -94,6 +94,9 @@ substitutions:
   warning.
   {pr}`2300`
 
+- {{ Enhancement }} Updated to Emscripten 2.0.27.
+  {pr}`1102`
+
 _February 19, 2022_
 
 ## Version 0.19.1
@@ -713,7 +716,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 
 ### Build system
 
-- {{ Enhancement }} Updated to latest emscripten 2.0.13 with the updstream LLVM backend
+- {{ Enhancement }} Updated to latest emscripten 2.0.13 with the upstream LLVM backend
   {pr}`1102`
 - {{ API }} Use upstream `file_packager.py`, and stop checking package abi versions.
   The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is
