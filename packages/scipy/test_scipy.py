@@ -64,4 +64,3 @@ def test_scipy_pytest():
     runtest("odr", "explicit")
     runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
-    runtest("linalg.tests.test_basic", "hermitian")

@@ -67,7 +67,11 @@ build:
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
+
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
+    sed -i 's/^void/int/g' scipy/odr/odrpack.h
+    sed -i 's/^void/int/g' scipy/odr/__odrpack.c
+
     sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/special/lapack_defs.h
     # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
@@ -82,7 +86,6 @@ build:
     sed -i 's/^void/int/g' scipy/spatial/qhull_misc.h
     sed -i 's/, size_t)/)/g' scipy/spatial/qhull_misc.h
     sed -i 's/,1)/)/g' scipy/spatial/qhull_misc.h
-
 
 
     # Missing declaration from cython_lapack_signatures.txt
