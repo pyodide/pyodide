@@ -28,6 +28,10 @@ substitutions:
   suite, but none seem to be simple linker errors.
   {pr}`2289`
 
+- Removed pyodide-interrupts. If you were using this for some reason, use
+  `setInterruptBuffer` instead.
+  {pr}`2309`
+
 ### Uncategorized
 
 - {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
