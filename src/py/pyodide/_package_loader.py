@@ -64,7 +64,15 @@ def unpack_buffer(
 
     format
         Controls the format that we assume the archive has. Overrides the file
-        extension of filename.
+        extension of filename. In particular we decide the file format as
+        follows:
+
+        1. If format is present, we use that.
+        2. If file name is present, it should have an extension, like a.zip,
+           a.tar, etc. Then we use that.
+        3. If neither is present or the file name has no extension, we throw an
+           error.
+
 
     extract_dir
         Controls which directory the file is unpacked into. Default is the
