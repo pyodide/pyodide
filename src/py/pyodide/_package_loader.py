@@ -100,7 +100,7 @@ def unpack_buffer(
         format = get_format(format)
     if target and extract_dir:
         raise ValueError("Cannot provide both 'target' and 'extract_dir'")
-    if not filename and not format:
+    if not filename and format is None:
         raise ValueError("At least one of filename and format must be provided")
     if target:
         extract_path = TARGETS[target]
