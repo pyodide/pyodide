@@ -5,8 +5,6 @@ source:
   url: https://files.pythonhosted.org/packages/10/3d/87d1dc421e369540184de23c31f2c2e60e18750322919552aba09f05f7be/astropy-5.0.2.tar.gz
   sha256: 449f0ba5e7292457eed37550b047444751a606e7b8a34f93b1c28d0bb63e7f40
 build:
-  script: |
-    pip install extension-helpers
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false

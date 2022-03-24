@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Iterator, Optional, Union
 
 # TODO: support more complex types for validation
 
@@ -12,9 +12,8 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "url": str,
         "extract_dir": str,
         "path": str,
-        "patches": list,  # List[str]
-        "md5": str,
         "sha256": str,
+        "patches": list,  # List[str]
         "extras": list,  # List[Tuple[str, str]],
     },
     "build": {
@@ -43,11 +42,124 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
 }
 
 
-def check_package_config(
+def _check_config_keys(config: dict[str, Any]) -> Iterator[str]:
+    # Check top level sections
+    wrong_keys = set(config.keys()).difference(PACKAGE_CONFIG_SPEC.keys())
+    if wrong_keys:
+        yield (
+            f"Found unknown sections {list(wrong_keys)}. Expected "
+            f"sections are {list(PACKAGE_CONFIG_SPEC)}."
+        )
+
+    # Check subsections
+    for section_key in config:
+        if section_key not in PACKAGE_CONFIG_SPEC:
+            # Don't check subsections if the main section is invalid
+            continue
+        actual_keys = set(config[section_key].keys())
+        expected_keys = set(PACKAGE_CONFIG_SPEC[section_key].keys())
+
+        wrong_keys = set(actual_keys).difference(expected_keys)
+        if wrong_keys:
+            yield (
+                f"Found unknown keys "
+                f"{[section_key + '/' + key for key in wrong_keys]}. "
+                f"Expected keys are "
+                f"{[section_key + '/' + key for key in expected_keys]}."
+            )
+
+
+def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
+    # Check value types
+    for section_key, section in config.items():
+        for subsection_key, value in section.items():
+            try:
+                expected_type = PACKAGE_CONFIG_SPEC[section_key][subsection_key]
+            except KeyError:
+                # Unknown key, which was already reported previously, don't
+                # check types
+                continue
+            if not isinstance(value, expected_type):
+                yield (
+                    f"Wrong type for '{section_key}/{subsection_key}': "
+                    f"expected {expected_type.__name__}, got {type(value).__name__}."
+                )
+
+
+def _check_config_source(config: dict[str, Any]) -> Iterator[str]:
+    if "source" not in config:
+        yield "Missing source section"
+        return
+
+    src_metadata = config["source"]
+    patches = src_metadata.get("patches", [])
+    extras = src_metadata.get("extras", [])
+
+    in_tree = "path" in src_metadata
+    from_url = "url" in src_metadata
+
+    if not (in_tree or from_url):
+        yield "Source section should have a 'url' or 'path' key"
+        return
+
+    if in_tree and from_url:
+        yield "Source section should not have both a 'url' and a 'path' key"
+        return
+
+    if in_tree and (patches or extras):
+        yield "If source is in tree, 'source/patches' and 'source/extras' keys are not allowed"
+
+    if from_url:
+        if "sha256" not in src_metadata:
+            yield "If source is downloaded from url, it must have a 'source/sha256' hash."
+
+
+def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
+    if "build" not in config:
+        return
+    build_metadata = config["build"]
+    library = build_metadata.get("library", False)
+    sharedlibrary = build_metadata.get("sharedlibrary", False)
+    if not library and not sharedlibrary:
+        return
+    if library and sharedlibrary:
+        yield "build/library and build/sharedlibrary cannot both be true."
+
+    allowed_keys = {"library", "sharedlibrary", "script"}
+    typ = "library" if library else "sharedlibrary"
+    for key in build_metadata.keys():
+        if key not in PACKAGE_CONFIG_SPEC["build"]:
+            continue
+        if key not in allowed_keys:
+            yield f"If building a {typ}, 'build/{key}' key is not allowed."
+
+
+def _check_config_wheel_build(config: dict[str, Any]) -> Iterator[str]:
+    if "source" not in config:
+        return
+    src_metadata = config["source"]
+    if "url" not in src_metadata:
+        return
+    if not src_metadata["url"].endswith(".whl"):
+        return
+    patches = src_metadata.get("patches", [])
+    extras = src_metadata.get("extras", [])
+    if patches or extras:
+        yield "If source is a wheel, 'source/patches' and 'source/extras' keys are not allowed"
+    if "build" not in config:
+        return
+    build_metadata = config["build"]
+    allowed_keys = {"post", "unvendor-tests"}
+    for key in build_metadata.keys():
+        if key not in PACKAGE_CONFIG_SPEC["build"]:
+            continue
+        if key not in allowed_keys:
+            yield f"If source is a wheel, 'build/{key}' key is not allowed"
+
+
+def check_package_config_generate_errors(
     config: dict[str, Any],
-    raise_errors: bool = True,
-    file_path: Optional[Union[Path, str]] = None,
-) -> list[str]:
+) -> Iterator[str]:
     """Check the validity of a loaded meta.yaml file
 
     Currently the following checks are applied:
@@ -66,56 +178,24 @@ def check_package_config(
         optional meta.yaml file path. Only used for more explicit error output,
         when raise_errors = True.
     """
-    errors_msg = []
+    yield from _check_config_keys(config)
+    yield from _check_config_types(config)
+    yield from _check_config_source(config)
+    yield from _check_config_build(config)
+    yield from _check_config_wheel_build(config)
 
-    # Check top level sections
-    wrong_keys = set(config.keys()).difference(PACKAGE_CONFIG_SPEC.keys())
-    if wrong_keys:
-        errors_msg.append(
-            f"Found unknown sections {list(wrong_keys)}. Expected "
-            f"sections are {list(PACKAGE_CONFIG_SPEC)}."
-        )
 
-    # Check subsections
-    for section_key in config:
-        if section_key not in PACKAGE_CONFIG_SPEC:
-            # Don't check subsections is the main section is invalid
-            continue
-        actual_keys = set(config[section_key].keys())
-        expected_keys = set(PACKAGE_CONFIG_SPEC[section_key].keys())
+def check_package_config(
+    config: dict[str, Any], file_path: Optional[Union[Path, str]] = None
+):
+    errors_msg = list(check_package_config_generate_errors(config))
 
-        wrong_keys = set(actual_keys).difference(expected_keys)
-        if wrong_keys:
-            errors_msg.append(
-                f"Found unknown keys "
-                f"{[section_key + '/' + key for key in wrong_keys]}. "
-                f"Expected keys are "
-                f"{[section_key + '/' + key for key in expected_keys]}."
-            )
-
-    # Check value types
-    for section_key, section in config.items():
-        for subsection_key, value in section.items():
-            try:
-                expected_type = PACKAGE_CONFIG_SPEC[section_key][subsection_key]
-            except KeyError:
-                # Unknown key, which was already reported previously, don't
-                # check types
-                continue
-            if not isinstance(value, expected_type):
-                errors_msg.append(
-                    f"Wrong type for '{section_key}/{subsection_key}': "
-                    f"expected {expected_type.__name__}, got {type(value).__name__}."
-                )
-
-    if raise_errors and errors_msg:
+    if errors_msg:
         if file_path is None:
             file_path = Path("meta.yaml")
         raise ValueError(
             f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
         )
-
-    return errors_msg
 
 
 def parse_package_config(path: Union[Path, str], check: bool = True) -> dict[str, Any]:
