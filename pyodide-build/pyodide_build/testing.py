@@ -5,11 +5,9 @@ from typing import Callable, Collection, Optional
 
 import pytest
 
-from .common import get_make_flag
+from .common import get_pyversion
 
-PYMAJOR = get_make_flag("PYMAJOR")
-PYMINOR = get_make_flag("PYMINOR")
-PYVERSION = f"python{PYMAJOR}.{PYMINOR}"
+PYVERSION = get_pyversion()
 
 
 def _run_in_pyodide_get_source(f):

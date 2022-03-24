@@ -9,6 +9,9 @@ source:
   sha256: 920f0d66a896c2d99f0adbb391f990a84091179542c205fa53ce5787aff87954
   patches:
     - patches/libffi-config.patch
+build:
+  script: |
+    pip install -t $HOSTSITEPACKAGES cffi==$PKG_VERSION
 test:
   imports:
     - cffi

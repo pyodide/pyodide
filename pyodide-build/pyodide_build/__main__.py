@@ -35,15 +35,14 @@ def make_parser() -> argparse.ArgumentParser:
 
 def main():
     if not os.environ.get("__LOADED_PYODIDE_ENV"):
-        from sys import version_info
+        from .common import get_hostsitepackages
 
         PYODIDE_ROOT = str(pathlib.Path(__file__).parents[2].resolve())
         os.environ["PYODIDE_ROOT"] = PYODIDE_ROOT
         os.environ.update(get_make_environment_vars())
-        HOSTINSTALLDIR = os.environ["HOSTINSTALLDIR"]
-        PYVERSION = f"python{version_info.major}.{version_info.minor}"
+        hostsitepackages = get_hostsitepackages()
         pythonpath = [
-            f"{HOSTINSTALLDIR}/lib/{PYVERSION}/site-packages/",
+            hostsitepackages,
             f"{PYODIDE_ROOT}/pyodide-build/",
         ]
         os.environ["PYTHONPATH"] = ":".join(pythonpath)
