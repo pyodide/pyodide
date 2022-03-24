@@ -189,7 +189,8 @@ def fix_f2c_output(f2c_output_path: str):
     if f2c_output.name == "lapack_extras.c":
         # dfft.c has a bunch of implicit cast args coming from functions copied
         # out of future lapack versions. fix_inconsistent_decls will fix all
-        # except string to int.
+        # except string to int. String to int is fixed by fix_string_args and
+        # char1_args_to_int above.
         subprocess.check_call(
             [
                 "patch",
@@ -219,14 +220,6 @@ def fix_f2c_output(f2c_output_path: str):
         else:
             add_externs_to_structs(lines)
 
-    if f2c_output.name in [
-        "wrap_dummy_g77_abi.c",
-        "_lapack_subroutine_wrappers.c",
-        "_blas_subroutine_wrappers.c",
-        "_flapack-f2pywrappers.c",
-    ]:
-        lines = remove_ftnlen_args(lines)
-
     if f2c_output.name == "_lapack_subroutine_wrappers.c":
         lines = [
             line.replace("integer chla_transtype__", "void chla_transtype__")
@@ -235,34 +228,6 @@ def fix_f2c_output(f2c_output_path: str):
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
-
-
-def remove_ftnlen_args(lines: list[str]) -> list[str]:
-    """
-    Functions with "character" arguments have these extra ftnlen arguments at
-    the end (which are never used). Other places declare these arguments as
-    "integer" which don't get length arguments. This automates the removal of
-    the problematic arguments.
-
-    >>> print("".join(remove_ftnlen_args(prepare_doctest('''
-    ...     /* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans, ftnlen
-    ...     	ret_len)
-    ... '''))))
-    /* Subroutine */ int chla_transtypewrp__(char *ret, integer *trans)
-
-    >>> print("".join(remove_ftnlen_args(prepare_doctest('''
-    ...     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
-    ...     	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen
-    ...     	transr_len, ftnlen uplo_len)
-    ... '''))))
-    /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work)
-    """
-    new_lines = []
-    for line in regroup_lines(lines):
-        if line.startswith("/* Subroutine */"):
-            line = re.sub(r",\s*ftnlen [a-z]*_len", "", line)
-        new_lines.append(line)
-    return new_lines
 
 
 def add_externs_to_structs(lines: list[str]):
