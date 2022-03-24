@@ -1,7 +1,7 @@
-From 64ad57cc02d9ce10ed71ba1a35e38c88369570c1 Mon Sep 17 00:00:00 2001
+From 3c19f54ad98ffa0143794986f001aedf8d7ca5e5 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
-Subject: [PATCH 3/7] Fix dup
+Subject: [PATCH 2/5] Fix dup
 
 This fixes two problems with the `dup` system calls:
 1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
@@ -17,10 +17,10 @@ This patch is simpler than the upstream one but leaves NODERAWFS broken.
  2 files changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index 4ca59469c..519fab972 100644
+index cb077adbf..35cd816d2 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
-@@ -425,11 +425,16 @@ FS.staticInit();` +
+@@ -429,11 +429,16 @@ FS.staticInit();` +
            },
            isAppend: {
              get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
@@ -39,7 +39,7 @@ index 4ca59469c..519fab972 100644
          newStream[p] = stream[p];
        }
 diff --git a/src/library_syscall.js b/src/library_syscall.js
-index 96d2ec0c3..0001624ec 100644
+index cb0e758c4..9b094a556 100644
 --- a/src/library_syscall.js
 +++ b/src/library_syscall.js
 @@ -137,10 +137,10 @@ var SyscallsLibrary = {
