@@ -76,13 +76,17 @@ def unpack_buffer(
         unpacked the file into the standard library. Mutually exclusive with
         extract_dir.
 
+    calculate_dynlibs
+        If true, will return a Javascript Array of paths to dynamic libraries
+        ('.so' files) that were in the archive. We need to precompile these Wasm
+        binaries in `load-pyodide.js`. These paths point to the unpacked
+        locations of the .so files.
 
     Returns
     -------
-        A Javascript Array of paths to dynamic libraries ('.so' files) that were
-        in the archive. We need to precompile these Wasm binaries in
-        `load-pyodide.js`. These paths point to the unpacked locations of the
-        .so files.
+        If calculate_dynlibs is True, a Javascript Array of dynamic libraries.
+        Otherwise, return None.
+
     """
     if format:
         format = get_format(format)

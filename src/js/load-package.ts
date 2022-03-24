@@ -173,7 +173,7 @@ async function installPackage(name: string, buffer: Uint8Array) {
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
-  const dynlibs = API.package_loader.unpack_buffer.call_kwargs({
+  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
