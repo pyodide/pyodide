@@ -1,7 +1,18 @@
+From c1c714f1217ab6fba5ae1ceb6d0c4a9469490093 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Fri, 18 Mar 2022 19:59:05 -0700
+Subject: [PATCH 1/7] add missing import
+
 The original source files are missing some imports. gcc assumes implicit
 function declaration, so the code compiles fine, but emscripten sets
  -Werror=implicit-function-declaration so it is a hard error.
+---
+ BLAS/SRC/xerbla.c | 2 ++
+ INSTALL/tstiee.c  | 2 ++
+ 2 files changed, 4 insertions(+)
 
+diff --git a/BLAS/SRC/xerbla.c b/BLAS/SRC/xerbla.c
+index 2d7baf5..da1d7fd 100644
 --- a/BLAS/SRC/xerbla.c
 +++ b/BLAS/SRC/xerbla.c
 @@ -10,6 +10,8 @@
@@ -12,7 +23,9 @@ function declaration, so the code compiles fine, but emscripten sets
 +
  #include "f2c.h"
  #include "blaswrap.h"
-
+ 
+diff --git a/INSTALL/tstiee.c b/INSTALL/tstiee.c
+index 2b5426f..89a41b8 100644
 --- a/INSTALL/tstiee.c
 +++ b/INSTALL/tstiee.c
 @@ -10,6 +10,8 @@
@@ -23,4 +36,7 @@ function declaration, so the code compiles fine, but emscripten sets
 +
  #include "f2c.h"
  #include "blaswrap.h"
+ #include "string.h"
+-- 
+2.25.1
 
