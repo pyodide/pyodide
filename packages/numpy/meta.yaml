@@ -26,11 +26,13 @@ build:
   cflags: |
     -Wno-return-type
   post: |
-    python -m pip install --prefix $HOSTINSTALLDIR numpy==$PKG_VERSION
+    pip install -t $HOSTSITEPACKAGES numpy==$PKG_VERSION
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    export NUMPY_LIB_PATH=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/numpy/
-    cp build/numpy-$PKG_VERSION/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/numpy/core/include/numpy/*config.h $NUMPY_LIB_PATH
+    export NUMPY_CORE_INCLUDE=numpy/core/include/numpy
+    cp \
+      build/numpy-$PKG_VERSION/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
+      $HOSTSITEPACKAGES/$NUMPY_CORE_INCLUDE
     # static libraries for other packages to link
     mkdir -p $NUMPY_LIB
     find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash

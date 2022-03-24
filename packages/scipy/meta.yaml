@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.7.3 # when updating version make sure to update pip install scipy==1.7.3 below too.
+  version: 1.7.3
 
 # See extra explanation in info.md
 #
@@ -34,10 +34,8 @@ source:
 
 build:
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/numpy/config
     -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
-    -I$(PYODIDE_ROOT)/packages/.artifacts/include/
-    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
+    -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
   ldflags: |
@@ -48,8 +46,7 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    pip install scipy==1.7.3 pybind11[global] pythran
-    pip install --upgrade pybind11[global] pythran -t $PYODIDE_ROOT/packages/.artifacts/
+    pip install -t $HOSTSITEPACKAGES pythran scipy==$PKG_VERSION
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz

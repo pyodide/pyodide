@@ -16,10 +16,9 @@ import {
 } from "./pyodide";
 
 async function main() {
-  let pyodide = await loadPyodide({ indexURL: "blah" });
-  expectType<Promise<typeof pyodide>>(
-    loadPyodide({ indexURL: "blah", fullStdLib: true })
-  );
+  let pyodide = await loadPyodide();
+  expectType<Promise<typeof pyodide>>(loadPyodide({ indexURL: "blah" }));
+  expectType<Promise<typeof pyodide>>(loadPyodide({ fullStdLib: true }));
 
   expectType<Promise<typeof pyodide>>(
     loadPyodide({
@@ -44,7 +43,9 @@ async function main() {
   let px: PyProxy = <PyProxy>{};
 
   expectType<any>(pyodide.runPython("1+1"));
-  expectType<any>(pyodide.runPython("1+1", px));
+  expectType<any>(pyodide.runPython("1+1", { globals: px }));
+  expectType<Promise<any>>(pyodide.runPythonAsync("1+1"));
+  expectType<Promise<any>>(pyodide.runPythonAsync("1+1", { globals: px }));
 
   expectType<Promise<void>>(pyodide.loadPackagesFromImports("import some_pkg"));
   expectType<Promise<void>>(

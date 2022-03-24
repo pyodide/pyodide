@@ -1,6 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
+import ErrorStackParser from "error-stack-parser";
 import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
@@ -150,12 +151,41 @@ function finalizeBootstrap(config: ConfigType) {
 declare function _createPyodideModule(Module: any): Promise<void>;
 
 /**
+ *  If indexURL isn't provided, throw an error and catch it and then parse our
+ *  file name out from the stack trace.
+ *
+ *  Question: But getting the URL from error stack trace is well... really
+ *  hacky. Can't we use
+ *  [`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
+ *  or
+ *  [`import.meta.url`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta)
+ *  instead?
+ *
+ *  Answer: `document.currentScript` works for the browser main thread.
+ *  `import.meta` works for es6 modules. In a classic webworker, I think there
+ *  is no approach that works. Also we would need some third approach for node
+ *  when loading a commonjs module using `require`. On the other hand, this
+ *  stack trace approach works for every case without any feature detection
+ *  code.
+ */
+function calculateIndexURL(): string {
+  let err;
+  try {
+    throw new Error();
+  } catch (e) {
+    err = e;
+  }
+  const fileName = ErrorStackParser.parse(err)[0].fileName!;
+  return fileName.slice(0, fileName.lastIndexOf("/"));
+}
+
+/**
  * See documentation for loadPyodide.
  * @private
  */
 type ConfigType = {
   indexURL: string;
-  homedir?: string;
+  homedir: string;
   fullStdLib?: boolean;
   stdin?: () => string;
   stdout?: (msg: string) => void;
@@ -176,43 +206,49 @@ type ConfigType = {
  * @memberof globalThis
  * @async
  */
-export async function loadPyodide(config: {
-  /**
-   * The URL from which Pyodide will load packages
-   */
-  indexURL: string;
+export async function loadPyodide(
+  options: {
+    /**
+     * The URL from which Pyodide will load the main Pyodide runtime and
+     * packages. Defaults to the url that pyodide is loaded from with the file
+     * name (pyodide.js or pyodide.mjs) removed. It is recommended that you
+     * leave this undefined, providing an incorrect value can cause broken
+     * behavior.
+     */
+    indexURL?: string;
 
-  /**
-   * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
-   */
-  homedir?: string;
+    /**
+     * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
+     */
+    homedir?: string;
 
-  /** Load the full Python standard library.
-   * Setting this to false excludes following modules: distutils.
-   * Default: true
-   */
-  fullStdLib?: boolean;
-  /**
-   * Override the standard input callback. Should ask the user for one line of input.
-   */
-  stdin?: () => string;
-  /**
-   * Override the standard output callback.
-   * Default: undefined
-   */
-  stdout?: (msg: string) => void;
-  /**
-   * Override the standard error output callback.
-   * Default: undefined
-   */
-  stderr?: (msg: string) => void;
-  jsglobals?: object;
-}): Promise<PyodideInterface> {
+    /** Load the full Python standard library.
+     * Setting this to false excludes following modules: distutils.
+     * Default: true
+     */
+    fullStdLib?: boolean;
+    /**
+     * Override the standard input callback. Should ask the user for one line of input.
+     */
+    stdin?: () => string;
+    /**
+     * Override the standard output callback.
+     * Default: undefined
+     */
+    stdout?: (msg: string) => void;
+    /**
+     * Override the standard error output callback.
+     * Default: undefined
+     */
+    stderr?: (msg: string) => void;
+    jsglobals?: object;
+  } = {}
+): Promise<PyodideInterface> {
   if ((loadPyodide as any).inProgress) {
     throw new Error("Pyodide is already loading.");
   }
-  if (!config.indexURL) {
-    throw new Error("Please provide indexURL parameter to loadPyodide");
+  if (!options.indexURL) {
+    options.indexURL = calculateIndexURL();
   }
   (loadPyodide as any).inProgress = true;
 
@@ -222,7 +258,7 @@ export async function loadPyodide(config: {
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
   };
-  config = Object.assign(default_config, config);
+  let config = Object.assign(default_config, options) as ConfigType;
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
@@ -234,7 +270,7 @@ export async function loadPyodide(config: {
   );
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(config.homedir!);
+  setHomeDirectory(config.homedir);
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 

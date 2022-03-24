@@ -19,7 +19,7 @@ substitutions:
 - {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
 
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
-  standard library ssl module {pr}`2263`
+  standard library ssl module {pr}`2263`, python-solvespace v3.0.7
 
 - Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
@@ -70,6 +70,24 @@ substitutions:
   accurate. For backwards compatibility, we still export `Py2JsResult` as an
   alias for `any`.
   {pr}`2277`
+
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
+- {{Enhancement}} It is no longer necessary to provide `indexURL` to
+  `loadPyodide`.
+  {pr}`2292`
+
+- {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
+  Javascript code. This mostly should never happen since well behaved Javascript
+  code ought to throw errors. But it's better not to completely crash if it
+  throws something else.
+  {pr}`2294`
+
+- {{ Breaking }} The `globals` argument to `runPython` and `runPythonAsync` is
+  now passed as a named argument. The old usage still works with a deprecation
+  warning.
+  {pr}`2300`
 
 _February 19, 2022_
 
