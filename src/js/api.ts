@@ -360,9 +360,6 @@ export function unpackArchive(
     options = { extract_dir: options };
   }
   let extract_dir = options.extract_dir;
-  if (!API._util_module) {
-    API._util_module = pyimport("pyodide._util");
-  }
   API.package_loader.unpack_buffer.callKwargs({
     buffer,
     format,
