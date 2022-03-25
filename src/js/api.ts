@@ -324,6 +324,8 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * ``NSIG`` it will be silently ignored. NSIG is 65 (internally signals are
  * indicated by a bitflag).
  *
+ * You can disable interrupts by calling `setInterruptBuffer(undefined)`.
+ *
  * If you wish to trigger a ``KeyboardInterrupt``, write ``SIGINT`` (a 2), into
  * the interrupt buffer.
  *
