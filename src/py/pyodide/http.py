@@ -10,7 +10,7 @@ except ImportError:
     pass
 
 from ._core import IN_BROWSER
-from ._util import unpack_buffer_archive
+from ._package_loader import unpack_buffer
 
 __all__ = [
     "open_url",
@@ -202,9 +202,7 @@ class FetchResponse:
         """
         buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]
-        unpack_buffer_archive(
-            buf, filename=filename, format=format, extract_dir=extract_dir
-        )
+        unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
 
 
 async def pyfetch(url: str, **kwargs) -> FetchResponse:
