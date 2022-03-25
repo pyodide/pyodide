@@ -64,8 +64,8 @@ build:
     -DBUILD_opencv_dnn=ON \
     -DBUILD_opencv_ml=ON \
     -DBUILD_opencv_objdetect=ON \
-    -DWITH_OPENCL=ON \
-    -DOPENCV_DNN_OPENCL=ON \
+    -DWITH_OPENCL=OFF \
+    -DOPENCV_DNN_OPENCL=OFF \
     -DWITH_PROTOBUF=ON \
     \
     -DPYTHON3_EXECUTABLE=python \
