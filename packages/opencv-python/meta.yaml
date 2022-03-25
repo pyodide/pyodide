@@ -27,7 +27,6 @@ build:
 
     export VERBOSE=1
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
-    export ZLIB_DIR="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/"
     export EMSCRIPTEN="$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten/"
 
     export CMAKE_ARGS=" \
