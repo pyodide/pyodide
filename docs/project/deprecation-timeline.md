@@ -16,6 +16,8 @@ More details about each item can often be found in the {ref}`changelog`.
 ## 0.20.0
 
 - The skip-host key will be removed from the meta.yaml format. If needed, install a host copy of the package with pip instead.
+- `pyodide-interrupts` module will be removed. If you were using this for some reason, use
+  {any}`setInterruptBuffer <pyodide.setInterruptBuffer>` instead.
 
 ## 0.19.0
 
