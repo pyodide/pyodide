@@ -355,11 +355,24 @@ API.saveState = () => API.pyodide_py._state.save_state();
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 
 /**
- * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
- * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
- * shared with the main browser thread (or another worker). To request an
- * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
- * constant for SIGINT).
+ * Sets the interrupt buffer to be ``interrupt_buffer``. This is only useful
+ * when Pyodide is used in a webworker. The buffer should be a
+ * ``SharedArrayBuffer`` shared with the main browser thread (or another
+ * worker). In that case, signal ``signum`` may be sent by writing ``signum``
+ * into the interrupt buffer. If ``signum`` does not satisfy 0 < ``signum`` <
+ * ``NSIG`` it will be silently ignored. NSIG is 65 (internally signals are
+ * indicated by a bitflag).
+ *
+ * You can disable interrupts by calling `setInterruptBuffer(undefined)`.
+ *
+ * If you wish to trigger a ``KeyboardInterrupt``, write ``SIGINT`` (a 2), into
+ * the interrupt buffer.
+ *
+ * By default ``SIGINT`` raises a ``KeyboardInterrupt`` and all other signals
+ * are ignored. You can install custom signal handlers with the signal module.
+ * Even signals that normally have special meaning and can't be overridden like
+ * ``SIGKILL`` and ``SIGSEGV`` are ignored by default and can be used for any
+ * purpose you like.
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   API.interrupt_buffer = interrupt_buffer;
