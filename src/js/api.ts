@@ -363,7 +363,8 @@ export function unpackArchive(
   if (!API._util_module) {
     API._util_module = pyimport("pyodide._util");
   }
-  API._util_module.unpack_buffer_archive.callKwargs(buffer, {
+  API.package_loader.unpack_buffer.callKwargs({
+    buffer,
     format,
     extract_dir,
   });
