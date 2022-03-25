@@ -330,7 +330,7 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * By default ``SIGINT`` raises a ``KeyboardInterrupt`` and all other signals
  * are ignored. You can install custom signal handlers with the signal module.
  * Even signals that normally have special meaning and can't be overridden like
- * ``SIGKILL`` and ``SIGSEGV``are ignored by default and can be used for any
+ * ``SIGKILL`` and ``SIGSEGV`` are ignored by default and can be used for any
  * purpose you like.
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
