@@ -1054,7 +1054,10 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         return [self.stdoutStrings, self.stderrStrings];
         """
     )
-    assert stdoutstrings == ["Python initialization complete", "something to stdout"]
+    assert stdoutstrings[-2:] == [
+        "Python initialization complete",
+        "something to stdout",
+    ]
     assert stderrstrings == ["something to stderr"]
 
 

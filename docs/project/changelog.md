@@ -19,9 +19,18 @@ substitutions:
 - {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
 
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
-  standard library ssl module {pr}`2263`
+  standard library ssl module {pr}`2263`, python-solvespace v3.0.7
 
 - Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
+
+- Many more scipy linking errors were fixed, mostly related to the Fortran f2c
+  ABI for string arguments. There are still some fatal errors in the Scipy test
+  suite, but none seem to be simple linker errors.
+  {pr}`2289`
+
+- Removed pyodide-interrupts. If you were using this for some reason, use
+  {any}`setInterruptBuffer <pyodide.setInterruptBuffer>` instead.
+  {pr}`2309`
 
 ### Uncategorized
 
@@ -56,12 +65,13 @@ substitutions:
   {pr}`2178`
 
 - {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
-  `loadPyodide` variable is created (instead, it should be accessed as an
-  attribute on the module).
+  {any}`loadPyodide <globalThis.loadPyodide>` variable is created (instead, it
+  should be accessed as an attribute on the module).
   {pr}`2249`
 
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
-  needed, install a host copy of the package with pip instead. {pr}`2256`
+  needed, install a host copy of the package with pip instead.
+  {pr}`2256`
 
 - {{ Update }} Pyodide now runs Python 3.10.2.
   {pr}`2225`
@@ -75,7 +85,7 @@ substitutions:
   {pr}`2283`
 
 - {{Enhancement}} It is no longer necessary to provide `indexURL` to
-  `loadPyodide`.
+  {any}`loadPyodide <globalThis.loadPyodide>`.
   {pr}`2292`
 
 - {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
@@ -90,6 +100,13 @@ substitutions:
   but `SIGINT` will be ignored. Any value written into the interrupt buffer
   outside of the range from 1 to 64 will be silently discarded.
   {pr}`2301`
+
+- {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
+  and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
+  argument. The old usage still works with a deprecation warning. {pr}`2300`
+
+- {{ Enhancement }} Updated to Emscripten 2.0.27.
+  {pr}`2295`
 
 _February 19, 2022_
 
@@ -710,7 +727,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 
 ### Build system
 
-- {{ Enhancement }} Updated to latest emscripten 2.0.13 with the updstream LLVM backend
+- {{ Enhancement }} Updated to latest emscripten 2.0.13 with the upstream LLVM backend
   {pr}`1102`
 - {{ API }} Use upstream `file_packager.py`, and stop checking package abi versions.
   The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is

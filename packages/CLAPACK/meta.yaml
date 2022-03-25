@@ -8,11 +8,12 @@ source:
   extract_dir: CLAPACK-3.2.1
   patches:
     - patches/0001-add-missing-import.patch
-    - patches/0002-fix-arith-h.patch
+    - patches/0002-fix-arith.h.patch
     - patches/0003-lapack-install-make.patch
     - patches/0004-fix-f2clibs-build.patch
     - patches/0005-remove-redundant-symbols.patch
     - patches/0006-correct-return-types.patch
+    - patches/0007-Fix-xerbla-and-ilaenv.patch
   extras:
     - [make.inc, make.inc]
 

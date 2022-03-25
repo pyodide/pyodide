@@ -3,7 +3,7 @@ from pyodide_build import testing
 run_in_pyodide = testing.run_in_pyodide(
     module_scope=True,
     packages=["scipy"],
-    xfail_browsers={"chrome": "Times out in chrome"},
+    # xfail_browsers={"chrome": "Times out in chrome"},
     driver_timeout=40,
 )
 
@@ -43,3 +43,24 @@ def test_binom_ppf():
     from scipy.stats import binom
 
     assert binom.ppf(0.9, 1000, 0.1) == 112
+
+
+@testing.run_in_pyodide(module_scope=True, packages=["pytest", "scipy-tests"])
+def test_scipy_pytest():
+    import pytest
+
+    def runtest(module, filter):
+        pytest.main(
+            [
+                "--pyargs",
+                f"scipy.{module}",
+                "--continue-on-collection-errors",
+                "-vv",
+                "-k",
+                filter,
+            ]
+        )
+
+    runtest("odr", "explicit")
+    runtest("signal.tests.test_ltisys", "TestImpulse2")
+    runtest("stats.tests.test_multivariate", "haar")
