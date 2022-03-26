@@ -928,7 +928,7 @@ def test_coroutine_scheduling(selenium):
         `);
         setTimeout(f, 100);
         await sleep(200);
-        assert(() => x === 1);
+        assert(() => pyodide.globals.get('x') === 1);
         f.destroy();
         """
     )
