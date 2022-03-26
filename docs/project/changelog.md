@@ -101,6 +101,11 @@ substitutions:
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
   {pr}`1102`
 
+- {{ Enhancement }} Async Python functions called from Javascript now have the
+  resulting coroutine automatically scheduled. For instance, this makes it
+  possible to use an async Python function as a Javascript event handler.
+  {pr}`2319`
+
 _February 19, 2022_
 
 ## Version 0.19.1
