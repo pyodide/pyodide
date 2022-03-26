@@ -315,7 +315,7 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   }
   let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
-  if (result && result._ensure_future) {
+  if (result && result.type === "coroutine" && result._ensure_future) {
     result._ensure_future();
   }
   return result;
