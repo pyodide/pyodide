@@ -82,9 +82,9 @@ and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
 
-The second argument to {any}`pyodide.runPython` is an object which may include a
-`globals` element which creates a namespace for code to read from and write to.
-The namespace is a Python dictionary.
+The second argument to {any}`pyodide.runPython` is an options object which may
+include a `globals` element which is a namespace for code to read from and write
+to. The provided namespace must be a Python dictionary.
 
 ```pyodide
 let my_namespace = pyodide.globals.get("dict")();
@@ -94,7 +94,7 @@ my_namespace.get("y"); // ==> 4
 ```
 
 You can also use this approach to inject variables from JavaScript into the
-python namespace, for example:
+Python namespace, for example:
 
 ```pyodide
 let my_namespace = pyodide.toPy({ x: 2, y: [1, 2, 3] });
