@@ -82,14 +82,29 @@ and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
 
-The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
+The second argument to {any}`pyodide.eval_code` is an object
+which may include a `globals` element which creates a namespace for code to read from and write to.
 The namespace is a Python dictionary.
 
 ```javascript
-let my_namespace = pyodide.globals.dict();
-pyodide.runPython(`x = 1 + 1`, my_namespace);
-pyodide.runPython(`y = x ** x`, my_namespace);
-my_namespace.y; // ==> 4
+let my_namespace = pyodide.globals.get("dict")();
+pyodide.runPython(`x = 1 + 1`, { globals: my_namespace });
+pyodide.runPython(`y = x ** x`, { globals: my_namespace });
+my_namespace.get("y"); // ==> 4
+```
+
+You can also use this approach to inject variables from JavaScript into the python namespace, for example:
+
+```javascript
+let my_namespace = pyodide.toPy({ x: 2, y: [1, 2, 3] });
+pyodide.runPython(
+  `
+	assert x == y[1]
+	z = x ** x
+`,
+  { globals: my_namespace }
+);
+my_namespace.get("z"); // ==> 4
 ```
 
 ## How to detect that code is run with Pyodide?
