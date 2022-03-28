@@ -170,7 +170,7 @@ async function installPackage(name: string, buffer: Uint8Array) {
     calculate_dynlibs: true,
   });
   for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib);
+    await loadDynlib(dynlib, pkg.shared_library);
   }
   loadedPackages[name] = pkg;
 }
@@ -213,7 +213,7 @@ const acquireDynlibLock = createLock();
  * @param lib The file system path to the library.
  * @private
  */
-async function loadDynlib(lib: string) {
+async function loadDynlib(lib: string, shared: boolean) {
   const node = Module.FS.lookupPath(lib).node;
   let byteArray;
   if (node.mount.type == Module.FS.filesystems.MEMFS) {
@@ -232,6 +232,12 @@ async function loadDynlib(lib: string) {
     });
     Module.preloadedWasm[lib] = module;
     Module.preloadedWasm[lib.split("/").pop()!] = module;
+    if (shared) {
+      Module.loadDynamicLibrary(lib, {
+        global: true,
+        nodelete: true,
+      });
+    }
   } finally {
     releaseDynlibLock();
   }
