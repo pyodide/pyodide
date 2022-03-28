@@ -87,7 +87,7 @@ $(BUILD)/.patched: $(TARBALL)
 
 $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-1.2.11.tar.gz
+	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 	cd $(ZLIBBUILD); emconfigure ./configure
 	touch $@
 
