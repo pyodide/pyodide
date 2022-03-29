@@ -21,7 +21,6 @@ if IS_MAIN:
 
     PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
 
-import importlib.machinery
 import re
 import subprocess
 from collections import namedtuple
@@ -502,8 +501,7 @@ def handle_command(
        containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
     """
     # some libraries have different names on wasm e.g. png16 = png
-    library_output = get_library_output(line)
-    is_link_cmd = library_output is not None
+    is_link_cmd = get_library_output(line) is not None
 
     if line[0] == "gfortran":
         if "-dumpversion" in line:
@@ -522,17 +520,6 @@ def handle_command(
     if returncode != 0:
         sys.exit(returncode)
 
-    # Emscripten .so files shouldn't have the native platform slug
-    if library_output:
-        renamed = library_output
-        for ext in importlib.machinery.EXTENSION_SUFFIXES:
-            if ext == ".so":
-                continue
-            if renamed.endswith(ext):
-                renamed = renamed[: -len(ext)] + ".so"
-                break
-        if library_output != renamed:
-            os.rename(library_output, renamed)
     sys.exit(returncode)
 
 

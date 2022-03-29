@@ -1,4 +1,4 @@
-import { Module, API } from "./module.js";
+import { Module, API, Tests } from "./module.js";
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -249,10 +249,19 @@ async function loadDynlib(lib: string, shared: boolean) {
         nodelete: true,
       });
     }
+  } catch (e) {
+    if (e.message.includes("need to see wasm magic number")) {
+      console.warn(
+        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
+      );
+      return;
+    }
+    throw e;
   } finally {
     releaseDynlibLock();
   }
 }
+Tests.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 
