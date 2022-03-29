@@ -21,6 +21,10 @@ set(CMAKE_WORDS_BIGENDIAN 0)
 set(CMAKE_DL_LIBS)
 set(CMAKE_RANLIB echo)
 
+# Force filesystem support, it is disabled in Emscripten platform (needs fix)
+# https://github.com/opencv/opencv/blob/17234f82d025e3bbfbf611089637e5aa2038e7b8/modules/core/include/opencv2/core/utils/filesystem.private.hpp#L10
+add_definitions(-DOPENCV_HAVE_FILESYSTEM_SUPPORT=1)
+
 if ("${EMSCRIPTEN_ROOT_PATH}" STREQUAL "")
   set(EMSCRIPTEN_ROOT_PATH "$ENV{EMSCRIPTEN}")
 endif()

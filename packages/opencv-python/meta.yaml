@@ -11,6 +11,8 @@ source:
   sha256: f65de0446a330c3b773cd04ba10345d8ce1b15dcac3f49770204e37602d0b3f7
   extras:
     - [cmake/OpenCVFindLibsGrfmt.cmake, opencv/cmake/OpenCVFindLibsGrfmt.cmake]
+  patches:
+    - patches/0001-Enable-file-system.patch
 
 requirements:
   run:
