@@ -144,13 +144,27 @@ async function downloadPackage(
   return await _loadBinaryFile(baseURL, file_name);
 }
 
+type PromisePair = { promise: Promise<void>; resolve: () => void };
+
+function mkPromise(): PromisePair {
+  let resolve;
+  let promise: Promise<void> = new Promise((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
 /**
  * Install the package into the file system.
  * @param name The name of the package
  * @param buffer The binary data returned by downloadPkgBuffer
  * @private
  */
-async function installPackage(name: string, buffer: Uint8Array) {
+async function installPackage(
+  name: string,
+  buffer: Uint8Array,
+  pkg_promises: { [name: string]: Promise<void> }
+) {
   let pkg = API.packages[name];
   if (!pkg) {
     pkg = {
@@ -162,17 +176,80 @@ async function installPackage(name: string, buffer: Uint8Array) {
     };
   }
   const filename = pkg.file_name;
+  const dep_pkg_promises: { [dep: string]: Promise<void> } = {};
+  for (let dep of pkg.depends) {
+    dep_pkg_promises[dep] = pkg_promises[dep];
+  }
   // This Python helper function unpacks the buffer and lists out any so files therein.
-  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
+  const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
     calculate_dynlibs: true,
   });
-  for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib, pkg.shared_library);
+  let dynlib_promises: { [lib: string]: PromisePair } = {};
+  for (let dynlib of dynlibs) {
+    dynlib_promises[dynlib.split("/").pop()] = mkPromise();
   }
-  loadedPackages[name] = pkg;
+  await Promise.all(
+    dynlibs.map((lib) =>
+      installDynlib(lib, pkg.shared, dep_pkg_promises, dynlib_promises)
+    )
+  );
+}
+
+async function installDynlib(
+  lib: string,
+  shared: boolean,
+  pkg_promises: { [dep: string]: Promise<void> },
+  dynlib_promises: { [lib: string]: PromisePair }
+) {
+  const binary = getLibBinary(lib);
+  const metadata = Module.getDylinkMetadata(binary);
+  for (let dep of metadata.neededDynlibs) {
+    // If we have it, can proceed
+    if (dep in Module.preloadedWasm) {
+      continue;
+    }
+    // Maybe it's part of this package?
+    if (dep in dynlib_promises) {
+      await dynlib_promises[dep].promise;
+      continue;
+    }
+    // Else, hope they come from dependencies?
+    for (const [dep, dep_promise] of Object.entries(pkg_promises)) {
+      await dep_promise;
+      if (dep in Module.preloadedWasm) {
+        break;
+      }
+    }
+    // If we've finished loading all dependency packages and still don't have it
+    // we have to give up.
+    if (!(dep in Module.preloadedWasm)) {
+      throw new Error(`Library ${lib} is missing dependency ${dep}!`);
+    }
+  }
+  const releaseDynlibLock = await acquireDynlibLock();
+  try {
+    const module = await Module.loadWebAssemblyModule(binary, {
+      loadAsync: true,
+      nodelete: true,
+      allowUndefined: true,
+    });
+    Module.preloadedWasm[lib] = module;
+    const libname = lib.split("/").pop()!;
+    Module.preloadedWasm[libname] = module;
+    if (shared) {
+      Module.loadDynamicLibrary(lib, {
+        global: true,
+        nodelete: true,
+      });
+    }
+    console.log("resolving", libname);
+    dynlib_promises[libname].resolve();
+  } finally {
+    releaseDynlibLock();
+  }
 }
 
 /**
@@ -204,6 +281,18 @@ function createLock() {
 // it.
 const acquireDynlibLock = createLock();
 
+function getLibBinary(lib: string): Uint8Array {
+  const node = Module.FS.lookupPath(lib).node;
+  let byteArray;
+  if (node.mount.type == Module.FS.filesystems.MEMFS) {
+    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
+      Module.FS.lookupPath(lib).node
+    );
+  } else {
+    byteArray = Module.FS.readFile(lib);
+  }
+  return byteArray;
+}
 /**
  * Load a dynamic library. This is an async operation and Python imports are
  * synchronous so we have to do it ahead of time. When we add more support for
@@ -223,24 +312,11 @@ async function loadDynlib(lib: string, shared: boolean) {
   } else {
     byteArray = Module.FS.readFile(lib);
   }
-  const releaseDynlibLock = await acquireDynlibLock();
-  try {
-    const module = await Module.loadWebAssemblyModule(byteArray, {
-      loadAsync: true,
-      nodelete: true,
-      allowUndefined: true,
-    });
-    Module.preloadedWasm[lib] = module;
-    Module.preloadedWasm[lib.split("/").pop()!] = module;
-    if (shared) {
-      Module.loadDynamicLibrary(lib, {
-        global: true,
-        nodelete: true,
-      });
-    }
-  } finally {
-    releaseDynlibLock();
-  }
+  const metadata = Module.getDylinkMetadata(byteArray);
+  // 1. If we have these, can proceed
+  // 2. If we don't have these, check if they are part of this package
+  // 3. Else, hope they come from dependencies?
+  metadata.neededDynlibs;
 }
 
 const acquirePackageLock = createLock();
@@ -322,16 +398,25 @@ export async function loadPackage(
     // TODO: add support for prefetching modules by awaiting on a promise right
     // here which resolves in loadPyodide when the bootstrap is done.
     const packageInstallPromises: { [name: string]: Promise<void> } = {};
+    const packageInstallResolves: { [name: string]: () => void } = {};
+    for (const name of toLoad.keys()) {
+      const { promise, resolve } = mkPromise();
+      packageInstallPromises[name] = promise;
+      packageInstallResolves[name] = resolve;
+    }
     for (const [name, channel] of toLoad) {
-      packageInstallPromises[name] = packageLoadPromises[name]
-        .then(async (buffer) => {
-          await installPackage(name, buffer);
-          loaded.push(name);
-          loadedPackages[name] = channel;
-        })
-        .catch((err) => {
+      packageLoadPromises[name].then(async (buffer) => {
+        try {
+          await installPackage(name, buffer, packageInstallPromises);
+        } catch (err) {
           failed[name] = err;
-        });
+          return;
+        } finally {
+          packageInstallResolves[name]();
+        }
+        loaded.push(name);
+        loadedPackages[name] = channel;
+      });
     }
     await Promise.all(Object.values(packageInstallPromises));
 
