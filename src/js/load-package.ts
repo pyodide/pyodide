@@ -1,4 +1,4 @@
-import { Module, API } from "./module.js";
+import { Module, API, Tests } from "./module.js";
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -245,8 +245,15 @@ async function installDynlib(
         nodelete: true,
       });
     }
-    console.log("resolving", libname);
     dynlib_promises[libname].resolve();
+  } catch (e) {
+    if (e.message.includes("need to see wasm magic number")) {
+      console.warn(
+        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
+      );
+      return;
+    }
+    throw e;
   } finally {
     releaseDynlibLock();
   }
@@ -292,31 +299,6 @@ function getLibBinary(lib: string): Uint8Array {
     byteArray = Module.FS.readFile(lib);
   }
   return byteArray;
-}
-/**
- * Load a dynamic library. This is an async operation and Python imports are
- * synchronous so we have to do it ahead of time. When we add more support for
- * synchronous I/O, we could consider doing this later as a part of a Python
- * import hook.
- *
- * @param lib The file system path to the library.
- * @private
- */
-async function loadDynlib(lib: string, shared: boolean) {
-  const node = Module.FS.lookupPath(lib).node;
-  let byteArray;
-  if (node.mount.type == Module.FS.filesystems.MEMFS) {
-    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
-      Module.FS.lookupPath(lib).node
-    );
-  } else {
-    byteArray = Module.FS.readFile(lib);
-  }
-  const metadata = Module.getDylinkMetadata(byteArray);
-  // 1. If we have these, can proceed
-  // 2. If we don't have these, check if they are part of this package
-  // 3. Else, hope they come from dependencies?
-  metadata.neededDynlibs;
 }
 
 const acquirePackageLock = createLock();

@@ -1,6 +1,8 @@
+import re
 import shutil
 import sysconfig
 import tarfile
+from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
@@ -14,6 +16,16 @@ STD_LIB = Path(sysconfig.get_path("stdlib"))
 TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
+EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
+# See PEP 3149. I think the situation has since been updated since PEP 3149 does
+# not talk about platform triples. But I could not find any newer pep discussing
+# shared library names.
+#
+# There are other interpreters but it's better to have false negatives than
+# false positives.
+PLATFORM_TAG_REGEX = re.compile(
+    r"\.(cpython|pypy|jython)-[0-9]{2,}[a-z]*(-[a-z0-9_-]*)?"
+)
 
 
 def make_whlfile(*args, owner=None, group=None, **kwargs):
@@ -117,6 +129,24 @@ def unpack_buffer(
             return None
 
 
+def should_load_dynlib(path: str):
+    suffixes = Path(path).suffixes
+    if not suffixes:
+        return False
+    if suffixes[-1] != ".so":
+        return False
+    if len(suffixes) == 1:
+        return True
+    tag = suffixes[-2]
+    if tag in EXTENSION_TAGS:
+        return True
+    # Okay probably it's not compatible now. But it might be an unrelated .so
+    # file with a name with an extra dot: `some.name.so` vs
+    # `some.cpython-39-x86_64-linux-gnu.so` Let's make a best effort here to
+    # check.
+    return not PLATFORM_TAG_REGEX.match(tag)
+
+
 def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
     """List out the paths to .so files in a zip or tar archive.
 
@@ -147,5 +177,5 @@ def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
     return [
         str((target_dir / path).resolve())
         for path in dynlib_paths_iter
-        if path.endswith(".so")
+        if should_load_dynlib(path)
     ]

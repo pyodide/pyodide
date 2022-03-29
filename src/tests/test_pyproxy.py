@@ -913,3 +913,22 @@ def test_pyproxy_borrow(selenium):
         Tcopy.destroy();
         """
     )
+
+
+def test_coroutine_scheduling(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            async def f():
+                global x
+                print('hi!')
+                x += 1
+            f
+        `);
+        setTimeout(f, 100);
+        await sleep(200);
+        assert(() => pyodide.globals.get('x') === 1);
+        f.destroy();
+        """
+    )

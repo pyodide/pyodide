@@ -103,10 +103,21 @@ substitutions:
 
 - {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
   and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
-  argument. The old usage still works with a deprecation warning. {pr}`2300`
+  argument. The old usage still works with a deprecation warning.
+  {pr}`2300`
 
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
   {pr}`2295`
+
+- {{ Breaking }} The `extract_dir` argument to
+  {any}`unpackArchive <pyodide.unpackArchive>` is now passed as a named argument.
+  The old usage still works with a deprecation warning.
+  {pr}`2300`
+
+- {{ Enhancement }} Async Python functions called from Javascript now have the
+  resulting coroutine automatically scheduled. For instance, this makes it
+  possible to use an async Python function as a Javascript event handler.
+  {pr}`2319`
 
 _February 19, 2022_
 
