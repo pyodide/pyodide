@@ -313,7 +313,12 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   if (idresult === 0) {
     Module._pythonexc2js();
   }
-  return Hiwire.pop_value(idresult);
+  let result = Hiwire.pop_value(idresult);
+  // Automatically schedule coroutines
+  if (result && result.type === "coroutine" && result._ensure_future) {
+    result._ensure_future();
+  }
+  return result;
 };
 
 Module.callPyObject = function (ptrobj: number, ...jsargs: any) {
