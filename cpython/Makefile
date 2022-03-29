@@ -12,10 +12,10 @@ URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 SYSCONFIG_NAME=_sysconfigdata__emscripten_
 
-ZLIBVERSION = 1.2.11
+ZLIBVERSION=1.2.12
 ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
-ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
+ZLIBURL=https://zlib.net/zlib-$(ZLIBVERSION).tar.gz
 
 SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
 SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
@@ -87,7 +87,7 @@ $(BUILD)/.patched: $(TARBALL)
 
 $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-1.2.11.tar.gz
+	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 	cd $(ZLIBBUILD); emconfigure ./configure
 	touch $@
 
