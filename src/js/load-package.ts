@@ -147,11 +147,11 @@ async function downloadPackage(
 type PromisePair = { promise: Promise<void>; resolve: () => void };
 
 function mkPromise(): PromisePair {
-  let resolve;
+  let resolve: () => void;
   let promise: Promise<void> = new Promise((res) => {
     resolve = res;
   });
-  return { promise, resolve };
+  return { promise, resolve: resolve! };
 }
 
 /**
@@ -189,7 +189,7 @@ async function installPackage(
   });
   let dynlib_promises: { [lib: string]: PromisePair } = {};
   for (let dynlib of dynlibs) {
-    dynlib_promises[dynlib.split("/").pop()] = mkPromise();
+    dynlib_promises[dynlib.split("/").pop()!] = mkPromise();
   }
   await Promise.all(
     dynlibs.map((lib) =>
