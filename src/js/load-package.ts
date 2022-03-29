@@ -205,7 +205,18 @@ async function installDynlib(
   dynlib_promises: { [lib: string]: PromisePair }
 ) {
   const binary = getLibBinary(lib);
-  const metadata = Module.getDylinkMetadata(binary);
+  let metadata;
+  try {
+    metadata = Module.getDylinkMetadata(binary);
+  } catch (e) {
+    if (e.message.includes("need to see wasm magic number")) {
+      console.warn(
+        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
+      );
+      return;
+    }
+    throw e;
+  }
   for (let dep of metadata.neededDynlibs) {
     // If we have it, can proceed
     if (dep in Module.preloadedWasm) {
@@ -246,18 +257,11 @@ async function installDynlib(
       });
     }
     dynlib_promises[libname].resolve();
-  } catch (e) {
-    if (e.message.includes("need to see wasm magic number")) {
-      console.warn(
-        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
-      );
-      return;
-    }
-    throw e;
   } finally {
     releaseDynlibLock();
   }
 }
+Tests.installDynlib = installDynlib;
 
 /**
  * @returns A new asynchronous lock

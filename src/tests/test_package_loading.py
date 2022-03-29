@@ -311,7 +311,7 @@ def test_load_bad_so_file(selenium):
     selenium.run_js(
         """
         pyodide.FS.writeFile("/a.so", new Uint8Array(4))
-        await pyodide._api.tests.loadDynlib("/a.so");
+        await pyodide._api.tests.installDynlib("/a.so");
         """
     )
     assert (
