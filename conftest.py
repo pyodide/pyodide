@@ -386,11 +386,15 @@ class NodeWrapper(SeleniumWrapper):
 
     def init_node(self):
         os.chdir("build")
-        self.p = pexpect.spawn(
-            f"node --expose-gc ../tools/node_test_driver.js {self.base_url}", timeout=60
-        )
+        self.p = pexpect.spawn("/bin/bash", timeout=60)
         self.p.setecho(False)
         self.p.delaybeforesend = None
+        # disable canonical input processing mode to allow sending longer lines
+        # See: https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
+        self.p.sendline("stty -icanon")
+        self.p.sendline(
+            f"node --expose-gc ../tools/node_test_driver.js {self.base_url}"
+        )
         os.chdir("..")
 
     def get_driver(self):

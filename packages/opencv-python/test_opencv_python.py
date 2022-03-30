@@ -28,12 +28,11 @@ def compare_with_reference_image(selenium, reference_image, var="img", grayscale
     return match_ratio > 0.95
 
 
-@run_in_pyodide(packages=["opencv-python"])
+@run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_import():
     import cv2
 
-    print(f"{cv2.__version__=}")
-    print(f"{cv2.getBuildInformation()=}")
+    print(cv2.__version__)
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
