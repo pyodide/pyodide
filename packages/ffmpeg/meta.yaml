@@ -16,6 +16,7 @@ build:
       --disable-doc \
       --disable-stripping \
       --disable-programs \
+      --disable-pthreads \
       --nm="$PYODIDE_ROOT/emsdk/emsdk/upstream/bin/llvm-nm -g" \
       --ar=emar --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --ranlib=emranlib \
       --prefix=./lib
