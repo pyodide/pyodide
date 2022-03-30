@@ -28,6 +28,17 @@ def compare_with_reference_image(selenium, reference_image, var="img", grayscale
     return match_ratio > 0.95
 
 
+def test_import(selenium):
+    selenium.set_script_timeout(60)
+    selenium.load_package("opencv-python")
+    selenium.run(
+        """
+        import cv2
+        cv2.__version__
+        """
+    )
+
+
 @run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_image_extensions():
     import cv2 as cv
