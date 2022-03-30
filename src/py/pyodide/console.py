@@ -18,7 +18,7 @@ from typing import Any, Callable, Literal, Optional, Union
 
 from _pyodide._base import CodeRunner, should_quiet
 
-__all__ = ["Console", "PyodideConsole", "BANNER", "repr_shorten", "ConsoleFuture"]
+__all__ = ["Console", "PyodideConsole", "repr_shorten", "ConsoleFuture"]
 
 
 BANNER = f"""
@@ -455,24 +455,6 @@ class Console:
         return completions, start
 
 
-def repr_shorten(
-    value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
-) -> str:
-    """Compute the string representation of ``value`` and shorten it
-    if necessary.
-
-    If it is longer than ``limit`` then return the firsts ``split``
-    characters and the last ``split`` characters separated by '...'.
-    Default value for ``split`` is `limit // 2`.
-    """
-    if split is None:
-        split = limit // 2
-    text = repr(value)
-    if len(text) > limit:
-        text = f"{text[:split]}{separator}{text[-split:]}"
-    return text
-
-
 class PyodideConsole(Console):
     """A subclass of :any:`Console` that uses :any:`pyodide.loadPackagesFromImports` before running the code."""
 
@@ -490,3 +472,21 @@ class PyodideConsole(Console):
 
         await loadPackagesFromImports(source)
         return await super().runcode(source, code)
+
+
+def repr_shorten(
+    value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
+) -> str:
+    """Compute the string representation of ``value`` and shorten it
+    if necessary.
+
+    If it is longer than ``limit`` then return the firsts ``split``
+    characters and the last ``split`` characters separated by '...'.
+    Default value for ``split`` is `limit // 2`.
+    """
+    if split is None:
+        split = limit // 2
+    text = repr(value)
+    if len(text) > limit:
+        text = f"{text[:split]}{separator}{text[-split:]}"
+    return text
