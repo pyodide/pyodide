@@ -18,7 +18,7 @@ from typing import Any, Callable, Literal, Optional, Union
 
 from _pyodide._base import CodeRunner, should_quiet
 
-__all__ = ["Console", "PyodideConsole", "repr_shorten", "ConsoleFuture"]
+__all__ = ["Console", "PyodideConsole", "BANNER", "repr_shorten", "ConsoleFuture"]
 
 
 BANNER = f"""
