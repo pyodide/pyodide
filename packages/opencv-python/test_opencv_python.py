@@ -29,13 +29,6 @@ def compare_with_reference_image(selenium, reference_image, var="img", grayscale
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
-def test_import():
-    import cv2
-
-    print(cv2.__version__)
-
-
-@run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_image_extensions():
     import cv2 as cv
     import numpy as np
