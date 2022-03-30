@@ -11,26 +11,20 @@ from pyodide_build.common import UNVENDORED_STDLIB_MODULES
 
 
 def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
-    info = dict(info)
     # keep only flags related to the current browser
-    flags_to_remove = ["firefox", "chrome", "node"]
-    flags_to_remove.remove(browser)
-    for browser in flags_to_remove:
-        for key in list(info.keys()):
-            if key.endswith(browser):
-                del info[key]
-    return info
+    suffix = "-" + browser
+    result = {key.removesuffix(suffix): value for key, value in info.items()}
+    if "skip" in info and f"skip{suffix}" in info:
+        result["skip"] = info["skip"] + info[f"skip{suffix}"]
+    return result
 
 
 def possibly_skip_test(request, info: dict[str, Any]) -> dict[str, Any]:
-    for reason in (
-        reason for (flag, reason) in info.items() if flag.startswith("segfault")
-    ):
-        pytest.skip(f"known segfault: {reason}")
+    if "segfault" in info:
+        pytest.skip(f"known segfault: {info['segfault']}")
 
-    for reason in (
-        reason for [flag, reason] in info.items() if flag.startswith("xfail")
-    ):
+    if "xfail" in info:
+        reason = info["xfail"]
         if request.config.option.run_xfail:
             request.applymarker(
                 pytest.mark.xfail(
