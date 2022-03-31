@@ -402,8 +402,8 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * purpose you like.
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
-  API.interrupt_buffer = interrupt_buffer;
-  Module._set_pyodide_callback(!!interrupt_buffer);
+  Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = !!interrupt_buffer;
+  Module.Py_EmscriptenSignalBuffer = interrupt_buffer;
 }
 
 /**

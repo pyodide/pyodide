@@ -1,0 +1,103 @@
+From 7397f587c65890c356318d13ce7a918692c47718 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 30 Mar 2022 14:50:30 -0700
+Subject: [PATCH] Interrupt handling
+
+---
+ Modules/signalmodule.c | 31 +++++++++++++++++++++++++++++++
+ Python/ceval.c         | 25 +++++++++++++++++++++++++
+ 2 files changed, 56 insertions(+)
+
+diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
+index 96881d4a49..d6fe1f5f87 100644
+--- a/Modules/signalmodule.c
++++ b/Modules/signalmodule.c
+@@ -1768,11 +1768,42 @@ PyErr_CheckSignals(void)
+     return _PyErr_CheckSignalsTstate(tstate);
+ }
+ 
++#if defined(__EMSCRIPTEN__)
++
++#include <emscripten.h>
++EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
++    if(!Module.Py_EmscriptenSignalBuffer){
++        return 0;
++    }
++    let result = Module.Py_EmscriptenSignalBuffer[0];
++    Module.Py_EmscriptenSignalBuffer[0] = 0;
++    return result;
++});
++
++void
++_Py_CheckEmscriptenSignals(void)
++{
++    int signal = _Py_CheckEmscriptenSignals_Helper();
++    if (signal) {
++        PyErr_SetInterruptEx(signal);
++    }
++}
++
++
++int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
++
++#endif
+ 
+ /* Declared in cpython/pyerrors.h */
+ int
+ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
+ {
++    #if defined(__EMSCRIPTEN__)
++    if (Py_EMSCRIPTEN_SIGNAL_HANDLING) {
++       _Py_CheckEmscriptenSignals();
++    }
++    #endif
++
+     if (!_Py_atomic_load(&is_tripped)) {
+         return 0;
+     }
+diff --git a/Python/ceval.c b/Python/ceval.c
+index ab10b4166d..0a321ab4b5 100644
+--- a/Python/ceval.c
++++ b/Python/ceval.c
+@@ -1152,6 +1152,25 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
+     return _PyEval_EvalFrame(tstate, f, throwflag);
+ }
+ 
++#if defined(__EMSCRIPTEN__)
++
++extern int Py_EMSCRIPTEN_SIGNAL_HANDLING;
++void _Py_CheckEmscriptenSignals(void);
++
++static int
++emscripten_signal_clock = 50;
++
++static int
++periodically_check_emscripten_signals()
++{
++    emscripten_signal_clock--;
++    if (emscripten_signal_clock == 0) {
++        emscripten_signal_clock = 50;
++        _Py_CheckEmscriptenSignals();
++    }
++}
++
++#endif
+ 
+ /* Handle signals, pending calls, GIL drop request
+    and asynchronous exception */
+@@ -1161,6 +1180,12 @@ eval_frame_handle_pending(PyThreadState *tstate)
+     _PyRuntimeState * const runtime = &_PyRuntime;
+     struct _ceval_runtime_state *ceval = &runtime->ceval;
+ 
++    #if defined(__EMSCRIPTEN__)
++    if (Py_EMSCRIPTEN_SIGNAL_HANDLING) {
++        periodically_check_emscripten_signals();
++    }
++    #endif
++
+     /* Pending signals */
+     if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
+         if (handle_signals(tstate) != 0) {
+-- 
+2.25.1
+
