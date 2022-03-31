@@ -415,10 +415,8 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
  * during execution of C code.
  */
 export function checkInterrupt() {
-  if (API.interrupt_buffer[0] === 2) {
-    API.interrupt_buffer[0] = 0;
-    Module._PyErr_SetInterrupt();
-    API.runPython("");
+  if (Module.__PyErr_CheckSignals()) {
+    Module._pythonexc2js();
   }
 }
 
