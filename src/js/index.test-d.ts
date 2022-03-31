@@ -162,6 +162,6 @@ async function main() {
 
   pyodide.unpackArchive(new Uint8Array(40), "tar");
   pyodide.unpackArchive(new Uint8Array(40), "tar", {
-    extract_dir: "/some/path",
+    extractDir: "/some/path",
   });
 }
