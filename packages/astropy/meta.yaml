@@ -1,15 +1,10 @@
 package:
   name: astropy
-  version: 5.0.1
+  version: 5.0.2
 source:
-  url: https://files.pythonhosted.org/packages/91/a8/619de6e60fe461e3c7e908ec6fa04333b91249e7877a42485b2df981fdcb/astropy-5.0.1.tar.gz
-  sha256: 6382cde6a205aa0b16a0d5e61c0c0131ebd4f0174d6c73e2964f4bee132a9027
-  patches:
-    - patches/0001-Move-ssl-import-into-functions-to-avoid-import-error.patch
-    - patches/0002-Move-concurrent.futures-import-into-function-to-avoi.patch
+  url: https://files.pythonhosted.org/packages/10/3d/87d1dc421e369540184de23c31f2c2e60e18750322919552aba09f05f7be/astropy-5.0.2.tar.gz
+  sha256: 449f0ba5e7292457eed37550b047444751a606e7b8a34f93b1c28d0bb63e7f40
 build:
-  script: |
-    pip install extension-helpers
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false

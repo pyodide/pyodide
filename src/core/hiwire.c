@@ -30,6 +30,10 @@ EM_JS(bool, hiwire_to_bool, (JsRef val), {
 });
 // clang-format on
 
+#ifdef DEBUG_F
+bool tracerefs;
+#endif
+
 EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
@@ -64,7 +68,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.new_value = function(jsval)
   {
     // Should we guard against duplicating standard values?
-    // Probably not worth it for performance: it's harmless to ocassionally
+    // Probably not worth it for performance: it's harmless to occasionally
     // duplicate. Maybe in test builds we could raise if jsval is a standard
     // value?
     while (_hiwire.objects.has(_hiwire.counter[0])) {
@@ -83,8 +87,10 @@ EM_JS_NUM(int, hiwire_init, (), {
       many_objects_warning_threshold += 100;
     }
 #endif
-#ifdef HW_TRACE_REFS
-    console.warn("hw.new_value", idval, jsval);
+#ifdef DEBUG_F
+    if (DEREF_U8(_tracerefs, 0)) {
+      console.warn("hw.new_value", idval, jsval);
+    }
 #endif
     return idval;
   };
@@ -151,6 +157,11 @@ EM_JS_NUM(int, hiwire_init, (), {
       // We don't reference count interned values.
       return;
     }
+#ifdef DEBUG_F
+    if(DEREF_U8(_tracerefs, 0)){
+      console.warn("hw.decref", idval, _hiwire.objects.get(idval));
+    }
+#endif
     let new_refcnt = --_hiwire.objects.get(idval)[1];
     if (new_refcnt === 0) {
       _hiwire.objects.delete(idval);
@@ -158,7 +169,15 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
-  Hiwire.incref = function(idval) { _hiwire.objects.get(idval)[1]++; };
+  Hiwire.incref = function(idval)
+  {
+    _hiwire.objects.get(idval)[1]++;
+#ifdef DEBUG_F
+    if (DEREF_U8(_tracerefs, 0)) {
+      console.warn("hw.incref", idval, _hiwire.objects.get(idval));
+    }
+#endif
+  };
 
   Hiwire.pop_value = function(idval)
   {

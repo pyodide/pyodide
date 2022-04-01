@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="20220213-chrome97-firefox96"
+PYODIDE_IMAGE_TAG="20220317-chrome99-firefox98-py310"
 PYODIDE_PREBUILT_IMAGE_TAG="0.19.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
@@ -11,13 +11,12 @@ DOCKER_INTERACTIVE="--interactive"
 
 USER_HOME="/src/.docker_home"
 USER_NAME="$(id -u -n)"
-USER_PASS="x"
 USER_ID="$(id -u)"
 USER_GID="$(id -g)"
 USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
 USER_INTERPRETER="/sbin/nologin"
-USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
-USER_FLAG="--user $USER_ID:$USER_GID"
+USER_FLAG=("--user" "$USER_ID:$USER_GID")
+HEALTHCHECK_MESSAGE="Done initialization"
 
 set -eo pipefail
 
@@ -83,7 +82,7 @@ do
         shift
       ;;
       --root)
-        USER_FLAG=""
+        USER_FLAG=()
         shift
       ;;
       -*)
@@ -91,7 +90,7 @@ do
         error
       ;;
       *)
-        DOCKER_COMMAND="$@"
+        DOCKER_COMMAND="$*"
         break
       ;;
   esac
@@ -104,14 +103,14 @@ PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-${DEFAULT_PYODIDE_DOCKER_IMAGE}}
 # in case the port is not a number, do not bind the port
 case $PYODIDE_SYSTEM_PORT in
   none)
-  PORT_CONFIGURATION_LINE=""
+  PORT_CONFIGURATION_LINE=()
   ;;
   ''|*[!0-9]*) # contains a non-digit character, therefore it is not a number
   echo "WARNING: Invalid port argument '$PYODIDE_SYSTEM_PORT'. Port binding disabled."
-  PORT_CONFIGURATION_LINE=""
+  PORT_CONFIGURATION_LINE=()
   ;;
   *)
-  PORT_CONFIGURATION_LINE="-p $PYODIDE_SYSTEM_PORT:$PYODIDE_DOCKER_PORT"
+  PORT_CONFIGURATION_LINE=("-p" "$PYODIDE_SYSTEM_PORT:$PYODIDE_DOCKER_PORT")
   ;;
 esac
 
@@ -121,25 +120,41 @@ mkdir -p .docker_home
 # then run forever
 CONTAINER=$(\
   docker run \
-    $PORT_CONFIGURATION_LINE \
+    "${PORT_CONFIGURATION_LINE[@]}" \
     -d --rm \
-    -v $PWD:/src \
+    -v "$PWD":/src \
     --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash -c " \
-      echo '${USER_ACCOUNT_INFO}' >> /etc/passwd ; \
+      groupadd '$USER_GID'; \
+      useradd \
+        --home-dir '$USER_HOME' \
+        --uid '$USER_ID' \
+        --gid '$USER_GID' \
+        --comment '$USER_COMMENT_FIELD' \
+        --shell '$USER_INTERPRETER' \
+        --groups sudo  \
+        $USER_NAME \
+      ; \
+      echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+      echo '$HEALTHCHECK_MESSAGE'; \
       tail -f /dev/null \
     " \
 )
 
+until docker logs "$CONTAINER" 2>&1 | grep -q "$HEALTHCHECK_MESSAGE"; do
+  echo "Waiting for initialization to finish..."
+  sleep 0.2
+done
+
 EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
 docker exec \
-  $DOCKER_INTERACTIVE --tty \
-  $USER_FLAG \
-  $CONTAINER \
+  "$DOCKER_INTERACTIVE" --tty \
+  "${USER_FLAG[@]}" \
+  "$CONTAINER" \
   /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
-docker kill $CONTAINER > /dev/null
+docker kill "$CONTAINER" > /dev/null
 exit $EXIT_STATUS

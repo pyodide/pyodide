@@ -1,9 +1,10 @@
 This comes from #541. We let it as is in case it helps building on Mac.
 
 diff --git a/setupext.py b/setupext.py
+index e41ab98fe1..d0e26d484d 100644
 --- a/setupext.py
 +++ b/setupext.py
-@@ -665,6 +665,7 @@ class BackendMacOSX(OptionalPackage):
+@@ -724,6 +724,7 @@ class BackendMacOSX(OptionalPackage):
      name = 'macosx'
  
      def check(self):
@@ -12,4 +13,5 @@ diff --git a/setupext.py b/setupext.py
              raise Skipped("Mac OS-X only")
          return super().check()
 -- 
-2.20.1
+2.35.1
+

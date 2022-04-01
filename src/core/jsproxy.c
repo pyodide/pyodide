@@ -101,8 +101,11 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
-#ifdef HW_TRACE_REFS
-  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#ifdef DEBUG_F
+  extern bool tracerefs;
+  if (tracerefs) {
+    printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+  }
 #endif
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
@@ -291,8 +294,7 @@ JsProxy_GetIter(PyObject* o)
 
 /**
  * next overload. Controlled by IS_ITERATOR.
- * TODO: Should add a similar send method for generator support.
- * Python 3.10 has a different way to handle this.
+ * TODO: Implement Py_am_send method for generator support
  */
 static PyObject*
 JsProxy_IterNext(PyObject* o)
@@ -719,10 +721,10 @@ JsProxy_toPy(PyObject* self,
   }
   PyObject* result =
     js2python_convert(GET_JSREF(self), depth, default_converter_js);
-  if (default_converter_js != NULL) {
+  if (pyproxy_Check(default_converter_js)) {
     destroy_proxy(default_converter_js, NULL);
-    hiwire_decref(default_converter_js);
   }
+  hiwire_decref(default_converter_js);
   return result;
 }
 
@@ -992,8 +994,11 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
-#ifdef HW_TRACE_REFS
-  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#ifdef DEBUG_F
+  extern bool tracerefs;
+  if (tracerefs) {
+    printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+  }
 #endif
   return 0;
 }
@@ -1935,8 +1940,8 @@ JsProxy_create_subtype(int flags)
   FAIL_IF_NULL(result);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
-    // member __vectorcall_offset__ but it doesn't work in 3.8. I like this
-    // approach better.
+    // member __vectorcall_offset__, we might consider switching to using that
+    // approach.
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }

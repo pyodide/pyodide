@@ -1,4 +1,4 @@
-import { Module, API } from "./module.js";
+import { Module, API, Tests } from "./module.js";
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -46,7 +46,7 @@ const DEFAULT_CHANNEL = "default channel";
 // Regexp for validating package name and URI
 const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
-function _uri_to_package_name(package_uri: string): string {
+function _uri_to_package_name(package_uri: string): string | undefined {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
     let wheel_name = match[1].toLowerCase();
@@ -171,13 +171,14 @@ async function installPackage(name: string, buffer: Uint8Array) {
       imports: [] as string[],
     };
   }
-  const file_name = pkg.file_name;
+  const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
-  const dynlibs = API.package_loader.unpack_buffer(
-    file_name,
+  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
     buffer,
-    pkg.install_dir
-  );
+    filename,
+    target: pkg.install_dir,
+    calculate_dynlibs: true,
+  });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
@@ -202,6 +203,7 @@ function createLock() {
     let releaseLock: () => void;
     _lock = new Promise((resolve) => (releaseLock = resolve));
     await old_lock;
+    // @ts-ignore
     return releaseLock;
   }
   return acquireLock;
@@ -237,18 +239,29 @@ async function loadDynlib(lib: string, shared: boolean) {
     const module = await Module.loadWebAssemblyModule(byteArray, {
       loadAsync: true,
       nodelete: true,
+      allowUndefined: true,
     });
     Module.preloadedWasm[lib] = module;
+    Module.preloadedWasm[lib.split("/").pop()!] = module;
     if (shared) {
       Module.loadDynamicLibrary(lib, {
         global: true,
         nodelete: true,
       });
     }
+  } catch (e) {
+    if (e.message.includes("need to see wasm magic number")) {
+      console.warn(
+        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
+      );
+      return;
+    }
+    throw e;
   } finally {
     releaseDynlibLock();
   }
 }
+Tests.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 
@@ -293,7 +306,7 @@ export async function loadPackage(
     toLoad.delete(pkg);
     toLoadShared.delete(pkg);
     // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-    // depedency, which was previously overridden.
+    // dependency, which was previously overridden.
     if (loaded === uri || uri === DEFAULT_CHANNEL) {
       messageCallback(`${pkg} already loaded from ${loaded}`);
     } else {

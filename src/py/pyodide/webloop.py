@@ -95,7 +95,9 @@ class WebLoop(asyncio.AbstractEventLoop):
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
 
-    def call_soon(self, callback: Callable, *args, context: contextvars.Context = None):
+    def call_soon(
+        self, callback: Callable, *args, context: contextvars.Context | None = None
+    ):
         """Arrange for a callback to be called as soon as possible.
 
         Any positional arguments after the callback will be passed to
@@ -107,7 +109,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        self, callback: Callable, *args, context: contextvars.Context = None
+        self, callback: Callable, *args, context: contextvars.Context | None = None
     ):
         """Like ``call_soon()``, but thread-safe.
 
@@ -120,7 +122,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: contextvars.Context | None = None,
     ):
         """Arrange for a callback to be called at a given time.
 
@@ -156,7 +158,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         when: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: contextvars.Context | None = None,
     ):
         """Like ``call_later()``, but uses an absolute time.
 
@@ -373,7 +375,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                     traceback.print_exc()
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
+# Type issue fixed in next release of mypy (0.940)
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[misc, valid-type]
     """
     A simple event loop policy for managing WebLoop based event loops.
     """

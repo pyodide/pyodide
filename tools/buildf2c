@@ -70,11 +70,7 @@ tar -xvf f2c.tar
 
 gunzip -rf f2c/*
 
-cd f2c
-
-unzip libf2c.zip -d libf2c
-
-cd ..
+(cd f2c && unzip libf2c.zip -d libf2c)
 
 echo "... done."
 
@@ -118,7 +114,7 @@ echo "4. Creating and installing f2c header file f2c.h ..."
 
 echo "----------------------------------------------------"
 
-cd f2c/libf2c
+cd f2c/libf2c || exit
 
 make f2c.h
 
@@ -142,7 +138,7 @@ echo "... done."
 
 echo "-----------------------------------------------------"
 
-echo "5. Creating and installing f2c library "libf2c.a" ..."
+echo "5. Creating and installing f2c library \"libf2c.a\" ..."
 
 echo "-----------------------------------------------------"
 
@@ -174,7 +170,7 @@ echo "6. Creating and installing f2c translator ..."
 
 echo "---------------------------------------------"
 
-cd ../src
+cd ../src || exit
 
 gcc -o xsum xsum.c
 
@@ -212,7 +208,7 @@ echo "... done."
 
 # 3. Eliminate '-u MAIN__' at the bottom of the 'fc' script.   #
 
-#    You will have to explitly load FORTRAN MAIN programs      #
+#    You will have to explicitly load FORTRAN MAIN programs      #
 
 #    (explicitly mention the relevant .f or .o file).          #
 
@@ -224,15 +220,16 @@ echo "7. Installing fc script ..."
 
 echo "---------------------------"
 
+# shellcheck disable=SC2103
 cd ..
 
-mv fc fc.orig
+mv "fc" fc.orig
 
-sed 's/ -Olimit 2000//g; s/ -lm//g; s/ -u MAIN__//g' fc.orig > fc
+sed 's/ -Olimit 2000//g; s/ -lm//g; s/ -u MAIN__//g' fc.orig > "fc"
 
-chmod +x fc
+chmod +x "fc"
 
-cp fc /usr/local/bin/
+cp "fc" /usr/local/bin/
 
 echo "... done."
 
@@ -268,11 +265,11 @@ echo "9. Cleaning up ..."
 
 echo "------------------"
 
-cd src
+cd src || exit
 
 make clean
 
-cd ../libf2c
+cd ../libf2c || exit
 
 make clean
 

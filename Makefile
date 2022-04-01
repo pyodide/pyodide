@@ -59,6 +59,11 @@ build/pyodide.asm.js: \
 		let clearImmediate = globalThis.clearImmediate;\
 		let baseName, fpcGOT, dyncallGOT, fpVal, dcVal;\
 	' build/pyodide.asm.js
+	# Remove last 6 lines of pyodide.asm.js, see issue #2282
+	# Hopefully we will remove this after emscripten fixes it, upstream issue
+	# emscripten-core/emscripten#16518
+	# Sed nonsense from https://stackoverflow.com/a/13383331
+	sed -i -n -e :a -e '1,6!{P;N;D;};N;ba' build/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
@@ -175,9 +180,36 @@ src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
 
 # Stdlib modules that we repackage as standalone packages
 
+TEST_EXTENSIONS= \
+		_testinternalcapi.so \
+		_testcapi.so \
+		_testbuffer.so \
+		_testimportmultiple.so \
+		_testmultiphase.so \
+		_ctypes_test.so
+TEST_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
+
 # TODO: also include test directories included in other stdlib modules
 build/test.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar test
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
+							   -I Include/internal/ -DPy_BUILD_CORE_MODULE
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testcapimodule.c -o Modules/_testcapi.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testbuffer.c -o Modules/_testbuffer.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
+	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
+
+	for testname in $(TEST_EXTENSIONS); do \
+		cd $(CPYTHONBUILD) && \
+		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
+		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
+	done
+
+	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/test.tar \
+		test $(TEST_EXTENSIONS) unittest/test sqlite3/test ctypes/test
+
+	cd $(CPYTHONLIB) && rm $(TEST_EXTENSIONS)
+
 
 build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/build/distutils.tar distutils

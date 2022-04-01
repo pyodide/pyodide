@@ -28,20 +28,24 @@ def make_parser() -> argparse.ArgumentParser:
         ]:
             # Likely building documentation, skip private API
             continue
-        parser = module.make_parser(subparsers.add_parser(command_name))  # type: ignore
-        parser.set_defaults(func=module.main)  # type: ignore
+        parser = module.make_parser(subparsers.add_parser(command_name))
+        parser.set_defaults(func=module.main)
     return main_parser
 
 
 def main():
     if not os.environ.get("__LOADED_PYODIDE_ENV"):
+        from .common import get_hostsitepackages
+
         PYODIDE_ROOT = str(pathlib.Path(__file__).parents[2].resolve())
         os.environ["PYODIDE_ROOT"] = PYODIDE_ROOT
         os.environ.update(get_make_environment_vars())
-        HOSTINSTALLDIR = os.environ["HOSTINSTALLDIR"]
-        os.environ[
-            "PYTHONPATH"
-        ] = f"{HOSTINSTALLDIR}/lib/python:{PYODIDE_ROOT}/pyodide-build/"
+        hostsitepackages = get_hostsitepackages()
+        pythonpath = [
+            hostsitepackages,
+            f"{PYODIDE_ROOT}/pyodide-build/",
+        ]
+        os.environ["PYTHONPATH"] = ":".join(pythonpath)
         os.environ["BASH_ENV"] = ""
         os.environ["__LOADED_PYODIDE_ENV"] = "1"
 

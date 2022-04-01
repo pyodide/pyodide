@@ -68,7 +68,7 @@ The interrupt system above allows interruption of Python code and also of C code
 that opts to allow itself to be interrupted by periodically calling
 `PyErr_CheckSignals`. There is also a function {any}`pyodide.checkInterrupt` that
 allows JavasSript functions called from Python to check for an interrupt. As a
-simple example, we can implement an interruptable sleep function using
+simple example, we can implement an interruptible sleep function using
 `Atomics.wait`:
 
 ```js

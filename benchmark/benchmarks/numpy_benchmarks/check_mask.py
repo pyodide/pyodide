@@ -1,4 +1,4 @@
-# setup: n=100 ; import numpy; db = numpy.random.randint(2, size=(n, 4), dtype='bool')  # noqa
+# setup: n=100 ; import numpy; db = numpy.random.randint(2, size=(n, 4), dtype='bool')
 # run: check_mask(db)
 # from:
 # http://stackoverflow.com/questions/34500913/numba-slower-for-numpy-bitwise-and-on-boolean-arrays

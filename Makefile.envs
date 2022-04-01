@@ -1,7 +1,9 @@
-export PYVERSION ?= 3.9.5
-export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
+export PYVERSION ?= 3.10.2
+export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
 
-# BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
+export PLATFORM_TRIPLET=wasm32-emscripten
+
+# BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each
 # command.
 export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
@@ -19,9 +21,11 @@ export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
 export CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
+export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
+export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
@@ -30,7 +34,9 @@ export PYODIDE_BASE_URL?=./
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
-export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.21.4/build/temp.emscripten_wasm32-$(PYMAJOR).$(PYMINOR)
+export NUMPY_LIB=$(HOSTINSTALLDIR)/numpy-wasm-libs
+export OPEN_SSL_ROOT=$(PYODIDE_ROOT)/packages/openssl/build/openssl-1.1.1n/
+
 
 # This environment variable is used for packages to detect if they are built
 # for pyodide during build time
@@ -38,8 +44,8 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
-# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
 export DBGFLAGS=-g0
+# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
@@ -107,8 +113,9 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-I$(PYTHONINCLUDE) \
-	-sEXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
+export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
 
 .output_vars:
 	set

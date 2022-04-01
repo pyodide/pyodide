@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20220213-chrome97-firefox96
+    - image: pyodide/pyodide-env:20220317-chrome99-firefox98-py310
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -323,6 +323,10 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - run:
+          name: install requirements
+          command: |
+            pip3 install numpy matplotlib
       - run:
           name: benchmark
           command: |

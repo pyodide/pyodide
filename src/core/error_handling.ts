@@ -11,6 +11,38 @@ API.dump_traceback = function () {
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
 
+function ensureCaughtObjectIsError(e: any) {
+  if (typeof e === "string") {
+    // Sometimes emscripten throws a raw string...
+    e = new Error(e);
+  } else if (
+    typeof e !== "object" ||
+    e === null ||
+    typeof e.stack !== "string" ||
+    typeof e.message !== "string"
+  ) {
+    // We caught something really weird. Be brave!
+    let msg = `A value of type ${typeof e} with tag ${Object.prototype.toString.call(
+      e
+    )} was thrown as an error!`;
+    try {
+      msg += `\nString interpolation of the thrown value gives """${e}""".`;
+    } catch (e) {
+      msg += `\nString interpolation of the thrown value fails.`;
+    }
+    try {
+      msg += `\nThe thrown value's toString method returns """${e.toString()}""".`;
+    } catch (e) {
+      msg += `\nThe thrown value's toString method fails.`;
+    }
+    e = new Error(msg);
+  }
+  // Post conditions:
+  // 1. typeof e is object
+  // 2. hiwire_is_error(e) returns true
+  return e;
+}
+
 let fatal_error_occurred = false;
 /**
  * Signal a fatal error.
@@ -25,7 +57,7 @@ let fatal_error_occurred = false;
  * @private
  */
 API.fatal_error = function (e: any) {
-  if (e.pyodide_fatal_error) {
+  if (e && e.pyodide_fatal_error) {
     return;
   }
   if (fatal_error_occurred) {
@@ -34,14 +66,10 @@ API.fatal_error = function (e: any) {
     return;
   }
   if (typeof e === "number") {
-    // A C++ exception. Have to do some conversion work.
+    // Hopefully a C++ exception? Have to do some conversion work.
     e = convertCppException(e);
-  } else if (typeof e === "string") {
-    e = new Error(e);
-  } else if (typeof e !== "object") {
-    e = new Error(
-      `An object of type ${typeof e} was thrown as an error. toString returns ${e.toString()}`
-    );
+  } else {
+    e = ensureCaughtObjectIsError(e);
   }
   // Mark e so we know not to handle it later in EM_JS wrappers
   e.pyodide_fatal_error = true;
@@ -193,7 +221,7 @@ function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
 }
 
 Module.handle_js_error = function (e: any) {
-  if (e.pyodide_fatal_error) {
+  if (e && e.pyodide_fatal_error) {
     throw e;
   }
   if (e instanceof Module._PropagatePythonError) {
@@ -207,6 +235,16 @@ Module.handle_js_error = function (e: any) {
     // Try to restore the original Python exception.
     restored_error = Module._restore_sys_last_exception(e.__error_address);
   }
+  let stack: any;
+  let weirdCatch;
+  try {
+    stack = ErrorStackParser.parse(e);
+  } catch (_) {
+    weirdCatch = true;
+  }
+  if (weirdCatch) {
+    e = ensureCaughtObjectIsError(e);
+  }
   if (!restored_error) {
     // Wrap the JavaScript error
     let eidx = Hiwire.new_value(e);
@@ -215,7 +253,10 @@ Module.handle_js_error = function (e: any) {
     Module._Py_DecRef(err);
     Hiwire.decref(eidx);
   }
-  let stack = ErrorStackParser.parse(e);
+  if (weirdCatch) {
+    // In this case we have no stack frames so we can quit
+    return;
+  }
   if (isErrorStart(stack[0])) {
     while (isPyodideFrame(stack[0])) {
       stack.shift();
@@ -254,10 +295,6 @@ Module.handle_js_error = function (e: any) {
  *    easiest way is to only handle the exception in Python.
  */
 export class PythonError extends Error {
-  /**
-   * The Python traceback.
-   */
-  message: string;
   /**  The address of the error we are wrapping. We may later compare this
    * against sys.last_value.
    * WARNING: we don't own a reference to this pointer, dereferencing it

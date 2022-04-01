@@ -88,7 +88,7 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node.
 
     Fixes two crashes and separates documentation for destructured object
-    arguments into a series of separate arguement entires.
+    arguments into a series of separate argument entries.
     """
     kind = node.get("kindString")
     # if a class has no documented constructor, don't crash
@@ -185,7 +185,13 @@ def _type_name(self, type):
         return f"boolean (typeguard for {self._type_name(type['targetType'])})"
     if type_of_type == "reflection":
         return reflection_type_name(self, type)
-    raise AssertionError()
+    if type_of_type == "named-tuple-member":
+        name = type["name"]
+        type = self._type_name(type["element"])
+        return f"{name}: {type}"
+    raise NotImplementedError(
+        f"Cannot render type name for type_of_type={type_of_type}"
+    )
 
 
 TsAnalyzer._type_name = _type_name

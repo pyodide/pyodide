@@ -1,0 +1,14 @@
+package:
+  name: tqdm
+  version: 4.63.0
+source:
+  url: https://files.pythonhosted.org/packages/81/1c/93a2b77b97cdba15a59c3d2d03e53d3292158d1106d37f579069abd90ece/tqdm-4.63.0-py2.py3-none-any.whl
+  sha256: e643e071046f17139dea55b880dc9b33822ce21613b4a4f5ea57f202833dbc29
+test:
+  imports:
+    - tqdm
+about:
+  home: https://tqdm.github.io
+  PyPI: https://pypi.org/project/tqdm
+  summary: Fast, Extensible Progress Meter
+  license: MPLv2.0, MIT Licences

@@ -60,4 +60,10 @@ create_promise_handles(PyObject* onfulfilled,
 int
 pyproxy_init();
 
+// These are defined as an enum in Python.h but we want to use them in
+// pyproxy.ts.
+#define PYGEN_NEXT 1
+#define PYGEN_RETURN 0
+#define PYGEN_ERROR -1
+
 #endif /* PYPROXY_H */

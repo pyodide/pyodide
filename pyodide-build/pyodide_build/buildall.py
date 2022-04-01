@@ -19,7 +19,7 @@ from typing import Any, Optional
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import UNVENDORED_STDLIB_MODULES
+from .common import UNVENDORED_STDLIB_MODULES, find_matching_wheels
 from .io import parse_package_config
 
 
@@ -39,10 +39,10 @@ class BasePackage:
     run_dependencies: list[str]
     # All the following variables indicate host dependencies, meaning the dependencies
     # that are needed at build time
-    host_dependencies: List[str]
-    unbuilt_run_dependencies: Set[str]
-    host_dependents: Set[str]
-    unvendored_tests: Optional[Path] = None
+    host_dependencies: list[str]
+    unbuilt_run_dependencies: set[str]
+    host_dependents: set[str]
+    unvendored_tests: Path | None = None
     file_name: Optional[str] = None
     install_dir: str = "site"
 
@@ -107,7 +107,8 @@ class Package(BasePackage):
         self.host_dependents = set()
 
     def wheel_path(self) -> Path:
-        wheels = list((self.pkgdir / "dist").glob("*.whl"))
+        dist_dir = self.pkgdir / "dist"
+        wheels = list(find_matching_wheels(dist_dir.glob("*.whl")))
         if len(wheels) != 1:
             raise Exception(
                 f"Unexpected number of wheels {len(wheels)} when building {self.name}"
@@ -122,54 +123,42 @@ class Package(BasePackage):
         return None
 
     def build(self, outputdir: Path, args) -> None:
-        with open(self.pkgdir / "build.log.tmp", "w") as f:
-            p = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pyodide_build",
-                    "buildpkg",
-                    str(self.pkgdir / "meta.yaml"),
-                    "--cflags",
-                    args.cflags,
-                    "--cxxflags",
-                    args.cxxflags,
-                    "--ldflags",
-                    args.ldflags,
-                    "--target-install-dir",
-                    args.target_install_dir,
-                    "--host-install-dir",
-                    args.host_install_dir,
-                    # Either this package has been updated and this doesn't
-                    # matter, or this package is dependent on a package that has
-                    # been updated and should be rebuilt even though its own
-                    # files haven't been updated.
-                    "--force-rebuild",
-                ],
-                check=False,
-                stdout=f,
-                stderr=subprocess.STDOUT,
+
+        p = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pyodide_build",
+                "buildpkg",
+                str(self.pkgdir / "meta.yaml"),
+                "--cflags",
+                args.cflags,
+                "--cxxflags",
+                args.cxxflags,
+                "--ldflags",
+                args.ldflags,
+                "--target-install-dir",
+                args.target_install_dir,
+                "--host-install-dir",
+                args.host_install_dir,
+                # Either this package has been updated and this doesn't
+                # matter, or this package is dependent on a package that has
+                # been updated and should be rebuilt even though its own
+                # files haven't been updated.
+                "--force-rebuild",
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+        if log_dir and (self.pkgdir / "build.log").exists():
+            log_dir.mkdir(exist_ok=True, parents=True)
+            shutil.copy(
+                self.pkgdir / "build.log",
+                log_dir / f"{self.name}.log",
             )
-
-        # Don't overwrite build log if we didn't build the file.
-        # If the file didn't need to be rebuilt, the log will have exactly two lines.
-        rebuilt = True
-        with open(self.pkgdir / "build.log.tmp") as f:
-            try:
-                next(f)
-                next(f)
-                next(f)
-            except StopIteration:
-                rebuilt = False
-
-        if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
-            if args.log_dir and (self.pkgdir / "build.log").exists():
-                shutil.copy(
-                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
-                )
-        else:
-            (self.pkgdir / "build.log.tmp").unlink()
 
         if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
@@ -183,11 +172,11 @@ class Package(BasePackage):
         if self.library:
             return
         if self.shared_library:
-            file_path = shutil.make_archive(
-                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
-            )
+            file_path = Path(self.pkgdir / f"{self.name}-{self.version}.zip")
             shutil.copy(file_path, outputdir)
+            file_path.unlink()
             return
+
         shutil.copy(self.wheel_path(), outputdir)
         test_path = self.tests_path()
         if test_path:
@@ -382,9 +371,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set: dict[
-        str, None
-    ] = {}  # using dict keys for insertion order preservation
+    # Using dict keys for insertion order preservation
+    package_set: dict[str, None] = {}
 
     def builder(n):
         nonlocal queue_idx

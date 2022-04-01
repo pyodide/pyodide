@@ -322,7 +322,7 @@ def test_python2js_track_proxies(selenium):
         function check(l){
             for(let x of l){
                 if(pyodide.isPyProxy(x)){
-                    assert(() => x.$$.ptr === null);
+                    assert(() => x.$$.ptr === 0);
                 } else {
                     check(x);
                 }
@@ -1217,6 +1217,72 @@ def test_to_py_default_converter2(selenium):
             assert r[0] is r
             del r
         `);
+        """
+    )
+
+
+def test_to_js_default_converter(selenium):
+    selenium.run_js(
+        """
+        p = pyodide.runPython(`
+        class Pair:
+            def __init__(self, first, second):
+                self.first = first
+                self.second = second
+        p = Pair(1,2)
+        p
+        `);
+        let res = p.toJs({ default_converter(x, convert, cacheConversion){
+            let result = [];
+            cacheConversion(x, result);
+            result.push(convert(x.first));
+            result.push(convert(x.second));
+            return result;
+        }});
+        assert(() => res[0] === 1);
+        assert(() => res[1] === 2);
+        p.first = p;
+        let res2 = p.toJs({ default_converter(x, convert, cacheConversion){
+            let result = [];
+            cacheConversion(x, result);
+            result.push(convert(x.first));
+            result.push(convert(x.second));
+            return result;
+        }});
+        assert(() => res2[0] === res2);
+        assert(() => res2[1] === 2);
+        p.destroy();
+        """
+    )
+
+
+def test_to_js_default_converter2(selenium):
+    selenium.run_js(
+        """
+        let res = pyodide.runPython(`
+        class Pair:
+            def __init__(self, first, second):
+                self.first = first
+                self.second = second
+        p = Pair(1,2)
+        from js import Array
+        def default_converter(value, convert, cacheConversion):
+            result = Array.new()
+            cacheConversion(value, result)
+            result.push(convert(value.first))
+            result.push(convert(value.second))
+            return result
+        from pyodide import to_js
+        to_js(p, default_converter=default_converter)
+        `);
+        assert(() => res[0] === 1);
+        assert(() => res[1] === 2);
+        let res2 = pyodide.runPython(`
+        p.first = p
+        to_js(p, default_converter=default_converter)
+        `);
+        assert(() => res2[0] === res2);
+        assert(() => res2[1] === 2);
         """
     )
 

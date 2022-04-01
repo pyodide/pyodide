@@ -1,5 +1,5 @@
 FROM node:14.16.1-buster-slim AS node-image
-FROM python:3.9.5-slim-buster
+FROM python:3.10.2-slim-buster
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -8,7 +8,7 @@ RUN apt-get update \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2
+        gnupg2 libdbus-glib-1-2 sudo
 
 ADD docs/requirements-doc.txt requirements.txt /
 

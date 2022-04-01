@@ -155,7 +155,7 @@ class SeleniumWrapper:
     def load_pyodide(self):
         self.run_js(
             """
-            let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
+            let pyodide = await loadPyodide({ fullStdLib: false, jsglobals : self });
             self.pyodide = pyodide;
             globalThis.pyodide = pyodide;
             pyodide._api.inTestHoist = true; // improve some error messages for tests
@@ -164,7 +164,7 @@ class SeleniumWrapper:
 
     def initialize_global_hiwire_objects(self):
         """
-        There are a bunch of global objects that ocassionally enter the hiwire cache
+        There are a bunch of global objects that occasionally enter the hiwire cache
         but never leave. The refcount checks get angry about them if they aren't preloaded.
         We need to go through and touch them all once to keep everything okay.
         """
@@ -179,8 +179,6 @@ class SeleniumWrapper:
             pyodide._api.importlib.invalidate_caches;
             pyodide._api.package_loader.unpack_buffer;
             pyodide._api.package_loader.get_dynlibs;
-            pyodide._api._util_module = pyodide.pyimport("pyodide._util");
-            pyodide._api._util_module.unpack_buffer_archive;
             pyodide.runPython("");
             """
         )
@@ -465,7 +463,7 @@ def pytest_runtest_call(item):
     not possible to "Fail" a test from a fixture (no matter what you do, pytest
     sets the test status to "Error"). The approach suggested there is hook
     pytest_runtest_call as we do here. To get access to the selenium fixture, we
-    immitate the definition of pytest_pyfunc_call:
+    imitate the definition of pytest_pyfunc_call:
     https://github.com/pytest-dev/pytest/blob/6.2.2/src/_pytest/python.py#L177
 
     Pytest issue #5044:

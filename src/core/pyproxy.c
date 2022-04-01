@@ -8,6 +8,7 @@
 #include "js2python.h"
 #include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
+#include "pyproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
@@ -113,7 +114,8 @@ pyproxy_getflags(PyObject* pyobj)
     result |= HAS_GET;
   } else if (PyType_Check(pyobj)) {
     _Py_IDENTIFIER(__class_getitem__);
-    if (_PyObject_HasAttrId(pyobj, &PyId___class_getitem__)) {
+    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
+    if (PyObject_HasAttr(pyobj, oname)) {
       result |= HAS_GET;
     }
   }
@@ -479,7 +481,7 @@ finally:
 }
 
 /**
- * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * This sets up a call to _PyObject_Vectorcall. It's a helper function for
  * callPyObjectKwargs. This is the primary entrypoint from JavaScript into
  * Python code.
  *
@@ -578,66 +580,30 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
-/**
- * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
- * so in v3.10 this would be a simple API call wrapper like the rest of the code
- * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c).
- *
- * When the iterator is done, it returns NULL and sets StopIteration. We'll use
- * _pyproxyGen_FetchStopIterationValue below to get the return value of the
- * generator (again copying from YIELD_FROM).
- */
-JsRef
-_pyproxyGen_Send(PyObject* receiver, JsRef jsval)
+PySendResult
+_pyproxyGen_Send(PyObject* receiver, JsRef jsval, JsRef* result)
 {
   bool success = false;
   PyObject* v = NULL;
   PyObject* retval = NULL;
-  JsRef jsresult = NULL;
 
   v = js2python(jsval);
   FAIL_IF_NULL(v);
-  if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
-    retval = _PyGen_Send((PyGenObject*)receiver, v);
-  } else if (v == Py_None) {
-    retval = Py_TYPE(receiver)->tp_iternext(receiver);
-  } else {
-    _Py_IDENTIFIER(send);
-    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+  PySendResult status = PyIter_Send(receiver, v, &retval);
+  if (status == PYGEN_ERROR) {
+    FAIL();
   }
-  FAIL_IF_NULL(retval);
-
-  jsresult = python2js(retval);
-  FAIL_IF_NULL(jsresult);
+  *result = python2js(retval);
+  FAIL_IF_NULL(*result);
 
   success = true;
 finally:
   Py_CLEAR(v);
   Py_CLEAR(retval);
   if (!success) {
-    hiwire_CLEAR(jsresult);
+    status = PYGEN_ERROR;
   }
-  return jsresult;
-}
-
-/**
- * If StopIteration was set, return the value it was set with. Otherwise, return
- * NULL.
- */
-JsRef
-_pyproxyGen_FetchStopIterationValue()
-{
-  PyObject* val = NULL;
-  // cf implementation of YIELD_FROM opcode in ceval.c
-  // _PyGen_FetchStopIterationValue returns an error code, but it seems
-  // redundant
-  _PyGen_FetchStopIterationValue(&val);
-  if (val == NULL) {
-    return NULL;
-  }
-  JsRef result = python2js(val);
-  Py_CLEAR(val);
-  return result;
+  return status;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -846,7 +812,7 @@ size_t buffer_struct_size = sizeof(buffer_struct);
  *
  * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
  * determine the locations of: the first element of the buffer, the earliest
- * element of the buffer in memory the lastest element of the buffer in memory
+ * element of the buffer in memory the latest element of the buffer in memory
  * (plus one itemsize).
  *
  * We will use this information to slice out a subarray of the wasm heap that

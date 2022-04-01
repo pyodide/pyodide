@@ -1,4 +1,4 @@
-# setup: import numpy as np ; N = 100000 ; a = np.random.random(N); b = 0.1; c =1.1  # noqa
+# setup: import numpy as np ; N = 100000 ; a = np.random.random(N); b = 0.1; c =1.1
 # run: log_likelihood(a, b, c)
 # from: http://arogozhnikov.github.io/2015/09/08/SpeedBenchmarks.html
 import numpy
