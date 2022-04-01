@@ -166,13 +166,11 @@ class ConsoleFuture(Future):
 
     def __init__(
         self,
-        syntax_check: (
-            Literal["incomplete"] | Literal["syntax-error"] | Literal["complete"]
-        ),
+        syntax_check: (Literal["incomplete", "syntax-error", "complete"]),
     ):
         super().__init__()
         self.syntax_check: (
-            Literal["incomplete"] | Literal["syntax-error"] | Literal["complete"]
+            Literal["incomplete", "syntax-error", "complete"]
         ) = syntax_check
         self.formatted_error: str | None = None
 
