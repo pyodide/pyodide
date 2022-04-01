@@ -49,9 +49,9 @@ repos:
     rev: "v0.942"
     hooks:
       - id: mypy
-        args: [--ignore-missing-imports]
-        files: ^(src/|packages/|conftest.py|docs/)
-        exclude: (^packages/.*/setup.py|/src)
+        files: ^(packages/.*/src|src|docs|pyodide-build/pyodide_build)
+        exclude: setup.py
+        args: []
         additional_dependencies: &mypy-deps
           - packaging
           - types-docutils
@@ -59,15 +59,10 @@ repos:
           - types-setuptools
           - numpy
       - id: mypy
-        name: mypy-srcs
-        files: ^packages/.*/src
-        exclude: setup.py
-        args: []
-        additional_dependencies: *mypy-deps
-      - id: mypy
-        name: mypy-pyodide-build
-        files: ^pyodide-build/pyodide_build/
-        args: []
+        name: mypy-tests
+        args: [--ignore-missing-imports]
+        files: ^(packages/|conftest.py)
+        exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
