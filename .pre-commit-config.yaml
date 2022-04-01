@@ -50,9 +50,9 @@ repos:
     hooks:
       - id: mypy
         args:
-          - --show-error-codes
           - --ignore-missing-imports
-        files: ^(src/|packages/.*/test|conftest.py|docs/)
+        files: ^(src/|packages/|conftest.py|docs/)
+        exclude: ^packages/.*/setup.py
         additional_dependencies: &mypy-deps
           - packaging
           - types-docutils
@@ -61,13 +61,12 @@ repos:
       - id: mypy
         name: mypy-micropip
         files: ^packages/micropip/src/
-        args: &mypy-args
-          - --show-error-codes
+        args: []
         additional_dependencies: *mypy-deps
       - id: mypy
         name: mypy-pyodide-build
         files: ^pyodide-build/pyodide_build/
-        args: *mypy-args
+        args: []
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
