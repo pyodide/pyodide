@@ -1,7 +1,7 @@
 From 90b3929743198f7c7bd19bc9f81bdbd7da0bf972 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:18:12 -0700
-Subject: [PATCH 03/12] dont include execinfo
+Subject: [PATCH 03/13] dont include execinfo
 
 ---
  numpy/core/src/multiarray/temp_elide.c | 2 +-

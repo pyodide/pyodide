@@ -1,7 +1,7 @@
 From 61f19d3c2da35468d1ae45b432d2ff37b1e89fcb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:17:17 -0700
-Subject: [PATCH 01/12] disable maybe uninitialized
+Subject: [PATCH 01/13] disable maybe uninitialized
 
 ---
  numpy/linalg/umath_linalg.c.src | 1 -
