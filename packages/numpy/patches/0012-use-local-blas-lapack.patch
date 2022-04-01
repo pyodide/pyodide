@@ -1,4 +1,4 @@
-From 2c8621f791857028764151901f975286740b72b7 Mon Sep 17 00:00:00 2001
+From 12917e4c1b9d64f3896989d767a4cec6a15684d6 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:25:44 -0700
 Subject: [PATCH 12/12] use local blas lapack
