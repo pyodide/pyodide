@@ -49,18 +49,19 @@ repos:
     rev: "v0.942"
     hooks:
       - id: mypy
-        args:
-          - --ignore-missing-imports
+        args: [--ignore-missing-imports]
         files: ^(src/|packages/|conftest.py|docs/)
-        exclude: ^packages/.*/setup.py
+        exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: &mypy-deps
           - packaging
           - types-docutils
           - types-pyyaml
           - types-setuptools
+          - numpy
       - id: mypy
-        name: mypy-micropip
-        files: ^packages/micropip/src/
+        name: mypy-srcs
+        files: ^packages/.*/src
+        exclude: setup.py
         args: []
         additional_dependencies: *mypy-deps
       - id: mypy

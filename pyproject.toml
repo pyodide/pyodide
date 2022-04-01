@@ -1,7 +1,7 @@
 [tool.mypy]
 warn_unused_configs = true
 python_version = "3.10"
-mypy_path = "src/py"
+mypy_path = ["src/py", "pyodide-build"]
 check_untyped_defs = true
 show_error_codes = true
 
@@ -13,6 +13,8 @@ module = [
   "pyodide_js",
   "pytest",
   "ruamel.yaml",
+  "matplotlib.*",
+  "PIL.*",
 ]
 ignore_missing_imports = true
 
