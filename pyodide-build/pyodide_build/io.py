@@ -196,16 +196,20 @@ def check_package_config_generate_errors(
 
 
 def check_package_config(
-    config: dict[str, Any], file_path: Optional[Union[Path, str]] = None
-):
+    config: dict[str, Any],
+    file_path: Optional[Union[Path, str]] = None,
+    raise_errors: bool = True,
+) -> list[str]:
     errors_msg = list(check_package_config_generate_errors(config))
 
     if errors_msg:
         if file_path is None:
             file_path = Path("meta.yaml")
-        raise ValueError(
-            f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
-        )
+        if raise_errors:
+            raise ValueError(
+                f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
+            )
+    return errors_msg
 
 
 def parse_package_config(path: Union[Path, str], check: bool = True) -> dict[str, Any]:

@@ -37,10 +37,8 @@ class BasePackage:
     library: bool
     shared_library: bool
     run_dependencies: list[str]
-    # All the following variables indicate host dependencies, meaning the dependencies
-    # that are needed at build time
     host_dependencies: list[str]
-    unbuilt_run_dependencies: set[str]
+    unbuilt_host_dependencies: set[str]
     host_dependents: set[str]
     unvendored_tests: Path | None = None
     file_name: Optional[str] = None
@@ -72,7 +70,7 @@ class StdLibPackage(BasePackage):
         self.shared_library = False
         self.run_dependencies = []
         self.host_dependencies = []
-        self.unbuilt_run_dependencies = set()
+        self.unbuilt_host_dependencies = set()
         self.host_dependents = set()
         self.install_dir = "lib"
 
@@ -103,7 +101,7 @@ class Package(BasePackage):
 
         self.run_dependencies = self.meta["requirements"].get("run", [])
         self.host_dependencies = self.meta["requirements"].get("host", [])
-        self.unbuilt_run_dependencies = set(self.run_dependencies)
+        self.unbuilt_host_dependencies = set(self.host_dependencies)
         self.host_dependents = set()
 
     def wheel_path(self) -> Path:
@@ -351,7 +349,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     # Remove the packages we've already built from the dependency sets of
     # the remaining ones
     for pkg_name in needs_build:
-        pkg_map[pkg_name].unbuilt_run_dependencies.difference_update(already_built)
+        pkg_map[pkg_name].unbuilt_host_dependencies.difference_update(already_built)
 
     if already_built:
         print(
@@ -365,7 +363,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     t0 = perf_counter()
     for pkg_name in needs_build:
         pkg = pkg_map[pkg_name]
-        if len(pkg.unbuilt_run_dependencies) == 0:
+        if len(pkg.unbuilt_host_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
     built_queue: Queue = Queue()
@@ -419,8 +417,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
 
         for _dependent in pkg.host_dependents:
             dependent = pkg_map[_dependent]
-            dependent.unbuilt_run_dependencies.remove(pkg.name)
-            if len(dependent.unbuilt_run_dependencies) == 0:
+            dependent.unbuilt_host_dependencies.remove(pkg.name)
+            if len(dependent.unbuilt_host_dependencies) == 0:
                 build_queue.put((job_priority(dependent), dependent))
 
     print(
