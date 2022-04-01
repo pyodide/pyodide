@@ -1,7 +1,7 @@
 import functools
 import subprocess
 from pathlib import Path
-from typing import Iterable, Iterator, Optional
+from typing import Iterable, Iterator
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
@@ -78,7 +78,7 @@ CORE_SCIPY_PACKAGES = {
 }
 
 
-def _parse_package_subset(query: Optional[str]) -> set[str]:
+def _parse_package_subset(query: str | None) -> set[str]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
     Also add the list of mandatory packages: ["pyparsing", "packaging",

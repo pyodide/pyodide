@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator
 
 # TODO: support more complex types for validation
 
@@ -197,7 +197,7 @@ def check_package_config_generate_errors(
 
 def check_package_config(
     config: dict[str, Any],
-    file_path: Optional[Union[Path, str]] = None,
+    file_path: Path | str | None = None,
     raise_errors: bool = True,
 ) -> list[str]:
     errors_msg = list(check_package_config_generate_errors(config))
@@ -212,7 +212,7 @@ def check_package_config(
     return errors_msg
 
 
-def parse_package_config(path: Union[Path, str], check: bool = True) -> dict[str, Any]:
+def parse_package_config(path: Path | str, check: bool = True) -> dict[str, Any]:
     """Load a meta.yaml file
 
     Parameters

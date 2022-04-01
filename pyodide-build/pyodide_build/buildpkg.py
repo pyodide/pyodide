@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, Optional, TextIO
+from typing import Any, NoReturn, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -72,8 +72,8 @@ class BashRunnerWithSharedEnvironment:
         if env is None:
             env = dict(os.environ)
 
-        self._reader: Optional[TextIO]
-        self._fd_write: Optional[int]
+        self._reader: TextIO | None
+        self._fd_write: int | None
         self.env: dict[str, str] = env
 
     def __enter__(self) -> "BashRunnerWithSharedEnvironment":
@@ -108,9 +108,9 @@ class BashRunnerWithSharedEnvironment:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Free the file descriptors."""
 
