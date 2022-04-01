@@ -1,7 +1,7 @@
 From 04399d268103b821fe5e3124a7742a1f8aa86155 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:22:18 -0700
-Subject: [PATCH 08/13] fix static init of nditer pywrap
+Subject: [PATCH 08/14] fix static init of nditer pywrap
 
 ---
  numpy/core/src/multiarray/nditer_pywrap.c | 2 +-

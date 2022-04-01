@@ -1,7 +1,7 @@
 From 12917e4c1b9d64f3896989d767a4cec6a15684d6 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:25:44 -0700
-Subject: [PATCH 12/13] use local blas lapack
+Subject: [PATCH 12/14] use local blas lapack
 
 ---
  numpy/distutils/system_info.py | 4 ++--

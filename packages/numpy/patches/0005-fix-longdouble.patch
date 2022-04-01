@@ -1,7 +1,7 @@
 From 69030ca31273be35847e677a800651be7b7e3106 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:20:58 -0700
-Subject: [PATCH 05/13] fix longdouble
+Subject: [PATCH 05/14] fix longdouble
 
 ---
  numpy/core/src/npymath/npy_math_complex.c.src | 5 ++---

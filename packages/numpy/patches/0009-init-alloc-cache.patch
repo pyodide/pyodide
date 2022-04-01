@@ -1,7 +1,7 @@
 From fc9fff66fba0258cf4fd782ff6e55c52a15833eb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:22:42 -0700
-Subject: [PATCH 09/13] init alloc cache
+Subject: [PATCH 09/14] init alloc cache
 
 ---
  numpy/core/src/multiarray/alloc.c            | 6 ++++++
