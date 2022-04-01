@@ -14,7 +14,7 @@ from contextlib import (  # type: ignore[attr-defined]
 )
 from platform import python_build, python_version
 from tokenize import TokenError
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union, Generator
 
 from _pyodide._base import CodeRunner, should_quiet
 
@@ -251,7 +251,7 @@ class Console:
         self.buffer: list[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator = None  # track persistent stream redirection
+        self._stream_generator: Generator[None, None, None] | None = None  # track persistent stream redirection
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
         self._completer = rlcompleter.Completer(self.globals)
@@ -277,13 +277,13 @@ class Console:
         self._stream_generator = None
 
     @contextmanager
-    def redirect_streams(self):
+    def redirect_streams(self) -> Generator[None, None, None]:
         """A context manager to redirect standard streams.
 
         This supports nesting."""
         yield from self._stdstreams_redirections_inner()
 
-    def _stdstreams_redirections_inner(self):
+    def _stdstreams_redirections_inner(self) -> Generator[None, None, None]:
         """This is the generator which implements redirect_streams and the stdstreams_redirections"""
         # already redirected?
         if self._streams_redirected:

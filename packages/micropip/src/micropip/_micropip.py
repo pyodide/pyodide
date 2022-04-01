@@ -280,8 +280,8 @@ class _PackageManager:
                     f"but {req.name}=={ver} is already installed"
                 )
         metadata = await _get_pypi_json(req.name)
-        wheel, ver = self.find_wheel(metadata, req)
-        if wheel is None and ver is None:
+        maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
+        if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
                 transaction["failed"].append(req)
             else:
@@ -290,7 +290,7 @@ class _PackageManager:
                     "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
                 )
         else:
-            await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
+            await self.add_wheel(req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction)
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = PackageMetadata(name=name, version=version)
@@ -319,7 +319,7 @@ class _PackageManager:
 
     def find_wheel(
         self, metadata: dict[str, Any], req: Requirement
-    ) -> tuple[Any, Optional[Version]]:
+    ) -> tuple[Any | None, Version | None]:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
