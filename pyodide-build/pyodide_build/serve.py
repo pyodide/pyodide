@@ -5,8 +5,6 @@ import pathlib
 import socketserver
 import sys
 
-BUILD_PATH = pathlib.Path(__file__).resolve().parents[2] / "build"
-
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -23,8 +21,8 @@ def make_parser(parser):
         "--build_dir",
         action="store",
         type=str,
-        default=BUILD_PATH,
-        help="set the build directory",
+        default="build",
+        help="set the build directory (default: %(default)s)",
     )
     parser.add_argument(
         "--port", action="store", type=int, default=8000, help="set the PORT number"
@@ -38,11 +36,11 @@ def server(port):
 
 
 def main(args):
-    build_dir = args.build_dir
+    build_dir = pathlib.Path(args.build_dir).resolve()
     port = args.port
     httpd = server(port)
     os.chdir(build_dir)
-    print(f"serving from {build_dir} at localhost:" + str(port))
+    print(f"serving from {build_dir} at localhost:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

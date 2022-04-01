@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import time
@@ -7,6 +8,8 @@ import pytest
 
 from pyodide_build import buildpkg
 from pyodide_build.io import parse_package_config
+
+PYODIDE_ROOT = Path(os.environ.get("PYODIDE_ROOT", os.getcwd()))
 
 
 def test_subprocess_with_shared_env():
@@ -42,8 +45,9 @@ def test_prepare_source(monkeypatch):
     test_pkgs = []
 
     # tarballname == version
-    test_pkgs.append(parse_package_config("./packages/scipy/meta.yaml"))
-    test_pkgs.append(parse_package_config("./packages/numpy/meta.yaml"))
+    # TODO: instead of using real package configs, mock them or provide example configs.
+    test_pkgs.append(parse_package_config(PYODIDE_ROOT / "packages/scipy/meta.yaml"))
+    test_pkgs.append(parse_package_config(PYODIDE_ROOT / "packages/numpy/meta.yaml"))
 
     # tarballname != version
     test_pkgs.append(
