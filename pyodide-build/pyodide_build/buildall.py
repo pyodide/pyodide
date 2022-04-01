@@ -15,7 +15,7 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Optional
+from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
@@ -39,8 +39,8 @@ class BasePackage:
     dependencies: list[str]
     unbuilt_dependencies: set[str]
     dependents: set[str]
-    unvendored_tests: Optional[Path] = None
-    file_name: Optional[str] = None
+    unvendored_tests: Path | None = None
+    file_name: str | None = None
     install_dir: str = "site"
 
     # We use this in the priority queue, which pops off the smallest element.
@@ -110,7 +110,7 @@ class Package(BasePackage):
             )
         return wheels[0]
 
-    def tests_path(self) -> Optional[Path]:
+    def tests_path(self) -> Path | None:
         tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
         assert len(tests) <= 1
         if tests:

@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 import warnings
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 
@@ -26,7 +26,7 @@ SDIST_EXTENSIONS = tuple(
 )
 
 
-def _find_sdist(pypi_metadata: dict[str, Any]) -> Optional[dict[str, Any]]:
+def _find_sdist(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
     """Get sdist file path from the metadata"""
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
@@ -37,7 +37,7 @@ def _find_sdist(pypi_metadata: dict[str, Any]) -> Optional[dict[str, Any]]:
     return None
 
 
-def _find_wheel(pypi_metadata: dict[str, Any]) -> Optional[dict[str, Any]]:
+def _find_wheel(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
     """Get wheel file path from the metadata"""
     for entry in pypi_metadata["urls"]:
         if entry["packagetype"] == "bdist_wheel" and entry["filename"].endswith(
@@ -72,7 +72,7 @@ def _find_dist(
     raise MkpkgFailedException(f"No {types_str} found for package {name} ({url})")
 
 
-def _get_metadata(package: str, version: Optional[str] = None) -> dict:
+def _get_metadata(package: str, version: str | None = None) -> dict:
     """Download metadata for a package from PyPI"""
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
@@ -107,8 +107,8 @@ def run_prettier(meta_path):
 
 def make_package(
     package: str,
-    version: Optional[str] = None,
-    source_fmt: Optional[Literal["wheel", "sdist"]] = None,
+    version: str | None = None,
+    source_fmt: Literal["wheel", "sdist"] | None = None,
 ):
     """
     Creates a template that will work for most pure Python packages,
@@ -186,7 +186,7 @@ def success(msg):
 def update_package(
     package: str,
     update_patched: bool = True,
-    source_fmt: Optional[Literal["wheel", "sdist"]] = None,
+    source_fmt: Literal["wheel", "sdist"] | None = None,
 ):
 
     YAML = _import_ruamel_yaml()

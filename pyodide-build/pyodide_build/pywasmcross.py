@@ -25,7 +25,7 @@ import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Any, MutableMapping, NoReturn, Optional, overload
+from typing import Any, MutableMapping, NoReturn, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
@@ -122,7 +122,7 @@ def compile(env, **kwargs):
         raise
 
 
-def replay_f2c(args: list[str], dryrun: bool = False) -> Optional[list[str]]:
+def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     """Apply f2c to compilation arguments
 
     Parameters
@@ -170,7 +170,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> Optional[list[str]]:
     return new_args
 
 
-def get_library_output(line: list[str]) -> Optional[str]:
+def get_library_output(line: list[str]) -> str | None:
     """
     Check if the command is a linker invocation. If so, return the name of the
     output file.
@@ -209,7 +209,7 @@ def parse_replace_libs(replace_libs: str) -> dict[str, str]:
 
 def replay_genargs_handle_dashl(
     arg: str, replace_libs: dict[str, str], used_libs: set[str]
-) -> Optional[str]:
+) -> str | None:
     """
     Figure out how to replace a `-lsomelib` argument.
 
@@ -250,7 +250,7 @@ def replay_genargs_handle_dashl(
     return arg
 
 
-def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> Optional[str]:
+def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> str | None:
     """
     Figure out how to replace a `-Iincludepath` argument.
 
@@ -312,7 +312,7 @@ def replay_genargs_handle_linker_opts(arg):
         return None
 
 
-def replay_genargs_handle_argument(arg: str) -> Optional[str]:
+def replay_genargs_handle_argument(arg: str) -> str | None:
     """
     Figure out how to replace a general argument.
 
