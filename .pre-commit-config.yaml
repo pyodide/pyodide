@@ -49,8 +49,8 @@ repos:
     rev: "v0.942"
     hooks:
       - id: mypy
-        files: ^(packages/.*/src|src|docs|pyodide-build/pyodide_build)
-        exclude: setup.py
+        files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
+        exclude: (setup.py|^src/tests|conftest.py)
         args: []
         additional_dependencies: &mypy-deps
           - packaging
@@ -61,7 +61,7 @@ repos:
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|conftest.py)
+        files: ^(packages/|docs|conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
