@@ -1,5 +1,5 @@
 import math
-from types import Any, Callable
+from typing import Any, Callable
 
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
