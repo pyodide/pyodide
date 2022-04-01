@@ -284,6 +284,7 @@ jobs:
           name: test
           command: |
             mkdir test-results
+            python3 -m pip install -r pyodide-build/requirements.txt
             pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
