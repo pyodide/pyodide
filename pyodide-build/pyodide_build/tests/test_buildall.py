@@ -1,4 +1,3 @@
-import os
 from collections import namedtuple
 from pathlib import Path
 from time import sleep
@@ -7,9 +6,7 @@ import pytest
 
 from pyodide_build import buildall
 
-# TODO: instead of using real package configs, mock them or provide example configs.
-PYODIDE_ROOT = Path(os.environ.get("PYODIDE_ROOT", os.getcwd()))
-PACKAGES_DIR = PYODIDE_ROOT / "packages"
+PACKAGES_DIR = Path(__file__) / "_test_packages"
 
 
 def test_generate_dependency_graph():

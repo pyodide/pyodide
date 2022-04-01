@@ -1,0 +1,13 @@
+package:
+  name: zlib
+  version: 1.2.12
+
+source:
+  sha256: 91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9
+  url: https://zlib.net/zlib-1.2.12.tar.gz
+
+build:
+  library: true
+  script: |
+    CFLAGS="-fPIC" emconfigure ./configure --prefix=$PWD
+    emmake make install -j ${PYODIDE_JOBS:-3}

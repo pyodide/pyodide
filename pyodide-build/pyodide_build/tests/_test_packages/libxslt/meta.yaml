@@ -1,0 +1,24 @@
+package:
+  name: libxslt
+  version: 1.1.33
+
+source:
+  sha256: 8e36605144409df979cab43d835002f63988f3dc94d5d3537c12796db90e38c8
+  url: http://xmlsoft.org/sources/libxslt-1.1.33.tar.gz
+
+requirements:
+  run:
+    - libxml
+
+build:
+  library: true
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-dependency-tracking \
+        --disable-shared \
+        --without-python \
+        --with-libxml-src="$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10" \
+        --without-crypto
+    emmake make -j ${PYODIDE_JOBS:-3}
+    chmod 755 xslt-config

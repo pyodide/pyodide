@@ -25,7 +25,11 @@ def make_parser(parser):
         help="set the build directory (default: %(default)s)",
     )
     parser.add_argument(
-        "--port", action="store", type=int, default=8000, help="set the PORT number"
+        "--port",
+        action="store",
+        type=int,
+        default=8000,
+        help="set the PORT number (default: %(default)s)",
     )
     return parser
 
