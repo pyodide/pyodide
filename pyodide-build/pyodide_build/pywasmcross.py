@@ -524,7 +524,7 @@ def handle_command(
 
 
 def environment_substitute_args(
-    args: dict[str, str], env: dict[str, str] = None
+    args: dict[str, str], env: dict[str, str] | None = None
 ) -> dict[str, Any]:
     if env is None:
         env = dict(os.environ)

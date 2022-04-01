@@ -14,7 +14,7 @@ from contextlib import (  # type: ignore[attr-defined]
 )
 from platform import python_build, python_version
 from tokenize import TokenError
-from typing import Any, Callable, Literal, Optional, Union, Generator
+from typing import Any, Callable, Generator, Literal, Optional, Union
 
 from _pyodide._base import CodeRunner, should_quiet
 
@@ -251,7 +251,9 @@ class Console:
         self.buffer: list[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator: Generator[None, None, None] | None = None  # track persistent stream redirection
+        self._stream_generator: Generator[
+            None, None, None
+        ] | None = None  # track persistent stream redirection
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
         self._completer = rlcompleter.Completer(self.globals)

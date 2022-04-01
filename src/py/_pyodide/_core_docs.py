@@ -56,7 +56,8 @@ class JsProxy:
         default_converter: Callable[
             ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any], None]],
             Any,
-        ] = None,
+        ]
+        | None = None,
     ) -> Any:
         """Convert the :class:`JsProxy` to a native Python object as best as
         possible.
@@ -324,12 +325,13 @@ def to_js(
     obj: Any,
     *,
     depth: int = -1,
-    pyproxies: JsProxy = None,
+    pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
-    dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None,
+    dict_converter: Callable[[Iterable[JsProxy]], JsProxy] | None = None,
     default_converter: Callable[
         [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-    ] = None,
+    ]
+    | None = None,
 ) -> JsProxy:
     """Convert the object to JavaScript.
 

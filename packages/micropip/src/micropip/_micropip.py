@@ -7,7 +7,7 @@ import io
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Union
 from zipfile import ZipFile
 
 from packaging.markers import default_environment
@@ -290,7 +290,9 @@ class _PackageManager:
                     "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
                 )
         else:
-            await self.add_wheel(req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction)
+            await self.add_wheel(
+                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction
+            )
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = PackageMetadata(name=name, version=version)

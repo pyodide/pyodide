@@ -54,9 +54,9 @@ def unpack_buffer(
     buffer: JsProxy,
     *,
     filename: str = "",
-    format: str = None,
-    target: Literal["site", "lib", None] = None,
-    extract_dir: str = None,
+    format: str | None = None,
+    target: Literal["site", "lib"] | None = None,
+    extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
 ) -> Optional[JsProxy]:
     """Used to install a package either into sitepackages or into the standard
