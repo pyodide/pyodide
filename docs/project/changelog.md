@@ -109,7 +109,7 @@ substitutions:
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
   {pr}`2295`
 
-- {{ Breaking }} The `extract_dir` argument to
+- {{ Breaking }} The `extractDir` argument to
   {any}`unpackArchive <pyodide.unpackArchive>` is now passed as a named argument.
   The old usage still works with a deprecation warning.
   {pr}`2300`
