@@ -20,16 +20,6 @@ def registered_packages() -> list[str]:
     return packages
 
 
-def registered_packages_meta():
-    """Returns a dictionary with the contents of `meta.yaml`
-    for each registered package
-    """
-    packages = registered_packages
-    return {
-        name: parse_package_config(PKG_DIR / name / "meta.yaml") for name in packages
-    }
-
-
 UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],

@@ -77,7 +77,7 @@ def test_der():
             raise ZeroDivisionError
 
     # Parse the outer element.
-    outer = reader.read_element(SEQUENCE)
+    outer = reader.read_element(SEQUENCE)  # type: ignore[unreachable]
     reader.check_empty()
     assert outer.data.tobytes() == der[2:]
 

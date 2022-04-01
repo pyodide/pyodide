@@ -254,7 +254,11 @@ class CodeRunner:
             raise AssertionError()
         return self
 
-    def run(self, globals: dict[str, Any] = None, locals: dict[str, Any] = None):
+    def run(
+        self,
+        globals: dict[str, Any] | None = None,
+        locals: dict[str, Any] | None = None,
+    ):
         """Executes ``self.code``.
 
         Can only be used after calling compile. The code may not use top level
@@ -303,7 +307,9 @@ class CodeRunner:
             return e.value
 
     async def run_async(
-        self, globals: dict[str, Any] = None, locals: dict[str, Any] = None
+        self,
+        globals: dict[str, Any] | None = None,
+        locals: dict[str, Any] | None = None,
     ):
         """Runs ``self.code`` which may use top level await.
 
