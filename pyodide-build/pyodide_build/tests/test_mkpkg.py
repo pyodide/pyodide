@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Union
 
 import pytest
 import yaml
@@ -46,7 +45,7 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
 
     old_ext = ".tar.gz" if old_dist_type == "sdist" else ".whl"
     old_url = "https://<some>/idna-2.0" + old_ext
-    db_init: dict[str, dict[str, Union[str, list[str]]]] = {
+    db_init: dict[str, dict[str, str | list[str]]] = {
         "package": {"name": "idna", "version": "2.0"},
         "source": {
             "sha256": "b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6",

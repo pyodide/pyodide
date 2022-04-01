@@ -1,7 +1,7 @@
 import contextlib
 import inspect
 from base64 import b64encode
-from typing import Callable, Collection, Optional
+from typing import Callable, Collection
 
 import pytest
 
@@ -31,13 +31,13 @@ from pprint import pformat
 
 
 def run_in_pyodide(
-    _function: Optional[Callable] = None,
+    _function: Callable | None = None,
     *,
     standalone: bool = False,
     module_scope: bool = False,
     packages: Collection[str] = (),
-    xfail_browsers: Optional[dict[str, str]] = None,
-    driver_timeout: Optional[float] = None,
+    xfail_browsers: dict[str, str] | None = None,
+    driver_timeout: float | None = None,
 ) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
@@ -133,7 +133,7 @@ def run_in_pyodide(
 
 
 @contextlib.contextmanager
-def set_webdriver_script_timeout(selenium, script_timeout: Optional[float]):
+def set_webdriver_script_timeout(selenium, script_timeout: float | None):
     """Set selenium script timeout
 
     Parameters
@@ -151,7 +151,7 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[float]):
         selenium.set_script_timeout(selenium.script_timeout)
 
 
-def parse_driver_timeout(request) -> Optional[float]:
+def parse_driver_timeout(request) -> float | None:
     """Parse driver timeout value from pytest request object"""
     mark = request.node.get_closest_marker("driver_timeout")
     if mark is None:

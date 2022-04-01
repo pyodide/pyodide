@@ -11,7 +11,7 @@ from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
 from types import CodeType
-from typing import Any, Generator, Optional
+from typing import Any, Generator
 
 
 def should_quiet(source: str) -> bool:
@@ -357,8 +357,8 @@ class CodeRunner:
 
 def eval_code(
     source: str,
-    globals: Optional[dict[str, Any]] = None,
-    locals: Optional[dict[str, Any]] = None,
+    globals: dict[str, Any] | None = None,
+    locals: dict[str, Any] | None = None,
     *,
     return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
@@ -432,8 +432,8 @@ def eval_code(
 
 async def eval_code_async(
     source: str,
-    globals: Optional[dict[str, Any]] = None,
-    locals: Optional[dict[str, Any]] = None,
+    globals: dict[str, Any] | None = None,
+    locals: dict[str, Any] | None = None,
     *,
     return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,

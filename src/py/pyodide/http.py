@@ -1,6 +1,6 @@
 import json
 from io import StringIO
-from typing import Any, BinaryIO, TextIO, Union
+from typing import Any, BinaryIO, TextIO
 
 from ._core import JsProxy, to_js
 
@@ -149,7 +149,7 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
-    async def _into_file(self, f: Union[TextIO, BinaryIO]):
+    async def _into_file(self, f: TextIO | BinaryIO):
         """Write the data into an empty file with no copy.
 
         Warning: should only be used when f is an empty file, otherwise it may

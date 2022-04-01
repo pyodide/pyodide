@@ -7,7 +7,7 @@ import io
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 from zipfile import ZipFile
 
 from packaging.markers import default_environment
@@ -148,7 +148,7 @@ class _PackageManager:
 
     async def gather_requirements(
         self,
-        requirements: Union[str, list[str]],
+        requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
     ):
@@ -174,7 +174,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, list[str]], ctx=None, keep_going: bool = False
+        self, requirements: str | list[str], ctx=None, keep_going: bool = False
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -227,9 +227,7 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(
-        self, requirement: Union[str, Requirement], ctx, transaction
-    ):
+    async def add_requirement(self, requirement: str | Requirement, ctx, transaction):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -357,7 +355,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, list[str]], keep_going: bool = False):
+def install(requirements: str | list[str], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
