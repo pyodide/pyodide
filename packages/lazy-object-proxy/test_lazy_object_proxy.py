@@ -2,15 +2,16 @@ from pyodide_build.testing import run_in_pyodide
 
 
 @run_in_pyodide(packages=["lazy-object-proxy"])
-def test_regex():
+def test_lazy_object_proxy():
     import lazy_object_proxy
 
     def expensive_func():
         from time import sleep
-        print('starting calculation')
+
+        print("starting calculation")
         # just as example for a slow computation
         sleep(0.1)
-        print('finished calculation')
+        print("finished calculation")
         # return the result of the calculation
         return 10
 
