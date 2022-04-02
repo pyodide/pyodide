@@ -1,4 +1,4 @@
-From 6a12f704bc79832925424e7325bc5cf577be81ad Mon Sep 17 00:00:00 2001
+From 2b1c8ba0c5ee3acc2f9f221d517114c28b2c8bf9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 2 Apr 2022 11:13:37 -0700
 Subject: [PATCH] loadDynamicLibrary flapack
@@ -30,7 +30,7 @@ So we have to call loadDynamicLibrary on it, hence this patch.
  1 file changed, 7 insertions(+)
 
 diff --git a/scipy/__init__.py b/scipy/__init__.py
-index 8c23069f9..0fe6fd64f 100644
+index 8c23069f9..4fa852612 100644
 --- a/scipy/__init__.py
 +++ b/scipy/__init__.py
 @@ -158,3 +158,10 @@ else:
@@ -41,7 +41,7 @@ index 8c23069f9..0fe6fd64f 100644
 +    import sysconfig
 +    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
 +    from pyodide_js._module import loadDynamicLibrary
-+    loadDynamicLibrary(f'/lib/python3.10/site-packages/scipy/linalg/_flapack.{ext_suffix}')
++    loadDynamicLibrary(f'/lib/python3.10/site-packages/scipy/linalg/_flapack{ext_suffix}')
 +    del sysconfig
 +    del ext_suffix
 -- 
