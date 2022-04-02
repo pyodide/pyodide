@@ -159,4 +159,9 @@ async function main() {
     expectAssignable<{ done?: any; value: any }>(px.next());
     expectAssignable<{ done?: any; value: any }>(px.next(22));
   }
+
+  pyodide.unpackArchive(new Uint8Array(40), "tar");
+  pyodide.unpackArchive(new Uint8Array(40), "tar", {
+    extractDir: "/some/path",
+  });
 }

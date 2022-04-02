@@ -33,22 +33,22 @@ export let version: string = ""; // actually defined in loadPyodide (see pyodide
 
 let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
- * Runs a string of Python code from JavaScript.
+ * Runs a string of Python code from JavaScript, using :any:`pyodide.eval_code`
+ * to evaluate the code. If the last statement in the Python code is an
+ * expression (and the code doesn't end with a semicolon), the value of the
+ * expression is returned.
  *
- * The last part of the string may be an expression, in which case, its value is
- * returned.
+ * .. admonition:: Positional globals argument
+ *    :class: warning
  *
- * .. admonition:: Positional globals argument :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
+ *    In Pyodide v0.19, this function took the globals parameter as a positional
+ *    argument rather than as a named argument. In v0.20 this will still work
+ *    but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
- *        Defaults to :any:`pyodide.globals`. Uses the Python API
- *        :any:`pyodide.eval_code` to evaluate the code.
+ *        Defaults to :any:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
@@ -60,7 +60,7 @@ export function runPython(
     options = { globals: options as PyProxy };
     if (!runPythonPositionalGlobalsDeprecationWarned) {
       console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated. Use 'runPython(code, {globals : some_dict})' instead."
+        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
       );
       runPythonPositionalGlobalsDeprecationWarned = true;
     }
@@ -122,8 +122,11 @@ export async function loadPackagesFromImports(
 }
 
 /**
- * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
- * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
+ * Run a Python code string with top level await using
+ * :any:`pyodide.eval_code_async` to evaluate the code. Returns a promise which
+ * resolves when execution completes. If the last statement in the Python code
+ * is an expression (and the code doesn't end with a semicolon), the returned
+ * promise will resolve to the value of this expression.
  *
  * For example:
  *
@@ -138,13 +141,15 @@ export async function loadPackagesFromImports(
  *    `);
  *    console.log(result); // 79
  *
- * .. admonition:: Python imports :class: warning
+ * .. admonition:: Python imports
+ *    :class: warning
  *
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
  *    import any python packages referenced via `import` statements in your
  *    code. This function will no longer do it for you.
  *
- * .. admonition:: Positional globals argument :class: warning
+ * .. admonition:: Positional globals argument
+ *    :class: warning
  *
  *    In Pyodide v0.19, this function took the globals parameter as a
  *    positional argument rather than as a named argument. In v0.20 this will
@@ -153,8 +158,7 @@ export async function loadPackagesFromImports(
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
- * Defaults to :any:`pyodide.globals`. Uses the Python API
- * :any:`pyodide.eval_code_async` to evaluate the code.
+ * Defaults to :any:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript.
  * @async
  */
@@ -166,7 +170,7 @@ export async function runPythonAsync(
     options = { globals: options as PyProxy };
     if (!runPythonPositionalGlobalsDeprecationWarned) {
       console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated. Use 'runPythonAsync(code, {globals : some_dict})' instead."
+        "Passing a PyProxy as the second argument to runPythonAsync is deprecated and will be removed in v0.21. Use 'runPythonAsync(code, {globals : some_dict})' instead."
       );
       runPythonPositionalGlobalsDeprecationWarned = true;
     }
@@ -322,21 +326,44 @@ export function pyimport(mod_name: string): PyProxy {
   return API.importlib.import_module(mod_name);
 }
 
+let unpackArchivePositionalExtractDirDeprecationWarned = false;
 /**
  * Unpack an archive into a target directory.
  *
- * @param buffer The archive as an ArrayBuffer or TypedArray.
- * @param format The format of the archive. Should be one of the formats recognized by `shutil.unpack_archive`.
- * By default the options are 'bztar', 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each format, e.g.,
- * for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or 'tgz' are considered to be synonyms.
+ * .. admonition:: Positional globals argument :class: warning
  *
- * @param extract_dir The directory to unpack the archive into. Defaults to the working directory.
+ *    In Pyodide v0.19, this function took the extract_dir parameter as a
+ *    positional argument rather than as a named argument. In v0.20 this will
+ *    still work  but it is deprecated. It will be removed in v0.21.
+ *
+ * @param buffer The archive as an ArrayBuffer or TypedArray.
+ * @param format The format of the archive. Should be one of the formats
+ * recognized by `shutil.unpack_archive`. By default the options are 'bztar',
+ * 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each
+ * format, e.g., for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or
+ * 'tgz' are considered to be synonyms.
+ *
+ * @param options
+ * @param options.extractDir The directory to unpack the archive into. Defaults
+ * to the working directory.
  */
 export function unpackArchive(
   buffer: TypedArray,
   format: string,
-  extract_dir?: string
+  options: {
+    extractDir?: string;
+  } = {}
 ) {
+  if (typeof options === "string") {
+    if (!unpackArchivePositionalExtractDirDeprecationWarned) {
+      console.warn(
+        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
+      );
+      unpackArchivePositionalExtractDirDeprecationWarned = true;
+    }
+    options = { extractDir: options };
+  }
+  let extract_dir = options.extractDir;
   API.package_loader.unpack_buffer.callKwargs({
     buffer,
     format,
@@ -355,11 +382,24 @@ API.saveState = () => API.pyodide_py._state.save_state();
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 
 /**
- * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
- * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
- * shared with the main browser thread (or another worker). To request an
- * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
- * constant for SIGINT).
+ * Sets the interrupt buffer to be ``interrupt_buffer``. This is only useful
+ * when Pyodide is used in a webworker. The buffer should be a
+ * ``SharedArrayBuffer`` shared with the main browser thread (or another
+ * worker). In that case, signal ``signum`` may be sent by writing ``signum``
+ * into the interrupt buffer. If ``signum`` does not satisfy 0 < ``signum`` <
+ * ``NSIG`` it will be silently ignored. NSIG is 65 (internally signals are
+ * indicated by a bitflag).
+ *
+ * You can disable interrupts by calling `setInterruptBuffer(undefined)`.
+ *
+ * If you wish to trigger a ``KeyboardInterrupt``, write ``SIGINT`` (a 2), into
+ * the interrupt buffer.
+ *
+ * By default ``SIGINT`` raises a ``KeyboardInterrupt`` and all other signals
+ * are ignored. You can install custom signal handlers with the signal module.
+ * Even signals that normally have special meaning and can't be overridden like
+ * ``SIGKILL`` and ``SIGSEGV`` are ignored by default and can be used for any
+ * purpose you like.
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
   API.interrupt_buffer = interrupt_buffer;

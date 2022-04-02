@@ -1,6 +1,8 @@
 export PYVERSION ?= 3.10.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
 
+export PLATFORM_TRIPLET=wasm32-emscripten
+
 # BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each
 # command.
@@ -33,6 +35,8 @@ export PYODIDE_BASE_URL?=./
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
 export NUMPY_LIB=$(HOSTINSTALLDIR)/numpy-wasm-libs
+export OPEN_SSL_ROOT=$(PYODIDE_ROOT)/packages/openssl/build/openssl-1.1.1n/
+
 
 # This environment variable is used for packages to detect if they are built
 # for pyodide during build time

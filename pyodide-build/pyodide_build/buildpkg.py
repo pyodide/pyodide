@@ -13,13 +13,14 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 import textwrap
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, Optional, TextIO
+from typing import Any, NoReturn, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -71,8 +72,8 @@ class BashRunnerWithSharedEnvironment:
         if env is None:
             env = dict(os.environ)
 
-        self._reader: Optional[TextIO]
-        self._fd_write: Optional[int]
+        self._reader: TextIO | None
+        self._fd_write: int | None
         self.env: dict[str, str] = env
 
     def __enter__(self) -> "BashRunnerWithSharedEnvironment":
@@ -107,9 +108,9 @@ class BashRunnerWithSharedEnvironment:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Free the file descriptors."""
 
@@ -143,6 +144,7 @@ def get_bash_runner():
             "SIDE_MODULE_CFLAGS",
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
+            "OPEN_SSL_ROOT",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
@@ -434,6 +436,18 @@ def compile(
         )
 
 
+def replace_so_abi_tags(wheel_dir: Path):
+    """Replace native abi tag with emscripten abi tag in .so file names"""
+    build_soabi = sysconfig.get_config_var("SOABI")
+    assert build_soabi
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    assert ext_suffix
+    build_triplet = "-".join(build_soabi.split("-")[2:])
+    host_triplet = common.get_make_flag("PLATFORM_TRIPLET")
+    for file in wheel_dir.glob(f"**/*{ext_suffix}"):
+        file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
+
+
 def package_wheel(
     pkg_name: str,
     pkg_root: Path,
@@ -481,6 +495,10 @@ def package_wheel(
     name, ver, _ = wheel.name.split("-", 2)
     wheel_dir_name = f"{name}-{ver}"
     wheel_dir = distdir / wheel_dir_name
+
+    # update so abi tags after build is complete but before running post script
+    # to maximize sanity.
+    replace_so_abi_tags(wheel_dir)
 
     post = build_metadata.get("post")
     if post:

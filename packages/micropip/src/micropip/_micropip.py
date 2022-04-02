@@ -7,7 +7,7 @@ import io
 import json
 import tempfile
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 from zipfile import ZipFile
 
 from packaging.markers import default_environment
@@ -148,7 +148,7 @@ class _PackageManager:
 
     async def gather_requirements(
         self,
-        requirements: Union[str, list[str]],
+        requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
     ):
@@ -174,7 +174,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, list[str]], ctx=None, keep_going: bool = False
+        self, requirements: str | list[str], ctx=None, keep_going: bool = False
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -227,9 +227,7 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(
-        self, requirement: Union[str, Requirement], ctx, transaction
-    ):
+    async def add_requirement(self, requirement: str | Requirement, ctx, transaction):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -280,8 +278,8 @@ class _PackageManager:
                     f"but {req.name}=={ver} is already installed"
                 )
         metadata = await _get_pypi_json(req.name)
-        wheel, ver = self.find_wheel(metadata, req)
-        if wheel is None and ver is None:
+        maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
+        if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
                 transaction["failed"].append(req)
             else:
@@ -290,7 +288,9 @@ class _PackageManager:
                     "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
                 )
         else:
-            await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
+            await self.add_wheel(
+                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction
+            )
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = PackageMetadata(name=name, version=version)
@@ -319,7 +319,7 @@ class _PackageManager:
 
     def find_wheel(
         self, metadata: dict[str, Any], req: Requirement
-    ) -> tuple[Any, Optional[Version]]:
+    ) -> tuple[Any | None, Version | None]:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
@@ -355,7 +355,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, list[str]], keep_going: bool = False):
+def install(requirements: str | list[str], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.

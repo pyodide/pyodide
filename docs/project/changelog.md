@@ -95,12 +95,30 @@ substitutions:
   throws something else.
   {pr}`2294`
 
+- {{ Enhancement }} The interrupt buffer can be used to raise all 64 signals
+  now, not just `SIGINT`. Write a number between `1<= signum <= 64` into the
+  interrupt buffer to trigger the corresponding signal. By default everything
+  but `SIGINT` will be ignored. Any value written into the interrupt buffer
+  outside of the range from 1 to 64 will be silently discarded.
+  {pr}`2301`
+
 - {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
   and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
-  argument. The old usage still works with a deprecation warning. {pr}`2300`
+  argument. The old usage still works with a deprecation warning.
+  {pr}`2300`
 
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
-  {pr}`1102`
+  {pr}`2295`
+
+- {{ Breaking }} The `extractDir` argument to
+  {any}`unpackArchive <pyodide.unpackArchive>` is now passed as a named argument.
+  The old usage still works with a deprecation warning.
+  {pr}`2300`
+
+- {{ Enhancement }} Async Python functions called from Javascript now have the
+  resulting coroutine automatically scheduled. For instance, this makes it
+  possible to use an async Python function as a Javascript event handler.
+  {pr}`2319`
 
 ## Version 0.19.1
 
@@ -999,3 +1017,10 @@ _Mar 21, 2019_
   have been removed.
 
 - The `run_docker` script can now be configured with environment variables.
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   deprecation-timeline.md
+```

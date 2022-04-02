@@ -307,6 +307,58 @@ def test_install_archive(selenium):
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
+def test_load_bad_so_file(selenium):
+    # If we load a bad so file, we should catch the error, ignore it (and log a
+    # warning)
+    selenium.run_js(
+        """
+        pyodide.FS.writeFile("/a.so", new Uint8Array(4))
+        await pyodide._api.tests.loadDynlib("/a.so");
+        """
+    )
+    assert (
+        "Failed to load dynlib /a.so. We probably just tried to load a linux .so file or something."
+        in selenium.logs
+    )
+
+
+def test_should_load_dynlib():
+    import sysconfig
+
+    from pyodide._package_loader import should_load_dynlib
+
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    assert ext_suffix
+    should_load = [
+        "a.so",
+        "a/b.so",
+        "b/b.so",
+        "a/b/c/d.so",
+        "a/b/c/d.abi3.so",
+        "x.abi3.so",
+        "a.b.c.so",
+        "a-weird-name.stuff-with-dashes.so",
+        f"x.{ext_suffix}",
+    ]
+    should_not_load = [
+        "a",
+        "a.py",
+        "a.txt",
+        "a/b.txt",
+        "a/b.py",
+        "b/a.py",
+        "q.cpython-38-x86_64-linux-gnu.so",
+        "q.cpython-38-x86_64-linux-gnu.so",
+        "q" + ext_suffix.replace("cpython", "pypy"),
+        "q.cpython-32mu.so",
+        "x.so.1",  # Any chance we'd want these at some point?
+    ]
+    for file in should_load:
+        assert should_load_dynlib(file)
+    for file in should_not_load:
+        assert not should_load_dynlib(file)
+
+
 def test_get_dynlibs():
     import tarfile
     from tempfile import NamedTemporaryFile
@@ -315,6 +367,7 @@ def test_get_dynlibs():
     from pyodide._package_loader import get_dynlibs
 
     files = [
+        "a",
         "a.so",
         "a.py",
         "a.txt",
