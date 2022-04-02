@@ -120,6 +120,9 @@ substitutions:
   possible to use an async Python function as a Javascript event handler.
   {pr}`2319`
 
+- {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
+  {pr}`2345`
+
 ## Version 0.19.1
 
 _February 19, 2022_
