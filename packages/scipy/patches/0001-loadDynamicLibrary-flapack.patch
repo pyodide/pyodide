@@ -1,6 +1,6 @@
-From 2b1c8ba0c5ee3acc2f9f221d517114c28b2c8bf9 Mon Sep 17 00:00:00 2001
+From 6e87b998a3c0073c507626a7c88963d9bda27c24 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
-Date: Sat, 2 Apr 2022 11:13:37 -0700
+Date: Sat, 2 Apr 2022 14:20:25 -0700
 Subject: [PATCH] loadDynamicLibrary flapack
 
 We are using CLAPACK for our LAPACK, but CLAPACK only supports
@@ -26,14 +26,14 @@ look them up with `dlsym`). Scipy is not loaded this way. But we
 need the `lapack_extras.f` symbols to have this global visibility.
 So we have to call loadDynamicLibrary on it, hence this patch.
 ---
- scipy/__init__.py | 7 +++++++
- 1 file changed, 7 insertions(+)
+ scipy/__init__.py | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 diff --git a/scipy/__init__.py b/scipy/__init__.py
-index 8c23069f9..4fa852612 100644
+index 8c23069f9..f408fc0b6 100644
 --- a/scipy/__init__.py
 +++ b/scipy/__init__.py
-@@ -158,3 +158,10 @@ else:
+@@ -158,3 +158,11 @@ else:
  
      # This makes "from scipy import fft" return scipy.fft, not np.fft
      del fft
@@ -42,6 +42,7 @@ index 8c23069f9..4fa852612 100644
 +    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
 +    from pyodide_js._module import loadDynamicLibrary
 +    loadDynamicLibrary(f'/lib/python3.10/site-packages/scipy/linalg/_flapack{ext_suffix}')
++    del loadDynamicLibrary
 +    del sysconfig
 +    del ext_suffix
 -- 
