@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import subprocess
-from typing import List
 import sys
 
 args = sys.argv[1:]
 
 
-def remove_num_threads_option(args: List[str]) -> None:
+def remove_num_threads_option(args: list[str]) -> None:
     """Remove -n <n> from argument list"""
     for i in range(0, len(args)):
         if args[i] == "-n":
@@ -30,7 +29,7 @@ if __name__ == "__main__":
         print("More than 9 tests failed. Not rerunning")
         sys.exit(1)
 
-    print("Rerunnning failed tests sequentially")
+    print("Rerunning failed tests sequentially")
     remove_num_threads_option(args)
     try:
         subprocess.run(["pytest", "--lf"] + args, check=True)

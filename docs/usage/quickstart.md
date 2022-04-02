@@ -24,7 +24,7 @@ and returns {js:mod}`the Pyodide top level namespace <pyodide>`.
 
 ```pyodide
 async function main() {
-  let pyodide = await loadPyodide({ indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/" });
+  let pyodide = await loadPyodide();
   // Pyodide is now ready to use...
   console.log(pyodide.runPython(`
     import sys
@@ -67,9 +67,7 @@ Create and save a test `index.html` page with the following contents:
     Open your browser console to see Pyodide output
     <script type="text/javascript">
       async function main(){
-        let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
-        });
+        let pyodide = await loadPyodide();
         console.log(pyodide.runPython(`
             import sys
             sys.version
@@ -114,9 +112,7 @@ Create and save a test `index.html` page with the following contents:
       output.value = "Initializing...\n";
       // init Pyodide
       async function main() {
-        let pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
-        });
+        let pyodide = await loadPyodide();
         output.value += "Ready!\n";
         return pyodide;
       }

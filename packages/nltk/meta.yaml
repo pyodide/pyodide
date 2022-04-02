@@ -1,13 +1,13 @@
 package:
   name: nltk
-  version: 3.6.2
+  version: 3.6.7
 source:
-  sha256: 57d556abed621ab9be225cc6d2df1edce17572efb67a3d754630c9f8381503eb
-  url: https://files.pythonhosted.org/packages/fe/a5/b7931f2c2c3204c304e0a3a6396d7adeb15335b8d2ab46e5ca48666c9186/nltk-3.6.2.zip
+  sha256: 22e97be5d6c784d93a52d17860515cc50c5cfcc620b1f5c3747765041255a01e
+  url: https://files.pythonhosted.org/packages/c5/ea/84c7247f5c96c5a1b619fe822fb44052081ccfbe487a49d4c888306adec7/nltk-3.6.7-py3-none-any.whl
 requirements:
   run:
-  - regex
+    - regex
 test:
   imports:
-  - nltk
-  - sqlite3
+    - nltk
+    - sqlite3

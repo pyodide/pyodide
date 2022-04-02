@@ -1,173 +1,438 @@
 import re
+import subprocess
+from pathlib import Path
+from textwrap import dedent  # for doctests
+from typing import Iterable, Iterator
 
 
-def fix_f2c_clapack_calls(f2c_output_name: str):
-    """Fix F2C CLAPACK calls
+def prepare_doctest(x):
+    return dedent(x).strip().splitlines(True)
 
-    f2c compiles code with fortran linkage, which means that
-    strings are passed as char* plus extra length argument at
-    the end.
 
-    CLAPACK uses C null terminated strings.
-
-    In scipy, we build fortran linkage wrappers for all char* CLAPACK calls.
-    We just need to replace the calls and extern definitions in f2c generated code.
-
-    Annoyingly, we can't just patch the fortran code to use the wrapped names because f2c
-    has a limit of 6 character function names.
+def fix_f2c_input(f2c_input_path: str):
     """
-    # fmt: off
-    lapack_names = [
-        "lsame_", "cgbmv_", "cgemm_", "cgemv_", "chbmv_",
-        "chemm_", "chemv_", "cher_", "cher2_", "cher2k_", "cherk_",
-        "chpmv_", "chpr_", "chpr2_", "csymm_", "csyr2k_", "csyrk_",
-        "ctbmv_", "ctbsv_", "ctpmv_", "ctpsv_", "ctrmm_", "ctrmv_",
-        "ctrsm_", "ctrsv_", "dgbmv_", "dgemm_", "dgemv_", "dsbmv_",
-        "dspmv_", "dspr_", "dspr2_", "dsymm_", "dsymv_", "dsyr_", "dsyr2_",
-        "dsyr2k_", "dsyrk_", "dtbmv_", "dtbsv_", "dtpmv_", "dtpsv_",
-        "dtrmm_", "dtrmv_", "dtrsm_", "dtrsv_", "sgbmv_", "sgemm_",
-        "sgemv_", "ssbmv_", "sspmv_", "sspr_", "sspr2_", "ssymm_",
-        "ssymv_", "ssyr_", "ssyr2_", "ssyr2k_", "ssyrk_", "stbmv_",
-        "stbsv_", "stpmv_", "stpsv_", "strmm_", "strmv_", "strsm_",
-        "strsv_", "zgbmv_", "zgemm_", "zgemv_", "zhbmv_", "zhemm_",
-        "zhemv_", "zher_", "zher2_", "zher2k_", "zherk_", "zhpmv_",
-        "zhpr_", "zhpr2_", "zsymm_", "zsyr2k_", "zsyrk_", "ztbmv_",
-        "ztbsv_", "ztpmv_", "ztpsv_", "ztrmm_", "ztrmv_", "ztrsm_",
-        "ztrsv_", "clangb_", "clange_", "clangt_", "clanhb_", "clanhe_",
-        "clanhp_", "clanhs_", "clanht_", "clansb_", "clansp_", "clansy_",
-        "clantb_", "clantp_", "clantr_", "dlamch_", "dlangb_", "dlange_",
-        "dlangt_", "dlanhs_", "dlansb_", "dlansp_", "dlanst_", "dlansy_",
-        "dlantb_", "dlantp_", "dlantr_", "slamch_", "slangb_", "slange_",
-        "slangt_", "slanhs_", "slansb_", "slansp_", "slanst_", "slansy_",
-        "slantb_", "slantp_", "slantr_", "zlangb_", "zlange_", "zlangt_",
-        "zlanhb_", "zlanhe_", "zlanhp_", "zlanhs_", "zlanht_", "zlansb_",
-        "zlansp_", "zlansy_", "zlantb_", "zlantp_", "zlantr_", "cbdsqr_",
-        "cgbbrd_", "cgbcon_", "cgbrfs_", "cgbsvx_", "cgbtrs_", "cgebak_",
-        "cgebal_", "cgecon_", "cgees_", "cgeesx_", "cgeev_", "cgeevx_",
-        "cgels_", "cgerfs_", "cgesdd_", "cgesvd_", "cgesvx_", "cgetrs_",
-        "cggbak_", "cggbal_", "cgges_", "cggesx_", "cggev_", "cggevx_",
-        "cgghrd_", "cgtcon_", "cgtrfs_", "cgtsvx_", "cgttrs_", "chbev_",
-        "chbevd_", "chbevx_", "chbgst_", "chbgv_", "chbgvd_", "chbgvx_",
-        "chbtrd_", "checon_", "cheev_", "cheevd_", "cheevr_", "cheevx_",
-        "chegs2_", "chegst_", "chegv_", "chegvd_", "chegvx_", "cherfs_",
-        "chesv_", "chesvx_", "chetd2_", "chetf2_", "chetrd_", "chetrf_",
-        "chetri_", "chetrs_", "chgeqz_", "chpcon_", "chpev_", "chpevd_",
-        "chpevx_", "chpgst_", "chpgv_", "chpgvd_", "chpgvx_", "chprfs_",
-        "chpsv_", "chpsvx_", "chptrd_", "chptrf_", "chptri_", "chptrs_",
-        "chsein_", "chseqr_", "clacp2_", "clacpy_", "clagtm_", "clahef_",
-        "clalsd_", "claqgb_", "claqge_", "claqhb_", "claqhe_", "claqhp_",
-        "claqsb_", "claqsp_", "claqsy_", "clarf_", "clarfb_", "clarft_",
-        "clarfx_", "clarz_", "clarzb_", "clarzt_", "clascl_", "claset_",
-        "clasr_", "clasyf_", "clatbs_", "clatps_", "clatrd_", "clatrs_",
-        "clauu2_", "clauum_", "cpbcon_", "cpbequ_", "cpbrfs_", "cpbstf_",
-        "cpbsv_", "cpbsvx_", "cpbtf2_", "cpbtrf_", "cpbtrs_", "cpocon_",
-        "cporfs_", "cposv_", "cposvx_", "cpotf2_", "cpotrf_", "cpotri_",
-        "cpotrs_", "cppcon_", "cppequ_", "cpprfs_", "cppsv_", "cppsvx_",
-        "cpptrf_", "cpptri_", "cpptrs_", "cpteqr_", "cptrfs_", "cptsvx_",
-        "cpttrs_", "cspcon_", "cspmv_", "cspr_", "csprfs_", "cspsv_",
-        "cspsvx_", "csptrf_", "csptri_", "csptrs_", "cstedc_", "cstegr_",
-        "cstemr_", "csteqr_", "csycon_", "csymv_", "csyr_", "csyrfs_",
-        "csysv_", "csysvx_", "csytf2_", "csytrf_", "csytri_", "csytrs_",
-        "ctbcon_", "ctbrfs_", "ctbtrs_", "ctgevc_", "ctgsja_", "ctgsna_",
-        "ctgsy2_", "ctgsyl_", "ctpcon_", "ctprfs_", "ctptri_", "ctptrs_",
-        "ctrcon_", "ctrevc_", "ctrexc_", "ctrrfs_", "ctrsen_", "ctrsna_",
-        "ctrsyl_", "ctrti2_", "ctrtri_", "ctrtrs_", "cungbr_", "cungtr_",
-        "cunm2l_", "cunm2r_", "cunmbr_", "cunmhr_", "cunml2_", "cunmlq_",
-        "cunmql_", "cunmqr_", "cunmr2_", "cunmr3_", "cunmrq_", "cunmrz_",
-        "cunmtr_", "cupgtr_", "cupmtr_", "dbdsdc_", "dbdsqr_", "ddisna_",
-        "dgbbrd_", "dgbcon_", "dgbrfs_", "dgbsvx_", "dgbtrs_", "dgebak_",
-        "dgebal_", "dgecon_", "dgees_", "dgeesx_", "dgeev_", "dgeevx_", "dgels_",
-        "dgerfs_", "dgesdd_", "dgesvd_", "dgesvx_", "dgetrs_", "dggbak_",
-        "dggbal_", "dgges_", "dggesx_", "dggev_", "dggevx_", "dgghrd_", "dgtcon_",
-        "dgtrfs_", "dgtsvx_", "dgttrs_", "dhgeqz_", "dhsein_", "dhseqr_",
-        "dlacpy_", "dlagtm_", "dlalsd_", "dlaqgb_", "dlaqge_", "dlaqsb_",
-        "dlaqsp_", "dlaqsy_", "dlarf_", "dlarfb_", "dlarft_", "dlarfx_", "dlarrc_",
-        "dlarrd_", "dlarre_", "dlarz_", "dlarzb_", "dlarzt_", "dlascl_", "dlasdq_",
-        "dlaset_", "dlasr_", "dlasrt_", "dlasyf_", "dlatbs_", "dlatps_", "dlatrd_",
-        "dlatrs_", "dlauu2_", "dlauum_", "dopgtr_", "dopmtr_", "dorgbr_",
-        "dorgtr_", "dorm2l_", "dorm2r_", "dormbr_", "dormhr_", "dorml2_",
-        "dormlq_", "dormql_", "dormqr_", "dormr2_", "dormr3_", "dormrq_",
-        "dormrz_", "dormtr_", "dpbcon_", "dpbequ_", "dpbrfs_", "dpbstf_", "dpbsv_",
-        "dpbsvx_", "dpbtf2_", "dpbtrf_", "dpbtrs_", "dpocon_", "dporfs_", "dposv_",
-        "dposvx_", "dpotf2_", "dpotrf_", "dpotri_", "dpotrs_", "dppcon_",
-        "dppequ_", "dpprfs_", "dppsv_", "dppsvx_", "dpptrf_", "dpptri_", "dpptrs_",
-        "dpteqr_", "dptsvx_", "dsbev_", "dsbevd_", "dsbevx_", "dsbgst_", "dsbgv_",
-        "dsbgvd_", "dsbgvx_", "dsbtrd_", "dspcon_", "dspev_", "dspevd_", "dspevx_",
-        "dspgst_", "dspgv_", "dspgvd_", "dspgvx_", "dsprfs_", "dspsv_", "dspsvx_",
-        "dsptrd_", "dsptrf_", "dsptri_", "dsptrs_", "dstebz_", "dstedc_",
-        "dstegr_", "dstemr_", "dsteqr_", "dstev_", "dstevd_", "dstevr_", "dstevx_",
-        "dsycon_", "dsyev_", "dsyevd_", "dsyevr_", "dsyevx_", "dsygs2_", "dsygst_",
-        "dsygv_", "dsygvd_", "dsygvx_", "dsyrfs_", "dsysv_", "dsysvx_", "dsytd2_",
-        "dsytf2_", "dsytrd_", "dsytrf_", "dsytri_", "dsytrs_", "dtbcon_",
-        "dtbrfs_", "dtbtrs_", "dtgevc_", "dtgsja_", "dtgsna_", "dtgsy2_",
-        "dtgsyl_", "dtpcon_", "dtprfs_", "dtptri_", "dtptrs_", "dtrcon_",
-        "dtrevc_", "dtrexc_", "dtrrfs_", "dtrsen_", "dtrsna_", "dtrsyl_",
-        "dtrti2_", "dtrtri_", "dtrtrs_", "sbdsdc_", "sbdsqr_", "sdisna_",
-        "sgbbrd_", "sgbcon_", "sgbrfs_", "sgbsvx_", "sgbtrs_", "sgebak_",
-        "sgebal_", "sgecon_", "sgees_", "sgeesx_", "sgeev_", "sgeevx_", "sgels_",
-        "sgerfs_", "sgesdd_", "sgesvd_", "sgesvx_", "sgetrs_", "sggbak_",
-        "sggbal_", "sgges_", "sggesx_", "sggev_", "sggevx_", "sgghrd_", "sgtcon_",
-        "sgtrfs_", "sgtsvx_", "sgttrs_", "shgeqz_", "shsein_", "shseqr_",
-        "slacpy_", "slagtm_", "slalsd_", "slaqgb_", "slaqge_", "slaqsb_",
-        "slaqsp_", "slaqsy_", "slarf_", "slarfb_", "slarft_", "slarfx_", "slarrc_",
-        "slarrd_", "slarre_", "slarz_", "slarzb_", "slarzt_", "slascl_", "slasdq_",
-        "slaset_", "slasr_", "slasrt_", "slasyf_", "slatbs_", "slatps_", "slatrd_",
-        "slatrs_", "slauu2_", "slauum_", "sopgtr_", "sopmtr_", "sorgbr_",
-        "sorgtr_", "sorm2l_", "sorm2r_", "sormbr_", "sormhr_", "sorml2_",
-        "sormlq_", "sormql_", "sormqr_", "sormr2_", "sormr3_", "sormrq_",
-        "sormrz_", "sormtr_", "spbcon_", "spbequ_", "spbrfs_", "spbstf_", "spbsv_",
-        "spbsvx_", "spbtf2_", "spbtrf_", "spbtrs_", "spocon_", "sporfs_", "sposv_",
-        "sposvx_", "spotf2_", "spotrf_", "spotri_", "spotrs_", "sppcon_",
-        "sppequ_", "spprfs_", "sppsv_", "sppsvx_", "spptrf_", "spptri_", "spptrs_",
-        "spteqr_", "sptsvx_", "ssbev_", "ssbevd_", "ssbevx_", "ssbgst_", "ssbgv_",
-        "ssbgvd_", "ssbgvx_", "ssbtrd_", "sspcon_", "sspev_", "sspevd_", "sspevx_",
-        "sspgst_", "sspgv_", "sspgvd_", "sspgvx_", "ssprfs_", "sspsv_", "sspsvx_",
-        "ssptrd_", "ssptrf_", "ssptri_", "ssptrs_", "sstebz_", "sstedc_",
-        "sstegr_", "sstemr_", "ssteqr_", "sstev_", "sstevd_", "sstevr_", "sstevx_",
-        "ssycon_", "ssyev_", "ssyevd_", "ssyevr_", "ssyevx_", "ssygs2_", "ssygst_",
-        "ssygv_", "ssygvd_", "ssygvx_", "ssyrfs_", "ssysv_", "ssysvx_", "ssytd2_",
-        "ssytf2_", "ssytrd_", "ssytrf_", "ssytri_", "ssytrs_", "stbcon_",
-        "stbrfs_", "stbtrs_", "stgevc_", "stgsja_", "stgsna_", "stgsy2_",
-        "stgsyl_", "stpcon_", "stprfs_", "stptri_", "stptrs_", "strcon_",
-        "strevc_", "strexc_", "strrfs_", "strsen_", "strsna_", "strsyl_",
-        "strti2_", "strtri_", "strtrs_", "zbdsqr_", "zgbbrd_", "zgbcon_",
-        "zgbrfs_", "zgbsvx_", "zgbtrs_", "zgebak_", "zgebal_", "zgecon_", "zgees_",
-        "zgeesx_", "zgeev_", "zgeevx_", "zgels_", "zgerfs_", "zgesdd_", "zgesvd_",
-        "zgesvx_", "zgetrs_", "zggbak_", "zggbal_", "zgges_", "zggesx_", "zggev_",
-        "zggevx_", "zgghrd_", "zgtcon_", "zgtrfs_", "zgtsvx_", "zgttrs_", "zhbev_",
-        "zhbevd_", "zhbevx_", "zhbgst_", "zhbgv_", "zhbgvd_", "zhbgvx_", "zhbtrd_",
-        "zhecon_", "zheev_", "zheevd_", "zheevr_", "zheevx_", "zhegs2_", "zhegst_",
-        "zhegv_", "zhegvd_", "zhegvx_", "zherfs_", "zhesv_", "zhesvx_", "zhetd2_",
-        "zhetf2_", "zhetrd_", "zhetrf_", "zhetri_", "zhetrs_", "zhgeqz_",
-        "zhpcon_", "zhpev_", "zhpevd_", "zhpevx_", "zhpgst_", "zhpgv_", "zhpgvd_",
-        "zhpgvx_", "zhprfs_", "zhpsv_", "zhpsvx_", "zhptrd_", "zhptrf_", "zhptri_",
-        "zhptrs_", "zhsein_", "zhseqr_", "zlacp2_", "zlacpy_", "zlagtm_",
-        "zlahef_", "zlalsd_", "zlaqgb_", "zlaqge_", "zlaqhb_", "zlaqhe_",
-        "zlaqhp_", "zlaqsb_", "zlaqsp_", "zlaqsy_", "zlarf_", "zlarfb_", "zlarft_",
-        "zlarfx_", "zlarz_", "zlarzb_", "zlarzt_", "zlascl_", "zlaset_", "zlasr_",
-        "zlasyf_", "zlatbs_", "zlatps_", "zlatrd_", "zlatrs_", "zlauu2_",
-        "zlauum_", "zpbcon_", "zpbequ_", "zpbrfs_", "zpbstf_", "zpbsv_", "zpbsvx_",
-        "zpbtf2_", "zpbtrf_", "zpbtrs_", "zpocon_", "zporfs_", "zposv_", "zposvx_",
-        "zpotf2_", "zpotrf_", "zpotri_", "zpotrs_", "zppcon_", "zppequ_",
-        "zpprfs_", "zppsv_", "zppsvx_", "zpptrf_", "zpptri_", "zpptrs_", "zpteqr_",
-        "zptrfs_", "zptsvx_", "zpttrs_", "zspcon_", "zspmv_", "zspr_", "zsprfs_",
-        "zspsv_", "zspsvx_", "zsptrf_", "zsptri_", "zsptrs_", "zstedc_", "zstegr_",
-        "zstemr_", "zsteqr_", "zsycon_", "zsymv_", "zsyr_", "zsyrfs_", "zsysv_",
-        "zsysvx_", "zsytf2_", "zsytrf_", "zsytri_", "zsytrs_", "ztbcon_",
-        "ztbrfs_", "ztbtrs_", "ztgevc_", "ztgsja_", "ztgsna_", "ztgsy2_",
-        "ztgsyl_", "ztpcon_", "ztprfs_", "ztptri_", "ztptrs_", "ztrcon_",
-        "ztrevc_", "ztrexc_", "ztrrfs_", "ztrsen_", "ztrsna_", "ztrsyl_",
-        "ztrti2_", "ztrtri_", "ztrtrs_", "zungbr_", "zungtr_", "zunm2l_",
-        "zunm2r_", "zunmbr_", "zunmhr_", "zunml2_", "zunmlq_", "zunmql_",
-        "zunmqr_", "zunmr2_", "zunmr3_", "zunmrq_", "zunmrz_", "zunmtr_",
-        "zupgtr_", "zupmtr_", "ilaenv_",
+    CLAPACK has been manually modified to remove useless arguments generated by
+    f2c. But the mismatches between the f2c ABI and the human-curated sensible
+    ABI in CLAPACK cause us great pain.
+
+    This stuff applies to actual source files, but scipy also has multiple
+    templating engines for Fortran, so these changes have to be applied
+    immediately prior to f2c'ing a .f file to ensure that they also work
+    correctly on templated files.
+
+    Fortran seems to be mostly case insensitive. The templated files in
+    particular can include weird mixtures of lower and upper case.
+
+    Mostly the issues are related to 'character' types. Most LAPACK functions
+    that take string arguments use them as enums and only care about the first
+    character of the string. f2c generates a 'length' argument to indicate how
+    long the string is, but CLAPACK leaves these length arguments out because
+    the strings are assumed to have length 1.
+
+    So the goal is to cause f2c to generate no length argument. We can achieve
+    this by replacing the string with the ascii code of the first character
+    e.g.,:
+
+        f('UPPER') --> f(85)
+
+    Coming from C this surprises me a bit. I would expect `f(85)` to cause a
+    segfault or something when f tries to find its string at memory address 85.
+
+    f("UPPER") gets f2c'd to:
+
+        f("UPPER", 5)
+
+    But f2c compiles f(85) to the C code:
+
+        static integer c__85 = 85;
+        f(&c__85);
+
+    This is perfect. Not sure why it does this, but it's very convenient for us.
+
+    chla_transtype is a special case. The CLAPACK version of chla_transtype takes
+    a return argument, whereas f2c thinks it should return the value.
+
+    """
+    f2c_input = Path(f2c_input_path)
+    with open(f2c_input) as f:
+        lines = f.readlines()
+    new_lines = []
+    lines = char1_args_to_int(lines)
+
+    for line in lines:
+        line = fix_string_args(line)
+
+        if f2c_input_path.endswith("_flapack-f2pywrappers.f"):
+            line = line.replace("character cmach", "integer cmach")
+            line = line.replace("character norm", "integer norm")
+        if "id_dist" in str(f2c_input):
+            line = line.replace("character*1 jobz", "integer jobz")
+            if "jobz =" in line:
+                line = re.sub("'(.)'", lambda r: str(ord(r.group(1))), line)
+
+        if f2c_input.name in [
+            "_lapack_subroutine_wrappers.f",
+            "_blas_subroutine_wrappers.f",
+        ]:
+            line = line.replace("character", "integer")
+            line = line.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
+
+        new_lines.append(line)
+
+    with open(f2c_input_path, "w") as f:
+        f.writelines(new_lines)
+
+
+def fix_string_args(line):
+    """
+    The two functions ilaenv and xerbla have real string args, f2c generates
+    inaccurate signatures for them. Instead of manually fixing the signatures
+    (xerbla happens a lot) we inject wrappers called `xerblaf2py` and
+    `ilaenvf2py` that have the signatures f2c expects and call these instead.
+
+    Also, replace all single character strings in (the first line of) "call"
+    statements with their ascci codes.
+    """
+    line = re.sub("ilaenv", "ilaenvf2py", line, flags=re.I)
+    if not re.search("call", line, re.I):
+        return line
+    if re.search("xerbla", line, re.I):
+        return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
+    else:
+        return re.sub("'[A-Za-z0-9]'", lambda y: str(ord(y.group(0)[1])), line)
+
+
+def char1_to_int(x):
+    """
+    Replace multicharacter strings with the ascii code of their first character.
+
+    >>> char1_to_int("CALL sTRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )")
+    'CALL sTRSV( 85, 78, 78, J, H, LDH, Y, 1 )'
+    """
+    return re.sub("'(.)[A-Za-z -]*'", lambda r: str(ord(r.group(1))), x)
+
+
+def char1_args_to_int(lines):
+    """
+    Replace strings with the ascii code of their first character if they are
+    arguments to one of a long list of hard coded LAPACK functions (see
+    fncstems). This handles multiline function calls.
+
+    >>> print(char1_args_to_int(["CALL sTRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )"]))
+    ['CALL sTRSV( 85, 78, 78, J, H, LDH, Y, 1 )']
+
+    >>> print("".join(char1_args_to_int(prepare_doctest('''
+    ...               call cvout (logfil, nconv, workl(ihbds), ndigit,
+    ...     &            '_neupd: Last row of the eigenvector matrix for T')
+    ...     call ctrmm('Right'   , 'Upper'      , 'No transpose',
+    ...     &                  'Non-unit', n            , nconv         ,
+    ...     &                  one       , workl(invsub), ldq           ,
+    ...     &                  z         , ldz)
+    ... '''))))
+    call cvout (logfil, nconv, workl(ihbds), ndigit,
+    &            '_neupd: Last row of the eigenvector matrix for T')
+    call ctrmm(82   , 85      , 78,
+    &                  78, n            , nconv         ,
+    &                  one       , workl(invsub), ldq           ,
+    &                  z         , ldz)
+    """
+    fncstems = [
+        "gemm",
+        "ggbak",
+        "gghrd",
+        "lacpy",
+        "lamch",
+        "lanhs",
+        "lanst",
+        "larf",
+        "lascl",
+        "laset",
+        "lasr",
+        "ormqr",
+        "orm2r",
+        "steqr",
+        "stevr",
+        "trevc",
+        "trmm",
+        "trsen",
+        "trsv",
+        "unm2r",
+        "unmqr",
     ]
-    # fmt: on
-    code = None
-    with open(f2c_output_name, "r") as f:
-        code = f.read()
-        for cur_name in lapack_names:
-            code = re.sub(rf"\b{cur_name}\b", "w" + cur_name, code)
-    if code:
-        with open(f2c_output_name, "w") as f:
-            f.write(code)
+    fncnames = []
+    for c in "cdsz":
+        for stem in fncstems:
+            fncnames.append(c + stem)
+    fncnames += ["lsame"]
+
+    funcs_pattern = "|".join(fncnames)
+    new_lines = []
+    replace = False
+    for line in lines:
+        if re.search(funcs_pattern, line, re.IGNORECASE):
+            replace = True
+        if replace:
+            line = char1_to_int(line)
+        if not re.search(r",\s*$", line):
+            replace = False
+        new_lines.append(line)
+    return new_lines
+
+
+def fix_f2c_output(f2c_output_path: str):
+    """
+    This function is called on the name of each C output file. It fixes up the C
+    output in various ways to compensate for the lack of f2c support for Fortran
+    90 and Fortran 95.
+    """
+    f2c_output = Path(f2c_output_path)
+    if f2c_output.name == "lapack_extras.c":
+        # dfft.c has a bunch of implicit cast args coming from functions copied
+        # out of future lapack versions. fix_inconsistent_decls will fix all
+        # except string to int. String to int is fixed by fix_string_args and
+        # char1_args_to_int above.
+        subprocess.check_call(
+            [
+                "patch",
+                str(f2c_output_path),
+                "../../patches/fix-implicit-cast-args-from-newer-lapack.patch",
+            ]
+        )
+
+    with open(f2c_output) as f:
+        lines = f.readlines()
+    if "id_dist" in f2c_output_path:
+        # Fix implicit casts in id_dist.
+        lines = fix_inconsistent_decls(lines)
+    if "odepack" in f2c_output_path or f2c_output.name == "mvndst.c":
+        # Mark all but one declaration of each struct as extern.
+        if f2c_output.name == "blkdta000.c":
+            # extern marking in blkdata000.c doesn't work properly so we let it
+            # define the one copy of the structs. It doesn't talk about lsa001
+            # at all though, so we need to add a definition of it.
+            lines.append(
+                """
+                struct {    doublereal rownd2, pdest, pdlast, ratio, cm1[12], cm2[5], pdnorm;
+                    integer iownd2[3], icount, irflag, jtyp, mused, mxordn, mxords;
+                } lsa001_;
+                """
+            )
+        else:
+            add_externs_to_structs(lines)
+
+    if f2c_output.name == "_lapack_subroutine_wrappers.c":
+        lines = [
+            line.replace("integer chla_transtype__", "void chla_transtype__")
+            for line in lines
+        ]
+
+    with open(f2c_output, "w") as f:
+        f.writelines(lines)
+
+
+def add_externs_to_structs(lines: list[str]):
+    """
+    The fortran "common" keyword is supposed to share variables between a bunch
+    of files. f2c doesn't handle this correctly (it isn't possible for it to
+    handle it correctly because it only looks one file at a time).
+
+    We mark all the structs as externs and then (separately) add one non extern
+    version to each file.
+    >>> lines = prepare_doctest('''
+    ...     struct {    doublereal rls[218];
+    ...         integer ils[39];
+    ...     } ls0001_;
+    ...     struct {    doublereal rlsa[22];
+    ...         integer ilsa[9];
+    ...     } lsa001_;
+    ...     struct {    integer ieh[2];
+    ...     } eh0001_;
+    ... ''')
+    >>> add_externs_to_structs(lines)
+    >>> print("".join(lines))
+    extern struct {    doublereal rls[218];
+        integer ils[39];
+    } ls0001_;
+    extern struct {    doublereal rlsa[22];
+        integer ilsa[9];
+    } lsa001_;
+    extern struct {    integer ieh[2];
+    } eh0001_;
+    """
+    for idx, line in enumerate(lines):
+        if line.startswith("struct"):
+            lines[idx] = "extern " + lines[idx]
+
+
+def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
+    """
+    Make sure that functions and declarations have their argument list only on
+    one line.
+
+    >>> print("".join(regroup_lines(prepare_doctest('''
+    ...     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
+    ...     	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen
+    ...     	transr_len, ftnlen uplo_len)
+    ...     {
+    ...        static doublereal psum[52];
+    ...        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *,
+    ...            doublereal *, doublereal *, integer *);
+    ... '''))))
+    /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen transr_len, ftnlen uplo_len){
+       static doublereal psum[52];
+       extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);
+
+    """
+    line_iter = iter(lines)
+    for line in line_iter:
+        if "/* Subroutine */" not in line:
+            yield line
+            continue
+
+        is_definition = line.startswith("/* Subroutine */")
+        stop = ")" if is_definition else ";"
+        if stop in line:
+            yield line
+            continue
+
+        sub_lines = [line.rstrip()]
+        for line in line_iter:
+            sub_lines.append(line.strip())
+            if stop in line:
+                break
+        joined_line = " ".join(sub_lines)
+        if is_definition:
+            yield joined_line
+        else:
+            yield from (x + ";" for x in joined_line.split(";")[:-1])
+
+
+def fix_inconsistent_decls(lines: list[str]) -> list[str]:
+    """
+    Fortran functions in id_dist use implicit casting of function args which f2c
+    doesn't support.
+
+    The fortran equivalent of the following code:
+
+        double f(double x){
+            return x + 5;
+        }
+        double g(int x){
+            return f(x);
+        }
+
+    gets f2c'd to:
+
+        double f(double x){
+            return x + 5;
+        }
+        double g(int x){
+            double f(int);
+            return f(x);
+        }
+
+    which fails to compile because the declaration of f type clashes with the
+    definition. Gather up all the definitions in each file and then gathers the
+    declarations and fixes them if necessary so that the declaration matches the
+    definition.
+
+    >>> print("".join(fix_inconsistent_decls(prepare_doctest('''
+    ...    /* Subroutine */ double f(double x){
+    ...        return x + 5;
+    ...    }
+    ...    /* Subroutine */ double g(int x){
+    ...        extern /* Subroutine */ double f(int);
+    ...        return f(x);
+    ...    }
+    ... '''))))
+    /* Subroutine */ double f(double x){
+        return x + 5;
+    }
+    /* Subroutine */ double g(int x){
+        extern /* Subroutine */ double f(double);
+        return f(x);
+    }
+    """
+    func_types = {}
+    lines = list(regroup_lines(lines))
+    for line in lines:
+        if not line.startswith("/* Subroutine */"):
+            continue
+        [func_name, types] = get_subroutine_decl(line)
+        func_types[func_name] = types
+
+    for idx, line in enumerate(lines):
+        if "extern /* Subroutine */" not in line:
+            continue
+        decls = line.split(")")[:-1]
+        for decl in decls:
+            [func_name, types] = get_subroutine_decl(decl)
+            if func_name not in func_types or types == func_types[func_name]:
+                continue
+            types = func_types[func_name]
+            l = list(line.partition(func_name + "("))
+            l[2:] = list(l[2].partition(")"))
+            l[2] = ", ".join(types)
+            line = "".join(l)
+        lines[idx] = line
+    return lines
+
+
+def get_subroutine_decl(sub: str) -> tuple[str, list[str]]:
+    """
+    >>> get_subroutine_decl(
+    ...     "extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);"
+    ... )
+    ('dqelg_', ['integer *', 'doublereal *', 'doublereal *', 'doublereal *', 'doublereal *', 'integer *'])
+    """
+    func_name = sub.partition("(")[0].rpartition(" ")[2]
+    args_str = sub.partition("(")[2].partition(")")[0]
+    args = args_str.split(",")
+    types = []
+    for arg in args:
+        arg = arg.strip()
+        if "*" in arg:
+            type = "".join(arg.partition("*")[:-1])
+        else:
+            type = arg.partition(" ")[0]
+        types.append(type.strip())
+    return (func_name, types)
+
+
+def scipy_fix_cfile(path):
+    """
+    Replace void return types with int return types in various generated .c and
+    .h files. We can't achieve this with a simple patch because these files are
+    not in the sdist, they are generated as part of the build.
+    """
+    source_path = Path(path)
+    text = source_path.read_text()
+    text = text.replace("extern void F_WRAPPEDFUNC", "extern int F_WRAPPEDFUNC")
+    text = text.replace("extern void F_FUNC", "extern int F_FUNC")
+    text = text.replace("void (*f2py_func)", "int (*f2py_func)")
+    text = text.replace("static void cb_", "static int cb_")
+    text = text.replace("typedef void(*cb_", "typedef int(*cb_")
+    text = text.replace("void(*)", "int(*)")
+    text = text.replace("static void f2py_setup_", "static int f2py_setup_")
+
+    if path.endswith("_flapackmodule.c"):
+        text = text.replace(",size_t", "")
+        text = re.sub(r",slen\([a-z]*\)\)", ")", text)
+
+    if path.endswith("_fblasmodule.c"):
+        text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
+
+    source_path.write_text(text)
+
+    for lib in ["lapack", "blas"]:
+        if path.endswith(f"cython_{lib}.c"):
+            header_path = Path(path).with_name(f"_{lib}_subroutines.h")
+            header_text = header_path.read_text()
+            header_text = header_text.replace("void F_FUNC", "int F_FUNC")
+            header_path.write_text(header_text)
+
+
+def scipy_fixes(args):
+    for arg in args:
+        if arg.endswith(".c"):
+            scipy_fix_cfile(arg)

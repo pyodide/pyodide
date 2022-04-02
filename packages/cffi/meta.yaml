@@ -1,14 +1,17 @@
 package:
   name: cffi
-  version: 1.14.6
+  version: 1.15.0
 requirements:
   run:
     - pycparser
 source:
-  url: https://files.pythonhosted.org/packages/2e/92/87bb61538d7e60da8a7ec247dc048f7671afe17016cd0008b3b710012804/cffi-1.14.6.tar.gz
-  sha256: c9a875ce9d7fe32887784274dd533c57909b7b1dcadcc128a2ac21331a9765dd
+  url: https://files.pythonhosted.org/packages/00/9e/92de7e1217ccc3d5f352ba21e52398372525765b2e0c4530e6eb2ba9282a/cffi-1.15.0.tar.gz
+  sha256: 920f0d66a896c2d99f0adbb391f990a84091179542c205fa53ce5787aff87954
   patches:
     - patches/libffi-config.patch
+build:
+  script: |
+    pip install -t $HOSTSITEPACKAGES cffi==$PKG_VERSION
 test:
   imports:
     - cffi

@@ -8,6 +8,7 @@
 #include "js2python.h"
 #include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
+#include "pyproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
@@ -21,19 +22,27 @@ EM_JS(int, pyproxy_Check, (JsRef x), {
   if (x == 0) {
     return false;
   }
-  let val = Module.hiwire.get_value(x);
-  return Module.isPyProxy(val);
+  let val = Hiwire.get_value(x);
+  return API.isPyProxy(val);
 });
 
-EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);
   }
-  let proxies = Module.hiwire.get_value(proxies_id);
+  let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
     Module.pyproxy_destroy(px, msg);
   }
+});
+
+EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
+  let msg = undefined;
+  if (msg_ptr) {
+    msg = UTF8ToString(msg_ptr);
+  }
+  Module.pyproxy_destroy(Module.hiwire.get_value(proxy_id), msg);
 });
 
 static PyObject* asyncio;
@@ -105,7 +114,8 @@ pyproxy_getflags(PyObject* pyobj)
     result |= HAS_GET;
   } else if (PyType_Check(pyobj)) {
     _Py_IDENTIFIER(__class_getitem__);
-    if (_PyObject_HasAttrId(pyobj, &PyId___class_getitem__)) {
+    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
+    if (PyObject_HasAttr(pyobj, oname)) {
       result |= HAS_GET;
     }
   }
@@ -236,18 +246,18 @@ int
 _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
 
 EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
-  let proxyCache = Module.hiwire.get_value(proxyCacheId);
+  let proxyCache = Hiwire.get_value(proxyCacheId);
   let proxyId = proxyCache.get(descr);
   if (!proxyId) {
     return undefined;
   }
   // Okay found a proxy. Is it alive?
-  if (Module.hiwire.get_value(proxyId).$$.ptr) {
+  if (Hiwire.get_value(proxyId).$$.ptr) {
     return proxyId;
   } else {
     // It's dead, tidy up
     proxyCache.delete(descr);
-    Module.hiwire.decref(proxyId);
+    Hiwire.decref(proxyId);
     return undefined;
   }
 })
@@ -256,7 +266,7 @@ EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
 EM_JS(void,
 proxy_cache_set,
 (JsRef proxyCacheId, PyObject* descr, JsRef proxy), {
-  let proxyCache = Module.hiwire.get_value(proxyCacheId);
+  let proxyCache = Hiwire.get_value(proxyCacheId);
   proxyCache.set(descr, proxy);
 })
 // clang-format on
@@ -471,7 +481,7 @@ finally:
 }
 
 /**
- * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * This sets up a call to _PyObject_Vectorcall. It's a helper function for
  * callPyObjectKwargs. This is the primary entrypoint from JavaScript into
  * Python code.
  *
@@ -570,66 +580,30 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
-/**
- * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
- * so in v3.10 this would be a simple API call wrapper like the rest of the code
- * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c).
- *
- * When the iterator is done, it returns NULL and sets StopIteration. We'll use
- * _pyproxyGen_FetchStopIterationValue below to get the return value of the
- * generator (again copying from YIELD_FROM).
- */
-JsRef
-_pyproxyGen_Send(PyObject* receiver, JsRef jsval)
+PySendResult
+_pyproxyGen_Send(PyObject* receiver, JsRef jsval, JsRef* result)
 {
   bool success = false;
   PyObject* v = NULL;
   PyObject* retval = NULL;
-  JsRef jsresult = NULL;
 
   v = js2python(jsval);
   FAIL_IF_NULL(v);
-  if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
-    retval = _PyGen_Send((PyGenObject*)receiver, v);
-  } else if (v == Py_None) {
-    retval = Py_TYPE(receiver)->tp_iternext(receiver);
-  } else {
-    _Py_IDENTIFIER(send);
-    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+  PySendResult status = PyIter_Send(receiver, v, &retval);
+  if (status == PYGEN_ERROR) {
+    FAIL();
   }
-  FAIL_IF_NULL(retval);
-
-  jsresult = python2js(retval);
-  FAIL_IF_NULL(jsresult);
+  *result = python2js(retval);
+  FAIL_IF_NULL(*result);
 
   success = true;
 finally:
   Py_CLEAR(v);
   Py_CLEAR(retval);
   if (!success) {
-    hiwire_CLEAR(jsresult);
+    status = PYGEN_ERROR;
   }
-  return jsresult;
-}
-
-/**
- * If StopIteration was set, return the value it was set with. Otherwise, return
- * NULL.
- */
-JsRef
-_pyproxyGen_FetchStopIterationValue()
-{
-  PyObject* val = NULL;
-  // cf implementation of YIELD_FROM opcode in ceval.c
-  // _PyGen_FetchStopIterationValue returns an error code, but it seems
-  // redundant
-  _PyGen_FetchStopIterationValue(&val);
-  if (val == NULL) {
-    return NULL;
-  }
-  JsRef result = python2js(val);
-  Py_CLEAR(val);
-  return result;
+  return status;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -805,7 +779,7 @@ size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
  * Convert a C array of Py_ssize_t to JavaScript.
  */
 EM_JS_REF(JsRef, array_to_js, (Py_ssize_t * array, int len), {
-  return Module.hiwire.new_value(
+  return Hiwire.new_value(
     Array.from(HEAP32.subarray(array / 4, array / 4 + len)));
 })
 
@@ -838,7 +812,7 @@ size_t buffer_struct_size = sizeof(buffer_struct);
  *
  * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
  * determine the locations of: the first element of the buffer, the earliest
- * element of the buffer in memory the lastest element of the buffer in memory
+ * element of the buffer in memory the latest element of the buffer in memory
  * (plus one itemsize).
  *
  * We will use this information to slice out a subarray of the wasm heap that
@@ -937,7 +911,7 @@ finally:
 }
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
+  return Hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
 /**
@@ -970,7 +944,7 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     _Py_DecRef(obj);
   };
   Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
-  return Module.hiwire.new_value(wrapper);
+  return Hiwire.new_value(wrapper);
 });
 
 static PyObject*
@@ -1021,7 +995,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
   }
   let done_callback = (x) => {};
   if(done_callback_id){
-    done_callback = Module.hiwire.get_value(done_callback_id);
+    done_callback = Hiwire.get_value(done_callback_id);
   }
   let used = false;
   function checkUsed(){
@@ -1063,7 +1037,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
   }
   onFulfilled.destroy = destroy;
   onRejected.destroy = destroy;
-  return Module.hiwire.new_value(
+  return Hiwire.new_value(
     [onFulfilled, onRejected]
   );
 })

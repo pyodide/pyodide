@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import argparse
+import os
+import pathlib
 import sys
 
-from . import buildall
-from . import buildpkg
-from . import pywasmcross
-from . import serve
-from . import mkpkg
+from . import buildall, buildpkg, mkpkg, serve
+from .common import get_make_environment_vars
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -19,7 +18,6 @@ def make_parser() -> argparse.ArgumentParser:
     for command_name, module in (
         ("buildpkg", buildpkg),
         ("buildall", buildall),
-        ("pywasmcross", pywasmcross),
         ("serve", serve),
         ("mkpkg", mkpkg),
     ):
@@ -30,12 +28,27 @@ def make_parser() -> argparse.ArgumentParser:
         ]:
             # Likely building documentation, skip private API
             continue
-        parser = module.make_parser(subparsers.add_parser(command_name))  # type: ignore
-        parser.set_defaults(func=module.main)  # type: ignore
+        parser = module.make_parser(subparsers.add_parser(command_name))
+        parser.set_defaults(func=module.main)
     return main_parser
 
 
 def main():
+    if not os.environ.get("__LOADED_PYODIDE_ENV"):
+        from .common import get_hostsitepackages
+
+        PYODIDE_ROOT = str(pathlib.Path(__file__).parents[2].resolve())
+        os.environ["PYODIDE_ROOT"] = PYODIDE_ROOT
+        os.environ.update(get_make_environment_vars())
+        hostsitepackages = get_hostsitepackages()
+        pythonpath = [
+            hostsitepackages,
+            f"{PYODIDE_ROOT}/pyodide-build/",
+        ]
+        os.environ["PYTHONPATH"] = ":".join(pythonpath)
+        os.environ["BASH_ENV"] = ""
+        os.environ["__LOADED_PYODIDE_ENV"] = "1"
+
     main_parser = make_parser()
 
     args = main_parser.parse_args()

@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.23.0/js/jquery.terminal.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.32.0/js/jquery.terminal.min.js"></script>
     <link
-      href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.23.0/css/jquery.terminal.min.css"
+      href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.32.0/css/jquery.terminal.min.css"
       rel="stylesheet"
     />
     <script src="{{ PYODIDE_BASE_URL }}pyodide.js"></script>
@@ -24,9 +24,7 @@
       }
 
       async function main() {
-        globalThis.pyodide = await loadPyodide({
-          indexURL: "{{ PYODIDE_BASE_URL }}",
-        });
+        globalThis.pyodide = await loadPyodide();
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
           `
@@ -45,7 +43,7 @@
             def clear_console():
               pyconsole.buffer = []
         `,
-          namespace
+          { globals: namespace }
         );
         let repr_shorten = namespace.get("repr_shorten");
         let banner = namespace.get("BANNER");
@@ -68,7 +66,7 @@
         async function interpreter(command) {
           let unlock = await lock();
           term.pause();
-          // multiline should be splitted (useful when pasting)
+          // multiline should be split (useful when pasting)
           for (const c of command.split("\n")) {
             let fut = pyconsole.push(c);
             term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
@@ -103,7 +101,8 @@
               }
             } catch (e) {
               if (e.constructor.name === "PythonError") {
-                term.error(fut.formatted_error.trimEnd());
+                const message = fut.formatted_error || e.message;
+                term.error(message.trimEnd());
               } else {
                 throw e;
               }
@@ -127,10 +126,19 @@
           keymap: {
             "CTRL+C": async function (event, original) {
               clear_console();
-              term.echo_command();
+              term.enter();
               term.echo("KeyboardInterrupt");
               term.set_command("");
               term.set_prompt(ps1);
+            },
+            TAB: (event, original) => {
+              const command = term.before_cursor();
+              // Disable completion for whitespaces.
+              if (command.trim() === "") {
+                term.insert("\t");
+                return false;
+              }
+              return original(event);
             },
           },
         });
@@ -140,7 +148,7 @@
           term.error(s.trimEnd());
         };
         term.ready = Promise.resolve();
-        pyodide._module.on_fatal = async (e) => {
+        pyodide._api.on_fatal = async (e) => {
           term.error(
             "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
           );

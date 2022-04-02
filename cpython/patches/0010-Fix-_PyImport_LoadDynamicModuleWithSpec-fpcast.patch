@@ -1,0 +1,41 @@
+From 1775d9b346016fec4eb22f7b46d6aa8ece8aa761 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 1 Mar 2022 17:06:53 -0800
+Subject: [PATCH 10/10] Fix _PyImport_LoadDynamicModuleWithSpec fpcast
+
+---
+ Python/importdl.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/Python/importdl.c b/Python/importdl.c
+index 6d2554741f..0caafd0e13 100644
+--- a/Python/importdl.c
++++ b/Python/importdl.c
+@@ -89,6 +89,15 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
+     return NULL;
+ }
+ 
++#include <emscripten.h>
++// Sometimes these init functions expect one argument, sometimes zero arguments
++// so they need a trampoline.
++typedef PyObject *(*PyInitFunctionType)(void);
++
++EM_JS(PyObject*, em_call_init_function, (PyInitFunctionType f), {
++    return Module.wasmTable.get(f)();
++});
++
+ PyObject *
+ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
+ {
+@@ -164,7 +173,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
+         _Py_PackageContext = oldcontext;
+         goto error;
+     }
+-    m = p0();
++    m = em_call_init_function(p0);
+     _Py_PackageContext = oldcontext;
+ 
+     if (m == NULL) {
+-- 
+2.25.1
+

@@ -1,13 +1,17 @@
 #!/bin/bash
 
 # get the absolute path of the root folder
-ROOT=`cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P`
+# shellcheck disable=SC2164
+ROOT=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P)
 
 # emsdk_env.sh is fairly noisy, and suppress error message if the file doesn't
 # exist yet (i.e. before building emsdk)
+# shellcheck source=/dev/null
 source "$ROOT/emsdk/emsdk/emsdk_env.sh" 2> /dev/null || true
 export PATH="$ROOT/node_modules/.bin/:$ROOT/emsdk/emsdk/ccache/git-emscripten_64bit/bin:$PATH:$ROOT/packages/.artifacts/bin/"
-export EM_DIR=$(dirname $(which emcc.py || echo "."))
+EMCC_PATH=$(which emcc.py || echo ".")
+EM_DIR=$(dirname "$EMCC_PATH")
+export EM_DIR
 
 # Following two variables are set by emsdk activated otherwise
 export _EMCC_CCACHE=1

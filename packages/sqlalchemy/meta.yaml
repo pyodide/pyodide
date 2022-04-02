@@ -1,0 +1,14 @@
+package:
+  name: sqlalchemy
+  version: 1.4.31
+source:
+  url: https://files.pythonhosted.org/packages/0f/80/d8883f12689a55e333d221bb9a56c727e976f5a8e9dc862efeac9f40d296/SQLAlchemy-1.4.31.tar.gz
+  sha256: 582b59d1e5780a447aada22b461e50b404a9dc05768da1d87368ad8190468418
+test:
+  imports:
+    - sqlalchemy
+about:
+  home: https://www.sqlalchemy.org
+  PyPI: https://pypi.org/project/sqlalchemy
+  summary: Database Abstraction Library
+  license: MIT

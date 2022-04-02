@@ -1,7 +1,8 @@
-from io import StringIO
-from ._core import JsProxy, to_js
-from typing import Any
 import json
+from io import StringIO
+from typing import Any, BinaryIO, TextIO
+
+from ._core import JsProxy, to_js
 
 try:
     from js import XMLHttpRequest
@@ -9,7 +10,7 @@ except ImportError:
     pass
 
 from ._core import IN_BROWSER
-
+from ._package_loader import unpack_buffer
 
 __all__ = [
     "open_url",
@@ -22,7 +23,7 @@ def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
     The download of binary files is not supported. To download binary
-     files use :func:`pyodide.utils.fetch` which is asynchronous.
+    files use :func:`pyodide.http.pyfetch` which is asynchronous.
 
     Parameters
     ----------
@@ -64,7 +65,7 @@ class FetchResponse:
     def body_used(self) -> bool:
         """Has the response been used yet?
 
-        (If so, attempting to retreive the body again will raise an OSError.)
+        (If so, attempting to retrieve the body again will raise an OSError.)
         """
         return self.js_response.bodyUsed
 
@@ -148,24 +149,83 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
+    async def _into_file(self, f: TextIO | BinaryIO):
+        """Write the data into an empty file with no copy.
 
-async def pyfetch(url, **kwargs) -> FetchResponse:
-    """Fetch the url and return the response.
+        Warning: should only be used when f is an empty file, otherwise it may
+        overwrite the data of f.
+        """
+        buf = await self.buffer()
+        buf._into_file(f)
+
+    async def _create_file(self, path: str):
+        """Uses the data to back a new file without copying it.
+
+        This method avoids copying the data when creating a new file. If you
+        want to write the data into an existing file, use
+
+        .. code-block:: python
+
+            buf = await resp.buffer()
+            buf.to_file(file)
+
+        Parameters
+        ----------
+        path : str
+
+            The path to the file to create. The file should not exist but
+            it should be in a directory that exists. Otherwise, will raise
+            an ``OSError``
+        """
+        with open(path, "x") as f:
+            await self._into_file(f)
+
+    async def unpack_archive(self, *, extract_dir=None, format=None):
+        """Treat the data as an archive and unpack it into target directory.
+
+        Assumes that the file is an archive in a format that shutil has an
+        unpacker for. The arguments extract_dir and format are passed directly
+        on to ``shutil.unpack_archive``.
+
+        Parameters
+        ----------
+        extract_dir : str
+            Directory to extract the archive into. If not
+            provided, the current working directory is used.
+
+        format : str
+            The archive format: one of “zip”, “tar”, “gztar”, “bztar”.
+            Or any other format registered with ``shutil.register_unpack_format()``. If not
+            provided, ``unpack_archive()`` will use the archive file name extension
+            and see if an unpacker was registered for that extension. In case
+            none is found, a ``ValueError`` is raised.
+        """
+        buf = await self.buffer()
+        filename = self._url.rsplit("/", -1)[-1]
+        unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
+
+
+async def pyfetch(url: str, **kwargs) -> FetchResponse:
+    r"""Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function
     <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
     designed to be convenient to use from Python. The
-    :class:`pyodide.utils.FetchResponse` has methods with the output types
+    :class:`pyodide.http.FetchResponse` has methods with the output types
     already converted to Python objects.
 
     Parameters
     ----------
-    url URL to fetch. \*\*kwargs Any keyword arguments are passed along as
-        `optional parameters to the fetch API
+    url : str
+        URL to fetch.
+
+    \*\*kwargs : Any
+        keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
     if IN_BROWSER:
-        from js import fetch as _jsfetch, Object
+        from js import Object
+        from js import fetch as _jsfetch
 
     return FetchResponse(
         url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))

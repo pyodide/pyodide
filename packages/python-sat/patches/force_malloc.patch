@@ -1,5 +1,5 @@
 diff --git a/cardenc/pycard.cc b/cardenc/pycard.cc
-index 4ae27fe..5941d0a 100644
+index c4d2ead..a0a30db 100644
 --- a/cardenc/pycard.cc
 +++ b/cardenc/pycard.cc
 @@ -11,6 +11,7 @@
@@ -8,12 +8,12 @@ index 4ae27fe..5941d0a 100644
  #include <stdio.h>
 +#include <stdlib.h>
  #include <Python.h>
-
+ 
  #include "card.hh"
 @@ -122,8 +123,14 @@ static struct PyModuleDef module_def = {
  	NULL,              /* m_free */
  };
-
+ 
 +static volatile int *_dummy_malloc;
 +
  PyMODINIT_FUNC PyInit_pycard(void)
@@ -23,10 +23,10 @@ index 4ae27fe..5941d0a 100644
 +	free((void *)_dummy_malloc);
 +
  	PyObject *m = PyModule_Create(&module_def);
-
+ 
  	if (m == NULL)
 diff --git a/solvers/pysolvers.cc b/solvers/pysolvers.cc
-index 7066cb4..6b4d7de 100644
+index a198f43..d45639b 100644
 --- a/solvers/pysolvers.cc
 +++ b/solvers/pysolvers.cc
 @@ -15,6 +15,7 @@
@@ -35,12 +35,12 @@ index 7066cb4..6b4d7de 100644
  #include <stdio.h>
 +#include <stdlib.h>
  #include <vector>
-
+ 
  #ifdef WITH_CADICAL
-@@ -493,8 +494,14 @@ static struct PyModuleDef module_def = {
+@@ -643,8 +644,14 @@ static struct PyModuleDef module_def = {
  	NULL,              /* m_free */
  };
-
+ 
 +static volatile int *_dummy_malloc;
 +
  PyMODINIT_FUNC PyInit_pysolvers(void)
@@ -50,5 +50,5 @@ index 7066cb4..6b4d7de 100644
 +	free((void *)_dummy_malloc);
 +
  	PyObject *m = PyModule_Create(&module_def);
-
+ 
  	if (m == NULL)

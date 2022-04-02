@@ -1,0 +1,199 @@
+From 8e62ac7ee97e6046745ba086545ac9c2511279f8 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 25 Dec 2021 16:02:23 -0800
+Subject: [PATCH] remove mvnun -- not fortran 77 compliant
+
+These two functions use features from newer fortran standards which won't work
+with f2c. This deletes them.
+
+---
+ scipy/stats/mvn.pyf  |  29 ----------
+ scipy/stats/mvndst.f | 132 -------------------------------------------
+ 2 files changed, 161 deletions(-)
+
+diff --git a/scipy/stats/mvn.pyf b/scipy/stats/mvn.pyf
+index c9022b8de..cb0862a76 100644
+--- a/scipy/stats/mvn.pyf
++++ b/scipy/stats/mvn.pyf
+@@ -3,35 +3,6 @@
+ 
+ python module mvn ! in 
+     interface  ! in :mvn
+-        subroutine mvnun(d,n,lower,upper,means,covar,maxpts,abseps,releps,value,inform) ! in :mvn:mvndst.f
+-            integer intent(hide) :: d=shape(means,0)
+-            integer intent(hide) :: n=shape(means,1)
+-            double precision dimension(d) :: lower
+-            double precision dimension(d) :: upper
+-            double precision dimension(d,n) :: means
+-            double precision dimension(d,d) :: covar
+-            integer intent(optional) :: maxpts=d*1000
+-            double precision intent(optional) :: abseps=1e-6
+-            double precision intent(optional) :: releps=1e-6
+-            double precision intent(out) :: value
+-            integer intent(out) :: inform
+-        end subroutine mvnun
+-
+-        subroutine mvnun_weighted(d,n,lower,upper,means,weights,covar,maxpts,abseps,releps,value,inform) ! in :mvn:mvndst.f
+-            integer intent(hide) :: d=shape(means,0)
+-            integer intent(hide) :: n=shape(means,1)
+-            double precision dimension(d) :: lower
+-            double precision dimension(d) :: upper
+-            double precision dimension(d,n) :: means
+-            double precision dimension(n) :: weights
+-            double precision dimension(d,d) :: covar
+-            integer intent(optional) :: maxpts=d*1000
+-            double precision intent(optional) :: abseps=1e-6
+-            double precision intent(optional) :: releps=1e-6
+-            double precision intent(out) :: value
+-            integer intent(out) :: inform
+-        end subroutine mvnun_weighted
+-
+         subroutine mvndst(n,lower,upper,infin,correl,maxpts,abseps,releps,error,value,inform) ! in :mvn:mvndst.f
+             integer intent(hide) :: n=len(lower)
+             double precision dimension(n) :: lower
+diff --git a/scipy/stats/mvndst.f b/scipy/stats/mvndst.f
+index 41afa7e74..76d9690e3 100644
+--- a/scipy/stats/mvndst.f
++++ b/scipy/stats/mvndst.f
+@@ -21,138 +21,6 @@
+ *          Pullman, WA 99164-3113
+ *          Email : alangenz@wsu.edu
+ *
+-      SUBROUTINE mvnun(d, n, lower, upper, means, covar, maxpts, 
+-     &                   abseps, releps, value, inform)
+-*  Parameters
+-*
+-*   d       integer, dimensionality of the data
+-*   n       integer, the number of data points
+-*   lower   double(2), the lower integration limits
+-*   upper   double(2), the upper integration limits
+-*   means   double(n), the mean of each kernel
+-*   covar   double(2,2), the covariance matrix
+-*   maxpts  integer, the maximum number of points to evaluate at
+-*   abseps  double, absolute error tolerance
+-*   releps  double, relative error tolerance
+-*   value   double intent(out), integral value
+-*   inform  integer intent(out), 
+-*               if inform == 0: error < eps
+-*               elif inform == 1: error > eps, all maxpts used
+-      integer n, d, infin(d), maxpts, inform, tmpinf
+-      double precision lower(d), upper(d), releps, abseps,
+-     &                 error, value, stdev(d), rho(d*(d-1)/2), 
+-     &                 covar(d,d),
+-     &                 nlower(d), nupper(d), means(d,n), tmpval,
+-     &                 inf
+-      integer i, j
+-
+-      inf = 0d0
+-      inf = 1d0 / inf
+-
+-      do i=1,d
+-        stdev(i) = dsqrt(covar(i,i))
+-        if (upper(i).eq.inf.and.lower(i).eq.-inf) then
+-           infin(i) = -1
+-        else if (lower(i).eq.-inf) then
+-           infin(i) = 0
+-        else if (upper(i).eq.inf) then
+-           infin(i) = 1
+-        else
+-           infin(i) = 2
+-        end if
+-      end do
+-      do i=1,d
+-        do j=1,i-1
+-          rho(j+(i-2)*(i-1)/2) = covar(i,j)/stdev(i)/stdev(j)
+-        end do
+-      end do
+-      value = 0d0
+-
+-      inform = 0
+-
+-      do i=1,n
+-        do j=1,d
+-          nlower(j) = (lower(j) - means(j,i))/stdev(j)
+-          nupper(j) = (upper(j) - means(j,i))/stdev(j)
+-        end do
+-        call mvndst(d,nlower,nupper,infin,rho,maxpts,abseps,releps,
+-     &              error,tmpval,tmpinf)
+-        value = value + tmpval
+-        if (tmpinf .eq. 1) then
+-            inform = 1
+-        end if
+-      end do
+-
+-      value = value / n
+-      
+-      END 
+-
+-
+-      SUBROUTINE mvnun_weighted(d, n, lower, upper, means, weights,
+-     &                          covar, maxpts, abseps, releps, 
+-     &                           value, inform)
+-*  Parameters
+-*
+-*   d       integer, dimensionality of the data
+-*   n       integer, the number of data points
+-*   lower   double(2), the lower integration limits
+-*   upper   double(2), the upper integration limits
+-*   means   double(n), the mean of each kernel
+-*   weights double(n), the weight of each kernel
+-*   covar   double(2,2), the covariance matrix
+-*   maxpts  integer, the maximum number of points to evaluate at
+-*   abseps  double, absolute error tolerance
+-*   releps  double, relative error tolerance
+-*   value   double intent(out), integral value
+-*   inform  integer intent(out), 
+-*               if inform == 0: error < eps
+-*               elif inform == 1: error > eps, all maxpts used
+-      integer n, d, infin(d), maxpts, inform, tmpinf
+-      double precision lower(d), upper(d), releps, abseps,
+-     &                 error, value, stdev(d), rho(d*(d-1)/2), 
+-     &                 covar(d,d),
+-     &                 nlower(d), nupper(d), means(d,n), tmpval,
+-     &                 inf, weights(n)
+-      integer i, j
+-
+-      inf = 0d0
+-      inf = 1d0 / inf
+-
+-      do i=1,d
+-        stdev(i) = dsqrt(covar(i,i))
+-        if (upper(i).eq.inf.and.lower(i).eq.-inf) then
+-           infin(i) = -1
+-        else if (lower(i).eq.-inf) then
+-           infin(i) = 0
+-        else if (upper(i).eq.inf) then
+-           infin(i) = 1
+-        else
+-           infin(i) = 2
+-        end if
+-      end do
+-      do i=1,d
+-        do j=1,i-1
+-          rho(j+(i-2)*(i-1)/2) = covar(i,j)/stdev(i)/stdev(j)
+-        end do
+-      end do
+-      value = 0d0
+-
+-      inform = 0
+-
+-      do i=1,n
+-        do j=1,d
+-          nlower(j) = (lower(j) - means(j,i))/stdev(j)
+-          nupper(j) = (upper(j) - means(j,i))/stdev(j)
+-        end do
+-        call mvndst(d,nlower,nupper,infin,rho,maxpts,abseps,releps,
+-     &              error,tmpval,tmpinf)
+-        value = value + tmpval * weights(i)
+-        if (tmpinf .eq. 1) then
+-            inform = 1
+-        end if
+-      end do
+-      
+-      END 
+ 
+       SUBROUTINE MVNDST( N, LOWER, UPPER, INFIN, CORREL, MAXPTS,
+      &                   ABSEPS, RELEPS, ERROR, VALUE, INFORM )
+-- 
+2.25.1
+

@@ -1,8 +1,9 @@
-export PYVERSION ?= 3.9.5
-export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
-export PYODIDE_BINARYEN_VERSION ?= version_100
+export PYVERSION ?= 3.10.2
+export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
 
-# BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
+export PLATFORM_TRIPLET=wasm32-emscripten
+
+# BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each
 # command.
 export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
@@ -17,11 +18,25 @@ export PYMICRO=$(word 3,$(version_tuple))
 
 export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
-export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+
+export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
+export CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
+export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
+
+export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
+export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
+
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
+
+# For packages that depend on numpy.
+# TODO: maybe move this somewhere else?
+export NUMPY_LIB=$(HOSTINSTALLDIR)/numpy-wasm-libs
+export OPEN_SSL_ROOT=$(PYODIDE_ROOT)/packages/openssl/build/openssl-1.1.1n/
+
 
 # This environment variable is used for packages to detect if they are built
 # for pyodide during build time
@@ -29,18 +44,20 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
+export DBGFLAGS=-g0
+# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+
 export OPTFLAGS=-Os
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
-	-g \
+	$(DBGFLAGS) \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
-	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	$(OPTFLAGS) \
+	$(DBGFLAGS) \
 	-s MODULARIZE=1 \
-	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \
@@ -55,33 +72,53 @@ export CXXFLAGS_BASE=\
 
 
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
-export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
+export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+	-s MAIN_MODULE=1 \
+	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
+	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+	-s DEMANGLE_SUPPORT=1 \
+	-s USE_FREETYPE=1 \
+	-s USE_LIBPNG=1 \
+	-s FORCE_FILESYSTEM=1 \
+	-s TOTAL_MEMORY=20971520 \
+	-s ALLOW_MEMORY_GROWTH=1 \
+	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
 	-lbz2 \
 	-lstdc++ \
-	-s TOTAL_MEMORY=20971520 \
-	-s ALLOW_MEMORY_GROWTH=1 \
-    --use-preload-plugins \
-	-s USE_FREETYPE=1 \
-	-s USE_LIBPNG=1 \
-	-s USE_LIBJPEG=1 \
-	--memory-init-file 0 \
+	-lidbfs.js \
+	-lnodefs.js \
+	-lproxyfs.js \
+	-lworkerfs.js \
+	\
+	--use-preload-plugins \
+	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
+	--exclude-file "*__pycache__*" \
+	--exclude-file "*/test/*" \
+	--exclude-file "*/tests/*" \
+	--exclude-file "*/distutils/*" \
+	--pre-js src/core/pre.js
+
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
 export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE)
 export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
-    	-Wall \
-    	-Wno-warn-absolute-paths \
-    	-Werror=unused-variable \
-    	-Werror=sometimes-uninitialized \
-    	-Werror=int-conversion \
-    	-Werror=incompatible-pointer-types \
-		-I$(PYTHONINCLUDE)
+	-Wall \
+	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
+	-Werror=int-conversion \
+	-Werror=incompatible-pointer-types \
+	-Werror=unused-result \
+	-I$(PYTHONINCLUDE) \
+	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
+export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
 
 .output_vars:
 	set

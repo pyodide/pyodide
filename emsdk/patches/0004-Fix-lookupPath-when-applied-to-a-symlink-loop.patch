@@ -1,0 +1,31 @@
+From 8de43377d0e72a4c5794f8494a06d81a9609090f Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 2 Mar 2022 13:44:14 -0800
+Subject: [PATCH 4/4] Fix lookupPath when applied to a symlink loop
+
+The following code leads to an infinite loop in lookupPath:
+
+FS.symlink("linkX/inside","/linkX");
+FS.lookupPath("/linkX", {follow:true});
+
+This patch fixes it.
+---
+ src/library_fs.js | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/library_fs.js b/src/library_fs.js
+index fc8d0193a..294361b09 100644
+--- a/src/library_fs.js
++++ b/src/library_fs.js
+@@ -173,7 +173,7 @@ FS.staticInit();` +
+             var link = FS.readlink(current_path);
+             current_path = PATH_FS.resolve(PATH.dirname(current_path), link);
+ 
+-            var lookup = FS.lookupPath(current_path, { recurse_count: opts.recurse_count });
++            var lookup = FS.lookupPath(current_path, { recurse_count: opts.recurse_count + 1 });
+             current = lookup.node;
+ 
+             if (count++ > 40) {  // limit max consecutive symlinks to 40 (SYMLOOP_MAX).
+-- 
+2.25.1
+

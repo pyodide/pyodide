@@ -1,9 +1,11 @@
-import __main__
-import sys
 import gc
+import sys
+
+import __main__
+
+from _pyodide._importhook import jsfinder
 
 from ._core import JsProxy
-from _pyodide._importhook import jsfinder
 
 
 def save_state() -> dict:

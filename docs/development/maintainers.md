@@ -15,8 +15,21 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 1. Make a new PR and for all occurrences of
    `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
    the release version `vX.Y.Z` (note the presence of the leading `v`). This
-   also applies to `docs/conf.py`
-2. Set version in `src/py/pyodide/__init__.py`
+   also applies to `docs/conf.py`, but you should skip this file and
+   `docs/usage/downloading-and-deploying.md`.
+
+2. Set the version in:
+
+   - `docs/project/about.md`,
+   - `setup.cfg`,
+   - `src/js/package.json`,
+   - `src/py/pyodide/__init__.py`,
+   - `src/py/setup.cfg`,
+   - `pyodide-build/setup.cfg`,
+
+   After this, try using `ripgrep` to make sure there are no extra old versions
+   lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
+
 3. Make sure the change log is up-to-date.
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
@@ -38,41 +51,31 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    ```
 5. Create a tag `X.Y.Z` (without leading `v`) and push
    it to upstream,
+
    ```bash
    git tag X.Y.Z
    git push upstream X.Y.Z
    ```
+
    Create a new `stable` branch from this tag,
+
    ```bash
    git checkout -b stable
    git push upstream stable --force
    ```
+
    Wait for the CI to pass and create the release on GitHub.
-6. Release the pyodide-build package,
-   ```bash
-   pip install twine build
-   cd pyodide-build/
-   python -m build .
-   ls dist/   # check the produced files
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-7. Release the Pyodide JavaScript package,
+
+6. Release the Pyodide JavaScript package:
 
    ```bash
    cd src/js
-   npm publish
+   npm publish # Note: use "--tag next" for prereleases
+   npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
-8. Build the pre-built Docker image locally and push,
-   ```bash
-   docker build -t pyodide/pyodide:X.Y.Z -f Dockerfile-prebuilt --build-arg VERSION=BB .
-   docker push
-   ```
-   where `BB` is the last version of the `pyodide-env` Docker image.
-9. Revert Step 1. and increment the version in
-   `src/py/pyodide/__init__.py` to the next version specified by
-   Semantic Versioning.
+7. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
+   the next version specified by Semantic Versioning.
 
 ### Making a minor release
 
@@ -97,6 +100,20 @@ This can be done with either,
   and indicate which commits to take from `main` in the UI.
 
 Then follow steps 2, 3, and 6 from {ref}`making-major-release`.
+
+### Making an alpha release
+
+Follow steps 2, 6, 7, and 9 from {ref}`making-major-release`. Name the first
+alpha release `x.x.xa1` and in subsequent alphas increment the final number. For
+the npm package the alpha should have version in the format `x.x.x-alpha.1`. For
+the node package make sure to use `npm publish --tag next` to avoid setting the
+alpha version as the stable release.
+
+If you accidentally publish the alpha release over the stable `latest` tag, you
+can fix it with: `npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be
+the latest stable version. Then use
+`npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the
+just-published alpha release.
 
 ### Fixing documentation for a released version
 

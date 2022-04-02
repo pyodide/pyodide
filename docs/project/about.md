@@ -1,20 +1,20 @@
-# About Pyodide
+# What is Pyodide?
 
-Python with the scientific stack, compiled to WebAssembly.
+Pyodide is a Python distribution for the browser and Node.js based on WebAssembly/[Emscripten](https://emscripten.org/).
 
-Pyodide may be used in any context where you want to run Python inside a web
-browser.
+Pyodide makes it possible to install and run Python packages in the browser with
+[micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html). Any pure
+Python package with a wheel available on PyPI is supported. Many packages with C
+extensions have also been ported for use with Pyodide. These include many
+general-purpose packages such as regex, PyYAML, lxml and scientific Python
+packages including NumPy, pandas, SciPy, Matplotlib, and scikit-learn.
 
-Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
-[Emscripten](https://emscripten.org/).
-It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
-scikit-learn. The [packages
-directory](https://github.com/pyodide/pyodide/tree/main/packages) lists over
-75 packages which are currently available. In addition, it's possible to install
-pure Python wheels from PyPI.
+Pyodide comes with a robust Javascript 🡘 Python foreign function interface so
+that you can freely mix these two languages in your code with minimal
+friction. This includes full support for error handling (throw an error in one
+language, catch it in the other), async/await, and much more.
 
-Pyodide provides transparent conversion of objects between JavaScript and
-Python. When used inside a browser, Python has full access to the Web APIs.
+When used inside a browser, Python has full access to the Web APIs.
 
 ## History
 
@@ -45,7 +45,7 @@ list from there with "The Pyodide development team" like in the example below:
   month        = aug,
   year         = 2021,
   publisher    = {Zenodo},
-  version      = {0.18.0},
+  version      = {0.19.0},
   doi          = {10.5281/zenodo.5156931},
   url          = {https://doi.org/10.5281/zenodo.5156931}
 }

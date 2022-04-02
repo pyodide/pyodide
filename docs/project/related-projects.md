@@ -17,6 +17,11 @@
   notebook with a Pyodide kernel (currently in French).
 - [JupyterLite](https://github.com/jupyterlite/jupyterlite) is a JupyterLab
   distribution that runs entirely in the browser, based on Pyodide.
+- [futurecoder](https://futurecoder.io/) is an interactive Python
+  course running on Pyodide. It includes an
+  [IDE](https://futurecoder.io/course/#ide) with a REPL,
+  debuggers, and automatic installation of
+  any imported packages supported by Pyodide's `micropip`.
 
 ## Dashboards and visualization
 
@@ -28,3 +33,5 @@
 - [wc-code](https://github.com/vanillawc/wc-code) is a library to run
   JavaScript, Python, and Theme in the browser with inline code blocks.
   It uses Pyodide to execute Python code.
+- [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
+  Gamma. It's an in-browser answer engine with a Pyodide backend.

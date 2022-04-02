@@ -1,17 +1,17 @@
-import pytest
-import os
-from pathlib import Path
-from typing import List
 import functools
+import os
 
+import pytest
+
+from conftest import ROOT_PATH, built_packages
 from pyodide_build.io import parse_package_config
+from pyodide_build.testing import PYVERSION
 
-PKG_DIR = Path(__file__).parent
-BUILD_DIR = PKG_DIR.parent / "build"
+PKG_DIR = ROOT_PATH / "packages"
 
 
 @functools.cache
-def registered_packages() -> List[str]:
+def registered_packages() -> list[str]:
     """Returns a list of registered package names"""
     packages = []
     for name in os.listdir(PKG_DIR):
@@ -20,40 +20,13 @@ def registered_packages() -> List[str]:
     return packages
 
 
-@functools.cache
-def built_packages() -> List[str]:
-    """Returns a list of built package names.
-
-    This functions lists the names of the .data files in the build/ directory.
-    """
-    if not BUILD_DIR.exists():
-        return []
-    registered_packages_ = registered_packages()
-    packages = []
-    for fpath in os.listdir(BUILD_DIR):
-        if not fpath.endswith(".data"):
-            continue
-        name = fpath.split(".")[0]
-        if name in registered_packages_:
-            packages.append(name)
-    return packages
-
-
-def registered_packages_meta():
-    """Returns a dictionary with the contents of `meta.yaml`
-    for each registered package
-    """
-    packages = registered_packages
-    return {
-        name: parse_package_config(PKG_DIR / name / "meta.yaml") for name in packages
-    }
-
-
-UNSUPPORTED_PACKAGES: dict = {
-    "chrome": ["scikit-image", "statsmodels"],
+UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
+    "chrome": [],
     "firefox": [],
-    "node": ["scikit-image", "statsmodels"],
+    "node": ["cmyt", "yt"],
 }
+if "CI" in os.environ:
+    UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
 
 @pytest.mark.parametrize("name", registered_packages())
@@ -61,18 +34,23 @@ def test_parse_package(name):
     # check that we can parse the meta.yaml
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
-    skip_host = meta.get("build", {}).get("skip_host", True)
-    if name == "numpy":
-        assert skip_host is False
-    elif name == "pandas":
-        assert skip_host is True
+    sharedlibrary = meta.get("build", {}).get("sharedlibrary", False)
+    if name == "sharedlib-test":
+        assert sharedlibrary is True
+    elif name == "sharedlib-test-py":
+        assert sharedlibrary is False
 
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    # check that we can parse the meta.yaml
+    if name not in built_packages():
+        raise AssertionError(
+            "Implementation error. Test for an unbuilt package "
+            "should have been skipped in selenium_standalone fixture"
+        )
+
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
@@ -82,15 +60,12 @@ def test_import(name, selenium_standalone):
             )
         )
 
-    if name not in built_packages():
-        pytest.skip(f"{name} was skipped due to PYODIDE_PACKAGES")
-
     selenium_standalone.run("import glob, os")
 
     baseline_pyc = selenium_standalone.run(
-        """
+        f"""
         len(list(glob.glob(
-            '/lib/python3.9/site-packages/**/*.pyc',
+            '/lib/{PYVERSION}/site-packages/**/*.pyc',
             recursive=True)
         ))
         """
@@ -101,12 +76,24 @@ def test_import(name, selenium_standalone):
         # files
         assert (
             selenium_standalone.run(
+                f"""
+                len(list(glob.glob(
+                    '/lib/{PYVERSION}/site-packages/**/*.pyc',
+                    recursive=True)
+                ))
                 """
-            len(list(glob.glob(
-                '/lib/python3.9/site-packages/**/*.pyc',
-                recursive=True)
-            ))
-            """
             )
             == baseline_pyc
+        )
+        # Make sure no exe files were loaded!
+        assert (
+            selenium_standalone.run(
+                f"""
+                len(list(glob.glob(
+                    '/lib/{PYVERSION}/site-packages/**/*.exe',
+                    recursive=True)
+                ))
+                """
+            )
+            == 0
         )

@@ -1,9 +1,8 @@
+import math
+
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
-from js import document
-from js import window
-
-import math
+from js import document, window
 
 
 class FigureCanvasWasm(FigureCanvasBase):
@@ -111,8 +110,7 @@ class FigureCanvasWasm(FigureCanvasBase):
         div.addEventListener("contextmenu", ignore)
         div.setAttribute(
             "style",
-            "margin: 0 auto; text-align: center;"
-            + "width: {}px".format(width / self._ratio),
+            "margin: 0 auto; text-align: center;" + f"width: {width / self._ratio}px",
         )
         div.id = self._id
 
@@ -432,7 +430,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
             span.textContent = "\u00a0"
             div.appendChild(span)
 
-        for text, tooltip_text, image_file, name_of_method in self.toolitems:
+        for _text, _tooltip_text, image_file, name_of_method in self.toolitems:
             if image_file in _FONTAWESOME_ICONS:
                 if image_file is None:
                     add_spacer()
@@ -444,7 +442,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
                     button.addEventListener("click", getattr(self, name_of_method))
                     div.appendChild(button)
 
-        for format, mimetype in sorted(list(FILE_TYPES.items())):
+        for format, _mimetype in sorted(list(FILE_TYPES.items())):
             button = document.createElement("button")
             button.classList.add("fa")
             button.textContent = format

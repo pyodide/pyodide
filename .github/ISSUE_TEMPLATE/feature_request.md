@@ -1,9 +1,9 @@
 ---
 name: Feature request
 about: Suggest an idea for Pyodide
-title: ''
+title: ""
 labels: enhancement
-assignees: ''
+assignees: ""
 ---
 
 ## 🚀 Feature

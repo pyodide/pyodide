@@ -39,6 +39,13 @@
     }                                                                          \
   } while (0)
 
+#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
+  do {                                                                         \
+    if (mod##_init(core_module)) {                                             \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+    }                                                                          \
+  } while (0)
+
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python()
@@ -50,7 +57,6 @@ initialize_python()
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
-  config.install_signal_handlers = false;
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);
 
@@ -62,12 +68,6 @@ finally:
     Py_ExitStatusException(status);
   }
 }
-#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
-  do {                                                                         \
-    if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
-    }                                                                          \
-  } while (0)
 
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
@@ -75,17 +75,6 @@ static struct PyModuleDef core_module_def = {
   .m_doc = "Pyodide C builtins",
   .m_size = -1,
 };
-
-// from numpy_patch.c (no need for a header just for this)
-int
-numpy_patch_init();
-
-int
-get_python_stack_depth()
-{
-  PyThreadState* tstate = PyThreadState_GET();
-  return tstate->recursion_depth;
-}
 
 /**
  * Bootstrap steps here:
@@ -100,6 +89,13 @@ get_python_stack_depth()
 int
 main(int argc, char** argv)
 {
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+    Module.wasmTable = wasmTable;
+  });
+
   // This exits and prints a message to stderr on failure,
   // no status code to check.
   initialize_python();
@@ -110,7 +106,13 @@ main(int argc, char** argv)
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
+  emscripten_exit_with_live_runtime();
+  return 0;
+}
 
+int
+pyodide_init(void)
+{
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
   JsRef _pyodide_proxy = NULL;
@@ -125,17 +127,9 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to create core module.");
   }
 
-  EM_ASM({
-    // For some reason emscripten doesn't make UTF8ToString available on Module
-    // by default...
-    Module.UTF8ToString = UTF8ToString;
-    Module.wasmTable = wasmTable;
-  });
-
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
-  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
@@ -152,10 +146,9 @@ main(int argc, char** argv)
   if (_pyodide_proxy == NULL) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ Module._pyodide = Module.hiwire.pop_value($0); }, _pyodide_proxy);
+  EM_ASM({ API._pyodide = Hiwire.pop_value($0); }, _pyodide_proxy);
 
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  emscripten_exit_with_live_runtime();
   return 0;
 }

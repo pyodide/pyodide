@@ -1,17 +1,15 @@
 package:
   name: pywavelets
-  version: 1.1.1
+  version: 1.2.0
 source:
-  sha256: 1a64b40f6acb4ffbaccce0545d7fc641744f95351f62e4c6aaa40549326008c9
-  url: https://files.pythonhosted.org/packages/17/6b/ef989cfb3acff2ea966c5f28a7443ccaec2ee136675dfa0366db2635f78a/PyWavelets-1.1.1.tar.gz
-  patches:
-    - patches/fft.patch
+  sha256: 6cbd69b047bb4e00873097472133425f5f08a4e6bc8b3f0ae709274d4d5e9a8d
+  url: https://files.pythonhosted.org/packages/35/e9/decd467448cde227aad94ff2976046afd3a51ad461ba9a325840687e8836/PyWavelets-1.2.0.tar.gz
 requirements:
   run:
-   - distutils
-   - numpy
-   - matplotlib
-   - scipy
+    - distutils
+    - numpy
+    - matplotlib
+    - scipy
 test:
   imports:
-  - pywt
+    - pywt

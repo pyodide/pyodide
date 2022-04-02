@@ -1,15 +1,12 @@
 package:
   name: cycler
-  version: 0.10.0
-
+  version: 0.11.0
 source:
-  url: https://files.pythonhosted.org/packages/c2/4b/137dea450d6e1e3d474e1d873cd1d4f7d3beed7e0dc973b06e8e10d32488/cycler-0.10.0.tar.gz
-  md5: 4cb42917ac5007d1cdff6cccfe2d016b
-
+  url: https://files.pythonhosted.org/packages/5c/f9/695d6bedebd747e5eb0fe8fad57b72fdf25411273a39791cde838d5a8f51/cycler-0.11.0-py3-none-any.whl
+  sha256: 3a27e95f763a428a739d2add979fa7494c912a32c17c4c38c4d5f082cad165a3
 test:
   imports:
     - cycler
-
 requirements:
   run:
     - six

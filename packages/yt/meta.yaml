@@ -1,13 +1,14 @@
 package:
   name: yt
-  version: 3.6.1
+  version: 4.0.2
 
 source:
-  url: https://files.pythonhosted.org/packages/1e/ce/e75e41f077e330f25d912eda4a1ba124e6b5f896f457ec5ca4e8c89b97c2/yt-3.6.1.tar.gz
-  sha256: be454f9d05dcbe0623328b4df43a1bfd1f0925e516be97399710452931a19bb0
+  url: https://files.pythonhosted.org/packages/b6/ba/c28c9af83797c0e7a9273004a9ac0a924e6c5920fd0aa944d305e8288b30/yt-4.0.2.tar.gz
+  sha256: 76b238eef0fbbbea810dda4821331a9b03f74e5e2dda9997e401c685deec1631
 
   patches:
     - patches/skip-openmp.patch
+    - patches/tomli-3833.patch
 
 requirements:
   run:
@@ -15,6 +16,13 @@ requirements:
     - matplotlib
     - sympy
     - setuptools
+    - packaging
+    - unyt
+    - cmyt
+    - colorspacious
+    - tqdm
+    - tomli
+    - tomli-w
 
 build:
   # The test module is imported from the top level `__init__.py`

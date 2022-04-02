@@ -4,118 +4,66 @@
 distutils has never had a proper cross-compilation story. This is a hack, which
 miraculously works, to get around that.
 
-The gist is:
-
-- Compile the package natively, replacing calls to the compiler and linker with
-  wrappers that store the arguments in a log, and then delegate along to the
-  real native compiler and linker.
-
-- Remove all the native build products.
-
-- Play back the log, replacing the native compiler with emscripten and
-  adjusting include paths and flags as necessary for cross-compiling to
-  emscripten. This overwrites the results from the original native compilation.
-
-While this results in more work than strictly necessary (it builds a native
-version of the package, even though we then throw it away), it seems to be the
-only reliable way to automatically build a package that interleaves
-configuration with build.
+The gist is we compile the package replacing calls to the compiler and linker
+with wrappers that adjusting include paths and flags as necessary for
+cross-compiling and then pass the command long to emscripten.
 """
-
-
-import argparse
-import importlib.machinery
 import json
 import os
-from pathlib import Path, PurePosixPath
-import re
-import subprocess
-import shutil
 import sys
 
+IS_MAIN = __name__ == "__main__"
+if IS_MAIN:
+    PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
+    # restore __name__ so that relative imports work as we expect
+    __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
+    sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
+
+    PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+
+import re
+import subprocess
+from collections import namedtuple
+from pathlib import Path, PurePosixPath
+from typing import Any, MutableMapping, NoReturn, overload
 
 # absolute import is necessary as this file will be symlinked
 # under tools
-from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
+from . import common
+from ._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
+
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
 
-symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
+def symlink_dir():
+    return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
 
 
-class EnvironmentRewritingArgument(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        for e_name, e_value in os.environ.items():
-            values = values.replace(f"$({e_name})", e_value)
-        setattr(namespace, self.dest, values)
+ReplayArgs = namedtuple(
+    "ReplayArgs",
+    [
+        "pkgname",
+        "cflags",
+        "cxxflags",
+        "ldflags",
+        "host_install_dir",
+        "target_install_dir",
+        "replace_libs",
+        "builddir",
+        "pythoninclude",
+    ],
+)
 
 
-def collect_args(basename):
-    """
-    This is called when this script is called through a symlink that looks like
-    a compiler or linker.
-
-    It writes the arguments to the build.log, and then delegates to the real
-    native compiler or linker.
-    """
-    TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
-    # Remove the symlink compiler from the PATH, so we can delegate to the
-    # native compiler
-    env = dict(os.environ)
-    path = env["PATH"]
-    while str(TOOLSDIR) + ":" in path:
-        path = path.replace(str(TOOLSDIR) + ":", "")
-    env["PATH"] = path
-
-    skip_host = "SKIP_HOST" in os.environ
-
-    # Skip compilations of C/Fortran extensions for the target environment.
-    # We still need to generate the output files for distutils to continue
-    # the build.
-    # TODO: This may need slight tuning for new projects. In particular,
-    #       currently ar is not skipped, so a known failure would happen when
-    #       we create some object files (that are empty as gcc is skipped), on
-    #       which we run the actual ar command.
-    skip = False
-    if (
-        basename in ["gcc", "cc", "c++", "gfortran", "ld"]
-        and "-o" in sys.argv[1:]
-        # do not skip numpy as it is needed as build time
-        # dependency by other packages (e.g. matplotlib)
-        and skip_host
-    ):
-        out_idx = sys.argv.index("-o")
-        if (out_idx + 1) < len(sys.argv):
-            # get the index of the output file path
-            out_idx += 1
-            with open(sys.argv[out_idx], "wb") as fh:
-                fh.write(b"")
-            skip = True
-
-    with open("build.log", "a") as fd:
-        # TODO: store skip status in the build.log
-        json.dump([basename] + sys.argv[1:], fd)
-        fd.write("\n")
-
-    if skip:
-        sys.exit(0)
-    compiler_command = [basename]
-    if shutil.which("ccache") is not None:
-        # Enable ccache if it's installed
-        compiler_command.insert(0, "ccache")
-
-    sys.exit(subprocess.run(compiler_command + sys.argv[1:], env=env).returncode)
-
-
-def make_symlinks(env):
+def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
     """
-    TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     exec_path = Path(__file__).resolve()
+    SYMLINKDIR = symlink_dir()
     for symlink in symlinks:
-        symlink_path = TOOLSDIR / symlink
+        symlink_path = SYMLINKDIR / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
@@ -130,58 +78,83 @@ def make_symlinks(env):
         env[var] = symlink
 
 
-def capture_compile(args):
-    TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
-    env = dict(os.environ)
-    make_symlinks(env)
-    env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
+@overload
+def compile(
+    env: dict[str, str],
+    *,
+    pkgname: str,
+    cflags: str,
+    cxxflags: str,
+    ldflags: str,
+    host_install_dir: str,
+    target_install_dir: str,
+    replace_libs: str,
+):
+    ...
 
-    cmd = [sys.executable, "setup.py", "install"]
-    if args.install_dir == "skip":
-        cmd[-1] = "build"
-    elif args.install_dir != "":
-        cmd.extend(["--home", args.install_dir])
 
-    result = subprocess.run(cmd, env=env)
-    if result.returncode != 0:
+@overload
+def compile(*, mypy__Single_overload_definition_multiple_required: int):
+    ...
+
+
+def compile(env, **kwargs):
+    args = environment_substitute_args(kwargs, env)
+    args["builddir"] = str(Path(".").absolute())
+
+    env = dict(env)
+    SYMLINKDIR = symlink_dir()
+    env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
+    args["PYTHONPATH"] = sys.path
+    args["orig__name__"] = __name__
+    make_command_wrapper_symlinks(env)
+    env["PYWASMCROSS_ARGS"] = json.dumps(args)
+    env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
+
+    from pyodide_build.pypabuild import build
+
+    try:
+        build(env)
+    except BaseException:
         build_log_path = Path("build.log")
         if build_log_path.exists():
             build_log_path.unlink()
-        sys.exit(result.returncode)
+        raise
 
 
-def f2c(args, dryrun=False):
+def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     """Apply f2c to compilation arguments
 
     Parameters
     ----------
-    args : iterable
+    args
        input compiler arguments
-    dryrun : bool, default=True
+    dryrun
        if False run f2c on detected fortran files
 
     Returns
     -------
-    new_args : list
+    new_args
        output compiler arguments
 
 
     Examples
     --------
 
-    >>> f2c(['gfortran', 'test.f'], dryrun=True)
-    ['gfortran', 'test.c']
+    >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
+    ['gcc', 'test.c']
     """
-    new_args = []
+    new_args = ["gcc"]
     found_source = False
-    for arg in args:
+    for arg in args[1:]:
         if arg.endswith(".f"):
             filename = os.path.abspath(arg)
             if not dryrun:
+                fix_f2c_input(arg)
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
-                fix_f2c_clapack_calls(arg[:-2] + ".c")
+                fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
@@ -197,328 +170,386 @@ def f2c(args, dryrun=False):
     return new_args
 
 
-def handle_command(line, args, dryrun=False):
-    """Handle a compilation command
+def get_library_output(line: list[str]) -> str | None:
+    """
+    Check if the command is a linker invocation. If so, return the name of the
+    output file.
+    """
+    for arg in line:
+        if arg.endswith(".so") and not arg.startswith("-"):
+            return arg
+    return None
+
+
+def parse_replace_libs(replace_libs: str) -> dict[str, str]:
+    """
+    Parameters
+    ----------
+    replace_libs
+        The `--replace-libs` argument, should be a string like "a=b;c=d".
+
+    Returns
+    -------
+        The input string converted to a dictionary
+
+    Examples
+    --------
+    >>> parse_replace_libs("a=b;c=d;e=f")
+    {'a': 'b', 'c': 'd', 'e': 'f'}
+    """
+    result = {}
+    for l in replace_libs.split(";"):
+        if not l:
+            continue
+        from_lib, to_lib = l.split("=")
+        if to_lib:
+            result[from_lib] = to_lib
+    return result
+
+
+def replay_genargs_handle_dashl(
+    arg: str, replace_libs: dict[str, str], used_libs: set[str]
+) -> str | None:
+    """
+    Figure out how to replace a `-lsomelib` argument.
 
     Parameters
     ----------
-    line : iterable
-       an iterable with the compilation arguments
-    args : {object, namedtuple}
-       an container with additional compilation options,
-       in particular containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
-    dryrun : bool, default=False
-       if True do not run the resulting command, only return it
+    arg
+        The argument we are replacing. Must start with `-l`.
+
+    replace_libs
+        The dictionary of libraries we are replacing
+
+    used_libs
+        The libraries we've used so far in this command. emcc fails out if `-lsomelib`
+        occurs twice, so we have to track this.
+
+    Returns
+    -------
+        The new argument, or None to delete the argument.
+    """
+    assert arg.startswith("-l")
+    for lib_name in replace_libs.keys():
+        # this enables glob style **/* matching
+        if PurePosixPath(arg[2:]).match(lib_name):
+            arg = "-l" + replace_libs[lib_name]
+
+    if arg == "-lffi":
+        return None
+
+    # See https://github.com/emscripten-core/emscripten/issues/8650
+    if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
+        return None
+
+    # WASM link doesn't like libraries being included twice
+    # skip second one
+    if arg in used_libs:
+        return None
+    used_libs.add(arg)
+    return arg
+
+
+def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> str | None:
+    """
+    Figure out how to replace a `-Iincludepath` argument.
+
+    Parameters
+    ----------
+    arg
+        The argument we are replacing. Must start with `-I`.
+
+    target_install_dir
+        The target_install_dir argument.
+
+    Returns
+    -------
+        The new argument, or None to delete the argument.
+    """
+    assert arg.startswith("-I")
+    if (
+        str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
+        and "site-packages" not in arg
+    ):
+        return arg.replace("-I" + sys.prefix, "-I" + target_install_dir)
+    # Don't include any system directories
+    if arg[2:].startswith("/usr"):
+        return None
+    return arg
+
+
+def replay_genargs_handle_linker_opts(arg):
+    """
+    ignore some link flags
+    it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
+    because arg may be something like "-Wl,-xxx,-yyy" where we only want
+    to ignore "-xxx" but not "-yyy".
+    """
+
+    assert arg.startswith("-Wl")
+    link_opts = arg.split(",")[1:]
+    new_link_opts = ["-Wl"]
+    for opt in link_opts:
+        if opt in [
+            "-Bsymbolic-functions",
+            # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
+            "--strip-all",
+            "-strip-all",
+            # wasm-ld does not regconize some link flags
+            "--sort-common",
+            "--as-needed",
+        ]:
+            continue
+        # ignore unsupported --sysroot compile argument used in conda
+        if opt.startswith("--sysroot="):
+            continue
+        if opt.startswith("--version-script="):
+            continue
+        new_link_opts.append(opt)
+    if len(new_link_opts) > 1:
+        return ",".join(new_link_opts)
+    else:
+        return None
+
+
+def replay_genargs_handle_argument(arg: str) -> str | None:
+    """
+    Figure out how to replace a general argument.
+
+    Parameters
+    ----------
+    arg
+        The argument we are replacing. Must not start with `-I` or `-l`.
+
+    Returns
+    -------
+        The new argument, or None to delete the argument.
+    """
+    assert not arg.startswith("-I")  # should be handled by other functions
+    assert not arg.startswith("-l")
+    assert not arg.startswith("-Wl,")
+
+    # Don't include any system directories
+    if arg.startswith("-L/usr"):
+        return None
+
+    # fmt: off
+    if arg in [
+        # don't use -shared, SIDE_MODULE is already used
+        # and -shared breaks it
+        "-shared",
+        # threading is disabled for now
+        "-pthread",
+        # this only applies to compiling fortran code, but we already f2c'd
+        "-ffixed-form",
+        # On Mac, we need to omit some darwin-specific arguments
+        "-bundle", "-undefined", "dynamic_lookup",
+        # This flag is needed to build numpy with SIMD optimization which we currently disable
+        "-mpopcnt",
+        # gcc flag that clang does not support
+        "-Bsymbolic-functions",
+        '-fno-second-underscore',
+    ]:
+        return None
+    # fmt: on
+    return arg
+
+
+def handle_command_generate_args(
+    line: list[str], args: ReplayArgs, is_link_command: bool
+) -> list[str]:
+    """
+    A helper command for `handle_command` that generates the new arguments for
+    the compilation.
+
+    Unlike `handle_command` this avoids I/O: it doesn't sys.exit, it doesn't run
+    subprocesses, it doesn't create any files, and it doesn't write to stdout.
+
+    Parameters
+    ----------
+    line The original compilation command as a list e.g., ["gcc", "-c",
+        "input.c", "-o", "output.c"]
+
+    args The arguments that pywasmcross was invoked with
+
+    is_link_command Is this a linker invocation?
+
+    Returns
+    -------
+        An updated argument list suitable for use with emscripten.
+
 
     Examples
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs','install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='',install_dir='')
-    >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
-    emcc test.c
-    ['emcc', 'test.c']
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
+    >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
+    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
-    # some libraries have different names on wasm e.g. png16 = png
-    replace_libs = {}
-    for l in args.replace_libs.split(";"):
-        if len(l) > 0:
-            from_lib, to_lib = l.split("=")
-            replace_libs[from_lib] = to_lib
-
-    # This is a special case to skip the compilation tests in numpy that aren't
-    # actually part of the build
+    if "-print-multiarch" in line:
+        return ["echo", "wasm32-emscripten"]
     for arg in line:
-        if r"/file.c" in arg or "_configtest" in arg:
-            return
-        if re.match(r"/tmp/.*/source\.[bco]+", arg):
-            return
-        if arg == "-print-multiarch":
-            return
-        if arg.startswith("/tmp"):
-            return
+        if arg.startswith("-print-file-name"):
+            return line
 
-    if line[0] == "gfortran":
-        result = f2c(line)
-        if result is None:
-            return
-        line = result
-        new_args = ["emcc"]
-    elif line[0] == "ar":
-        new_args = ["emar"]
-    elif line[0] == "c++":
+    cmd = line[0]
+    if cmd == "ar":
+        line[0] = "emar"
+        return line
+    elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
-    else:
+    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
-    library_output = False
-    for arg in line:
-        if arg.endswith(".so") and not arg.startswith("-"):
-            library_output = True
+    else:
+        return line
 
-    if library_output:
+    # set linker and C flags to error on anything to do with function declarations being wrong.
+    # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
+    # will fail. Better to fail at compile or link time.
+    if is_link_command:
+        new_args.append("-Wl,--fatal-warnings")
+    new_args.extend(
+        [
+            "-Werror=implicit-function-declaration",
+            "-Werror=mismatched-parameter-types",
+            "-Werror=return-type",
+        ]
+    )
+
+    if is_link_command:
         new_args.extend(args.ldflags.split())
-    elif new_args[0] == "emcc":
-        new_args.extend(args.cflags.split())
-    elif new_args[0] == "em++":
-        new_args.extend(args.cflags.split() + args.cxxflags.split())
+    if "-c" in line:
+        if new_args[0] == "emcc":
+            new_args.extend(args.cflags.split())
+        elif new_args[0] == "em++":
+            new_args.extend(args.cflags.split() + args.cxxflags.split())
+        new_args.extend(["-I", args.pythoninclude])
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
     # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
     # priority.
-    for arg in new_args[::-1]:
+    for arg in reversed(new_args):
         if arg in optflags_valid:
             optflag = arg
             break
+    debugflag = None
+    # Identify the debug flag (e.g. -g0) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in reversed(new_args):
+        if arg.startswith("-g"):
+            debugflag = arg
+            break
 
-    used_libs = set()
-
+    used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        if arg in optflags_valid and optflag is not None and arg != optflag:
-            # There are multiple contradictory optflags provided, use the one
-            # from cflags/cxxflags/ldflags
-            continue
-
-        if arg.startswith("-I"):
-            if (
-                str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
-                and "site-packages" not in arg
-            ):
-                arg = arg.replace("-I" + sys.prefix, "-I" + args.target)
-            # Don't include any system directories
-            elif arg[2:].startswith("/usr"):
-                continue
-        # Don't include any system directories
-        if arg.startswith("-L/usr"):
-            continue
-        if arg.startswith("-l"):
-            for lib_name in replace_libs.keys():
-                # this enables glob style **/* matching
-                if PurePosixPath(arg[2:]).match(lib_name):
-                    if len(replace_libs[lib_name]) > 0:
-                        arg = "-l" + replace_libs[lib_name]
-                    else:
-                        continue
-        if arg.startswith("-l"):
-            # WASM link doesn't like libraries being included twice
-            # skip second one
-            if arg in used_libs:
-                continue
-            used_libs.add(arg)
-        # some gcc flags that clang does not support actually
-        if arg == "-Bsymbolic-functions":
-            continue
-        if arg == "-Wl,-Bsymbolic-functions":
-            continue
-        # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
-        if arg == "-Wl,--strip-all":
-            continue
-        # threading is disabled for now
-        if arg == "-pthread":
-            continue
-        # this only applies to compiling fortran code, but we already f2c'd
-        if arg == "-ffixed-form":
-            continue
-        # On Mac, we need to omit some darwin-specific arguments
-        if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
-            continue
-        if arg == "-lffi":
-            continue
-        # This flag is needed to build numpy with SIMD optimization
-        if arg == "-mpopcnt":
-            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
-        if arg.endswith(".so"):
-            output = arg
-        # don't include libraries from native builds
-        if (
-            len(args.install_dir) > 0
-            and arg.startswith("-l" + args.install_dir)
-            or arg.startswith("-L" + args.install_dir)
-        ):
+        if arg in optflags_valid and optflag is not None:
+            # There are multiple contradictory optflags provided, use the one
+            # from cflags/cxxflags/ldflags
             continue
-
+        if arg.startswith("-g") and debugflag is not None:
+            continue
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
             del new_args[-1]
             continue
 
-        # ignore unsupported --sysroot compile argument used in conda
-        if arg.startswith("-Wl,--sysroot"):
+        # don't include libraries from native builds
+        if args.host_install_dir and (
+            arg.startswith("-L" + args.host_install_dir)
+            or arg.startswith("-l" + args.host_install_dir)
+        ):
             continue
 
-        # See https://github.com/emscripten-core/emscripten/issues/8650
-        if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
-            continue
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        if arg in ["-shared"]:
-            continue
+        replace_libs = parse_replace_libs(args.replace_libs)
+        if arg.startswith("-l"):
+            result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
+        elif arg.startswith("-I"):
+            result = replay_genargs_handle_dashI(arg, args.target_install_dir)
+        elif arg.startswith("-Wl"):
+            result = replay_genargs_handle_linker_opts(arg)
+        else:
+            result = replay_genargs_handle_argument(arg)
 
-        new_args.append(arg)
-
-    # This can only be used for incremental rebuilds -- it generates
-    # an error during clean build of numpy
-    # if os.path.isfile(output):
-    #     print('SKIPPING: ' + ' '.join(new_args))
-    #     return
-
-    print(" ".join(new_args))
-
-    if not dryrun:
-        result = subprocess.run(new_args)
-        if result.returncode != 0:
-            sys.exit(result.returncode)
-
-    # Emscripten .so files shouldn't have the native platform slug
-    if library_output:
-        renamed = output
-        for ext in importlib.machinery.EXTENSION_SUFFIXES:
-            if ext == ".so":
-                continue
-            if renamed.endswith(ext):
-                renamed = renamed[: -len(ext)] + ".so"
-                break
-        if not dryrun and output != renamed:
-            os.rename(output, renamed)
+        if result:
+            new_args.append(result)
     return new_args
 
 
-def replay_compile(args):
-    # If pure Python, there will be no build.log file, which is fine -- just do
-    # nothing
-    build_log_path = Path("build.log")
-    if build_log_path.is_file():
-        with open(build_log_path, "r") as fd:
-            for line in fd:
-                line = json.loads(line)
-                handle_command(line, args)
+def handle_command(
+    line: list[str],
+    args: ReplayArgs,
+) -> NoReturn:
+    """Handle a compilation command. Exit with an appropriate exit code when done.
+
+    Parameters
+    ----------
+    line : iterable
+       an iterable with the compilation arguments
+    args : {object, namedtuple}
+       an container with additional compilation options, in particular
+       containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
+    """
+    # some libraries have different names on wasm e.g. png16 = png
+    is_link_cmd = get_library_output(line) is not None
+
+    if line[0] == "gfortran":
+        if "-dumpversion" in line:
+            sys.exit(subprocess.run(line).returncode)
+        tmp = replay_f2c(line)
+        if tmp is None:
+            sys.exit(0)
+        line = tmp
+
+    new_args = handle_command_generate_args(line, args, is_link_cmd)
+
+    if args.pkgname == "scipy":
+        scipy_fixes(new_args)
+
+    returncode = subprocess.run(new_args).returncode
+    if returncode != 0:
+        sys.exit(returncode)
+
+    sys.exit(returncode)
 
 
-def clean_out_native_artifacts():
-    for root, dirs, files in os.walk("."):
-        for file in files:
-            path = Path(root) / file
-            if path.suffix in (".o", ".so", ".a"):
-                path.unlink()
+def environment_substitute_args(
+    args: dict[str, str], env: dict[str, str] | None = None
+) -> dict[str, Any]:
+    if env is None:
+        env = dict(os.environ)
+    subbed_args = {}
+    for arg, value in args.items():
+        if isinstance(value, str):
+            for e_name, e_value in env.items():
+                value = value.replace(f"$({e_name})", e_value)
+        subbed_args[arg] = value
+    return subbed_args
 
 
-def install_for_distribution(args):
-    commands = [
-        sys.executable,
-        "setup.py",
-        "install",
-        "--skip-build",
-        "--prefix=install",
-        "--old-and-unmanageable",
-    ]
-    try:
-        subprocess.check_call(commands)
-    except Exception:
-        print(
-            f'Warning: {" ".join(str(arg) for arg in commands)} failed '
-            f"with distutils, possibly due to the use of distutils "
-            f"that does not support the --old-and-unmanageable "
-            "argument. Re-trying the install without this argument."
-        )
-        subprocess.check_call(commands[:-1])
+if IS_MAIN:
+    path = os.environ["PATH"]
+    SYMLINKDIR = symlink_dir()
+    while f"{SYMLINKDIR}:" in path:
+        path = path.replace(f"{SYMLINKDIR}:", "")
+    os.environ["PATH"] = path
 
+    REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
-def build_wrap(args):
-    build_log_path = Path("build.log")
-    if not build_log_path.is_file():
-        capture_compile(args)
-    clean_out_native_artifacts()
-    replay_compile(args)
-    install_for_distribution(args)
-
-
-def make_parser(parser):
     basename = Path(sys.argv[0]).name
+    args = list(sys.argv)
+    args[0] = basename
     if basename in symlinks:
-        # skip parsing of all arguments
-        parser._actions = []
+        sys.exit(handle_command(args, REPLAY_ARGS))
     else:
-        parser.description = (
-            "Cross compile a Python distutils package. "
-            "Run from the root directory of the package's source.\n\n"
-            "Note: this is a private endpoint that should not be used "
-            "outside of the Pyodide Makefile."
-        )
-        parser.add_argument(
-            "--cflags",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
-            help="Extra compiling flags",
-            action=EnvironmentRewritingArgument,
-        )
-        parser.add_argument(
-            "--cxxflags",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-            help="Extra C++ specific compiling flags",
-            action=EnvironmentRewritingArgument,
-        )
-        parser.add_argument(
-            "--ldflags",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
-            help="Extra linking flags",
-            action=EnvironmentRewritingArgument,
-        )
-        parser.add_argument(
-            "--target",
-            type=str,
-            nargs="?",
-            default=common.get_make_flag("TARGETPYTHONROOT"),
-            help="The path to the target Python installation",
-        )
-        parser.add_argument(
-            "--install-dir",
-            type=str,
-            nargs="?",
-            default="",
-            help=(
-                "Directory for installing built host packages. Defaults to setup.py "
-                "default. Set to 'skip' to skip installation. Installation is "
-                "needed if you want to build other packages that depend on this one."
-            ),
-        )
-        parser.add_argument(
-            "--replace-libs",
-            type=str,
-            nargs="?",
-            default="",
-            help="Libraries to replace in final link",
-            action=EnvironmentRewritingArgument,
-        )
-    return parser
-
-
-def main(args):
-    basename = Path(sys.argv[0]).name
-    if basename in symlinks:
-        collect_args(basename)
-    else:
-        build_wrap(args)
-
-
-if __name__ == "__main__":
-    basename = Path(sys.argv[0]).name
-    if basename in symlinks:
-        main(None)
-    else:
-        parser = make_parser(argparse.ArgumentParser())
-        args = parser.parse_args()
-        main(args)
+        raise Exception(f"Unexpected invocation '{basename}'")

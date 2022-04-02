@@ -1,14 +1,17 @@
 package:
   name: setuptools
-  version: 57.1.0
+  version: 60.9.3
 source:
-  url: https://files.pythonhosted.org/packages/cf/79/1a19c2f792da00cbead7b6caa176afdddf517522cb9163ce39576025b050/setuptools-57.1.0.tar.gz
-  sha256: cfca9c97e7eebbc8abe18d5e5e962a08dcad55bb63afddd82d681de4d22a597b
+  url: https://files.pythonhosted.org/packages/3b/02/8d4d27b1cacaac2d129a27d17a22d92a2a5eedcb7817d4ed8ab0d4daf5c4/setuptools-60.9.3-py3-none-any.whl
+  sha256: e4f30b9f84e5ab3decf945113119649fec09c1fc3507c6ebffec75646c56e62b
+build:
+  post: |
+    find build/setuptools-*/dist -name '*.exe' -delete
 requirements:
   run:
-  - distutils
-  - pyparsing
+    - distutils
+    - pyparsing
 test:
   imports:
-  - setuptools
-  - pkg_resources
+    - setuptools
+    - pkg_resources
