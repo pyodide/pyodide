@@ -19,7 +19,8 @@ substitutions:
 - {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
 
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
-  standard library ssl module {pr}`2263`, python-solvespace v3.0.7
+  standard library ssl module {pr}`2263`, python-solvespace v3.0.7,
+  lazy-object-proxy {pr}`2320`.
 
 - Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
@@ -101,9 +102,9 @@ substitutions:
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
   {pr}`1102`
 
-_February 19, 2022_
-
 ## Version 0.19.1
+
+_February 19, 2022_
 
 ### Packages
 
