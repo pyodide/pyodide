@@ -1,4 +1,4 @@
-From ae58d041d3e19afdee21e1aab396aa45740368e0 Mon Sep 17 00:00:00 2001
+From 841959a2833208b1739ac4d45c08245da836b8b3 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 2 Apr 2022 14:20:25 -0700
 Subject: [PATCH] loadDynamicLibrary flapack
@@ -26,17 +26,17 @@ look them up with `dlsym`). Scipy is not loaded this way. But we
 need the `lapack_extras.f` symbols to have this global visibility.
 So we have to call loadDynamicLibrary on it, hence this patch.
 ---
- scipy/linalg/__init__.py | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ scipy/linalg/lapack.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/scipy/linalg/__init__.py b/scipy/linalg/__init__.py
-index e88479b48..586c52ba6 100644
---- a/scipy/linalg/__init__.py
-+++ b/scipy/linalg/__init__.py
-@@ -219,3 +219,11 @@ __all__ = [s for s in dir() if not s.startswith('_')]
- from scipy._lib._testutils import PytestTester
- test = PytestTester(__name__)
- del PytestTester
+diff --git a/scipy/linalg/lapack.py b/scipy/linalg/lapack.py
+index 9850d80c4..05ad527e2 100644
+--- a/scipy/linalg/lapack.py
++++ b/scipy/linalg/lapack.py
+@@ -809,6 +809,15 @@ All functions
+    ilaver
+ 
+ """
 +
 +import sysconfig
 +import pyodide_js
@@ -45,6 +45,10 @@ index e88479b48..586c52ba6 100644
 +del pyodide_js
 +del sysconfig
 +del ext_suffix
++
+ #
+ # Author: Pearu Peterson, March 2002
+ #
 -- 
 2.25.1
 
