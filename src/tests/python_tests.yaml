@@ -191,13 +191,6 @@
 - test_ctypes:
     skip:
       - test_callback_too_many_args # can never work
-    skip-node:
-      # These fail with: TypeError: wasm function signature contains illegal type
-      # we probably need to test with a more recent version of node.
-      - test_longlong_callbacks
-      - test_longdouble
-      - test_longlong
-      - test_ulonglong
 - test_curses
 - test_dataclasses
 - test_datetime:
