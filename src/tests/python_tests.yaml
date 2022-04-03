@@ -190,12 +190,11 @@
 - test_csv
 - test_ctypes:
     skip:
-      - test_callback_too_many_args
-      - test_callback_large_struct
-      - CFunctions
-      - test_struct_return_2H
-      - FunctionTestCase
+      - test_callback_too_many_args # can never work
+      - test_callback_large_struct # Fixed by https://github.com/python/cpython/pull/32246
     skip-node:
+      # These fail with: TypeError: wasm function signature contains illegal type
+      # we probably need to test with a more recent version of node.
       - test_longlong_callbacks
       - test_longdouble
       - test_longlong
