@@ -1,4 +1,4 @@
-From 6e87b998a3c0073c507626a7c88963d9bda27c24 Mon Sep 17 00:00:00 2001
+From ae58d041d3e19afdee21e1aab396aa45740368e0 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 2 Apr 2022 14:20:25 -0700
 Subject: [PATCH] loadDynamicLibrary flapack
@@ -26,25 +26,25 @@ look them up with `dlsym`). Scipy is not loaded this way. But we
 need the `lapack_extras.f` symbols to have this global visibility.
 So we have to call loadDynamicLibrary on it, hence this patch.
 ---
- scipy/__init__.py | 8 ++++++++
+ scipy/linalg/__init__.py | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/scipy/__init__.py b/scipy/__init__.py
-index 8c23069f9..f408fc0b6 100644
---- a/scipy/__init__.py
-+++ b/scipy/__init__.py
-@@ -158,3 +158,11 @@ else:
- 
-     # This makes "from scipy import fft" return scipy.fft, not np.fft
-     del fft
+diff --git a/scipy/linalg/__init__.py b/scipy/linalg/__init__.py
+index e88479b48..586c52ba6 100644
+--- a/scipy/linalg/__init__.py
++++ b/scipy/linalg/__init__.py
+@@ -219,3 +219,11 @@ __all__ = [s for s in dir() if not s.startswith('_')]
+ from scipy._lib._testutils import PytestTester
+ test = PytestTester(__name__)
+ del PytestTester
 +
-+    import sysconfig
-+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
-+    from pyodide_js._module import loadDynamicLibrary
-+    loadDynamicLibrary(f'/lib/python3.10/site-packages/scipy/linalg/_flapack{ext_suffix}')
-+    del loadDynamicLibrary
-+    del sysconfig
-+    del ext_suffix
++import sysconfig
++import pyodide_js
++ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
++pyodide_js._module.loadDynamicLibrary(f'/lib/python3.10/site-packages/scipy/linalg/_flapack{ext_suffix}')
++del pyodide_js
++del sysconfig
++del ext_suffix
 -- 
 2.25.1
 
