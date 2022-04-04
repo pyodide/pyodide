@@ -43,8 +43,8 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    test_pkgs.append(parse_package_config(PACKAGES_DIR / "pkg_1/meta.yaml"))
-    test_pkgs.append(parse_package_config(PACKAGES_DIR / "pkg_2/meta.yaml"))
+    test_pkgs.append(parse_package_config(PACKAGES_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(parse_package_config(PACKAGES_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
         pkg["source"]["patches"] = []
