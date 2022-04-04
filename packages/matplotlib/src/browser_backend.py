@@ -15,13 +15,13 @@ except ImportError:
 EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
 
 
-def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any]]):
+def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt, event, listener)] = proxy
     elt.addEventListener(event, proxy)
 
 
-def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any]]):
+def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
     proxy = EVENT_LISTENERS[(elt, event, listener)]
     elt.removeEventListener(event, proxy)
     proxy.destroy()
@@ -35,8 +35,8 @@ class Destroyable:
 TIMEOUTS: dict[int, Destroyable] = {}
 
 
-def set_timeout(callback: Callable[[]], timeout: int) -> int:
-    id = None
+def set_timeout(callback: Callable[[], None], timeout: int) -> int:
+    id = -1
 
     def wrapper():
         nonlocal id
@@ -55,7 +55,7 @@ def clear_timeout(id: int):
     TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
 
 
-def set_interval(callback: Callable[[]], interval: int) -> int:
+def set_interval(callback: Callable[[], None], interval: int) -> int:
     return setInterval(create_once_callable(callback), interval)
 
 
@@ -536,7 +536,7 @@ class TimerWasm(TimerBase):
     def _timer_start(self):
         self._timer_stop()
         if self._single:
-            self._timer = set_timeout(self._on_timer, self.interval)
+            self._timer: int | None = set_timeout(self._on_timer, self.interval)
         else:
             self._timer = set_interval(self._on_timer, self.interval)
 
