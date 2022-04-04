@@ -34,8 +34,8 @@ def test_generate_packages_json():
         "pkg_1",
         "pkg_1_1",
         "pkg_2",
-        "pkg_2_1",
         "pkg_3",
+        "pkg_3_1",
     }
     assert package_data["packages"]["pkg_1"] == {
         "name": "pkg_1",
