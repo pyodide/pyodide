@@ -47,6 +47,13 @@ def _set_timeout(callback: Callable[[], None], timeout: int) -> int:
     return id
 
 
+# An object with a no-op destroy method so we can do 
+# 
+# TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy() 
+# 
+# and either it gets a real object and calls the real destroy method or it gets
+# the fake which does nothing. This is to handle the case where clear_timeout is
+# called after the timeout executes.
 DUMMY_DESTROYABLE = Destroyable()
 
 
