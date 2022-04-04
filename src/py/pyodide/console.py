@@ -14,7 +14,7 @@ from contextlib import (  # type: ignore[attr-defined]
 )
 from platform import python_build, python_version
 from tokenize import TokenError
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Generator, Literal
 
 from _pyodide._base import CodeRunner, should_quiet
 
@@ -136,7 +136,7 @@ class _CommandCompiler(CommandCompiler):
 
     def __call__(  # type: ignore[override]
         self, source, filename="<console>", symbol="single"
-    ) -> Optional[CodeRunner]:
+    ) -> CodeRunner | None:
         return super().__call__(source, filename, symbol)  # type: ignore[return-value]
 
 
@@ -166,15 +166,13 @@ class ConsoleFuture(Future):
 
     def __init__(
         self,
-        syntax_check: Union[
-            Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
-        ],
+        syntax_check: (Literal["incomplete", "syntax-error", "complete"]),
     ):
         super().__init__()
-        self.syntax_check: Union[
-            Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
-        ] = syntax_check
-        self.formatted_error: Optional[str] = None
+        self.syntax_check: (
+            Literal["incomplete", "syntax-error", "complete"]
+        ) = syntax_check
+        self.formatted_error: str | None = None
 
 
 class Console:
@@ -231,11 +229,11 @@ class Console:
 
     def __init__(
         self,
-        globals: Optional[dict] = None,
+        globals: dict | None = None,
         *,
-        stdin_callback: Optional[Callable[[], str]] = None,
-        stdout_callback: Optional[Callable[[str], None]] = None,
-        stderr_callback: Optional[Callable[[str], None]] = None,
+        stdin_callback: Callable[[], str] | None = None,
+        stdout_callback: Callable[[str], None] | None = None,
+        stderr_callback: Callable[[str], None] | None = None,
         persistent_stream_redirection: bool = False,
         filename: str = "<console>",
     ):
@@ -251,7 +249,9 @@ class Console:
         self.buffer: list[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator = None  # track persistent stream redirection
+        self._stream_generator: Generator[
+            None, None, None
+        ] | None = None  # track persistent stream redirection
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
         self._completer = rlcompleter.Completer(self.globals)
@@ -277,13 +277,13 @@ class Console:
         self._stream_generator = None
 
     @contextmanager
-    def redirect_streams(self):
+    def redirect_streams(self) -> Generator[None, None, None]:
         """A context manager to redirect standard streams.
 
         This supports nesting."""
         yield from self._stdstreams_redirections_inner()
 
-    def _stdstreams_redirections_inner(self):
+    def _stdstreams_redirections_inner(self) -> Generator[None, None, None]:
         """This is the generator which implements redirect_streams and the stdstreams_redirections"""
         # already redirected?
         if self._streams_redirected:
@@ -319,7 +319,7 @@ class Console:
             :any:`ConsoleFuture`
 
         """
-        res: Optional[ConsoleFuture]
+        res: ConsoleFuture | None
 
         try:
             code = self._compile(source, filename, "single")
@@ -475,7 +475,7 @@ class PyodideConsole(Console):
 
 
 def repr_shorten(
-    value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
+    value: Any, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
     """Compute the string representation of ``value`` and shorten it
     if necessary.

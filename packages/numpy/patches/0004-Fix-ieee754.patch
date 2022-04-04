@@ -1,16 +1,20 @@
-commit 12b131883a0505987b052cb58ee1320aed24aeb4
-Author: Roman Yurchak <rth.yurchak@gmail.com>
-Date:   Mon Mar 22 21:33:26 2021 +0100
+From 77cdba9a810726e01542ab330ee7ec49f446a50e Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
+Date: Thu, 31 Mar 2022 17:19:07 -0700
+Subject: [PATCH 04/14] Fix ieee754
 
-    Use float error status without external includes in numpy
-    
-    A better solution would be to rely on FE_DIVBYZERO, FE_DIVBYZERO etc
-    defined in musl's fenv.h (https://github.com/numpy/numpy/pull/12124)
-    however these are not valid for emscripten
-    (https://github.com/emscripten-core/emscripten/issues/13678)
+Use float error status without external includes in numpy
+
+A better solution would be to rely on FE_DIVBYZERO, FE_DIVBYZERO etc
+defined in musl's fenv.h (https://github.com/numpy/numpy/pull/12124)
+however these are not valid for emscripten
+(https://github.com/emscripten-core/emscripten/issues/13678)
+---
+ numpy/core/src/npymath/ieee754.c.src | 30 ++++++++--------------------
+ 1 file changed, 8 insertions(+), 22 deletions(-)
 
 diff --git a/numpy/core/src/npymath/ieee754.c.src b/numpy/core/src/npymath/ieee754.c.src
-index 3f66b24a4..6beb63edc 100644
+index 4e6ddb712..6aecb7577 100644
 --- a/numpy/core/src/npymath/ieee754.c.src
 +++ b/numpy/core/src/npymath/ieee754.c.src
 @@ -682,7 +682,8 @@ void npy_set_floatstatus_invalid(void)
@@ -67,3 +71,6 @@ index 3f66b24a4..6beb63edc 100644
      return fpstatus;
  }
  
+-- 
+2.25.1
+

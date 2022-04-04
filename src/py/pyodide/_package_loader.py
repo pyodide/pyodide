@@ -6,7 +6,7 @@ from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Iterable, Literal, Optional
+from typing import IO, Iterable, Literal
 from zipfile import ZipFile
 
 from ._core import IN_BROWSER, JsProxy, to_js
@@ -54,11 +54,11 @@ def unpack_buffer(
     buffer: JsProxy,
     *,
     filename: str = "",
-    format: str = None,
-    target: Literal["site", "lib", None] = None,
-    extract_dir: str = None,
+    format: str | None = None,
+    target: Literal["site", "lib"] | None = None,
+    extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
-) -> Optional[JsProxy]:
+) -> JsProxy | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
