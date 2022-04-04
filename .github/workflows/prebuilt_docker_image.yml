@@ -33,7 +33,7 @@ jobs:
             VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
-          driver-opts: BUILDKIT_STEP_LOG_MAX_SIZE=-1
+          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=-1
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:
@@ -62,6 +62,6 @@ jobs:
             VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
-          driver-opts: BUILDKIT_STEP_LOG_MAX_SIZE=-1
+          driver-opts: env.BUILDKIT_STEP_LOG_MAX_SIZE=-1
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
