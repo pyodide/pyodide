@@ -4,9 +4,6 @@ package:
 source:
   sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
   url: https://dummy-url-that-not-exists.com/pkg_1_1-py3-none-any.whl
-requirements:
-  run:
-    - pkg_1_1
 test:
   imports:
     - pkg_1_1
