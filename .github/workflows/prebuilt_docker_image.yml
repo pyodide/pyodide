@@ -5,7 +5,7 @@ on:
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide
-  PYODIDE_ENV_VERSION: 20220213-chrome97-firefox96
+  PYODIDE_ENV_VERSION: 20220317-chrome99-firefox98-py310
 jobs:
   build_docker:
     runs-on: ubuntu-latest
@@ -33,6 +33,7 @@ jobs:
             VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
+          driver-opts: BUILDKIT_STEP_LOG_MAX_SIZE=-1
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
   build_ghcr:
@@ -61,5 +62,6 @@ jobs:
             VERSION=${{ env.PYODIDE_ENV_VERSION }}
           tags: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}
           labels: ${{ steps.meta.outputs.labels }}
+          driver-opts: BUILDKIT_STEP_LOG_MAX_SIZE=-1
       - name: Image digest
         run: echo ${{ steps.build.outputs.digest }}
