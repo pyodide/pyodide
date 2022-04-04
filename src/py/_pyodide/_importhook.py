@@ -1,7 +1,6 @@
 import sys
 from importlib.abc import Loader, MetaPathFinder
 from importlib.util import spec_from_loader
-from typing import Optional
 
 
 class JsFinder(MetaPathFinder):
@@ -100,7 +99,7 @@ class JsLoader(Loader):
         return True
 
 
-JsProxy: Optional[type] = None
+JsProxy: type | None = None
 jsfinder: JsFinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module

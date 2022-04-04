@@ -25,7 +25,7 @@ repos:
     rev: "v2.31.1"
     hooks:
       - id: pyupgrade
-        args: ["--py39-plus"]
+        args: ["--py310-plus"]
 
   - repo: https://github.com/hadialqattan/pycln
     rev: "v1.2.5"
@@ -49,25 +49,20 @@ repos:
     rev: "v0.942"
     hooks:
       - id: mypy
-        args:
-          - --show-error-codes
-          - --ignore-missing-imports
-        files: ^(src/|packages/.*/test|conftest.py|docs/)
+        files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
+        exclude: (setup.py|^src/tests|conftest.py)
+        args: []
         additional_dependencies: &mypy-deps
           - packaging
           - types-docutils
           - types-pyyaml
           - types-setuptools
+          - numpy
       - id: mypy
-        name: mypy-micropip
-        files: ^packages/micropip/src/
-        args: &mypy-args
-          - --show-error-codes
-        additional_dependencies: *mypy-deps
-      - id: mypy
-        name: mypy-pyodide-build
-        files: ^pyodide-build/pyodide_build/
-        args: *mypy-args
+        name: mypy-tests
+        args: [--ignore-missing-imports]
+        files: ^(packages/|docs|conftest.py|src/tests)
+        exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format

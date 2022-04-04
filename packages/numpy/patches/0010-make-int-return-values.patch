@@ -1,3 +1,8 @@
+From 1760850bf0f763b19ea5cd9de8f2e578bcc08a98 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 31 Mar 2022 17:24:13 -0700
+Subject: [PATCH 10/14] make int return values
+
 Make return values to fortran subroutines be consistently int.
 
 This is because f2py defaults to making subroutines return void, whereas
@@ -5,29 +10,20 @@ f2c makes them int. On most systems this doesn't matter, but on WASM, strict
 return type checking is used which makes things fail when f2py code calls
 subroutines that were generated from fortran with f2c. To fix this we make
 everything, including f2c, return int from subroutines.
+---
+ numpy/f2py/common_rules.py     |  6 +++---
+ numpy/f2py/rules.py            |  6 +++---
+ numpy/f2py/src/fortranobject.c |  7 +++++--
+ numpy/f2py/src/fortranobject.h |  6 +++---
+ numpy/linalg/lapack_lite/f2c.c | 11 ++++++-----
+ numpy/linalg/lapack_lite/f2c.h | 10 +++++-----
+ 6 files changed, 25 insertions(+), 21 deletions(-)
 
-diff --git a/numpy/f2py/src/fortranobject.h b/numpy/f2py/src/fortranobject.h
-index 5d0dcf6..d5f77b3 100644
---- a/numpy/f2py/src/fortranobject.h
-+++ b/numpy/f2py/src/fortranobject.h
-@@ -67,9 +67,9 @@ Author: Pearu Peterson <pearu@cens.ioc.ee>
-
- #define F2PY_MAX_DIMS 40
-
--typedef void (*f2py_set_data_func)(char*,npy_intp*);
--typedef void (*f2py_void_func)(void);
--typedef void (*f2py_init_func)(int*,npy_intp*,f2py_set_data_func,int*);
-+typedef int (*f2py_set_data_func)(char*,npy_intp*);
-+typedef int (*f2py_void_func)(void);
-+typedef int (*f2py_init_func)(int*,npy_intp*,f2py_set_data_func,int*);
-
-   /*typedef void* (*f2py_c_func)(void*,...);*/
- 
 diff --git a/numpy/f2py/common_rules.py b/numpy/f2py/common_rules.py
-index 62c1ba2..5893683 100644
+index 937d8bc72..1bc01ecd1 100644
 --- a/numpy/f2py/common_rules.py
 +++ b/numpy/f2py/common_rules.py
-@@ -108,7 +108,7 @@ def buildhooks(m):
+@@ -104,7 +104,7 @@ def dadd(line, s=doc):
          cadd('\t{NULL}\n};')
          inames1 = rmbadname(inames)
          inames1_tps = ','.join(['char *' + s for s in inames1])
@@ -36,7 +32,7 @@ index 62c1ba2..5893683 100644
          cadd('\tint i_f2py=0;')
          for n in inames1:
              cadd('\tf2py_%s_def[i_f2py++].data = %s;' % (name, n))
-@@ -117,10 +117,10 @@ def buildhooks(m):
+@@ -113,10 +113,10 @@ def dadd(line, s=doc):
              F_FUNC = 'F_FUNC_US'
          else:
              F_FUNC = 'F_FUNC'
@@ -50,10 +46,10 @@ index 62c1ba2..5893683 100644
               % (F_FUNC, lower_name, name.upper(), name))
          cadd('}\n')
 diff --git a/numpy/f2py/rules.py b/numpy/f2py/rules.py
-index 1b41498ea..9419aeb16 100755
+index 78810a0a7..24cb06432 100755
 --- a/numpy/f2py/rules.py
 +++ b/numpy/f2py/rules.py
-@@ -399,9 +399,9 @@ rout_rules = [
+@@ -394,9 +394,9 @@
          'decl': '',
          '_check': ismoduleroutine
      }, {  # Subroutine
@@ -67,32 +63,49 @@ index 1b41498ea..9419aeb16 100755
                                 isdummyroutine: ''
                                 },
 diff --git a/numpy/f2py/src/fortranobject.c b/numpy/f2py/src/fortranobject.c
-index b55385b50..232a7f90d 100644
+index c96378170..d7b9536d8 100644
 --- a/numpy/f2py/src/fortranobject.c
 +++ b/numpy/f2py/src/fortranobject.c
-@@ -308,6 +308,11 @@ fortran_getattr(PyFortranObject *fp, char *name) {
+@@ -397,6 +397,10 @@ fortran_getattr(PyFortranObject *fp, char *name)
          return s;
      }
-     if ((strcmp(name,"_cpointer")==0) && (fp->len==1)) {
-+        if(fp->defs[0].data==NULL)
+     if ((strcmp(name, "_cpointer") == 0) && (fp->len == 1)) {
++        if(fp->defs[0].data == NULL)
 +        {
-+            PyErr_Format(PyExc_AttributeError,"missing function pointer %s",fp->defs[0].name);
-+
++            PyErr_Format(PyExc_AttributeError, "missing function pointer %s", fp->defs[0].name);
 +        }
-         PyObject *cobj = F2PyCapsule_FromVoidPtr((void *)(fp->defs[0].data),NULL);
+         PyObject *cobj =
+                 F2PyCapsule_FromVoidPtr((void *)(fp->defs[0].data), NULL);
          if (PyDict_SetItemString(fp->dict, name, cobj))
-             return NULL;
-@@ -382,7 +387,7 @@ fortran_setattr(PyFortranObject *fp, char *name, PyObject *v) {
+@@ -483,8 +487,7 @@ fortran_setattr(PyFortranObject *fp, char *name, PyObject *v)
      if (v == NULL) {
          int rv = PyDict_DelItemString(fp->dict, name);
          if (rv < 0)
--            PyErr_SetString(PyExc_AttributeError,"delete non-existing fortran attribute");
+-            PyErr_SetString(PyExc_AttributeError,
+-                            "delete non-existing fortran attribute");
 +            PyErr_Format(PyExc_AttributeError,"delete non-existing fortran attribute %s",name);
          return rv;
      }
      else
+diff --git a/numpy/f2py/src/fortranobject.h b/numpy/f2py/src/fortranobject.h
+index a1e9fdbdf..a55335a8d 100644
+--- a/numpy/f2py/src/fortranobject.h
++++ b/numpy/f2py/src/fortranobject.h
+@@ -45,9 +45,9 @@ Author: Pearu Peterson <pearu@cens.ioc.ee>
+ 
+ #define F2PY_MAX_DIMS 40
+ 
+-typedef void (*f2py_set_data_func)(char *, npy_intp *);
+-typedef void (*f2py_void_func)(void);
+-typedef void (*f2py_init_func)(int *, npy_intp *, f2py_set_data_func, int *);
++typedef int (*f2py_set_data_func)(char*,npy_intp*);
++typedef int (*f2py_void_func)(void);
++typedef int (*f2py_init_func)(int*,npy_intp*,f2py_set_data_func,int*);
+ 
+ /*typedef void* (*f2py_c_func)(void*,...);*/
+ 
 diff --git a/numpy/linalg/lapack_lite/f2c.c b/numpy/linalg/lapack_lite/f2c.c
-index 1114bef3b..905beaa0d 100644
+index 9a1e9cec1..f94cd5736 100644
 --- a/numpy/linalg/lapack_lite/f2c.c
 +++ b/numpy/linalg/lapack_lite/f2c.c
 @@ -14,9 +14,9 @@
@@ -135,10 +148,10 @@ index 1114bef3b..905beaa0d 100644
  
  
 diff --git a/numpy/linalg/lapack_lite/f2c.h b/numpy/linalg/lapack_lite/f2c.h
-index 80f1a12b1..25204797b 100644
+index d3fbfc177..b44aaac44 100644
 --- a/numpy/linalg/lapack_lite/f2c.h
 +++ b/numpy/linalg/lapack_lite/f2c.h
-@@ -259,7 +259,7 @@ extern double d_tan(double *);
+@@ -263,7 +263,7 @@ extern double d_tan(double *);
  extern double d_tanh(double *);
  extern double derf_(double *);
  extern double derfc_(double *);
@@ -147,7 +160,7 @@ index 80f1a12b1..25204797b 100644
  extern integer do_lio(ftnint *, ftnint *, char *, ftnlen);
  extern integer do_uio(ftnint *, char *, ftnlen);
  extern integer e_rdfe(void);
-@@ -271,7 +271,7 @@ extern integer e_rsli(void);
+@@ -275,7 +275,7 @@ extern integer e_rsli(void);
  extern integer e_rsue(void);
  extern integer e_wdfe(void);
  extern integer e_wdue(void);
@@ -156,7 +169,7 @@ index 80f1a12b1..25204797b 100644
  extern integer e_wsfi(void);
  extern integer e_wsle(void);
  extern integer e_wsli(void);
-@@ -346,9 +346,9 @@ extern double r_sinh(float *);
+@@ -350,9 +350,9 @@ extern double r_sinh(float *);
  extern double r_sqrt(float *);
  extern double r_tan(float *);
  extern double r_tanh(float *);
@@ -168,7 +181,7 @@ index 80f1a12b1..25204797b 100644
  extern int s_paus(char *, ftnlen);
  extern integer s_rdfe(cilist *);
  extern integer s_rdue(cilist *);
-@@ -363,7 +363,7 @@ extern integer s_rsue(cilist *);
+@@ -367,7 +367,7 @@ extern integer s_rsue(cilist *);
  extern int s_stop(char *, ftnlen);
  extern integer s_wdfe(cilist *);
  extern integer s_wdue(cilist *);
@@ -177,3 +190,6 @@ index 80f1a12b1..25204797b 100644
  extern integer s_wsfi(icilist *);
  extern integer s_wsle(cilist *);
  extern integer s_wsli(icilist *);
+-- 
+2.25.1
+

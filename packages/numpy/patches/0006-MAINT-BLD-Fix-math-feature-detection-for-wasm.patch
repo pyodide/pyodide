@@ -1,7 +1,7 @@
-From 00c46aac027dcefbb965044f8fa86f1298f91504 Mon Sep 17 00:00:00 2001
+From 2895d82a329e356d94c3f00762804f5fa23745fa Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 5 Mar 2022 16:00:54 -0800
-Subject: [PATCH] MAINT, BLD Fix math feature detection for wasm
+Subject: [PATCH 06/14] MAINT, BLD Fix math feature detection for wasm
 
 The web assembly linker is strict about function types, it is unwilling
 to link a function defined with signature say `double f(double, double)`
@@ -183,10 +183,10 @@ index 000000000..bc14d16d0
 +int fseeko(FILE *stream, off_t offset, int whence);
 +int fallocate(int, int, off_t, off_t);
 diff --git a/numpy/core/setup.py b/numpy/core/setup.py
-index b03e9f990..b693f35cd 100644
+index 7eb08132e..cb31162d1 100644
 --- a/numpy/core/setup.py
 +++ b/numpy/core/setup.py
-@@ -103,32 +103,48 @@ def win32_checks(deflist):
+@@ -125,32 +125,48 @@ def win32_checks(deflist):
          deflist.append('FORCE_NO_LONG_DOUBLE_FORMATTING')
  
  def check_math_capabilities(config, ext, moredefs, mathlibs):
@@ -247,7 +247,7 @@ index b03e9f990..b693f35cd 100644
      if not check_funcs_once(MANDATORY_FUNCS):
          raise SystemError("One of the required function to build numpy is not"
                  " available (the list is %s)." % str(MANDATORY_FUNCS))
-@@ -143,15 +159,34 @@ def check_funcs(funcs_name):
+@@ -165,15 +181,34 @@ def check_funcs(funcs_name):
      for f in OPTIONAL_STDFUNCS_MAYBE:
          if config.check_decl(fname2def(f),
                      headers=["Python.h", "math.h"]):
@@ -283,7 +283,7 @@ index b03e9f990..b693f35cd 100644
      for tup in OPTIONAL_INTRINSICS:
          headers = None
          if len(tup) == 2:
-@@ -372,12 +407,18 @@ def check_types(config_cmd, ext, build_dir):
+@@ -394,12 +429,18 @@ def check_types(config_cmd, ext, build_dir):
  def check_mathlib(config_cmd):
      # Testing the C math library
      mathlibs = []
@@ -306,8 +306,8 @@ index b03e9f990..b693f35cd 100644
              mathlibs = libs
              break
      else:
-@@ -386,6 +427,7 @@ def check_mathlib(config_cmd):
-                                "MATHLIB env variable")
+@@ -408,6 +449,7 @@ def check_mathlib(config_cmd):
+             "MATHLIB env variable")
      return mathlibs
  
 +
@@ -315,7 +315,7 @@ index b03e9f990..b693f35cd 100644
      """Return the define value to use for NPY_VISIBILITY_HIDDEN (may be empty
      string)."""
 diff --git a/numpy/core/setup_common.py b/numpy/core/setup_common.py
-index a700610d3..9b6648190 100644
+index 70e8fc897..181c58fb1 100644
 --- a/numpy/core/setup_common.py
 +++ b/numpy/core/setup_common.py
 @@ -1,8 +1,9 @@
@@ -330,7 +330,7 @@ index a700610d3..9b6648190 100644
  
  from numpy.distutils.misc_util import mingw32
  
-@@ -100,6 +101,32 @@ def check_api_version(apiversion, codegen_dir):
+@@ -101,6 +102,32 @@ def check_api_version(apiversion, codegen_dir):
          warnings.warn(msg % (apiversion, curapi_hash, apiversion, api_hash,
                               __file__),
                        MismatchCAPIWarning, stacklevel=2)
@@ -363,7 +363,7 @@ index a700610d3..9b6648190 100644
  # Mandatory functions: if not found, fail the build
  MANDATORY_FUNCS = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "fabs",
          "floor", "ceil", "sqrt", "log10", "log", "exp", "asin",
-@@ -109,9 +136,11 @@ def check_api_version(apiversion, codegen_dir):
+@@ -110,9 +137,11 @@ def check_api_version(apiversion, codegen_dir):
  # replacement implementation. Note that some of these are C99 functions.
  OPTIONAL_STDFUNCS = ["expm1", "log1p", "acosh", "asinh", "atanh",
          "rint", "trunc", "exp2", "log2", "hypot", "atan2", "pow",

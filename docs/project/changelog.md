@@ -19,7 +19,8 @@ substitutions:
 - {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
 
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
-  standard library ssl module {pr}`2263`, python-solvespace v3.0.7
+  standard library ssl module {pr}`2263`, python-solvespace v3.0.7,
+  lazy-object-proxy {pr}`2320`.
 
 - Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
@@ -109,7 +110,7 @@ substitutions:
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
   {pr}`2295`
 
-- {{ Breaking }} The `extract_dir` argument to
+- {{ Breaking }} The `extractDir` argument to
   {any}`unpackArchive <pyodide.unpackArchive>` is now passed as a named argument.
   The old usage still works with a deprecation warning.
   {pr}`2300`
@@ -119,9 +120,12 @@ substitutions:
   possible to use an async Python function as a Javascript event handler.
   {pr}`2319`
 
-_February 19, 2022_
+- {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
+  {pr}`2345`
 
 ## Version 0.19.1
+
+_February 19, 2022_
 
 ### Packages
 
@@ -135,7 +139,7 @@ _February 19, 2022_
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
 
-## Type translations
+### Type translations
 
 - {{Fix}} The "PyProxy has already been destroyed" error message has been
   improved with some context information.
