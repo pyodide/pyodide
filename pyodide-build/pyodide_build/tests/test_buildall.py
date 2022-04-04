@@ -6,7 +6,7 @@ import pytest
 
 from pyodide_build import buildall
 
-PACKAGES_DIR = Path(__file__) / "_test_packages"
+PACKAGES_DIR = Path(__file__).parent / "_test_packages"
 
 
 def test_generate_dependency_graph():
