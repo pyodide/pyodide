@@ -1,0 +1,12 @@
+package:
+  name: pkg_1_1
+  version: 1.0.0
+source:
+  sha256: 0000000000000000000000000000000000000000000000000000000000000000
+  url: https://dummy-url-that-not-exists.com/pkg_1_1-py3-none-any.whl
+requirements:
+  run:
+    - pkg_1_1
+test:
+  imports:
+    - pkg_1_1

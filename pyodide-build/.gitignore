@@ -1,0 +1,11 @@
+*.pyc
+*.egg-info/
+__pycache__
+
+.docker_home
+.hypothesis
+.idea
+.mozilla
+.mypy_cache/
+.pytest_cache/
+.vscode
