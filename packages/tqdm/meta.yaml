@@ -1,9 +1,9 @@
 package:
   name: tqdm
-  version: 4.63.0
+  version: 4.64.0
 source:
-  url: https://files.pythonhosted.org/packages/81/1c/93a2b77b97cdba15a59c3d2d03e53d3292158d1106d37f579069abd90ece/tqdm-4.63.0-py2.py3-none-any.whl
-  sha256: e643e071046f17139dea55b880dc9b33822ce21613b4a4f5ea57f202833dbc29
+  url: https://files.pythonhosted.org/packages/8a/c4/d15f1e627fff25443ded77ea70a7b5532d6371498f9285d44d62587e209c/tqdm-4.64.0-py2.py3-none-any.whl
+  sha256: 74a2cdefe14d11442cedf3ba4e21a3b84ff9a2dbdc6cfae2c34addb2a14a5ea6
 test:
   imports:
     - tqdm
