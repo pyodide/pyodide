@@ -15,13 +15,13 @@ except ImportError:
 EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
 
 
-def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+def _add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt, event, listener)] = proxy
     elt.addEventListener(event, proxy)
 
 
-def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+def _remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
     proxy = EVENT_LISTENERS[(elt, event, listener)]
     elt.removeEventListener(event, proxy)
     proxy.destroy()
@@ -35,7 +35,7 @@ class Destroyable:
 TIMEOUTS: dict[int, Destroyable] = {}
 
 
-def set_timeout(callback: Callable[[], None], timeout: int) -> int:
+def _set_timeout(callback: Callable[[], None], timeout: int) -> int:
     id = -1
 
     def wrapper():
@@ -50,16 +50,16 @@ def set_timeout(callback: Callable[[], None], timeout: int) -> int:
 DUMMY_DESTROYABLE = Destroyable()
 
 
-def clear_timeout(id: int):
+def _clear_timeout(id: int):
     clearTimeout(id)
     TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
 
 
-def set_interval(callback: Callable[[], None], interval: int) -> int:
+def _set_interval(callback: Callable[[], None], interval: int) -> int:
     return setInterval(create_once_callable(callback), interval)
 
 
-def clear_interval(id: int):
+def _clear_interval(id: int):
     clearInterval(id)
     TIMEOUTS.pop(id).destroy()
 
@@ -166,7 +166,7 @@ class FigureCanvasWasm(FigureCanvasBase):
         width *= self._ratio
         height *= self._ratio
         div = self.create_root_element()
-        add_event_listener(div, "contextmenu", ignore)
+        _add_event_listener(div, "contextmenu", ignore)
         div.setAttribute(
             "style",
             "margin: 0 auto; text-align: center;" + f"width: {width / self._ratio}px",
@@ -215,13 +215,13 @@ class FigureCanvasWasm(FigureCanvasBase):
         rubberband.setAttribute("tabindex", "0")
         # Event handlers are added to the canvas "on top", even though most of
         # the activity happens in the canvas below.
-        add_event_listener(rubberband, "mousemove", self.onmousemove)
-        add_event_listener(rubberband, "mouseup", self.onmouseup)
-        add_event_listener(rubberband, "mousedown", self.onmousedown)
-        add_event_listener(rubberband, "mouseenter", self.onmouseenter)
-        add_event_listener(rubberband, "mouseleave", self.onmouseleave)
-        add_event_listener(rubberband, "keyup", self.onkeyup)
-        add_event_listener(rubberband, "keydown", self.onkeydown)
+        _add_event_listener(rubberband, "mousemove", self.onmousemove)
+        _add_event_listener(rubberband, "mouseup", self.onmouseup)
+        _add_event_listener(rubberband, "mousedown", self.onmousedown)
+        _add_event_listener(rubberband, "mouseenter", self.onmouseenter)
+        _add_event_listener(rubberband, "mouseleave", self.onmouseleave)
+        _add_event_listener(rubberband, "keyup", self.onkeyup)
+        _add_event_listener(rubberband, "keydown", self.onkeydown)
         context = rubberband.getContext("2d")
         context.strokeStyle = "#000000"
         context.setLineDash([2, 2])
@@ -247,7 +247,7 @@ class FigureCanvasWasm(FigureCanvasBase):
     def draw_idle(self):
         if not self._idle_scheduled:
             self._idle_scheduled = True
-            set_timeout(self.draw, 1)
+            _set_timeout(self.draw, 1)
 
     def set_message(self, message):
         message_display = self.get_element("message")
@@ -498,7 +498,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
                     button.classList.add("fa")
                     button.classList.add(_FONTAWESOME_ICONS[image_file])
                     button.classList.add("matplotlib-toolbar-button")
-                    add_event_listener(button, "click", getattr(self, name_of_method))
+                    _add_event_listener(button, "click", getattr(self, name_of_method))
                     div.appendChild(button)
 
         for format, _mimetype in sorted(list(FILE_TYPES.items())):
@@ -507,7 +507,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
             button.textContent = format
             button.classList.add("matplotlib-toolbar-button")
             button.id = "text"
-            add_event_listener(button, "click", self.ondownload)
+            _add_event_listener(button, "click", self.ondownload)
             div.appendChild(button)
 
         return div
@@ -536,18 +536,18 @@ class TimerWasm(TimerBase):
     def _timer_start(self):
         self._timer_stop()
         if self._single:
-            self._timer: int | None = set_timeout(self._on_timer, self.interval)
+            self._timer: int | None = _set_timeout(self._on_timer, self.interval)
         else:
-            self._timer = set_interval(self._on_timer, self.interval)
+            self._timer = _set_interval(self._on_timer, self.interval)
 
     def _timer_stop(self):
         if self._timer is None:
             return
         elif self._single:
-            clear_timeout(self._timer)
+            _clear_timeout(self._timer)
             self._timer = None
         else:
-            clear_interval(self._timer)
+            _clear_interval(self._timer)
             self._timer = None
 
     def _timer_set_interval(self):
