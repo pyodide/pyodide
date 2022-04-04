@@ -190,7 +190,8 @@
 - test_csv
 - test_ctypes:
     skip:
-      - test_callback_too_many_args # can never work
+      # See https://bugs.python.org/issue47208
+      - test_callback_too_many_args 
 - test_curses
 - test_dataclasses
 - test_datetime:

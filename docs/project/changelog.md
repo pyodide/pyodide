@@ -120,6 +120,11 @@ substitutions:
   possible to use an async Python function as a Javascript event handler.
   {pr}`2319`
 
+- {{ Enhancement }} `libffi-emscripten` now passes all libffi tests. All
+  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
+  a plan to fix `test_callback_too_many_args` upstream).
+  {pr}`2350`
+
 ## Version 0.19.1
 
 _February 19, 2022_
