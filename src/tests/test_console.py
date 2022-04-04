@@ -349,7 +349,7 @@ def test_console_html(console_html_fixture):
     assert exec_and_get_result("1+1") == ">>> 1+1\n2"
     assert exec_and_get_result("1 +1") == ">>> 1 +1\n2"
     assert exec_and_get_result("1+ 1") == ">>> 1+ 1\n2"
-    assert exec_and_get_result("[1,2,3]") == ">>> &#91;1,2,3&#93;\n[1, 2, 3]"
+    assert exec_and_get_result("[1,2,3]") == ">>> [1,2,3]\n[1, 2, 3]"
     assert (
         exec_and_get_result("{'a' : 1, 'b' : 2, 'c' : 3}")
         == ">>> {'a' : 1, 'b' : 2, 'c' : 3}\n{'a': 1, 'b': 2, 'c': 3}"
@@ -359,11 +359,15 @@ def test_console_html(console_html_fixture):
     )
     assert (
         exec_and_get_result("[x*x+1 for x in range(5)]")
-        == ">>> &#91;x*x+1 for x in range(5)&#93;\n[1, 2, 5, 10, 17]"
+        == ">>> [x*x+1 for x in range(5)]\n[1, 2, 5, 10, 17]"
     )
     assert (
         exec_and_get_result("{x+1:x*x+1 for x in range(5)}")
         == ">>> {x+1:x*x+1 for x in range(5)}\n{1: 1, 2: 2, 3: 5, 4: 10, 5: 17}"
+    )
+    assert (
+        exec_and_get_result("print('\x1b[31mHello World\x1b[0m')")
+        == ">>> print('[[;#A00;]Hello World]')\n[[;#A00;]Hello World]"
     )
 
     term_exec(
