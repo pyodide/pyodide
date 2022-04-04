@@ -38,7 +38,7 @@ _February 19, 2022_
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
 
-## Type translations
+### Type translations
 
 - {{Fix}} The "PyProxy has already been destroyed" error message has been
   improved with some context information.
