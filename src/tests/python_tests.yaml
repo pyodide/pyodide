@@ -190,16 +190,8 @@
 - test_csv
 - test_ctypes:
     skip:
+      # See https://bugs.python.org/issue47208
       - test_callback_too_many_args
-      - test_callback_large_struct
-      - CFunctions
-      - test_struct_return_2H
-      - FunctionTestCase
-    skip-node:
-      - test_longlong_callbacks
-      - test_longdouble
-      - test_longlong
-      - test_ulonglong
 - test_curses
 - test_dataclasses
 - test_datetime:

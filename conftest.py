@@ -387,7 +387,8 @@ class NodeWrapper(SeleniumWrapper):
     def init_node(self):
         os.chdir("build")
         self.p = pexpect.spawn(
-            f"node --expose-gc ../tools/node_test_driver.js {self.base_url}", timeout=60
+            f"node --expose-gc --experimental-wasm-bigint ../tools/node_test_driver.js {self.base_url}",
+            timeout=60,
         )
         self.p.setecho(False)
         self.p.delaybeforesend = None
