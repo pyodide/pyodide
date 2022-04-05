@@ -41,7 +41,7 @@ def _set_timeout(callback: Callable[[], None], timeout: int) -> int:
     def wrapper():
         nonlocal id
         callback()
-        del TIMEOUTS[id]
+        TIMEOUTS.pop(id, None)
 
     id = setTimeout(create_once_callable(wrapper), timeout)
     return id
