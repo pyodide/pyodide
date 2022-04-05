@@ -1,7 +1,7 @@
-From d94b4b85f87cb2c0c83f605028acbe2de4ab028a Mon Sep 17 00:00:00 2001
+From 5269845b6390efedb10dbdaec4d5b4b73ca76445 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Fri, 3 Sep 2021 18:08:26 -0700
-Subject: [PATCH 07/10] Patch in keyboard interrupt handling
+Subject: [PATCH 06/10] Patch in keyboard interrupt handling
 
 This patch adds a callback called pyodide_callback with signature
 `int callback(void)` to the main loop in `ceval.c`. This function gets called once
