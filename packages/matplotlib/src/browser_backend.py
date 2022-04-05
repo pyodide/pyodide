@@ -17,12 +17,12 @@ EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
 
 def _add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
     proxy = create_proxy(listener)
-    EVENT_LISTENERS[(elt, event, listener)] = proxy
+    EVENT_LISTENERS[(id(elt), event, listener)] = proxy
     elt.addEventListener(event, proxy)
 
 
 def _remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
-    proxy = EVENT_LISTENERS[(elt, event, listener)]
+    proxy = EVENT_LISTENERS[(id(elt), event, listener)]
     elt.removeEventListener(event, proxy)
     proxy.destroy()
 
