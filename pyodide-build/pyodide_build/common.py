@@ -152,10 +152,13 @@ def get_make_environment_vars():
 
     This allows us to set all build vars in one place"""
     # TODO: make this not rely on paths outside of pyodide-build
-    PYODIDE_ROOT = Path(os.environ.get("PYODIDE_ROOT", os.getcwd()))
+    PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
+    if PYODIDE_ROOT is None:
+        raise ValueError("PYODIDE_ROOT is not set")
+
     environment = {}
     result = subprocess.run(
-        ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
+        ["make", "-f", str(Path(PYODIDE_ROOT) / "Makefile.envs"), ".output_vars"],
         capture_output=True,
         text=True,
     )

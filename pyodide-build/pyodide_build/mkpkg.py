@@ -94,7 +94,7 @@ def run_prettier(meta_path):
 
 
 def make_package(
-    root: Path,
+    packages_dir: Path,
     package: str,
     version: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
@@ -137,7 +137,7 @@ def make_package(
         },
     }
 
-    package_dir = root / package
+    package_dir = packages_dir / package
     package_dir.mkdir(parents=True, exist_ok=True)
 
     meta_path = package_dir / "meta.yaml"

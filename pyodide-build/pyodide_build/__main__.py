@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import pathlib
 import sys
 
 from . import buildall, buildpkg, mkpkg, serve
@@ -36,7 +35,10 @@ def make_parser() -> argparse.ArgumentParser:
 def main():
     if not os.environ.get("__LOADED_PYODIDE_ENV"):
         if "PYODIDE_ROOT" not in os.environ:
-            os.environ["PYODIDE_ROOT"] = str(pathlib.Path(os.getcwd()))
+            raise ValueError(
+                "PYODIDE_ROOT needs to be set. Try export `PYODIDE_ROOT=<pyodide-root-directory>` then rerun."
+            )
+
         os.environ.update(get_make_environment_vars())
         hostsitepackages = get_hostsitepackages()
         pythonpath = [
