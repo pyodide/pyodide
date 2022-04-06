@@ -18,10 +18,10 @@ and check that they are in your `PATH`.
 
 ### Running the Python test suite
 
-To run the pytest suite of tests, type on the command line:
+To run the pytest suite of tests, from the root directory of Pyodide, type on the command line:
 
 ```bash
-pytest
+PYDODIE_ROOT=$(pwd) pytest
 ```
 
 There are 3 test locations that are collected by pytest,
