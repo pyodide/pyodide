@@ -10,6 +10,7 @@ requirements:
     - numpy
     - scipy
     - setuptools
+    - decorator
 test:
   imports:
     - mne
