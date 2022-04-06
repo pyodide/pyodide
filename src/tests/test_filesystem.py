@@ -29,7 +29,8 @@ def test_idbfs_persist_code(selenium_standalone):
         f"""
         pyodide.runPython(`
             import pathlib
-            p = pathlib.Path('{mount_dir}/__init__.py')
+            p = pathlib.Path('{mount_dir}/test_idbfs/__init__.py')
+            p.parent.mkdir(exist_ok=True, parents=True)
             p.write_text("def test(): return 7")
             from importlib import invalidate_caches
             invalidate_caches()
@@ -103,4 +104,4 @@ def test_idbfs_persist_code(selenium_standalone):
         """
     )
     # remove file
-    selenium.run_js(f"""pyodide.FS.unlink("{mount_dir}/__init__.py")""")
+    selenium.run_js(f"""pyodide.FS.unlink("{mount_dir}/test_idbfs/__init__.py")""")

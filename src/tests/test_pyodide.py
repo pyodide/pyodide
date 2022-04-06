@@ -862,7 +862,7 @@ def test_js_stackframes(selenium):
     def normalize_tb(t):
         res = []
         for [file, name] in t:
-            if file.endswith([".js", ".html"]):
+            if file.endswith((".js", ".html")):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[:-2])
