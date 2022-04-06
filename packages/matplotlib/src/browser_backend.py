@@ -1,8 +1,74 @@
 import math
+from typing import Any, Callable
 
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
-from js import document, window
+from js import clearInterval, clearTimeout, document, setInterval, setTimeout
+from pyodide import JsProxy, create_once_callable, create_proxy
+
+try:
+    from js import devicePixelRatio as DEVICE_PIXEL_RATIO
+except ImportError:
+    DEVICE_PIXEL_RATIO = 1
+
+
+EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
+
+
+def _add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+    proxy = create_proxy(listener)
+    EVENT_LISTENERS[(id(elt), event, listener)] = proxy
+    elt.addEventListener(event, proxy)
+
+
+def _remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+    proxy = EVENT_LISTENERS[(id(elt), event, listener)]
+    elt.removeEventListener(event, proxy)
+    proxy.destroy()
+
+
+class Destroyable:
+    def destroy(self):
+        pass
+
+
+TIMEOUTS: dict[int, Destroyable] = {}
+
+
+def _set_timeout(callback: Callable[[], None], timeout: int) -> int:
+    id = -1
+
+    def wrapper():
+        nonlocal id
+        callback()
+        TIMEOUTS.pop(id, None)
+
+    id = setTimeout(create_once_callable(wrapper), timeout)
+    return id
+
+
+# An object with a no-op destroy method so we can do
+#
+# TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
+#
+# and either it gets a real object and calls the real destroy method or it gets
+# the fake which does nothing. This is to handle the case where clear_timeout is
+# called after the timeout executes.
+DUMMY_DESTROYABLE = Destroyable()
+
+
+def _clear_timeout(id: int):
+    clearTimeout(id)
+    TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
+
+
+def _set_interval(callback: Callable[[], None], interval: int) -> int:
+    return setInterval(create_once_callable(callback), interval)
+
+
+def _clear_interval(id: int):
+    clearInterval(id)
+    TIMEOUTS.pop(id).destroy()
 
 
 class FigureCanvasWasm(FigureCanvasBase):
@@ -76,7 +142,7 @@ class FigureCanvasWasm(FigureCanvasBase):
             or getattr(context, "backendStorePixelRatio", 0)
             or 1
         )
-        return (getattr(window, "devicePixelRatio", 0) or 1) / backing_store
+        return DEVICE_PIXEL_RATIO / backing_store
 
     def create_root_element(self):
         # Designed to be overridden by subclasses
@@ -107,7 +173,7 @@ class FigureCanvasWasm(FigureCanvasBase):
         width *= self._ratio
         height *= self._ratio
         div = self.create_root_element()
-        div.addEventListener("contextmenu", ignore)
+        _add_event_listener(div, "contextmenu", ignore)
         div.setAttribute(
             "style",
             "margin: 0 auto; text-align: center;" + f"width: {width / self._ratio}px",
@@ -156,13 +222,13 @@ class FigureCanvasWasm(FigureCanvasBase):
         rubberband.setAttribute("tabindex", "0")
         # Event handlers are added to the canvas "on top", even though most of
         # the activity happens in the canvas below.
-        rubberband.addEventListener("mousemove", self.onmousemove)
-        rubberband.addEventListener("mouseup", self.onmouseup)
-        rubberband.addEventListener("mousedown", self.onmousedown)
-        rubberband.addEventListener("mouseenter", self.onmouseenter)
-        rubberband.addEventListener("mouseleave", self.onmouseleave)
-        rubberband.addEventListener("keyup", self.onkeyup)
-        rubberband.addEventListener("keydown", self.onkeydown)
+        _add_event_listener(rubberband, "mousemove", self.onmousemove)
+        _add_event_listener(rubberband, "mouseup", self.onmouseup)
+        _add_event_listener(rubberband, "mousedown", self.onmousedown)
+        _add_event_listener(rubberband, "mouseenter", self.onmouseenter)
+        _add_event_listener(rubberband, "mouseleave", self.onmouseleave)
+        _add_event_listener(rubberband, "keyup", self.onkeyup)
+        _add_event_listener(rubberband, "keydown", self.onkeydown)
         context = rubberband.getContext("2d")
         context.strokeStyle = "#000000"
         context.setLineDash([2, 2])
@@ -188,7 +254,7 @@ class FigureCanvasWasm(FigureCanvasBase):
     def draw_idle(self):
         if not self._idle_scheduled:
             self._idle_scheduled = True
-            window.setTimeout(self.draw, 1)
+            _set_timeout(self.draw, 1)
 
     def set_message(self, message):
         message_display = self.get_element("message")
@@ -439,7 +505,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
                     button.classList.add("fa")
                     button.classList.add(_FONTAWESOME_ICONS[image_file])
                     button.classList.add("matplotlib-toolbar-button")
-                    button.addEventListener("click", getattr(self, name_of_method))
+                    _add_event_listener(button, "click", getattr(self, name_of_method))
                     div.appendChild(button)
 
         for format, _mimetype in sorted(list(FILE_TYPES.items())):
@@ -448,7 +514,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
             button.textContent = format
             button.classList.add("matplotlib-toolbar-button")
             button.id = "text"
-            button.addEventListener("click", self.ondownload)
+            _add_event_listener(button, "click", self.ondownload)
             div.appendChild(button)
 
         return div
@@ -477,18 +543,18 @@ class TimerWasm(TimerBase):
     def _timer_start(self):
         self._timer_stop()
         if self._single:
-            self._timer = window.setTimeout(self._on_timer, self.interval)
+            self._timer: int | None = _set_timeout(self._on_timer, self.interval)
         else:
-            self._timer = window.setInterval(self._on_timer, self.interval)
+            self._timer = _set_interval(self._on_timer, self.interval)
 
     def _timer_stop(self):
         if self._timer is None:
             return
         elif self._single:
-            window.clearTimeout(self._timer)
+            _clear_timeout(self._timer)
             self._timer = None
         else:
-            window.clearInterval(self._timer)
+            _clear_interval(self._timer)
             self._timer = None
 
     def _timer_set_interval(self):
