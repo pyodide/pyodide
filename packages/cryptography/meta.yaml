@@ -1,10 +1,10 @@
 package:
   name: cryptography
-  version: 3.3.2
+  version: 36.0.2
 
 source:
-  url: https://files.pythonhosted.org/packages/d4/85/38715448253404186029c575d559879912eb8a1c5d16ad9f25d35f7c4f4c/cryptography-3.3.2.tar.gz
-  sha256: 5a60d3780149e13b7a6ff7ad6526b38846354d11a15e21068e57073e29e19bed
+  url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
+  sha256: 70f8f4f7bb2ac9f340655cbac89d68c527af5bb4387522a8413e841e3e6628c9
 build:
   cflags: |
     -I$(OPEN_SSL_ROOT)/include/

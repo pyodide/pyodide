@@ -258,12 +258,25 @@ def fix_f2c_output(f2c_output_path: str):
     if "PROPACK" in str(f2c_output):
 
         def fix_line(line):
-            line = line.replace("struct", "extern struct")
+            if f2c_output.name != "cgemm_ovwr.c":
+                line = line.replace("struct", "extern struct")
             if "12300" in line:
                 return line.replace("static", "").replace("123001", "(*n)")
             return line
 
         lines = list(map(fix_line, lines))
+        if f2c_output.name == "dlansvd.c":
+            lines.extend(
+                """
+            #include <time.h>
+
+            int second_(real *t) {
+                *t = clock()/1000;
+            }
+            """.split(
+                    "\n"
+                )
+            )
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
