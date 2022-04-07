@@ -42,7 +42,7 @@ def test_generate_packages_json():
     }
     assert package_data["packages"]["micropip"] == {
         "name": "micropip",
-        "version": "0.1",
+        "version": "pyodide.stdlib",
         "file_name": "micropip.file",
         "depends": ["pyparsing", "packaging", "distutils"],
         "imports": ["micropip"],
