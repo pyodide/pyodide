@@ -1,6 +1,6 @@
 package:
   name: cpp-exceptions-test
-  version: "0.1"
+  version: pyodide.test
 source:
   path: src
 build:

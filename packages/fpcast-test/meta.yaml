@@ -1,6 +1,6 @@
 package:
   name: fpcast-test
-  version: "0.1"
+  version: pyodide.test
 source:
   path: fpcast-test
 test:

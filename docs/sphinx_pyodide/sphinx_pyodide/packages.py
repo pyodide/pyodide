@@ -11,12 +11,8 @@ sys.path.append(str(base_dir / "pyodide-build"))
 
 from pyodide_build.io import parse_package_config
 
-DUMMY_PACKAGES = (
-    "cpp-exceptions-test",
-    "fpcast-test",
-    "sharedlib-test",
-    "sharedlib-test-py",
-)
+PYODIDE_TESTONLY = "pyodide.test"
+PYODIDE_STDLIB = "pyodide.stdlib"
 
 
 def get_packages_summary_directive(app):
@@ -33,9 +29,12 @@ def get_packages_summary_directive(app):
             for package in packages_list:
                 name, version, is_library = self.parse_package_info(package)
 
-                # skip libraries (e.g. libxml, libyaml, ...)
-                if is_library or name in DUMMY_PACKAGES:
+                # skip libraries (e.g. libxml, libyaml, ...) and test only packages
+                if is_library or version == PYODIDE_TESTONLY:
                     continue
+
+                if version == PYODIDE_STDLIB:
+                    version = "Pyodide standard library"
 
                 packages[name] = {
                     "name": name,
