@@ -41,7 +41,7 @@ def test_cpp_exception_catching(selenium):
             await pyodide.loadPackage("cpp-exceptions-test");
             const Module = pyodide._module;
             const sitePackages = pyodide.runPython("import site; site.getsitepackages()[0]")
-            const idx = Module.LDSO.loadedLibNames[sitePackages + "/site-packages/cpp-exceptions-test-catch.so"]
+            const idx = Module.LDSO.loadedLibNames[sitePackages + "/cpp-exceptions-test-catch.so"]
             const catchlib = Module.LDSO.loadedLibs[idx].module;
             """
             """\
