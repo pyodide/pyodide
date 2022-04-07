@@ -266,16 +266,15 @@ def fix_f2c_output(f2c_output_path: str):
 
         lines = list(map(fix_line, lines))
         if f2c_output.name.endswith("lansvd.c"):
-            lines.extend(
+            lines.append(
                 """
                 #include <time.h>
 
                 int second_(real *t) {
                     *t = clock()/1000;
+                    return 0;
                 }
-                """.split(
-                    "\n"
-                )
+                """
             )
 
     with open(f2c_output, "w") as f:
