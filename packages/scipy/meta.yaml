@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.7.3
+  version: 1.8.0
 
 # See extra explanation in info.md
 #
@@ -13,25 +13,26 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/61/67/1a654b96309c991762ee9bc39c363fc618076b155fe52d295211cf2536c7/scipy-1.7.3.tar.gz
-  sha256: ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf
+  url: https://files.pythonhosted.org/packages/b4/a2/4faa34bf0cdbefd5c706625f1234987795f368eb4e97bde9d6f46860843e/scipy-1.8.0.tar.gz
+  sha256: 31d4f2d6b724bc9a98e527b5849b8a7e589bf1ea630c33aa563eda912c9ff0bd
 
   patches:
-    - patches/add-lapack_extras-to-flapack.patch
-    - patches/convert-xerrwv-message-arg-from-int-to-str.patch
-    - patches/disable-blas-detection.patch
-    - patches/fix-fortran-files-minpack.patch
-    - patches/gemm_-no-const.patch
-    - patches/make-int-return-values.patch
-    - patches/remove-cuncsd-dorcsd-sorcsd-zuncsd.patch
-    - patches/remove-mvnun-not-fortran-77-compliant.patch
-    - patches/sasum-returns-double-not-float.patch
-    - patches/skip-fortran-fails-to-link.patch
-    - patches/rename-_page_trend_test.patch
-    - patches/USE_CPP14-branch-doesn-t-work-for-wasm.patch
-    - patches/0001-Fix-getbreak-dlamch.patch
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
-    - patches/0001-loadDynamicLibrary-flapack.patch
+    - patches/0002-Fix-getbreak-dlamch.patch
+    - patches/0003-loadDynamicLibrary-flapack.patch
+    - patches/0004-Add-lapack_extras-to-linalg-setup.py.patch
+    - patches/0005-int-to-string.patch
+    - patches/0006-disable-blas-detection.patch
+    - patches/0007-fix-fotran-files-minpack.patch
+    - patches/0008-gemm_-no-const.patch
+    - patches/0009-make-int-return-values.patch
+    - patches/0010-Remove-cuncsd-dorcsd-sorcsd-zuncsd.patch
+    - patches/0011-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0012-sasum-returns-double-not-float.patch
+    - patches/0013-skip-fortran-fails-to-link.patch
+    - patches/0014-Disable-lapack-detection.patch
+    - patches/0015-Add-extra-END-to-prini.f.patch
+    - patches/0016-BUG-Fix-signature-of-D_IIR_forback-1-2.patch
 
 build:
   cflags: |
@@ -96,7 +97,7 @@ build:
     # sed -i 's/^void/int/g' scipy/linalg/cython_lapack_signatures.txt
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
-    echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
+    echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
 requirements:
   run:

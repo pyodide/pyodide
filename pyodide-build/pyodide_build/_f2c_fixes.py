@@ -77,6 +77,18 @@ def fix_f2c_input(f2c_input_path: str):
             line = line.replace("character", "integer")
             line = line.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
 
+        # f2c has no support for variable sized arrays, so we replace them with
+        # dummy fixed sized arrays and then put the formulas back in in
+        # fix_f2c_output. Luckily, variable sized arrays are scarce in the scipy
+        # code base.
+        if "PROPACK" in str(f2c_input):
+            line = line.replace("ylocal(n)", "ylocal(123001)")
+            line = line.replace("character*1", "integer")
+
+        if f2c_input.name == "mvndst.f":
+            line = re.sub(r"(infin|stdev|nlower|nupper)\(d\)", r"\1(123001)", line)
+            line = line.replace("rho(d*(d-1)/2)", "rho(123002)")
+
         new_lines.append(line)
 
     with open(f2c_input_path, "w") as f:
@@ -225,6 +237,33 @@ def fix_f2c_output(f2c_output_path: str):
             line.replace("integer chla_transtype__", "void chla_transtype__")
             for line in lines
         ]
+
+    # Substitute back the dummy fixed array sizes. We also have to remove the
+    # "static" storage specifier since variable sized arrays can't have static
+    # storage.
+    if f2c_output.name == "mvndst.c":
+        lines = fix_inconsistent_decls(lines)
+
+        def fix_line(line):
+            if "12300" in line:
+                return (
+                    line.replace("static", "")
+                    .replace("123001", "(*d__)")
+                    .replace("123002", "(*d__)*((*d__)-1)/2")
+                )
+            return line
+
+        lines = list(map(fix_line, lines))
+
+    if "PROPACK" in str(f2c_output):
+
+        def fix_line(line):
+            line = line.replace("struct", "extern struct")
+            if "12300" in line:
+                return line.replace("static", "").replace("123001", "(*n)")
+            return line
+
+        lines = list(map(fix_line, lines))
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
