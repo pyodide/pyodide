@@ -11,6 +11,13 @@ sys.path.append(str(base_dir / "pyodide-build"))
 
 from pyodide_build.io import parse_package_config
 
+DUMMY_PACKAGES = (
+    "cpp-exceptions-test",
+    "fpcast-test",
+    "sharedlib-test",
+    "sharedlib-test-py",
+)
+
 
 def get_packages_summary_directive(app):
     class PyodidePackagesSummary(Directive):
@@ -27,7 +34,7 @@ def get_packages_summary_directive(app):
                 name, version, is_library = self.parse_package_info(package)
 
                 # skip libraries (e.g. libxml, libyaml, ...)
-                if is_library:
+                if is_library or name in DUMMY_PACKAGES:
                     continue
 
                 packages[name] = {
