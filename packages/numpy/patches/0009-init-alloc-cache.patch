@@ -1,10 +1,21 @@
+From fc9fff66fba0258cf4fd782ff6e55c52a15833eb Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 31 Mar 2022 17:22:42 -0700
+Subject: [PATCH 09/14] init alloc cache
+
+---
+ numpy/core/src/multiarray/alloc.c            | 6 ++++++
+ numpy/core/src/multiarray/alloc.h            | 3 +++
+ numpy/core/src/multiarray/multiarraymodule.c | 2 ++
+ 3 files changed, 11 insertions(+)
+
 diff --git a/numpy/core/src/multiarray/alloc.c b/numpy/core/src/multiarray/alloc.c
-index f8305d115..369a14012 100644
+index 0a694cf62..07feba641 100644
 --- a/numpy/core/src/multiarray/alloc.c
 +++ b/numpy/core/src/multiarray/alloc.c
-@@ -277,3 +277,9 @@ PyDataMem_RENEW(void *ptr, size_t size)
-     }
-     return result;
+@@ -658,3 +658,9 @@ get_handler_version(PyObject *NPY_UNUSED(self), PyObject *args)
+     Py_DECREF(mem_handler);
+     return version;
  }
 +
 +NPY_NO_EXPORT void npy_init_cache() {
@@ -13,22 +24,24 @@ index f8305d115..369a14012 100644
 +  _PyDataMem_eventhook = NULL;
 +}
 diff --git a/numpy/core/src/multiarray/alloc.h b/numpy/core/src/multiarray/alloc.h
-index 2b69efc35..10069503d 100644
+index 13c828458..a81e9b20f 100644
 --- a/numpy/core/src/multiarray/alloc.h
 +++ b/numpy/core/src/multiarray/alloc.h
-@@ -33,4 +33,7 @@ npy_free_cache_dim_array(PyArrayObject * arr)
-     npy_free_cache_dim(PyArray_DIMS(arr), PyArray_NDIM(arr));
- }
+@@ -45,6 +45,9 @@ extern PyDataMem_Handler default_handler;
+ extern PyObject *current_handler; /* PyContextVar/PyCapsule */
+ #endif
  
 +NPY_NO_EXPORT void
 +npy_init_cache(void);
 +
- #endif
+ NPY_NO_EXPORT PyObject *
+ get_handler_name(PyObject *NPY_UNUSED(self), PyObject *obj);
+ NPY_NO_EXPORT PyObject *
 diff --git a/numpy/core/src/multiarray/multiarraymodule.c b/numpy/core/src/multiarray/multiarraymodule.c
-index 8e7352e4f..a713679e8 100644
+index 576c39f5d..066297a6d 100644
 --- a/numpy/core/src/multiarray/multiarraymodule.c
 +++ b/numpy/core/src/multiarray/multiarraymodule.c
-@@ -4747,6 +4747,8 @@ PyMODINIT_FUNC initmultiarray(void) {
+@@ -4723,6 +4723,8 @@ PyMODINIT_FUNC PyInit__multiarray_umath(void) {
          goto err;
      }
  
@@ -37,3 +50,6 @@ index 8e7352e4f..a713679e8 100644
  #if defined(MS_WIN64) && defined(__GNUC__)
    PyErr_WarnEx(PyExc_Warning,
          "Numpy built with MINGW-W64 on Windows 64 bits is experimental, " \
+-- 
+2.25.1
+

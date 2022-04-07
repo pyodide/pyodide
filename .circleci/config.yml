@@ -498,7 +498,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: -k "node and not numpy" packages/test* packages/*/test*
+          test-params: -k node packages/test* packages/*/test*
           requires:
             - build-packages
           filters:

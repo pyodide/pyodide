@@ -1,4 +1,4 @@
-from pyodide_build.common import (  # type: ignore[import]
+from pyodide_build.common import (
     ALWAYS_PACKAGES,
     CORE_PACKAGES,
     CORE_SCIPY_PACKAGES,

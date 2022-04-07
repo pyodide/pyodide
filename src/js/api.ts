@@ -344,14 +344,14 @@ let unpackArchivePositionalExtractDirDeprecationWarned = false;
  * 'tgz' are considered to be synonyms.
  *
  * @param options
- * @param options.extract_dir The directory to unpack the archive into. Defaults
+ * @param options.extractDir The directory to unpack the archive into. Defaults
  * to the working directory.
  */
 export function unpackArchive(
   buffer: TypedArray,
   format: string,
   options: {
-    extract_dir?: string;
+    extractDir?: string;
   } = {}
 ) {
   if (typeof options === "string") {
@@ -361,9 +361,9 @@ export function unpackArchive(
       );
       unpackArchivePositionalExtractDirDeprecationWarned = true;
     }
-    options = { extract_dir: options };
+    options = { extractDir: options };
   }
-  let extract_dir = options.extract_dir;
+  let extract_dir = options.extractDir;
   API.package_loader.unpack_buffer.callKwargs({
     buffer,
     format,
