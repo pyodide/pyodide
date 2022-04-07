@@ -1,6 +1,6 @@
 package:
   name: networkx
-  version: 2.6.3
+  version: 2.7.1
 requirements:
   run:
     - decorator
@@ -8,8 +8,8 @@ requirements:
     - matplotlib
     - numpy
 source:
-  sha256: 80b6b89c77d1dfb64a4c7854981b60aeea6360ac02c6d4e4913319e0a313abef
-  url: https://files.pythonhosted.org/packages/e9/93/aa6613aa70d6eb4868e667068b5a11feca9645498fd31b954b6c4bb82fa5/networkx-2.6.3-py3-none-any.whl
+  sha256: 011e85d277c89681e8fa661cf5ff0743443445049b0b68789ad55ef09340c6e0
+  url: https://files.pythonhosted.org/packages/f6/34/4913f651b8e178dde5abcf8d62495e4dcd0757a9a6840f1b1f7a290afaea/networkx-2.7.1-py3-none-any.whl
 test:
   imports:
     - networkx

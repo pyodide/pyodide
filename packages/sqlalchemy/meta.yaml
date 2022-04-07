@@ -1,9 +1,9 @@
 package:
   name: sqlalchemy
-  version: 1.4.31
+  version: 1.4.34
 source:
-  url: https://files.pythonhosted.org/packages/0f/80/d8883f12689a55e333d221bb9a56c727e976f5a8e9dc862efeac9f40d296/SQLAlchemy-1.4.31.tar.gz
-  sha256: 582b59d1e5780a447aada22b461e50b404a9dc05768da1d87368ad8190468418
+  url: https://files.pythonhosted.org/packages/a2/6f/5bda54b52b50801f83bbb5e2ffac503ef57ea8ec889bcef3263470578964/SQLAlchemy-1.4.34.tar.gz
+  sha256: 623bac2d6bdca3f3e61cf1e1c466c5fb9f5cf08735736ee1111187b7a4108891
 test:
   imports:
     - sqlalchemy
