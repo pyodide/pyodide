@@ -865,7 +865,7 @@ def test_js_stackframes(selenium):
             if file.endswith((".js", ".html")):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
-                file = "/".join(file.split("/")[:-2])
+                file = "/".join(file.split("/")[-2:])
             if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
                 file = "test.html"
             res.append([file, name])
