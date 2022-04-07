@@ -31,6 +31,7 @@ source:
     - patches/USE_CPP14-branch-doesn-t-work-for-wasm.patch
     - patches/0001-Fix-getbreak-dlamch.patch
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
+    - patches/0001-loadDynamicLibrary-flapack.patch
 
 build:
   cflags: |
@@ -96,10 +97,6 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
-    echo 'import sys' >> scipy/__init__.py
-    echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
-    echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
-    echo "   loadDynamicLibrary('/lib/python$PYMAJOR.$PYMINOR/site-packages/scipy/linalg/_flapack.so')" >> scipy/__init__.py
 
 requirements:
   run:
