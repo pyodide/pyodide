@@ -1,0 +1,29 @@
+From 69030ca31273be35847e677a800651be7b7e3106 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 31 Mar 2022 17:20:58 -0700
+Subject: [PATCH 05/14] fix longdouble
+
+---
+ numpy/core/src/npymath/npy_math_complex.c.src | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/numpy/core/src/npymath/npy_math_complex.c.src b/numpy/core/src/npymath/npy_math_complex.c.src
+index 8c432e483..19c136b43 100644
+--- a/numpy/core/src/npymath/npy_math_complex.c.src
++++ b/numpy/core/src/npymath/npy_math_complex.c.src
+@@ -1485,10 +1485,9 @@ _sum_squares@c@(@type@ x, @type@ y)
+ #if @precision@ == 1
+ const npy_float SQRT_MIN = 1.0842022e-19f;
+ #endif
+-#if @precision@ == 2
++#if @precision@ == 2 || NPY_SIZEOF_LONGDOUBLE < 16
+ const npy_double SQRT_MIN = 1.4916681462400413e-154; /* sqrt(DBL_MIN) */
+-#endif
+-#if @precision@ == 3
++#elif @precision@ == 3
+ #if NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE
+ const npy_longdouble SQRT_MIN = 1.4916681462400413e-154; /* sqrt(DBL_MIN) */
+ #else
+-- 
+2.25.1
+

@@ -12,7 +12,8 @@
 #define UNPAIRED_OPEN_BRACE {
 #define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
 #define JS_FILE(func_name, a, args...)                                         \
-  EM_JS_NUM(int, func_name, (), UNPAIRED_OPEN_BRACE { args return 0; })
+  EM_JS_NUM(                                                                   \
+    int, func_name, (), UNPAIRED_OPEN_BRACE { args return 0; })
 
 // A macro to allow us to add code that is only intended to influence JsDoc
 // output, but shouldn't end up in generated code.

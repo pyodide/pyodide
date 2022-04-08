@@ -17,9 +17,7 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
   <body>
     <script type="text/javascript">
       async function main(){
-        let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
-        });
+        let pyodide = await loadPyodide();
         console.log(pyodide.runPython("1 + 2"));
       }
       main();
@@ -52,6 +50,10 @@ Pyodide works in any modern web browser with WebAssembly support.
 | ------- | ------------------------- | --------------- |
 | Firefox | 70.0                      | 22 October 2019 |
 | Chrome  | 71.0                      | 4 December 2018 |
+
+Chrome 89 and 90 have bugs in the webassembly compiler which makes using Pyodide
+with them unstable. Known problems occur in numpy and have been observed
+occasionally in other packages. See {issue}`1384`.
 
 ```{note}
 Latest browser versions generally provide more reliable WebAssembly support
@@ -96,9 +98,7 @@ Then you can load Pyodide in Node.js as follows,
 ```js
 let pyodide_pkg = await import("pyodide/pyodide.js");
 
-let pyodide = await pyodide_pkg.loadPyodide({
-  indexURL: "<pyodide artifacts folder>",
-});
+let pyodide = await pyodide_pkg.loadPyodide();
 
 await pyodide.runPythonAsync("1+1");
 ```

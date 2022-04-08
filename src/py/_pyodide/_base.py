@@ -6,12 +6,12 @@ A library of helper utilities for connecting Python to the browser environment.
 
 import ast
 import builtins
+import tokenize
 from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
-import tokenize
 from types import CodeType
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Generator
 
 
 def should_quiet(source: str) -> bool:
@@ -98,7 +98,7 @@ class EvalCodeResultException(Exception):
 # Put it into a list to avoid breaking CPython test test_inheritance
 # (test.test_baseexception.ExceptionClassTests) which examines all Exceptions in
 # builtins.
-builtins.___EvalCodeResultException = [EvalCodeResultException]  # type: ignore
+builtins.___EvalCodeResultException = [EvalCodeResultException]  # type: ignore[attr-defined]
 
 # We will substitute in the value of x we are trying to return.
 _raise_template_ast = ast.parse("raise ___EvalCodeResultException[0](x)").body[0]
@@ -115,7 +115,7 @@ def _last_expr_to_raise(mod: ast.Module):
         return
     raise_expr = deepcopy(_raise_template_ast)
     # Replace x with our value in _raise_template_ast.
-    raise_expr.exc.args[0] = last_node.value  # type: ignore
+    raise_expr.exc.args[0] = last_node.value  # type: ignore[attr-defined]
     mod.body[-1] = raise_expr
 
 
@@ -164,7 +164,7 @@ class CodeRunner:
     It is primarily intended for REPLs and other sophisticated consumers that
     may wish to add their own AST transformations, separately signal to the user
     when parsing is complete, etc. The simpler :any:`eval_code` and
-    :any:`eval_code_async` apis should be prefered when their flexibility
+    :any:`eval_code_async` apis should be preferred when their flexibility
     suffices.
 
     Parameters
@@ -211,7 +211,7 @@ class CodeRunner:
               modify this variable before calling :any:`CodeRunner.compile`.
 
         code : Once you call :any:`CodeRunner.compile` the compiled code will
-               be avaible in the code field. You can modify this variable
+               be available in the code field. You can modify this variable
                before calling :any:`CodeRunner.run` to do a code transform.
     """
 
@@ -251,10 +251,14 @@ class CodeRunner:
             # generator must return, which raises StopIteration
             self.code = e.value
         else:
-            assert False
+            raise AssertionError()
         return self
 
-    def run(self, globals: Dict[str, Any] = None, locals: Dict[str, Any] = None):
+    def run(
+        self,
+        globals: dict[str, Any] | None = None,
+        locals: dict[str, Any] | None = None,
+    ):
         """Executes ``self.code``.
 
         Can only be used after calling compile. The code may not use top level
@@ -303,7 +307,9 @@ class CodeRunner:
             return e.value
 
     async def run_async(
-        self, globals: Dict[str, Any] = None, locals: Dict[str, Any] = None
+        self,
+        globals: dict[str, Any] | None = None,
+        locals: dict[str, Any] | None = None,
     ):
         """Runs ``self.code`` which may use top level await.
 
@@ -351,8 +357,8 @@ class CodeRunner:
 
 def eval_code(
     source: str,
-    globals: Optional[Dict[str, Any]] = None,
-    locals: Optional[Dict[str, Any]] = None,
+    globals: dict[str, Any] | None = None,
+    locals: dict[str, Any] | None = None,
     *,
     return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
@@ -426,8 +432,8 @@ def eval_code(
 
 async def eval_code_async(
     source: str,
-    globals: Optional[Dict[str, Any]] = None,
-    locals: Optional[Dict[str, Any]] = None,
+    globals: dict[str, Any] | None = None,
+    locals: dict[str, Any] | None = None,
     *,
     return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
@@ -489,7 +495,7 @@ async def eval_code_async(
         expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
     """
-    flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
+    flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     return (
         await CodeRunner(
             source,
@@ -503,7 +509,7 @@ async def eval_code_async(
     )
 
 
-def find_imports(source: str) -> List[str]:
+def find_imports(source: str) -> list[str]:
     """
     Finds the imports in a Python source code string
 

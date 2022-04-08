@@ -1,9 +1,9 @@
 package:
   name: pytest
-  version: 6.2.5
+  version: 7.1.1
 source:
-  url: https://files.pythonhosted.org/packages/4b/24/7d1f2d2537de114bdf1e6875115113ca80091520948d370c964b88070af2/pytest-6.2.5.tar.gz
-  sha256: 131b36680866a76e6781d13f101efb86cf674ebb9762eb70d3082b6f29889e89
+  url: https://files.pythonhosted.org/packages/d2/ac/556e4410326ce77eeb1d1ec35a3e3ec847fb3e5cb30673729d2eeeffc970/pytest-7.1.1-py3-none-any.whl
+  sha256: 92f723789a8fdd7180b6b06483874feca4c48a5c76968e03bb3e7f806a1869ea
 requirements:
   run:
     - atomicwrites

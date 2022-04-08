@@ -1,14 +1,13 @@
 package:
   name: matplotlib
-  version: 3.3.3
+  version: 3.5.1
 
 source:
-  url: https://files.pythonhosted.org/packages/7b/b3/7c48f648bf83f39d4385e0169d1b68218b838e185047f7f613b1cfc57947/matplotlib-3.3.3.tar.gz
-  sha256: b1b60c6476c4cfe9e5cf8ab0d3127476fd3d5f05de0f343a452badaad0e4bdec
+  url: https://files.pythonhosted.org/packages/8a/46/425a44ab9a71afd2f2c8a78b039c1af8ec21e370047f0ad6e43ca819788e/matplotlib-3.5.1.tar.gz
+  sha256: b2e9810e09c3a47b73ce9cab5a72243a1258f61e7900969097a817232246ce1c
 
   patches:
     - patches/disable_macosx_backend.patch
-    - patches/fix-freetype.patch
     - patches/hardcoded-font-cache.patch
     - patches/fix-threading.patch
 
@@ -20,7 +19,7 @@ source:
     - - src/html5_canvas_backend.py
       - lib/matplotlib/backends/html5_canvas_backend.py
     - - src/setup.cfg
-      - ./setup.cfg
+      - ./mplsetup.cfg
 
 build:
   cflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
@@ -28,21 +27,24 @@ build:
   replace-libs:
     - png16=png
   post: |
-    wget -O $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
-    rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
-    rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
-    rm -rf $SITEPACKAGES/sphinxext
-    cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
+    cd build/matplotlib-3.5.1/dist/matplotlib-3.5.1/
+    rm -rf matplotlib/backends/qt_editor
+    rm -rf matplotlib/backends/web_backend
+    rm -rf sphinxext
+    cp $PKGDIR/src/fontlist.json matplotlib
+    cp $PKGDIR/src/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
     mkdir -p $PKGDIR/../../build/fonts
-    cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
+    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
   run:
-    - distutils
     - cycler
+    - distutils
+    - fonttools
     - kiwisolver
     - numpy
-    - pillow
+    - packaging
+    - Pillow
     - pyparsing
     - python-dateutil
     - pytz

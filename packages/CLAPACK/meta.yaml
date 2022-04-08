@@ -8,11 +8,12 @@ source:
   extract_dir: CLAPACK-3.2.1
   patches:
     - patches/0001-add-missing-import.patch
-    - patches/0002-fix-arith-h.patch
+    - patches/0002-fix-arith.h.patch
     - patches/0003-lapack-install-make.patch
     - patches/0004-fix-f2clibs-build.patch
     - patches/0005-remove-redundant-symbols.patch
     - patches/0006-correct-return-types.patch
+    - patches/0007-Fix-xerbla-and-ilaenv.patch
   extras:
     - [make.inc, make.inc]
 
@@ -32,6 +33,5 @@ build:
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
-    mkdir -p install/lib
-
-    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o install/lib/clapack_all.so
+    mkdir -p dist/lib
+    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o dist/lib/clapack_all.so

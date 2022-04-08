@@ -5,13 +5,13 @@
 Most of the Python standard library is functional, except for the modules
 listed in the sections below. A large part of the CPython test suite passes except for
 tests skipped in
-[`src/tests/python_tests.txt`](https://github.com/pyodide/pyodide/blob/main/src/tests/python_tests.txt)
+[`src/tests/python_tests.yaml`](https://github.com/pyodide/pyodide/blob/main/src/tests/python_tests.yaml)
 or via [patches](https://github.com/pyodide/pyodide/tree/main/cpython/patches).
 
 ### Optional modules
 
 The following stdlib modules are included by default, however
-they can be excluded with `loadPyodide({..., fullStdLib = false })`.
+they can be excluded with `loadPyodide({ fullStdLib : false })`.
 Individual modules can then be loaded as necessary using
 {any}`pyodide.loadPackage`,
 

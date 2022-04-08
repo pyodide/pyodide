@@ -6,20 +6,18 @@ import importlib
 import io
 import json
 import tempfile
-from importlib.metadata import version as get_version
+from pathlib import Path
+from typing import Any
+from zipfile import ZipFile
 
+from packaging.markers import default_environment
 from packaging.requirements import Requirement
 from packaging.version import Version
-from packaging.markers import default_environment
 
-from pathlib import Path
-from typing import Dict, Any, Union, List, Tuple, Optional
-from zipfile import ZipFile
+from pyodide import IN_BROWSER, to_js
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
-
-from pyodide import IN_BROWSER, to_js
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -36,7 +34,7 @@ else:
     WHEEL_BASE = Path(tempfile.mkdtemp())
 
 if IN_BROWSER:
-    BUILTIN_PACKAGES = pyodide_js._module.packages.to_py()
+    BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
 else:
     BUILTIN_PACKAGES = {}
 
@@ -44,7 +42,7 @@ if IN_BROWSER:
     from pyodide_js import loadedPackages
 else:
 
-    class loadedPackages:  # type: ignore
+    class loadedPackages:  # type: ignore[no-redef]
         @staticmethod
         def to_py():
             return {}
@@ -60,7 +58,7 @@ if IN_BROWSER:
         return await (await pyfetch(url, **kwargs)).string()
 
 else:
-    from urllib.request import urlopen, Request
+    from urllib.request import Request, urlopen
 
     async def fetch_bytes(url: str, **kwargs) -> bytes:
         return urlopen(Request(url, headers=kwargs)).read()
@@ -76,7 +74,7 @@ else:
     # we want to avoid using the event loop at all. Instead just run the
     # coroutines in sequence.
     # TODO: Use an asyncio testing framework to avoid this
-    async def gather(*coroutines):  # type: ignore
+    async def gather(*coroutines):  # type: ignore[no-redef]
         result = []
         for coroutine in coroutines:
             result.append(await coroutine)
@@ -92,7 +90,7 @@ def _is_pure_python_wheel(filename: str):
     return filename.endswith("py3-none-any.whl")
 
 
-def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
+def _parse_wheel_url(url: str) -> tuple[str, dict[str, Any], str]:
     """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
@@ -150,7 +148,7 @@ class _PackageManager:
 
     async def gather_requirements(
         self,
-        requirements: Union[str, List[str]],
+        requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
     ):
@@ -159,7 +157,7 @@ class _PackageManager:
         if isinstance(requirements, str):
             requirements = [requirements]
 
-        transaction: Dict[str, Any] = {
+        transaction: dict[str, Any] = {
             "wheels": [],
             "pyodide_packages": [],
             "locked": copy.deepcopy(self.installed_packages),
@@ -176,7 +174,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
+        self, requirements: str | list[str], ctx=None, keep_going: bool = False
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -229,9 +227,7 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(
-        self, requirement: Union[str, Requirement], ctx, transaction
-    ):
+    async def add_requirement(self, requirement: str | Requirement, ctx, transaction):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -282,8 +278,8 @@ class _PackageManager:
                     f"but {req.name}=={ver} is already installed"
                 )
         metadata = await _get_pypi_json(req.name)
-        wheel, ver = self.find_wheel(metadata, req)
-        if wheel is None and ver is None:
+        maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
+        if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
                 transaction["failed"].append(req)
             else:
@@ -292,14 +288,29 @@ class _PackageManager:
                     "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
                 )
         else:
-            await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
+            await self.add_wheel(
+                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction
+            )
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = PackageMetadata(name=name, version=version)
-        wheel_bytes = await fetch_bytes(wheel["url"])
+
+        try:
+            wheel_bytes = await fetch_bytes(wheel["url"])
+        except Exception as e:
+            if wheel["url"].startswith("https://files.pythonhosted.org/"):
+                raise e
+            else:
+                raise ValueError(
+                    f"Couldn't fetch wheel from '{wheel['url']}'."
+                    "One common reason for this is when the server blocks "
+                    "Cross-Origin Resource Sharing (CORS)."
+                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
+                ) from e
+
         wheel["wheel_bytes"] = wheel_bytes
 
-        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
+        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
             dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
@@ -307,8 +318,8 @@ class _PackageManager:
         transaction["wheels"].append((name, wheel, version))
 
     def find_wheel(
-        self, metadata: Dict[str, Any], req: Requirement
-    ) -> Tuple[Any, Optional[Version]]:
+        self, metadata: dict[str, Any], req: Requirement
+    ) -> tuple[Any | None, Version | None]:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
@@ -327,7 +338,7 @@ class _PackageManager:
         """
         releases = metadata.get("releases", {})
         candidate_versions = sorted(
-            (Version(v) for v in req.specifier.filter(releases)),  # type: ignore
+            (Version(v) for v in req.specifier.filter(releases)),
             reverse=True,
         )
         for ver in candidate_versions:
@@ -344,7 +355,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, List[str]], keep_going: bool = False):
+def install(requirements: str | list[str], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.

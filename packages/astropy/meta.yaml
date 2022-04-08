@@ -1,12 +1,10 @@
 package:
   name: astropy
-  version: "5.0"
+  version: 5.0.4
 source:
-  url: https://files.pythonhosted.org/packages/82/f0/fc3f6f250bb9d5e5aaa890469fb27c4edee66cf0e2ea4f8b0b287260c6f8/astropy-5.0.tar.gz
-  sha256: 70203e151e13292586a817b4069ce1aad4643567aff38b1d191c173bc54f3927
+  url: https://files.pythonhosted.org/packages/a3/d6/b36be0232fa0761f4f3484eb5907224feebf0b359fde2218b01e782649c6/astropy-5.0.4.tar.gz
+  sha256: 001184f1a9c3f526a363883ce28efb9cbf076df3d151ca3e131509a248f0dfb9
 build:
-  script: |
-    pip install extension-helpers
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false
@@ -16,6 +14,26 @@ requirements:
     - packaging
     - numpy
     - pyerfa
+    - pyyaml
 test:
   imports:
     - astropy
+    - astropy.config
+    - astropy.constants
+    - astropy.convolution
+    - astropy.coordinates
+    - astropy.cosmology
+    - astropy.extern
+    - astropy.io
+    - astropy.modeling
+    - astropy.nddata
+    - astropy.samp
+    - astropy.stats
+    - astropy.table
+    - astropy.time
+    - astropy.timeseries
+    - astropy.uncertainty
+    - astropy.units
+    - astropy.utils
+    - astropy.visualization
+    - astropy.wcs

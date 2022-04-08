@@ -1,8 +1,9 @@
 import asyncio
 import io
 import sys
-from pathlib import Path
 import zipfile
+from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -26,7 +27,7 @@ def mock_get_pypi_json(pkg_map):
         A mock function of ``_get_pypi_json`` which returns dummy JSON data of PyPI API.
     """
 
-    class Wildcard(object):
+    class Wildcard:
         def __eq__(self, other):
             return True
 
@@ -190,7 +191,10 @@ def test_add_requirement(web_server_tst_data):
     base_url = f"http://{server_hostname}:{server_port}/"
     url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-    transaction = {"wheels": [], "locked": {}}
+    transaction: dict[str, Any] = {
+        "wheels": [],
+        "locked": {},
+    }
     asyncio.get_event_loop().run_until_complete(
         _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
     )
@@ -230,8 +234,9 @@ def test_add_requirement_marker():
 
 def test_last_version_from_pypi():
     pytest.importorskip("packaging")
-    from micropip import _micropip
     from packaging.requirements import Requirement
+
+    from micropip import _micropip
 
     requirement = Requirement("dummy_module")
     versions = ["0.0.1", "0.15.5", "0.9.1"]
@@ -257,7 +262,7 @@ def test_install_non_pure_python_wheel():
     msg = "not a pure Python 3 wheel"
     with pytest.raises(ValueError, match=msg):
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
-        transaction = {"wheels": [], "locked": {}}
+        transaction = {"wheels": list[Any](), "locked": dict[str, Any]()}
         asyncio.get_event_loop().run_until_complete(
             _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
         )
@@ -342,6 +347,22 @@ def test_install_keep_going(monkeypatch):
     with pytest.raises(ValueError, match=msg):
         asyncio.get_event_loop().run_until_complete(
             _micropip.install(dummy_pkg_name, keep_going=True)
+        )
+
+
+def test_fetch_wheel_fail(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    def _mock_fetch_bytes(*args, **kwargs):
+        raise Exception("Failed to fetch")
+
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    msg = "Access-Control-Allow-Origin"
+    with pytest.raises(ValueError, match=msg):
+        asyncio.get_event_loop().run_until_complete(
+            _micropip.install("htps://x.com/xxx-1.0.0-py3-none-any.whl")
         )
 
 

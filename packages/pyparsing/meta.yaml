@@ -1,9 +1,9 @@
 package:
   name: pyparsing
-  version: 3.0.6
+  version: 3.0.7
 source:
-  sha256: d9bdec0013ef1eb5a84ab39a3b3868911598afa494f5faa038647101504e2b81
-  url: https://files.pythonhosted.org/packages/ab/61/1a1613e3dcca483a7aa9d446cb4614e6425eb853b90db131c305bd9674cb/pyparsing-3.0.6.tar.gz
+  sha256: a6c06a88f252e6c322f65faf8f418b16213b51bdfaece0524c1c1bc30c63c484
+  url: https://files.pythonhosted.org/packages/80/c1/23fd82ad3121656b585351aba6c19761926bb0db2ebed9e4ff09a43a3fcc/pyparsing-3.0.7-py3-none-any.whl
 test:
   imports:
     - pyparsing

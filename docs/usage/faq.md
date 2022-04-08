@@ -82,14 +82,30 @@ and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
 
-The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
-The namespace is a Python dictionary.
+The second argument to {any}`pyodide.runPython` is an options object which may
+include a `globals` element which is a namespace for code to read from and write
+to. The provided namespace must be a Python dictionary.
 
-```javascript
-let my_namespace = pyodide.globals.dict();
-pyodide.runPython(`x = 1 + 1`, my_namespace);
-pyodide.runPython(`y = x ** x`, my_namespace);
-my_namespace.y; // ==> 4
+```pyodide
+let my_namespace = pyodide.globals.get("dict")();
+pyodide.runPython(`x = 1 + 1`, { globals: my_namespace });
+pyodide.runPython(`y = x ** x`, { globals: my_namespace });
+my_namespace.get("y"); // ==> 4
+```
+
+You can also use this approach to inject variables from JavaScript into the
+Python namespace, for example:
+
+```pyodide
+let my_namespace = pyodide.toPy({ x: 2, y: [1, 2, 3] });
+pyodide.runPython(
+  `
+  assert x == y[1]
+  z = x ** x
+  `,
+  { globals: my_namespace }
+);
+my_namespace.get("z"); // ==> 4
 ```
 
 ## How to detect that code is run with Pyodide?
@@ -268,12 +284,12 @@ you say
 
 ```
 loadPyodide({
-  ..., stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
+  stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
 });
 ```
 
 then every time a line is written to `stdout` (resp. `stderr`), `stdout_func`
-(resp `stderr_func`) will be called on the line. Everytime `stdin` is read,
+(resp `stderr_func`) will be called on the line. Every time `stdin` is read,
 `stdin_func` will be called with zero arguments. It is expected to return a
 string which is interpreted as a line of text.
 
@@ -303,7 +319,7 @@ with redirect_stdin(StringIO("\n".join(["eval", "asyncio.ensure_future", "functo
 it will print:
 
 ```
-Welcome to Python 3.9's help utility!
+Welcome to Python 3.10's help utility!
 <...OMITTED LINES>
 Help on built-in function eval in module builtins:
 eval(source, globals=None, locals=None, /)

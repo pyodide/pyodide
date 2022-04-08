@@ -8,6 +8,10 @@ source:
     - patches/fixblosc.patch
     - patches/fixsetup.patch
     - patches/fixzlib.patch
+build:
+  script: |
+    rm numcodecs/blosc.c
+    pip install -t $HOSTSITEPACKAGES cython
 requirements:
   run:
     - numpy

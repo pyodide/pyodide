@@ -59,7 +59,7 @@ packages are finished loading:
 ```javascript
 let pyodide;
 async function main() {
-  pyodide = await loadPyodide({ indexURL: "<some-url>" });
+  pyodide = await loadPyodide();
   await pyodide.loadPackage("matplotlib");
   // matplotlib is now available
 }
@@ -113,11 +113,16 @@ be the case if the wheels is made using standard Python tools (`pip wheel`,
 All required dependencies must have been previously installed with {mod}`micropip`
 or {any}`pyodide.loadPackage`.
 
-If the file is on a remote server, the server must set Cross-Origin Resource Sharing
-(CORS) headers to allow access. Otherwise, you can prepend a CORS proxy to the
+```{admonition} Cross-Origin Resource Sharing (CORS)
+:class: info
+
+If the file is on a remote server, the server must set
+[Cross-Origin Resource Sharing (CORS) headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+to allow access. Otherwise, you can prepend a CORS proxy to the
 URL. Note however that using third-party CORS proxies has security implications,
 particularly since we are not able to check the file integrity, unlike with
 installs from PyPI.
+```
 
 ## Example
 
@@ -133,9 +138,7 @@ installs from PyPI.
     ></script>
     <script type="text/javascript">
       async function main() {
-        let pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
-        });
+        let pyodide = await loadPyodide();
         await pyodide.loadPackage("micropip");
         await pyodide.runPythonAsync(`
         import micropip

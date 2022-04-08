@@ -10,12 +10,12 @@ INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
-SYSCONFIG_NAME=_sysconfigdata__emscripten_
+SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
 
-ZLIBVERSION = 1.2.11
+ZLIBVERSION=1.2.12
 ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
-ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
+ZLIBURL=https://zlib.net/zlib-$(ZLIBVERSION).tar.gz
 
 SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
 SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
@@ -27,7 +27,7 @@ BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_COMMIT=d6666df2a2820e0548a66166021ddae04a11a2db
+LIBFFI_COMMIT=008d7aafde297703eb2f259c969aebf301b01a6d
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -60,7 +60,7 @@ clean-all: clean
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(URL)
-	md5sum --quiet --check checksums || (rm $@; false)
+	shasum --algorithm 256 --check checksums --quiet || (rm $@; false)
 
 
 $(ZLIBTARBALL):
@@ -87,7 +87,7 @@ $(BUILD)/.patched: $(TARBALL)
 
 $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-1.2.11.tar.gz
+	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 	cd $(ZLIBBUILD); emconfigure ./configure
 	touch $@
 
@@ -140,6 +140,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \

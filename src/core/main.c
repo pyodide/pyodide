@@ -39,6 +39,13 @@
     }                                                                          \
   } while (0)
 
+#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
+  do {                                                                         \
+    if (mod##_init(core_module)) {                                             \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+    }                                                                          \
+  } while (0)
+
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python()
@@ -50,7 +57,6 @@ initialize_python()
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
-  config.install_signal_handlers = false;
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);
 
@@ -62,12 +68,6 @@ finally:
     Py_ExitStatusException(status);
   }
 }
-#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
-  do {                                                                         \
-    if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
-    }                                                                          \
-  } while (0)
 
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
@@ -75,17 +75,6 @@ static struct PyModuleDef core_module_def = {
   .m_doc = "Pyodide C builtins",
   .m_size = -1,
 };
-
-// from numpy_patch.c (no need for a header just for this)
-int
-numpy_patch_init();
-
-int
-get_python_stack_depth()
-{
-  PyThreadState* tstate = PyThreadState_GET();
-  return tstate->recursion_depth;
-}
 
 /**
  * Bootstrap steps here:
@@ -141,7 +130,6 @@ pyodide_init(void)
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
-  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
@@ -158,7 +146,7 @@ pyodide_init(void)
   if (_pyodide_proxy == NULL) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ Module._pyodide = Module.hiwire.pop_value($0); }, _pyodide_proxy);
+  EM_ASM({ API._pyodide = Hiwire.pop_value($0); }, _pyodide_proxy);
 
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);

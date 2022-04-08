@@ -1,14 +1,14 @@
 package:
   name: bleach
-  version: 4.1.0
+  version: 5.0.0
 requirements:
   run:
     - webencodings
     - packaging
     - six
 source:
-  sha256: 0900d8b37eba61a802ee40ac0061f8c2b5dee29c1927dd1d233e075ebf5a71da
-  url: https://files.pythonhosted.org/packages/6a/a3/217842324374fd3fb33db0eb4c2909ccf3ecc5a94f458088ac68581f8314/bleach-4.1.0.tar.gz
+  sha256: 08a1fe86d253b5c88c92cc3d810fd8048a16d15762e1e5b74d502256e5926aa1
+  url: https://files.pythonhosted.org/packages/35/8b/bad37525e7ef0669f013059affb3bbcd9311a24d63eda96723339ee0aab7/bleach-5.0.0-py3-none-any.whl
 test:
   imports:
     - bleach

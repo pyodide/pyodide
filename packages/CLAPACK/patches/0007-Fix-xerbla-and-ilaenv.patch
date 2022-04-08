@@ -1,0 +1,52 @@
+From c0d2a69ac4e4b63c4f28fadb896581164a2e29d3 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 18 Mar 2022 22:07:00 -0700
+Subject: [PATCH 7/7] Fix xerbla and ilaenv
+
+These functions take actual C strings as arguments. It is annoying
+to patch fortran to pass C strings, so this adds a wrapper that
+'converts' from a Fortran string.
+---
+ BLAS/SRC/xerbla.c | 6 +++++-
+ SRC/ilaenv.c      | 6 ++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/BLAS/SRC/xerbla.c b/BLAS/SRC/xerbla.c
+index da1d7fd..a6b5ca4 100644
+--- a/BLAS/SRC/xerbla.c
++++ b/BLAS/SRC/xerbla.c
+@@ -68,7 +68,7 @@ static integer c__1 = 1;
+ /*     .. */
+ /*     .. Executable Statements .. */
+ 
+-	printf("** On entry to %6s, parameter number %2i had an illegal value\n",
++	printf("** On entry to %s, parameter number %2i had an illegal value\n",
+ 		srname, *info);
+ 
+ 
+@@ -76,3 +76,7 @@ static integer c__1 = 1;
+ 
+     return 0;
+ } /* xerbla_ */
++
++int xerblaf2py_(char *srname, integer *info, integer srnamelen){
++	return xerbla_(srname, info);
++}
+diff --git a/SRC/ilaenv.c b/SRC/ilaenv.c
+index 9565433..b8d28a8 100644
+--- a/SRC/ilaenv.c
++++ b/SRC/ilaenv.c
+@@ -652,3 +652,9 @@ L160:
+ /*     End of ILAENV */
+ 
+ } /* ilaenv_ */
++
++integer ilaenvf2py_(integer *ispec, char *name__, char *opts, integer *n1,
++	integer *n2, integer *n3, integer *n4, int name_len, int opts_len)
++{
++	return ilaenv_(ispec, name__, opts, n1, n2, n3, n4);
++}
+\ No newline at end of file
+-- 
+2.25.1
+

@@ -37,12 +37,12 @@ def get_cmeth_docstring(func):
     >>> get_cmeth_docstring(sum)[:80]
     "sum(iterable, /, start=0)\\n--\\n\\nReturn the sum of a 'start' value (default: 0) plu"
     """
-    from inspect import signature, _empty
+    from inspect import _empty, signature
 
     sig = signature(func)
     # remove param and return annotations and
     for param in sig.parameters.values():
-        param._annotation = _empty
-    sig._return_annotation = _empty
+        param._annotation = _empty  # type: ignore[attr-defined]
+    sig._return_annotation = _empty  # type: ignore[attr-defined]
 
     return func.__name__ + str(sig) + "\n--\n\n" + dedent_docstring(func.__doc__)

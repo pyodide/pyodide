@@ -1,6 +1,7 @@
 import pathlib
-from pyodide_build.testing import run_in_pyodide, _run_in_pyodide_get_source
 from textwrap import dedent
+
+from pyodide_build.testing import _run_in_pyodide_get_source, run_in_pyodide
 
 
 def test_web_server_secondary(selenium, web_server_secondary):
@@ -34,9 +35,9 @@ def dummy_decorator(*args, **kwargs):
         "chrome": "nlopt set_min_objective triggers a fatal runtime error in chrome 89 see #1493",
     },
 )
-def some_func():
-    import numpy as np
+def some_func(f):
     import nlopt
+    import numpy as np
 
     opt = nlopt.opt(nlopt.LD_SLSQP, 2)
     opt.set_min_objective(f)
@@ -48,9 +49,9 @@ def test_run_in_pyodide_multiline_decorator():
         _run_in_pyodide_get_source(some_func).strip()
         == dedent(
             """
-            def some_func():
-                import numpy as np
+            def some_func(f):
                 import nlopt
+                import numpy as np
 
                 opt = nlopt.opt(nlopt.LD_SLSQP, 2)
                 opt.set_min_objective(f)

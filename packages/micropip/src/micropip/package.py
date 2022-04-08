@@ -1,27 +1,24 @@
 from collections import UserDict
-from dataclasses import dataclass, field, astuple
-from pathlib import Path
-from typing import List, Dict, Iterable
+from dataclasses import astuple, dataclass
+from typing import Iterable
 
 __all__ = ["PackageDict"]
 
 
-def _format_table(headers: List[str], table: List[Iterable]) -> str:
-    # fmt: off
+def _format_table(headers: list[str], table: list[Iterable]) -> str:
     """
     Returns a minimal formatted table
 
     >>> print(_format_table(["Header1", "Header2"], [["val1", "val2"], ["val3", "val4"]]))
     Header1 | Header2
     ------- | -------
-    val1    | val2   
-    val3    | val4   
+    val1    | val2
+    val3    | val4
     """
-    # fmt: on
 
     def format_row(values, widths, filler=""):
         row = " | ".join(f"{x:{filler}<{w}}" for x, w in zip(values, widths))
-        return row
+        return row.rstrip()
 
     col_width = [max(len(x) for x in col) for col in zip(headers, *table)]
     rows = []

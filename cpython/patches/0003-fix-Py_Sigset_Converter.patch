@@ -1,0 +1,30 @@
+From 88529d19154fae757a58229e76c0fb849d279725 Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
+Date: Mon, 28 Feb 2022 00:53:53 -0500
+Subject: [PATCH 03/10] fix Py_Sigset_Converter
+
+---
+ Modules/posixmodule.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
+index 03de470323..b115552dcd 100644
+--- a/Modules/posixmodule.c
++++ b/Modules/posixmodule.c
+@@ -1552,6 +1552,13 @@ _Py_Sigset_Converter(PyObject *obj, void *addr)
+     Py_DECREF(iterator);
+     return 0;
+ }
++#else
++int
++_Py_Sigset_Converter(PyObject *obj, void *addr)
++{
++    PyErr_SetFromErrno(PyExc_OSError);
++    return 0;
++}
+ #endif /* HAVE_SIGSET_T */
+ 
+ #ifdef MS_WINDOWS
+-- 
+2.25.1
+

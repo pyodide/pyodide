@@ -1,7 +1,6 @@
 import { expectType, expectAssignable } from "tsd";
 import {
   loadPyodide,
-  Py2JsResult,
   PyProxy,
   PyProxyWithLength,
   PyProxyWithGet,
@@ -14,13 +13,12 @@ import {
   PyProxyCallable,
   PyBuffer,
   TypedArray,
-} from "../../build/pyodide";
+} from "./pyodide";
 
 async function main() {
-  let pyodide = await loadPyodide({ indexURL: "blah" });
-  expectType<Promise<typeof pyodide>>(
-    loadPyodide({ indexURL: "blah", fullStdLib: true })
-  );
+  let pyodide = await loadPyodide();
+  expectType<Promise<typeof pyodide>>(loadPyodide({ indexURL: "blah" }));
+  expectType<Promise<typeof pyodide>>(loadPyodide({ fullStdLib: true }));
 
   expectType<Promise<typeof pyodide>>(
     loadPyodide({
@@ -34,18 +32,20 @@ async function main() {
 
   expectType<PyProxy>(pyodide.globals);
 
-  let x: Py2JsResult;
+  let x: any;
   expectType<boolean>(pyodide.isPyProxy(x));
   if (pyodide.isPyProxy(x)) {
     expectType<PyProxy>(x);
   } else {
-    expectType<number | string | boolean | bigint | undefined>(x);
+    expectType<any>(x);
   }
 
   let px: PyProxy = <PyProxy>{};
 
-  expectType<Py2JsResult>(pyodide.runPython("1+1"));
-  expectType<Py2JsResult>(pyodide.runPython("1+1", px));
+  expectType<any>(pyodide.runPython("1+1"));
+  expectType<any>(pyodide.runPython("1+1", { globals: px }));
+  expectType<Promise<any>>(pyodide.runPythonAsync("1+1"));
+  expectType<Promise<any>>(pyodide.runPythonAsync("1+1", { globals: px }));
 
   expectType<Promise<void>>(pyodide.loadPackagesFromImports("import some_pkg"));
   expectType<Promise<void>>(
@@ -80,10 +80,10 @@ async function main() {
   expectType<void>(pyodide.unregisterJsModule("blah"));
 
   pyodide.setInterruptBuffer(new Int32Array(1));
-  expectType<PyProxy>(pyodide.toPy({}));
+  expectType<any>(pyodide.toPy({}));
   expectType<string>(pyodide.version);
 
-  expectType<Py2JsResult>(px.x);
+  expectType<any>(px.x);
   expectType<PyProxy>(px.copy());
   expectType<void>(px.destroy("blah"));
   expectType<void>(px.destroy());
@@ -98,7 +98,7 @@ async function main() {
 
   if (px.supportsGet()) {
     expectType<PyProxyWithGet>(px);
-    expectType<(x: any) => Py2JsResult>(px.get);
+    expectType<(x: any) => any>(px.get);
   }
 
   if (px.supportsHas()) {
@@ -118,7 +118,7 @@ async function main() {
 
   if (px.isAwaitable()) {
     expectType<PyProxyAwaitable>(px);
-    expectType<Py2JsResult>(await px);
+    expectType<any>(await px);
   }
 
   if (px.isBuffer()) {
@@ -141,22 +141,27 @@ async function main() {
 
   if (px.isCallable()) {
     expectType<PyProxyCallable>(px);
-    expectType<Py2JsResult>(px(1, 2, 3));
-    expectAssignable<(...args: any[]) => Py2JsResult>(px);
+    expectType<any>(px(1, 2, 3));
+    expectAssignable<(...args: any[]) => any>(px);
   }
 
   if (px.isIterable()) {
     expectType<PyProxyIterable>(px);
     for (let x of px) {
-      expectType<Py2JsResult>(x);
+      expectType<any>(x);
     }
     let it = px[Symbol.iterator]();
-    expectAssignable<{ done?: Py2JsResult; value: Py2JsResult }>(it.next());
+    expectAssignable<{ done?: any; value: any }>(it.next());
   }
 
   if (px.isIterator()) {
     expectType<PyProxyIterator>(px);
-    expectAssignable<{ done?: Py2JsResult; value: Py2JsResult }>(px.next());
-    expectAssignable<{ done?: Py2JsResult; value: Py2JsResult }>(px.next(22));
+    expectAssignable<{ done?: any; value: any }>(px.next());
+    expectAssignable<{ done?: any; value: any }>(px.next(22));
   }
+
+  pyodide.unpackArchive(new Uint8Array(40), "tar");
+  pyodide.unpackArchive(new Uint8Array(40), "tar", {
+    extractDir: "/some/path",
+  });
 }
