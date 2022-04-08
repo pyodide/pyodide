@@ -2,7 +2,7 @@ from pyodide_build.testing import run_in_pyodide
 
 
 @run_in_pyodide(
-    packages=["pillow"],
+    packages=["Pillow"],
 )
 def test_pillow():
     import io
@@ -38,7 +38,7 @@ def test_pillow():
 
 
 @run_in_pyodide(
-    packages=["pillow"],
+    packages=["Pillow"],
 )
 def test_jpeg_modes():
     from PIL import Image
