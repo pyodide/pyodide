@@ -185,6 +185,7 @@ def success(msg):
 
 def update_package(
     package: str,
+    version: str | None = None,
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
 ):
@@ -213,7 +214,7 @@ def update_package(
     else:
         old_fmt = "sdist"
 
-    pypi_metadata = _get_metadata(package)
+    pypi_metadata = _get_metadata(package, version)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
     already_up_to_date = pypi_ver <= local_ver and (
@@ -288,10 +289,20 @@ def main(args):
     try:
         package = args.package[0]
         if args.update:
-            update_package(package, update_patched=True, source_fmt=args.source_format)
+            update_package(
+                package,
+                args.version,
+                update_patched=True,
+                source_fmt=args.source_format,
+            )
             return
         if args.update_if_not_patched:
-            update_package(package, update_patched=False, source_fmt=args.source_format)
+            update_package(
+                package,
+                args.version,
+                update_patched=False,
+                source_fmt=args.source_format,
+            )
             return
         make_package(package, args.version, source_fmt=args.source_format)
     except MkpkgFailedException as e:
