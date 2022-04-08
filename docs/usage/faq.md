@@ -11,7 +11,7 @@ For that purpose, Pyodide provides {any}`pyodide.http.pyfetch`,
 which is a convenient wrapper of JavaScript `fetch`:
 
 ```pyodide
-pyodide.runPython(`
+await pyodide.runPythonAsync(`
   from pyodide.http import pyfetch
   response = await pyfetch("https://some_url/...")
   if response.status == 200:
