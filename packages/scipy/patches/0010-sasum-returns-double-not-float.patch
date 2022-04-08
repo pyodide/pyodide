@@ -1,7 +1,7 @@
-From 9b68abe7a6bbd4fbfe8f1cbdd0944f322e60ef90 Mon Sep 17 00:00:00 2001
+From b41cd9f3f5302c30281d6b8ed6c068586ecbe683 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 18 Dec 2021 12:31:51 -0800
-Subject: [PATCH 11/15] sasum returns double not float
+Subject: [PATCH 10/14] sasum returns double not float
 
 ---
  scipy/sparse/linalg/_dsolve/SuperLU/SRC/slacon2.c | 2 +-
