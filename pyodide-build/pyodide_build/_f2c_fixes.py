@@ -1,5 +1,4 @@
 import re
-import subprocess
 from pathlib import Path
 from textwrap import dedent  # for doctests
 from typing import Iterable, Iterator
@@ -198,18 +197,6 @@ def fix_f2c_output(f2c_output_path: str):
     90 and Fortran 95.
     """
     f2c_output = Path(f2c_output_path)
-    if f2c_output.name == "lapack_extras.c":
-        # dfft.c has a bunch of implicit cast args coming from functions copied
-        # out of future lapack versions. fix_inconsistent_decls will fix all
-        # except string to int. String to int is fixed by fix_string_args and
-        # char1_args_to_int above.
-        subprocess.check_call(
-            [
-                "patch",
-                str(f2c_output_path),
-                "../../patches/fix-implicit-cast-args-from-newer-lapack.patch",
-            ]
-        )
 
     with open(f2c_output) as f:
         lines = f.readlines()
