@@ -152,6 +152,8 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
             if not dryrun:
                 fix_f2c_input(arg)
                 if arg.endswith(".F"):
+                    # .F files apparently expect to be run through the C
+                    # preprocessor (they have #ifdef's in them)
                     subprocess.check_call(
                         [
                             "gcc",
