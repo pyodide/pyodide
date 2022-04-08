@@ -105,7 +105,11 @@ def fix_string_args(line):
     statements with their ascci codes.
     """
     line = re.sub("ilaenv", "ilaenvf2py", line, flags=re.I)
-    if not re.search("call", line, re.I):
+    if (
+        not re.search("call", line, re.I)
+        and "SIGNST" not in line
+        and "TRANST" not in line
+    ):
         return line
     if re.search("xerbla", line, re.I):
         return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
