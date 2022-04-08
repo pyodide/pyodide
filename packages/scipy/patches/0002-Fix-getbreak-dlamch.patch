@@ -1,7 +1,7 @@
 From dfad8166e0705c6808035b67b761d27bb0649ec4 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 18 Mar 2022 16:06:48 -0700
-Subject: [PATCH 02/14] Fix getbreak dlamch
+Subject: [PATCH 02/15] Fix getbreak dlamch
 
 ---
  scipy/sparse/linalg/_isolve/iterative/GMRESREVCOM.f.src | 2 +-

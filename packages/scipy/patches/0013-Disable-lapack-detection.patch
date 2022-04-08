@@ -1,7 +1,7 @@
 From eb5b43c5057e9352ffbcbabfce1a65fdcece3817 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 6 Apr 2022 21:52:29 -0700
-Subject: [PATCH 13/14] Disable lapack detection
+Subject: [PATCH 13/15] Disable lapack detection
 
 ---
  scipy/sparse/linalg/_propack/setup.py | 2 +-
