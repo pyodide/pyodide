@@ -1,3 +1,5 @@
+import pytest
+
 from pyodide_build.common import (
     ALWAYS_PACKAGES,
     CORE_PACKAGES,
@@ -116,20 +118,13 @@ def test_wheel_paths():
     ]
 
 
-def test_search_pyodide_root():
-    import tempfile
-    from pathlib import Path
+def test_search_pyodide_root(tmp_path):
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_file.write_text("[tool.pyodide]")
+    assert search_pyodide_root(tmp_path, 0) == tmp_path
+    assert search_pyodide_root(tmp_path / "subdir", 0) == tmp_path
+    assert search_pyodide_root(tmp_path / "subdir" / "subdir", 0) == tmp_path
 
-    with tempfile.TemporaryDirectory() as _temp_dir:
-        temp_dir = Path(_temp_dir)
-        pyproject_file = temp_dir / "pyproject.toml"
-        pyproject_file.write_text("[tool.pyodide]")
-        assert search_pyodide_root(temp_dir, 0) == temp_dir
-        assert search_pyodide_root(temp_dir / "subdir", 0) == temp_dir
-        assert search_pyodide_root(temp_dir / "subdir" / "subdir", 0) == temp_dir
-
-        pyproject_file.unlink()
-        try:
-            search_pyodide_root(temp_dir, 0)
-        except Exception as e:
-            assert isinstance(e, FileNotFoundError)
+    pyproject_file.unlink()
+    with pytest.raises(FileNotFoundError):
+        search_pyodide_root(tmp_path, 0)
