@@ -21,7 +21,7 @@ build:
       -C link-arg=-s\
       -C link-arg=SIDE_MODULE=1\
     "
-    git clone --depth 1 https://github.com/hoodmane/chrono.git
+    git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
   cflags: |
     -I$(OPEN_SSL_ROOT)/include/
     -Wno-implicit-function-declaration
