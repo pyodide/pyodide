@@ -37,7 +37,7 @@ function config({ input, format, minify, ext }) {
 
 export default [
   // { input: "pyodide", format: "esm", minify: false, ext: "mjs" },
-  { input: "pyodide", format: "esm", minify: true, ext: "mjs" },
+  { input: "pyodide", format: "esm", minify: false, ext: "mjs" },
   // { input: "pyodide", format: "umd", minify: false },
-  { input: "pyodide.umd", format: "umd", minify: true, ext: "js" },
+  { input: "pyodide.umd", format: "umd", minify: false, ext: "js" },
 ].map(config);

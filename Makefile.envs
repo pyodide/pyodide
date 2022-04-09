@@ -44,8 +44,8 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
-export DBGFLAGS=-g0
-# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+#export DBGFLAGS=-g0
+export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
 
 export OPTFLAGS=-Os
 export CFLAGS_BASE=\
@@ -62,6 +62,7 @@ export LDFLAGS_BASE=\
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \
 	-std=c++14 \
+	-s ASSERTIONS=1 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	$(EXTRA_LDFLAGS)
