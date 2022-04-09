@@ -5,6 +5,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
   sha256: 70f8f4f7bb2ac9f340655cbac89d68c527af5bb4387522a8413e841e3e6628c9
+  patches:
+    - patches/0001-Use-patched-chrono.patch
 build:
   script: |
     source $HOME/.cargo/env
@@ -19,6 +21,7 @@ build:
       -C link-arg=-s\
       -C link-arg=SIDE_MODULE=1\
     "
+    git clone --depth 1 https://github.com/hoodmane/chrono.git
   cflags: |
     -I$(OPEN_SSL_ROOT)/include/
     -Wno-implicit-function-declaration
