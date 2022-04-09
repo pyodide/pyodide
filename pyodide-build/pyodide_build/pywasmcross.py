@@ -33,7 +33,7 @@ from typing import Any, MutableMapping, NoReturn, overload
 from . import common
 from ._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo", "rustc"}
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
 
 def symlink_dir():

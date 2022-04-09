@@ -13,15 +13,14 @@ build:
     rustup update nightly
     rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
     export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
-    export CARGO_BUILD_RUSTC=$PYODIDE_ROOT/tools/symlinks/rustc
-    export PYO3_CONFIG_FILE=$PYODIDE_ROOT/packages/pyo3_samples/pyo3_config.ini
+    export PYO3_CONFIG_FILE=$PKG_DIR/pyo3_config.ini
     CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER="emcc"
     export EMSCRIPTEN_LINKING_RUST=1
-    export RUSTFLAGS="\
-      -C relocation-model=pic\
-      -C target-feature=+mutable-globals\
-      -C link-arg=-s\
-      -C link-arg=SIDE_MODULE=1\
+    export RUSTFLAGS=" \
+      -C relocation-model=pic \
+      -C target-feature=+mutable-globals \
+      -C link-arg=-s \
+      -C link-arg=SIDE_MODULE=1 \
     "
     git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
   cflags: |
