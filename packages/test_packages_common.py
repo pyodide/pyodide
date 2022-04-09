@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from conftest import ROOT_PATH, built_packages
+from conftest import ROOT_PATH, _package_is_built
 from pyodide_build.io import parse_package_config
 
 PKG_DIR = ROOT_PATH / "packages"
@@ -24,8 +24,6 @@ UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "firefox": [],
     "node": ["cmyt", "yt"],
 }
-if "CI" in os.environ:
-    UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
 
 @pytest.mark.parametrize("name", registered_packages())
@@ -44,7 +42,7 @@ def test_parse_package(name):
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    if name not in built_packages():
+    if not _package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"

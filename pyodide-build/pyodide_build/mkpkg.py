@@ -179,6 +179,7 @@ def success(msg):
 def update_package(
     root: Path,
     package: str,
+    version: str | None = None,
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
 ):
@@ -203,7 +204,7 @@ def update_package(
     else:
         old_fmt = "sdist"
 
-    pypi_metadata = _get_metadata(package)
+    pypi_metadata = _get_metadata(package, version)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
     already_up_to_date = pypi_ver <= local_ver and (
@@ -293,6 +294,7 @@ def main(args):
             update_package(
                 PACKAGES_ROOT,
                 package,
+                args.version,
                 update_patched=True,
                 source_fmt=args.source_format,
             )
@@ -301,6 +303,7 @@ def main(args):
             update_package(
                 PACKAGES_ROOT,
                 package,
+                args.version,
                 update_patched=False,
                 source_fmt=args.source_format,
             )

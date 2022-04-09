@@ -1,9 +1,9 @@
 package:
   name: Pillow
-  version: 9.0.0
+  version: 9.1.0
 source:
-  sha256: ee6e2963e92762923956fe5d3479b1fdc3b76c83f290aad131a2f98c3df0593e
-  url: https://files.pythonhosted.org/packages/b0/43/3e286c93b9fa20e233d53532cc419b5aad8a468d91065dbef4c846058834/Pillow-9.0.0.tar.gz
+  sha256: f401ed2bbb155e1ade150ccc63db1a4f6c1909d3d378f7d1235a44e90d75fb97
+  url: https://files.pythonhosted.org/packages/4b/83/090146d7871d90a2643d469c319c1d014e41b315ab5cf0f8b4b6a764ef31/Pillow-9.1.0.tar.gz
   patches:
     - patches/setitup.patch
   extras:
