@@ -731,6 +731,7 @@ def build_package(
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         bash_runner.env["PKG_VERSION"] = version
+        bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         if not continue_:
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
             patch(pkg_root, srcpath, source_metadata)

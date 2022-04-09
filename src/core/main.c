@@ -9,7 +9,6 @@
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsproxy.h"
-#include "keyboard_interrupt.h"
 #include "pyproxy.h"
 #include "python2js.h"
 #include "python2js_buffer.h"

@@ -36,7 +36,6 @@ build/pyodide.asm.js: \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
-	src/core/keyboard_interrupt.o \
 	src/core/main.o  \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \

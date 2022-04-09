@@ -120,6 +120,14 @@ substitutions:
   possible to use an async Python function as a Javascript event handler.
   {pr}`2319`
 
+- {{ Enhancement }} `libffi-emscripten` now passes all libffi tests. All
+  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
+  a plan to fix `test_callback_too_many_args` upstream).
+  {pr}`2350`
+
+- {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
+  {pr}`2345`
+
 ## Version 0.19.1
 
 _February 19, 2022_
@@ -136,7 +144,7 @@ _February 19, 2022_
 - {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
   {pr}`2110`
 
-## Type translations
+### Type translations
 
 - {{Fix}} The "PyProxy has already been destroyed" error message has been
   improved with some context information.

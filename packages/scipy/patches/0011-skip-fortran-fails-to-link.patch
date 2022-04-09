@@ -1,18 +1,17 @@
-From ad5d7fb18134af51cd1d40599a0bf59a4782ec53 Mon Sep 17 00:00:00 2001
+From d2107ce2e3edcd33adf41cf682bfc56358f52f00 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 15:08:18 -0800
-Subject: [PATCH] skip fortran fails to link
+Subject: [PATCH 11/14] skip fortran fails to link
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
-
 ---
  scipy/integrate/setup.py | 6 ------
  scipy/io/setup.py        | 3 ---
  2 files changed, 9 deletions(-)
 
 diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
-index 11ce3d1aa..ddd7b08b2 100644
+index 1ba82d18c..dd298a480 100644
 --- a/scipy/integrate/setup.py
 +++ b/scipy/integrate/setup.py
 @@ -95,12 +95,6 @@ def configuration(parent_package='',top_path=None):
@@ -29,7 +28,7 @@ index 11ce3d1aa..ddd7b08b2 100644
      config.add_subpackage('_ivp')
  
 diff --git a/scipy/io/setup.py b/scipy/io/setup.py
-index bec840e36..f3fb726c2 100644
+index 0b936ceed..bf0c16d6c 100644
 --- a/scipy/io/setup.py
 +++ b/scipy/io/setup.py
 @@ -3,9 +3,6 @@ def configuration(parent_package='',top_path=None):

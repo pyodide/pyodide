@@ -1,15 +1,16 @@
 package:
   name: mne
-  version: 0.24.1
+  version: 1.0.0
 source:
-  sha256: 26f75fc0b468ed078f35a86a26fa75bab60887b914b90707000cbc0cb8b11e78
-  url: https://files.pythonhosted.org/packages/64/7b/14d15a1dd526411c426f3a7749076a3ef7d8c7c559d43fcb27d4d088db5f/mne-0.24.1-py3-none-any.whl
+  sha256: fe754938aac35a4a1c3d321e6a584f100bfdbaa0a380de9f395cb95c48d1f9a7
+  url: https://files.pythonhosted.org/packages/cd/3c/223fd3fd4529c3d9f4786a9a8e6873adaaeff2c5fa873e233f50cfdeba44/mne-1.0.0-py3-none-any.whl
 requirements:
   run:
     - distutils
     - numpy
     - scipy
     - setuptools
+    - decorator
 test:
   imports:
     - mne

@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.7.3
+  version: 1.8.0
 
 # See extra explanation in info.md
 #
@@ -13,24 +13,24 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/61/67/1a654b96309c991762ee9bc39c363fc618076b155fe52d295211cf2536c7/scipy-1.7.3.tar.gz
-  sha256: ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf
+  url: https://files.pythonhosted.org/packages/b4/a2/4faa34bf0cdbefd5c706625f1234987795f368eb4e97bde9d6f46860843e/scipy-1.8.0.tar.gz
+  sha256: 31d4f2d6b724bc9a98e527b5849b8a7e589bf1ea630c33aa563eda912c9ff0bd
 
   patches:
-    - patches/add-lapack_extras-to-flapack.patch
-    - patches/convert-xerrwv-message-arg-from-int-to-str.patch
-    - patches/disable-blas-detection.patch
-    - patches/fix-fortran-files-minpack.patch
-    - patches/gemm_-no-const.patch
-    - patches/make-int-return-values.patch
-    - patches/remove-cuncsd-dorcsd-sorcsd-zuncsd.patch
-    - patches/remove-mvnun-not-fortran-77-compliant.patch
-    - patches/sasum-returns-double-not-float.patch
-    - patches/skip-fortran-fails-to-link.patch
-    - patches/rename-_page_trend_test.patch
-    - patches/USE_CPP14-branch-doesn-t-work-for-wasm.patch
-    - patches/0001-Fix-getbreak-dlamch.patch
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
+    - patches/0002-loadDynamicLibrary-flapack.patch
+    - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
+    - patches/0004-int-to-string.patch
+    - patches/0005-disable-blas-detection.patch
+    - patches/0006-fix-fotran-files-minpack.patch
+    - patches/0007-gemm_-no-const.patch
+    - patches/0008-make-int-return-values.patch
+    - patches/0009-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0010-sasum-returns-double-not-float.patch
+    - patches/0011-skip-fortran-fails-to-link.patch
+    - patches/0012-Disable-lapack-detection.patch
+    - patches/0013-Add-extra-END-to-prini.f.patch
+    - patches/0014-BUG-Fix-signature-of-D_IIR_forback-1-2.patch
 
 build:
   cflags: |
@@ -52,18 +52,16 @@ build:
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
     tar xzf v3.10.0.tar.gz
     cd lapack-3.10.0/SRC
+
     cat \
-      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
-      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
-      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
-      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
+      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f cuncsd.f \
+      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f dorcsd.f \
+      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
+      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
     >>  ../../scipy/linalg/lapack_extras.f
     sed -i 's/CHARACTER/INTEGER/g' ../../scipy/linalg/lapack_extras.f
+    sed -i 's/RECURSIVE//g' ../../scipy/linalg/lapack_extras.f
     cd ../..
-    # The additional four functions cuncsd, dorcsd, sorcsd, and zuncsd are also
-    # missing but they use features of Fortran that aren't Fortran 77 compatible
-    # so f2c can't handle them. We stub them with C definitions that do nothing.
-    # These stubs come from f2cpatches/wrap_dummy_g77_abi.patch
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
@@ -95,11 +93,10 @@ build:
     # sed -i 's/^void/int/g' scipy/linalg/cython_lapack_signatures.txt
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
-    echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
-    echo 'import sys' >> scipy/__init__.py
-    echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
-    echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
-    echo "   loadDynamicLibrary('/lib/python$PYMAJOR.$PYMINOR/site-packages/scipy/linalg/_flapack.so')" >> scipy/__init__.py
+    echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
+
+  post: |
+    cp $PKG_BUILD_DIR/scipy/linalg/cython_{lapack,blas}.pxd $HOSTSITEPACKAGES/scipy/linalg/
 
 requirements:
   run:

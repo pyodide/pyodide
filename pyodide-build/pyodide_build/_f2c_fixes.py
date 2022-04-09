@@ -1,5 +1,4 @@
 import re
-import subprocess
 from pathlib import Path
 from textwrap import dedent  # for doctests
 from typing import Iterable, Iterator
@@ -77,6 +76,18 @@ def fix_f2c_input(f2c_input_path: str):
             line = line.replace("character", "integer")
             line = line.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
 
+        # f2c has no support for variable sized arrays, so we replace them with
+        # dummy fixed sized arrays and then put the formulas back in in
+        # fix_f2c_output. Luckily, variable sized arrays are scarce in the scipy
+        # code base.
+        if "PROPACK" in str(f2c_input):
+            line = line.replace("ylocal(n)", "ylocal(123001)")
+            line = line.replace("character*1", "integer")
+
+        if f2c_input.name == "mvndst.f":
+            line = re.sub(r"(infin|stdev|nlower|nupper)\(d\)", r"\1(123001)", line)
+            line = line.replace("rho(d*(d-1)/2)", "rho(123002)")
+
         new_lines.append(line)
 
     with open(f2c_input_path, "w") as f:
@@ -94,7 +105,11 @@ def fix_string_args(line):
     statements with their ascci codes.
     """
     line = re.sub("ilaenv", "ilaenvf2py", line, flags=re.I)
-    if not re.search("call", line, re.I):
+    if (
+        not re.search("call", line, re.I)
+        and "SIGNST" not in line
+        and "TRANST" not in line
+    ):
         return line
     if re.search("xerbla", line, re.I):
         return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
@@ -186,18 +201,6 @@ def fix_f2c_output(f2c_output_path: str):
     90 and Fortran 95.
     """
     f2c_output = Path(f2c_output_path)
-    if f2c_output.name == "lapack_extras.c":
-        # dfft.c has a bunch of implicit cast args coming from functions copied
-        # out of future lapack versions. fix_inconsistent_decls will fix all
-        # except string to int. String to int is fixed by fix_string_args and
-        # char1_args_to_int above.
-        subprocess.check_call(
-            [
-                "patch",
-                str(f2c_output_path),
-                "../../patches/fix-implicit-cast-args-from-newer-lapack.patch",
-            ]
-        )
 
     with open(f2c_output) as f:
         lines = f.readlines()
@@ -225,6 +228,45 @@ def fix_f2c_output(f2c_output_path: str):
             line.replace("integer chla_transtype__", "void chla_transtype__")
             for line in lines
         ]
+
+    # Substitute back the dummy fixed array sizes. We also have to remove the
+    # "static" storage specifier since variable sized arrays can't have static
+    # storage.
+    if f2c_output.name == "mvndst.c":
+        lines = fix_inconsistent_decls(lines)
+
+        def fix_line(line):
+            if "12300" in line:
+                return (
+                    line.replace("static", "")
+                    .replace("123001", "(*d__)")
+                    .replace("123002", "(*d__)*((*d__)-1)/2")
+                )
+            return line
+
+        lines = list(map(fix_line, lines))
+
+    if "PROPACK" in str(f2c_output):
+
+        def fix_line(line):
+            if f2c_output.name != "cgemm_ovwr.c":
+                line = line.replace("struct", "extern struct")
+            if "12300" in line:
+                return line.replace("static", "").replace("123001", "(*n)")
+            return line
+
+        lines = list(map(fix_line, lines))
+        if f2c_output.name.endswith("lansvd.c"):
+            lines.append(
+                """
+                #include <time.h>
+
+                int second_(real *t) {
+                    *t = clock()/1000;
+                    return 0;
+                }
+                """
+            )
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)

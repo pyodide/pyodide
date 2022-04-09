@@ -61,7 +61,7 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
     source_fmt = new_dist_type
     if new_dist_type == "same":
         source_fmt = None
-    pyodide_build.mkpkg.update_package("idna", False, source_fmt)
+    pyodide_build.mkpkg.update_package("idna", None, False, source_fmt)
 
     db = parse_package_config(meta_path)
     assert list(db.keys()) == list(db_init.keys())
