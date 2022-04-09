@@ -121,10 +121,10 @@ def test_wheel_paths():
 def test_search_pyodide_root(tmp_path):
     pyproject_file = tmp_path / "pyproject.toml"
     pyproject_file.write_text("[tool.pyodide]")
-    assert search_pyodide_root(tmp_path, 0) == tmp_path
-    assert search_pyodide_root(tmp_path / "subdir", 0) == tmp_path
-    assert search_pyodide_root(tmp_path / "subdir" / "subdir", 0) == tmp_path
+    assert search_pyodide_root(tmp_path) == tmp_path
+    assert search_pyodide_root(tmp_path / "subdir") == tmp_path
+    assert search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path
 
     pyproject_file.unlink()
     with pytest.raises(FileNotFoundError):
-        search_pyodide_root(tmp_path, 0)
+        search_pyodide_root(tmp_path)

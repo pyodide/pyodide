@@ -153,13 +153,14 @@ def get_make_environment_vars():
 
     This allows us to set all build vars in one place"""
 
-    PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
-    if PYODIDE_ROOT is None:
-        PYODIDE_ROOT = str(search_pyodide_root(os.getcwd(), 0))
+    if "PYODIDE_ROOT" in os.environ:
+        PYODIDE_ROOT = Path(os.environ["PYODIDE_ROOT"])
+    else:
+        PYODIDE_ROOT = search_pyodide_root(os.getcwd())
 
     environment = {}
     result = subprocess.run(
-        ["make", "-f", str(Path(PYODIDE_ROOT) / "Makefile.envs"), ".output_vars"],
+        ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
         capture_output=True,
         text=True,
     )
@@ -173,28 +174,31 @@ def get_make_environment_vars():
     return environment
 
 
-def search_pyodide_root(base: str | Path, depth: int, max_depth: int = 5) -> Path:
+def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     """
     Recursively search for the root of the Pyodide repository,
     by looking for the pyproject.toml file in the parent directories
     which contains [tool.pyodide] section.
     """
 
-    if depth >= max_depth:
-        raise FileNotFoundError(
-            "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
-        )
+    # We want to include "curdir" in parent_dirs, so add a garbage suffix
+    parent_dirs = (Path(curdir) / "garbage").parents[:max_depth]
 
-    base = Path(base)
-    pyproject_file = base / "pyproject.toml"
-    if pyproject_file.is_file():
-        with pyproject_file.open("rb") as f:
-            try:
+    for base in parent_dirs:
+        pyproject_file = base / "pyproject.toml"
+
+        if not pyproject_file.is_file():
+            continue
+
+        try:
+            with pyproject_file.open("rb") as f:
                 configs = tomli.load(f)
-            except tomli.TOMLDecodeError:
-                raise ValueError(f"Could not parse {pyproject_file}.")
+        except tomli.TOMLDecodeError:
+            raise ValueError(f"Could not parse {pyproject_file}.")
 
-            if "tool" in configs and "pyodide" in configs["tool"]:
-                return base
+        if "tool" in configs and "pyodide" in configs["tool"]:
+            return base
 
-    return search_pyodide_root(base.parent, depth + 1, max_depth)
+    raise FileNotFoundError(
+        "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
+    )
