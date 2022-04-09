@@ -292,6 +292,8 @@ export async function loadPyodide(
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
+  Module["__emscripten_get_now"] = Module["_emscripten_get_now"];
+  Module["__emscripten_get_now"].sig = "v";
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(pyodide_py_tar);
