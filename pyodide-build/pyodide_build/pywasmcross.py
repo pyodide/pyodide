@@ -527,6 +527,8 @@ def handle_command(
     if returncode != 0:
         sys.exit(returncode)
 
+    # Rust gives output files a `.wasm` suffix, but we need them to have a `.so`
+    # suffix.
     if line[0:2] == ["cargo", "rustc"]:
         p = Path(args.builddir)
         for x in p.glob("**/*.wasm"):
