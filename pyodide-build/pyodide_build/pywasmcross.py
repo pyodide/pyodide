@@ -523,19 +523,13 @@ def handle_command(
         scipy_fixes(new_args)
 
     returncode = subprocess.run(new_args).returncode
+
     if returncode != 0:
         sys.exit(returncode)
 
-    if line[0] == "cargo" or line[0] == "rustc":
-        with open("tmp.out", "a") as f:
-            print(line, file=f)
-    if line[0:1] == ["cargo", "rustc"]:
-        with open("tmp.out", "a") as f:
-            print("==================================================", file=f)
+    if line[0:2] == ["cargo", "rustc"]:
         p = Path(args.builddir)
         for x in p.glob("**/*.wasm"):
-            with open("tmp.out", "a") as f:
-                print(":::", x, file=f)
             shutil.copy(x, x.with_suffix(".so"))
 
     sys.exit(returncode)
