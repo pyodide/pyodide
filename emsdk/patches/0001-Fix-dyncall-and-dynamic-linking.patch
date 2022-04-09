@@ -47,13 +47,3 @@ index ef8a618bb..cbc70bbe0 100644
      }
  #endif
  #if ASSERTIONS
-diff --git a/tests/third_party/posixtestsuite b/tests/third_party/posixtestsuite
-index a5e7ff5f9..869e266b0 160000
---- a/tests/third_party/posixtestsuite
-+++ b/tests/third_party/posixtestsuite
-@@ -1 +1 @@
--Subproject commit a5e7ff5f906c9a8f18d70f6472c4055bc311c34d
-+Subproject commit 869e266b090a8d44e51bb040904c942556b1e4ab
--- 
-2.25.1
-
