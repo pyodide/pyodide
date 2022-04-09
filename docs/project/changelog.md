@@ -12,7 +12,9 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.20.0
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
 
 ### CPython and stdlib
 
@@ -146,6 +148,13 @@ substitutions:
 - {{ Fix }} `pyodide_build` can now be installed in non-editable ways.
   {pr}`2351`
 
+### List of contributors
+
+Boris Feld, Christian Staudt, Gabriel Fougeron, Gyeongjae Choi, Henry Schreiner,
+Hood Chatham, Jo Bovy, Karthikeyan Singaravelan, Leo Psidom, Liumeo, Luka
+Mamukashvili, Madhur Tandon, Paul Korzhyk, Roman Yurchak, Seungmin Kim, Thorsten
+Beier, Tom White, and Will Lachance
+
 ## Version 0.19.1
 
 _February 19, 2022_
@@ -181,6 +190,8 @@ Yurchak, Seungmin Kim, Thorsten Beier
 ## Version 0.19.0
 
 _January 10, 2021_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.19-release/)
 
 ### Python package
 
