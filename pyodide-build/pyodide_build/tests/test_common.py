@@ -1,3 +1,5 @@
+import pytest
+
 from pyodide_build.common import (
     ALWAYS_PACKAGES,
     CORE_PACKAGES,
@@ -7,6 +9,7 @@ from pyodide_build.common import (
     find_matching_wheels,
     get_make_environment_vars,
     get_make_flag,
+    search_pyodide_root,
 )
 
 
@@ -113,3 +116,15 @@ def test_wheel_paths():
         "py3-none-any",
         "py2.py3-none-any",
     ]
+
+
+def test_search_pyodide_root(tmp_path):
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_file.write_text("[tool.pyodide]")
+    assert search_pyodide_root(tmp_path) == tmp_path
+    assert search_pyodide_root(tmp_path / "subdir") == tmp_path
+    assert search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path
+
+    pyproject_file.unlink()
+    with pytest.raises(FileNotFoundError):
+        search_pyodide_root(tmp_path)

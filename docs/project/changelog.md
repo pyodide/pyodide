@@ -126,6 +126,9 @@ substitutions:
 - {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
   {pr}`2345`
 
+- {{ Fix }} `pyodide_build` can now be installed in non-editable ways.
+  {pr}`2351`
+
 ## Version 0.19.1
 
 _February 19, 2022_
