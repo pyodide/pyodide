@@ -10,6 +10,8 @@ source:
 build:
   script: |
     source $HOME/.cargo/env
+    rustup update nightly
+    rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
     export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
     export CARGO_BUILD_RUSTC=$PYODIDE_ROOT/tools/symlinks/rustc
     export PYO3_CONFIG_FILE=$PYODIDE_ROOT/packages/pyo3_samples/pyo3_config.ini
