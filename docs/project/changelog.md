@@ -14,8 +14,15 @@ substitutions:
 
 ## Unreleased
 
+### CPython and stdlib
+
 - {{ Update }} Pyodide now runs Python 3.10.2.
   {pr}`2225`
+- {{ Enhancement }} All
+  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
+  a plan to fix `test_callback_too_many_args` upstream). `libffi-emscripten`
+  now also passes all libffi tests.
+  {pr}`2350`
 
 ### Packages
 
@@ -25,8 +32,6 @@ substitutions:
   standard library ssl module {pr}`2263`, python-solvespace v3.0.7,
   lazy-object-proxy {pr}`2320`.
 
-- Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
-
 - Many more scipy linking errors were fixed, mostly related to the Fortran f2c
   ABI for string arguments. There are still some fatal errors in the Scipy test
   suite, but none seem to be simple linker errors.
@@ -35,6 +40,9 @@ substitutions:
 - Removed pyodide-interrupts. If you were using this for some reason, use
   {any}`setInterruptBuffer <pyodide.setInterruptBuffer>` instead.
   {pr}`2309`
+
+- Most included packages were updated to the latest version. See
+  {ref}`packages-in-pyodide` for a full list.
 
 ### Type translations
 
@@ -114,11 +122,6 @@ substitutions:
   {any}`unpackArchive <pyodide.unpackArchive>` is now passed as a named argument.
   The old usage still works with a deprecation warning.
   {pr}`2300`
-
-- {{ Enhancement }} `libffi-emscripten` now passes all libffi tests. All
-  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
-  a plan to fix `test_callback_too_many_args` upstream).
-  {pr}`2350`
 
 - {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
   {pr}`2345`
