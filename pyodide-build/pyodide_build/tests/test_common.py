@@ -7,6 +7,7 @@ from pyodide_build.common import (
     find_matching_wheels,
     get_make_environment_vars,
     get_make_flag,
+    search_pyodide_root,
 )
 
 
@@ -113,3 +114,22 @@ def test_wheel_paths():
         "py3-none-any",
         "py2.py3-none-any",
     ]
+
+
+def test_search_pyodide_root():
+    import tempfile
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as _temp_dir:
+        temp_dir = Path(_temp_dir)
+        pyproject_file = temp_dir / "pyproject.toml"
+        pyproject_file.write_text("[tool.pyodide]")
+        assert search_pyodide_root(temp_dir, 0) == temp_dir
+        assert search_pyodide_root(temp_dir / "subdir", 0) == temp_dir
+        assert search_pyodide_root(temp_dir / "subdir" / "subdir", 0) == temp_dir
+
+        pyproject_file.unlink()
+        try:
+            search_pyodide_root(temp_dir, 0)
+        except Exception as e:
+            assert isinstance(e, FileNotFoundError)

@@ -4,7 +4,7 @@ import os
 import sys
 
 from . import buildall, buildpkg, mkpkg, serve
-from .common import get_hostsitepackages, get_make_environment_vars
+from .common import get_hostsitepackages, get_make_environment_vars, search_pyodide_root
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -34,14 +34,12 @@ def make_parser() -> argparse.ArgumentParser:
 
 def main():
     if not os.environ.get("__LOADED_PYODIDE_ENV"):
-        # If we are building docs or running tests, we don't need to know the PYODIDE_ROOT
-        if "sphinx" in sys.modules or "pytest" in sys.modules:
+        # If we are building docs, we don't need to know the PYODIDE_ROOT
+        if "sphinx" in sys.modules:
             os.environ["PYODIDE_ROOT"] = ""
 
         if "PYODIDE_ROOT" not in os.environ:
-            raise ValueError(
-                "PYODIDE_ROOT needs to be set. Try export `PYODIDE_ROOT=<pyodide-root-directory>` then rerun."
-            )
+            os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd(), 0))
 
         os.environ.update(get_make_environment_vars())
         hostsitepackages = get_hostsitepackages()

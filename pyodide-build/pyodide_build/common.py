@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, Iterator
 
+import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
@@ -151,10 +152,10 @@ def get_make_environment_vars():
     """Load environment variables from Makefile.envs
 
     This allows us to set all build vars in one place"""
-    # TODO: make this not rely on paths outside of pyodide-build
+
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if PYODIDE_ROOT is None:
-        raise ValueError("PYODIDE_ROOT is not set")
+        PYODIDE_ROOT = str(search_pyodide_root(os.getcwd(), 0))
 
     environment = {}
     result = subprocess.run(
@@ -170,3 +171,30 @@ def get_make_environment_vars():
             value = value.strip("'").strip()
             environment[varname] = value
     return environment
+
+
+def search_pyodide_root(base: str | Path, depth: int, max_depth: int = 5) -> Path:
+    """
+    Recursively search for the root of the Pyodide repository,
+    by looking for the pyproject.toml file in the parent directories
+    which contains [tool.pyodide] section.
+    """
+
+    if depth >= max_depth:
+        raise FileNotFoundError(
+            "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
+        )
+
+    base = Path(base)
+    pyproject_file = base / "pyproject.toml"
+    if pyproject_file.is_file():
+        with pyproject_file.open("rb") as f:
+            try:
+                configs = tomli.load(f)
+            except tomli.TOMLDecodeError:
+                raise ValueError(f"Could not parse {pyproject_file}.")
+
+            if "tool" in configs and "pyodide" in configs["tool"]:
+                return base
+
+    return search_pyodide_root(base.parent, depth + 1, max_depth)
