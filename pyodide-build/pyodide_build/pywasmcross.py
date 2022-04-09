@@ -59,7 +59,6 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
     exist.
     """
     exec_path = Path(__file__).resolve()
-    exec_path.chmod(0o755)
     SYMLINKDIR = symlink_dir()
     for symlink in symlinks:
         symlink_path = SYMLINKDIR / symlink
