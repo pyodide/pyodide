@@ -363,6 +363,7 @@ export async function loadPackage(
           loadedPackages[name] = channel;
         })
         .catch((err) => {
+          console.warn(err);
           failed[name] = err;
         });
     }
@@ -376,6 +377,7 @@ export async function loadPackage(
           loadedPackages[name] = channel;
         })
         .catch((err) => {
+          console.warn(err);
           failed[name] = err;
         });
     }
