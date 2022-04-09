@@ -688,16 +688,16 @@ to_js(PyObject* self,
   //      default_converter.
   //         :to_js - name of this function for error messages
   static struct _PyArg_Parser _parser = { "O|$ipOOO:to_js", _keywords, 0 };
-  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args,
-                                                       nargs,
-                                                       kwnames,
-                                                       &_parser,
-                                                       &obj,
-                                                       &depth,
-                                                       &create_proxies,
-                                                       &pyproxies,
-                                                       &py_dict_converter,
-                                                       &py_default_converter)) {
+  if (!_PyArg_ParseStackAndKeywords(args,
+                                    nargs,
+                                    kwnames,
+                                    &_parser,
+                                    &obj,
+                                    &depth,
+                                    &create_proxies,
+                                    &pyproxies,
+                                    &py_dict_converter,
+                                    &py_default_converter)) {
     return NULL;
   }
 
