@@ -1,9 +1,0 @@
-build==0.7.0
-Cython==0.29.28
-packaging==21.3
-pep517==0.12.0
-pyparsing==3.0.7
-PyYAML==6.0
-ruamel.yaml==0.17.21
-ruamel.yaml.clib==0.2.6
-tomli==2.0.1
