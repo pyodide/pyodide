@@ -39,7 +39,7 @@ def main():
             os.environ["PYODIDE_ROOT"] = ""
 
         if "PYODIDE_ROOT" not in os.environ:
-            os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd(), 0))
+            os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
 
         os.environ.update(get_make_environment_vars())
         hostsitepackages = get_hostsitepackages()
