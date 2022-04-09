@@ -1,3 +1,34 @@
+From 84a590dd8d7563306c09f1f3ba5299e68c9bd359 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 6 Apr 2022 21:21:53 -0700
+Subject: [PATCH 06/14] fix fotran files minpack
+
+---
+ scipy/optimize/minpack/chkder.f | 3 +--
+ scipy/optimize/minpack/dogleg.f | 3 +--
+ scipy/optimize/minpack/dpmpar.f | 3 +--
+ scipy/optimize/minpack/enorm.f  | 3 +--
+ scipy/optimize/minpack/fdjac1.f | 3 +--
+ scipy/optimize/minpack/fdjac2.f | 3 +--
+ scipy/optimize/minpack/hybrd.f  | 3 +--
+ scipy/optimize/minpack/hybrd1.f | 3 +--
+ scipy/optimize/minpack/hybrj.f  | 3 +--
+ scipy/optimize/minpack/hybrj1.f | 3 +--
+ scipy/optimize/minpack/lmder.f  | 3 +--
+ scipy/optimize/minpack/lmder1.f | 3 +--
+ scipy/optimize/minpack/lmdif.f  | 3 +--
+ scipy/optimize/minpack/lmdif1.f | 3 +--
+ scipy/optimize/minpack/lmpar.f  | 3 +--
+ scipy/optimize/minpack/lmstr.f  | 3 +--
+ scipy/optimize/minpack/lmstr1.f | 3 +--
+ scipy/optimize/minpack/qform.f  | 3 +--
+ scipy/optimize/minpack/qrfac.f  | 3 +--
+ scipy/optimize/minpack/qrsolv.f | 3 +--
+ scipy/optimize/minpack/r1mpyq.f | 3 +--
+ scipy/optimize/minpack/r1updt.f | 3 +--
+ scipy/optimize/minpack/rwupdt.f | 3 +--
+ 23 files changed, 23 insertions(+), 46 deletions(-)
+
 diff --git a/scipy/optimize/minpack/chkder.f b/scipy/optimize/minpack/chkder.f
 index 0657ab56a..29578fc41 100644
 --- a/scipy/optimize/minpack/chkder.f
@@ -251,3 +282,6 @@ index 61a7928bb..05282b556 100644
        integer n,ldr
        double precision alpha
        double precision r(ldr,n),w(n),b(n),cos(n),sin(n)
+-- 
+2.25.1
+

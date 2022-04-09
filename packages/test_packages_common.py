@@ -25,6 +25,8 @@ UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "firefox": [],
     "node": ["cmyt", "yt"],
 }
+if "CI" in os.environ:
+    UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
 
 @pytest.mark.parametrize("name", registered_packages())
