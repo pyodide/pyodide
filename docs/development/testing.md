@@ -21,7 +21,7 @@ and check that they are in your `PATH`.
 To run the pytest suite of tests, from the root directory of Pyodide, type on the command line:
 
 ```bash
-PYDODIE_ROOT=$(pwd) pytest
+pytest
 ```
 
 There are 3 test locations that are collected by pytest,
