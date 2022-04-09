@@ -18,6 +18,7 @@ substitutions:
 
 - {{ Update }} Pyodide now runs Python 3.10.2.
   {pr}`2225`
+
 - {{ Enhancement }} All
   `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
   a plan to fix `test_callback_too_many_args` upstream). `libffi-emscripten`
@@ -55,6 +56,7 @@ substitutions:
   a built-in conversion to Python. Also added a `default_converter` argument to
   {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
   {pr}`2170` and {pr}`2208`
+
 - {{ Enhancement }} Async Python functions called from Javascript now have the
   resulting coroutine automatically scheduled. For instance, this makes it
   possible to use an async Python function as a Javascript event handler.
@@ -65,24 +67,31 @@ substitutions:
 - {{Enhancement}} It is no longer necessary to provide `indexURL` to
   {any}`loadPyodide <globalThis.loadPyodide>`.
   {pr}`2292`
+
 - {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
   and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
   argument. The old usage still works with a deprecation warning.
   {pr}`2300`
+
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
+
 - {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
   {pr}`2220`
+
 - {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
   {any}`loadPyodide <globalThis.loadPyodide>` variable is created (instead, it
   should be accessed as an attribute on the module).
   {pr}`2249`
+
 - {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
   accurate. For backwards compatibility, we still export `Py2JsResult` as an
   alias for `any`.
   {pr}`2277`
+
 - {{Fix}} Pyodide now loads correctly even if requirejs is included.
   {pr}`2283`
+
 - {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
   Javascript code. This mostly should never happen since well behaved Javascript
   code ought to throw errors. But it's better not to completely crash if it
@@ -94,14 +103,22 @@ substitutions:
 - {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
   rather than the emscripten `file_packager.py` format.
   {pr}`2027`
+
+- {{Enhancement}} Pyodide now uses `pypa/build` to build packages. We (mostly)
+  use build isolation, so we can build packages that require conflicting
+  versions of setuptools or alternative build backends.
+  {pr}`2272`
+
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
   {pr}`2126`
+
 - {{Enhancement}} Added support for C++ exceptions in packages. Now C++
   extensions compiled and linked with `-fexceptions` can catch C++ exceptions.
   Furthermore, uncaught C++ exceptions will be formatted in a human-readable
   way.
   {pr}`2178`
+
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
   needed, install a host copy of the package with pip instead.
   {pr}`2256`
