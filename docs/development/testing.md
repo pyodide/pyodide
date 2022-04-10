@@ -58,9 +58,9 @@ used.
    docker environment using external browser programs on the host system. To do
    this, run: `pyodide-build serve`
 
-3. This serves the `build` directory of the Pyodide project on port 8000.
+3. This serves the `dist` directory of the Pyodide project on port 8000.
 
-   - To serve a different directory, use the `--build_dir` argument followed
+   - To serve a different directory, use the `--dist_dir` argument followed
      by the path of the directory.
    - To serve on a different port, use the `--port` argument followed by the
      desired port number. Make sure that the port passed in `--port` argument

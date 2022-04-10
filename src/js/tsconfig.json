@@ -3,7 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "lib": ["ES2021", "DOM"],
-    "outDir": "../../build",
+    "outDir": "../../dist",
     "esModuleInterop": true,
     "target": "ES6",
     "module": "ES2020",

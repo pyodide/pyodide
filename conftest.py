@@ -20,7 +20,7 @@ import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
-BUILD_PATH = ROOT_PATH / "build"
+BUILD_PATH = ROOT_PATH / "dist"
 
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
@@ -385,7 +385,7 @@ class NodeWrapper(SeleniumWrapper):
     browser = "node"
 
     def init_node(self):
-        os.chdir("build")
+        os.chdir("dist")
         self.p = pexpect.spawn(
             f"node --expose-gc --experimental-wasm-bigint ../tools/node_test_driver.js {self.base_url}",
             timeout=60,
