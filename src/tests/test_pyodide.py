@@ -413,6 +413,7 @@ def test_check_interrupt(selenium):
         let x = 0;
         pyodide.setInterruptBuffer(buffer);
         function test(){
+            // send a SIGINT (i.e. a 2)
             buffer[0] = 2;
             pyodide.checkInterrupt();
             x = 1;
