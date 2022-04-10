@@ -710,8 +710,7 @@ JsProxy_toPy(PyObject* self,
   static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
   int depth = -1;
   PyObject* default_converter = NULL;
-  if (kwnames != NULL &&
-      !_PyArg_ParseStackAndKeywords(
+  if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }

@@ -7,7 +7,7 @@ import pytest
 from conftest import selenium_common
 from pyodide import CodeRunner, console  # noqa: E402
 from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
-from pyodide_build.testing import PYVERSION, run_in_pyodide
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_command_compiler():
@@ -421,9 +421,10 @@ def test_console_html(console_html_fixture):
         ).strip()
     )
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
+    result = re.sub(r"/lib/python3.\d+/site-packages", "...", result)
 
     answer = dedent(
-        f"""
+        """
             >>> class Test:
             ...     def __repr__(self):
             ...         raise TypeError(\"hi\")
@@ -431,7 +432,7 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/{PYVERSION}/site-packages/pyodide/console.py\", line xxx, in repr_shorten
+              File \".../pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]

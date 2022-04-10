@@ -12,7 +12,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Literal
 
-PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
+from ruamel.yaml import YAML
 
 
 class MkpkgFailedException(Exception):
@@ -89,23 +89,12 @@ def _get_metadata(package: str, version: str | None = None) -> dict:
     return pypi_metadata
 
 
-def _import_ruamel_yaml():
-    """Import ruamel.yaml with a better error message is not installed."""
-    try:
-        from ruamel.yaml import YAML
-    except ImportError as err:
-        raise ImportError(
-            "No module named 'ruamel'. "
-            "It can be installed with pip install ruamel.yaml"
-        ) from err
-    return YAML
-
-
 def run_prettier(meta_path):
     subprocess.run(["npx", "prettier", "-w", meta_path])
 
 
 def make_package(
+    packages_dir: Path,
     package: str,
     version: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
@@ -115,7 +104,6 @@ def make_package(
     but will have to be edited for more complex things.
     """
     print(f"Creating meta.yaml package for {package}")
-    YAML = _import_ruamel_yaml()
 
     yaml = YAML()
 
@@ -149,15 +137,20 @@ def make_package(
         },
     }
 
-    if not (PACKAGES_ROOT / package).is_dir():
-        os.makedirs(PACKAGES_ROOT / package)
-    meta_path = PACKAGES_ROOT / package / "meta.yaml"
-    with open(meta_path, "w") as fd:
-        yaml.dump(yaml_content, fd)
+    package_dir = packages_dir / package
+    package_dir.mkdir(parents=True, exist_ok=True)
+
+    meta_path = package_dir / "meta.yaml"
+    if meta_path.exists():
+        raise MkpkgFailedException(f"The package {package} already exists")
+
+    yaml.dump(yaml_content, meta_path)
     run_prettier(meta_path)
+
     success(f"Output written to {meta_path}")
 
 
+# TODO: use rich for coloring outputs
 class bcolors:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
@@ -184,30 +177,27 @@ def success(msg):
 
 
 def update_package(
+    root: Path,
     package: str,
     version: str | None = None,
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
 ):
 
-    YAML = _import_ruamel_yaml()
     yaml = YAML()
 
-    meta_path = PACKAGES_ROOT / package / "meta.yaml"
+    meta_path = root / package / "meta.yaml"
     if not meta_path.exists():
-        print(f"{meta_path} does not exist")
-        sys.exit(0)
-    with open(meta_path, "rb") as fd:
-        yaml_content = yaml.load(fd)
+        abort(f"{meta_path} does not exist")
+
+    yaml_content = yaml.load(meta_path.read_bytes())
 
     if "url" not in yaml_content["source"]:
-        print(f"Skipping: {package} is a local package!")
-        sys.exit(0)
+        raise MkpkgFailedException(f"Skipping: {package} is a local package!")
 
     build_info = yaml_content.get("build", {})
     if build_info.get("library", False) or build_info.get("sharedlibrary", False):
-        print(f"Skipping: {package} is a library!")
-        sys.exit(0)
+        raise MkpkgFailedException(f"Skipping: {package} is a library!")
 
     if yaml_content["source"]["url"].endswith("whl"):
         old_fmt = "wheel"
@@ -222,7 +212,7 @@ def update_package(
     )
     if already_up_to_date:
         print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
-        sys.exit(0)
+        return
 
     print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
 
@@ -233,7 +223,9 @@ def update_package(
                 "patches (if needed) to avoid build failing."
             )
         else:
-            abort(f"Pyodide applies patches to {package}. Skipping update.")
+            raise MkpkgFailedException(
+                f"Pyodide applies patches to {package}. Skipping update."
+            )
 
     if source_fmt:
         # require the type requested
@@ -251,9 +243,10 @@ def update_package(
     yaml_content["source"].pop("md5", None)
     yaml_content["source"]["sha256"] = dist_metadata["digests"]["sha256"]
     yaml_content["package"]["version"] = pypi_metadata["info"]["version"]
-    with open(meta_path, "wb") as fd:
-        yaml.dump(yaml_content, fd)
+
+    yaml.dump(yaml_content, meta_path)
     run_prettier(meta_path)
+
     success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
@@ -286,10 +279,20 @@ complex things.""".strip()
 
 
 def main(args):
+    PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
+    if PYODIDE_ROOT is None:
+        raise ValueError("PYODIDE_ROOT is not set")
+
+    if shutil.which("npx") is None:
+        raise ValueError("npx is not installed")
+
+    PACKAGES_ROOT = Path(PYODIDE_ROOT) / "packages"
+
     try:
         package = args.package[0]
         if args.update:
             update_package(
+                PACKAGES_ROOT,
                 package,
                 args.version,
                 update_patched=True,
@@ -298,13 +301,16 @@ def main(args):
             return
         if args.update_if_not_patched:
             update_package(
+                PACKAGES_ROOT,
                 package,
                 args.version,
                 update_patched=False,
                 source_fmt=args.source_format,
             )
             return
-        make_package(package, args.version, source_fmt=args.source_format)
+        make_package(
+            PACKAGES_ROOT, package, args.version, source_fmt=args.source_format
+        )
     except MkpkgFailedException as e:
         # This produces two types of error messages:
         #

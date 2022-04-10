@@ -1,12 +1,13 @@
+import os
 import subprocess
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parents[3]
+PYODIDE_ROOT = Path(os.environ.get("PYODIDE_ROOT", os.getcwd()))
 
 
 def test_run_docker_script():
     res = subprocess.run(
-        ["bash", str(BASE_DIR / "run_docker"), "--help"],
+        ["bash", str(PYODIDE_ROOT / "run_docker"), "--help"],
         check=False,
         capture_output=True,
     )
@@ -14,7 +15,7 @@ def test_run_docker_script():
     assert "Usage: run_docker" in res.stdout.decode("utf-8")
 
     res = subprocess.run(
-        ["bash", str(BASE_DIR / "run_docker"), "--invalid-param"],
+        ["bash", str(PYODIDE_ROOT / "run_docker"), "--invalid-param"],
         check=False,
         capture_output=True,
     )

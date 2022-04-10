@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 # -- Project information -----------------------------------------------------
 
@@ -53,6 +54,9 @@ versionwarning_body_selector = "#main-content > div"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
+
+# Add modules to be mocked.
+mock_modules = ["ruamel.yaml", "tomli"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -190,3 +194,6 @@ if IN_SPHINX:
     delete_attrs(pyodide.webloop.WebLoop)
     delete_attrs(pyodide.webloop.WebLoopPolicy)
     delete_attrs(pyodide.console.PyodideConsole)
+
+    for module in mock_modules:
+        sys.modules[module] = mock.Mock()

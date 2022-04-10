@@ -27,10 +27,8 @@ from collections import namedtuple
 from pathlib import Path, PurePosixPath
 from typing import Any, MutableMapping, NoReturn, overload
 
-# absolute import is necessary as this file will be symlinked
-# under tools
-from . import common
-from ._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
+from pyodide_build import common
+from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 

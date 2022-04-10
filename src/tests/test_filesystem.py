@@ -4,8 +4,6 @@ for a basic nodejs-based test, see src/js/test/filesystem.test.js
 """
 import pytest
 
-from pyodide_build.testing import PYVERSION
-
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
@@ -16,11 +14,14 @@ def test_idbfs_persist_code(selenium_standalone):
         fstype = "NODEFS"
     else:
         fstype = "IDBFS"
+
+    mount_dir = "/mount_test"
     # create mount
     selenium.run_js(
         f"""
-        pyodide.FS.mkdir('/lib/{PYVERSION}/site-packages/test_idbfs');
-        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/{PYVERSION}/site-packages/test_idbfs");
+        let mountDir = '{mount_dir}';
+        pyodide.FS.mkdir(mountDir);
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "{mount_dir}");
         """
     )
     # create file in mount
@@ -28,10 +29,13 @@ def test_idbfs_persist_code(selenium_standalone):
         f"""
         pyodide.runPython(`
             import pathlib
-            p = pathlib.Path('/lib/{PYVERSION}/site-packages/test_idbfs/__init__.py')
+            p = pathlib.Path('{mount_dir}/test_idbfs/__init__.py')
+            p.parent.mkdir(exist_ok=True, parents=True)
             p.write_text("def test(): return 7")
             from importlib import invalidate_caches
             invalidate_caches()
+            import sys
+            sys.path.append('{mount_dir}')
             from test_idbfs import test
             assert test() == 7
         `);
@@ -55,12 +59,14 @@ def test_idbfs_persist_code(selenium_standalone):
     )
     # idbfs isn't magically loaded
     selenium.run_js(
-        """
+        f"""
         pyodide.runPython(`
             from importlib import invalidate_caches
+            import sys
             invalidate_caches()
             err_type = None
             try:
+                sys.path.append('{mount_dir}')
                 from test_idbfs import test
             except Exception as err:
                 err_type = type(err)
@@ -71,8 +77,8 @@ def test_idbfs_persist_code(selenium_standalone):
     # re-mount
     selenium.run_js(
         f"""
-        pyodide.FS.mkdir('/lib/{PYVERSION}/site-packages/test_idbfs');
-        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/{PYVERSION}/site-packages/test_idbfs");
+        pyodide.FS.mkdir('{mount_dir}');
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "{mount_dir}");
         """
     )
     # sync FROM idbfs
@@ -86,16 +92,16 @@ def test_idbfs_persist_code(selenium_standalone):
     )
     # import file persisted above
     selenium.run_js(
-        """
+        f"""
         pyodide.runPython(`
             from importlib import invalidate_caches
             invalidate_caches()
+            import sys
+            sys.path.append('{mount_dir}')
             from test_idbfs import test
             assert test() == 7
         `);
         """
     )
     # remove file
-    selenium.run_js(
-        f"""pyodide.FS.unlink("/lib/{PYVERSION}/site-packages/test_idbfs/__init__.py")"""
-    )
+    selenium.run_js(f"""pyodide.FS.unlink("{mount_dir}/test_idbfs/__init__.py")""")
