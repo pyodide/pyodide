@@ -60,7 +60,6 @@ export LDFLAGS_BASE=\
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
-        -s ASSERTIONS=1 \
 	-s WASM=1 \
 	-std=c++14 \
 	-s LZ4=1 \
