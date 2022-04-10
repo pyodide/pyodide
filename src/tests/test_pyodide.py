@@ -8,7 +8,7 @@ from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E
 from pyodide_build.testing import run_in_pyodide
 
 
-def _strip_assertion_stderr(messages: Sequence[str]) -> list[str]:
+def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
     """Strip additional messages on stderr included when ASSERTIONS=1"""
     res = []
     for msg in messages:
@@ -779,7 +779,7 @@ def test_fatal_error(selenium_standalone):
         return x
 
     err_msg = strip_stack_trace(selenium_standalone.logs)
-    err_msg = "".join(_strip_assertion_stderr(err_msg.splitlines(keepends=True)))
+    err_msg = "".join(_strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
         err_msg
         == dedent(
@@ -1102,7 +1102,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         "Python initialization complete",
         "something to stdout",
     ]
-    stderrstrings = _strip_assertion_stderr(stderrstrings)
+    stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
 
 
