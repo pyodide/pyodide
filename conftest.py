@@ -20,7 +20,7 @@ import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
-BUILD_PATH = ROOT_PATH / "dist"
+DIST_PATH = ROOT_PATH / "dist"
 
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
@@ -31,10 +31,10 @@ from pyodide_build.testing import parse_driver_timeout, set_webdriver_script_tim
 def pytest_addoption(parser):
     group = parser.getgroup("general")
     group.addoption(
-        "--build-dir",
+        "--dist-dir",
         action="store",
-        default=BUILD_PATH,
-        help="Path to the build directory",
+        default=DIST_PATH,
+        help="Path to the dist directory",
     )
     group.addoption(
         "--run-xfail",
@@ -76,7 +76,7 @@ def pytest_collection_modifyitems(config, items):
 @functools.cache
 def built_packages() -> list[str]:
     """Returns the list of built package names from packages.json"""
-    packages_json_path = BUILD_PATH / "packages.json"
+    packages_json_path = DIST_PATH / "packages.json"
     if not packages_json_path.exists():
         return []
     return list(json.loads(packages_json_path.read_text())["packages"].keys())
@@ -704,14 +704,14 @@ def selenium(request, selenium_module_scope):
 
 @pytest.fixture(scope="session")
 def web_server_main(request):
-    """Web server that serves files in the build/ directory"""
+    """Web server that serves files in the dist/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
-    """Secondary web server that serves files build/ directory"""
+    """Secondary web server that serves files dist/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
@@ -727,7 +727,7 @@ def web_server_tst_data(request):
 def spawn_web_server(build_dir=None):
 
     if build_dir is None:
-        build_dir = BUILD_PATH
+        build_dir = DIST_PATH
 
     tmp_dir = tempfile.mkdtemp()
     log_path = pathlib.Path(tmp_dir) / "http-server.log"

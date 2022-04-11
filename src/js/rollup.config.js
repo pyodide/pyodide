@@ -4,7 +4,7 @@ import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
 function config({ input, format, minify, ext }) {
-  const dir = `build/`;
+  const dir = `dist/`;
   // const minifierSuffix = minify ? ".min" : "";
   const minifierSuffix = "";
   return {
