@@ -43,6 +43,7 @@ def test_generate_packages_json():
         "file_name": "pkg_1.file",
         "depends": ["pkg_1_1", "pkg_3"],
         "imports": ["pkg_1"],
+        "install_dir": "site",
     }
 
 
