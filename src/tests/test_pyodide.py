@@ -1,11 +1,24 @@
 import re
 from textwrap import dedent
-from typing import Any
+from typing import Any, Sequence
 
 import pytest
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.testing import run_in_pyodide
+
+
+def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+        ]:
+            continue
+        res.append(msg)
+    return res
 
 
 def test_find_imports():
@@ -765,8 +778,10 @@ def test_fatal_error(selenium_standalone):
         x = x.replace("\n\n", "\n")
         return x
 
+    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = "".join(_strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
-        strip_stack_trace(selenium_standalone.logs)
+        err_msg
         == dedent(
             strip_stack_trace(
                 """
@@ -1087,6 +1102,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         "Python initialization complete",
         "something to stdout",
     ]
+    stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
 
 
