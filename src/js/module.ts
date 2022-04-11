@@ -3,20 +3,20 @@
  *
  * @private
  */
-export let Module: any = {};
+
+declare var Module: any;
+declare var Hiwire: any;
+declare var Tests: any;
+declare var API: any;
+
 Module.noImageDecoding = true;
 Module.noAudioDecoding = true;
 Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
 Module.preloadedWasm = {};
 Module.preRun = [];
 
-export let API: any = {};
-Module.API = API;
-export let Hiwire: any = {};
 Module.hiwire = Hiwire;
-
 // Put things that are exposed only for testing purposes here.
-export let Tests: any = {};
 API.tests = Tests;
 
 /**
@@ -26,7 +26,7 @@ API.tests = Tests;
  * @param stderr
  * @private
  */
-export function setStandardStreams(
+function setStandardStreams(
   stdin?: () => string,
   stdout?: (a: string) => void,
   stderr?: (a: string) => void
@@ -115,3 +115,10 @@ export function setHomeDirectory(path: string) {
     Module.FS.chdir(path);
   });
 }
+
+setStandardStreams(
+  Module.config.stdin,
+  Module.config.stdout,
+  Module.config.stderr
+);
+setHomeDirectory(Module.config.homedir);

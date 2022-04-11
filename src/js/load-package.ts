@@ -1,4 +1,7 @@
-import { Module, API, Tests } from "./module.js";
+declare var Module: any;
+declare var Tests: any;
+declare var API: any;
+
 import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -412,3 +415,5 @@ export async function loadPackage(
  * install location for a particular ``package_name``.
  */
 export let loadedPackages: { [key: string]: string } = {};
+
+API.packageIndexReady = initializePackageIndex(API.config.indexURL);

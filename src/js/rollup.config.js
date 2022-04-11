@@ -3,15 +3,12 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
-function config({ input, format, minify, ext }) {
-  const dir = `build/`;
-  // const minifierSuffix = minify ? ".min" : "";
-  const minifierSuffix = "";
+function config({ input, output, format, minify }) {
   return {
     input: `./src/js/${input}.ts`,
     output: {
       name: "loadPyodide",
-      file: `${dir}/pyodide${minifierSuffix}.${ext}`,
+      file: output,
       format,
       sourcemap: true,
     },
@@ -36,8 +33,22 @@ function config({ input, format, minify, ext }) {
 }
 
 export default [
-  // { input: "pyodide", format: "esm", minify: false, ext: "mjs" },
-  { input: "pyodide", format: "esm", minify: true, ext: "mjs" },
-  // { input: "pyodide", format: "umd", minify: false },
-  { input: "pyodide.umd", format: "umd", minify: true, ext: "js" },
+  {
+    input: "pyodide",
+    output: "build/pyodide.mjs",
+    format: "esm",
+    minify: true,
+  },
+  {
+    input: "pyodide.umd",
+    output: "build/pyodide.js",
+    format: "umd",
+    minify: true,
+  },
+  {
+    input: "api",
+    output: "src/js/_pyodide.out.js",
+    format: "iife",
+    minify: true,
+  },
 ].map(config);
