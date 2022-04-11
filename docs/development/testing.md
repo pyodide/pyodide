@@ -60,7 +60,7 @@ used.
 
 3. This serves the `dist` directory of the Pyodide project on port 8000.
 
-   - To serve a different directory, use the `--dist_dir` argument followed
+   - To serve a different directory, use the `--dist-dir` argument followed
      by the path of the directory.
    - To serve on a different port, use the `--port` argument followed by the
      desired port number. Make sure that the port passed in `--port` argument
