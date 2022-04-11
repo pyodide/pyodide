@@ -2,7 +2,12 @@ declare var Module: any;
 declare var Tests: any;
 declare var API: any;
 
-import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
+import {
+  IN_NODE,
+  nodeFsPromisesMod,
+  _loadBinaryFile,
+  initNodeModules,
+} from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /** @private */
@@ -18,6 +23,7 @@ export async function initializePackageIndex(indexURL: string) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
+    await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}packages.json`
     );
