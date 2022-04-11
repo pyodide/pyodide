@@ -3,15 +3,15 @@ from pathlib import Path
 
 import pytest
 
-from conftest import BUILD_PATH
+from conftest import DIST_PATH
 
 
 def get_pyparsing_wheel_name():
-    return list(BUILD_PATH.glob("pyparsing*.whl"))[0].name
+    return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
 
 
 def get_pytz_wheel_name():
-    return list(BUILD_PATH.glob("pytz*.whl"))[0].name
+    return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
