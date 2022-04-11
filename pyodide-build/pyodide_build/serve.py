@@ -16,9 +16,9 @@ Handler.extensions_map[".wasm"] = "application/wasm"
 
 
 def make_parser(parser):
-    parser.description = "Start a server with the supplied dist_dir and port."
+    parser.description = "Start a server with the supplied dist-dir and port."
     parser.add_argument(
-        "--dist_dir",
+        "--dist-dir",
         action="store",
         type=str,
         default="dist",
