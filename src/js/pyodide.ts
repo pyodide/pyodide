@@ -4,6 +4,8 @@
 import ErrorStackParser from "error-stack-parser";
 import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
 
+import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
 
@@ -170,7 +172,7 @@ function calculateIndexURL(): string {
  * See documentation for loadPyodide.
  * @private
  */
-type ConfigType = {
+export type ConfigType = {
   indexURL: string;
   homedir: string;
   fullStdLib?: boolean;
@@ -251,8 +253,13 @@ export async function loadPyodide(
     "pyodide_py.tar"
   );
 
+  const Module = createModule();
   const API: any = { config };
-  const Module: any = { API };
+  Module.API = API;
+
+  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
+  setHomeDirectory(Module, config.homedir);
+
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
   // locateFile tells Emscripten where to find the data files that initialize

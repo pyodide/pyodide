@@ -3,12 +3,12 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
-function config({ input, output, format, minify }) {
+function config({ input, output, name, format, minify }) {
   return {
     input: `./src/js/${input}.ts`,
     output: {
-      name: "loadPyodide",
       file: output,
+      name,
       format,
       sourcemap: true,
     },
@@ -43,6 +43,7 @@ export default [
     input: "pyodide.umd",
     output: "build/pyodide.js",
     format: "umd",
+    name: "loadPyodide",
     minify: true,
   },
   {

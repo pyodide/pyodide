@@ -3,21 +3,15 @@
  *
  * @private
  */
-
-declare var Module: any;
-declare var Hiwire: any;
-declare var Tests: any;
-declare var API: any;
-
-Module.noImageDecoding = true;
-Module.noAudioDecoding = true;
-Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
-Module.preloadedWasm = {};
-Module.preRun = [];
-
-Module.hiwire = Hiwire;
-// Put things that are exposed only for testing purposes here.
-API.tests = Tests;
+export function createModule(): any {
+  let Module: any = {};
+  Module.noImageDecoding = true;
+  Module.noAudioDecoding = true;
+  Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
+  Module.preloadedWasm = {};
+  Module.preRun = [];
+  return Module;
+}
 
 /**
  *
@@ -26,7 +20,8 @@ API.tests = Tests;
  * @param stderr
  * @private
  */
-function setStandardStreams(
+export function setStandardStreams(
+  Module: any,
   stdin?: () => string,
   stdout?: (a: string) => void,
   stderr?: (a: string) => void
@@ -100,7 +95,7 @@ function createStdinWrapper(stdin: () => string) {
  * @param path
  * @private
  */
-export function setHomeDirectory(path: string) {
+export function setHomeDirectory(Module: any, path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {
@@ -115,10 +110,3 @@ export function setHomeDirectory(path: string) {
     Module.FS.chdir(path);
   });
 }
-
-setStandardStreams(
-  Module.config.stdin,
-  Module.config.stdout,
-  Module.config.stderr
-);
-setHomeDirectory(Module.config.homedir);

@@ -1,6 +1,7 @@
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
+import "./module.ts";
 
 import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
