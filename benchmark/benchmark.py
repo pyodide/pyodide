@@ -137,7 +137,7 @@ def parse_args(benchmarks):
     parser.add_argument(
         "-o",
         "--output",
-        default="build/benchmarks.json",
+        default="dist/benchmarks.json",
         help="path to the json file where benchmark results will be saved",
     )
     parser.add_argument(
