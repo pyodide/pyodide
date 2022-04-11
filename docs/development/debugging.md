@@ -155,7 +155,7 @@ in this case.
 
 If you are debugging and run into the dreaded `;; text is truncated due to size`
 error message, the solution is to compile a modified version of Chrome devtools
-with a larger wasm size cap. Surprisingly,g this is not actually all that hard.
+with a larger wasm size cap. Surprisingly, this is not actually all that hard.
 
 These instructions are adapted from here:
 https://www.diverto.hr/en/blog/2020-08-15-WebAssembly-limit/
