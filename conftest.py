@@ -20,7 +20,7 @@ import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
-BUILD_PATH = ROOT_PATH / "build"
+DIST_PATH = ROOT_PATH / "dist"
 
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
@@ -31,10 +31,10 @@ from pyodide_build.testing import parse_driver_timeout, set_webdriver_script_tim
 def pytest_addoption(parser):
     group = parser.getgroup("general")
     group.addoption(
-        "--build-dir",
+        "--dist-dir",
         action="store",
-        default=BUILD_PATH,
-        help="Path to the build directory",
+        default=DIST_PATH,
+        help="Path to the dist directory",
     )
     group.addoption(
         "--run-xfail",
@@ -76,7 +76,7 @@ def pytest_collection_modifyitems(config, items):
 @functools.cache
 def built_packages() -> list[str]:
     """Returns the list of built package names from packages.json"""
-    packages_json_path = BUILD_PATH / "packages.json"
+    packages_json_path = DIST_PATH / "packages.json"
     if not packages_json_path.exists():
         return []
     return list(json.loads(packages_json_path.read_text())["packages"].keys())
@@ -385,7 +385,7 @@ class NodeWrapper(SeleniumWrapper):
     browser = "node"
 
     def init_node(self):
-        os.chdir("build")
+        os.chdir("dist")
         self.p = pexpect.spawn(
             f"node --expose-gc --experimental-wasm-bigint ../tools/node_test_driver.js {self.base_url}",
             timeout=60,
@@ -704,15 +704,15 @@ def selenium(request, selenium_module_scope):
 
 @pytest.fixture(scope="session")
 def web_server_main(request):
-    """Web server that serves files in the build/ directory"""
-    with spawn_web_server(request.config.option.build_dir) as output:
+    """Web server that serves files in the dist/ directory"""
+    with spawn_web_server(request.config.option.dist_dir) as output:
         yield output
 
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
-    """Secondary web server that serves files build/ directory"""
-    with spawn_web_server(request.config.option.build_dir) as output:
+    """Secondary web server that serves files dist/ directory"""
+    with spawn_web_server(request.config.option.dist_dir) as output:
         yield output
 
 
@@ -724,15 +724,15 @@ def web_server_tst_data(request):
 
 
 @contextlib.contextmanager
-def spawn_web_server(build_dir=None):
+def spawn_web_server(dist_dir=None):
 
-    if build_dir is None:
-        build_dir = BUILD_PATH
+    if dist_dir is None:
+        dist_dir = DIST_PATH
 
     tmp_dir = tempfile.mkdtemp()
     log_path = pathlib.Path(tmp_dir) / "http-server.log"
     q: multiprocessing.Queue[str] = multiprocessing.Queue()
-    p = multiprocessing.Process(target=run_web_server, args=(q, log_path, build_dir))
+    p = multiprocessing.Process(target=run_web_server, args=(q, log_path, dist_dir))
 
     try:
         p.start()
@@ -750,7 +750,7 @@ def spawn_web_server(build_dir=None):
         shutil.rmtree(tmp_dir)
 
 
-def run_web_server(q, log_filepath, build_dir):
+def run_web_server(q, log_filepath, dist_dir):
     """Start the HTTP web server
 
     Parameters
@@ -763,7 +763,7 @@ def run_web_server(q, log_filepath, build_dir):
     import http.server
     import socketserver
 
-    os.chdir(build_dir)
+    os.chdir(dist_dir)
 
     log_fh = log_filepath.open("w", buffering=1)
     sys.stdout = log_fh
