@@ -705,14 +705,14 @@ def selenium(request, selenium_module_scope):
 @pytest.fixture(scope="session")
 def web_server_main(request):
     """Web server that serves files in the dist/ directory"""
-    with spawn_web_server(request.config.option.build_dir) as output:
+    with spawn_web_server(request.config.option.dist_dir) as output:
         yield output
 
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
     """Secondary web server that serves files dist/ directory"""
-    with spawn_web_server(request.config.option.build_dir) as output:
+    with spawn_web_server(request.config.option.dist_dir) as output:
         yield output
 
 
@@ -724,15 +724,15 @@ def web_server_tst_data(request):
 
 
 @contextlib.contextmanager
-def spawn_web_server(build_dir=None):
+def spawn_web_server(dist_dir=None):
 
-    if build_dir is None:
-        build_dir = DIST_PATH
+    if dist_dir is None:
+        dist_dir = DIST_PATH
 
     tmp_dir = tempfile.mkdtemp()
     log_path = pathlib.Path(tmp_dir) / "http-server.log"
     q: multiprocessing.Queue[str] = multiprocessing.Queue()
-    p = multiprocessing.Process(target=run_web_server, args=(q, log_path, build_dir))
+    p = multiprocessing.Process(target=run_web_server, args=(q, log_path, dist_dir))
 
     try:
         p.start()
@@ -750,7 +750,7 @@ def spawn_web_server(build_dir=None):
         shutil.rmtree(tmp_dir)
 
 
-def run_web_server(q, log_filepath, build_dir):
+def run_web_server(q, log_filepath, dist_dir):
     """Start the HTTP web server
 
     Parameters
@@ -763,7 +763,7 @@ def run_web_server(q, log_filepath, build_dir):
     import http.server
     import socketserver
 
-    os.chdir(build_dir)
+    os.chdir(dist_dir)
 
     log_fh = log_filepath.open("w", buffering=1)
     sys.stdout = log_fh
