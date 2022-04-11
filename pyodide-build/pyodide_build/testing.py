@@ -5,10 +5,6 @@ from typing import Callable, Collection
 
 import pytest
 
-from .common import get_pyversion
-
-PYVERSION = get_pyversion()
-
 
 def _run_in_pyodide_get_source(f):
     lines, start_line = inspect.getsourcelines(f)

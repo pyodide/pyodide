@@ -27,10 +27,8 @@ from collections import namedtuple
 from pathlib import Path, PurePosixPath
 from typing import Any, MutableMapping, NoReturn, overload
 
-# absolute import is necessary as this file will be symlinked
-# under tools
-from . import common
-from ._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
+from pyodide_build import common
+from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
@@ -147,13 +145,26 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     new_args = ["gcc"]
     found_source = False
     for arg in args[1:]:
-        if arg.endswith(".f"):
-            filename = os.path.abspath(arg)
+        if arg.endswith(".f") or arg.endswith(".F"):
+            filepath = Path(arg).resolve()
             if not dryrun:
                 fix_f2c_input(arg)
-                subprocess.check_call(
-                    ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
-                )
+                if arg.endswith(".F"):
+                    # .F files apparently expect to be run through the C
+                    # preprocessor (they have #ifdef's in them)
+                    subprocess.check_call(
+                        [
+                            "gcc",
+                            "-E",
+                            "-C",
+                            "-P",
+                            filepath,
+                            "-o",
+                            filepath.with_suffix(".f"),
+                        ]
+                    )
+                    filepath = filepath.with_suffix(".f")
+                subprocess.check_call(["f2c", filepath.name], cwd=filepath.parent)
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True

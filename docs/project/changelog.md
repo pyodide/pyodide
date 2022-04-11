@@ -12,7 +12,20 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.20.0
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
+
+### CPython and stdlib
+
+- {{ Update }} Pyodide now runs Python 3.10.2.
+  {pr}`2225`
+
+- {{ Enhancement }} All
+  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
+  a plan to fix `test_callback_too_many_args` upstream). `libffi-emscripten`
+  now also passes all libffi tests.
+  {pr}`2350`
 
 ### Packages
 
@@ -21,8 +34,6 @@ substitutions:
 - New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
   standard library ssl module {pr}`2263`, python-solvespace v3.0.7,
   lazy-object-proxy {pr}`2320`.
-
-- Upgraded packages: distlib (0.3.4), lxml (4.8.0) {pr}`2239`, astropy (5.0.2)
 
 - Many more scipy linking errors were fixed, mostly related to the Fortran f2c
   ABI for string arguments. There are still some fatal errors in the Scipy test
@@ -33,27 +44,72 @@ substitutions:
   {any}`setInterruptBuffer <pyodide.setInterruptBuffer>` instead.
   {pr}`2309`
 
-### Uncategorized
+- Most included packages were updated to the latest version. See
+  {ref}`packages-in-pyodide` for a full list.
 
-- {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
-  {pr}`2220`
-
-- {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
-  rather than the emscripten `file_packager.py` format.
-  {pr}`2027`
+### Type translations
 
 - {{Fix}} Python tracebacks now include Javascript frames when Python calls a
   Javascript function.
   {pr}`2123`
-
-- {{Enhancement}} The Javascript package was migrated to Typescript.
-  {pr}`2130` and {pr}`2133`
 
 - {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
   a built-in conversion to Python. Also added a `default_converter` argument to
   {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
   {pr}`2170` and {pr}`2208`
+
+- {{ Enhancement }} Async Python functions called from Javascript now have the
+  resulting coroutine automatically scheduled. For instance, this makes it
+  possible to use an async Python function as a Javascript event handler.
+  {pr}`2319`
+
+### Javascript package
+
+- {{Enhancement}} It is no longer necessary to provide `indexURL` to
+  {any}`loadPyodide <globalThis.loadPyodide>`.
+  {pr}`2292`
+
+- {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
+  and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
+  argument. The old usage still works with a deprecation warning.
+  {pr}`2300`
+
+- {{Enhancement}} The Javascript package was migrated to Typescript.
+  {pr}`2130` and {pr}`2133`
+
+- {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
+  {pr}`2220`
+
+- {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
+  {any}`loadPyodide <globalThis.loadPyodide>` variable is created (instead, it
+  should be accessed as an attribute on the module).
+  {pr}`2249`
+
+- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
+  accurate. For backwards compatibility, we still export `Py2JsResult` as an
+  alias for `any`.
+  {pr}`2277`
+
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
+- {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
+  Javascript code. This mostly should never happen since well behaved Javascript
+  code ought to throw errors. But it's better not to completely crash if it
+  throws something else.
+  {pr}`2294`
+
+### pyodide_build
+
+- {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
+  rather than the emscripten `file_packager.py` format.
+  {pr}`2027`
+
+- {{Enhancement}} Pyodide now uses `pypa/build` to build packages. We (mostly)
+  use build isolation, so we can build packages that require conflicting
+  versions of setuptools or alternative build backends.
+  {pr}`2272`
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
@@ -65,35 +121,11 @@ substitutions:
   way.
   {pr}`2178`
 
-- {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
-  {any}`loadPyodide <globalThis.loadPyodide>` variable is created (instead, it
-  should be accessed as an attribute on the module).
-  {pr}`2249`
-
 - {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
   needed, install a host copy of the package with pip instead.
   {pr}`2256`
 
-- {{ Update }} Pyodide now runs Python 3.10.2.
-  {pr}`2225`
-
-- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
-  accurate. For backwards compatibility, we still export `Py2JsResult` as an
-  alias for `any`.
-  {pr}`2277`
-
-- {{Fix}} Pyodide now loads correctly even if requirejs is included.
-  {pr}`2283`
-
-- {{Enhancement}} It is no longer necessary to provide `indexURL` to
-  {any}`loadPyodide <globalThis.loadPyodide>`.
-  {pr}`2292`
-
-- {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
-  Javascript code. This mostly should never happen since well behaved Javascript
-  code ought to throw errors. But it's better not to completely crash if it
-  throws something else.
-  {pr}`2294`
+### Uncategorized
 
 - {{ Enhancement }} The interrupt buffer can be used to raise all 64 signals
   now, not just `SIGINT`. Write a number between `1<= signum <= 64` into the
@@ -101,11 +133,6 @@ substitutions:
   but `SIGINT` will be ignored. Any value written into the interrupt buffer
   outside of the range from 1 to 64 will be silently discarded.
   {pr}`2301`
-
-- {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
-  and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
-  argument. The old usage still works with a deprecation warning.
-  {pr}`2300`
 
 - {{ Enhancement }} Updated to Emscripten 2.0.27.
   {pr}`2295`
@@ -115,18 +142,18 @@ substitutions:
   The old usage still works with a deprecation warning.
   {pr}`2300`
 
-- {{ Enhancement }} Async Python functions called from Javascript now have the
-  resulting coroutine automatically scheduled. For instance, this makes it
-  possible to use an async Python function as a Javascript event handler.
-  {pr}`2319`
-
-- {{ Enhancement }} `libffi-emscripten` now passes all libffi tests. All
-  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
-  a plan to fix `test_callback_too_many_args` upstream).
-  {pr}`2350`
-
 - {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
   {pr}`2345`
+
+- {{ Fix }} `pyodide_build` can now be installed in non-editable ways.
+  {pr}`2351`
+
+### List of contributors
+
+Boris Feld, Christian Staudt, Gabriel Fougeron, Gyeongjae Choi, Henry Schreiner,
+Hood Chatham, Jo Bovy, Karthikeyan Singaravelan, Leo Psidom, Liumeo, Luka
+Mamukashvili, Madhur Tandon, Paul Korzhyk, Roman Yurchak, Seungmin Kim, Thorsten
+Beier, Tom White, and Will Lachance
 
 ## Version 0.19.1
 
@@ -163,6 +190,8 @@ Yurchak, Seungmin Kim, Thorsten Beier
 ## Version 0.19.0
 
 _January 10, 2021_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.19-release/)
 
 ### Python package
 

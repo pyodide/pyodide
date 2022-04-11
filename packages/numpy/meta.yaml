@@ -31,7 +31,7 @@ build:
     # from the build computer and bad things will happen
     export NUMPY_CORE_INCLUDE=numpy/core/include/numpy
     cp \
-      build/numpy-$PKG_VERSION/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
+      $PKG_BUILD_DIR/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
       $HOSTSITEPACKAGES/$NUMPY_CORE_INCLUDE
     # static libraries for other packages to link
     mkdir -p $NUMPY_LIB

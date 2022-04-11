@@ -10,7 +10,7 @@ Pyodide packages, including the `pyodide.js` file, are available from the JsDeli
 
 | channel             | indexURL                                         | Comments                                                                                 | REPL                                               |
 | ------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Latest release      | `https://cdn.jsdelivr.net/pyodide/v0.19.0/full/` | Recommended, cached by the browser                                                       | [link](https://pyodide.org/en/stable/console.html) |
+| Latest release      | `https://cdn.jsdelivr.net/pyodide/v0.20.0/full/` | Recommended, cached by the browser                                                       | [link](https://pyodide.org/en/stable/console.html) |
 | Dev (`main` branch) | `https://cdn.jsdelivr.net/pyodide/dev/full/`     | Re-deployed for each commit on main, no browser caching, should only be used for testing | [link](https://pyodide.org/en/latest/console.html) |
 
 To access a particular file, append the file name to `indexURL`. For instance,

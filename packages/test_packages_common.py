@@ -3,9 +3,8 @@ import os
 
 import pytest
 
-from conftest import ROOT_PATH, built_packages
+from conftest import ROOT_PATH, _package_is_built
 from pyodide_build.io import parse_package_config
-from pyodide_build.testing import PYVERSION
 
 PKG_DIR = ROOT_PATH / "packages"
 
@@ -45,7 +44,7 @@ def test_parse_package(name):
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    if name not in built_packages():
+    if not _package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"
@@ -60,12 +59,12 @@ def test_import(name, selenium_standalone):
             )
         )
 
-    selenium_standalone.run("import glob, os")
+    selenium_standalone.run("import glob, os, site")
 
     baseline_pyc = selenium_standalone.run(
-        f"""
+        """
         len(list(glob.glob(
-            '/lib/{PYVERSION}/site-packages/**/*.pyc',
+            site.getsitepackages()[0] + '/**/*.pyc',
             recursive=True)
         ))
         """
@@ -76,9 +75,9 @@ def test_import(name, selenium_standalone):
         # files
         assert (
             selenium_standalone.run(
-                f"""
+                """
                 len(list(glob.glob(
-                    '/lib/{PYVERSION}/site-packages/**/*.pyc',
+                    site.getsitepackages()[0] + '/**/*.pyc',
                     recursive=True)
                 ))
                 """
@@ -88,9 +87,9 @@ def test_import(name, selenium_standalone):
         # Make sure no exe files were loaded!
         assert (
             selenium_standalone.run(
-                f"""
+                """
                 len(list(glob.glob(
-                    '/lib/{PYVERSION}/site-packages/**/*.exe',
+                    site.getsitepackages()[0] + '/**/*.exe',
                     recursive=True)
                 ))
                 """
