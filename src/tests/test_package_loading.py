@@ -3,15 +3,15 @@ from pathlib import Path
 
 import pytest
 
-from conftest import BUILD_PATH
+from conftest import DIST_PATH
 
 
 def get_pyparsing_wheel_name():
-    return list(BUILD_PATH.glob("pyparsing*.whl"))[0].name
+    return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
 
 
 def get_pytz_wheel_name():
-    return list(BUILD_PATH.glob("pytz*.whl"))[0].name
+    return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
@@ -159,17 +159,17 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    build_dir = Path(__file__).parents[2] / "build"
+    dist_dir = Path(__file__).parents[2] / "dist"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
-        build_dir / pyparsing_wheel_name,
-        build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
+        dist_dir / pyparsing_wheel_name,
+        dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
     )
 
     try:
         selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
-        (build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
+        (dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
     assert selenium_standalone.run_js(
         "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
@@ -265,14 +265,14 @@ def test_test_unvendoring(selenium_standalone):
 
 
 def test_install_archive(selenium):
-    build_dir = Path(__file__).parents[2] / "build"
+    dist_dir = Path(__file__).parents[2] / "dist"
     test_dir = Path(__file__).parent
     # TODO: first argument actually works as a path due to implementation,
     # maybe it can be proposed to typeshed?
     shutil.make_archive(
         str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
-    build_test_pkg = build_dir / "test_pkg.tar.gz"
+    build_test_pkg = dist_dir / "test_pkg.tar.gz"
     if not build_test_pkg.exists():
         build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
@@ -303,7 +303,7 @@ def test_install_archive(selenium):
                 """
             )
     finally:
-        (build_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+        (dist_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
