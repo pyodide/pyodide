@@ -52,12 +52,12 @@ To run tests manually:
 
 1. Build Pyodide, perhaps in the docker image
 
-2. From outside of the docker image, `cd` into the `dist` directory and run `python -m http.server`.
+2. From outside of the docker image, `cd` into the `dist` directory and run
+   `python -m http.server`.
 
 3. Once the webserver is running, simple interactive testing can be run by
-   visiting the URL:
-   `http://localhost:<PORT>/console.html`
-   It's recommended to use `pyodide.runPython` in the browser console rather than using the repl.
+   visiting the URL: `http://localhost:<PORT>/console.html`. It's recommended to
+   use `pyodide.runPython` in the browser console rather than using the repl.
 
 ## Benchmarking
 
