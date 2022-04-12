@@ -35,13 +35,13 @@ function config({ input, output, name, format, minify }) {
 export default [
   {
     input: "pyodide",
-    output: "build/pyodide.mjs",
+    output: "dist/pyodide.mjs",
     format: "esm",
     minify: true,
   },
   {
     input: "pyodide.umd",
-    output: "build/pyodide.js",
+    output: "dist/pyodide.js",
     format: "umd",
     name: "loadPyodide",
     minify: true,
