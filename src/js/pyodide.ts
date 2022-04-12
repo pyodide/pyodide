@@ -3,7 +3,12 @@
  */
 import ErrorStackParser from "error-stack-parser";
 import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
+import {
+  loadScript,
+  _loadBinaryFile,
+  initNodeModules,
+  IN_NODE,
+} from "./compat.js";
 import { initializePackageIndex, loadPackage } from "./load-package.js";
 import { makePublicAPI, PyodideInterface } from "./api.js";
 import "./error_handling.gen.js";
@@ -175,7 +180,10 @@ function calculateIndexURL(): string {
   } catch (e) {
     err = e;
   }
-  const fileName = ErrorStackParser.parse(err)[0].fileName!;
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
+  if (IN_NODE && fileName.startsWith("file://")) {
+    fileName = fileName.slice("file://".length);
+  }
   return fileName.slice(0, fileName.lastIndexOf("/"));
 }
 
