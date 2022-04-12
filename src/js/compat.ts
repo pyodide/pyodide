@@ -35,6 +35,22 @@ export async function initNodeModules() {
   nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
   // @ts-ignore
   nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
+  if (typeof require !== "undefined") {
+    return;
+  }
+  const fs = await import(/* webpackIgnore: true */ "fs");
+  const crypto = await import(/* webpackIgnore: true */ "crypto");
+  const ws = await import(/* webpackIgnore: true */ "ws");
+  const child_process = await import(/* webpackIgnore: true */ "child_process");
+  const node_modules: { [mode: string]: any } = {
+    fs,
+    crypto,
+    ws,
+    child_process,
+  };
+  (globalThis as any).require = function (mod: string): any {
+    return node_modules[mod];
+  };
 }
 
 /**
