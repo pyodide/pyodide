@@ -6,6 +6,7 @@ source:
   sha256: 951b4cf3858dc337bbfa9f6d9efe9fd6e8dfa7fed022556196add1ba5a56b045
 build:
   script: |
+    pip install -t $HOSTSITEPACKAGES cython
     wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz && tar -zxvf eigen-3.4.0.tar.gz
     cp -rn eigen-3.4.0/Eigen python_solvespace/include
 test:

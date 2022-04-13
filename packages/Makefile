@@ -10,7 +10,7 @@ endif
 
 all: pyodide-build
 	mkdir -p $(HOSTINSTALLDIR)
-	PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build buildall . $(PYODIDE_ROOT)/build \
+	PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build buildall . $(PYODIDE_ROOT)/dist \
 	$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs
 

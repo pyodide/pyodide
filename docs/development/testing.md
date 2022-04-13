@@ -35,40 +35,29 @@ There are 3 test locations that are collected by pytest,
 
 To run tests on the JavaScript Pyodide package using Mocha, run the following commands,
 
-```
+```sh
 cd src/js
 npm test
 ```
 
 To check TypeScript type definitions run,
 
-```
+```sh
 npx tsd
 ```
 
 ### Manual interactive testing
 
-To run manual interactive tests, a docker environment and a webserver will be
-used.
+To run tests manually:
 
-1. Bind port 8000 for testing. To automatically bind port 8000 of the docker
-   environment and the host system, run: `./run_docker`
+1. Build Pyodide, perhaps in the docker image
 
-2. Now, this can be used to test the Pyodide builds running within the
-   docker environment using external browser programs on the host system. To do
-   this, run: `pyodide-build serve`
+2. From outside of the docker image, `cd` into the `dist` directory and run
+   `python -m http.server`.
 
-3. This serves the `build` directory of the Pyodide project on port 8000.
-
-   - To serve a different directory, use the `--build_dir` argument followed
-     by the path of the directory.
-   - To serve on a different port, use the `--port` argument followed by the
-     desired port number. Make sure that the port passed in `--port` argument
-     is same as the one defined as `DOCKER_PORT` in the `run_docker` script.
-
-4. Once the webserver is running, simple interactive testing can be run by
-   visiting this URL:
-   [http://localhost:8000/console.html](http://localhost:8000/console.html)
+3. Once the webserver is running, simple interactive testing can be run by
+   visiting the URL: `http://localhost:<PORT>/console.html`. It's recommended to
+   use `pyodide.runPython` in the browser console rather than using the repl.
 
 ## Benchmarking
 
