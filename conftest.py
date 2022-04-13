@@ -393,7 +393,7 @@ class NodeWrapper(SeleniumWrapper):
         # See: https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
         self.p.sendline("stty -icanon")
         self.p.sendline(
-            f"node --expose-gc ../tools/node_test_driver.js {self.base_url}"
+            f"node --expose-gc --experimental-wasm-bigint ../tools/node_test_driver.js {self.base_url}"
         )
         os.chdir("..")
 
