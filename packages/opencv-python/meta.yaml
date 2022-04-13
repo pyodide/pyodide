@@ -22,6 +22,7 @@ requirements:
   run:
     - numpy
     - ffmpeg
+    - libwebp
 build:
   cxxflags: |
     -fPIC
@@ -47,11 +48,14 @@ build:
 
   script: |
     pip install scikit-build
+    # TODO: remove this line after update (https://github.com/opencv/opencv-python/issues/648)
+    sed -i "s/cmake_install_dir=cmake_install_reldir/_cmake_install_dir=cmake_install_reldir/" setup.py
 
     export VERBOSE=1
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
     export EMSCRIPTEN="$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten/"
     export FFMPEG_ROOT="$PYODIDE_ROOT/packages/ffmpeg/build/ffmpeg-4.4.1/lib"
+    export LIBWEBP_ROOT="$PYODIDE_ROOT/packages/libwebp/build/libwebp-1.2.2/build/lib"
 
     export CMAKE_ARGS=" \
     -DCMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/opencv-python/cmake/Config.cmake \
@@ -65,6 +69,9 @@ build:
     -DWITH_JPEG=ON \
     -DWITH_PNG=ON \
     -DWITH_WEBP=ON \
+    -DBUILD_WEBP=OFF \
+    -DWEBP_INCLUDE_DIR=$LIBWEBP_ROOT/include \
+    -DWEBP_LIBRARY=$LIBWEBP_ROOT/lib/libwebp.a \
     \
     -DBUILD_opencv_python3=ON \
     -DBUILD_opencv_world=ON \
