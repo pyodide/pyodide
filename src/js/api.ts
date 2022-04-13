@@ -344,14 +344,14 @@ let unpackArchivePositionalExtractDirDeprecationWarned = false;
  * 'tgz' are considered to be synonyms.
  *
  * @param options
- * @param options.extract_dir The directory to unpack the archive into. Defaults
+ * @param options.extractDir The directory to unpack the archive into. Defaults
  * to the working directory.
  */
 export function unpackArchive(
   buffer: TypedArray,
   format: string,
   options: {
-    extract_dir?: string;
+    extractDir?: string;
   } = {}
 ) {
   if (typeof options === "string") {
@@ -361,9 +361,9 @@ export function unpackArchive(
       );
       unpackArchivePositionalExtractDirDeprecationWarned = true;
     }
-    options = { extract_dir: options };
+    options = { extractDir: options };
   }
-  let extract_dir = options.extract_dir;
+  let extract_dir = options.extractDir;
   API.package_loader.unpack_buffer.callKwargs({
     buffer,
     format,
@@ -402,8 +402,8 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * purpose you like.
  */
 export function setInterruptBuffer(interrupt_buffer: TypedArray) {
-  API.interrupt_buffer = interrupt_buffer;
-  Module._set_pyodide_callback(!!interrupt_buffer);
+  Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = !!interrupt_buffer;
+  Module.Py_EmscriptenSignalBuffer = interrupt_buffer;
 }
 
 /**
@@ -415,10 +415,8 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
  * during execution of C code.
  */
 export function checkInterrupt() {
-  if (API.interrupt_buffer[0] === 2) {
-    API.interrupt_buffer[0] = 0;
-    Module._PyErr_SetInterrupt();
-    API.runPython("");
+  if (Module.__PyErr_CheckSignals()) {
+    Module._pythonexc2js();
   }
 }
 

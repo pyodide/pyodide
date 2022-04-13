@@ -710,8 +710,7 @@ JsProxy_toPy(PyObject* self,
   static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
   int depth = -1;
   PyObject* default_converter = NULL;
-  if (kwnames != NULL &&
-      !_PyArg_ParseStackAndKeywords(
+  if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
@@ -1643,7 +1642,7 @@ finally:
 }
 
 static PyObject*
-JsBuffer_tomemoryview(PyObject* buffer)
+JsBuffer_tomemoryview(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoMemoryView(
@@ -1657,7 +1656,7 @@ static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_tobytes(PyObject* buffer)
+JsBuffer_tobytes(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoBytes(self->js, self->byteLength);

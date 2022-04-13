@@ -6,7 +6,7 @@ import pytest
 
 from pyodide_build import buildall
 
-PACKAGES_DIR = (Path(__file__).parents[3] / "packages").resolve()
+PACKAGES_DIR = Path(__file__).parent / "_test_packages"
 
 
 def test_generate_dependency_graph():
@@ -23,9 +23,7 @@ def test_generate_dependency_graph():
 
 
 def test_generate_packages_json():
-    pkg_map = buildall.generate_dependency_graph(
-        PACKAGES_DIR, {"beautifulsoup4", "micropip"}
-    )
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".file"
 
@@ -33,19 +31,18 @@ def test_generate_packages_json():
     assert set(package_data.keys()) == {"info", "packages"}
     assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
     assert set(package_data["packages"]) == {
-        "distutils",
-        "pyparsing",
-        "packaging",
-        "soupsieve",
-        "beautifulsoup4",
-        "micropip",
+        "pkg_1",
+        "pkg_1_1",
+        "pkg_2",
+        "pkg_3",
+        "pkg_3_1",
     }
-    assert package_data["packages"]["micropip"] == {
-        "name": "micropip",
-        "version": "0.1",
-        "file_name": "micropip.file",
-        "depends": ["pyparsing", "packaging", "distutils"],
-        "imports": ["micropip"],
+    assert package_data["packages"]["pkg_1"] == {
+        "name": "pkg_1",
+        "version": "1.0.0",
+        "file_name": "pkg_1.file",
+        "depends": ["pkg_1_1", "pkg_3"],
+        "imports": ["pkg_1"],
         "install_dir": "site",
     }
 
@@ -60,7 +57,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"lxml", "micropip"})
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
 
     Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
@@ -68,24 +65,15 @@ def test_build_dependencies(n_jobs, monkeypatch):
     )
 
     assert set(build_list) == {
-        "packaging",
-        "pyparsing",
-        "soupsieve",
-        "beautifulsoup4",
-        "micropip",
-        "webencodings",
-        "html5lib",
-        "cssselect",
-        "lxml",
-        "libxslt",
-        "libxml",
-        "zlib",
-        "libiconv",
-        "six",
+        "pkg_1",
+        "pkg_1_1",
+        "pkg_2",
+        "pkg_3",
+        "pkg_3_1",
     }
-    assert build_list.index("pyparsing") < build_list.index("packaging")
-    assert build_list.index("packaging") < build_list.index("micropip")
-    assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
+    assert build_list.index("pkg_1_1") < build_list.index("pkg_1")
+    assert build_list.index("pkg_3") < build_list.index("pkg_1")
+    assert build_list.index("pkg_3_1") < build_list.index("pkg_3")
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
@@ -121,7 +109,7 @@ def test_build_error(n_jobs, monkeypatch):
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"lxml"})
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1"})
 
     with pytest.raises(ValueError, match="Failed build"):
         Args = namedtuple("Args", ["n_jobs", "force_rebuild"])

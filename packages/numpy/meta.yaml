@@ -1,26 +1,26 @@
 package:
   name: numpy
-  version: 1.21.4
+  version: 1.22.3
 
 source:
-  url: https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip
-  sha256: e6c76a87633aa3fa16614b61ccedfae45b91df2767cf097aa9c933932a7ed1e0
+  url: https://files.pythonhosted.org/packages/64/4a/b008d1f8a7b9f5206ecf70a53f84e654707e7616a771d84c05151a4713e9/numpy-1.22.3.zip
+  sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
 
   patches:
-    - patches/disable-maybe-uninitialized.patch
-    - patches/dont-include-execinfo.patch
-    - patches/fix-longdouble.patch
-    - patches/fix-static-init-of-nditer-pywrap.patch
-    - patches/init-alloc-cache.patch
-    - patches/use-local-blas-lapack.patch
-    - patches/make-int-return-values.patch
-    - patches/fix-ieee754.patch
-    - patches/disable-optimization.patch
-    - patches/not-build-lapack-lite-as-64-bit.patch
-    - patches/fix-invalid-asm-instruction.patch
-    - patches/fix-comparator-function-signatures.patch
-    - patches/fix-random_float_fill-return-type.patch
-    - patches/fix-math-feature-detection-for-wasm.patch
+    - patches/0001-disable-maybe-uninitialized.patch
+    - patches/0002-disable-optimization.patch
+    - patches/0003-dont-include-execinfo.patch
+    - patches/0004-Fix-ieee754.patch
+    - patches/0005-fix-longdouble.patch
+    - patches/0006-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
+    - patches/0007-BUG-Fix-the-return-type-of-random_float_fill.patch
+    - patches/0008-fix-static-init-of-nditer-pywrap.patch
+    - patches/0009-init-alloc-cache.patch
+    - patches/0010-make-int-return-values.patch
+    - patches/0011-not-build-lapack-lite-as-64-bit.patch
+    - patches/0012-use-local-blas-lapack.patch
+    - patches/0013-fix-invalid-asm-instruction.patch
+    - patches/0014-disable-svml.patch
 
 build:
   cflags: |
@@ -31,7 +31,7 @@ build:
     # from the build computer and bad things will happen
     export NUMPY_CORE_INCLUDE=numpy/core/include/numpy
     cp \
-      build/numpy-$PKG_VERSION/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
+      $PKG_BUILD_DIR/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
       $HOSTSITEPACKAGES/$NUMPY_CORE_INCLUDE
     # static libraries for other packages to link
     mkdir -p $NUMPY_LIB

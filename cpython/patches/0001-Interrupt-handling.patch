@@ -1,0 +1,113 @@
+From a59b6694ff9b216b5632079522a47df46c464b9b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 30 Mar 2022 14:50:30 -0700
+Subject: [PATCH] Interrupt handling
+
+---
+ Modules/signalmodule.c | 38 ++++++++++++++++++++++++++++++++++++++
+ Python/ceval.c         | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 66 insertions(+)
+
+diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
+index 96881d4a49..1926f650b6 100644
+--- a/Modules/signalmodule.c
++++ b/Modules/signalmodule.c
+@@ -1768,11 +1768,49 @@ PyErr_CheckSignals(void)
+     return _PyErr_CheckSignalsTstate(tstate);
+ }
+ 
++#if defined(__EMSCRIPTEN__)
++
++#include <emscripten.h>
++EM_JS(int, _Py_CheckEmscriptenSignals_Helper, (void), {
++    if (!Module.Py_EmscriptenSignalBuffer) {
++        return 0;
++    }
++    try {
++        let result = Module.Py_EmscriptenSignalBuffer[0];
++        Module.Py_EmscriptenSignalBuffer[0] = 0;
++        return result;
++    } catch(e) {
++#if !defined(NDEBUG)
++        console.warn("Error occurred while trying to read signal buffer:", e);
++#endif
++        return 0;
++    }
++});
++
++EMSCRIPTEN_KEEPALIVE int Py_EMSCRIPTEN_SIGNAL_HANDLING = 0;
++
++void
++_Py_CheckEmscriptenSignals(void)
++{
++    if (!Py_EMSCRIPTEN_SIGNAL_HANDLING) {
++        return;
++    }
++    int signal = _Py_CheckEmscriptenSignals_Helper();
++    if (signal) {
++        PyErr_SetInterruptEx(signal);
++    }
++}
++
++#endif
+ 
+ /* Declared in cpython/pyerrors.h */
+ int
+ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
+ {
++    #if defined(__EMSCRIPTEN__)
++    _Py_CheckEmscriptenSignals();
++    #endif
++
+     if (!_Py_atomic_load(&is_tripped)) {
+         return 0;
+     }
+diff --git a/Python/ceval.c b/Python/ceval.c
+index ab10b4166d..5ed67ee398 100644
+--- a/Python/ceval.c
++++ b/Python/ceval.c
+@@ -1152,6 +1152,30 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
+     return _PyEval_EvalFrame(tstate, f, throwflag);
+ }
+ 
++#if defined(__EMSCRIPTEN__)
++
++extern int Py_EMSCRIPTEN_SIGNAL_HANDLING;
++void _Py_CheckEmscriptenSignals(void);
++
++#define PY_EMSCRIPTEN_SIGNAL_INTERVAL 50
++
++static int
++emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
++
++static void
++_Py_CheckEmscriptenSignalsPeriodically()
++{
++    if (!Py_EMSCRIPTEN_SIGNAL_HANDLING) {
++        return;
++    }
++    emscripten_signal_clock--;
++    if (emscripten_signal_clock == 0) {
++        emscripten_signal_clock = PY_EMSCRIPTEN_SIGNAL_INTERVAL;
++        _Py_CheckEmscriptenSignals();
++    }
++}
++
++#endif
+ 
+ /* Handle signals, pending calls, GIL drop request
+    and asynchronous exception */
+@@ -1742,6 +1766,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
+         assert(!_PyErr_Occurred(tstate));
+ 
++        #if defined(__EMSCRIPTEN__)
++        _Py_CheckEmscriptenSignalsPeriodically();
++        #endif
++
+         /* Do periodic things.  Doing this every time through
+            the loop would add too much overhead, so we do it
+            only every Nth instruction.  We also do it if
+-- 
+2.25.1
+

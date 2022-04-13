@@ -1,8 +1,25 @@
 [tool.mypy]
-warn_unused_configs = true
 python_version = "3.10"
-mypy_path = "src/py"
+mypy_path = ["src/py", "pyodide-build"]
+show_error_codes = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+# Strict checks
+warn_unused_configs = true
 check_untyped_defs = true
+disallow_any_generics = false
+disallow_subclassing_any = false
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = false
+no_implicit_reexport = false
+strict_equality = false
 
 [[tool.mypy.overrides]]
 module = [
@@ -12,6 +29,8 @@ module = [
   "pyodide_js",
   "pytest",
   "ruamel.yaml",
+  "matplotlib.*",
+  "PIL.*",
 ]
 ignore_missing_imports = true
 
@@ -36,3 +55,5 @@ known_first_party = [
 known_third_party = [
   "build",
 ]
+
+[tool.pyodide]

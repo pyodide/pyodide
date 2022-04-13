@@ -14,7 +14,7 @@ deprecation warnings. More details about each item can often be found in the
 
 - The `globals` argument to `runPython` and `runPythonAsync` will be passed as a
   named argument only.
-- The `extract_dir` argument to `unpackArchive` will be passed as a named
+- The `extractDir` argument to `unpackArchive` will be passed as a named
   argument only.
 
 ## 0.20.0

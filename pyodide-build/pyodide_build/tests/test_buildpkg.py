@@ -8,6 +8,8 @@ import pytest
 from pyodide_build import buildpkg
 from pyodide_build.io import parse_package_config
 
+PACKAGES_DIR = Path(__file__).parent / "_test_packages"
+
 
 def test_subprocess_with_shared_env():
     with buildpkg.BashRunnerWithSharedEnvironment() as p:
@@ -41,19 +43,8 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    # tarballname == version
-    test_pkgs.append(parse_package_config("./packages/scipy/meta.yaml"))
-    test_pkgs.append(parse_package_config("./packages/numpy/meta.yaml"))
-
-    # tarballname != version
-    test_pkgs.append(
-        {
-            "package": {"name": "pyyaml", "version": "5.3.1"},
-            "source": {
-                "url": "https://files.pythonhosted.org/packages/64/c2/b80047c7ac2478f9501676c988a5411ed5572f35d1beff9cae07d321512c/PyYAML-5.3.1.tar.gz"
-            },
-        }
-    )
+    test_pkgs.append(parse_package_config(PACKAGES_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(parse_package_config(PACKAGES_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
         pkg["source"]["patches"] = []
@@ -65,6 +56,8 @@ def test_prepare_source(monkeypatch):
         src_metadata = pkg["source"]
         srcpath = buildpath / source_dir_name
         buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
+
+        assert srcpath.is_dir()
 
 
 @pytest.mark.parametrize("is_library", [True, False])

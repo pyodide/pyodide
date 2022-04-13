@@ -1,11 +1,24 @@
 import re
 from textwrap import dedent
-from typing import Any
+from typing import Any, Sequence
 
 import pytest
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
-from pyodide_build.testing import PYVERSION, run_in_pyodide
+from pyodide_build.testing import run_in_pyodide
+
+
+def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+        ]:
+            continue
+        res.append(msg)
+    return res
 
 
 def test_find_imports():
@@ -765,8 +778,10 @@ def test_fatal_error(selenium_standalone):
         x = x.replace("\n\n", "\n")
         return x
 
+    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = "".join(_strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
-        strip_stack_trace(selenium_standalone.logs)
+        err_msg
         == dedent(
             strip_stack_trace(
                 """
@@ -862,8 +877,10 @@ def test_js_stackframes(selenium):
     def normalize_tb(t):
         res = []
         for [file, name] in t:
-            if file.endswith(".js") or file.endswith(".html"):
+            if file.endswith((".js", ".html")):
                 file = file.rpartition("/")[-1]
+            if file.endswith(".py"):
+                file = "/".join(file.split("/")[-2:])
             if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
                 file = "test.html"
             res.append([file, name])
@@ -876,14 +893,14 @@ def test_js_stackframes(selenium):
         ["test.html", "d2"],
         ["test.html", "d1"],
         ["pyodide.js", "runPython"],
-        [f"/lib/{PYVERSION}/site-packages/_pyodide/_base.py", "eval_code"],
-        [f"/lib/{PYVERSION}/site-packages/_pyodide/_base.py", "run"],
+        ["_pyodide/_base.py", "eval_code"],
+        ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
         ["test.html", "b"],
         ["pyodide.js", "pyimport"],
-        [f"/lib/{PYVERSION}/importlib/__init__.py", "import_module"],
+        ["importlib/__init__.py", "import_module"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 
@@ -1085,6 +1102,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         "Python initialization complete",
         "something to stdout",
     ]
+    stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
 
 

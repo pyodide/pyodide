@@ -1,0 +1,699 @@
+From b540dfc763970a818b70b520b7b1e0b365bc3825 Mon Sep 17 00:00:00 2001
+From: Joe Marshall <joe.marshall@nottingham.ac.uk>
+Date: Wed, 6 Apr 2022 21:25:13 -0700
+Subject: [PATCH 08/14] make int return values
+
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+There's a big change to scipy/linalg/_cython_wrapper_generators.py, which is
+called on build to generate python wrappers for lapack and BLAS. The change
+makes everything call direct to CLAPACK with the correct function signatures
+and also fixes some fortran -> c linking oddities that occur because f2py assumes
+different function signatures to f2c, which in turn creates different function
+signatures compared to what has been done in CLAPACK.
+
+f2py is patched in numpy to make subroutines return int.
+
+emscripten is very strict about void vs int returns and function signatures, so
+we change everything to return int from subroutines, and signatures are altered
+to be consistent.
+---
+ scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
+ scipy/integrate/_odepackmodule.c              |  6 +-
+ scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
+ scipy/linalg/setup.py                         |  7 +-
+ scipy/optimize/_lsq/setup.py                  |  2 +-
+ .../linalg/_dsolve/SuperLU/SRC/cgsrfs.c       |  7 --
+ .../linalg/_dsolve/SuperLU/SRC/dgscon.c       |  3 -
+ .../linalg/_dsolve/SuperLU/SRC/dgsrfs.c       |  7 --
+ .../_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c   |  2 -
+ .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  9 ---
+ .../_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c   |  1 -
+ .../_dsolve/SuperLU/SRC/ilu_ddrop_row.c       |  7 --
+ .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c   |  2 +-
+ .../_dsolve/SuperLU/SRC/ilu_sdrop_row.c       |  7 --
+ .../_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c   |  1 -
+ .../_dsolve/SuperLU/SRC/ilu_zdrop_row.c       |  9 ---
+ .../_dsolve/SuperLU/SRC/scipy_slu_config.h    |  8 ++
+ .../linalg/_dsolve/SuperLU/SRC/sgsrfs.c       |  7 --
+ .../linalg/_dsolve/SuperLU/SRC/sgssvx.c       |  7 +-
+ .../linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h |  5 +-
+ .../linalg/_dsolve/SuperLU/SRC/slu_scomplex.h |  5 +-
+ .../linalg/_dsolve/SuperLU/SRC/slu_util.h     |  1 -
+ .../linalg/_dsolve/SuperLU/SRC/zgsrfs.c       |  7 --
+ scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +-
+ .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 ++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++----
+ 26 files changed, 109 insertions(+), 145 deletions(-)
+
+diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
+index caf99ac63..73cdebd96 100644
+--- a/scipy/_build_utils/src/wrap_dummy_g77_abi.f
++++ b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
+@@ -6,14 +6,6 @@
+       WCDOTC = CDOTC( N, CX, INCX, CY, INCY )
+       END FUNCTION
+ 
+-      COMPLEX FUNCTION WCDOTU( N, CX, INCX, CY, INCY )
+-      INTEGER INCX, INCY, N
+-      COMPLEX CX(*), CY(*)
+-      EXTERNAL CDOTU
+-      COMPLEX CDOTU
+-      WCDOTU = CDOTU( N, CX, INCX, CY, INCY )
+-      END FUNCTION
+-
+       DOUBLE COMPLEX FUNCTION WZDOTC( N, CX, INCX, CY, INCY )
+       INTEGER INCX, INCY, N
+       DOUBLE COMPLEX CX(*), CY(*)
+@@ -22,14 +14,6 @@
+       WZDOTC = ZDOTC( N, CX, INCX, CY, INCY )
+       END FUNCTION
+ 
+-      DOUBLE COMPLEX FUNCTION WZDOTU( N, CX, INCX, CY, INCY )
+-      INTEGER INCX, INCY, N
+-      DOUBLE COMPLEX CX(*), CY(*)
+-      EXTERNAL ZDOTU
+-      DOUBLE COMPLEX ZDOTU
+-      WZDOTU = ZDOTU( N, CX, INCX, CY, INCY )
+-      END FUNCTION
+-
+       COMPLEX FUNCTION WCLADIV( X, Y )
+       COMPLEX            X, Y
+       EXTERNAL           CLADIV
+diff --git a/scipy/integrate/_odepackmodule.c b/scipy/integrate/_odepackmodule.c
+index 9974ae0f3..f74c379df 100644
+--- a/scipy/integrate/_odepackmodule.c
++++ b/scipy/integrate/_odepackmodule.c
+@@ -158,13 +158,13 @@ typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
+ typedef int lsoda_jac_t(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
+                         double *pd, F_INT *nrowpd);
+ 
+-void LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
++int LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
+            double *rtol, double *atol, F_INT *itask, F_INT *istate, F_INT *iopt,
+            double *rwork, F_INT *lrw, F_INT *iwork, F_INT *liw, lsoda_jac_t *jac,
+            F_INT *jt);
+ 
+ /*
+-void ode_function(int *n, double *t, double *y, double *ydot)
++int ode_function(int *n, double *t, double *y, double *ydot)
+ {
+   ydot[0] = -0.04*y[0] + 1e4*y[1]*y[2];
+   ydot[2] = 3e7*y[1]*y[1];
+@@ -173,7 +173,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
+ }
+ */
+ 
+-void
++int
+ ode_function(F_INT *n, double *t, double *y, double *ydot)
+ {
+     /*
+diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
+index 89e50a990..b7c77115d 100644
+--- a/scipy/linalg/fblas_l1.pyf.src
++++ b/scipy/linalg/fblas_l1.pyf.src
+@@ -279,14 +279,16 @@ end subroutine <prefix>axpy
+ function sdot(n,x,offx,incx,y,offy,incy) result (xy)
+   ! Computes a vector-vector dot product.
+ 
+-  fortranname sdot
++  callstatement sdot_return_value=(*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
++  callprotoargument int*,float*,int*,float*,int*
+ 
+-  callstatement (*f2py_func)(&sdot,&n,x+offx,&incx,y+offy,&incy)
+-  callprotoargument float*,F_INT*,float*,F_INT*,float*,F_INT*
++  fortranname F_FUNC(sdot,SDOT)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) sdot
+ 
+   real dimension(*), intent(in) :: x
+   real dimension(*), intent(in) :: y
+-  real sdot,xy
++  double precision sdot,xy
+   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+   integer optional, intent(in),depend(x) :: offx=0
+@@ -304,8 +306,12 @@ end function sdot
+ function ddot(n,x,offx,incx,y,offy,incy) result (xy)
+   ! Computes a vector-vector dot product.
+ 
+-  callstatement (*f2py_func)(&ddot,&n,x+offx,&incx,y+offy,&incy)
+-  callprotoargument double*,F_INT*,double*,F_INT*,double*,F_INT*
++  callstatement ddot_return_value=(*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
++  callprotoargument int*,double*,int*,double*,int*
++
++  fortranname F_FUNC(ddot,ddot)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) ddot
+ 
+   double precision dimension(*), intent(in) :: x
+   double precision dimension(*), intent(in) :: y
+@@ -324,6 +330,7 @@ function ddot(n,x,offx,incx,y,offy,incy) result (xy)
+ end function ddot
+ 
+ 
+++// in CLAPACK, cdotu and zdotu are void and return by pointer (as can't return complex* without allocation)
+ function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
+ 
+   <ftype2c> :: <prefix2c>dotu, xy
+@@ -335,6 +342,11 @@ function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
+   <ftype2c> dimension(*),intent(in) :: x
+   <ftype2c> dimension(*),intent(in) :: y
+ 
+++  fortranname F_FUNC(<prefix2c>dotu,<C,Z>DOTU)
+++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
+++  intent(c) <prefix2c>dotu
+++
++
+   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+ 
+@@ -354,10 +366,12 @@ end function <prefix2c>dotu
+ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
+ 
+   <ftype2c> :: <prefix2c>dotc, xy
+-  fortranname w<prefix2c>dotc
++  callstatement <prefix2c>dotc_return_value=(*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
++  callprotoargument int*,<ctype2c>*,int*,<ctype2c>*,int*
+ 
+-  callstatement (*f2py_func)(&<prefix2c>dotc,&n,x+offx,&incx,y+offy,&incy)
+-  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
++  fortranname F_FUNC(<prefix2c>dotc,<C,Z>DOTC)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) <prefix2c>dotc
+ 
+   <ftype2c> dimension(*),intent(in) :: x
+   <ftype2c> dimension(*),intent(in) :: y
+@@ -379,10 +393,15 @@ end function <prefix2c>dotc
+ 
+ function <prefix3>nrm2(n,x,offx,incx) result(n2)
+ 
+-  <ftypereal3> <prefix3>nrm2, n2
++  <ftypereal3> nm2
++  double precision <prefix3>nrm2
+ 
+-  callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
+-  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
++  callstatement <prefix3>nrm2_return_value=(*f2py_func)( &n,x+offx,&incx)
++  callprotoargument int*,<ctype3>*,int*
++
++  fortranname F_FUNC(<prefix3>nrm2,<S,SC>NRM2)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) <prefix3>nrm2
+ 
+   <ftype3> dimension(*),intent(in) :: x
+ 
+@@ -399,10 +418,14 @@ end function <prefix3>nrm2
+ 
+ function <prefix4>nrm2(n,x,offx,incx) result(n2)
+ 
+-  <ftypereal4> <prefix4>nrm2, n2
++  callstatement <prefix4>nrm2_return_value=(*f2py_func)(&n,x+offx,&incx)
++  callprotoargument int*,<ctype4>*,int*
+ 
+-  callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
+-  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
++  double precision <prefix4>nrm2
++  <ftype4> n2
++  fortranname F_FUNC(<prefix4>nrm2,<S,D>NRM2)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) <prefix4>nrm2
+ 
+   <ftype4> dimension(*),intent(in) :: x
+ 
+@@ -417,14 +440,20 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
+ end function <prefix4>nrm2
+ 
+ 
+-function <prefix3>asum(n,x,offx,incx) result (s)
++function <prefix3>asum(n,x,offx,incx) result (d)
+   ! Computes the sum of magnitudes of the vector elements
+ 
+-  callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
+-  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
++  callstatement <prefix3>asum_return_value=(*f2py_func)(&n,x+offx,&incx)
++  callprotoargument int*,<ctype3>*,int*
++ 
++  double precision <prefix3>asum
++  fortranname F_FUNC(<prefix3>asum,<S,SC>ASUM)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) <prefix3>asum
+ 
+   <ftype3> dimension(*), intent(in) :: x
+-  <ftypereal3> <prefix3>asum,s
++  <ftypereal3> s
++  double precision <prefix3>asum
+   integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+   integer optional, intent(in), depend(x) :: offx=0
+   check(offx>=0 && offx<len(x)) :: offx
+@@ -434,11 +463,16 @@ function <prefix3>asum(n,x,offx,incx) result (s)
+ end function <prefix3>asum
+ 
+ 
+-function <prefix4>asum(n,x,offx,incx) result (s)
++function <prefix4>asum(n,x,offx,incx) result (d)
+   ! Computes the sum of magnitudes of the vector elements
+ 
+-  callstatement (*f2py_func)(&<prefix4>asum,&n,x+offx,&incx)
+-  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
++  callstatement <prefix4>asum_return_value=(*f2py_func)(&n,x+offx,&incx) 
++  callprotoargument int*,<ctype4>*,int*
++
++  <ftype4> <prefix4>asum
++  fortranname F_FUNC(<prefix4>asum,<D,Z>ASUM)
++  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
++  intent(c) <prefix4>asum
+ 
+   <ftype4> dimension(*), intent(in) :: x
+   <ftypereal4> <prefix4>asum,s
+diff --git a/scipy/linalg/setup.py b/scipy/linalg/setup.py
+index d384081a2..d318fa8b8 100644
+--- a/scipy/linalg/setup.py
++++ b/scipy/linalg/setup.py
+@@ -45,9 +45,10 @@ def configuration(parent_package='', top_path=None):
+     # flapack:
+     sources = ['flapack.pyf.src', 'lapack_extras.f']
+     sources += get_g77_abi_wrappers(lapack_opt)
+-    dep_pfx = join('src', 'lapack_deprecations')
+-    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
+-    sources += deprecated_lapack_routines
++#   CLAPACK still has these routines (with conflicting signatures)
++#    dep_pfx = join('src', 'lapack_deprecations')
++#    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
++#    sources += deprecated_lapack_routines
+     depends = ['flapack_gen.pyf.src',
+                'flapack_gen_banded.pyf.src',
+                'flapack_gen_tri.pyf.src',
+diff --git a/scipy/optimize/_lsq/setup.py b/scipy/optimize/_lsq/setup.py
+index 7ce589c0c..6412886e0 100644
+--- a/scipy/optimize/_lsq/setup.py
++++ b/scipy/optimize/_lsq/setup.py
+@@ -3,7 +3,7 @@ def configuration(parent_package='', top_path=None):
+     from numpy.distutils.misc_util import Configuration
+     config = Configuration('_lsq', parent_package, top_path)
+     config.add_extension('givens_elimination',
+-                         sources=['givens_elimination.c'])
++                         sources=['givens_elimination.c'],include_dirs=['../../linalg'])
+     return config
+ 
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
+index a7dd2f8fd..3b2544d4f 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
+@@ -171,13 +171,6 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     int      isave[3];
+ 
+     extern int clacon2_(int *, complex *, complex *, float *, int *, int []);
+-#ifdef _CRAY
+-    extern int CCOPY(int *, complex *, int *, complex *, int *);
+-    extern int CSAXPY(int *, complex *, complex *, int *, complex *, int *);
+-#else
+-    extern int ccopy_(int *, complex *, int *, complex *, int *);
+-    extern int caxpy_(int *, complex *, complex *, int *, complex *, int *);
+-#endif
+ 
+     Astore = A->Store;
+     Aval   = Astore->nzval;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgscon.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgscon.c
+index d51f24c3b..b76dc7a78 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgscon.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgscon.c
+@@ -92,10 +92,7 @@ dgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+     double *work;
+     int    *iwork;
+     int    isave[3];
+-    extern int drscl_(int *, double *, double *, int *);
+-
+     extern int dlacon2_(int *, double *, double *, int *, double *, int *, int []);
+-
+     
+     /* Test the input parameters. */
+     *info = 0;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c
+index d37226035..69f6bd8cf 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/dgsrfs.c
+@@ -171,13 +171,6 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     int      isave[3];
+ 
+     extern int dlacon2_(int *, double *, double *, int *, double *, int *, int []);
+-#ifdef _CRAY
+-    extern int SCOPY(int *, double *, int *, double *, int *);
+-    extern int SSAXPY(int *, double *, double *, int *, double *, int *);
+-#else
+-    extern int dcopy_(int *, double *, int *, double *, int *);
+-    extern int daxpy_(int *, double *, double *, int *, double *, int *);
+-#endif
+ 
+     Astore = A->Store;
+     Aval   = Astore->nzval;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+index 027b9260f..e1299bed2 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+@@ -26,8 +26,6 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
+-
+ #if 0
+ static complex *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index 09b8a937d..fdd6064de 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -23,15 +23,6 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_cdefs.h"
+ 
+-extern void cswap_(int *, complex [], int *, complex [], int *);
+-extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
+-extern float scasum_(int *, complex *, int *);
+-extern float scnrm2_(int *, complex *, int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int icamax_(int *, complex [], int *);
+-
+ static float *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+ {
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
+index 2bb889c39..658e7e71e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
+@@ -26,7 +26,6 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void dcopy_(int *, double [], int *, double [], int *);
+ 
+ #if 0
+ static double *A;  /* used in _compare_ only */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c
+index f25b5085a..19afee76c 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ddrop_row.c
+@@ -23,13 +23,6 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_ddefs.h"
+ 
+-extern void dswap_(int *, double [], int *, double [], int *);
+-extern void daxpy_(int *, double *, double [], int *, double [], int *);
+-extern void dcopy_(int *, double [], int *, double [], int *);
+-extern double dasum_(int *, double *, int *);
+-extern double dnrm2_(int *, double *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int idamax_(int *, double [], int *);
+ 
+ static double *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+index 6dc0460c1..994224c35 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+@@ -26,7 +26,7 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern int scopy_(int *, float [], int *, float [], int *);
+ 
+ #if 0
+ static float *A;  /* used in _compare_ only */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c
+index 836ee5450..8d1368838 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_sdrop_row.c
+@@ -23,13 +23,6 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_sdefs.h"
+ 
+-extern void sswap_(int *, float [], int *, float [], int *);
+-extern void saxpy_(int *, float *, float [], int *, float [], int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
+-extern float sasum_(int *, float *, int *);
+-extern float snrm2_(int *, float *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern int isamax_(int *, float [], int *);
+ 
+ static float *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
+index e7847a37d..9c1f02e09 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
+@@ -26,7 +26,6 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+ 
+ #if 0
+ static doublecomplex *A;  /* used in _compare_ only */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c
+index 2de1226ef..362e18210 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_zdrop_row.c
+@@ -23,15 +23,6 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_zdefs.h"
+ 
+-extern void zswap_(int *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+-extern double dzasum_(int *, doublecomplex *, int *);
+-extern double dznrm2_(int *, doublecomplex *, int *);
+-extern double dnrm2_(int *, double [], int *);
+-extern void dcopy_(int *, double [], int *, double [], int *);
+-extern int izamax_(int *, doublecomplex [], int *);
+-
+ static double *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+ {
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
+index 5afc93b5d..1a2c4ca36 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
+@@ -3,6 +3,14 @@
+ 
+ #include <stdlib.h>
+ 
++#include"f2c.h"
++#define integer int
++#define logical int
++#include"clapack.h"
++#undef integer
++#undef logical
++
++
+ /*
+  * Support routines
+  */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
+index 5faab1dfb..7380eb6cc 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
+@@ -171,13 +171,6 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     int      isave[3];
+ 
+     extern int slacon2_(int *, float *, float *, int *, float *, int *, int []);
+-#ifdef _CRAY
+-    extern int SCOPY(int *, float *, int *, float *, int *);
+-    extern int SSAXPY(int *, float *, float *, int *, float *, int *);
+-#else
+-    extern int scopy_(int *, float *, int *, float *, int *);
+-    extern int saxpy_(int *, float *, float *, int *, float *, int *);
+-#endif
+ 
+     Astore = A->Store;
+     Aval   = Astore->nzval;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
+index 7ee2e77ea..d13914e04 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
+@@ -21,6 +21,8 @@ at the top-level directory.
+  */
+ #include "slu_sdefs.h"
+ 
++extern float slangs(char *, SuperMatrix *);
++
+ /*! \brief
+  *
+  * <pre>
+@@ -378,8 +380,6 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+     double    t0;      /* temporary time */
+     double    *utime;
+ 
+-    /* External functions */
+-    extern float slangs(char *, SuperMatrix *);
+ 
+     Bstore = B->Store;
+     Xstore = X->Store;
+@@ -579,7 +579,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
+         } else {
+ 	    *(unsigned char *)norm = 'I';
+         }
+-        anorm = slangs(norm, AA);
++        anorm = slangs(norm, AA);    /* External functions */
++        extern float slangs(char *, SuperMatrix *);
+         sgscon(norm, L, U, anorm, rcond, stat, &info1);
+         utime[RCOND] = SuperLU_timer_() - t0;
+     }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
+index 67e83bcc7..e5757d5c4 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
+@@ -28,7 +28,10 @@ at the top-level directory.
+ #ifndef DCOMPLEX_INCLUDE
+ #define DCOMPLEX_INCLUDE
+ 
+-typedef struct { double r, i; } doublecomplex;
++#include"scipy_slu_config.h"
++
++// defined in clapack
++//typedef struct { double r, i; } doublecomplex;
+ 
+ 
+ /* Macro definitions */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+index 5c9aa7058..a10f9a52f 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+@@ -27,8 +27,9 @@ at the top-level directory.
+ 
+ #ifndef SCOMPLEX_INCLUDE
+ #define SCOMPLEX_INCLUDE
+-
+-typedef struct { float r, i; } complex;
++#include"scipy_slu_config.h"
++// defined in  CLAPACK
++//typedef struct { float r, i; } complex;
+ 
+ 
+ /* Macro definitions */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
+index 42bab985d..936db381d 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_util.h
+@@ -398,7 +398,6 @@ extern int     spcoletree (int *, int *, int *, int, int, int *);
+ extern int     *TreePostorder (int, int *);
+ extern double  SuperLU_timer_ ();
+ extern int     sp_ienv (int);
+-extern int     xerbla_ (char *, int *);
+ extern void    ifill (int *, int, int);
+ extern void    snode_profile (int, int *);
+ extern void    super_stats (int, int *);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
+index 02b63df30..71209b3b7 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
+@@ -171,13 +171,6 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     int      isave[3];
+ 
+     extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
+-#ifdef _CRAY
+-    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
+-    extern int CSAXPY(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
+-#else
+-    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
+-    extern int zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
+-#endif
+ 
+     Astore = A->Store;
+     Aval   = Astore->nzval;
+diff --git a/scipy/sparse/linalg/_dsolve/_superlu_utils.c b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
+index 49b928a43..082268771 100644
+--- a/scipy/sparse/linalg/_dsolve/_superlu_utils.c
++++ b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
+@@ -243,12 +243,12 @@ int input_error(char *srname, int *info)
+  * Stubs for Harwell Subroutine Library functions that SuperLU tries to call.
+  */
+ 
+-void mc64id_(int *a)
++int mc64id_(int *a)
+ {
+     superlu_python_module_abort("chosen functionality not available");
+ }
+ 
+-void mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
++int mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
+ 	     int *g, int h[], int *i, int j[], int *k, double l[],
+ 	     int m[], int n[])
+ {
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
+index 5eb0bb1b3..81a6efafb 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
+@@ -1,16 +1,16 @@
+-c
++
+ c\SCCS Information: @(#) 
+ c FILE: debug.h   SID: 2.3   DATE OF SID: 11/16/95   RELEASE: 2 
+ c
+ c     %---------------------------------%
+ c     | See debug.doc for documentation |
+ c     %---------------------------------%
+-      integer  logfil, ndigit, mgetv0,
+-     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
+-     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
+-     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
+-      common /debug/ 
+-     &         logfil, ndigit, mgetv0,
+-     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
+-     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
+-     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
++c      integer  logfil, ndigit, mgetv0,
++c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
++c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
++c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
++c      common /debug/
++c     &         logfil, ndigit, mgetv0,
++c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
++c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
++c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
+index 66a8e9f87..81d49c3bd 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
+@@ -5,17 +5,17 @@ c
+ c\SCCS Information: @(#) 
+ c FILE: stat.h   SID: 2.2   DATE OF SID: 11/16/95   RELEASE: 2 
+ c
+-      real       t0, t1, t2, t3, t4, t5
+-      save       t0, t1, t2, t3, t4, t5
++c      real       t0, t1, t2, t3, t4, t5
++c      save       t0, t1, t2, t3, t4, t5
+ c
+-      integer    nopx, nbx, nrorth, nitref, nrstrt
+-      real       tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
+-     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
+-     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
+-     &           tmvopx, tmvbx, tgetv0, titref, trvec
+-      common /timing/ 
+-     &           nopx, nbx, nrorth, nitref, nrstrt,
+-     &           tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
+-     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
+-     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
+-     &           tmvopx, tmvbx, tgetv0, titref, trvec
++c      integer    nopx, nbx, nrorth, nitref, nrstrt
++c      real       tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
++c     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
++c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
++c     &           tmvopx, tmvbx, tgetv0, titref, trvec
++c      common /timing/
++c     &           nopx, nbx, nrorth, nitref, nrstrt,
++c     &           tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
++c     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
++c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
++c     &           tmvopx, tmvbx, tgetv0, titref, trvec
+-- 
+2.25.1
+
