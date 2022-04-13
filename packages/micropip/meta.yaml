@@ -1,7 +1,7 @@
 package:
   name: micropip
   version: "0.1"
-  tag: pyodide.stdlib
+  _tag: pyodide.stdlib
 requirements:
   run:
     - pyparsing

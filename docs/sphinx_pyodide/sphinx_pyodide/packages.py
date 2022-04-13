@@ -55,7 +55,7 @@ def get_packages_summary_directive(app):
 
             name = yaml_data["package"]["name"]
             version = yaml_data["package"]["version"]
-            tag = yaml_data["package"].get("tag", "")
+            tag = yaml_data["package"].get("_tag", "")
             is_library = yaml_data.get("build", {}).get("library", False)
 
             return name, version, is_library, tag
