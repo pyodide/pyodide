@@ -282,8 +282,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - ./packages
-            - ./dist
+            - ./dist/opencv_python*
 
       - run:
           name: Zip build directory
