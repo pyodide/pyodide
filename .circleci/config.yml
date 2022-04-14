@@ -179,6 +179,74 @@ jobs:
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
 
+  build-packages-numpy-dependents:
+    <<: *defaults
+    resource_class: large
+
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - restore_cache:
+          keys:
+            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg1-v20220303
+
+      - run:
+          name: build packages
+          no_output_timeout: 30m
+          command: |
+            source pyodide_env.sh
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+
+            ccache -z
+            PYODIDE_PACKAGES='*,!opencv-python' make -C packages
+            ccache -s
+          environment:
+            PYODIDE_JOBS: 5
+
+      - run:
+          name: check-size
+          command: ls -lh dist/
+
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./packages
+            - ./dist
+
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide-build.tar.gz  dist
+            tar cjf build-logs.tar.gz  packages/build-logs
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+      - store_artifacts:
+          path: /root/repo/dist/
+
+      - store_artifacts:
+          path: /root/repo/pyodide-build.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
+
   build-packages:
     <<: *defaults
     resource_class: large
@@ -204,7 +272,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='*,!opencv-python' make -C packages
+            PYODIDE_PACKAGES='*' make -C packages
             ccache -s
           environment:
             PYODIDE_JOBS: 5
@@ -491,16 +559,24 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages:
+      - build-packages-opencv-python:
           requires:
             - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/
 
-      - build-packages-opencv-python:
+      - build-packages-numpy-dependents:
           requires:
             - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+
+      - build-packages:
+          requires:
+            - build-packages-numpy-dependents
+            - build-packages-opencv-python
           filters:
             tags:
               only: /.*/
@@ -555,7 +631,6 @@ workflows:
           test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
-            - build-packages-opencv-python
           filters:
             tags:
               only: /.*/
@@ -565,7 +640,6 @@ workflows:
           test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
-            - build-packages-opencv-python
           filters:
             tags:
               only: /.*/
@@ -575,7 +649,6 @@ workflows:
           test-params: -k node packages/test* packages/*/test*
           requires:
             - build-packages
-            - build-packages-opencv-python
           filters:
             tags:
               only: /.*/
