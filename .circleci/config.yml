@@ -150,12 +150,6 @@ jobs:
             - /root/.ccache
           key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./packages
-            - ./dist
-
       - run:
           name: Zip build directory
           command: |
@@ -165,7 +159,8 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - .
+            - ./packages
+            - ./dist
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -233,7 +228,69 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - .
+            - ./packages/.artifacts
+            - ./dist
+
+      - store_artifacts:
+          path: /root/repo/dist/
+
+      - store_artifacts:
+          path: /root/repo/pyodide-build.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
+
+  build-packages-opencv-python:
+    <<: *defaults
+    resource_class: large
+
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - restore_cache:
+          keys:
+            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg1-v20220303
+
+      - run:
+          name: build packages
+          no_output_timeout: 60m
+          command: |
+            source pyodide_env.sh
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+            ccache -z
+            PYODIDE_PACKAGES='opencv-python' make -C packages
+            ccache -s
+          environment:
+            PYODIDE_JOBS: 5
+
+      - run:
+          name: check-size
+          command: ls -lh dist/
+
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide-build.tar.gz  dist
+            tar cjf build-logs.tar.gz  packages/build-logs
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./packages/build-logs
+            - ./dist/opencv_python*
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -297,70 +354,6 @@ jobs:
           paths:
             - ./packages/.artifacts
             - ./dist
-
-      - store_artifacts:
-          path: /root/repo/dist/
-
-      - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
-
-      - store_artifacts:
-          path: /root/repo/packages/build-logs
-
-      - store_artifacts:
-          path: /root/repo/build-logs.tar.gz
-
-  build-packages-opencv-python:
-    <<: *defaults
-    resource_class: large
-
-    steps:
-      - checkout
-
-      - attach_workspace:
-          at: .
-
-      - restore_cache:
-          keys:
-            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg1-v20220303
-
-      - run:
-          name: build packages
-          no_output_timeout: 60m
-          command: |
-            source pyodide_env.sh
-            # Set mtime for EM_CONFIG to avoid ccache cache misses
-            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
-            ccache -z
-            PYODIDE_PACKAGES='opencv-python' make -C packages
-            ccache -s
-          environment:
-            PYODIDE_JOBS: 5
-
-      - run:
-          name: check-size
-          command: ls -lh dist/
-
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./dist/opencv_python*
-
-      - run:
-          name: Zip build directory
-          command: |
-            tar cjf pyodide-build.tar.gz  dist
-            tar cjf build-logs.tar.gz  packages/build-logs
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
 
       - store_artifacts:
           path: /root/repo/dist/
