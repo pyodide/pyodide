@@ -38,6 +38,9 @@ export async function initNodeModules() {
   if (typeof require !== "undefined") {
     return;
   }
+  // These are all the packages required in pyodide.asm.js. You can get this
+  // list with:
+  // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
   const fs = await import(/* webpackIgnore: true */ "fs");
   const crypto = await import(/* webpackIgnore: true */ "crypto");
   const ws = await import(/* webpackIgnore: true */ "ws");
