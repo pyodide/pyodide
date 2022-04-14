@@ -35,7 +35,16 @@
     "typescript": "^4.2.4"
   },
   "main": "pyodide.js",
-  "module": "pyodide.mjs",
+  "exports": {
+    "require": "./pyodide.js",
+    "import": "./pyodide.mjs"
+  },
+  "files": [
+    "pyodide*",
+    "packages.json",
+    "distutils.tar",
+    "console.html"
+  ],
   "scripts": {
     "test": "mocha --loader node_modules/ts-node/dist/esm.js"
   },
