@@ -14,7 +14,7 @@ substitutions:
 
 ## Unreleased
 
-- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`
+- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`
 
 ## Version 0.20.0
 
