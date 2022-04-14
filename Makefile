@@ -11,6 +11,7 @@ CXX=em++
 all: check \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
+	dist/pyodide.d.ts \
 	dist/console.html \
 	dist/distutils.tar \
 	dist/packages.json \
