@@ -38,6 +38,11 @@ export async function initNodeModules() {
   if (typeof require !== "undefined") {
     return;
   }
+  // Emscripten uses `require`, so if it's missing (because we were imported as
+  // an ES6 module) we need to polyfill `require` with `import`. `import` is
+  // async and `require` is synchronous, so we import all packages that might be
+  // required up front and define require to look them up in this table.
+
   // These are all the packages required in pyodide.asm.js. You can get this
   // list with:
   // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
@@ -51,6 +56,8 @@ export async function initNodeModules() {
     ws,
     child_process,
   };
+  // Since we're in an ES6 module, this is only modifying the module namespace,
+  // it's still private to Pyodide.
   (globalThis as any).require = function (mod: string): any {
     return node_modules[mod];
   };
