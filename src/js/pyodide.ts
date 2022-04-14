@@ -185,9 +185,6 @@ function calculateIndexURL(): string {
     err = e;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  if (IN_NODE && fileName.startsWith("file://")) {
-    fileName = fileName.slice("file://".length);
-  }
   return fileName.slice(0, fileName.lastIndexOf("/"));
 }
 
@@ -312,6 +309,8 @@ export async function loadPyodide(
   let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.
   if (!pyodide.version.includes("dev")) {
+    // Currently only used in Node to download packages the first time they are
+    // loaded. But in other cases it's harmless.
     setCdnUrl(`https://pyodide-cdn2.iodide.io/v${pyodide.version}/full/`);
   }
   await packageIndexReady;
