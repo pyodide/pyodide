@@ -7,6 +7,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
     "package": {
         "name": str,
         "version": str,
+        "_tag": str,
     },
     "source": {
         "url": str,
