@@ -36,8 +36,13 @@
   },
   "main": "pyodide.js",
   "exports": {
-    "require": "./pyodide.js",
-    "import": "./pyodide.mjs"
+    ".": {
+      "require": "./pyodide.js",
+      "import": "./pyodide.mjs"
+    },
+    "./pyodide.mjs": "./pyodide.mjs",
+    "./pyodide.js": "./pyodide.js",
+    "./package.json": "./package.json"
   },
   "files": [
     "pyodide*",
