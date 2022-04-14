@@ -65,6 +65,10 @@ async function node_loadBinaryFile(
   indexURL: string,
   path: string
 ): Promise<Uint8Array> {
+  if (path.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    path = path.slice("file://".length);
+  }
   if (path.includes("://")) {
     let response = await nodeFetch(path);
     if (!response.ok) {
@@ -151,6 +155,10 @@ if (globalThis.document) {
  * @private
  */
 async function nodeLoadScript(url: string) {
+  if (url.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    url = url.slice("file://".length);
+  }
   if (url.includes("://")) {
     // If it's a url, load it with fetch then eval it.
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
