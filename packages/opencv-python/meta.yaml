@@ -51,7 +51,8 @@ build:
     # TODO: remove this line after version update (https://github.com/opencv/opencv-python/issues/648)
     sed -i "s/cmake_install_dir=cmake_install_reldir/_cmake_install_dir=cmake_install_reldir/" setup.py
 
-    export VERBOSE=1
+    # export VERBOSE=1
+
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
     export EMSCRIPTEN="$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten/"
     export FFMPEG_ROOT="$PYODIDE_ROOT/packages/ffmpeg/build/ffmpeg-4.4.1/lib"
