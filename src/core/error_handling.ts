@@ -195,13 +195,10 @@ Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
-  if (fileName.includes("pyodide.asm")) {
-    return true;
-  }
   if (fileName.includes("wasm-function")) {
     return true;
   }
-  if (!fileName.includes("pyodide.js")) {
+  if (!fileName.includes("pyodide.asm.js")) {
     return false;
   }
   let funcName = frame.functionName || "";
