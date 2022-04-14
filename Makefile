@@ -79,6 +79,9 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 dist/pyodide.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
 	npx rollup -c src/js/rollup.config.js
 
+dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
+	npx dts-bundle-generator -o pyodide.d.ts pyodide.ts --export-referenced-types false
+
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
 

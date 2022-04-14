@@ -1,6 +1,6 @@
 {
-  "name": "--123hoodmane-pyodide",
-  "version": "0.20.0-b",
+  "name": "pyodide",
+  "version": "0.21.0-dev.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -21,6 +21,7 @@
     "@types/emscripten": "^1.39.5",
     "@types/node-fetch": "^3.0.3",
     "@types/ws": "^8.5.3",
+    "dts-bundle-generator": "^6.7.0",
     "error-stack-parser": "^2.0.6",
     "mocha": "^9.0.2",
     "prettier": "^2.2.1",
