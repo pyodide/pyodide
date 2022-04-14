@@ -1,6 +1,6 @@
 import pytest
 
-from pyodide_build.testing import run_in_pyodide as run_in_pyodide_orig
+from conftest import run_in_pyodide as run_in_pyodide_orig
 
 
 def run_in_pyodide(**kwargs):

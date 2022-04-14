@@ -8,7 +8,7 @@ from time import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import conftest  # noqa: E402
+from test_fixture import ChromeWrapper, FirefoxWrapper, spawn_web_server  # noqa: E402
 
 SKIP = {"fft", "hyantes"}
 
@@ -146,6 +146,11 @@ def parse_args(benchmarks):
         type=int,
         help="Browser timeout(sec) for each benchmark (default: %(default)s)",
     )
+    parser.add_argument(
+        "--dist-dir",
+        default=str(Path(__file__).parent / "dist"),
+        help="Pyodide dist directory (default: %(default)s)",
+    )
 
     return parser.parse_args()
 
@@ -166,11 +171,11 @@ def main():
     results = {}
     selenium_backends = {}
     browser_cls = [
-        ("firefox", conftest.FirefoxWrapper),
-        ("chrome", conftest.ChromeWrapper),
+        ("firefox", FirefoxWrapper),
+        ("chrome", ChromeWrapper),
     ]
 
-    with conftest.spawn_web_server() as (hostname, port, log_path):
+    with spawn_web_server(args.dist_dir) as (hostname, port, log_path):
 
         # selenium initialization time
         result = {"native": float("NaN")}

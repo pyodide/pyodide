@@ -7,6 +7,8 @@ from typing import Any
 
 import pytest
 
+from conftest import spawn_web_server
+
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
 
@@ -183,21 +185,22 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
         target.unlink()
 
 
-def test_add_requirement(web_server_tst_data):
+def test_add_requirement():
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    server_hostname, server_port, server_log = web_server_tst_data
-    base_url = f"http://{server_hostname}:{server_port}/"
-    url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-    transaction: dict[str, Any] = {
-        "wheels": [],
-        "locked": {},
-    }
-    asyncio.get_event_loop().run_until_complete(
-        _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
-    )
+        transaction: dict[str, Any] = {
+            "wheels": [],
+            "locked": {},
+        }
+        asyncio.get_event_loop().run_until_complete(
+            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+        )
 
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"

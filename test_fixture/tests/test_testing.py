@@ -1,7 +1,8 @@
 import pathlib
 from textwrap import dedent
 
-from pyodide_build.testing import _run_in_pyodide_get_source, run_in_pyodide
+from test_fixture import run_in_pyodide
+from test_fixture.decorator import _run_in_pyodide_get_source
 
 
 def test_web_server_secondary(selenium, web_server_secondary):
@@ -52,7 +53,6 @@ def test_run_in_pyodide_multiline_decorator():
             def some_func(f):
                 import nlopt
                 import numpy as np
-
                 opt = nlopt.opt(nlopt.LD_SLSQP, 2)
                 opt.set_min_objective(f)
                 opt.set_lower_bounds(np.array([2.5, 7]))
@@ -89,7 +89,6 @@ def test_assert(selenium):
         let threw;
         assertThrows(() => { throw new TypeError("aaabbbccc") }, "TypeError", "bbc");
         assertThrows(() => { throw new TypeError("aaabbbccc") }, "TypeError", /.{3}.{3}.{3}/);
-
         threw = false;
         try {
             assertThrows(() => 0, "TypeError", /.*/);
@@ -98,7 +97,6 @@ def test_assert(selenium):
             assert(() => e.message == `assertThrows(() => 0, "TypeError", /.*/) failed, no error thrown`, e.message);
         }
         assert(() => threw);
-
         threw = false;
         try {
             assertThrows(() => { throw new ReferenceError("blah"); }, "TypeError", /.*/);
@@ -107,7 +105,6 @@ def test_assert(selenium):
             assert(() => e.message.endsWith("expected error of type 'TypeError' got type 'ReferenceError'"));
         }
         assert(() => threw);
-
         threw = false;
         try {
             assertThrows(() => { throw new TypeError("blah"); }, "TypeError", "abcd");
@@ -117,7 +114,6 @@ def test_assert(selenium):
             assert(() => e.message.endsWith(`expected error message to match pattern "abcd" got:\nblah`));
         }
         assert(() => threw);
-
         threw = false;
         try {
             assertThrows(() => { throw new TypeError("blah"); }, "TypeError", /a..d/);

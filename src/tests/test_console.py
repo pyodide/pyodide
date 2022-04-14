@@ -4,10 +4,9 @@ import time
 
 import pytest
 
-from conftest import selenium_common
+from conftest import run_in_pyodide, selenium_common
 from pyodide import CodeRunner, console  # noqa: E402
 from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
-from pyodide_build.testing import run_in_pyodide
 
 
 def test_command_compiler():
