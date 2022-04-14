@@ -3,8 +3,17 @@
  */
 import ErrorStackParser from "error-stack-parser";
 import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
-import { initializePackageIndex, loadPackage } from "./load-package.js";
+import {
+  loadScript,
+  _loadBinaryFile,
+  initNodeModules,
+  IN_NODE,
+} from "./compat.js";
+import {
+  initializePackageIndex,
+  loadPackage,
+  setCdnUrl,
+} from "./load-package.js";
 import { makePublicAPI, PyodideInterface } from "./api.js";
 import "./error_handling.gen.js";
 
@@ -176,6 +185,9 @@ function calculateIndexURL(): string {
     err = e;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
+  if (IN_NODE && fileName.startsWith("file://")) {
+    fileName = fileName.slice("file://".length);
+  }
   return fileName.slice(0, fileName.lastIndexOf("/"));
 }
 
@@ -299,7 +311,9 @@ export async function loadPyodide(
 
   let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.
-
+  if (!pyodide.version.includes("dev")) {
+    setCdnUrl(`https://pyodide-cdn2.iodide.io/v${pyodide.version}/full/`);
+  }
   await packageIndexReady;
   if (config.fullStdLib) {
     await loadPackage(["distutils"]);

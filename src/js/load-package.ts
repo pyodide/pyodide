@@ -39,6 +39,17 @@ export async function initializePackageIndex(indexURL: string) {
   }
 }
 
+/**
+ * Only used in Node. If we can't find a package in node_modules, we'll use this
+ * to fetch the package from the cdn (and we'll store it into node_modules so
+ * subsequent loads don't require a web request).
+ * @private
+ */
+let cdnURL: string;
+export function setCdnUrl(url: string) {
+  cdnURL = url;
+}
+
 //
 // Dependency resolution
 //
@@ -151,7 +162,18 @@ async function downloadPackage(
   } else {
     file_name = channel;
   }
-  return await _loadBinaryFile(baseURL, file_name);
+  try {
+    return await _loadBinaryFile(baseURL, file_name);
+  } catch (e) {
+    if (!IN_NODE) {
+      throw e;
+    }
+  }
+  // If we are IN_NODE, download the package from the cdn, then stash it into
+  // the node_modules directory for future use.
+  let binary = await _loadBinaryFile(cdnURL, file_name);
+  await nodeFsPromisesMod.writeFile(`${baseURL}${file_name}`, binary);
+  return binary;
 }
 
 /**

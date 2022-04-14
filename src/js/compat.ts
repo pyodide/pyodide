@@ -65,18 +65,26 @@ async function node_loadBinaryFile(
   indexURL: string,
   path: string
 ): Promise<Uint8Array> {
+  if (!path.startsWith("/") && !path.includes("://")) {
+    // If path starts with a "/" or starts with a protocol "blah://", we
+    // interpret it as an absolute path, otherwise "resolve" it by
+    // joining it with indexURL.
+    path = `${indexURL}${path}`;
+  }
   if (path.startsWith("file://")) {
     // handle file:// with filesystem operations rather than with fetch.
     path = path.slice("file://".length);
   }
   if (path.includes("://")) {
+    // If it has a protocol, make a fetch request
     let response = await nodeFetch(path);
     if (!response.ok) {
       throw new Error(`Failed to load '${path}': request failed.`);
     }
-    return await response.arrayBuffer();
+    return new Uint8Array(await response.arrayBuffer());
   } else {
-    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    // Otherwise get it from the file system
+    const data = await nodeFsPromisesMod.readFile(path);
     return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
 }
