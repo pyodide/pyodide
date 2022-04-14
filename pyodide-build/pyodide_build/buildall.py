@@ -213,7 +213,7 @@ def generate_dependency_graph(
     if no_numpy_dependents:
         packages.discard("no-numpy-dependents")
 
-    packages_exclude = filter(lambda pkg: pkg.startswith("!"), packages)
+    packages_exclude = list(filter(lambda pkg: pkg.startswith("!"), packages))
     for pkg_exclude in packages_exclude:
         packages.discard(pkg_exclude)
         packages.discard(pkg_exclude[1:])

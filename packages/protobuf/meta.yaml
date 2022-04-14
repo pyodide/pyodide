@@ -1,0 +1,18 @@
+package:
+  name: protobuf
+  version: 3.19.1
+
+source:
+  sha256: 87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422
+  url: https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.19.1.tar.gz
+
+build:
+  library: true
+  script: |
+    ./autogen.sh
+    emconfigure ./configure \
+        CXXFLAGS="-fPIC" \
+        --disable-shared \
+        --prefix=$(pwd)/lib
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
