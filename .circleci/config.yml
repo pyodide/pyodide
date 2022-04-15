@@ -213,12 +213,6 @@ jobs:
             - /root/.ccache
           key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./packages
-            - ./dist
-
       - run:
           name: Zip build directory
           command: |
@@ -228,7 +222,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - ./packages/.artifacts
+            - ./packages
             - ./dist
 
       - store_artifacts:
@@ -290,6 +284,7 @@ jobs:
           root: .
           paths:
             - ./packages/build-logs/opencv*
+            - ./packages/opencv*
             - ./dist/opencv*
 
       - store_artifacts:
