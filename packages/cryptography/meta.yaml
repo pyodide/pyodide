@@ -19,8 +19,7 @@ build:
     export RUSTFLAGS=" \
       -C relocation-model=pic \
       -C target-feature=+mutable-globals \
-      -C link-arg=-s \
-      -C link-arg=SIDE_MODULE=1 \
+      -C link-arg=-sSIDE_MODULE=1 \
     "
     git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
   cflags: |
