@@ -164,7 +164,7 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
 
     root = Path(__file__).resolve().parents[2]
     src = root / "src" / "tests" / "data"
-    target = root / "build" / "test_data"
+    target = root / "dist" / "test_data"
     target.symlink_to(src, True)
     path = "/test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
     try:

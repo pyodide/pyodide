@@ -63,17 +63,6 @@ resolution.
 
 See issues {issue}`2045` and {issue}`1100`.
 
-## Switch to using wheels for Python packages
-
-We are planning to switch from using Emscripten's file packager to packaging
-Python packages as wheels. Other shared libraries can be bundled as zip or tar
-archives. This makes us more compliant with the general Python ecosystem and
-makes the archive files easier to inspect. They could also be used more easily
-with systems other than Emscripten. Eventually, it is possible that packages
-will be able to upload wheels for Pyodide to PyPi.
-
-See issue {pr}`655` and PR {pr}`2027`.
-
 ## Find a better way to compile Fortran
 
 Currently, we use f2c to cross compile Fortran to C. This does not work very
@@ -89,16 +78,6 @@ toolchain, most of these problems would be solved. There are several promising
 projects heading in that direction including flang and lfortran.
 
 See {issue}`scipy/scipy#15290`.
-
-## Support for Rust packages
-
-We have promising partial work toward compiling Python packages with Rust extensions for use with
-Pyodide. So far we have only compiled small toy examples. Currently the compiled
-Rust packages have various functional limitations and come out _very_ large.
-Hopefully we can work toward increasing functionality so we can compile real
-world Rust packages. It would also be good to reduce the Rust package sizes.
-
-See {issue}`1973` and {pr}`2081`.
 
 ## Better project sustainability
 

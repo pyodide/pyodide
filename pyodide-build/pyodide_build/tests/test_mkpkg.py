@@ -14,13 +14,10 @@ from pyodide_build.io import parse_package_config
 
 
 @pytest.mark.parametrize("source_fmt", ["wheel", "sdist"])
-def test_mkpkg(tmpdir, monkeypatch, capsys, source_fmt):
-    pytest.importorskip("ruamel")
-    assert pyodide_build.mkpkg.PACKAGES_ROOT.exists()
+def test_mkpkg(tmpdir, capsys, source_fmt):
     base_dir = Path(str(tmpdir))
-    monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
 
-    pyodide_build.mkpkg.make_package("idna", None, source_fmt)
+    pyodide_build.mkpkg.make_package(base_dir, "idna", None, source_fmt)
     assert os.listdir(base_dir) == ["idna"]
     meta_path = base_dir / "idna" / "meta.yaml"
     assert meta_path.exists()
@@ -38,10 +35,8 @@ def test_mkpkg(tmpdir, monkeypatch, capsys, source_fmt):
 
 @pytest.mark.parametrize("old_dist_type", ["wheel", "sdist"])
 @pytest.mark.parametrize("new_dist_type", ["wheel", "sdist", "same"])
-def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
-    pytest.importorskip("ruamel")
+def test_mkpkg_update(tmpdir, old_dist_type, new_dist_type):
     base_dir = Path(str(tmpdir))
-    monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
 
     old_ext = ".tar.gz" if old_dist_type == "sdist" else ".whl"
     old_url = "https://<some>/idna-2.0" + old_ext
@@ -54,14 +49,15 @@ def test_mkpkg_update(tmpdir, monkeypatch, old_dist_type, new_dist_type):
         "test": {"imports": ["idna"]},
     }
 
-    os.mkdir(base_dir / "idna")
-    meta_path = base_dir / "idna" / "meta.yaml"
-    with open(meta_path, "w") as fh:
-        yaml.dump(db_init, fh)
+    package_dir = base_dir / "idna"
+    package_dir.mkdir(parents=True)
+    meta_path = package_dir / "meta.yaml"
+    with open(meta_path, "w") as f:
+        yaml.dump(db_init, f)
     source_fmt = new_dist_type
     if new_dist_type == "same":
         source_fmt = None
-    pyodide_build.mkpkg.update_package("idna", None, False, source_fmt)
+    pyodide_build.mkpkg.update_package(base_dir, "idna", None, False, source_fmt)
 
     db = parse_package_config(meta_path)
     assert list(db.keys()) == list(db_init.keys())

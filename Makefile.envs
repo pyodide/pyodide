@@ -44,8 +44,19 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
-export DBGFLAGS=-g0
-# export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+export DBGFLAGS_NODEBUG=-g0
+export DBGFLAGS_WASMDEBUG=-g2
+export DBGFLAGS_SOURCEMAPDEBUG=-g3
+export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
+
+export DBGFLAGS=$(DBGFLAGS_NODEBUG)
+
+# Include debug symbols but no source maps (most useful)
+#export DBGFLAGS=$(DBGFLAGS_WASMDEBUG)
+
+# Debug with source maps (less useful than WASMDEBUG but easier if it helps)
+#export DBGFLAGS=$(DBGFLAGS_SOURCEMAPDEBUG)
+#export DBG_LDFLAGS=$(DBG_LDFLAGS_SOURCEMAPDEBUG)
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
@@ -57,6 +68,7 @@ export CFLAGS_BASE=\
 export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
+	$(DBG_LDFLAGS) \
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
@@ -98,7 +110,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--exclude-file "*/test/*" \
 	--exclude-file "*/tests/*" \
 	--exclude-file "*/distutils/*" \
-	--pre-js src/core/pre.js
+	--pre-js src/core/pre.js \
+	--pre-js src/js/_pyodide.out.js
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
