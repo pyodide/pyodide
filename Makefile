@@ -13,6 +13,7 @@ all: check \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
 	dist/package.json \
+	npm-link \
 	dist/console.html \
 	dist/distutils.tar \
 	dist/packages.json \
@@ -83,6 +84,10 @@ dist/pyodide.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts 
 
 dist/package.json : src/js/package.json
 	cp $< $@
+
+.PHONY: npm-link
+npm-link: dist/package.json
+	cd src/test-js && npm ci && npm link ../../dist
 
 dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
 	npx dts-bundle-generator src/js/pyodide.ts --export-referenced-types false
