@@ -148,7 +148,7 @@ def parse_args(benchmarks):
     )
     parser.add_argument(
         "--dist-dir",
-        default=str(Path(__file__).parent / "dist"),
+        default=str(Path(__file__).parents[1] / "dist"),
         help="Pyodide dist directory (default: %(default)s)",
     )
 

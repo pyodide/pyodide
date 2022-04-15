@@ -46,7 +46,7 @@ def test_cpython_core(main_test, selenium, request):
     if not isinstance(ignore_tests, list):
         raise Exception("Invalid python_tests.yaml entry: 'skip' should be a list")
 
-    selenium.load_package(UNVENDORED_STDLIB_MODULES)
+    selenium.load_package(list(UNVENDORED_STDLIB_MODULES))
     try:
         selenium.run(
             dedent(

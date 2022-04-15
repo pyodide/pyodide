@@ -133,4 +133,4 @@ def extra_checks_test_wrapper(selenium, trace_hiwire_refs, trace_pyproxies):
 
 
 def package_is_built(package_name):
-    _package_is_built(package_name, pytest.pyodide_dist_dir)
+    return _package_is_built(package_name, pytest.pyodide_dist_dir)
