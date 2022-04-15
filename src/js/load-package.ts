@@ -1,5 +1,13 @@
-import { Module, API, Tests } from "./module.js";
-import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
+declare var Module: any;
+declare var Tests: any;
+declare var API: any;
+
+import {
+  IN_NODE,
+  nodeFsPromisesMod,
+  _loadBinaryFile,
+  initNodeModules,
+} from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /** @private */
@@ -15,6 +23,7 @@ export async function initializePackageIndex(indexURL: string) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
+    await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}packages.json`
     );
@@ -46,9 +55,9 @@ export async function initializePackageIndex(indexURL: string) {
  * @private
  */
 let cdnURL: string;
-export function setCdnUrl(url: string) {
+API.setCdnUrl = function (url: string) {
   cdnURL = url;
-}
+};
 
 //
 // Dependency resolution
@@ -434,3 +443,5 @@ export async function loadPackage(
  * install location for a particular ``package_name``.
  */
 export let loadedPackages: { [key: string]: string } = {};
+
+API.packageIndexReady = initializePackageIndex(API.config.indexURL);

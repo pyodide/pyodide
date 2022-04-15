@@ -892,14 +892,14 @@ def test_js_stackframes(selenium):
         ["test.html", "d3"],
         ["test.html", "d2"],
         ["test.html", "d1"],
-        ["pyodide.js", "runPython"],
+        ["pyodide.asm.js", "runPython"],
         ["_pyodide/_base.py", "eval_code"],
         ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
         ["test.html", "b"],
-        ["pyodide.js", "pyimport"],
+        ["pyodide.asm.js", "pyimport"],
         ["importlib/__init__.py", "import_module"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames

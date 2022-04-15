@@ -12,6 +12,20 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} We now put our built files into the `dist` directory rather
+  than the `build` directory. {pr}`2387`
+
+- {{ Enhancement }} `loadPyodide` no longer uses any global state, so it can be
+  used more than once in the same thread. This is recommended if a network
+  request causes a loading failure, if there is a fatal error, if you damage the
+  state of the runtime so badly that it is no longer usable, or for certain
+  testing purposes. It is not recommended for creating multiple execution
+  environments, for which you should use
+  `pyodide.runPython(code, { globals : some_dict})`;
+  {pr}`2391`
+
 ## Version 0.20.0
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
