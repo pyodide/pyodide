@@ -9,5 +9,8 @@
   },
   "mocha": {
     "timeout": 30000
+  },
+  "dependencies": {
+    "tsd": "^0.20.0"
   }
 }
