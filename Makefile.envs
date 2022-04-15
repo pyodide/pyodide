@@ -110,7 +110,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--exclude-file "*/test/*" \
 	--exclude-file "*/tests/*" \
 	--exclude-file "*/distutils/*" \
-	--pre-js src/core/pre.js
+	--pre-js src/core/pre.js \
+	--pre-js src/js/_pyodide.out.js
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

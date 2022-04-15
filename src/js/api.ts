@@ -1,8 +1,13 @@
-import { Module, API, Hiwire } from "./module";
+declare var Module: any;
+declare var Hiwire: any;
+declare var API: any;
+import "./module.ts";
+
 import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 export { loadPackage, loadedPackages, isPyProxy };
+import "./error_handling.gen.js";
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -30,6 +35,16 @@ export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
  * the git hash of the current commit (e.g. ``0.1.0-1-bd84646``).
  */
 export let version: string = ""; // actually defined in loadPyodide (see pyodide.js)
+
+/**
+ * Just like `runPython` except uses a different globals dict and gets
+ * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
+ * @private
+ */
+API.runPythonInternal = function (code: string): any {
+  // API.runPythonInternal_dict is initialized in finalizeBootstrap
+  return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
+};
 
 let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
@@ -463,7 +478,7 @@ export let FS: any;
 /**
  * @private
  */
-export function makePublicAPI(): PyodideInterface {
+API.makePublicAPI = function (): PyodideInterface {
   FS = Module.FS;
   let namespace = {
     globals,
@@ -492,4 +507,4 @@ export function makePublicAPI(): PyodideInterface {
 
   API.public_api = namespace;
   return namespace;
-}
+};
