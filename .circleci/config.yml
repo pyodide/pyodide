@@ -117,6 +117,7 @@ jobs:
         description: The packages to be built.
         type: string
     <<: *defaults
+    resource_class: large
     steps:
       - checkout
 
