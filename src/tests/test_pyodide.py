@@ -1063,7 +1063,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            indexURL : './',
             fullStdLib: false,
             jsglobals : self,
             stdin,
@@ -1112,7 +1111,6 @@ def test_home_directory(selenium_standalone_noload):
     selenium.run_js(
         """
         let pyodide = await loadPyodide({
-            indexURL : './',
             homedir : "%s",
         });
         return pyodide.runPython(`

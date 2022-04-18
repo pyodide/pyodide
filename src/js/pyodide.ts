@@ -164,7 +164,7 @@ function calculateIndexURL(): string {
   } catch (e) {
     err = e;
   }
-  const fileName = ErrorStackParser.parse(err)[0].fileName!;
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
   return fileName.slice(0, fileName.lastIndexOf("/"));
 }
 
@@ -287,7 +287,11 @@ export async function loadPyodide(
 
   const pyodide = finalizeBootstrap(API, config);
   // API.runPython works starting here.
-
+  if (!pyodide.version.includes("dev")) {
+    // Currently only used in Node to download packages the first time they are
+    // loaded. But in other cases it's harmless.
+    API.setCdnUrl(`https://cdn.jsdelivr.net/v${pyodide.version}/full/`);
+  }
   await API.packageIndexReady;
   if (config.fullStdLib) {
     await pyodide.loadPackage(["distutils"]);
