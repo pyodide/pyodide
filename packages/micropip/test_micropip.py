@@ -162,17 +162,15 @@ def test_parse_wheel_url():
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
 def test_install_custom_url(selenium_standalone_micropip, base_url):
     selenium = selenium_standalone_micropip
-    base_url = base_url.format(base_url=selenium.base_url)
 
-    root = Path(__file__).resolve().parents[2]
-    src = root / "src" / "tests" / "data"
-    target = root / "dist" / "test_data"
-    target.symlink_to(src, True)
-    path = "/test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    try:
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
         selenium.run_js(
             f"""
-            let url = {base_url} + '{path}';
+            let url = '{url}';
             let resp = await fetch(url);
             await pyodide.runPythonAsync(`
                 import micropip
@@ -181,8 +179,6 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
             `);
             """
         )
-    finally:
-        target.unlink()
 
 
 def test_add_requirement():
