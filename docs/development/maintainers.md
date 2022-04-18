@@ -15,10 +15,26 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 1. Make a new PR and for all occurrences of
    `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
    the release version `vX.Y.Z` (note the presence of the leading `v`). This
-   also applies to `docs/conf.py`
-2. Set the version in `src/py/pyodide/__init__.py` in `src/js/package.json`, in
-   `src/py/setup.cfg` and in `pyodide-build/setup.cfg`.
+   also applies to `docs/conf.py`, but you should skip this file and
+   `docs/usage/downloading-and-deploying.md`.
+
+2. Set the version in:
+
+   - `docs/project/about.md` (the Zenodo citation),
+   - `docs/development/building-from-sources.md`,
+   - `docs/usage/downloading-and-deploying.md`,
+   - `setup.cfg`,
+   - `src/js/package.json`,
+   - `src/py/pyodide/__init__.py`,
+   - `src/py/setup.cfg`,
+   - `pyodide-build/setup.cfg`,
+   - ... other places
+
+   After this, try using `ripgrep` to make sure there are no extra old versions
+   lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
+
 3. Make sure the change log is up-to-date.
+
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
@@ -27,6 +43,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
      ```
      where `LAST_TAG` is the tag for the last release.
      Merge the PR.
+
 4. Assuming the upstream `stable` branch exists, rename it to a release branch
    for the previous major version. For instance if last release was, `0.20.0`,
    the corresponding release branch would be `0.20.X`,
@@ -39,49 +56,33 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    ```
 5. Create a tag `X.Y.Z` (without leading `v`) and push
    it to upstream,
+
    ```bash
    git tag X.Y.Z
    git push upstream X.Y.Z
    ```
+
    Create a new `stable` branch from this tag,
+
    ```bash
    git checkout -b stable
    git push upstream stable --force
    ```
+
    Wait for the CI to pass and create the release on GitHub.
-6. Release the `pyodide-build` package and `pyodide` package:
-   ```bash
-   pip install twine build
-   cd pyodide-build/
-   python -m build .
-   ls dist/   # check the produced files
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-   And to release the `pyodide` package:
-   ```bash
-   cd src/py/
-   python -m build .
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-7. Release the Pyodide JavaScript package:
+
+6. Release the Pyodide JavaScript package:
 
    ```bash
-   cd src/js
+   cd dist
    npm publish # Note: use "--tag next" for prereleases
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
-8. Build the pre-built Docker image locally and push,
-   ```bash
-   docker build -t pyodide/pyodide:X.Y.Z -f Dockerfile-prebuilt --build-arg VERSION=BB .
-   docker push
-   ```
-   where `BB` is the last version of the `pyodide-env` Docker image (you can
-   find it at the top of `.circleci/config.yml`).
-9. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
+7. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
    the next version specified by Semantic Versioning.
+
+8. Update this file with any relevant changes.
 
 ### Making a minor release
 
@@ -117,7 +118,7 @@ alpha version as the stable release.
 
 If you accidentally publish the alpha release over the stable `latest` tag, you
 can fix it with: `npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be
-the lastest stable version. Then use
+the latest stable version. Then use
 `npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the
 just-published alpha release.
 

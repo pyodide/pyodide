@@ -33,28 +33,51 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Simplification of the package loading system
+## Better support and documentation for loading user Python code
+
+Currently, most of our documentation suggests using `pyodide.runPython` to run
+code. This makes code difficult to maintain, because it won't work with `mypy`,
+`black`, or other code analysis tools, doesn't get good syntax highlighting in
+editors, etc. It also may lead to passing "arguments" to code via string
+formatting, missing out on the type conversion utilities.
+
+Our goal is to develop and document a better workflow for users to develop
+Python code for use in Pyodide.
+
+See issue {issue}`1940`.
+
+## Improvements to package loading system
 
 Currently, Pyodide has two ways of loading packages:
 
-- `loadPackage` for packages built with Pyodide and
-- `micropip.install` for pure Python packages from PyPI.
+- {any}`pyodide.loadPackage` for packages built with Pyodide and
+- {any}`micropip.install` for pure Python packages from PyPI.
 
-The relationship between these tools is confusing and could be simplified.
-Furthermore, the dependency resolution logic and packaging / build system could
-be improved.
+The relationship between these tools is currently confusing.
 
-See issues {issue}`1470` and {issue}`1100`.
+Our goal is to have three ways to load packages: one with no dependency
+resolution at all, one with static dependency resolution which is done ahead of
+time, and one for dynamic dependency resolution. Ideally most applications can
+use static dependency resolution and repls can use dynamic dependency
+resolution.
 
-## Update SciPy to a more recent version
+See issues {issue}`2045` and {issue}`1100`.
 
-SciPy is a cornerstone of scientific computing in Python. It's a challenging
-package to build for WebAssembly because it is large, includes Fortran code, and
-requires BLAS and LAPACK libraries. Currently, Pyodide includes scipy 0.17.1 from 2016.
-Updating it is a blocker for using more recent versions of packages such
-as scikit-learn, scikit-image, statsmodels, and MNE.
+## Find a better way to compile Fortran
 
-See issue {issue}`549`.
+Currently, we use f2c to cross compile Fortran to C. This does not work very
+well because f2c only fully supports Fortran 77 code. LAPACK has used more
+modern Fortran features since 2008 and Scipy has adopted more recent Fortran as
+well. f2c still successfully generates code for all but 6 functions in Scipy +
+LAPACK, but much of the generated code is slightly wrong and requires extensive
+patching. There are still a large number of fatal errors due to call signature
+incompatibilities.
+
+If we could use an LLVM-based Fortran compiler as a part of the Emscripten
+toolchain, most of these problems would be solved. There are several promising
+projects heading in that direction including flang and lfortran.
+
+See {issue}`scipy/scipy#15290`.
 
 ## Better project sustainability
 
@@ -77,13 +100,13 @@ See issue {issue}`1504`.
 ## Synchronous IO
 
 The majority of existing I/O APIs are synchronous. Unless we can support
-synchronous IO, much of the existing Python ecosystem cannot be ported. Luckily
-{user}`joemarshall` has a solution for this involving rewinding the Python
-stack. He has [a prototype implementation
-here](https://github.com/joemarshall/unthrow). We would like to bring this into
-Pyodide as a core feature.
+synchronous IO, much of the existing Python ecosystem cannot be ported. There
+are several different approaches to this, we would like to support at least one
+method.
 
 See issue {issue}`1503`.
+
+(http-client-limit)=
 
 ## Write http.client in terms of Web APIs
 

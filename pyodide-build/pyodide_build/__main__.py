@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 import argparse
-import pathlib
 import os
 import sys
 
-from . import buildall
-from . import buildpkg
-from . import serve
-from . import mkpkg
-from .common import get_make_environment_vars
+from . import buildall, buildpkg, mkpkg, serve
+from .common import get_hostsitepackages, get_make_environment_vars, search_pyodide_root
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -31,20 +27,26 @@ def make_parser() -> argparse.ArgumentParser:
         ]:
             # Likely building documentation, skip private API
             continue
-        parser = module.make_parser(subparsers.add_parser(command_name))  # type: ignore
-        parser.set_defaults(func=module.main)  # type: ignore
+        parser = module.make_parser(subparsers.add_parser(command_name))
+        parser.set_defaults(func=module.main)
     return main_parser
 
 
 def main():
     if not os.environ.get("__LOADED_PYODIDE_ENV"):
-        PYODIDE_ROOT = str(pathlib.Path(__file__).parents[2].resolve())
-        os.environ["PYODIDE_ROOT"] = PYODIDE_ROOT
+        # If we are building docs, we don't need to know the PYODIDE_ROOT
+        if "sphinx" in sys.modules:
+            os.environ["PYODIDE_ROOT"] = ""
+
+        if "PYODIDE_ROOT" not in os.environ:
+            os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
+
         os.environ.update(get_make_environment_vars())
-        HOSTINSTALLDIR = os.environ["HOSTINSTALLDIR"]
-        os.environ[
-            "PYTHONPATH"
-        ] = f"{HOSTINSTALLDIR}/lib/python:{PYODIDE_ROOT}/pyodide-build/"
+        hostsitepackages = get_hostsitepackages()
+        pythonpath = [
+            hostsitepackages,
+        ]
+        os.environ["PYTHONPATH"] = ":".join(pythonpath)
         os.environ["BASH_ENV"] = ""
         os.environ["__LOADED_PYODIDE_ENV"] = "1"
 

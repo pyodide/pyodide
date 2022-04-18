@@ -6,7 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: main-${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.10.2
+      - uses: pre-commit/action@v2.0.3
+
   build-core:
     runs-on: ubuntu-latest
     env:
@@ -28,7 +41,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: 3.9.5
+          python-version: 3.10.2
           channels: conda-forge
 
       - name: Check Python versions
@@ -75,13 +88,13 @@ jobs:
           ccache -s
 
       - name: check-size
-        run: ls -lh build/
+        run: ls -lh dist/
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v2
         with:
           name: core-build
-          path: ./build/
+          path: ./dist/
           retention-days: 60
 
   test-core:
@@ -89,7 +102,7 @@ jobs:
     env:
       DISPLAY: :99
 
-    needs: build-core
+    needs: [build-core]
     strategy:
       matrix:
         selenium_runner: [firefox]
@@ -101,12 +114,12 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: core-build
-          path: ./build/
+          path: ./dist/
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: 3.9.5
+          python-version: 3.10.2
           channels: conda-forge
 
       - name: install test requirements
@@ -120,7 +133,7 @@ jobs:
         shell: bash -l {0}
         run: |
           ls -lh
-          ls -lh build/
+          ls -lh dist/
           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
 
       - name: run package tests
@@ -129,5 +142,5 @@ jobs:
         shell: bash -l {0}
         run: |
           ls -lh
-          ls -lh build/
+          ls -lh dist/
           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${SELENIUM_RUNNER}"

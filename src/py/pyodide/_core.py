@@ -5,22 +5,22 @@ IN_BROWSER = "_pyodide_core" in sys.modules
 if IN_BROWSER:
     from _pyodide_core import (
         ConversionError,
-        create_proxy,
-        create_once_callable,
-        JsProxy,
         JsException,
-        to_js,
+        JsProxy,
+        create_once_callable,
+        create_proxy,
         destroy_proxies,
+        to_js,
     )
 else:
     from _pyodide._core_docs import (
         ConversionError,
-        create_proxy,
-        create_once_callable,
-        JsProxy,
         JsException,
-        to_js,
+        JsProxy,
+        create_once_callable,
+        create_proxy,
         destroy_proxies,
+        to_js,
     )
 
 

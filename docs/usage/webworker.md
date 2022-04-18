@@ -108,9 +108,7 @@ shown below:
 importScripts("https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js");
 
 async function loadPyodideAndPackages() {
-  self.pyodide = await loadPyodide({
-    indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
-  });
+  self.pyodide = await loadPyodide();
   await self.pyodide.loadPackage(["numpy", "pytz"]);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();
@@ -145,7 +143,7 @@ You would just need to call `.postMessages()` with the right arguments as
 this API does.
 
 ```js
-const pyodideWorker = new Worker("./build/webworker.js");
+const pyodideWorker = new Worker("./dist/webworker.js");
 
 const callbacks = {};
 
@@ -157,7 +155,7 @@ pyodideWorker.onmessage = (event) => {
 };
 
 const asyncRun = (() => {
-  let id = 0;  // identify a Promise
+  let id = 0; // identify a Promise
   return (script, context) => {
     // the id could be generated more carefully
     id = (id + 1) % Number.MAX_SAFE_INTEGER;
@@ -166,13 +164,13 @@ const asyncRun = (() => {
       pyodideWorker.postMessage({
         ...context,
         python: script,
-        id
+        id,
       });
-    })
-  }
+    });
+  };
 })();
 
-export { asyncRun }
+export { asyncRun };
 ```
 
 [worker api]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API

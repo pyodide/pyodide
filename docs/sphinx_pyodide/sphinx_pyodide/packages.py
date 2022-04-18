@@ -1,16 +1,18 @@
+import pathlib
+import sys
+from typing import Any
+
 from docutils import nodes
 from docutils.parsers.rst import Directive
-import sys
-import pathlib
-from typing import Dict, Any, Tuple, List
-
 from sphinx import addnodes
-
 
 base_dir = pathlib.Path(__file__).resolve().parents[3]
 sys.path.append(str(base_dir / "pyodide-build"))
 
 from pyodide_build.io import parse_package_config
+
+PYODIDE_TESTONLY = "pyodide.test"
+PYODIDE_STDLIB = "pyodide.stdlib"
 
 
 def get_packages_summary_directive(app):
@@ -25,11 +27,14 @@ def get_packages_summary_directive(app):
 
             packages = {}
             for package in packages_list:
-                name, version, is_library = self.parse_package_info(package)
+                name, version, is_library, tag = self.parse_package_info(package)
 
-                # skip libraries (e.g. libxml, libyaml, ...)
-                if is_library:
+                # skip libraries (e.g. libxml, libyaml, ...) and test only packages
+                if is_library or tag == PYODIDE_TESTONLY:
                     continue
+
+                if tag == PYODIDE_STDLIB:
+                    version = "Pyodide standard library"
 
                 packages[name] = {
                     "name": name,
@@ -43,18 +48,21 @@ def get_packages_summary_directive(app):
 
             return result
 
-        def parse_package_info(self, config: pathlib.Path) -> Tuple[str, str, bool]:
+        def parse_package_info(
+            self, config: pathlib.Path
+        ) -> tuple[str, str, bool, str]:
             yaml_data = parse_package_config(config)
 
             name = yaml_data["package"]["name"]
             version = yaml_data["package"]["version"]
+            tag = yaml_data["package"].get("_tag", "")
             is_library = yaml_data.get("build", {}).get("library", False)
 
-            return name, version, is_library
+            return name, version, is_library, tag
 
         def get_package_metadata_list(
             self, directory: pathlib.Path
-        ) -> List[pathlib.Path]:
+        ) -> list[pathlib.Path]:
             """Return metadata files of packages in alphabetical order (case insensitive)"""
             return sorted(
                 directory.glob("**/meta.yaml"),
@@ -62,8 +70,8 @@ def get_packages_summary_directive(app):
             )
 
         def format_packages_table(
-            self, packages: Dict[str, Any], columns: Tuple[str]
-        ) -> List[Any]:
+            self, packages: dict[str, Any], columns: tuple[str, ...]
+        ) -> list[Any]:
             table_spec = addnodes.tabular_col_spec()
             table_spec["spec"] = r"\X{1}{2}\X{1}{2}"
 
@@ -84,7 +92,7 @@ def get_packages_summary_directive(app):
             group += thead
 
             rows = []
-            for name, pkg_info in packages.items():
+            for pkg_info in packages.values():
                 row = nodes.row()
                 rows.append(row)
                 for column in columns:

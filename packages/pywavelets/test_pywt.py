@@ -5,8 +5,8 @@ from pyodide_build.testing import run_in_pyodide
     packages=["pywavelets"], driver_timeout=30, xfail_browsers={"chrome": "xfail"}
 )
 def test_pywt():
-    import pywt
     import numpy as np
+    import pywt
 
     def checkit(a, v):
         assert (np.rint(a) == v).all()

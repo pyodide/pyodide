@@ -1,11 +1,9 @@
-import os
-import sys
 import argparse
 import http.server
-import socketserver
+import os
 import pathlib
-
-BUILD_PATH = pathlib.Path(__file__).resolve().parents[2] / "build"
+import socketserver
+import sys
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -18,16 +16,20 @@ Handler.extensions_map[".wasm"] = "application/wasm"
 
 
 def make_parser(parser):
-    parser.description = "Start a server with the supplied " "build_dir and port."
+    parser.description = "Start a server with the supplied dist-dir and port."
     parser.add_argument(
-        "--build_dir",
+        "--dist-dir",
         action="store",
         type=str,
-        default=BUILD_PATH,
-        help="set the build directory",
+        default="dist",
+        help="set the dist directory (default: %(default)s)",
     )
     parser.add_argument(
-        "--port", action="store", type=int, default=8000, help="set the PORT number"
+        "--port",
+        action="store",
+        type=int,
+        default=8000,
+        help="set the PORT number (default: %(default)s)",
     )
     return parser
 
@@ -38,11 +40,11 @@ def server(port):
 
 
 def main(args):
-    build_dir = args.build_dir
+    build_dir = pathlib.Path(args.build_dir).resolve()
     port = args.port
     httpd = server(port)
     os.chdir(build_dir)
-    print("serving from {0} at localhost:".format(build_dir) + str(port))
+    print(f"serving from {build_dir} at localhost:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

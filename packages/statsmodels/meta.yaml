@@ -1,10 +1,12 @@
 package:
   name: statsmodels
-  version: 0.9.0
+  version: 0.13.2
 
 source:
-  url: https://github.com/statsmodels/statsmodels/archive/refs/tags/v0.9.0.tar.gz
-  sha256: 4ab219c776bf5b2187645c0ccb00cf8564c6c17541ae66ab96503f07368197d3
+  url: https://files.pythonhosted.org/packages/e1/4a/0eb4efa49cc352e2721e2aebfe8573264db2add195545ec3979c98040c3b/statsmodels-0.13.2.tar.gz
+  sha256: 77dc292c9939c036a476f1770f9d08976b05437daa229928da73231147cde7d4
+  patches:
+    - patches/fix-scipy-blas-cythonize.patch
 
 build:
   ldflags: -L$(NUMPY_LIB)
@@ -16,7 +18,9 @@ requirements:
     - scipy
     - pandas
     - patsy
+    - packaging
 
 test:
   imports:
     - statsmodels
+    - statsmodels.api

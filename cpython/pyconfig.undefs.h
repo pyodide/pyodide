@@ -21,6 +21,7 @@
 #undef HAVE_PWRITEV
 #undef HAVE_PIPE2
 #undef HAVE_NICE
+#undef HAVE_EVENTFD
 
 /* Syscalls that resulted in a segfault */
 #undef HAVE_UTIMENSAT

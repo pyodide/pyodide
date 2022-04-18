@@ -1,13 +1,14 @@
 {
   "$schema": "http://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "allowJs": true,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "lib": ["ES2018", "DOM"],
-    "outDir": "../../build",
-    "rootDir": "."
+    "lib": ["ES2021", "DOM"],
+    "outDir": "../../dist",
+    "esModuleInterop": true,
+    "target": "ES6",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "noImplicitAny": true
   },
-  "include": ["./*.js"],
-  "exclude": ["rollup.config.js"]
+  "include": ["*.ts"],
+  "exclude": ["rollup.config.js", "*test*"]
 }

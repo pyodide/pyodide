@@ -3,7 +3,10 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:19
+    # Note: when updating the docker image version,
+    #       make sure there are no extra old versions lying around.
+    #       (e.g. `rg -F --hidden <old_tag>`)
+    - image: pyodide/pyodide-env:20220411-chrome99-firefox98
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -13,16 +16,6 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
 
 jobs:
-  lint:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-
-      - run:
-          name: lint
-          command: make lint
-
   test-docs:
     <<: *defaults
     resource_class: small
@@ -44,11 +37,13 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
+            - -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220303-{{ checksum "cpython/Makefile" }}
+            - -core-v20220303
 
       - run:
           name: build emsdk
-          no_output_timeout: 1200
+          no_output_timeout: 20m
           command: |
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
@@ -62,7 +57,7 @@ jobs:
 
       - run:
           name: build cpython
-          no_output_timeout: 1200
+          no_output_timeout: 20m
           command: |
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
@@ -73,7 +68,7 @@ jobs:
 
       - run:
           name: build pyodide core
-          no_output_timeout: 1200
+          no_output_timeout: 20m
           command: |
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
@@ -84,12 +79,12 @@ jobs:
 
       - run:
           name: check-size
-          command: ls -lh build/
+          command: ls -lh dist/
 
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
+          key: -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -100,7 +95,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz  build
+            tar cjf pyodide-build.tar.gz dist
 
       - persist_to_workspace:
           root: .
@@ -108,7 +103,7 @@ jobs:
             - .
 
       - store_artifacts:
-          path: /root/repo/build/
+          path: /root/repo/dist/
 
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
@@ -128,11 +123,12 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg1-v20220303
 
       - run:
           name: build packages
-          no_output_timeout: 1800
+          no_output_timeout: 30m
           command: |
             source pyodide_env.sh
 
@@ -147,23 +143,24 @@ jobs:
 
       - run:
           name: check-size
-          command: ls -lh build/
+          command: ls -lh dist/
 
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
 
       - persist_to_workspace:
           root: .
           paths:
             - ./packages
-            - ./build
+            - ./dist
 
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz  build
+            tar cjf pyodide-build.tar.gz  dist
+            tar cjf build-logs.tar.gz  packages/build-logs
 
       - persist_to_workspace:
           root: .
@@ -171,13 +168,16 @@ jobs:
             - .
 
       - store_artifacts:
-          path: /root/repo/build/
+          path: /root/repo/dist/
 
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
 
   build-packages:
     <<: *defaults
@@ -191,11 +191,12 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
+            - -pkg2-v20220303
 
       - run:
           name: build packages
-          no_output_timeout: 1800
+          no_output_timeout: 30m
           command: |
             source pyodide_env.sh
 
@@ -210,32 +211,36 @@ jobs:
 
       - run:
           name: check-size
-          command: ls -lh build/
+          command: ls -lh dist/
 
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz  build
+            tar cjf pyodide-build.tar.gz dist
+            tar cjf build-logs.tar.gz  packages/build-logs
 
       - persist_to_workspace:
           root: .
           paths:
             - ./packages/.artifacts
-            - ./build
+            - ./dist
 
       - store_artifacts:
-          path: /root/repo/build/
+          path: /root/repo/dist/
 
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
+
+      - store_artifacts:
+          path: /root/repo/build-logs.tar.gz
 
   test-main:
     parameters:
@@ -254,6 +259,7 @@ jobs:
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
+              --durations 10 \
               << parameters.test-params >>
       - store_test_results:
           path: test-results
@@ -278,7 +284,8 @@ jobs:
           name: test
           command: |
             mkdir test-results
-            pytest \
+            python3 -m pip install -e ./pyodide-build
+            PYODIDE_ROOT=. pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
               -k 'not (chrome or firefox or node)' \
@@ -297,19 +304,19 @@ jobs:
       - run:
           name: test
           command: |
-            cd src/js
-            npx tsd
+            cd src/test-js
             npm ci
+            npm link ../../dist
+            npm run test-types
             npm test
-      - run:
-          name: check if webpack cli works well with load-pyodide.js
-          command: |
-            git clone https://github.com/pyodide/pyodide-webpack-example.git
-            cd pyodide-webpack-example
-            npm ci
-            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js
-            head -20 node_modules/pyodide/load-pyodide.js
-            npx webpack
+      # - run:
+      #     name: check if webpack cli works well with load-pyodide.js
+      #     command: |
+      #       git clone https://github.com/pyodide/pyodide-webpack-example.git
+      #       cd pyodide-webpack-example
+      #       npm ci
+      #       cp ../src/js/*.js node_modules/pyodide/
+      #       npx webpack
 
   benchmark:
     <<: *defaults
@@ -319,11 +326,16 @@ jobs:
       - attach_workspace:
           at: .
       - run:
+          name: install requirements
+          command: |
+            pip3 install numpy matplotlib
+      - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py all --output dist/benchmarks.json
+
       - store_artifacts:
-          path: /root/repo/build/benchmarks.json
+          path: /root/repo/dist/benchmarks.json
 
   deploy-release:
     # To reduce chance of deployment issues, try to keep the steps here as
@@ -345,7 +357,7 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
-            cp -r build /tmp/pyodide
+            cp -r dist /tmp/pyodide
             cd /tmp/
             tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
@@ -356,9 +368,9 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
+            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
+            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
+            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
@@ -385,20 +397,15 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
+            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
 
 workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint:
-          filters:
-            tags:
-              only: /.*/
-
       - test-docs:
           filters:
             tags:
@@ -430,7 +437,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -439,7 +446,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -448,7 +455,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/
+          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -493,7 +500,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: -k "node and not numpy" packages/test* packages/*/test*
+          test-params: -k node packages/test* packages/*/test*
           requires:
             - build-packages
           filters:
@@ -523,7 +530,6 @@ workflows:
 
       - deploy-release:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox
@@ -534,7 +540,6 @@ workflows:
               only: /^\d+\.\d+\.\w+$/
       - deploy-dev:
           requires:
-            - lint
             - test-python
             - test-core-firefox
             - test-packages-firefox

@@ -21,11 +21,9 @@ _csv _csv.c
 
 CTYPES_FLAGS=-DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 -DHAVE_FFI_CLOSURE_ALLOC=1
 _ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/cfield.c _ctypes/stgdict.c $(CTYPES_FLAGS)
-_ctypes_test _ctypes/_ctypes_test.c
 
 unicodedata unicodedata.c
 _pickle _pickle.c
-parser parsermodule.c
 
 _socket socketmodule.c
 select selectmodule.c
@@ -71,3 +69,4 @@ _lsprof _lsprof.c rotatingtree.c
 
 _decimal _decimal/_decimal.c _decimal/libmpdec/basearith.c _decimal/libmpdec/constants.c _decimal/libmpdec/context.c _decimal/libmpdec/convolute.c _decimal/libmpdec/crt.c _decimal/libmpdec/difradix2.c _decimal/libmpdec/fnt.c _decimal/libmpdec/fourstep.c _decimal/libmpdec/io.c _decimal/libmpdec/mpalloc.c _decimal/libmpdec/mpdecimal.c _decimal/libmpdec/numbertheory.c _decimal/libmpdec/sixstep.c _decimal/libmpdec/transpose.c -I$(srcdir)/Modules/_decimal/libmpdec
 mmap mmapmodule.c
+_xxsubinterpreters _xxsubinterpretersmodule.c

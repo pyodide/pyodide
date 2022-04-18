@@ -9,4 +9,4 @@ requirements:
     - six
 test:
   imports:
-  - retrying
+    - retrying
