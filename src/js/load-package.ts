@@ -178,9 +178,15 @@ async function downloadPackage(
       throw e;
     }
   }
+  console.log(
+    `Didn't find package ${file_name}, attempting to load from ${cdnURL}`
+  );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
   let binary = await _loadBinaryFile(cdnURL, file_name);
+  console.log(
+    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
+  );
   await nodeFsPromisesMod.writeFile(`${baseURL}${file_name}`, binary);
   return binary;
 }

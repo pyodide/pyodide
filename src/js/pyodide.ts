@@ -290,7 +290,7 @@ export async function loadPyodide(
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
     // loaded. But in other cases it's harmless.
-    API.setCdnUrl(`https://pyodide-cdn2.iodide.io/v${pyodide.version}/full/`);
+    API.setCdnUrl(`https://cdn.jsdelivr.net/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
   if (config.fullStdLib) {
