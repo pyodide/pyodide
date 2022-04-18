@@ -350,7 +350,7 @@ workflows:
 
       - build-packages:
           name: build-packages-no-numpy-dependents
-          packages: no-numpy-dependents
+          packages: "*,no-numpy-dependents"
           requires:
             - build-core
           filters:
