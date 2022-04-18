@@ -54,7 +54,7 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.refresh()
     selenium.run_js(
         """
-        self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+        self.pyodide = await loadPyodide({ fullStdLib: false });
         """
     )
     # idbfs isn't magically loaded
