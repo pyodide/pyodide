@@ -1,6 +1,7 @@
 package:
   name: sharedlib-test
   version: "1.0"
+  _tag: pyodide.test
 
 source:
   path: src

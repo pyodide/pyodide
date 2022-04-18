@@ -13,7 +13,7 @@ import {
   PyProxyCallable,
   PyBuffer,
   TypedArray,
-} from "./pyodide";
+} from "pyodide";
 
 async function main() {
   let pyodide = await loadPyodide();

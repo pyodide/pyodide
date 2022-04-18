@@ -892,14 +892,14 @@ def test_js_stackframes(selenium):
         ["test.html", "d3"],
         ["test.html", "d2"],
         ["test.html", "d1"],
-        ["pyodide.js", "runPython"],
+        ["pyodide.asm.js", "runPython"],
         ["_pyodide/_base.py", "eval_code"],
         ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
         ["test.html", "b"],
-        ["pyodide.js", "pyimport"],
+        ["pyodide.asm.js", "pyimport"],
         ["importlib/__init__.py", "import_module"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
@@ -1063,7 +1063,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            indexURL : './',
             fullStdLib: false,
             jsglobals : self,
             stdin,
@@ -1112,7 +1111,6 @@ def test_home_directory(selenium_standalone_noload):
     selenium.run_js(
         """
         let pyodide = await loadPyodide({
-            indexURL : './',
             homedir : "%s",
         });
         return pyodide.runPython(`

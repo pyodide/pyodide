@@ -35,6 +35,32 @@ export async function initNodeModules() {
   nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
   // @ts-ignore
   nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
+  if (typeof require !== "undefined") {
+    return;
+  }
+  // Emscripten uses `require`, so if it's missing (because we were imported as
+  // an ES6 module) we need to polyfill `require` with `import`. `import` is
+  // async and `require` is synchronous, so we import all packages that might be
+  // required up front and define require to look them up in this table.
+
+  // These are all the packages required in pyodide.asm.js. You can get this
+  // list with:
+  // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
+  const fs = await import(/* webpackIgnore: true */ "fs");
+  const crypto = await import(/* webpackIgnore: true */ "crypto");
+  const ws = await import(/* webpackIgnore: true */ "ws");
+  const child_process = await import(/* webpackIgnore: true */ "child_process");
+  const node_modules: { [mode: string]: any } = {
+    fs,
+    crypto,
+    ws,
+    child_process,
+  };
+  // Since we're in an ES6 module, this is only modifying the module namespace,
+  // it's still private to Pyodide.
+  (globalThis as any).require = function (mod: string): any {
+    return node_modules[mod];
+  };
 }
 
 /**
@@ -49,14 +75,26 @@ async function node_loadBinaryFile(
   indexURL: string,
   path: string
 ): Promise<Uint8Array> {
+  if (!path.startsWith("/") && !path.includes("://")) {
+    // If path starts with a "/" or starts with a protocol "blah://", we
+    // interpret it as an absolute path, otherwise "resolve" it by
+    // joining it with indexURL.
+    path = `${indexURL}${path}`;
+  }
+  if (path.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    path = path.slice("file://".length);
+  }
   if (path.includes("://")) {
+    // If it has a protocol, make a fetch request
     let response = await nodeFetch(path);
     if (!response.ok) {
       throw new Error(`Failed to load '${path}': request failed.`);
     }
-    return await response.arrayBuffer();
+    return new Uint8Array(await response.arrayBuffer());
   } else {
-    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    // Otherwise get it from the file system
+    const data = await nodeFsPromisesMod.readFile(path);
     return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
 }
@@ -135,6 +173,10 @@ if (globalThis.document) {
  * @private
  */
 async function nodeLoadScript(url: string) {
+  if (url.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    url = url.slice("file://".length);
+  }
   if (url.includes("://")) {
     // If it's a url, load it with fetch then eval it.
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
