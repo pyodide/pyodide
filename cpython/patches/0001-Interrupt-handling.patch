@@ -1,4 +1,4 @@
-From 743d9b5eff9a05f8187141a44403968f9bb457e3 Mon Sep 17 00:00:00 2001
+From e2e91c8940302f3c431d81c6ea2af2ea0571165d Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 30 Mar 2022 14:50:30 -0700
 Subject: [PATCH] Interrupt handling
@@ -63,7 +63,7 @@ index 96881d4a49..1926f650b6 100644
          return 0;
      }
 diff --git a/Python/ceval.c b/Python/ceval.c
-index ab10b4166d..b06a453a97 100644
+index ab10b4166d..98bc690fae 100644
 --- a/Python/ceval.c
 +++ b/Python/ceval.c
 @@ -1152,6 +1152,30 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
@@ -101,7 +101,7 @@ index ab10b4166d..b06a453a97 100644
  
  
  #define CHECK_EVAL_BREAKER() \
-+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
++    _Py_CheckEmscriptenSignalsPeriodically(); \
      if (_Py_atomic_load_relaxed(eval_breaker)) { \
          continue; \
      }
