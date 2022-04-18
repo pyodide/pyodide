@@ -232,9 +232,10 @@ jobs:
       - run:
           name: test
           command: |
-            cd src/js
-            npx tsd
+            cd src/test-js
             npm ci
+            npm link ../../dist
+            npm run test-types
             npm test
       # - run:
       #     name: check if webpack cli works well with load-pyodide.js
