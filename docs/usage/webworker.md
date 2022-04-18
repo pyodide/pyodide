@@ -143,7 +143,7 @@ You would just need to call `.postMessages()` with the right arguments as
 this API does.
 
 ```js
-const pyodideWorker = new Worker("./build/webworker.js");
+const pyodideWorker = new Worker("./dist/webworker.js");
 
 const callbacks = {};
 

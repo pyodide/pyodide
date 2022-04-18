@@ -98,13 +98,6 @@ main(int argc, char** argv)
   // This exits and prints a message to stderr on failure,
   // no status code to check.
   initialize_python();
-
-  if (alignof(JsRef) != alignof(int)) {
-    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
-  }
-  if (sizeof(JsRef) != sizeof(int)) {
-    FATAL_ERROR("JsRef doesn't have the same size as int.");
-  }
   emscripten_exit_with_live_runtime();
   return 0;
 }

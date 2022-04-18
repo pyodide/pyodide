@@ -1,11 +1,24 @@
 import re
 from textwrap import dedent
-from typing import Any
+from typing import Any, Sequence
 
 import pytest
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.testing import run_in_pyodide
+
+
+def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+        ]:
+            continue
+        res.append(msg)
+    return res
 
 
 def test_find_imports():
@@ -766,8 +779,10 @@ def test_fatal_error(selenium_standalone):
         x = x.replace("\n\n", "\n")
         return x
 
+    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = "".join(_strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
-        strip_stack_trace(selenium_standalone.logs)
+        err_msg
         == dedent(
             strip_stack_trace(
                 """
@@ -878,14 +893,14 @@ def test_js_stackframes(selenium):
         ["test.html", "d3"],
         ["test.html", "d2"],
         ["test.html", "d1"],
-        ["pyodide.js", "runPython"],
+        ["pyodide.asm.js", "runPython"],
         ["_pyodide/_base.py", "eval_code"],
         ["_pyodide/_base.py", "run"],
         ["<exec>", "<module>"],
         ["<exec>", "c2"],
         ["<exec>", "c1"],
         ["test.html", "b"],
-        ["pyodide.js", "pyimport"],
+        ["pyodide.asm.js", "pyimport"],
         ["importlib/__init__.py", "import_module"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
@@ -1049,7 +1064,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            indexURL : './',
             fullStdLib: false,
             jsglobals : self,
             stdin,
@@ -1088,6 +1102,7 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         "Python initialization complete",
         "something to stdout",
     ]
+    stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
 
 
@@ -1097,7 +1112,6 @@ def test_home_directory(selenium_standalone_noload):
     selenium.run_js(
         """
         let pyodide = await loadPyodide({
-            indexURL : './',
             homedir : "%s",
         });
         return pyodide.runPython(`

@@ -1,5 +1,8 @@
 import ErrorStackParser from "error-stack-parser";
-import { Module, API, Hiwire, Tests } from "./module.js";
+declare var Module: any;
+declare var Hiwire: any;
+declare var API: any;
+declare var Tests: any;
 
 /**
  * Dump the Python traceback to the browser console.
@@ -192,13 +195,10 @@ Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   const fileName = frame.fileName || "";
-  if (fileName.includes("pyodide.asm")) {
-    return true;
-  }
   if (fileName.includes("wasm-function")) {
     return true;
   }
-  if (!fileName.includes("pyodide.js")) {
+  if (!fileName.includes("pyodide.asm.js")) {
     return false;
   }
   let funcName = frame.functionName || "";

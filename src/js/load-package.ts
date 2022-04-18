@@ -1,5 +1,13 @@
-import { Module, API, Tests } from "./module.js";
-import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
+declare var Module: any;
+declare var Tests: any;
+declare var API: any;
+
+import {
+  IN_NODE,
+  nodeFsPromisesMod,
+  _loadBinaryFile,
+  initNodeModules,
+} from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /** @private */
@@ -15,6 +23,7 @@ export async function initializePackageIndex(indexURL: string) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
+    await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}packages.json`
     );
@@ -38,6 +47,17 @@ export async function initializePackageIndex(indexURL: string) {
     }
   }
 }
+
+/**
+ * Only used in Node. If we can't find a package in node_modules, we'll use this
+ * to fetch the package from the cdn (and we'll store it into node_modules so
+ * subsequent loads don't require a web request).
+ * @private
+ */
+let cdnURL: string;
+API.setCdnUrl = function (url: string) {
+  cdnURL = url;
+};
 
 //
 // Dependency resolution
@@ -151,7 +171,24 @@ async function downloadPackage(
   } else {
     file_name = channel;
   }
-  return await _loadBinaryFile(baseURL, file_name);
+  try {
+    return await _loadBinaryFile(baseURL, file_name);
+  } catch (e) {
+    if (!IN_NODE) {
+      throw e;
+    }
+  }
+  console.log(
+    `Didn't find package ${file_name}, attempting to load from ${cdnURL}`
+  );
+  // If we are IN_NODE, download the package from the cdn, then stash it into
+  // the node_modules directory for future use.
+  let binary = await _loadBinaryFile(cdnURL, file_name);
+  console.log(
+    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
+  );
+  await nodeFsPromisesMod.writeFile(`${baseURL}${file_name}`, binary);
+  return binary;
 }
 
 /**
@@ -412,3 +449,5 @@ export async function loadPackage(
  * install location for a particular ``package_name``.
  */
 export let loadedPackages: { [key: string]: string } = {};
+
+API.packageIndexReady = initializePackageIndex(API.config.indexURL);
