@@ -600,7 +600,6 @@ python2js_custom(PyObject* x,
                  JsRef dict_converter,
                  JsRef default_converter)
 {
-
   PyObject* cache = PyDict_New();
   if (cache == NULL) {
     return NULL;
@@ -699,12 +698,6 @@ to_js(PyObject* self,
                                     &pyproxies,
                                     &py_dict_converter,
                                     &py_default_converter)) {
-    return NULL;
-  }
-
-  if (obj == NULL) {
-    PyErr_SetString(PyExc_TypeError,
-                    "Call to _PyArg_ParseStackAndKeywords failed");
     return NULL;
   }
 

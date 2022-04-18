@@ -74,7 +74,6 @@ export LDFLAGS_BASE=\
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \
 	-std=c++14 \
-	-s ASSERTIONS=1 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	$(EXTRA_LDFLAGS)
