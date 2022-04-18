@@ -349,67 +349,67 @@ workflows:
               only: /.*/
 
       - build-packages:
-        name: build-packages-no-numpy-dependents
-        packages: no-numpy-dependents
-        requires:
-          - build-core
-        filters:
-          tags:
-            only: /.*/
-        post-steps:
-          - persist_to_workspace:
-              root: .
-              paths:
-                - ./packages
-                - ./dist
+          name: build-packages-no-numpy-dependents
+          packages: no-numpy-dependents
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
 
       - build-packages:
-        name: build-packages-opencv-python
-        packages: opencv-python
-        requires:
-          - build-packages-no-numpy-dependents
-        filters:
-          tags:
-            only: /.*/
-        post-steps:
-          - persist_to_workspace:
-              root: .
-              paths:
-                - ./packages/opencv-python/build
-                - ./packages/opencv-python/dist
-                - ./packages/build-logs/opencv*
-                - ./dist/opencv*
+          name: build-packages-opencv-python
+          packages: opencv-python
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages/opencv-python/build
+                  - ./packages/opencv-python/dist
+                  - ./packages/build-logs/opencv*
+                  - ./dist/opencv*
 
       - build-packages:
-        name: build-packages-numpy-dependents
-        packages: "*,!opencv-python"
-        requires:
-          - build-packages-no-numpy-dependents
-        filters:
-          tags:
-            only: /.*/
-        post-steps:
-          - persist_to_workspace:
-              root: .
-              paths:
-                - ./packages
-                - ./dist
+          name: build-packages-numpy-dependents
+          packages: "*,!opencv-python"
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
 
       - build-packages:
-        name: build-packages
-        packages: "*"
-        requires:
-          - build-packages-numpy-dependents
-          - build-packages-opencv-python
-        filters:
-          tags:
-            only: /.*/
-        post-steps:
-          - persist_to_workspace:
-              root: .
-              paths:
-                - ./packages/.artifacts
-                - ./dist
+          name: build-packages
+          packages: "*"
+          requires:
+            - build-packages-numpy-dependents
+            - build-packages-opencv-python
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages/.artifacts
+                  - ./dist
 
       - test-main:
           name: test-core-chrome
