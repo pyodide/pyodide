@@ -5,13 +5,23 @@ source:
   sha256: f401ed2bbb155e1ade150ccc63db1a4f6c1909d3d378f7d1235a44e90d75fb97
   url: https://files.pythonhosted.org/packages/4b/83/090146d7871d90a2643d469c319c1d014e41b315ab5cf0f8b4b6a764ef31/Pillow-9.1.0.tar.gz
   patches:
-    - patches/setitup.patch
+    - patches/0001-Enable-image-formats.patch
   extras:
     - - src/setup.cfg
       - ./setup.cfg
 build:
-  cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1 -s SIDE_MODULE=1
-  ldflags: -ljpeg
+  cflags: |
+    -s USE_ZLIB=1
+    -s USE_LIBJPEG=1
+    -s USE_FREETYPE=1
+    -s SIDE_MODULE=1
+    -I$(PYODIDE_ROOT)/packages/libwebp/build/libwebp-1.2.2/build/lib/include
+  ldflags: |
+    -ljpeg
+    -L$(PYODIDE_ROOT)/packages/libwebp/build/libwebp-1.2.2/build/lib/lib/
+requirements:
+  run:
+    - libwebp
 test:
   imports:
     - PIL
