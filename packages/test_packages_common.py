@@ -43,7 +43,7 @@ def test_parse_package(name):
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
-def test_import(name, selenium_standalone):
+def test_import(name, selenium):
     if not _package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
@@ -52,16 +52,16 @@ def test_import(name, selenium_standalone):
 
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
-    if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
+    if name in UNSUPPORTED_PACKAGES[selenium.browser]:
         pytest.xfail(
             "{} fails to load and is not supported on {}.".format(
-                name, selenium_standalone.browser
+                name, selenium.browser
             )
         )
 
-    selenium_standalone.run("import glob, os, site")
+    selenium.run("import glob, os, site")
 
-    baseline_pyc = selenium_standalone.run(
+    baseline_pyc = selenium.run(
         """
         len(list(glob.glob(
             site.getsitepackages()[0] + '/**/*.pyc',
@@ -70,29 +70,30 @@ def test_import(name, selenium_standalone):
         """
     )
     for import_name in meta.get("test", {}).get("imports", []):
-        selenium_standalone.run_async("import %s" % import_name)
-        # Make sure that even after importing, there are no additional .pyc
-        # files
-        assert (
-            selenium_standalone.run(
-                """
-                len(list(glob.glob(
-                    site.getsitepackages()[0] + '/**/*.pyc',
-                    recursive=True)
-                ))
-                """
-            )
-            == baseline_pyc
+        selenium.run_async("import %s" % import_name)
+
+    # Make sure that even after importing, there are no additional .pyc
+    # files
+    assert (
+        selenium.run(
+            """
+            len(list(glob.glob(
+                site.getsitepackages()[0] + '/**/*.pyc',
+                recursive=True)
+            ))
+            """
         )
-        # Make sure no exe files were loaded!
-        assert (
-            selenium_standalone.run(
-                """
-                len(list(glob.glob(
-                    site.getsitepackages()[0] + '/**/*.exe',
-                    recursive=True)
-                ))
-                """
-            )
-            == 0
+        == baseline_pyc
+    )
+    # Make sure no exe files were loaded!
+    assert (
+        selenium.run(
+            """
+            len(list(glob.glob(
+                site.getsitepackages()[0] + '/**/*.exe',
+                recursive=True)
+            ))
+            """
         )
+        == 0
+    )
