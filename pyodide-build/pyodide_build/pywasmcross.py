@@ -494,6 +494,7 @@ def handle_command_generate_args(
 
         if result:
             new_args.append(result)
+
     return new_args
 
 
@@ -526,6 +527,19 @@ def handle_command(
 
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
+
+    # FIXME: For some unknown reason,
+    #        opencv-python tries to link a same library (libopencv_world.a) multiple times,
+    #        which leads to 'duplicated symbols' error.
+    if args.pkgname == "opencv-python":
+        duplicated_lib = "libopencv_world.a"
+        _new_args = []
+        for arg in new_args:
+            if duplicated_lib in arg and arg in _new_args:
+                continue
+            _new_args.append(arg)
+
+        new_args = _new_args
 
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:

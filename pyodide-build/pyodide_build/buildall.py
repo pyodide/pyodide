@@ -206,12 +206,17 @@ def generate_dependency_graph(
     if "*" in packages:
         packages.discard("*")
         packages.update(
-            str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
+            str(x.name) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
 
     no_numpy_dependents = "no-numpy-dependents" in packages
     if no_numpy_dependents:
         packages.discard("no-numpy-dependents")
+
+    packages_exclude = list(filter(lambda pkg: pkg.startswith("!"), packages))
+    for pkg_exclude in packages_exclude:
+        packages.discard(pkg_exclude)
+        packages.discard(pkg_exclude[1:])
 
     while packages:
         pkgname = packages.pop()

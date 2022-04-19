@@ -1,0 +1,25 @@
+package:
+  name: ffmpeg
+  version: "4.4.1"
+
+source:
+  url: https://github.com/FFmpeg/FFmpeg/archive/refs/tags/n4.4.1.tar.gz
+  sha256: 82b43cc67296bcd01a59ae6b327cdb50121d3a9e35f41a30de1edd71bb4a6666
+  extract_dir: FFmpeg-n4.4.1
+build:
+  library: true
+  script: |
+    emconfigure ./configure \
+      --extra-cflags="-fPIC" \
+      --disable-x86asm \
+      --disable-inline-asm \
+      --disable-doc \
+      --disable-stripping \
+      --disable-programs \
+      --disable-pthreads \
+      --nm="$PYODIDE_ROOT/emsdk/emsdk/upstream/bin/llvm-nm -g" \
+      --ar=emar --cc=emcc --cxx=em++ --objcc=emcc --dep-cc=emcc --ranlib=emranlib \
+      --prefix=./lib
+
+    emmake make -j${PYODIDE_JOBS:-3}
+    emmake make install
