@@ -293,7 +293,10 @@ class _PackageManager:
             )
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
-        transaction["locked"][name] = PackageMetadata(name=name, version=version)
+        transaction["locked"][name] = PackageMetadata(
+            name=name,
+            version=version,
+        )
 
         try:
             wheel_bytes = await fetch_bytes(wheel["url"])
@@ -312,10 +315,29 @@ class _PackageManager:
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
             dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
+
+        # the package name and version in the wheel file name can be different from
+        # real package project name specified in METADATA file.
+        # The most common example of this is when the package name contains "-",
+        # it will be replaced with "_" in wheel file name.
+        real_name = dist.project_name
+        if real_name == "UNKNOWN":
+            real_name = name
+        try:
+            real_version = dist.version
+        except ValueError:
+            real_version = version
+
+        if real_name != name or real_version != version:
+            transaction["locked"].pop(name)
+            transaction["locked"][real_name] = PackageMetadata(
+                name=real_name, version=real_version
+            )
+
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
-        transaction["wheels"].append((name, wheel, version))
+        transaction["wheels"].append((real_name, wheel, real_version))
 
     def find_wheel(
         self, metadata: dict[str, Any], req: Requirement
