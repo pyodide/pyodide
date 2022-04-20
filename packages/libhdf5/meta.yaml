@@ -15,18 +15,17 @@ build:
   script: |
     mkdir -p build;
     cd build \
-        && LDFLAGS="-s NODERAWFS=1" emcmake cmake ../ \
-        -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.18.2_64bit/bin/node" \
-        -DCMAKE_INSTALL_PREFIX=hdf5 \
+        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1" emcmake cmake ../ \
+        -DCMAKE_INSTALL_PREFIX=../../hdf5 \
         -DH5_HAVE_GETPWUID=0 \
         -DH5_HAVE_SIGNAL=0 \
-        -DBUILD_SHARED_LIBS=1 \
-        -DBUILD_STATIC_LIBS=0 \
+        -DBUILD_SHARED_LIBS=0 \
+        -DBUILD_STATIC_LIBS=1 \
         -DBUILD_TESTING=0 \
         -DCMAKE_C_FLAGS="-Wno-incompatible-pointer-types-discards-qualifiers" \
         -DHDF5_BUILD_EXAMPLES=0 \
         -DHDF5_BUILD_TOOLS=0 \
+        -DHDF5_BUILD_UTILS=0 \
         -DHDF5_ENABLE_Z_LIB_SUPPORT=1 \
-        -DZLIB_INCLUDE_DIR="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/include" \
-        -DZLIB_LIBRARY="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/lib/libz.a";
+        -DHDF5_ENABLE_ROS3_VFD=0;
     emmake make -j ${PYODIDE_JOBS:-3} install;
