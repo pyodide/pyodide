@@ -1,5 +1,11 @@
-import { loadPyodide } from "../pyodide.js";
+import { loadPyodide } from "../pyodide";
 import path from "path";
+
+declare global {
+  var path: path.PlatformPath;
+  var pyodide: any;
+}
+
 globalThis.path = path;
 
 before(async () => {
