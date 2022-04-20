@@ -69,7 +69,9 @@ def test_import(name, selenium):
         ))
         """
     )
-    for import_name in meta.get("test", {}).get("imports", []):
+
+    import_names = meta.get("test", {}).get("imports", [])
+    for import_name in import_names:
         selenium.run_async("import %s" % import_name)
 
     # Make sure that even after importing, there are no additional .pyc
@@ -97,3 +99,16 @@ def test_import(name, selenium):
         )
         == 0
     )
+
+    selenium.load_pyodide()
+    selenium.initialize_global_hiwire_objects()
+    selenium.save_state()
+    selenium.restore_state()
+
+    for import_name in import_names:
+        assert selenium.run(
+            f"""
+            import sys
+            {import_name!r} not in sys.modules
+            """
+        )
