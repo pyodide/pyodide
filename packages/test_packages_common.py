@@ -43,7 +43,7 @@ def test_parse_package(name):
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
-def test_import(name, selenium):
+def test_import(name, selenium_standalone):
     if not _package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
@@ -52,16 +52,16 @@ def test_import(name, selenium):
 
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
-    if name in UNSUPPORTED_PACKAGES[selenium.browser]:
+    if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(
             "{} fails to load and is not supported on {}.".format(
-                name, selenium.browser
+                name, selenium_standalone.browser
             )
         )
 
-    selenium.run("import glob, os, site")
+    selenium_standalone.run("import glob, os, site")
 
-    baseline_pyc = selenium.run(
+    baseline_pyc = selenium_standalone.run(
         """
         len(list(glob.glob(
             site.getsitepackages()[0] + '/**/*.pyc',
@@ -69,46 +69,30 @@ def test_import(name, selenium):
         ))
         """
     )
-
-    import_names = meta.get("test", {}).get("imports", [])
-    for import_name in import_names:
-        selenium.run_async("import %s" % import_name)
-
-    # Make sure that even after importing, there are no additional .pyc
-    # files
-    assert (
-        selenium.run(
-            """
-            len(list(glob.glob(
-                site.getsitepackages()[0] + '/**/*.pyc',
-                recursive=True)
-            ))
-            """
+    for import_name in meta.get("test", {}).get("imports", []):
+        selenium_standalone.run_async("import %s" % import_name)
+        # Make sure that even after importing, there are no additional .pyc
+        # files
+        assert (
+            selenium_standalone.run(
+                """
+                len(list(glob.glob(
+                    site.getsitepackages()[0] + '/**/*.pyc',
+                    recursive=True)
+                ))
+                """
+            )
+            == baseline_pyc
         )
-        == baseline_pyc
-    )
-    # Make sure no exe files were loaded!
-    assert (
-        selenium.run(
-            """
-            len(list(glob.glob(
-                site.getsitepackages()[0] + '/**/*.exe',
-                recursive=True)
-            ))
-            """
-        )
-        == 0
-    )
-
-    selenium.load_pyodide()
-    selenium.initialize_global_hiwire_objects()
-    selenium.save_state()
-    selenium.restore_state()
-
-    for import_name in import_names:
-        assert selenium.run(
-            f"""
-            import sys
-            {import_name!r} not in sys.modules
-            """
+        # Make sure no exe files were loaded!
+        assert (
+            selenium_standalone.run(
+                """
+                len(list(glob.glob(
+                    site.getsitepackages()[0] + '/**/*.exe',
+                    recursive=True)
+                ))
+                """
+            )
+            == 0
         )
