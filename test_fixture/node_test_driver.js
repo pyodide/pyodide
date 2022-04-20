@@ -8,24 +8,26 @@ const base64 = require("base-64");
 let baseUrl = process.argv[2];
 let distDir = process.argv[3];
 
-require(path.resolve(`${distDir}/pyodide.js`));
+let { loadPyodide } = require(`${distDir}/pyodide`);
 
 // node requires full paths.
 function fetch(path) {
   return node_fetch(new URL(path, baseUrl).toString());
 }
 
-const context = Object.assign({}, globalThis, {
+const context = {
+  loadPyodide,
   path,
   process,
   require,
   fetch,
+  setTimeout,
   TextDecoder: util.TextDecoder,
   TextEncoder: util.TextEncoder,
   URL,
   atob: base64.decode,
   btoa: base64.encode,
-});
+};
 vm.createContext(context);
 vm.runInContext("globalThis.self = globalThis;", context);
 
@@ -76,3 +78,5 @@ async function evalCode(uuid, code, eval_context) {
     console.log(`${delim}\n1\n${e.stack}\n${delim}`);
   }
 }
+console.log("READY!!");
+// evalCode("xxx", "let pyodide = await loadPyodide(); pyodide.runPython(`print([x*x+1 for x in range(10)])`);", context);

@@ -384,12 +384,20 @@ class NodeWrapper(SeleniumWrapper):
 
     def init_node(self):
         curdir = Path(__file__).parent
-        self.p = pexpect.spawn(
-            f"node --expose-gc --experimental-wasm-bigint {curdir}/node_test_driver.js {self.base_url} {self.dist_dir}",
-            timeout=60,
-        )
+        self.p = pexpect.spawn("/bin/bash", timeout=60)
         self.p.setecho(False)
         self.p.delaybeforesend = None
+        # disable canonical input processing mode to allow sending longer lines
+        # See: https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
+        self.p.sendline("stty -icanon")
+        self.p.sendline(
+            f"node --expose-gc --experimental-wasm-bigint {curdir}/node_test_driver.js {self.base_url} {self.dist_dir}",
+        )
+
+        try:
+            self.p.expect_exact("READY!!")
+        except pexpect.exceptions.EOF:
+            raise JavascriptException("", self.p.before.decode())
 
     def get_driver(self):
         self._logs = []
