@@ -1,0 +1,75 @@
+From c7e9f892204ce1e47774fe21790195e2cbd7f2b3 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Tue, 29 Mar 2022 01:58:40 +0000
+Subject: [PATCH] Enable file system
+
+---
+ .../include/opencv2/core/utils/plugin_loader.private.hpp  | 8 ++++----
+ modules/core/src/utils/filesystem.cpp                     | 4 ++--
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/modules/core/include/opencv2/core/utils/plugin_loader.private.hpp b/modules/core/include/opencv2/core/utils/plugin_loader.private.hpp
+index d6390fc74a..c089309443 100644
+--- a/opencv/modules/core/include/opencv2/core/utils/plugin_loader.private.hpp
++++ b/opencv/modules/core/include/opencv2/core/utils/plugin_loader.private.hpp
+@@ -12,7 +12,7 @@
+ 
+ #if defined(_WIN32)
+ #include <windows.h>
+-#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__)
++#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__) || defined(__EMSCRIPTEN__)
+ #include <dlfcn.h>
+ #endif
+ 
+@@ -65,7 +65,7 @@ void* getSymbol_(LibHandle_t h, const char* symbolName)
+ {
+ #if defined(_WIN32)
+     return (void*)GetProcAddress(h, symbolName);
+-#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__)
++#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__) || defined(__EMSCRIPTEN__)
+     return dlsym(h, symbolName);
+ #endif
+ }
+@@ -79,7 +79,7 @@ LibHandle_t libraryLoad_(const FileSystemPath_t& filename)
+ # else
+     return LoadLibraryW(filename.c_str());
+ #endif
+-#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__)
++#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__) || defined(__EMSCRIPTEN__)
+     void* handle = dlopen(filename.c_str(), RTLD_NOW);
+     CV_LOG_IF_DEBUG(NULL, !handle, "dlopen() error: " << dlerror());
+     return handle;
+@@ -91,7 +91,7 @@ void libraryRelease_(LibHandle_t h)
+ {
+ #if defined(_WIN32)
+     FreeLibrary(h);
+-#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__)
++#elif defined(__linux__) || defined(__APPLE__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__HAIKU__) || defined(__GLIBC__) || defined(__EMSCRIPTEN__)
+     dlclose(h);
+ #endif
+ }
+diff --git a/modules/core/src/utils/filesystem.cpp b/modules/core/src/utils/filesystem.cpp
+index 663ec311e4..3ef4408d2d 100644
+--- a/opencv/modules/core/src/utils/filesystem.cpp
++++ b/opencv/modules/core/src/utils/filesystem.cpp
+@@ -34,7 +34,7 @@
+ #include <errno.h>
+ #include <io.h>
+ #include <stdio.h>
+-#elif defined __linux__ || defined __APPLE__ || defined __HAIKU__ || defined __FreeBSD__
++#elif defined __linux__ || defined __APPLE__ || defined __HAIKU__ || defined __FreeBSD__ || defined __EMSCRIPTEN__
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+@@ -343,7 +343,7 @@ private:
+     Impl& operator=(const Impl&); // disabled
+ };
+ 
+-#elif defined __linux__ || defined __APPLE__ || defined __HAIKU__ || defined __FreeBSD__
++#elif defined __linux__ || defined __APPLE__ || defined __HAIKU__ || defined __FreeBSD__ || defined __EMSCRIPTEN__
+ 
+ struct FileLock::Impl
+ {
+-- 
+2.35.1
+

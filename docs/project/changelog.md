@@ -26,6 +26,8 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
+- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`
+
 ## Version 0.20.0
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
