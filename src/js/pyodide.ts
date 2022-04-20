@@ -2,7 +2,7 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
+import { loadScript, _loadBinaryFile, initNodeModules } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
