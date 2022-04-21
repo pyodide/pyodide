@@ -1,3 +1,4 @@
+/** @private */
 export interface Module {
   noImageDecoding: boolean;
   noAudioDecoding: boolean;
