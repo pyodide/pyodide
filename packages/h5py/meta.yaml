@@ -1,0 +1,28 @@
+package:
+  name: h5py
+  version: 3.6.0
+
+source:
+  url: https://github.com/h5py/h5py/archive/3.6.0.tar.gz
+  sha256: 840fca0787bca8ad2729b9c20e06a16f219e7a24ccc59fdf5177a05ec8472b2d
+  patches:
+    - patches/configure.patch
+    - patches/build.patch
+
+requirements:
+  run:
+    - numpy
+    - libhdf5
+    - pkgconfig
+
+test:
+  imports:
+    - h5py
+
+build:
+  script: |
+    export HDF5_MPI=OFF
+    export H5PY_SETUP_REQUIRES="0"
+    export HDF5_DIR=$PYODIDE_ROOT/packages/libhdf5/build/hdf5
+    export PKG_CONFIG_PATH=${HDF5_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH}
+    export HDF5_VERSION=1.13.1
