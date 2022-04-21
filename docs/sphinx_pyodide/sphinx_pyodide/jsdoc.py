@@ -12,7 +12,7 @@ from sphinx.domains.javascript import JavaScriptDomain, JSCallable
 from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
-from sphinx_js.ir import Class, Function
+from sphinx_js.ir import Class, Function, Interface
 from sphinx_js.parsers import PathVisitor, path_and_formal_params
 from sphinx_js.renderers import (
     AutoAttributeRenderer,
@@ -349,6 +349,8 @@ def get_jsdoc_content_directive(app):
             if isinstance(obj, Function):
                 renderer = AutoFunctionRenderer
             elif isinstance(obj, Class):
+                renderer = AutoClassRenderer
+            elif isinstance(obj, Interface):
                 renderer = AutoClassRenderer
             else:
                 renderer = AutoAttributeRenderer

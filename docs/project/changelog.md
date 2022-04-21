@@ -26,6 +26,10 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
+### Packages
+
+- {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
+
 - New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`
 
 ## Version 0.20.0
