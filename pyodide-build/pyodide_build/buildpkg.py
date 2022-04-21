@@ -648,7 +648,7 @@ def needs_rebuild(
         )
         src_path = source_metadata.get("path")
         if src_path:
-            yield from Path(src_path).resolve().glob("**/*")
+            yield from (pkg_root / src_path).resolve().glob("**/*")
 
     for source_file in source_files():
         source_file = Path(source_file)
