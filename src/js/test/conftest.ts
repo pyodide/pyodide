@@ -9,5 +9,7 @@ declare global {
 globalThis.path = path;
 
 before(async () => {
-  globalThis.pyodide = await loadPyodide();
+  globalThis.pyodide = await loadPyodide({
+    indexURL: path.resolve(__dirname, "../../../", "dist"),
+  });
 });
