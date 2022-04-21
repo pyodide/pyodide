@@ -7,8 +7,9 @@
     "target": "ES6",
     "module": "ES2020",
     "moduleResolution": "node",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["*.ts"],
-  "exclude": ["rollup.config.js", "*test*"]
+  "exclude": ["test/**/*"]
 }
