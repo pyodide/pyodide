@@ -30,7 +30,8 @@ substitutions:
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
 
-- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`
+- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
+  h5py, pkgconfig and libhdf5 {pr}`2411`
 
 ## Version 0.20.0
 
@@ -399,7 +400,7 @@ async function runPythonAsync(code, globals) {
   {pr}`2028`
 
 - New packages: logbook {pr}`1920`, pyb2d {pr}`1968`, and threadpoolctl (a
-  dependency of scikit-learn) {pr}`2065`, libhdf5 {pr}`1799`, h5py {pr}`2180`
+  dependency of scikit-learn) {pr}`2065`
 
 - Upgraded packages: numpy (1.21.4) {pr}`1934`, scikit-learn (1.0.2) {pr}`2065`,
   scikit-image (0.19.1) {pr}`2005`, msgpack (1.0.3) {pr}`2071`, astropy (5.0.3)
