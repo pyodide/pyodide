@@ -337,6 +337,20 @@ class _PackageManager:
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
+        # We have to recheck that duplicated packages are not added,
+        # because the package name can be changed (e.g. "foo_bar" -> "foo-bar")
+        for _name, _, _version in transaction["wheels"]:
+            if real_name != _name:
+                continue
+
+            if real_version == _version:
+                return
+
+            raise ValueError(
+                f"Dependency resolution failed:"
+                f"Trying to install multiple versions of {real_name} ({real_version} <==> {_version})."
+            )
+
         transaction["wheels"].append((real_name, wheel, real_version))
 
     def find_wheel(
