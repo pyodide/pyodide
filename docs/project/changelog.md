@@ -14,7 +14,7 @@ substitutions:
 
 ## Unreleased
 
-- {{ Fix }} micropip now correctly handles dash-included package names
+- {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
 
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
