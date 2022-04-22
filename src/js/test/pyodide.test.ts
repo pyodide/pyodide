@@ -1,6 +1,4 @@
 import assert from "assert";
-import { loadPyodide } from "../pyodide";
-
 import fetch from "node-fetch";
 
 describe("Pyodide", () => {
@@ -11,15 +9,24 @@ describe("Pyodide", () => {
   it("loadPackage", async () => {
     await pyodide.loadPackage(["micropip"]);
   });
-  it("micropip.install", async () => {
-    // TODO: micropip currently requires a globally defined fetch function
-    await pyodide.runPythonAsync(
-      'import micropip; await micropip.install("snowballstemmer")'
-    );
-    let res = pyodide.runPython(`
-      import snowballstemmer
-      len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
-    `);
-    assert.equal(res, 3);
+  describe("micropip", () => {
+    const globalFetch = globalThis.fetch;
+    before(() => {
+      (globalThis as any).fetch = fetch;
+    });
+    after(() => {
+      globalThis.fetch = globalFetch;
+    });
+    it("install", async () => {
+      // TODO: micropip currently requires a globally defined fetch function
+      await pyodide.runPythonAsync(
+        'import micropip; await micropip.install("snowballstemmer")'
+      );
+      let res = pyodide.runPython(`
+        import snowballstemmer
+        len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
+      `);
+      assert.equal(res, 3);
+    });
   });
 });
