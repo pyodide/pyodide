@@ -325,9 +325,8 @@ class _PackageManager:
             dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
 
         project_name = dist.project_name
-
-        if project_name != "UNKNOWN":
-            transaction["locked"][normalized_name].name = project_name
+        if project_name == "UNKNOWN":
+            project_name = name
 
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
