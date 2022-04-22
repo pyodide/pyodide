@@ -6,10 +6,7 @@ const chai = require("chai");
 const __ROOT = path.resolve(__dirname, "../../../", "dist");
 
 const { loadPyodide } = require(path.resolve(__ROOT, "pyodide"));
-// declare global {
-//   var path: path.PlatformPath;
-//   var pyodide: any;
-// }
+
 // chai.use(require("deep-equal-in-any-order"));
 chai.use(require("chai-as-promised"));
 const app = express();
@@ -27,7 +24,7 @@ before(async () => {
   globalThis.chai = chai;
 
   if (BROWSER) {
-    browser = await puppeteer.launch({ headless: false, devtools: true });
+    browser = await puppeteer.launch(/*{ headless: false, devtools: true }*/);
     const page = await browser.newPage();
     await new Promise((resolve) => {
       server = app.listen(() => resolve(""));

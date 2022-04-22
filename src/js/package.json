@@ -63,8 +63,9 @@
   ],
   "scripts": {
     "test": "npm-run-all test:*",
-    "test:browser": "mocha test/**/*.test.js",
-    "test:node": "cross-env TEST_NODE=1 mocha test/**/*.test.js",
+    "test:unit": "ts-mocha -p tsconfig.test.json test/unit/**/*.test.ts",
+    "test:node": "cross-env TEST_NODE=1 mocha test/integration/**/*.test.js",
+    "test:browser": "mocha test/integration/**/*.test.js",
     "coverage": "cross-env TEST_NODE=1 npm-run-all coverage:*",
     "coverage:build": "nyc npm run test:node"
   },
