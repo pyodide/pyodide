@@ -17,7 +17,7 @@ from packaging.version import Version
 from pyodide import IN_BROWSER, to_js
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
-from .package import PackageDict, PackageMetadata
+from .package import PackageDict, PackageMetadata, normalize_package_name
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -205,7 +205,10 @@ class _PackageManager:
                     ),
                     functools.partial(
                         self.installed_packages.update,
-                        {pkg.name: pkg for pkg in pyodide_packages},
+                        {
+                            normalize_package_name(pkg.name): pkg
+                            for pkg in pyodide_packages
+                        },
                     ),
                 )
             )
@@ -220,7 +223,11 @@ class _PackageManager:
                     _install_wheel(name, wheel),
                     functools.partial(
                         self.installed_packages.update,
-                        {name: PackageMetadata(name, str(ver), wheel_source)},
+                        {
+                            normalize_package_name(name): PackageMetadata(
+                                name, str(ver), wheel_source
+                            )
+                        },
                     ),
                 )
             )
@@ -293,7 +300,8 @@ class _PackageManager:
             )
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
-        transaction["locked"][name] = PackageMetadata(
+        normalized_name = normalize_package_name(name)
+        transaction["locked"][normalized_name] = PackageMetadata(
             name=name,
             version=version,
         )
@@ -316,42 +324,15 @@ class _PackageManager:
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
             dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
 
-        # the package name and version in the wheel file name can be different from
-        # real package project name specified in METADATA file.
-        # The most common example of this is when the package name contains "-",
-        # it will be replaced with "_" in wheel file name.
-        real_name = dist.project_name
-        if real_name == "UNKNOWN":
-            real_name = name
-        try:
-            real_version = dist.version
-        except ValueError:
-            real_version = version
+        project_name = dist.project_name
 
-        if real_name != name or real_version != version:
-            transaction["locked"].pop(name)
-            transaction["locked"][real_name] = PackageMetadata(
-                name=real_name, version=real_version
-            )
+        if project_name != "UNKNOWN":
+            transaction["locked"][normalized_name].name = project_name
 
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
-        # We have to recheck that duplicated packages are not added,
-        # because the package name can be changed (e.g. "foo_bar" -> "foo-bar")
-        for _name, _, _version in transaction["wheels"]:
-            if real_name != _name:
-                continue
-
-            if real_version == _version:
-                return
-
-            raise ValueError(
-                f"Dependency resolution failed:"
-                f"Trying to install multiple versions of {real_name} ({real_version} <==> {_version})."
-            )
-
-        transaction["wheels"].append((real_name, wheel, real_version))
+        transaction["wheels"].append((project_name, wheel, version))
 
     def find_wheel(
         self, metadata: dict[str, Any], req: Requirement

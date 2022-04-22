@@ -417,8 +417,9 @@ def test_list_wheel_name_mismatch(monkeypatch):
 
     pkg_list = _micropip._list()
     assert (
-        "dummy-dummy" in pkg_list
-        and pkg_list["dummy-dummy"].source.lower() == dummy_url
+        dummy_pkg_name in pkg_list
+        and pkg_list[dummy_pkg_name].source.lower() == dummy_url
+        and pkg_list[dummy_pkg_name].name == dummy_pkg_name
     )
 
 
