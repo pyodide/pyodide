@@ -6,16 +6,28 @@ import sys
 
 import pytest
 
-from test_fixture.decorator import *  # noqa: F401, F403
-from test_fixture.fixture import *  # noqa: F401, F403
-from test_fixture.utils import maybe_skip_test
-from test_fixture.utils import package_is_built as _package_is_built
-
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
+sys.path.append(str(ROOT_PATH / "pyodide-test-runner"))
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
+
+from pyodide_test_runner.fixture import (  # noqa: F401
+    selenium,
+    selenium_common,
+    selenium_context_manager,
+    selenium_esm,
+    selenium_module_scope,
+    selenium_standalone,
+    selenium_standalone_noload,
+    selenium_standalone_noload_common,
+    selenium_webworker_standalone,
+    web_server_main,
+    web_server_secondary,
+)
+from pyodide_test_runner.utils import maybe_skip_test
+from pyodide_test_runner.utils import package_is_built as _package_is_built
 
 
 def pytest_addoption(parser):
@@ -80,55 +92,55 @@ def pytest_runtest_call(item):
     Pytest issue #5044:
     https://github.com/pytest-dev/pytest/issues/5044
     """
-    selenium = None
+    browser = None
     for fixture in item._fixtureinfo.argnames:
         if fixture.startswith("selenium"):
-            selenium = item.funcargs[fixture]
+            browser = item.funcargs[fixture]
             break
-    if selenium and selenium.pyodide_loaded:
+    if browser and browser.pyodide_loaded:
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
         trace_hiwire_refs = (
             trace_pyproxies
             and pytest.mark.skip_refcount_check.mark not in item.own_markers
         )
         yield from extra_checks_test_wrapper(
-            selenium, trace_hiwire_refs, trace_pyproxies
+            browser, trace_hiwire_refs, trace_pyproxies
         )
     else:
         yield
 
 
-def extra_checks_test_wrapper(selenium, trace_hiwire_refs, trace_pyproxies):
+def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     """Extra conditions for test to pass:
     1. No explicit request for test to fail
     2. No leaked JsRefs
     3. No leaked PyProxys
     """
-    selenium.clear_force_test_fail()
-    init_num_keys = selenium.get_num_hiwire_keys()
+    browser.clear_force_test_fail()
+    init_num_keys = browser.get_num_hiwire_keys()
     if trace_pyproxies:
-        selenium.enable_pyproxy_tracing()
-        init_num_proxies = selenium.get_num_proxies()
+        browser.enable_pyproxy_tracing()
+        init_num_proxies = browser.get_num_proxies()
     a = yield
     try:
         # If these guys cause a crash because the test really screwed things up,
         # we override the error message with the better message returned by
         # a.result() in the finally block.
-        selenium.disable_pyproxy_tracing()
-        selenium.restore_state()
+        browser.disable_pyproxy_tracing()
+        browser.restore_state()
     finally:
         # if there was an error in the body of the test, flush it out by calling
         # get_result (we don't want to override the error message by raising a
         # different error here.)
         a.get_result()
-    if selenium.force_test_fail:
+    if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
     if trace_pyproxies and trace_hiwire_refs:
-        delta_proxies = selenium.get_num_proxies() - init_num_proxies
-        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        delta_proxies = browser.get_num_proxies() - init_num_proxies
+        delta_keys = browser.get_num_hiwire_keys() - init_num_keys
         assert (delta_proxies, delta_keys) == (0, 0) or delta_keys < 0
     if trace_hiwire_refs:
-        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        delta_keys = browser.get_num_hiwire_keys() - init_num_keys
         assert delta_keys <= 0
 
 

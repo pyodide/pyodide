@@ -7,8 +7,13 @@ from pathlib import Path
 from time import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[1] / "pyodide-test-runner"))
 
-from test_fixture import ChromeWrapper, FirefoxWrapper, spawn_web_server  # noqa: E402
+from pyodide_test_runner import (  # noqa: E402
+    ChromeWrapper,
+    FirefoxWrapper,
+    spawn_web_server,
+)
 
 SKIP = {"fft", "hyantes"}
 

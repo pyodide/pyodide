@@ -1,7 +1,7 @@
 import base64
 import pathlib
 
-from conftest import run_in_pyodide
+from pyodide_test_runner.decorator import run_in_pyodide
 
 REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
 

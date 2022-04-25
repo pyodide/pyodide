@@ -1,6 +1,5 @@
 import pytest
-
-from conftest import run_in_pyodide
+from pyodide_test_runner.decorator import run_in_pyodide
 
 
 def test_open_url(selenium, httpserver):

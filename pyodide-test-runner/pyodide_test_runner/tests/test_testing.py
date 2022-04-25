@@ -1,8 +1,8 @@
 import pathlib
 from textwrap import dedent
 
-from test_fixture import run_in_pyodide
-from test_fixture.decorator import _run_in_pyodide_get_source
+from pyodide_test_runner import run_in_pyodide
+from pyodide_test_runner.decorator import _run_in_pyodide_get_source
 
 
 def test_web_server_secondary(selenium, web_server_secondary):

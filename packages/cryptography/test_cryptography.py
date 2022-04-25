@@ -1,7 +1,8 @@
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import binary, integers
+from pyodide_test_runner.decorator import run_in_pyodide
 
-from conftest import run_in_pyodide, selenium_context_manager
+from conftest import selenium_context_manager
 
 
 @run_in_pyodide(packages=["cryptography"])

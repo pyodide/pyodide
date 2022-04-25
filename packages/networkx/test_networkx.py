@@ -1,4 +1,4 @@
-from conftest import run_in_pyodide
+from pyodide_test_runner.decorator import run_in_pyodide
 
 
 @run_in_pyodide(standalone=True, packages=["networkx"])
