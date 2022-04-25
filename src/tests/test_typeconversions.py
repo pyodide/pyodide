@@ -5,8 +5,7 @@ import pytest
 from hypothesis import assume, given, settings, strategies
 from hypothesis.strategies import from_type, text
 from pyodide_test_runner.decorator import run_in_pyodide
-
-from conftest import selenium_context_manager
+from pyodide_test_runner.fixture import selenium_context_manager
 
 
 @given(s=text())

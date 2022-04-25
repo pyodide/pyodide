@@ -14,6 +14,7 @@ sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 from pyodide_test_runner.fixture import (  # noqa: F401
+    script_type,
     selenium,
     selenium_common,
     selenium_context_manager,
