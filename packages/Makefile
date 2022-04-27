@@ -15,7 +15,7 @@ all: pyodide-build
 	--log-dir=./build-logs
 
 pyodide-build: ../pyodide-build/pyodide_build/**
-	$(HOSTPYTHON) -m pip install --prefix=$(shell $(HOSTPYTHON) -m site --user-base) -e ../pyodide-build
+	$(HOSTPYTHON) -m pip install -e ../pyodide-build
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
