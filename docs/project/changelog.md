@@ -26,6 +26,8 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
+- {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
