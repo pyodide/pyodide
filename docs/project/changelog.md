@@ -28,6 +28,9 @@ substitutions:
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
 
+- {{ Feature }} Added `pyodide.run_js` API.
+  {pr}`2426`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
