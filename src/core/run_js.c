@@ -19,7 +19,7 @@ run_js(PyObject* _mod, PyObject* code)
 
   if (!PyUnicode_Check(code)) {
     PyErr_Format(PyExc_TypeError,
-                 "'code' argument should be a string not '%s'",
+                 "argument should have type 'string' not type '%s'",
                  Py_TYPE(code)->tp_name);
     FAIL();
   }
