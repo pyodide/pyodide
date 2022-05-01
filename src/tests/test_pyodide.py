@@ -1143,7 +1143,7 @@ def test_run_js():
         run_js(3)
 
     assert run_js("(x)=> x+1")(7) == 8
-    assert run_js("[1,2,3]")(2) == 3
+    assert run_js("[1,2,3]")[2] == 3
     run_js("self.x = 77")
     from js import x
 
