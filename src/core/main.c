@@ -33,6 +33,7 @@
 
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
+    int mod##_init();                                                          \
     if (mod##_init()) {                                                        \
       FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
@@ -40,6 +41,7 @@
 
 #define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
   do {                                                                         \
+    int mod##_init(PyObject* mod);                                             \
     if (mod##_init(core_module)) {                                             \
       FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
@@ -127,6 +129,7 @@ pyodide_init(void)
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
+  TRY_INIT_WITH_CORE_MODULE(run_js);
 
   PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {

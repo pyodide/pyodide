@@ -318,7 +318,17 @@ def create_proxy(obj: Any) -> JsProxy:
     return obj
 
 
-# from python2js
+# run_js.c
+def run_js(code: str):
+    """Runs ``code`` as a JavaScript code string using eval.
+
+    Returns the last expression as a JsProxy (if eval would return it). This
+    won't work if the page has been loaded with a Content Security Policy that
+    forbids eval.
+    """
+
+
+# from python2js.c
 
 
 def to_js(

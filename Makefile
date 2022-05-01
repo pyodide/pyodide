@@ -33,6 +33,7 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
 dist/pyodide.asm.js: \
+	src/core/run_js.o \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/error_handling_cpp.o \
