@@ -29,6 +29,7 @@ from ._core import (
     create_once_callable,
     create_proxy,
     destroy_proxies,
+    run_js,
     to_js,
 )
 from .http import open_url
@@ -52,6 +53,7 @@ __all__ = [
     "JsProxy",
     "JsException",
     "to_js",
+    "run_js",
     "register_js_module",
     "unregister_js_module",
     "create_once_callable",
