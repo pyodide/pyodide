@@ -151,6 +151,7 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        deps: bool = True,
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -163,6 +164,7 @@ class _PackageManager:
             "locked": copy.deepcopy(self.installed_packages),
             "failed": [],
             "keep_going": keep_going,
+            "deps": deps,
         }
         requirement_promises = []
         for requirement in requirements:
@@ -174,13 +176,19 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: str | list[str], ctx=None, keep_going: bool = False
+        self,
+        requirements: str | list[str],
+        ctx=None,
+        keep_going: bool = False,
+        deps: bool = True,
     ):
         async def _install(install_func, done_callback):
             await install_func
             done_callback()
 
-        transaction = await self.gather_requirements(requirements, ctx, keep_going)
+        transaction = await self.gather_requirements(
+            requirements, ctx, keep_going, deps
+        )
 
         if transaction["failed"]:
             failed_requirements = ", ".join(
@@ -328,8 +336,9 @@ class _PackageManager:
         if project_name == "UNKNOWN":
             project_name = name
 
-        for recurs_req in dist.requires(extras):
-            await self.add_requirement(recurs_req, ctx, transaction)
+        if transaction["deps"]:
+            for recurs_req in dist.requires(extras):
+                await self.add_requirement(recurs_req, ctx, transaction)
 
         transaction["wheels"].append((project_name, wheel, version))
 
@@ -371,7 +380,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: str | list[str], keep_going: bool = False):
+def install(requirements: str | list[str], keep_going: bool = False, deps: bool = True):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
@@ -410,6 +419,11 @@ def install(requirements: str | list[str], keep_going: bool = False):
         - If ``True``, the micropip will keep going after the first error, and report a list
           of errors at the end.
 
+    deps : ``bool``, default: True
+
+        If ``True``, install dependencies of the given packages specified in METADATA file.
+        If ``False``, install the given packages without dependencies.
+
     Returns
     -------
     ``Future``
@@ -419,7 +433,7 @@ def install(requirements: str | list[str], keep_going: bool = False):
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(
-        PACKAGE_MANAGER.install(requirements, keep_going=keep_going)
+        PACKAGE_MANAGER.install(requirements, keep_going=keep_going, deps=deps)
     )
 
 
