@@ -5,33 +5,17 @@ from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, Timer
 
 from js import document
 from pyodide import (
-    JsProxy,
     set_timeout,
     set_interval,
     clear_timeout,
     clear_interval,
-    create_proxy,
+    add_event_listener,
 )
 
 try:
     from js import devicePixelRatio as DEVICE_PIXEL_RATIO
 except ImportError:
     DEVICE_PIXEL_RATIO = 1
-
-
-EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
-
-
-def _add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
-    proxy = create_proxy(listener)
-    EVENT_LISTENERS[(id(elt), event, listener)] = proxy
-    elt.addEventListener(event, proxy)
-
-
-def _remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
-    proxy = EVENT_LISTENERS[(id(elt), event, listener)]
-    elt.removeEventListener(event, proxy)
-    proxy.destroy()
 
 
 class FigureCanvasWasm(FigureCanvasBase):
@@ -136,7 +120,7 @@ class FigureCanvasWasm(FigureCanvasBase):
         width *= self._ratio
         height *= self._ratio
         div = self.create_root_element()
-        _add_event_listener(div, "contextmenu", ignore)
+        add_event_listener(div, "contextmenu", ignore)
         div.setAttribute(
             "style",
             "margin: 0 auto; text-align: center;" + f"width: {width / self._ratio}px",
@@ -185,13 +169,13 @@ class FigureCanvasWasm(FigureCanvasBase):
         rubberband.setAttribute("tabindex", "0")
         # Event handlers are added to the canvas "on top", even though most of
         # the activity happens in the canvas below.
-        _add_event_listener(rubberband, "mousemove", self.onmousemove)
-        _add_event_listener(rubberband, "mouseup", self.onmouseup)
-        _add_event_listener(rubberband, "mousedown", self.onmousedown)
-        _add_event_listener(rubberband, "mouseenter", self.onmouseenter)
-        _add_event_listener(rubberband, "mouseleave", self.onmouseleave)
-        _add_event_listener(rubberband, "keyup", self.onkeyup)
-        _add_event_listener(rubberband, "keydown", self.onkeydown)
+        add_event_listener(rubberband, "mousemove", self.onmousemove)
+        add_event_listener(rubberband, "mouseup", self.onmouseup)
+        add_event_listener(rubberband, "mousedown", self.onmousedown)
+        add_event_listener(rubberband, "mouseenter", self.onmouseenter)
+        add_event_listener(rubberband, "mouseleave", self.onmouseleave)
+        add_event_listener(rubberband, "keyup", self.onkeyup)
+        add_event_listener(rubberband, "keydown", self.onkeydown)
         context = rubberband.getContext("2d")
         context.strokeStyle = "#000000"
         context.setLineDash([2, 2])
@@ -468,7 +452,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
                     button.classList.add("fa")
                     button.classList.add(_FONTAWESOME_ICONS[image_file])
                     button.classList.add("matplotlib-toolbar-button")
-                    _add_event_listener(button, "click", getattr(self, name_of_method))
+                    add_event_listener(button, "click", getattr(self, name_of_method))
                     div.appendChild(button)
 
         for format, _mimetype in sorted(list(FILE_TYPES.items())):
@@ -477,7 +461,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
             button.textContent = format
             button.classList.add("matplotlib-toolbar-button")
             button.id = "text"
-            _add_event_listener(button, "click", self.ondownload)
+            add_event_listener(button, "click", self.ondownload)
             div.appendChild(button)
 
         return div

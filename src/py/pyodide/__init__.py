@@ -32,7 +32,14 @@ from ._core import (
     to_js,
 )
 from ._run_js import run_js
-from ._browser_apis import set_timeout, set_interval, clear_timeout, clear_interval
+from ._browser_apis import (
+    set_timeout,
+    set_interval,
+    clear_timeout,
+    clear_interval,
+    add_event_listener,
+    remove_event_listener,
+)
 from .http import open_url
 
 if IN_BROWSER:
@@ -67,4 +74,6 @@ __all__ = [
     "set_interval",
     "clear_timeout",
     "clear_interval",
+    "add_event_listener",
+    "remove_event_listener",
 ]

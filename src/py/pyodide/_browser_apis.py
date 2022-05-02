@@ -1,12 +1,27 @@
 from typing import Any, Callable
 
 from js import clearInterval, clearTimeout, setInterval, setTimeout
-from pyodide import create_once_callable
+from pyodide import create_once_callable, JsProxy, create_proxy
 
 
 class Destroyable:
     def destroy(self):
         pass
+
+
+EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
+
+
+def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+    proxy = create_proxy(listener)
+    EVENT_LISTENERS[(id(elt), event, listener)] = proxy
+    elt.addEventListener(event, proxy)
+
+
+def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+    proxy = EVENT_LISTENERS[(id(elt), event, listener)]
+    elt.removeEventListener(event, proxy)
+    proxy.destroy()
 
 
 TIMEOUTS: dict[int, Destroyable] = {}
