@@ -11,8 +11,8 @@ for diving into it.
 To contribute code, see the following steps,
 
 1. Fork the Pyodide repository [https://github.com/pyodide/pyodide](https://github.com/pyodide/pyodide) on Github.
-2. If you are on Linux, can skip this step. On Windows and MacOS you have a choice between,
-   manually installing Docker,
+2. If you are on Linux, you can skip this step. On Windows and MacOS you have a
+   choice between, manually installing Docker,
 
    - on MacOS follow [these instructions](https://docs.docker.com/desktop/mac/install/)
    - on Windows, [install WSL
@@ -20,7 +20,7 @@ To contribute code, see the following steps,
      Note that Windows filesystem access from WSL2 is very slow and should
      be avoided when building Pyodide.
 
-   The other alternative is to use a service that provides you a Linux
+   The other alternative is to use a service that provides a Linux
    development environment, such as,
 
    - [Github Codespaces](https://github.com/features/codespaces)
@@ -55,9 +55,9 @@ To contribute code, see the following steps,
 
    This will run a set of linters for each commit.
 
-7. Follow {ref}`building_from_sources` instructions
+7. Follow {ref}`building_from_sources` instructions.
 
-8. For testing use {ref}`testing` documentation.
+8. See {ref}`testing` documentation.
 
 ## Code of Conduct
 
