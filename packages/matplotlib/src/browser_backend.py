@@ -65,7 +65,17 @@ def _clear_timeout(id: int):
 
 
 def _set_interval(callback: Callable[[], None], interval: int) -> int:
-    return setInterval(create_once_callable(callback), interval)
+    id = -1
+
+    def wrapper():
+        nonlocal id
+        callback()
+        TIMEOUTS.pop(id, None)
+
+    callable = create_once_callable(wrapper)
+    id = setInterval(callable, interval)
+    TIMEOUTS[id] = callable
+    return id
 
 
 def _clear_interval(id: int):
