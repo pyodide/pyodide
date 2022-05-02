@@ -3,6 +3,6 @@ def run_js(code, /):
 
     if not isinstance(code, str):
         raise ValueError(
-            f"argument should have type 'string' not type '{code.__name__}'"
+            f"argument should have type 'string' not type '{type(code).__name__}'"
         )
     return eval(code)
