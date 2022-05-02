@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -430,7 +431,15 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
+def generate_package_hash(full_path: Path) -> str:
+    sha256_hash = hashlib.sha256()
+    with open(full_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+
+def generate_packages_json(packages_dir: Path, pkg_map: dict[str, BasePackage]) -> dict:
     """Generate the package.json file"""
     # Build package.json data.
     package_data: dict[str, dict[str, Any]] = {
@@ -448,6 +457,7 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
+            "sha_256": generate_package_hash(Path(packages_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
@@ -504,7 +514,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         pkg.file_name = pkg.wheel_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
-    package_data = generate_packages_json(pkg_map)
+    package_data = generate_packages_json(packages_dir, pkg_map)
 
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)

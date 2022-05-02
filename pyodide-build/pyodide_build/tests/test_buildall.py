@@ -27,7 +27,7 @@ def test_generate_packages_json():
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".file"
 
-    package_data = buildall.generate_packages_json(pkg_map)
+    package_data = buildall.generate_packages_json(PACKAGES_DIR, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
     assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
     assert set(package_data["packages"]) == {
