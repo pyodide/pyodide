@@ -434,8 +434,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
 def _generate_package_hash(full_path: Path) -> str:
     sha256_hash = hashlib.sha256()
     with open(full_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
+        while chunk := f.read(4096):
+            sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
 
 
