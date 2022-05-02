@@ -31,6 +31,10 @@ substitutions:
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
 
+- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
+  through `pyodide_test_runner`.
+  {pr}`2418`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
