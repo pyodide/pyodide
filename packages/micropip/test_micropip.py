@@ -405,9 +405,10 @@ def test_list_wheel_name_mismatch(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    dummy_pkg_name = "dummy-dummy"
+    dummy_pkg_name = "dummy-Dummy"
+    normalized_pkg_name = dummy_pkg_name.replace('-', '_').lower()
     dummy_url = (
-        f"https://dummy.com/{dummy_pkg_name.replace('-', '_')}-1.0.0-py3-none-any.whl"
+        f"https://dummy.com/{normalized_pkg_name}-1.0.0-py3-none-any.whl"
     )
     _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, f"Name: {dummy_pkg_name}")
 
