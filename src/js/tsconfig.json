@@ -8,7 +8,8 @@
     "module": "ES2020",
     "moduleResolution": "node",
     "noImplicitAny": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"]
   },
   "include": ["*.ts"],
   "exclude": ["test/**/*"]
