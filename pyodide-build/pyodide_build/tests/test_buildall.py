@@ -1,4 +1,3 @@
-import os
 from collections import namedtuple
 from pathlib import Path
 from time import sleep
@@ -24,14 +23,11 @@ def test_generate_dependency_graph():
 
 
 def test_generate_packages_json(tmp_path):
-    # Set up directory to store dummy package files for SHA-256 hash verification
-    if not os.path.exists(tmp_path):
-        os.makedirs(tmp_path)
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".file"
         # Write dummy package file for SHA-256 hash verification
-        with open(os.path.join(tmp_path, pkg.file_name), "w") as f:
+        with open(tmp_path / pkg.file_name, "w") as f:
             f.write(pkg.name)
 
     package_data = buildall.generate_packages_json(tmp_path, pkg_map)
