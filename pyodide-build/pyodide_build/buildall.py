@@ -431,7 +431,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def generate_package_hash(full_path: Path) -> str:
+def _generate_package_hash(full_path: Path) -> str:
     sha256_hash = hashlib.sha256()
     with open(full_path, "rb") as f:
         for byte_block in iter(lambda: f.read(4096), b""):
@@ -457,7 +457,7 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
-            "sha_256": generate_package_hash(Path(output_dir, pkg.file_name)),
+            "sha_256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
