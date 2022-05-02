@@ -43,7 +43,9 @@ def _set_timeout(callback: Callable[[], None], timeout: int) -> int:
         callback()
         TIMEOUTS.pop(id, None)
 
-    id = setTimeout(create_once_callable(wrapper), timeout)
+    callable = create_once_callable(wrapper)
+    id = setTimeout(callable, timeout)
+    TIMEOUTS[id] = callable
     return id
 
 
