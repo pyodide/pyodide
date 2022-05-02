@@ -33,7 +33,7 @@ def _format_table(headers: list[str], table: list[Iterable]) -> str:
 
 
 def normalize_package_name(pkgname: str):
-    return re.sub(r"[^\w\d.]+", "_", pkgname, re.UNICODE)
+    return re.sub(r"[^\w\d.]+", "_", pkgname, re.UNICODE).lower()
 
 
 @dataclass
