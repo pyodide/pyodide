@@ -3,8 +3,15 @@ from typing import Any, Callable
 
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
-from js import clearInterval, clearTimeout, document, setInterval, setTimeout
-from pyodide import JsProxy, create_once_callable, create_proxy
+from js import document
+from pyodide import (
+    JsProxy,
+    set_timeout,
+    set_interval,
+    clear_timeout,
+    clear_interval,
+    create_proxy,
+)
 
 try:
     from js import devicePixelRatio as DEVICE_PIXEL_RATIO
@@ -25,62 +32,6 @@ def _remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], N
     proxy = EVENT_LISTENERS[(id(elt), event, listener)]
     elt.removeEventListener(event, proxy)
     proxy.destroy()
-
-
-class Destroyable:
-    def destroy(self):
-        pass
-
-
-TIMEOUTS: dict[int, Destroyable] = {}
-
-
-def _set_timeout(callback: Callable[[], None], timeout: int) -> int:
-    id = -1
-
-    def wrapper():
-        nonlocal id
-        callback()
-        TIMEOUTS.pop(id, None)
-
-    callable = create_once_callable(wrapper)
-    id = setTimeout(callable, timeout)
-    TIMEOUTS[id] = callable
-    return id
-
-
-# An object with a no-op destroy method so we can do
-#
-# TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
-#
-# and either it gets a real object and calls the real destroy method or it gets
-# the fake which does nothing. This is to handle the case where clear_timeout is
-# called after the timeout executes.
-DUMMY_DESTROYABLE = Destroyable()
-
-
-def _clear_timeout(id: int):
-    clearTimeout(id)
-    TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
-
-
-def _set_interval(callback: Callable[[], None], interval: int) -> int:
-    id = -1
-
-    def wrapper():
-        nonlocal id
-        callback()
-        TIMEOUTS.pop(id, None)
-
-    callable = create_once_callable(wrapper)
-    id = setInterval(callable, interval)
-    TIMEOUTS[id] = callable
-    return id
-
-
-def _clear_interval(id: int):
-    clearInterval(id)
-    TIMEOUTS.pop(id).destroy()
 
 
 class FigureCanvasWasm(FigureCanvasBase):
@@ -266,7 +217,7 @@ class FigureCanvasWasm(FigureCanvasBase):
     def draw_idle(self):
         if not self._idle_scheduled:
             self._idle_scheduled = True
-            _set_timeout(self.draw, 1)
+            set_timeout(self.draw, 1)
 
     def set_message(self, message):
         message_display = self.get_element("message")
@@ -555,18 +506,18 @@ class TimerWasm(TimerBase):
     def _timer_start(self):
         self._timer_stop()
         if self._single:
-            self._timer: int | None = _set_timeout(self._on_timer, self.interval)
+            self._timer: int | None = set_timeout(self._on_timer, self.interval)
         else:
-            self._timer = _set_interval(self._on_timer, self.interval)
+            self._timer = set_interval(self._on_timer, self.interval)
 
     def _timer_stop(self):
         if self._timer is None:
             return
         elif self._single:
-            _clear_timeout(self._timer)
+            clear_timeout(self._timer)
             self._timer = None
         else:
-            _clear_interval(self._timer)
+            clear_interval(self._timer)
             self._timer = None
 
     def _timer_set_interval(self):
