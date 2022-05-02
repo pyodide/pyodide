@@ -381,10 +381,10 @@ export function unpackArchive(
   if (ArrayBuffer.isView(buffer)) {
     buffer = buffer.buffer;
   }
-  if (Object.prototype.toString.call(buffer) === '[object ArrayBuffer]') {
+  if (Object.prototype.toString.call(buffer) === "[object ArrayBuffer]") {
     buffer = new Uint8Array(buffer);
   } else {
-    throw new TypeError(`Expected argument buffer to be typed ${buffer}`)
+    throw new TypeError(`Expected argument buffer to be typed ${buffer}`);
   }
 
   let extract_dir = options.extractDir;

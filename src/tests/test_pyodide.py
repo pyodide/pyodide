@@ -217,7 +217,7 @@ def test_unpack_archive(selenium_standalone):
         var error = "";
         try {
             pyodide.unpackArchive([1, 2, 3], "zip", "abc");
-        } catch (te) { 
+        } catch (te) {
             error = te.toString();
         }
         return error
