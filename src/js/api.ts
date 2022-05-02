@@ -363,7 +363,7 @@ let unpackArchivePositionalExtractDirDeprecationWarned = false;
  * to the working directory.
  */
 export function unpackArchive(
-  buffer: TypedArray,
+  buffer: TypedArray | ArrayBuffer,
   format: string,
   options: {
     extractDir?: string;
@@ -378,6 +378,15 @@ export function unpackArchive(
     }
     options = { extractDir: options };
   }
+  if (ArrayBuffer.isView(buffer)) {
+    buffer = buffer.buffer;
+  }
+  if (Object.prototype.toString.call(buffer) === '[object ArrayBuffer]') {
+    buffer = new Uint8Array(buffer);
+  } else {
+    throw new TypeError(`Expected argument buffer to be typed ${buffer}`)
+  }
+
   let extract_dir = options.extractDir;
   API.package_loader.unpack_buffer.callKwargs({
     buffer,
