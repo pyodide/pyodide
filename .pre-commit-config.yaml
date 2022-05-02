@@ -83,7 +83,7 @@ repos:
       - id: python-check-blanket-type-ignore
       - id: python-no-log-warn
       - id: python-no-eval
-        exclude: ^(src/py/_pyodide/_base\.py|src/tests/test_typeconversions\.py)$
+        exclude: ^(src/py/_pyodide/_base\.py|src/tests/test_typeconversions\.py|src/py/pyodide/_run_js.py)$
       - id: python-use-type-annotations
         exclude: docs/sphinx_pyodide/tests/test_directives\.py
       - id: rst-backticks

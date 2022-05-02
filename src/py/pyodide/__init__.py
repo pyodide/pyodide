@@ -29,9 +29,9 @@ from ._core import (
     create_once_callable,
     create_proxy,
     destroy_proxies,
-    run_js,
     to_js,
 )
+from ._run_js import run_js
 from .http import open_url
 
 if IN_BROWSER:

@@ -10,7 +10,6 @@ if IN_BROWSER:
         create_once_callable,
         create_proxy,
         destroy_proxies,
-        run_js,
         to_js,
     )
 else:
@@ -21,18 +20,16 @@ else:
         create_once_callable,
         create_proxy,
         destroy_proxies,
-        run_js,
         to_js,
     )
 
 
 __all__ = [
-    "ConversionError",
-    "JsException",
     "JsProxy",
-    "create_once_callable",
+    "JsException",
     "create_proxy",
-    "destroy_proxies",
+    "create_once_callable",
     "to_js",
-    "run_js",
+    "ConversionError",
+    "destroy_proxies",
 ]
