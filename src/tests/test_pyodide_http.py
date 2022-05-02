@@ -61,3 +61,26 @@ async def test_pyfetch_unpack_archive():
         "src",
         "tests",
     ]
+
+""" def test_pyfetch_credentials(selenium, httpserver):
+    if selenium.browser == "node":
+        pytest.xfail("XMLHttpRequest not available in node")
+    httpserver.expect_request("/data").respond_with_data(
+        b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
+    )
+    request_url = httpserver.url_for("/data")
+
+    assert (
+        selenium.run(
+            f"""
+        import pyodide
+        resp = await pyodide.pyfetch('{request_url})
+        body = await resp.text()
+
+
+        pyodide.open_url('{request_url}').read()
+        """
+        )
+        == "HELLO"
+    ) """
+

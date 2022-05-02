@@ -7,6 +7,8 @@ from typing import Any
 
 import pytest
 
+from unittest.mock import MagicMock
+
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
 
@@ -458,3 +460,33 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
         `);
         """
     )
+
+
+def test_custom_url_credentials(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            from unittest.mock import patch
+            from pyodide.http import pyfetch
+            @patch('pyodide.http.pyfetch')
+            async def call_micropip_install(pyfetch_mock):
+                await micropip.install('pyodide-micropip-test', credentials=True)
+                assert pyfetch_mock.called
+                pyftech_mock.assert_called_once_with()
+            await call_micropip_install()
+            `);
+        """
+    )
+# pytest -k 'node and mytest' packages/micropip/test_micropip.py
+
+#$ poetry run pytest -k 'node and mytest' packages/micropip/test_micropip.py
+# ImportError while loading conftest '/home/echorand/pyodide/conftest.py'.
+#conftest.py:18: in <module>
+#    import pexpect
+#E   ModuleNotFoundError: No module named 'pexpect'
+
+# poetry run pytest -v -k 'node' packages/micropip/test_micropip.py::test_custom_url_credentials
+
+# Run test  by getting a container shell
