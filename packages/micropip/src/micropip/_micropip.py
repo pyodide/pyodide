@@ -81,9 +81,13 @@ else:
         return result
 
 
-async def _get_pypi_json(pkgname):
+async def _get_pypi_json(pkgname, with_credentials):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    return json.loads(await fetch_string(url))
+    if with_credentials:
+        credential = 'include'
+    else:
+        credential = 'same-origin'
+    return json.loads(await fetch_string(url, credentials=credential))
 
 
 def _is_pure_python_wheel(filename: str):
@@ -151,6 +155,7 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        with_credentials: bool = False
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -167,7 +172,9 @@ class _PackageManager:
         requirement_promises = []
         for requirement in requirements:
             requirement_promises.append(
-                self.add_requirement(requirement, ctx, transaction)
+                self.add_requirement(
+                    requirement, ctx, transaction, with_credentials=with_credentials
+                )
             )
 
         await gather(*requirement_promises)
@@ -180,7 +187,9 @@ class _PackageManager:
             await install_func
             done_callback()
 
-        transaction = await self.gather_requirements(requirements, ctx, keep_going)
+        transaction = await self.gather_requirements(
+            requirements, ctx, keep_going, with_credentials=with_credentials
+        )
 
         if transaction["failed"]:
             failed_requirements = ", ".join(
@@ -234,7 +243,7 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(self, requirement: str | Requirement, ctx, transaction):
+    async def add_requirement(self, requirement: str | Requirement, ctx, transaction, with_credentials: bool = False):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -249,7 +258,7 @@ class _PackageManager:
             if not _is_pure_python_wheel(wheel["filename"]):
                 raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
 
-            await self.add_wheel(name, wheel, version, (), ctx, transaction)
+            await self.add_wheel(name, wheel, version, (), ctx, transaction, with_credentials)
             return
         else:
             req = Requirement(requirement)
@@ -284,7 +293,7 @@ class _PackageManager:
                     f"Requested '{requirement}', "
                     f"but {req.name}=={ver} is already installed"
                 )
-        metadata = await _get_pypi_json(req.name)
+        metadata = await _get_pypi_json(req.name, with_credentials=with_credentials)
         maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
         if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
@@ -296,18 +305,22 @@ class _PackageManager:
                 )
         else:
             await self.add_wheel(
-                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction
+                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction, with_credentials=with_credentials
             )
 
-    async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
+    async def add_wheel(self, name, wheel, version, extras, ctx, transaction, with_credentials):
         normalized_name = normalize_package_name(name)
         transaction["locked"][normalized_name] = PackageMetadata(
             name=name,
             version=version,
         )
 
+        if with_credentials:
+            credential = 'include'
+        else:
+            credential = 'same-origin'
         try:
-            wheel_bytes = await fetch_bytes(wheel["url"])
+            wheel_bytes = await fetch_bytes(wheel["url"], credentials=credential)
         except Exception as e:
             if wheel["url"].startswith("https://files.pythonhosted.org/"):
                 raise e

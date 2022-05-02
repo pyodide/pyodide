@@ -483,13 +483,10 @@ def test_custom_url_credentials(selenium_standalone_micropip):
                 except:
                     # The above will fail as the mock data is garbage
                     pass
-                print(pyfetch_mock.call_args.args)
-                print(pyfetch_mock.call_args.kwargs)
-                assert pyfetch_mock.called
-                pyfetch_mock.assert_called_once_with(
-                    'https://pypi.python.org/pypi/pyodide-micropip-test/json',
+                pyfetch_mock.assert_called_with(
+                    'https://pypi.org/pypi/pyodide-micropip-test/json',
                     credentials='include'
-                    )
+                )
             await call_micropip_install()
             `);
         """
