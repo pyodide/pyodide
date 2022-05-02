@@ -406,10 +406,8 @@ def test_list_wheel_name_mismatch(monkeypatch):
     from micropip import _micropip
 
     dummy_pkg_name = "dummy-Dummy"
-    normalized_pkg_name = dummy_pkg_name.replace('-', '_').lower()
-    dummy_url = (
-        f"https://dummy.com/{normalized_pkg_name}-1.0.0-py3-none-any.whl"
-    )
+    normalized_pkg_name = dummy_pkg_name.replace("-", "_").lower()
+    dummy_url = f"https://dummy.com/{normalized_pkg_name}-1.0.0-py3-none-any.whl"
     _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, f"Name: {dummy_pkg_name}")
 
     monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
