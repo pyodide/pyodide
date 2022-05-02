@@ -174,7 +174,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: str | list[str], ctx=None, keep_going: bool = False, with_credentials: bool = False
+        self, requirements: str | list[str], ctx=None, keep_going: bool = False, credentials: bool = False
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -371,7 +371,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: str | list[str], keep_going: bool = False, with_credentials: bool = False):
+def install(requirements: str | list[str], keep_going: bool = False, credentials: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
