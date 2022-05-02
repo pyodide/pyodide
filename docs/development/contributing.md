@@ -12,7 +12,7 @@ To contribute code, see the following steps,
 
 1. Fork the Pyodide repository [https://github.com/pyodide/pyodide](https://github.com/pyodide/pyodide) on Github.
 2. If you are on Linux, you can skip this step. On Windows and MacOS you have a
-   choice between, manually installing Docker,
+   choice. The first option is to manually install Docker:
 
    - on MacOS follow [these instructions](https://docs.docker.com/desktop/mac/install/)
    - on Windows, [install WSL
@@ -20,14 +20,14 @@ To contribute code, see the following steps,
      Note that Windows filesystem access from WSL2 is very slow and should
      be avoided when building Pyodide.
 
-   The other alternative is to use a service that provides a Linux
-   development environment, such as,
+   The second option is to use a service that provides a Linux
+   development environment, such as
 
    - [Github Codespaces](https://github.com/features/codespaces)
    - [gitpod.io](https://gitpod.io)
    - or a remote Linux VM with SSH connection.
 
-3. Clone your fork of Pyodide,
+3. Clone your fork of Pyodide
    ```
    git clone https://github.com/<your-username>/pyodide.git
    ```
