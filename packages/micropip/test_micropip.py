@@ -468,13 +468,28 @@ def test_custom_url_credentials(selenium_standalone_micropip):
         f"""
         await pyodide.runPythonAsync(`
             import micropip
-            from unittest.mock import patch
-            from pyodide.http import pyfetch
-            @patch('pyodide.http.pyfetch')
+            import json
+            from unittest.mock import patch, MagicMock
+
+            fetch_response_mock = MagicMock()
+            async def myfunc():
+                return json.dumps(dict())
+            fetch_response_mock.string.side_effect = myfunc
+
+            @patch('micropip._micropip.pyfetch', return_value=fetch_response_mock)
             async def call_micropip_install(pyfetch_mock):
-                await micropip.install('pyodide-micropip-test', credentials=True)
+                try:
+                    await micropip.install('pyodide-micropip-test', credentials=True)
+                except:
+                    # The above will fail as the mock data is garbage
+                    pass
+                print(pyfetch_mock.call_args.args)
+                print(pyfetch_mock.call_args.kwargs)
                 assert pyfetch_mock.called
-                pyftech_mock.assert_called_once_with()
+                pyfetch_mock.assert_called_once_with(
+                    'https://pypi.python.org/pypi/pyodide-micropip-test/json',
+                    credentials='include'
+                    )
             await call_micropip_install()
             `);
         """
