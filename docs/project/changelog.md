@@ -14,6 +14,10 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} {func}`micropip.install` now accepts a `deps` parameter.
+  If set to `False`, micropip will not install dependencies of the package.
+  {pr}`2433`
+
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
 
