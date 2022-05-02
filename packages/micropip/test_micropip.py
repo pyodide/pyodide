@@ -399,6 +399,28 @@ def test_list_wheel_package(monkeypatch):
     assert "dummy" in pkg_list and pkg_list["dummy"].source.lower() == dummy_url
 
 
+def test_list_wheel_name_mismatch(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy-dummy"
+    dummy_url = (
+        f"https://dummy.com/{dummy_pkg_name.replace('-', '_')}-1.0.0-py3-none-any.whl"
+    )
+    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, f"Name: {dummy_pkg_name}")
+
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_url))
+
+    pkg_list = _micropip._list()
+    assert (
+        dummy_pkg_name in pkg_list
+        and pkg_list[dummy_pkg_name].source.lower() == dummy_url
+        and pkg_list[dummy_pkg_name].name == dummy_pkg_name
+    )
+
+
 def test_list_pyodide_package(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(

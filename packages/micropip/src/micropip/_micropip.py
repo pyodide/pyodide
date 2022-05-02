@@ -17,7 +17,7 @@ from packaging.version import Version
 from pyodide import IN_BROWSER, to_js
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
-from .package import PackageDict, PackageMetadata
+from .package import PackageDict, PackageMetadata, normalize_package_name
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -205,7 +205,10 @@ class _PackageManager:
                     ),
                     functools.partial(
                         self.installed_packages.update,
-                        {pkg.name: pkg for pkg in pyodide_packages},
+                        {
+                            normalize_package_name(pkg.name): pkg
+                            for pkg in pyodide_packages
+                        },
                     ),
                 )
             )
@@ -220,7 +223,11 @@ class _PackageManager:
                     _install_wheel(name, wheel),
                     functools.partial(
                         self.installed_packages.update,
-                        {name: PackageMetadata(name, str(ver), wheel_source)},
+                        {
+                            normalize_package_name(name): PackageMetadata(
+                                name, str(ver), wheel_source
+                            )
+                        },
                     ),
                 )
             )
@@ -293,7 +300,11 @@ class _PackageManager:
             )
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
-        transaction["locked"][name] = PackageMetadata(name=name, version=version)
+        normalized_name = normalize_package_name(name)
+        transaction["locked"][normalized_name] = PackageMetadata(
+            name=name,
+            version=version,
+        )
 
         try:
             wheel_bytes = await fetch_bytes(wheel["url"])
@@ -312,10 +323,15 @@ class _PackageManager:
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
             dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
+
+        project_name = dist.project_name
+        if project_name == "UNKNOWN":
+            project_name = name
+
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
-        transaction["wheels"].append((name, wheel, version))
+        transaction["wheels"].append((project_name, wheel, version))
 
     def find_wheel(
         self, metadata: dict[str, Any], req: Requirement
