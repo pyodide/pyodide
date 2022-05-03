@@ -4,9 +4,10 @@ import sys
 import zipfile
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
+
+from unittest.mock import MagicMock
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
@@ -235,8 +236,9 @@ def test_add_requirement_marker():
 
 def test_last_version_from_pypi():
     pytest.importorskip("packaging")
-    from micropip import _micropip
     from packaging.requirements import Requirement
+
+    from micropip import _micropip
 
     requirement = Requirement("dummy_module")
     versions = ["0.0.1", "0.15.5", "0.9.1"]
@@ -489,15 +491,13 @@ def test_install_with_credentials(selenium_standalone_micropip):
             `);
         """
     )
-
-
 # pytest -k 'node and mytest' packages/micropip/test_micropip.py
 
-# $ poetry run pytest -k 'node and mytest' packages/micropip/test_micropip.py
+#$ poetry run pytest -k 'node and mytest' packages/micropip/test_micropip.py
 # ImportError while loading conftest '/home/echorand/pyodide/conftest.py'.
-# conftest.py:18: in <module>
+#conftest.py:18: in <module>
 #    import pexpect
-# E   ModuleNotFoundError: No module named 'pexpect'
+#E   ModuleNotFoundError: No module named 'pexpect'
 
 # poetry run pytest -v -k 'node' packages/micropip/test_micropip.py::test_custom_url_credentials
 

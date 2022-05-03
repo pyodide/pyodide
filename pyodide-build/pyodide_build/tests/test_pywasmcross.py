@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
+
 from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
 from pyodide_build.pywasmcross import environment_substitute_args

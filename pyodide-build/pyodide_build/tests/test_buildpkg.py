@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import pytest
+
 from pyodide_build import buildpkg
 from pyodide_build.io import parse_package_config
 
