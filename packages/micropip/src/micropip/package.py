@@ -1,3 +1,4 @@
+import re
 from collections import UserDict
 from dataclasses import astuple, dataclass
 from typing import Iterable
@@ -31,6 +32,10 @@ def _format_table(headers: list[str], table: list[Iterable]) -> str:
     return "\n".join(rows)
 
 
+def normalize_package_name(pkgname: str):
+    return re.sub(r"[^\w\d.]+", "_", pkgname, re.UNICODE).lower()
+
+
 @dataclass
 class PackageMetadata:
     name: str
@@ -53,6 +58,14 @@ class PackageDict(UserDict):
 
     def __repr__(self):
         return self._tabularize()
+
+    def __getitem__(self, key):
+        normalized_key = normalize_package_name(key)
+        return super().__getitem__(normalized_key)
+
+    def __contains__(self, key):
+        normalized_key = normalize_package_name(key)
+        return super().__contains__(normalized_key)
 
     def _tabularize(self):
         headers = [key.capitalize() for key in PackageMetadata.keys()]

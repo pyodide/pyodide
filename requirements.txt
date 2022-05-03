@@ -2,6 +2,7 @@
   # lint
   pre-commit
   # testing
+  build==0.7.0
   hypothesis
   pexpect
   pytest

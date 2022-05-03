@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} micropip now correctly handles package names that include dashes
+  {pr}`2414`
+
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
 
@@ -27,6 +30,8 @@ substitutions:
   {pr}`2391`
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
 
 ### Packages
 
