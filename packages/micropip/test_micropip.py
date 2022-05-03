@@ -462,8 +462,8 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
     )
 
 
-@run_in_pyodide(standalone=True, packages=["micropip"])
-@pytest.mark.asyncio
+@pytest.mark.skip_refcount_check
+@run_in_pyodide(packages=["micropip"])
 async def test_install_with_credentials():
     import json
     from unittest.mock import MagicMock, patch
@@ -480,11 +480,11 @@ async def test_install_with_credentials():
     @patch("micropip._micropip.pyfetch", return_value=fetch_response_mock)
     async def call_micropip_install(pyfetch_mock):
         try:
-            await micropip.install("pyodide-micropip-test")
+            await micropip.install("pyodide-micropip-test", credentials="include")
         except BaseException:
             # The above will raise an exception as the mock data is garbage
             # but it is sufficient for this test
-            raise
+            pass
         pyfetch_mock.assert_called_with(
             "https://pypi.org/pypi/pyodide-micropip-test/json", credentials="include"
         )
