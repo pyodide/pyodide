@@ -1,5 +1,4 @@
 import pytest
-
 from pyodide_build.common import (
     ALWAYS_PACKAGES,
     CORE_PACKAGES,

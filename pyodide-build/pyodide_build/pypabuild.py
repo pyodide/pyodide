@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Mapping
 
 from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
-from build.__main__ import (  # type: ignore[import]
+from build.__main__ import (
     _STYLES,
-    _error,
+    _error,  # type: ignore[import]
     _handle_build_error,
     _IsolatedEnvBuilder,
     _ProjectBuilder,

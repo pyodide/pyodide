@@ -2,9 +2,9 @@ import math
 from typing import Any, Callable
 
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
+from pyodide import JsProxy, create_once_callable, create_proxy
 
 from js import clearInterval, clearTimeout, document, setInterval, setTimeout
-from pyodide import JsProxy, create_once_callable, create_proxy
 
 try:
     from js import devicePixelRatio as DEVICE_PIXEL_RATIO

@@ -5,8 +5,8 @@ import sys
 import traceback
 from asyncio import Future, ensure_future
 from codeop import CommandCompiler, Compile, _features  # type: ignore[attr-defined]
-from contextlib import (  # type: ignore[attr-defined]
-    ExitStack,
+from contextlib import (
+    ExitStack,  # type: ignore[attr-defined]
     _RedirectStream,
     contextmanager,
     redirect_stderr,

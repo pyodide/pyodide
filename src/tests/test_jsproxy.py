@@ -1,6 +1,5 @@
 # See also test_typeconversions, and test_python.
 import pytest
-
 from pyodide_build.testing import run_in_pyodide
 
 
@@ -1054,6 +1053,7 @@ def test_buffer_into_file():
 def test_buffer_into_file2():
     """Check that no copy occurred."""
     import pyodide_js
+
     from js import Uint8Array
 
     a = Uint8Array.new(range(10))

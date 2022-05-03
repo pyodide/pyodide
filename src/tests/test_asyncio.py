@@ -2,7 +2,6 @@ import asyncio
 import time
 
 import pytest
-
 from pyodide import eval_code_async
 
 
