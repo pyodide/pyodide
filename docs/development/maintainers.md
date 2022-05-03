@@ -19,11 +19,13 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    `docs/usage/downloading-and-deploying.md`.
 
 2. Set the version in:
+
    - `src/js/package.json`,
    - `docs/project/about.md` (the Zenodo citation),
    - `docs/development/building-from-sources.md`,
    - `docs/usage/downloading-and-deploying.md`,
    - Bump version in source code files by running `bump2version` command, for example:
+
      ```bash
      bump2version --current-version 0.20.0 minor --dry-run --verbose
      ```
@@ -31,7 +33,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
      and
 
      ```bash
-     bump2version --current-version 0.20.0 minor 
+     bump2version --current-version 0.20.0 minor
      ```
 
    After this, try using `ripgrep` to make sure there are no extra old versions
