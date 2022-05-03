@@ -477,7 +477,7 @@ def test_install_with_credentials(selenium_standalone_micropip):
             @patch('micropip._micropip.pyfetch', return_value=fetch_response_mock)
             async def call_micropip_install(pyfetch_mock):
                 try:
-                    await micropip.install('pyodide-micropip-test', credentials='True')
+                    await micropip.install('pyodide-micropip-test', credentials='include')
                 except:
                     # The above will fail as the mock data is garbage
                     pass
