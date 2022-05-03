@@ -81,7 +81,7 @@ else:
         return result
 
 
-async def _get_pypi_json(pkgname, fetch_extra_kwargs):
+async def _get_pypi_json(pkgname, **fetch_extra_kwargs):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     return json.loads(await fetch_string(url, **fetch_extra_kwargs))
 
@@ -267,7 +267,7 @@ class _PackageManager:
                 raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
 
             await self.add_wheel(
-                name, wheel, version, (), ctx, transaction, fetch_extra_kwargs
+                name, wheel, version, (), ctx, transaction, **fetch_extra_kwargs
             )
             return
         else:
@@ -321,11 +321,11 @@ class _PackageManager:
                 req.extras,
                 ctx,
                 transaction,
-                fetch_extra_kwargs,
+                **fetch_extra_kwargs,
             )
 
     async def add_wheel(
-        self, name, wheel, version, extras, ctx, transaction, fetch_extra_kwargs
+        self, name, wheel, version, extras, ctx, transaction, **fetch_extra_kwargs
     ):
         normalized_name = normalize_package_name(name)
         transaction["locked"][normalized_name] = PackageMetadata(
