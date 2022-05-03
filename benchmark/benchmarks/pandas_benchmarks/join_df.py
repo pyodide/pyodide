@@ -2,4 +2,4 @@
 # run: join_df(df1, df2)
 
 def join_df(df1, df2):
-    df = df1.join(df2, how='outer')
+    return df1.join(df2, how='outer')

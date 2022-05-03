@@ -6,4 +6,4 @@ from io import StringIO
 import pandas as pd
 
 def read_csv(data):
-    df = pd.read_csv(StringIO(data), sep=";")
+    return pd.read_csv(StringIO(data), sep=";")
