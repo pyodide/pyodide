@@ -258,7 +258,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   try {
     proxy_repr = proxy.toString();
   } catch (e) {
-    if (e.pyodide_fatal_error) {
+    if ((e as any).pyodide_fatal_error) {
       throw e;
     }
   }

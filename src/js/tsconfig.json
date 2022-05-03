@@ -7,6 +7,7 @@
     "module": "ES2020",
     "moduleResolution": "node",
     "composite": true,
+    "useUnknownInCatchVariables": true,
     "alwaysStrict": true,
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
