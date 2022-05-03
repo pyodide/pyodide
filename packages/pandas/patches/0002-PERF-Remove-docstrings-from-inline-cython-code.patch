@@ -1,0 +1,31 @@
+From e073902997d05a30734cd08b23cef9274adcb2af Mon Sep 17 00:00:00 2001
+From: William Lachance <wlach@protonmail.com>
+Date: Tue, 3 May 2022 15:55:12 -0400
+Subject: [PATCH] PERF: Remove docstrings from inline cython code
+
+These functions aren't externally available, and removing them saves
+a small amount of space (approximately 250k in the size of the generated
+.so's on a linux64 machine).
+---
+ setup.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/setup.py b/setup.py
+index 67b91c55dd..11e3494b72 100755
+--- a/setup.py
++++ b/setup.py
+@@ -46,8 +46,11 @@ try:
+         __version__ as _CYTHON_VERSION,
+     )
+     from Cython.Build import cythonize
++    from Cython.Compiler import Options
+ 
+     _CYTHON_INSTALLED = parse_version(_CYTHON_VERSION) >= parse_version(min_cython_ver)
++    Options.docstrings = False
++
+ except ImportError:
+     _CYTHON_VERSION = None
+     _CYTHON_INSTALLED = False
+-- 
+2.34.1
+
