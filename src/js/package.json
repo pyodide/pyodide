@@ -105,7 +105,7 @@
   "tsd": {
     "compilerOptions": {
       "lib": [
-        "ES2018",
+        "ES2017",
         "DOM"
       ]
     }
