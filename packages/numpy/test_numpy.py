@@ -1,5 +1,4 @@
 import pytest
-
 from pyodide_build.testing import run_in_pyodide as run_in_pyodide_orig
 
 

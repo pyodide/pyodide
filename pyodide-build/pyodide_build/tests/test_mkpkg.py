@@ -1,11 +1,10 @@
 import os
 from pathlib import Path
 
+import pyodide_build.mkpkg
 import pytest
 import yaml
 from pkg_resources import parse_version
-
-import pyodide_build.mkpkg
 from pyodide_build.io import parse_package_config
 
 # Following tests make real network calls to the PyPI JSON API.

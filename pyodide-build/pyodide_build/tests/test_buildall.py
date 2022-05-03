@@ -3,7 +3,6 @@ from pathlib import Path
 from time import sleep
 
 import pytest
-
 from pyodide_build import buildall
 
 PACKAGES_DIR = Path(__file__).parent / "_test_packages"

@@ -5,9 +5,8 @@ from typing import Any
 
 import pytest
 import yaml
-from yaml import CLoader as Loader
-
 from pyodide_build.common import UNVENDORED_STDLIB_MODULES
+from yaml import CLoader as Loader
 
 
 def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
