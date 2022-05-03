@@ -83,11 +83,10 @@ else:
 
 async def _get_pypi_json(pkgname, with_credentials):
     url = f"https://pypi.org/pypi/{pkgname}/json"
+    extra_kwargs = dict()
     if with_credentials:
-        credential = 'include'
-    else:
-        credential = 'same-origin'
-    return json.loads(await fetch_string(url, credentials=credential))
+        extra_kwargs['credentials'] = 'include'
+    return json.loads(await fetch_string(url, **extra_kwargs))
 
 
 def _is_pure_python_wheel(filename: str):
@@ -315,12 +314,11 @@ class _PackageManager:
             version=version,
         )
 
+        extra_kwargs = dict()
         if with_credentials:
-            credential = 'include'
-        else:
-            credential = 'same-origin'
+            extra_kwargs['credentials'] = 'include'
         try:
-            wheel_bytes = await fetch_bytes(wheel["url"], credentials=credential)
+            wheel_bytes = await fetch_bytes(wheel["url"], **extra_kwargs )
         except Exception as e:
             if wheel["url"].startswith("https://files.pythonhosted.org/"):
                 raise e

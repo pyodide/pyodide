@@ -462,7 +462,7 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
     )
 
 
-def test_custom_url_credentials(selenium_standalone_micropip):
+def test_install_with_credentials(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(
         f"""
