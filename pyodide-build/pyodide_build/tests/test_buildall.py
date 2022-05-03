@@ -22,12 +22,15 @@ def test_generate_dependency_graph():
     assert pkg_map["beautifulsoup4"].dependents == set()
 
 
-def test_generate_packages_json():
+def test_generate_packages_json(tmp_path):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".file"
+        # Write dummy package file for SHA-256 hash verification
+        with open(tmp_path / pkg.file_name, "w") as f:
+            f.write(pkg.name)
 
-    package_data = buildall.generate_packages_json(pkg_map)
+    package_data = buildall.generate_packages_json(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
     assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
     assert set(package_data["packages"]) == {
@@ -44,6 +47,7 @@ def test_generate_packages_json():
         "depends": ["pkg_1_1", "pkg_3"],
         "imports": ["pkg_1"],
         "install_dir": "site",
+        "sha_256": "c1e38241013b5663e902fff97eb8585e98e6df446585da1dcf2ad121b52c2143",
     }
 
 

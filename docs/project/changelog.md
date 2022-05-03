@@ -31,6 +31,8 @@ substitutions:
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
 
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
