@@ -7,6 +7,8 @@
     "module": "ES2020",
     "moduleResolution": "node",
     "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
     "allowSyntheticDefaultImports": true,
     "types": ["node"]
   },
