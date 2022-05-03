@@ -85,7 +85,7 @@ async def _get_pypi_json(pkgname, with_credentials):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     extra_kwargs = dict()
     if with_credentials:
-        extra_kwargs['credentials'] = 'include'
+        extra_kwargs["credentials"] = "include"
     return json.loads(await fetch_string(url, **extra_kwargs))
 
 
@@ -154,7 +154,7 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
-        with_credentials: bool = False
+        with_credentials: bool = False,
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -180,7 +180,11 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: str | list[str], ctx=None, keep_going: bool = False, with_credentials: bool = False
+        self,
+        requirements: str | list[str],
+        ctx=None,
+        keep_going: bool = False,
+        with_credentials: bool = False,
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -242,7 +246,13 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(self, requirement: str | Requirement, ctx, transaction, with_credentials: bool = False):
+    async def add_requirement(
+        self,
+        requirement: str | Requirement,
+        ctx,
+        transaction,
+        with_credentials: bool = False,
+    ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -257,7 +267,9 @@ class _PackageManager:
             if not _is_pure_python_wheel(wheel["filename"]):
                 raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
 
-            await self.add_wheel(name, wheel, version, (), ctx, transaction, with_credentials)
+            await self.add_wheel(
+                name, wheel, version, (), ctx, transaction, with_credentials
+            )
             return
         else:
             req = Requirement(requirement)
@@ -304,10 +316,18 @@ class _PackageManager:
                 )
         else:
             await self.add_wheel(
-                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction, with_credentials=with_credentials
+                req.name,
+                maybe_wheel,
+                maybe_ver,
+                req.extras,
+                ctx,
+                transaction,
+                with_credentials=with_credentials,
             )
 
-    async def add_wheel(self, name, wheel, version, extras, ctx, transaction, with_credentials):
+    async def add_wheel(
+        self, name, wheel, version, extras, ctx, transaction, with_credentials
+    ):
         normalized_name = normalize_package_name(name)
         transaction["locked"][normalized_name] = PackageMetadata(
             name=name,
@@ -316,9 +336,9 @@ class _PackageManager:
 
         extra_kwargs = dict()
         if with_credentials:
-            extra_kwargs['credentials'] = 'include'
+            extra_kwargs["credentials"] = "include"
         try:
-            wheel_bytes = await fetch_bytes(wheel["url"], **extra_kwargs )
+            wheel_bytes = await fetch_bytes(wheel["url"], **extra_kwargs)
         except Exception as e:
             if wheel["url"].startswith("https://files.pythonhosted.org/"):
                 raise e
@@ -382,7 +402,11 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: str | list[str], keep_going: bool = False, with_credentials: bool = False):
+def install(
+    requirements: str | list[str],
+    keep_going: bool = False,
+    with_credentials: bool = False,
+):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
@@ -430,7 +454,9 @@ def install(requirements: str | list[str], keep_going: bool = False, with_creden
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(
-        PACKAGE_MANAGER.install(requirements, keep_going=keep_going, with_credentials=with_credentials)
+        PACKAGE_MANAGER.install(
+            requirements, keep_going=keep_going, with_credentials=with_credentials
+        )
     )
 
 

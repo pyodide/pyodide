@@ -62,12 +62,14 @@ async def test_pyfetch_unpack_archive():
         "tests",
     ]
 
+
 def test_pyfetch_set_credentials(selenium, httpserver):
     if selenium.browser == "node":
         pytest.xfail("XMLHttpRequest not available in node")
     httpserver.expect_request("/data").respond_with_data(
-        b"HELLO", content_type="text/plain",
-        headers={"Access-Control-Allow-Origin": "*"}
+        b"HELLO",
+        content_type="text/plain",
+        headers={"Access-Control-Allow-Origin": "*"},
     )
     request_url = httpserver.url_for("/data")
 

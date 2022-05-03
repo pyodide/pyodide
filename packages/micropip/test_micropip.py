@@ -7,8 +7,6 @@ from typing import Any
 
 import pytest
 
-from unittest.mock import MagicMock
-
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
 
@@ -465,7 +463,7 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
 def test_install_with_credentials(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(
-        f"""
+        """
         await pyodide.runPythonAsync(`
             import micropip
             import json
@@ -491,14 +489,3 @@ def test_install_with_credentials(selenium_standalone_micropip):
             `);
         """
     )
-# pytest -k 'node and mytest' packages/micropip/test_micropip.py
-
-#$ poetry run pytest -k 'node and mytest' packages/micropip/test_micropip.py
-# ImportError while loading conftest '/home/echorand/pyodide/conftest.py'.
-#conftest.py:18: in <module>
-#    import pexpect
-#E   ModuleNotFoundError: No module named 'pexpect'
-
-# poetry run pytest -v -k 'node' packages/micropip/test_micropip.py::test_custom_url_credentials
-
-# Run test  by getting a container shell
