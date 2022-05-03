@@ -63,7 +63,7 @@ async def test_pyfetch_unpack_archive():
     ]
 
 
-def test_pyfetch_set_credentials(selenium, httpserver):
+def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     if selenium.browser == "node":
         pytest.xfail("XMLHttpRequest not available in node")
     httpserver.expect_request("/data").respond_with_data(
@@ -82,4 +82,31 @@ def test_pyfetch_set_credentials(selenium, httpserver):
         """
         )
         == "HELLO"
+    )
+
+
+def test_pyfetch_set_invalid_credentials_value(selenium, httpserver):
+    if selenium.browser == "node":
+        pytest.xfail("XMLHttpRequest not available in node")
+    httpserver.expect_request("/data").respond_with_data(
+        b"HELLO",
+        content_type="text/plain",
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+    request_url = httpserver.url_for("/data")
+
+    with pytest.raises(selenium.JavascriptException) as excinfo:
+        selenium.run_async(
+            f"""
+        from pyodide import JsException
+        import pyodide.http
+        try:
+            data = await pyodide.http.pyfetch('{request_url}', credentials='invalid')
+        except Exception as exc:
+            raise exc
+        """
+        )
+    assert (
+        "The provided value 'invalid' is not a valid enum value of type RequestCredentials"
+        in str(excinfo.value)
     )
