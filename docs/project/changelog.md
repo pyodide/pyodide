@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
 
