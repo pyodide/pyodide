@@ -99,24 +99,30 @@ def test_big_integer_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import json
 
-        print("n:", n)
+        print("n:", n, end=" ")
         s = json.dumps(n)
         selenium.run_js(
             f"""
-            self.x_js = eval({s!r}); // JSON.parse apparently doesn't work
+            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
             pyodide.runPython(`
                 import json
                 x_py = json.loads({s!r})
             `);
             """
         )
-        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
-        assert selenium.run(
-            """
-            from js import x_js
-            x_js == x_py
-            """
-        )
+        try:
+            assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
+            assert selenium.run(
+                """
+                from js import x_js
+                x_js == x_py
+                """
+            )
+        except Exception:
+            print("failed =(")
+            raise
+        else:
+            print("worked!!")
 
 
 def test_nan_conversions(selenium):
