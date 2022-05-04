@@ -3,7 +3,7 @@ import contextvars
 import sys
 import time
 import traceback
-from typing import Callable
+from typing import Any, Callable
 
 from ._core import IN_BROWSER, create_once_callable
 
@@ -375,8 +375,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     traceback.print_exc()
 
 
-# Type issue fixed in next release of mypy (0.940)
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[misc, valid-type]
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
     A simple event loop policy for managing WebLoop based event loops.
     """
@@ -390,12 +389,12 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[misc, valid
             return self._default_loop
         return self.new_event_loop()
 
-    def new_event_loop(self):
+    def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
         self._default_loop = WebLoop()  # type: ignore[abstract]
         return self._default_loop
 
-    def set_event_loop(self, loop: asyncio.AbstractEventLoop):
+    def set_event_loop(self, loop: Any) -> None:
         """Set the current event loop"""
         self._default_loop = loop
 
