@@ -178,6 +178,7 @@ jobs:
       - run:
           name: test
           command: |
+            make npm-link
             mkdir test-results
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
@@ -195,6 +196,7 @@ jobs:
       - run:
           name: stack-size
           command: |
+            make npm-link
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-python:
