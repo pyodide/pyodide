@@ -1137,9 +1137,9 @@ def test_run_js():
 
     from pyodide import run_js
 
-    raises = TestCase().assertRaisesRegex
+    raises = TestCase().assertRaises
 
-    with raises(TypeError, "argument should have type 'string' not type 'int'"):
+    with raises(TypeError, msg="argument should have type 'string' not type 'int'"):
         run_js(3)
 
     assert run_js("(x)=> x+1")(7) == 8
