@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
 - {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
