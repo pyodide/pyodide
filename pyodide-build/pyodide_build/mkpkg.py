@@ -145,7 +145,10 @@ def make_package(
         raise MkpkgFailedException(f"The package {package} already exists")
 
     yaml.dump(yaml_content, meta_path)
-    run_prettier(meta_path)
+    try:
+        run_prettier(meta_path)
+    except FileNotFoundError:
+        warnings.warn("'npx' executable missing, output has not been prettified.")
 
     success(f"Output written to {meta_path}")
 
@@ -282,9 +285,6 @@ def main(args):
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if PYODIDE_ROOT is None:
         raise ValueError("PYODIDE_ROOT is not set")
-
-    if shutil.which("npx") is None:
-        raise ValueError("npx is not installed")
 
     PACKAGES_ROOT = Path(PYODIDE_ROOT) / "packages"
 
