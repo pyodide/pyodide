@@ -1,0 +1,35 @@
+From dbe39f16495a3c50b9dd3dcd2ffa3ba4d83ace77 Mon Sep 17 00:00:00 2001
+From: William Lachance <wlach@protonmail.com>
+Date: Tue, 3 May 2022 19:42:59 -0400
+Subject: [PATCH] Remove pre-emptive loading of cython modules
+
+---
+ pandas/__init__.py | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/pandas/__init__.py b/pandas/__init__.py
+index 1b18af0f69..667d8e6c7b 100644
+--- a/pandas/__init__.py
++++ b/pandas/__init__.py
+@@ -21,18 +21,6 @@ del hard_dependencies, dependency, missing_dependencies
+ # numpy compat
+ from pandas.compat import is_numpy_dev as _is_numpy_dev
+ 
+-try:
+-    from pandas._libs import hashtable as _hashtable, lib as _lib, tslib as _tslib
+-except ImportError as err:  # pragma: no cover
+-    module = err.name
+-    raise ImportError(
+-        f"C extension: {module} not built. If you want to import "
+-        "pandas from the source directory, you may need to run "
+-        "'python setup.py build_ext --force' to build the C extensions first."
+-    ) from err
+-else:
+-    del _tslib, _lib, _hashtable
+-
+ from pandas._config import (
+     get_option,
+     set_option,
+-- 
+2.34.1
+

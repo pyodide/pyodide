@@ -6,6 +6,7 @@ source:
   sha256: 92bc1fc585f1463ca827b45535957815b7deb218c549b7c18402c322c7549a12
   patches:
     - patches/fix_json_signature.patch
+    - patches/0001-Remove-pre-emptive-loading-of-cython-modules.patch
 build:
   cflags:
     -Werror=implicit-function-declaration -Werror=mismatched-parameter-types
