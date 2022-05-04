@@ -30,7 +30,7 @@ from typing import Any, MutableMapping, NoReturn, overload
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cmake"}
 
 
 def symlink_dir():
@@ -408,6 +408,9 @@ def handle_command_generate_args(
     cmd = line[0]
     if cmd == "ar":
         line[0] = "emar"
+        return line
+    elif cmd == "cmake":
+        line[0] = "emcmake"
         return line
     elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
