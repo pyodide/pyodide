@@ -280,7 +280,7 @@ class JsProxy:
         data.
         """
 
-    def to_string(self, encoding=None, /) -> str:
+    def to_string(self, encoding=None) -> str:
         """Convert a buffer to a string object.
 
         Copies the data twice.
