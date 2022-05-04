@@ -13,6 +13,7 @@ test:
 requirements:
   run:
     - setuptools
+    - decorator
     - numpy
 
 about:
