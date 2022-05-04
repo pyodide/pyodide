@@ -1,14 +1,15 @@
 FROM node:14.16.1-buster-slim AS node-image
 FROM python:3.10.2-slim-buster
 
+# Requirements for building packages
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-        # building packages
-        bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
+        bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo
+        gnupg2 libdbus-glib-1-2 sudo \
+  && rm -rf /var/lib/apt/lists/*
 
 ADD docs/requirements-doc.txt requirements.txt /
 
