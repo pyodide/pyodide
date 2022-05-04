@@ -14,7 +14,7 @@ pyodide.runPython(`
 `);
 
 let file = pyodide.FS.readFile("/hello.txt", { encoding: "utf-8" });
-console.log(file);
+console.log(file); // ==> "hello world!"
 ```
 
 **Example: Writing to the file system**
@@ -34,7 +34,7 @@ pyodide.runPython(`
 The default file system used in Pyodide is [MEMFS](https://emscripten.org/docs/api_reference/Filesystem-API.html#memfs),
 which is a virtual in-memory file system. The data stored in MEMFS will be lost when the page is reloaded.
 
-To prevent that situation, you can mount other types of file systems.
+If you wish for files to persist, you can mount other file systems.
 Other file systems provided by Emscripten are `IDBFS`, `NODEFS`, `PROXYFS`, `WORKERFS`.
 Note that some filesystems can only be used in specific runtime environments.
 See [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api) for more details.
