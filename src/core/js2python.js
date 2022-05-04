@@ -47,12 +47,10 @@ JS_FILE(js2python_init, () => {
     if (value < 0) {
       value = -value;
     }
+    value <<= 1;
     while (value) {
       length++;
       value >>= BigInt(32);
-    }
-    if (value_orig >> BigInt(32 * length - 1)) {
-      length++;
     }
     let stackTop = stackSave();
     let ptr = stackAlloc(length * 4);
