@@ -1,7 +1,11 @@
 from typing import Any, Callable
 
-from js import clearInterval, clearTimeout, setInterval, setTimeout
-from pyodide import create_once_callable, JsProxy, create_proxy
+from ._core import IN_BROWSER
+
+if IN_BROWSER:
+    from js import clearInterval, clearTimeout, setInterval, setTimeout
+
+from ._core import create_once_callable, JsProxy, create_proxy
 
 
 class Destroyable:
