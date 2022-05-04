@@ -3,9 +3,14 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
+
+/**
+ * @type {import('rollup').RollupOptions}
+ */
 function config({ input, output, name, format, minify }) {
   return {
-    input: `./src/js/${input}.ts`,
+    input: `lib/${input}.js`,
+    // input: `./src/js/${input}.ts`,
     output: {
       file: output,
       name,

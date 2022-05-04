@@ -1,16 +1,17 @@
 {
   "$schema": "http://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "outDir": "../../dist",
+    "outDir": "lib",
+    "rootDir": "src",
     "esModuleInterop": true,
     "target": "ES2017",
     "module": "ES2020",
     "moduleResolution": "node",
-    "composite": true,
+    "declaration": true,
     "strict": true,
     "noUnusedLocals": true,
-    "types": ["node"]
+    "types": ["node"],
   },
-  "include": ["*.ts"],
+  "include": ["src/*.ts"],
   "exclude": ["test/**/*"]
 }

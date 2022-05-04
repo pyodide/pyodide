@@ -28,7 +28,6 @@
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.3",
-    "dts-bundle-generator": "^6.7.0",
     "error-stack-parser": "^2.0.6",
     "express": "^4.17.3",
     "mocha": "^9.0.2",
@@ -36,6 +35,7 @@
     "nyc": "^15.1.0",
     "prettier": "^2.2.1",
     "puppeteer": "^13.6.0",
+    "rimraf": "^3.0.2",
     "rollup": "^2.48.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-ts": "^2.0.5",
@@ -48,18 +48,19 @@
   "main": "pyodide.js",
   "exports": {
     ".": {
-      "require": "./pyodide.js",
-      "import": "./pyodide.mjs"
+      "require": "./lib/pyodide.js",
+      "import": "./lib/pyodide.mjs"
     },
-    "./pyodide.mjs": "./pyodide.mjs",
-    "./pyodide.js": "./pyodide.js",
+    "./pyodide.mjs": "./lib/pyodide.mjs",
+    "./pyodide.js": "./lib/pyodide.js",
     "./package.json": "./package.json"
   },
   "files": [
     "pyodide*",
     "packages.json",
     "distutils.tar",
-    "console.html"
+    "console.html",
+    "lib/*.js"
   ],
   "browser": {
     "child_process": false,
@@ -71,6 +72,8 @@
     "ws": false
   },
   "scripts": {
+    "build": "npm run clean && tsc && esbuild lib/pyodide.umd.js --bundle --outfile=dist/pyodide.js",
+    "clean": "rimraf lib/",
     "test": "npm-run-all test:*",
     "test:unit": "cross-env TEST_NODE=1 ts-mocha -p tsconfig.test.json test/unit/**/*.test.ts",
     "test:node": "cross-env TEST_NODE=1 mocha test/integration/**/*.test.js",
@@ -121,6 +124,7 @@
   },
   "dependencies": {
     "base-64": "^1.0.0",
+    "esbuild": "^0.14.38",
     "node-fetch": "^2.6.1",
     "ws": "^8.5.0"
   }
