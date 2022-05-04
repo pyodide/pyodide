@@ -1,0 +1,14 @@
+package:
+  name: xgboost
+  version: 1.6.0
+source:
+  url: https://files.pythonhosted.org/packages/77/89/92b399140a7688443fc182b54240822c903e906121d63446eb2f84350e99/xgboost-1.6.0.tar.gz
+  sha256: 9c944c2495cb426b8a365021565755c39ee0b53156cf5e53a4346bdad2e3b734
+test:
+  imports:
+    - xgboost
+about:
+  home: https://github.com/dmlc/xgboost
+  PyPI: https://pypi.org/project/xgboost
+  summary: XGBoost Python Package
+  license: Apache-2.0
