@@ -5,7 +5,7 @@ import sys
 import traceback
 from asyncio import Future, ensure_future
 from codeop import CommandCompiler, Compile, _features  # type: ignore[attr-defined]
-from contextlib import (  # type: ignore[attr-defined]
+from contextlib import (
     ExitStack,
     _RedirectStream,
     contextmanager,
@@ -449,9 +449,9 @@ class Console:
         start = max(map(source.rfind, self.completer_word_break_characters)) + 1
         source = source[start:]
         if "." in source:
-            completions = self._completer.attr_matches(source)  # type: ignore[attr-defined]
+            completions = self._completer.attr_matches(source)
         else:
-            completions = self._completer.global_matches(source)  # type: ignore[attr-defined]
+            completions = self._completer.global_matches(source)
         return completions, start
 
 
