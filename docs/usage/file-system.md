@@ -3,7 +3,7 @@
 # Dealing with the file system
 
 Pyodide includes a file system provided by Emscripten.
-In JavaScript, the Pyodide file system can be accessed through {any}`pyodide.FS` which re-exports the  [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api)
+In JavaScript, the Pyodide file system can be accessed through {any}`pyodide.FS` which re-exports the [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api)
 
 **Example: Reading from the file system**
 
@@ -38,9 +38,10 @@ If you wish for files to persist, you can mount other file systems.
 Other file systems provided by Emscripten are `IDBFS`, `NODEFS`, `PROXYFS`, `WORKERFS`.
 Note that some filesystems can only be used in specific runtime environments.
 See [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api) for more details.
-For instance, to store data persistently between page reloads, one could mount 
-a folder with the 
-[IDBFS file system](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api-idbfs) 
+For instance, to store data persistently between page reloads, one could mount
+a folder with the
+[IDBFS file system](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api-idbfs)
+
 ```js
 let mountDir = "/mnt";
 pyodide.FS.mkdir(mountDir);
