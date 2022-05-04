@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477`
+
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
 - {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
