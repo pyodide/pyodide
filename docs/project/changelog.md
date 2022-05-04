@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477`
+
 - {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
   {pr}`2458`
 
