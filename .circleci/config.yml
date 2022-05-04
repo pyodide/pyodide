@@ -76,6 +76,8 @@ jobs:
             ccache -z
             PYODIDE_PACKAGES="core" make
             ccache -s
+            # Dont cache node_modules
+            rm -r dist/node_modules
 
       - run:
           name: check-size
@@ -141,6 +143,10 @@ jobs:
             ccache -z
             PYODIDE_PACKAGES='<< parameters.packages >>' make -C packages
             ccache -s
+
+            # Dont cache node_modules
+            rm -r dist/node_modules
+
           environment:
             PYODIDE_JOBS: 5
 
@@ -156,7 +162,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
+            tar -cjf pyodide-build.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - store_artifacts:
