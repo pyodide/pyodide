@@ -12,6 +12,7 @@ test:
 
 requirements:
   run:
+    - setuptools
     - numpy
 
 about:
