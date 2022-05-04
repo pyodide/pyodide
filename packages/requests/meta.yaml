@@ -14,11 +14,11 @@ source:
     - patches/pyodide-requests-shim.patch
 
 requirements:
- run:
-   - urllib3
-   - idna
-   - charset-normalizer
-   - certifi
+  run:
+    - urllib3
+    - idna
+    - charset-normalizer
+    - certifi
 
 test:
   imports:
