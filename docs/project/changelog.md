@@ -28,12 +28,13 @@ substitutions:
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
 
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
 
 - New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`
 
 ## Version 0.20.0
 
