@@ -286,7 +286,7 @@ async function loadDynlib(lib: string, shared: boolean) {
         nodelete: true,
       });
     }
-  } catch (e) {
+  } catch (e: any) {
     if (e.message.includes("need to see wasm magic number")) {
       console.warn(
         `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
