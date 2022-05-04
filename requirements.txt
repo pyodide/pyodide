@@ -1,3 +1,5 @@
+  # build
+  cmake
   ruamel.yaml
   # lint
   pre-commit
