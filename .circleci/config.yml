@@ -111,78 +111,13 @@ jobs:
       - store_artifacts:
           path: /root/repo/packages/build-logs
 
-  build-packages-no-numpy-dependents:
-    <<: *defaults
-    resource_class: large
-
-    steps:
-      - checkout
-
-      - attach_workspace:
-          at: .
-
-      - restore_cache:
-          keys:
-            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg1-v20220303
-
-      - run:
-          name: build packages
-          no_output_timeout: 30m
-          command: |
-            source pyodide_env.sh
-
-            # Set mtime for EM_CONFIG to avoid ccache cache misses
-            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
-
-            ccache -z
-            PYODIDE_PACKAGES='*, no-numpy-dependents' make -C packages
-            ccache -s
-          environment:
-            PYODIDE_JOBS: 5
-
-      - run:
-          name: check-size
-          command: ls -lh dist/
-
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./packages
-            - ./dist
-
-      - run:
-          name: Zip build directory
-          command: |
-            tar cjf pyodide-build.tar.gz  dist
-            tar cjf build-logs.tar.gz  packages/build-logs
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-
-      - store_artifacts:
-          path: /root/repo/dist/
-
-      - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
-
-      - store_artifacts:
-          path: /root/repo/packages/build-logs
-
-      - store_artifacts:
-          path: /root/repo/build-logs.tar.gz
-
   build-packages:
+    parameters:
+      packages:
+        description: The packages to be built.
+        type: string
     <<: *defaults
     resource_class: large
-
     steps:
       - checkout
 
@@ -196,7 +131,7 @@ jobs:
 
       - run:
           name: build packages
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: |
             source pyodide_env.sh
 
@@ -204,7 +139,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='*' make -C packages
+            PYODIDE_PACKAGES='<< parameters.packages >>' make -C packages
             ccache -s
           environment:
             PYODIDE_JOBS: 5
@@ -221,23 +156,11 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz dist
+            tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./packages/.artifacts
-            - ./dist
-
-      - store_artifacts:
-          path: /root/repo/dist/
 
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
-
-      - store_artifacts:
-          path: /root/repo/packages/build-logs
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
@@ -421,19 +344,68 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages-no-numpy-dependents:
+      - build-packages:
+          name: build-packages-no-numpy-dependents
+          packages: "*,no-numpy-dependents"
           requires:
             - build-core
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
 
       - build-packages:
+          name: build-packages-opencv-python
+          packages: opencv-python
           requires:
             - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages/opencv-python/build
+                  - ./packages/opencv-python/dist
+                  - ./packages/build-logs/opencv*
+                  - ./dist/opencv*
+
+      - build-packages:
+          name: build-packages-numpy-dependents
+          packages: "*,!opencv-python"
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
+
+      - build-packages:
+          name: build-packages
+          packages: "*"
+          requires:
+            - build-packages-numpy-dependents
+            - build-packages-opencv-python
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages/.artifacts
+                  - ./dist
 
       - test-main:
           name: test-core-chrome

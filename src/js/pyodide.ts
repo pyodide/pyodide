@@ -2,12 +2,13 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
+import { loadScript, _loadBinaryFile, initNodeModules } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+export type { PyodideInterface };
 
 export type {
   PyProxy,

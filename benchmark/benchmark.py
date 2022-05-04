@@ -79,7 +79,7 @@ def parse_benchmark(filename):
     return "".join(lines)
 
 
-def get_benchmark_scripts(scripts_dir, repeat=11, number=5):
+def get_benchmark_scripts(scripts_dir, repeat=5, number=5):
     root = Path(__file__).resolve().parent / scripts_dir
     for filename in sorted(root.iterdir()):
         name = filename.stem
@@ -186,7 +186,7 @@ def main():
         print_entry("selenium init", result)
 
         # package loading time
-        for package_name in ["numpy"]:
+        for package_name in ["numpy", "pandas", "matplotlib"]:
             result = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
                 selenium = cls(port, script_timeout=timeout)
