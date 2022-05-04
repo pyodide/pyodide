@@ -88,7 +88,7 @@ jobs:
           ccache -s
 
           # Don't cache node_modules/
-          rm -r dist/node_modules
+          rm -rf dist/node_modules
 
       - name: check-size
         run: ls -lh dist/

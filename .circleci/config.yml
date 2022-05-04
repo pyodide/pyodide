@@ -77,7 +77,7 @@ jobs:
             PYODIDE_PACKAGES="core" make
             ccache -s
             # Dont cache node_modules
-            rm -r dist/node_modules
+            rm -rf dist/node_modules
 
       - run:
           name: check-size
@@ -145,7 +145,7 @@ jobs:
             ccache -s
 
             # Dont cache node_modules
-            rm -r dist/node_modules
+            rm -rf dist/node_modules
 
           environment:
             PYODIDE_JOBS: 5
