@@ -47,7 +47,7 @@ JS_FILE(js2python_init, () => {
     if (value < 0) {
       value = -value;
     }
-    value <<= 1;
+    value <<= BigInt(1);
     while (value) {
       length++;
       value >>= BigInt(32);
