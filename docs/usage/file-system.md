@@ -13,7 +13,7 @@ pyodide.runPython(`
       fh.write("hello world!")
 `);
 
-let file = pyodide.FS.readFile("/hello.txt", { encoding: "utf-8" });
+let file = pyodide.FS.readFile("/hello.txt", { encoding: "utf8" });
 console.log(file); // ==> "hello world!"
 ```
 
@@ -21,7 +21,7 @@ console.log(file); // ==> "hello world!"
 
 ```js
 let data = "hello world!";
-pyodide.FS.writeFile("/hello.txt", data, { encoding: "utf-8" });
+pyodide.FS.writeFile("/hello.txt", data, { encoding: "utf8" });
 pyodide.runPython(`
   with open("/hello.txt", "r") as fh:
         data = fh.read()
