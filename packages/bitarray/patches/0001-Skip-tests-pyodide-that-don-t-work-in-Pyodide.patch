@@ -1,8 +1,10 @@
-From d3c5e55a17cd31318bf1b40b2b9c4e0876302341 Mon Sep 17 00:00:00 2001
+From 0715af1c516856d19502d260975bf4d4f841c319 Mon Sep 17 00:00:00 2001
 From: Ilan Schnell <ilanschnell@gmail.com>
 Date: Mon, 2 May 2022 18:53:55 -0600
-Subject: [PATCH 2/2] skip bad tests for pyodide
+Subject: [PATCH] Skip tests pyodide that don't work in Pyodide
 
+test_shelve needs dbm which we don't have
+test_mmap_2 hits a bug in emscripten mmap impl
 ---
  bitarray/test_bitarray.py | 2 ++
  1 file changed, 2 insertions(+)
