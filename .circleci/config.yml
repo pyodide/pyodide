@@ -253,7 +253,7 @@ jobs:
       - run:
           name: install requirements
           command: |
-            pip3 install numpy matplotlib
+            pip3 install numpy matplotlib pandas
       - run:
           name: benchmark
           command: |
