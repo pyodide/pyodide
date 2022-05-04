@@ -186,7 +186,7 @@ def main():
         print_entry("selenium init", result)
 
         # package loading time
-        for package_name in ["numpy"]:
+        for package_name in ["numpy", "pandas", "matplotlib"]:
             result = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
                 selenium = cls(port, script_timeout=timeout)
