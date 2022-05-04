@@ -22,6 +22,7 @@ if IS_MAIN:
     PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
 
 import re
+import shutil
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
@@ -60,15 +61,11 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
     """
     exec_path = Path(__file__).resolve()
     SYMLINKDIR = symlink_dir()
+    shutil.rmtree(SYMLINKDIR)
+    SYMLINKDIR.mkdir()
     for symlink in symlinks:
         symlink_path = SYMLINKDIR / symlink
-        if os.path.lexists(symlink_path) and not symlink_path.exists():
-            # remove broken symlink so it can be re-created
-            symlink_path.unlink()
-        try:
-            symlink_path.symlink_to(exec_path)
-        except FileExistsError:
-            pass
+        symlink_path.symlink_to(exec_path)
         if symlink == "c++":
             var = "CXX"
         else:
@@ -410,7 +407,7 @@ def handle_command_generate_args(
         line[0] = "emar"
         return line
     elif cmd == "cmake":
-        line[0] = "emcmake"
+        line[:1] = ["emcmake", "cmake", "-DUSE_OPENMP=OFF"]
         return line
     elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
