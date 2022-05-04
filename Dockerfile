@@ -69,6 +69,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; \
   fi \
   && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
+  && apt-get update \
   && apt install -qqy /tmp/google-chrome.deb \
   && rm -f /tmp/google-chrome.deb \
   && rm -rf /var/lib/apt/lists/* \
