@@ -17,6 +17,8 @@ substitutions:
 - {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
   {pr}`2458`
 
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
+
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
 
@@ -33,6 +35,8 @@ substitutions:
   {pr}`2391`
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
 
 ### Packages
 

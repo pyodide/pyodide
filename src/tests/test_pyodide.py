@@ -686,7 +686,7 @@ def test_docstrings_b(selenium):
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj)"
+    sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
