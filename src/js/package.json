@@ -61,6 +61,15 @@
     "distutils.tar",
     "console.html"
   ],
+  "browser": {
+    "child_process": false,
+    "crypto": false,
+    "fs": false,
+    "fs/promises": false,
+    "path": false,
+    "vm": false,
+    "ws": false
+  },
   "scripts": {
     "test": "npm-run-all test:*",
     "test:unit": "cross-env TEST_NODE=1 ts-mocha -p tsconfig.test.json test/unit/**/*.test.ts",
