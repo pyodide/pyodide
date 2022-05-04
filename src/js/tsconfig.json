@@ -6,8 +6,9 @@
     "target": "ES2017",
     "module": "ES2020",
     "moduleResolution": "node",
-    "noImplicitAny": true,
-    "allowSyntheticDefaultImports": true,
+    "composite": true,
+    "strict": true,
+    "noUnusedLocals": true,
     "types": ["node"]
   },
   "include": ["*.ts"],
