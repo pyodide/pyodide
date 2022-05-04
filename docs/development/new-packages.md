@@ -133,6 +133,30 @@ find ways to include your patches into the package. Many package maintainers are
 very receptive to including Pyodide-related patches and they reduce future
 maintenance work for us.
 
+### 4. Try out locally built package
+
+On a successful local build you should now have a wheel
+`<package-name>-<version>-cp310-cp310-emscripten_wasm32.whl` in directory
+`packages/<package-name>/dist/`.
+
+You can download the
+[current pyodide build](https://github.com/pyodide/pyodide/releases), unpack it
+in a location of your choice and mix in your locally built wheel. Copy your
+wheel into the unpacked directory and manually add the appropriate information
+to the `packages.json` file in a text editor of your choice (e.g.
+`"<package-name>": {"name": "<package-name>", "version": "<version>", "file_name": "<package-name>-<version>-cp310-cp310-emscripten_wasm32.whl", "install_dir": "site", "depends": ["setuptools", "numpy", "scipy"], "imports": ["<package-name>"]}`).
+
+Then navigate to that directory in a terminal and serve it locally:
+
+```sh
+python -m http.server
+```
+
+By default Python will serve it locally on port 8000 (the target address will
+be stated on the terminal), then navigate your browser to
+`http://localhost:8000/console.html` and try out using your Python module in
+the pyodide terminal in your browser.
+
 ## The package build pipeline
 
 Pyodide includes a toolchain to add new third-party Python libraries to the
