@@ -88,6 +88,37 @@ def test_number_conversions(selenium_module_scope, n):
         )
 
 
+@given(
+    n=strategies.one_of(
+        strategies.integers(min_value=2**53 + 1),
+        strategies.integers(max_value=-(2**53) - 1),
+    )
+)
+@settings(deadline=2000)
+def test_big_integer_conversions(selenium_module_scope, n):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        import json
+
+        print("n:", n)
+        s = json.dumps(n)
+        selenium.run_js(
+            f"""
+            self.x_js = eval({s!r}); // JSON.parse apparently doesn't work
+            pyodide.runPython(`
+                import json
+                x_py = json.loads({s!r})
+            `);
+            """
+        )
+        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
+        assert selenium.run(
+            """
+            from js import x_js
+            x_js == x_py
+            """
+        )
+
+
 def test_nan_conversions(selenium):
     selenium.run_js(
         """
