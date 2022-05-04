@@ -1,0 +1,17 @@
+package:
+  name: obspy
+  version: 1.3.0
+
+source:
+  url: https://files.pythonhosted.org/packages/b5/40/cebd39066edb6d91b7fddeb676a788ac89c59d3e31e820c2b64983b368d8/obspy-1.3.0.tar.gz
+  sha256: 932eb8af44542d605184a07f518f4839c7f42c22939fc848a9ddb9d8f7125077
+
+test:
+  imports:
+    - obspy
+
+about:
+  home: https://www.obspy.org
+  PyPI: https://pypi.org/project/obspy
+  summary: ObsPy - a Python framework for seismological observatories.
+  license: GNU Lesser General Public License, Version 3 (LGPLv3)
