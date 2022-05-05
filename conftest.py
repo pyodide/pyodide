@@ -91,6 +91,8 @@ def _get_pytest_rewrite_config() -> Any:
     for meta_path_finder in sys.meta_path:
         if isinstance(meta_path_finder, AssertionRewritingHook):
             break
+    else:
+        return None
     return meta_path_finder.config  # type: ignore[attr-defined]
 
 
