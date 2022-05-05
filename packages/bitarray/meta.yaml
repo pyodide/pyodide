@@ -1,0 +1,16 @@
+package:
+  name: bitarray
+  version: 2.4.1
+source:
+  url: https://files.pythonhosted.org/packages/f3/de/5385fc4d88cb34a4d061f73ab4dbe27d78670ba90837af97384590a4a19a/bitarray-2.4.1.tar.gz
+  sha256: faeca03f979e992cc76f7406af7eb9795cb111b8d8969c891a032bd7497c87da
+  patches:
+    - patches/0001-Skip-tests-pyodide-that-don-t-work-in-Pyodide.patch
+test:
+  imports:
+    - bitarray
+about:
+  home: https://github.com/ilanschnell/bitarray
+  PyPI: https://pypi.org/project/bitarray
+  summary: efficient arrays of booleans -- C extension
+  license: PSF

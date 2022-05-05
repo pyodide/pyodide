@@ -13,7 +13,6 @@ all: check \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
 	dist/package.json \
-	npm-link \
 	dist/console.html \
 	dist/distutils.tar \
 	dist/test.tar \
