@@ -1,14 +1,21 @@
 package:
   name: caterva
   version: 0.7.2
+
 source:
   url: https://files.pythonhosted.org/packages/37/3e/0c2131e98ba327630f47d2db70e11c2416821fd0f44c4ee248c1f6a18951/caterva-0.7.2.tar.gz
   sha256: 109a744715e99e1771575871b9eb6b54d3fcc6de6f3ca56d52289d12c2cb9849
+
 test:
   imports:
     - caterva
+
 about:
   home: https://github.com/Blosc/python-caterva
   PyPI: https://pypi.org/project/caterva
   summary: Caterva for Python (multidimensional compressed data containers).
   license: https://opensource.org/licenses/BSD-3-Clause
+
+build:
+  script: |
+    export SKBUILD_CONFIGURE_OPTIONS='-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON'
