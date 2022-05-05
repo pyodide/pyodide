@@ -378,14 +378,10 @@ export function unpackArchive(
     }
     options = { extractDir: options };
   }
-  if (ArrayBuffer.isView(buffer)) {
-    buffer = buffer.buffer;
+  if (!ArrayBuffer.isView(buffer) && Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]") {
+    throw new TypeError(`Expected argument buffer to be an ArrayBuffer or an ArrayBuffer view. `);
   }
-  if (Object.prototype.toString.call(buffer) === "[object ArrayBuffer]") {
-    buffer = new Uint8Array(buffer);
-  } else {
-    throw new TypeError(`Expected argument buffer to be typed ${buffer}`);
-  }
+  API.typedArrayAsUint8Array(buffer);
 
   let extract_dir = options.extractDir;
   API.package_loader.unpack_buffer.callKwargs({
