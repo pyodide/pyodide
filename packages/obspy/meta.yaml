@@ -10,11 +10,17 @@ test:
   imports:
     - obspy
 
+# see https://github.com/conda-forge/obspy-feedstock/blob/main/recipe/meta.yaml
 requirements:
   run:
     - setuptools
-    - decorator
     - numpy
+    - scipy
+    - matplotlib
+    - lxml
+    - sqlalchemy
+    #- requests
+    - decorator
 
 about:
   home: https://www.obspy.org
