@@ -42,13 +42,13 @@ def run_in_pyodide(
     packages: Collection[str] = (),
     xfail_browsers: dict[str, str] | None = None,
     driver_timeout: float | None = None,
-    use_pytest: bool = True,
+    pytest_assert_rewrites: bool = True,
 ) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
     arguments. If it is called without arguments, then the `_function` kwarg
-    catches the function the decorator is applied to. Otherwise, standalone
-    and packages are the actual arguments to the decorator.
+    catches the function the decorator is applied to. Otherwise, standalone and
+    packages are the actual arguments to the decorator.
 
     See docs/testing.md for details on how to use this.
 
@@ -56,10 +56,20 @@ def run_in_pyodide(
     ----------
     standalone : bool, default=False
         Whether to use a standalone selenium instance to run the test or not
+
     packages : List[str]
         List of packages to load before running the test
+
+    xfail_browsers: dict[str, str]
+        A dictionary of browsers to xfail the test and reasons for the xfails.
+
     driver_timeout : Optional[float]
-        selenium driver timeout (in seconds)
+        selenium driver timeout (in seconds). If missing, use the default
+        timeout.
+
+    pytest_assert_rewrites : bool, default = True
+        If True, use pytest assertion rewrites. This gives better error messages
+        when an assertion fails, but requires us to load pytest.
     """
     xfail_browsers_local = xfail_browsers or {}
 
@@ -73,7 +83,7 @@ def run_in_pyodide(
         if module_fname not in ORIGINAL_MODULE_ASTS:
             return
 
-        if use_pytest:
+        if pytest_assert_rewrites:
             module_ast = REWRITTEN_MODULE_ASTS[module_fname]
         else:
             module_ast = ORIGINAL_MODULE_ASTS[module_fname]
@@ -86,7 +96,7 @@ def run_in_pyodide(
                 pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 pkgs = list(packages)
-                if use_pytest:
+                if pytest_assert_rewrites:
                     pkgs.append("pytest")
                 selenium.load_package(pkgs)
                 err = None
