@@ -77,7 +77,6 @@ async function node_loadBinaryFile(
   path: string,
   _checksum: string | undefined // Ignoring package checksum. See issue-XXX
 ): Promise<Uint8Array> {
-
   if (!path.startsWith("/") && !path.includes("://")) {
     // If path starts with a "/" or starts with a protocol "blah://", we
     // interpret it as an absolute path, otherwise "resolve" it by
