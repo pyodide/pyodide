@@ -15,6 +15,7 @@ import sys
 import tempfile
 import textwrap
 import time
+from copy import deepcopy
 from pathlib import Path
 
 import pexpect
@@ -81,7 +82,8 @@ from _pytest.python import (
     pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,
 )
 
-MODULE_ASTS = {}
+ORIGINAL_MODULE_ASTS = {}
+REWRITTEN_MODULE_ASTS = {}
 
 def tmp():
     for meta_path_finder in sys.meta_path:
@@ -97,8 +99,10 @@ def pytest_pycollect_makemodule(module_path, path, parent):
     source = module_path.read_bytes()
     strfn = str(module_path)
     tree = ast.parse(source, filename=strfn)
-    rewrite_asserts(tree, source, strfn, CONFIG)
-    MODULE_ASTS[strfn] = tree
+    ORIGINAL_MODULE_ASTS[strfn] = tree
+    tree2 = deepcopy(tree)
+    rewrite_asserts(tree2, source, strfn, CONFIG)
+    REWRITTEN_MODULE_ASTS[strfn] = tree2
     orig_pytest_pycollect_makemodule(module_path, parent)
 
 

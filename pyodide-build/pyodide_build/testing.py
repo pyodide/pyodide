@@ -1,30 +1,36 @@
-from ast import AsyncFunctionDef
 import contextlib
-import inspect
-from base64 import b64encode
 from typing import Callable, Collection
 
 import pytest
-
-
-def _run_in_pyodide_get_source(f):
-    lines, start_line = inspect.getsourcelines(f)
-    num_decorator_lines = 0
-    for line in lines:
-        if line.startswith("def") or line.startswith("async def"):
-            break
-        num_decorator_lines += 1
-    start_line += num_decorator_lines - 1
-    # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
-    lines = ["\n"] * start_line + lines[num_decorator_lines:]
-    return "".join(lines)
-
 
 def chunkstring(string, length):
     return (string[0 + i : length + i] for i in range(0, len(string), length))
 
 
-from pprint import pformat
+def _encode_ast(module_ast, funcname):
+    import ast
+    import pickle
+    from base64 import b64encode 
+    nodes = []
+    for node in module_ast.body:
+        if isinstance(node, ast.Import) and node.names[0].asname and node.names[0].asname.startswith("@"):
+            nodes.append(node)
+
+        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+            if node.name == funcname:
+                node.decorator_list = []
+                nodes.append(node)
+                break
+    mod = ast.Module(nodes, type_ignores=[])
+    ast.fix_missing_locations(mod)
+
+
+    from astpretty import pprint
+    pprint(mod)
+    serialized_mod = pickle.dumps(mod)
+    encoded_mod = b64encode(serialized_mod)
+    string_mod = encoded_mod.decode()
+    return string_mod
 
 
 def run_in_pyodide(
@@ -35,6 +41,7 @@ def run_in_pyodide(
     packages: Collection[str] = (),
     xfail_browsers: dict[str, str] | None = None,
     driver_timeout: float | None = None,
+    use_pytest: bool = True,
 ) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
@@ -57,59 +64,47 @@ def run_in_pyodide(
 
     def decorator(f):
 
-        import ast
         import sys
-        import pickle
+        
 
-        from conftest import MODULE_ASTS
-        from base64 import b64encode 
+        from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
         
         import sys
         module_fname = sys.modules[f.__module__].__file__
-        if module_fname not in MODULE_ASTS:
+        if module_fname not in ORIGINAL_MODULE_ASTS:
             return
 
+        if use_pytest:
+            module_ast = REWRITTEN_MODULE_ASTS[module_fname]
+        else:
+            module_ast = ORIGINAL_MODULE_ASTS[module_fname]
 
-        module_ast = MODULE_ASTS[module_fname]
-        nodes = []
+        string_mod = _encode_ast(module_ast, f.__name__)
 
-        for node in module_ast.body:
-            if isinstance(node, ast.Import) and node.names[0].asname and node.names[0].asname.startswith("@"):
-                nodes.append(node)
-
-            if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
-                if node.name == f.__name__:
-                    node.decorator_list = []
-                    nodes.append(node)
-                    break
-        mod = ast.Module(nodes, type_ignores=[])
-
-
-        print(ast.dump(mod))
-        serialized_mod = pickle.dumps(mod)
-        encoded_mod = b64encode(serialized_mod)
-        string_mod = encoded_mod.decode()        
+     
 
         def inner(selenium):
             if selenium.browser in xfail_browsers_local:
                 xfail_message = xfail_browsers_local[selenium.browser]
                 pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
-                selenium.load_package(list(packages) + ["pytest"])
+                pkgs = list(packages)
+                if use_pytest:
+                    pkgs.append("pytest")
+                selenium.load_package(pkgs)
                 err = None
                 try:
                     selenium.run(
                         f"""
-                        import _pytest
                         def tmp():
                             from base64 import b64decode
                             import pickle
                             serialized_mod = b64decode({string_mod!r})
                             mod = pickle.loads(serialized_mod)
                             co = compile(mod, {module_fname!r}, "exec")
-                            d = dict()
+                            d = {{}}
                             exec(co, d)
-                            print(d[{f.__name__!r}]())
+                            d[{f.__name__!r}]()
 
                         try:
                             tmp()
