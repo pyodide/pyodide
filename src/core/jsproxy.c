@@ -136,11 +136,21 @@ JsProxy_typeof(PyObject* self, void* _unused)
   return result;
 }
 
+static PyTypeObject JsProxyType;
+
 static PyObject*
 JsProxy_js_id(PyObject* self, void* _unused)
 {
+  PyObject* idpy = NULL;
+  PyObject* tuple = NULL;
+  
   JsRef idval = JsProxy_REF(self);
-  return PyLong_FromLong((int)idval);
+  idpy = PyLong_FromLong((int)idval);
+  tuple = Py_BuildValue("(OO)", &JsProxyType, idpy);
+
+finally:
+  Py_CLEAR(idpy);
+  return tuple;
 }
 
 /**
@@ -978,7 +988,7 @@ static PyNumberMethods JsProxy_NumberMethods = {
 // clang-format on
 
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
-                                        { "js_id", .get = JsProxy_js_id}
+                                        { "js_id", .get = JsProxy_js_id }, 
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
