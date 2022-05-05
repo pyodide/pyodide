@@ -76,12 +76,9 @@ def pytest_collection_modifyitems(config, items):
         _maybe_skip_test(item, delayed=True)
 
 
-from _pytest.assertion.rewrite import (  # type: ignore[import]
-    AssertionRewritingHook,
-    rewrite_asserts,
-)
+from _pytest.assertion.rewrite import AssertionRewritingHook, rewrite_asserts
 from _pytest.python import (
-    pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,  # type: ignore[import]
+    pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,
 )
 
 ORIGINAL_MODULE_ASTS = {}
