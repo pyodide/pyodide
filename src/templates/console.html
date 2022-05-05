@@ -27,10 +27,10 @@
       async function main() {
         var term;
         globalThis.pyodide = await loadPyodide({
-          stdin: x => {
-            term.echo(x, {newline: false});
+          stdin: (x) => {
+            term.echo(x, { newline: false });
             return prompt(x);
-          }
+          },
         });
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
