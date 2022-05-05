@@ -31,6 +31,9 @@ substitutions:
 
 - {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
 
+- {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
+  `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.

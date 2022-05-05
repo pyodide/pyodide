@@ -349,7 +349,7 @@ let unpackArchivePositionalExtractDirDeprecationWarned = false;
  *
  *    In Pyodide v0.19, this function took the extract_dir parameter as a
  *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
+ *    still work but it is deprecated. It will be removed in v0.21.
  *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
