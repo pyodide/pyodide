@@ -3,10 +3,6 @@ from typing import Callable, Collection
 
 import pytest
 
-def chunkstring(string, length):
-    return (string[0 + i : length + i] for i in range(0, len(string), length))
-
-
 def _encode_ast(module_ast, funcname):
     import ast
     import pickle
