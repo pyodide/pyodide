@@ -74,10 +74,8 @@ def run_in_pyodide(
         nodes = []
 
         for node in module_ast.body:
-            if isinstance(node, ast.Import):
-                print(node.names[0].asname)
-                if node.names[0].asname and node.names[0].asname.startswith("@"):
-                    nodes.append(node)
+            if isinstance(node, ast.Import) and node.names[0].asname and node.names[0].asname.startswith("@"):
+                nodes.append(node)
 
             if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
                 if node.name == f.__name__:
@@ -86,9 +84,6 @@ def run_in_pyodide(
                     break
         mod = ast.Module(nodes, type_ignores=[])
 
-        co = compile(mod, module_fname, "exec")
-        d = {}
-        exec(co, d)
 
         print(ast.dump(mod))
         serialized_mod = pickle.dumps(mod)
@@ -100,12 +95,12 @@ def run_in_pyodide(
                 xfail_message = xfail_browsers_local[selenium.browser]
                 pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
-                if len(packages) > 0:
-                    selenium.load_package(packages)
+                selenium.load_package(list(packages) + ["pytest"])
                 err = None
                 try:
                     selenium.run(
                         f"""
+                        import _pytest
                         def tmp():
                             from base64 import b64decode
                             import pickle
