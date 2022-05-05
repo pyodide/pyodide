@@ -24,17 +24,13 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    - `docs/project/about.md` (the Zenodo citation),
    - `docs/development/building-from-sources.md`,
    - `docs/usage/downloading-and-deploying.md`,
-   - Bump version in source code files by running `bump2version` command, for example:
+   - Bump version in source code files by running `bump2version` command, for example,
 
      ```bash
-     bump2version --current-version 0.20.0 minor --dry-run --verbose
+     bump2version minor
      ```
 
-     and
-
-     ```bash
-     bump2version --current-version 0.20.0 minor
-     ```
+     check that the diff is correct with `git diff` before committing.
 
    After this, try using `ripgrep` to make sure there are no extra old versions
    lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
