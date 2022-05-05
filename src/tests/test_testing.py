@@ -1,5 +1,4 @@
 import pathlib
-from textwrap import dedent
 
 from pyodide_build.testing import run_in_pyodide
 
@@ -14,13 +13,14 @@ def test_web_server_secondary(selenium, web_server_secondary):
 def test_run_in_pyodide():
     x = 6
     y = 7
-    assert x == y 
+    assert x == y
+
 
 @run_in_pyodide(use_pytest=False)
 def test_run_in_pyodide2():
     x = 6
     y = 7
-    assert x == y 
+    assert x == y
 
 
 @run_in_pyodide
@@ -30,7 +30,7 @@ async def test_run_in_pyodide_async():
     await sleep(5)
     x = 6
     y = 7
-    assert x == y 
+    assert x == y
 
 
 def dummy_decorator(*args, **kwargs):

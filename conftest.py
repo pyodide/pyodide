@@ -16,11 +16,10 @@ import tempfile
 import textwrap
 import time
 from copy import deepcopy
-from pathlib import Path
+from typing import Any
 
 import pexpect
 import pytest
-from pytest import Module, Package
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
@@ -77,23 +76,31 @@ def pytest_collection_modifyitems(config, items):
         _maybe_skip_test(item, delayed=True)
 
 
-from _pytest.assertion.rewrite import AssertionRewritingHook, rewrite_asserts
+from _pytest.assertion.rewrite import (  # type: ignore[import]
+    AssertionRewritingHook,
+    rewrite_asserts,
+)
 from _pytest.python import (
-    pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,
+    pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,  # type: ignore[import]
 )
 
 ORIGINAL_MODULE_ASTS = {}
 REWRITTEN_MODULE_ASTS = {}
+
+CONFIG: Any = None
+
 
 def tmp():
     for meta_path_finder in sys.meta_path:
         if isinstance(meta_path_finder, AssertionRewritingHook):
             break
     global CONFIG
-    CONFIG = meta_path_finder.config
+    CONFIG = meta_path_finder.config  # type: ignore[attr-defined]
+
 
 tmp()
 del tmp
+
 
 def pytest_pycollect_makemodule(module_path, path, parent):
     source = module_path.read_bytes()

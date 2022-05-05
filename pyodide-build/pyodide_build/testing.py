@@ -1,15 +1,21 @@
 import contextlib
-from typing import Callable, Collection
+from typing import Any, Callable, Collection
 
 import pytest
+
 
 def _encode_ast(module_ast, funcname):
     import ast
     import pickle
-    from base64 import b64encode 
-    nodes = []
+    from base64 import b64encode
+
+    nodes: list[Any] = []
     for node in module_ast.body:
-        if isinstance(node, ast.Import) and node.names[0].asname and node.names[0].asname.startswith("@"):
+        if (
+            isinstance(node, ast.Import)
+            and node.names[0].asname
+            and node.names[0].asname.startswith("@")
+        ):
             nodes.append(node)
 
         if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
@@ -20,9 +26,6 @@ def _encode_ast(module_ast, funcname):
     mod = ast.Module(nodes, type_ignores=[])
     ast.fix_missing_locations(mod)
 
-
-    from astpretty import pprint
-    pprint(mod)
     serialized_mod = pickle.dumps(mod)
     encoded_mod = b64encode(serialized_mod)
     string_mod = encoded_mod.decode()
@@ -61,11 +64,9 @@ def run_in_pyodide(
     def decorator(f):
 
         import sys
-        
 
         from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
-        
-        import sys
+
         module_fname = sys.modules[f.__module__].__file__
         if module_fname not in ORIGINAL_MODULE_ASTS:
             return
@@ -76,8 +77,6 @@ def run_in_pyodide(
             module_ast = ORIGINAL_MODULE_ASTS[module_fname]
 
         string_mod = _encode_ast(module_ast, f.__name__)
-
-     
 
         def inner(selenium):
             if selenium.browser in xfail_browsers_local:
