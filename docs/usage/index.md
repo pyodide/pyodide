@@ -120,4 +120,5 @@ For this same reason, installing Pyodide packages from the CDN is explicitly not
 
    webworker.md
    loading-custom-python-code.md
+   file-system.md
 ```

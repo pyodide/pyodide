@@ -1,7 +1,10 @@
+  # build
+  cmake
   ruamel.yaml
   # lint
   pre-commit
   # testing
+  build==0.7.0
   hypothesis
   pexpect
   pytest

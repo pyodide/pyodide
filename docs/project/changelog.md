@@ -14,6 +14,16 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477`
+
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
+
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
+
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
 
@@ -33,13 +43,16 @@ substitutions:
 
 - {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
   `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
+  {pr}`2451`
+
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
 
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
 
 - New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`
 
 ## Version 0.20.0
 
