@@ -16,7 +16,7 @@ def test_run_in_pyodide():
     assert x == y
 
 
-@run_in_pyodide(use_pytest=False)
+@run_in_pyodide(pytest_assert_rewrites=False)
 def test_run_in_pyodide2():
     x = 6
     y = 7

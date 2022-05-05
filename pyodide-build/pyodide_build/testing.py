@@ -1,4 +1,5 @@
 import contextlib
+import sys
 from typing import Any, Callable, Collection
 
 import pytest
@@ -32,6 +33,34 @@ def _encode_ast(module_ast, funcname):
     encoded_mod = b64encode(serialized_mod)
     string_mod = encoded_mod.decode()
     return string_mod
+
+
+def _run_in_pyodide_run(
+    selenium, string_mod: str, module_fname: str, func_name: str
+) -> Any:
+    try:
+        selenium.run(
+            f"""
+            def tmp():
+                from base64 import b64decode
+                import pickle
+                serialized_mod = b64decode({string_mod!r})
+                mod = pickle.loads(serialized_mod)
+                co = compile(mod, {module_fname!r}, "exec")
+                d = {{}}
+                exec(co, d)
+                d[{func_name!r}]()
+
+            try:
+                tmp()
+            finally:
+                del tmp
+            """
+        )
+    except selenium.JavascriptException as e:
+        return e
+    else:
+        return None
 
 
 def run_in_pyodide(
@@ -72,57 +101,33 @@ def run_in_pyodide(
         when an assertion fails, but requires us to load pytest.
     """
     xfail_browsers_local = xfail_browsers or {}
+    from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
+
+    pkgs = list(packages)
+    if pytest_assert_rewrites:
+        pkgs.append("pytest")
 
     def decorator(f):
-
-        import sys
-
-        from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
-
-        module_fname = sys.modules[f.__module__].__file__
-        if module_fname not in ORIGINAL_MODULE_ASTS:
-            return
-
-        if pytest_assert_rewrites:
-            module_ast = REWRITTEN_MODULE_ASTS[module_fname]
-        else:
-            module_ast = ORIGINAL_MODULE_ASTS[module_fname]
-
+        module_fname = sys.modules[f.__module__].__file__ or ""
+        MODULE_ASTS = (
+            REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
+        )
+        module_ast = MODULE_ASTS[module_fname]
         string_mod = _encode_ast(module_ast, f.__name__)
 
-        def inner(selenium):
+        def run_test(selenium):
             if selenium.browser in xfail_browsers_local:
                 xfail_message = xfail_browsers_local[selenium.browser]
                 pytest.xfail(xfail_message)
+
             with set_webdriver_script_timeout(selenium, driver_timeout):
-                pkgs = list(packages)
-                if pytest_assert_rewrites:
-                    pkgs.append("pytest")
-                selenium.load_package(pkgs)
-                err = None
-                try:
-                    selenium.run(
-                        f"""
-                        def tmp():
-                            from base64 import b64decode
-                            import pickle
-                            serialized_mod = b64decode({string_mod!r})
-                            mod = pickle.loads(serialized_mod)
-                            co = compile(mod, {module_fname!r}, "exec")
-                            d = {{}}
-                            exec(co, d)
-                            d[{f.__name__!r}]()
+                if pkgs:
+                    selenium.load_package(pkgs)
+                err = _run_in_pyodide_run(
+                    selenium, string_mod, module_fname, f.__name__
+                )
 
-                        try:
-                            tmp()
-                        finally:
-                            del tmp
-                        """
-                    )
-                except selenium.JavascriptException as e:
-                    err = e
-
-            if err is not None:
+            if err:
                 pytest.fail(
                     "Error running function in pyodide\n\n" + str(err),
                     pytrace=False,
@@ -131,17 +136,17 @@ def run_in_pyodide(
         if standalone:
 
             def wrapped(selenium_standalone):
-                inner(selenium_standalone)
+                run_test(selenium_standalone)
 
         elif module_scope:
 
             def wrapped(selenium_module_scope):  # type: ignore[misc]
-                inner(selenium_module_scope)
+                run_test(selenium_module_scope)
 
         else:
 
             def wrapped(selenium):  # type: ignore[misc]
-                inner(selenium)
+                run_test(selenium)
 
         return wrapped
 
