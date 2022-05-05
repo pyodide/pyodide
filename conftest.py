@@ -1,6 +1,7 @@
 """
 Various common utilities for testing.
 """
+import ast
 import contextlib
 import functools
 import json
@@ -14,9 +15,11 @@ import sys
 import tempfile
 import textwrap
 import time
+from pathlib import Path
 
 import pexpect
 import pytest
+from pytest import Module, Package
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
@@ -71,6 +74,55 @@ def pytest_collection_modifyitems(config, items):
     """
     for item in items:
         _maybe_skip_test(item, delayed=True)
+
+
+from _pytest.assertion.rewrite import rewrite_asserts
+
+MODULE_ASTS = {}
+
+orig_Module__importtestmodule = Module._importtestmodule
+
+
+def patched__importtestmodule(self):
+    source = self.path.read_bytes()
+    strfn = str(self.path)
+    tree = ast.parse(source, filename=strfn)
+    print("strfn:", strfn)
+    rewrite_asserts(tree, source, strfn, self.config)
+    MODULE_ASTS[strfn] = tree
+    print("MODULE_ASTS11111", MODULE_ASTS)
+
+    return orig_Module__importtestmodule(self)
+
+
+from _pytest.assertion.rewrite import AssertionRewritingHook, _rewrite_test
+from _pytest.python import (
+    pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,
+)
+
+
+def tmp():
+    for meta_path_finder in sys.meta_path:
+        if isinstance(meta_path_finder, AssertionRewritingHook):
+            break
+    global CONFIG
+    CONFIG = meta_path_finder.config
+
+
+tmp()
+del tmp
+
+
+def pytest_pycollect_makemodule(module_path, path, parent):
+    print("pytest_pycollect_makemodule!!!")
+
+    source = module_path.read_bytes()
+    strfn = str(module_path)
+    tree = ast.parse(source, filename=strfn)
+    print("strfn:", strfn)
+    rewrite_asserts(tree, source, strfn, CONFIG)
+    MODULE_ASTS[strfn] = tree
+    orig_pytest_pycollect_makemodule(module_path, parent)
 
 
 @functools.cache

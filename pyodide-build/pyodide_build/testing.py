@@ -52,10 +52,23 @@ def run_in_pyodide(
     driver_timeout : Optional[float]
         selenium driver timeout (in seconds)
     """
-
+    print("\n\n?????????????\n\n")
     xfail_browsers_local = xfail_browsers or {}
 
     def decorator(f):
+
+        import ast
+        import sys
+
+        from conftest import MODULE_ASTS
+
+        print("__file__", sys.modules[f.__module__].__file__)
+        print("MODULE_ASTS", MODULE_ASTS)
+        print(ast.dump(MODULE_ASTS[sys.modules[f.__module__].__file__]))
+        import sys
+
+        sys.exit(0)
+
         def inner(selenium):
             if selenium.browser in xfail_browsers_local:
                 xfail_message = xfail_browsers_local[selenium.browser]
