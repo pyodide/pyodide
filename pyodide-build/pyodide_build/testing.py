@@ -11,6 +11,7 @@ def _encode_ast(module_ast, funcname):
 
     nodes: list[Any] = []
     for node in module_ast.body:
+        # We need to include the magic imports that pytest inserts
         if (
             isinstance(node, ast.Import)
             and node.names[0].asname
@@ -18,6 +19,7 @@ def _encode_ast(module_ast, funcname):
         ):
             nodes.append(node)
 
+        # We also want the function definition
         if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             if node.name == funcname:
                 node.decorator_list = []
