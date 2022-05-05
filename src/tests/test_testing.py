@@ -12,7 +12,9 @@ def test_web_server_secondary(selenium, web_server_secondary):
 
 @run_in_pyodide
 def test_run_in_pyodide():
-    pass
+    x = 6
+    y = 7
+    assert x == y 
 
 
 @run_in_pyodide
@@ -20,6 +22,9 @@ async def test_run_in_pyodide_async():
     from js import sleep
 
     await sleep(5)
+    x = 6
+    y = 7
+    assert x == y 
 
 
 def dummy_decorator(*args, **kwargs):

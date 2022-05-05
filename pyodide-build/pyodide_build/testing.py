@@ -1,3 +1,4 @@
+from ast import AsyncFunctionDef
 import contextlib
 import inspect
 from base64 import b64encode
@@ -52,22 +53,47 @@ def run_in_pyodide(
     driver_timeout : Optional[float]
         selenium driver timeout (in seconds)
     """
-    print("\n\n?????????????\n\n")
     xfail_browsers_local = xfail_browsers or {}
 
     def decorator(f):
 
         import ast
         import sys
+        import pickle
 
         from conftest import MODULE_ASTS
-
-        print("__file__", sys.modules[f.__module__].__file__)
-        print("MODULE_ASTS", MODULE_ASTS)
-        print(ast.dump(MODULE_ASTS[sys.modules[f.__module__].__file__]))
+        from base64 import b64encode 
+        
         import sys
+        module_fname = sys.modules[f.__module__].__file__
+        if module_fname not in MODULE_ASTS:
+            return
 
-        sys.exit(0)
+
+        module_ast = MODULE_ASTS[module_fname]
+        nodes = []
+
+        for node in module_ast.body:
+            if isinstance(node, ast.Import):
+                print(node.names[0].asname)
+                if node.names[0].asname and node.names[0].asname.startswith("@"):
+                    nodes.append(node)
+
+            if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+                if node.name == f.__name__:
+                    node.decorator_list = []
+                    nodes.append(node)
+                    break
+        mod = ast.Module(nodes, type_ignores=[])
+
+        co = compile(mod, module_fname, "exec")
+        d = {}
+        exec(co, d)
+
+        print(ast.dump(mod))
+        serialized_mod = pickle.dumps(mod)
+        encoded_mod = b64encode(serialized_mod)
+        string_mod = encoded_mod.decode()        
 
         def inner(selenium):
             if selenium.browser in xfail_browsers_local:
@@ -78,36 +104,23 @@ def run_in_pyodide(
                     selenium.load_package(packages)
                 err = None
                 try:
-                    # When writing the function, we set the filename to the file
-                    # containing the source. This results in a more helpful
-                    # traceback
-                    if inspect.iscoroutinefunction(f):
-                        run_python = "pyodide.runPythonAsync"
-                        await_kw = "await "
-                    else:
-                        run_python = "pyodide.runPython"
-                        await_kw = ""
-                    source = _run_in_pyodide_get_source(f)
-                    filename = inspect.getsourcefile(f)
-                    encoded = pformat(
-                        list(chunkstring(b64encode(source.encode()).decode(), 100))
-                    )
-
-                    selenium.run_js(
+                    selenium.run(
                         f"""
-                        let eval_code = pyodide.pyodide_py.eval_code;
-                        eval_code.callKwargs(
-                            {{
-                                source : atob({encoded}.join("")),
-                                globals : pyodide._api.globals,
-                                filename : {filename!r}
-                            }}
-                        );
+                        def tmp():
+                            from base64 import b64decode
+                            import pickle
+                            serialized_mod = b64decode({string_mod!r})
+                            mod = pickle.loads(serialized_mod)
+                            co = compile(mod, {module_fname!r}, "exec")
+                            d = dict()
+                            exec(co, d)
+                            print(d[{f.__name__!r}]())
+
+                        try:
+                            tmp()
+                        finally:
+                            del tmp
                         """
-                    )
-                    # When invoking the function, use the default filename <eval>
-                    selenium.run_js(
-                        f"""{await_kw}{run_python}("{await_kw}{f.__name__}()", pyodide.globals)"""
                     )
                 except selenium.JavascriptException as e:
                     err = e
