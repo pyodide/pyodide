@@ -223,7 +223,7 @@ def test_unpack_archive(selenium_standalone):
         return error
         """
     )
-    expected_err_msg = "TypeError: Expected argument buffer to be typed 1,2,3"
+    expected_err_msg = "TypeError: Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view"
     assert js_error == expected_err_msg
 
 
