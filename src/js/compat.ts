@@ -75,9 +75,9 @@ export async function initNodeModules() {
 async function node_loadBinaryFile(
   indexURL: string,
   path: string,
-  checksum: string | undefined
+  _checksum: string | undefined // Ignoring package checksum. See issue-XXX
 ): Promise<Uint8Array> {
-  console.log("Ignoring package checksum. See issue-XXX.", checksum);
+
   if (!path.startsWith("/") && !path.includes("://")) {
     // If path starts with a "/" or starts with a protocol "blah://", we
     // interpret it as an absolute path, otherwise "resolve" it by
