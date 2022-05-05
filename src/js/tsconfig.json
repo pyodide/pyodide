@@ -10,7 +10,7 @@
     "declaration": true,
     "strict": true,
     "noUnusedLocals": true,
-    "types": ["node"],
+    "types": ["node"]
   },
   "include": ["src/*.ts"],
   "exclude": ["test/**/*"]

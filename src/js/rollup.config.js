@@ -3,7 +3,6 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
-
 /**
  * @type {import('rollup').RollupOptions}
  */
