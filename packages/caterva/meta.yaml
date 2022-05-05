@@ -19,3 +19,4 @@ about:
 build:
   script: |
     export SKBUILD_CONFIGURE_OPTIONS='-DCMAKE_BUILD_WITH_INSTALL_RPATH=ON'
+    export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/caterva/cmake/Config.cmake"
