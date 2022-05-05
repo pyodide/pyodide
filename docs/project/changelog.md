@@ -14,7 +14,7 @@ substitutions:
 
 ## Unreleased
 
-- {{ Fix }} Fix output bug with using `input()` 
+- {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
 
 - {{ Enhancement }} Update sqlite version to latest stable release
