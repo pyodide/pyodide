@@ -2,6 +2,7 @@ import ast
 import inspect
 import pathlib
 from textwrap import dedent
+import asyncio
 
 from pytest import raises
 
@@ -45,8 +46,10 @@ def test_run_in_pyodide_local():
         JavascriptException = Exception
 
         @staticmethod
-        def run(code: str):
-            return exec(dedent(code))
+        def run_async(code: str):
+            co = compile(dedent(code), flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+            return asyncio.run_until_complete(eval(co))
+            
 
     with raises(AssertionError, match="6 == 7"):
         run_in_pyodide_test_helper(selenium_mock)
