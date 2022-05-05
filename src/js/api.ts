@@ -378,8 +378,13 @@ export function unpackArchive(
     }
     options = { extractDir: options };
   }
-  if (!ArrayBuffer.isView(buffer) && Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]") {
-    throw new TypeError(`Expected argument buffer to be an ArrayBuffer or an ArrayBuffer view. `);
+  if (
+    !ArrayBuffer.isView(buffer) &&
+    Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"
+  ) {
+    throw new TypeError(
+      `Expected argument buffer to be an ArrayBuffer or an ArrayBuffer view. `
+    );
   }
   API.typedArrayAsUint8Array(buffer);
 
