@@ -141,6 +141,76 @@ def test_bigint_conversions(selenium_module_scope, n):
         )
 
 
+@given(
+    n=strategies.one_of(
+        strategies.integers(min_value=2**53 + 1),
+        strategies.integers(max_value=-(2**53) - 1),
+    )
+)
+@settings(deadline=2000)
+def test_big_int_conversions2(selenium_module_scope, n):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        import json
+
+        print("n:", n, end=" ")
+        s = json.dumps(n)
+        selenium.run_js(
+            f"""
+            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
+            pyodide.runPython(`
+                import json
+                x_py = json.loads({s!r})
+            `);
+            """
+        )
+        try:
+            assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
+            assert selenium.run(
+                """
+                from js import x_js
+                x_js == x_py
+                """
+            )
+        except Exception:
+            print("failed =(")
+            raise
+        else:
+            print("worked!!")
+
+
+@given(
+    n=strategies.integers(),
+    exp=strategies.integers(min_value=1, max_value=10),
+)
+def test_big_int_conversions3(selenium_module_scope, n, exp):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        import json
+
+        val = 2 ** (32 * exp) - n
+        s = json.dumps(val)
+        selenium.run_js(
+            f"""
+            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
+            pyodide.runPython(`
+                import json
+                x_py = json.loads({s!r})
+            `);
+            """
+        )
+        [x1, x2] = selenium.run_js(
+            """return [pyodide.runPython('x_py').toString(), x_js.toString()]"""
+        )
+        assert x1 == x2
+        [x1, x2] = selenium.run(
+            """
+            from js import x_js
+            from pyodide import to_js
+            to_js([str(x_js), str(x_py)])
+            """
+        )
+        assert x1 == x2
+
+
 # Generate an object of any type
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
