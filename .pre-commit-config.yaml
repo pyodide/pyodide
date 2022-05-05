@@ -28,7 +28,7 @@ repos:
         args: ["--py310-plus"]
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v1.2.5"
+    rev: "v1.3.2"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml]
@@ -46,7 +46,7 @@ repos:
         additional_dependencies: [flake8-bugbear]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.942"
+    rev: "v0.950"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -66,7 +66,7 @@ repos:
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v13.0.1"
+    rev: "v14.0.1"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]

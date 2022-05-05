@@ -183,7 +183,7 @@ jobs:
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
-              --durations 10 \
+              --durations 50 \
               << parameters.test-params >>
       - store_test_results:
           path: test-results
