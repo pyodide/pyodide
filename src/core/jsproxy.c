@@ -136,6 +136,13 @@ JsProxy_typeof(PyObject* self, void* _unused)
   return result;
 }
 
+static PyObject*
+JsProxy_js_id(PyObject* self, void* _unused)
+{
+  JsRef idval = JsProxy_REF(self);
+  return PyLong_FromLong((int)idval);
+}
+
 /**
  * getattr overload, first checks whether the attribute exists in the JsProxy
  * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
@@ -971,6 +978,7 @@ static PyNumberMethods JsProxy_NumberMethods = {
 // clang-format on
 
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
+                                        { "js_id", .get = JsProxy_js_id}
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
