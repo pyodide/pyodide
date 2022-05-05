@@ -8,7 +8,7 @@ from pytest import raises
 
 from conftest import REWRITE_CONFIG, rewrite_asserts
 from pyodide_build.testing import _run_in_pyodide_run, run_in_pyodide
-
+from pyodide import eval_code_async
 
 def test_web_server_secondary(selenium, web_server_secondary):
     host, port, logs = web_server_secondary
@@ -47,8 +47,7 @@ def test_run_in_pyodide_local():
 
         @staticmethod
         def run_async(code: str):
-            co = compile(dedent(code), flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-            return asyncio.run_until_complete(eval(co))
+            return asyncio.get_event_loop().run_until_complete(eval_code_async(code))
             
 
     with raises(AssertionError, match="6 == 7"):
