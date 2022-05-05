@@ -11,11 +11,13 @@ CXX=em++
 all: check \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
+	dist/pyodide.d.ts \
+	dist/package.json \
 	dist/console.html \
 	dist/distutils.tar \
+	dist/test.tar \
 	dist/packages.json \
 	dist/pyodide_py.tar \
-	dist/test.tar \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
@@ -75,8 +77,16 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
 	npx rollup -c src/js/rollup.config.js
 
+dist/package.json : src/js/package.json
+	cp $< $@
+
+.PHONY: npm-link
+npm-link: dist/package.json
+	cd src/test-js && npm ci && npm link ../../dist
+
 dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
-	npx dts-bundle-generator -o pyodide.d.ts pyodide.ts --export-referenced-types false
+	npx dts-bundle-generator src/js/pyodide.ts --export-referenced-types false
+	mv src/js/pyodide.d.ts dist
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@

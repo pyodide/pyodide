@@ -385,14 +385,20 @@ class NodeWrapper(SeleniumWrapper):
     browser = "node"
 
     def init_node(self):
-        os.chdir("dist")
-        self.p = pexpect.spawn(
-            f"node --expose-gc --experimental-wasm-bigint ../tools/node_test_driver.js {self.base_url}",
-            timeout=60,
-        )
+        self.p = pexpect.spawn("/bin/bash", timeout=60)
         self.p.setecho(False)
         self.p.delaybeforesend = None
-        os.chdir("..")
+        # disable canonical input processing mode to allow sending longer lines
+        # See: https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
+        self.p.sendline("stty -icanon")
+        self.p.sendline(
+            f"node --expose-gc --experimental-wasm-bigint ./src/test-js/node_test_driver.js {self.base_url}",
+        )
+
+        try:
+            self.p.expect_exact("READY!!")
+        except pexpect.exceptions.EOF:
+            raise JavascriptException("", self.p.before.decode())
 
     def get_driver(self):
         self._logs = []
@@ -441,16 +447,19 @@ class NodeWrapper(SeleniumWrapper):
         from uuid import uuid4
 
         cmd_id = str(uuid4())
-        self.p.sendline(cmd_id)
-        self.p.sendline(wrapped)
-        self.p.sendline(cmd_id)
-        self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self._timeout)
-        self.p.expect_exact(f"{cmd_id}:UUID\r\n")
-        if self.p.before:
-            self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
-        self.p.expect("[01]\r\n")
-        success = int(self.p.match[0].decode()[0]) == 0
-        self.p.expect_exact(f"\r\n{cmd_id}:UUID\r\n")
+        try:
+            self.p.sendline(cmd_id)
+            self.p.sendline(wrapped)
+            self.p.sendline(cmd_id)
+            self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self._timeout)
+            self.p.expect_exact(f"{cmd_id}:UUID\r\n")
+            if self.p.before:
+                self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
+            self.p.expect("[01]\r\n")
+            success = int(self.p.match[0].decode()[0]) == 0
+            self.p.expect_exact(f"\r\n{cmd_id}:UUID\r\n")
+        except pexpect.exceptions.EOF:
+            raise JavascriptException("", self.p.before.decode())
         if success:
             return json.loads(self.p.before.decode().replace("undefined", "null"))
         else:

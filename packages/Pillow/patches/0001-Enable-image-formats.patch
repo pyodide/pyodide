@@ -1,6 +1,17 @@
---- a/setup.py	2020-10-22 16:27:16.000000000 +0200
-+++ b/setup.py	2020-12-15 08:43:30.000000000 +0100
-@@ -557,7 +557,9 @@
+From 0c4d089d29d7b12de69b1725a65ad1d3d3fa82ec Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Tue, 19 Apr 2022 07:18:31 +0000
+Subject: [PATCH] Enable image formats
+
+---
+ setup.py | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index 3468b260..da2a2067 100755
+--- a/setup.py
++++ b/setup.py
+@@ -630,7 +630,9 @@ class pil_build_ext(build_ext):
  
          if feature.want("zlib"):
              _dbg("Looking for zlib")
@@ -11,7 +22,7 @@
                  if _find_library_file(self, "z"):
                      feature.zlib = "z"
                  elif sys.platform == "win32" and _find_library_file(self, "zlib"):
-@@ -565,7 +567,9 @@
+@@ -638,7 +640,9 @@ class pil_build_ext(build_ext):
  
          if feature.want("jpeg"):
              _dbg("Looking for jpeg")
@@ -22,7 +33,7 @@
                  if _find_library_file(self, "jpeg"):
                      feature.jpeg = "jpeg"
                  elif sys.platform == "win32" and _find_library_file(self, "libjpeg"):
-@@ -631,7 +635,9 @@
+@@ -704,7 +708,9 @@ class pil_build_ext(build_ext):
  
          if feature.want("freetype"):
              _dbg("Looking for freetype")
@@ -33,7 +44,18 @@
                  # look for freetype2 include files
                  freetype_version = 0
                  for subdir in self.compiler.include_dirs:
-@@ -704,7 +710,8 @@
+@@ -769,7 +775,9 @@ class pil_build_ext(build_ext):
+ 
+         if feature.want("webp"):
+             _dbg("Looking for webp")
+-            if _find_include_file(self, "webp/encode.h") and _find_include_file(
++            if "PYODIDE" in os.environ:
++                feature.webp = "webp"
++            elif _find_include_file(self, "webp/encode.h") and _find_include_file(
+                 self, "webp/decode.h"
+             ):
+                 # In Google's precompiled zip it is call "libwebp":
+@@ -810,7 +818,8 @@ class pil_build_ext(build_ext):
          libs = self.add_imaging_libs.split()
          defs = []
          if feature.jpeg:
@@ -43,3 +65,6 @@
              defs.append(("HAVE_LIBJPEG", None))
          if feature.jpeg2000:
              libs.append(feature.jpeg2000)
+-- 
+2.35.1
+

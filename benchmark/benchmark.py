@@ -79,7 +79,7 @@ def parse_benchmark(filename):
     return "".join(lines)
 
 
-def get_benchmark_scripts(scripts_dir, repeat=11, number=5):
+def get_benchmark_scripts(scripts_dir, repeat=5, number=5):
     root = Path(__file__).resolve().parent / scripts_dir
     for filename in sorted(root.iterdir()):
         name = filename.stem
@@ -113,6 +113,10 @@ def get_numpy_benchmarks():
 
 def get_matplotlib_benchmarks():
     return get_benchmark_scripts("benchmarks/matplotlib_benchmarks")
+
+
+def get_pandas_benchmarks():
+    return get_benchmark_scripts("benchmarks/pandas_benchmarks")
 
 
 def get_benchmarks(benchmarks, targets=("all",)):
@@ -156,6 +160,7 @@ def main():
         "pystone": get_pystone_benchmarks,
         "numpy": get_numpy_benchmarks,
         "matplotlib": get_matplotlib_benchmarks,
+        "pandas": get_pandas_benchmarks,
     }
 
     args = parse_args(list(BENCHMARKS.keys()))
@@ -186,7 +191,7 @@ def main():
         print_entry("selenium init", result)
 
         # package loading time
-        for package_name in ["numpy"]:
+        for package_name in ["numpy", "pandas", "matplotlib"]:
             result = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
                 selenium = cls(port, script_timeout=timeout)
@@ -206,9 +211,9 @@ def main():
                 # instantiate browsers for each benchmark to prevent side effects
                 for browser_name, cls in browser_cls:
                     selenium_backends[browser_name] = cls(port, script_timeout=timeout)
-                    # pre-load numpy and matplotlib for the selenium instance used in benchmarks
+                    # pre-load numpy, matplotlib and pandas for the selenium instance used in benchmarks
                     selenium_backends[browser_name].load_package(
-                        ["numpy", "matplotlib"]
+                        ["numpy", "matplotlib", "pandas"]
                     )
 
                 results[benchmark_name] = run_all(selenium_backends, content)

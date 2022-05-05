@@ -89,7 +89,6 @@ def test_pyodide_analyzer():
         "registerComlink",
     }
     assert attribute_names == {
-        "IN_NODE",
         "FS",
         "loadedPackages",
         "globals",

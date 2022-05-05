@@ -12,7 +12,16 @@ function config({ input, output, name, format, minify }) {
       format,
       sourcemap: true,
     },
-    external: ["path", "fs/promises", "node-fetch", "vm"],
+    external: [
+      "path",
+      "fs/promises",
+      "node-fetch",
+      "vm",
+      "fs",
+      "crypto",
+      "ws",
+      "child_process",
+    ],
     plugins: [
       commonjs(),
       ts({

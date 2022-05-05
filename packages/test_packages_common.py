@@ -41,7 +41,7 @@ def test_parse_package(name):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.driver_timeout(40)
+@pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     if not _package_is_built(name):

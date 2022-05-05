@@ -144,7 +144,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def catch(self, onrejected: Callable) -> "Promise":
+    def catch(self, onrejected: Callable, /) -> "Promise":
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
@@ -153,7 +153,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def finally_(self, onfinally: Callable) -> "Promise":
+    def finally_(self, onfinally: Callable, /) -> "Promise":
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -170,7 +170,7 @@ class JsProxy:
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
-    def assign(self, rhs: Any):
+    def assign(self, rhs: Any, /):
         """Assign from a Python buffer into the JavaScript buffer.
 
         Present only if the wrapped JavaScript object is an ArrayBuffer or
@@ -179,7 +179,7 @@ class JsProxy:
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
-    def assign_to(self, to: Any):
+    def assign_to(self, to: Any, /):
         """Assign to a Python buffer from the JavaScript buffer.
 
         Present only if the wrapped JavaScript object is an ArrayBuffer or
@@ -202,7 +202,7 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
-    def to_file(self, file: IOBase):
+    def to_file(self, file: IOBase, /):
         """Writes a buffer to a file.
 
         Will write the entire contents of the buffer to the current position of
@@ -226,7 +226,7 @@ class JsProxy:
         data once.
         """
 
-    def from_file(self, file: IOBase):
+    def from_file(self, file: IOBase, /):
         """Reads from a file into a buffer.
 
         Will try to read a chunk of data the same size as the buffer from
@@ -252,7 +252,7 @@ class JsProxy:
         data once.
         """
 
-    def _into_file(self, file: IOBase):
+    def _into_file(self, file: IOBase, /):
         """Will write the entire contents of a buffer into a file using
         ``canOwn : true`` without any copy. After this, the buffer cannot be
         used again.
@@ -299,7 +299,7 @@ class JsProxy:
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable) -> JsProxy:
+def create_once_callable(obj: Callable, /) -> JsProxy:
     """Wrap a Python callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
@@ -309,7 +309,7 @@ def create_once_callable(obj: Callable) -> JsProxy:
     return obj  # type: ignore[return-value]
 
 
-def create_proxy(obj: Any) -> JsProxy:
+def create_proxy(obj: Any, /) -> JsProxy:
     """Create a ``JsProxy`` of a ``PyProxy``.
 
     This allows explicit control over the lifetime of the ``PyProxy`` from
@@ -323,6 +323,7 @@ def create_proxy(obj: Any) -> JsProxy:
 
 def to_js(
     obj: Any,
+    /,
     *,
     depth: int = -1,
     pyproxies: JsProxy | None = None,
@@ -444,7 +445,7 @@ class Promise(JsProxy):
     pass
 
 
-def destroy_proxies(pyproxies: JsProxy):
+def destroy_proxies(pyproxies: JsProxy, /):
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
