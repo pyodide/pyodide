@@ -119,7 +119,7 @@ async function browser_loadBinaryFile(
   // @ts-ignore
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
-  let options = checksum ? { 'integrity': 'sha256-' + checksum } : {};
+  let options = checksum ? { integrity: "sha256-" + checksum } : {};
   // @ts-ignore
   let response = await fetch(url, options);
   if (!response.ok) {
