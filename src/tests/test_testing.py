@@ -1,6 +1,6 @@
 import pathlib
 
-from pyodide_build.testing import run_in_pyodide
+from pyodide_build.testing import run_in_pyodide, _run_in_pyodide_run
 
 
 def test_web_server_secondary(selenium, web_server_secondary):
@@ -8,6 +8,12 @@ def test_web_server_secondary(selenium, web_server_secondary):
     assert pathlib.Path(logs).exists()
     assert selenium.server_port != port
 
+def test_run_in_pyodide_internals():
+    class selenium_mock:
+        JavascriptException = Exception
+        run = exec
+    
+    
 
 @run_in_pyodide
 def test_run_in_pyodide():

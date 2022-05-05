@@ -1,3 +1,4 @@
+import ast
 import contextlib
 import sys
 from typing import Any, Callable, Collection
@@ -36,8 +37,11 @@ def _encode_ast(module_ast, funcname):
 
 
 def _run_in_pyodide_run(
-    selenium, string_mod: str, module_fname: str, func_name: str
-) -> Any:
+    selenium : Any, f : Any, pytest_assert_rewrites : bool, module_asts_dict : dict[str, ast.Module]
+) -> Exception | None:
+    module_fname = sys.modules[f.__module__].__file__ or ""
+    module_ast = module_asts_dict[module_fname]
+    string_mod = _encode_ast(module_ast, f.__name__)
     try:
         selenium.run(
             f"""
@@ -49,7 +53,7 @@ def _run_in_pyodide_run(
                 co = compile(mod, {module_fname!r}, "exec")
                 d = {{}}
                 exec(co, d)
-                d[{func_name!r}]()
+                d[{f.__name__!r}]()
 
             try:
                 tmp()
@@ -101,20 +105,17 @@ def run_in_pyodide(
         when an assertion fails, but requires us to load pytest.
     """
     xfail_browsers_local = xfail_browsers or {}
+
     from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
+    module_asts_dict = (
+        REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
+    )
 
     pkgs = list(packages)
     if pytest_assert_rewrites:
         pkgs.append("pytest")
 
     def decorator(f):
-        module_fname = sys.modules[f.__module__].__file__ or ""
-        MODULE_ASTS = (
-            REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
-        )
-        module_ast = MODULE_ASTS[module_fname]
-        string_mod = _encode_ast(module_ast, f.__name__)
-
         def run_test(selenium):
             if selenium.browser in xfail_browsers_local:
                 xfail_message = xfail_browsers_local[selenium.browser]
@@ -124,7 +125,7 @@ def run_in_pyodide(
                 if pkgs:
                     selenium.load_package(pkgs)
                 err = _run_in_pyodide_run(
-                    selenium, string_mod, module_fname, f.__name__
+                    selenium, f, pytest_assert_rewrites, module_asts_dict
                 )
 
             if err:
