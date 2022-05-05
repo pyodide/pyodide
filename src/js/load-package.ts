@@ -162,17 +162,19 @@ async function downloadPackage(
   name: string,
   channel: string
 ): Promise<Uint8Array> {
-  let file_name;
+  let file_name, file_checksum;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.packages[name].file_name;
+    file_checksum = API.packages[name].sha_256;
   } else {
     file_name = channel;
+    file_checksum = undefined;
   }
   try {
-    return await _loadBinaryFile(baseURL, file_name);
+    return await _loadBinaryFile(baseURL, file_name, file_checksum);
   } catch (e) {
     if (!IN_NODE) {
       throw e;
