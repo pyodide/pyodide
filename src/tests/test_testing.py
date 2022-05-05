@@ -1,6 +1,12 @@
+import ast
+import inspect
 import pathlib
+from textwrap import dedent
 
-from pyodide_build.testing import run_in_pyodide, _run_in_pyodide_run
+from pytest import raises
+
+from conftest import REWRITE_CONFIG, rewrite_asserts
+from pyodide_build.testing import _run_in_pyodide_run, run_in_pyodide
 
 
 def test_web_server_secondary(selenium, web_server_secondary):
@@ -8,57 +14,69 @@ def test_web_server_secondary(selenium, web_server_secondary):
     assert pathlib.Path(logs).exists()
     assert selenium.server_port != port
 
-def test_run_in_pyodide_internals():
-    class selenium_mock:
-        JavascriptException = Exception
-        run = exec
-    
-    
 
-@run_in_pyodide
-def test_run_in_pyodide():
+def example_func():
     x = 6
     y = 7
     assert x == y
+
+
+async def async_example_func():
+    from asyncio import sleep
+
+    await sleep(0.01)
+    x = 6
+    await sleep(0.01)
+    y = 7
+    assert x == y
+
+
+def run_in_pyodide_test_helper(selenium):
+    source = inspect.getsource(example_func)
+    tree = ast.parse(source, filename=__file__)
+    rewrite_asserts(tree, source, __file__, REWRITE_CONFIG)
+    err = _run_in_pyodide_run(selenium, example_func, {__file__: tree})
+    if err:
+        raise err
+
+
+def test_run_in_pyodide_local():
+    class selenium_mock:
+        JavascriptException = Exception
+
+        @staticmethod
+        def run(code: str):
+            return exec(dedent(code))
+
+    with raises(AssertionError, match="6 == 7"):
+        run_in_pyodide_test_helper(selenium_mock)
+
+
+def test_run_in_pyodide_selenium(selenium):
+    selenium.load_package(["pytest"])
+    with raises(AssertionError, match="6 == 7"):
+        run_in_pyodide_test_helper(selenium)
+
+
+@run_in_pyodide
+def test_run_in_pyodide1():
+    x = 6
+    assert x == 6
 
 
 @run_in_pyodide(pytest_assert_rewrites=False)
 def test_run_in_pyodide2():
     x = 6
-    y = 7
-    assert x == y
+    assert x == 6
 
 
 @run_in_pyodide
 async def test_run_in_pyodide_async():
-    from js import sleep
+    from asyncio import sleep
 
-    await sleep(5)
     x = 6
-    y = 7
-    assert x == y
-
-
-def dummy_decorator(*args, **kwargs):
-    def func(f):
-        return f
-
-    return func
-
-
-@dummy_decorator(
-    packages=["nlopt"],
-    xfail_browsers={
-        "chrome": "nlopt set_min_objective triggers a fatal runtime error in chrome 89 see #1493",
-    },
-)
-def some_func(f):
-    import nlopt
-    import numpy as np
-
-    opt = nlopt.opt(nlopt.LD_SLSQP, 2)
-    opt.set_min_objective(f)
-    opt.set_lower_bounds(np.array([2.5, 7]))
+    await sleep(0.01)
+    assert x == 6
 
 
 def test_assert(selenium):

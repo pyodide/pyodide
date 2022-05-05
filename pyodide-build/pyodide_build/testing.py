@@ -1,15 +1,14 @@
 import ast
 import contextlib
+import pickle
 import sys
+from base64 import b64decode, b64encode
 from typing import Any, Callable, Collection
 
 import pytest
 
 
 def _encode_ast(module_ast, funcname):
-    import ast
-    import pickle
-    from base64 import b64encode
 
     nodes: list[Any] = []
     for node in module_ast.body:
@@ -24,6 +23,7 @@ def _encode_ast(module_ast, funcname):
         # We also want the function definition
         if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             if node.name == funcname:
+                async_func = isinstance(node, ast.AsyncFunctionDef)
                 node.decorator_list = []
                 nodes.append(node)
                 break
@@ -33,36 +33,42 @@ def _encode_ast(module_ast, funcname):
     serialized_mod = pickle.dumps(mod)
     encoded_mod = b64encode(serialized_mod)
     string_mod = encoded_mod.decode()
-    return string_mod
+    return string_mod, async_func
 
 
 def _run_in_pyodide_run(
-    selenium : Any, f : Any, pytest_assert_rewrites : bool, module_asts_dict : dict[str, ast.Module]
+    selenium: Any, f: Any, module_asts_dict: dict[str, ast.Module]
 ) -> Exception | None:
     module_fname = sys.modules[f.__module__].__file__ or ""
     module_ast = module_asts_dict[module_fname]
-    string_mod = _encode_ast(module_ast, f.__name__)
-    try:
-        selenium.run(
-            f"""
-            def tmp():
-                from base64 import b64decode
-                import pickle
-                serialized_mod = b64decode({string_mod!r})
-                mod = pickle.loads(serialized_mod)
-                co = compile(mod, {module_fname!r}, "exec")
-                d = {{}}
-                exec(co, d)
-                d[{f.__name__!r}]()
-
+    string_mod, async_func = _encode_ast(module_ast, f.__name__)
+    result = selenium.run_async(
+        f"""
+        async def __tmp():
+            from base64 import b64encode, b64decode
+            import pickle
+            serialized_mod = b64decode({string_mod!r})
+            mod = pickle.loads(serialized_mod)
+            co = compile(mod, {module_fname!r}, "exec")
+            d = {{}}
+            exec(co, d)
             try:
-                tmp()
-            finally:
-                del tmp
-            """
-        )
-    except selenium.JavascriptException as e:
-        return e
+                result = d[{f.__name__!r}]()
+                if {async_func}:
+                    result = await result
+            except BaseException as e:
+                serialized_err = pickle.dumps(e)
+                return b64encode(serialized_err).decode()
+
+        try:
+            result = await __tmp()
+        finally:
+            del __tmp
+        result
+        """
+    )
+    if result:
+        return pickle.loads(b64decode(result))
     else:
         return None
 
@@ -107,6 +113,7 @@ def run_in_pyodide(
     xfail_browsers_local = xfail_browsers or {}
 
     from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
+
     module_asts_dict = (
         REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
     )
@@ -124,9 +131,7 @@ def run_in_pyodide(
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if pkgs:
                     selenium.load_package(pkgs)
-                err = _run_in_pyodide_run(
-                    selenium, f, pytest_assert_rewrites, module_asts_dict
-                )
+                err = _run_in_pyodide_run(selenium, f, module_asts_dict)
 
             if err:
                 pytest.fail(
