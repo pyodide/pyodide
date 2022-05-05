@@ -1,0 +1,8 @@
+diff --color -Naur cftime-1.6.0.orig/pyproject.toml cftime-1.6.0/pyproject.toml
+--- cftime-1.6.0.orig/pyproject.toml	2022-03-03 10:59:04.000000000 -0300
++++ cftime-1.6.0/pyproject.toml	2022-05-05 10:11:01.523853642 -0300
+@@ -1,3 +1,3 @@
+ [build-system]
+-requires = ["setuptools>=41.2", "cython", "wheel", "oldest-supported-numpy"]
++requires = ["setuptools>=41.2", "Cython", "wheel", "oldest-supported-numpy"]
+ build-backend = "setuptools.build_meta"
