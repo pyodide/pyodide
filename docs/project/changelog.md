@@ -49,6 +49,10 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and various other improvments.
+  {pr}`2510`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
