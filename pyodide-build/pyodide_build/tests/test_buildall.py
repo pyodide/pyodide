@@ -47,7 +47,7 @@ def test_generate_packages_json(tmp_path):
         "depends": ["pkg_1_1", "pkg_3"],
         "imports": ["pkg_1"],
         "install_dir": "site",
-        "sub_resource_hash": "sha256-uRTkBUih9DcSGPKrCsX889wCyxXX/rDOnAUmlUrYwOU=",
+        "sub_resource_hash": "sha256-weOCQQE7VmPpAv/5frhYXpjm30RlhdodzyrRIbUsIUM=",
     }
 
 
