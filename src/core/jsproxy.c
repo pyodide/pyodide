@@ -142,7 +142,7 @@ static PyObject*
 JsProxy_js_id(PyObject* self, void* _unused)
 {
   PyObject* result = NULL;
-  
+
   JsRef idval = JsProxy_REF(self);
   int x[2] = { (int)&JsProxyType, (int)idval };
   Py_hash_t result_c = _Py_HashBytes(x, 8);
@@ -987,7 +987,7 @@ static PyNumberMethods JsProxy_NumberMethods = {
 // clang-format on
 
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
-                                        { "js_id", .get = JsProxy_js_id }, 
+                                        { "js_id", .get = JsProxy_js_id },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {

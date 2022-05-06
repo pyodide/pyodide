@@ -34,9 +34,9 @@ EM_JS(bool, hiwire_to_bool, (JsRef val), {
 bool tracerefs;
 #endif
 
-#define HIWIRE_INIT_CONST(js_const, hiwire_attr, js_value) \
-  Hiwire.hiwire_attr = DEREF_U8(js_const, 0); \
-  _hiwire.objects.set(Hiwire.hiwire_attr, [ js_value, -1 ]); \
+#define HIWIRE_INIT_CONST(js_const, hiwire_attr, js_value)                     \
+  Hiwire.hiwire_attr = DEREF_U8(js_const, 0);                                  \
+  _hiwire.objects.set(Hiwire.hiwire_attr, [ js_value, -1 ]);                   \
   _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
 EM_JS_NUM(int, hiwire_init, (), {
@@ -69,7 +69,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.new_value = function(jsval)
   {
     let idval = _hiwire.obj_to_key.get(jsval);
-    if(idval !== undefined){
+    if (idval != = undefined) {
       _hiwire.objects.get(idval)[1]++;
       return idval;
     }
