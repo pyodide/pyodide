@@ -1,17 +1,39 @@
 package:
   name: astropy
-  version: 3.2.3
-
+  version: 5.0.4
 source:
-  url: https://pypi.io/packages/source/a/astropy/astropy-3.2.3.tar.gz
-  sha256: 47f00816c2978fdd10f448c8f0337d6dca7b8cbeaab4bf272b5fd37cb4b890d3
-  patches:
-    - patches/fix_link_opts.patch
-
+  url: https://files.pythonhosted.org/packages/a3/d6/b36be0232fa0761f4f3484eb5907224feebf0b359fde2218b01e782649c6/astropy-5.0.4.tar.gz
+  sha256: 001184f1a9c3f526a363883ce28efb9cbf076df3d151ca3e131509a248f0dfb9
+build:
+  # The test module is imported from the top level `__init__.py`
+  # so it cannot be unvendored
+  unvendor-tests: false
 requirements:
   run:
+    - distutils
+    - packaging
     - numpy
-
+    - pyerfa
+    - pyyaml
 test:
   imports:
     - astropy
+    - astropy.config
+    - astropy.constants
+    - astropy.convolution
+    - astropy.coordinates
+    - astropy.cosmology
+    - astropy.extern
+    - astropy.io
+    - astropy.modeling
+    - astropy.nddata
+    - astropy.samp
+    - astropy.stats
+    - astropy.table
+    - astropy.time
+    - astropy.timeseries
+    - astropy.uncertainty
+    - astropy.units
+    - astropy.utils
+    - astropy.visualization
+    - astropy.wcs

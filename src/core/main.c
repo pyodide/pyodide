@@ -9,7 +9,6 @@
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsproxy.h"
-#include "keyboard_interrupt.h"
 #include "pyproxy.h"
 #include "python2js.h"
 #include "python2js_buffer.h"
@@ -34,7 +33,16 @@
 
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
+    int mod##_init();                                                          \
     if (mod##_init()) {                                                        \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+    }                                                                          \
+  } while (0)
+
+#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
+  do {                                                                         \
+    int mod##_init(PyObject* mod);                                             \
+    if (mod##_init(core_module)) {                                             \
       FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
   } while (0)
@@ -50,7 +58,6 @@ initialize_python()
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
-  config.install_signal_handlers = false;
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);
 
@@ -62,12 +69,6 @@ finally:
     Py_ExitStatusException(status);
   }
 }
-#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
-  do {                                                                         \
-    if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
-    }                                                                          \
-  } while (0)
 
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
@@ -76,47 +77,45 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
-PyObject* init_dict;
-
 /**
- * The C code for runPythonSimple. The definition of runPythonSimple is in
- * `pyodide.js` for greater visibility.
+ * Bootstrap steps here:
+ *  1. Import _pyodide package (we depend on this in _pyodide_core)
+ *  2. Initialize the different ffi components and create the _pyodide_core
+ *     module
+ *  3. Create a PyProxy wrapper around _pyodide package so that JavaScript can
+ *     call into _pyodide._base.eval_code and
+ *     _pyodide._import_hook.register_js_finder (this happens in loadPyodide in
+ *     pyodide.js)
  */
-int
-run_python_simple_inner(char* code)
-{
-  PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
-  Py_XDECREF(result);
-  return result ? 0 : -1;
-}
-
-// from numpy_patch.c (no need for a header just for this)
-int
-numpy_patch_init();
-
 int
 main(int argc, char** argv)
 {
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+    Module.wasmTable = wasmTable;
+  });
+
   // This exits and prints a message to stderr on failure,
   // no status code to check.
   initialize_python();
+  emscripten_exit_with_live_runtime();
+  return 0;
+}
 
-  // Once we initialize init_dict, runPythonSimple can work. This gives us a way
-  // to run Python code that works even if the rest of the initialization fails
-  // pretty badly.
-  init_dict = PyDict_New();
-  if (init_dict == NULL) {
-    FATAL_ERROR("Failed to create init_dict.");
-  }
-
-  if (alignof(JsRef) != alignof(int)) {
-    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
-  }
-  if (sizeof(JsRef) != sizeof(int)) {
-    FATAL_ERROR("JsRef doesn't have the same size as int.");
-  }
-
+int
+pyodide_init(void)
+{
+  PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
+  JsRef _pyodide_proxy = NULL;
+
+  _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import _pyodide module");
+  }
+
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
@@ -125,33 +124,25 @@ main(int argc, char** argv)
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
-  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
-  TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  // Enable Javascript access to the global variables from runPythonSimple.
-  JsRef init_dict_proxy = python2js(init_dict);
-  if (init_dict_proxy == NULL) {
-    FATAL_ERROR("Failed to create init_dict proxy.");
+  // Enable JavaScript access to the _pyodide module.
+  _pyodide_proxy = python2js(_pyodide);
+  if (_pyodide_proxy == NULL) {
+    FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0); }, init_dict_proxy);
+  EM_ASM({ API._pyodide = Hiwire.pop_value($0); }, _pyodide_proxy);
 
-  PyObject* pyodide = PyImport_ImportModule("pyodide");
-  if (pyodide == NULL) {
-    FATAL_ERROR("Failed to import pyodide module");
-  }
+  Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  Py_CLEAR(pyodide);
-  printf("Python initialization complete\n");
-  emscripten_exit_with_live_runtime();
   return 0;
 }

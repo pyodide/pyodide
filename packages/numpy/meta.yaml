@@ -1,35 +1,41 @@
 package:
   name: numpy
-  version: 1.17.5
+  version: 1.22.3
 
 source:
-  url: https://files.pythonhosted.org/packages/d9/09/8e89c05abc450ea347f40b4fa917ec5c69b5228da344487f178586a3187c/numpy-1.17.5.zip
-  sha256: 16507ba6617f62ae3c6ab1725ae6f550331025d4d9a369b83f6d5a470446c342
+  url: https://files.pythonhosted.org/packages/64/4a/b008d1f8a7b9f5206ecf70a53f84e654707e7616a771d84c05151a4713e9/numpy-1.22.3.zip
+  sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
 
   patches:
-    - patches/segfault-PyArray_Broadcast.patch
-    - patches/segfault-PyArray_PyIntAsIntp.patch
-    - patches/add-emscripten-cpu.patch
-    - patches/disable-maybe-uninitialized.patch
-    - patches/dont-include-execinfo.patch
-    - patches/fix-longdouble.patch
-    - patches/fix-static-init-of-nditer-pywrap.patch
-    - patches/init-alloc-cache.patch
-    - patches/use-local-blas-lapack.patch
-    - patches/fix-install-with-skip-build.patch
-    - patches/make-int-return-values.patch
-    - patches/fix-ieee754.patch
-    - patches/rm-duplicate-symbols-link.patch
-    - patches/delay-ctypes-import.patch
+    - patches/0001-disable-maybe-uninitialized.patch
+    - patches/0002-disable-optimization.patch
+    - patches/0003-dont-include-execinfo.patch
+    - patches/0004-Fix-ieee754.patch
+    - patches/0005-fix-longdouble.patch
+    - patches/0006-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
+    - patches/0007-BUG-Fix-the-return-type-of-random_float_fill.patch
+    - patches/0008-fix-static-init-of-nditer-pywrap.patch
+    - patches/0009-init-alloc-cache.patch
+    - patches/0010-make-int-return-values.patch
+    - patches/0011-not-build-lapack-lite-as-64-bit.patch
+    - patches/0012-use-local-blas-lapack.patch
+    - patches/0013-fix-invalid-asm-instruction.patch
+    - patches/0014-disable-svml.patch
 
 build:
-  skip_host: False
-  cflags: -include math.h -I../../config -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -Werror=mismatched-return-types
+  cflags: |
+    -Wno-return-type
   post: |
+    pip install -t $HOSTSITEPACKAGES numpy==$PKG_VERSION
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.8-linux-x86_64.egg/numpy/core/include/numpy
-
+    export NUMPY_CORE_INCLUDE=numpy/core/include/numpy
+    cp \
+      $PKG_BUILD_DIR/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
+      $HOSTSITEPACKAGES/$NUMPY_CORE_INCLUDE
+    # static libraries for other packages to link
+    mkdir -p $NUMPY_LIB
+    find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
 test:
   imports:
     - numpy

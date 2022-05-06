@@ -8,39 +8,45 @@
 
 typedef int errcode;
 #include "hiwire.h"
+#define likely(x) __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
 
 int
 error_handling_init();
 
 extern PyObject* internal_error;
 
+// If we are in the test suite, ensure that the current test fails.
+void
+fail_test();
+
 /**
- * Raised when conversion between Javascript and Python fails.
+ * Raised when conversion between JavaScript and Python fails.
  */
 extern PyObject* conversion_error;
 
+/**
+ * Wrap the current Python exception in a JavaScript Error and return the
+ * result. Usually we use pythonexc2js instead, but for futures and for some
+ * internal error messages it's useful to have this separate.
+ */
 JsRef
-wrap_exception(bool attach_python_error);
+wrap_exception();
 
 /**
- * Argument should be output of wrap_exception.
+ * Convert the active Python exception into a JavaScript Error object, print
+ * an appropriate message to the console and throw the error.
  */
-errcode log_python_error(JsRef);
-
-/**
- * Convert the active Python exception into a Javascript Error object and print
- * it to the console.
- */
-void
+void _Py_NO_RETURN
 pythonexc2js();
 
 // Used by LOG_EM_JS_ERROR (behind DEBUG_F flag)
-errcode
+void
 console_error(char* msg);
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-errcode
+void
 console_error_obj(JsRef obj);
 
 /**
@@ -83,8 +89,13 @@ console_error_obj(JsRef obj);
 #define EM_JS_DEFER(ret, func_name, args, body...)                             \
   EM_JS(ret, func_name, args, body)
 
+#define EM_JS_UNCHECKED(ret, func_name, args, body...)                         \
+  EM_JS(ret, func_name, args, body)
+
+#define WARN_UNUSED __attribute__((warn_unused_result))
+
 #define EM_JS_REF(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret, func_name, args, {                                          \
+  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
     "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
@@ -99,12 +110,12 @@ console_error_obj(JsRef obj);
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret, func_name, args, {                                          \
+  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
     "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(func_name, e);                                       \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
@@ -155,28 +166,28 @@ console_error_obj(JsRef obj);
 
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
-    if ((ref) == NULL) {                                                       \
+    if (unlikely((ref) == NULL)) {                                             \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if ((num) == -1) {                                                         \
+    if (unlikely((num) == -1)) {                                               \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_NONZERO(num)                                                   \
   do {                                                                         \
-    if ((num) != 0) {                                                          \
+    if (unlikely((num) != 0)) {                                                \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_ERR_OCCURRED()                                                 \
   do {                                                                         \
-    if (PyErr_Occurred()) {                                                    \
+    if (unlikely(PyErr_Occurred() != NULL)) {                                  \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

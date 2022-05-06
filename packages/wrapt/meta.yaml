@@ -1,0 +1,14 @@
+package:
+  name: wrapt
+  version: 1.14.0
+source:
+  url: https://files.pythonhosted.org/packages/c7/b4/3a937c7f8ee4751b38274c8542e02f42ebf3e080f1344c4a2aff6416630e/wrapt-1.14.0.tar.gz
+  sha256: 8323a43bd9c91f62bb7d4be74cc9ff10090e7ef820e27bfe8815c57e68261311
+test:
+  imports:
+    - wrapt
+about:
+  home: https://github.com/GrahamDumpleton/wrapt
+  PyPI: https://pypi.org/project/wrapt
+  summary: Module for decorators, wrappers and monkey patching.
+  license: BSD

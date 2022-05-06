@@ -1,4 +1,5 @@
 (how_to_contribute)=
+
 # How to Contribute
 
 Thank you for your interest in contributing to Pyodide! There are many ways to
@@ -7,15 +8,56 @@ for diving into it.
 
 ## Development Workflow
 
-See {ref}`building_from_sources` and {ref}`testing` documentation.
+To contribute code, see the following steps,
 
-For code-style the use of [pre-commit](https://pre-commit.com/) is also recommended,
-```
-pip install pre-commit
-pre-commit install
-```
-This will run a set of linters at each commit. Currently it runs yaml syntax
-validation and is removing trailing whitespaces.
+1. Fork the Pyodide repository [https://github.com/pyodide/pyodide](https://github.com/pyodide/pyodide) on Github.
+2. If you are on Linux, you can skip this step. On Windows and MacOS you have a
+   choice. The first option is to manually install Docker:
+
+   - on MacOS follow [these instructions](https://docs.docker.com/desktop/mac/install/)
+   - on Windows, [install WSL
+     2](https://docs.microsoft.com/en-us/windows/wsl/install), then Docker.
+     Note that Windows filesystem access from WSL2 is very slow and should
+     be avoided when building Pyodide.
+
+   The second option is to use a service that provides a Linux
+   development environment, such as
+
+   - [Github Codespaces](https://github.com/features/codespaces)
+   - [gitpod.io](https://gitpod.io)
+   - or a remote Linux VM with SSH connection.
+
+3. Clone your fork of Pyodide
+   ```
+   git clone https://github.com/<your-username>/pyodide.git
+   ```
+   and add the upstream remote,
+   ```
+   git remote add upstream https://github.com/pyodide/pyodide.git
+   ```
+4. While the build will happen inside Docker you still need a development
+   environment with Python 3.10 and ideally Node.js. These can be installed
+   for instance with,
+   ```
+   conda create -c conda-forge -n pyodide-env python=3.10.2 nodejs
+   conda activate pyodide-env
+   ```
+   or via your system package manager.
+5. Install requirements (it's recommended to use a virtualenv or a conda env),
+   ```
+   pip install -r requirements.txt
+   ```
+6. Enable [pre-commit](https://pre-commit.com/) for code style,
+
+   ```
+   pre-commit install
+   ```
+
+   This will run a set of linters for each commit.
+
+7. Follow {ref}`building_from_sources` instructions.
+
+8. See {ref}`testing` documentation.
 
 ## Code of Conduct
 
@@ -24,16 +66,16 @@ core members to adhere to.
 
 ## Development
 
-Work on Pyodide happens on Github. Core members and contributors can make Pull
+Work on Pyodide happens on GitHub. Core members and contributors can make Pull
 Requests to fix issues and add features, which all go through the same review
 process. We’ll detail how you can start making PRs below.
 
-We’ll do our best to keep `master` in a non-breaking state, ideally with tests
+We’ll do our best to keep `main` in a non-breaking state, ideally with tests
 always passing. The unfortunate reality of software development is sometimes
-things break. As such, `master` cannot be expected to remain reliable at all
+things break. As such, `main` cannot be expected to remain reliable at all
 times. We recommend using the latest stable version of Pyodide.
 
-Pyodide follows semantic versioning (http://semver.org/) - major versions for
+Pyodide follows [semantic versioning](http://semver.org/) - major versions for
 breaking changes (x.0.0), minor versions for new features (0.x.0), and patches
 for bug fixes (0.0.x).
 
@@ -59,8 +101,6 @@ duplicate report.
 Core contributors are monitoring new issues & comments all the time, and will
 label & organize issues to align with development priorities.
 
-
-
 ## How to Contribute
 
 Pull requests are the primary mechanism we use to change Pyodide. GitHub itself
@@ -71,7 +111,7 @@ on using the Pull Request feature. We use the "fork and pull" model
 where contributors push changes to their personal fork and create pull requests
 to bring those changes into the source repository.
 
-Please make pull requests against the `master` branch.
+Please make pull requests against the `main` branch.
 
 If you’re looking for a way to jump in and contribute, our list of
 [good first issues](https://github.com/pyodide/pyodide/labels/good%20first%20issue)
@@ -86,7 +126,7 @@ comment asking if you can take over, and we’ll figure it out from there.
 We use [pytest](https://pytest.org), driving
 [Selenium](https://www.seleniumhq.org) as our testing framework. Every PR will
 automatically run through our tests, and our test framework will alert you on
-Github if your PR doesn’t pass all of them. If your PR fails a test, try to
+GitHub if your PR doesn’t pass all of them. If your PR fails a test, try to
 figure out whether or not you can update your code to make the test pass again,
 or ask for help. As a policy we will not accept a PR that fails any of our
 tests, and will likely ask you to add tests if your PR adds new functionality.
@@ -95,28 +135,33 @@ everyone to assess. Take a moment and look through how we’ve written our tests
 and try to make your tests match. If you are having trouble, we can help you get
 started on our test-writing journey.
 
-All code submissions should pass `make lint`.  Python is checked with the
-default settings of `flake8`.  C and Javascript are checked against the Mozilla
-style in `clang-format`.
+All code submissions should pass `make lint`. Python is checked with `flake8`,
+`black` and `mypy`. JavaScript is checked with `prettier`.
+C is checked against the Mozilla style in `clang-format`.
+
+### Contributing to the “core” C Code
+
+See {ref}`contributing-core`.
 
 ## Documentation
 
-Documentation is a critical part of any open source project and we are very
+Documentation is a critical part of any open source project, and we are very
 welcome to any documentation improvements. Pyodide has a documentation written
 in Markdown in the `docs/` folder. We use the
 [MyST](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing)
-for parsing Markdown in sphinx.  You may want to have a look at the
+for parsing Markdown in sphinx. You may want to have a look at the
 [MyST syntax guide](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#the-myst-syntax-guide)
 when contributing, in particular regarding
 [cross-referencing sections](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing).
 
 ### Building the docs
-From the directory ``docs``, first install the Python dependencies with
-``pip install -r requirements-doc.txt``. You also need to install JsDoc, which is a
-``node`` dependency. Install it with ``sudo npm install -g jsdoc``. Then to
-build the docs run ``make html``. The built documentation will be in the
-subdirectory ``docs/_build/html``. To view them, cd into ``_build/html`` and
-start a file server, for instance ``http-server``.
+
+From the directory `docs`, first install the Python dependencies with
+`pip install -r requirements-doc.txt`. You also need to install JsDoc, which is a
+`node` dependency. Install it with `sudo npm install -g jsdoc`. Then to
+build the docs run `make html`. The built documentation will be in the
+subdirectory `docs/_build/html`. To view them, cd into `_build/html` and
+start a file server, for instance `http-server`.
 
 ## Migrating patches
 
@@ -124,6 +169,7 @@ It often happens that patches need to be migrated between different versions of
 upstream packages.
 
 If patches fail to apply automatically, one solution can be to
+
 1. Checkout the initial version of the upstream package in a separate repo, and
    create a branch from it.
 2. Add existing patches with `git apply <path.path>`
@@ -138,6 +184,10 @@ If patches fail to apply automatically, one solution can be to
    git format-patch -<N> -N --no-stat HEAD -o <out_dir>
    ```
 
+## Maintainer information
+
+For information about making releases see {ref}`maintainer-information`.
+
 ## License
 
 All contributions to Pyodide will be licensed under the
@@ -147,9 +197,16 @@ information, as well as Mozilla's
 [MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) if you need further
 clarification on what is and isn't permitted.
 
-
 ## Get in Touch
 
-- __Gitter:__ [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
+- **Gitter:** [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
 
-[tl;drLegal entry]:https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
+[tl;drlegal entry]: https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   core.md
+   maintainers.md
+```

@@ -1,9 +1,14 @@
 package:
   name: decorator
-  version: 4.4.2
+  version: 5.1.1
 source:
-  sha256: e3a62f0520172440ca0dcc823749319382e377f37f140a0b99ef45fecb84bfe7
-  url: https://files.pythonhosted.org/packages/da/93/84fa12f2dc341f8cf5f022ee09e109961055749df2d0c75c5f98746cfe6c/decorator-4.4.2.tar.gz
+  url: https://files.pythonhosted.org/packages/d5/50/83c593b07763e1161326b3b8c6686f0f4b0f24d5526546bee538c89837d6/decorator-5.1.1-py3-none-any.whl
+  sha256: b8c3f85900b9dc423225913c5aace94729fe1fa9763b38939a95226f02d37186
 test:
   imports:
-  - decorator
+    - decorator
+about:
+  home: https://github.com/micheles/decorator
+  PyPI: https://pypi.org/project/decorator
+  summary: Decorators for Humans
+  license: new BSD License

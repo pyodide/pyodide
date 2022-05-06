@@ -1,5 +1,17 @@
+From 572a3e20ba040b4f29bbef97a9db6658c10077d3 Mon Sep 17 00:00:00 2001
+From: Joe Marshall <joe.marshall@nottingham.ac.uk>
+Date: Fri, 18 Mar 2022 20:02:42 -0700
+Subject: [PATCH 6/7] correct return types
+
 Make return types to fortran subroutines consistently be int. Some functions are defined within clapack as variously
 void and int return. Normal C compilers don't care, but emscripten is strict about return values.
+---
+ F2CLIBS/libf2c/ef1asc_.c | 2 +-
+ F2CLIBS/libf2c/f2ch.add  | 4 ++--
+ F2CLIBS/libf2c/s_cat.c   | 6 +++---
+ F2CLIBS/libf2c/s_copy.c  | 4 ++--
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
 diff --git a/F2CLIBS/libf2c/ef1asc_.c b/F2CLIBS/libf2c/ef1asc_.c
 index 70be0bc..b2a82a2 100644
 --- a/F2CLIBS/libf2c/ef1asc_.c
@@ -64,3 +76,6 @@ index 9dacfc7..8d8963f 100644
  #endif
  {
  	register char *aend, *bend;
+-- 
+2.25.1
+

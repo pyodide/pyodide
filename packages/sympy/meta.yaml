@@ -1,12 +1,13 @@
 package:
   name: sympy
-  version: 1.6.2
+  version: 1.10.1
 requirements:
   run:
-  - mpmath
+    - distutils
+    - mpmath
 source:
-  sha256: 1cfadcc80506e4b793f5b088558ca1fcbeaec24cd6fc86f1fdccaa3ee1d48708
-  url: https://files.pythonhosted.org/packages/8a/43/d433f66b01a355d12602ccc7de409aea4b3a1cfdb7a2fb5dac57eb4b09c1/sympy-1.6.2.tar.gz
+  sha256: df75d738930f6fe9ebe7034e59d56698f29e85f443f743e51e47df0caccc2130
+  url: https://files.pythonhosted.org/packages/d0/04/66be21ceb305c66a4b326b0ae44cc4f027a43bc08cac204b48fb45bb3653/sympy-1.10.1-py3-none-any.whl
 test:
   imports:
-  - sympy
+    - sympy

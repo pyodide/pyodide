@@ -4,32 +4,37 @@
   </a>
 </div>
 
-
+[![NPM Latest Release](https://img.shields.io/npm/v/pyodide)](https://www.npmjs.com/package/pyodide)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/pyodide-build.svg)](https://pypi.org/project/pyodide-build/)
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
-[![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=v0.17.0a2)](https://pyodide.readthedocs.io/?badge=v0.17.0a2)
+[![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=stable)](https://pyodide.readthedocs.io/?badge=stable)
 
-Python with the scientific stack, compiled to WebAssembly.
+Pyodide is a Python distribution for the browser and Node.js based on WebAssembly.
 
 ## What is Pyodide?
 
-Pyodide may be used in any context where you want to run Python inside a web
-browser.
+Pyodide is a port of CPython to WebAssembly/[Emscripten](https://emscripten.org/).
 
-Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along with
-the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
-scikit-learn. The [packages directory](packages) lists over 75 packages which
-are currently available. In addition it's possible to install pure Python wheels
-from PyPi.
+Pyodide makes it possible to install and run Python packages in the browser with
+[micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html). Any pure
+Python package with a wheel available on PyPi is supported. Many packages with C
+extensions have also been ported for use with Pyodide. These include many
+general-purpose packages such as regex, PyYAML, lxml and scientific Python
+packages including NumPy, pandas, SciPy, Matplotlib, and scikit-learn.
 
-Pyodide provides transparent conversion of objects between Javascript and
-Python. When used inside a browser, Python has full access to the Web APIs.
+Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
+that you can freely mix these two languages in your code with minimal
+friction. This includes full support for error handling (throw an error in one
+language, catch it in the other), async/await, and much more.
+
+When used inside a browser, Python has full access to the Web APIs.
 
 ## Try Pyodide (no installation needed)
 
 Try Pyodide in a
-[REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in
+[REPL](https://pyodide.org/en/stable/console.html) directly in
 your browser. For further information, see the
-[documentation](https://pyodide.org/en/0.17.0a2/).
+[documentation](https://pyodide.org/en/stable/).
 
 ## Getting Started
 
@@ -37,37 +42,45 @@ Pyodide offers three different ways to get started depending on your needs and
 technical resources. These include:
 
 - Use a hosted distribution of Pyodide: see the [Getting
-  Started](https://pyodide.org/en/0.17.0a2/usage/quickstart.html) documentation.
+  Started](https://pyodide.org/en/stable/usage/quickstart.html) documentation.
 - Download a version of Pyodide from the [releases
   page](https://github.com/pyodide/pyodide/releases/) and serve it
   with a web server.
-- [Build Pyodide from source](https://pyodide.org/en/0.17.0a2/development/building-from-sources.html)
+- [Build Pyodide from source](https://pyodide.org/en/stable/development/building-from-sources.html)
   - Build natively with `make`: primarily for Linux users who want to
     experiment or contribute back to the project.
-  - [Use a Docker image](https://pyodide.org/en/0.17.0a2/development/building-from-sources.html#using-docker):
+  - [Use a Docker image](https://pyodide.org/en/stable/development/building-from-sources.html#using-docker):
     recommended for Windows and macOS users and for Linux users who prefer a
     Debian-based Docker image with the dependencies already installed.
 
-
 ## History
+
 Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
-at Mozilla as part of the [iodide
+at Mozilla as part of the [Iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental
 web-based notebook environment for literate scientific computing and
 communication.
 
 Iodide is no longer maintained. If you want to use Pyodide in an interactive
 client-side notebook, see [Pyodide notebook
-environments](https://pyodide.org/en/0.17.0a2/project/related-projects.html#notebook-environments-ides-repls).
+environments](https://pyodide.org/en/stable/project/related-projects.html#notebook-environments-ides-repls).
 
 ## Contributing
 
 Please view the [contributing
-guide](https://pyodide.org/en/0.17.0a2/development/contributing.html) for tips
+guide](https://pyodide.org/en/stable/development/contributing.html) for tips
 on filing issues, making changes, and submitting pull requests. Pyodide is an
-independent and community-driven open-source project. The decision making
+independent and community-driven open-source project. The decision-making
 process is outlined in the [Project
-governance](https://pyodide.org/en/0.17.0a2/project/governance.html).
+governance](https://pyodide.org/en/stable/project/governance.html).
+
+## Communication
+
+- Blog: [blog.pyodide.org](https://blog.pyodide.org/)
+- Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
+- Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
+- Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
+- Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 
 ## License
 

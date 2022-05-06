@@ -1,0 +1,19 @@
+package:
+  name: bokeh
+  version: 2.4.2
+requirements:
+  run:
+    - distutils
+    - numpy
+    - Jinja2
+    - Pillow
+    - python-dateutil
+    - six
+    - typing-extensions
+    - pyyaml
+source:
+  sha256: 2a842d717feeee802e668054277c09054b6f1561557a16dddaf5f7c452f2728c
+  url: https://files.pythonhosted.org/packages/87/6c/c2b2911555d34c9fa24ad0f41cf42ba6887e279a521bca0cb3d091d77c17/bokeh-2.4.2-py3-none-any.whl
+test:
+  imports:
+    - bokeh

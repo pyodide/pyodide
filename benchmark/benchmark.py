@@ -1,34 +1,36 @@
+import argparse
 import json
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 from time import time
 
-sys.path.insert(0, str((Path(__file__).resolve().parents[1] / "test")))
-sys.path.insert(0, str((Path(__file__).resolve().parents[1])))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import conftest  # noqa: E402
 
-
-SKIP = set(["fft", "hyantes", "README"])
+SKIP = {"fft", "hyantes"}
 
 
 def print_entry(name, res):
     print(" - ", name)
     print(" " * 4, end="")
     for name, dt in res.items():
-        print("{}: {:.6f}  ".format(name, dt), end="")
+        print(f"{name}: {dt:.6f}  ", end="")
     print("")
 
 
-def run_native(hostpython, code):
+def run_native(code):
+    if "# non-native" in code:
+        return float("NaN")
+
     root = Path(__file__).resolve().parents[1]
     output = subprocess.check_output(
-        [hostpython.resolve(), "-c", code],
+        [sys.executable, "-c", code],
         cwd=Path(__file__).resolve().parent,
         env={
-            "PYTHONPATH": str(root / "src")
+            "PYTHONPATH": str(root / "src/py/lib")
             + ":"
             + str(root / "packages" / ".artifacts" / "lib" / "python")
         },
@@ -36,7 +38,15 @@ def run_native(hostpython, code):
     return float(output.strip().split()[-1])
 
 
-def run_wasm(code, selenium):
+def run_wasm(code, selenium, interrupt_buffer):
+    if interrupt_buffer:
+        selenium.run_js(
+            """
+            let interrupt_buffer = new Int32Array(1);
+            pyodide.setInterruptBuffer(interrupt_buffer)
+            """
+        )
+
     selenium.run(code)
     try:
         runtime = float(selenium.logs.split("\n")[-1])
@@ -46,98 +56,175 @@ def run_wasm(code, selenium):
     return runtime
 
 
-def run_all(hostpython, selenium_backends, code):
-    a = run_native(hostpython, code)
-    result = {"native": a}
+def run_all(selenium_backends, code):
+    result = {"native": run_native(code)}
+
     for browser_name, selenium in selenium_backends.items():
-        dt = run_wasm(code, selenium)
-        result[browser_name] = dt
+        for interrupt_buffer in [False, True]:
+            dt = run_wasm(code, selenium, interrupt_buffer)
+            if interrupt_buffer:
+                browser_name += "(w/ ib)"
+            result[browser_name] = dt
     return result
 
 
-def get_pystone_benchmarks():
-    yield "pystone", ("import pystone\n" "pystone.main(pystone.LOOPS)\n")
-
-
-def parse_numpy_benchmark(filename):
+def parse_benchmark(filename):
     lines = []
     with open(filename) as fp:
         for line in fp:
             m = re.match(r"^#\s*(setup|run): (.*)$", line)
             if m:
-                line = "{} = {!r}\n".format(m.group(1), m.group(2))
+                line = f"{m.group(1)} = {m.group(2)!r}\n"
             lines.append(line)
     return "".join(lines)
 
 
-def get_numpy_benchmarks():
-    root = Path(__file__).resolve().parent / "benchmarks"
+def get_benchmark_scripts(scripts_dir, repeat=5, number=5):
+    root = Path(__file__).resolve().parent / scripts_dir
     for filename in sorted(root.iterdir()):
         name = filename.stem
+
         if name in SKIP:
             continue
-        content = parse_numpy_benchmark(filename)
+
+        content = parse_benchmark(filename)
         content += (
             "import numpy as np\n"
             "_ = np.empty(())\n"
-            "setup = setup + '\\nfrom __main__ import {}'\n"
+            f"setup = setup + '\\nfrom __main__ import {name}'\n"
             "from timeit import Timer\n"
             "t = Timer(run, setup)\n"
-            "r = t.repeat(11, 40)\n"
+            f"r = t.repeat({repeat}, {number})\n"
             "r.remove(min(r))\n"
             "r.remove(max(r))\n"
-            "print(np.mean(r))\n".format(name)
+            "print(np.mean(r))\n"
         )
+
         yield name, content
 
 
-def get_benchmarks():
-    yield from get_pystone_benchmarks()
-    yield from get_numpy_benchmarks()
+def get_pystone_benchmarks():
+    return get_benchmark_scripts("benchmarks/pystone_benchmarks", repeat=5, number=1)
 
 
-def main(hostpython):
+def get_numpy_benchmarks():
+    return get_benchmark_scripts("benchmarks/numpy_benchmarks")
+
+
+def get_matplotlib_benchmarks():
+    return get_benchmark_scripts("benchmarks/matplotlib_benchmarks")
+
+
+def get_pandas_benchmarks():
+    return get_benchmark_scripts("benchmarks/pandas_benchmarks")
+
+
+def get_benchmarks(benchmarks, targets=("all",)):
+    if "all" in targets:
+        for benchmark in benchmarks.values():
+            yield from benchmark()
+    else:
+        for target in targets:
+            yield from benchmarks[target]()
+
+
+def parse_args(benchmarks):
+    benchmarks.append("all")
+
+    parser = argparse.ArgumentParser("Run benchmarks on Pyodide's performance")
+    parser.add_argument(
+        "target",
+        choices=benchmarks,
+        nargs="+",
+        help="Benchmarks to run ('all' to run all benchmarks)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        default="dist/benchmarks.json",
+        help="path to the json file where benchmark results will be saved",
+    )
+    parser.add_argument(
+        "--timeout",
+        default=1200,
+        type=int,
+        help="Browser timeout(sec) for each benchmark (default: %(default)s)",
+    )
+
+    return parser.parse_args()
+
+
+def main():
+
+    BENCHMARKS = {
+        "pystone": get_pystone_benchmarks,
+        "numpy": get_numpy_benchmarks,
+        "matplotlib": get_matplotlib_benchmarks,
+        "pandas": get_pandas_benchmarks,
+    }
+
+    args = parse_args(list(BENCHMARKS.keys()))
+    targets = [t.lower() for t in args.target]
+    output = Path(args.output).resolve()
+    timeout = args.timeout
+
+    results = {}
+    selenium_backends = {}
+    browser_cls = [
+        ("firefox", conftest.FirefoxWrapper),
+        ("chrome", conftest.ChromeWrapper),
+    ]
+
     with conftest.spawn_web_server() as (hostname, port, log_path):
-        results = {}
-        selenium_backends = {}
 
-        b = {"native": float("NaN")}
-        browser_cls = [
-            ("firefox", conftest.FirefoxWrapper),
-            ("chrome", conftest.ChromeWrapper),
-        ]
-        for name, cls in browser_cls:
-            t0 = time()
-            selenium_backends[name] = cls(port)
-            b[name] = time() - t0
-            # pre-load numpy for the selenium instance used in benchmarks
-            selenium_backends[name].load_package("numpy")
-        results["selenium init"] = b
-        print_entry("selenium init", b)
+        # selenium initialization time
+        result = {"native": float("NaN")}
+        for browser_name, cls in browser_cls:
+            try:
+                t0 = time()
+                selenium = cls(port, script_timeout=timeout)
+                result[browser_name] = time() - t0
+            finally:
+                selenium.driver.quit()
 
-        # load packages
-        for package_name in ["numpy"]:
-            b = {"native": float("NaN")}
+        results["selenium init"] = result
+        print_entry("selenium init", result)
+
+        # package loading time
+        for package_name in ["numpy", "pandas", "matplotlib"]:
+            result = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
-                selenium = cls(port)
+                selenium = cls(port, script_timeout=timeout)
                 try:
                     t0 = time()
                     selenium.load_package(package_name)
-                    b[browser_name] = time() - t0
+                    result[browser_name] = time() - t0
                 finally:
                     selenium.driver.quit()
-            results["load " + package_name] = b
-            print_entry("load " + package_name, b)
 
-        for name, content in get_benchmarks():
-            results[name] = run_all(hostpython, selenium_backends, content)
-            print_entry(name, results[name])
-        for selenium in selenium_backends.values():
-            selenium.driver.quit()
-    return results
+            results[f"load {package_name}"] = result
+            print_entry(f"load {package_name}", result)
+
+        # run benchmarks
+        for benchmark_name, content in get_benchmarks(BENCHMARKS, targets):
+            try:
+                # instantiate browsers for each benchmark to prevent side effects
+                for browser_name, cls in browser_cls:
+                    selenium_backends[browser_name] = cls(port, script_timeout=timeout)
+                    # pre-load numpy, matplotlib and pandas for the selenium instance used in benchmarks
+                    selenium_backends[browser_name].load_package(
+                        ["numpy", "matplotlib", "pandas"]
+                    )
+
+                results[benchmark_name] = run_all(selenium_backends, content)
+                print_entry(benchmark_name, results[benchmark_name])
+            finally:
+                for selenium in selenium_backends.values():
+                    selenium.driver.quit()
+
+    output.parent.mkdir(exist_ok=True, parents=True)
+    output.write_text(json.dumps(results))
 
 
 if __name__ == "__main__":
-    results = main(Path(sys.argv[-2]).resolve())
-    with open(sys.argv[-1], "w") as fp:
-        json.dump(results, fp)
+    main()

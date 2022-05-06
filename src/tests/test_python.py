@@ -3,10 +3,11 @@ import pytest
 
 def test_init(selenium_standalone):
     assert "Python initialization complete" in selenium_standalone.logs.splitlines()
-    assert len(selenium_standalone.driver.window_handles) == 1
 
 
 def test_webbrowser(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("Webbrowser doesn't work in node")
     selenium.run_async("import antigravity")
     assert len(selenium.driver.window_handles) == 2
 
@@ -17,6 +18,8 @@ def test_print(selenium):
 
 
 def test_import_js(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No window in node")
     result = selenium.run(
         """
         import js
@@ -37,33 +40,12 @@ def test_import_js(selenium):
 
 def test_globals_get_multiple(selenium):
     """See #1151"""
-    selenium.run("v = 0.123")
-    selenium.run_js("pyodide.globals.get('v')")
-    selenium.run_js("pyodide.globals.get('v')")
-
-
-def test_globals_get_same(selenium):
-    """See #382"""
-    selenium.run("def func(): return 42")
-    assert selenium.run_js(
-        "return pyodide.globals.get('func') == pyodide.globals.get('func')"
-    )
-
-
-def test_open_url(selenium, httpserver):
-    httpserver.expect_request("/data").respond_with_data(
-        b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
-    )
-    request_url = httpserver.url_for("/data")
-
-    assert (
-        selenium.run(
-            f"""
-        import pyodide
-        pyodide.open_url('{request_url}').read()
+    selenium.run_js(
         """
-        )
-        == "HELLO"
+        pyodide.runPython("v = 0.123");
+        pyodide.globals.get('v')
+        pyodide.globals.get('v')
+        """
     )
 
 
@@ -71,10 +53,10 @@ def test_load_package_after_convert_string(selenium):
     """
     See #93.
     """
-    selenium.run("import sys\n" "x = sys.version")
-    selenium.run_js("let x = pyodide.globals.get('x');\n" "console.log(x);")
-    selenium.load_package("kiwisolver")
-    selenium.run("import kiwisolver")
+    selenium.run("import sys; x = sys.version")
+    selenium.run_js("let x = pyodide.runPython('x'); console.log(x);")
+    selenium.load_package("pytz")
+    selenium.run("import pytz")
 
 
 def test_version_info(selenium):
@@ -139,14 +121,17 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
 
 
 def test_py(selenium_standalone):
-    selenium_standalone.run(
+    selenium_standalone.run_js(
         """
-        def func():
-            return 42
+        pyodide.runPython(`
+            def func():
+                return 42
+        `);
+        let func = pyodide.globals.get('func');
+        assert(() => func() === 42);
+        func.destroy();
         """
     )
-
-    assert selenium_standalone.run_js("return pyodide.globals.get('func')()") == 42
 
 
 def test_eval_nothing(selenium):

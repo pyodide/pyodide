@@ -1,9 +1,9 @@
 package:
   name: xlrd
-  version: 1.2.0
+  version: 2.0.1
 source:
-  sha256: 546eb36cee8db40c3eaa46c351e67ffee6eeb5fa2650b71bc4c758a29a1b29b2
-  url: https://files.pythonhosted.org/packages/aa/05/ec9d4fcbbb74bbf4da9f622b3b61aec541e4eccf31d3c60c5422ec027ce2/xlrd-1.2.0.tar.gz
+  sha256: 6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd
+  url: https://files.pythonhosted.org/packages/a6/0c/c2a72d51fe56e08a08acc85d13013558a2d793028ae7385448a6ccdfae64/xlrd-2.0.1-py2.py3-none-any.whl
 test:
   imports:
-  - xlrd
+    - xlrd

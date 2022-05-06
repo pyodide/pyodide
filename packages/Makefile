@@ -1,5 +1,6 @@
+.PHONY=pyodide-build
+
 export PYODIDE_ROOT=$(abspath ..)
-PYODIDE_LIBRARIES=$(abspath ./.artifacts)
 include ../Makefile.envs
 
 ifeq ($(strip $(PYODIDE_PACKAGES)),)
@@ -7,17 +8,20 @@ else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
 endif
 
-all:
-	mkdir -p $(PYODIDE_LIBRARIES)
-	PYTHONPATH=$(PYODIDE_LIBRARIES)/lib/python ../bin/pyodide buildall . ../build \
-		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES)
+all: pyodide-build
+	mkdir -p $(HOSTINSTALLDIR)
+	PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build buildall . $(PYODIDE_ROOT)/dist \
+	$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
+	--log-dir=./build-logs
 
+pyodide-build: ../pyodide-build/pyodide_build/**
+	$(HOSTPYTHON) -m pip install -e ../pyodide-build
 
 update-all:
-	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
-		../bin/pyodide mkpkg "$${pkg}" --update; \
+	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
+		PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build mkpkg "$${pkg}" --update; \
 	done
 
 clean:
-	rm -rf ./*/build ./*/build.log
+	rm -rf ./*/build ./*/build.log ./*/dist
 	rm -rf ./.artifacts

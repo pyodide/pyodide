@@ -1,10 +1,9 @@
-from typing import Dict
 import random
 
 import pytest
 
 
-def generate_largish_json(n_rows: int = 91746) -> Dict:
+def generate_largish_json(n_rows: int = 91746) -> dict:
     # with n_rows = 91746, the output JSON size will be ~15 MB/10k rows
 
     # Note: we don't fix the random seed here, but the actual values
@@ -35,22 +34,22 @@ def generate_largish_json(n_rows: int = 91746) -> Dict:
 
 
 @pytest.mark.driver_timeout(30)
-def test_pandas(selenium, request):
-    selenium.load_package("pandas")
-    assert len(selenium.run("import pandas\ndir(pandas)")) == 142
-
-
-@pytest.mark.driver_timeout(30)
 def test_extra_import(selenium, request):
 
     selenium.load_package("pandas")
-    selenium.run("from pandas import Series, DataFrame, Panel")
+    selenium.run("from pandas import Series, DataFrame")
 
 
 @pytest.mark.driver_timeout(40)
 @pytest.mark.skip_refcount_check
 def test_load_largish_file(selenium_standalone, request, httpserver):
     selenium = selenium_standalone
+    if selenium.browser == "chrome":
+        pytest.xfail(
+            "test_load_largish_file triggers a fatal runtime error in Chrome 89 see #1495"
+        )
+    if selenium.browser == "node":
+        pytest.xfail("open_url doesn't work in node")
 
     selenium.load_package("pandas")
     selenium.load_package("matplotlib")
