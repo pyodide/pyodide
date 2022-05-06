@@ -141,16 +141,15 @@ static PyTypeObject JsProxyType;
 static PyObject*
 JsProxy_js_id(PyObject* self, void* _unused)
 {
-  PyObject* idpy = NULL;
-  PyObject* tuple = NULL;
+  PyObject* result = NULL;
   
   JsRef idval = JsProxy_REF(self);
-  idpy = PyLong_FromLong((int)idval);
-  tuple = Py_BuildValue("(OO)", &JsProxyType, idpy);
-
+  int x[2] = { (int)&JsProxyType, (int)idval };
+  Py_hash_t result_c = _Py_HashBytes(x, 8);
+  FAIL_IF_MINUS_ONE(result_c);
+  result = PyLong_FromLong(result_c);
 finally:
-  Py_CLEAR(idpy);
-  return tuple;
+  return result;
 }
 
 /**

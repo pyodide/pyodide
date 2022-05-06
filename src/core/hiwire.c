@@ -68,7 +68,7 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.new_value = function(jsval)
   {
-    let idval = _hiwire.obj_to_key.has(jsval);
+    let idval = _hiwire.obj_to_key.get(jsval);
     if(idval !== undefined){
       _hiwire.objects.get(idval)[1]++;
       return idval;
