@@ -69,10 +69,12 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.new_value = function(jsval)
   {
     let idval = _hiwire.obj_to_key.get(jsval);
-    if (idval != = undefined) {
+    // clang-format off
+    if (idval !== undefined) {
       _hiwire.objects.get(idval)[1]++;
       return idval;
     }
+    // clang-format on
     while (_hiwire.objects.has(_hiwire.counter[0])) {
       // Increment by two here (and below) because even integers are reserved
       // for singleton constants
