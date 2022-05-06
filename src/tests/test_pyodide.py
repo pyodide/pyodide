@@ -1129,3 +1129,22 @@ def test_sys_path0(selenium):
         `)
         """
     )
+
+
+@run_in_pyodide
+def test_run_js():
+    from unittest import TestCase
+
+    from pyodide import run_js
+
+    raises = TestCase().assertRaises
+
+    with raises(TypeError, msg="argument should have type 'string' not type 'int'"):
+        run_js(3)  # type: ignore[arg-type]
+
+    assert run_js("(x)=> x+1")(7) == 8
+    assert run_js("[1,2,3]")[2] == 3
+    run_js("globalThis.x = 77")
+    from js import x
+
+    assert x == 77
