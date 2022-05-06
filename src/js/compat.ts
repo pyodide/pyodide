@@ -6,7 +6,7 @@ export const IN_NODE =
   process.release &&
   process.release.name === "node" &&
   typeof process.browser ===
-    "undefined"; /* This last condition checks if we run the browser shim of process */
+  "undefined"; /* This last condition checks if we run the browser shim of process */
 
 let nodePathMod: any;
 let nodeFetch: any;
@@ -75,7 +75,7 @@ export async function initNodeModules() {
 async function node_loadBinaryFile(
   indexURL: string,
   path: string,
-  _checksum: string | undefined // Ignoring package checksum. See issue-XXX
+  _file_sub_resource_hash?: string | undefined // Ignoring sub resource hash. See issue-XXX
 ): Promise<Uint8Array> {
   if (!path.startsWith("/") && !path.includes("://")) {
     // If path starts with a "/" or starts with a protocol "blah://", we
@@ -107,18 +107,19 @@ async function node_loadBinaryFile(
  *
  * @param indexURL base path to resolve relative paths
  * @param path the path to load
+ * @param subResourceHash the sub resource hash for fetch() integrity check
  * @returns A Uint8Array containing the binary data
  * @private
  */
 async function browser_loadBinaryFile(
   indexURL: string,
   path: string,
-  checksum: string | undefined
+  subResourceHash: string | undefined
 ): Promise<Uint8Array> {
   // @ts-ignore
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
-  let options = checksum ? { integrity: "sha256-" + checksum } : {};
+  let options = subResourceHash ? { integrity: subResourceHash } : {};
   // @ts-ignore
   let response = await fetch(url, options);
   if (!response.ok) {
@@ -131,7 +132,7 @@ async function browser_loadBinaryFile(
 export let _loadBinaryFile: (
   indexURL: string,
   path: string,
-  file_checksum?: string | undefined
+  file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
   _loadBinaryFile = node_loadBinaryFile;

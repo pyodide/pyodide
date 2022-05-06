@@ -162,19 +162,19 @@ async function downloadPackage(
   name: string,
   channel: string
 ): Promise<Uint8Array> {
-  let file_name, file_checksum;
+  let file_name, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.packages[name].file_name;
-    file_checksum = API.packages[name].sha_256;
+    file_sub_resource_hash = API.packages[name].sub_resource_hash;
   } else {
     file_name = channel;
-    file_checksum = undefined;
+    file_sub_resource_hash = undefined;
   }
   try {
-    return await _loadBinaryFile(baseURL, file_name, file_checksum);
+    return await _loadBinaryFile(baseURL, file_name, file_sub_resource_hash);
   } catch (e) {
     if (!IN_NODE) {
       throw e;
@@ -351,8 +351,8 @@ export async function loadPackage(
     } else {
       errorCallback(
         `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
-          `while it is already loaded from ${loaded}. To override a dependency, ` +
-          `load the custom package first.`
+        `while it is already loaded from ${loaded}. To override a dependency, ` +
+        `load the custom package first.`
       );
     }
   }
