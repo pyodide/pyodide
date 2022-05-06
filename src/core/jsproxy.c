@@ -136,15 +136,13 @@ JsProxy_typeof(PyObject* self, void* _unused)
   return result;
 }
 
-static PyTypeObject JsProxyType;
-
 static PyObject*
 JsProxy_js_id(PyObject* self, void* _unused)
 {
   PyObject* result = NULL;
 
   JsRef idval = JsProxy_REF(self);
-  int x[2] = { (int)&JsProxyType, (int)idval };
+  int x[2] = { (int)Py_TYPE(self), (int)idval };
   Py_hash_t result_c = _Py_HashBytes(x, 8);
   FAIL_IF_MINUS_ONE(result_c);
   result = PyLong_FromLong(result_c);
