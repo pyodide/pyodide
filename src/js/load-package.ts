@@ -351,8 +351,8 @@ export async function loadPackage(
     } else {
       errorCallback(
         `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
-        `while it is already loaded from ${loaded}. To override a dependency, ` +
-        `load the custom package first.`
+          `while it is already loaded from ${loaded}. To override a dependency, ` +
+          `load the custom package first.`
       );
     }
   }

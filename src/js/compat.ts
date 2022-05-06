@@ -6,7 +6,7 @@ export const IN_NODE =
   process.release &&
   process.release.name === "node" &&
   typeof process.browser ===
-  "undefined"; /* This last condition checks if we run the browser shim of process */
+    "undefined"; /* This last condition checks if we run the browser shim of process */
 
 let nodePathMod: any;
 let nodeFetch: any;

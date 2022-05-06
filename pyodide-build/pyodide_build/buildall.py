@@ -458,7 +458,9 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
-            "sub_resource_hash": _generate_package_sub_resource_hash(Path(output_dir, pkg.file_name)),
+            "sub_resource_hash": _generate_package_sub_resource_hash(
+                Path(output_dir, pkg.file_name)
+            ),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
