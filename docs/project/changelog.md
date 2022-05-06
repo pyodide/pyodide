@@ -53,7 +53,6 @@ substitutions:
   JavaScript object identity as a dictionary key.
   {pr}`2515`
 
-
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
