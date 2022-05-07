@@ -1155,3 +1155,13 @@ def test_memory_leaks(selenium):
         `);
         """
     )
+
+
+@run_in_pyodide
+def test_js_id():
+    from js import eval as run_js
+
+    [x, y, z] = run_js("let a = {}; let b = {}; [a, a, b]")
+    assert x.js_id == y.js_id
+    assert x is not y
+    assert x.js_id != z.js_id
