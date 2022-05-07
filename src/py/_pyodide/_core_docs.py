@@ -37,6 +37,16 @@ class JsProxy:
     that are (conditionally) implemented on :any:`JsProxy`.
     """
 
+    @property
+    def js_id() -> int:
+        """An id number which can be used as a dictionary/set key if you want to
+        key on JavaScript object identity.
+
+        If two `JsProxy` are made with the same backing JavaScript object, they
+        will have the same `js_id`. The reault is a "pseudorandom" 32 bit integer.
+        """
+        return 0
+
     def object_entries(self) -> "JsProxy":
         "The JavaScript API ``Object.entries(object)``"
 

@@ -150,6 +150,18 @@ finally:
   return result;
 }
 
+static PyObject*
+JsProxy_js_id_private(PyObject* mod, PyObject* obj)
+{
+  if (!JsProxy_Check(obj)) {
+    PyErr_SetString(PyExc_TypeError, "Expected argument to be a JsProxy");
+    return NULL;
+  }
+
+  JsRef idval = JsProxy_REF(obj);
+  return PyLong_FromLong((int)idval);
+}
+
 /**
  * getattr overload, first checks whether the attribute exists in the JsProxy
  * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
@@ -2109,6 +2121,16 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
+static PyMethodDef methods[] = {
+  {
+    "hiwire_id",
+    JsProxy_js_id_private,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
+
+
 int
 JsProxy_init(PyObject* core_module)
 {
@@ -2149,6 +2171,8 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_read_from_file_MethodDef);
   SET_DOCSTRING(JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
+
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
