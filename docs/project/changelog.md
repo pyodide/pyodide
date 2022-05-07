@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
 - {{ Enhancement }} Update sqlite version to latest stable release
   {pr}`2477`
 
@@ -42,12 +45,18 @@ substitutions:
 - {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
   {pr}`2423`
 
+- {{ Feature }} Added `pyodide.run_js` API.
+  {pr}`2426`
 - {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
   {pr}`2455`
 
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
   translated to negative Python ints.
   {pr}`2484`
+
+- {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
+  JavaScript object identity as a dictionary key.
+  {pr}`2515`
 
 ### Packages
 

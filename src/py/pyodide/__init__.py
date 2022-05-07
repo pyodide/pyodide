@@ -31,6 +31,7 @@ from ._core import (
     destroy_proxies,
     to_js,
 )
+from ._run_js import run_js
 from .http import open_url
 
 if IN_BROWSER:
@@ -52,6 +53,7 @@ __all__ = [
     "JsProxy",
     "JsException",
     "to_js",
+    "run_js",
     "register_js_module",
     "unregister_js_module",
     "create_once_callable",
