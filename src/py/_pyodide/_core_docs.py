@@ -47,6 +47,15 @@ class JsProxy:
         """
         return 0
 
+    @property
+    def typeof(self) -> str:
+        """Returns the JavaScript type of the JsProxy.
+
+        Corresponds to `typeof obj;` in JavaScript. You may also be interested
+        in the `constuctor` attribute which returns the type as an object.
+        """
+        return "object"
+
     def object_entries(self) -> "JsProxy":
         "The JavaScript API ``Object.entries(object)``"
 
