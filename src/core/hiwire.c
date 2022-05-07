@@ -42,6 +42,8 @@ bool tracerefs;
 EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
+    // The reverse of the object maps, needed to deduplicate keys so that key
+    // equality is object identity.
     obj_to_key : new Map(),
     // counter is used to allocate keys for the objects map.
     // We use even integers to represent singleton constants which we won't
@@ -68,6 +70,8 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.new_value = function(jsval)
   {
+    // If jsval already has a hiwire key, then use existing key. We need this to
+    // ensure that obj1 === obj2 implies key1 == key2.
     let idval = _hiwire.obj_to_key.get(jsval);
     // clang-format off
     if (idval !== undefined) {
