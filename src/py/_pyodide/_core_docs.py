@@ -38,7 +38,7 @@ class JsProxy:
     """
 
     @property
-    def js_id() -> int:
+    def js_id(self) -> int:
         """An id number which can be used as a dictionary/set key if you want to
         key on JavaScript object identity.
 
