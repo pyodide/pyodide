@@ -1424,3 +1424,10 @@ def test_buffer_format_string(selenium):
         [array_name, is_big_endian] = process_fmt_string(fmt)
         assert is_big_endian == expected_is_big_endian
         assert array_name == expected_array_name
+
+
+@run_in_pyodide
+def test_object_with_null_constructor():
+    from js import eval as run_js
+
+    run_js("Object.create(null)")
