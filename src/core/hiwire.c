@@ -16,7 +16,7 @@ const JsRef Js_false = ((JsRef)(6));
 const JsRef Js_null = ((JsRef)(8));
 
 // For when the return value would be Option<JsRef>
-const JsRef Js_novalue = ((JsRef)(1000));
+const JsRef Js_novalue = ((JsRef)(10));
 
 JsRef
 hiwire_from_bool(bool boolean)
@@ -59,7 +59,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   HIWIRE_INIT_CONST(_Js_null, JSNULL, null);
   HIWIRE_INIT_CONST(_Js_true, TRUE, true);
   HIWIRE_INIT_CONST(_Js_false, FALSE, false);
-  let hiwire_next_permanent = Hiwire.FALSE + 2;
+  let hiwire_next_permanent = HEAPU8[_Js_novalue] + 2;
 
 #ifdef DEBUG_F
   Hiwire._hiwire = _hiwire;
