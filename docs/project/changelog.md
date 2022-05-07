@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Update sqlite version to 3.38.5 stable release
+  {pr}`2518`
+
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
 
