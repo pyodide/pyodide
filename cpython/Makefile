@@ -42,7 +42,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
 	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
-	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	cp `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(INSTALL)/sysconfigdata/
 	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/sysconfigdata/
 	rmdir `cat pybuilddir.txt`
