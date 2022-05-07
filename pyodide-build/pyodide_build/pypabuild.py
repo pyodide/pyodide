@@ -2,6 +2,7 @@ import contextlib
 import os
 import sys
 import traceback
+import shutil
 from itertools import chain
 from pathlib import Path
 from typing import Mapping
@@ -26,6 +27,9 @@ def symlink_unisolated_packages(env: IsolatedEnv):
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env._path) / site_packages_path
+    sysconfigdata_name = os.environ['SYSCONFIG_NAME']
+    sysconfigdata_path = Path(os.environ["TARGETINSTALLDIR"]) /f"sysconfigdata/{sysconfigdata_name}.py"
+    shutil.copy(sysconfigdata_path, env_site_packages)
     host_site_packages = Path(get_hostsitepackages())
     for name in UNISOLATED_PACKAGES:
         for path in chain(
