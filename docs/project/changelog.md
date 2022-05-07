@@ -14,14 +14,11 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Update sqlite version to 3.38.5 stable release
-  {pr}`2518`
-
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
 
 - {{ Enhancement }} Update sqlite version to latest stable release
-  {pr}`2477`
+  {pr}`2477` and {pr}`2518`
 
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
