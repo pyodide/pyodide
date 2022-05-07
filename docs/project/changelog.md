@@ -49,6 +49,9 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null` constructor.
+  {pr}`2520`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
