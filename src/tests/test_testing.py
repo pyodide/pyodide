@@ -3,8 +3,6 @@ import asyncio
 import inspect
 import pathlib
 
-from pytest import raises
-
 from conftest import REWRITE_CONFIG, rewrite_asserts
 from pyodide import eval_code_async
 from pyodide_build.testing import _run_in_pyodide_run, run_in_pyodide
@@ -36,9 +34,7 @@ def run_in_pyodide_test_helper(selenium):
     source = inspect.getsource(example_func)
     tree = ast.parse(source, filename=__file__)
     rewrite_asserts(tree, source, __file__, REWRITE_CONFIG)
-    err = _run_in_pyodide_run(selenium, example_func, {__file__: tree})
-    if err:
-        raise err
+    return _run_in_pyodide_run(selenium, example_func, {__file__: tree})
 
 
 def test_run_in_pyodide_local():
@@ -49,14 +45,16 @@ def test_run_in_pyodide_local():
         def run_async(code: str):
             return asyncio.get_event_loop().run_until_complete(eval_code_async(code))
 
-    with raises(AssertionError, match="6 == 7"):
-        run_in_pyodide_test_helper(selenium_mock)
+    err = run_in_pyodide_test_helper(selenium_mock)
+    assert err.exc_type is AssertionError
+    assert "".join(err.format_exception_only()) == "AssertionError: assert 6 == 7\n"
 
 
 def test_run_in_pyodide_selenium(selenium):
     selenium.load_package(["pytest"])
-    with raises(AssertionError, match="6 == 7"):
-        run_in_pyodide_test_helper(selenium)
+    err = run_in_pyodide_test_helper(selenium)
+    assert err.exc_type is AssertionError
+    assert "".join(err.format_exception_only()) == "AssertionError: assert 6 == 7\n"
 
 
 @run_in_pyodide

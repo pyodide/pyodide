@@ -93,7 +93,7 @@ def _get_pytest_rewrite_config() -> Any:
             break
     else:
         return None
-    return meta_path_finder.config  # type: ignore[attr-defined]
+    return meta_path_finder.config
 
 
 # Now we need to parse the ast of the files, rewrite the ast, and store the

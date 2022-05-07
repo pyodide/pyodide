@@ -2,6 +2,7 @@ import ast
 import contextlib
 import pickle
 import sys
+import traceback
 from base64 import b64decode, b64encode
 from typing import Any, Callable, Collection
 
@@ -38,7 +39,7 @@ def _encode_ast(module_ast, funcname):
 
 def _run_in_pyodide_run(
     selenium: Any, f: Any, module_asts_dict: dict[str, ast.Module]
-) -> Exception | None:
+) -> traceback.TracebackException | None:
     module_fname = sys.modules[f.__module__].__file__ or ""
     module_ast = module_asts_dict[module_fname]
     string_mod, async_func = _encode_ast(module_ast, f.__name__)
@@ -57,7 +58,9 @@ def _run_in_pyodide_run(
                 if {async_func}:
                     result = await result
             except BaseException as e:
-                serialized_err = pickle.dumps(e)
+                import traceback
+                tb = traceback.TracebackException(type(e), e, e.__traceback__)
+                serialized_err = pickle.dumps(tb)
                 return b64encode(serialized_err).decode()
 
         try:
@@ -135,7 +138,8 @@ def run_in_pyodide(
 
             if err:
                 pytest.fail(
-                    "Error running function in pyodide\n\n" + str(err),
+                    "Error running function in pyodide\n\n"
+                    + "".join(err.format(chain=True)),
                     pytrace=False,
                 )
 
