@@ -36,6 +36,10 @@ build:
     # static libraries for other packages to link
     mkdir -p $NUMPY_LIB
     find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
+    cp numpy/core/include/numpy/numpyconfig.h $HOSTSITEPACKAGES/numpy/core/include/numpy/
+    cp numpy/core/include/numpy/_numpyconfig.h $HOSTSITEPACKAGES/numpy/core/include/numpy/
+    cp numpy/core/lib/ $HOSTSITEPACKAGES/numpy/core/lib/
+    cp numpy/random/lib/ $HOSTSITEPACKAGES/numpy/random/lib/
 test:
   imports:
     - numpy
