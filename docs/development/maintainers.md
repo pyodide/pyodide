@@ -20,15 +20,17 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 2. Set the version in:
 
+   - `src/js/package.json`,
    - `docs/project/about.md` (the Zenodo citation),
    - `docs/development/building-from-sources.md`,
    - `docs/usage/downloading-and-deploying.md`,
-   - `setup.cfg`,
-   - `src/js/package.json`,
-   - `src/py/pyodide/__init__.py`,
-   - `src/py/setup.cfg`,
-   - `pyodide-build/setup.cfg`,
-   - ... other places
+   - Bump version in source code files by running `bump2version` command, for example,
+
+     ```bash
+     bump2version minor
+     ```
+
+     check that the diff is correct with `git diff` before committing.
 
    After this, try using `ripgrep` to make sure there are no extra old versions
    lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.

@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20220411-chrome99-firefox98
+    - image: pyodide/pyodide-env:20220504-py310-chrome101-firefox100
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -178,11 +178,12 @@ jobs:
       - run:
           name: test
           command: |
+            make npm-link
             mkdir test-results
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
-              --durations 10 \
+              --durations 50 \
               << parameters.test-params >>
       - store_test_results:
           path: test-results
@@ -195,6 +196,7 @@ jobs:
       - run:
           name: stack-size
           command: |
+            make npm-link
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-python:
@@ -251,7 +253,7 @@ jobs:
       - run:
           name: install requirements
           command: |
-            pip3 install numpy matplotlib
+            pip3 install numpy matplotlib pandas
       - run:
           name: benchmark
           command: |

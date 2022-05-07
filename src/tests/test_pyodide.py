@@ -686,7 +686,7 @@ def test_docstrings_b(selenium):
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj)"
+    sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
@@ -1129,3 +1129,22 @@ def test_sys_path0(selenium):
         `)
         """
     )
+
+
+@run_in_pyodide
+def test_run_js():
+    from unittest import TestCase
+
+    from pyodide import run_js
+
+    raises = TestCase().assertRaises
+
+    with raises(TypeError, msg="argument should have type 'string' not type 'int'"):
+        run_js(3)  # type: ignore[arg-type]
+
+    assert run_js("(x)=> x+1")(7) == 8
+    assert run_js("[1,2,3]")[2] == 3
+    run_js("globalThis.x = 77")
+    from js import x
+
+    assert x == 77

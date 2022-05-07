@@ -81,9 +81,9 @@ else:
         return result
 
 
-async def _get_pypi_json(pkgname):
+async def _get_pypi_json(pkgname, **fetch_extra_kwargs):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    return json.loads(await fetch_string(url))
+    return json.loads(await fetch_string(url, **fetch_extra_kwargs))
 
 
 def _is_pure_python_wheel(filename: str):
@@ -151,6 +151,7 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        **kwargs,
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -167,20 +168,30 @@ class _PackageManager:
         requirement_promises = []
         for requirement in requirements:
             requirement_promises.append(
-                self.add_requirement(requirement, ctx, transaction)
+                self.add_requirement(requirement, ctx, transaction, **kwargs)
             )
 
         await gather(*requirement_promises)
         return transaction
 
     async def install(
-        self, requirements: str | list[str], ctx=None, keep_going: bool = False
+        self,
+        requirements: str | list[str],
+        ctx=None,
+        keep_going: bool = False,
+        credentials: str | None = None,
     ):
         async def _install(install_func, done_callback):
             await install_func
             done_callback()
 
-        transaction = await self.gather_requirements(requirements, ctx, keep_going)
+        fetch_extra_kwargs = dict()
+
+        if credentials:
+            fetch_extra_kwargs["credentials"] = credentials
+        transaction = await self.gather_requirements(
+            requirements, ctx, keep_going, **fetch_extra_kwargs
+        )
 
         if transaction["failed"]:
             failed_requirements = ", ".join(
@@ -234,7 +245,13 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(self, requirement: str | Requirement, ctx, transaction):
+    async def add_requirement(
+        self,
+        requirement: str | Requirement,
+        ctx,
+        transaction,
+        **fetch_extra_kwargs,
+    ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -249,7 +266,9 @@ class _PackageManager:
             if not _is_pure_python_wheel(wheel["filename"]):
                 raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
 
-            await self.add_wheel(name, wheel, version, (), ctx, transaction)
+            await self.add_wheel(
+                name, wheel, version, (), ctx, transaction, **fetch_extra_kwargs
+            )
             return
         else:
             req = Requirement(requirement)
@@ -284,7 +303,7 @@ class _PackageManager:
                     f"Requested '{requirement}', "
                     f"but {req.name}=={ver} is already installed"
                 )
-        metadata = await _get_pypi_json(req.name)
+        metadata = await _get_pypi_json(req.name, **fetch_extra_kwargs)
         maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
         if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
@@ -296,10 +315,18 @@ class _PackageManager:
                 )
         else:
             await self.add_wheel(
-                req.name, maybe_wheel, maybe_ver, req.extras, ctx, transaction
+                req.name,
+                maybe_wheel,
+                maybe_ver,
+                req.extras,
+                ctx,
+                transaction,
+                **fetch_extra_kwargs,
             )
 
-    async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
+    async def add_wheel(
+        self, name, wheel, version, extras, ctx, transaction, **fetch_extra_kwargs
+    ):
         normalized_name = normalize_package_name(name)
         transaction["locked"][normalized_name] = PackageMetadata(
             name=name,
@@ -307,7 +334,7 @@ class _PackageManager:
         )
 
         try:
-            wheel_bytes = await fetch_bytes(wheel["url"])
+            wheel_bytes = await fetch_bytes(wheel["url"], **fetch_extra_kwargs)
         except Exception as e:
             if wheel["url"].startswith("https://files.pythonhosted.org/"):
                 raise e
@@ -371,7 +398,11 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: str | list[str], keep_going: bool = False):
+def install(
+    requirements: str | list[str],
+    keep_going: bool = False,
+    credentials: str | None = None,
+):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
@@ -410,6 +441,15 @@ def install(requirements: str | list[str], keep_going: bool = False):
         - If ``True``, the micropip will keep going after the first error, and report a list
           of errors at the end.
 
+    credentials : ``Optional[str]``
+
+        This parameter specifies the value of ``credentials`` when calling the
+        `fetch() <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`__ function
+        which is used to download the package.
+
+        When not specified, ``fetch()`` is called without ``credentials``.
+
+
     Returns
     -------
     ``Future``
@@ -419,7 +459,9 @@ def install(requirements: str | list[str], keep_going: bool = False):
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(
-        PACKAGE_MANAGER.install(requirements, keep_going=keep_going)
+        PACKAGE_MANAGER.install(
+            requirements, keep_going=keep_going, credentials=credentials
+        )
     )
 
 

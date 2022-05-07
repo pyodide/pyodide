@@ -1,0 +1,27 @@
+From 809cac60435af4dbc392e59c8ad79763bd3616d5 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 2 May 2022 17:31:07 -0700
+Subject: [PATCH] Add one more trampoline in cfunction_vectorcall_O
+
+Christian already added this upstream in 3.11a7 so we can remove
+this when we update to 3.11
+---
+ Objects/methodobject.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Objects/methodobject.c b/Objects/methodobject.c
+index 978d62cd67..26919a15e9 100644
+--- a/Objects/methodobject.c
++++ b/Objects/methodobject.c
+@@ -519,7 +519,7 @@ cfunction_vectorcall_O(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(PyCFunction_GET_SELF(func), args[0]);
++    PyObject *result = method_call_trampoline(meth, PyCFunction_GET_SELF(func), args[0], NULL);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+-- 
+2.25.1
+

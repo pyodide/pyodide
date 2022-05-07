@@ -9,8 +9,8 @@ source:
 build:
   cflags:
     -Werror=implicit-function-declaration -Werror=mismatched-parameter-types
-    -Werror=mismatched-return-types
-  ldflags: --Wl,--fatal-warnings
+    -Werror=mismatched-return-types -Oz
+  ldflags: --Wl,--fatal-warnings -Oz
 requirements:
   run:
     - distutils

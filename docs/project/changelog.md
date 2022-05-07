@@ -14,6 +14,19 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477`
+
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
+
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
+
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
 
@@ -29,7 +42,17 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
-- {{ Bugfix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+  {pr}`2423`
+
+- {{ Feature }} Added `pyodide.run_js` API.
+  {pr}`2426`
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
+  {pr}`2455`
+
+- {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
+  translated to negative Python ints.
+  {pr}`2484`
 
 - {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
   through `pyodide_test_runner`.
@@ -39,8 +62,11 @@ substitutions:
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
 
+- Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
+  on Chrome {pr}`2457`
+
 - New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`
 
 ## Version 0.20.0
 

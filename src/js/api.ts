@@ -332,7 +332,7 @@ export function toPy(
  *    .. code-block:: js
  *
  *      let sysmodule = pyodide.pyimport("sys");
- *      let recursionLimit = sys.getrecursionlimit();
+ *      let recursionLimit = sysmodule.getrecursionlimit();
  *
  * @param mod_name The name of the module to import
  * @returns A PyProxy for the imported module

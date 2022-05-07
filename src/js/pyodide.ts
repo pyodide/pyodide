@@ -8,6 +8,7 @@ import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+export type { PyodideInterface };
 
 export type {
   PyProxy,
@@ -158,11 +159,11 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  *  code.
  */
 function calculateIndexURL(): string {
-  let err;
+  let err: Error;
   try {
     throw new Error();
   } catch (e) {
-    err = e;
+    err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
   return fileName.slice(0, fileName.lastIndexOf("/"));

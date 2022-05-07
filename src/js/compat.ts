@@ -29,12 +29,12 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodePathMod = (await import(/* webpackIgnore: true */ "path")).default;
-  nodeFsPromisesMod = await import(/* webpackIgnore: true */ "fs/promises");
+  nodePathMod = (await import("path")).default;
+  nodeFsPromisesMod = await import("fs/promises");
   // @ts-ignore
-  nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
+  nodeFetch = (await import("node-fetch")).default;
   // @ts-ignore
-  nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
+  nodeVmMod = (await import("vm")).default;
   if (typeof require !== "undefined") {
     return;
   }
@@ -46,10 +46,10 @@ export async function initNodeModules() {
   // These are all the packages required in pyodide.asm.js. You can get this
   // list with:
   // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
-  const fs = await import(/* webpackIgnore: true */ "fs");
-  const crypto = await import(/* webpackIgnore: true */ "crypto");
-  const ws = await import(/* webpackIgnore: true */ "ws");
-  const child_process = await import(/* webpackIgnore: true */ "child_process");
+  const fs = await import("fs");
+  const crypto = await import("crypto");
+  const ws = await import("ws");
+  const child_process = await import("child_process");
   const node_modules: { [mode: string]: any } = {
     fs,
     crypto,
@@ -144,7 +144,7 @@ export let loadScript: (url: string) => Promise<void>;
 
 if (globalThis.document) {
   // browser
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
+  loadScript = async (url) => await import(url);
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
