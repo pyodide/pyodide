@@ -25,7 +25,14 @@
       }
 
       async function main() {
-        globalThis.pyodide = await loadPyodide();
+        var term;
+        globalThis.pyodide = await loadPyodide({
+          stdin: () => {
+            var result = prompt();
+            term.echo(result);
+            return result;
+          },
+        });
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
           `
@@ -117,7 +124,7 @@
           unlock();
         }
 
-        let term = $("body").terminal(interpreter, {
+        term = $("body").terminal(interpreter, {
           greetings: banner,
           prompt: ps1,
           completionEscape: false,
