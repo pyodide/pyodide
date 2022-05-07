@@ -2130,7 +2130,6 @@ static PyMethodDef methods[] = {
   { NULL } /* Sentinel */
 };
 
-
 int
 JsProxy_init(PyObject* core_module)
 {
