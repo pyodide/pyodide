@@ -1,6 +1,6 @@
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import binary, integers
-from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
 
 

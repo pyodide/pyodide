@@ -1,5 +1,5 @@
 import pytest
-from pyodide_test_runner.decorator import run_in_pyodide as run_in_pyodide_orig
+from pyodide_test_runner import run_in_pyodide as run_in_pyodide_orig
 
 
 def run_in_pyodide(**kwargs):

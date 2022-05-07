@@ -3,7 +3,7 @@ from textwrap import dedent
 from typing import Any, Sequence
 
 import pytest
-from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 

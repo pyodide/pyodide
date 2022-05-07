@@ -1,5 +1,5 @@
 import pytest
-from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
 def test_open_url(selenium, httpserver):

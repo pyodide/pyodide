@@ -1,5 +1,5 @@
 import pytest
-from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 CHROME_FAIL_v90_MSG = (
     "Doesn't work in chrome v89 or v90, I think because of "

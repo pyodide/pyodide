@@ -6,9 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from pyodide_test_runner import spawn_web_server
-
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 

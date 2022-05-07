@@ -1,4 +1,4 @@
-from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 run_in_pyodide_scipy = run_in_pyodide(
     module_scope=True,
