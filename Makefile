@@ -42,6 +42,7 @@ dist/pyodide.asm.js: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
+	src/core/tar.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB)/tzdata \
