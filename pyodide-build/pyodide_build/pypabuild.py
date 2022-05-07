@@ -17,17 +17,14 @@ from build.__main__ import (  # type: ignore[import]
 from build.env import IsolatedEnv  # type: ignore[import]
 from packaging.requirements import Requirement
 
-from .common import get_hostsitepackages, get_pyversion
-
-UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser", "pythran"]
-
+from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
 
 def symlink_unisolated_packages(env: IsolatedEnv):
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env._path) / site_packages_path
     host_site_packages = Path(get_hostsitepackages())
-    for name in UNISOLATED_PACKAGES:
+    for name in get_unisolated_packages():
         for path in chain(
             host_site_packages.glob(f"{name}*"), host_site_packages.glob(f"_{name}*")
         ):
@@ -38,7 +35,7 @@ def symlink_unisolated_packages(env: IsolatedEnv):
 def remove_unisolated_requirements(requires: set[str]) -> set[str]:
     for reqstr in list(requires):
         req = Requirement(reqstr)
-        for avoid_name in UNISOLATED_PACKAGES:
+        for avoid_name in get_unisolated_packages():
             if avoid_name in req.name.lower():
                 requires.remove(reqstr)
     return requires
@@ -62,7 +59,7 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]):
     # only recythonize if it is present. We need them to always recythonize so
     # we always install cython. If the reqs included some cython version already
     # then this won't do anything.
-    env.install(["cython"])
+    env.install(["cython", "pythran"])
 
 
 def _build_in_isolated_env(

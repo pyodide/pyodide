@@ -10,7 +10,6 @@ INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
-SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
 
 ZLIBVERSION=1.2.12
 ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
@@ -44,6 +43,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	# the subfolder is written to pybuilddir.txt.
 	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/sysconfigdata
 	rmdir `cat pybuilddir.txt`
 	rm pybuilddir.txt
 	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`

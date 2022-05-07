@@ -2,6 +2,7 @@ export PYVERSION ?= 3.10.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
 
 export PLATFORM_TRIPLET=wasm32-emscripten
+export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each
@@ -34,7 +35,7 @@ export PYODIDE_BASE_URL?=./
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
-export NUMPY_LIB=$(HOSTINSTALLDIR)/numpy-wasm-libs
+export NUMPY_LIB=$(HOSTSITEPACKAGES)/numpy/
 export OPEN_SSL_ROOT=$(PYODIDE_ROOT)/packages/openssl/build/openssl-1.1.1n/
 
 
