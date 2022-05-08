@@ -492,6 +492,7 @@ def package_wheel(
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
+    print(f"Unpacking wheel to {str(wheel)}")
     unpack_wheel(wheel)
     wheel.unlink()
     name, ver, _ = wheel.name.split("-", 2)
@@ -504,7 +505,8 @@ def package_wheel(
 
     post = build_metadata.get("post")
     if post:
-        bash_runner.env.update({"PKGDIR": str(pkg_root)})
+        print("Running post script in ", str(Path.cwd().absolute()))
+        bash_runner.env.update({"PKGDIR": str(pkg_root), "WHEELDIR": str(wheel_dir)})
         result = bash_runner.run(post)
         if result.returncode != 0:
             print("ERROR: post failed")

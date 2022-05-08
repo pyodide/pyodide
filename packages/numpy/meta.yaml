@@ -37,10 +37,9 @@ build:
     # static libraries for other packages to link
     mkdir -p $NUMPY_LIB
     find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
-    export WHEEL_PATH=$PKGDIR/dist/numpy-$PKG_VERSION
-    cp $WHEEL_PATH/numpy/core/include/numpy/_numpyconfig.h $HOSTSITEPACKAGES/numpy/core/include/numpy/
-    cp $WHEEL_PATH/numpy/core/lib/libnpymath.a $HOSTSITEPACKAGES/numpy/core/lib/
-    cp $WHEEL_PATH/numpy/random/lib/libnpyrandom.a $HOSTSITEPACKAGES/numpy/random/lib/
+    cp $WHEELDIR/numpy/core/include/numpy/_numpyconfig.h $HOSTSITEPACKAGES/numpy/core/include/numpy/
+    cp $WHEELDIR/numpy/core/lib/libnpymath.a $HOSTSITEPACKAGES/numpy/core/lib/
+    cp $WHEELDIR/numpy/random/lib/libnpyrandom.a $HOSTSITEPACKAGES/numpy/random/lib/
 test:
   imports:
     - numpy
