@@ -19,15 +19,7 @@ JS_FILE(tar_init_js, () => {
     const up_to_first_zero = (buffer) => buffer.subarray(0, buffer.indexOf(0));
     const text_decoder = new TextDecoder();
     let offset = 0;
-    let name,
-      mode,
-      uid,
-      gid,
-      length,
-      lastModified,
-      checksum,
-      linkType,
-      linkName;
+    let name, mode, uid, gid, length, lastModified, checksum, type, linkName;
     // Convince tools that these are used (they are used by our macros)
     up_to_first_zero;
     text_decoder;
