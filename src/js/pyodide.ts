@@ -258,7 +258,6 @@ export async function loadPyodide(
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   const stdlib_tar = await stdlib_tar_promise;
-  (window as any).Module = Module;
   Module._tar_init();
   Module.API.loadTar(stdlib_tar, "/lib");
   Module.API.loadTar(pyodide_py_tar, "/lib/python3.10/site-packages/");

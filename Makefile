@@ -34,7 +34,12 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 
 dist/cpython_stdlib.tar: src/py/lib/*.py
 	cp src/py/lib/*.py $(CPYTHONLIB)
-	cd $(CPYTHONLIB)/.. && tar --exclude '*__pycache__*' --exclude '*.a' -cf $(PYODIDE_ROOT)/dist/cpython_stdlib.tar *
+	cd $(CPYTHONLIB)/.. && tar \
+		--exclude '*__pycache__*' \
+		--exclude '*.a' \
+		--exclude 'test' \
+		-cf $(PYODIDE_ROOT)/dist/cpython_stdlib.tar \
+		*
 
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
