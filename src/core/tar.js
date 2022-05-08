@@ -44,7 +44,6 @@ JS_FILE(tar_init_js, () => {
       SET_OCTAL(length, 12);
       SKIP_OCTAL(lastModified, 12);
       SKIP_OCTAL(checksum, 8);
-      buffer.subarray(offset - 8, offset).set(0);
       SET_STRING(linkType, 1);
       SKIP_STRING(linkName, 100);
       ALIGN_ADDRESS_UP(offset, 0x200);
