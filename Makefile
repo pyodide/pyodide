@@ -31,7 +31,8 @@ $(CPYTHONLIB)/tzdata :
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf $(PYODIDE_ROOT)/dist/pyodide_py.tar pyodide _pyodide
 
-dist/cpython_stdlib.tar:
+dist/cpython_stdlib.tar: src/py/lib/*.py
+	cp src/py/lib/*.py $(CPYTHONLIB)
 	cd $(CPYTHONLIB)/.. && tar --exclude '*__pycache__*' --exclude '*.a' -cf $(PYODIDE_ROOT)/dist/cpython_stdlib.tar *
 
 dist/pyodide.asm.js: \
