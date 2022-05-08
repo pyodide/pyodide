@@ -1,29 +1,11 @@
-import contextlib
 import inspect
 from base64 import b64encode
+from pprint import pformat
 from typing import Callable, Collection
 
 import pytest
 
-
-def _run_in_pyodide_get_source(f):
-    lines, start_line = inspect.getsourcelines(f)
-    num_decorator_lines = 0
-    for line in lines:
-        if line.startswith("def") or line.startswith("async def"):
-            break
-        num_decorator_lines += 1
-    start_line += num_decorator_lines - 1
-    # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
-    lines = ["\n"] * start_line + lines[num_decorator_lines:]
-    return "".join(lines)
-
-
-def chunkstring(string, length):
-    return (string[0 + i : length + i] for i in range(0, len(string), length))
-
-
-from pprint import pformat
+from .utils import set_webdriver_script_timeout
 
 
 def run_in_pyodide(
@@ -77,7 +59,7 @@ def run_in_pyodide(
                     source = _run_in_pyodide_get_source(f)
                     filename = inspect.getsourcefile(f)
                     encoded = pformat(
-                        list(chunkstring(b64encode(source.encode()).decode(), 100))
+                        list(_chunkstring(b64encode(source.encode()).decode(), 100))
                     )
 
                     selenium.run_js(
@@ -128,29 +110,18 @@ def run_in_pyodide(
         return decorator
 
 
-@contextlib.contextmanager
-def set_webdriver_script_timeout(selenium, script_timeout: float | None):
-    """Set selenium script timeout
-
-    Parameters
-    ----------
-    selenum : SeleniumWrapper
-       a SeleniumWrapper wrapper instance
-    script_timeout : int | float
-       value of the timeout in seconds
-    """
-    if script_timeout is not None:
-        selenium.set_script_timeout(script_timeout)
-    yield
-    # revert to the initial value
-    if script_timeout is not None:
-        selenium.set_script_timeout(selenium.script_timeout)
+def _chunkstring(string, length):
+    return (string[0 + i : length + i] for i in range(0, len(string), length))
 
 
-def parse_driver_timeout(request) -> float | None:
-    """Parse driver timeout value from pytest request object"""
-    mark = request.node.get_closest_marker("driver_timeout")
-    if mark is None:
-        return None
-    else:
-        return mark.args[0]
+def _run_in_pyodide_get_source(f):
+    lines, start_line = inspect.getsourcelines(f)
+    num_decorator_lines = 0
+    for line in lines:
+        if line.startswith("def") or line.startswith("async def"):
+            break
+        num_decorator_lines += 1
+    start_line += num_decorator_lines - 1
+    # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
+    lines = ["\n"] * start_line + lines[num_decorator_lines:]
+    return "".join(lines)
