@@ -18,7 +18,7 @@ substitutions:
   {pr}`2509`
 
 - {{ Enhancement }} Update sqlite version to latest stable release
-  {pr}`2477`
+  {pr}`2477` and {pr}`2518`
 
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
@@ -57,6 +57,10 @@ substitutions:
 - {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
   through `pyodide_test_runner`.
   {pr}`2418`
+
+- {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
+  JavaScript object identity as a dictionary key.
+  {pr}`2515`
 
 ### Packages
 
