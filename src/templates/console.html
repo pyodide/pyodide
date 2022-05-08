@@ -59,7 +59,10 @@
         let pyconsole = namespace.get("pyconsole");
         let clear_console = namespace.get("clear_console");
         const echo = (msg, ...opts) =>
-          term.echo(msg.replace("]]", "&rsqb;&rsqb;"), ...opts);
+          term.echo(
+            msg.replace("]]", "&rsqb;&rsqb;").replace("[[", "&lsqb;&lsqb;"),
+            ...opts
+          );
         namespace.destroy();
 
         let ps1 = ">>> ",
@@ -102,7 +105,7 @@
               if (value !== undefined) {
                 echo(
                   repr_shorten.callKwargs(value, {
-                    separator: "\n[[;orange;]<long output truncated>]\n",
+                    separator: "\n<long output truncated>\n",
                   })
                 );
               }
