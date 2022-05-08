@@ -21,7 +21,7 @@ def _encode_ast(module_ast, funcname):
         ):
             nodes.append(node)
 
-        # We also want the function definition
+        # We also want the function definition for the current test
         if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             if node.name == funcname:
                 async_func = isinstance(node, ast.AsyncFunctionDef)
