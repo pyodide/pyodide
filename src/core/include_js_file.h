@@ -8,6 +8,9 @@
 // to remove it. We put `()=>{0,0;`, JS_FILE removes everything up to
 // the comma and replace it with a single open brace.
 //
+#include "emscripten.h"
+#include "error_handling.h"
+#include "jsmemops.h"
 
 #define UNPAIRED_OPEN_BRACE {
 #define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up

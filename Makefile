@@ -29,7 +29,10 @@ $(CPYTHONLIB)/tzdata :
 	pip install tzdata --target=$(CPYTHONLIB)
 
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
-	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
+	cd src/py && tar --exclude '*__pycache__*' -cf $(PYODIDE_ROOT)/dist/pyodide_py.tar pyodide _pyodide
+
+dist/cpython_stdlib.tar:
+	cd $(CPYTHONLIB)/.. && tar --exclude '*__pycache__*' --exclude '*.a' -cf $(PYODIDE_ROOT)/dist/cpython_stdlib.tar *
 
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -39,6 +42,7 @@ dist/pyodide.asm.js: \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/main.o  \
+	src/core/tar.o  \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \

@@ -99,7 +99,6 @@ main(int argc, char** argv)
 
   // This exits and prints a message to stderr on failure,
   // no status code to check.
-  initialize_python();
   emscripten_exit_with_live_runtime();
   return 0;
 }
@@ -110,6 +109,8 @@ pyodide_init(void)
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
   JsRef _pyodide_proxy = NULL;
+
+  initialize_python();
 
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {

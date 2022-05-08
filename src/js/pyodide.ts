@@ -58,36 +58,6 @@ function wrapPythonGlobals(
   });
 }
 
-function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
-  const fileName = "/pyodide_py.tar";
-  let stream = Module.FS.open(fileName, "w");
-  Module.FS.write(
-    stream,
-    pyodide_py_tar,
-    0,
-    pyodide_py_tar.byteLength,
-    undefined,
-    true
-  );
-  Module.FS.close(stream);
-  const code_ptr = Module.stringToNewUTF8(`
-from sys import version_info
-pyversion = f"python{version_info.major}.{version_info.minor}"
-import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/site-packages/")
-del shutil
-import importlib
-importlib.invalidate_caches()
-del importlib
-    `);
-  let errcode = Module._PyRun_SimpleString(code_ptr);
-  if (errcode) {
-    throw new Error("OOPS!");
-  }
-  Module._free(code_ptr);
-  Module.FS.unlink(fileName);
-}
-
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -253,6 +223,10 @@ export async function loadPyodide(
     config.indexURL,
     "pyodide_py.tar"
   );
+  const stdlib_tar_promise = _loadBinaryFile(
+    config.indexURL,
+    "cpython_stdlib.tar"
+  );
 
   const Module = createModule();
   const API: any = { config };
@@ -283,7 +257,11 @@ export async function loadPyodide(
   };
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
-  unpackPyodidePy(Module, pyodide_py_tar);
+  const stdlib_tar = await stdlib_tar_promise;
+  (window as any).Module = Module;
+  Module._tar_init();
+  Module.API.loadTar(stdlib_tar, "/lib");
+  Module.API.loadTar(pyodide_py_tar, "/lib/python3.10/site-packages/");
   Module._pyodide_init();
 
   const pyodide = finalizeBootstrap(API, config);
