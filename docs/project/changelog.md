@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517`
+
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
 
