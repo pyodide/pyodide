@@ -44,14 +44,19 @@ JS_FILE(tar_init_js, () => {
       SET_OCTAL(length, 12);
       SKIP_OCTAL(lastModified, 12);
       SKIP_OCTAL(checksum, 8);
-      SET_STRING(linkType, 1);
+      SET_STRING(type, 1);
       SKIP_STRING(linkName, 100);
       ALIGN_ADDRESS_UP(offset, 0x200);
 
-      if (linkType !== "" && linkType !== "0") {
+      if (type !== "" && type !== "0") {
         throw new Error("Link support not implemented");
       }
-      if (length === 0) {
+      // GNU TAR ensures that the file name of a directory ends with a /.
+      // See https://git.savannah.gnu.org/cgit/tar.git/tree/src/create.c?h=release_1_34#n1265
+      // It seems like it also puts this info into "type" which seems like a better way to do it
+      // (cf same file line #n1142) but as per the check above the type always seems to be empty
+      // in our tar files.
+      if (name.endsWith("/")) {
         FS.createPath(curnode, name);
       } else {
         FS.writeFile(name, LOAD(length), 0, length, undefined, true);
