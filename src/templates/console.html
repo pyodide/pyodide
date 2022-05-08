@@ -25,11 +25,11 @@
       }
 
       async function main() {
-        var term;
+        let term;
         globalThis.pyodide = await loadPyodide({
           stdin: () => {
-            var result = prompt();
-            term.echo(result);
+            let result = prompt();
+            echo(result);
             return result;
           },
         });
@@ -58,6 +58,11 @@
         let await_fut = namespace.get("await_fut");
         let pyconsole = namespace.get("pyconsole");
         let clear_console = namespace.get("clear_console");
+        const echo = (msg, ...opts) =>
+          term.echo(
+            msg.replace("]]", "&rsqb;&rsqb;").replace("[[", "&lsqb;&lsqb;"),
+            ...opts
+          );
         namespace.destroy();
 
         let ps1 = ">>> ",
@@ -98,9 +103,9 @@
             try {
               let [value] = await wrapped;
               if (value !== undefined) {
-                term.echo(
+                echo(
                   repr_shorten.callKwargs(value, {
-                    separator: "\n[[;orange;]<long output truncated>]\n",
+                    separator: "\n<long output truncated>\n",
                   })
                 );
               }
@@ -135,7 +140,7 @@
             "CTRL+C": async function (event, original) {
               clear_console();
               term.enter();
-              term.echo("KeyboardInterrupt");
+              echo("KeyboardInterrupt");
               term.set_command("");
               term.set_prompt(ps1);
             },
@@ -151,7 +156,7 @@
           },
         });
         window.term = term;
-        pyconsole.stdout_callback = (s) => term.echo(s, { newline: false });
+        pyconsole.stdout_callback = (s) => echo(s, { newline: false });
         pyconsole.stderr_callback = (s) => {
           term.error(s.trimEnd());
         };

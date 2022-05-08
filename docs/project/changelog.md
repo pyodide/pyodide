@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517`
+
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
 
@@ -57,6 +60,10 @@ substitutions:
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
   rewriting and various other improvements.
   {pr}`2510`
+
+- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
+  through `pyodide_test_runner`.
+  {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
   JavaScript object identity as a dictionary key.
