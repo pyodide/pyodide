@@ -448,8 +448,8 @@ def install(
 
     deps : ``bool``, default: True
 
-        If ``True``, install dependencies of the given packages specified in METADATA file.
-        If ``False``, install the given packages without dependencies.
+        If ``True``, install dependencies specified in METADATA file for
+        each package. Otherwise do not install dependencies.
 
     credentials : ``Optional[str]``
 
