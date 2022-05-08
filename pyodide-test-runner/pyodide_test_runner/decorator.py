@@ -1,13 +1,13 @@
 import ast
-import contextlib
 import pickle
 import sys
 import traceback
 from base64 import b64decode, b64encode
 from typing import Any, Callable, Collection
-from .utils import set_webdriver_script_timeout
 
 import pytest
+
+from .utils import set_webdriver_script_timeout
 
 
 def _encode_ast(module_ast, funcname):
@@ -171,4 +171,3 @@ def run_in_pyodide(
         return decorator(_function)
     else:
         return decorator
-

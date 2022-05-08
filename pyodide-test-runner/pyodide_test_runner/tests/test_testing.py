@@ -3,9 +3,10 @@ import asyncio
 import inspect
 import pathlib
 
+from pyodide_test_runner.decorator import _run_in_pyodide_run, run_in_pyodide
+
 from conftest import REWRITE_CONFIG, rewrite_asserts
 from pyodide import eval_code_async
-from pyodide_build.testing import _run_in_pyodide_run, run_in_pyodide
 
 
 def test_web_server_secondary(selenium, web_server_secondary):

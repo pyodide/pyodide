@@ -150,15 +150,16 @@ def package_is_built(package_name):
 
 
 import ast
-from typing import Any
 from copy import deepcopy
-
-# Handling for pytest assertion rewrites
+from typing import Any
 
 from _pytest.assertion.rewrite import AssertionRewritingHook, rewrite_asserts
 from _pytest.python import (
     pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,
 )
+
+# Handling for pytest assertion rewrites
+
 
 # First we find the pytest rewrite config. It's an attribute of the pytest
 # assertion rewriting meta_path_finder, so we locate that to get the config.
@@ -194,5 +195,3 @@ def pytest_pycollect_makemodule(module_path: pathlib.Path, path: Any, parent: An
     rewrite_asserts(tree2, source, strfn, REWRITE_CONFIG)
     REWRITTEN_MODULE_ASTS[strfn] = tree2
     orig_pytest_pycollect_makemodule(module_path, parent)
-
-
