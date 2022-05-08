@@ -14,8 +14,11 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
 - {{ Enhancement }} Update sqlite version to latest stable release
-  {pr}`2477`
+  {pr}`2477` and {pr}`2518`
 
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
@@ -42,6 +45,8 @@ substitutions:
 - {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
   {pr}`2423`
 
+- {{ Feature }} Added `pyodide.run_js` API.
+  {pr}`2426`
 - {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
   {pr}`2455`
 
@@ -50,8 +55,12 @@ substitutions:
   {pr}`2484`
 
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
-  rewriting and various other improvments.
+  rewriting and various other improvements.
   {pr}`2510`
+
+- {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
+  JavaScript object identity as a dictionary key.
+  {pr}`2515`
 
 ### Packages
 
@@ -61,7 +70,7 @@ substitutions:
   on Chrome {pr}`2457`
 
 - New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`
 
 ## Version 0.20.0
 
