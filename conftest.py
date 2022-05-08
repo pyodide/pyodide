@@ -88,7 +88,7 @@ def pytest_collection_modifyitems(config, items):
     items : list of collected items
     """
     for item in items:
-        _maybe_skip_test(item, delayed=True)
+        maybe_skip_test(item, delayed=True)
 
 
 # Handling for pytest assertion rewrites

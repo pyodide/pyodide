@@ -5,6 +5,7 @@ import sys
 import traceback
 from base64 import b64decode, b64encode
 from typing import Any, Callable, Collection
+from .utils import set_webdriver_script_timeout
 
 import pytest
 
@@ -171,19 +172,3 @@ def run_in_pyodide(
     else:
         return decorator
 
-
-def _chunkstring(string, length):
-    return (string[0 + i : length + i] for i in range(0, len(string), length))
-
-
-def _run_in_pyodide_get_source(f):
-    lines, start_line = inspect.getsourcelines(f)
-    num_decorator_lines = 0
-    for line in lines:
-        if line.startswith("def") or line.startswith("async def"):
-            break
-        num_decorator_lines += 1
-    start_line += num_decorator_lines - 1
-    # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
-    lines = ["\n"] * start_line + lines[num_decorator_lines:]
-    return "".join(lines)
