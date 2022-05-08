@@ -10,6 +10,12 @@ import pytest
 
 
 def _encode_ast(module_ast, funcname):
+    """Generates an appropriate AST for the test.
+
+    The test ast should include mypy magic imports and the test function
+    definition. Once we generate this module, we pickle it and base64 encode it
+    so we can send it to Pyodide using string templating.
+    """
 
     nodes: list[Any] = []
     for node in module_ast.body:
