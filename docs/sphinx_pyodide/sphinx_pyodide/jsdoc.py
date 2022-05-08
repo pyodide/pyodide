@@ -282,6 +282,7 @@ class PyodideAnalyzer:
         for (key, doclet) in self.doclets.items():
             if getattr(doclet.value, "is_private", False):
                 continue
+
             # Remove the part of the key corresponding to the file
             key = [x for x in key if "/" not in x]
             filename = key[0]
@@ -290,6 +291,8 @@ class PyodideAnalyzer:
                 doclet.value.is_private = True
                 continue
             doclet.value.name = doclet.value.name.rpartition(".")[2]
+            if filename == "module." or filename == "compat.":
+                continue
             if filename == "pyodide.":
                 # Might be named globalThis.something or exports.something.
                 # Trim off the prefix.

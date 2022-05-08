@@ -13,12 +13,11 @@ all: check \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
 	dist/package.json \
-	npm-link \
 	dist/console.html \
 	dist/distutils.tar \
+	dist/test.tar \
 	dist/packages.json \
 	dist/pyodide_py.tar \
-	dist/test.tar \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \

@@ -1,7 +1,10 @@
+  # build
+  cmake
   ruamel.yaml
   # lint
   pre-commit
   # testing
+  build==0.7.0
   hypothesis
   pexpect
   pytest
@@ -12,3 +15,5 @@
   pytest-rerunfailures
   pytest-xdist
   selenium==4.1.0
+  # maintenance
+  bump2version

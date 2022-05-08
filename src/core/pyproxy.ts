@@ -258,7 +258,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   try {
     proxy_repr = proxy.toString();
   } catch (e) {
-    if (e.pyodide_fatal_error) {
+    if ((e as any).pyodide_fatal_error) {
       throw e;
     }
   }
@@ -805,6 +805,9 @@ export class PyProxyIteratorMethods {
       Hiwire.decref(idarg);
     }
     let HEAPU32 = Module.HEAPU32;
+    // HEAPU32 is used in the DEREF_U32 C preprocessor macro. Typescript doesn't know this.
+    // So we "use" HEAPU32 once to trick Typescript, so we can enable strictUnusedLocalVariables.
+    HEAPU32;
     let idresult = DEREF_U32(res_ptr, 0);
     Module.stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
