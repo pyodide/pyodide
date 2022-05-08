@@ -53,6 +53,7 @@ def test_run_in_pyodide_multiline_decorator():
             def some_func(f):
                 import nlopt
                 import numpy as np
+
                 opt = nlopt.opt(nlopt.LD_SLSQP, 2)
                 opt.set_min_objective(f)
                 opt.set_lower_bounds(np.array([2.5, 7]))
