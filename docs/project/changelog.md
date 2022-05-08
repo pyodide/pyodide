@@ -21,7 +21,7 @@ substitutions:
   {pr}`2509`
 
 - {{ Enhancement }} Update sqlite version to latest stable release
-  {pr}`2477`
+  {pr}`2477` and {pr}`2518`
 
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
