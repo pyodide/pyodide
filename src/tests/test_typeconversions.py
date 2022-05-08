@@ -4,9 +4,8 @@ from typing import Any
 import pytest
 from hypothesis import assume, given, settings, strategies
 from hypothesis.strategies import from_type, text
-
-from conftest import selenium_context_manager
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
+from pyodide_test_runner.fixture import selenium_context_manager
 
 
 @given(s=text())
