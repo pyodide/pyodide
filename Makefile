@@ -18,6 +18,7 @@ all: check \
 	dist/test.tar \
 	dist/packages.json \
 	dist/pyodide_py.tar \
+	dist/cpython_stdlib.tar \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
