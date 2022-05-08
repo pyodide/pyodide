@@ -58,6 +58,10 @@ substitutions:
   JavaScript object identity as a dictionary key.
   {pr}`2515`
 
+- {{ Enhancement }} The standard library is now loaded from a tar file
+  instead of from Emscripten file packager.
+  {pr}`2521`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
