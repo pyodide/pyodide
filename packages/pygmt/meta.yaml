@@ -1,0 +1,14 @@
+package:
+  name: pygmt
+  version: 0.6.1
+source:
+  url: https://files.pythonhosted.org/packages/b9/d8/508dfc94ac4a3ae5f79263d181c1b460b7ef84b2e02a93ae99fb6cc44e14/pygmt-0.6.1-py3-none-any.whl
+  sha256: b0c5a699d4582ecf444b7b6a893dc431e0708113c6fb1661b3075789a718aa2b
+test:
+  imports:
+    - pygmt
+about:
+  home: https://github.com/GenericMappingTools/pygmt
+  PyPI: https://pypi.org/project/pygmt
+  summary: A Python interface for the Generic Mapping Tools
+  license: BSD License
