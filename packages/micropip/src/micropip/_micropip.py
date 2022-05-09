@@ -272,6 +272,8 @@ class _PackageManager:
             return
         else:
             req = Requirement(requirement)
+
+        req.specifier.prereleases = True
         req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
