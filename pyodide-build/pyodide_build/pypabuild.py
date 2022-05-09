@@ -19,6 +19,7 @@ from packaging.requirements import Requirement
 
 from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
 
+
 def symlink_unisolated_packages(env: IsolatedEnv):
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"

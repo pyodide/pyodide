@@ -27,8 +27,8 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "post": str,
         "replace-libs": list,
         "unvendor-tests": bool,
-        "cross-build-env" : bool,
-        "cross-build-files" : list # list[str]
+        "cross-build-env": bool,
+        "cross-build-files": list,  # list[str]
     },
     "requirements": {
         "run": list,  # List[str],
@@ -224,5 +224,3 @@ def parse_package_config(path: Path | str, check: bool = True) -> dict[str, Any]
         check_package_config(config, file_path=path)
 
     return config
-
-

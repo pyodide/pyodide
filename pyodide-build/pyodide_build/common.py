@@ -1,13 +1,14 @@
 import functools
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Iterable, Iterator
-import sys
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
+
 from .io import parse_package_config
 
 PLATFORM = "emscripten_wasm32"
@@ -202,6 +203,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
         "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
     )
 
+
 def init_environment():
     if os.environ.get("__LOADED_PYODIDE_ENV"):
         return
@@ -221,7 +223,7 @@ def init_environment():
     os.environ["PYTHONPATH"] = ":".join(pythonpath)
     os.environ["BASH_ENV"] = ""
     get_unisolated_packages()
-    
+
 
 @functools.cache
 def get_pyodide_root():
@@ -232,15 +234,14 @@ def get_pyodide_root():
 @functools.cache
 def get_unisolated_packages():
     import json
+
     if "UNISOLATED_PACKGES" in os.environ:
         return json.loads(os.environ["UNISOLATED_PACKGES"])
     PYODIDE_ROOT = get_pyodide_root()
     unisolated_packages = []
-    for pkg in (PYODIDE_ROOT/"packages").glob("**/*.meta"):
+    for pkg in (PYODIDE_ROOT / "packages").glob("**/*.meta"):
         config = parse_package_config(pkg, False)
         if config.get("build", {}).get("cross-build-env", False):
             unisolated_packages.append(config["package"]["name"])
     os.environ["UNISOLATED_PACKGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
-
-
