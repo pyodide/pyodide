@@ -56,11 +56,13 @@ EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
   const cache = Hiwire.get_value(idcache);
   for (const[parent, key, value] of list) {
     let out_value = Hiwire.get_value(cache.get(value));
-    if(parent.set){
+    // clang-format off
+    if(typeof parent.set === "function"){
       parent.set(key, out_value)
     } else {
       parent[key] = out_value;
     }
+    // clang-format on
   }
 });
 
