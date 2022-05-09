@@ -182,6 +182,9 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.incref = function(idval)
   {
+    if ((idval & 1) == = 0) {
+      return;
+    }
     _hiwire.objects.get(idval)[1]++;
 #ifdef DEBUG_F
     if (DEREF_U8(_tracerefs, 0)) {
@@ -398,8 +401,10 @@ EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
 });
 
-EM_JS(void, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
-  Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
+EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
+  const arr = Hiwire.get_value(idarr);
+  arr.push(Hiwire.get_value(idval));
+  return arr.length - 1;
 });
 
 // clang-format off
