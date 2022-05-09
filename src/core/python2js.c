@@ -640,7 +640,7 @@ python2js_custom(PyObject* x,
   if (cache == NULL) {
     return NULL;
   }
-  JsRef postprocess_list = JsMap_New();
+  JsRef postprocess_list = JsArray_New();
   if (postprocess_list == NULL) {
     hiwire_CLEAR(cache);
     return NULL;
