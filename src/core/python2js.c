@@ -57,7 +57,7 @@ EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
   for (const[parent, key, value] of list) {
     let out_value = Hiwire.get_value(cache.get(value));
     // clang-format off
-    if(typeof parent.set === "function"){
+    if(parent.constructor.name === "Map"){
       parent.set(key, out_value)
     } else {
       parent[key] = out_value;
