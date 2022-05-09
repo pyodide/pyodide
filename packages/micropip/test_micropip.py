@@ -6,8 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
@@ -162,17 +161,15 @@ def test_parse_wheel_url():
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
 def test_install_custom_url(selenium_standalone_micropip, base_url):
     selenium = selenium_standalone_micropip
-    base_url = base_url.format(base_url=selenium.base_url)
 
-    root = Path(__file__).resolve().parents[2]
-    src = root / "src" / "tests" / "data"
-    target = root / "dist" / "test_data"
-    target.symlink_to(src, True)
-    path = "/test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    try:
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
         selenium.run_js(
             f"""
-            let url = {base_url} + '{path}';
+            let url = '{url}';
             let resp = await fetch(url);
             await pyodide.runPythonAsync(`
                 import micropip
@@ -181,21 +178,22 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
             `);
             """
         )
-    finally:
-        target.unlink()
 
 
-def test_add_requirement(web_server_tst_data):
+def test_add_requirement():
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    server_hostname, server_port, server_log = web_server_tst_data
-    base_url = f"http://{server_hostname}:{server_port}/"
-    url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
     transaction: dict[str, Any] = {
         "wheels": [],
         "locked": {},
+        "keep_going": True,
+        "deps": True,
     }
     asyncio.get_event_loop().run_until_complete(
         _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
@@ -350,6 +348,33 @@ def test_install_keep_going(monkeypatch):
         asyncio.get_event_loop().run_until_complete(
             _micropip.install(dummy_pkg_name, keep_going=True)
         )
+
+
+def test_install_no_deps(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy"
+    dep_pkg_name = "dependency_dummy"
+    _mock_get_pypi_json = mock_get_pypi_json(
+        {
+            dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl",
+            dep_pkg_name: f"{dep_pkg_name}-1.0.0-py3-none-any.whl",
+        }
+    )
+    _mock_fetch_bytes = mock_fetch_bytes(
+        dummy_pkg_name, f"Requires-Dist: {dep_pkg_name}\n\nUNKNOWN"
+    )
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json)
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(dummy_pkg_name, deps=False)
+    )
+
+    assert dummy_pkg_name in _micropip._list()
+    assert dep_pkg_name not in _micropip._list()
 
 
 def test_fetch_wheel_fail(monkeypatch):

@@ -67,6 +67,7 @@ CORE_PACKAGES = {
     "sharedlib-test-py",
     "cpp-exceptions-test",
     "ssl",
+    "pytest",
 }
 
 CORE_SCIPY_PACKAGES = {

@@ -19,7 +19,7 @@ from packaging.requirements import Requirement
 
 from .common import get_hostsitepackages, get_pyversion
 
-UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser", "pythran", "cython"]
+UNISOLATED_PACKAGES = ["numpy", "scipy", "cffi", "pycparser", "pythran"]
 
 
 def symlink_unisolated_packages(env: IsolatedEnv):
@@ -39,7 +39,7 @@ def remove_unisolated_requirements(requires: set[str]) -> set[str]:
     for reqstr in list(requires):
         req = Requirement(reqstr)
         for avoid_name in UNISOLATED_PACKAGES:
-            if avoid_name in req.name:
+            if avoid_name in req.name.lower():
                 requires.remove(reqstr)
     return requires
 
@@ -58,6 +58,11 @@ def replace_env(build_env: Mapping[str, str]):
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]):
     env.install(remove_unisolated_requirements(reqs))
+    # Some packages (numcodecs) don't declare cython as a build dependency and
+    # only recythonize if it is present. We need them to always recythonize so
+    # we always install cython. If the reqs included some cython version already
+    # then this won't do anything.
+    env.install(["cython"])
 
 
 def _build_in_isolated_env(
@@ -66,6 +71,10 @@ def _build_in_isolated_env(
     outdir: str,
     distribution: str,
 ) -> str:
+    # For debugging: The following line disables removal of the isolated venv.
+    # It will be left in the /tmp folder and can be inspected or entered as
+    # needed.
+    # _IsolatedEnvBuilder.__exit__ = lambda *args: None
     with _IsolatedEnvBuilder() as env:
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir

@@ -86,10 +86,10 @@ make lint
 
 Many tests simply involve running a chunk of code in Pyodide and ensuring it
 doesn't error. In this case, one can use the `run_in_pyodide` decorate from
-`pyodide_build.testing`, e.g.
+`pyodide_test_runner.decorator`, e.g.
 
 ```python
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide
 def test_add():
@@ -108,7 +108,7 @@ The `packages` option lists packages to load before running the test. For
 example,
 
 ```python
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide(standalone = True, packages = ["regex"])
 def test_regex():
