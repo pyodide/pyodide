@@ -13,7 +13,17 @@
 #define DEREF_F64(addr, offset) HEAPF64[(addr >> 3) + offset]
 
 #define ASSIGN_U32(addr, offset, value) DEREF_U32(addr, offset) = value
+
+/**
+ * Round addr down to nearest multiple of align and store result into addr.
+ * align must be a power of 2.
+ */
 #define ALIGN_ADDRESS(addr, align) (addr &= (~((align)-1)))
+
+/**
+ * Round addr up to nearest multiple of align and store result into addr. align
+ * must be a power of 2.
+ */
 #define ALIGN_ADDRESS_UP(addr, align) (addr = ((addr + (align - 1)) & (-align)))
 
 #if WASM_BIGINT
