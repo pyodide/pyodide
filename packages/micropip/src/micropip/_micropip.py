@@ -151,6 +151,7 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        deps: bool = True,
         **kwargs,
     ):
         ctx = ctx or default_environment()
@@ -164,6 +165,7 @@ class _PackageManager:
             "locked": copy.deepcopy(self.installed_packages),
             "failed": [],
             "keep_going": keep_going,
+            "deps": deps,
         }
         requirement_promises = []
         for requirement in requirements:
@@ -179,6 +181,7 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        deps: bool = True,
         credentials: str | None = None,
     ):
         async def _install(install_func, done_callback):
@@ -190,7 +193,7 @@ class _PackageManager:
         if credentials:
             fetch_extra_kwargs["credentials"] = credentials
         transaction = await self.gather_requirements(
-            requirements, ctx, keep_going, **fetch_extra_kwargs
+            requirements, ctx, keep_going, deps, **fetch_extra_kwargs
         )
 
         if transaction["failed"]:
@@ -355,8 +358,9 @@ class _PackageManager:
         if project_name == "UNKNOWN":
             project_name = name
 
-        for recurs_req in dist.requires(extras):
-            await self.add_requirement(recurs_req, ctx, transaction)
+        if transaction["deps"]:
+            for recurs_req in dist.requires(extras):
+                await self.add_requirement(recurs_req, ctx, transaction)
 
         transaction["wheels"].append((project_name, wheel, version))
 
@@ -401,6 +405,7 @@ del _PackageManager
 def install(
     requirements: str | list[str],
     keep_going: bool = False,
+    deps: bool = True,
     credentials: str | None = None,
 ):
     """Install the given package and all of its dependencies.
@@ -441,6 +446,11 @@ def install(
         - If ``True``, the micropip will keep going after the first error, and report a list
           of errors at the end.
 
+    deps : ``bool``, default: True
+
+        If ``True``, install dependencies specified in METADATA file for
+        each package. Otherwise do not install dependencies.
+
     credentials : ``Optional[str]``
 
         This parameter specifies the value of ``credentials`` when calling the
@@ -460,7 +470,7 @@ def install(
     importlib.invalidate_caches()
     return asyncio.ensure_future(
         PACKAGE_MANAGER.install(
-            requirements, keep_going=keep_going, credentials=credentials
+            requirements, keep_going=keep_going, deps=deps, credentials=credentials
         )
     )
 

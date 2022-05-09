@@ -189,13 +189,15 @@ def test_add_requirement():
         base_url = f"http://{server_hostname}:{server_port}/"
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-        transaction: dict[str, Any] = {
-            "wheels": [],
-            "locked": {},
-        }
-        asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
-        )
+    transaction: dict[str, Any] = {
+        "wheels": [],
+        "locked": {},
+        "keep_going": True,
+        "deps": True,
+    }
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+    )
 
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
@@ -346,6 +348,33 @@ def test_install_keep_going(monkeypatch):
         asyncio.get_event_loop().run_until_complete(
             _micropip.install(dummy_pkg_name, keep_going=True)
         )
+
+
+def test_install_no_deps(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy"
+    dep_pkg_name = "dependency_dummy"
+    _mock_get_pypi_json = mock_get_pypi_json(
+        {
+            dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl",
+            dep_pkg_name: f"{dep_pkg_name}-1.0.0-py3-none-any.whl",
+        }
+    )
+    _mock_fetch_bytes = mock_fetch_bytes(
+        dummy_pkg_name, f"Requires-Dist: {dep_pkg_name}\n\nUNKNOWN"
+    )
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json)
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(dummy_pkg_name, deps=False)
+    )
+
+    assert dummy_pkg_name in _micropip._list()
+    assert dep_pkg_name not in _micropip._list()
 
 
 def test_fetch_wheel_fail(monkeypatch):

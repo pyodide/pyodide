@@ -2183,7 +2183,8 @@ JsProxy_init(PyObject* core_module)
   JsProxy_TypeDict = PyDict_New();
   FAIL_IF_NULL(JsProxy_TypeDict);
 
-  PyModule_AddObject(core_module, "jsproxy_typedict", JsProxy_TypeDict);
+  FAIL_IF_MINUS_ONE(
+    PyModule_AddObject(core_module, "jsproxy_typedict", JsProxy_TypeDict));
 
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
