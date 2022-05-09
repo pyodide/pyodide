@@ -14,6 +14,10 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} {func}`micropip.install` now accepts a `deps` parameter.
+  If set to `False`, micropip will not install dependencies of the package.
+  {pr}`2433`
+
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
   {pr}`2517`
 
