@@ -137,7 +137,6 @@ def get_bash_runner():
             "PYODIDE_PACKAGE_ABI",
             "HOSTINSTALLDIR",
             "TARGETINSTALLDIR",
-            "SYSCONFIG_NAME",
             "HOSTSITEPACKAGES",
             "PYMAJOR",
             "PYMINOR",
@@ -515,13 +514,14 @@ def package_wheel(
     python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
     host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
     if build_metadata.get("cross-build-env"):
-        subprocess.check_call(["pip", "install", "-t", str(host_site_packages),  f"{name}=={ver}"])
-    
-    cross_build_files : list[str] = build_metadata.get("cross-build-files")
+        subprocess.check_call(
+            ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"]
+        )
+
+    cross_build_files: list[str] | None = build_metadata.get("cross-build-files")
     if cross_build_files:
         for file in cross_build_files:
-            shutil.copy((wheel_dir / file), host_site_packages/file)
-
+            shutil.copy((wheel_dir / file), host_site_packages / file)
 
     test_dir = distdir / "tests"
     nmoved = 0
@@ -768,12 +768,7 @@ def build_package(
             )
         if not sharedlibrary:
             package_wheel(
-                name,
-                pkg_root,
-                srcpath,
-                build_metadata,
-                bash_runner,
-                host_install_dir
+                name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
             )
 
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)

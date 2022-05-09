@@ -103,13 +103,11 @@ def compile(env, **kwargs):
     env = dict(env)
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-    sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
-    args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
+    args["PYTHONPATH"] = sys.path
     args["orig__name__"] = __name__
     make_command_wrapper_symlinks(env)
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
-    env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
 
     from pyodide_build.pypabuild import build
 
