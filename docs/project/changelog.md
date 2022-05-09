@@ -57,6 +57,10 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and various other improvements.
+  {pr}`2510`
+
 - {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
   through `pyodide_test_runner`.
   {pr}`2418`
