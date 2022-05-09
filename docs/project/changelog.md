@@ -18,6 +18,9 @@ substitutions:
   If set to `False`, micropip will not install dependencies of the package.
   {pr}`2433`
 
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517`
+
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
 
@@ -57,6 +60,10 @@ substitutions:
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
   translated to negative Python ints.
   {pr}`2484`
+
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and various other improvements.
+  {pr}`2510`
 
 - {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
   through `pyodide_test_runner`.
