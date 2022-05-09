@@ -210,6 +210,23 @@ def test_deprecations(selenium_standalone):
     assert selenium.logs.count(dep_msg) == 1
 
 
+def test_unpack_archive(selenium_standalone):
+    selenium = selenium_standalone
+    js_error = selenium.run_js(
+        """
+        var error = "";
+        try {
+            pyodide.unpackArchive([1, 2, 3], "zip", "abc");
+        } catch (te) {
+            error = te.toString();
+        }
+        return error
+        """
+    )
+    expected_err_msg = "TypeError: Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view"
+    assert js_error == expected_err_msg
+
+
 @run_in_pyodide
 def test_dup_pipe():
     # See https://github.com/emscripten-core/emscripten/issues/14640

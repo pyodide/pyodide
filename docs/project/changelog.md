@@ -52,8 +52,13 @@ substitutions:
 - {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
   {pr}`2423`
 
+- {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
+  `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
+  {pr}`2451`
+
 - {{ Feature }} Added `pyodide.run_js` API.
   {pr}`2426`
+
 - {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
   {pr}`2455`
 
