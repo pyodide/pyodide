@@ -60,6 +60,8 @@ EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
     if(parent.constructor.name === "Map"){
       parent.set(key, out_value)
     } else {
+      // This is unfortunately a bit of a hack, if user does something weird
+      // enough in dict_converter then it won't work.
       parent[key] = out_value;
     }
     // clang-format on
