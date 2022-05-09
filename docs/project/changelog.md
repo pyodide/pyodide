@@ -25,13 +25,7 @@ substitutions:
 
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
-- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
-  {pr}`2458`
-
 - {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
-
-- {{ Fix }} micropip now correctly handles package names that include dashes
-  {pr}`2414`
 
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
@@ -68,6 +62,17 @@ substitutions:
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
   JavaScript object identity as a dictionary key.
   {pr}`2515`
+
+### micropip
+
+- {{ Fix }} micropip now correctly handles package names that include dashes
+  {pr}`2414`
+
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
+- {{ Fix }} micropip now correctly compares packages with prerelease version
+  {pr}`2531`
 
 ### Packages
 
