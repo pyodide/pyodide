@@ -22,7 +22,6 @@ if IS_MAIN:
     PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
 
 import re
-import shutil
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
@@ -31,7 +30,7 @@ from typing import Any, MutableMapping, NoReturn, overload
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cmake"}
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
 
 
 def symlink_dir():
@@ -61,11 +60,15 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
     """
     exec_path = Path(__file__).resolve()
     SYMLINKDIR = symlink_dir()
-    shutil.rmtree(SYMLINKDIR)
-    SYMLINKDIR.mkdir()
     for symlink in symlinks:
         symlink_path = SYMLINKDIR / symlink
-        symlink_path.symlink_to(exec_path)
+        if os.path.lexists(symlink_path) and not symlink_path.exists():
+            # remove broken symlink so it can be re-created
+            symlink_path.unlink()
+        try:
+            symlink_path.symlink_to(exec_path)
+        except FileExistsError:
+            pass
         if symlink == "c++":
             var = "CXX"
         else:
@@ -405,9 +408,6 @@ def handle_command_generate_args(
     cmd = line[0]
     if cmd == "ar":
         line[0] = "emar"
-        return line
-    elif cmd == "cmake":
-        line[:1] = ["emcmake", "cmake", "-DUSE_OPENMP=OFF"]
         return line
     elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
