@@ -177,12 +177,11 @@ EM_JS_NUM(int, hiwire_init, (), {
       _hiwire.objects.delete(idval);
       _hiwire.obj_to_key.delete(pair[0]);
     }
-    // clang-format on
   };
 
   Hiwire.incref = function(idval)
   {
-    if ((idval & 1) == = 0) {
+    if ((idval & 1) === 0) {
       return;
     }
     _hiwire.objects.get(idval)[1]++;
@@ -192,6 +191,7 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
 #endif
   };
+  // clang-format on
 
   Hiwire.pop_value = function(idval)
   {

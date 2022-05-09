@@ -396,18 +396,20 @@ finally:
  * This cache only lives for each invocation of python2js.
  */
 
-EM_JS_NUM(int,
-          _python2js_add_to_cache,
-          (JsRef cacheid, PyObject* pyparent, JsRef jsparent),
-          {
-            const cache = Hiwire.get_value(cacheid);
-            const old_value = cache.get(pyparent);
-            if (old_value != = undefined) {
-              Hiwire.decref(old_value);
-            }
-            Hiwire.incref(jsparent);
-            cache.set(pyparent, jsparent);
-          });
+// clang-format off
+EM_JS_NUM(
+int, _python2js_add_to_cache,
+(JsRef cacheid, PyObject* pyparent, JsRef jsparent),
+{
+  const cache = Hiwire.get_value(cacheid);
+  const old_value = cache.get(pyparent);
+  if (old_value !== undefined) {
+    Hiwire.decref(old_value);
+  }
+  Hiwire.incref(jsparent);
+  cache.set(pyparent, jsparent);
+});
+// clang-format oh
 
 EM_JS(void, _python2js_destroy_cache, (JsRef cacheid), {
   const cache = Hiwire.get_value(cacheid);
