@@ -6,11 +6,9 @@ source:
   sha256: 560f36eaabe7a989d5583d37ec753dd737357aa6a6453e55c80bb4f92291a69e
 requirements:
   run:
-    # - importlib_metadata
     - numpy
     - packaging
     - pandas
-    # - typing_extensions
 test:
   imports:
     - xarray
