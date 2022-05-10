@@ -609,7 +609,6 @@ python2js_custom__create_jscontext,
       let input_ptr = Module.PyProxy_getPtr(input);
       let output_key = Hiwire.new_value(output);
       Hiwire.get_value(idcache).set(input_ptr, output_key);
-      Hiwire.decref(output_key);
     };
     jscontext.converter = function (x) {
       if (!API.isPyProxy(x)) {
