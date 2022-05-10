@@ -35,7 +35,7 @@ source:
 build:
   cflags: |
     -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
-    -I$(HOSTSITEPACKAGES)/pythran/
+    -I$(ENV_SITE_PACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
   ldflags: |
