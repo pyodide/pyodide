@@ -10,7 +10,7 @@ requirements:
     - numpy
     - packaging
     - pandas
-    - typing_extensions
+    # - typing_extensions
 test:
   imports:
     - xarray
