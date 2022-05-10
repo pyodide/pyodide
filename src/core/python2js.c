@@ -55,7 +55,16 @@ EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
   const list = Hiwire.get_value(idlist);
   const cache = Hiwire.get_value(idcache);
   for (const[parent, key, value] of list) {
-    parent[key] = cache.get(value);
+    let out_value = Hiwire.get_value(cache.get(value));
+    // clang-format off
+    if(parent.constructor.name === "Map"){
+      parent.set(key, out_value)
+    } else {
+      // This is unfortunately a bit of a hack, if user does something weird
+      // enough in dict_converter then it won't work.
+      parent[key] = out_value;
+    }
+    // clang-format on
   }
 });
 
@@ -220,10 +229,10 @@ _python2js_dict(ConversionContext context, PyObject* x)
   if (context.dict_postprocess) {
     JsRef temp = context.dict_postprocess(context, jsdict);
     FAIL_IF_NULL(temp);
-    FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, temp));
     hiwire_CLEAR(jsdict);
     jsdict = temp;
   }
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   success = true;
 finally:
   hiwire_CLEAR(jskey);
@@ -639,7 +648,7 @@ python2js_custom(PyObject* x,
   if (cache == NULL) {
     return NULL;
   }
-  JsRef postprocess_list = JsMap_New();
+  JsRef postprocess_list = JsArray_New();
   if (postprocess_list == NULL) {
     hiwire_CLEAR(cache);
     return NULL;
