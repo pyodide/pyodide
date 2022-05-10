@@ -275,13 +275,13 @@ class _PackageManager:
             return
         else:
             req = Requirement(requirement)
+
         req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
-        if (
-            req.name in BUILTIN_PACKAGES
-            and BUILTIN_PACKAGES[req.name]["version"] in req.specifier
+        if req.name in BUILTIN_PACKAGES and req.specifier.contains(
+            BUILTIN_PACKAGES[req.name]["version"], prereleases=True
         ):
             version = BUILTIN_PACKAGES[req.name]["version"]
             transaction["pyodide_packages"].append(
@@ -298,7 +298,7 @@ class _PackageManager:
         # Is some version of this package is already installed?
         if req.name in transaction["locked"]:
             ver = transaction["locked"][req.name].version
-            if ver in req.specifier:
+            if req.specifier.contains(ver, prereleases=True):
                 # installed version matches, nothing to do
                 return
             else:

@@ -349,7 +349,7 @@ let unpackArchivePositionalExtractDirDeprecationWarned = false;
  *
  *    In Pyodide v0.19, this function took the extract_dir parameter as a
  *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
+ *    still work but it is deprecated. It will be removed in v0.21.
  *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
@@ -363,7 +363,7 @@ let unpackArchivePositionalExtractDirDeprecationWarned = false;
  * to the working directory.
  */
 export function unpackArchive(
-  buffer: TypedArray,
+  buffer: TypedArray | ArrayBuffer,
   format: string,
   options: {
     extractDir?: string;
@@ -378,6 +378,16 @@ export function unpackArchive(
     }
     options = { extractDir: options };
   }
+  if (
+    !ArrayBuffer.isView(buffer) &&
+    Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"
+  ) {
+    throw new TypeError(
+      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`
+    );
+  }
+  API.typedArrayAsUint8Array(buffer);
+
   let extract_dir = options.extractDir;
   API.package_loader.unpack_buffer.callKwargs({
     buffer,

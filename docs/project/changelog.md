@@ -14,10 +14,6 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} {func}`micropip.install` now accepts a `deps` parameter.
-  If set to `False`, micropip will not install dependencies of the package.
-  {pr}`2433`
-
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
   {pr}`2517`
 
@@ -29,13 +25,7 @@ substitutions:
 
 - {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
 
-- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
-  {pr}`2458`
-
 - {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
-
-- {{ Fix }} micropip now correctly handles package names that include dashes
-  {pr}`2414`
 
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
@@ -52,8 +42,13 @@ substitutions:
 - {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
   {pr}`2423`
 
+- {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
+  `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
+  {pr}`2451`
+
 - {{ Feature }} Added `pyodide.run_js` API.
   {pr}`2426`
+
 - {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
   {pr}`2455`
 
@@ -76,6 +71,21 @@ substitutions:
 - {{ Fix }} Fixed a bug with `toJs` when used with recursive structures and the
   `dictConverter` argument.
   {pr}`2533`
+
+### micropip
+
+- {{ Fix }} micropip now correctly handles package names that include dashes
+  {pr}`2414`
+
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
+- {{ Enhancement }} {func}`micropip.install` now accepts a `deps` parameter.
+  If set to `False`, micropip will not install dependencies of the package.
+  {pr}`2433`
+
+- {{ Fix }} micropip now correctly compares packages with prerelease version
+  {pr}`2532`
 
 ### Packages
 
