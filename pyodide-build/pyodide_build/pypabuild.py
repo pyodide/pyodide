@@ -4,7 +4,7 @@ import sys
 import traceback
 from itertools import chain
 from pathlib import Path
-from typing import MutableMapping
+from typing import Mapping
 
 from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
 from build.__main__ import (  # type: ignore[import]
@@ -20,12 +20,11 @@ from packaging.requirements import Requirement
 from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
 
 
-def symlink_unisolated_packages(env: IsolatedEnv, build_env: MutableMapping[str, str]):
+def symlink_unisolated_packages(env: IsolatedEnv):
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env._path) / site_packages_path
     host_site_packages = Path(get_hostsitepackages())
-    build_env["ENV_SITE_PACKAGES"] = str(env_site_packages)
     for name in get_unisolated_packages():
         for path in chain(
             host_site_packages.glob(f"{name}*"), host_site_packages.glob(f"_{name}*")
@@ -44,7 +43,7 @@ def remove_unisolated_requirements(requires: set[str]) -> set[str]:
 
 
 @contextlib.contextmanager
-def replace_env(build_env: MutableMapping[str, str]):
+def replace_env(build_env: Mapping[str, str]):
     old_environ = dict(os.environ)
     os.environ.clear()
     os.environ.update(build_env)
@@ -65,7 +64,7 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]):
 
 
 def _build_in_isolated_env(
-    build_env: MutableMapping[str, str],
+    build_env: Mapping[str, str],
     builder: ProjectBuilder,
     outdir: str,
     distribution: str,
@@ -78,7 +77,7 @@ def _build_in_isolated_env(
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir
         # first install the build dependencies
-        symlink_unisolated_packages(env, build_env)
+        symlink_unisolated_packages(env)
         install_reqs(env, builder.build_system_requires)
         installed_requires_for_build = False
         try:
@@ -95,7 +94,7 @@ def _build_in_isolated_env(
             return builder.build(distribution, outdir, {})
 
 
-def build(build_env: MutableMapping[str, str]):
+def build(build_env: Mapping[str, str]):
     srcdir = Path.cwd()
     outdir = srcdir / "dist"
     builder = _ProjectBuilder(srcdir)
