@@ -152,7 +152,7 @@ def _check_config_wheel_build(config: dict[str, Any]) -> Iterator[str]:
     if "build" not in config:
         return
     build_metadata = config["build"]
-    allowed_keys = {"post", "unvendor-tests"}
+    allowed_keys = {"post", "unvendor-tests", "cross-build-env", "cross-build-files"}
     for key in build_metadata.keys():
         if key not in PACKAGE_CONFIG_SPEC["build"]:
             continue
