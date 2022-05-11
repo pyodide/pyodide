@@ -110,9 +110,13 @@ def _process_module(module_ast: ast.Module, module_filename: str) -> dict[str, a
             node.decorator_list = []
     ast.fix_missing_locations(module_ast)
     co = compile(module_ast, module_filename, "exec")
-    result = {}
-    exec(co, result)
-    return result
+
+    import types
+
+    module = types.ModuleType(module_filename)
+    module.__file__ = module_filename
+    exec(co, module.__dict__)
+    return module.__dict__
 
 
 class run_in_pyodide:
