@@ -60,7 +60,7 @@ def clear_timeout(timeout_retval: int | JsProxy):
     TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
 
 
-def set_interval(callback: Callable[[], None], interval: int) -> int:
+def set_interval(callback: Callable[[], None], interval: int) -> int | JsProxy:
     id = -1
 
     def wrapper():
@@ -69,11 +69,13 @@ def set_interval(callback: Callable[[], None], interval: int) -> int:
         TIMEOUTS.pop(id, None)
 
     callable = create_once_callable(wrapper)
-    id = setInterval(callable, interval)
+    interval_retval: int | JsProxy = setInterval(callable, interval)
+    id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id
     TIMEOUTS[id] = callable
-    return id
+    return interval_retval
 
 
-def clear_interval(id: int):
-    clearInterval(id)
+def clear_interval(interval_retval: int | JsProxy):
+    clearInterval(interval_retval)
+    id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id
     TIMEOUTS.pop(id).destroy()

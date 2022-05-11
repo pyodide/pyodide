@@ -84,8 +84,6 @@ async def test_start_multiple_timeouts_and_clear_one():
     timeout_id2 = set_timeout(foo2, 500)
     set_timeout(foo3, 500)
 
-    await asyncio.sleep(0.2)
-
     clear_timeout(timeout_id1)
     clear_timeout(timeout_id2)
 
@@ -94,6 +92,79 @@ async def test_start_multiple_timeouts_and_clear_one():
     assert not success1
     assert not success2
     assert success3
+
+
+@run_in_pyodide
+async def test_set_interval_succeeded():
+    num_times_ran = 0 
+
+    def foo():
+        nonlocal num_times_ran 
+        num_times_ran += 1
+
+    import asyncio
+
+    from pyodide import set_interval
+
+    set_interval(foo, 300)
+    await asyncio.sleep(1)
+
+    assert num_times_ran == 3
+
+
+@run_in_pyodide
+async def test_clear_interval_succeeded():
+    num_times_ran = 0
+
+    def foo():
+        nonlocal num_times_ran
+        num_times_ran += 1
+
+    import asyncio
+
+    from pyodide import clear_interval, set_interval
+
+    interval_id = set_interval(foo, 500)
+    await asyncio.sleep(0.2)
+    clear_interval(interval_id)
+
+    assert num_times_ran == 0
+
+
+@run_in_pyodide
+async def test_start_multiple_intervals_and_clear_one():
+    num_times_ran_1 = 0
+    num_times_ran_2 = 0
+    num_times_ran_3 = 0
+
+    def foo1():
+        nonlocal num_times_ran_1
+        num_times_ran_1 += 1
+
+    def foo2():
+        nonlocal num_times_ran_2
+        num_times_ran_2 += 1
+
+    def foo3():
+        nonlocal num_times_ran_3
+        num_times_ran_3 += 1
+
+    import asyncio
+
+    from pyodide import clear_interval, set_interval
+
+    interval_id1 = set_interval(foo1, 300)
+    interval_id2 = set_interval(foo2, 300)
+    set_interval(foo3, 300)
+
+    clear_interval(interval_id1)
+    clear_interval(interval_id2)
+
+    await asyncio.sleep(1)
+
+    assert num_times_ran_1 == 0
+    assert num_times_ran_2 == 0
+    assert num_times_ran_3 == 3
 
 
 @run_in_pyodide
