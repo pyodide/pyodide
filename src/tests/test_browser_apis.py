@@ -253,8 +253,6 @@ x;
         nonlocal triggered3
         triggered3 = True
 
-    import asyncio
-
     from pyodide import add_event_listener, remove_event_listener
 
     add_event_listener(x, "click", foo1)
