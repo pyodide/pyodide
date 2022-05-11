@@ -1,5 +1,4 @@
 import asyncio
-import pathlib
 
 import pytest
 from pyodide_test_runner.decorator import run_in_pyodide
@@ -25,12 +24,6 @@ def complicated_decorator(attr_name: str):
 
 d1 = complicated_decorator("testdec1")
 d2 = complicated_decorator("testdec2")
-
-
-def test_web_server_secondary(selenium, web_server_secondary):
-    host, port, logs = web_server_secondary
-    assert pathlib.Path(logs).exists()
-    assert selenium.server_port != port
 
 
 @run_in_pyodide
