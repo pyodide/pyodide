@@ -5,11 +5,11 @@ from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, Timer
 
 from js import document
 from pyodide import (
-    set_timeout,
-    set_interval,
-    clear_timeout,
-    clear_interval,
     add_event_listener,
+    clear_interval,
+    clear_timeout,
+    set_interval,
+    set_timeout,
 )
 
 try:

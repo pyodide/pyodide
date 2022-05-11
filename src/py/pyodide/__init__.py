@@ -21,6 +21,14 @@ from _pyodide._base import (
 from _pyodide._importhook import register_js_module, unregister_js_module
 
 from . import _state  # noqa: F401
+from ._browser_apis import (
+    add_event_listener,
+    clear_interval,
+    clear_timeout,
+    remove_event_listener,
+    set_interval,
+    set_timeout,
+)
 from ._core import (
     IN_BROWSER,
     ConversionError,
@@ -32,14 +40,6 @@ from ._core import (
     to_js,
 )
 from ._run_js import run_js
-from ._browser_apis import (
-    set_timeout,
-    set_interval,
-    clear_timeout,
-    clear_interval,
-    add_event_listener,
-    remove_event_listener,
-)
 from .http import open_url
 
 if IN_BROWSER:

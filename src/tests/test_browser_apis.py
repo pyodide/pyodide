@@ -95,6 +95,7 @@ async def test_start_multiple_timeouts_and_clear_one():
     assert not success2
     assert success3
 
+
 @run_in_pyodide
 async def test_trigger_event_listener():
     from pyodide import run_js
@@ -315,7 +316,7 @@ x;
         nonlocal triggered
         triggered = True
 
-    from pyodide import add_event_listener,remove_event_listener
+    from pyodide import add_event_listener, remove_event_listener
 
     add_event_listener(x, "click", foo)
     remove_event_listener(x, "click", foo)
@@ -380,4 +381,3 @@ x;
         error_raised = True
 
     assert error_raised
-
