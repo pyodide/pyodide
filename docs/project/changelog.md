@@ -68,6 +68,10 @@ substitutions:
   JavaScript object identity as a dictionary key.
   {pr}`2515`
 
+- {{ Fix }} Fixed a bug with `toJs` when used with recursive structures and the
+  `dictConverter` argument.
+  {pr}`2533`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
