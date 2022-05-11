@@ -29,7 +29,7 @@ def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], No
 TIMEOUTS: dict[int, Destroyable] = {}
 
 
-def set_timeout(callback: Callable[[], None], timeout: int) -> int:
+def set_timeout(callback: Callable[[], None], timeout: int) -> int | JsProxy:
     id = -1
 
     def wrapper():
@@ -38,9 +38,10 @@ def set_timeout(callback: Callable[[], None], timeout: int) -> int:
         TIMEOUTS.pop(id, None)
 
     callable = create_once_callable(wrapper)
-    id = setTimeout(callable, timeout)
+    timeout_retval: int | JsProxy = setTimeout(callable, timeout)
+    id = timeout_retval if isinstance(timeout_retval, int) else timeout_retval.js_id
     TIMEOUTS[id] = callable
-    return id
+    return timeout_retval
 
 
 # An object with a no-op destroy method so we can do
@@ -53,7 +54,8 @@ def set_timeout(callback: Callable[[], None], timeout: int) -> int:
 DUMMY_DESTROYABLE = Destroyable()
 
 
-def clear_timeout(id: int):
+def clear_timeout(timeout_retval: int | JsProxy):
+    id = timeout_retval if isinstance(timeout_retval, int) else timeout_retval.js_id
     clearTimeout(id)
     TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
 
