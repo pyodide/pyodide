@@ -11,7 +11,9 @@ import pytest
 from .utils import set_webdriver_script_timeout
 
 
-def _encode_ast(module_ast : ast.Module, funcname : str) -> tuple[str, bool, ast.expr, list[ast.Import]]:
+def _encode_ast(
+    module_ast: ast.Module, funcname: str
+) -> tuple[str, bool, ast.expr, list[ast.Import]]:
     """Generates an appropriate AST for the test.
 
     The test ast should include mypy magic imports and the test function
@@ -19,18 +21,28 @@ def _encode_ast(module_ast : ast.Module, funcname : str) -> tuple[str, bool, ast
     so we can send it to Pyodide using string templating.
     """
     from ast import Import, Try, ExceptHandler, Pass, Name, Load
-    imports : list[ast.Import] = []
+
+    imports: list[ast.Import] = []
     nodes: list[ast.stmt] = []
     for node in module_ast.body:
         # We need to include the magic imports that pytest inserts
         if isinstance(node, ast.Import):
             imports.append(node)
             nodes.append(
-                Try(body=[node], handlers=[
-                    ExceptHandler(type=Name(id='ImportError', ctx=Load()), name=None, body=[
-                        Pass(),
-                    ]),
-                ], orelse=[], finalbody=[])
+                Try(
+                    body=[node],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id="ImportError", ctx=Load()),
+                            name=None,
+                            body=[
+                                Pass(),
+                            ],
+                        ),
+                    ],
+                    orelse=[],
+                    finalbody=[],
+                )
             )
 
         # We also want the function definition for the current test
@@ -42,7 +54,9 @@ def _encode_ast(module_ast : ast.Module, funcname : str) -> tuple[str, bool, ast
                 nodes.append(node)
                 break
     else:
-        raise Exception("Didn't find function in module. @run_in_pyodide can only be used with top-level names")
+        raise Exception(
+            "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
+        )
     mod = ast.Module(nodes, type_ignores=[])
     ast.fix_missing_locations(mod)
 
@@ -53,7 +67,7 @@ def _encode_ast(module_ast : ast.Module, funcname : str) -> tuple[str, bool, ast
 
 
 def _code_template(
-    encoded_ast : str, module_filename : str, func_name : str, async_func : bool, args
+    encoded_ast: str, module_filename: str, func_name: str, async_func: bool, args
 ) -> str:
     return f"""
     async def __tmp():
@@ -81,7 +95,15 @@ def _code_template(
     result
     """
 
-def _run_test(selenium : any, encoded_ast : str, module_filename : str, func_name : str, async_func : bool, args):
+
+def _run_test(
+    selenium: any,
+    encoded_ast: str,
+    module_filename: str,
+    func_name: str,
+    async_func: bool,
+    args,
+):
     code = _code_template(encoded_ast, module_filename, func_name, async_func, args)
     result = selenium.run_async(code)
     if result:
@@ -89,20 +111,28 @@ def _run_test(selenium : any, encoded_ast : str, module_filename : str, func_nam
     else:
         return None
 
+
 def _create_wrapper(func_name, run_test, selenium_arg_name, node, imports):
     from ast import Module, FunctionDef, Name, Load, Expr, Call, Tuple
+
     access_selenium = Name(id=selenium_arg_name, ctx=Load())
-    
+
     node = deepcopy(node)
     from pprintast import pprintast
+
     call_args = [Name(id=selenium_arg_name, ctx=Load())]
     func_args = []
     for arg in node.args.args:
         func_args.append(Name(id=arg.arg, ctx=Load()))
     call_args.append(Tuple(func_args, ctx=Load()))
     node.args.args.append(ast.arg(arg=selenium_arg_name))
-    # pprintast(node)
-    node.body = [Expr(value=Call(func=Name(id='run_test', ctx=Load()), args=call_args, keywords=[]))]
+    node.body = [
+        Expr(
+            value=Call(
+                func=Name(id="run_test", ctx=Load()), args=call_args, keywords=[]
+            )
+        )
+    ]
 
     for i, dec in enumerate(node.decorator_list):
         if isinstance(dec, Name):
@@ -115,9 +145,10 @@ def _create_wrapper(func_name, run_test, selenium_arg_name, node, imports):
     mod = Module(imports + [node], type_ignores=[])
     ast.fix_missing_locations(mod)
     co = compile(mod, __file__, "exec")
-    globs = {"run_test" : run_test}
+    globs = {"run_test": run_test}
     exec(co, globs)
     return globs[func_name]
+
 
 def run_in_pyodide(
     _function: Callable | None = None,
@@ -182,7 +213,9 @@ def run_in_pyodide(
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if pkgs:
                     selenium.load_package(pkgs)
-                err = _run_test(selenium, encoded_ast, module_filename, func_name, async_func, args)
+                err = _run_test(
+                    selenium, encoded_ast, module_filename, func_name, async_func, args
+                )
 
             if err:
                 pytest.fail(
@@ -190,7 +223,7 @@ def run_in_pyodide(
                     + "".join(err.format(chain=True)),
                     pytrace=False,
                 )
-        
+
         if standalone:
             selenium_arg_name = "selenium_standalone"
         elif module_scope:
@@ -198,6 +231,7 @@ def run_in_pyodide(
         else:
             selenium_arg_name = "selenium"
         return _create_wrapper(func_name, run_test, selenium_arg_name, node, imports)
+
     if _function is not None:
         return decorator(_function)
     else:

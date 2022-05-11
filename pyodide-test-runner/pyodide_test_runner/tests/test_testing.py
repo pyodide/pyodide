@@ -36,8 +36,12 @@ def run_in_pyodide_test_helper(selenium):
     source = inspect.getsource(example_func)
     tree = ast.parse(source, filename=__file__)
     rewrite_asserts(tree, source, __file__, REWRITE_CONFIG)
-    encoded_ast, async_func, decorators, imports = _encode_ast(tree, example_func.__name__)
-    return _run_test(selenium, encoded_ast, __file__, example_func.__name__, async_func, tuple())
+    encoded_ast, async_func, decorators, imports = _encode_ast(
+        tree, example_func.__name__
+    )
+    return _run_test(
+        selenium, encoded_ast, __file__, example_func.__name__, async_func, tuple()
+    )
 
 
 def test_run_in_pyodide_local():
