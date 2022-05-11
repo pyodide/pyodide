@@ -1,11 +1,9 @@
 from typing import Any, Callable
 
-from ._core import IN_BROWSER
+from ._core import create_once_callable, JsProxy, create_proxy, IN_BROWSER
 
 if IN_BROWSER:
     from js import clearInterval, clearTimeout, setInterval, setTimeout
-
-from ._core import create_once_callable, JsProxy, create_proxy
 
 
 class Destroyable:
@@ -18,12 +16,12 @@ EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
 
 def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
     proxy = create_proxy(listener)
-    EVENT_LISTENERS[(id(elt), event, listener)] = proxy
+    EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
     elt.addEventListener(event, proxy)
 
 
 def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
-    proxy = EVENT_LISTENERS[(id(elt), event, listener)]
+    proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
     elt.removeEventListener(event, proxy)
     proxy.destroy()
 
