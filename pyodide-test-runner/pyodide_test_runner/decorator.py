@@ -18,18 +18,20 @@ def _encode_ast(module_ast : ast.Module, funcname : str) -> tuple[str, bool, ast
     definition. Once we generate this module, we pickle it and base64 encode it
     so we can send it to Pyodide using string templating.
     """
+    from ast import Import, Try, ExceptHandler, Pass, Name, Load
     imports : list[ast.Import] = []
     nodes: list[ast.stmt] = []
     for node in module_ast.body:
+        # We need to include the magic imports that pytest inserts
         if isinstance(node, ast.Import):
             imports.append(node)
-        # We need to include the magic imports that pytest inserts
-        if (
-            isinstance(node, ast.Import)
-            and node.names[0].asname
-            and node.names[0].asname.startswith("@")
-        ):
-            nodes.append(node)
+            nodes.append(
+                Try(body=[node], handlers=[
+                    ExceptHandler(type=Name(id='ImportError', ctx=Load()), name=None, body=[
+                        Pass(),
+                    ]),
+                ], orelse=[], finalbody=[])
+            )
 
         # We also want the function definition for the current test
         if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
@@ -63,7 +65,7 @@ def _code_template(
         d = {{}}
         exec(co, d)
         try:
-            result = d[{func_name!r}]({args})
+            result = d[{func_name!r}](*{args!r})
             if {async_func}:
                 result = await result
         except BaseException as e:
@@ -88,22 +90,29 @@ def _run_test(selenium : any, encoded_ast : str, module_filename : str, func_nam
         return None
 
 def _create_wrapper(func_name, run_test, selenium_arg_name, node, imports):
-    from ast import Module, FunctionDef, Name, Load, Expr, Call
+    from ast import Module, FunctionDef, Name, Load, Expr, Call, Tuple
     access_selenium = Name(id=selenium_arg_name, ctx=Load())
     
     node = deepcopy(node)
     from pprintast import pprintast
+    call_args = [Name(id=selenium_arg_name, ctx=Load())]
+    func_args = []
+    for arg in node.args.args:
+        func_args.append(Name(id=arg.arg, ctx=Load()))
+    call_args.append(Tuple(func_args, ctx=Load()))
     node.args.args.append(ast.arg(arg=selenium_arg_name))
-    node.body = [Expr(value=Call(func=Name(id='run_test', ctx=Load()), args=[
-        Name(id=selenium_arg_name, ctx=Load()),
-    ], keywords=[]))]
+    # pprintast(node)
+    node.body = [Expr(value=Call(func=Name(id='run_test', ctx=Load()), args=call_args, keywords=[]))]
 
     for i, dec in enumerate(node.decorator_list):
-        if dec.id == "run_in_pyodide":
+        if isinstance(dec, Name):
+            name = dec.id
+        elif isinstance(dec, Call):
+            name = dec.func.id
+        if name == "run_in_pyodide":
             del node.decorator_list[i]
             break
     mod = Module(imports + [node], type_ignores=[])
-    pprintast(mod)
     ast.fix_missing_locations(mod)
     co = compile(mod, __file__, "exec")
     globs = {"run_test" : run_test}
@@ -165,7 +174,7 @@ def run_in_pyodide(
         module_ast = module_asts_dict[module_filename]
         encoded_ast, async_func, node, imports = _encode_ast(module_ast, func_name)
 
-        def run_test(selenium):
+        def run_test(selenium, args):
             if selenium.browser in xfail_browsers_local:
                 xfail_message = xfail_browsers_local[selenium.browser]
                 pytest.xfail(xfail_message)
@@ -173,7 +182,7 @@ def run_in_pyodide(
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if pkgs:
                     selenium.load_package(pkgs)
-                err = _run_test(selenium, encoded_ast, module_filename, func_name, async_func)
+                err = _run_test(selenium, encoded_ast, module_filename, func_name, async_func, args)
 
             if err:
                 pytest.fail(
