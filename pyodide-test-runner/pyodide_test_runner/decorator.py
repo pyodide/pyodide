@@ -2,6 +2,7 @@ import ast
 import pickle
 import sys
 import traceback
+from copy import deepcopy
 from base64 import b64decode, b64encode
 from typing import Any, Callable, Collection
 
@@ -10,16 +11,18 @@ import pytest
 from .utils import set_webdriver_script_timeout
 
 
-def _encode_ast(module_ast, funcname):
+def _encode_ast(module_ast : ast.Module, funcname : str) -> tuple[str, bool, ast.expr, list[ast.Import]]:
     """Generates an appropriate AST for the test.
 
     The test ast should include mypy magic imports and the test function
     definition. Once we generate this module, we pickle it and base64 encode it
     so we can send it to Pyodide using string templating.
     """
-
-    nodes: list[Any] = []
+    imports : list[ast.Import] = []
+    nodes: list[ast.stmt] = []
     for node in module_ast.body:
+        if isinstance(node, ast.Import):
+            imports.append(node)
         # We need to include the magic imports that pytest inserts
         if (
             isinstance(node, ast.Import)
@@ -31,57 +34,81 @@ def _encode_ast(module_ast, funcname):
         # We also want the function definition for the current test
         if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             if node.name == funcname:
+                saved_node = deepcopy(node)
                 async_func = isinstance(node, ast.AsyncFunctionDef)
                 node.decorator_list = []
                 nodes.append(node)
                 break
+    else:
+        raise Exception("Didn't find function in module. @run_in_pyodide can only be used with top-level names")
     mod = ast.Module(nodes, type_ignores=[])
     ast.fix_missing_locations(mod)
 
     serialized_mod = pickle.dumps(mod)
     encoded_mod = b64encode(serialized_mod)
     string_mod = encoded_mod.decode()
-    return string_mod, async_func
+    return string_mod, async_func, saved_node, imports
 
 
-def _run_in_pyodide_run(
-    selenium: Any, f: Any, module_asts_dict: dict[str, ast.Module]
-) -> traceback.TracebackException | None:
-    module_fname = sys.modules[f.__module__].__file__ or ""
-    module_ast = module_asts_dict[module_fname]
-    string_mod, async_func = _encode_ast(module_ast, f.__name__)
-    result = selenium.run_async(
-        f"""
-        async def __tmp():
-            from base64 import b64encode, b64decode
-            import pickle
-            serialized_mod = b64decode({string_mod!r})
-            mod = pickle.loads(serialized_mod)
-            co = compile(mod, {module_fname!r}, "exec")
-            d = {{}}
-            exec(co, d)
-            try:
-                result = d[{f.__name__!r}]()
-                if {async_func}:
-                    result = await result
-            except BaseException as e:
-                import traceback
-                tb = traceback.TracebackException(type(e), e, e.__traceback__)
-                serialized_err = pickle.dumps(tb)
-                return b64encode(serialized_err).decode()
-
+def _code_template(
+    encoded_ast : str, module_filename : str, func_name : str, async_func : bool, args
+) -> str:
+    return f"""
+    async def __tmp():
+        from base64 import b64encode, b64decode
+        import pickle
+        serialized_mod = b64decode({encoded_ast!r})
+        mod = pickle.loads(serialized_mod)
+        co = compile(mod, {module_filename!r}, "exec")
+        d = {{}}
+        exec(co, d)
         try:
-            result = await __tmp()
-        finally:
-            del __tmp
-        result
-        """
-    )
+            result = d[{func_name!r}]({args})
+            if {async_func}:
+                result = await result
+        except BaseException as e:
+            import traceback
+            tb = traceback.TracebackException(type(e), e, e.__traceback__)
+            serialized_err = pickle.dumps(tb)
+            return b64encode(serialized_err).decode()
+
+    try:
+        result = await __tmp()
+    finally:
+        del __tmp
+    result
+    """
+
+def _run_test(selenium : any, encoded_ast : str, module_filename : str, func_name : str, async_func : bool, args):
+    code = _code_template(encoded_ast, module_filename, func_name, async_func, args)
+    result = selenium.run_async(code)
     if result:
         return pickle.loads(b64decode(result))
     else:
         return None
 
+def _create_wrapper(func_name, run_test, selenium_arg_name, node, imports):
+    from ast import Module, FunctionDef, Name, Load, Expr, Call
+    access_selenium = Name(id=selenium_arg_name, ctx=Load())
+    
+    node = deepcopy(node)
+    from pprintast import pprintast
+    node.args.args.append(ast.arg(arg=selenium_arg_name))
+    node.body = [Expr(value=Call(func=Name(id='run_test', ctx=Load()), args=[
+        Name(id=selenium_arg_name, ctx=Load()),
+    ], keywords=[]))]
+
+    for i, dec in enumerate(node.decorator_list):
+        if dec.id == "run_in_pyodide":
+            del node.decorator_list[i]
+            break
+    mod = Module(imports + [node], type_ignores=[])
+    pprintast(mod)
+    ast.fix_missing_locations(mod)
+    co = compile(mod, __file__, "exec")
+    globs = {"run_test" : run_test}
+    exec(co, globs)
+    return globs[func_name]
 
 def run_in_pyodide(
     _function: Callable | None = None,
@@ -133,6 +160,11 @@ def run_in_pyodide(
         pkgs.append("pytest")
 
     def decorator(f):
+        func_name = f.__name__
+        module_filename = sys.modules[f.__module__].__file__ or ""
+        module_ast = module_asts_dict[module_filename]
+        encoded_ast, async_func, node, imports = _encode_ast(module_ast, func_name)
+
         def run_test(selenium):
             if selenium.browser in xfail_browsers_local:
                 xfail_message = xfail_browsers_local[selenium.browser]
@@ -141,7 +173,7 @@ def run_in_pyodide(
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if pkgs:
                     selenium.load_package(pkgs)
-                err = _run_in_pyodide_run(selenium, f, module_asts_dict)
+                err = _run_test(selenium, encoded_ast, module_filename, func_name, async_func)
 
             if err:
                 pytest.fail(
@@ -149,24 +181,14 @@ def run_in_pyodide(
                     + "".join(err.format(chain=True)),
                     pytrace=False,
                 )
-
+        
         if standalone:
-
-            def wrapped(selenium_standalone):
-                run_test(selenium_standalone)
-
+            selenium_arg_name = "selenium_standalone"
         elif module_scope:
-
-            def wrapped(selenium_module_scope):  # type: ignore[misc]
-                run_test(selenium_module_scope)
-
+            selenium_arg_name = "selenium_module_scope"
         else:
-
-            def wrapped(selenium):  # type: ignore[misc]
-                run_test(selenium)
-
-        return wrapped
-
+            selenium_arg_name = "selenium"
+        return _create_wrapper(func_name, run_test, selenium_arg_name, node, imports)
     if _function is not None:
         return decorator(_function)
     else:
