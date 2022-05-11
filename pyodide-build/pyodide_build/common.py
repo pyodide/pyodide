@@ -235,13 +235,13 @@ def get_pyodide_root():
 def get_unisolated_packages():
     import json
 
-    if "UNISOLATED_PACKGES" in os.environ:
-        return json.loads(os.environ["UNISOLATED_PACKGES"])
+    if "UNISOLATED_PACKAGES" in os.environ:
+        return json.loads(os.environ["UNISOLATED_PACKAGES"])
     PYODIDE_ROOT = get_pyodide_root()
     unisolated_packages = []
-    for pkg in (PYODIDE_ROOT / "packages").glob("**/*.meta"):
+    for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
         config = parse_package_config(pkg, False)
         if config.get("build", {}).get("cross-build-env", False):
             unisolated_packages.append(config["package"]["name"])
-    os.environ["UNISOLATED_PACKGES"] = json.dumps(unisolated_packages)
+    os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
