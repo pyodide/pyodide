@@ -146,7 +146,7 @@ def get_bash_runner():
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
             "OPEN_SSL_ROOT",
-            "UNISOLATED_PACKGES",
+            "UNISOLATED_PACKAGES",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
