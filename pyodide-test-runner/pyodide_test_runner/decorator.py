@@ -118,7 +118,6 @@ def _create_wrapper(func_name, run_test, selenium_arg_name, node, imports):
     access_selenium = Name(id=selenium_arg_name, ctx=Load())
 
     node = deepcopy(node)
-    from pprintast import pprintast
 
     call_args = [Name(id=selenium_arg_name, ctx=Load())]
     func_args = []
