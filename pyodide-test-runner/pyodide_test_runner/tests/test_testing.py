@@ -2,9 +2,14 @@ import ast
 import asyncio
 import inspect
 import pathlib
-import pytest
 
-from pyodide_test_runner.decorator import _run_test, run_in_pyodide, _encode_ast
+import pytest
+from pyodide_test_runner.decorator import (
+    _encode,
+    _generate_ast,
+    _run_test,
+    run_in_pyodide,
+)
 
 from conftest import REWRITE_CONFIG, rewrite_asserts
 from pyodide import eval_code_async
@@ -36,11 +41,11 @@ def run_in_pyodide_test_helper(selenium):
     source = inspect.getsource(example_func)
     tree = ast.parse(source, filename=__file__)
     rewrite_asserts(tree, source, __file__, REWRITE_CONFIG)
-    encoded_ast, async_func, decorators, imports = _encode_ast(
-        tree, example_func.__name__
-    )
+    mod, async_func, decorators, imports = _generate_ast(tree, example_func.__name__)
+    encoded_ast = _encode(mod)
+    encoded_args = _encode(tuple())
     return _run_test(
-        selenium, encoded_ast, __file__, example_func.__name__, async_func, tuple()
+        selenium, encoded_ast, __file__, example_func.__name__, async_func, encoded_args
     )
 
 

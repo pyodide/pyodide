@@ -2,8 +2,22 @@ import ast
 import pickle
 import sys
 import traceback
-from copy import deepcopy
+from ast import (
+    AsyncFunctionDef,
+    Call,
+    ExceptHandler,
+    Expr,
+    FunctionDef,
+    Import,
+    Load,
+    Module,
+    Name,
+    Pass,
+    Try,
+    Tuple,
+)
 from base64 import b64decode, b64encode
+from copy import deepcopy
 from typing import Any, Callable, Collection
 
 import pytest
@@ -11,22 +25,28 @@ import pytest
 from .utils import set_webdriver_script_timeout
 
 
-def _encode_ast(
+def _encode(obj: Any) -> str:
+    """
+    Pickle and base 64 encode
+    """
+    return b64encode(pickle.dumps(obj)).decode()
+
+
+def _generate_ast(
     module_ast: ast.Module, funcname: str
-) -> tuple[str, bool, ast.expr, list[ast.Import]]:
+) -> tuple[ast.Module, bool, ast.expr, list[ast.Import]]:
     """Generates an appropriate AST for the test.
 
     The test ast should include mypy magic imports and the test function
     definition. Once we generate this module, we pickle it and base64 encode it
     so we can send it to Pyodide using string templating.
     """
-    from ast import Import, Try, ExceptHandler, Pass, Name, Load
 
-    imports: list[ast.Import] = []
+    imports: list[Import] = []
     nodes: list[ast.stmt] = []
     for node in module_ast.body:
         # We need to include the magic imports that pytest inserts
-        if isinstance(node, ast.Import):
+        if isinstance(node, Import):
             imports.append(node)
             nodes.append(
                 Try(
@@ -46,10 +66,10 @@ def _encode_ast(
             )
 
         # We also want the function definition for the current test
-        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+        if isinstance(node, FunctionDef) or isinstance(node, AsyncFunctionDef):
             if node.name == funcname:
                 saved_node = deepcopy(node)
-                async_func = isinstance(node, ast.AsyncFunctionDef)
+                async_func = isinstance(node, AsyncFunctionDef)
                 node.decorator_list = []
                 nodes.append(node)
                 break
@@ -60,26 +80,27 @@ def _encode_ast(
     mod = ast.Module(nodes, type_ignores=[])
     ast.fix_missing_locations(mod)
 
-    serialized_mod = pickle.dumps(mod)
-    encoded_mod = b64encode(serialized_mod)
-    string_mod = encoded_mod.decode()
-    return string_mod, async_func, saved_node, imports
+    return mod, async_func, saved_node, imports
 
 
 def _code_template(
-    encoded_ast: str, module_filename: str, func_name: str, async_func: bool, args
+    mod: ast.Module,
+    module_filename: str,
+    func_name: str,
+    async_func: bool,
+    args: tuple,
 ) -> str:
     return f"""
     async def __tmp():
         from base64 import b64encode, b64decode
         import pickle
-        serialized_mod = b64decode({encoded_ast!r})
-        mod = pickle.loads(serialized_mod)
+        mod = pickle.loads(b64decode({_encode(mod)!r}))
+        args = pickle.loads(b64decode({_encode(args)!r}))
         co = compile(mod, {module_filename!r}, "exec")
         d = {{}}
         exec(co, d)
         try:
-            result = d[{func_name!r}](*{args!r})
+            result = d[{func_name!r}](*args)
             if {async_func}:
                 result = await result
         except BaseException as e:
@@ -97,14 +118,14 @@ def _code_template(
 
 
 def _run_test(
-    selenium: any,
-    encoded_ast: str,
+    selenium: Any,
+    mod: ast.Module,
     module_filename: str,
     func_name: str,
     async_func: bool,
-    args,
-):
-    code = _code_template(encoded_ast, module_filename, func_name, async_func, args)
+    args: tuple,
+) -> traceback.TracebackException | None:
+    code = _code_template(mod, module_filename, func_name, async_func, args)
     result = selenium.run_async(code)
     if result:
         return pickle.loads(b64decode(result))
@@ -112,10 +133,14 @@ def _run_test(
         return None
 
 
-def _create_wrapper(func_name, run_test, selenium_arg_name, node, imports):
-    from ast import Module, FunctionDef, Name, Load, Expr, Call, Tuple
-
-    access_selenium = Name(id=selenium_arg_name, ctx=Load())
+def _create_wrapper(
+    func_name: str,
+    run_test: Callable,
+    selenium_arg_name: str,
+    node: ast.stmt,
+    imports: list[ast.stmt],
+) -> Callable:
+    # from ast import Call, Expr, FunctionDef, Load, Module, Name, Tuple
 
     node = deepcopy(node)
 
@@ -202,7 +227,7 @@ def run_in_pyodide(
         func_name = f.__name__
         module_filename = sys.modules[f.__module__].__file__ or ""
         module_ast = module_asts_dict[module_filename]
-        encoded_ast, async_func, node, imports = _encode_ast(module_ast, func_name)
+        mod, async_func, node, imports = _generate_ast(module_ast, func_name)
 
         def run_test(selenium, args):
             if selenium.browser in xfail_browsers_local:
@@ -213,7 +238,7 @@ def run_in_pyodide(
                 if pkgs:
                     selenium.load_package(pkgs)
                 err = _run_test(
-                    selenium, encoded_ast, module_filename, func_name, async_func, args
+                    selenium, mod, module_filename, func_name, async_func, args
                 )
 
             if err:
