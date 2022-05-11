@@ -39,19 +39,25 @@ def mock_get_pypi_json(pkg_map):
         else:
             pkg_file = f"{pkgname}-1.0.0.tar.gz"
             pkg_version = "1.0.0"
-        return {
-            "releases": {
-                pkg_version: [
-                    {
-                        "filename": pkg_file,
-                        "url": "",
-                        "digests": {
-                            "sha256": Wildcard(),
-                        },
-                    }
-                ]
-            }
-        }
+
+        if isinstance(pkg_file, str):
+            pkg_file = [pkg_file]
+        if isinstance(pkg_version, str):
+            pkg_version = [pkg_version]
+
+        json_data: dict[str, Any] = {"releases": {}}
+        for file, version in zip(pkg_file, pkg_version):
+            json_data["releases"][version] = [
+                {
+                    "filename": file,
+                    "url": "",
+                    "digests": {
+                        "sha256": Wildcard(),
+                    },
+                }
+            ]
+
+        return json_data
 
     return _mock_get_pypi_json
 
@@ -190,15 +196,16 @@ def test_add_requirement():
         base_url = f"http://{server_hostname}:{server_port}/"
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-    transaction: dict[str, Any] = {
-        "wheels": [],
-        "locked": {},
-        "keep_going": True,
-        "deps": True,
-    }
-    asyncio.get_event_loop().run_until_complete(
-        _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
-    )
+        transaction: dict[str, Any] = {
+            "wheels": [],
+            "locked": {},
+            "keep_going": True,
+            "deps": True,
+            "pre": False,
+        }
+        asyncio.get_event_loop().run_until_complete(
+            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+        )
 
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
@@ -423,6 +430,62 @@ def test_install_no_deps(monkeypatch):
     assert dep_pkg_name not in _micropip._list()
 
 
+def test_install_pre(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    stable_pkg_name = "stable-pre"
+    alpha_pkg_name = "alpha-pre"
+    version_alpha = "2.0.1a1"
+    version_stable = "1.0.0"
+
+    _mock_get_pypi_json = mock_get_pypi_json(
+        {
+            stable_pkg_name: {
+                "name": [
+                    f"{stable_pkg_name}-{version_stable}-py3-none-any.whl",
+                    f"{stable_pkg_name}-{version_alpha}-py3-none-any.whl",
+                ],
+                "version": [
+                    version_stable,
+                    version_alpha,
+                ],
+            },
+            alpha_pkg_name: {
+                "name": [
+                    f"{alpha_pkg_name}-{version_stable}-py3-none-any.whl",
+                    f"{alpha_pkg_name}-{version_alpha}-py3-none-any.whl",
+                ],
+                "version": [
+                    version_stable,
+                    version_alpha,
+                ],
+            },
+        }
+    )
+
+    _mock_fetch_bytes_stable = mock_fetch_bytes(stable_pkg_name, "UNKNOWN")
+
+    _mock_fetch_bytes_alpha = mock_fetch_bytes(alpha_pkg_name, "UNKNOWN")
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json)
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes_stable)
+
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(stable_pkg_name, pre=False)
+    )
+
+    assert _micropip._list()[stable_pkg_name].version == version_stable
+
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes_alpha)
+
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(alpha_pkg_name, pre=True)
+    )
+
+    assert _micropip._list()[alpha_pkg_name].version == version_alpha
+
+
 def test_fetch_wheel_fail(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import _micropip
@@ -481,7 +544,7 @@ def test_list_wheel_name_mismatch(monkeypatch):
     dummy_pkg_name = "dummy-Dummy"
     normalized_pkg_name = dummy_pkg_name.replace("-", "_").lower()
     dummy_url = f"https://dummy.com/{normalized_pkg_name}-1.0.0-py3-none-any.whl"
-    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, f"Name: {dummy_pkg_name}")
+    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, f"Name: {dummy_pkg_name}\n")
 
     monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
 
@@ -491,7 +554,6 @@ def test_list_wheel_name_mismatch(monkeypatch):
     assert (
         dummy_pkg_name in pkg_list
         and pkg_list[dummy_pkg_name].source.lower() == dummy_url
-        and pkg_list[dummy_pkg_name].name == dummy_pkg_name
     )
 
 
