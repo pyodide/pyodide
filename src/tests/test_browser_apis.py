@@ -96,10 +96,10 @@ async def test_start_multiple_timeouts_and_clear_one():
 
 @run_in_pyodide
 async def test_set_interval_succeeded():
-    num_times_ran = 0 
+    num_times_ran = 0
 
     def foo():
-        nonlocal num_times_ran 
+        nonlocal num_times_ran
         num_times_ran += 1
 
     import asyncio
