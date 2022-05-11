@@ -55,8 +55,8 @@ DUMMY_DESTROYABLE = Destroyable()
 
 
 def clear_timeout(timeout_retval: int | JsProxy):
+    clearTimeout(timeout_retval)
     id = timeout_retval if isinstance(timeout_retval, int) else timeout_retval.js_id
-    clearTimeout(id)
     TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
 
 
