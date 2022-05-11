@@ -16,7 +16,7 @@ def mock_get_pypi_json(pkg_map):
 
     Parameters
     ----------
-    pkg_map : ``None | Dict[str, str]``
+    pkg_map : ``None | Dict[str, Any]``
 
         Dictionary that maps package name to dummy release file.
         Packages that are not in this dictionary will return
@@ -34,13 +34,14 @@ def mock_get_pypi_json(pkg_map):
 
     async def _mock_get_pypi_json(pkgname, **kwargs):
         if pkgname in pkg_map:
-            pkg_file = pkg_map[pkgname]
+            pkg_file = pkg_map[pkgname]["name"]
+            pkg_version = pkg_map[pkgname].get("version", "1.0.0")
         else:
             pkg_file = f"{pkgname}-1.0.0.tar.gz"
-
+            pkg_version = "1.0.0"
         return {
             "releases": {
-                "1.0.0": [
+                pkg_version: [
                     {
                         "filename": pkg_file,
                         "url": "",
@@ -189,13 +190,15 @@ def test_add_requirement():
         base_url = f"http://{server_hostname}:{server_port}/"
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-        transaction: dict[str, Any] = {
-            "wheels": [],
-            "locked": {},
-        }
-        asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
-        )
+    transaction: dict[str, Any] = {
+        "wheels": [],
+        "locked": {},
+        "keep_going": True,
+        "deps": True,
+    }
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+    )
 
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
@@ -331,7 +334,7 @@ def test_install_keep_going(monkeypatch):
 
     dummy_pkg_name = "dummy"
     _mock_get_pypi_json = mock_get_pypi_json(
-        {dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}
+        {dummy_pkg_name: {"name": f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}}
     )
     _mock_fetch_bytes = mock_fetch_bytes(
         dummy_pkg_name, "Requires-Dist: dep1\nRequires-Dist: dep2\n\nUNKNOWN"
@@ -346,6 +349,78 @@ def test_install_keep_going(monkeypatch):
         asyncio.get_event_loop().run_until_complete(
             _micropip.install(dummy_pkg_name, keep_going=True)
         )
+
+
+def test_install_version_compare_prerelease(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy"
+    version_new = "3.2.1a1"
+    version_old = "3.2.0"
+
+    _mock_get_pypi_json_new = mock_get_pypi_json(
+        {
+            dummy_pkg_name: {
+                "name": f"{dummy_pkg_name}-{version_new}-py3-none-any.whl",
+                "version": version_new,
+            }
+        }
+    )
+
+    _mock_get_pypi_json_old = mock_get_pypi_json(
+        {
+            dummy_pkg_name: {
+                "name": f"{dummy_pkg_name}-{version_old}-py3-none-any.whl",
+                "version": version_old,
+            }
+        }
+    )
+
+    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, "UNKNOWN")
+
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json_new)
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(f"{dummy_pkg_name}=={version_new}")
+    )
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json_old)
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(f"{dummy_pkg_name}>={version_old}")
+    )
+
+    installed_pkgs = _micropip._list()
+    # Older version should not be installed
+    assert installed_pkgs[dummy_pkg_name].version == version_new
+
+
+def test_install_no_deps(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy"
+    dep_pkg_name = "dependency_dummy"
+    _mock_get_pypi_json = mock_get_pypi_json(
+        {
+            dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl",
+            dep_pkg_name: f"{dep_pkg_name}-1.0.0-py3-none-any.whl",
+        }
+    )
+    _mock_fetch_bytes = mock_fetch_bytes(
+        dummy_pkg_name, f"Requires-Dist: {dep_pkg_name}\n\nUNKNOWN"
+    )
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json)
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    asyncio.get_event_loop().run_until_complete(
+        _micropip.install(dummy_pkg_name, deps=False)
+    )
+
+    assert dummy_pkg_name in _micropip._list()
+    assert dep_pkg_name not in _micropip._list()
 
 
 def test_fetch_wheel_fail(monkeypatch):
@@ -370,7 +445,7 @@ def test_list_pypi_package(monkeypatch):
 
     dummy_pkg_name = "dummy"
     _mock_get_pypi_json = mock_get_pypi_json(
-        {dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}
+        {dummy_pkg_name: {"name": f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}}
     )
     _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, "UNKNOWN")
 
