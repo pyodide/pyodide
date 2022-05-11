@@ -77,6 +77,8 @@ def _create_wrapper(
     node: ast.stmt,
 ) -> Callable:
     node = deepcopy(node)
+    if isinstance(node, AsyncFunctionDef):
+        node = FunctionDef(**node.__dict__)
     call_args = [Name(id=selenium_arg_name, ctx=Load())]
     func_args = []
     for arg in node.args.args:
@@ -230,11 +232,13 @@ class run_in_pyodide:
                 err = None
 
         if err:
-            pytest.fail(
-                "Error running function in pyodide\n\n"
-                + "".join(err.format(chain=True)),
-                pytrace=False,
-            )
+            self.fail(err)
+
+    def fail(self, err):
+        pytest.fail(
+            "Error running function in pyodide\n\n" + "".join(err.format(chain=True)),
+            pytrace=False,
+        )
 
     def __call__(self, f):
         func_name = f.__name__
@@ -245,10 +249,11 @@ class run_in_pyodide:
                 module_ast, module_filename
             )
         module_env = self.module_dict[module_filename]
-        decorators = []
-        for dec in module_env[f"@decorators@{func_name}"]:
-            if dec != run_in_pyodide and not isinstance(dec, run_in_pyodide):
-                decorators.append(dec)
+        orig_decorator_list = module_env[f"@decorators@{func_name}"]
+        for _idx, dec in enumerate(orig_decorator_list):
+            if dec == run_in_pyodide or isinstance(dec, run_in_pyodide):
+                break
+        decorators = orig_decorator_list[_idx + 1 :]
 
         self.mod, self.async_func, self.node = _generate_ast(module_ast, func_name)
         self.func_name = func_name
