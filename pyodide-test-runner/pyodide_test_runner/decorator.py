@@ -88,7 +88,7 @@ def _create_outer_test_function(
     This wrapper looks like:
 
         def <func_name>(arg1, arg2, arg3, <selenium_arg_name>):
-            run_test(<selenium_arg_name>, tuple(arg1, arg2, arg3))
+            run_test(<selenium_arg_name>, (arg1, arg2, arg3))
 
     Any inner_decorators get applied in __call__. Any outer_decorators get applied
     by the Python interpreter via the normal mechanism
