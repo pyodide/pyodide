@@ -11,7 +11,7 @@ class Destroyable:
         pass
 
 
-EVENT_LISTENERS: dict[tuple[JsProxy, str, JsProxy], JsProxy] = {}
+EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], JsProxy] = {}
 
 
 def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
@@ -60,22 +60,18 @@ def clear_timeout(timeout_retval: int | JsProxy):
     TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
 
 
+INTERVAL_CALLBACKS: dict[int, Destroyable] = {}
+
+
 def set_interval(callback: Callable[[], None], interval: int) -> int | JsProxy:
-    id = -1
-
-    def wrapper():
-        nonlocal id
-        callback()
-        TIMEOUTS.pop(id, None)
-
-    callable = create_once_callable(wrapper)
-    interval_retval: int | JsProxy = setInterval(callable, interval)
+    proxy = create_proxy(callback)
+    interval_retval = setInterval(proxy, interval)
     id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id
-    TIMEOUTS[id] = callable
+    INTERVAL_CALLBACKS[id] = proxy
     return interval_retval
 
 
 def clear_interval(interval_retval: int | JsProxy):
     clearInterval(interval_retval)
     id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id
-    TIMEOUTS.pop(id).destroy()
+    INTERVAL_CALLBACKS.pop(id, DUMMY_DESTROYABLE).destroy()
