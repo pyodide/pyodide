@@ -6,20 +6,10 @@ source:
   url: https://files.pythonhosted.org/packages/3b/94/e2b1b3bad91d15526c7e38918795883cee18b93f6785ea8ecf13f8ffa01e/lxml-4.8.0.tar.gz
 build:
   script: |
-    export WITH_XML2_CONFIG=$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10/xml2-config
-    export WITH_XSLT_CONFIG=$PYODIDE_ROOT/packages/libxslt/build/libxslt-1.1.33/xslt-config
+    export WITH_XML2_CONFIG="${HOSTINSTALLDIR}/bin/xml2-config"
+    export WITH_XSLT_CONFIG="${HOSTINSTALLDIR}/bin/xslt-config"
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/libxml/build/libxml-2.9.10/include
-    -I$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/
-    -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/include
-    -I$(PYODIDE_ROOT)/packages/libiconv/build/libiconv-1.16/include
     -Wno-implicit-function-declaration
-  ldflags: |
-    -L$(PYODIDE_ROOT)/packages/libxml/build/libxml-2.9.10/.libs/
-    -L$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/libxslt/.libs/
-    -L$(PYODIDE_ROOT)/packages/libxslt/build/libxslt-1.1.33/libexslt/.libs/
-    -L$(PYODIDE_ROOT)/packages/zlib/build/zlib-1.2.11/lib/
-    -L$(PYODIDE_ROOT)/packages/libiconv/build/libiconv-1.16/lib/.libs/
 requirements:
   run:
     - beautifulsoup4
