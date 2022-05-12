@@ -93,7 +93,6 @@ substitutions:
   If set to `True`, micropip will include pre-release and development versions.
   {pr}`2542`
 
-
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
