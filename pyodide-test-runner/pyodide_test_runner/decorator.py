@@ -247,7 +247,6 @@ class run_in_pyodide:
         if the function is async await the result. Last, if there was an
         exception, pickle it and send it back.
         """
-        print("args: ======", args)
         return f"""
         async def __tmp():
             from base64 import b64encode, b64decode
