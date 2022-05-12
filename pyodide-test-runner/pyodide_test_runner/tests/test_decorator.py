@@ -95,7 +95,7 @@ def check_err(exc_list, ty, msg):
 
 def test_local1(monkeypatch):
     exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "fail", make_patched_fail(exc_list))
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
     example_func1(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
@@ -103,7 +103,7 @@ def test_local1(monkeypatch):
 
 def test_local2(monkeypatch):
     exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "fail", make_patched_fail(exc_list))
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
     example_func1(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
@@ -111,7 +111,7 @@ def test_local2(monkeypatch):
 
 def test_local3(monkeypatch):
     exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "fail", make_patched_fail(exc_list))
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
     async_example_func(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
@@ -128,7 +128,7 @@ def test_local4():
 
 def test_selenium(selenium, monkeypatch):
     exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "fail", make_patched_fail(exc_list))
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
     example_func1(selenium)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
