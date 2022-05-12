@@ -1,12 +1,12 @@
 import os
 import pprint
 
-def load_sysconfig(sysconfig_name):
+def load_sysconfig(sysconfig_name : str):
     _temp = __import__(sysconfig_name, globals(), locals(), ['build_time_vars'], 0)
     config_vars = _temp.build_time_vars
     return config_vars, _temp.__file__
 
-def write_sysconfig(destfile, config_vars):
+def write_sysconfig(destfile : str, config_vars : dict[str, str]):
     with open(destfile, 'w', encoding='utf8') as f:
         f.write('# system configuration generated and used by'
                 ' the sysconfig module\n')
