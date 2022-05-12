@@ -56,6 +56,8 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
+
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
   rewriting and various other improvements.
   {pr}`2510`
