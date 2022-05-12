@@ -14,7 +14,7 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Integrity of Pyodide packages are now verified before loading them. This is for now only 
+- {{ Enhancement }} Integrity of Pyodide packages are now verified before loading them. This is for now only
   limited to browser environments. {pr}`2513`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
