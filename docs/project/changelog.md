@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
+
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
   {pr}`2517`
 
