@@ -53,7 +53,7 @@ Using Pyodide
 Development
 ^^^^^^^^^^^
 
-The Development section help Pyodide contributors to find information about the
+The Development section helps Pyodide contributors to find information about the
 development process including making packages to support third party libraries.
 
 .. toctree::

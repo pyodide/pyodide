@@ -39,14 +39,15 @@ build:
     -Wno-return-type
     -DUNDERSCORE_G77
   ldflags: |
-    -L$(NUMPY_LIB)
+    -L$(NUMPY_LIB)/core/lib/
+    -L$(NUMPY_LIB)/random/lib/
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    pip install -t $HOSTSITEPACKAGES pythran scipy==$PKG_VERSION
+    pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
@@ -94,9 +95,10 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
-
-  post: |
-    cp $PKG_BUILD_DIR/scipy/linalg/cython_{lapack,blas}.pxd $HOSTSITEPACKAGES/scipy/linalg/
+  cross-build-env: true
+  cross-build-files:
+    - scipy/linalg/cython_lapack.pxd
+    - scipy/linalg/cython_blas.pxd
 
 requirements:
   run:

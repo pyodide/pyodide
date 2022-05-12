@@ -1,7 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
-
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):

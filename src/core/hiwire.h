@@ -203,7 +203,7 @@ JsArray_Push(JsRef idobj, JsRef idval);
 /**
  * Same as JsArray_Push but panics on failure
  */
-void
+int
 JsArray_Push_unchecked(JsRef idobj, JsRef idval);
 
 /**

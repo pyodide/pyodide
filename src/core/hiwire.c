@@ -177,11 +177,13 @@ EM_JS_NUM(int, hiwire_init, (), {
       _hiwire.objects.delete(idval);
       _hiwire.obj_to_key.delete(pair[0]);
     }
-    // clang-format on
   };
 
   Hiwire.incref = function(idval)
   {
+    if ((idval & 1) === 0) {
+      return;
+    }
     _hiwire.objects.get(idval)[1]++;
 #ifdef DEBUG_F
     if (DEREF_U8(_tracerefs, 0)) {
@@ -189,6 +191,7 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
 #endif
   };
+  // clang-format on
 
   Hiwire.pop_value = function(idval)
   {
@@ -215,10 +218,10 @@ EM_JS_NUM(int, hiwire_init, (), {
    * This respects slices: if the ArrayBuffer view is restricted to a slice of
    * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
    */
-  Module.typedArrayAsUint8Array = function(arg)
+  API.typedArrayAsUint8Array = function(arg)
   {
     // clang-format off
-    if(arg.buffer !== undefined){
+    if(ArrayBuffer.isView(arg)){
       // clang-format on
       return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
     } else {
@@ -398,8 +401,10 @@ EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
 });
 
-EM_JS(void, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
-  Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
+EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
+  const arr = Hiwire.get_value(idarr);
+  arr.push(Hiwire.get_value(idval));
+  return arr.length - 1;
 });
 
 // clang-format off
@@ -782,32 +787,32 @@ EM_JS(bool, hiwire_is_typedarray, (JsRef idobj), {
 
 EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
-  Module.HEAPU8.set(Module.typedArrayAsUint8Array(jsobj), ptr);
+  Module.HEAPU8.set(API.typedArrayAsUint8Array(jsobj), ptr);
 });
 
 EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
-  Module.typedArrayAsUint8Array(jsobj).set(
+  API.typedArrayAsUint8Array(jsobj).set(
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
 });
 
 EM_JS_NUM(errcode, hiwire_read_from_file, (JsRef idobj, int fd), {
   let jsobj = Hiwire.get_value(idobj);
-  let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
+  let uint8_buffer = API.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   Module.FS.read(stream, uint8_buffer, 0, uint8_buffer.byteLength);
 });
 
 EM_JS_NUM(errcode, hiwire_write_to_file, (JsRef idobj, int fd), {
   let jsobj = Hiwire.get_value(idobj);
-  let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
+  let uint8_buffer = API.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   Module.FS.write(stream, uint8_buffer, 0, uint8_buffer.byteLength);
 });
 
 EM_JS_NUM(errcode, hiwire_into_file, (JsRef idobj, int fd), {
   let jsobj = Hiwire.get_value(idobj);
-  let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
+  let uint8_buffer = API.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   // set canOwn param to true, leave position undefined.
   Module.FS.write(
