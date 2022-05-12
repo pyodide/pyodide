@@ -13,9 +13,16 @@ def write_sysconfig(destfile, config_vars):
         f.write('build_time_vars = ')
         pprint.pprint(config_vars, stream=f)
 
-def adjust_sysconfig(config_vars):
-    config_vars["CC"] = "cc"
-    config_vars["CXX"] = "c++"
+def adjust_sysconfig(config_vars : dict[str, str]):
+    config_vars.update(
+        CC="cc",
+        MAINCC="cc",
+        LDSHARED="cc",
+        LINKCC="cc",
+        BLDSHARED="cc",
+        CXX="c++",
+        LDCXXSHARED="c++",
+    )
 
 
 if __name__ == "__main__":

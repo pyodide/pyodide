@@ -32,19 +32,19 @@ all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
-	# ( \
-	# 	cd $(BUILD); \
-	# 	sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
-	# 	touch $(BUILD)/$(LIB) ; \
-	# 	emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
-	# 	cp $(LIB) $(INSTALL)/lib/ \
-	# )
+	( \
+		cd $(BUILD); \
+		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
+		touch $(BUILD)/$(LIB) ; \
+		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
+		cp $(LIB) $(INSTALL)/lib/ \
+	)
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
 	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 	
 	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
-	PYTHONPATH=$(PYBUILDDIR) python update_sysconfig.py
+	PYTHONPATH=$(PYBUILDDIR) python adjust_sysconfig.py
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(INSTALL)/sysconfigdata/
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/sysconfigdata/
