@@ -12,4 +12,4 @@ build:
     CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=${HOSTINSTALLDIR} .
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-    ln -s ${HOST_LD_LIBRARY_PATH}/libyaml_static.a ${HOST_LD_LIBRARY_PATH}/libyaml.a
+    ln -s libyaml_static.a ${HOST_LD_LIBRARY_PATH}/libyaml.a
