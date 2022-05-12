@@ -87,6 +87,10 @@ substitutions:
 - {{ Fix }} micropip now correctly compares packages with prerelease version
   {pr}`2532`
 
+- {{ Enhancement }} {func}`micropip.install` now accepts a `pre` parameter.
+  If set to `True`, micropip will include pre-release and development versions.
+  {pr}`2542`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
