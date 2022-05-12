@@ -152,6 +152,7 @@ class _PackageManager:
         ctx=None,
         keep_going: bool = False,
         deps: bool = True,
+        pre: bool = False,
         **kwargs,
     ):
         ctx = ctx or default_environment()
@@ -166,6 +167,7 @@ class _PackageManager:
             "failed": [],
             "keep_going": keep_going,
             "deps": deps,
+            "pre": pre,
         }
         requirement_promises = []
         for requirement in requirements:
@@ -183,6 +185,7 @@ class _PackageManager:
         keep_going: bool = False,
         deps: bool = True,
         credentials: str | None = None,
+        pre: bool = False,
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -193,7 +196,7 @@ class _PackageManager:
         if credentials:
             fetch_extra_kwargs["credentials"] = credentials
         transaction = await self.gather_requirements(
-            requirements, ctx, keep_going, deps, **fetch_extra_kwargs
+            requirements, ctx, keep_going, deps, pre, **fetch_extra_kwargs
         )
 
         if transaction["failed"]:
@@ -275,6 +278,9 @@ class _PackageManager:
             return
         else:
             req = Requirement(requirement)
+
+        if transaction["pre"]:
+            req.specifier.prereleases = True
 
         req.name = req.name.lower()
 
@@ -407,6 +413,7 @@ def install(
     keep_going: bool = False,
     deps: bool = True,
     credentials: str | None = None,
+    pre: bool = False,
 ):
     """Install the given package and all of its dependencies.
 
@@ -459,6 +466,10 @@ def install(
 
         When not specified, ``fetch()`` is called without ``credentials``.
 
+    pre : ``bool``, default: False
+
+        If ``True``, include pre-release and development versions.
+        By default, micropip only finds stable versions.
 
     Returns
     -------
@@ -470,7 +481,11 @@ def install(
     importlib.invalidate_caches()
     return asyncio.ensure_future(
         PACKAGE_MANAGER.install(
-            requirements, keep_going=keep_going, deps=deps, credentials=credentials
+            requirements,
+            keep_going=keep_going,
+            deps=deps,
+            credentials=credentials,
+            pre=pre,
         )
     )
 

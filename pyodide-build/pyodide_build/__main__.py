@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import sys
 
 from . import buildall, buildpkg, mkpkg, serve
-from .common import get_hostsitepackages, get_make_environment_vars, search_pyodide_root
+from .common import init_environment
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -33,22 +32,7 @@ def make_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    if not os.environ.get("__LOADED_PYODIDE_ENV"):
-        # If we are building docs, we don't need to know the PYODIDE_ROOT
-        if "sphinx" in sys.modules:
-            os.environ["PYODIDE_ROOT"] = ""
-
-        if "PYODIDE_ROOT" not in os.environ:
-            os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
-
-        os.environ.update(get_make_environment_vars())
-        hostsitepackages = get_hostsitepackages()
-        pythonpath = [
-            hostsitepackages,
-        ]
-        os.environ["PYTHONPATH"] = ":".join(pythonpath)
-        os.environ["BASH_ENV"] = ""
-        os.environ["__LOADED_PYODIDE_ENV"] = "1"
+    init_environment()
 
     main_parser = make_parser()
 
