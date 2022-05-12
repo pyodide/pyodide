@@ -7,10 +7,7 @@ source:
   sha256: 94cc5ed4ceaefcbe5bf38c8fba6a21fc1d365bb8fb826ea1688e3370b2e24a1c
 build:
   cflags: |
-    -I$(OPEN_SSL_ROOT)/include/
     -Wno-implicit-function-declaration
-  ldflags: |
-    -L$(OPEN_SSL_ROOT)/dist/
   script: |
     export CRYPTOGRAPHY_DONT_BUILD_RUST=1
 requirements:
