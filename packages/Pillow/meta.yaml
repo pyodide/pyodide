@@ -15,10 +15,8 @@ build:
     -s USE_LIBJPEG=1
     -s USE_FREETYPE=1
     -s SIDE_MODULE=1
-    -I$(PYODIDE_ROOT)/packages/libwebp/build/libwebp-1.2.2/build/lib/include
   ldflags: |
     -ljpeg
-    -L$(PYODIDE_ROOT)/packages/libwebp/build/libwebp-1.2.2/build/lib/lib/
 requirements:
   run:
     - libwebp
