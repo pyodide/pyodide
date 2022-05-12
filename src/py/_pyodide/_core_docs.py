@@ -37,6 +37,25 @@ class JsProxy:
     that are (conditionally) implemented on :any:`JsProxy`.
     """
 
+    @property
+    def js_id(self) -> int:
+        """An id number which can be used as a dictionary/set key if you want to
+        key on JavaScript object identity.
+
+        If two `JsProxy` are made with the same backing JavaScript object, they
+        will have the same `js_id`. The reault is a "pseudorandom" 32 bit integer.
+        """
+        return 0
+
+    @property
+    def typeof(self) -> str:
+        """Returns the JavaScript type of the JsProxy.
+
+        Corresponds to `typeof obj;` in JavaScript. You may also be interested
+        in the `constuctor` attribute which returns the type as an object.
+        """
+        return "object"
+
     def object_entries(self) -> "JsProxy":
         "The JavaScript API ``Object.entries(object)``"
 

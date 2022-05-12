@@ -151,6 +151,8 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        deps: bool = True,
+        pre: bool = False,
         **kwargs,
     ):
         ctx = ctx or default_environment()
@@ -164,6 +166,8 @@ class _PackageManager:
             "locked": copy.deepcopy(self.installed_packages),
             "failed": [],
             "keep_going": keep_going,
+            "deps": deps,
+            "pre": pre,
         }
         requirement_promises = []
         for requirement in requirements:
@@ -179,7 +183,9 @@ class _PackageManager:
         requirements: str | list[str],
         ctx=None,
         keep_going: bool = False,
+        deps: bool = True,
         credentials: str | None = None,
+        pre: bool = False,
     ):
         async def _install(install_func, done_callback):
             await install_func
@@ -190,7 +196,7 @@ class _PackageManager:
         if credentials:
             fetch_extra_kwargs["credentials"] = credentials
         transaction = await self.gather_requirements(
-            requirements, ctx, keep_going, **fetch_extra_kwargs
+            requirements, ctx, keep_going, deps, pre, **fetch_extra_kwargs
         )
 
         if transaction["failed"]:
@@ -272,13 +278,16 @@ class _PackageManager:
             return
         else:
             req = Requirement(requirement)
+
+        if transaction["pre"]:
+            req.specifier.prereleases = True
+
         req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
-        if (
-            req.name in BUILTIN_PACKAGES
-            and BUILTIN_PACKAGES[req.name]["version"] in req.specifier
+        if req.name in BUILTIN_PACKAGES and req.specifier.contains(
+            BUILTIN_PACKAGES[req.name]["version"], prereleases=True
         ):
             version = BUILTIN_PACKAGES[req.name]["version"]
             transaction["pyodide_packages"].append(
@@ -295,7 +304,7 @@ class _PackageManager:
         # Is some version of this package is already installed?
         if req.name in transaction["locked"]:
             ver = transaction["locked"][req.name].version
-            if ver in req.specifier:
+            if req.specifier.contains(ver, prereleases=True):
                 # installed version matches, nothing to do
                 return
             else:
@@ -355,8 +364,9 @@ class _PackageManager:
         if project_name == "UNKNOWN":
             project_name = name
 
-        for recurs_req in dist.requires(extras):
-            await self.add_requirement(recurs_req, ctx, transaction)
+        if transaction["deps"]:
+            for recurs_req in dist.requires(extras):
+                await self.add_requirement(recurs_req, ctx, transaction)
 
         transaction["wheels"].append((project_name, wheel, version))
 
@@ -401,7 +411,9 @@ del _PackageManager
 def install(
     requirements: str | list[str],
     keep_going: bool = False,
+    deps: bool = True,
     credentials: str | None = None,
+    pre: bool = False,
 ):
     """Install the given package and all of its dependencies.
 
@@ -441,6 +453,11 @@ def install(
         - If ``True``, the micropip will keep going after the first error, and report a list
           of errors at the end.
 
+    deps : ``bool``, default: True
+
+        If ``True``, install dependencies specified in METADATA file for
+        each package. Otherwise do not install dependencies.
+
     credentials : ``Optional[str]``
 
         This parameter specifies the value of ``credentials`` when calling the
@@ -449,6 +466,10 @@ def install(
 
         When not specified, ``fetch()`` is called without ``credentials``.
 
+    pre : ``bool``, default: False
+
+        If ``True``, include pre-release and development versions.
+        By default, micropip only finds stable versions.
 
     Returns
     -------
@@ -460,7 +481,11 @@ def install(
     importlib.invalidate_caches()
     return asyncio.ensure_future(
         PACKAGE_MANAGER.install(
-            requirements, keep_going=keep_going, credentials=credentials
+            requirements,
+            keep_going=keep_going,
+            deps=deps,
+            credentials=credentials,
+            pre=pre,
         )
     )
 

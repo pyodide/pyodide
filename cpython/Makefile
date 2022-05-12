@@ -17,9 +17,9 @@ ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
 ZLIBURL=https://zlib.net/zlib-$(ZLIBVERSION).tar.gz
 
-SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3380300.tar.gz
-SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3380300
-SQLITEURL=https://sqlite.org/2022/sqlite-autoconf-3380300.tar.gz
+SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3380500.tar.gz
+SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3380500
+SQLITEURL=https://sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
 
 BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2

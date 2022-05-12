@@ -3,9 +3,9 @@ from textwrap import dedent
 from typing import Any, Sequence
 
 import pytest
+from pyodide_test_runner import run_in_pyodide
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
-from pyodide_build.testing import run_in_pyodide
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -208,6 +208,23 @@ def test_deprecations(selenium_standalone):
     )
     dep_msg = "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
     assert selenium.logs.count(dep_msg) == 1
+
+
+def test_unpack_archive(selenium_standalone):
+    selenium = selenium_standalone
+    js_error = selenium.run_js(
+        """
+        var error = "";
+        try {
+            pyodide.unpackArchive([1, 2, 3], "zip", "abc");
+        } catch (te) {
+            error = te.toString();
+        }
+        return error
+        """
+    )
+    expected_err_msg = "TypeError: Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view"
+    assert js_error == expected_err_msg
 
 
 @run_in_pyodide
@@ -1129,3 +1146,22 @@ def test_sys_path0(selenium):
         `)
         """
     )
+
+
+@run_in_pyodide
+def test_run_js():
+    from unittest import TestCase
+
+    from pyodide import run_js
+
+    raises = TestCase().assertRaises
+
+    with raises(TypeError, msg="argument should have type 'string' not type 'int'"):
+        run_js(3)  # type: ignore[arg-type]
+
+    assert run_js("(x)=> x+1")(7) == 8
+    assert run_js("[1,2,3]")[2] == 3
+    run_js("globalThis.x = 77")
+    from js import x
+
+    assert x == 77
