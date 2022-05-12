@@ -23,8 +23,8 @@ import pytest
 
 from .utils import set_webdriver_script_timeout
 
-REWRITTEN_MODULES: dict[str, Any] = {}
-ORIGINAL_MODULES: dict[str, Any] = {}
+# For getting decorator lists
+DECORATOR_LIST_MODULES: dict[str, Any] = {}
 
 
 class SeleniumType:
@@ -227,9 +227,6 @@ class run_in_pyodide:
         self._module_asts_dict = (
             REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
         )
-        self._module_dict = (
-            REWRITTEN_MODULES if pytest_assert_rewrites else ORIGINAL_MODULES
-        )
 
         self._pkgs = list(packages)
         if pytest_assert_rewrites:
@@ -312,13 +309,12 @@ class run_in_pyodide:
         module_filename = sys.modules[f.__module__].__file__ or ""
         module_ast = self._module_asts_dict[module_filename]
 
-        # We need to get the decorator list off of self._module_dict
-        if module_filename not in self._module_dict:
-            self._module_dict[module_filename] = _execute_module_for_decorators(
+        if module_filename not in DECORATOR_LIST_MODULES:
+            DECORATOR_LIST_MODULES[module_filename] = _execute_module_for_decorators(
                 module_ast, module_filename
             )
-        module_env = self._module_dict[module_filename]
-        orig_decorator_list = module_env[f"@decorators@{func_name}"]
+        module_with_decorator_lists = DECORATOR_LIST_MODULES[module_filename]
+        orig_decorator_list = module_with_decorator_lists[f"@decorators@{func_name}"]
 
         # We are currently applying the run_in_pyodide decorator, all of the
         # decorators before it will be applied later. We need to track down the
