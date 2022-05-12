@@ -111,7 +111,7 @@ my_namespace.get("z"); // ==> 4
 ## How to detect that code is run with Pyodide?
 
 **At run time**, you can check if Python is built with Emscripten (which is the
-case Pyodide) with,
+case for Pyodide) with,
 
 ```py
 import sys
