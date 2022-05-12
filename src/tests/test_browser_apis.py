@@ -104,7 +104,7 @@ async def test_set_interval_succeeded():
 
     import asyncio
 
-    from pyodide import set_interval, clear_interval
+    from pyodide import clear_interval, set_interval
 
     interval_id = set_interval(foo, 300)
     await asyncio.sleep(1)
