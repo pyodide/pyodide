@@ -26,6 +26,8 @@ export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
 export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
+export HOST_LD_LIBRARY_PATH=$(PYODIDE_ROOT)/packages/.artifacts/lib
+export HOST_C_INCLUDE_PATH=$(PYODIDE_ROOT)/packages/.artifacts/include
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
@@ -61,12 +63,15 @@ export DBGFLAGS=$(DBGFLAGS_NODEBUG)
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
+	-I $(HOST_C_INCLUDE_PATH) \
 	$(DBGFLAGS) \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
+
 export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
+	-L $(HOST_LD_LIBRARY_PATH) \
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
 	-s MODULARIZE=1 \
