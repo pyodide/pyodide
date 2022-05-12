@@ -34,7 +34,7 @@ export PYODIDE_BASE_URL?=./
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
-export NUMPY_LIB=$(HOSTINSTALLDIR)/numpy-wasm-libs
+export NUMPY_LIB=$(HOSTSITEPACKAGES)/numpy/
 export OPEN_SSL_ROOT=$(PYODIDE_ROOT)/packages/openssl/build/openssl-1.1.1n/
 
 

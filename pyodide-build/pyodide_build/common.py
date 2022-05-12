@@ -1,12 +1,15 @@
 import functools
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Iterable, Iterator
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
+
+from .io import parse_package_config
 
 PLATFORM = "emscripten_wasm32"
 
@@ -154,11 +157,7 @@ def get_make_environment_vars():
 
     This allows us to set all build vars in one place"""
 
-    if "PYODIDE_ROOT" in os.environ:
-        PYODIDE_ROOT = Path(os.environ["PYODIDE_ROOT"])
-    else:
-        PYODIDE_ROOT = search_pyodide_root(os.getcwd())
-
+    PYODIDE_ROOT = get_pyodide_root()
     environment = {}
     result = subprocess.run(
         ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
@@ -203,3 +202,46 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     raise FileNotFoundError(
         "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
     )
+
+
+def init_environment():
+    if os.environ.get("__LOADED_PYODIDE_ENV"):
+        return
+    os.environ["__LOADED_PYODIDE_ENV"] = "1"
+    # If we are building docs, we don't need to know the PYODIDE_ROOT
+    if "sphinx" in sys.modules:
+        os.environ["PYODIDE_ROOT"] = ""
+
+    if "PYODIDE_ROOT" not in os.environ:
+        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
+
+    os.environ.update(get_make_environment_vars())
+    hostsitepackages = get_hostsitepackages()
+    pythonpath = [
+        hostsitepackages,
+    ]
+    os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    os.environ["BASH_ENV"] = ""
+    get_unisolated_packages()
+
+
+@functools.cache
+def get_pyodide_root():
+    init_environment()
+    return Path(os.environ["PYODIDE_ROOT"])
+
+
+@functools.cache
+def get_unisolated_packages():
+    import json
+
+    if "UNISOLATED_PACKAGES" in os.environ:
+        return json.loads(os.environ["UNISOLATED_PACKAGES"])
+    PYODIDE_ROOT = get_pyodide_root()
+    unisolated_packages = []
+    for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
+        config = parse_package_config(pkg, False)
+        if config.get("build", {}).get("cross-build-env", False):
+            unisolated_packages.append(config["package"]["name"])
+    os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
+    return unisolated_packages
