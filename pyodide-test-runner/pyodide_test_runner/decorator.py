@@ -1,19 +1,6 @@
 import ast
 import pickle
 import sys
-from ast import (
-    Assign,
-    AsyncFunctionDef,
-    Call,
-    Expr,
-    FunctionDef,
-    Import,
-    Load,
-    Module,
-    Name,
-    Store,
-    Tuple,
-)
 from base64 import b64decode, b64encode
 from copy import deepcopy
 from traceback import TracebackException
@@ -58,16 +45,16 @@ def _generate_pyodide_ast(
     for node in module_ast.body:
         # We need to include the magic imports that pytest inserts
         if (
-            isinstance(node, Import)
+            isinstance(node, ast.Import)
             and node.names[0].asname
             and node.names[0].asname.startswith("@")
         ):
             nodes.append(node)
 
         # We also want the function definition for the current test
-        if isinstance(node, FunctionDef) or isinstance(node, AsyncFunctionDef):
+        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             if node.name == funcname:
-                async_func = isinstance(node, AsyncFunctionDef)
+                async_func = isinstance(node, ast.AsyncFunctionDef)
                 node.decorator_list = []
                 nodes.append(node)
                 break
@@ -108,28 +95,26 @@ def _create_outer_test_function(
     """
     node = deepcopy(node)
 
-    if isinstance(node, AsyncFunctionDef):
+    if isinstance(node, ast.AsyncFunctionDef):
         # wrapper should be sync, convert AsyncFunctionDef ==> FunctionDef.
-        node = FunctionDef(**node.__dict__)
-
-    # tuple (arg1, arg2, arg3)
-    func_args_tuple = Tuple(
-        [Name(id=arg.arg, ctx=Load()) for arg in node.args.args], ctx=Load()
-    )
-
-    # Add extra <selenium_arg_name> argument
-    node.args.args.append(ast.arg(arg=selenium_arg_name))
+        node = ast.FunctionDef(**node.__dict__)
 
     # Make onwards call with two args:
     # 1. <selenium_arg_name>
     # 2. all other arguments in a tuple
-    onwargs_call_args = [Name(id=selenium_arg_name, ctx=Load()), func_args_tuple]
-    onwargs_call = Call(
-        func=Name(id="run_test", ctx=Load()), args=onwargs_call_args, keywords=[]
-    )
-    node.body = [Expr(value=onwargs_call)]
+    func_body = ast.parse("run_test(selenium_arg_name, (arg1, arg2, ...))").body
+    onwards_call = func_body[0].value
+    # Set variable name
+    onwards_call.args[0].id = selenium_arg_name
+    # Set tuple elements
+    onwards_call.args[1].elts = [
+        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node.args.args
+    ]
 
-    mod = Module([node], type_ignores=[])
+    # Add extra <selenium_arg_name> argument
+    node.args.args.append(ast.arg(arg=selenium_arg_name))
+    node.body = func_body
+    mod = ast.Module([node], type_ignores=[])
     ast.fix_missing_locations(mod)
     co = compile(mod, __file__, "exec")
 
@@ -152,11 +137,11 @@ def _execute_module_for_decorators(
     that is robust to renaming.
     """
     for i, node in reversed(list(enumerate(module_ast.body))):
-        if isinstance(node, FunctionDef) or isinstance(node, AsyncFunctionDef):
+        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
             # Store the decorators for each FunctionDef into our magic variable
-            assign_target = [Name(id="@decorators@" + node.name, ctx=Store())]
-            assign_value = Tuple(node.decorator_list, ctx=Load())
-            decs = Assign(targets=assign_target, value=assign_value)
+            assign_target = [ast.Name(id="@decorators@" + node.name, ctx=ast.Store())]
+            assign_value = ast.Tuple(node.decorator_list, ctx=ast.Load())
+            decs = ast.Assign(targets=assign_target, value=assign_value)
             module_ast.body.insert(i, decs)
             node.decorator_list = []  # Avoid recursion issues
     ast.fix_missing_locations(module_ast)
