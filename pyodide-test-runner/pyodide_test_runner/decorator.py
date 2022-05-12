@@ -92,7 +92,9 @@ def _create_outer_test_function(
 
     If the original function looked like:
 
+        @outer_decorators
         @run_in_pyodide
+        @inner_decorators
         <async?> def func(arg1, arg2, arg3):
             # do stuff
 
@@ -101,7 +103,8 @@ def _create_outer_test_function(
         def <func_name>(arg1, arg2, arg3, <selenium_arg_name>):
             run_test(<selenium_arg_name>, tuple(arg1, arg2, arg3))
 
-    Any decorators that were inside of run_in_pyodide get applied in __call__.
+    Any inner_decorators get applied in __call__. Any outer_decorators get applied
+    by the Python interpreter via the normal mechanism
     """
     node = deepcopy(node)
 
@@ -119,7 +122,7 @@ def _create_outer_test_function(
 
     # Make onwards call with two args:
     # 1. <selenium_arg_name>
-    # 2. all other arguments in a tuple (arg1, arg2, arg3)
+    # 2. all other arguments in a tuple
     onwargs_call_args = [Name(id=selenium_arg_name, ctx=Load()), func_args_tuple]
     onwargs_call = Call(
         func=Name(id="run_test", ctx=Load()), args=onwargs_call_args, keywords=[]
