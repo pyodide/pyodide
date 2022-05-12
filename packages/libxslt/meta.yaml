@@ -13,7 +13,6 @@ requirements:
 build:
   library: true
   script: |
-    export VERBOSE=1
     emconfigure ./configure \
         CFLAGS="-fPIC" \
         --disable-dependency-tracking \
