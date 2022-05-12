@@ -168,7 +168,9 @@ async function downloadPackage(
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.packages[name].file_name;
-    file_sub_resource_hash = API.packages[name].sub_resource_hash;
+    file_sub_resource_hash = API.package_loader.sub_resource_hash(
+      API.packages[name].sha_256
+    );
   } else {
     file_name = channel;
     file_sub_resource_hash = undefined;

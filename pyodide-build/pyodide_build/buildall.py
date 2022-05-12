@@ -5,7 +5,6 @@ Build all of the packages in a given directory.
 """
 
 import argparse
-import base64
 import hashlib
 import json
 import os
@@ -432,12 +431,12 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def _generate_package_sub_resource_hash(full_path: Path) -> str:
+def _generate_package_hash(full_path: Path) -> str:
     sha256_hash = hashlib.sha256()
     with open(full_path, "rb") as f:
         while chunk := f.read(4096):
             sha256_hash.update(chunk)
-    return "sha256-" + base64.b64encode(sha256_hash.digest()).decode()
+    return sha256_hash.hexdigest()
 
 
 def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) -> dict:
@@ -458,9 +457,7 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
-            "sub_resource_hash": _generate_package_sub_resource_hash(
-                Path(output_dir, pkg.file_name)
-            ),
+            "sha_256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True

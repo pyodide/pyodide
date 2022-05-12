@@ -1,3 +1,5 @@
+import base64
+import binascii
 import re
 import shutil
 import sysconfig
@@ -179,3 +181,19 @@ def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
         for path in dynlib_paths_iter
         if should_load_dynlib(path)
     ]
+
+
+def sub_resource_hash(sha_256: str) -> str:
+    """Calculates the sub resource integrity hash given a SHA-256
+
+    Parameters
+    ----------
+    sha_256
+        A hexdigest of the SHA-256 sum.
+
+    Returns
+    -------
+        The sub resource integrity hash corresponding to the sum.
+    """
+    binary_digest = binascii.unhexlify(sha_256)
+    return "sha256-" + base64.b64encode(binary_digest).decode()
