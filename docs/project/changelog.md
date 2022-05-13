@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
+
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
   {pr}`2517`
 
@@ -73,6 +75,10 @@ substitutions:
 - {{ Fix }} Fixed a bug with `toJs` when used with recursive structures and the
   `dictConverter` argument.
   {pr}`2533`
+
+- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`, `set_interval`,
+  `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
+  {pr}`2456`
 
 ### micropip
 
