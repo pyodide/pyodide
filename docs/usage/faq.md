@@ -110,23 +110,24 @@ my_namespace.get("z"); // ==> 4
 
 ## How to detect that code is run with Pyodide?
 
-**At run time**, you can detect that a code is running with Pyodide using,
+**At run time**, you can check if Python is built with Emscripten (which is the
+case for Pyodide) with,
+
+```py
+import sys
+
+if sys.platform == 'emscripten':
+    # running in Pyodide or other Emscripten based build
+```
+
+To detect that a code is running with Pyodide specifically, you can check
+for the loaded `pyodide` module,
 
 ```py
 import sys
 
 if "pyodide" in sys.modules:
    # running in Pyodide
-```
-
-More generally you can detect Python built with Emscripten (which includes
-Pyodide) with,
-
-```py
-import platform
-
-if platform.system() == 'Emscripten':
-    # running in Pyodide or other Emscripten based build
 ```
 
 This however will not work at build time (i.e. in a `setup.py`) due to the way
