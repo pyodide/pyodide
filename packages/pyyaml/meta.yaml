@@ -8,6 +8,9 @@ build:
   cflags: |
     -I$(PYTHONINCLUDE)
     -I$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/system/include/libc
+    -I$(WASM_LIBRARY_DIR)/libyaml/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/libyaml/lib
 requirements:
   run:
     - libyaml

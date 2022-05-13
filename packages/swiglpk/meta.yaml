@@ -8,7 +8,7 @@ source:
 
 build:
   script: |
-    export ENV_GLPK_HEADER_PATH="${HOST_C_INCLUDE_PATH}/glpk.h"
+    export ENV_GLPK_HEADER_PATH="${WASM_LIBRARY_DIR}/glpk/include/glpk.h"
 
 requirements:
   run:

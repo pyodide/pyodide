@@ -13,7 +13,7 @@ build:
        CFLAGS="-fPIC" \
        --disable-dependency-tracking \
        --disable-shared \
-       --prefix=${HOSTINSTALLDIR}
+       --prefix=${WASM_LIBRARY_DIR}/libiconv
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

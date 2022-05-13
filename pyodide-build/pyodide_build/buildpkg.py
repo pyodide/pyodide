@@ -146,8 +146,8 @@ def get_bash_runner():
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
             "UNISOLATED_PACKAGES",
-            "HOST_C_INCLUDE_PATH",
-            "HOST_LD_LIBRARY_PATH",
+            "WASM_LIBRARY_DIR",
+            "WASM_PKG_CONFIG_PATH",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:

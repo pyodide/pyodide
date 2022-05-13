@@ -19,8 +19,9 @@ build:
         --disable-dependency-tracking \
         --disable-shared \
         --without-python \
-        --with-iconv="${HOSTINSTALLDIR}" \
-        --with-zlib="${HOSTINSTALLDIR}" \
-        --prefix=${HOSTINSTALLDIR}
+        --with-iconv="${WASM_LIBRARY_DIR}/libiconv" \
+        --with-zlib="${WASM_LIBRARY_DIR}/zlib" \
+        --prefix=${WASM_LIBRARY_DIR}/libxml
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+    mkdir -p ${WASM_PKG_CONFIG_PATH} && cp ${WASM_LIBRARY_DIR}/libxml/lib/pkgconfig/*.pc ${WASM_PKG_CONFIG_PATH}

@@ -16,7 +16,7 @@ build:
       -DOPENSSL_NO_SECURE_MEMORY \
       -DNO_SYSLOG \
       -fPIC \
-      --prefix=${HOSTINSTALLDIR}
+      --prefix=${WASM_LIBRARY_DIR}/openssl
 
     sed -i 's!^CROSS_COMPILE=.*!!g' Makefile
     make build_generated
@@ -27,3 +27,5 @@ build:
     emcc -sSIDE_MODULE=1 libcrypto.a -o libcrypto.so
     emcc -sSIDE_MODULE=1 libssl.a -o libssl.so
     make install_sw
+
+    mkdir -p ${WASM_PKG_CONFIG_PATH} && cp ${WASM_LIBRARY_DIR}/openssl/lib/pkgconfig/*.pc ${WASM_PKG_CONFIG_PATH}

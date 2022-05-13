@@ -24,4 +24,4 @@ update-all:
 
 clean:
 	rm -rf ./*/build ./*/build.log ./*/dist
-	rm -rf ./.artifacts
+	rm -rf ./.artifacts ./.libs
