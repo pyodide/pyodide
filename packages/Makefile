@@ -9,7 +9,7 @@ else
 endif
 
 all: pyodide-build
-	mkdir -p $(HOSTINSTALLDIR)
+	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build buildall . $(PYODIDE_ROOT)/dist \
 	$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs

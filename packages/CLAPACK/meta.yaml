@@ -33,5 +33,7 @@ build:
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
-    mkdir -p dist/lib
-    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o dist/lib/clapack_all.so
+    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a -sSIDE_MODULE -o clapack_all.so
+    mkdir -p ${WASM_LIBRARY_DIR}/CLAPACK/lib
+    cp -r INCLUDE ${WASM_LIBRARY_DIR}/CLAPACK/
+    cp clapack_all.so ${WASM_LIBRARY_DIR}/CLAPACK/lib
