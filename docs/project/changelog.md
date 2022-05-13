@@ -76,6 +76,10 @@ substitutions:
   `dictConverter` argument.
   {pr}`2533`
 
+- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`, `set_interval`,
+  `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
+  {pr}`2456`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
