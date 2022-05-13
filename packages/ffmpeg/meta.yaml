@@ -23,3 +23,4 @@ build:
 
     emmake make -j${PYODIDE_JOBS:-3}
     emmake make install
+    mkdir -p ${WASM_PKG_CONFIG_PATH} && cp ${WASM_LIBRARY_DIR}/ffmpeg/lib/pkgconfig/*.pc ${WASM_PKG_CONFIG_PATH}

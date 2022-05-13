@@ -6,7 +6,7 @@ source:
   url: https://files.pythonhosted.org/packages/3b/94/e2b1b3bad91d15526c7e38918795883cee18b93f6785ea8ecf13f8ffa01e/lxml-4.8.0.tar.gz
 build:
   script: |
-    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${WASM_PKG_CONFIG_PATH}
+    export PKG_CONFIG_PATH=${WASM_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}
   cflags: |
     -Wno-implicit-function-declaration
 requirements:

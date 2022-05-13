@@ -8,7 +8,8 @@ source:
 
 build:
   script: |
-    export ENV_GLPK_HEADER_PATH="${WASM_LIBRARY_DIR}/glpk/include/glpk.h"
+    export GLPK_HEADER_PATH="${WASM_LIBRARY_DIR}/glpk/include/"
+  ldflags: -L$(WASM_LIBRARY_DIR)/glpk/lib
 
 requirements:
   run:

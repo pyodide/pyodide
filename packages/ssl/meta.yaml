@@ -8,7 +8,7 @@ build:
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist
-    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:${WASM_PKG_CONFIG_PATH}
+    export PKG_CONFIG_PATH=${WASM_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}
     cd $CPYTHONBUILD
     emcc $STDLIB_MODULE_CFLAGS -c Modules/socketmodule.c -o Modules/socketmodule.o
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_ssl.c -o Modules/_ssl.o \
