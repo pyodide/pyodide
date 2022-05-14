@@ -204,7 +204,7 @@ class _PackageManager:
                 [f"'{req}'" for req in transaction["failed"]]
             )
             raise ValueError(
-                f"Couldn't find a pure Python 3 wheel for: {failed_requirements}"
+                f"Can't find a pure Python 3 wheel for: {failed_requirements}"
             )
 
         wheel_promises = []
@@ -319,8 +319,9 @@ class _PackageManager:
                 transaction["failed"].append(req)
             else:
                 raise ValueError(
-                    f"Couldn't find a pure Python 3 wheel for '{req}'. "
-                    "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
+                    f"Can't find a pure Python 3 wheel for '{req}'.\n"
+                    "You can use `micropip.install(..., keep_going=True)` to "
+                    "get a list of all packages with missing wheels."
                 )
         else:
             await self.add_wheel(
@@ -349,7 +350,7 @@ class _PackageManager:
                 raise e
             else:
                 raise ValueError(
-                    f"Couldn't fetch wheel from '{wheel['url']}'."
+                    f"Can't fetch wheel from '{wheel['url']}'."
                     "One common reason for this is when the server blocks "
                     "Cross-Origin Resource Sharing (CORS)."
                     "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
