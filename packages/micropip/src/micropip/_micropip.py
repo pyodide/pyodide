@@ -51,19 +51,19 @@ else:
 if IN_BROWSER:
     from pyodide.http import pyfetch
 
-    async def fetch_bytes(url: str, **kwargs) -> bytes:
+    async def fetch_bytes(url: str, kwargs) -> bytes:
         return await (await pyfetch(url, **kwargs)).bytes()
 
-    async def fetch_string(url: str, **kwargs) -> str:
+    async def fetch_string(url: str, kwargs) -> str:
         return await (await pyfetch(url, **kwargs)).string()
 
 else:
     from urllib.request import Request, urlopen
 
-    async def fetch_bytes(url: str, **kwargs) -> bytes:
+    async def fetch_bytes(url: str, kwargs) -> bytes:
         return urlopen(Request(url, headers=kwargs)).read()
 
-    async def fetch_string(url: str, **kwargs) -> str:
+    async def fetch_string(url: str, kwargs) -> str:
         return (await fetch_bytes(url, **kwargs)).decode()
 
 
@@ -81,9 +81,9 @@ else:
         return result
 
 
-async def _get_pypi_json(pkgname, **fetch_extra_kwargs):
+async def _get_pypi_json(pkgname, fetch_extra_kwargs):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    return json.loads(await fetch_string(url, **fetch_extra_kwargs))
+    return json.loads(await fetch_string(url, fetch_extra_kwargs))
 
 
 def _is_pure_python_wheel(filename: str):
@@ -153,7 +153,7 @@ class _PackageManager:
         keep_going: bool = False,
         deps: bool = True,
         pre: bool = False,
-        **kwargs,
+        fetch_extra_kwargs = {},
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -172,7 +172,7 @@ class _PackageManager:
         requirement_promises = []
         for requirement in requirements:
             requirement_promises.append(
-                self.add_requirement(requirement, ctx, transaction, **kwargs)
+                self.add_requirement(requirement, ctx, transaction, fetch_extra_kwargs)
             )
 
         await gather(*requirement_promises)
@@ -196,7 +196,7 @@ class _PackageManager:
         if credentials:
             fetch_extra_kwargs["credentials"] = credentials
         transaction = await self.gather_requirements(
-            requirements, ctx, keep_going, deps, pre, **fetch_extra_kwargs
+            requirements, ctx, keep_going, deps, pre, fetch_extra_kwargs
         )
 
         if transaction["failed"]:
@@ -256,7 +256,7 @@ class _PackageManager:
         requirement: str | Requirement,
         ctx,
         transaction,
-        **fetch_extra_kwargs,
+        fetch_extra_kwargs,
     ):
         """Add a requirement to the transaction.
 
@@ -273,7 +273,7 @@ class _PackageManager:
                 raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
 
             await self.add_wheel(
-                name, wheel, version, (), ctx, transaction, **fetch_extra_kwargs
+                name, wheel, version, (), ctx, transaction, fetch_extra_kwargs
             )
             return
         else:
@@ -312,7 +312,7 @@ class _PackageManager:
                     f"Requested '{requirement}', "
                     f"but {req.name}=={ver} is already installed"
                 )
-        metadata = await _get_pypi_json(req.name, **fetch_extra_kwargs)
+        metadata = await _get_pypi_json(req.name, fetch_extra_kwargs)
         maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
         if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
@@ -330,11 +330,11 @@ class _PackageManager:
                 req.extras,
                 ctx,
                 transaction,
-                **fetch_extra_kwargs,
+                fetch_extra_kwargs,
             )
 
     async def add_wheel(
-        self, name, wheel, version, extras, ctx, transaction, **fetch_extra_kwargs
+        self, name, wheel, version, extras, ctx, transaction, fetch_extra_kwargs
     ):
         normalized_name = normalize_package_name(name)
         transaction["locked"][normalized_name] = PackageMetadata(
@@ -343,7 +343,7 @@ class _PackageManager:
         )
 
         try:
-            wheel_bytes = await fetch_bytes(wheel["url"], **fetch_extra_kwargs)
+            wheel_bytes = await fetch_bytes(wheel["url"], fetch_extra_kwargs)
         except Exception as e:
             if wheel["url"].startswith("https://files.pythonhosted.org/"):
                 raise e
