@@ -479,7 +479,9 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
                 "imports": [],
                 "file_name": pkg.unvendored_tests.name,
                 "install_dir": pkg.install_dir,
-                "sha256": _generate_package_hash(Path(output_dir, pkg.unvendored_tests.name)),
+                "sha256": _generate_package_hash(
+                    Path(output_dir, pkg.unvendored_tests.name)
+                ),
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
