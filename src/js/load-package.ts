@@ -169,7 +169,7 @@ async function downloadPackage(
     }
     file_name = API.packages[name].file_name;
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.packages[name].sha_256
+      API.packages[name].sha256
     );
   } else {
     file_name = channel;
