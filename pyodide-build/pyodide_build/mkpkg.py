@@ -11,6 +11,7 @@ import urllib.request
 import warnings
 from pathlib import Path
 from typing import Any, Literal
+import pkg_resources
 
 from ruamel.yaml import YAML
 
@@ -97,6 +98,7 @@ def make_package(
     packages_dir: Path,
     package: str,
     version: str | None = None,
+    extra: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
 ):
     """
@@ -125,10 +127,82 @@ def make_package(
     license = pypi_metadata["info"]["license"]
     pypi = "https://pypi.org/project/" + package
 
+    class YamlDistribution(pkg_resources.Distribution):
+        def __init__(self,*args,**argv):
+            super().__init__(*args,**argv)
+            self.yaml=YAML()
+            meta_path=Path(self.location) / "meta.yaml"
+            p_yaml=yaml.load(meta_path.read_bytes())
+
+        def _build_dep_map(self):
+            # read dependencies from pypi
+            package_metadata=_get_metadata(self.project_name,self._version)
+            dm={}
+            if "requires_dist" in package_metadata["info"] and package_metadata["info"]["requires_dist"]!=None:
+                # make a requirements parser and do this properly
+                reqs=pkg_resources.parse_requirements(package_metadata["info"]["requires_dist"])
+                for req in reqs:
+                    m=req.marker
+                    extra_name=None
+                    if m!=None:
+                        for m in m._markers:
+                            if str(m[0])=="extra" and len(m)==3:
+                                extra_name=str(m[2])
+                    dm.setdefault(extra_name, []).append(req)
+            return dm
+
+    class EnvironmentHelper(pkg_resources.Environment):
+        def __init__(self):
+            pass
+
+        def make_dist(self,proj_name,meta_path):
+            yaml=YAML()
+            p_yaml=yaml.load(meta_path.read_bytes())
+            p_version=p_yaml["package"]["version"]
+            dist=YamlDistribution( meta_path.parents[0],project_name=proj_name,version=p_version)
+            return dist
+
+        def best_match(self,req,working_set,installer=None,replace_conflicting=False):
+            proj_name=req.project_name
+            if os.path.isfile(packages_dir / proj_name / "meta.yaml"):
+                return self.make_dist(req.project_name,packages_dir / proj_name / "meta.yaml")
+            proj_name=proj_name.replace("-","_")
+            if os.path.isfile(packages_dir / proj_name / "meta.yaml"):
+                return self.make_dist(req.project_name,packages_dir / proj_name / "meta.yaml")
+            # no package yet - return false
+            print("Can't find:",packages_dir/proj_name/"meta.yaml")
+            return None
+            
+    if extra:
+        our_extras=extra.split(",")
+    else:
+        our_extras=[]
+    requires_packages=[]
+    yaml_requires=[]
+    for requirement_spec in pypi_metadata["info"]["requires_dist"]:
+        reqs=pkg_resources.parse_requirements(requirement_spec)
+        for r in reqs:
+            requires_packages.append(r)
+
+    for r in requires_packages:
+        name=r.name
+        if os.path.isfile(packages_dir / name / "meta.yaml"):
+            yaml_requires.append(name)
+        else:
+            name=name.replace("-","_")
+            if os.path.isfile(packages_dir / name / "meta.yaml"):
+                yaml_requires.append(name)
+        
+    ws= pkg_resources.WorkingSet([])
+    ws.resolve(requires_packages,env=EnvironmentHelper())
+
+    print(yaml_requires)
+
     yaml_content = {
         "package": {"name": package, "version": version},
         "source": {"url": url, "sha256": sha256},
         "test": {"imports": [package]},
+        "requirements": {"run":yaml_requires},
         "about": {
             "home": homepage,
             "PyPI": pypi,
@@ -136,6 +210,8 @@ def make_package(
             "license": license,
         },
     }
+
+
 
     package_dir = packages_dir / package
     package_dir.mkdir(parents=True, exist_ok=True)
@@ -274,6 +350,13 @@ complex things.""".strip()
         default=None,
         help="Package version string, "
         "e.g. v1.2.1 (defaults to latest stable release)",
+    )
+    parser.add_argument(
+        "--extras",
+        type=str,
+        default=None,
+        help="Package extras"
+        "e.g. extra1,extra2",
     )
     return parser
 
