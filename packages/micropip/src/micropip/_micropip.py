@@ -81,6 +81,11 @@ else:
         return result
 
 
+FAQ_URLS = {
+    "cant_find_wheel": "https://pyodide.org/en/stable/usage/faq.html#micropip-can-t-find-a-pure-python-wheel"
+}
+
+
 async def _get_pypi_json(pkgname, **fetch_extra_kwargs):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     return json.loads(await fetch_string(url, **fetch_extra_kwargs))
@@ -204,7 +209,8 @@ class _PackageManager:
                 [f"'{req}'" for req in transaction["failed"]]
             )
             raise ValueError(
-                f"Can't find a pure Python 3 wheel for: {failed_requirements}"
+                f"Can't find a pure Python 3 wheel for: {failed_requirements}\n"
+                f"See: {FAQ_URLS['cant_find_wheel']}\n"
             )
 
         wheel_promises = []
@@ -320,6 +326,7 @@ class _PackageManager:
             else:
                 raise ValueError(
                     f"Can't find a pure Python 3 wheel for '{req}'.\n"
+                    f"See: {FAQ_URLS['cant_find_wheel']}\n"
                     "You can use `micropip.install(..., keep_going=True)` to "
                     "get a list of all packages with missing wheels."
                 )

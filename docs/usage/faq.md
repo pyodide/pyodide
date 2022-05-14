@@ -338,7 +338,7 @@ functools.reduce = reduce(...)
 You are now leaving help and returning to the Python interpreter.
 ```
 
-## Micropip can't find a pure Python 3 wheel: what can I do about this error?
+## Micropip can't find a pure Python wheel
 
 When installing a Python package from PyPi, micropip will produce an error if
 it cannot find a pure Python wheel. To determine if a package has a pure
