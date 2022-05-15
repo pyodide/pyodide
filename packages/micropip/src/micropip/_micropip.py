@@ -107,7 +107,7 @@ class WheelInfo:
 
 @dataclass
 class Transaction:
-    wheels: list[tuple[str, WheelInfo, Version]]
+    wheels: list[tuple[str, WheelInfo]]
     pyodide_packages: list[PackageMetadata]
     locked: PackageDict
     failed: list[Requirement]
@@ -116,7 +116,7 @@ class Transaction:
     pre: bool
 
 
-def _parse_wheel_url(url: str) -> tuple[str, WheelInfo, Version]:
+def _parse_wheel_url(url: str) -> WheelInfo:
     """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
@@ -130,7 +130,7 @@ def _parse_wheel_url(url: str) -> tuple[str, WheelInfo, Version]:
         raise ValueError(f"{file_name} is not a valid wheel file name.")
     version, python_tag, abi_tag, platform = tokens[-4:]
     name = "-".join(tokens[:-4])
-    wheel = WheelInfo(
+    return WheelInfo(
         name=name,
         version=Version(version),
         filename=file_name,
@@ -140,8 +140,6 @@ def _parse_wheel_url(url: str) -> tuple[str, WheelInfo, Version]:
         platform=platform,
         url=url,
     )
-
-    return name, wheel, Version(version)
 
 
 def _extract_wheel(fd: io.BytesIO):
@@ -256,7 +254,7 @@ class _PackageManager:
             )
 
         # Now install PyPI packages
-        for name, wheel, ver in transaction.wheels:
+        for name, wheel in transaction.wheels:
             # detect whether the wheel metadata is from PyPI or from custom location
             # wheel metadata from PyPI has SHA256 checksum digest.
             wheel_source = "pypi" if wheel.digests is not None else wheel.url
@@ -267,7 +265,7 @@ class _PackageManager:
                         self.installed_packages.update,
                         {
                             normalize_package_name(name): PackageMetadata(
-                                name, str(ver), wheel_source
+                                name, str(wheel.version), wheel_source
                             )
                         },
                     ),
@@ -292,14 +290,11 @@ class _PackageManager:
             req = requirement
         elif requirement.endswith(".whl"):
             # custom download location
-            name, wheel, version = _parse_wheel_url(requirement)
-            name = name.lower()
+            wheel = _parse_wheel_url(requirement)
             if not _is_pure_python_wheel(wheel.filename):
                 raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
-            await self.add_wheel(
-                name, wheel, version, set(), ctx, transaction, fetch_extra_kwargs
-            )
+            await self.add_wheel(wheel, set(), ctx, transaction, fetch_extra_kwargs)
             return
         else:
             req = Requirement(requirement)
@@ -339,16 +334,14 @@ class _PackageManager:
         metadata = await _get_pypi_json(req.name, fetch_extra_kwargs)
 
         try:
-            wheel, ver = self.find_wheel(metadata, req)
+            wheel = self.find_wheel(metadata, req)
         except ValueError:
             transaction.failed.append(req)
             if not transaction.keep_going:
                 raise
 
         await self.add_wheel(
-            req.name,
             wheel,
-            ver,
             req.extras,
             ctx,
             transaction,
@@ -357,18 +350,16 @@ class _PackageManager:
 
     async def add_wheel(
         self,
-        name: str,
         wheel: WheelInfo,
-        version: Version,
         extras: set[str],
         ctx: dict[str, str],
         transaction: Transaction,
         fetch_extra_kwargs: dict[str, str],
     ):
-        normalized_name = normalize_package_name(name)
+        normalized_name = normalize_package_name(wheel.name)
         transaction.locked[normalized_name] = PackageMetadata(
-            name=name,
-            version=str(version),
+            name=wheel.name,
+            version=str(wheel.version),
         )
 
         try:
@@ -387,11 +378,11 @@ class _PackageManager:
         wheel.wheel_bytes = wheel_bytes
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
-            dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
+            dist = pkg_resources_distribution_for_wheel(zip_file, wheel.name, "???")
 
         project_name: str = dist.project_name
         if project_name == "UNKNOWN":
-            project_name = name
+            project_name = wheel.name
 
         if transaction.deps:
             for recurs_req in dist.requires(extras):
@@ -399,11 +390,9 @@ class _PackageManager:
                     recurs_req, ctx, transaction, fetch_extra_kwargs
                 )
 
-        transaction.wheels.append((project_name, wheel, version))
+        transaction.wheels.append((project_name, wheel))
 
-    def find_wheel(
-        self, metadata: dict[str, Any], req: Requirement
-    ) -> tuple[Any, Version]:
+    def find_wheel(self, metadata: dict[str, Any], req: Requirement) -> WheelInfo:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
@@ -429,7 +418,9 @@ class _PackageManager:
             release = releases[str(ver)]
             for fileinfo in release:
                 if _is_pure_python_wheel(fileinfo["filename"]):
-                    return fileinfo, ver
+                    wheel = _parse_wheel_url(fileinfo["url"])
+                    wheel.digests = fileinfo["digests"]
+                    return wheel
 
         raise ValueError(
             f"Couldn't find a pure Python 3 wheel for '{req}'. "
