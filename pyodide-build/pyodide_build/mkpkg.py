@@ -9,12 +9,14 @@ import sys
 import urllib.error
 import urllib.request
 import warnings
-from pathlib import Path
+from pathlib import Path,PurePath
 from typing import Any, Literal
 import pkg_resources
 import packaging.specifiers
 from ruamel.yaml import YAML
-
+from zipfile import ZipFile
+import tarfile
+import tempfile
 
 class MkpkgFailedException(Exception):
     pass
@@ -97,7 +99,7 @@ def _get_metadata(package: str, version: str | None = None) -> dict:
                             if spec.contains(str(v)):
                                 chosen_version=str(v)
                                 break
-                    except packaging.specifiers.InvalidSpecifier:
+                    except packaging.specifiers.InvalidSpecifier as e:
                         raise MkpkgFailedException(
                             f"Bad specifier for  {package}{version} from "
                             f"https://pypi.org/pypi/{package}{version}/json: {e}"
@@ -136,12 +138,101 @@ def run_prettier(meta_path):
     subprocess.run(["npx", "prettier", "-w", meta_path])
 
 
+def _make_project_compare_name(project_name):
+    project_name_cleaned=project_name.replace("_","").replace("-","").lower()
+    if project_name_cleaned.startswith("py"):
+        project_name_cleaned=project_name[2:]
+    return project_name_cleaned
+
+# download a package from pypi and guess what modules are provided by it
+def _find_imports_from_package(url,project_name):
+    project_name_cleaned=_make_project_compare_name(project_name)
+    all_imports=[]
+    try:
+        if url.endswith(".zip") or url.endswith(".whl"):
+            filetype=".zip"
+        elif url.endswith(".tar.gz") or url.endswith(".tgz"):
+            filetype=".tar.gz"
+        else:
+            print("Unknown archive type for {url}, can't determine imports")
+            return []
+        with tempfile.NamedTemporaryFile(suffix=filetype) as tf:
+            with urllib.request.urlopen(url) as fd:
+                tf.write(fd.read())
+            if url.endswith(".zip") or url.endswith(".whl"):
+                # wheel is zip
+                with ZipFile(tf) as package:
+                    all_files=package.namelist()
+                    all_modules=[]
+                    for f in all_files:
+                        if f.endswith("__init__.py") and f.find("/test/")==-1:
+                            all_modules.append(PurePath("/"+f).parents[0])
+            elif url.endswith(".tar.gz") or url.endswith(".tgz"):
+                # wheel is tar gz
+                with tarfile.open(tf.name) as package:
+                    all_files=package.getnames()
+                    all_modules=[]
+                    for f in all_files:
+                        if f.endswith("__init__.py") and f.find("/test/")==-1:
+                            all_modules.append(PurePath("/"+f).parents[0])
+            if len(all_modules)==0:
+                print(f"WARNING: COuldn't find any imports in package {url}")
+                return []
+            main_prefix=None
+            main_prefix_level=None
+            # check for first bit of the path that looks like the package name
+            # without any _ or -
+            for mod in all_modules:
+                level=len(mod.parts)
+                path_part=mod.parts[-1]
+                cleaned=_make_project_compare_name(path_part)
+                if cleaned==project_name_cleaned:
+                    if main_prefix_level==None or level<=main_prefix_level :
+                        main_prefix_level=level
+                        main_prefix=PurePath(*mod.parts[0:level+1])
+            if main_prefix==None:
+                # not found a correctly named top level prefix, just find the highest up path
+                # that contains all modules and assume that is the base
+                test_prefix=str(all_modules[0])
+                found_prefix=false
+                while main_prefix==None:
+                    found_prefix=True
+                    for mod in all_modules:
+                        if not str(all_modules).startswith(test_prefix):
+                            found_prefix=False
+                            break
+                    if not found_prefix:
+                        test_prefix=test_prefix.parents[0]
+                    else:
+                        main_prefix=test_prefix
+
+            main_prefix=str(main_prefix.parents[0])
+            if not main_prefix.endswith("/"):
+                main_prefix+="/"
+            for mod in all_modules:
+                if str(mod).startswith(str(main_prefix)):
+                    import_name=str(mod).replace("/",".")
+                    import_name=import_name[len(str(main_prefix)):]
+                    all_imports.append(import_name)
+    except urllib.error.HTTPError as e:
+        raise MkpkgFailedException(
+            f"Failed to load wheel or sdist for {project_name} from "
+            f"{url} {e}"
+        )
+    print(f"Package {project_name}, imports = {','.join(all_imports)}")
+    return all_imports
+
+    
+
+
 def make_package(
     packages_dir: Path,
     package: str,
     version: str | None = None,
     extra: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
+    make_dependencies: bool = False,
+    find_imports : bool= False
 ):
     """
     Creates a template that will work for most pure Python packages,
@@ -172,14 +263,11 @@ def make_package(
     class YamlDistribution(pkg_resources.Distribution):
         def __init__(self,*args,**argv):
             super().__init__(*args,**argv)
-            self.yaml=YAML()
-            meta_path=Path(self.location) / "meta.yaml"
-            p_yaml=yaml.load(meta_path.read_bytes())
+            # filter python version etc. extras now
             self.__dep_map= self._filter_extras(self._build_dep_map())
 
         def requires(self,extras=()):
             reqs=super().requires(extras)
-#            print(f"{self.project_name}[{extras}]\n  Requirements:{reqs}\n")
             return reqs
 
         def _build_dep_map(self):
@@ -222,9 +310,9 @@ def make_package(
             if from_install:
                 return None
             parser = make_parser(argparse.ArgumentParser())            
-            print("Can't find:",packages_dir/proj_name/"meta.yaml")
-            print("TRY INSTALL:",req.project_name,str(req.specs))
-            args = parser.parse_args(['--version',str(req.specifier),req.project_name])
+            print("Installing dependency:",req.project_name,str(req.specs))
+            args = parser.parse_args(['--make-dependencies','--version',str(req.specifier),req.project_name])
+            args.find_correct_imports=find_imports
             main(args)
             return self.best_match(req,working_set,installer,replace_conflicting,True)
             
@@ -234,16 +322,15 @@ def make_package(
         our_extras=[]
     requires_packages=[]
     yaml_requires=[]
-    if "requires_dist" in pypi_metadata["info"] and pypi_metadata["info"]["requires_dist"]!=None:
-        for requirement_spec in pypi_metadata["info"]["requires_dist"]:
-            reqs=pkg_resources.parse_requirements(requirement_spec)
-            for r in reqs:
-                requires_packages.append(r)
-    print(f"{package}\n  Requirements:{requires_packages}\n")
 
-        
-    ws= pkg_resources.WorkingSet([])
-    ws.resolve(requires_packages,env=EnvironmentHelper())
+    package_dir = packages_dir / package
+
+    dist=YamlDistribution(package_dir,project_name=package,version=version)
+    requires_packages=dist.requires(extras=our_extras)
+
+    if make_dependencies:
+        ws= pkg_resources.WorkingSet([])
+        ws.resolve(requires_packages,env=EnvironmentHelper(),extras=our_extras)
 
     for r in requires_packages:
         name=r.name
@@ -253,11 +340,18 @@ def make_package(
             name=name.replace("-","_")
             if os.path.isfile(packages_dir / name / "meta.yaml"):
                 yaml_requires.append(name)
+            else:
+                print(f"Warning: Missing dependency of {package}: {name}")
+
+    if find_imports:
+        pkg_imports=_find_imports_from_package(url,package)
+    else:
+        pkg_imports=[package]
 
     yaml_content = {
         "package": {"name": package, "version": version},
         "source": {"url": url, "sha256": sha256},
-        "test": {"imports": [package]},
+        "test": {"imports": pkg_imports},
         "requirements": {"run":yaml_requires},
         "about": {
             "home": homepage,
@@ -267,9 +361,6 @@ def make_package(
         },
     }
 
-
-
-    package_dir = packages_dir / package
     package_dir.mkdir(parents=True, exist_ok=True)
 
     meta_path = package_dir / "meta.yaml"
@@ -395,6 +486,11 @@ complex things.""".strip()
         help="Update existing package if it has no patches",
     )
     parser.add_argument(
+        "--make-dependencies",
+        action="store_true",
+        help="Make package dependencies if not installed",
+    )
+    parser.add_argument(
         "--source-format",
         help="Which source format is preferred. Options are wheel or sdist. "
         "If none is provided, then either a wheel or an sdist will be used. "
@@ -411,8 +507,15 @@ complex things.""".strip()
         "--extras",
         type=str,
         default=None,
-        help="Package extras"
+        help="Package install extras"
         "e.g. extra1,extra2",
+    )
+    parser.add_argument(
+        "--find-correct-imports",
+        action="store_true",
+        help="Find the correct imports for the package"
+        "(e.g. if the package is called bob-jones, import might be bobjones, bob_jones, pybobjones etc.)"
+        "This involves downloading the source wheel for the package, so could be slow."
     )
     return parser
 
@@ -448,7 +551,7 @@ def main(args):
             )
             return
         make_package(
-            PACKAGES_ROOT, package, args.version, source_fmt=args.source_format
+            PACKAGES_ROOT, package, args.version, source_fmt=args.source_format,make_dependencies=args.make_dependencies,find_imports=args.find_correct_imports
         )
     except MkpkgFailedException as e:
         # This produces two types of error messages:
