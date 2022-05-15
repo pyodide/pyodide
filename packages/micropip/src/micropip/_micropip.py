@@ -101,13 +101,14 @@ class WheelInfo:
     abi_tag: str
     platform: str
     url: str
+    project_name: str | None = None
     digests: dict[str, str] | None = None
     wheel_bytes: bytes | None = None
 
 
 @dataclass
 class Transaction:
-    wheels: list[tuple[str, WheelInfo]]
+    wheels: list[WheelInfo]
     pyodide_packages: list[PackageMetadata]
     locked: PackageDict
     failed: list[Requirement]
@@ -159,7 +160,7 @@ def _validate_wheel(data: io.BytesIO, wheelinfo: WheelInfo):
         raise ValueError("Contents don't match hash")
 
 
-async def _install_wheel(name: str, wheelinfo: WheelInfo):
+async def _install_wheel(wheelinfo: WheelInfo):
     url = wheelinfo.url
     if not wheelinfo.wheel_bytes:
         raise RuntimeError(
@@ -168,6 +169,8 @@ async def _install_wheel(name: str, wheelinfo: WheelInfo):
     wheel = io.BytesIO(wheelinfo.wheel_bytes)
     _validate_wheel(wheel, wheelinfo)
     _extract_wheel(wheel)
+    name = wheelinfo.project_name
+    assert name
     setattr(loadedPackages, name, url)
 
 
@@ -254,13 +257,15 @@ class _PackageManager:
             )
 
         # Now install PyPI packages
-        for name, wheel in transaction.wheels:
+        for wheel in transaction.wheels:
             # detect whether the wheel metadata is from PyPI or from custom location
             # wheel metadata from PyPI has SHA256 checksum digest.
             wheel_source = "pypi" if wheel.digests is not None else wheel.url
+            name = wheel.project_name
+            assert name
             wheel_promises.append(
                 _install(
-                    _install_wheel(name, wheel),
+                    _install_wheel(wheel),
                     functools.partial(
                         self.installed_packages.update,
                         {
@@ -299,7 +304,8 @@ class _PackageManager:
         else:
             req = Requirement(requirement)
 
-        req.specifier.prereleases = transaction.pre
+        if transaction.pre:
+            req.specifier.prereleases = True
 
         req.name = req.name.lower()
 
@@ -339,14 +345,15 @@ class _PackageManager:
             transaction.failed.append(req)
             if not transaction.keep_going:
                 raise
+        else:
+            await self.add_wheel(
+                wheel,
+                req.extras,
+                ctx,
+                transaction,
+                fetch_extra_kwargs,
+            )
 
-        await self.add_wheel(
-            wheel,
-            req.extras,
-            ctx,
-            transaction,
-            fetch_extra_kwargs,
-        )
 
     async def add_wheel(
         self,
@@ -380,9 +387,9 @@ class _PackageManager:
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
             dist = pkg_resources_distribution_for_wheel(zip_file, wheel.name, "???")
 
-        project_name: str = dist.project_name
-        if project_name == "UNKNOWN":
-            project_name = wheel.name
+        wheel.project_name = dist.project_name
+        if wheel.project_name == "UNKNOWN":
+            wheel.project_name = wheel.name
 
         if transaction.deps:
             for recurs_req in dist.requires(extras):
@@ -390,7 +397,7 @@ class _PackageManager:
                     recurs_req, ctx, transaction, fetch_extra_kwargs
                 )
 
-        transaction.wheels.append((project_name, wheel))
+        transaction.wheels.append(wheel)
 
     def find_wheel(self, metadata: dict[str, Any], req: Requirement) -> WheelInfo:
         """Parse metadata to find the latest version of pure python wheel.
