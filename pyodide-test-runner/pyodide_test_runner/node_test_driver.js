@@ -27,6 +27,10 @@ const context = {
   URL,
   atob: base64.decode,
   btoa: base64.encode,
+  clearInterval,
+  clearTimeout,
+  setInterval,
+  setTimeout,
 };
 vm.createContext(context);
 vm.runInContext("globalThis.self = globalThis;", context);

@@ -13,12 +13,13 @@ from zipfile import ZipFile
 
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 from packaging.version import Version
 
 from pyodide import IN_BROWSER, to_js
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
-from .package import PackageDict, PackageMetadata, normalize_package_name
+from .package import PackageDict, PackageMetadata
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -248,10 +249,7 @@ class _PackageManager:
                     ),
                     functools.partial(
                         self.installed_packages.update,
-                        {
-                            normalize_package_name(pkg.name): pkg
-                            for pkg in pyodide_packages
-                        },
+                        {canonicalize_name(pkg.name): pkg for pkg in pyodide_packages},
                     ),
                 )
             )
@@ -269,7 +267,7 @@ class _PackageManager:
                     functools.partial(
                         self.installed_packages.update,
                         {
-                            normalize_package_name(name): PackageMetadata(
+                            canonicalize_name(name): PackageMetadata(
                                 name, str(wheel.version), wheel_source
                             )
                         },
@@ -307,7 +305,7 @@ class _PackageManager:
         if transaction.pre:
             req.specifier.prereleases = True
 
-        req.name = req.name.lower()
+        req.name = canonicalize_name(req.name)
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
@@ -354,7 +352,6 @@ class _PackageManager:
                 fetch_extra_kwargs,
             )
 
-
     async def add_wheel(
         self,
         wheel: WheelInfo,
@@ -363,7 +360,7 @@ class _PackageManager:
         transaction: Transaction,
         fetch_extra_kwargs: dict[str, str],
     ):
-        normalized_name = normalize_package_name(wheel.name)
+        normalized_name = canonicalize_name(wheel.name)
         transaction.locked[normalized_name] = PackageMetadata(
             name=wheel.name,
             version=str(wheel.version),
