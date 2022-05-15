@@ -12,7 +12,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Literal
 import pkg_resources
-
+import packaging.specifiers
 from ruamel.yaml import YAML
 
 
@@ -75,6 +75,48 @@ def _find_dist(
 
 def _get_metadata(package: str, version: str | None = None) -> dict:
     """Download metadata for a package from PyPI"""
+
+    if version is not None:
+        # first download metadata for current version so we
+        # can get the list of versions
+        url = f"https://pypi.org/pypi/{package}/json"
+        chosen_version=None
+        try:
+            with urllib.request.urlopen(url) as fd:
+                main_metadata = json.load(fd)
+                all_versions=main_metadata["releases"].keys()
+                all_versions=sorted(map(pkg_resources.parse_version,all_versions))
+                this_ver=pkg_resources.parse_version(version)
+                if this_ver in all_versions:
+                    chosen_version=str(this_ver)
+                else:
+                    try:
+                        spec=packaging.specifiers.SpecifierSet(version)
+                        chosen_version=None
+                        for v in reversed(all_versions):
+                            if spec.contains(str(v)):
+                                chosen_version=str(v)
+                                break
+                    except packaging.specifiers.InvalidSpecifier:
+                        raise MkpkgFailedException(
+                            f"Bad specifier for  {package}{version} from "
+                            f"https://pypi.org/pypi/{package}{version}/json: {e}"
+                        )
+                    
+        except urllib.error.HTTPError as e:
+            raise MkpkgFailedException(
+                f"Failed to load metadata for {package}{version} from "
+                f"https://pypi.org/pypi/{package}{version}/json: {e}"
+            )
+        if chosen_version is None:
+            raise MkpkgFailedException(
+                f"Failed to find pypi package for {package}{version} from "
+                f"https://pypi.org/pypi/{package}{version}/json: {e}"
+            )
+        version=chosen_version
+                
+    # and set version to this to download specific metadata
+
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
 
@@ -133,6 +175,12 @@ def make_package(
             self.yaml=YAML()
             meta_path=Path(self.location) / "meta.yaml"
             p_yaml=yaml.load(meta_path.read_bytes())
+            self.__dep_map= self._filter_extras(self._build_dep_map())
+
+        def requires(self,extras=()):
+            reqs=super().requires(extras)
+#            print(f"{self.project_name}[{extras}]\n  Requirements:{reqs}\n")
+            return reqs
 
         def _build_dep_map(self):
             # read dependencies from pypi
@@ -149,6 +197,7 @@ def make_package(
                             if str(m[0])=="extra" and len(m)==3:
                                 extra_name=str(m[2])
                     dm.setdefault(extra_name, []).append(req)
+
             return dm
 
     class EnvironmentHelper(pkg_resources.Environment):
@@ -162,16 +211,22 @@ def make_package(
             dist=YamlDistribution( meta_path.parents[0],project_name=proj_name,version=p_version)
             return dist
 
-        def best_match(self,req,working_set,installer=None,replace_conflicting=False):
+        def best_match(self,req,working_set,installer=None,replace_conflicting=False,from_install=False):
             proj_name=req.project_name
             if os.path.isfile(packages_dir / proj_name / "meta.yaml"):
                 return self.make_dist(req.project_name,packages_dir / proj_name / "meta.yaml")
             proj_name=proj_name.replace("-","_")
             if os.path.isfile(packages_dir / proj_name / "meta.yaml"):
                 return self.make_dist(req.project_name,packages_dir / proj_name / "meta.yaml")
-            # no package yet - return false
+            # no package installed - try to install it
+            if from_install:
+                return None
+            parser = make_parser(argparse.ArgumentParser())            
             print("Can't find:",packages_dir/proj_name/"meta.yaml")
-            return None
+            print("TRY INSTALL:",req.project_name,str(req.specs))
+            args = parser.parse_args(['--version',str(req.specifier),req.project_name])
+            main(args)
+            return self.best_match(req,working_set,installer,replace_conflicting,True)
             
     if extra:
         our_extras=extra.split(",")
@@ -179,10 +234,16 @@ def make_package(
         our_extras=[]
     requires_packages=[]
     yaml_requires=[]
-    for requirement_spec in pypi_metadata["info"]["requires_dist"]:
-        reqs=pkg_resources.parse_requirements(requirement_spec)
-        for r in reqs:
-            requires_packages.append(r)
+    if "requires_dist" in pypi_metadata["info"] and pypi_metadata["info"]["requires_dist"]!=None:
+        for requirement_spec in pypi_metadata["info"]["requires_dist"]:
+            reqs=pkg_resources.parse_requirements(requirement_spec)
+            for r in reqs:
+                requires_packages.append(r)
+    print(f"{package}\n  Requirements:{requires_packages}\n")
+
+        
+    ws= pkg_resources.WorkingSet([])
+    ws.resolve(requires_packages,env=EnvironmentHelper())
 
     for r in requires_packages:
         name=r.name
@@ -192,11 +253,6 @@ def make_package(
             name=name.replace("-","_")
             if os.path.isfile(packages_dir / name / "meta.yaml"):
                 yaml_requires.append(name)
-        
-    ws= pkg_resources.WorkingSet([])
-    ws.resolve(requires_packages,env=EnvironmentHelper())
-
-    print(yaml_requires)
 
     yaml_content = {
         "package": {"name": package, "version": version},
