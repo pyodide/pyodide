@@ -237,11 +237,11 @@ def test_add_requirement_marker():
                 "numpy ; extra == 'socketio'",
                 "python-socketio[client] ; extra == 'socketio'",
             ],
-            {"extra" : ""},
+            {"extra": ""},
             False,
             False,
             False,
-            {}
+            {},
         )
     )
     assert len(transaction.wheels) == 1
@@ -261,11 +261,9 @@ def test_last_version_from_pypi():
     releases = {}
     for v in versions:
         filename = f"dummy_module-{v}-py3-none-any.whl"
-        releases[v] = [{"filename": filename, "url" : filename, "digests" : None}]
+        releases[v] = [{"filename": filename, "url": filename, "digests": None}]
 
-    metadata = {
-        "releases": releases
-    }
+    metadata = {"releases": releases}
 
     # get version number from find_wheel
     wheel = _micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
@@ -421,8 +419,8 @@ def test_install_no_deps(monkeypatch):
     dep_pkg_name = "dependency_dummy"
     _mock_get_pypi_json = mock_get_pypi_json(
         {
-            dummy_pkg_name: { "name" : f"{dummy_pkg_name}-1.0.0-py3-none-any.whl" },
-            dep_pkg_name: { "name" : f"{dep_pkg_name}-1.0.0-py3-none-any.whl" },
+            dummy_pkg_name: {"name": f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"},
+            dep_pkg_name: {"name": f"{dep_pkg_name}-1.0.0-py3-none-any.whl"},
         }
     )
     _mock_fetch_bytes = mock_fetch_bytes(

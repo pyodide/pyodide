@@ -354,7 +354,6 @@ class _PackageManager:
                 fetch_extra_kwargs,
             )
 
-
     async def add_wheel(
         self,
         wheel: WheelInfo,
