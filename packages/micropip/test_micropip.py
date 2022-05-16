@@ -185,6 +185,20 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
         )
 
 
+def create_transaction(Transaction):
+    return Transaction(
+        wheels=[],
+        locked={},
+        keep_going=True,
+        deps=True,
+        pre=False,
+        pyodide_packages=[],
+        failed=[],
+        ctx={"extra" : ""},
+        fetch_extra_kwargs={},
+    )
+
+
 def test_add_requirement():
     pytest.importorskip("packaging")
     from micropip import _micropip
@@ -195,19 +209,9 @@ def test_add_requirement():
         base_url = f"http://{server_hostname}:{server_port}/"
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-        transaction = Transaction(
-            wheels=[],
-            locked={},
-            keep_going=True,
-            deps=True,
-            pre=False,
-            pyodide_packages=[],
-            failed=[],
-            ctx={},
-            fetch_extra_kwargs={},
-        )
+        transaction = create_transaction(Transaction)
         asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(transaction, url)
+            transaction.add_requirement(url)
         )
 
     wheel = transaction.wheels[0]
@@ -223,14 +227,12 @@ def test_add_requirement():
 
 def test_add_requirement_marker():
     pytest.importorskip("packaging")
-    from micropip import _micropip
     from micropip._micropip import Transaction
 
-    transaction = Transaction({"extra": ""}, False, False, False, {}, {})
+    transaction = create_transaction(Transaction)
 
     asyncio.get_event_loop().run_until_complete(
-        _micropip.PACKAGE_MANAGER.gather_requirements(
-            transaction,
+        transaction.gather_requirements(
             [
                 "werkzeug",
                 'contextvars ; python_version < "3.7"',
@@ -251,7 +253,7 @@ def test_last_version_from_pypi():
     pytest.importorskip("packaging")
     from packaging.requirements import Requirement
 
-    from micropip import _micropip
+    from micropip._micropip import find_wheel
 
     requirement = Requirement("dummy_module")
     versions = ["0.0.1", "0.15.5", "0.9.1"]
@@ -266,21 +268,21 @@ def test_last_version_from_pypi():
     metadata = {"releases": releases}
 
     # get version number from find_wheel
-    wheel = _micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
+    wheel = find_wheel(metadata, requirement)
 
     assert str(wheel.version) == "0.15.5"
 
 
 def test_install_non_pure_python_wheel():
     pytest.importorskip("packaging")
-    from micropip import _micropip
+    from micropip._micropip import Transaction
 
     msg = "not a pure Python 3 wheel"
     with pytest.raises(ValueError, match=msg):
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
-        transaction = {"wheels": list[Any](), "locked": dict[str, Any]()}
+        transaction = create_transaction(Transaction)
         asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(transaction, url)
+            transaction.add_requirement(url)
         )
 
 
