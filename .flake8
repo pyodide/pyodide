@@ -1,3 +1,4 @@
 [flake8]
 extend-ignore = E203, E402, E501, E731, E741, B950
 select = C,E,F,W,B,B9
+extend-immutable-calls = typer.Argument, typer.Option
