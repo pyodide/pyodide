@@ -334,12 +334,8 @@ class _PackageManager:
                 raise ValueError(
                     f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
                 )
-<<<<<<< micropip/nopackage -- Incoming Change
 
-        metadata = await _get_pypi_json(req.name, fetch_extra_kwargs)
-=======
         metadata = await _get_pypi_json(req.name, transaction.fetch_extra_kwargs)
->>>>>>> main -- Current Change
 
         try:
             wheel = self.find_wheel(metadata, req)
