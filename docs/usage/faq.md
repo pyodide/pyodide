@@ -340,7 +340,7 @@ You are now leaving help and returning to the Python interpreter.
 
 ## Micropip can't find a pure Python wheel
 
-When installing a Python package from PyPi, micropip will produce an error if
+When installing a Python package from PyPI, micropip will produce an error if
 it cannot find a pure Python wheel. To determine if a package has a pure
 Python wheel manually, you can open its PyPi page (for instance
 https://pypi.org/project/snowballstemmer/) and go to the "Download files" tab.
