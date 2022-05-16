@@ -201,7 +201,6 @@ def create_transaction(Transaction):
 
 def test_add_requirement():
     pytest.importorskip("packaging")
-    from micropip import _micropip
     from micropip._micropip import Transaction
 
     with spawn_web_server(Path(__file__).parent / "test") as server:
