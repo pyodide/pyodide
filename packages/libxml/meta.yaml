@@ -19,7 +19,7 @@ build:
         --disable-dependency-tracking \
         --disable-shared \
         --without-python \
-        --with-iconv="${WASM_LIBRARY_DIR}/libiconv" \
+        --with-iconv="${WASM_LIBRARY_DIR}/libiconv/lib" \
         --with-zlib="${WASM_LIBRARY_DIR}/zlib" \
         --prefix=${WASM_LIBRARY_DIR}/libxml
     emmake make -j ${PYODIDE_JOBS:-3}

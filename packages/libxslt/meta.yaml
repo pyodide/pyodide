@@ -12,6 +12,7 @@ requirements:
 
 build:
   library: true
+
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
@@ -20,8 +21,6 @@ build:
         --without-python \
         --with-libxml-prefix="${WASM_LIBRARY_DIR}/libxml" \
         --without-crypto \
-        --without-debug \
-        --without-debugger \
         --prefix=${WASM_LIBRARY_DIR}/libxslt
 
     emmake make -j ${PYODIDE_JOBS:-3}

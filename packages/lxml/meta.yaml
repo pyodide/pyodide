@@ -16,8 +16,6 @@ requirements:
     - html5lib
     - libxml
     - libxslt
-    - zlib
-    - libiconv
 test:
   imports:
     - lxml
