@@ -273,7 +273,7 @@ class _PackageManager:
     async def add_requirement(
         self,
         transaction: Transaction,
-        requirement: str | Requirement,
+        requirement: str,
     ):
         """Add a requirement to the transaction.
 
@@ -281,10 +281,7 @@ class _PackageManager:
         https://www.python.org/dev/peps/pep-0508
         """
 
-        # 1. Convert `req` from a string to a Requirement if necessary
-        if isinstance(requirement, Requirement):
-            req = requirement
-        elif requirement.endswith(".whl"):
+        if requirement.endswith(".whl"):
             # custom download location
             wheel = _parse_wheel_url(requirement)
             if not _is_pure_python_wheel(wheel.filename):
@@ -292,8 +289,8 @@ class _PackageManager:
 
             await self.add_wheel(transaction, wheel, extras=set())
             return
-        else:
-            req = Requirement(requirement)
+
+        req = Requirement(requirement)
 
         if transaction.pre:
             req.specifier.prereleases = True
@@ -378,8 +375,7 @@ class _PackageManager:
             wheel.project_name = wheel.name
 
         if transaction.deps:
-            for recurs_req in dist.requires(extras):
-                await self.add_requirement(transaction, recurs_req)
+            await self.gather_requirements(transaction, dist.requires(extras))
 
         transaction.wheels.append(wheel)
 
