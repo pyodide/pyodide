@@ -325,8 +325,7 @@ class _PackageManager:
                 return
             else:
                 raise ValueError(
-                    f"Requested '{req}', "
-                    f"but {req.name}=={ver} is already installed"
+                    f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
                 )
         metadata = await _get_pypi_json(req.name, transaction.fetch_extra_kwargs)
 
