@@ -270,27 +270,31 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(
+    async def add_requirement(self, transaction : Transaction, req : str | Requirement):
+        if isinstance(req, Requirement):
+            return await self.add_requirement_inner(transaction, req)
+            
+        if not req.endswith(".whl"):
+            return await self.add_requirement_inner(transaction, Requirement(req))
+
+        # custom download location
+        wheel = _parse_wheel_url(req)
+        if not _is_pure_python_wheel(wheel.filename):
+            raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
+
+        await self.add_wheel(transaction, wheel, extras=set())
+
+
+    async def add_requirement_inner(
         self,
         transaction: Transaction,
-        requirement: str,
+        req: Requirement,
     ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
-
-        if requirement.endswith(".whl"):
-            # custom download location
-            wheel = _parse_wheel_url(requirement)
-            if not _is_pure_python_wheel(wheel.filename):
-                raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
-
-            await self.add_wheel(transaction, wheel, extras=set())
-            return
-
-        req = Requirement(requirement)
 
         if transaction.pre:
             req.specifier.prereleases = True
@@ -316,7 +320,7 @@ class _PackageManager:
 
         # Is some version of this package is already installed?
         if req.name in transaction.locked:
-            ver = importlib.metadata.version(req.name)
+            ver = transaction.locked[req.name].version
             if req.specifier.contains(ver, prereleases=True):
                 # installed version matches, nothing to do
                 return

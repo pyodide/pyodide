@@ -203,9 +203,11 @@ def test_add_requirement():
             pre=False,
             pyodide_packages=[],
             failed=[],
+            ctx={},
+            fetch_extra_kwargs={},
         )
         asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction, {})
+            _micropip.PACKAGE_MANAGER.add_requirement(transaction, url)
         )
 
     wheel = transaction.wheels[0]
@@ -222,9 +224,13 @@ def test_add_requirement():
 def test_add_requirement_marker():
     pytest.importorskip("packaging")
     from micropip import _micropip
+    from micropip._micropip import Transaction
 
-    transaction = asyncio.get_event_loop().run_until_complete(
+    transaction = Transaction({"extra": ""}, False, False, False, {}, {})
+
+    asyncio.get_event_loop().run_until_complete(
         _micropip.PACKAGE_MANAGER.gather_requirements(
+            transaction,
             [
                 "werkzeug",
                 'contextvars ; python_version < "3.7"',
@@ -236,11 +242,6 @@ def test_add_requirement_marker():
                 "numpy ; extra == 'socketio'",
                 "python-socketio[client] ; extra == 'socketio'",
             ],
-            {"extra": ""},
-            False,
-            False,
-            False,
-            {},
         )
     )
     assert len(transaction.wheels) == 1
@@ -279,7 +280,7 @@ def test_install_non_pure_python_wheel():
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = {"wheels": list[Any](), "locked": dict[str, Any]()}
         asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction, {})
+            _micropip.PACKAGE_MANAGER.add_requirement(transaction, url)
         )
 
 
