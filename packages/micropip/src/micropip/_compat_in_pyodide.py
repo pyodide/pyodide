@@ -1,42 +1,30 @@
-import tempfile
+from asyncio import gather
 from pathlib import Path
-from typing import Any
 
-import pyodide_js
+from pyodide.http import pyfetch
 
-# Provide stubs for testing in native python
-WHEEL_BASE = Path(tempfile.mkdtemp())
-BUILTIN_PACKAGES : dict[str, dict[str, Any]] = pyodide_js._api.packages.to_py()
+try:
+    import pyodide_js
+    from pyodide_js import loadedPackages
+    BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
 
+    # Random note: getsitepackages is not available in a virtual environment...
+    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
+    # problem is not fixed)
+    from site import getsitepackages
 
-class loadedPackages_:
-    @staticmethod
-    def to_py():
-        return {}
-
-loadedPackages : Any = loadedPackages_
-
-
-from urllib.request import Request, urlopen
-
+    WHEEL_BASE = Path(getsitepackages()[0])
+except ImportError:
+    from pyodide import IN_BROWSER
+    if IN_BROWSER:
+        raise
+    # Otherwise, this is pytest test collection so let it go.
 
 async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
-    return urlopen(Request(url, headers=kwargs)).read()
-
+    return await (await pyfetch(url, **kwargs)).bytes()
 
 async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
-    return (await fetch_bytes(url, kwargs)).decode()
-
-
-# asyncio.gather will schedule any coroutines to run on the event loop but
-# we want to avoid using the event loop at all. Instead just run the
-# coroutines in sequence.
-# TODO: Use an asyncio testing framework to avoid this
-async def gather(*coroutines):
-    result = []
-    for coroutine in coroutines:
-        result.append(await coroutine)
-    return result
+    return await (await pyfetch(url, **kwargs)).string()
 
 
 __all__ = [
