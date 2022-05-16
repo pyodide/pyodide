@@ -32,7 +32,7 @@ def mock_get_pypi_json(pkg_map):
         def __eq__(self, other):
             return True
 
-    async def _mock_get_pypi_json(pkgname, **kwargs):
+    async def _mock_get_pypi_json(pkgname, kwargs):
         if pkgname in pkg_map:
             pkg_file = pkg_map[pkgname]["name"]
             pkg_version = pkg_map[pkgname].get("version", "1.0.0")
@@ -50,7 +50,7 @@ def mock_get_pypi_json(pkg_map):
             json_data["releases"][version] = [
                 {
                     "filename": file,
-                    "url": "",
+                    "url": file,
                     "digests": {
                         "sha256": Wildcard(),
                     },
@@ -82,7 +82,7 @@ def mock_fetch_bytes(pkg_name, metadata, version="1.0.0"):
         A mock function of ``fetch_bytes`` which return dummy wheel bytes
     """
 
-    async def _mock_fetch_bytes(url, **kwargs):
+    async def _mock_fetch_bytes(url, kwargs):
         mock_metadata = metadata
         mock_wheel = "Wheel-Version: 1.0"
 
@@ -141,28 +141,26 @@ def test_parse_wheel_url():
     from micropip import _micropip
 
     url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    name, wheel, version = _micropip._parse_wheel_url(url)
-    assert name == "snowballstemmer"
-    assert version == "2.0.0"
-    assert wheel == {
-        "digests": None,
-        "filename": "snowballstemmer-2.0.0-py2.py3-none-any.whl",
-        "packagetype": "bdist_wheel",
-        "python_version": "py2.py3",
-        "abi_tag": "none",
-        "platform": "any",
-        "url": url,
-    }
+    wheel = _micropip._parse_wheel_url(url)
+    assert wheel.name == "snowballstemmer"
+    assert str(wheel.version) == "2.0.0"
+    assert wheel.digests is None
+    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.packagetype == "bdist_wheel"
+    assert wheel.python_version == "py2.py3"
+    assert wheel.abi_tag == "none"
+    assert wheel.platform == "any"
+    assert wheel.url == url
 
     msg = "not a valid wheel file name"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
-        name, params, version = _micropip._parse_wheel_url(url)
+        wheel = _micropip._parse_wheel_url(url)
 
     url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
-    name, wheel, version = _micropip._parse_wheel_url(url)
-    assert name == "scikit_learn"
-    assert wheel["platform"] == "macosx_10_9_intel"
+    wheel = _micropip._parse_wheel_url(url)
+    assert wheel.name == "scikit_learn"
+    assert wheel.platform == "macosx_10_9_intel"
 
 
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
@@ -190,32 +188,35 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
 def test_add_requirement():
     pytest.importorskip("packaging")
     from micropip import _micropip
+    from micropip._micropip import Transaction
 
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
-        transaction: dict[str, Any] = {
-            "wheels": [],
-            "locked": {},
-            "keep_going": True,
-            "deps": True,
-            "pre": False,
-        }
+        transaction = Transaction(
+            wheels=[],
+            locked={},
+            keep_going=True,
+            deps=True,
+            pre=False,
+            pyodide_packages=[],
+            failed=[],
+        )
         asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction, {})
         )
 
-    [name, req, version] = transaction["wheels"][0]
-    assert name == "snowballstemmer"
-    assert version == "2.0.0"
-    assert req["filename"] == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    assert req["packagetype"] == "bdist_wheel"
-    assert req["python_version"] == "py2.py3"
-    assert req["abi_tag"] == "none"
-    assert req["platform"] == "any"
-    assert req["url"] == url
+    wheel = transaction.wheels[0]
+    assert wheel.name == "snowballstemmer"
+    assert str(wheel.version) == "2.0.0"
+    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.packagetype == "bdist_wheel"
+    assert wheel.python_version == "py2.py3"
+    assert wheel.abi_tag == "none"
+    assert wheel.platform == "any"
+    assert wheel.url == url
 
 
 def test_add_requirement_marker():
@@ -234,10 +235,15 @@ def test_add_requirement_marker():
                 "ipykernel ; extra == 'jupyter'",
                 "numpy ; extra == 'socketio'",
                 "python-socketio[client] ; extra == 'socketio'",
-            ]
+            ],
+            {"extra": ""},
+            False,
+            False,
+            False,
+            {},
         )
     )
-    assert len(transaction["wheels"]) == 1
+    assert len(transaction.wheels) == 1
 
 
 def test_last_version_from_pypi():
@@ -251,16 +257,17 @@ def test_last_version_from_pypi():
 
     # building metadata as returned from
     # https://pypi.org/pypi/{pkgname}/json
-    metadata = {
-        "releases": {
-            v: [{"filename": f"dummy_module-{v}-py3-none-any.whl"}] for v in versions
-        }
-    }
+    releases = {}
+    for v in versions:
+        filename = f"dummy_module-{v}-py3-none-any.whl"
+        releases[v] = [{"filename": filename, "url": filename, "digests": None}]
+
+    metadata = {"releases": releases}
 
     # get version number from find_wheel
-    wheel, ver = _micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
+    wheel = _micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
 
-    assert str(ver) == "0.15.5"
+    assert str(wheel.version) == "0.15.5"
 
 
 def test_install_non_pure_python_wheel():
@@ -272,7 +279,7 @@ def test_install_non_pure_python_wheel():
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = {"wheels": list[Any](), "locked": dict[str, Any]()}
         asyncio.get_event_loop().run_until_complete(
-            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+            _micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction, {})
         )
 
 
@@ -411,8 +418,8 @@ def test_install_no_deps(monkeypatch):
     dep_pkg_name = "dependency_dummy"
     _mock_get_pypi_json = mock_get_pypi_json(
         {
-            dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl",
-            dep_pkg_name: f"{dep_pkg_name}-1.0.0-py3-none-any.whl",
+            dummy_pkg_name: {"name": f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"},
+            dep_pkg_name: {"name": f"{dep_pkg_name}-1.0.0-py3-none-any.whl"},
         }
     )
     _mock_fetch_bytes = mock_fetch_bytes(
