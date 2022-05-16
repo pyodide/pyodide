@@ -6,7 +6,7 @@ import importlib
 import io
 import json
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
