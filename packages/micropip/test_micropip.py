@@ -57,7 +57,6 @@ def mock_get_pypi_json(pkg_map):
                 }
             ]
 
-        print("pkgname", pkgname, json_data)
         return json_data
 
     return _mock_get_pypi_json
