@@ -185,6 +185,42 @@ async def _install_wheel(wheelinfo: WheelInfo):
     setattr(loadedPackages, name, url)
 
 
+def _find_wheel(self, metadata: dict[str, Any], req: Requirement) -> WheelInfo:
+    """Parse metadata to find the latest version of pure python wheel.
+
+    Parameters
+    ----------
+    metadata : ``Dict[str, Any]``
+
+        Package search result from PyPI,
+        See: https://warehouse.pypa.io/api-reference/json.html
+
+    Returns
+    -------
+    fileinfo : Dict[str, Any] or None
+        The metadata of the Python wheel, or None if there is no pure Python wheel.
+    ver : Version or None
+        The version of the Python wheel, or None if there is no pure Python wheel.
+    """
+    releases = metadata.get("releases", {})
+    candidate_versions = sorted(
+        (Version(v) for v in req.specifier.filter(releases)),
+        reverse=True,
+    )
+    for ver in candidate_versions:
+        release = releases[str(ver)]
+        for fileinfo in release:
+            if _is_pure_python_wheel(fileinfo["filename"]):
+                wheel = _parse_wheel_url(fileinfo["url"])
+                wheel.digests = fileinfo["digests"]
+                return wheel
+
+    raise ValueError(
+        f"Couldn't find a pure Python 3 wheel for '{req}'. "
+        "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
+    )
+
+
 class _PackageManager:
     def __init__(self):
         self.installed_packages = PackageDict()
@@ -389,40 +425,7 @@ class _PackageManager:
 
         transaction.wheels.append(wheel)
 
-    def find_wheel(self, metadata: dict[str, Any], req: Requirement) -> WheelInfo:
-        """Parse metadata to find the latest version of pure python wheel.
 
-        Parameters
-        ----------
-        metadata : ``Dict[str, Any]``
-
-            Package search result from PyPI,
-            See: https://warehouse.pypa.io/api-reference/json.html
-
-        Returns
-        -------
-        fileinfo : Dict[str, Any] or None
-            The metadata of the Python wheel, or None if there is no pure Python wheel.
-        ver : Version or None
-            The version of the Python wheel, or None if there is no pure Python wheel.
-        """
-        releases = metadata.get("releases", {})
-        candidate_versions = sorted(
-            (Version(v) for v in req.specifier.filter(releases)),
-            reverse=True,
-        )
-        for ver in candidate_versions:
-            release = releases[str(ver)]
-            for fileinfo in release:
-                if _is_pure_python_wheel(fileinfo["filename"]):
-                    wheel = _parse_wheel_url(fileinfo["url"])
-                    wheel.digests = fileinfo["digests"]
-                    return wheel
-
-        raise ValueError(
-            f"Couldn't find a pure Python 3 wheel for '{req}'. "
-            "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
-        )
 
 
 # Make PACKAGE_MANAGER singleton
