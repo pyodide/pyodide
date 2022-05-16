@@ -85,7 +85,14 @@ else:
 
 async def _get_pypi_json(pkgname: str, fetch_extra_kwargs: dict[str, str]):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    return json.loads(await fetch_string(url, fetch_extra_kwargs))
+    try:
+        metadata = await fetch_string(url, fetch_extra_kwargs)
+    except Exception as e:
+        raise ValueError(
+            f"Can't fetch metadata for '{pkgname}' from PyPI. "
+            "Please make sure you have entered a correct package name."
+        ) from e
+    return json.loads(metadata)
 
 
 def _is_pure_python_wheel(filename: str):
@@ -327,7 +334,12 @@ class _PackageManager:
                 raise ValueError(
                     f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
                 )
+<<<<<<< micropip/nopackage -- Incoming Change
+
+        metadata = await _get_pypi_json(req.name, fetch_extra_kwargs)
+=======
         metadata = await _get_pypi_json(req.name, transaction.fetch_extra_kwargs)
+>>>>>>> main -- Current Change
 
         try:
             wheel = self.find_wheel(metadata, req)
