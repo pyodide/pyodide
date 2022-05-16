@@ -6,7 +6,7 @@ import pyodide_js
 
 # Provide stubs for testing in native python
 WHEEL_BASE = Path(tempfile.mkdtemp())
-BUILTIN_PACKAGES : dict[str, dict[str, Any]] = pyodide_js._api.packages.to_py()
+BUILTIN_PACKAGES: dict[str, dict[str, Any]] = pyodide_js._api.packages.to_py()
 
 
 class loadedPackages_:
@@ -14,7 +14,8 @@ class loadedPackages_:
     def to_py():
         return {}
 
-loadedPackages : Any = loadedPackages_
+
+loadedPackages: Any = loadedPackages_
 
 
 from urllib.request import Request, urlopen
