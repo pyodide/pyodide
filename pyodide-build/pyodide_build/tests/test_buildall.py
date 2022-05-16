@@ -47,7 +47,7 @@ def test_generate_packages_json(tmp_path):
         "depends": ["pkg_1_1", "pkg_3"],
         "imports": ["pkg_1"],
         "install_dir": "site",
-        "sha_256": "c1e38241013b5663e902fff97eb8585e98e6df446585da1dcf2ad121b52c2143",
+        "sha256": "c1e38241013b5663e902fff97eb8585e98e6df446585da1dcf2ad121b52c2143",
     }
 
 
