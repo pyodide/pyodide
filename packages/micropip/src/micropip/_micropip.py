@@ -270,10 +270,10 @@ class _PackageManager:
 
         await gather(*wheel_promises)
 
-    async def add_requirement(self, transaction : Transaction, req : str | Requirement):
+    async def add_requirement(self, transaction: Transaction, req: str | Requirement):
         if isinstance(req, Requirement):
             return await self.add_requirement_inner(transaction, req)
-            
+
         if not req.endswith(".whl"):
             return await self.add_requirement_inner(transaction, Requirement(req))
 
@@ -283,7 +283,6 @@ class _PackageManager:
             raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
         await self.add_wheel(transaction, wheel, extras=set())
-
 
     async def add_requirement_inner(
         self,
