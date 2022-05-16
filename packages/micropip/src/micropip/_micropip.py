@@ -116,9 +116,9 @@ class Transaction:
     locked: PackageDict
     fetch_extra_kwargs: dict[str, str]
 
-    wheels: list[WheelInfo] = []
-    pyodide_packages: list[PackageMetadata] = []
-    failed: list[Requirement] = []
+    wheels: list[WheelInfo] = field(default_factory=list)
+    pyodide_packages: list[PackageMetadata] = field(default_factory=list)
+    failed: list[Requirement] = field(default_factory=list)
 
 
 def _parse_wheel_url(url: str) -> WheelInfo:
