@@ -194,7 +194,7 @@ def create_transaction(Transaction):
         pre=False,
         pyodide_packages=[],
         failed=[],
-        ctx={"extra" : ""},
+        ctx={"extra": ""},
         fetch_extra_kwargs={},
     )
 
@@ -210,9 +210,7 @@ def test_add_requirement():
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
         transaction = create_transaction(Transaction)
-        asyncio.get_event_loop().run_until_complete(
-            transaction.add_requirement(url)
-        )
+        asyncio.get_event_loop().run_until_complete(transaction.add_requirement(url))
 
     wheel = transaction.wheels[0]
     assert wheel.name == "snowballstemmer"
@@ -281,9 +279,7 @@ def test_install_non_pure_python_wheel():
     with pytest.raises(ValueError, match=msg):
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
-        asyncio.get_event_loop().run_until_complete(
-            transaction.add_requirement(url)
-        )
+        asyncio.get_event_loop().run_until_complete(transaction.add_requirement(url))
 
 
 def test_install_different_version(selenium_standalone_micropip):
