@@ -2,23 +2,23 @@ from pyodide import IN_BROWSER
 
 if IN_BROWSER:
     from ._compat_in_pyodide import (
-        gather,
+        BUILTIN_PACKAGES,
+        WHEEL_BASE,
         fetch_bytes,
         fetch_string,
-        WHEEL_BASE,
-        BUILTIN_PACKAGES,
+        gather,
         loadedPackages,
-        pyodide_js
+        pyodide_js,
     )
 else:
     from ._compat_not_in_pyodide import (
-        gather,
+        BUILTIN_PACKAGES,
+        WHEEL_BASE,
         fetch_bytes,
         fetch_string,
-        WHEEL_BASE,
-        BUILTIN_PACKAGES,
+        gather,
         loadedPackages,
-        pyodide_js
+        pyodide_js,
     )
 
 __all__ = [
@@ -28,5 +28,5 @@ __all__ = [
     "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
-    "pyodide_js"
+    "pyodide_js",
 ]

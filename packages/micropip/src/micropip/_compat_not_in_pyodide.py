@@ -4,7 +4,7 @@ from typing import Any
 
 # Provide stubs for testing in native python
 WHEEL_BASE = Path(tempfile.mkdtemp())
-BUILTIN_PACKAGES : dict[str, dict[str, Any]] = {}
+BUILTIN_PACKAGES: dict[str, dict[str, Any]] = {}
 
 
 class loadedPackages:
@@ -34,11 +34,13 @@ async def gather(*coroutines):
         result.append(await coroutine)
     return result
 
+
 class pyodide_js_:
     def __get__(self, attr):
         raise RuntimeError(f"Attempted to access property '{attr}' on pyodide_js dummy")
 
-pyodide_js : Any = pyodide_js_()
+
+pyodide_js: Any = pyodide_js_()
 
 
 __all__ = [
