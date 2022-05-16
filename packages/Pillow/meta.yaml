@@ -12,8 +12,8 @@ source:
 build:
   script: |
     export PKG_CONFIG_PATH=${WASM_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}
-    export LIBWEBP_INCLUDE_PATH=$(pkg-config --cflags-only-I libwebp)
-    export LIBWEBP_LIBRARY_PATH=$(pkg-config --libs-only-L libwebp)
+    export LIBWEBP_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix libwebp)
+    export LIBWEBP_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix libwebp)
   cflags: |
     -s USE_ZLIB=1
     -s USE_LIBJPEG=1
