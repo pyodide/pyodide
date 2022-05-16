@@ -3,7 +3,7 @@ import copy
 import functools
 import hashlib
 import importlib
-import io
+from io import BytesIO
 import json
 import tempfile
 from dataclasses import dataclass, field
@@ -98,7 +98,6 @@ async def _get_pypi_json(pkgname: str, fetch_extra_kwargs: dict[str, str]):
 def _is_pure_python_wheel(filename: str):
     return filename.endswith("py3-none-any.whl")
 
-
 @dataclass
 class WheelInfo:
     name: str
@@ -111,64 +110,90 @@ class WheelInfo:
     url: str
     project_name: str | None = None
     digests: dict[str, str] | None = None
-    wheel_bytes: bytes | None = None
+    data: BytesIO | None = None
+    _dist : Any = None
 
+    @staticmethod
+    def from_url(url: str) -> "WheelInfo":
+        """Parse wheels URL and extract available metadata
 
-def _parse_wheel_url(url: str) -> WheelInfo:
-    """Parse wheels URL and extract available metadata
-
-    See https://www.python.org/dev/peps/pep-0427/#file-name-convention
-    """
-    file_name = Path(url).name
-    # also strip '.whl' extension.
-    wheel_name = Path(url).stem
-    tokens = wheel_name.split("-")
-    # TODO: support optional build tags in the filename (cf PEP 427)
-    if len(tokens) < 5:
-        raise ValueError(f"{file_name} is not a valid wheel file name.")
-    version, python_tag, abi_tag, platform = tokens[-4:]
-    name = "-".join(tokens[:-4])
-    return WheelInfo(
-        name=name,
-        version=Version(version),
-        filename=file_name,
-        packagetype="bdist_wheel",
-        python_version=python_tag,
-        abi_tag=abi_tag,
-        platform=platform,
-        url=url,
-    )
-
-
-def _extract_wheel(fd: io.BytesIO):
-    with ZipFile(fd) as zf:
-        zf.extractall(WHEEL_BASE)
-
-
-def _validate_wheel(data: io.BytesIO, wheelinfo: WheelInfo):
-    if wheelinfo.digests is None:
-        # No checksums available, e.g. because installing
-        # from a different location than PyPI.
-        return
-    sha256 = wheelinfo.digests["sha256"]
-    m = hashlib.sha256()
-    m.update(data.getvalue())
-    if m.hexdigest() != sha256:
-        raise ValueError("Contents don't match hash")
-
-
-async def _install_wheel(wheelinfo: WheelInfo):
-    url = wheelinfo.url
-    if not wheelinfo.wheel_bytes:
-        raise RuntimeError(
-            "Micropip internal error: attempted to install wheel before downloading it?"
+        See https://www.python.org/dev/peps/pep-0427/#file-name-convention
+        """
+        file_name = Path(url).name
+        # also strip '.whl' extension.
+        wheel_name = Path(url).stem
+        tokens = wheel_name.split("-")
+        # TODO: support optional build tags in the filename (cf PEP 427)
+        if len(tokens) < 5:
+            raise ValueError(f"{file_name} is not a valid wheel file name.")
+        version, python_tag, abi_tag, platform = tokens[-4:]
+        name = "-".join(tokens[:-4])
+        return WheelInfo(
+            name=name,
+            version=Version(version),
+            filename=file_name,
+            packagetype="bdist_wheel",
+            python_version=python_tag,
+            abi_tag=abi_tag,
+            platform=platform,
+            url=url,
         )
-    wheel = io.BytesIO(wheelinfo.wheel_bytes)
-    _validate_wheel(wheel, wheelinfo)
-    _extract_wheel(wheel)
-    name = wheelinfo.project_name
-    assert name
-    setattr(loadedPackages, name, url)
+
+    async def download(self):
+        try:
+            wheel_bytes = await fetch_bytes(self.url, self.fetch_extra_kwargs)
+        except Exception as e:
+            if self.url.startswith("https://files.pythonhosted.org/"):
+                raise e
+            else:
+                raise ValueError(
+                    f"Couldn't fetch wheel from '{self.url}'."
+                    "One common reason for this is when the server blocks "
+                    "Cross-Origin Resource Sharing (CORS)."
+                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
+                ) from e
+
+        self.data = BytesIO(wheel_bytes)
+
+        with ZipFile(self.data) as zip_file:
+            self._dist = pkg_resources_distribution_for_wheel(zip_file, self.name, "???")
+
+        self.project_name = self.dist.project_name
+        if self.project_name == "UNKNOWN":
+            self.project_name = self.name
+
+    def validate(self):
+        if self.digests is None:
+            # No checksums available, e.g. because installing
+            # from a different location than PyPI.
+            return
+        sha256 = self.digests["sha256"]
+        m = hashlib.sha256()
+        m.update(self.data.getvalue())
+        if m.hexdigest() != sha256:
+            raise ValueError("Contents don't match hash")
+
+    def extract(self):
+        with ZipFile(self.data) as zf:
+            zf.extractall(WHEEL_BASE)
+
+    def requires(self, extras : tuple[str]):
+        if not self._dist:
+            raise RuntimeError("Micropip internal error: attempted to access wheel 'requires' before downloading it?")
+        return self._dist.requires(extras)
+
+
+    async def install(self):
+        url = self.url
+        if not self.data:
+            raise RuntimeError(
+                "Micropip internal error: attempted to install wheel before downloading it?"
+            )
+        self.validate()
+        self.extract()
+        name = self.project_name
+        assert name
+        setattr(loadedPackages, name, url)
 
 
 def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
@@ -197,7 +222,7 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
         release = releases[str(ver)]
         for fileinfo in release:
             if _is_pure_python_wheel(fileinfo["filename"]):
-                wheel = _parse_wheel_url(fileinfo["url"])
+                wheel = WheelInfo.from_url(fileinfo["url"])
                 wheel.digests = fileinfo["digests"]
                 return wheel
 
@@ -238,7 +263,7 @@ class Transaction:
             return await self.add_requirement_inner(Requirement(req))
 
         # custom download location
-        wheel = _parse_wheel_url(req)
+        wheel = WheelInfo.from_url(req)
         if not _is_pure_python_wheel(wheel.filename):
             raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
@@ -312,30 +337,9 @@ class Transaction:
             version=str(wheel.version),
         )
 
-        try:
-            wheel_bytes = await fetch_bytes(wheel.url, self.fetch_extra_kwargs)
-        except Exception as e:
-            if wheel.url.startswith("https://files.pythonhosted.org/"):
-                raise e
-            else:
-                raise ValueError(
-                    f"Couldn't fetch wheel from '{wheel.url}'."
-                    "One common reason for this is when the server blocks "
-                    "Cross-Origin Resource Sharing (CORS)."
-                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
-                ) from e
-
-        wheel.wheel_bytes = wheel_bytes
-
-        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
-            dist = pkg_resources_distribution_for_wheel(zip_file, wheel.name, "???")
-
-        wheel.project_name = dist.project_name
-        if wheel.project_name == "UNKNOWN":
-            wheel.project_name = wheel.name
-
+        await wheel.download()
         if self.deps:
-            await self.gather_requirements(dist.requires(extras))
+            await self.gather_requirements(wheel.requires(extras))
 
         self.wheels.append(wheel)
 
@@ -473,7 +477,7 @@ async def install(
         assert name
         wheel_promises.append(
             _install(
-                _install_wheel(wheel),
+                wheel.install(),
                 functools.partial(
                     INSTALLED_PACKAGES.update,
                     {
