@@ -27,7 +27,7 @@ export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
 export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
 export WASM_LIBRARY_DIR=$(PYODIDE_ROOT)/packages/.libs
-export WASM_PKG_CONFIG_PATH=$(PYODIDE_ROOT)/packages/.libs/pkgconfig
+export WASM_PKG_CONFIG_PATH=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 

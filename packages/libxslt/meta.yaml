@@ -19,10 +19,9 @@ build:
         --disable-dependency-tracking \
         --disable-shared \
         --without-python \
-        --with-libxml-prefix="${WASM_LIBRARY_DIR}/libxml" \
+        --with-libxml-prefix="${WASM_LIBRARY_DIR}" \
         --without-crypto \
-        --prefix=${WASM_LIBRARY_DIR}/libxslt
+        --prefix=${WASM_LIBRARY_DIR}
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-    mkdir -p ${WASM_PKG_CONFIG_PATH} && cp ${WASM_LIBRARY_DIR}/libxslt/lib/pkgconfig/*.pc ${WASM_PKG_CONFIG_PATH}

@@ -9,7 +9,6 @@ source:
 build:
   library: true
   script: |
-    mkdir build && cd build && emcmake cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR}/libwebp ../
+    mkdir build && cd build && emcmake cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} ../
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-    mkdir -p ${WASM_PKG_CONFIG_PATH} && cp ${WASM_LIBRARY_DIR}/libwebp/lib/pkgconfig/*.pc ${WASM_PKG_CONFIG_PATH}

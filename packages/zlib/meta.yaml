@@ -9,6 +9,5 @@ source:
 build:
   library: true
   script: |
-    CFLAGS="-fPIC" emconfigure ./configure --prefix=${WASM_LIBRARY_DIR}/zlib
+    CFLAGS="-fPIC" emconfigure ./configure --prefix=${WASM_LIBRARY_DIR}
     emmake make install -j ${PYODIDE_JOBS:-3}
-    mkdir -p ${WASM_PKG_CONFIG_PATH} && cp ${WASM_LIBRARY_DIR}/zlib/lib/pkgconfig/*.pc ${WASM_PKG_CONFIG_PATH}
