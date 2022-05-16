@@ -5,7 +5,6 @@ import hashlib
 import importlib
 import io
 import json
-
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -18,17 +17,17 @@ from packaging.version import Version
 
 from pyodide import to_js
 
-from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
-from .package import PackageDict, PackageMetadata
-
 from ._compat import (
-    gather,
+    BUILTIN_PACKAGES,
+    WHEEL_BASE,
     fetch_bytes,
     fetch_string,
-    WHEEL_BASE,
-    BUILTIN_PACKAGES,
+    gather,
     loadedPackages,
+    pyodide_js,
 )
+from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
+from .package import PackageDict, PackageMetadata
 
 
 async def _get_pypi_json(pkgname: str, fetch_extra_kwargs: dict[str, str]):

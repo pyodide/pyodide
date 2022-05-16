@@ -8,6 +8,7 @@ if IN_BROWSER:
         WHEEL_BASE,
         BUILTIN_PACKAGES,
         loadedPackages,
+        pyodide_js
     )
 else:
     from ._compat_not_in_pyodide import (
@@ -17,6 +18,7 @@ else:
         WHEEL_BASE,
         BUILTIN_PACKAGES,
         loadedPackages,
+        pyodide_js
     )
 
 __all__ = [
@@ -26,4 +28,5 @@ __all__ = [
     "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
+    "pyodide_js"
 ]
