@@ -89,7 +89,7 @@ async def _get_pypi_json(pkgname: str, fetch_extra_kwargs: dict[str, str]):
         metadata = await fetch_string(url, fetch_extra_kwargs)
     except Exception as e:
         raise ValueError(
-            f"Couldn't fetch metadata for '{pkgname}' from PyPI. "
+            f"Can't fetch metadata for '{pkgname}' from PyPI. "
             "Please make sure you have entered a correct package name."
         ) from e
     return json.loads(metadata)
