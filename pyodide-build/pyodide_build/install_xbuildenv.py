@@ -10,8 +10,11 @@ from .common import get_make_flag, get_pyodide_root
 def make_parser(parser: argparse.ArgumentParser):
     parser.description = (
         "Install xbuild env.\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the Pyodide Makefile."
+        "The installed environment is the same as the one that would result from\n"
+        "`PYODIDE_PACKAGES='scipy' make` except that it is much faster.\n"
+        "The goal is to enable out-of-tree builds for binary packages that depend\n"
+        "on numpy or scipy.\n"
+        "Note: this is a private endpoint that should not be used outside of the Pyodide Makefile."
     )
     return parser
 
