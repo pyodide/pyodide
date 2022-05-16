@@ -4,7 +4,9 @@ import re
 import shutil
 import sysconfig
 import tarfile
+import zipfile
 from importlib.machinery import EXTENSION_SUFFIXES
+from importlib.metadata import distribution
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
@@ -60,6 +62,8 @@ def unpack_buffer(
     target: Literal["site", "lib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
+    installer: str | None = None,
+    source: str | None = None
 ) -> JsProxy | None:
     """Used to install a package either into sitepackages or into the standard
     library.
@@ -125,6 +129,9 @@ def unpack_buffer(
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
+        suffix = Path(f.name).suffix
+        if suffix == ".whl":
+            set_installer(f, extract_path, installer, source)
         if calculate_dynlibs:
             return to_js(get_dynlibs(f, extract_path))
         else:
@@ -147,6 +154,17 @@ def should_load_dynlib(path: str):
     # `some.cpython-39-x86_64-linux-gnu.so` Let's make a best effort here to
     # check.
     return not PLATFORM_TAG_REGEX.match(tag)
+
+
+def set_installer(archive: IO[bytes], target_dir: Path, installer: str | None, source : str | None):
+    z = ZipFile(archive)
+    for x in zipfile.Path(z).iterdir():
+        if x.name.endswith('.dist-info'):
+            break
+    if installer:
+        (target_dir / x.name / "INSTALLER").write_text(installer)
+    if source:
+        (target_dir / x.name / "PYODIDE_SOURCE").write_text(source)
 
 
 def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
