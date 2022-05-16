@@ -109,13 +109,16 @@ class WheelInfo:
 
 @dataclass
 class Transaction:
-    wheels: list[WheelInfo]
-    pyodide_packages: list[PackageMetadata]
-    locked: PackageDict
-    failed: list[Requirement]
+    ctx: dict[str, str]
     keep_going: bool
     deps: bool
     pre: bool
+    locked: PackageDict
+    fetch_extra_kwargs: dict[str, str]
+
+    wheels: list[WheelInfo] = []
+    pyodide_packages: list[PackageMetadata] = []
+    failed: list[Requirement] = []
 
 
 def _parse_wheel_url(url: str) -> WheelInfo:
@@ -181,31 +184,14 @@ class _PackageManager:
 
     async def gather_requirements(
         self,
+        transaction: Transaction,
         requirements: list[str],
-        ctx: dict[str, str],
-        keep_going: bool,
-        deps: bool,
-        pre: bool,
-        fetch_extra_kwargs: dict[str, str],
-    ) -> Transaction:
-
-        transaction = Transaction(
-            wheels=[],
-            pyodide_packages=[],
-            locked=copy.deepcopy(self.installed_packages),
-            failed=[],
-            keep_going=keep_going,
-            deps=deps,
-            pre=pre,
-        )
+    ):
         requirement_promises = []
         for requirement in requirements:
-            requirement_promises.append(
-                self.add_requirement(requirement, ctx, transaction, fetch_extra_kwargs)
-            )
+            requirement_promises.append(self.add_requirement(transaction, requirement))
 
         await gather(*requirement_promises)
-        return transaction
 
     async def install(
         self,
@@ -224,9 +210,16 @@ class _PackageManager:
 
         if credentials:
             fetch_extra_kwargs["credentials"] = credentials
-        transaction = await self.gather_requirements(
-            requirements, ctx, keep_going, deps, pre, fetch_extra_kwargs
+
+        transaction = Transaction(
+            ctx=ctx,
+            locked=copy.deepcopy(self.installed_packages),
+            keep_going=keep_going,
+            deps=deps,
+            pre=pre,
+            fetch_extra_kwargs=fetch_extra_kwargs,
         )
+        await self.gather_requirements(transaction, requirements)
 
         if transaction.failed:
             failed_requirements = ", ".join([f"'{req}'" for req in transaction.failed])
@@ -279,16 +272,16 @@ class _PackageManager:
 
     async def add_requirement(
         self,
-        requirement: str | Requirement,
-        ctx: dict[str, str],
         transaction: Transaction,
-        fetch_extra_kwargs: dict[str, str],
+        requirement: str | Requirement,
     ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
+
+        # 1. Convert `req` from a string to a Requirement if necessary
         if isinstance(requirement, Requirement):
             req = requirement
         elif requirement.endswith(".whl"):
@@ -297,7 +290,7 @@ class _PackageManager:
             if not _is_pure_python_wheel(wheel.filename):
                 raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
-            await self.add_wheel(wheel, set(), ctx, transaction, fetch_extra_kwargs)
+            await self.add_wheel(transaction, wheel, extras=set())
             return
         else:
             req = Requirement(requirement)
@@ -321,12 +314,12 @@ class _PackageManager:
         if req.marker:
             # handle environment markers
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
-            if not req.marker.evaluate(ctx):
+            if not req.marker.evaluate(transaction.ctx):
                 return
 
         # Is some version of this package is already installed?
         if req.name in transaction.locked:
-            ver = transaction.locked[req.name].version
+            ver = importlib.metadata.version(req.name)
             if req.specifier.contains(ver, prereleases=True):
                 # installed version matches, nothing to do
                 return
@@ -335,7 +328,7 @@ class _PackageManager:
                     f"Requested '{requirement}', "
                     f"but {req.name}=={ver} is already installed"
                 )
-        metadata = await _get_pypi_json(req.name, fetch_extra_kwargs)
+        metadata = await _get_pypi_json(req.name, transaction.fetch_extra_kwargs)
 
         try:
             wheel = self.find_wheel(metadata, req)
@@ -345,20 +338,16 @@ class _PackageManager:
                 raise
         else:
             await self.add_wheel(
+                transaction,
                 wheel,
                 req.extras,
-                ctx,
-                transaction,
-                fetch_extra_kwargs,
             )
 
     async def add_wheel(
         self,
+        transaction: Transaction,
         wheel: WheelInfo,
         extras: set[str],
-        ctx: dict[str, str],
-        transaction: Transaction,
-        fetch_extra_kwargs: dict[str, str],
     ):
         normalized_name = canonicalize_name(wheel.name)
         transaction.locked[normalized_name] = PackageMetadata(
@@ -367,7 +356,7 @@ class _PackageManager:
         )
 
         try:
-            wheel_bytes = await fetch_bytes(wheel.url, fetch_extra_kwargs)
+            wheel_bytes = await fetch_bytes(wheel.url, transaction.fetch_extra_kwargs)
         except Exception as e:
             if wheel.url.startswith("https://files.pythonhosted.org/"):
                 raise e
@@ -390,9 +379,7 @@ class _PackageManager:
 
         if transaction.deps:
             for recurs_req in dist.requires(extras):
-                await self.add_requirement(
-                    recurs_req, ctx, transaction, fetch_extra_kwargs
-                )
+                await self.add_requirement(transaction, recurs_req)
 
         transaction.wheels.append(wheel)
 
