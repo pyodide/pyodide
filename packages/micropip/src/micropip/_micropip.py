@@ -310,7 +310,14 @@ class _PackageManager:
                     f"Requested '{requirement}', "
                     f"but {req.name}=={ver} is already installed"
                 )
-        metadata = await _get_pypi_json(req.name, **fetch_extra_kwargs)
+        try:
+            metadata = await _get_pypi_json(req.name, **fetch_extra_kwargs)
+        except Exception as e:
+            raise ValueError(
+                f"Couldn't fetch metadata of '{req.name}' from PyPI. "
+                "Please make sure you have entered a correct package name."
+            ) from e
+
         maybe_wheel, maybe_ver = self.find_wheel(metadata, req)
         if maybe_wheel is None or maybe_ver is None:
             if transaction["keep_going"]:
