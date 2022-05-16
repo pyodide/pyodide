@@ -20,7 +20,7 @@ def copy_xbuild_files(xbuildenv_path):
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     xbuild_site_packages = xbuildenv_path / "site_packages"
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, False)
+        config = parse_package_config(pkg, check=False)
         xbuild_files = config.get("build", {}).get("cross-build-files", [])
         for path in xbuild_files:
             target = xbuild_site_packages / path

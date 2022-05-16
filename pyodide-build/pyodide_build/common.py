@@ -240,7 +240,7 @@ def get_unisolated_packages():
     PYODIDE_ROOT = get_pyodide_root()
     unisolated_packages = []
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, False)
+        config = parse_package_config(pkg, check=False)
         if config.get("build", {}).get("cross-build-env", False):
             unisolated_packages.append(config["package"]["name"])
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
