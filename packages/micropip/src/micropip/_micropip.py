@@ -265,7 +265,7 @@ class Transaction:
             )
             return
 
-        metadata = await _get_pypi_json(req.name, self.fetch_extra_kwargs)
+        metadata = await _get_pypi_json(req.name, self.fetch_kwargs)
 
         try:
             wheel = find_wheel(metadata, req)
