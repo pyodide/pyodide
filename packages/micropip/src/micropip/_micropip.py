@@ -228,6 +228,22 @@ class Transaction:
 
         await self.add_wheel(wheel, extras=set())
 
+    def check_version_satisfied(self, req: Requirement):
+        ver = None
+        if req.name in self.locked:
+            ver = self.locked[req.name].version
+
+        if not ver:
+            return False
+
+        if req.specifier.contains(ver, prereleases=True):
+            # installed version matches, nothing to do
+            return True
+
+        raise ValueError(
+            f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
+        )
+
     async def add_requirement_inner(
         self,
         req: Requirement,
@@ -248,17 +264,10 @@ class Transaction:
                 return
 
         # Is some version of this package is already installed?
-        if req.name in self.locked:
-            ver = self.locked[req.name].version
-            if req.specifier.contains(ver, prereleases=True):
-                # installed version matches, nothing to do
-                return
-            else:
-                raise ValueError(
-                    f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
-                )
 
         req.name = canonicalize_name(req.name)
+        if self.check_version_satisfied(req):
+            return
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
@@ -279,11 +288,15 @@ class Transaction:
             self.failed.append(req)
             if not self.keep_going:
                 raise
-        else:
-            await self.add_wheel(
-                wheel,
-                req.extras,
-            )
+            else:
+                return
+
+        if self.check_version_satisfied(req):
+            # Maybe while we were downloading pypi_json some other branch
+            # installed the wheel?
+            return
+
+        await self.add_wheel(wheel, req.extras)
 
     async def add_wheel(
         self,
