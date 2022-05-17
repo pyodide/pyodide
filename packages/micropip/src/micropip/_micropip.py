@@ -83,10 +83,10 @@ else:
         return result
 
 
-async def _get_pypi_json(pkgname: str, fetch_extra_kwargs: dict[str, str]):
+async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     try:
-        metadata = await fetch_string(url, fetch_extra_kwargs)
+        metadata = await fetch_string(url, fetch_kwargs)
     except Exception as e:
         raise ValueError(
             f"Can't fetch metadata for '{pkgname}' from PyPI. "
@@ -139,9 +139,9 @@ class WheelInfo:
             url=url,
         )
 
-    async def download(self):
+    async def download(self, fetch_kwargs):
         try:
-            wheel_bytes = await fetch_bytes(self.url, self.fetch_extra_kwargs)
+            wheel_bytes = await fetch_bytes(self.url, fetch_kwargs)
         except Exception as e:
             if self.url.startswith("https://files.pythonhosted.org/"):
                 raise e
@@ -239,7 +239,7 @@ class Transaction:
     deps: bool
     pre: bool
     locked: PackageDict
-    fetch_extra_kwargs: dict[str, str]
+    fetch_kwargs: dict[str, str]
 
     wheels: list[WheelInfo] = field(default_factory=list)
     pyodide_packages: list[PackageMetadata] = field(default_factory=list)
@@ -312,7 +312,7 @@ class Transaction:
                     f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
                 )
 
-        metadata = await _get_pypi_json(req.name, self.fetch_extra_kwargs)
+        metadata = await _get_pypi_json(req.name, self.fetch_kwargs)
 
         try:
             wheel = find_wheel(metadata, req)
@@ -337,7 +337,7 @@ class Transaction:
             version=str(wheel.version),
         )
 
-        await wheel.download()
+        await wheel.download(self.fetch_kwargs)
         if self.deps:
             await self.gather_requirements(wheel.requires(extras))
 
@@ -427,10 +427,10 @@ async def install(
         await install_func
         done_callback()
 
-    fetch_extra_kwargs = dict()
+    fetch_kwargs = dict()
 
     if credentials:
-        fetch_extra_kwargs["credentials"] = credentials
+        fetch_kwargs["credentials"] = credentials
 
     transaction = Transaction(
         ctx=ctx,
@@ -438,7 +438,7 @@ async def install(
         keep_going=keep_going,
         deps=deps,
         pre=pre,
-        fetch_extra_kwargs=fetch_extra_kwargs,
+        fetch_kwargs=fetch_kwargs,
     )
     await transaction.gather_requirements(requirements)
 
