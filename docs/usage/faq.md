@@ -337,3 +337,27 @@ functools.reduce = reduce(...)
 <...OMITTED LINES>
 You are now leaving help and returning to the Python interpreter.
 ```
+
+## Micropip can't find a pure Python wheel
+
+When installing a Python package from PyPI, micropip will produce an error if
+it cannot find a pure Python wheel. To determine if a package has a pure
+Python wheel manually, you can open its PyPi page (for instance
+https://pypi.org/project/snowballstemmer/) and go to the "Download files" tab.
+If this tab doesn't contain a file `*py3-none-any.whl` then the pure Python
+wheel is missing.
+
+This can happen for two reasons,
+
+1. either the package is pure Python (you can check language composition for a
+   package on Github), and its maintainers didn't upload a wheel.
+   In this case, you can report this issue to the package issue tracker. As a
+   temporary solution, you can also [build the
+   wheel](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
+   yourself, upload it to some temporary location and install it with micropip
+   from the corresponding URL.
+2. or the package has binary extensions (e.g. C, Fortran or Rust), in which
+   case it needs to be packaged in Pyodide. Please open [an
+   issue](https://github.com/pyodide/pyodide/issues) after checking than an
+   issue for this opackage doesn't exist already. Then follow
+   {ref}`new-packages`.

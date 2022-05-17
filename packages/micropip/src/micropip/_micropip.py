@@ -95,7 +95,7 @@ class WheelInfo:
                 raise e
             else:
                 raise ValueError(
-                    f"Couldn't fetch wheel from '{self.url}'."
+                    f"Can't fetch wheel from '{self.url}'."
                     "One common reason for this is when the server blocks "
                     "Cross-Origin Resource Sharing (CORS)."
                     "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
@@ -149,9 +149,13 @@ class WheelInfo:
         setattr(loadedPackages, name, url)
 
 
+FAQ_URLS = {
+    "cant_find_wheel": "https://pyodide.org/en/stable/usage/faq.html#micropip-can-t-find-a-pure-python-wheel"
+}
+
+
 def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
     """Parse metadata to find the latest version of pure python wheel.
-
     Parameters
     ----------
     metadata : ``Dict[str, Any]``
@@ -180,8 +184,10 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
                 return wheel
 
     raise ValueError(
-        f"Couldn't find a pure Python 3 wheel for '{req}'. "
-        "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
+        f"Can't find a pure Python 3 wheel for '{req}'.\n"
+        f"See: {FAQ_URLS['cant_find_wheel']}\n"
+        "You can use `micropip.install(..., keep_going=True)`"
+        "to get a list of all packages with missing wheels."
     )
 
 
@@ -398,7 +404,8 @@ async def install(
     if transaction.failed:
         failed_requirements = ", ".join([f"'{req}'" for req in transaction.failed])
         raise ValueError(
-            f"Couldn't find a pure Python 3 wheel for: {failed_requirements}"
+            f"Can't find a pure Python 3 wheel for: {failed_requirements}\n"
+            f"See: {FAQ_URLS['cant_find_wheel']}\n"
         )
 
     wheel_promises = []
