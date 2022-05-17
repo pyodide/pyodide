@@ -1,10 +1,10 @@
 import asyncio
-import copy
-import functools
 import hashlib
 import importlib
 import json
 from dataclasses import dataclass, field
+from importlib.metadata import distributions as importlib_distributions
+from importlib.metadata import version as importlib_version
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -200,9 +200,9 @@ class Transaction:
     keep_going: bool
     deps: bool
     pre: bool
-    locked: PackageDict
     fetch_kwargs: dict[str, str]
 
+    locked: dict[str, PackageMetadata] = field(default_factory=dict)
     wheels: list[WheelInfo] = field(default_factory=list)
     pyodide_packages: list[PackageMetadata] = field(default_factory=list)
     failed: list[Requirement] = field(default_factory=list)
@@ -233,6 +233,10 @@ class Transaction:
 
     def check_version_satisfied(self, req: Requirement):
         ver = None
+        try:
+            ver = importlib_version(req.name)
+        except ModuleNotFoundError:
+            pass
         if req.name in self.locked:
             ver = self.locked[req.name].version
 
@@ -319,9 +323,6 @@ class Transaction:
         self.wheels.append(wheel)
 
 
-INSTALLED_PACKAGES = PackageDict()
-
-
 async def install(
     requirements: str | list[str],
     keep_going: bool = False,
@@ -398,10 +399,6 @@ async def install(
     if isinstance(requirements, str):
         requirements = [requirements]
 
-    async def _install(install_func, done_callback):
-        await install_func
-        done_callback()
-
     fetch_kwargs = dict()
 
     if credentials:
@@ -409,7 +406,6 @@ async def install(
 
     transaction = Transaction(
         ctx=ctx,
-        locked=copy.deepcopy(INSTALLED_PACKAGES),
         keep_going=keep_going,
         deps=deps,
         pre=pre,
@@ -431,16 +427,10 @@ async def install(
         # Note: branch never happens in out-of-browser testing because in
         # that case BUILTIN_PACKAGES is empty.
         wheel_promises.append(
-            _install(
-                asyncio.ensure_future(
-                    pyodide_js.loadPackage(
-                        to_js([name for [name, _, _] in pyodide_packages])
-                    )
-                ),
-                functools.partial(
-                    INSTALLED_PACKAGES.update,
-                    {canonicalize_name(pkg.name): pkg for pkg in pyodide_packages},
-                ),
+            asyncio.ensure_future(
+                pyodide_js.loadPackage(
+                    to_js([name for [name, _, _] in pyodide_packages])
+                )
             )
         )
 
@@ -448,22 +438,7 @@ async def install(
     for wheel in transaction.wheels:
         # detect whether the wheel metadata is from PyPI or from custom location
         # wheel metadata from PyPI has SHA256 checksum digest.
-        wheel_source = "pypi" if wheel.digests is not None else wheel.url
-        name = wheel.project_name
-        assert name
-        wheel_promises.append(
-            _install(
-                wheel.install(),
-                functools.partial(
-                    INSTALLED_PACKAGES.update,
-                    {
-                        canonicalize_name(name): PackageMetadata(
-                            name, str(wheel.version), wheel_source
-                        )
-                    },
-                ),
-            )
-        )
+        wheel_promises.append(wheel.install())
 
     await gather(*wheel_promises)
 
@@ -486,17 +461,29 @@ def _list():
         >>> "regex" in package_list # doctest: +SKIP
         True
     """
-    packages = copy.deepcopy(INSTALLED_PACKAGES)
 
     # Add packages that are loaded through pyodide.loadPackage
+    packages = PackageDict()
+    for dist in importlib_distributions():
+        name = dist.name
+        version = dist.version
+        source = dist.read_text("PYODIDE_SOURCE")
+        if not source:
+            continue
+        packages[name] = PackageMetadata(
+            name=name,
+            version=version,
+            source=source,
+        )
+
     for name, pkg_source in loadedPackages.to_py().items():
         if name in packages:
             continue
 
         version = BUILTIN_PACKAGES[name]["version"]
-        source = "pyodide"
+        source_ = "pyodide"
         if pkg_source != "default channel":
             # Pyodide package loaded from a custom URL
-            source = pkg_source
-        packages[name] = PackageMetadata(name=name, version=version, source=source)
+            source_ = pkg_source
+        packages[name] = PackageMetadata(name=name, version=version, source=source_)
     return packages
