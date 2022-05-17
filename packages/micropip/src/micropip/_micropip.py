@@ -3,10 +3,10 @@ import copy
 import functools
 import hashlib
 import importlib
-from io import BytesIO
 import json
 import tempfile
 from dataclasses import dataclass, field
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -98,6 +98,7 @@ async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
 def _is_pure_python_wheel(filename: str):
     return filename.endswith("py3-none-any.whl")
 
+
 @dataclass
 class WheelInfo:
     name: str
@@ -111,7 +112,7 @@ class WheelInfo:
     project_name: str | None = None
     digests: dict[str, str] | None = None
     data: BytesIO | None = None
-    _dist : Any = None
+    _dist: Any = None
 
     @staticmethod
     def from_url(url: str) -> "WheelInfo":
@@ -156,9 +157,11 @@ class WheelInfo:
         self.data = BytesIO(wheel_bytes)
 
         with ZipFile(self.data) as zip_file:
-            self._dist = pkg_resources_distribution_for_wheel(zip_file, self.name, "???")
+            self._dist = pkg_resources_distribution_for_wheel(
+                zip_file, self.name, "???"
+            )
 
-        self.project_name = self.dist.project_name
+        self.project_name = self._dist.project_name
         if self.project_name == "UNKNOWN":
             self.project_name = self.name
 
@@ -169,19 +172,22 @@ class WheelInfo:
             return
         sha256 = self.digests["sha256"]
         m = hashlib.sha256()
+        assert self.data
         m.update(self.data.getvalue())
         if m.hexdigest() != sha256:
             raise ValueError("Contents don't match hash")
 
     def extract(self):
+        assert self.data
         with ZipFile(self.data) as zf:
             zf.extractall(WHEEL_BASE)
 
-    def requires(self, extras : tuple[str]):
+    def requires(self, extras: set[str]):
         if not self._dist:
-            raise RuntimeError("Micropip internal error: attempted to access wheel 'requires' before downloading it?")
+            raise RuntimeError(
+                "Micropip internal error: attempted to access wheel 'requires' before downloading it?"
+            )
         return self._dist.requires(extras)
-
 
     async def install(self):
         url = self.url
