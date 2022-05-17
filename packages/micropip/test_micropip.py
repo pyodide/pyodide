@@ -138,10 +138,10 @@ def test_install_simple(selenium_standalone_micropip):
 
 def test_parse_wheel_url():
     pytest.importorskip("packaging")
-    from micropip import _micropip
+    from micropip._micropip import WheelInfo
 
     url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    wheel = _micropip._parse_wheel_url(url)
+    wheel = WheelInfo.from_url(url)
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
     assert wheel.digests is None
@@ -155,10 +155,10 @@ def test_parse_wheel_url():
     msg = "not a valid wheel file name"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
-        wheel = _micropip._parse_wheel_url(url)
+        wheel = WheelInfo.from_url(url)
 
     url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
-    wheel = _micropip._parse_wheel_url(url)
+    wheel = WheelInfo.from_url(url)
     assert wheel.name == "scikit_learn"
     assert wheel.platform == "macosx_10_9_intel"
 
@@ -195,7 +195,7 @@ def create_transaction(Transaction):
         pyodide_packages=[],
         failed=[],
         ctx={"extra": ""},
-        fetch_extra_kwargs={},
+        fetch_kwargs={},
     )
 
 
