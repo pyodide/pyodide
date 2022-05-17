@@ -4,7 +4,6 @@ import functools
 import hashlib
 import importlib
 import json
-import tempfile
 from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
@@ -16,71 +15,19 @@ from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
 
-from pyodide import IN_BROWSER, to_js
+from pyodide import to_js
 
+from ._compat import (
+    BUILTIN_PACKAGES,
+    WHEEL_BASE,
+    fetch_bytes,
+    fetch_string,
+    gather,
+    loadedPackages,
+    pyodide_js,
+)
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
-
-# Provide stubs for testing in native python
-if IN_BROWSER:
-    import pyodide_js
-
-if IN_BROWSER:
-    # Random note: getsitepackages is not available in a virtual environment...
-    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
-    # problem is not fixed)
-    from site import getsitepackages
-
-    WHEEL_BASE = Path(getsitepackages()[0])
-else:
-    WHEEL_BASE = Path(tempfile.mkdtemp())
-
-if IN_BROWSER:
-    BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
-else:
-    BUILTIN_PACKAGES = {}
-
-if IN_BROWSER:
-    from pyodide_js import loadedPackages
-else:
-
-    class loadedPackages:  # type: ignore[no-redef]
-        @staticmethod
-        def to_py():
-            return {}
-
-
-if IN_BROWSER:
-    from pyodide.http import pyfetch
-
-    async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
-        return await (await pyfetch(url, **kwargs)).bytes()
-
-    async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
-        return await (await pyfetch(url, **kwargs)).string()
-
-else:
-    from urllib.request import Request, urlopen
-
-    async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
-        return urlopen(Request(url, headers=kwargs)).read()
-
-    async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
-        return (await fetch_bytes(url, kwargs)).decode()
-
-
-if IN_BROWSER:
-    from asyncio import gather
-else:
-    # asyncio.gather will schedule any coroutines to run on the event loop but
-    # we want to avoid using the event loop at all. Instead just run the
-    # coroutines in sequence.
-    # TODO: Use an asyncio testing framework to avoid this
-    async def gather(*coroutines):  # type: ignore[no-redef]
-        result = []
-        for coroutine in coroutines:
-            result.append(await coroutine)
-        return result
 
 
 async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
