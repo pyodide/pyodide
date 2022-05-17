@@ -3,6 +3,7 @@ import hashlib
 import importlib
 import json
 from dataclasses import dataclass, field
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
 from importlib.metadata import version as importlib_version
 from io import BytesIO
@@ -235,7 +236,7 @@ class Transaction:
         ver = None
         try:
             ver = importlib_version(req.name)
-        except ModuleNotFoundError:
+        except PackageNotFoundError:
             pass
         if req.name in self.locked:
             ver = self.locked[req.name].version
