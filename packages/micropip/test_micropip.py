@@ -10,6 +10,33 @@ from pyodide_test_runner import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
+from importlib.metadata import Distribution, PackageNotFoundError
+
+
+def _mock_importlib_version(name: str):
+    dists = _mock_importlib_distributions()
+    for dist in dists:
+        if dist.name == name:
+            return dist.version
+    raise PackageNotFoundError(name)
+
+
+def _mock_importlib_distributions():
+    from micropip._micropip import WHEEL_BASE
+
+    for p in WHEEL_BASE.glob("*.dist-info"):
+        yield Distribution.at(p)
+
+
+@pytest.fixture
+def mock_importlib(monkeypatch):
+    from micropip import _micropip
+
+    monkeypatch.setattr(_micropip, "importlib_version", _mock_importlib_version)
+    monkeypatch.setattr(
+        _micropip, "importlib_distributions", _mock_importlib_distributions
+    )
+
 
 def mock_get_pypi_json(pkg_map):
     """Returns mock function of `_get_pypi_json` which returns dummy JSON data of PyPI API.
@@ -83,13 +110,18 @@ def mock_fetch_bytes(pkg_name, metadata, version="1.0.0"):
     """
 
     async def _mock_fetch_bytes(url, kwargs):
+        from micropip._micropip import WheelInfo
+
+        wheel_info = WheelInfo.from_url(url)
         mock_metadata = metadata
         mock_wheel = "Wheel-Version: 1.0"
+        version = wheel_info.version
 
         with io.BytesIO() as tmp:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
                 archive.writestr(
-                    f"{pkg_name}-{version}.dist-info/METADATA", mock_metadata
+                    f"{pkg_name}-{version}.dist-info/METADATA",
+                    f"Name:{pkg_name}\nVersion:{version}\n{mock_metadata}",
                 )
                 archive.writestr(f"{pkg_name}-{version}.dist-info/WHEEL", mock_wheel)
 
@@ -222,7 +254,7 @@ def test_add_requirement():
     assert wheel.url == url
 
 
-def test_add_requirement_marker():
+def test_add_requirement_marker(mock_importlib):
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
@@ -344,7 +376,7 @@ def test_install_keep_going(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    dummy_pkg_name = "dummy"
+    dummy_pkg_name = "dummy1"
     _mock_get_pypi_json = mock_get_pypi_json(
         {dummy_pkg_name: {"name": f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}}
     )
@@ -363,11 +395,11 @@ def test_install_keep_going(monkeypatch):
         )
 
 
-def test_install_version_compare_prerelease(monkeypatch):
+def test_install_version_compare_prerelease(monkeypatch, mock_importlib):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    dummy_pkg_name = "dummy"
+    dummy_pkg_name = "dummy2"
     version_new = "3.2.1a1"
     version_old = "3.2.0"
 
@@ -408,11 +440,11 @@ def test_install_version_compare_prerelease(monkeypatch):
     assert installed_pkgs[dummy_pkg_name].version == version_new
 
 
-def test_install_no_deps(monkeypatch):
+def test_install_no_deps(monkeypatch, mock_importlib):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    dummy_pkg_name = "dummy"
+    dummy_pkg_name = "dummy3"
     dep_pkg_name = "dependency_dummy"
     _mock_get_pypi_json = mock_get_pypi_json(
         {
@@ -435,7 +467,7 @@ def test_install_no_deps(monkeypatch):
     assert dep_pkg_name not in _micropip._list()
 
 
-def test_install_pre(monkeypatch):
+def test_install_pre(monkeypatch, mock_importlib):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
@@ -507,11 +539,11 @@ def test_fetch_wheel_fail(monkeypatch):
         )
 
 
-def test_list_pypi_package(monkeypatch):
+def test_list_pypi_package(monkeypatch, mock_importlib):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    dummy_pkg_name = "dummy"
+    dummy_pkg_name = "dummy4"
     _mock_get_pypi_json = mock_get_pypi_json(
         {dummy_pkg_name: {"name": f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}}
     )
@@ -523,14 +555,15 @@ def test_list_pypi_package(monkeypatch):
     asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_pkg_name))
 
     pkg_list = _micropip._list()
-    assert "dummy" in pkg_list and pkg_list["dummy"].source.lower() == "pypi"
+    assert dummy_pkg_name in pkg_list
+    assert pkg_list[dummy_pkg_name].source.lower() == "pypi"
 
 
-def test_list_wheel_package(monkeypatch):
+def test_list_wheel_package(monkeypatch, mock_importlib):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
-    dummy_pkg_name = "dummy"
+    dummy_pkg_name = "dummy5"
     dummy_url = f"https://dummy.com/{dummy_pkg_name}-1.0.0-py3-none-any.whl"
     _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, "UNKNOWN")
 
@@ -539,27 +572,28 @@ def test_list_wheel_package(monkeypatch):
     asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_url))
 
     pkg_list = _micropip._list()
-    assert "dummy" in pkg_list and pkg_list["dummy"].source.lower() == dummy_url
+    repr(pkg_list)
+    assert dummy_pkg_name in pkg_list
+    assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
 
 
-def test_list_wheel_name_mismatch(monkeypatch):
+def test_list_wheel_name_mismatch(monkeypatch, mock_importlib):
     pytest.importorskip("packaging")
     from micropip import _micropip
 
     dummy_pkg_name = "dummy-Dummy"
     normalized_pkg_name = dummy_pkg_name.replace("-", "_").lower()
     dummy_url = f"https://dummy.com/{normalized_pkg_name}-1.0.0-py3-none-any.whl"
-    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, f"Name: {dummy_pkg_name}\n")
+    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, "")
 
     monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
 
     asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_url))
 
     pkg_list = _micropip._list()
-    assert (
-        dummy_pkg_name in pkg_list
-        and pkg_list[dummy_pkg_name].source.lower() == dummy_url
-    )
+    print(pkg_list)
+    assert dummy_pkg_name in pkg_list
+    assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
 
 
 def test_list_pyodide_package(selenium_standalone_micropip):
@@ -579,7 +613,8 @@ def test_list_pyodide_package(selenium_standalone_micropip):
         await pyodide.runPythonAsync(`
             import micropip
             pkgs = micropip.list()
-            assert "regex" in pkgs and pkgs["regex"].source.lower() == "pyodide"
+            assert "regex" in pkgs
+            assert pkgs["regex"].source.lower() == "pyodide"
         `);
         """
     )
@@ -593,7 +628,8 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
         await pyodide.runPythonAsync(`
             import micropip
             pkgs = micropip.list()
-            assert "regex" in pkgs and pkgs["regex"].source.lower() == "pyodide"
+            assert "regex" in pkgs
+            assert pkgs["regex"].source.lower() == "pyodide"
         `);
         """
     )

@@ -201,7 +201,11 @@ async function downloadPackage(
  * @param buffer The binary data returned by downloadPkgBuffer
  * @private
  */
-async function installPackage(name: string, buffer: Uint8Array, channel: string) {
+async function installPackage(
+  name: string,
+  buffer: Uint8Array,
+  channel: string
+) {
   let pkg = API.packages[name];
   if (!pkg) {
     pkg = {
@@ -219,8 +223,8 @@ async function installPackage(name: string, buffer: Uint8Array, channel: string)
     filename,
     target: pkg.install_dir,
     calculate_dynlibs: true,
-    installer : "pyodide.loadPackage",
-    source : channel === DEFAULT_CHANNEL ? "pyodide" : channel,
+    installer: "pyodide.loadPackage",
+    source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);

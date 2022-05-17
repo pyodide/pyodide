@@ -6,7 +6,6 @@ import sysconfig
 import tarfile
 import zipfile
 from importlib.machinery import EXTENSION_SUFFIXES
-from importlib.metadata import distribution
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
@@ -63,7 +62,7 @@ def unpack_buffer(
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
     installer: str | None = None,
-    source: str | None = None
+    source: str | None = None,
 ) -> JsProxy | None:
     """Used to install a package either into sitepackages or into the standard
     library.
@@ -156,10 +155,12 @@ def should_load_dynlib(path: str):
     return not PLATFORM_TAG_REGEX.match(tag)
 
 
-def set_installer(archive: IO[bytes], target_dir: Path, installer: str | None, source : str | None):
+def set_installer(
+    archive: IO[bytes], target_dir: Path, installer: str | None, source: str | None
+):
     z = ZipFile(archive)
     for x in zipfile.Path(z).iterdir():
-        if x.name.endswith('.dist-info'):
+        if x.name.endswith(".dist-info"):
             break
     if installer:
         (target_dir / x.name / "INSTALLER").write_text(installer)
