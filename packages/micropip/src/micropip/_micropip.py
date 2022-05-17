@@ -204,19 +204,6 @@ class Transaction:
         if self.pre:
             req.specifier.prereleases = True
 
-        req.name = canonicalize_name(req.name)
-
-        # If there's a Pyodide package that matches the version constraint, use
-        # the Pyodide package instead of the one on PyPI
-        if req.name in BUILTIN_PACKAGES and req.specifier.contains(
-            BUILTIN_PACKAGES[req.name]["version"], prereleases=True
-        ):
-            version = BUILTIN_PACKAGES[req.name]["version"]
-            self.pyodide_packages.append(
-                PackageMetadata(name=req.name, version=str(version), source="pyodide")
-            )
-            return
-
         if req.marker:
             # handle environment markers
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
@@ -233,6 +220,19 @@ class Transaction:
                 raise ValueError(
                     f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
                 )
+
+        req.name = canonicalize_name(req.name)
+
+        # If there's a Pyodide package that matches the version constraint, use
+        # the Pyodide package instead of the one on PyPI
+        if req.name in BUILTIN_PACKAGES and req.specifier.contains(
+            BUILTIN_PACKAGES[req.name]["version"], prereleases=True
+        ):
+            version = BUILTIN_PACKAGES[req.name]["version"]
+            self.pyodide_packages.append(
+                PackageMetadata(name=req.name, version=str(version), source="pyodide")
+            )
+            return
 
         metadata = await _get_pypi_json(req.name, self.fetch_extra_kwargs)
 
