@@ -195,7 +195,7 @@ def create_transaction(Transaction):
         pyodide_packages=[],
         failed=[],
         ctx={"extra": ""},
-        fetch_extra_kwargs={},
+        fetch_kwargs={},
     )
 
 
