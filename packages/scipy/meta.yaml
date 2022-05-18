@@ -34,7 +34,7 @@ source:
 
 build:
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
+    -I$(WASM_LIBRARY_DIR)/CLAPACK/INCLUDE
     -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77

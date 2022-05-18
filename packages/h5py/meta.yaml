@@ -23,6 +23,4 @@ build:
   script: |
     export HDF5_MPI=OFF
     export H5PY_SETUP_REQUIRES="0"
-    export HDF5_DIR=$PYODIDE_ROOT/packages/libhdf5/build/hdf5
-    export PKG_CONFIG_PATH=${HDF5_DIR}/lib/pkgconfig:${PKG_CONFIG_PATH}
     export HDF5_VERSION=1.13.1

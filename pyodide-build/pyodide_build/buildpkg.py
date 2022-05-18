@@ -145,12 +145,18 @@ def get_bash_runner():
             "SIDE_MODULE_CFLAGS",
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
-            "OPEN_SSL_ROOT",
             "UNISOLATED_PACKAGES",
+            "WASM_LIBRARY_DIR",
+            "WASM_PKG_CONFIG_PATH",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
+    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    if "PKG_CONFIG_PATH" in os.environ:
+        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+
     with BashRunnerWithSharedEnvironment(env=env) as b:
         b.run(
             f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL

@@ -8,5 +8,7 @@ build:
   library: true
   script: |
     emconfigure ./configure \
-        CFLAGS="-fPIC"
+        CFLAGS="-fPIC" \
+        --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install

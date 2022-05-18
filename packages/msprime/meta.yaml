@@ -5,11 +5,13 @@ source:
   url: https://files.pythonhosted.org/packages/30/ac/22b9d2dc6e3233cc35e613b714d52cf87e4af00064a53d226824401629cb/msprime-1.1.1.tar.gz
   sha256: e840bed2ba37ae572b234f0b55af006dc408881593f184304481ee6058ea6f30
 build:
+  script:
+    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix gsl)
+    export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix gsl)
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/libgsl/build/libgsl-2.7
+    $(LIBGSL_INCLUDE_PATH)
   ldflags: |
-    -L$(PYODIDE_ROOT)/packages/libgsl/build/libgsl-2.7/.libs
-    -L$(PYODIDE_ROOT)/packages/libgsl/build/libgsl-2.7/cblas/.libs
+    $(LIBGSL_LIBRARY_PATH)
 requirements:
   run:
     - numpy
