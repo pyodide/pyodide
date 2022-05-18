@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from .browser import RUNNERS
+
 
 @contextlib.contextmanager
 def set_webdriver_script_timeout(selenium, script_timeout: float | None):
@@ -40,7 +42,7 @@ def maybe_skip_test(item, dist_dir, delayed=False):
 
     loading the selenium_standalone fixture which takes a long time.
     """
-    browsers = "|".join(["firefox", "chrome", "node"])
+    browsers = "|".join(RUNNERS)
 
     skip_msg = None
     # Testing a package. Skip the test if the package is not built.

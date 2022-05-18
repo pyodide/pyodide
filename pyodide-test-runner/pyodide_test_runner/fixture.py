@@ -2,7 +2,14 @@ import contextlib
 
 import pytest
 
-from .browser import ChromeWrapper, FirefoxWrapper, NodeWrapper, SeleniumWrapper
+from .browser import (
+    RUNNERS,
+    ChromeWrapper,
+    FirefoxWrapper,
+    NodeWrapper,
+    SafariWrapper,
+    SeleniumWrapper,
+)
 from .server import spawn_web_server
 from .utils import parse_driver_timeout, set_webdriver_script_timeout
 
@@ -23,6 +30,8 @@ def selenium_common(request, web_server_main, load_pyodide=True, script_type="cl
         cls = ChromeWrapper
     elif request.param == "node":
         cls = NodeWrapper
+    elif request.param == "safari":
+        cls = SafariWrapper
     else:
         raise AssertionError(f"Unknown browser: {request.param}")
 
@@ -41,7 +50,7 @@ def selenium_common(request, web_server_main, load_pyodide=True, script_type="cl
         selenium.quit()
 
 
-@pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
+@pytest.fixture(params=RUNNERS, scope="function")
 def selenium_standalone(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
         with set_webdriver_script_timeout(
@@ -53,7 +62,7 @@ def selenium_standalone(request, web_server_main):
                 print(selenium.logs)
 
 
-@pytest.fixture(params=["firefox", "chrome", "node"], scope="module")
+@pytest.fixture(params=RUNNERS, scope="module")
 def selenium_esm(request, web_server_main):
     with selenium_common(
         request, web_server_main, load_pyodide=True, script_type="module"
@@ -81,7 +90,7 @@ def selenium_standalone_noload_common(request, web_server_main, script_type="cla
                 print(selenium.logs)
 
 
-@pytest.fixture(params=["firefox", "chrome"], scope="function")
+@pytest.fixture(params=[name for name in RUNNERS if name != "node"], scope="function")
 def selenium_webworker_standalone(request, web_server_main, script_type):
     # Avoid loading the fixture if the test is going to be skipped
     if request.param == "firefox" and script_type == "module":
@@ -98,7 +107,7 @@ def script_type(request):
     return request.param
 
 
-@pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
+@pytest.fixture(params=RUNNERS, scope="function")
 def selenium_standalone_noload(request, web_server_main):
     """Only difference between this and selenium_webworker_standalone is that
     this also tests on node."""
@@ -108,7 +117,7 @@ def selenium_standalone_noload(request, web_server_main):
 
 
 # selenium instance cached at the module level
-@pytest.fixture(params=["firefox", "chrome", "node"], scope="module")
+@pytest.fixture(params=RUNNERS, scope="module")
 def selenium_module_scope(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
         yield selenium

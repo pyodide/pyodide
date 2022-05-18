@@ -1,4 +1,5 @@
 import json
+import sys
 import textwrap
 from pathlib import Path
 
@@ -94,6 +95,11 @@ class JavascriptException(Exception):
 
     def __str__(self):
         return "\n\n".join(x for x in [self.msg, self.stack] if x)
+
+
+RUNNERS = ["firefox", "chrome", "node"]
+if sys.platform == "darwin":
+    RUNNERS.append("safari")
 
 
 class SeleniumWrapper:
@@ -378,6 +384,19 @@ class ChromeWrapper(SeleniumWrapper):
 
     def collect_garbage(self):
         self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+
+
+class SafariWrapper(SeleniumWrapper):
+
+    browser = "safari"
+
+    def get_driver(self):
+        from selenium.webdriver import Safari
+        from selenium.webdriver.safari.options import Options
+
+        options = Options()
+
+        return Safari(options=options)
 
 
 class NodeWrapper(SeleniumWrapper):

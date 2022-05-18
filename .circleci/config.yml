@@ -466,7 +466,7 @@ workflows:
 
       - test-main-macos:
           name: test-core-safari
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner
+          test-params: -k safari src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner
           requires:
             - build-core
           filters:
