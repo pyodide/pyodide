@@ -572,7 +572,6 @@ def test_list_wheel_package(monkeypatch, mock_importlib):
     asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_url))
 
     pkg_list = _micropip._list()
-    repr(pkg_list)
     assert dummy_pkg_name in pkg_list
     assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
 
@@ -591,7 +590,6 @@ def test_list_wheel_name_mismatch(monkeypatch, mock_importlib):
     asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_url))
 
     pkg_list = _micropip._list()
-    print(pkg_list)
     assert dummy_pkg_name in pkg_list
     assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
 
