@@ -30,3 +30,5 @@ packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
+
+xbuildenv/
