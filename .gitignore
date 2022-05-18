@@ -29,3 +29,5 @@ packages/.artifacts
 packages/*/build.log*
 packages/build-logs
 dist/
+
+xbuildenv/

@@ -18,7 +18,7 @@ def make_parser(parser: argparse.ArgumentParser):
 def copy_xbuild_files(xbuildenv_path):
     PYODIDE_ROOT = get_pyodide_root()
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
-    xbuild_site_packages = xbuildenv_path / "site_packages"
+    xbuild_site_packages = xbuildenv_path / "site-packages"
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
         config = parse_package_config(pkg, check=False)
         xbuild_files = config.get("build", {}).get("cross-build-files", [])

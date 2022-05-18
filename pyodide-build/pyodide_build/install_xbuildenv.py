@@ -2,7 +2,6 @@ import argparse
 import shutil
 import subprocess
 from pathlib import Path
-from sys import version_info
 
 from .common import get_make_flag, get_pyodide_root
 
@@ -23,12 +22,7 @@ def main(args):
     pyodide_root = get_pyodide_root()
     host_site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     xbuildenv_path = pyodide_root / "xbuildenv"
-    major_minor = f"{version_info.major}.{version_info.minor}"
-    major_minor_patch = f"{major_minor}.{version_info.micro}"
-    include_path = (
-        pyodide_root
-        / f"cpython/installs/python-{major_minor_patch}/include/python{major_minor}/"
-    )
+    include_path = Path(get_make_flag("PYTHONINCLUDE"))
     include_path.mkdir(exist_ok=True, parents=True)
     shutil.copytree(xbuildenv_path / "python-include", include_path, dirs_exist_ok=True)
     host_site_packages.mkdir(exist_ok=True, parents=True)
@@ -43,5 +37,5 @@ def main(args):
         ]
     )
     shutil.copytree(
-        xbuildenv_path / "site_packages", host_site_packages, dirs_exist_ok=True
+        xbuildenv_path / "site-packages", host_site_packages, dirs_exist_ok=True
     )
