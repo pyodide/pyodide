@@ -31,6 +31,16 @@ PLATFORM_TAG_REGEX = re.compile(
 )
 
 
+def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
+    tokens = filename.split("-")
+    # TODO: support optional build tags in the filename (cf PEP 427)
+    if len(tokens) < 5:
+        raise ValueError(f"{filename} is not a valid wheel file name.")
+    version, python_tag, abi_tag, platform = tokens[-4:]
+    name = "-".join(tokens[:-4])
+    return name, version, python_tag, abi_tag, platform
+
+
 def make_whlfile(*args, owner=None, group=None, **kwargs):
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
@@ -163,10 +173,11 @@ def set_wheel_installer(
     source: str | None,
 ):
     z = ZipFile(archive)
-    name, version = filename.split("-", 2)[:-1]
+    name, version, *_ = parse_wheel_name(filename)
     dist_info_name = f"{name}-{version}.dist-info"
     if not (zipfile.Path(z) / dist_info_name).is_dir():
-        raise Exception("archive is not a valid wheel")
+        raise Exception(f"The provided archive for '{filename}' is not a valid wheel")
+
     dist_info = target_dir / dist_info_name
     if installer:
         (dist_info / "INSTALLER").write_text(installer)

@@ -17,7 +17,7 @@ from packaging.utils import canonicalize_name
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import set_wheel_installer
+from pyodide._package_loader import parse_wheel_name, set_wheel_installer
 
 from ._compat import (
     BUILTIN_PACKAGES,
@@ -72,12 +72,7 @@ class WheelInfo:
         file_name = Path(url).name
         # also strip '.whl' extension.
         wheel_name = Path(url).stem
-        tokens = wheel_name.split("-")
-        # TODO: support optional build tags in the filename (cf PEP 427)
-        if len(tokens) < 5:
-            raise ValueError(f"{file_name} is not a valid wheel file name.")
-        version, python_tag, abi_tag, platform = tokens[-4:]
-        name = "-".join(tokens[:-4])
+        name, version, python_tag, abi_tag, platform = parse_wheel_name(wheel_name)
         return WheelInfo(
             name=name,
             version=Version(version),
