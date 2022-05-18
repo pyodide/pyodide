@@ -128,9 +128,9 @@ def unpack_buffer(
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
-        suffix = Path(f.name).suffix
+        suffix = Path(filename).suffix
         if suffix == ".whl":
-            set_wheel_installer(f, extract_path, installer, source)
+            set_wheel_installer(filename, f, extract_path, installer, source)
         if calculate_dynlibs:
             return to_js(get_dynlibs(f, extract_path))
         else:
@@ -156,10 +156,14 @@ def should_load_dynlib(path: str):
 
 
 def set_wheel_installer(
-    archive: IO[bytes], target_dir: Path, installer: str | None, source: str | None
+    filename: str,
+    archive: IO[bytes],
+    target_dir: Path,
+    installer: str | None,
+    source: str | None,
 ):
     z = ZipFile(archive)
-    name, version = archive.name.split("-", 2)[:-1]
+    name, version = filename.split("-", 2)[:-1]
     dist_info_name = f"{name}-{version}.dist-info"
     if not (zipfile.Path(z) / dist_info_name).is_dir():
         raise Exception("archive is not a valid wheel")

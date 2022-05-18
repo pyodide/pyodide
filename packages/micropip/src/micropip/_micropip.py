@@ -141,7 +141,9 @@ class WheelInfo:
     def set_installer(self):
         assert self.data
         wheel_source = "pypi" if self.digests is not None else self.url
-        set_wheel_installer(self.data, WHEEL_BASE, "micropip", wheel_source)
+        set_wheel_installer(
+            self.filename, self.data, WHEEL_BASE, "micropip", wheel_source
+        )
 
     async def install(self):
         url = self.url
