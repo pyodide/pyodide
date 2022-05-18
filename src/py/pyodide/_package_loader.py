@@ -214,14 +214,45 @@ def should_load_dynlib(path: str):
 
 
 def set_wheel_installer(
-    name: str,
+    filename: str,
     archive: IO[bytes],
     target_dir: Path,
     installer: str | None,
     source: str | None,
 ):
+    """Record the installer and source of a wheel into the `dist-info`
+    directory.
+
+    We put the installer into an INSTALLER file according to the packaging spec:
+    packaging.python.org/en/latest/specifications/recording-installed-packages/#the-dist-info-directory
+
+    We put the source into PYODIDE_SORUCE.
+
+    The packaging spec allows us to make custom files. It also allows wheels to
+    include custom files in their .dist-info directory. The spec has no attempt
+    to coordinate these so that installers don't trample files that wheels
+    include. We make a best effort with our PYODIDE prefix.
+
+    Parameters
+    ----------
+    filename
+        The file name of the wheel.
+
+    archive
+        A binary representation of a wheel archive
+
+    target_dir
+        The directory the wheel is being installed into. Probably site-packages.
+
+    installer
+        The name of the installer. Currently either `pyodide.unpackArchive`,
+        `pyodide.loadPackage` or `micropip`.
+
+    source
+        Where did the package come from? Either a url, `pyodide`, or `PyPI`.
+    """
     z = ZipFile(archive)
-    wheel_name = parse_wheel_name(name)[0]
+    wheel_name = parse_wheel_name(filename)[0]
     dist_info_name = wheel_dist_info_dir(z, wheel_name)
     dist_info = target_dir / dist_info_name
     if installer:

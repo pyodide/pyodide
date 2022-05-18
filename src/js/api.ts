@@ -393,6 +393,7 @@ export function unpackArchive(
     buffer,
     format,
     extract_dir,
+    installer: "pyodide.unpackArchive",
   });
 }
 
