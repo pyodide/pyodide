@@ -3,9 +3,7 @@
 # get the absolute path of the root folder
 # shellcheck disable=SC2164
 
-# FIXME: pydoit does not set BASH_SOURCE for some reason
-# ROOT=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P)
-ROOT=$PYODIDE_ROOT
+ROOT=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P)
 
 # emsdk_env.sh is fairly noisy, and suppress error message if the file doesn't
 # exist yet (i.e. before building emsdk)
