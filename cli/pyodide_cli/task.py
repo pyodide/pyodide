@@ -2,15 +2,22 @@ import argparse
 import os
 from pathlib import Path
 
-from doit.reporter import ZeroReporter
-
 import pyodide_build.buildpkg
+from pyodide_build.buildpkg import get_bash_runner
+
+# from doit.reporter import ZeroReporter
+
 
 DOIT_CONFIG = {
     "verbosity": 2,
     "minversion": "0.36.0",
-    "reporter": ZeroReporter,
+    # "reporter": ZeroReporter,
 }
+
+
+def bash_runner(cmd):
+    with get_bash_runner() as runner:
+        runner.run(cmd)
 
 
 def task_build_package():
@@ -32,31 +39,9 @@ def task_build_package():
     }
 
 
-def task_build_core():
-    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
-    core_dir = pyodide_root / "src/core"
-    flags = os.environ["MAIN_MODULE_CFLAGS"].replace("''", "")
-    compilers = {
-        ".c": "emcc",
-        ".cpp": "em++",
-    }
-    for ext, compiler in compilers.items():
-        for source in core_dir.glob(f"*{ext}"):
-            target = source.with_suffix(".o")
-            yield {
-                "name": source.name,
-                "file_dep": [source],
-                "actions": [
-                    f"{compiler} -c {source} -o {target} {flags} -I{str(core_dir)}",
-                ],
-                "targets": [target],
-                "task_dep": ["build_cpython"],
-            }
-
-
 def task_build_cpython():
     pyodide_root = Path(os.environ["PYODIDE_ROOT"])
-    cpythonlib = os.environ["CPYTHONLIB"]
+    cpythonlib = Path(os.environ["CPYTHONLIB"])
     return {
         "file_dep": [pyodide_root / "cpython/Makefile"],
         "actions": [
@@ -64,8 +49,8 @@ def task_build_cpython():
             f"pip install tzdata --target={cpythonlib}",
         ],
         "targets": [
-            pyodide_root / cpythonlib / "libpython3.10.a",
-            pyodide_root / cpythonlib / "tzdata",
+            cpythonlib.parent / "libpython3.10.a",
+            cpythonlib / "tzdata",
         ],
         "task_dep": ["build_emsdk"],
     }
@@ -78,3 +63,198 @@ def task_build_emsdk():
         "actions": ["make -C emsdk"],
         "targets": [pyodide_root / "emsdk/emsdk/.complete"],
     }
+
+
+def task_build_pyodide_core():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    core_dir = pyodide_root / "src/core"
+    flags = os.environ["MAIN_MODULE_CFLAGS"].replace("''", "")
+
+    compilers = {
+        ".c": "emcc",
+        ".cpp": "em++",
+    }
+    for ext, compiler in compilers.items():
+        for source in core_dir.glob(f"*{ext}"):
+            target = source.with_suffix(".o")
+            yield {
+                "name": source.name,
+                "file_dep": [source],
+                "actions": [
+                    (
+                        bash_runner,
+                        [
+                            f"{compiler} -c {source} -o {target} {flags} -I{str(core_dir)}"
+                        ],
+                    ),
+                ],
+                "targets": [target],
+                "task_dep": ["build_cpython"],
+            }
+
+
+def task_install_js_deps():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    js_dir = pyodide_root / "src/js"
+    return {
+        "file_dep": [js_dir / "package.json", js_dir / "package-lock.json"],
+        "actions": [
+            (
+                bash_runner,
+                [
+                    f"""
+                    cd {js_dir} && npm ci
+                    ln -sfn {js_dir}/node_modules {pyodide_root}/node_modules
+                    touch {pyodide_root}/node_modules/.installed
+                    """
+                ],
+            )
+        ],
+        "targets": [pyodide_root / "node_modules/.installed"],
+    }
+
+
+def task_build_pyproxy_gen():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    core_dir = pyodide_root / "src/core"
+    js_dir = pyodide_root / "src/js"
+    flags = os.environ["MAIN_MODULE_CFLAGS"].replace("''", "")
+
+    # We can't input pyproxy.js directly because CC will be unhappy about the file
+    # extension. Instead cat it and have CC read from stdin.
+    # -E : Only apply prepreocessor
+    # -C : Leave comments alone (this allows them to be preserved in typescript
+    #      definition files, rollup will strip them out)
+    # -P : Don't put in macro debug info
+    # -imacros pyproxy.c : include all of the macros definitions from pyproxy.c
+    #
+    # First we use sed to delete the segments of the file between
+    # "// pyodide-skip" and "// end-pyodide-skip". This allows us to give typescript type
+    # declarations for the macros which we need for intellisense
+    # and documentation generation. The result of processing the type
+    # declarations with the macro processor is a type error, so we snip them
+    # out.
+
+    return {
+        "file_dep": [*core_dir.glob("pyproxy.*"), *core_dir.glob("*.h")],
+        "actions": [
+            (
+                bash_runner,
+                [
+                    f"""
+                    rm -f {js_dir}/pyproxy.gen.ts
+                    echo "// This file is generated by applying the C preprocessor to core/pyproxy.ts" >> {js_dir}/pyproxy.gen.ts
+                    echo "// It uses the macros defined in core/pyproxy.c" >> {js_dir}/pyproxy.gen.ts
+                    echo "// Do not edit it directly!" >> {js_dir}/pyproxy.gen.ts
+                    cat {core_dir}/pyproxy.ts | \
+                        sed '/^\\/\\/\\s*pyodide-skip/,/^\\/\\/\\s*end-pyodide-skip/d' | \
+                        emcc -E -C -P -imacros {core_dir}/pyproxy.c {flags} - \
+                        >> {js_dir}/pyproxy.gen.ts
+                    """
+                ],
+            )
+        ],
+        "targets": [js_dir / "pyproxy.gen.ts"],
+    }
+
+
+def task_build_error_handling():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    core_dir = pyodide_root / "src/core"
+    js_dir = pyodide_root / "src/js"
+    return {
+        "file_dep": [core_dir / "error_handling.ts"],
+        "actions": [
+            (
+                bash_runner,
+                [
+                    f"cp {core_dir / 'error_handling.ts'} {js_dir / 'error_handling.gen.ts'}"
+                ],
+            ),
+        ],
+        "targets": [js_dir / "error_handling.gen.ts"],
+    }
+
+
+def task_build_pyodide_js():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    js_dir = pyodide_root / "src/js"
+    dist_dir = pyodide_root / "dist"
+    build_config = js_dir / "rollup.config.js"
+    return {
+        "file_dep": [
+            *js_dir.glob("*.ts"),
+            js_dir / "pyproxy.gen.ts",
+            js_dir / "error_handling.gen.ts",
+            pyodide_root / "node_modules/.installed",
+        ],
+        "actions": [
+            (bash_runner, [f"npx rollup -c {build_config}"]),
+        ],
+        "targets": [dist_dir / "pyodide.js", js_dir / "_pyodide.out.js"],
+        "task_dep": ["install_js_deps", "build_error_handling", "build_pyproxy_gen"],
+    }
+
+
+def task_build_pyodide_asm_js():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    dist_dir = pyodide_root / "dist"
+    flags = os.environ["MAIN_MODULE_LDFLAGS"]
+
+    target = dist_dir / "pyodide.asm.js"
+    return {
+        "file_dep": [],
+        "actions": [
+            (
+                # TODO: replace makefile internal filterfunc with a proper
+                bash_runner,
+                [
+                    f"""
+                    date +"[%F %T] Building pyodide.asm.js..."
+                    [ -d {dist_dir} ] || mkdir {dist_dir}
+                    emcc -o {target} $(filter %.o,$^) {flags}
+                    # Strip out C++ symbols which all start __Z.
+                    # There are 4821 of these and they have VERY VERY long names.
+                    # To show some stats on the symbols you can use the following:
+                    # cat {target} | grep -ohE 'var _{{0,5}}.' | sort | uniq -c | sort -nr | head -n 20
+                        sed -i -E 's/var __Z[^;]*;//g' {target}
+                        sed -i '1i "use strict";' {target}
+                        # Remove last 6 lines of pyodide.asm.js, see issue #2282
+                        # Hopefully we will remove this after emscripten fixes it, upstream issue
+                        # emscripten-core/emscripten#16518
+                        # Sed nonsense from https://stackoverflow.com/a/13383331
+                        sed -i -n -e :a -e '1,6!{{P;N;D;}};N;ba' {target}
+                        echo "globalThis._createPyodideModule = _createPyodideModule;" >> {target}
+                        date +"[%F %T] done building pyodide.asm.js."
+                    """
+                ],
+            )
+        ],
+        "targets": [target],
+        "task_dep": ["build_pyodide_core", "build_pyodide_js"],
+    }
+
+
+def task_build_webworker_js():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    templates_dir = pyodide_root / "src/templates"
+    dist_dir = pyodide_root / "dist"
+
+    targets = {
+        "webworker.js": templates_dir / "webworker.js",
+        "webworker_dev.js": templates_dir / "webworker.js",
+        "module_webworker_dev.js": templates_dir / "module_webworker.js",
+    }
+
+    for target, source in targets.items():
+        yield {
+            "name": target,
+            "file_dep": [source],
+            "actions": [
+                (
+                    bash_runner,
+                    [f"cp {source} {dist_dir / target}"],
+                ),
+            ],
+            "targets": [dist_dir / target],
+        }

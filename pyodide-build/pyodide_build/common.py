@@ -181,6 +181,7 @@ def get_make_environment_vars() -> dict[str, str]:
             varname = line[0:equalPos]
             value = line[equalPos + 1 :]
             value = value.strip("'").strip()
+            value = value.replace("'\\''", "'")
             environment[varname] = value
     return environment
 

@@ -3,7 +3,7 @@ import subprocess
 
 import rich_click.typer as typer
 
-from pyodide_build.common import search_pyodide_root
+from pyodide_build.common import init_environment, search_pyodide_root
 
 from . import __version__, build, package
 
@@ -50,10 +50,7 @@ def main(
         None, "--version", callback=version_callback, is_eager=True
     ),
 ):
-    env = get_config("Makefile.envs")
-    os.environ["PYODIDE_ROOT"] = env["PYODIDE_ROOT"]
-    os.environ["CPYTHONLIB"] = env["CPYTHONLIB"]
-    os.environ["MAIN_MODULE_CFLAGS"] = env["MAIN_MODULE_CFLAGS"]
+    init_environment()
 
 
 if __name__ == "__main__":

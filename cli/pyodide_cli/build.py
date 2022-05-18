@@ -35,7 +35,19 @@ def cpython():
     DoitMain(ModuleTaskLoader(task)).run(["build_cpython"])
 
 
-@app.command("pyodide")
-def pyodide():
+@app.command("pyodide-core")
+def pyodide_core():
     """Build pyodide"""
-    DoitMain(ModuleTaskLoader(task)).run(["build_core"])
+    DoitMain(ModuleTaskLoader(task)).run(["build_pyodide_core"])
+
+
+@app.command("pyodide-js")
+def pyodide_js():
+    """Build pyodide"""
+    DoitMain(ModuleTaskLoader(task)).run(["build_pyodide_js"])
+
+
+@app.command("pyodide-asm-js")
+def pyodide_asm_js():
+    """Build pyodide"""
+    DoitMain(ModuleTaskLoader(task)).run(["build_pyodide_asm_js"])
