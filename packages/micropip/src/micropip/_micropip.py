@@ -3,10 +3,9 @@ import copy
 import functools
 import hashlib
 import importlib
-import io
 import json
-import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -16,76 +15,31 @@ from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
 
-from pyodide import IN_BROWSER, to_js
+from pyodide import to_js
 
+from ._compat import (
+    BUILTIN_PACKAGES,
+    WHEEL_BASE,
+    fetch_bytes,
+    fetch_string,
+    gather,
+    loadedPackages,
+    pyodide_js,
+)
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
 
-# Provide stubs for testing in native python
-if IN_BROWSER:
-    import pyodide_js
 
-if IN_BROWSER:
-    # Random note: getsitepackages is not available in a virtual environment...
-    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
-    # problem is not fixed)
-    from site import getsitepackages
-
-    WHEEL_BASE = Path(getsitepackages()[0])
-else:
-    WHEEL_BASE = Path(tempfile.mkdtemp())
-
-if IN_BROWSER:
-    BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
-else:
-    BUILTIN_PACKAGES = {}
-
-if IN_BROWSER:
-    from pyodide_js import loadedPackages
-else:
-
-    class loadedPackages:  # type: ignore[no-redef]
-        @staticmethod
-        def to_py():
-            return {}
-
-
-if IN_BROWSER:
-    from pyodide.http import pyfetch
-
-    async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
-        return await (await pyfetch(url, **kwargs)).bytes()
-
-    async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
-        return await (await pyfetch(url, **kwargs)).string()
-
-else:
-    from urllib.request import Request, urlopen
-
-    async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
-        return urlopen(Request(url, headers=kwargs)).read()
-
-    async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
-        return (await fetch_bytes(url, kwargs)).decode()
-
-
-if IN_BROWSER:
-    from asyncio import gather
-else:
-    # asyncio.gather will schedule any coroutines to run on the event loop but
-    # we want to avoid using the event loop at all. Instead just run the
-    # coroutines in sequence.
-    # TODO: Use an asyncio testing framework to avoid this
-    async def gather(*coroutines):  # type: ignore[no-redef]
-        result = []
-        for coroutine in coroutines:
-            result.append(await coroutine)
-        return result
-
-
-async def _get_pypi_json(pkgname: str, fetch_extra_kwargs: dict[str, str]):
+async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    return json.loads(await fetch_string(url, fetch_extra_kwargs))
+    try:
+        metadata = await fetch_string(url, fetch_kwargs)
+    except Exception as e:
+        raise ValueError(
+            f"Can't fetch metadata for '{pkgname}' from PyPI. "
+            "Please make sure you have entered a correct package name."
+        ) from e
+    return json.loads(metadata)
 
 
 def _is_pure_python_wheel(filename: str):
@@ -104,208 +58,216 @@ class WheelInfo:
     url: str
     project_name: str | None = None
     digests: dict[str, str] | None = None
-    wheel_bytes: bytes | None = None
+    data: BytesIO | None = None
+    _dist: Any = None
+
+    @staticmethod
+    def from_url(url: str) -> "WheelInfo":
+        """Parse wheels URL and extract available metadata
+
+        See https://www.python.org/dev/peps/pep-0427/#file-name-convention
+        """
+        file_name = Path(url).name
+        # also strip '.whl' extension.
+        wheel_name = Path(url).stem
+        tokens = wheel_name.split("-")
+        # TODO: support optional build tags in the filename (cf PEP 427)
+        if len(tokens) < 5:
+            raise ValueError(f"{file_name} is not a valid wheel file name.")
+        version, python_tag, abi_tag, platform = tokens[-4:]
+        name = "-".join(tokens[:-4])
+        return WheelInfo(
+            name=name,
+            version=Version(version),
+            filename=file_name,
+            packagetype="bdist_wheel",
+            python_version=python_tag,
+            abi_tag=abi_tag,
+            platform=platform,
+            url=url,
+        )
+
+    async def download(self, fetch_kwargs):
+        try:
+            wheel_bytes = await fetch_bytes(self.url, fetch_kwargs)
+        except Exception as e:
+            if self.url.startswith("https://files.pythonhosted.org/"):
+                raise e
+            else:
+                raise ValueError(
+                    f"Can't fetch wheel from '{self.url}'."
+                    "One common reason for this is when the server blocks "
+                    "Cross-Origin Resource Sharing (CORS)."
+                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
+                ) from e
+
+        self.data = BytesIO(wheel_bytes)
+
+        with ZipFile(self.data) as zip_file:
+            self._dist = pkg_resources_distribution_for_wheel(
+                zip_file, self.name, "???"
+            )
+
+        self.project_name = self._dist.project_name
+        if self.project_name == "UNKNOWN":
+            self.project_name = self.name
+
+    def validate(self):
+        if self.digests is None:
+            # No checksums available, e.g. because installing
+            # from a different location than PyPI.
+            return
+        sha256 = self.digests["sha256"]
+        m = hashlib.sha256()
+        assert self.data
+        m.update(self.data.getvalue())
+        if m.hexdigest() != sha256:
+            raise ValueError("Contents don't match hash")
+
+    def extract(self):
+        assert self.data
+        with ZipFile(self.data) as zf:
+            zf.extractall(WHEEL_BASE)
+
+    def requires(self, extras: set[str]):
+        if not self._dist:
+            raise RuntimeError(
+                "Micropip internal error: attempted to access wheel 'requires' before downloading it?"
+            )
+        return self._dist.requires(extras)
+
+    async def install(self):
+        url = self.url
+        if not self.data:
+            raise RuntimeError(
+                "Micropip internal error: attempted to install wheel before downloading it?"
+            )
+        self.validate()
+        self.extract()
+        name = self.project_name
+        assert name
+        setattr(loadedPackages, name, url)
+
+
+FAQ_URLS = {
+    "cant_find_wheel": "https://pyodide.org/en/stable/usage/faq.html#micropip-can-t-find-a-pure-python-wheel"
+}
+
+
+def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
+    """Parse metadata to find the latest version of pure python wheel.
+    Parameters
+    ----------
+    metadata : ``Dict[str, Any]``
+
+        Package search result from PyPI,
+        See: https://warehouse.pypa.io/api-reference/json.html
+
+    Returns
+    -------
+    fileinfo : Dict[str, Any] or None
+        The metadata of the Python wheel, or None if there is no pure Python wheel.
+    ver : Version or None
+        The version of the Python wheel, or None if there is no pure Python wheel.
+    """
+    releases = metadata.get("releases", {})
+    candidate_versions = sorted(
+        (Version(v) for v in req.specifier.filter(releases)),
+        reverse=True,
+    )
+    for ver in candidate_versions:
+        release = releases[str(ver)]
+        for fileinfo in release:
+            if _is_pure_python_wheel(fileinfo["filename"]):
+                wheel = WheelInfo.from_url(fileinfo["url"])
+                wheel.digests = fileinfo["digests"]
+                return wheel
+
+    raise ValueError(
+        f"Can't find a pure Python 3 wheel for '{req}'.\n"
+        f"See: {FAQ_URLS['cant_find_wheel']}\n"
+        "You can use `micropip.install(..., keep_going=True)`"
+        "to get a list of all packages with missing wheels."
+    )
 
 
 @dataclass
 class Transaction:
-    wheels: list[WheelInfo]
-    pyodide_packages: list[PackageMetadata]
-    locked: PackageDict
-    failed: list[Requirement]
+    ctx: dict[str, str]
     keep_going: bool
     deps: bool
     pre: bool
+    locked: PackageDict
+    fetch_kwargs: dict[str, str]
 
-
-def _parse_wheel_url(url: str) -> WheelInfo:
-    """Parse wheels URL and extract available metadata
-
-    See https://www.python.org/dev/peps/pep-0427/#file-name-convention
-    """
-    file_name = Path(url).name
-    # also strip '.whl' extension.
-    wheel_name = Path(url).stem
-    tokens = wheel_name.split("-")
-    # TODO: support optional build tags in the filename (cf PEP 427)
-    if len(tokens) < 5:
-        raise ValueError(f"{file_name} is not a valid wheel file name.")
-    version, python_tag, abi_tag, platform = tokens[-4:]
-    name = "-".join(tokens[:-4])
-    return WheelInfo(
-        name=name,
-        version=Version(version),
-        filename=file_name,
-        packagetype="bdist_wheel",
-        python_version=python_tag,
-        abi_tag=abi_tag,
-        platform=platform,
-        url=url,
-    )
-
-
-def _extract_wheel(fd: io.BytesIO):
-    with ZipFile(fd) as zf:
-        zf.extractall(WHEEL_BASE)
-
-
-def _validate_wheel(data: io.BytesIO, wheelinfo: WheelInfo):
-    if wheelinfo.digests is None:
-        # No checksums available, e.g. because installing
-        # from a different location than PyPI.
-        return
-    sha256 = wheelinfo.digests["sha256"]
-    m = hashlib.sha256()
-    m.update(data.getvalue())
-    if m.hexdigest() != sha256:
-        raise ValueError("Contents don't match hash")
-
-
-async def _install_wheel(wheelinfo: WheelInfo):
-    url = wheelinfo.url
-    if not wheelinfo.wheel_bytes:
-        raise RuntimeError(
-            "Micropip internal error: attempted to install wheel before downloading it?"
-        )
-    wheel = io.BytesIO(wheelinfo.wheel_bytes)
-    _validate_wheel(wheel, wheelinfo)
-    _extract_wheel(wheel)
-    name = wheelinfo.project_name
-    assert name
-    setattr(loadedPackages, name, url)
-
-
-class _PackageManager:
-    def __init__(self):
-        self.installed_packages = PackageDict()
+    wheels: list[WheelInfo] = field(default_factory=list)
+    pyodide_packages: list[PackageMetadata] = field(default_factory=list)
+    failed: list[Requirement] = field(default_factory=list)
 
     async def gather_requirements(
         self,
         requirements: list[str],
-        ctx: dict[str, str],
-        keep_going: bool,
-        deps: bool,
-        pre: bool,
-        fetch_extra_kwargs: dict[str, str],
-    ) -> Transaction:
-
-        transaction = Transaction(
-            wheels=[],
-            pyodide_packages=[],
-            locked=copy.deepcopy(self.installed_packages),
-            failed=[],
-            keep_going=keep_going,
-            deps=deps,
-            pre=pre,
-        )
+    ):
         requirement_promises = []
         for requirement in requirements:
-            requirement_promises.append(
-                self.add_requirement(requirement, ctx, transaction, fetch_extra_kwargs)
-            )
+            requirement_promises.append(self.add_requirement(requirement))
 
         await gather(*requirement_promises)
-        return transaction
 
-    async def install(
-        self,
-        requirements: list[str],
-        ctx: dict[str, str],
-        keep_going: bool,
-        deps: bool,
-        credentials: str | None,
-        pre: bool,
-    ):
-        async def _install(install_func, done_callback):
-            await install_func
-            done_callback()
+    async def add_requirement(self, req: str | Requirement):
+        if isinstance(req, Requirement):
+            return await self.add_requirement_inner(req)
 
-        fetch_extra_kwargs = dict()
+        if not req.endswith(".whl"):
+            return await self.add_requirement_inner(Requirement(req))
 
-        if credentials:
-            fetch_extra_kwargs["credentials"] = credentials
-        transaction = await self.gather_requirements(
-            requirements, ctx, keep_going, deps, pre, fetch_extra_kwargs
+        # custom download location
+        wheel = WheelInfo.from_url(req)
+        if not _is_pure_python_wheel(wheel.filename):
+            raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
+
+        await self.add_wheel(wheel, extras=set())
+
+    def check_version_satisfied(self, req: Requirement):
+        ver = None
+        if req.name in self.locked:
+            ver = self.locked[req.name].version
+
+        if not ver:
+            return False
+
+        if req.specifier.contains(ver, prereleases=True):
+            # installed version matches, nothing to do
+            return True
+
+        raise ValueError(
+            f"Requested '{req}', " f"but {req.name}=={ver} is already installed"
         )
 
-        if transaction.failed:
-            failed_requirements = ", ".join([f"'{req}'" for req in transaction.failed])
-            raise ValueError(
-                f"Couldn't find a pure Python 3 wheel for: {failed_requirements}"
-            )
-
-        wheel_promises = []
-        # Install built-in packages
-        pyodide_packages = transaction.pyodide_packages
-        if len(pyodide_packages):
-            # Note: branch never happens in out-of-browser testing because in
-            # that case BUILTIN_PACKAGES is empty.
-            wheel_promises.append(
-                _install(
-                    asyncio.ensure_future(
-                        pyodide_js.loadPackage(
-                            to_js([name for [name, _, _] in pyodide_packages])
-                        )
-                    ),
-                    functools.partial(
-                        self.installed_packages.update,
-                        {canonicalize_name(pkg.name): pkg for pkg in pyodide_packages},
-                    ),
-                )
-            )
-
-        # Now install PyPI packages
-        for wheel in transaction.wheels:
-            # detect whether the wheel metadata is from PyPI or from custom location
-            # wheel metadata from PyPI has SHA256 checksum digest.
-            wheel_source = "pypi" if wheel.digests is not None else wheel.url
-            name = wheel.project_name
-            assert name
-            wheel_promises.append(
-                _install(
-                    _install_wheel(wheel),
-                    functools.partial(
-                        self.installed_packages.update,
-                        {
-                            canonicalize_name(name): PackageMetadata(
-                                name, str(wheel.version), wheel_source
-                            )
-                        },
-                    ),
-                )
-            )
-
-        await gather(*wheel_promises)
-
-    async def add_requirement(
+    async def add_requirement_inner(
         self,
-        requirement: str | Requirement,
-        ctx: dict[str, str],
-        transaction: Transaction,
-        fetch_extra_kwargs: dict[str, str],
+        req: Requirement,
     ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
-        if isinstance(requirement, Requirement):
-            req = requirement
-        elif requirement.endswith(".whl"):
-            # custom download location
-            wheel = _parse_wheel_url(requirement)
-            if not _is_pure_python_wheel(wheel.filename):
-                raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
-            await self.add_wheel(wheel, set(), ctx, transaction, fetch_extra_kwargs)
-            return
-        else:
-            req = Requirement(requirement)
-
-        if transaction.pre:
+        if self.pre:
             req.specifier.prereleases = True
 
+        if req.marker:
+            # handle environment markers
+            # https://www.python.org/dev/peps/pep-0508/#environment-markers
+            if not req.marker.evaluate(self.ctx):
+                return
+
+        # Is some version of this package is already installed?
+
         req.name = canonicalize_name(req.name)
+        if self.check_version_satisfied(req):
+            return
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
@@ -313,131 +275,51 @@ class _PackageManager:
             BUILTIN_PACKAGES[req.name]["version"], prereleases=True
         ):
             version = BUILTIN_PACKAGES[req.name]["version"]
-            transaction.pyodide_packages.append(
+            self.pyodide_packages.append(
                 PackageMetadata(name=req.name, version=str(version), source="pyodide")
             )
             return
 
-        if req.marker:
-            # handle environment markers
-            # https://www.python.org/dev/peps/pep-0508/#environment-markers
-            if not req.marker.evaluate(ctx):
-                return
-
-        # Is some version of this package is already installed?
-        if req.name in transaction.locked:
-            ver = transaction.locked[req.name].version
-            if req.specifier.contains(ver, prereleases=True):
-                # installed version matches, nothing to do
-                return
-            else:
-                raise ValueError(
-                    f"Requested '{requirement}', "
-                    f"but {req.name}=={ver} is already installed"
-                )
-        metadata = await _get_pypi_json(req.name, fetch_extra_kwargs)
+        metadata = await _get_pypi_json(req.name, self.fetch_kwargs)
 
         try:
-            wheel = self.find_wheel(metadata, req)
+            wheel = find_wheel(metadata, req)
         except ValueError:
-            transaction.failed.append(req)
-            if not transaction.keep_going:
+            self.failed.append(req)
+            if not self.keep_going:
                 raise
-        else:
-            await self.add_wheel(
-                wheel,
-                req.extras,
-                ctx,
-                transaction,
-                fetch_extra_kwargs,
-            )
+            else:
+                return
+
+        if self.check_version_satisfied(req):
+            # Maybe while we were downloading pypi_json some other branch
+            # installed the wheel?
+            return
+
+        await self.add_wheel(wheel, req.extras)
 
     async def add_wheel(
         self,
         wheel: WheelInfo,
         extras: set[str],
-        ctx: dict[str, str],
-        transaction: Transaction,
-        fetch_extra_kwargs: dict[str, str],
     ):
         normalized_name = canonicalize_name(wheel.name)
-        transaction.locked[normalized_name] = PackageMetadata(
+        self.locked[normalized_name] = PackageMetadata(
             name=wheel.name,
             version=str(wheel.version),
         )
 
-        try:
-            wheel_bytes = await fetch_bytes(wheel.url, fetch_extra_kwargs)
-        except Exception as e:
-            if wheel.url.startswith("https://files.pythonhosted.org/"):
-                raise e
-            else:
-                raise ValueError(
-                    f"Couldn't fetch wheel from '{wheel.url}'."
-                    "One common reason for this is when the server blocks "
-                    "Cross-Origin Resource Sharing (CORS)."
-                    "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
-                ) from e
+        await wheel.download(self.fetch_kwargs)
+        if self.deps:
+            await self.gather_requirements(wheel.requires(extras))
 
-        wheel.wheel_bytes = wheel_bytes
-
-        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:
-            dist = pkg_resources_distribution_for_wheel(zip_file, wheel.name, "???")
-
-        wheel.project_name = dist.project_name
-        if wheel.project_name == "UNKNOWN":
-            wheel.project_name = wheel.name
-
-        if transaction.deps:
-            for recurs_req in dist.requires(extras):
-                await self.add_requirement(
-                    recurs_req, ctx, transaction, fetch_extra_kwargs
-                )
-
-        transaction.wheels.append(wheel)
-
-    def find_wheel(self, metadata: dict[str, Any], req: Requirement) -> WheelInfo:
-        """Parse metadata to find the latest version of pure python wheel.
-
-        Parameters
-        ----------
-        metadata : ``Dict[str, Any]``
-
-            Package search result from PyPI,
-            See: https://warehouse.pypa.io/api-reference/json.html
-
-        Returns
-        -------
-        fileinfo : Dict[str, Any] or None
-            The metadata of the Python wheel, or None if there is no pure Python wheel.
-        ver : Version or None
-            The version of the Python wheel, or None if there is no pure Python wheel.
-        """
-        releases = metadata.get("releases", {})
-        candidate_versions = sorted(
-            (Version(v) for v in req.specifier.filter(releases)),
-            reverse=True,
-        )
-        for ver in candidate_versions:
-            release = releases[str(ver)]
-            for fileinfo in release:
-                if _is_pure_python_wheel(fileinfo["filename"]):
-                    wheel = _parse_wheel_url(fileinfo["url"])
-                    wheel.digests = fileinfo["digests"]
-                    return wheel
-
-        raise ValueError(
-            f"Couldn't find a pure Python 3 wheel for '{req}'. "
-            "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
-        )
+        self.wheels.append(wheel)
 
 
-# Make PACKAGE_MANAGER singleton
-PACKAGE_MANAGER = _PackageManager()
-del _PackageManager
+INSTALLED_PACKAGES = PackageDict()
 
 
-def install(
+async def install(
     requirements: str | list[str],
     keep_going: bool = False,
     deps: bool = True,
@@ -513,16 +395,74 @@ def install(
     if isinstance(requirements, str):
         requirements = [requirements]
 
-    return asyncio.ensure_future(
-        PACKAGE_MANAGER.install(
-            requirements,
-            ctx=ctx,
-            keep_going=keep_going,
-            deps=deps,
-            credentials=credentials,
-            pre=pre,
-        )
+    async def _install(install_func, done_callback):
+        await install_func
+        done_callback()
+
+    fetch_kwargs = dict()
+
+    if credentials:
+        fetch_kwargs["credentials"] = credentials
+
+    transaction = Transaction(
+        ctx=ctx,
+        locked=copy.deepcopy(INSTALLED_PACKAGES),
+        keep_going=keep_going,
+        deps=deps,
+        pre=pre,
+        fetch_kwargs=fetch_kwargs,
     )
+    await transaction.gather_requirements(requirements)
+
+    if transaction.failed:
+        failed_requirements = ", ".join([f"'{req}'" for req in transaction.failed])
+        raise ValueError(
+            f"Can't find a pure Python 3 wheel for: {failed_requirements}\n"
+            f"See: {FAQ_URLS['cant_find_wheel']}\n"
+        )
+
+    wheel_promises = []
+    # Install built-in packages
+    pyodide_packages = transaction.pyodide_packages
+    if len(pyodide_packages):
+        # Note: branch never happens in out-of-browser testing because in
+        # that case BUILTIN_PACKAGES is empty.
+        wheel_promises.append(
+            _install(
+                asyncio.ensure_future(
+                    pyodide_js.loadPackage(
+                        to_js([name for [name, _, _] in pyodide_packages])
+                    )
+                ),
+                functools.partial(
+                    INSTALLED_PACKAGES.update,
+                    {canonicalize_name(pkg.name): pkg for pkg in pyodide_packages},
+                ),
+            )
+        )
+
+    # Now install PyPI packages
+    for wheel in transaction.wheels:
+        # detect whether the wheel metadata is from PyPI or from custom location
+        # wheel metadata from PyPI has SHA256 checksum digest.
+        wheel_source = "pypi" if wheel.digests is not None else wheel.url
+        name = wheel.project_name
+        assert name
+        wheel_promises.append(
+            _install(
+                wheel.install(),
+                functools.partial(
+                    INSTALLED_PACKAGES.update,
+                    {
+                        canonicalize_name(name): PackageMetadata(
+                            name, str(wheel.version), wheel_source
+                        )
+                    },
+                ),
+            )
+        )
+
+    await gather(*wheel_promises)
 
 
 def _list():
@@ -543,7 +483,7 @@ def _list():
         >>> "regex" in package_list # doctest: +SKIP
         True
     """
-    packages = copy.deepcopy(PACKAGE_MANAGER.installed_packages)
+    packages = copy.deepcopy(INSTALLED_PACKAGES)
 
     # Add packages that are loaded through pyodide.loadPackage
     for name, pkg_source in loadedPackages.to_py().items():
@@ -557,7 +497,3 @@ def _list():
             source = pkg_source
         packages[name] = PackageMetadata(name=name, version=version, source=source)
     return packages
-
-
-if __name__ == "__main__":
-    install("snowballstemmer")
