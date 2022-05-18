@@ -130,7 +130,7 @@ def unpack_buffer(
         shutil.unpack_archive(f.name, extract_path, format)
         suffix = Path(f.name).suffix
         if suffix == ".whl":
-            set_installer(f, extract_path, installer, source)
+            set_wheel_installer(f, extract_path, installer, source)
         if calculate_dynlibs:
             return to_js(get_dynlibs(f, extract_path))
         else:
@@ -155,13 +155,15 @@ def should_load_dynlib(path: str):
     return not PLATFORM_TAG_REGEX.match(tag)
 
 
-def set_installer(
+def set_wheel_installer(
     archive: IO[bytes], target_dir: Path, installer: str | None, source: str | None
 ):
     z = ZipFile(archive)
     for x in zipfile.Path(z).iterdir():
         if x.name.endswith(".dist-info"):
             break
+    else:
+        raise Exception("archive is not a valid wheel")
     if installer:
         (target_dir / x.name / "INSTALLER").write_text(installer)
     if source:

@@ -17,7 +17,7 @@ from packaging.utils import canonicalize_name
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import set_installer
+from pyodide._package_loader import set_wheel_installer
 
 from ._compat import (
     BUILTIN_PACKAGES,
@@ -138,6 +138,11 @@ class WheelInfo:
             )
         return self._dist.requires(extras)
 
+    def set_installer(self):
+        assert self.data
+        wheel_source = "pypi" if self.digests is not None else self.url
+        set_wheel_installer(self.data, WHEEL_BASE, "micropip", wheel_source)
+
     async def install(self):
         url = self.url
         if not self.data:
@@ -146,8 +151,7 @@ class WheelInfo:
             )
         self.validate()
         self.extract()
-        wheel_source = "pypi" if self.digests is not None else self.url
-        set_installer(self.data, WHEEL_BASE, "micropip", wheel_source)
+        self.set_installer()
         name = self.project_name
         assert name
         setattr(loadedPackages, name, url)
