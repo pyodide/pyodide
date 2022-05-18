@@ -102,6 +102,17 @@ substitutions:
   If set to `True`, micropip will include pre-release and development versions.
   {pr}`2542`
 
+- {{ Enhancement }} `micropip` was refactored to improve readability and ease of maintenance.
+  {pr}`2561`, {pr}`2563`, {pr}`2564`, {pr}`2565`, {pr}`2568`
+
+- {{ Enhancement }} Various error messages were fine tuned and improved.
+  {pr}`2562`, {pr}`2558`
+
+- {{ Enhancement }} `micropip` was adjusted to keep its state in the wheel
+  `.dist-info` directories which improves consistenency with the Python standard
+  library and other tools used to install packages.
+  {pr}`2572`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.

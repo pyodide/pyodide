@@ -60,6 +60,10 @@ class PackageDict(UserDict):
         normalized_key = canonicalize_name(key)
         return super().__getitem__(normalized_key)
 
+    def __setitem__(self, key, val):
+        normalized_key = canonicalize_name(key)
+        return super().__setitem__(normalized_key, val)
+
     def __contains__(self, key):
         normalized_key = canonicalize_name(key)
         return super().__contains__(normalized_key)
