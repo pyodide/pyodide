@@ -7,8 +7,8 @@ source:
   sha256: 80f9904f5b1356adfc32406725dd94c8cc9c8d265047d98390033a6c238cbb29
 
   patches:
-    - patches/disable-openmp.patch
     - patches/0001-Cythonize-_cython_blas.pyx-with-include-path-pointin.patch
+    - patches/0002-Disable-omp.patch
 
 build:
   cflags: -Wno-implicit-function-declaration
