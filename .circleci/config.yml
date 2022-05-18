@@ -15,6 +15,9 @@ defaults: &defaults
       # (it's not the case otherwise)
       CCACHE_DIR: /root/.ccache/
 
+orbs:
+  macos: circleci/macos@2.2.0
+
 jobs:
   test-docs:
     <<: *defaults
@@ -194,7 +197,7 @@ jobs:
         description: The tests to run.
         type: string
 
-    resource_class: medium+
+    resource_class: medium
     macos:
       xcode: 13.3.1
 
@@ -202,13 +205,18 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      # The standard way of enabling safaridriver no longer works for Safari 14+
+      # https://blog.bytesguy.com/enabling-remote-automation-in-safari-14
+      - macos/add-safari-permissions
       - run:
           name: test-macos
           command: |
-            defaults write com.apple.Safari AllowRemoteAutomation 1
-            make npm-link
-            mkdir test-results
-            tools/pytest_wrapper.py \
+            curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
+            bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
+            ~/miniforge3/bin/conda create -n pyodide python=3.10 -y
+            # TODO: activate the environment
+            ~/miniforge3/envs/pyodide/bin/python -m pip install -r requirements.txt
+            ~/miniforge3/envs/pyodide/bin/python tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
