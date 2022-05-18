@@ -1,4 +1,4 @@
 from ._micropip import _list as list
-from ._micropip import install
+from ._micropip import freeze, install
 
-__all__ = ["install", "list"]
+__all__ = ["install", "list", "freeze"]
