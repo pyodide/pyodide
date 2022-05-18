@@ -159,15 +159,15 @@ def set_wheel_installer(
     archive: IO[bytes], target_dir: Path, installer: str | None, source: str | None
 ):
     z = ZipFile(archive)
-    for x in zipfile.Path(z).iterdir():
-        if x.name.endswith(".dist-info"):
-            break
-    else:
+    name, version = archive.name.split("-", 2)[:-1]
+    dist_info_name = f"{name}-{version}.dist-info"
+    if not (zipfile.Path(z) / dist_info_name).is_dir():
         raise Exception("archive is not a valid wheel")
+    dist_info = target_dir / dist_info_name
     if installer:
-        (target_dir / x.name / "INSTALLER").write_text(installer)
+        (dist_info / "INSTALLER").write_text(installer)
     if source:
-        (target_dir / x.name / "PYODIDE_SOURCE").write_text(source)
+        (dist_info / "PYODIDE_SOURCE").write_text(source)
 
 
 def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
