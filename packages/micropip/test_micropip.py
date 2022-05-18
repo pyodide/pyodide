@@ -116,14 +116,17 @@ def mock_fetch_bytes(pkg_name, metadata, version="1.0.0"):
         mock_metadata = metadata
         mock_wheel = "Wheel-Version: 1.0"
         version = wheel_info.version
+        normalized_pkg_name = pkg_name.replace("-", "_")
 
         with io.BytesIO() as tmp:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
                 archive.writestr(
-                    f"{pkg_name}-{version}.dist-info/METADATA",
+                    f"{normalized_pkg_name}-{version}.dist-info/METADATA",
                     f"Name:{pkg_name}\nVersion:{version}\n{mock_metadata}",
                 )
-                archive.writestr(f"{pkg_name}-{version}.dist-info/WHEEL", mock_wheel)
+                archive.writestr(
+                    f"{normalized_pkg_name}-{version}.dist-info/WHEEL", mock_wheel
+                )
 
             tmp.seek(0)
 
