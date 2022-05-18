@@ -1,8 +1,17 @@
+From 1a557776fb87b000b27d5a306670bfdea07afb01 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 17 May 2022 18:10:15 -0700
+Subject: [PATCH 2/2] Disable omp
+
+---
+ sklearn/_build_utils/__init__.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
 diff --git a/sklearn/_build_utils/__init__.py b/sklearn/_build_utils/__init__.py
-index 8c57982ca..b8eb93545 100644
+index d8206a3a7..d361da6b8 100644
 --- a/sklearn/_build_utils/__init__.py
 +++ b/sklearn/_build_utils/__init__.py
-@@ -47,7 +47,7 @@ def cythonize_extensions(top_path, config):
+@@ -44,7 +44,7 @@ def cythonize_extensions(top_path, config):
  
      # Fast fail before cythonization if compiler fails compiling basic test
      # code even without OpenMP
@@ -11,7 +20,7 @@ index 8c57982ca..b8eb93545 100644
  
      # check simple compilation with OpenMP. If it fails scikit-learn will be
      # built without OpenMP and the test test_openmp_supported in the test suite
-@@ -61,7 +61,7 @@ def cythonize_extensions(top_path, config):
+@@ -58,7 +58,7 @@ def cythonize_extensions(top_path, config):
      #   cython build-time variable passed to the cythonize() call.
      # - Then in the build_ext subclass defined in the top-level setup.py file
      #   to actually build the compiled extensions with OpenMP flags if needed.
@@ -20,3 +29,6 @@ index 8c57982ca..b8eb93545 100644
  
      n_jobs = 1
      with contextlib.suppress(ImportError):
+-- 
+2.25.1
+

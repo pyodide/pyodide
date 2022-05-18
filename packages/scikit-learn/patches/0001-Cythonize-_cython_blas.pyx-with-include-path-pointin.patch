@@ -1,7 +1,7 @@
-From f1d8f0b92b17765a2e8b6ac508cfa77a79fb73a0 Mon Sep 17 00:00:00 2001
+From d7fd3973cee5e6582c81206b796fa4ebc22fdeb1 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 26 Dec 2021 22:39:25 -0800
-Subject: [PATCH] Cythonize _cython_blas.pyx with include path pointing to
+Subject: [PATCH 1/2] Cythonize _cython_blas.pyx with include path pointing to
  scipy
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH] Cythonize _cython_blas.pyx with include path pointing to
  1 file changed, 2 insertions(+)
 
 diff --git a/sklearn/utils/setup.py b/sklearn/utils/setup.py
-index ed78ecc5d..ea1a61b40 100644
+index eaf3a4473..d6fce8f0f 100644
 --- a/sklearn/utils/setup.py
 +++ b/sklearn/utils/setup.py
 @@ -2,6 +2,7 @@ import os
