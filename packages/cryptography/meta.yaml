@@ -13,7 +13,6 @@ build:
     $(OPENSSL_LIBRARY_PATH)
   script: |
     export CRYPTOGRAPHY_DONT_BUILD_RUST=1
-    export PKG_CONFIG_PATH=${WASM_PKG_CONFIG_PATH}:${PKG_CONFIG_PATH}
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
     export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
 requirements:
