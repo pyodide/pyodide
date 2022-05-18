@@ -9,5 +9,5 @@ source:
 build:
   library: true
   script: |
-    CFLAGS="-fPIC" emconfigure ./configure --prefix=$PWD
+    CFLAGS="-fPIC" emconfigure ./configure --prefix=${WASM_LIBRARY_DIR}
     emmake make install -j ${PYODIDE_JOBS:-3}

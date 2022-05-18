@@ -34,12 +34,6 @@ def generate_largish_json(n_rows: int = 91746) -> dict:
 
 
 @pytest.mark.driver_timeout(30)
-def test_pandas(selenium, request):
-    selenium.load_package("pandas")
-    assert len(selenium.run("import pandas\ndir(pandas)")) == 142
-
-
-@pytest.mark.driver_timeout(30)
 def test_extra_import(selenium, request):
 
     selenium.load_package("pandas")

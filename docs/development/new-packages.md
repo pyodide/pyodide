@@ -45,9 +45,9 @@ any compilation commands.
 
 If your package is on PyPI, the easiest place to start is with the
 {ref}`mkpkg tool <pyodide-mkpkg>`. From the Pyodide root directory, install the
-tool with `pip install -e pyodide-build`, then run:
+tool with `pip install ./pyodide-build`, then run:
 
-`pyodide-build mkpkg <package-name>`
+`python -m pyodide_build mkpkg <package-name>`
 
 This will generate a `meta.yaml` file under `packages/<package-name>/` (see
 {ref}`meta-yaml-spec`) that should work out of the box for many simple Python
@@ -77,9 +77,7 @@ Once the `meta.yaml` file is ready, build the package with the following
 commands from inside the package directory `packages/<package-name>`
 
 ```sh
-export PYTHONPATH="$PYTHONPATH:/path/to/pyodide/pyodide-build/"
 python -m pyodide_build buildpkg meta.yaml
-cp build/*.data build/*.js ../../build/
 ```
 
 and see if there are any errors.

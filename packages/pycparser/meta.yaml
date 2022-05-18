@@ -5,8 +5,7 @@ source:
   url: https://files.pythonhosted.org/packages/62/d5/5f610ebe421e85889f2e55e33b7f9a6795bd982198517d912eb1c76e1a53/pycparser-2.21-py2.py3-none-any.whl
   sha256: 8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9
 build:
-  post: |
-    pip install -t $HOSTSITEPACKAGES pycparser==$PKG_VERSION
+  cross-build-env: true
 test:
   imports:
     - pycparser

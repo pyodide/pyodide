@@ -20,17 +20,23 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 2. Set the version in:
 
-   - `docs/project/about.md`,
-   - `setup.cfg`,
    - `src/js/package.json`,
-   - `src/py/pyodide/__init__.py`,
-   - `src/py/setup.cfg`,
-   - `pyodide-build/setup.cfg`,
+   - `docs/project/about.md` (the Zenodo citation),
+   - `docs/development/building-from-sources.md`,
+   - `docs/usage/downloading-and-deploying.md`,
+   - Bump version in source code files by running `bump2version` command, for example,
+
+     ```bash
+     bump2version minor
+     ```
+
+     check that the diff is correct with `git diff` before committing.
 
    After this, try using `ripgrep` to make sure there are no extra old versions
    lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
 
 3. Make sure the change log is up-to-date.
+
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
@@ -39,6 +45,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
      ```
      where `LAST_TAG` is the tag for the last release.
      Merge the PR.
+
 4. Assuming the upstream `stable` branch exists, rename it to a release branch
    for the previous major version. For instance if last release was, `0.20.0`,
    the corresponding release branch would be `0.20.X`,
@@ -69,13 +76,15 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 6. Release the Pyodide JavaScript package:
 
    ```bash
-   cd src/js
+   cd dist
    npm publish # Note: use "--tag next" for prereleases
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
 7. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
    the next version specified by Semantic Versioning.
+
+8. Update this file with any relevant changes.
 
 ### Making a minor release
 

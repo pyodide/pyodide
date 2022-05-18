@@ -1,13 +1,11 @@
-from pyodide_build.testing import PYVERSION
-
-
 def test_uncaught_cpp_exceptions(selenium):
     assert (
         selenium.run_js(
-            f"""
+            """
             await pyodide.loadPackage("cpp-exceptions-test");
             const Tests = pyodide._api.tests;
-            const idx = pyodide._module.LDSO.loadedLibNames["/lib/{PYVERSION}/site-packages/cpp-exceptions-test-throw.so"]
+            const sitePackages = pyodide.runPython("import site; site.getsitepackages()[0]")
+            const idx = pyodide._module.LDSO.loadedLibNames[sitePackages + "/cpp-exceptions-test-throw.so"]
             const throwlib = pyodide._module.LDSO.loadedLibs[idx].module;
             """
             """\
@@ -39,10 +37,11 @@ def test_uncaught_cpp_exceptions(selenium):
 def test_cpp_exception_catching(selenium):
     assert (
         selenium.run_js(
-            f"""
+            """
             await pyodide.loadPackage("cpp-exceptions-test");
             const Module = pyodide._module;
-            const idx = Module.LDSO.loadedLibNames["/lib/{PYVERSION}/site-packages/cpp-exceptions-test-catch.so"]
+            const sitePackages = pyodide.runPython("import site; site.getsitepackages()[0]")
+            const idx = Module.LDSO.loadedLibNames[sitePackages + "/cpp-exceptions-test-catch.so"]
             const catchlib = Module.LDSO.loadedLibs[idx].module;
             """
             """\

@@ -2,15 +2,15 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { Module, setStandardStreams, setHomeDirectory, API } from "./module.js";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
-import { initializePackageIndex, loadPackage } from "./load-package.js";
-import { makePublicAPI, PyodideInterface } from "./api.js";
-import "./error_handling.gen.js";
+import { loadScript, _loadBinaryFile, initNodeModules } from "./compat";
 
-import { PyProxy, PyProxyDict } from "./pyproxy.gen";
+import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
-export {
+import type { PyodideInterface } from "./api.js";
+import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+export type { PyodideInterface };
+
+export type {
   PyProxy,
   PyProxyWithLength,
   PyProxyDict,
@@ -27,16 +27,6 @@ export {
 } from "./pyproxy.gen";
 
 export type Py2JsResult = any;
-
-let runPythonInternal_dict: PyProxy; // Initialized in finalizeBootstrap
-/**
- * Just like `runPython` except uses a different globals dict and gets
- * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
- * @private
- */
-API.runPythonInternal = function (code: string): any {
-  return API._pyodide._base.eval_code(code, runPythonInternal_dict);
-};
 
 /**
  * A proxy around globals that falls back to checking for a builtin if has or
@@ -68,7 +58,7 @@ function wrapPythonGlobals(
   });
 }
 
-function unpackPyodidePy(pyodide_py_tar: Uint8Array) {
+function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
   let stream = Module.FS.open(fileName, "w");
   Module.FS.write(
@@ -105,11 +95,11 @@ del importlib
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-function finalizeBootstrap(config: ConfigType) {
+function finalizeBootstrap(API: any, config: ConfigType) {
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
+  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
   API.importlib = API.runPythonInternal("import importlib; importlib");
   let import_module = API.importlib.import_module;
 
@@ -130,7 +120,7 @@ function finalizeBootstrap(config: ConfigType) {
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
 
-  let pyodide = makePublicAPI();
+  let pyodide = API.makePublicAPI();
   importhook.register_js_module("pyodide_js", pyodide);
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
@@ -169,13 +159,13 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  *  code.
  */
 function calculateIndexURL(): string {
-  let err;
+  let err: Error;
   try {
     throw new Error();
   } catch (e) {
-    err = e;
+    err = e as Error;
   }
-  const fileName = ErrorStackParser.parse(err)[0].fileName!;
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
   return fileName.slice(0, fileName.lastIndexOf("/"));
 }
 
@@ -183,7 +173,7 @@ function calculateIndexURL(): string {
  * See documentation for loadPyodide.
  * @private
  */
-type ConfigType = {
+export type ConfigType = {
   indexURL: string;
   homedir: string;
   fullStdLib?: boolean;
@@ -244,13 +234,9 @@ export async function loadPyodide(
     jsglobals?: object;
   } = {}
 ): Promise<PyodideInterface> {
-  if ((loadPyodide as any).inProgress) {
-    throw new Error("Pyodide is already loading.");
-  }
   if (!options.indexURL) {
     options.indexURL = calculateIndexURL();
   }
-  (loadPyodide as any).inProgress = true;
 
   const default_config = {
     fullStdLib: true,
@@ -258,21 +244,24 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
   };
-  let config = Object.assign(default_config, options) as ConfigType;
+  const config = Object.assign(default_config, options) as ConfigType;
   if (!config.indexURL.endsWith("/")) {
     config.indexURL += "/";
   }
   await initNodeModules();
-  let packageIndexReady = initializePackageIndex(config.indexURL);
-  let pyodide_py_tar_promise = _loadBinaryFile(
+  const pyodide_py_tar_promise = _loadBinaryFile(
     config.indexURL,
     "pyodide_py.tar"
   );
 
-  setStandardStreams(config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(config.homedir);
+  const Module = createModule();
+  const API: any = { config };
+  Module.API = API;
 
-  let moduleLoaded = new Promise((r) => (Module.postRun = r));
+  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
+  setHomeDirectory(Module, config.homedir);
+
+  const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
@@ -294,15 +283,19 @@ export async function loadPyodide(
   };
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
-  unpackPyodidePy(pyodide_py_tar);
+  unpackPyodidePy(Module, pyodide_py_tar);
   Module._pyodide_init();
 
-  let pyodide = finalizeBootstrap(config);
-  // Module.runPython works starting here.
-
-  await packageIndexReady;
+  const pyodide = finalizeBootstrap(API, config);
+  // API.runPython works starting here.
+  if (!pyodide.version.includes("dev")) {
+    // Currently only used in Node to download packages the first time they are
+    // loaded. But in other cases it's harmless.
+    API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
+  }
+  await API.packageIndexReady;
   if (config.fullStdLib) {
-    await loadPackage(["distutils"]);
+    await pyodide.loadPackage(["distutils"]);
   }
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;

@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -56,7 +57,9 @@ class BasePackage:
         return f"{type(self).__name__}({self.name})"
 
     def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta)
+        return needs_rebuild(
+            self.pkgdir, self.pkgdir / "build", self.meta.get("source", {})
+        )
 
 
 @total_ordering
@@ -209,12 +212,17 @@ def generate_dependency_graph(
     if "*" in packages:
         packages.discard("*")
         packages.update(
-            str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
+            str(x.name) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
 
     no_numpy_dependents = "no-numpy-dependents" in packages
     if no_numpy_dependents:
         packages.discard("no-numpy-dependents")
+
+    packages_exclude = list(filter(lambda pkg: pkg.startswith("!"), packages))
+    for pkg_exclude in packages_exclude:
+        packages.discard(pkg_exclude)
+        packages.discard(pkg_exclude[1:])
 
     while packages:
         pkgname = packages.pop()
@@ -427,7 +435,15 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
+def _generate_package_hash(full_path: Path) -> str:
+    sha256_hash = hashlib.sha256()
+    with open(full_path, "rb") as f:
+        while chunk := f.read(4096):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) -> dict:
     """Generate the package.json file"""
     # Build package.json data.
     package_data: dict[str, dict[str, Any]] = {
@@ -445,6 +461,7 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
+            "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
@@ -466,6 +483,9 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
                 "imports": [],
                 "file_name": pkg.unvendored_tests.name,
                 "install_dir": pkg.install_dir,
+                "sha256": _generate_package_hash(
+                    Path(output_dir, pkg.unvendored_tests.name)
+                ),
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
@@ -480,12 +500,12 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
     return package_data
 
 
-def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
+def build_packages(packages_dir: Path, output_dir: Path, args) -> None:
     packages = common._parse_package_subset(args.only)
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
-    build_from_graph(pkg_map, outputdir, args)
+    build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         if pkg.library:
             continue
@@ -501,9 +521,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         pkg.file_name = pkg.wheel_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
-    package_data = generate_packages_json(pkg_map)
+    package_data = generate_packages_json(output_dir, pkg_map)
 
-    with open(outputdir / "packages.json", "w") as fd:
+    with open(output_dir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 

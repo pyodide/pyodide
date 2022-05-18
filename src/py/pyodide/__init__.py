@@ -21,6 +21,14 @@ from _pyodide._base import (
 from _pyodide._importhook import register_js_module, unregister_js_module
 
 from . import _state  # noqa: F401
+from ._browser_apis import (
+    add_event_listener,
+    clear_interval,
+    clear_timeout,
+    remove_event_listener,
+    set_interval,
+    set_timeout,
+)
 from ._core import (
     IN_BROWSER,
     ConversionError,
@@ -31,6 +39,7 @@ from ._core import (
     destroy_proxies,
     to_js,
 )
+from ._run_js import run_js
 from .http import open_url
 
 if IN_BROWSER:
@@ -41,7 +50,7 @@ if IN_BROWSER:
     asyncio.set_event_loop_policy(WebLoopPolicy())
 
 
-__version__ = "0.20.0dev0"
+__version__ = "0.20.0"
 
 __all__ = [
     "open_url",
@@ -52,6 +61,7 @@ __all__ = [
     "JsProxy",
     "JsException",
     "to_js",
+    "run_js",
     "register_js_module",
     "unregister_js_module",
     "create_once_callable",
@@ -60,4 +70,10 @@ __all__ = [
     "should_quiet",
     "ConversionError",
     "destroy_proxies",
+    "set_timeout",
+    "set_interval",
+    "clear_timeout",
+    "clear_interval",
+    "add_event_listener",
+    "remove_event_listener",
 ]

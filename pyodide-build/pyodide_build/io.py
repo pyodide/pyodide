@@ -7,6 +7,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
     "package": {
         "name": str,
         "version": str,
+        "_tag": str,
     },
     "source": {
         "url": str,
@@ -26,6 +27,8 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "post": str,
         "replace-libs": list,
         "unvendor-tests": bool,
+        "cross-build-env": bool,
+        "cross-build-files": list,  # list[str]
     },
     "requirements": {
         "run": list,  # List[str],
@@ -159,7 +162,7 @@ def _check_config_wheel_build(config: dict[str, Any]) -> Iterator[str]:
     if "build" not in config:
         return
     build_metadata = config["build"]
-    allowed_keys = {"post", "unvendor-tests"}
+    allowed_keys = {"post", "unvendor-tests", "cross-build-env", "cross-build-files"}
     for key in build_metadata.keys():
         if key not in PACKAGE_CONFIG_SPEC["build"]:
             continue
@@ -212,7 +215,7 @@ def check_package_config(
     return errors_msg
 
 
-def parse_package_config(path: Path | str, check: bool = True) -> dict[str, Any]:
+def parse_package_config(path: Path | str, *, check: bool = True) -> dict[str, Any]:
     """Load a meta.yaml file
 
     Parameters

@@ -1,0 +1,25 @@
+From f6e479ea524c286f0a96d5df60d1f8edb595f643 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 31 Dec 2021 22:27:07 -0800
+Subject: [PATCH 03/14] Add lapack_extras to linalg/setup.py
+
+---
+ scipy/linalg/setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scipy/linalg/setup.py b/scipy/linalg/setup.py
+index 2f0ef0a48..d384081a2 100644
+--- a/scipy/linalg/setup.py
++++ b/scipy/linalg/setup.py
+@@ -43,7 +43,7 @@ def configuration(parent_package='', top_path=None):
+         ext._pre_build_hook = blas_ilp64_pre_build_hook(lapack_ilp64_opt)
+ 
+     # flapack:
+-    sources = ['flapack.pyf.src']
++    sources = ['flapack.pyf.src', 'lapack_extras.f']
+     sources += get_g77_abi_wrappers(lapack_opt)
+     dep_pfx = join('src', 'lapack_deprecations')
+     deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
+-- 
+2.25.1
+
