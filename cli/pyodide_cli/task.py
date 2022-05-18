@@ -32,13 +32,37 @@ def task_build_package():
     }
 
 
+def task_build_core():
+    pyodide_root = Path(os.environ["PYODIDE_ROOT"])
+    core_dir = pyodide_root / "src/core"
+    flags = os.environ["MAIN_MODULE_CFLAGS"].replace("''", "")
+    compilers = {
+        ".c": "emcc",
+        ".cpp": "em++",
+    }
+    for ext, compiler in compilers.items():
+        for source in core_dir.glob(f"*{ext}"):
+            target = source.with_suffix(".o")
+            yield {
+                "name": source.name,
+                "file_dep": [source],
+                "actions": [
+                    f"{compiler} -c {source} -o {target} {flags} -I{str(core_dir)}",
+                ],
+                "targets": [target],
+                "task_dep": ["build_cpython"],
+            }
+
+
 def task_build_cpython():
     pyodide_root = Path(os.environ["PYODIDE_ROOT"])
     cpythonlib = os.environ["CPYTHONLIB"]
     return {
         "file_dep": [pyodide_root / "cpython/Makefile"],
-        # "actions": ["make -C cpython", f"pip install tzdata --target={cpythonlib}"],
-        "actions": ["make -C cpython"],
+        "actions": [
+            "make -C cpython",
+            f"pip install tzdata --target={cpythonlib}",
+        ],
         "targets": [
             pyodide_root / cpythonlib / "libpython3.10.a",
             pyodide_root / cpythonlib / "tzdata",

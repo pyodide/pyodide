@@ -1,6 +1,9 @@
+import os
+import subprocess
+
 import rich_click.typer as typer
 
-from pyodide_build.common import init_environment
+from pyodide_build.common import search_pyodide_root
 
 from . import __version__, build, package
 
@@ -15,26 +18,43 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
+def get_config(config_file):
+    # TODO: use standalone config file instead of Makefile.env
+    # Note that we don't want to use pyodide_build.common.init_environment()
+    # because it override some unrelated env variables (BASH_SOURCE, ...) that causes build error.
+
+    PYODIDE_ROOT = search_pyodide_root(os.getcwd())
+    environment = {
+        "PYODIDE_ROOT": str(PYODIDE_ROOT),
+    }
+    result = subprocess.run(
+        ["make", "-f", str(PYODIDE_ROOT / config_file), ".output_vars"],
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
+    for line in result.stdout.splitlines():
+        equalPos = line.find("=")
+        if equalPos != -1:
+            varname = line[0:equalPos]
+            value = line[equalPos + 1 :]
+            value = value.strip("'").strip()
+            environment[varname] = value
+
+    return environment
+
+
 @app.callback(no_args_is_help=True)
 def main(
     version: bool = typer.Option(
         None, "--version", callback=version_callback, is_eager=True
     ),
 ):
-    init_environment()
+    env = get_config("Makefile.envs")
+    os.environ["PYODIDE_ROOT"] = env["PYODIDE_ROOT"]
+    os.environ["CPYTHONLIB"] = env["CPYTHONLIB"]
+    os.environ["MAIN_MODULE_CFLAGS"] = env["MAIN_MODULE_CFLAGS"]
 
 
 if __name__ == "__main__":
-    """
-    pyodide builddoc [--serve]
-    pyodide package new
-    pyodide package list
-    pyodide package update
-    pyodide serve
-    pyodide build python
-    pyodide build numpy
-    pyodide build api
-    pyodide generate
-    """
-
     app()

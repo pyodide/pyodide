@@ -30,10 +30,12 @@ def package(
 
 
 @app.command("cpython")
-def cpython(
-    root: str = typer.Option(
-        None, help="The root directory of the Pyodide.", envvar="PYODIDE_ROOT"
-    ),
-):
+def cpython():
     """Build a cpython"""
     DoitMain(ModuleTaskLoader(task)).run(["build_cpython"])
+
+
+@app.command("pyodide")
+def pyodide():
+    """Build pyodide"""
+    DoitMain(ModuleTaskLoader(task)).run(["build_core"])
