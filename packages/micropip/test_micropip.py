@@ -264,7 +264,8 @@ def create_transaction(Transaction):
         pre=False,
         pyodide_packages=[],
         failed=[],
-        ctx={"extra": ""},
+        ctx={},
+        ctx_extras=[],
         fetch_kwargs={},
     )
 
@@ -314,6 +315,23 @@ async def test_add_requirement_marker(mock_importlib, wheel_base):
         ],
     )
     assert len(transaction.wheels) == 1
+
+
+def test_add_install_with_extra(mock_importlib):
+    pytest.importorskip("packaging")
+    from micropip._micropip import Transaction
+
+    transaction = create_transaction(Transaction)
+
+    asyncio.get_event_loop().run_until_complete(
+        transaction.gather_requirements(
+            [
+                "hypothesis[cli]",
+            ],
+        )
+    )
+    wheel_names = [w.name for w in transaction.wheels]
+    assert "black" in wheel_names
 
 
 def test_last_version_from_pypi():
