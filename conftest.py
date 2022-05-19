@@ -583,6 +583,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys
         assert delta_keys <= 0
 
+
 @pytest.fixture(scope="session")
 def playwright_browsers(request):
     if request.config.option.runner.lower() != "playwright":
@@ -756,13 +757,15 @@ def console_html_fixture(request, web_server_main, playwright_browsers):
         finally:
             print(selenium.logs)
 
- 
+
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
 
 import ast
 from copy import deepcopy
 from typing import Any
+
 from _pytest.assertion.rewrite import AssertionRewritingHook, rewrite_asserts
 from _pytest.python import (
     pytest_pycollect_makemodule as orig_pytest_pycollect_makemodule,

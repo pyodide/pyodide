@@ -184,7 +184,7 @@ def main():
         ("firefox", conftest.SeleniumFirefoxWrapper),
         ("chrome", conftest.SeleniumChromeWrapper),
     ]
-    
+
     with spawn_web_server(args.dist_dir) as (hostname, port, log_path):
 
         # selenium initialization time
