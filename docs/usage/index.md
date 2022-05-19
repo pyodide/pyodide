@@ -12,7 +12,7 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+      <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
   <body>
     <script type="text/javascript">

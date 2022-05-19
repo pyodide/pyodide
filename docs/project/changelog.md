@@ -70,7 +70,7 @@ substitutions:
   rewriting and various other improvements.
   {pr}`2510`
 
-- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
   through `pyodide_test_runner`.
   {pr}`2418`
 
