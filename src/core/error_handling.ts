@@ -194,7 +194,7 @@ function convertCppException(ptr: number): CppException {
 Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
-  if(!frame){
+  if (!frame) {
     return false;
   }
   const fileName = frame.fileName || "";
