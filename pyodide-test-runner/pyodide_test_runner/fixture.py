@@ -23,18 +23,22 @@ def playwright_browsers(request):
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
-            raise Exception(
-                "playwright not installed. try `pip install playwright && python -m playwright install`"
+            pytest.exit(
+                "playwright not installed. try `pip install playwright && python -m playwright install`",
+                returncode=1,
             )
 
         with sync_playwright() as p:
-            chromium = p.chromium.launch(
-                args=[
-                    "--js-flags=--expose-gc",
-                ],
-            )
-            firefox = p.firefox.launch()
-            # webkit = p.webkit.launch()
+            try:
+                chromium = p.chromium.launch(
+                    args=[
+                        "--js-flags=--expose-gc",
+                    ],
+                )
+                firefox = p.firefox.launch()
+                # webkit = p.webkit.launch()
+            except Exception as e:
+                pytest.exit(f"playwright failed to launch\n{e}", returncode=1)
             try:
                 yield {
                     "chrome": chromium,
@@ -67,10 +71,10 @@ def selenium_common(
         ("selenium", "node"): NodeWrapper,
         ("playwright", "firefox"): PlaywrightFirefoxWrapper,
         ("playwright", "chrome"): PlaywrightChromeWrapper,
-        ("selenium", "node"): NodeWrapper,
+        ("playwright", "node"): NodeWrapper,
     }
 
-    cls = browser_set.get((runner_type, request.config.option.browser.lower()))
+    cls = browser_set.get((runner_type, request.param))
     if cls is None:
         raise AssertionError(
             f"Unknown runner or browser: {runner_type} / {request.param}"
