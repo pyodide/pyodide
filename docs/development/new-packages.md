@@ -91,11 +91,9 @@ then restart the build.
 
 If the build succeeds you can try to load the package by
 
-1. If you haven't built Pyodide from source, download the
-   [most recent Pyodide release](https://github.com/pyodide/pyodide/releases) and extract it into the `dist` directory
-2. Serve the dist directory with `python -m http.server`
-3. Open `localhost:<port>/console.html` and try to import the package
-4. You can test the package in the repl
+1. Serve the dist directory with `python -m http.server`
+2. Open `localhost:<port>/console.html` and try to import the package
+3. You can test the package in the repl
 
 #### Writing tests for your package
 
