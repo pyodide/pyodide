@@ -214,6 +214,7 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
 @dataclass
 class Transaction:
     ctx: dict[str, str]
+    ctx_extras: list[dict[str, str]]
     keep_going: bool
     deps: bool
     pre: bool
@@ -278,15 +279,24 @@ class Transaction:
         https://www.python.org/dev/peps/pep-0508
         """
 
+        for e in req.extras:
+            self.ctx_extras.append({"extra": e})
+        print("self_ctx_extras: ", self.ctx_extras)
+
         if self.pre:
             req.specifier.prereleases = True
 
         if req.marker:
             # handle environment markers
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
-            if not req.marker.evaluate(self.ctx):
+            found = False
+            for ctx_extra in self.ctx_extras:
+                self.ctx.update(ctx_extra)
+                if req.marker.evaluate(self.ctx):
+                    found = True
+                    break
+            if not found:
                 return
-
         # Is some version of this package is already installed?
 
         req.name = canonicalize_name(req.name)
@@ -412,7 +422,6 @@ async def install(
     """
     importlib.invalidate_caches()
     ctx = default_environment()
-    ctx.setdefault("extra", "")
     if isinstance(requirements, str):
         requirements = [requirements]
 
@@ -430,6 +439,8 @@ async def install(
 
     transaction = Transaction(
         ctx=ctx,
+        ctx_extras=[],
+        locked=copy.deepcopy(INSTALLED_PACKAGES),
         keep_going=keep_going,
         deps=deps,
         pre=pre,
