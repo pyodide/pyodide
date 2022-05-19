@@ -2,6 +2,7 @@
 *.o
 *.pyc
 src/js/*.gen.*
+src/js/*.out.*
 
 *.egg-info/
 
@@ -25,6 +26,9 @@ emsdk/emsdk
 geckodriver.log
 node_modules
 packages/.artifacts
+packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
+
+xbuildenv/

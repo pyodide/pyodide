@@ -1,13 +1,13 @@
 package:
   name: imageio
-  version: 2.14.0
+  version: 2.16.1
 source:
-  sha256: af6c7c89947ee9d81eab2caee3726f61e1a0d861e87e856904868d0fe7c0aa15
-  url: https://files.pythonhosted.org/packages/88/1e/62f8088805f7eb9cc9ce2b8ae7528a4083014f223c4e55d268dc48ac06c6/imageio-2.14.0-py3-none-any.whl
+  sha256: d8d17c59b6f5f3b350bbbe346e7cb7dda0399b1881d93ad01cb29b5acdb24c42
+  url: https://files.pythonhosted.org/packages/29/24/a3a7aa7f1e7f1c3a5c9fe2ff3fec8d9d17e10741eafb710f06705744b35f/imageio-2.16.1-py3-none-any.whl
 requirements:
   run:
     - numpy
-    - pillow
+    - Pillow
 test:
   imports:
     - imageio

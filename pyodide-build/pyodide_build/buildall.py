@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -15,12 +16,18 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Optional
+from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import UNVENDORED_STDLIB_MODULES
+from .common import UNVENDORED_STDLIB_MODULES, find_matching_wheels
 from .io import parse_package_config
+
+
+class BuildError(Exception):
+    def __init__(self, returncode):
+        self.returncode = returncode
+        super().__init__()
 
 
 class BasePackage:
@@ -33,8 +40,8 @@ class BasePackage:
     dependencies: list[str]
     unbuilt_dependencies: set[str]
     dependents: set[str]
-    unvendored_tests: Optional[Path] = None
-    file_name: Optional[str] = None
+    unvendored_tests: Path | None = None
+    file_name: str | None = None
     install_dir: str = "site"
 
     # We use this in the priority queue, which pops off the smallest element.
@@ -49,7 +56,9 @@ class BasePackage:
         return f"{type(self).__name__}({self.name})"
 
     def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta)
+        return needs_rebuild(
+            self.pkgdir, self.pkgdir / "build", self.meta.get("source", {})
+        )
 
 
 @total_ordering
@@ -69,6 +78,12 @@ class StdLibPackage(BasePackage):
     def build(self, outputdir: Path, args) -> None:
         # All build / packaging steps are already done in the main Makefile
         return
+
+    def wheel_path(self) -> Path:
+        raise RuntimeError("StdLibPackage has no wheel")
+
+    def tests_path(self) -> Path | None:
+        return None
 
 
 @total_ordering
@@ -96,14 +111,15 @@ class Package(BasePackage):
         self.dependents = set()
 
     def wheel_path(self) -> Path:
-        wheels = list((self.pkgdir / "dist").glob("*.whl"))
+        dist_dir = self.pkgdir / "dist"
+        wheels = list(find_matching_wheels(dist_dir.glob("*.whl")))
         if len(wheels) != 1:
-            raise Exception(
+            raise RuntimeError(
                 f"Unexpected number of wheels {len(wheels)} when building {self.name}"
             )
         return wheels[0]
 
-    def tests_path(self) -> Optional[Path]:
+    def tests_path(self) -> Path | None:
         tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
         assert len(tests) <= 1
         if tests:
@@ -111,77 +127,59 @@ class Package(BasePackage):
         return None
 
     def build(self, outputdir: Path, args) -> None:
-        with open(self.pkgdir / "build.log.tmp", "w") as f:
-            p = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pyodide_build",
-                    "buildpkg",
-                    str(self.pkgdir / "meta.yaml"),
-                    "--cflags",
-                    args.cflags,
-                    "--cxxflags",
-                    args.cxxflags,
-                    "--ldflags",
-                    args.ldflags,
-                    "--target-install-dir",
-                    args.target_install_dir,
-                    "--host-install-dir",
-                    args.host_install_dir,
-                    # Either this package has been updated and this doesn't
-                    # matter, or this package is dependent on a package that has
-                    # been updated and should be rebuilt even though its own
-                    # files haven't been updated.
-                    "--force-rebuild",
-                ],
-                check=False,
-                stdout=f,
-                stderr=subprocess.STDOUT,
+
+        p = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pyodide_build",
+                "buildpkg",
+                str(self.pkgdir / "meta.yaml"),
+                "--cflags",
+                args.cflags,
+                "--cxxflags",
+                args.cxxflags,
+                "--ldflags",
+                args.ldflags,
+                "--target-install-dir",
+                args.target_install_dir,
+                "--host-install-dir",
+                args.host_install_dir,
+                # Either this package has been updated and this doesn't
+                # matter, or this package is dependent on a package that has
+                # been updated and should be rebuilt even though its own
+                # files haven't been updated.
+                "--force-rebuild",
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+        if log_dir and (self.pkgdir / "build.log").exists():
+            log_dir.mkdir(exist_ok=True, parents=True)
+            shutil.copy(
+                self.pkgdir / "build.log",
+                log_dir / f"{self.name}.log",
             )
 
-        # Don't overwrite build log if we didn't build the file.
-        # If the file didn't need to be rebuilt, the log will have exactly two lines.
-        rebuilt = True
-        with open(self.pkgdir / "build.log.tmp") as f:
-            try:
-                next(f)
-                next(f)
-                next(f)
-            except StopIteration:
-                rebuilt = False
-
-        if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
-            if args.log_dir and (self.pkgdir / "build.log").exists():
-                shutil.copy(
-                    self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
-                )
-        else:
-            (self.pkgdir / "build.log.tmp").unlink()
-
-        try:
-            p.check_returncode()
-        except subprocess.CalledProcessError:
+        if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
 
             with open(self.pkgdir / "build.log") as f:
                 shutil.copyfileobj(f, sys.stdout)
 
-            raise
+            print("ERROR: cancelling buildall")
+            raise BuildError(p.returncode)
 
         if self.library:
             return
         if self.shared_library:
-            file_path = shutil.make_archive(
-                f"{self.name}-{self.version}", "zip", self.pkgdir / "dist"
-            )
+            file_path = Path(self.pkgdir / f"{self.name}-{self.version}.zip")
             shutil.copy(file_path, outputdir)
+            file_path.unlink()
             return
-        shutil.copy(self.wheel_path(), outputdir)
-        test_path = self.tests_path()
-        if test_path:
-            shutil.copy(test_path, outputdir)
 
 
 def generate_dependency_graph(
@@ -212,12 +210,17 @@ def generate_dependency_graph(
     if "*" in packages:
         packages.discard("*")
         packages.update(
-            str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
+            str(x.name) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
 
     no_numpy_dependents = "no-numpy-dependents" in packages
     if no_numpy_dependents:
         packages.discard("no-numpy-dependents")
+
+    packages_exclude = list(filter(lambda pkg: pkg.startswith("!"), packages))
+    for pkg_exclude in packages_exclude:
+        packages.discard(pkg_exclude)
+        packages.discard(pkg_exclude[1:])
 
     while packages:
         pkgname = packages.pop()
@@ -264,7 +267,7 @@ def print_with_progress_line(str, progress_line):
 def get_progress_line(package_set):
     if not package_set:
         return None
-    return f"In progress: " + ", ".join(package_set.keys())
+    return "In progress: " + ", ".join(package_set.keys())
 
 
 def format_name_list(l: list[str]) -> str:
@@ -371,7 +374,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     built_queue: Queue = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    package_set = {}
+    # Using dict keys for insertion order preservation
+    package_set: dict[str, None] = {}
 
     def builder(n):
         nonlocal queue_idx
@@ -409,6 +413,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     num_built = len(already_built)
     while num_built < len(pkg_map):
         pkg = built_queue.get()
+        if isinstance(pkg, BuildError):
+            raise SystemExit(pkg.returncode)
         if isinstance(pkg, Exception):
             raise pkg
 
@@ -426,7 +432,15 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
+def _generate_package_hash(full_path: Path) -> str:
+    sha256_hash = hashlib.sha256()
+    with open(full_path, "rb") as f:
+        while chunk := f.read(4096):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) -> dict:
     """Generate the package.json file"""
     # Build package.json data.
     package_data: dict[str, dict[str, Any]] = {
@@ -439,11 +453,14 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
             continue
+        if not Path(output_dir, pkg.file_name).exists():
+            continue
         pkg_entry: Any = {
             "name": name,
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
+            "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
@@ -465,6 +482,9 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
                 "imports": [],
                 "file_name": pkg.unvendored_tests.name,
                 "install_dir": pkg.install_dir,
+                "sha256": _generate_package_hash(
+                    Path(output_dir, pkg.unvendored_tests.name)
+                ),
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
@@ -479,12 +499,24 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
     return package_data
 
 
-def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
+def copy_packages_to_dist_dir(packages, output_dir):
+    for pkg in packages:
+        try:
+            shutil.copy(pkg.wheel_path(), output_dir)
+        except RuntimeError:
+            pass
+
+        test_path = pkg.tests_path()
+        if test_path:
+            shutil.copy(test_path, output_dir)
+
+
+def build_packages(packages_dir: Path, output_dir: Path, args) -> None:
     packages = common._parse_package_subset(args.only)
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
-    build_from_graph(pkg_map, outputdir, args)
+    build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         if pkg.library:
             continue
@@ -500,9 +532,10 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         pkg.file_name = pkg.wheel_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
-    package_data = generate_packages_json(pkg_map)
+    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
+    package_data = generate_packages_json(output_dir, pkg_map)
 
-    with open(outputdir / "packages.json", "w") as fd:
+    with open(output_dir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 
@@ -518,12 +551,14 @@ def make_parser(parser):
         "dir",
         type=str,
         nargs=1,
+        default="packages",
         help="Input directory containing a tree of package definitions",
     )
     parser.add_argument(
         "output",
         type=str,
         nargs=1,
+        default="dist",
         help="Output directory in which to put all built packages",
     )
     parser.add_argument(
@@ -596,6 +631,7 @@ def make_parser(parser):
 def main(args):
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
+    outputdir.mkdir(exist_ok=True)
     if args.cflags is None:
         args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     if args.cxxflags is None:

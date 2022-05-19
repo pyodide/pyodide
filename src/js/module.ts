@@ -1,23 +1,30 @@
+/** @private */
+export interface Module {
+  noImageDecoding: boolean;
+  noAudioDecoding: boolean;
+  noWasmDecoding: boolean;
+  preRun: { (): void }[];
+  print: (a: string) => void;
+  printErr: (a: string) => void;
+  ENV: { [key: string]: string };
+  preloadedWasm: any;
+  FS: any;
+}
+
 /**
  * The Emscripten Module.
  *
  * @private
  */
-export let Module: any = {};
-Module.noImageDecoding = true;
-Module.noAudioDecoding = true;
-Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
-Module.preloadedWasm = {};
-Module.preRun = [];
-
-export let API: any = {};
-Module.API = API;
-export let Hiwire: any = {};
-Module.hiwire = Hiwire;
-
-// Put things that are exposed only for testing purposes here.
-export let Tests: any = {};
-API.tests = Tests;
+export function createModule(): any {
+  let Module: any = {};
+  Module.noImageDecoding = true;
+  Module.noAudioDecoding = true;
+  Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
+  Module.preloadedWasm = {};
+  Module.preRun = [];
+  return Module;
+}
 
 /**
  *
@@ -27,6 +34,7 @@ API.tests = Tests;
  * @private
  */
 export function setStandardStreams(
+  Module: Module,
   stdin?: () => string,
   stdout?: (a: string) => void,
   stderr?: (a: string) => void
@@ -100,7 +108,7 @@ function createStdinWrapper(stdin: () => string) {
  * @param path
  * @private
  */
-export function setHomeDirectory(path: string) {
+export function setHomeDirectory(Module: Module, path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {

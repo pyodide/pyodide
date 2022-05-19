@@ -6,7 +6,7 @@ requirements:
     - distutils
     - numpy
     - Jinja2
-    - pillow
+    - Pillow
     - python-dateutil
     - six
     - typing-extensions

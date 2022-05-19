@@ -1,6 +1,6 @@
 import os
 
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 if "CI" in os.environ:
     xfail_browsers = {"chrome": "scikit-image takes too long to load in CI "}
@@ -50,3 +50,4 @@ def test_skimage():
     assert len(np.unique(segments_fz)) == 194
     assert len(np.unique(segments_slic)) == 196
     assert len(np.unique(segments_quick)) == 695
+    assert len(np.unique(segments_watershed)) == 256

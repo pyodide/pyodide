@@ -1,0 +1,218 @@
+From 9e3b5aacb71deb2870ab589ca88aa126e1acc86a Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 28 Feb 2022 00:44:13 -0500
+Subject: [PATCH 01/10] Patch in call trampolines to handle fpcast troubles
+
+The wasm call_indirect instruction takes a function signature as an immediate
+argument (an immediate argument is one which is determined statically at compile
+time). The web assembly runtime checks at runtime that the function pointer we
+are attempting to call has a signature which matches the asserted function
+signature, if they don't match, the runtime traps with "indirect call signature
+mismatch". The codegen provided by default by the emscripten toolchain produces
+an ABI that also has this constraint.
+
+By contrast, typical native ABIs handle function pointer casts very gracefully:
+extra arguments are ignored, missing arguments are filled in as 0, even wrong
+return values are completely fine.
+
+The Python ecosystem is full of code which contain function pointer casts.
+Emscripten offers a second "EMULATE_FPCASTS" ABI that fixes many of these
+issues, but it shims in the function pointer cast support in a binaryen pass
+that happens on the fully linked wasm module. At this point, lots of information
+has been destroyed and as a result the only possible solutions are extremely
+costly in run time, stack space, and code size.
+
+We wish to avoid these costs. Patching the packages is prohibitively time
+consuming and boring, especially given our limited developer effort. I have
+explored making automated detection tools, and these work. However, getting
+these tools included into the CI of Python ecosystem packages would be
+prohibitively time consuming.
+
+There is a best of both worlds solution. It is possible to define an ABI which
+allows for specific types of function pointer casts with neglible costs. I hope
+to do this in future work. However, this will require custom llvm passes.
+Because llvm is implemented in C++ which has very poor ABI compatibility, this
+means our whole toolchain needs to be built against the same version of llvm,
+from llvm all the way down to binaryen and the wasm binary toolkit.
+
+In the meantime, most bad function pointer calls happen in a small number of
+locations. Calling a function pointer from Javascript has no restrictions on
+arguments. Extra arguments can be provided, arguments can be left off, etc with
+no issue (this mimics Javascript's typical function call semantics). So at the
+locations where the bad calls occur, we patch in a trampoline which calls out to
+Javascript to make the call for us. Like magic, the problem is gone. Research
+shows that the performance cost of this is surprisingly low too.
+---
+ Objects/call.c         |  5 ++++-
+ Objects/descrobject.c  | 28 +++++++++++++++++++---------
+ Objects/methodobject.c | 12 +++++++++---
+ 3 files changed, 32 insertions(+), 13 deletions(-)
+
+diff --git a/Objects/call.c b/Objects/call.c
+index 960c37e196..98861e8b87 100644
+--- a/Objects/call.c
++++ b/Objects/call.c
+@@ -167,6 +167,9 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
+ }
+ 
+ 
++// Defined in methodobject patch
++PyObject* method_call_trampoline(PyCFunction func, PyObject *self, PyObject *arg1, PyObject *arg2);
++
+ PyObject *
+ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+                      PyObject *const *args, Py_ssize_t nargs,
+@@ -212,7 +215,7 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+     PyObject *result = NULL;
+     if (_Py_EnterRecursiveCall(tstate, " while calling a Python object") == 0)
+     {
+-        result = call(callable, argstuple, kwdict);
++        result = method_call_trampoline((PyCFunction)call, callable, argstuple, kwdict);
+         _Py_LeaveRecursiveCall(tstate);
+     }
+ 
+diff --git a/Objects/descrobject.c b/Objects/descrobject.c
+index 97669bef36..2a30c050a9 100644
+--- a/Objects/descrobject.c
++++ b/Objects/descrobject.c
+@@ -172,6 +172,11 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
+     return PyMember_GetOne((char *)obj, descr->d_member);
+ }
+ 
++#include <emscripten.h>
++EM_JS(PyObject*, getter_call_trampoline, (getter get, PyObject *obj, void *closure), {
++    return wasmTable.get(get)(obj, closure);
++});
++
+ static PyObject *
+ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
+ {
+@@ -182,7 +187,7 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
+         return NULL;
+     }
+     if (descr->d_getset->get != NULL)
+-        return descr->d_getset->get(obj, descr->d_getset->closure);
++        return getter_call_trampoline(descr->d_getset->get, obj, descr->d_getset->closure);
+     PyErr_Format(PyExc_AttributeError,
+                  "attribute '%V' of '%.100s' objects is not readable",
+                  descr_name((PyDescrObject *)descr), "?",
+@@ -227,6 +232,10 @@ member_set(PyMemberDescrObject *descr, PyObject *obj, PyObject *value)
+     return PyMember_SetOne((char *)obj, descr->d_member, value);
+ }
+ 
++EM_JS(PyObject*, setter_call_trampoline, (setter set, PyObject *obj, PyObject *value, void *closure), {
++    return wasmTable.get(set)(obj, value, closure);
++});
++
+ static int
+ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
+ {
+@@ -234,8 +243,7 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
+         return -1;
+     }
+     if (descr->d_getset->set != NULL) {
+-        return descr->d_getset->set(obj, value,
+-                                    descr->d_getset->closure);
++        return setter_call_trampoline(descr->d_getset->set, obj, value, descr->d_getset->closure);
+     }
+     PyErr_Format(PyExc_AttributeError,
+                  "attribute '%V' of '%.100s' objects is not writable",
+@@ -289,6 +297,9 @@ method_enter_call(PyThreadState *tstate, PyObject *func)
+     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
+ }
+ 
++// Defined in methodobject patch
++PyObject* method_call_trampoline(PyCFunction func, PyObject *self, PyObject *arg1, PyObject *arg2);
++
+ /* Now the actual vectorcall functions */
+ static PyObject *
+ method_vectorcall_VARARGS(
+@@ -308,7 +319,7 @@ method_vectorcall_VARARGS(
+         Py_DECREF(argstuple);
+         return NULL;
+     }
+-    PyObject *result = meth(args[0], argstuple);
++    PyObject *result = method_call_trampoline(meth, args[0], argstuple, NULL);
+     Py_DECREF(argstuple);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+@@ -336,12 +347,11 @@ method_vectorcall_VARARGS_KEYWORDS(
+             goto exit;
+         }
+     }
+-    PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)
+-                                   method_enter_call(tstate, func);
++    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
+     if (meth == NULL) {
+         goto exit;
+     }
+-    result = meth(args[0], argstuple, kwdict);
++    result = method_call_trampoline(meth, args[0], argstuple, kwdict);
+     _Py_LeaveRecursiveCall(tstate);
+ exit:
+     Py_DECREF(argstuple);
+@@ -429,7 +439,7 @@ method_vectorcall_NOARGS(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(args[0], NULL);
++    PyObject *result = method_call_trampoline(meth, args[0], NULL, NULL);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+@@ -457,7 +467,7 @@ method_vectorcall_O(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(args[0], args[1]);
++    PyObject *result = method_call_trampoline(meth, args[0], args[1], NULL);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+diff --git a/Objects/methodobject.c b/Objects/methodobject.c
+index 2df63cfdf6..978d62cd67 100644
+--- a/Objects/methodobject.c
++++ b/Objects/methodobject.c
+@@ -464,6 +464,12 @@ cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
+     return result;
+ }
+ 
++#include <emscripten.h>
++
++EM_JS(PyObject*, method_call_trampoline, (PyCFunction func, PyObject *self, PyObject *arg1, PyObject *arg2), {
++    return wasmTable.get(func)(self, arg1, arg2);
++});
++
+ static PyObject *
+ cfunction_vectorcall_NOARGS(
+     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+@@ -486,7 +492,7 @@ cfunction_vectorcall_NOARGS(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(PyCFunction_GET_SELF(func), NULL);
++    PyObject *result = method_call_trampoline(meth, PyCFunction_GET_SELF(func), NULL, NULL);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+@@ -540,7 +546,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
+ 
+     PyObject *result;
+     if (flags & METH_KEYWORDS) {
+-        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
++        result = method_call_trampoline(meth, self, args, kwargs);
+     }
+     else {
+         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+@@ -549,7 +555,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
+                           ((PyCFunctionObject*)func)->m_ml->ml_name);
+             return NULL;
+         }
+-        result = meth(self, args);
++        result = method_call_trampoline(meth, self, args, NULL);
+     }
+     return _Py_CheckFunctionResult(tstate, func, result, NULL);
+ }
+-- 
+2.25.1
+

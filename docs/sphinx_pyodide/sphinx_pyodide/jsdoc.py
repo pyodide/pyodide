@@ -12,7 +12,7 @@ from sphinx.domains.javascript import JavaScriptDomain, JSCallable
 from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
-from sphinx_js.ir import Class, Function
+from sphinx_js.ir import Class, Function, Interface
 from sphinx_js.parsers import PathVisitor, path_and_formal_params
 from sphinx_js.renderers import (
     AutoAttributeRenderer,
@@ -51,7 +51,7 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     result = []
     for child in decl["children"]:
         child = dict(child)
-        if not "type" in child:
+        if "type" not in child:
             if "signatures" in child:
                 child["comment"] = child["signatures"][0]["comment"]
                 child["type"] = {
@@ -59,7 +59,7 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
                     "declaration": dict(child),
                 }
             else:
-                assert False, "Didn't expect to get here..."
+                raise AssertionError("Didn't expect to get here...")
         child["name"] = param["name"] + "." + child["name"]
         result.append(child)
     return result
@@ -88,7 +88,7 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]):
     """Monkey patch for TsAnalyzer._convert_node.
 
     Fixes two crashes and separates documentation for destructured object
-    arguments into a series of separate arguement entires.
+    arguments into a series of separate argument entries.
     """
     kind = node.get("kindString")
     # if a class has no documented constructor, don't crash
@@ -185,7 +185,13 @@ def _type_name(self, type):
         return f"boolean (typeguard for {self._type_name(type['targetType'])})"
     if type_of_type == "reflection":
         return reflection_type_name(self, type)
-    assert False
+    if type_of_type == "named-tuple-member":
+        name = type["name"]
+        type = self._type_name(type["element"])
+        return f"{name}: {type}"
+    raise NotImplementedError(
+        f"Cannot render type name for type_of_type={type_of_type}"
+    )
 
 
 TsAnalyzer._type_name = _type_name
@@ -214,9 +220,9 @@ def flatten_suffix_tree(tree):
     suffix tree, but the suffix tree is inconveniently shaped. So we flatten
     it...
     """
-    result = {}
-    path = []
-    iters = []
+    result: dict[tuple[str, ...], Any] = {}
+    path: list[str] = []
+    iters: list[Any] = []
     cur_iter = iter(tree.items())
     while True:
         try:
@@ -268,14 +274,15 @@ class PyodideAnalyzer:
         self.doclets = flatten_suffix_tree(self._objects_by_path._tree)
 
         def get_val():
-            return OrderedDict([["attribute", []], ["function", []], ["class", []]])
+            return OrderedDict([("attribute", []), ("function", []), ("class", [])])
 
         modules = ["globalThis", "pyodide", "PyProxy"]
         self.js_docs = {key: get_val() for key in modules}
-        items = {key: [] for key in modules}
+        items = {key: list[Any]() for key in modules}
         for (key, doclet) in self.doclets.items():
             if getattr(doclet.value, "is_private", False):
                 continue
+
             # Remove the part of the key corresponding to the file
             key = [x for x in key if "/" not in x]
             filename = key[0]
@@ -284,6 +291,8 @@ class PyodideAnalyzer:
                 doclet.value.is_private = True
                 continue
             doclet.value.name = doclet.value.name.rpartition(".")[2]
+            if filename == "module." or filename == "compat.":
+                continue
             if filename == "pyodide.":
                 # Might be named globalThis.something or exports.something.
                 # Trim off the prefix.
@@ -344,6 +353,8 @@ def get_jsdoc_content_directive(app):
                 renderer = AutoFunctionRenderer
             elif isinstance(obj, Class):
                 renderer = AutoClassRenderer
+            elif isinstance(obj, Interface):
+                renderer = AutoClassRenderer
             else:
                 renderer = AutoAttributeRenderer
             rst = renderer(
@@ -353,12 +364,13 @@ def get_jsdoc_content_directive(app):
                 rst = self.add_async_option_to_rst(rst)
             return rst
 
-        def add_async_option_to_rst(self, rst):
+        def add_async_option_to_rst(self, rst: str) -> str:
             rst_lines = rst.split("\n")
-            for i, line in enumerate(rst_lines):
-                if line.startswith(".."):
-                    break
-            rst_lines.insert(i + 1, "   :async:")
+            try:
+                index = next(i for i, ln in enumerate(rst_lines) if ln.startswith(".."))
+            except StopIteration:
+                index = len(rst_lines) - 1
+            rst_lines.insert(index + 1, "   :async:")
             return "\n".join(rst_lines)
 
         def get_rst_for_group(self, objects):

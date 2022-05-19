@@ -1,8 +1,9 @@
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["wrapt"])
 def test_wrapt():
+    import inspect
     import unittest
 
     import wrapt
@@ -52,10 +53,6 @@ def test_wrapt():
             function1d_argspec = inspect.getargspec(function1d)
             self.assertEqual(function1o_argspec, function1d_argspec)
 
-        def test_getmembers(self):
-            function1o_members = inspect.getmembers(function1o)
-            function1d_members = inspect.getmembers(function1d)
-
         def test_isinstance(self):
             # Test preservation of isinstance() checks.
 
@@ -80,3 +77,7 @@ def test_wrapt():
             result = _function(*_args, **_kwargs)
 
             self.assertEqual(result, (_args, _kwargs))
+
+    # Run tests
+    with unittest.TestCase().assertRaisesRegex(SystemExit, "False"):
+        unittest.main()

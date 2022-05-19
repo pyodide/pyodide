@@ -8,29 +8,31 @@ import pytest
 from pyodide_build import buildpkg
 from pyodide_build.io import parse_package_config
 
+PACKAGES_DIR = Path(__file__).parent / "_test_packages"
+
 
 def test_subprocess_with_shared_env():
-    p = buildpkg.BashRunnerWithSharedEnvironment()
-    p.env.pop("A", None)
+    with buildpkg.BashRunnerWithSharedEnvironment() as p:
+        p.env.pop("A", None)
 
-    res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"6\n"
-    assert p.env.get("A", None) is None
+        res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"6\n"
+        assert p.env.get("A", None) is None
 
-    p.run("export A=2")
-    assert p.env["A"] == "2"
+        p.run("export A=2")
+        assert p.env["A"] == "2"
 
-    res = p.run("echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"2\n"
+        res = p.run("echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"2\n"
 
-    res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"6\n"
-    assert p.env.get("A", None) == "6"
+        res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"6\n"
+        assert p.env.get("A", None) == "6"
 
-    p.env["A"] = "7"
-    res = p.run("echo $A", stdout=subprocess.PIPE)
-    assert res.stdout == b"7\n"
-    assert p.env["A"] == "7"
+        p.env["A"] = "7"
+        res = p.run("echo $A", stdout=subprocess.PIPE)
+        assert res.stdout == b"7\n"
+        assert p.env["A"] == "7"
 
 
 def test_prepare_source(monkeypatch):
@@ -41,19 +43,8 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    # tarballname == version
-    test_pkgs.append(parse_package_config("./packages/scipy/meta.yaml"))
-    test_pkgs.append(parse_package_config("./packages/numpy/meta.yaml"))
-
-    # tarballname != version
-    test_pkgs.append(
-        {
-            "package": {"name": "pyyaml", "version": "5.3.1"},
-            "source": {
-                "url": "https://files.pythonhosted.org/packages/64/c2/b80047c7ac2478f9501676c988a5411ed5572f35d1beff9cae07d321512c/PyYAML-5.3.1.tar.gz"
-            },
-        }
-    )
+    test_pkgs.append(parse_package_config(PACKAGES_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(parse_package_config(PACKAGES_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
         pkg["source"]["patches"] = []
@@ -66,6 +57,8 @@ def test_prepare_source(monkeypatch):
         srcpath = buildpath / source_dir_name
         buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
 
+        assert srcpath.is_dir()
+
 
 @pytest.mark.parametrize("is_library", [True, False])
 def test_run_script(is_library, tmpdir):
@@ -73,9 +66,9 @@ def test_run_script(is_library, tmpdir):
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
     build_metadata = {"script": script, "library": is_library}
-    shared_env = buildpkg.BashRunnerWithSharedEnvironment()
-    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
-    assert (src_dir / "out.txt").exists()
+    with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
+        buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
+        assert (src_dir / "out.txt").exists()
 
 
 def test_run_script_environment(tmpdir):
@@ -83,10 +76,10 @@ def test_run_script_environment(tmpdir):
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
     build_metadata = {"script": script, "library": False}
-    shared_env = buildpkg.BashRunnerWithSharedEnvironment()
-    shared_env.env.pop("A", None)
-    buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
-    assert shared_env.env["A"] == "2"
+    with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
+        shared_env.env.pop("A", None)
+        buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
+        assert shared_env.env["A"] == "2"
 
 
 def test_unvendor_tests(tmpdir):

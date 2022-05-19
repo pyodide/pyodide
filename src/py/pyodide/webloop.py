@@ -3,7 +3,7 @@ import contextvars
 import sys
 import time
 import traceback
-from typing import Callable
+from typing import Any, Callable
 
 from ._core import IN_BROWSER, create_once_callable
 
@@ -95,7 +95,9 @@ class WebLoop(asyncio.AbstractEventLoop):
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
 
-    def call_soon(self, callback: Callable, *args, context: contextvars.Context = None):
+    def call_soon(
+        self, callback: Callable, *args, context: contextvars.Context | None = None
+    ):
         """Arrange for a callback to be called as soon as possible.
 
         Any positional arguments after the callback will be passed to
@@ -107,7 +109,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        self, callback: Callable, *args, context: contextvars.Context = None
+        self, callback: Callable, *args, context: contextvars.Context | None = None
     ):
         """Like ``call_soon()``, but thread-safe.
 
@@ -120,7 +122,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: contextvars.Context | None = None,
     ):
         """Arrange for a callback to be called at a given time.
 
@@ -156,7 +158,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         when: float,
         callback: Callable,
         *args,
-        context: contextvars.Context = None,
+        context: contextvars.Context | None = None,
     ):
         """Like ``call_later()``, but uses an absolute time.
 
@@ -216,14 +218,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._check_closed()
         if self._task_factory is None:
             task = asyncio.tasks.Task(coro, loop=self, name=name)
-            if task._source_traceback:
+            if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
                 # In that case, remove create_task from _source_traceback.
-                del task._source_traceback[-1]
+                del task._source_traceback[-1]  # type: ignore[attr-defined]
         else:
             task = self._task_factory(self, coro)
-            asyncio.tasks._set_task_name(task, name)
+            asyncio.tasks._set_task_name(task, name)  # type: ignore[attr-defined]
 
         return task
 
@@ -373,7 +375,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     traceback.print_exc()
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
     A simple event loop policy for managing WebLoop based event loops.
     """
@@ -387,12 +389,12 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
             return self._default_loop
         return self.new_event_loop()
 
-    def new_event_loop(self):
+    def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
-        self._default_loop = WebLoop()
+        self._default_loop = WebLoop()  # type: ignore[abstract]
         return self._default_loop
 
-    def set_event_loop(self, loop: asyncio.AbstractEventLoop):
+    def set_event_loop(self, loop: Any) -> None:
         """Set the current event loop"""
         self._default_loop = loop
 

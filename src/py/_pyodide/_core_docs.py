@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable
 _save_name = __name__
 __name__ = "pyodide"
 
+
 # From jsproxy.c
 class JsException(Exception):
     """
@@ -36,6 +37,25 @@ class JsProxy:
     that are (conditionally) implemented on :any:`JsProxy`.
     """
 
+    @property
+    def js_id(self) -> int:
+        """An id number which can be used as a dictionary/set key if you want to
+        key on JavaScript object identity.
+
+        If two `JsProxy` are made with the same backing JavaScript object, they
+        will have the same `js_id`. The reault is a "pseudorandom" 32 bit integer.
+        """
+        return 0
+
+    @property
+    def typeof(self) -> str:
+        """Returns the JavaScript type of the JsProxy.
+
+        Corresponds to `typeof obj;` in JavaScript. You may also be interested
+        in the `constuctor` attribute which returns the type as an object.
+        """
+        return "object"
+
     def object_entries(self) -> "JsProxy":
         "The JavaScript API ``Object.entries(object)``"
 
@@ -55,7 +75,8 @@ class JsProxy:
         default_converter: Callable[
             ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any], None]],
             Any,
-        ] = None,
+        ]
+        | None = None,
     ) -> Any:
         """Convert the :class:`JsProxy` to a native Python object as best as
         possible.
@@ -142,7 +163,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def catch(self, onrejected: Callable) -> "Promise":
+    def catch(self, onrejected: Callable, /) -> "Promise":
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
@@ -151,7 +172,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def finally_(self, onfinally: Callable) -> "Promise":
+    def finally_(self, onfinally: Callable, /) -> "Promise":
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -168,7 +189,7 @@ class JsProxy:
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
-    def assign(self, rhs: Any):
+    def assign(self, rhs: Any, /):
         """Assign from a Python buffer into the JavaScript buffer.
 
         Present only if the wrapped JavaScript object is an ArrayBuffer or
@@ -177,7 +198,7 @@ class JsProxy:
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
-    def assign_to(self, to: Any):
+    def assign_to(self, to: Any, /):
         """Assign to a Python buffer from the JavaScript buffer.
 
         Present only if the wrapped JavaScript object is an ArrayBuffer or
@@ -200,7 +221,7 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
-    def to_file(self, file: IOBase):
+    def to_file(self, file: IOBase, /):
         """Writes a buffer to a file.
 
         Will write the entire contents of the buffer to the current position of
@@ -224,7 +245,7 @@ class JsProxy:
         data once.
         """
 
-    def from_file(self, file: IOBase):
+    def from_file(self, file: IOBase, /):
         """Reads from a file into a buffer.
 
         Will try to read a chunk of data the same size as the buffer from
@@ -250,7 +271,7 @@ class JsProxy:
         data once.
         """
 
-    def _into_file(self, file: IOBase):
+    def _into_file(self, file: IOBase, /):
         """Will write the entire contents of a buffer into a file using
         ``canOwn : true`` without any copy. After this, the buffer cannot be
         used again.
@@ -297,17 +318,17 @@ class JsProxy:
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable) -> JsProxy:
+def create_once_callable(obj: Callable, /) -> JsProxy:
     """Wrap a Python callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
     of the Callable. The JavaScript function also has a ``destroy`` API that
     can be used to release the proxy without calling it.
     """
-    return obj  # type: ignore
+    return obj  # type: ignore[return-value]
 
 
-def create_proxy(obj: Any) -> JsProxy:
+def create_proxy(obj: Any, /) -> JsProxy:
     """Create a ``JsProxy`` of a ``PyProxy``.
 
     This allows explicit control over the lifetime of the ``PyProxy`` from
@@ -321,11 +342,16 @@ def create_proxy(obj: Any) -> JsProxy:
 
 def to_js(
     obj: Any,
+    /,
     *,
     depth: int = -1,
-    pyproxies: JsProxy = None,
+    pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
-    dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None,
+    dict_converter: Callable[[Iterable[JsProxy]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
 ) -> JsProxy:
     """Convert the object to JavaScript.
 
@@ -355,8 +381,8 @@ def to_js(
     create_pyproxies: bool, default=True
         If you set this to False, :any:`to_js` will raise an error
 
-    dict_converter: Callable[[Iterable[JsProxy]], JsProxy], defauilt = None
-        This converter if provided recieves a (JavaScript) iterable of
+    dict_converter: Callable[[Iterable[JsProxy]], JsProxy], default = None
+        This converter if provided receives a (JavaScript) iterable of
         (JavaScript) pairs [key, value]. It is expected to return the
         desired result of the dict conversion. Some suggested values for
         this argument:
@@ -364,6 +390,72 @@ def to_js(
             js.Map.new -- similar to the default behavior
             js.Array.from -- convert to an array of entries
             js.Object.fromEntries -- convert to a JavaScript object
+    default_converter: Callable[[Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy], default=None
+        If present will be invoked whenever Pyodide does not have some built in
+        conversion for the object. If ``default_converter`` raises an error, the
+        error will be allowed to propagate. Otherwise, the object returned will
+        be used as the conversion. ``default_converter`` takes three arguments.
+        The first argument is the value to be converted.
+
+        Here are a couple examples of converter functions. In addition to the
+        normal conversions, convert ``Date`` to ``datetime``:
+
+        .. code-block:: python
+
+            from datetime import datetime
+            from js import Date
+            def default_converter(value, _ignored1, _ignored2):
+                if isinstance(value, datetime):
+                    return Date.new(value.timestamp() * 1000)
+                return value
+
+        Don't create any PyProxies, require a complete conversion or raise an error:
+
+        .. code-block:: python
+
+            def default_converter(_value, _ignored1, _ignored2):
+                raise Exception("Failed to completely convert object")
+
+        The second and third arguments are only needed for converting
+        containers. The second argument is a conversion function which is used
+        to convert the elements of the container with the same settings. The
+        third argument is a "cache" function which is needed to handle self
+        referential containers. Consider the following example. Suppose we have
+        a Python ``Pair`` class:
+
+        .. code-block:: python
+
+            class Pair:
+                def __init__(self, first, second):
+                    self.first = first
+                    self.second = second
+
+        We can use the following ``default_converter`` to convert ``Pair`` to ``Array``:
+
+        .. code-block:: python
+
+            from js import Array
+            def default_converter(value, convert, cache):
+                if not isinstance(value, Pair):
+                    return value
+                result = Array.new()
+                cache(value, result);
+                result.push(convert(value.first))
+                result.push(convert(value.second))
+                return result
+
+        Note that we have to cache the conversion of ``value`` before converting
+        ``value.first`` and ``value.second``. To see why, consider a self
+        referential pair:
+
+        .. code-block:: javascript
+
+            p = Pair(0, 0);
+            p.first = p;
+
+        Without ``cache(value, result);``, converting ``p`` would lead to an
+        infinite recurse. With it, we can successfully convert ``p`` to an Array
+        such that ``l[0] === l``.
     """
     return obj
 
@@ -372,7 +464,7 @@ class Promise(JsProxy):
     pass
 
 
-def destroy_proxies(pyproxies: JsProxy):
+def destroy_proxies(pyproxies: JsProxy, /):
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the

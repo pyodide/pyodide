@@ -1,0 +1,93 @@
+From fb49efa04e2ecf57c68c73e00538b2c13abea503 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Mon, 28 Feb 2022 00:50:54 -0500
+Subject: [PATCH 02/10] add emscripten host
+
+---
+ config.sub   | 7 ++++++-
+ configure    | 6 ++++++
+ configure.ac | 5 +++++
+ 3 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/config.sub b/config.sub
+index d74fb6deac..3f5097a1af 100755
+--- a/config.sub
++++ b/config.sub
+@@ -145,7 +145,8 @@ case $1 in
+ 			nto-qnx* | linux-* | uclinux-uclibc* \
+ 			| uclinux-gnu* | kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* \
+ 			| netbsd*-eabi* | kopensolaris*-gnu* | cloudabi*-eabi* \
+-			| storm-chaos* | os2-emx* | rtmk-nova*)
++			| storm-chaos* | os2-emx* | rtmk-nova* | \
++			emscripten)
+ 				basic_machine=$field1
+ 				basic_os=$maybe_os
+ 				;;
+@@ -255,6 +256,9 @@ case $1 in
+ 				basic_machine=i386-pc
+ 				basic_os=aros
+ 				;;
++			wasm32)
++				basic_machine=wasm32-unknown
++				;;
+ 			aux)
+ 				basic_machine=m68k-apple
+ 				basic_os=aux
+@@ -1184,6 +1188,7 @@ case $cpu-$vendor in
+ 			| amdgcn \
+ 			| arc | arceb | arc32 | arc64 \
+ 			| arm | arm[lb]e | arme[lb] | armv* \
++			| wasm32 \
+ 			| avr | avr32 \
+ 			| asmjs \
+ 			| ba \
+diff --git a/configure b/configure
+index a7d2975f1f..13aeb01b73 100755
+--- a/configure
++++ b/configure
+@@ -3347,6 +3347,9 @@ then
+ 	*-*-vxworks*)
+ 	    ac_sys_system=VxWorks
+ 	    ;;
++	wasm32-*-*)
++		ac_sys_system=Emscripten
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -3397,6 +3400,9 @@ if test "$cross_compiling" = yes; then
+ 	*-*-vxworks*)
+ 		_host_cpu=$host_cpu
+ 		;;
++	wasm32-*-*)
++		_host_cpu=
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+diff --git a/configure.ac b/configure.ac
+index 5aa91cbad3..87c397e969 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -403,6 +403,9 @@ then
+ 	*-*-vxworks*)
+ 	    ac_sys_system=VxWorks
+ 	    ;;
++	wasm32-*-*)
++		ac_sys_system=Emscripten
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -451,6 +454,8 @@ if test "$cross_compiling" = yes; then
+ 		;;
+ 	*-*-vxworks*)
+ 		_host_cpu=$host_cpu
++	wasm32-*-*)
++		_host_cpu=
+ 		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+-- 
+2.25.1
+

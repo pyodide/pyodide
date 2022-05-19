@@ -278,7 +278,7 @@ proxy.toJs({pyproxies});
 // pyproxies contains the list of proxies created by `toJs`. We can destroy them
 // when we are done with them
 for(let px of pyproxies){
-    px.destory();
+    px.destroy();
 }
 proxy.destroy();
 ```
@@ -357,7 +357,7 @@ let result_js = result_py.toJs();
 result_py.destroy();
 ```
 
-If a function is indended to be used from JavaScript, you can use {any}`to_js <pyodide.to_js>` on the return value. This prevents the return value from
+If a function is intended to be used from JavaScript, you can use {any}`to_js <pyodide.to_js>` on the return value. This prevents the return value from
 leaking without requiring the JavaScript code to explicitly destroy it. This is
 particularly important for callbacks.
 
@@ -437,7 +437,7 @@ from pyodide import create_proxy
 from js import document
 def my_callback():
     print("hi")
-proxy = document.create_proxy(my_callback)
+proxy = pyodide.create_proxy(my_callback)
 document.body.addEventListener("click", proxy)
 # ...
 # make sure to hold on to proxy
@@ -498,7 +498,7 @@ JavaScript. The data inside the buffer can be accessed via the
 API copies the buffer into JavaScript, whereas the `getBuffer` method allows low
 level access to the WASM memory backing the buffer. The `getBuffer` API is more
 powerful but requires care to use correctly. For simple use cases the `toJs` API
-should be prefered.
+should be preferred.
 
 If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
 it to a single `TypedArray`. However, in the case that the format of the buffer
@@ -598,7 +598,7 @@ try {
 
 ## Importing Objects
 
-It is possible to access objects in one languge from the global scope in the
+It is possible to access objects in one language from the global scope in the
 other language. It is also possible to create custom namespaces and access
 objects on the custom namespaces.
 

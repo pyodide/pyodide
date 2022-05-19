@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 # -- Project information -----------------------------------------------------
 
@@ -53,6 +54,9 @@ versionwarning_body_selector = "#main-content > div"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
+
+# Add modules to be mocked.
+mock_modules = ["ruamel.yaml", "tomli"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -110,7 +114,7 @@ def delete_attrs(cls):
         if not name.startswith("_"):
             try:
                 delattr(cls, name)
-            except:
+            except Exception:
                 pass
 
 
@@ -137,6 +141,13 @@ if IN_READTHEDOCS:
     print(res)
 
 if IN_SPHINX:
+    # Compatibility shims. sphinx-js and sphinxcontrib-napoleon have not been updated for Python 3.10
+    import collections
+    from typing import Callable, Mapping
+
+    collections.Mapping = Mapping  # type: ignore[attr-defined]
+    collections.Callable = Callable  # type: ignore[attr-defined]
+
     base_dir = Path(__file__).resolve().parent.parent
     path_dirs = [
         str(base_dir),
@@ -147,7 +158,7 @@ if IN_SPHINX:
     ]
     sys.path = path_dirs + sys.path
 
-    import micropip  # noqa
+    import micropip  # noqa: F401
     import pyodide
 
     # We hacked it so that autodoc will look for submodules, but only if we import
@@ -183,3 +194,6 @@ if IN_SPHINX:
     delete_attrs(pyodide.webloop.WebLoop)
     delete_attrs(pyodide.webloop.WebLoopPolicy)
     delete_attrs(pyodide.console.PyodideConsole)
+
+    for module in mock_modules:
+        sys.modules[module] = mock.Mock()

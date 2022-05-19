@@ -14,43 +14,215 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Integrity of Pyodide packages are now verified before loading them. This is for now only
+  limited to browser environments. {pr}`2513`
+
+- {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
+
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517`
+
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477` and {pr}`2518`
+
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
+
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
+
+- {{ Enhancement }} We now put our built files into the `dist` directory rather
+  than the `build` directory. {pr}`2387`
+
+- {{ Enhancement }} `loadPyodide` no longer uses any global state, so it can be
+  used more than once in the same thread. This is recommended if a network
+  request causes a loading failure, if there is a fatal error, if you damage the
+  state of the runtime so badly that it is no longer usable, or for certain
+  testing purposes. It is not recommended for creating multiple execution
+  environments, for which you should use
+  `pyodide.runPython(code, { globals : some_dict})`;
+  {pr}`2391`
+
+- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+  {pr}`2423`
+
+- {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
+  `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
+  {pr}`2451`
+
+- {{ Feature }} Added `pyodide.run_js` API.
+  {pr}`2426`
+
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
+  {pr}`2455`
+
+- {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
+  translated to negative Python ints.
+  {pr}`2484`
+
+- {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
+
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and various other improvements.
+  {pr}`2510`
+
+- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
+  through `pyodide_test_runner`.
+  {pr}`2418`
+
+- {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
+  JavaScript object identity as a dictionary key.
+  {pr}`2515`
+
+- {{ Fix }} Fixed a bug with `toJs` when used with recursive structures and the
+  `dictConverter` argument.
+  {pr}`2533`
+
+- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`, `set_interval`,
+  `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
+  {pr}`2456`
+
+### micropip
+
+- {{ Fix }} micropip now correctly handles package names that include dashes
+  {pr}`2414`
+
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
+- {{ Enhancement }} {func}`micropip.install` now accepts a `deps` parameter.
+  If set to `False`, micropip will not install dependencies of the package.
+  {pr}`2433`
+
+- {{ Fix }} micropip now correctly compares packages with prerelease version
+  {pr}`2532`
+
+- {{ Enhancement }} {func}`micropip.install` now accepts a `pre` parameter.
+  If set to `True`, micropip will include pre-release and development versions.
+  {pr}`2542`
+
+- {{ Enhancement }} `micropip` was refactored to improve readability and ease of maintenance.
+  {pr}`2561`, {pr}`2563`, {pr}`2564`, {pr}`2565`, {pr}`2568`
+
+- {{ Enhancement }} Various error messages were fine tuned and improved.
+  {pr}`2562`, {pr}`2558`
+
+- {{ Enhancement }} `micropip` was adjusted to keep its state in the wheel
+  `.dist-info` directories which improves consistenency with the Python standard
+  library and other tools used to install packages.
+  {pr}`2572`
+
 ### Packages
 
-- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`,
-  boost-histogram {pr}`2174`
+- {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
 
-- Upgraded packages: distlib (0.3.4)
+- Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
+  on Chrome {pr}`2457`
 
-### Uncategorized
+- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
+  svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
+  ruamel, msprime {pr}`4138`.
 
-- {{ Update }} Upgraded pyb2d to 0.7.2.
-  {pr}`2117`
+## Version 0.20.0
 
-- {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
-  {pr}`2109`
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
 
-- {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
-  {pr}`2110`
+### CPython and stdlib
 
-- {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
-  rather than the emscripten `file_packager.py` format.
-  {pr}`2027`
+- {{ Update }} Pyodide now runs Python 3.10.2.
+  {pr}`2225`
 
-- {{Fix}} The "PyProxy has already been destroyed" error message has been
-  improved with some context information.
-  {pr}`2121`
+- {{ Enhancement }} All
+  `ctypes` tests pass now except for `test_callback_too_many_args` (and we have
+  a plan to fix `test_callback_too_many_args` upstream). `libffi-emscripten`
+  now also passes all libffi tests.
+  {pr}`2350`
+
+### Packages
+
+- {{Fix}} matplotlib now loads multiple fonts correctly {pr}`2271`
+
+- New packages: boost-histogram {pr}`2174`, cryptography v3.3.2 {pr}`2263`, the
+  standard library ssl module {pr}`2263`, python-solvespace v3.0.7,
+  lazy-object-proxy {pr}`2320`.
+
+- Many more scipy linking errors were fixed, mostly related to the Fortran f2c
+  ABI for string arguments. There are still some fatal errors in the Scipy test
+  suite, but none seem to be simple linker errors.
+  {pr}`2289`
+
+- Removed pyodide-interrupts. If you were using this for some reason, use
+  {any}`setInterruptBuffer <pyodide.setInterruptBuffer>` instead.
+  {pr}`2309`
+
+- Most included packages were updated to the latest version. See
+  {ref}`packages-in-pyodide` for a full list.
+
+### Type translations
 
 - {{Fix}} Python tracebacks now include Javascript frames when Python calls a
   Javascript function.
   {pr}`2123`
 
+- {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
+  and {any}`pyodide.toPy` which is used to process any object that doesn't have
+  a built-in conversion to Python. Also added a `default_converter` argument to
+  {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
+  {pr}`2170` and {pr}`2208`
+
+- {{ Enhancement }} Async Python functions called from Javascript now have the
+  resulting coroutine automatically scheduled. For instance, this makes it
+  possible to use an async Python function as a Javascript event handler.
+  {pr}`2319`
+
+### Javascript package
+
+- {{Enhancement}} It is no longer necessary to provide `indexURL` to
+  {any}`loadPyodide <globalThis.loadPyodide>`.
+  {pr}`2292`
+
+- {{ Breaking }} The `globals` argument to {any}`runPython <pyodide.runPython>`
+  and {any}`runPythonAsync <pyodide.runPythonAsync>` is now passed as a named
+  argument. The old usage still works with a deprecation warning.
+  {pr}`2300`
+
 - {{Enhancement}} The Javascript package was migrated to Typescript.
   {pr}`2130` and {pr}`2133`
 
-- {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
-  and {any}`pyodide.toPy` which is used to process any object that doesn't have
-  a built-in conversion to Python.
-  {pr}`2170`
+- {{Fix}} Fix importing pyodide with ESM syntax in a module type web worker.
+  {pr}`2220`
+
+- {{Enhancement}} When Pyodide is loaded as an ES6 module, no global
+  {any}`loadPyodide <globalThis.loadPyodide>` variable is created (instead, it
+  should be accessed as an attribute on the module).
+  {pr}`2249`
+
+- {{Fix}} The type `Py2JsResult` has been replaced with `any` which is more
+  accurate. For backwards compatibility, we still export `Py2JsResult` as an
+  alias for `any`.
+  {pr}`2277`
+
+- {{Fix}} Pyodide now loads correctly even if requirejs is included.
+  {pr}`2283`
+
+- {{ Enhancement }} Added robust handling for non-`Error` objects thrown by
+  Javascript code. This mostly should never happen since well behaved Javascript
+  code ought to throw errors. But it's better not to completely crash if it
+  throws something else.
+  {pr}`2294`
+
+### pyodide_build
+
+- {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
+  rather than the emscripten `file_packager.py` format.
+  {pr}`2027`
+
+- {{Enhancement}} Pyodide now uses `pypa/build` to build packages. We (mostly)
+  use build isolation, so we can build packages that require conflicting
+  versions of setuptools or alternative build backends.
+  {pr}`2272`
 
 - {{Enhancement}} Most pure Python packages were switched to use the wheels
   directly from PyPI rather than rebuilding them.
@@ -62,9 +234,77 @@ substitutions:
   way.
   {pr}`2178`
 
+- {{Breaking}} Removed the `skip-host` key from the `meta.yaml` format. If
+  needed, install a host copy of the package with pip instead.
+  {pr}`2256`
+
+### Uncategorized
+
+- {{ Enhancement }} The interrupt buffer can be used to raise all 64 signals
+  now, not just `SIGINT`. Write a number between `1<= signum <= 64` into the
+  interrupt buffer to trigger the corresponding signal. By default everything
+  but `SIGINT` will be ignored. Any value written into the interrupt buffer
+  outside of the range from 1 to 64 will be silently discarded.
+  {pr}`2301`
+
+- {{ Enhancement }} Updated to Emscripten 2.0.27.
+  {pr}`2295`
+
+- {{ Breaking }} The `extractDir` argument to
+  {any}`unpackArchive <pyodide.unpackArchive>` is now passed as a named argument.
+  The old usage still works with a deprecation warning.
+  {pr}`2300`
+
+- {{ Enhancement }} Support ANSI escape codes in the Pyodide console.
+  {pr}`2345`
+
+- {{ Fix }} `pyodide_build` can now be installed in non-editable ways.
+  {pr}`2351`
+
+### List of contributors
+
+Boris Feld, Christian Staudt, Gabriel Fougeron, Gyeongjae Choi, Henry Schreiner,
+Hood Chatham, Jo Bovy, Karthikeyan Singaravelan, Leo Psidom, Liumeo, Luka
+Mamukashvili, Madhur Tandon, Paul Korzhyk, Roman Yurchak, Seungmin Kim, Thorsten
+Beier, Tom White, and Will Lachance
+
+## Version 0.19.1
+
+_February 19, 2022_
+
+### Packages
+
+- New packages: sqlalchemy {pr}`2112`, pydantic {pr}`2117`, wrapt {pr}`2165`
+
+- {{ Update }} Upgraded packages: pyb2d (0.7.2), {pr}`2117`
+
+- {{Fix}} A fatal error in `scipy.stats.binom.ppf` has been fixed.
+  {pr}`2109`
+
+- {{Fix}} Type signature mismatches in some numpy comparators have been fixed.
+  {pr}`2110`
+
+### Type translations
+
+- {{Fix}} The "PyProxy has already been destroyed" error message has been
+  improved with some context information.
+  {pr}`2121`
+
+### REPL
+
+- {{Enhancement}} Pressing TAB in REPL no longer triggers completion when input
+  is whitespace. {pr}`2125`
+
+### List of contributors
+
+Christian Staudt, Gyeongjae Choi, Hood Chatham, Liumeo, Paul Korzhyk, Roman
+Yurchak, Seungmin Kim, Thorsten Beier
+
 ## Version 0.19.0
 
 _January 10, 2021_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.19-release/)
 
 ### Python package
 
@@ -495,7 +735,7 @@ _August 3rd, 2021_
 
 ### List of contributors
 
-Albertas Gimbutas, Andreas Klostermann, arfy slowy, daoxian,
+Albertas Gimbutas, Andreas Klostermann, Arfy Slowy, daoxian,
 Devin Neal, fuyutarow, Grimmer, Guido Zuidhof, Gyeongjae Choi, Hood
 Chatham, Ian Clester, Itay Dafna, Jeremy Tuloup, jmsmdy, LinasNas, Madhur
 Tandon, Michael Christensen, Nicholas Bollweg, Ondřej Staněk, Paul m. p. P,
@@ -624,7 +864,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   {pr}`1083`
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a
-  `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running
+  `SharedArrayBuffer` to be the keyboard interrupt buffer. If Pyodide is running
   on a webworker, the main thread can signal to the webworker that it should
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   {pr}`1148` and {pr}`1173`
@@ -649,7 +889,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 
 ### Build system
 
-- {{ Enhancement }} Updated to latest emscripten 2.0.13 with the updstream LLVM backend
+- {{ Enhancement }} Updated to latest emscripten 2.0.13 with the upstream LLVM backend
   {pr}`1102`
 - {{ API }} Use upstream `file_packager.py`, and stop checking package abi versions.
   The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is
@@ -789,7 +1029,7 @@ by 0.16.1 with identical contents.
 
 ### Other improvements
 
-- Modifiy MEMFS timestamp handling to support better caching. This in
+- Modify MEMFS timestamp handling to support better caching. This in
   particular allows to import newly created Python modules without invalidating
   import caches {pr}`893`
 
@@ -927,3 +1167,10 @@ _Mar 21, 2019_
   have been removed.
 
 - The `run_docker` script can now be configured with environment variables.
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   deprecation-timeline.md
+```

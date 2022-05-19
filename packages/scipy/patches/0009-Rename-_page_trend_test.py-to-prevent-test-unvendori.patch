@@ -1,0 +1,33 @@
+From 2597c12ed2438518e826fbb6721cc266af30de2f Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 26 Dec 2021 07:34:40 -0800
+Subject: [PATCH 09/14] Rename _page_trend_test.py to prevent test unvendoring
+
+unvendor_tests will unvendor any file that ends in _test.py.
+Prevent that by changing the name of this file.
+---
+ scipy/stats/__init__.py                                   | 2 +-
+ scipy/stats/{_page_trend_test.py => _page_trend_test_.py} | 0
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+ rename scipy/stats/{_page_trend_test.py => _page_trend_test_.py} (100%)
+
+diff --git a/scipy/stats/__init__.py b/scipy/stats/__init__.py
+index f416e1a4f..2268caa3e 100644
+--- a/scipy/stats/__init__.py
++++ b/scipy/stats/__init__.py
+@@ -466,7 +466,7 @@ from ._bootstrap import bootstrap, BootstrapDegenerateDistributionWarning
+ from ._entropy import *
+ from ._hypotests import *
+ from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
+-from ._page_trend_test import page_trend_test
++from ._page_trend_test_ import page_trend_test
+ from ._mannwhitneyu import mannwhitneyu
+ 
+ # Deprecated namespaces, to be removed in v2.0.0
+diff --git a/scipy/stats/_page_trend_test.py b/scipy/stats/_page_trend_test_.py
+similarity index 100%
+rename from scipy/stats/_page_trend_test.py
+rename to scipy/stats/_page_trend_test_.py
+-- 
+2.25.1
+

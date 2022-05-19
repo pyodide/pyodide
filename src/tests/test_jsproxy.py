@@ -1,7 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
-
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):
@@ -730,7 +729,7 @@ def test_object_entries_keys_values(selenium):
 
 
 def test_mixins_feature_presence(selenium):
-    result = selenium.run_js(
+    selenium.run_js(
         """
         let fields = [
             [{ [Symbol.iterator](){} }, "__iter__"],
@@ -1082,7 +1081,7 @@ def test_buffer_assign_back(selenium):
 
 def test_buffer_conversions(selenium):
     selenium.run_js(
-        f"""
+        """
         self.s = "abcဴ";
         self.jsbytes = new TextEncoder().encode(s);
         pyodide.runPython(`
@@ -1155,3 +1154,13 @@ def test_memory_leaks(selenium):
         `);
         """
     )
+
+
+@run_in_pyodide
+def test_js_id():
+    from js import eval as run_js
+
+    [x, y, z] = run_js("let a = {}; let b = {}; [a, a, b]")
+    assert x.js_id == y.js_id
+    assert x is not y
+    assert x.js_id != z.js_id

@@ -71,7 +71,7 @@ class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
         data = io.BytesIO()
         try:
             self.canvas.figure.savefig(data, format=format)
-        except Exception as e:
+        except Exception:
             raise
         element.setAttribute(
             "href",

@@ -101,8 +101,11 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
-#ifdef HW_TRACE_REFS
-  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#ifdef DEBUG_F
+  extern bool tracerefs;
+  if (tracerefs) {
+    printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+  }
 #endif
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
@@ -131,6 +134,32 @@ JsProxy_typeof(PyObject* self, void* _unused)
   PyObject* result = js2python(idval);
   hiwire_decref(idval);
   return result;
+}
+
+static PyObject*
+JsProxy_js_id(PyObject* self, void* _unused)
+{
+  PyObject* result = NULL;
+
+  JsRef idval = JsProxy_REF(self);
+  int x[2] = { (int)Py_TYPE(self), (int)idval };
+  Py_hash_t result_c = _Py_HashBytes(x, 8);
+  FAIL_IF_MINUS_ONE(result_c);
+  result = PyLong_FromLong(result_c);
+finally:
+  return result;
+}
+
+static PyObject*
+JsProxy_js_id_private(PyObject* mod, PyObject* obj)
+{
+  if (!JsProxy_Check(obj)) {
+    PyErr_SetString(PyExc_TypeError, "Expected argument to be a JsProxy");
+    return NULL;
+  }
+
+  JsRef idval = JsProxy_REF(obj);
+  return PyLong_FromLong((int)idval);
 }
 
 /**
@@ -291,8 +320,7 @@ JsProxy_GetIter(PyObject* o)
 
 /**
  * next overload. Controlled by IS_ITERATOR.
- * TODO: Should add a similar send method for generator support.
- * Python 3.10 has a different way to handle this.
+ * TODO: Implement Py_am_send method for generator support
  */
 static PyObject*
 JsProxy_IterNext(PyObject* o)
@@ -708,8 +736,7 @@ JsProxy_toPy(PyObject* self,
   static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
   int depth = -1;
   PyObject* default_converter = NULL;
-  if (kwnames != NULL &&
-      !_PyArg_ParseStackAndKeywords(
+  if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
@@ -719,10 +746,10 @@ JsProxy_toPy(PyObject* self,
   }
   PyObject* result =
     js2python_convert(GET_JSREF(self), depth, default_converter_js);
-  if (default_converter_js != NULL) {
+  if (pyproxy_Check(default_converter_js)) {
     destroy_proxy(default_converter_js, NULL);
-    hiwire_decref(default_converter_js);
   }
+  hiwire_decref(default_converter_js);
   return result;
 }
 
@@ -970,6 +997,7 @@ static PyNumberMethods JsProxy_NumberMethods = {
 // clang-format on
 
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
+                                        { "js_id", .get = JsProxy_js_id },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
@@ -992,8 +1020,11 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
-#ifdef HW_TRACE_REFS
-  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#ifdef DEBUG_F
+  extern bool tracerefs;
+  if (tracerefs) {
+    printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+  }
 #endif
   return 0;
 }
@@ -1638,7 +1669,7 @@ finally:
 }
 
 static PyObject*
-JsBuffer_tomemoryview(PyObject* buffer)
+JsBuffer_tomemoryview(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoMemoryView(
@@ -1652,7 +1683,7 @@ static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_tobytes(PyObject* buffer)
+JsBuffer_tobytes(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoBytes(self->js, self->byteLength);
@@ -1935,8 +1966,8 @@ JsProxy_create_subtype(int flags)
   FAIL_IF_NULL(result);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
-    // member __vectorcall_offset__ but it doesn't work in 3.8. I like this
-    // approach better.
+    // member __vectorcall_offset__, we might consider switching to using that
+    // approach.
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }
@@ -2090,6 +2121,15 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
+static PyMethodDef methods[] = {
+  {
+    "hiwire_id",
+    JsProxy_js_id_private,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
+
 int
 JsProxy_init(PyObject* core_module)
 {
@@ -2131,6 +2171,8 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
 
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
+
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
 
@@ -2140,6 +2182,9 @@ JsProxy_init(PyObject* core_module)
 
   JsProxy_TypeDict = PyDict_New();
   FAIL_IF_NULL(JsProxy_TypeDict);
+
+  FAIL_IF_MINUS_ONE(
+    PyModule_AddObject(core_module, "jsproxy_typedict", JsProxy_TypeDict));
 
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;

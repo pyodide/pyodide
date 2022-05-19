@@ -787,7 +787,7 @@ def test_fatal_error(selenium_standalone):
                     // pass
                 } finally {
                     if(!fatal_error){
-                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                        throw new Error(`No fatal error occurred: ${func.toString().slice(6)}`);
                     }
                 }
             }
@@ -911,5 +911,24 @@ def test_pyproxy_borrow(selenium):
         assert(() => Tcopy.f() === 7);
         assertThrows(() => T.f(), "Error", "automatically destroyed in the process of destroying the proxy it was borrowed from");
         Tcopy.destroy();
+        """
+    )
+
+
+def test_coroutine_scheduling(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            async def f():
+                global x
+                print('hi!')
+                x += 1
+            f
+        `);
+        setTimeout(f, 100);
+        await sleep(200);
+        assert(() => pyodide.globals.get('x') === 1);
+        f.destroy();
         """
     )

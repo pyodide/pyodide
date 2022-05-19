@@ -47,6 +47,7 @@ JS_FILE(js2python_init, () => {
     if (value < 0) {
       value = -value;
     }
+    value <<= BigInt(1);
     while (value) {
       length++;
       value >>= BigInt(32);
@@ -75,7 +76,7 @@ JS_FILE(js2python_init, () => {
    * If `value` is of any other type then `undefined` is returned.
    *
    * If `value` is one of those types but an error is raised during conversion,
-   * we throw a PropagateError to propogate the error out to C. This causes
+   * we throw a PropagateError to propagate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
   function js2python_convertImmutable(value) {
@@ -312,9 +313,6 @@ JS_FILE(js2python_init, () => {
         context.converter,
         context.cacheConversion
       );
-      if (result_js === undefined) {
-        return _JsProxy_create(id);
-      }
       result = js2python_convertImmutable(result_js);
       if (API.isPyProxy(result_js)) {
         result_js.destroy();

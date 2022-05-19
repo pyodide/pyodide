@@ -21,7 +21,12 @@ from matplotlib.transforms import Affine2D
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
-from js import FontFace, ImageData, XMLHttpRequest, document, window
+try:
+    from js import FontFace, ImageData, document
+except ImportError:
+    raise ImportError(
+        "html5_canvas_backend is only supported in the browser in the main thread"
+    )
 from pyodide import create_proxy
 
 _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
@@ -29,10 +34,7 @@ _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
 # The URLs of fonts that have already been loaded into the browser
 _font_set = set()
 
-if hasattr(window, "testing"):
-    _base_fonts_url = "/fonts/"
-else:
-    _base_fonts_url = "/pyodide/fonts/"
+_base_fonts_url = "/fonts/"
 
 interactive(True)
 
@@ -41,19 +43,10 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
 
-        # A count of the fonts loaded. To support testing
-        window.font_counter = 0
-
     def create_root_element(self):
         root_element = document.createElement("div")
         document.body.appendChild(root_element)
         return root_element
-
-    def get_dpi_ratio(self, context):
-        if hasattr(window, "testing"):
-            return 2.0
-        else:
-            return super().get_dpi_ratio(context)
 
     def draw(self):
         # Render the figure using custom renderer
@@ -69,6 +62,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             ctx = canvas.getContext("2d")
             renderer = RendererHTMLCanvas(ctx, width, height, self.figure.dpi, self)
             self.figure.draw(renderer)
+        except Exception as e:
+            raise RuntimeError("Rendering failed") from e
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
@@ -86,28 +81,6 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         img_URL = canvas.toDataURL("image/png")[21:]
         canvas_base64 = base64.b64decode(img_URL)
         return np.asarray(Image.open(io.BytesIO(canvas_base64)))
-
-    def compare_reference_image(self, url, threshold):
-        canvas_data = self.get_pixel_data()
-
-        def _get_url_async(url, threshold):
-            req = XMLHttpRequest.new()
-            req.open("GET", url, True)
-            req.responseType = "arraybuffer"
-
-            def callback(e):
-                if req.readyState == 4:
-                    ref_data = np.asarray(Image.open(io.BytesIO(req.response.to_py())))
-                    mean_deviation = np.mean(np.abs(canvas_data - ref_data))
-                    window.deviation = mean_deviation
-
-                    # converts a `numpy._bool` type explicitly to `bool`
-                    window.result = bool(mean_deviation <= threshold)
-
-            req.onreadystatechange = callback
-            req.send(None)
-
-        _get_url_async(url, threshold)
 
     def print_png(
         self, filename_or_obj, *args, metadata=None, pil_kwargs=None, **kwargs
@@ -209,8 +182,8 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
         if dash_list is None:
             self.renderer.ctx.setLineDash([])
         else:
-            dl = np.asarray(dash_list)
-            dl = list(self.renderer.points_to_pixels(dl))
+            dln = np.asarray(dash_list)
+            dl = list(self.renderer.points_to_pixels(dln))
             self.renderer.ctx.setLineDash(dl)
 
     def set_joinstyle(self, js):
@@ -238,6 +211,9 @@ class RendererHTMLCanvas(RendererBase):
         self.dpi = dpi
         self.fontd = maxdict(50)
         self.mathtext_parser = MathTextParser("bitmap")
+
+        # Keep the state of fontfaces that are loading
+        self.fonts_loading = {}
 
     def new_gc(self):
         return GraphicsContextHTMLCanvas(renderer=self)
@@ -356,9 +332,12 @@ class RendererHTMLCanvas(RendererBase):
         return font, font_file_name
 
     def get_text_width_height_descent(self, s, prop, ismath):
+        w: float
+        h: float
         if ismath:
             image, d = self.mathtext_parser.parse(s, self.dpi, prop)
-            w, h = image.get_width(), image.get_height()
+            image_arr = np.asarray(image)
+            h, w = image_arr.shape
         else:
             font, _ = self._get_font(prop)
             font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
@@ -383,15 +362,20 @@ class RendererHTMLCanvas(RendererBase):
         if angle != 0:
             self.ctx.restore()
 
-    def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
-        def _load_font_into_web(loaded_face):
-            document.fonts.add(loaded_face)
-            window.font_counter += 1
-            self.fig.draw_idle()
+    def load_font_into_web(self, loaded_face, font_url):
+        fontface = loaded_face.result()
+        document.fonts.add(fontface)
+        self.fonts_loading.pop(font_url, None)
 
+        # Redraw figure after font has loaded
+        self.fig.draw()
+        return fontface
+
+    def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
             return
+
         angle = math.radians(angle)
         width, height, descent = self.get_text_width_height_descent(s, prop, ismath)
         x -= math.sin(angle) * descent
@@ -414,7 +398,12 @@ class RendererHTMLCanvas(RendererBase):
         if font_face_arguments not in _font_set:
             _font_set.add(font_face_arguments)
             f = FontFace.new(*font_face_arguments)
-            f.load().then(_load_font_into_web)
+
+            font_url = font_face_arguments[1]
+            self.fonts_loading[font_url] = f
+            f.load().add_done_callback(
+                lambda result: self.load_font_into_web(result, font_url)
+            )
 
         font_property_string = "{} {} {:.3g}px {}, {}".format(
             prop.get_style(),

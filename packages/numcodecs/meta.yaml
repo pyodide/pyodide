@@ -8,6 +8,9 @@ source:
     - patches/fixblosc.patch
     - patches/fixsetup.patch
     - patches/fixzlib.patch
+build:
+  script: |
+    rm numcodecs/blosc.c
 requirements:
   run:
     - numpy
