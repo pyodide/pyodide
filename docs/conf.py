@@ -15,7 +15,7 @@ from unittest import mock
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.20.0"
+pyodide_version = "0.21.0"
 
 if any([(dev_ver in pyodide_version) for dev_ver in ("dev", "a", "b", "rc")]):
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
