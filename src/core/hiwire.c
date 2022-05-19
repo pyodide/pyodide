@@ -712,7 +712,7 @@ EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
   return Hiwire.new_value(Hiwire.get_value(idobj).toString());
 });
 
-EM_JS_REF(JsRef, hiwire_typeof, (JsRef idobj), {
+EM_JS(JsRef, hiwire_typeof, (JsRef idobj), {
   return Hiwire.new_value(typeof Hiwire.get_value(idobj));
 });
 
