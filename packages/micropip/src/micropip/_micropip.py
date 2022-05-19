@@ -281,7 +281,6 @@ class Transaction:
 
         for e in req.extras:
             self.ctx_extras.append({"extra": e})
-        print("self_ctx_extras: ", self.ctx_extras)
 
         if self.pre:
             req.specifier.prereleases = True
@@ -289,13 +288,14 @@ class Transaction:
         if req.marker:
             # handle environment markers
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
-            found = False
-            for ctx_extra in self.ctx_extras:
-                self.ctx.update(ctx_extra)
-                if req.marker.evaluate(self.ctx):
-                    found = True
-                    break
-            if not found:
+            def eval_marker(e: dict[str, str]) -> bool:
+                self.ctx.update(e)
+                # mypy stuff
+                if req.marker:
+                    return req.marker.evaluate(self.ctx)
+                return False
+
+            if not any([eval_marker(e) for e in self.ctx_extras]):
                 return
         # Is some version of this package is already installed?
 
@@ -440,7 +440,6 @@ async def install(
     transaction = Transaction(
         ctx=ctx,
         ctx_extras=[],
-        locked=copy.deepcopy(INSTALLED_PACKAGES),
         keep_going=keep_going,
         deps=deps,
         pre=pre,
