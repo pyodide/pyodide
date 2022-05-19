@@ -158,10 +158,10 @@ class WheelInfo:
         self.write_dist_info("PYODIDE_URL", self.url)
         self.write_dist_info("PYODIDE_SHA256", _generate_package_hash(self.data))
         self.write_dist_info("INSTALLER", "micropip")
-        assert self._requires
-        self.write_dist_info(
-            "PYODIDE_REQUIRES", json.dumps([x.name for x in self._requires])
-        )
+        if self._requires:
+            self.write_dist_info(
+                "PYODIDE_REQUIRES", json.dumps([x.name for x in self._requires])
+            )
 
     async def install(self):
         url = self.url
@@ -491,8 +491,10 @@ def freeze():
         assert sha256
         imports = (dist.read_text("top_level.txt") or "").split()
         requires = dist.read_text("PYODIDE_REQUIRES")
-        assert requires
-        depends = json.loads(requires)
+        if requires:
+            depends = json.loads(requires)
+        else:
+            depends = []
 
         pkg_entry: dict[str, Any] = dict(
             name=name,
