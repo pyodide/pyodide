@@ -6,15 +6,15 @@ from itertools import chain
 from pathlib import Path
 from typing import Mapping
 
-from build import BuildBackendException, ProjectBuilder  # type: ignore[import]
-from build.__main__ import (  # type: ignore[import]
+from build import BuildBackendException, ProjectBuilder
+from build.__main__ import (
     _STYLES,
     _error,
     _handle_build_error,
     _IsolatedEnvBuilder,
     _ProjectBuilder,
 )
-from build.env import IsolatedEnv  # type: ignore[import]
+from build.env import IsolatedEnv
 from packaging.requirements import Requirement
 
 from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
@@ -23,7 +23,7 @@ from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
 def symlink_unisolated_packages(env: IsolatedEnv):
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
-    env_site_packages = Path(env._path) / site_packages_path
+    env_site_packages = Path(env.path) / site_packages_path  # type: ignore[attr-defined]
     host_site_packages = Path(get_hostsitepackages())
     for name in get_unisolated_packages():
         for path in chain(
@@ -97,7 +97,7 @@ def _build_in_isolated_env(
 def build(build_env: Mapping[str, str]):
     srcdir = Path.cwd()
     outdir = srcdir / "dist"
-    builder = _ProjectBuilder(srcdir)
+    builder = _ProjectBuilder(str(srcdir))
     distribution = "wheel"
     try:
         with _handle_build_error():
