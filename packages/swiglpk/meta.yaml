@@ -5,11 +5,11 @@ package:
 source:
   sha256: 32f9fa0a082d80e32234f060704b6d7f07843a7aefffa5008b315b0970bab199
   url: https://github.com/biosustain/swiglpk/archive/refs/tags/5.0.3.tar.gz
-  extras:
-    - [../glpk/build/glpk-5.0/src/glpk.h, ./glpk.h]
 
 build:
-  ldflags: -L$(PYODIDE_ROOT)/packages/glpk/build/glpk-5.0/src/.libs/
+  script: |
+    export GLPK_HEADER_PATH="${WASM_LIBRARY_DIR}/include/"
+  ldflags: -L$(WASM_LIBRARY_DIR)/lib
 
 requirements:
   run:

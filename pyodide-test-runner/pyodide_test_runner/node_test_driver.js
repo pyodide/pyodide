@@ -5,11 +5,14 @@ const util = require("util");
 const node_fetch = require("node-fetch");
 const base64 = require("base-64");
 
-let { loadPyodide } = require("pyodide");
-let base_url = process.argv[2];
+let baseUrl = process.argv[2];
+let distDir = process.argv[3];
+
+let { loadPyodide } = require(`${distDir}/pyodide`);
+
 // node requires full paths.
 function fetch(path) {
-  return node_fetch(new URL(path, base_url).toString());
+  return node_fetch(new URL(path, baseUrl).toString());
 }
 
 const context = {
@@ -24,6 +27,10 @@ const context = {
   URL,
   atob: base64.decode,
   btoa: base64.encode,
+  clearInterval,
+  clearTimeout,
+  setInterval,
+  setTimeout,
 };
 vm.createContext(context);
 vm.runInContext("globalThis.self = globalThis;", context);

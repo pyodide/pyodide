@@ -10,8 +10,7 @@ source:
   patches:
     - patches/libffi-config.patch
 build:
-  script: |
-    pip install -t $HOSTSITEPACKAGES cffi==$PKG_VERSION
+  cross-build-env: true
 test:
   imports:
     - cffi

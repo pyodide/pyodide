@@ -7,8 +7,13 @@ from pathlib import Path
 from time import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[1] / "pyodide-test-runner"))
 
-import conftest  # noqa: E402
+from pyodide_test_runner import (  # noqa: E402
+    ChromeWrapper,
+    FirefoxWrapper,
+    spawn_web_server,
+)
 
 SKIP = {"fft", "hyantes"}
 
@@ -150,6 +155,11 @@ def parse_args(benchmarks):
         type=int,
         help="Browser timeout(sec) for each benchmark (default: %(default)s)",
     )
+    parser.add_argument(
+        "--dist-dir",
+        default=str(Path(__file__).parents[1] / "dist"),
+        help="Pyodide dist directory (default: %(default)s)",
+    )
 
     return parser.parse_args()
 
@@ -171,11 +181,11 @@ def main():
     results = {}
     selenium_backends = {}
     browser_cls = [
-        ("firefox", conftest.FirefoxWrapper),
-        ("chrome", conftest.ChromeWrapper),
+        ("firefox", FirefoxWrapper),
+        ("chrome", ChromeWrapper),
     ]
 
-    with conftest.spawn_web_server() as (hostname, port, log_path):
+    with spawn_web_server(args.dist_dir) as (hostname, port, log_path):
 
         # selenium initialization time
         result = {"native": float("NaN")}

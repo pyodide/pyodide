@@ -9,6 +9,6 @@ source:
 build:
   library: true
   script: |
-    mkdir build && cd build && emcmake cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=./lib ../
+    mkdir build && cd build && emcmake cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} ../
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

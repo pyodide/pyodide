@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from conftest import ROOT_PATH, _package_is_built
+from conftest import ROOT_PATH, package_is_built
 from pyodide_build.io import parse_package_config
 
 PKG_DIR = ROOT_PATH / "packages"
@@ -44,7 +44,7 @@ def test_parse_package(name):
 @pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    if not _package_is_built(name):
+    if not package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"

@@ -162,17 +162,21 @@ async function downloadPackage(
   name: string,
   channel: string
 ): Promise<Uint8Array> {
-  let file_name;
+  let file_name, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.packages[name].file_name;
+    file_sub_resource_hash = API.package_loader.sub_resource_hash(
+      API.packages[name].sha256
+    );
   } else {
     file_name = channel;
+    file_sub_resource_hash = undefined;
   }
   try {
-    return await _loadBinaryFile(baseURL, file_name);
+    return await _loadBinaryFile(baseURL, file_name, file_sub_resource_hash);
   } catch (e) {
     if (!IN_NODE) {
       throw e;
@@ -197,7 +201,11 @@ async function downloadPackage(
  * @param buffer The binary data returned by downloadPkgBuffer
  * @private
  */
-async function installPackage(name: string, buffer: Uint8Array) {
+async function installPackage(
+  name: string,
+  buffer: Uint8Array,
+  channel: string
+) {
   let pkg = API.packages[name];
   if (!pkg) {
     pkg = {
@@ -215,6 +223,8 @@ async function installPackage(name: string, buffer: Uint8Array) {
     filename,
     target: pkg.install_dir,
     calculate_dynlibs: true,
+    installer: "pyodide.loadPackage",
+    source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
@@ -395,7 +405,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoadShared) {
       sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer);
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })
@@ -409,7 +419,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoad) {
       packageInstallPromises[name] = packageLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer);
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })

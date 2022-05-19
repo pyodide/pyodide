@@ -3,11 +3,11 @@ import sys
 import time
 
 import pytest
+from pyodide_test_runner import run_in_pyodide
+from pyodide_test_runner.fixture import selenium_common
 
-from conftest import selenium_common
 from pyodide import CodeRunner, console  # noqa: E402
 from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
-from pyodide_build.testing import run_in_pyodide
 
 
 def test_command_compiler():
@@ -443,7 +443,7 @@ def test_console_html(console_html_fixture):
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
-    assert long_output[2] == "[[;orange;]<long output truncated>]"
+    assert long_output[2] == "<long output truncated>"
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
