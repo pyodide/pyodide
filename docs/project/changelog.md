@@ -61,6 +61,9 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null` constructor.
+  {pr}`2520`
+
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
 
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion

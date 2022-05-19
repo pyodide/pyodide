@@ -210,6 +210,7 @@ dist/test.tar: $(CPYTHONLIB) node_modules/.installed
 	for testname in $(TEST_EXTENSIONS); do \
 		cd $(CPYTHONBUILD) && \
 		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
+		rm -f $(CPYTHONLIB)/$$testname && \
 		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
 	done
 
