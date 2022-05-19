@@ -148,8 +148,7 @@ dist/webworker_dev.js: src/templates/webworker.js
 
 
 update_base_url: \
-	dist/console.html \
-	dist/webworker.js
+	dist/console.html
 
 
 
