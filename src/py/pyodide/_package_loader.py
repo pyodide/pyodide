@@ -220,7 +220,7 @@ def set_wheel_installer(
     target_dir: Path,
     installer: str | None,
     source: str | None,
-) -> Path:
+):
     """Record the installer and source of a wheel into the `dist-info`
     directory.
 
@@ -260,7 +260,6 @@ def set_wheel_installer(
         (dist_info / "INSTALLER").write_text(installer)
     if source:
         (dist_info / "PYODIDE_SOURCE").write_text(source)
-    return dist_info
 
 
 def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
