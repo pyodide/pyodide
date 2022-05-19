@@ -102,7 +102,7 @@ The tests should go in one or more files like
 `test_<package-name>.py`. The tests should look like:
 
 ```py
-from pyodide_build import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide(packages=["<package-name>"])
 def test_mytestname():
@@ -115,7 +115,7 @@ If you want to run your package's full pytest test suite and your package
 vendors tests you can do it like:
 
 ```py
-from pyodide_build import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide(packages=["<package-name>-tests", "pytest"])
 def test_mytestname():
