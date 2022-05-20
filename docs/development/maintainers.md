@@ -12,26 +12,25 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 ### Making a major release
 
-1. Set the version in:
+1. Bump versions.
 
-   - `src/js/package.json`,
-   - `docs/project/about.md` (the Zenodo citation),
-   - `docs/development/building-from-sources.md`,
-   - `docs/usage/downloading-and-deploying.md`,
-   - Bump version in source code files by running `bump2version` command, for example,
+   From the root directory of the repository,
 
-     ```bash
-     bump2version minor
-     ```
+   ```bash
+   pip install bump2version
+   bump2version minor  # This will bump Python versions
+   cd src/js; npm version --no-git-tag-version minor; cd -  # This will bump JS versions
+   ```
 
-     check that the diff is correct with `git diff` before committing.
+   check that the diff is correct with `git diff` before committing.
 
    After this, try using `ripgrep` to make sure there are no extra old versions
    lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
 
-2. Make sure the change log is up-to-date.
+2. Make sure the change log and deprecation timeline is up-to-date.
 
    - Indicate the release date in the change log.
+   - Make sure that entries in the deprecation timeline are correct.
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
      ```bash
@@ -75,8 +74,15 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
-6. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
-   the next version specified by Semantic Versioning.
+6. Revert Step 1. and increment the version to the next version
+   specified by Semantic Versioning. You will often want to use
+   `dev` version.
+
+   ```sh
+   # After reverting Step 1
+   bump2version --new-version "0.22.0.dev0" prerel  # Set --new-version correctly
+   cd src/js; npm version preminor --preid dev --no-git-tag-version; cd -
+   ```
 
 7. Update this file with any relevant changes.
 
@@ -102,7 +108,7 @@ This can be done with either,
   ```
   and indicate which commits to take from `main` in the UI.
 
-Then follow steps 2, 3, and 6 from {ref}`making-major-release`.
+Then follow steps 1, 2, 3, and 6 from {ref}`making-major-release`.
 
 ### Making an alpha release
 
