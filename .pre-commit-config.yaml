@@ -58,6 +58,7 @@ repos:
           - types-pyyaml
           - types-setuptools
           - numpy
+          - build
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
