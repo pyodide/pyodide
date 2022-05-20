@@ -2,7 +2,6 @@
 
 PYODIDE_IMAGE_REPO="pyodide"
 PYODIDE_IMAGE_TAG="20220504-py310-chrome101-firefox100"
-PYODIDE_PREBUILT_IMAGE_TAG="0.21.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
@@ -62,7 +61,15 @@ do
           echo "WARNING: will use the env var PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE},
           the flag --pre-built has no effect"
         fi
-        DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide:${PYODIDE_PREBUILT_IMAGE_TAG}"
+        LATEST_PREBUILT_DOCKER_IMAGE_TAG=$(wget -q \
+          https://registry.hub.docker.com/v1/repositories/pyodide/pyodide/tags -O - |
+          sed -e 's/[][]//g' -e 's/"//g' -e 's/ //g' |
+          tr '}' '\n'  |
+          awk -F: '{print $3}'|
+          tac |
+          head -n 1
+        )
+        DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide:${LATEST_PREBUILT_DOCKER_IMAGE_TAG}"
         shift
       ;;
       -p|--port)
