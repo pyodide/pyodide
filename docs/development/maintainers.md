@@ -12,13 +12,11 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 ### Making a major release
 
-1. Bump versions.
-
-   From the root directory of the repository,
+1. From the root directory of the repository,
 
    ```bash
    pip install bump2version
-   bump2version minor  # This will bump Python versions
+   bump2version --new-version "<version-string>" minor  # This will bump Python versions
    cd src/js; npm version --no-git-tag-version minor; cd -  # This will bump JS versions
    ```
 
@@ -27,10 +25,9 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    After this, try using `ripgrep` to make sure there are no extra old versions
    lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
 
-2. Make sure the change log and deprecation timeline is up-to-date.
+2. Make sure the change log is up-to-date.
 
    - Indicate the release date in the change log.
-   - Make sure that entries in the deprecation timeline are correct.
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
      ```bash
@@ -74,14 +71,13 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
-6. Revert Step 1. and increment the version to the next version
-   specified by Semantic Versioning. You will often want to use
-   `dev` version.
+6. Increment the version to the next version
+   specified by Semantic Versioning. Set `dev` version if needed.
 
    ```sh
-   # After reverting Step 1
-   bump2version --new-version "0.22.0.dev0" prerel  # Set --new-version correctly
-   cd src/js; npm version preminor --preid dev --no-git-tag-version; cd -
+   # For example, if you just released 0.22.0, then set the version to 0.22.1.dev0
+   bump2version --new-version "0.22.1.dev0" minor
+   cd src/js; npm version --no-git-tag-version --preid dev prepatch; cd -
    ```
 
 7. Update this file with any relevant changes.
@@ -108,13 +104,13 @@ This can be done with either,
   ```
   and indicate which commits to take from `main` in the UI.
 
-Then follow steps 1, 2, 3, and 6 from {ref}`making-major-release`.
+Then follow steps 1, 2, 5 and 6 from {ref}`making-major-release`.
 
 ### Making an alpha release
 
-Follow steps 2, 6, 7, and 9 from {ref}`making-major-release`. Name the first
-alpha release `x.x.xa1` and in subsequent alphas increment the final number. For
-the npm package the alpha should have version in the format `x.x.x-alpha.1`. For
+Follow steps 1, 5, and 6 from {ref}`making-major-release`. Name the first
+alpha release `x.x.xa0` and in subsequent alphas increment the final number. For
+the npm package the alpha should have version in the format `x.x.x-alpha.0`. For
 the node package make sure to use `npm publish --tag next` to avoid setting the
 alpha version as the stable release.
 
