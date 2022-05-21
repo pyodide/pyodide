@@ -1,6 +1,7 @@
 from collections import namedtuple
 from pathlib import Path
 from time import sleep
+from typing import Any
 
 import pytest
 
@@ -56,7 +57,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, outputdir: Path, args: Any) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -87,7 +88,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
     class MockPackage(buildall.Package):
         n_builds = 0
 
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, outputdir: Path, args: Any) -> None:
             sleep(0.005)
             self.n_builds += 1
             # check that each build is only run once
@@ -108,7 +109,7 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, outputdir: Path, args: Any) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)

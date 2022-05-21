@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, TextIO
+from typing import Any, Generator, NoReturn, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -28,7 +28,7 @@ from .common import find_matching_wheels
 
 
 @contextmanager
-def chdir(new_dir: Path):
+def chdir(new_dir: Path) -> Generator[None, None, None]:
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
@@ -393,7 +393,7 @@ def compile(
     *,
     target_install_dir: str,
     host_install_dir: str,
-):
+) -> None:
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
     with compiler wrappers subbed in, which don't actually build the package but
@@ -594,7 +594,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
-def create_packaged_token(buildpath: Path):
+def create_packaged_token(buildpath: Path) -> None:
     (buildpath / ".packaged").write_text("\n")
 
 

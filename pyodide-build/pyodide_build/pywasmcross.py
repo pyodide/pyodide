@@ -53,7 +53,7 @@ ReplayArgs = namedtuple(
 )
 
 
-def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
+def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.

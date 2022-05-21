@@ -90,13 +90,6 @@ static struct PyModuleDef core_module_def = {
 int
 main(int argc, char** argv)
 {
-  EM_ASM({
-    // For some reason emscripten doesn't make UTF8ToString available on Module
-    // by default...
-    Module.UTF8ToString = UTF8ToString;
-    Module.wasmTable = wasmTable;
-  });
-
   // This exits and prints a message to stderr on failure,
   // no status code to check.
   initialize_python();
