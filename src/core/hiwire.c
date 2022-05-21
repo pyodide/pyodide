@@ -712,7 +712,7 @@ EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
   return Hiwire.new_value(Hiwire.get_value(idobj).toString());
 });
 
-EM_JS_REF(JsRef, hiwire_typeof, (JsRef idobj), {
+EM_JS(JsRef, hiwire_typeof, (JsRef idobj), {
   return Hiwire.new_value(typeof Hiwire.get_value(idobj));
 });
 
@@ -781,7 +781,7 @@ EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
 EM_JS(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
-  return ArrayBuffer.isView(jsobj) || jsobj.constructor.name === "ArrayBuffer";
+  return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");
   // clang-format on
 });
 

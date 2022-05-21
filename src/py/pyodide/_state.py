@@ -27,7 +27,7 @@ def save_state() -> dict:
     )
 
 
-def restore_state(state: dict):
+def restore_state(state: dict) -> int:
     """Restore the global state to a snapshot. The argument ``state`` should
     come from ``save_state``"""
     __main__.__dict__.clear()

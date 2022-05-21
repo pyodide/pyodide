@@ -48,7 +48,7 @@ def _find_wheel(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _find_dist(
-    pypi_metadata: dict[str, Any], source_types=list[Literal["wheel", "sdist"]]
+    pypi_metadata: dict[str, Any], source_types: list[Literal["wheel", "sdist"]]
 ) -> dict[str, Any]:
     """Find a wheel or sdist, as appropriate.
 
@@ -98,7 +98,7 @@ def make_package(
     package: str,
     version: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
-):
+) -> None:
     """
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
@@ -185,7 +185,7 @@ def update_package(
     version: str | None = None,
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
-):
+) -> None:
 
     yaml = YAML()
 

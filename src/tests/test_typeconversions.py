@@ -1425,6 +1425,17 @@ def test_buffer_format_string(selenium):
         assert array_name == expected_array_name
 
 
+@run_in_pyodide
+def test_object_with_null_constructor():
+    from unittest import TestCase
+
+    from js import eval as run_js
+
+    o = run_js("Object.create(null)")
+    with TestCase().assertRaises(TypeError):
+        repr(o)
+
+
 def test_dict_converter_cache(selenium):
     selenium.run_js(
         """
