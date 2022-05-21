@@ -4,7 +4,7 @@ import sys
 import traceback
 from itertools import chain
 from pathlib import Path
-from typing import Mapping
+from typing import Generator, Mapping
 
 from build import BuildBackendException, ProjectBuilder
 from build.__main__ import (
@@ -20,7 +20,7 @@ from packaging.requirements import Requirement
 from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
 
 
-def symlink_unisolated_packages(env: IsolatedEnv):
+def symlink_unisolated_packages(env: IsolatedEnv) -> None:
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env.path) / site_packages_path  # type: ignore[attr-defined]
@@ -43,7 +43,7 @@ def remove_unisolated_requirements(requires: set[str]) -> set[str]:
 
 
 @contextlib.contextmanager
-def replace_env(build_env: Mapping[str, str]):
+def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
     old_environ = dict(os.environ)
     os.environ.clear()
     os.environ.update(build_env)
@@ -54,7 +54,7 @@ def replace_env(build_env: Mapping[str, str]):
         os.environ.update(old_environ)
 
 
-def install_reqs(env: IsolatedEnv, reqs: set[str]):
+def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     env.install(remove_unisolated_requirements(reqs))
     # Some packages (numcodecs) don't declare cython as a build dependency and
     # only recythonize if it is present. We need them to always recythonize so

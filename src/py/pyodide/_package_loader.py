@@ -195,7 +195,7 @@ def unpack_buffer(
             return None
 
 
-def should_load_dynlib(path: str):
+def should_load_dynlib(path: str) -> bool:
     suffixes = Path(path).suffixes
     if not suffixes:
         return False
@@ -219,7 +219,7 @@ def set_wheel_installer(
     target_dir: Path,
     installer: str | None,
     source: str | None,
-):
+) -> None:
     """Record the installer and source of a wheel into the `dist-info`
     directory.
 

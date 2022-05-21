@@ -126,7 +126,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, outputdir: Path, args) -> None:
+    def build(self, outputdir: Path, args: Any) -> None:
 
         p = subprocess.run(
             [
@@ -246,14 +246,14 @@ def generate_dependency_graph(
     return pkg_map
 
 
-def job_priority(pkg: BasePackage):
+def job_priority(pkg: BasePackage) -> int:
     if pkg.name == "numpy":
         return 0
     else:
         return 1
 
 
-def print_with_progress_line(str, progress_line):
+def print_with_progress_line(str, progress_line) -> None:
     if not sys.stdout.isatty():
         print(str)
         return
@@ -264,7 +264,7 @@ def print_with_progress_line(str, progress_line):
         print(progress_line, end="\r")
 
 
-def get_progress_line(package_set):
+def get_progress_line(package_set) -> str | None:
     if not package_set:
         return None
     return "In progress: " + ", ".join(package_set.keys())
@@ -289,7 +289,7 @@ def format_name_list(l: list[str]) -> str:
 
 def mark_package_needs_build(
     pkg_map: dict[str, BasePackage], pkg: BasePackage, needs_build: set[str]
-):
+) -> None:
     """
     Helper for generate_needs_build_set. Modifies needs_build in place.
     Recursively add pkg and all of its dependencies to needs_build.

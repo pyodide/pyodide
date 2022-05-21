@@ -186,7 +186,9 @@ ORIGINAL_MODULE_ASTS: dict[str, ast.Module] = {}
 REWRITTEN_MODULE_ASTS: dict[str, ast.Module] = {}
 
 
-def pytest_pycollect_makemodule(module_path: pathlib.Path, path: Any, parent: Any):
+def pytest_pycollect_makemodule(
+    module_path: pathlib.Path, path: Any, parent: Any
+) -> None:
     source = module_path.read_bytes()
     strfn = str(module_path)
     tree = ast.parse(source, filename=strfn)

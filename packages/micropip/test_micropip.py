@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).resolve().parent / "src"))
 from importlib.metadata import Distribution, PackageNotFoundError
 
 
-def _mock_importlib_version(name: str):
+def _mock_importlib_version(name: str) -> str:
     dists = _mock_importlib_distributions()
     for dist in dists:
         if dist.name == name:
