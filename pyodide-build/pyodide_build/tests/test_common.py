@@ -9,8 +9,8 @@ from pyodide_build.common import (
     find_matching_wheels,
     get_make_environment_vars,
     get_make_flag,
+    platform,
     search_pyodide_root,
-    platform
 )
 
 
