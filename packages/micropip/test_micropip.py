@@ -1,4 +1,3 @@
-import asyncio
 import io
 import sys
 import zipfile
@@ -235,7 +234,8 @@ def create_transaction(Transaction):
     )
 
 
-def test_add_requirement():
+@pytest.mark.asyncio
+async def test_add_requirement():
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
@@ -245,7 +245,7 @@ def test_add_requirement():
         url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
         transaction = create_transaction(Transaction)
-        asyncio.get_event_loop().run_until_complete(transaction.add_requirement(url))
+        await transaction.add_requirement(url)
 
     wheel = transaction.wheels[0]
     assert wheel.name == "snowballstemmer"
@@ -258,26 +258,25 @@ def test_add_requirement():
     assert wheel.url == url
 
 
-def test_add_requirement_marker(mock_importlib):
+@pytest.mark.asyncio
+async def test_add_requirement_marker(mock_importlib):
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
     transaction = create_transaction(Transaction)
 
-    asyncio.get_event_loop().run_until_complete(
-        transaction.gather_requirements(
-            [
-                "werkzeug",
-                'contextvars ; python_version < "3.7"',
-                'aiocontextvars ; python_version < "3.7"',
-                "numpy ; extra == 'full'",
-                "zarr ; extra == 'full'",
-                "numpy ; extra == 'jupyter'",
-                "ipykernel ; extra == 'jupyter'",
-                "numpy ; extra == 'socketio'",
-                "python-socketio[client] ; extra == 'socketio'",
-            ],
-        )
+    await transaction.gather_requirements(
+        [
+            "werkzeug",
+            'contextvars ; python_version < "3.7"',
+            'aiocontextvars ; python_version < "3.7"',
+            "numpy ; extra == 'full'",
+            "zarr ; extra == 'full'",
+            "numpy ; extra == 'jupyter'",
+            "ipykernel ; extra == 'jupyter'",
+            "numpy ; extra == 'socketio'",
+            "python-socketio[client] ; extra == 'socketio'",
+        ],
     )
     assert len(transaction.wheels) == 1
 
@@ -306,7 +305,8 @@ def test_last_version_from_pypi():
     assert str(wheel.version) == "0.15.5"
 
 
-def test_install_non_pure_python_wheel():
+@pytest.mark.asyncio
+async def test_install_non_pure_python_wheel():
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
@@ -314,7 +314,7 @@ def test_install_non_pure_python_wheel():
     with pytest.raises(ValueError, match=msg):
         url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
-        asyncio.get_event_loop().run_until_complete(transaction.add_requirement(url))
+        await transaction.add_requirement(url)
 
 
 def test_install_different_version(selenium_standalone_micropip):
