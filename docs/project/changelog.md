@@ -113,6 +113,9 @@ substitutions:
   library and other tools used to install packages.
   {pr}`2572`
 
+- {{ Enhancement }} `micropip` can now be used to install Emscripten binary wheels.
+  {pr}`2591`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
