@@ -13,11 +13,12 @@ from zipfile import ZipFile
 
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
+from packaging.tags import Tag, sys_tags
+from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import parse_wheel_name, set_wheel_installer
+from pyodide._package_loader import set_wheel_installer
 
 from ._compat import (
     BUILTIN_PACKAGES,
@@ -44,24 +45,20 @@ async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
     return json.loads(metadata)
 
 
-def _is_pure_python_wheel(filename: str):
-    return filename.endswith("py3-none-any.whl")
-
-
 @dataclass
 class WheelInfo:
     name: str
     version: Version
     filename: str
-    packagetype: str
-    python_version: str
-    abi_tag: str
-    platform: str
+    build: tuple[int, str] | tuple[()]
+    tags: frozenset[Tag]
     url: str
     project_name: str | None = None
     digests: dict[str, str] | None = None
     data: BytesIO | None = None
     _dist: Any = None
+    _dist_info: Path | None = None
+    _requires: list[Requirement] | None = None
 
     @staticmethod
     def from_url(url: str) -> "WheelInfo":
@@ -70,19 +67,23 @@ class WheelInfo:
         See https://www.python.org/dev/peps/pep-0427/#file-name-convention
         """
         file_name = Path(url).name
-        # also strip '.whl' extension.
-        wheel_name = Path(url).stem
-        name, version, python_tag, abi_tag, platform = parse_wheel_name(wheel_name)
+        name, version, build, tags = parse_wheel_filename(file_name)
         return WheelInfo(
             name=name,
-            version=Version(version),
+            version=version,
             filename=file_name,
-            packagetype="bdist_wheel",
-            python_version=python_tag,
-            abi_tag=abi_tag,
-            platform=platform,
+            build=build,
+            tags=tags,
             url=url,
         )
+
+    def is_compatible(self):
+        if self.filename.endswith("py3-none-any.whl"):
+            return True
+        for tag in sys_tags():
+            if tag in self.tags:
+                return True
+        return False
 
     async def download(self, fetch_kwargs):
         try:
@@ -183,8 +184,11 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
     for ver in candidate_versions:
         release = releases[str(ver)]
         for fileinfo in release:
-            if _is_pure_python_wheel(fileinfo["filename"]):
-                wheel = WheelInfo.from_url(fileinfo["url"])
+            url = fileinfo["url"]
+            if not url.endswith(".whl"):
+                continue
+            wheel = WheelInfo.from_url(url)
+            if wheel.is_compatible():
                 wheel.digests = fileinfo["digests"]
                 return wheel
 
@@ -228,7 +232,7 @@ class Transaction:
 
         # custom download location
         wheel = WheelInfo.from_url(req)
-        if not _is_pure_python_wheel(wheel.filename):
+        if not wheel.is_compatible():
             raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
         await self.add_wheel(wheel, extras=set())

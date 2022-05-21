@@ -11,6 +11,8 @@ sys.path.append(str(Path(__file__).resolve().parent / "src"))
 from importlib.metadata import Distribution, PackageNotFoundError
 
 try:
+    from packaging.tags import Tag
+
     import micropip
 except ImportError:
     pass
@@ -113,7 +115,6 @@ class mock_fetch_cls:
         wheel_info = WheelInfo.from_url(url)
         version = wheel_info.version
         name = wheel_info.name
-        print(wheel_info.filename, self.metadata_map)
         metadata = self.metadata_map[wheel_info.filename]
         metadata_str = "\n".join(": ".join(x) for x in metadata)
 
@@ -187,21 +188,20 @@ def test_parse_wheel_url():
     assert str(wheel.version) == "2.0.0"
     assert wheel.digests is None
     assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    assert wheel.packagetype == "bdist_wheel"
-    assert wheel.python_version == "py2.py3"
-    assert wheel.abi_tag == "none"
-    assert wheel.platform == "any"
     assert wheel.url == url
+    assert wheel.tags == frozenset(
+        {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
+    )
 
-    msg = "not a valid wheel file name"
+    msg = r"Invalid wheel filename \(wrong number of parts\)"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
         wheel = WheelInfo.from_url(url)
 
     url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
     wheel = WheelInfo.from_url(url)
-    assert wheel.name == "scikit_learn"
-    assert wheel.platform == "macosx_10_9_intel"
+    assert wheel.name == "scikit-learn"
+    assert wheel.tags == frozenset({Tag("cp35", "cp35m", "macosx_10_9_intel")})
 
 
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
@@ -257,11 +257,10 @@ async def test_add_requirement():
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
     assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    assert wheel.packagetype == "bdist_wheel"
-    assert wheel.python_version == "py2.py3"
-    assert wheel.abi_tag == "none"
-    assert wheel.platform == "any"
     assert wheel.url == url
+    assert wheel.tags == frozenset(
+        {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
+    )
 
 
 @pytest.mark.asyncio
@@ -387,7 +386,6 @@ async def test_install_keep_going(mock_fetch: mock_fetch_cls, dummy_pkg_name: st
     mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": ["dep1", "dep2"]})
     mock_fetch.add_pkg("dep1", {"1.0.0": []}, "native")
     mock_fetch.add_pkg("dep2", {"1.0.0": []}, "native")
-
     # report order is non-deterministic
     msg = "(dep1|dep2).*(dep2|dep1)"
     with pytest.raises(ValueError, match=msg):
@@ -436,6 +434,7 @@ async def test_install_pre(
     version_should_select = version_alpha if pre else version_stable
 
     mock_fetch.add_pkg(dummy_pkg_name, {version_stable: [], version_alpha: []})
+
     await micropip.install(dummy_pkg_name, pre=pre)
     assert micropip.list()[dummy_pkg_name].version == version_should_select
 
@@ -460,7 +459,6 @@ async def test_list_pypi_package(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
 ):
     mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
-
     await micropip.install(dummy_pkg_name)
     pkg_list = micropip.list()
     assert dummy_pkg_name in pkg_list
@@ -483,7 +481,6 @@ async def test_list_wheel_package(
 
 @pytest.mark.asyncio
 async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls, mock_importlib):
-
     dummy_pkg_name = "dummy-Dummy"
     mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
     dummy_url = "https://dummy.com/dummy_dummy-1.0.0-py3-none-any.whl"

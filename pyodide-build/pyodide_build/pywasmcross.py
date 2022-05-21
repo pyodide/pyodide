@@ -107,7 +107,7 @@ def compile(env, **kwargs):
     args["orig__name__"] = __name__
     make_command_wrapper_symlinks(env)
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
+    env["_PYTHON_HOST_PLATFORM"] = common.platform()
 
     from pyodide_build.pypabuild import build
 
