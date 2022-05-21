@@ -2,7 +2,6 @@ import io
 import sys
 import zipfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 from pyodide_test_runner import run_in_pyodide, spawn_web_server
@@ -38,6 +37,7 @@ def mock_importlib(monkeypatch):
 
 
 DUMMY_IDX = 0
+
 
 @pytest.fixture
 def dummy_pkg_name():
@@ -76,7 +76,7 @@ class mock_fetch_cls:
         platform: str = "generic",
     ):
         releases = {}
-        for version, requirements in requirements.items():
+        for version, reqs in requirements.items():
             filename = make_wheel_filename(name, version, platform)
             releases[version] = [
                 {
@@ -88,7 +88,7 @@ class mock_fetch_cls:
                 }
             ]
             metadata = [("Name", name), ("Version", version)] + [
-                ("Requires-Dist", req) for req in requirements
+                ("Requires-Dist", req) for req in reqs
             ]
             self.metadata_map[filename] = metadata
         self.releases_map[name] = {"releases": releases}
@@ -110,7 +110,7 @@ class mock_fetch_cls:
         name = wheel_info.name
         print(wheel_info.filename, self.metadata_map)
         metadata = self.metadata_map[wheel_info.filename]
-        metadata_str = "\n".join((": ".join(x) for x in metadata))
+        metadata_str = "\n".join(": ".join(x) for x in metadata)
 
         with io.BytesIO() as tmp:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -129,6 +129,7 @@ class mock_fetch_cls:
 def mock_fetch(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import _micropip
+
     result = mock_fetch_cls()
     monkeypatch.setattr(_micropip, "_get_pypi_json", result._get_pypi_json)
     monkeypatch.setattr(_micropip, "fetch_bytes", result._fetch_bytes)
@@ -377,10 +378,10 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
 
 
 @pytest.mark.asyncio
-async def test_install_keep_going(mock_fetch : mock_fetch_cls, dummy_pkg_name : str):
-    mock_fetch.add_pkg(dummy_pkg_name, { "1.0.0" : ["dep1", "dep2"] })
-    mock_fetch.add_pkg("dep1", { "1.0.0" : [] }, "native")
-    mock_fetch.add_pkg("dep2", { "1.0.0" : [] }, "native")
+async def test_install_keep_going(mock_fetch: mock_fetch_cls, dummy_pkg_name: str):
+    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": ["dep1", "dep2"]})
+    mock_fetch.add_pkg("dep1", {"1.0.0": []}, "native")
+    mock_fetch.add_pkg("dep2", {"1.0.0": []}, "native")
     import micropip
 
     # report order is non-deterministic
@@ -390,15 +391,16 @@ async def test_install_keep_going(mock_fetch : mock_fetch_cls, dummy_pkg_name : 
 
 
 @pytest.mark.asyncio
-async def test_install_version_compare_prerelease(mock_fetch : mock_fetch_cls, dummy_pkg_name : str, mock_importlib : None):
+async def test_install_version_compare_prerelease(
+    mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
+):
     import micropip
 
     version_old = "3.2.0"
     version_new = "3.2.1a1"
 
-    mock_fetch.add_pkg(dummy_pkg_name, {  version_old : [], version_new : [] })
+    mock_fetch.add_pkg(dummy_pkg_name, {version_old: [], version_new: []})
 
-    
     await micropip.install(f"{dummy_pkg_name}=={version_new}")
     await micropip.install(f"{dummy_pkg_name}>={version_old}")
 
@@ -408,21 +410,26 @@ async def test_install_version_compare_prerelease(mock_fetch : mock_fetch_cls, d
 
 
 @pytest.mark.asyncio
-async def test_install_no_deps(mock_fetch : mock_fetch_cls, dummy_pkg_name : str, mock_importlib : None):
+async def test_install_no_deps(
+    mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
+):
     import micropip
 
     dep_pkg_name = "dependency_dummy"
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0" : [dep_pkg_name]})
-    mock_fetch.add_pkg(dep_pkg_name, {"1.0.0" : []})
+    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": [dep_pkg_name]})
+    mock_fetch.add_pkg(dep_pkg_name, {"1.0.0": []})
 
     await micropip.install(dummy_pkg_name, deps=False)
 
     assert dummy_pkg_name in micropip.list()
     assert dep_pkg_name not in micropip.list()
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pre", [True, False])
-async def test_install_pre(mock_fetch : mock_fetch_cls, mock_importlib : None, pre : bool, dummy_pkg_name : str):
+async def test_install_pre(
+    mock_fetch: mock_fetch_cls, mock_importlib: None, pre: bool, dummy_pkg_name: str
+):
     pytest.importorskip("packaging")
 
     version_alpha = "2.0.1a1"
@@ -430,11 +437,12 @@ async def test_install_pre(mock_fetch : mock_fetch_cls, mock_importlib : None, p
 
     version_should_select = version_alpha if pre else version_stable
 
-    mock_fetch.add_pkg(dummy_pkg_name, {version_stable : [], version_alpha : []})
+    mock_fetch.add_pkg(dummy_pkg_name, {version_stable: [], version_alpha: []})
     import micropip
-    
+
     await micropip.install(dummy_pkg_name, pre=pre)
     assert micropip.list()[dummy_pkg_name].version == version_should_select
+
 
 @pytest.mark.asyncio
 async def test_fetch_wheel_fail(monkeypatch):
@@ -452,24 +460,29 @@ async def test_fetch_wheel_fail(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_list_pypi_package(mock_fetch : mock_fetch_cls, mock_importlib : None, dummy_pkg_name : str):
+async def test_list_pypi_package(
+    mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
+):
     pytest.importorskip("packaging")
+
+    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
+
     import micropip
 
-    mock_fetch.add_pkg(dummy_pkg_name, { "1.0.0" : []})
-
-    import micropip
     await micropip.install(dummy_pkg_name)
-
     pkg_list = micropip.list()
     assert dummy_pkg_name in pkg_list
     assert pkg_list[dummy_pkg_name].source.lower() == "pypi"
 
+
 @pytest.mark.asyncio
-async def test_list_wheel_package(mock_fetch : mock_fetch_cls, mock_importlib : None, dummy_pkg_name : str):
+async def test_list_wheel_package(
+    mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
+):
     pytest.importorskip("packaging")
     import micropip
-    mock_fetch.add_pkg(dummy_pkg_name, { "1.0.0" : []})
+
+    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
     dummy_url = f"https://dummy.com/{dummy_pkg_name}-1.0.0-py3-none-any.whl"
 
     await micropip.install(dummy_url)
@@ -478,14 +491,15 @@ async def test_list_wheel_package(mock_fetch : mock_fetch_cls, mock_importlib : 
     assert dummy_pkg_name in pkg_list
     assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
 
+
 @pytest.mark.asyncio
-async def test_list_wheel_name_mismatch(mock_fetch : mock_fetch_cls, mock_importlib):
+async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls, mock_importlib):
     pytest.importorskip("packaging")
     import micropip
 
     dummy_pkg_name = "dummy-Dummy"
-    mock_fetch.add_pkg(dummy_pkg_name, { "1.0.0" : []})
-    dummy_url = f"https://dummy.com/dummy_dummy-1.0.0-py3-none-any.whl"
+    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
+    dummy_url = "https://dummy.com/dummy_dummy-1.0.0-py3-none-any.whl"
 
     await micropip.install(dummy_url)
 
