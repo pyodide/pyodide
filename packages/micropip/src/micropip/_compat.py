@@ -6,8 +6,8 @@ if IN_BROWSER:
         WHEEL_BASE,
         fetch_bytes,
         fetch_string,
-        loadedPackages,
         loadDynlib,
+        loadedPackages,
         pyodide_js,
     )
 else:
@@ -16,8 +16,8 @@ else:
         WHEEL_BASE,
         fetch_bytes,
         fetch_string,
-        loadedPackages,
         loadDynlib,
+        loadedPackages,
         pyodide_js,
     )
 
