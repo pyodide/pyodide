@@ -11,7 +11,7 @@ if IN_BROWSER:
         pyodide_js,
     )
 else:
-    from ._compat_not_in_pyodide import (  # type: ignore[no-redef]
+    from ._compat_not_in_pyodide import (
         BUILTIN_PACKAGES,
         WHEEL_BASE,
         fetch_bytes,

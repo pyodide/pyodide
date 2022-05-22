@@ -5,7 +5,7 @@ from pyodide.http import pyfetch
 try:
     import pyodide_js
     from pyodide_js import loadedPackages
-    from pyodide_js._api import loadDynlib
+    from pyodide_js._api import loadDynlib  # type: ignore[import]
 
     BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
 
