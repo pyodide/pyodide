@@ -438,7 +438,6 @@ async def test_install_pre(
     version_stable = "1.0.0"
 
     version_should_select = version_alpha if pre else version_stable
-
     mock_fetch.add_pkg(dummy_pkg_name, {version_stable: [], version_alpha: []})
 
     await micropip.install(dummy_pkg_name, pre=pre)
