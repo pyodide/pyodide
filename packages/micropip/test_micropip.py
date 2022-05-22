@@ -17,8 +17,10 @@ try:
 except ImportError:
     pass
 
-from pyodide_build import common
 import os
+
+from pyodide_build import common
+
 os.environ["_PYTHON_HOST_PLATFORM"] = common.platform()
 
 
@@ -569,7 +571,7 @@ async def test_install_with_credentials():
 async def test_load_binary_wheel1(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
 ):
-    mock_fetch.add_pkg(dummy_pkg_name, { "1.0.0" : []}, "emscripten")
+    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []}, "emscripten")
     await micropip.install(dummy_pkg_name)
 
 
@@ -577,5 +579,6 @@ async def test_load_binary_wheel1(
 @run_in_pyodide(packages=["micropip"])
 async def test_load_binary_wheel2():
     from pyodide_js._api import packages
+
     await micropip.install(packages.regex.filename)
     import regex

@@ -19,16 +19,16 @@ from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import set_wheel_installer, get_dynlibs
+from pyodide._package_loader import get_dynlibs, set_wheel_installer
 
 from ._compat import (
     BUILTIN_PACKAGES,
     WHEEL_BASE,
     fetch_bytes,
     fetch_string,
+    loadDynlib,
     loadedPackages,
     pyodide_js,
-    loadDynlib,
 )
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata

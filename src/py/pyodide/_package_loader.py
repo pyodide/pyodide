@@ -262,7 +262,7 @@ def set_wheel_installer(
         (dist_info / "PYODIDE_SOURCE").write_text(source)
 
 
-def get_dynlibs(archive: IO[bytes], suffix : str, target_dir: Path) -> list[str]:
+def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     """List out the paths to .so files in a zip or tar archive.
 
     Parameters

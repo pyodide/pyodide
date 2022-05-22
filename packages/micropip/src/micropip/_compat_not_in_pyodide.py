@@ -24,7 +24,7 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
     return (await fetch_bytes(url, kwargs)).decode()
 
 
-async def loadDynlib(dynlib : str, is_shared_lib : bool):
+async def loadDynlib(dynlib: str, is_shared_lib: bool):
     pass
 
 
