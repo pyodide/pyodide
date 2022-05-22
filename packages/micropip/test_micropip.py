@@ -578,8 +578,8 @@ async def test_load_binary_wheel1(
 @pytest.mark.skip_refcount_check
 @run_in_pyodide(packages=["micropip"])
 async def test_load_binary_wheel2():
-    from pyodide_js._api import packages
     import micropip
+    from pyodide_js._api import packages
 
     await micropip.install(packages.regex.filename)
-    import regex
+    import regex  # noqa: F401
