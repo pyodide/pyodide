@@ -1,4 +1,3 @@
-from asyncio import gather
 from pathlib import Path
 
 from pyodide.http import pyfetch
@@ -6,6 +5,7 @@ from pyodide.http import pyfetch
 try:
     import pyodide_js
     from pyodide_js import loadedPackages
+    from pyodide_js._api import loadDynlib
 
     BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
 
@@ -32,11 +32,11 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
 
 
 __all__ = [
-    "gather",
     "fetch_bytes",
     "fetch_string",
     "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
+    "loadDynlib",
     "pyodide_js",
 ]

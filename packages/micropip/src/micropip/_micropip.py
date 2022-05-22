@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import importlib
 import json
+from asyncio import gather
 from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
@@ -18,16 +19,16 @@ from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import set_wheel_installer
+from pyodide._package_loader import set_wheel_installer, get_dynlibs
 
 from ._compat import (
     BUILTIN_PACKAGES,
     WHEEL_BASE,
     fetch_bytes,
     fetch_string,
-    gather,
     loadedPackages,
     pyodide_js,
+    loadDynlib,
 )
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
@@ -141,6 +142,11 @@ class WheelInfo:
             self.filename, self.data, WHEEL_BASE, "micropip", wheel_source
         )
 
+    async def load_libraries(self):
+        assert self.data
+        dynlibs = get_dynlibs(self.data, ".whl", WHEEL_BASE)
+        await gather(*map(lambda dynlib: loadDynlib(dynlib, False), dynlibs))
+
     async def install(self):
         url = self.url
         if not self.data:
@@ -150,6 +156,7 @@ class WheelInfo:
         self.validate()
         self.extract()
         self.set_installer()
+        await self.load_libraries()
         name = self.project_name
         assert name
         setattr(loadedPackages, name, url)

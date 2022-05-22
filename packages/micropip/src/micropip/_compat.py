@@ -6,8 +6,8 @@ if IN_BROWSER:
         WHEEL_BASE,
         fetch_bytes,
         fetch_string,
-        gather,
         loadedPackages,
+        loadDynlib,
         pyodide_js,
     )
 else:
@@ -16,17 +16,17 @@ else:
         WHEEL_BASE,
         fetch_bytes,
         fetch_string,
-        gather,
         loadedPackages,
+        loadDynlib,
         pyodide_js,
     )
 
 __all__ = [
-    "gather",
     "fetch_bytes",
     "fetch_string",
     "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
+    "loadDynlib",
     "pyodide_js",
 ]

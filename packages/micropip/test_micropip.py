@@ -17,6 +17,10 @@ try:
 except ImportError:
     pass
 
+from pyodide_build import common
+import os
+os.environ["_PYTHON_HOST_PLATFORM"] = common.platform()
+
 
 def _mock_importlib_version(name: str) -> str:
     dists = _mock_importlib_distributions()
@@ -62,9 +66,9 @@ def make_wheel_filename(name: str, version: str, platform: str = "generic"):
     if platform == "generic":
         platform_str = "py3-none-any"
     elif platform == "emscripten":
-        platform_str = "cp310-cp310-emscripten_wasm32"
+        platform_str = f"cp310-cp310-{common.platform()}"
     elif platform == "native":
-        platform_str = "cp310-cp310--manylinux_2_31_x86_64"
+        platform_str = "cp310-cp310-manylinux_2_31_x86_64"
     else:
         platform_str = platform
 
@@ -559,3 +563,19 @@ async def test_install_with_credentials():
         )
 
     await call_micropip_install()
+
+
+@pytest.mark.asyncio
+async def test_load_binary_wheel1(
+    mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
+):
+    mock_fetch.add_pkg(dummy_pkg_name, { "1.0.0" : []}, "emscripten")
+    await micropip.install(dummy_pkg_name)
+
+
+@pytest.mark.skip_refcount_check
+@run_in_pyodide(packages=["micropip"])
+async def test_load_binary_wheel2():
+    from pyodide_js._api import packages
+    await micropip.install(packages.regex.filename)
+    import regex
