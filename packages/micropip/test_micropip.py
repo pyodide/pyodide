@@ -113,7 +113,6 @@ class mock_fetch_cls:
         wheel_info = WheelInfo.from_url(url)
         version = wheel_info.version
         name = wheel_info.name
-        print(wheel_info.filename, self.metadata_map)
         metadata = self.metadata_map[wheel_info.filename]
         metadata_str = "\n".join(": ".join(x) for x in metadata)
 
