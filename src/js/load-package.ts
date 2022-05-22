@@ -226,9 +226,7 @@ async function installPackage(
     installer: "pyodide.loadPackage",
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
-  for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib, pkg.shared_library);
-  }
+  await Promise.all(dynlibs.map((dynlib : string) => loadDynlib(dynlib, pkg.shared_library)))
   loadedPackages[name] = pkg;
 }
 
