@@ -6,7 +6,7 @@ from pathlib import Path
 from .common import get_make_flag, get_pyodide_root, parse_package_config
 
 
-def make_parser(parser: argparse.ArgumentParser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = (
         "Create xbuild env.\n\n"
         "Note: this is a private endpoint that should not be used "

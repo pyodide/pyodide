@@ -61,6 +61,9 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null` constructor.
+  {pr}`2520`
+
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
 
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
@@ -82,6 +85,9 @@ substitutions:
 - {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`, `set_interval`,
   `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
+
+- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and `ERRNO_CODES` APIs.
+  {pr}`2582`
 
 ### micropip
 
