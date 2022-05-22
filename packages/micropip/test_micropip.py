@@ -62,7 +62,7 @@ def make_wheel_filename(name: str, version: str, platform: str = "generic"):
     elif platform == "emscripten":
         platform_str = "cp310-cp310-emscripten_wasm32"
     elif platform == "native":
-        platform_str = "cp310-cp310--manylinux_2_31_x86_64"
+        platform_str = "cp310-cp310-manylinux_2_31_x86_64"
     else:
         platform_str = platform
 
