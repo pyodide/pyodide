@@ -36,7 +36,7 @@ async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]) -> Any:
     url = f"https://pypi.org/pypi/{pkgname}/json"
     try:
         metadata = await fetch_string(url, fetch_kwargs)
-    except Exception as e:
+    except OSError as e:
         raise ValueError(
             f"Can't fetch metadata for '{pkgname}' from PyPI. "
             "Please make sure you have entered a correct package name."
@@ -87,7 +87,7 @@ class WheelInfo:
     async def download(self, fetch_kwargs):
         try:
             wheel_bytes = await fetch_bytes(self.url, fetch_kwargs)
-        except Exception as e:
+        except OSError as e:
             if self.url.startswith("https://files.pythonhosted.org/"):
                 raise e
             else:

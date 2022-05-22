@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+pytest_plugins = ("pytest_asyncio",)
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
