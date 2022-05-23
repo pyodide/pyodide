@@ -32,11 +32,11 @@ from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_
 from .package import PackageDict, PackageMetadata
 
 
-async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
+async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]) -> Any:
     url = f"https://pypi.org/pypi/{pkgname}/json"
     try:
         metadata = await fetch_string(url, fetch_kwargs)
-    except Exception as e:
+    except OSError as e:
         raise ValueError(
             f"Can't fetch metadata for '{pkgname}' from PyPI. "
             "Please make sure you have entered a correct package name."
@@ -44,7 +44,7 @@ async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]):
     return json.loads(metadata)
 
 
-def _is_pure_python_wheel(filename: str):
+def _is_pure_python_wheel(filename: str) -> bool:
     return filename.endswith("py3-none-any.whl")
 
 
@@ -87,7 +87,7 @@ class WheelInfo:
     async def download(self, fetch_kwargs):
         try:
             wheel_bytes = await fetch_bytes(self.url, fetch_kwargs)
-        except Exception as e:
+        except OSError as e:
             if self.url.startswith("https://files.pythonhosted.org/"):
                 raise e
             else:
@@ -212,14 +212,14 @@ class Transaction:
     async def gather_requirements(
         self,
         requirements: list[str],
-    ):
+    ) -> None:
         requirement_promises = []
         for requirement in requirements:
             requirement_promises.append(self.add_requirement(requirement))
 
         await gather(*requirement_promises)
 
-    async def add_requirement(self, req: str | Requirement):
+    async def add_requirement(self, req: str | Requirement) -> None:
         if isinstance(req, Requirement):
             return await self.add_requirement_inner(req)
 
@@ -233,7 +233,7 @@ class Transaction:
 
         await self.add_wheel(wheel, extras=set())
 
-    def check_version_satisfied(self, req: Requirement):
+    def check_version_satisfied(self, req: Requirement) -> bool:
         ver = None
         try:
             ver = importlib_version(req.name)
@@ -256,7 +256,7 @@ class Transaction:
     async def add_requirement_inner(
         self,
         req: Requirement,
-    ):
+    ) -> None:
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
@@ -311,7 +311,7 @@ class Transaction:
         self,
         wheel: WheelInfo,
         extras: set[str],
-    ):
+    ) -> None:
         normalized_name = canonicalize_name(wheel.name)
         self.locked[normalized_name] = PackageMetadata(
             name=wheel.name,
@@ -331,7 +331,7 @@ async def install(
     deps: bool = True,
     credentials: str | None = None,
     pre: bool = False,
-):
+) -> None:
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
