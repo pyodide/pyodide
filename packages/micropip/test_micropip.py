@@ -81,12 +81,14 @@ class mock_fetch_cls:
         requirements: list[str] | None = None,
         extras: dict[str, list[str]] | None = None,
         platform: str = "generic",
-        top_level: list[str] = [],
+        top_level: list[str] | None = None,
     ):
         if requirements is None:
             requirements = []
         if extras is None:
             extras = {}
+        if top_level is None:
+            top_level = []
         if name not in self.releases_map:
             self.releases_map[name] = {"releases": {}}
         releases = self.releases_map[name]["releases"]
