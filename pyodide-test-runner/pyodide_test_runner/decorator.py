@@ -10,9 +10,6 @@ import pytest
 
 from .utils import set_webdriver_script_timeout
 
-# For getting decorator lists
-DECORATOR_LIST_MODULES: dict[str, Any] = {}
-
 
 class SeleniumType:
     JavascriptException: type
@@ -31,41 +28,6 @@ def _encode(obj: Any) -> str:
     templating.
     """
     return b64encode(pickle.dumps(obj)).decode()
-
-
-def _generate_pyodide_ast(
-    module_ast: ast.Module, funcname: str
-) -> tuple[ast.Module, bool, ast.expr]:
-    """Generates appropriate AST for the test to run in Pyodide.
-
-    The test ast includes mypy magic imports and the test function definition.
-    This will be pickled and sent to Pyodide.
-    """
-    nodes: list[ast.stmt] = []
-    for node in module_ast.body:
-        # We need to include the magic imports that pytest inserts
-        if (
-            isinstance(node, ast.Import)
-            and node.names[0].asname
-            and node.names[0].asname.startswith("@")
-        ):
-            nodes.append(node)
-
-        # We also want the function definition for the current test
-        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
-            if node.name == funcname:
-                async_func = isinstance(node, ast.AsyncFunctionDef)
-                node.decorator_list = []
-                nodes.append(node)
-                break
-    else:
-        raise Exception(
-            "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
-        )
-    mod = ast.Module(nodes, type_ignores=[])
-    ast.fix_missing_locations(mod)
-
-    return mod, async_func, node
 
 
 def _create_outer_test_function(
@@ -90,8 +52,8 @@ def _create_outer_test_function(
         def <func_name>(arg1, arg2, arg3, <selenium_arg_name>):
             run_test(<selenium_arg_name>, (arg1, arg2, arg3))
 
-    Any inner_decorators get applied in __call__. Any outer_decorators get applied
-    by the Python interpreter via the normal mechanism
+    Any inner_decorators get ignored. Any outer_decorators get applied by
+    the Python interpreter via the normal mechanism
     """
     node = deepcopy(node)
 
@@ -125,38 +87,6 @@ def _create_outer_test_function(
     return globs[node.name]
 
 
-def _execute_module_for_decorators(
-    module_ast: ast.Module, module_filename: str
-) -> dict[str, any]:
-    """
-    Collect the actual real-life objects that were applied to the function into
-    a magic variable called @decorators@<func_name>
-
-    This helps us to locate `run_in_pyodide` to remove it in a way that is
-    robust to renaming. This also allows us to use other decorators in a way
-    that is robust to renaming.
-    """
-    for i, node in reversed(list(enumerate(module_ast.body))):
-        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
-            # Store the decorators for each FunctionDef into our magic variable
-            assign_target = [ast.Name(id="@decorators@" + node.name, ctx=ast.Store())]
-            assign_value = ast.Tuple(node.decorator_list, ctx=ast.Load())
-            decs = ast.Assign(targets=assign_target, value=assign_value)
-            module_ast.body.insert(i, decs)
-            node.decorator_list = []  # Avoid recursion issues
-    ast.fix_missing_locations(module_ast)
-    co = compile(module_ast, module_filename, "exec")
-
-    import types
-
-    module = types.ModuleType(module_filename)
-    module.__file__ = module_filename
-    exec(co, module.__dict__)
-    return module.__dict__
-
-
-# This has to be a class so we can identify it in and remove it from a list of
-# decorators
 class run_in_pyodide:
     def __new__(cls, function: Callable | None = None, /, **kwargs):
         if function:
@@ -288,39 +218,53 @@ class run_in_pyodide:
             pytrace=False,
         )
 
+    def _generate_pyodide_ast(
+        self, module_ast: ast.Module, funcname: str
+    ) -> tuple[ast.Module, bool, ast.expr]:
+        """Generates appropriate AST for the test to run in Pyodide.
+
+        The test ast includes mypy magic imports and the test function definition.
+        This will be pickled and sent to Pyodide.
+        """
+        nodes: list[ast.stmt] = []
+        for node in module_ast.body:
+            # We need to include the magic imports that pytest inserts
+            if (
+                isinstance(node, ast.Import)
+                and node.names[0].asname
+                and node.names[0].asname.startswith("@")
+            ):
+                nodes.append(node)
+
+            # We also want the function definition for the current test
+            if isinstance(node, ast.FunctionDef) or isinstance(
+                node, ast.AsyncFunctionDef
+            ):
+                if node.name == funcname:
+                    self.async_func = isinstance(node, ast.AsyncFunctionDef)
+                    node.decorator_list = []
+                    nodes.append(node)
+                    break
+        else:
+            raise Exception(
+                "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
+            )
+        self.mod = ast.Module(nodes, type_ignores=[])
+        ast.fix_missing_locations(self.mod)
+
+        self.node = node
+
     def __call__(self, f: Callable) -> Callable:
         func_name = f.__name__
         module_filename = sys.modules[f.__module__].__file__ or ""
         module_ast = self._module_asts_dict[module_filename]
 
-        if module_filename not in DECORATOR_LIST_MODULES:
-            DECORATOR_LIST_MODULES[module_filename] = _execute_module_for_decorators(
-                module_ast, module_filename
-            )
-        module_with_decorator_lists = DECORATOR_LIST_MODULES[module_filename]
-        orig_decorator_list = module_with_decorator_lists[f"@decorators@{func_name}"]
-
-        # We are currently applying the run_in_pyodide decorator, all of the
-        # decorators before it will be applied later. We need to track down the
-        # decorators inside of us and apply them.
-        for _idx, dec in enumerate(orig_decorator_list):
-            if dec == run_in_pyodide or isinstance(dec, run_in_pyodide):
-                break
-        decorators = orig_decorator_list[_idx + 1 :]
-
         # _code_template needs this info.
-        self._mod, self._async_func, self._node = _generate_pyodide_ast(
-            module_ast, func_name
-        )
+        self._generate_pyodide_ast(module_ast, func_name)
         self._func_name = func_name
         self._module_filename = module_filename
 
         wrapper = _create_outer_test_function(
             self._run_test, self._selenium_fixture_name, self._node
         )
-        # Apply the inside decorators ourselves.
-        # Technically it would be more accurate to pickle these and apply them
-        # in Pyodide, but I'm slightly pessimistic about that working.
-        for dec in reversed(decorators):
-            wrapper = dec(wrapper)
         return wrapper
