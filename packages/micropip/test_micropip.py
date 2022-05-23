@@ -317,21 +317,16 @@ async def test_add_requirement_marker(mock_importlib, wheel_base):
     assert len(transaction.wheels) == 1
 
 
-def test_add_install_with_extra(mock_importlib):
-    pytest.importorskip("packaging")
-    from micropip._micropip import Transaction
+async def test_package_with_extra(mock_fetch, mock_importlib):
+    from micropip import _micropip
 
-    transaction = create_transaction(Transaction)
+    mock_fetch.add_pkg_version("reportlab")
+    mock_fetch.add_pkg_version("beagle-vote", extras={"pdf": ["reportlab"]})
 
-    asyncio.get_event_loop().run_until_complete(
-        transaction.gather_requirements(
-            [
-                "hypothesis[cli]",
-            ],
-        )
-    )
-    wheel_names = [w.name for w in transaction.wheels]
-    assert "black" in wheel_names
+    await _micropip.install("beagle-vote[pdf]")
+
+    pkg_list = _micropip.list()
+    assert "reportlab" in pkg_list
 
 
 def test_last_version_from_pypi():
