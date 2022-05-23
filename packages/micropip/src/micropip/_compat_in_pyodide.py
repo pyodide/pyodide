@@ -1,8 +1,8 @@
 from asyncio import gather
 from pathlib import Path
 
-from pyodide.http import pyfetch
 from pyodide._core import IN_BROWSER
+from pyodide.http import pyfetch
 
 try:
     import pyodide_js
