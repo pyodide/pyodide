@@ -476,7 +476,15 @@ def _generate_package_hash(data: BytesIO) -> str:
     return sha256_hash.hexdigest()
 
 
-def freeze():
+def freeze() -> str:
+    """Produce a json string which can be used as the contents of the
+    `packages.json` lockfile.
+
+    If you later load `pyodide` with this lock file, you can use
+    `pyodide.loadPackage` to load packages that were loaded with `micropip` this
+    time. Loading packages with `pyodide.loadPackage` is much faster and you
+    will always get consistent versions of all your dependencies.
+    """
     from copy import deepcopy
 
     packages = deepcopy(BUILTIN_PACKAGES)
