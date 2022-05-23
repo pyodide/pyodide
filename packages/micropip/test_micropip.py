@@ -8,7 +8,7 @@ from pyodide_test_runner import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
-from importlib.metadata import Distribution, PackageNotFoundError
+from importlib.metadata import distributions, PackageNotFoundError
 
 try:
     import micropip
@@ -26,9 +26,7 @@ def _mock_importlib_version(name: str) -> str:
 
 def _mock_importlib_distributions():
     from micropip._micropip import WHEEL_BASE
-
-    for p in WHEEL_BASE.glob("*.dist-info"):
-        yield Distribution.at(p)
+    return distributions(path=[WHEEL_BASE])
 
 
 @pytest.fixture
@@ -73,6 +71,7 @@ class mock_fetch_cls:
     def __init__(self):
         self.releases_map = {}
         self.metadata_map = {}
+        self.top_level_map = {}
 
     def add_pkg_version(
         self,
@@ -82,6 +81,7 @@ class mock_fetch_cls:
         requirements: list[str] | None = None,
         extras: dict[str, list[str]] | None = None,
         platform: str = "generic",
+        top_level: list[str] = [],
     ):
         if requirements is None:
             requirements = []
@@ -108,6 +108,7 @@ class mock_fetch_cls:
                 ("Requires-Dist", f"{req}; extra == {extra!r}") for req in reqs
             ]
         self.metadata_map[filename] = metadata
+        self.top_level_map[filename] = top_level
 
     async def _get_pypi_json(self, pkgname, kwargs):
         try:
@@ -125,16 +126,22 @@ class mock_fetch_cls:
         wheel_info = WheelInfo.from_url(url)
         version = wheel_info.version
         name = wheel_info.name
-        metadata = self.metadata_map[wheel_info.filename]
+        filename = wheel_info.filename
+        metadata = self.metadata_map[filename]
         metadata_str = "\n".join(": ".join(x) for x in metadata)
+        toplevel = self.top_level_map[filename]
+        toplevel_str = "\n".join(toplevel)
+
+        metadata_dir = f"{name}-{version}.dist-info"
 
         with io.BytesIO() as tmp:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
-                archive.writestr(f"{name}-{version}.dist-info/METADATA", metadata_str)
-                archive.writestr(
-                    f"{name}-{version}.dist-info/WHEEL",
-                    "Wheel-Version: 1.0",
-                )
+                def write_file(filename, contents):
+                    archive.writestr(f"{metadata_dir}/{filename}", contents)
+
+                write_file("METADATA", metadata_str)
+                write_file("WHEEL", "Wheel-Version: 1.0")
+                write_file("top_level.txt", toplevel_str)
 
             tmp.seek(0)
 
@@ -395,12 +402,14 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
 
 @pytest.mark.asyncio
 async def test_install_keep_going(mock_fetch: mock_fetch_cls, dummy_pkg_name: str):
-    mock_fetch.add_pkg_version(dummy_pkg_name, requirements=["dep1", "dep2"])
-    mock_fetch.add_pkg_version("dep1", platform="native")
-    mock_fetch.add_pkg_version("dep2", platform="native")
+    dep1 = f"{dummy_pkg_name}-dep1"
+    dep2 = f"{dummy_pkg_name}-dep2"
+    mock_fetch.add_pkg_version(dummy_pkg_name, requirements=[dep1, dep2])
+    mock_fetch.add_pkg_version(dep1, platform="native")
+    mock_fetch.add_pkg_version(dep2, platform="native")
 
     # report order is non-deterministic
-    msg = "(dep1|dep2).*(dep2|dep1)"
+    msg = f"({dep1}|{dep2}).*({dep2}|{dep1})"
     with pytest.raises(ValueError, match=msg):
         await micropip.install(dummy_pkg_name, keep_going=True)
 
@@ -574,3 +583,29 @@ async def test_install_with_credentials():
         )
 
     await call_micropip_install()
+
+@pytest.mark.asyncio
+async def test_freeze(mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib : None):
+    pkg = dummy_pkg_name
+    dep1 = f"{pkg}-dep1"
+    dep2 = f"{pkg}-dep2"
+    toplevel = [["abc", "def", "geh"], ["c", "h", "i"], ["a12", "b13"]]
+
+    mock_fetch.add_pkg_version(pkg, requirements=[dep1, dep2], top_level=toplevel[0])
+    mock_fetch.add_pkg_version(dep1, top_level=toplevel[1])
+    mock_fetch.add_pkg_version(dep2, top_level=toplevel[2])
+
+    await micropip.install(pkg)
+    import json
+    lockfile = json.loads(micropip.freeze())
+    import pprint
+    pprint.pprint(lockfile['packages'])
+    pkg_metadata = lockfile['packages'][pkg]
+    dep1_metadata = lockfile['packages'][dep1]
+    dep2_metadata = lockfile['packages'][dep2]
+    assert pkg_metadata['depends'] == [dep1, dep2]
+    assert dep1_metadata['depends'] == []
+    assert dep2_metadata['depends'] == []
+    assert pkg_metadata["imports"] == toplevel[0]
+    assert dep1_metadata['imports'] == toplevel[1]
+    assert dep2_metadata['imports'] == toplevel[2]
