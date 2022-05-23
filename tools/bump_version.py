@@ -81,6 +81,12 @@ JS_TARGETS = [
 
 @functools.lru_cache
 def python_version_to_js_version(version: str) -> Str:
+    """
+    Convert Python version name to JS version name
+    These two are different in prerelease or dev versions.
+    e.g. 1.2.3a0 <==> 1.2.3-alpha.0
+         4.5.6.dev2 <==> 4.5.6.dev.2
+    """
     match = re.match(PYTHON_VERSION_REGEX, version)
     matches = match.groupdict()
 
@@ -96,11 +102,6 @@ def python_version_to_js_version(version: str) -> Str:
         return "{major}.{minor}.{patch}-dev.{devversion}".format(**matches)
     else:
         return "{major}.{minor}.{patch}".format(**matches)
-
-
-@functools.lru_cache
-def to_core_version(version: str) -> str:
-    return re.search(CORE_VERSION_REGEX, version).group()
 
 
 @functools.lru_cache
@@ -130,17 +131,15 @@ def update_version(
     pattern = target.pattern
     content = file.read_text()
 
-    # If not targeting prerelease, use only core section
-    if not target.prerelease:
-        if not is_core_version(new_version):
-            print(f"{file}: Skipped (not targeting a core version)")
-            return lambda: None
-
-        current_version = to_core_version(current_version)
-        new_version = to_core_version(new_version)
-
     if current_version == new_version:
         return lambda: None
+
+    # Some files only required to be bumped on core version release.
+    # For example, we don't deploy prebuilt docker images for dev release.
+    if not target.prerelease:
+        if not is_core_version(new_version):
+            print(f"[*] {file}: Skipped (not targeting a core version)")
+            return lambda: None
 
     new_content = content
     startpos = 0
@@ -166,7 +165,6 @@ def update_version(
 
 
 def show_diff(before: str, after: str, file: pathlib.Path):
-
     diffs = list(
         difflib.unified_diff(
             before.splitlines(keepends=True), after.splitlines(keepends=True), n=0
@@ -197,6 +195,8 @@ def main():
     if re.match(PYTHON_VERSION_REGEX, new_version) is None:
         raise ValueError(f"Invalid new version: {new_version}")
 
+    # We want to update files in all-or-nothing strategy,
+    # so we keep the queue of update functions
     update_queue = []
     for target in PYTHON_TARGETS:
         current_version = parse_current_version(target)
@@ -214,8 +214,8 @@ def main():
             )
         )
 
-    for func in update_queue:
-        func()
+    for update_func in update_queue:
+        update_func()
 
 
 if __name__ == "__main__":
