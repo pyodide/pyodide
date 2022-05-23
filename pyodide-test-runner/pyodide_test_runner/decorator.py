@@ -198,6 +198,7 @@ class run_in_pyodide:
         code = self._code_template(args)
 
         with set_webdriver_script_timeout(selenium, self._driver_timeout):
+            print("loading::", self._pkgs)
             if self._pkgs:
                 selenium.load_package(self._pkgs)
 
@@ -241,7 +242,7 @@ class run_in_pyodide:
                 node, ast.AsyncFunctionDef
             ):
                 if node.name == funcname:
-                    self.async_func = isinstance(node, ast.AsyncFunctionDef)
+                    self._async_func = isinstance(node, ast.AsyncFunctionDef)
                     node.decorator_list = []
                     nodes.append(node)
                     break
@@ -249,10 +250,10 @@ class run_in_pyodide:
             raise Exception(
                 "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
             )
-        self.mod = ast.Module(nodes, type_ignores=[])
-        ast.fix_missing_locations(self.mod)
+        self._mod = ast.Module(nodes, type_ignores=[])
+        ast.fix_missing_locations(self._mod)
 
-        self.node = node
+        self._node = node
 
     def __call__(self, f: Callable) -> Callable:
         func_name = f.__name__
