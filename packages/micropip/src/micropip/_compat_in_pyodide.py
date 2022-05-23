@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pyodide._core import IN_BROWSER
 from pyodide.http import pyfetch
 
 try:
@@ -16,8 +17,6 @@ try:
 
     WHEEL_BASE = Path(getsitepackages()[0])
 except ImportError:
-    from pyodide import IN_BROWSER
-
     if IN_BROWSER:
         raise
     # Otherwise, this is pytest test collection so let it go.

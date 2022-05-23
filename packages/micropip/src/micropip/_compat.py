@@ -1,4 +1,4 @@
-from pyodide import IN_BROWSER
+from pyodide._core import IN_BROWSER
 
 if IN_BROWSER:
     from ._compat_in_pyodide import (
