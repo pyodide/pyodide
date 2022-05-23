@@ -18,8 +18,8 @@ no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_return_any = false
-no_implicit_reexport = false
-strict_equality = false
+no_implicit_reexport = true
+strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -27,7 +27,6 @@ module = [
   "docutils.parsers.rst",
   "js",
   "pyodide_js",
-  "pytest",
   "ruamel.yaml",
   "matplotlib.*",
   "PIL.*",

@@ -61,6 +61,9 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null` constructor.
+  {pr}`2520`
+
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
 
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
@@ -83,6 +86,9 @@ substitutions:
   `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
 
+- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and `ERRNO_CODES` APIs.
+  {pr}`2582`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
@@ -101,6 +107,21 @@ substitutions:
 - {{ Enhancement }} {func}`micropip.install` now accepts a `pre` parameter.
   If set to `True`, micropip will include pre-release and development versions.
   {pr}`2542`
+
+- {{ Enhancement }} `micropip` was refactored to improve readability and ease of maintenance.
+  {pr}`2561`, {pr}`2563`, {pr}`2564`, {pr}`2565`, {pr}`2568`
+
+- {{ Enhancement }} Various error messages were fine tuned and improved.
+  {pr}`2562`, {pr}`2558`
+
+- {{ Enhancement }} `micropip` was adjusted to keep its state in the wheel
+  `.dist-info` directories which improves consistenency with the Python standard
+  library and other tools used to install packages.
+  {pr}`2572`
+
+- {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
+  packages into a `packages.json` file.
+  {pr}`2581`
 
 ### Packages
 
