@@ -27,7 +27,6 @@ module = [
   "docutils.parsers.rst",
   "js",
   "pyodide_js",
-  "pytest",
   "ruamel.yaml",
   "matplotlib.*",
   "PIL.*",

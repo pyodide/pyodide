@@ -51,7 +51,7 @@ def should_quiet(source: str) -> bool:
     return False
 
 
-def _last_assign_to_expr(mod: ast.Module):
+def _last_assign_to_expr(mod: ast.Module) -> None:
     """
     Implementation of 'last_expr_or_assign' return_mode.
     It modifies the supplyied AST module so that the last
@@ -104,7 +104,7 @@ builtins.___EvalCodeResultException = [EvalCodeResultException]  # type: ignore[
 _raise_template_ast = ast.parse("raise ___EvalCodeResultException[0](x)").body[0]
 
 
-def _last_expr_to_raise(mod: ast.Module):
+def _last_expr_to_raise(mod: ast.Module) -> None:
     """If the final ast node is a statement, raise an EvalCodeResultException
     with the value of the statement.
     """
@@ -124,7 +124,7 @@ def _parse_and_compile_gen(
     *,
     return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
-    mode="exec",
+    mode: str = "exec",
     filename: str = "<exec>",
     flags: int = 0x0,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
@@ -220,7 +220,7 @@ class CodeRunner:
         source: str,
         *,
         return_mode: str = "last_expr",
-        mode="exec",
+        mode: str = "exec",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
         flags: int = 0x0,
@@ -258,7 +258,7 @@ class CodeRunner:
         self,
         globals: dict[str, Any] | None = None,
         locals: dict[str, Any] | None = None,
-    ):
+    ) -> Any | None:
         """Executes ``self.code``.
 
         Can only be used after calling compile. The code may not use top level
@@ -295,7 +295,7 @@ class CodeRunner:
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
-            return
+            return None
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:
@@ -306,11 +306,13 @@ class CodeRunner:
             # Final expression from code returns here
             return e.value
 
+        return None
+
     async def run_async(
         self,
         globals: dict[str, Any] | None = None,
         locals: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         """Runs ``self.code`` which may use top level await.
 
         Can only be used after calling :any:`CodeRunner.compile`. If

@@ -65,7 +65,7 @@ class JsProxy:
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
 
-    def new(self, *args, **kwargs) -> "JsProxy":
+    def new(self, *args: Any, **kwargs: Any) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
 
     def to_py(
@@ -299,7 +299,7 @@ class JsProxy:
         data.
         """
 
-    def to_string(self, encoding=None) -> str:
+    def to_string(self, encoding: str | None = None) -> str:
         """Convert a buffer to a string object.
 
         Copies the data twice.
