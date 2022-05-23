@@ -157,7 +157,7 @@ def selenium_webworker_standalone(
         pytest.skip("firefox does not support module type web worker")
 
     with selenium_standalone_noload_common(
-        request, web_server_main, browsers=playwright_browsers, script_type=script_type
+        request, web_server_main, playwright_browsers, script_type=script_type
     ) as selenium:
         yield selenium
 
