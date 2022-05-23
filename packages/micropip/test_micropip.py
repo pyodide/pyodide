@@ -82,32 +82,44 @@ class mock_fetch_cls:
         self.releases_map = {}
         self.metadata_map = {}
 
-    def add_pkg(
+    def add_pkg_version(
         self,
         name: str,
-        requirements: dict[str, list[str]],
+        version: str = "1.0.0",
+        *,
+        requirements: list[str] | None = None,
+        extras: dict[str, list[str]] | None = None,
         platform: str = "generic",
     ):
-        releases = {}
-        for version, reqs in requirements.items():
-            filename = make_wheel_filename(name, version, platform)
-            releases[version] = [
-                {
-                    "filename": filename,
-                    "url": filename,
-                    "digests": {
-                        "sha256": Wildcard(),
-                    },
-                }
+        if requirements is None:
+            requirements = []
+        if extras is None:
+            extras = {}
+        if name not in self.releases_map:
+            self.releases_map[name] = {"releases": {}}
+        releases = self.releases_map[name]["releases"]
+        filename = make_wheel_filename(name, version, platform)
+        releases[version] = [
+            {
+                "filename": filename,
+                "url": filename,
+                "digests": {
+                    "sha256": Wildcard(),
+                },
+            }
+        ]
+        metadata = [("Name", name), ("Version", version)] + [
+            ("Requires-Dist", req) for req in requirements
+        ]
+        for extra, reqs in extras.items():
+            metadata += [("Provides-Extra", extra)] + [
+                ("Requires-Dist", f"{req}; extra == {extra!r}") for req in reqs
             ]
-            metadata = [("Name", name), ("Version", version)] + [
-                ("Requires-Dist", req) for req in reqs
-            ]
-            self.metadata_map[filename] = metadata
-        self.releases_map[name] = {"releases": releases}
+        self.metadata_map[filename] = metadata
 
     async def _get_pypi_json(self, pkgname, kwargs):
         try:
+            print("_get_pypi_json", pkgname, self.releases_map[pkgname])
             return self.releases_map[pkgname]
         except KeyError as e:
             raise ValueError(
@@ -389,9 +401,10 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
 
 @pytest.mark.asyncio
 async def test_install_keep_going(mock_fetch: mock_fetch_cls, dummy_pkg_name: str):
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": ["dep1", "dep2"]})
-    mock_fetch.add_pkg("dep1", {"1.0.0": []}, "native")
-    mock_fetch.add_pkg("dep2", {"1.0.0": []}, "native")
+    mock_fetch.add_pkg_version(dummy_pkg_name, requirements=["dep1", "dep2"])
+    mock_fetch.add_pkg_version("dep1", platform="native")
+    mock_fetch.add_pkg_version("dep2", platform="native")
+
     # report order is non-deterministic
     msg = "(dep1|dep2).*(dep2|dep1)"
     with pytest.raises(ValueError, match=msg):
@@ -405,7 +418,8 @@ async def test_install_version_compare_prerelease(
     version_old = "3.2.0"
     version_new = "3.2.1a1"
 
-    mock_fetch.add_pkg(dummy_pkg_name, {version_old: [], version_new: []})
+    mock_fetch.add_pkg_version(dummy_pkg_name, version_old)
+    mock_fetch.add_pkg_version(dummy_pkg_name, version_new)
 
     await micropip.install(f"{dummy_pkg_name}=={version_new}")
     await micropip.install(f"{dummy_pkg_name}>={version_old}")
@@ -420,8 +434,8 @@ async def test_install_no_deps(
     mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
 ):
     dep_pkg_name = "dependency_dummy"
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": [dep_pkg_name]})
-    mock_fetch.add_pkg(dep_pkg_name, {"1.0.0": []})
+    mock_fetch.add_pkg_version(dummy_pkg_name, requirements=[dep_pkg_name])
+    mock_fetch.add_pkg_version(dep_pkg_name)
 
     await micropip.install(dummy_pkg_name, deps=False)
 
@@ -438,8 +452,9 @@ async def test_install_pre(
     version_stable = "1.0.0"
 
     version_should_select = version_alpha if pre else version_stable
-    mock_fetch.add_pkg(dummy_pkg_name, {version_stable: [], version_alpha: []})
 
+    mock_fetch.add_pkg_version(dummy_pkg_name, version_stable)
+    mock_fetch.add_pkg_version(dummy_pkg_name, version_alpha)
     await micropip.install(dummy_pkg_name, pre=pre)
     assert micropip.list()[dummy_pkg_name].version == version_should_select
 
@@ -463,7 +478,8 @@ async def test_fetch_wheel_fail(monkeypatch):
 async def test_list_pypi_package(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
 ):
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
+    mock_fetch.add_pkg_version(dummy_pkg_name)
+
     await micropip.install(dummy_pkg_name)
     pkg_list = micropip.list()
     assert dummy_pkg_name in pkg_list
@@ -474,7 +490,7 @@ async def test_list_pypi_package(
 async def test_list_wheel_package(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
 ):
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
+    mock_fetch.add_pkg_version(dummy_pkg_name)
     dummy_url = f"https://dummy.com/{dummy_pkg_name}-1.0.0-py3-none-any.whl"
 
     await micropip.install(dummy_url)
@@ -487,7 +503,7 @@ async def test_list_wheel_package(
 @pytest.mark.asyncio
 async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls, mock_importlib):
     dummy_pkg_name = "dummy-Dummy"
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []})
+    mock_fetch.add_pkg_version(dummy_pkg_name)
     dummy_url = "https://dummy.com/dummy_dummy-1.0.0-py3-none-any.whl"
 
     await micropip.install(dummy_url)
@@ -570,7 +586,7 @@ async def test_install_with_credentials():
 async def test_load_binary_wheel1(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
 ):
-    mock_fetch.add_pkg(dummy_pkg_name, {"1.0.0": []}, "emscripten")
+    mock_fetch.add_pkg_version(dummy_pkg_name, platform="emscripten")
     await micropip.install(dummy_pkg_name)
 
 
