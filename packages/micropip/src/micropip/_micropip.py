@@ -160,7 +160,7 @@ class WheelInfo:
         self.write_dist_info("INSTALLER", "micropip")
         if self._requires:
             self.write_dist_info(
-                "PYODIDE_REQUIRES", json.dumps(sorted([x.name for x in self._requires]))
+                "PYODIDE_REQUIRES", json.dumps(sorted(x.name for x in self._requires))
             )
 
     async def install(self):

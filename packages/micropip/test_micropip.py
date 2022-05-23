@@ -8,7 +8,7 @@ from pyodide_test_runner import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
-from importlib.metadata import distributions, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, distributions
 
 try:
     import micropip
@@ -26,6 +26,7 @@ def _mock_importlib_version(name: str) -> str:
 
 def _mock_importlib_distributions():
     from micropip._micropip import WHEEL_BASE
+
     return distributions(path=[WHEEL_BASE])
 
 
@@ -138,6 +139,7 @@ class mock_fetch_cls:
 
         with io.BytesIO() as tmp:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
+
                 def write_file(filename, contents):
                     archive.writestr(f"{metadata_dir}/{filename}", contents)
 
@@ -586,8 +588,11 @@ async def test_install_with_credentials():
 
     await call_micropip_install()
 
+
 @pytest.mark.asyncio
-async def test_freeze(mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib : None):
+async def test_freeze(
+    mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
+):
     pkg = dummy_pkg_name
     dep1 = f"{pkg}-dep1"
     dep2 = f"{pkg}-dep2"
@@ -599,15 +604,17 @@ async def test_freeze(mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_impo
 
     await micropip.install(pkg)
     import json
+
     lockfile = json.loads(micropip.freeze())
     import pprint
-    pprint.pprint(lockfile['packages'])
-    pkg_metadata = lockfile['packages'][pkg]
-    dep1_metadata = lockfile['packages'][dep1]
-    dep2_metadata = lockfile['packages'][dep2]
-    assert pkg_metadata['depends'] == [dep1, dep2]
-    assert dep1_metadata['depends'] == []
-    assert dep2_metadata['depends'] == []
+
+    pprint.pprint(lockfile["packages"])
+    pkg_metadata = lockfile["packages"][pkg]
+    dep1_metadata = lockfile["packages"][dep1]
+    dep2_metadata = lockfile["packages"][dep2]
+    assert pkg_metadata["depends"] == [dep1, dep2]
+    assert dep1_metadata["depends"] == []
+    assert dep2_metadata["depends"] == []
     assert pkg_metadata["imports"] == toplevel[0]
-    assert dep1_metadata['imports'] == toplevel[1]
-    assert dep2_metadata['imports'] == toplevel[2]
+    assert dep1_metadata["imports"] == toplevel[1]
+    assert dep2_metadata["imports"] == toplevel[2]
