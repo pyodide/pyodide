@@ -119,6 +119,10 @@ substitutions:
   library and other tools used to install packages.
   {pr}`2572`
 
+- {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
+  packages into a `packages.json` file.
+  {pr}`2581`
+
 ### Packages
 
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.

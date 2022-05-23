@@ -183,6 +183,7 @@ def unpack_buffer(
         extract_path = Path(extract_dir)
     else:
         extract_path = Path(".")
+    filename = filename.rpartition("/")[-1]
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
