@@ -290,10 +290,10 @@ class Transaction:
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
             def eval_marker(e: dict[str, str]) -> bool:
                 self.ctx.update(e)
-                # mypy stuff
-                if req.marker:
-                    return req.marker.evaluate(self.ctx)
-                return False
+                # need the assertion here to make mypy happy:
+                # https://github.com/python/mypy/issues/4805
+                assert req.marker is not None
+                return req.marker.evaluate(self.ctx)
 
             if not any([eval_marker(e) for e in self.ctx_extras]):
                 return
