@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import os
@@ -30,11 +31,13 @@ class BuildError(Exception):
         super().__init__()
 
 
+@total_ordering
+@dataclasses.dataclass(eq=False, repr=False)
 class BasePackage:
     pkgdir: Path
     name: str
     version: str
-    meta: dict
+    meta: dict[str, Any]
     library: bool
     shared_library: bool
     dependencies: list[str]
@@ -43,6 +46,7 @@ class BasePackage:
     unvendored_tests: Path | None = None
     file_name: str | None = None
     install_dir: str = "site"
+    _queue_idx: int | None = None
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -60,8 +64,11 @@ class BasePackage:
             self.pkgdir, self.pkgdir / "build", self.meta.get("source", {})
         )
 
+    def build(self, outputdir: Path, args: Any) -> None:
+        raise NotImplementedError()
 
-@total_ordering
+
+@dataclasses.dataclass
 class StdLibPackage(BasePackage):
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
@@ -75,7 +82,7 @@ class StdLibPackage(BasePackage):
         self.dependents = set()
         self.install_dir = "lib"
 
-    def build(self, outputdir: Path, args) -> None:
+    def build(self, outputdir: Path, args: Any) -> None:
         # All build / packaging steps are already done in the main Makefile
         return
 
@@ -86,7 +93,7 @@ class StdLibPackage(BasePackage):
         return None
 
 
-@total_ordering
+@dataclasses.dataclass
 class Package(BasePackage):
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
@@ -340,7 +347,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
-    build_queue: PriorityQueue = PriorityQueue()
+    build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
 
     if args.force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
@@ -371,7 +378,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
         if len(pkg.unbuilt_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
-    built_queue: Queue = Queue()
+    built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
     # Using dict keys for insertion order preservation
@@ -412,11 +419,15 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
 
     num_built = len(already_built)
     while num_built < len(pkg_map):
-        pkg = built_queue.get()
-        if isinstance(pkg, BuildError):
-            raise SystemExit(pkg.returncode)
-        if isinstance(pkg, Exception):
-            raise pkg
+        match built_queue.get():
+            case BuildError() as err:
+                raise SystemExit(err.returncode)
+            case Exception() as err:
+                raise err
+            case a_package:
+                # MyPy should understand that this is a BasePackage
+                assert not isinstance(a_package, Exception)
+                pkg = a_package
 
         num_built += 1
 
@@ -440,7 +451,9 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) -> dict:
+def generate_packages_json(
+    output_dir: Path, pkg_map: dict[str, BasePackage]
+) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
     # Build package.json data.
     package_data: dict[str, dict[str, Any]] = {
