@@ -3,7 +3,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .common import get_make_flag, get_pyodide_root, parse_package_config
+from .common import get_make_flag, get_pyodide_root
+from .io import parse_package_config
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
