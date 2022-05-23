@@ -55,7 +55,6 @@ __version__ = "0.20.0"
 __all__ = [
     "CodeRunner",
     "ConversionError",
-    "IN_BROWSER",
     "JsException",
     "JsProxy",
     "add_event_listener",

@@ -2,6 +2,7 @@ from asyncio import gather
 from pathlib import Path
 
 from pyodide.http import pyfetch
+from pyodide._core import IN_BROWSER
 
 try:
     import pyodide_js
@@ -16,8 +17,6 @@ try:
 
     WHEEL_BASE = Path(getsitepackages()[0])
 except ImportError:
-    from pyodide import IN_BROWSER
-
     if IN_BROWSER:
         raise
     # Otherwise, this is pytest test collection so let it go.
