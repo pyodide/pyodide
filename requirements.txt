@@ -15,5 +15,3 @@
   pytest-rerunfailures
   pytest-xdist
   selenium==4.1.0
-  # maintenance
-  bump2version
