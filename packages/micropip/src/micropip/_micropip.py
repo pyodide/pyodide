@@ -380,7 +380,7 @@ async def install(
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPI
+          Pyodide repository at :any:`indexURL <globalThis.loadPyodide>` or on PyPI
 
     keep_going : ``bool``, default: False
 
@@ -478,11 +478,11 @@ def _generate_package_hash(data: BytesIO) -> str:
 
 def freeze() -> str:
     """Produce a json string which can be used as the contents of the
-    `packages.json` lockfile.
+    ``packages.json`` lockfile.
 
-    If you later load `pyodide` with this lock file, you can use
-    `pyodide.loadPackage` to load packages that were loaded with `micropip` this
-    time. Loading packages with `pyodide.loadPackage` is much faster and you
+    If you later load pyodide with this lock file, you can use
+    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
+    time. Loading packages with :any:`pyodide.loadPackage` is much faster and you
     will always get consistent versions of all your dependencies.
     """
     from copy import deepcopy
