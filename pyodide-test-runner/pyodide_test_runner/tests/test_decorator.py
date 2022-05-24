@@ -2,18 +2,30 @@ import ast
 import asyncio
 import inspect
 
-from pyodide_test_runner.decorator import _run_in_pyodide_run, run_in_pyodide
+from pyodide_test_runner.decorator import run_in_pyodide
 
 from conftest import REWRITE_CONFIG, rewrite_asserts
 from pyodide import eval_code_async
 
 
-def example_func():
+@run_in_pyodide
+def example_func1():
     x = 6
     y = 7
     assert x == y
 
 
+run_in_pyodide_alias = run_in_pyodide()
+
+
+@run_in_pyodide_alias
+def example_func2():
+    x = 6
+    y = 7
+    assert x == y
+
+
+@run_in_pyodide
 async def async_example_func():
     from asyncio import sleep
 
@@ -24,43 +36,82 @@ async def async_example_func():
     assert x == y
 
 
-def run_in_pyodide_test_helper(selenium):
-    source = inspect.getsource(example_func)
-    tree = ast.parse(source, filename=__file__)
-    rewrite_asserts(tree, source, __file__, REWRITE_CONFIG)
-    return _run_in_pyodide_run(selenium, example_func, {__file__: tree})
+class selenium_mock:
+    JavascriptException = Exception
+    browser = "none"
+
+    @staticmethod
+    def load_package(*args, **kwargs):
+        pass
+
+    @staticmethod
+    def run_async(code: str):
+        return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
+
+def make_patched_fail(exc_list):
+    def patched_fail(self, exc):
+        exc_list.append(exc)
+
+    return patched_fail
+
+def check_err(exc_list, ty, msg):
+    try:
+        assert exc_list
+        err = exc_list[0]
+        assert err
+        assert "".join(err.format_exception_only()) == msg
+    finally:
+        del exc_list[0]
+
+def test_local1(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    example_func1(selenium_mock)
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
-def test_run_in_pyodide_local():
-    class selenium_mock:
-        JavascriptException = Exception
+def test_local2(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
-        @staticmethod
-        def run_async(code: str):
-            return asyncio.get_event_loop().run_until_complete(eval_code_async(code))
-
-    err = run_in_pyodide_test_helper(selenium_mock)
-    assert err.exc_type is AssertionError
-    assert "".join(err.format_exception_only()) == "AssertionError: assert 6 == 7\n"
+    example_func1(selenium_mock)
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
-def test_run_in_pyodide_selenium(selenium):
-    selenium.load_package(["pytest"])
-    err = run_in_pyodide_test_helper(selenium)
-    assert err.exc_type is AssertionError
-    assert "".join(err.format_exception_only()) == "AssertionError: assert 6 == 7\n"
+def test_local3(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    async_example_func(selenium_mock)
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+
+def test_selenium(selenium, monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    example_func1(selenium)
+
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+
+    example_func2(selenium)
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
 @run_in_pyodide
-def test_run_in_pyodide1():
-    x = 6
-    assert x == 6
+def test_trivial1():
+    x = 7
+    assert x == 7
 
+@run_in_pyodide()
+def test_trivial2():
+    x = 7
+    assert x == 7
 
 @run_in_pyodide(pytest_assert_rewrites=False)
-def test_run_in_pyodide2():
-    x = 6
-    assert x == 6
+def test_trivial2():
+    x = 7
+    assert x == 7
 
 
 @run_in_pyodide
