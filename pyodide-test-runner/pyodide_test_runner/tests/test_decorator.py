@@ -1,10 +1,7 @@
-import ast
 import asyncio
-import inspect
 
 from pyodide_test_runner.decorator import run_in_pyodide
 
-from conftest import REWRITE_CONFIG, rewrite_asserts
 from pyodide import eval_code_async
 
 
@@ -115,7 +112,7 @@ def test_trivial2():
 
 
 @run_in_pyodide(pytest_assert_rewrites=False)
-def test_trivial2():
+def test_trivial3():
     x = 7
     assert x == 7
 
