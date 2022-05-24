@@ -1,8 +1,10 @@
-From 350b1a1fa438b327ccb1736b20e815eefcf48ea1 Mon Sep 17 00:00:00 2001
+From 6aca63c041033835d08a99fb54b3327a36652ff8 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 18 May 2022 21:49:17 -0700
 Subject: [PATCH 7/7] Indicate Emscripten version in uname
 
+This patch has been upstreamed:
+https://github.com/emscripten-core/emscripten/pull/17026
 ---
  src/library_syscall.js | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
