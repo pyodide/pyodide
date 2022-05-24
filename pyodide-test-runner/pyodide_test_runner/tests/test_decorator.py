@@ -48,11 +48,13 @@ class selenium_mock:
     def run_async(code: str):
         return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
 
+
 def make_patched_fail(exc_list):
     def patched_fail(self, exc):
         exc_list.append(exc)
 
     return patched_fail
+
 
 def check_err(exc_list, ty, msg):
     try:
@@ -62,6 +64,7 @@ def check_err(exc_list, ty, msg):
         assert "".join(err.format_exception_only()) == msg
     finally:
         del exc_list[0]
+
 
 def test_local1(monkeypatch):
     exc_list = []
@@ -86,6 +89,7 @@ def test_local3(monkeypatch):
     async_example_func(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
+
 def test_selenium(selenium, monkeypatch):
     exc_list = []
     monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
@@ -103,10 +107,12 @@ def test_trivial1():
     x = 7
     assert x == 7
 
+
 @run_in_pyodide()
 def test_trivial2():
     x = 7
     assert x == 7
+
 
 @run_in_pyodide(pytest_assert_rewrites=False)
 def test_trivial2():
