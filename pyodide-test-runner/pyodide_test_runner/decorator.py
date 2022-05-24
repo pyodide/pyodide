@@ -49,7 +49,7 @@ def _create_outer_test_function(
 
     This wrapper looks like:
 
-        def <func_name>(arg1, arg2, arg3, <selenium_arg_name>):
+        def <func_name>(<selenium_arg_name>, arg1, arg2, arg3):
             run_test(<selenium_arg_name>, (arg1, arg2, arg3))
 
     Any inner_decorators get ignored. Any outer_decorators get applied by
@@ -71,7 +71,7 @@ def _create_outer_test_function(
     ]
 
     # Add extra <selenium_arg_name> argument
-    node_args.args.append(ast.arg(arg=selenium_arg_name))
+    node_args.args.insert(0, ast.arg(arg=selenium_arg_name))
     new_node.body = func_body
 
     # Make a best effort to show something that isn't total nonsense in the
