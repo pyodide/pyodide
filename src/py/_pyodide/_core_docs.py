@@ -155,7 +155,7 @@ class JsProxy:
         pass
 
     def then(
-        self, onfulfilled: Callable[..., Any], onrejected: Callable[..., Any]
+        self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
     ) -> "Promise":
         """The ``Promise.then`` API, wrapped to manage the lifetimes of the
         handlers.
@@ -165,7 +165,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def catch(self, onrejected: Callable[..., Any], /) -> "Promise":
+    def catch(self, onrejected: Callable[[Any], Any], /) -> "Promise":
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
@@ -174,7 +174,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def finally_(self, onfinally: Callable[..., Any], /) -> "Promise":
+    def finally_(self, onfinally: Callable[[Any], Any], /) -> "Promise":
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
