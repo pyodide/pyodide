@@ -89,6 +89,9 @@ substitutions:
 - {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and `ERRNO_CODES` APIs.
   {pr}`2582`
 
+- {{ Fix }} If the request errors due to CORS, `pyfetch` now raises an `OSError` not a `JSException`.
+  {pr}`2598`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes

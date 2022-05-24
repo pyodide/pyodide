@@ -9,7 +9,7 @@ try:
 except ImportError:
     pass
 
-from ._core import IN_BROWSER
+from ._core import IN_BROWSER, JsException
 from ._package_loader import unpack_buffer
 
 __all__ = [
@@ -227,6 +227,9 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
         from js import Object
         from js import fetch as _jsfetch
 
-    return FetchResponse(
-        url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
-    )
+    try:
+        return FetchResponse(
+            url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+        )
+    except JsException as e:
+        raise OSError(e.js_error.message) from None
