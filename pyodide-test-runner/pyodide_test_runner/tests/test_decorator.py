@@ -130,7 +130,13 @@ def test_selenium(selenium, monkeypatch):
     exc_list = []
     monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
-    example_func1(selenium)
+    try:
+        example_func1(selenium)
+    except Exception as e:
+        # Protect ourselves from breaking pytest in the case that pytest is not
+        # available in browser.
+        raise Exception(e) from None
+
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
     example_func2(selenium)
