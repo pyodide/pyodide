@@ -75,6 +75,12 @@ class selenium_mock:
         return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
 
 
+class selenium_mock_fail_load_package(selenium_mock):
+    @staticmethod
+    def load_package(*args, **kwargs):
+        raise OSError("STOP!")
+
+
 def make_patched_fail(exc_list):
     def patched_fail(self, exc):
         exc_list.append(exc)
@@ -87,7 +93,6 @@ def check_err(exc_list, ty, msg):
         assert exc_list
         err = exc_list[0]
         assert err
-        assert err.exc_type is AssertionError
         assert "".join(err.format_exception_only()) == msg
     finally:
         del exc_list[0]
@@ -126,16 +131,42 @@ def test_local4():
     ]
 
 
+def test_local5(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    example_func1(selenium_mock)
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+
+
+def test_local_fail_load_package(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    exc = None
+    try:
+        example_func1(selenium_mock_fail_load_package)
+    except OSError:
+        exc = pytest.ExceptionInfo.from_current()
+
+    assert exc
+    try:
+        exc.getrepr()
+    except IndexError as e:
+        import traceback
+
+        traceback.print_exception(e)
+        raise Exception(
+            "run_in_pyodide decorator badly messed up the line numbers."
+            " This could crash pytest. Printed the traceback to stdout."
+        )
+
+
 def test_selenium(selenium, monkeypatch):
     exc_list = []
     monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
 
-    try:
-        example_func1(selenium)
-    except Exception as e:
-        # Protect ourselves from breaking pytest in the case that pytest is not
-        # available in browser.
-        raise Exception(e) from None
+    example_func1(selenium)
 
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 

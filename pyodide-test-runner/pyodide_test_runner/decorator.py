@@ -7,30 +7,8 @@ from traceback import TracebackException
 from typing import Any, Callable, Collection
 
 import pytest
-from _pytest._code import code
 
 from .utils import set_webdriver_script_timeout
-
-orig_repr_traceback_entry = code.FormattedExcinfo.repr_traceback_entry
-
-
-def repr_traceback_entry(
-    self,
-    entry,
-    excinfo=None,
-):
-    from traceback import print_tb
-
-    try:
-        return orig_repr_traceback_entry(self, entry, excinfo)
-    except Exception:
-        print("firstlineno", entry.frame.code.firstlineno)
-        print(print_tb(entry._rawentry))
-        print("\n\n")
-        raise
-
-
-code.FormattedExcinfo.repr_traceback_entry = repr_traceback_entry
 
 
 class SeleniumType:
@@ -77,14 +55,10 @@ def _create_outer_test_function(
     Any inner_decorators get ignored. Any outer_decorators get applied by
     the Python interpreter via the normal mechanism
     """
-    node = deepcopy(node)
-
-    if isinstance(node, ast.AsyncFunctionDef):
-        # wrapper should be sync, convert AsyncFunctionDef ==> FunctionDef.
-        node = ast.FunctionDef(**node.__dict__)
-
-    def fake_body_for_traceback(arg1, arg2, arg3, selenium_arg_name):
-        run_test(selenium_arg_name, (arg1, arg2, ...))
+    node_args = deepcopy(node.args)
+    new_node = ast.FunctionDef(
+        name=node.name, args=node_args, body=[], lineno=100, decorator_list=[]
+    )
 
     # Make onwards call with two args:
     # 1. <selenium_arg_name>
@@ -95,16 +69,20 @@ def _create_outer_test_function(
     onwards_call.args[0].id = selenium_arg_name
     # Set tuple elements
     onwards_call.args[1].elts = [
-        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node.args.args
+        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args
     ]
 
     # Add extra <selenium_arg_name> argument
-    node.args.args.append(ast.arg(arg=selenium_arg_name))
-    node.body = func_body
-    ast.increment_lineno(
-        node, -node.lineno + fake_body_for_traceback.__code__.co_firstlineno + 1
-    )
-    mod = ast.Module([node], type_ignores=[])
+    node_args.args.append(ast.arg(arg=selenium_arg_name))
+    new_node.body = func_body
+
+    def fake_body_for_traceback(arg1, arg2, arg3, selenium_arg_name):
+        run_test(selenium_arg_name, (arg1, arg2, ...))
+
+    lineno = fake_body_for_traceback.__code__.co_firstlineno
+    ast.increment_lineno(new_node, lineno)
+
+    mod = ast.Module([new_node], type_ignores=[])
     ast.fix_missing_locations(mod)
     co = compile(mod, __file__, "exec")
 
@@ -218,9 +196,7 @@ class run_in_pyodide:
             pytest.xfail(xfail_message)
 
         code = self._code_template(args)
-
         with set_webdriver_script_timeout(selenium, self._driver_timeout):
-            print("loading::", self._pkgs)
             if self._pkgs:
                 selenium.load_package(self._pkgs)
 
@@ -291,7 +267,4 @@ class run_in_pyodide:
             self._run_test, self._selenium_fixture_name, self._node
         )
 
-        # def wrapper2(*args, **kwargs):
-        #     print("wrapper2")
-        #     return wrapper(*args, **kwargs)
         return wrapper
