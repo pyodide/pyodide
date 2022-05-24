@@ -57,7 +57,7 @@ def _create_outer_test_function(
     """
     node_args = deepcopy(node.args)
     new_node = ast.FunctionDef(
-        name=node.name, args=node_args, body=[], lineno=100, decorator_list=[]
+        name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
     )
 
     # Make onwards call with two args:
