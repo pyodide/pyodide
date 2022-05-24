@@ -7,8 +7,30 @@ from traceback import TracebackException
 from typing import Any, Callable, Collection
 
 import pytest
+from _pytest._code import code
 
 from .utils import set_webdriver_script_timeout
+
+orig_repr_traceback_entry = code.FormattedExcinfo.repr_traceback_entry
+
+
+def repr_traceback_entry(
+    self,
+    entry,
+    excinfo=None,
+):
+    from traceback import print_tb
+
+    try:
+        return orig_repr_traceback_entry(self, entry, excinfo)
+    except Exception:
+        print("firstlineno", entry.frame.code.firstlineno)
+        print(print_tb(entry._rawentry))
+        print("\n\n")
+        raise
+
+
+code.FormattedExcinfo.repr_traceback_entry = repr_traceback_entry
 
 
 class SeleniumType:
