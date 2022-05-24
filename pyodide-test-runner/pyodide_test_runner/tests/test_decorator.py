@@ -106,16 +106,6 @@ def test_local1(monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
-def check_err(exc_list, ty, msg):
-    try:
-        assert exc_list
-        err = exc_list[0]
-        assert err
-        assert "".join(err.format_exception_only()) == msg
-    finally:
-        del exc_list[0]
-
-
 def test_local2(monkeypatch):
     exc_list = []
     monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
