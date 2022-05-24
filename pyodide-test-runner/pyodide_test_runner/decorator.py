@@ -65,10 +65,8 @@ def _create_outer_test_function(
     # 2. all other arguments in a tuple
     func_body = ast.parse("run_test(selenium_arg_name, (arg1, arg2, ...))").body
     onwards_call = func_body[0].value
-    # Set variable name
-    onwards_call.args[0].id = selenium_arg_name
-    # Set tuple elements
-    onwards_call.args[1].elts = [
+    onwards_call.args[0].id = selenium_arg_name  # Set variable name
+    onwards_call.args[1].elts = [  # Set tuple elements
         ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args
     ]
 
@@ -76,9 +74,15 @@ def _create_outer_test_function(
     node_args.args.append(ast.arg(arg=selenium_arg_name))
     new_node.body = func_body
 
-    def fake_body_for_traceback(arg1, arg2, arg3, selenium_arg_name):
+    # Make a best effort to show something that isn't total nonsense in the
+    # traceback for the generated function when there is an error.
+    # This will show:
+    # >   run_test(selenium_arg_name, (arg1, arg2, ...))
+    # in the traceback.
+    def fake_body_for_traceback(arg1, arg2, selenium_arg_name):
         run_test(selenium_arg_name, (arg1, arg2, ...))
 
+    # Adjust line numbers to point into our fake function
     lineno = fake_body_for_traceback.__code__.co_firstlineno
     ast.increment_lineno(new_node, lineno)
 
@@ -86,7 +90,8 @@ def _create_outer_test_function(
     ast.fix_missing_locations(mod)
     co = compile(mod, __file__, "exec")
 
-    # Need to give our code access to the actual "run_test" object!
+    # Need to give our code access to the actual "run_test" object which it
+    # invokes.
     globs = {"run_test": run_test}
     exec(co, globs)
 
