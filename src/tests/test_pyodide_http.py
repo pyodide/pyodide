@@ -13,9 +13,9 @@ def test_open_url(selenium, httpserver):
     assert (
         selenium.run(
             f"""
-        import pyodide
-        pyodide.open_url('{request_url}').read()
-        """
+            import pyodide
+            pyodide.open_url('{request_url}').read()
+            """
         )
         == "HELLO"
     )
@@ -75,10 +75,30 @@ def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     assert (
         selenium.run_async(
             f"""
-        import pyodide.http
-        data = await pyodide.http.pyfetch('{request_url}', credentials='omit')
-        data.string()
-        """
+            import pyodide.http
+            data = await pyodide.http.pyfetch('{request_url}', credentials='omit')
+            data.string()
+            """
         )
         == "HELLO"
+    )
+
+
+def test_pyfetch_coors_error(selenium, httpserver):
+    if selenium.browser == "node":
+        pytest.xfail("XMLHttpRequest not available in node")
+    httpserver.expect_request("/data").respond_with_data(
+        b"HELLO",
+        content_type="text/plain",
+    )
+    request_url = httpserver.url_for("/data")
+
+    selenium.run_async(
+        f"""
+        import pyodide.http
+        from unittest import TestCase
+        raises = TestCase().assertRaises
+        with raises(OSError):
+            data = await pyodide.http.pyfetch('{request_url}')
+        """
     )
