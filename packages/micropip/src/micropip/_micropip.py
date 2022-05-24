@@ -295,10 +295,11 @@ class Transaction:
                 assert req.marker is not None
                 return req.marker.evaluate(self.ctx)
 
-            if not any([eval_marker(e) for e in self.ctx_extras]):
+            if not req.marker.evaluate(self.ctx) and not any(
+                [eval_marker(e) for e in self.ctx_extras]
+            ):
                 return
         # Is some version of this package is already installed?
-
         req.name = canonicalize_name(req.name)
         if self.check_version_satisfied(req):
             return
