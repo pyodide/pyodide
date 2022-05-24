@@ -440,7 +440,7 @@ async def install(
 
     transaction = Transaction(
         ctx=ctx,
-        ctx_extras=[],
+        ctx_extras=[{"extra": ""}],
         keep_going=keep_going,
         deps=deps,
         pre=pre,
