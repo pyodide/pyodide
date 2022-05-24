@@ -6,26 +6,6 @@ from pyodide_test_runner.decorator import run_in_pyodide
 from pyodide import eval_code_async
 
 
-def complicated_decorator(attr_name: str):
-    def inner_func(value):
-        def dec(func):
-            def wrapper(*args, **kwargs):
-                wrapper.dec_info.append((attr_name, value))
-                return func(*args, **kwargs)
-
-            wrapper.dec_info = getattr(func, "dec_info", [])
-            wrapper.__name__ = func.__name__
-            return wrapper
-
-        return dec
-
-    return inner_func
-
-
-d1 = complicated_decorator("testdec1")
-d2 = complicated_decorator("testdec2")
-
-
 @run_in_pyodide
 def example_func1():
     x = 6
@@ -54,14 +34,6 @@ async def async_example_func():
     assert x == y
 
 
-@d1("a")
-@d2("b")
-@d1("c")
-@run_in_pyodide
-def example_decorator_func():
-    pass
-
-
 class selenium_mock:
     JavascriptException = Exception
     browser = "none"
@@ -73,12 +45,6 @@ class selenium_mock:
     @staticmethod
     def run_async(code: str):
         return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
-
-
-class selenium_mock_fail_load_package(selenium_mock):
-    @staticmethod
-    def load_package(*args, **kwargs):
-        raise OSError("STOP!")
 
 
 def make_patched_fail(exc_list):
@@ -122,6 +88,34 @@ def test_local3(monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
+def complicated_decorator(attr_name: str):
+    def inner_func(value):
+        def dec(func):
+            def wrapper(*args, **kwargs):
+                wrapper.dec_info.append((attr_name, value))
+                return func(*args, **kwargs)
+
+            wrapper.dec_info = getattr(func, "dec_info", [])
+            wrapper.__name__ = func.__name__
+            return wrapper
+
+        return dec
+
+    return inner_func
+
+
+d1 = complicated_decorator("testdec1")
+d2 = complicated_decorator("testdec2")
+
+
+@d1("a")
+@d2("b")
+@d1("c")
+@run_in_pyodide
+def example_decorator_func():
+    pass
+
+
 def test_local4():
     example_decorator_func(selenium_mock)
     assert example_decorator_func.dec_info == [
@@ -137,6 +131,12 @@ def test_local5(monkeypatch):
 
     example_func1(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+
+
+class selenium_mock_fail_load_package(selenium_mock):
+    @staticmethod
+    def load_package(*args, **kwargs):
+        raise OSError("STOP!")
 
 
 def test_local_fail_load_package(monkeypatch):
@@ -174,8 +174,20 @@ def test_selenium(selenium, monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
+@run_in_pyodide
+def test_trivial1():
+    x = 7
+    assert x == 7
+
+
 @run_in_pyodide()
-def test_trivial():
+def test_trivial2():
+    x = 7
+    assert x == 7
+
+
+@run_in_pyodide(pytest_assert_rewrites=False)
+def test_trivial3():
     x = 7
     assert x == 7
 
