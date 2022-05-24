@@ -9,6 +9,7 @@ from pyodide_build.common import (
     find_matching_wheels,
     get_make_environment_vars,
     get_make_flag,
+    platform,
     search_pyodide_root,
 )
 
@@ -89,6 +90,7 @@ def test_wheel_paths():
     old_version = "cp38"
     PYMAJOR = int(get_make_flag("PYMAJOR"))
     PYMINOR = int(get_make_flag("PYMINOR"))
+    PLATFORM = platform()
     current_version = f"cp{PYMAJOR}{PYMINOR}"
     future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
     strings = []
@@ -102,17 +104,17 @@ def test_wheel_paths():
         "py2.py3",
     ]:
         for abi in [interp, "abi3", "none"]:
-            for arch in ["emscripten_wasm32", "linux_x86_64", "any"]:
+            for arch in [PLATFORM, "linux_x86_64", "any"]:
                 strings.append(f"wrapt-1.13.3-{interp}-{abi}-{arch}.whl")
 
     paths = [Path(x) for x in strings]
     assert [x.stem.split("-", 2)[-1] for x in find_matching_wheels(paths)] == [
-        f"{current_version}-{current_version}-emscripten_wasm32",
-        f"{current_version}-abi3-emscripten_wasm32",
-        f"{current_version}-none-emscripten_wasm32",
-        f"{old_version}-abi3-emscripten_wasm32",
-        "py3-none-emscripten_wasm32",
-        "py2.py3-none-emscripten_wasm32",
+        f"{current_version}-{current_version}-{PLATFORM}",
+        f"{current_version}-abi3-{PLATFORM}",
+        f"{current_version}-none-{PLATFORM}",
+        f"{old_version}-abi3-{PLATFORM}",
+        f"py3-none-{PLATFORM}",
+        f"py2.py3-none-{PLATFORM}",
         "py3-none-any",
         "py2.py3-none-any",
     ]
