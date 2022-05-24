@@ -61,6 +61,9 @@ def _create_outer_test_function(
         # wrapper should be sync, convert AsyncFunctionDef ==> FunctionDef.
         node = ast.FunctionDef(**node.__dict__)
 
+    def fake_body_for_traceback(arg1, arg2, arg3, selenium_arg_name):
+        run_test(selenium_arg_name, (arg1, arg2, ...))
+
     # Make onwards call with two args:
     # 1. <selenium_arg_name>
     # 2. all other arguments in a tuple
@@ -76,6 +79,9 @@ def _create_outer_test_function(
     # Add extra <selenium_arg_name> argument
     node.args.args.append(ast.arg(arg=selenium_arg_name))
     node.body = func_body
+    ast.increment_lineno(
+        node, -node.lineno + fake_body_for_traceback.__code__.co_firstlineno + 1
+    )
     mod = ast.Module([node], type_ignores=[])
     ast.fix_missing_locations(mod)
     co = compile(mod, __file__, "exec")
@@ -102,8 +108,7 @@ class run_in_pyodide:
 
     def __init__(
         self,
-        standalone: bool = False,
-        module_scope: bool = False,
+        selenium_fixture_name: str = "selenium",
         packages: Collection[str] = (),
         xfail_browsers: dict[str, str] | None = None,
         driver_timeout: float | None = None,
@@ -149,12 +154,7 @@ class run_in_pyodide:
         self._xfail_browsers = xfail_browsers or {}
         self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
-        if standalone:
-            self._selenium_fixture_name = "selenium_standalone"
-        elif module_scope:
-            self._selenium_fixture_name = "selenium_module_scope"
-        else:
-            self._selenium_fixture_name = "selenium"
+        self._selenium_fixture_name = selenium_fixture_name
 
     def _code_template(self, args: tuple) -> str:
         """
@@ -268,4 +268,8 @@ class run_in_pyodide:
         wrapper = _create_outer_test_function(
             self._run_test, self._selenium_fixture_name, self._node
         )
+
+        # def wrapper2(*args, **kwargs):
+        #     print("wrapper2")
+        #     return wrapper(*args, **kwargs)
         return wrapper

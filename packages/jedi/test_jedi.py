@@ -1,7 +1,7 @@
 from pyodide_test_runner import run_in_pyodide
 
 
-@run_in_pyodide(standalone=True, packages=["jedi"])
+@run_in_pyodide(selenium_fixture_name="selenium_standalone", packages=["jedi"])
 def test_jedi():
     import jedi
 

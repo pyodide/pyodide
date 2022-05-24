@@ -33,7 +33,7 @@ def test_fnmatch(selenium_module_scope, pattern, name, flags, expected):
 
 @run_in_pyodide(
     packages=["cffi_example"],
-    module_scope=True,
+    selenium_fixture_name="selenium_module_scope",
     xfail_browsers={"chrome": CHROME_FAIL_v90_MSG},
 )
 def test_person():

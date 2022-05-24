@@ -137,6 +137,12 @@ def test_selenium(selenium, monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
+@run_in_pyodide()
+def test_trivial():
+    x = 7
+    assert x == 7
+
+
 @pytest.mark.parametrize("jinja2", ["jINja2", "Jinja2"])
 @run_in_pyodide
 def test_parametrize(jinja2):
@@ -146,54 +152,54 @@ def test_parametrize(jinja2):
         print(e)
 
 
-# @pytest.mark.skip(reason="Nope!")
-# @run_in_pyodide(pytest_assert_rewrites=False)
-# def test_skip():
-#     x = 6
-#     assert x == 7
+@pytest.mark.skip(reason="Nope!")
+@run_in_pyodide(pytest_assert_rewrites=False)
+def test_skip():
+    x = 6
+    assert x == 7
 
 
-# @run_in_pyodide
-# async def test_run_in_pyodide_async():
-#     from asyncio import sleep
+@run_in_pyodide
+async def test_run_in_pyodide_async():
+    from asyncio import sleep
 
-#     x = 6
-#     await sleep(0.01)
-#     assert x == 6
-
-
-# import pickle
-# from zoneinfo import ZoneInfo
-
-# from hypothesis import HealthCheck, given, settings, strategies
+    x = 6
+    await sleep(0.01)
+    assert x == 6
 
 
-# def is_picklable(x):
-#     try:
-#         pickle.dumps(x)
-#         return True
-#     except Exception:
-#         return False
+import pickle
+from zoneinfo import ZoneInfo
+
+from hypothesis import HealthCheck, given, settings, strategies
 
 
-# strategy = (
-#     strategies.from_type(type)
-#     .flatmap(strategies.from_type)
-#     .filter(lambda x: not isinstance(x, ZoneInfo))
-#     .filter(is_picklable)
-# )
+def is_picklable(x):
+    try:
+        pickle.dumps(x)
+        return True
+    except Exception:
+        return False
 
 
-# @pytest.mark.skip_refcount_check
-# @pytest.mark.skip_pyproxy_check
-# @given(obj=strategy)
-# @settings(
-#     deadline=2000,
-#     suppress_health_check=[HealthCheck.function_scoped_fixture],
-#     max_examples=25,
-# )
-# @run_in_pyodide
-# def test_hypothesis(obj):
-#     from pyodide import to_js
+strategy = (
+    strategies.from_type(type)
+    .flatmap(strategies.from_type)
+    .filter(lambda x: not isinstance(x, ZoneInfo))
+    .filter(is_picklable)
+)
 
-#     to_js(obj)
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@given(obj=strategy)
+@settings(
+    deadline=2000,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=25,
+)
+@run_in_pyodide
+def test_hypothesis(obj):
+    from pyodide import to_js
+
+    to_js(obj)
