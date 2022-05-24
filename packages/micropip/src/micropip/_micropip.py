@@ -278,7 +278,6 @@ class Transaction:
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
-
         for e in req.extras:
             self.ctx_extras.append({"extra": e})
 
@@ -295,6 +294,7 @@ class Transaction:
                 assert req.marker is not None
                 return req.marker.evaluate(self.ctx)
 
+            self.ctx.update({"extra": ""})
             if not req.marker.evaluate(self.ctx) and not any(
                 [eval_marker(e) for e in self.ctx_extras]
             ):
@@ -440,7 +440,7 @@ async def install(
 
     transaction = Transaction(
         ctx=ctx,
-        ctx_extras=[{"extra": ""}],
+        ctx_extras=[],
         keep_going=keep_going,
         deps=deps,
         pre=pre,
