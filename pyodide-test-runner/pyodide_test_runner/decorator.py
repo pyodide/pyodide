@@ -208,7 +208,8 @@ class run_in_pyodide:
             result = selenium.run_async(code)
 
         if result:
-            err = pickle.loads(b64decode(result))
+            err: TracebackException = pickle.loads(b64decode(result))
+            err.stack.pop(0)  # Get rid of __tmp in traceback
             self._fail(err)
 
     def _fail(self, err: TracebackException):
