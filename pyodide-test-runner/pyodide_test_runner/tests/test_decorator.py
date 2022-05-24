@@ -105,6 +105,7 @@ def test_local1(monkeypatch):
     example_func1(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
+
 def check_err(exc_list, ty, msg):
     try:
         assert exc_list
@@ -113,6 +114,7 @@ def check_err(exc_list, ty, msg):
         assert "".join(err.format_exception_only()) == msg
     finally:
         del exc_list[0]
+
 
 def test_local2(monkeypatch):
     exc_list = []
