@@ -1423,3 +1423,25 @@ def test_buffer_format_string(selenium):
         [array_name, is_big_endian] = process_fmt_string(fmt)
         assert is_big_endian == expected_is_big_endian
         assert array_name == expected_array_name
+
+
+@run_in_pyodide
+def test_object_with_null_constructor():
+    from unittest import TestCase
+
+    from js import eval as run_js
+
+    o = run_js("Object.create(null)")
+    with TestCase().assertRaises(TypeError):
+        repr(o)
+
+
+def test_dict_converter_cache(selenium):
+    selenium.run_js(
+        """
+        let d1 = pyodide.runPython('d={0: {1: 2}}; d[1]=d[0]; d');
+        let d = d1.toJs({dict_converter: Object.fromEntries});
+        d1.destroy();
+        assert(() => d[0] === d[1]);
+        """
+    )

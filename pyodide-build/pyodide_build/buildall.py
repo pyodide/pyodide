@@ -79,6 +79,12 @@ class StdLibPackage(BasePackage):
         # All build / packaging steps are already done in the main Makefile
         return
 
+    def wheel_path(self) -> Path:
+        raise RuntimeError("StdLibPackage has no wheel")
+
+    def tests_path(self) -> Path | None:
+        return None
+
 
 @total_ordering
 class Package(BasePackage):
@@ -108,7 +114,7 @@ class Package(BasePackage):
         dist_dir = self.pkgdir / "dist"
         wheels = list(find_matching_wheels(dist_dir.glob("*.whl")))
         if len(wheels) != 1:
-            raise Exception(
+            raise RuntimeError(
                 f"Unexpected number of wheels {len(wheels)} when building {self.name}"
             )
         return wheels[0]
@@ -120,7 +126,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, outputdir: Path, args) -> None:
+    def build(self, outputdir: Path, args: Any) -> None:
 
         p = subprocess.run(
             [
@@ -174,11 +180,6 @@ class Package(BasePackage):
             shutil.copy(file_path, outputdir)
             file_path.unlink()
             return
-
-        shutil.copy(self.wheel_path(), outputdir)
-        test_path = self.tests_path()
-        if test_path:
-            shutil.copy(test_path, outputdir)
 
 
 def generate_dependency_graph(
@@ -245,14 +246,14 @@ def generate_dependency_graph(
     return pkg_map
 
 
-def job_priority(pkg: BasePackage):
+def job_priority(pkg: BasePackage) -> int:
     if pkg.name == "numpy":
         return 0
     else:
         return 1
 
 
-def print_with_progress_line(str, progress_line):
+def print_with_progress_line(str, progress_line) -> None:
     if not sys.stdout.isatty():
         print(str)
         return
@@ -263,7 +264,7 @@ def print_with_progress_line(str, progress_line):
         print(progress_line, end="\r")
 
 
-def get_progress_line(package_set):
+def get_progress_line(package_set) -> str | None:
     if not package_set:
         return None
     return "In progress: " + ", ".join(package_set.keys())
@@ -288,7 +289,7 @@ def format_name_list(l: list[str]) -> str:
 
 def mark_package_needs_build(
     pkg_map: dict[str, BasePackage], pkg: BasePackage, needs_build: set[str]
-):
+) -> None:
     """
     Helper for generate_needs_build_set. Modifies needs_build in place.
     Recursively add pkg and all of its dependencies to needs_build.
@@ -452,12 +453,14 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
             continue
+        if not Path(output_dir, pkg.file_name).exists():
+            continue
         pkg_entry: Any = {
             "name": name,
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
-            "sha_256": _generate_package_hash(Path(output_dir, pkg.file_name)),
+            "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
@@ -479,6 +482,9 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
                 "imports": [],
                 "file_name": pkg.unvendored_tests.name,
                 "install_dir": pkg.install_dir,
+                "sha256": _generate_package_hash(
+                    Path(output_dir, pkg.unvendored_tests.name)
+                ),
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
@@ -491,6 +497,18 @@ def generate_packages_json(output_dir: Path, pkg_map: dict[str, BasePackage]) ->
     package_data["packages"] = dict(sorted(package_data["packages"].items()))
 
     return package_data
+
+
+def copy_packages_to_dist_dir(packages, output_dir):
+    for pkg in packages:
+        try:
+            shutil.copy(pkg.wheel_path(), output_dir)
+        except RuntimeError:
+            pass
+
+        test_path = pkg.tests_path()
+        if test_path:
+            shutil.copy(test_path, output_dir)
 
 
 def build_packages(packages_dir: Path, output_dir: Path, args) -> None:
@@ -514,6 +532,7 @@ def build_packages(packages_dir: Path, output_dir: Path, args) -> None:
         pkg.file_name = pkg.wheel_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
+    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
     package_data = generate_packages_json(output_dir, pkg_map)
 
     with open(output_dir / "packages.json", "w") as fd:
@@ -532,12 +551,14 @@ def make_parser(parser):
         "dir",
         type=str,
         nargs=1,
+        default="packages",
         help="Input directory containing a tree of package definitions",
     )
     parser.add_argument(
         "output",
         type=str,
         nargs=1,
+        default="dist",
         help="Output directory in which to put all built packages",
     )
     parser.add_argument(
@@ -610,6 +631,7 @@ def make_parser(parser):
 def main(args):
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
+    outputdir.mkdir(exist_ok=True)
     if args.cflags is None:
         args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     if args.cxxflags is None:

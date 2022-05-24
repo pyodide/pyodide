@@ -9,7 +9,9 @@ source:
 build:
   library: true
   script: |
-    CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=.. .
+    export INSTALL_DIR=${WASM_LIBRARY_DIR}
+
+    CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .
     emmake make -j ${PYODIDE_JOBS:-3}
-    ln -s libyaml-0.2.1/libyaml_static.a ../libyaml.a
-    ln -s libyaml-0.2.1/include ..
+    emmake make install
+    ln -s libyaml_static.a ${INSTALL_DIR}/lib/libyaml.a

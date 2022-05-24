@@ -68,12 +68,14 @@ export async function initNodeModules() {
  * then fetch from a URL, else load from the file system.
  * @param indexURL base path to resolve relative paths
  * @param path the path to load
+ * @param checksum sha-256 checksum of the package
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
 async function node_loadBinaryFile(
   indexURL: string,
-  path: string
+  path: string,
+  _file_sub_resource_hash?: string | undefined // Ignoring sub resource hash. See issue-2431.
 ): Promise<Uint8Array> {
   if (!path.startsWith("/") && !path.includes("://")) {
     // If path starts with a "/" or starts with a protocol "blah://", we
@@ -105,18 +107,21 @@ async function node_loadBinaryFile(
  *
  * @param indexURL base path to resolve relative paths
  * @param path the path to load
+ * @param subResourceHash the sub resource hash for fetch() integrity check
  * @returns A Uint8Array containing the binary data
  * @private
  */
 async function browser_loadBinaryFile(
   indexURL: string,
-  path: string
+  path: string,
+  subResourceHash: string | undefined
 ): Promise<Uint8Array> {
   // @ts-ignore
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
+  let options = subResourceHash ? { integrity: subResourceHash } : {};
   // @ts-ignore
-  let response = await fetch(url);
+  let response = await fetch(url, options);
   if (!response.ok) {
     throw new Error(`Failed to load '${url}': request failed.`);
   }
@@ -126,7 +131,8 @@ async function browser_loadBinaryFile(
 /** @private */
 export let _loadBinaryFile: (
   indexURL: string,
-  path: string
+  path: string,
+  file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
   _loadBinaryFile = node_loadBinaryFile;

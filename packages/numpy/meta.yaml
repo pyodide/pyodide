@@ -25,17 +25,12 @@ source:
 build:
   cflags: |
     -Wno-return-type
-  post: |
-    pip install -t $HOSTSITEPACKAGES numpy==$PKG_VERSION
-    # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
-    # from the build computer and bad things will happen
-    export NUMPY_CORE_INCLUDE=numpy/core/include/numpy
-    cp \
-      $PKG_BUILD_DIR/build/src.emscripten_wasm32-$PYMAJOR.$PYMINOR/$NUMPY_CORE_INCLUDE/*config.h \
-      $HOSTSITEPACKAGES/$NUMPY_CORE_INCLUDE
-    # static libraries for other packages to link
-    mkdir -p $NUMPY_LIB
-    find $SRC_DIR -name '*.a' | sed "s:.*:cp \0 $NUMPY_LIB:g" | bash
+  cross-build-env: true
+  cross-build-files:
+    - numpy/core/include/numpy/numpyconfig.h
+    - numpy/core/include/numpy/_numpyconfig.h
+    - numpy/core/lib/libnpymath.a
+    - numpy/random/lib/libnpyrandom.a
 test:
   imports:
     - numpy

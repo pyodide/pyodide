@@ -393,6 +393,7 @@ export function unpackArchive(
     buffer,
     format,
     extract_dir,
+    installer: "pyodide.unpackArchive",
   });
 }
 
@@ -448,6 +449,8 @@ export function checkInterrupt() {
 export type PyodideInterface = {
   globals: typeof globals;
   FS: typeof FS;
+  PATH: typeof PATH;
+  ERRNO_CODES: typeof ERRNO_CODES;
   pyodide_py: typeof pyodide_py;
   version: typeof version;
   loadPackage: typeof loadPackage;
@@ -486,13 +489,31 @@ export type PyodideInterface = {
 export let FS: any;
 
 /**
+ * An alias to the `Emscripten Path API
+ * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
+ *
+ * This provides a variety of operations for working with file system paths, such as
+ * ``dirname``, ``normalize``, and ``splitPath``.
+ */
+export let PATH: any;
+
+/**
+ * An alias to the Emscripten ERRNO_CODES map of standard error codes.
+ */
+export let ERRNO_CODES: any;
+
+/**
  * @private
  */
 API.makePublicAPI = function (): PyodideInterface {
   FS = Module.FS;
+  PATH = Module.PATH;
+  ERRNO_CODES = Module.ERRNO_CODES;
   let namespace = {
     globals,
     FS,
+    PATH,
+    ERRNO_CODES,
     pyodide_py,
     version,
     loadPackage,

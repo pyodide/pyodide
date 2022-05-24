@@ -13,8 +13,8 @@ export CMAKE_ARGS=" \
 -DWITH_PNG=ON \
 -DWITH_WEBP=ON \
 -DBUILD_WEBP=OFF \
--DWEBP_INCLUDE_DIR=$LIBWEBP_ROOT/include \
--DWEBP_LIBRARY=$LIBWEBP_ROOT/lib/libwebp.a \
+-DWEBP_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+-DWEBP_LIBRARY=$WASM_LIBRARY_DIR/lib/libwebp.a \
 \
 -DBUILD_opencv_python3=ON \
 -DBUILD_opencv_world=ON \

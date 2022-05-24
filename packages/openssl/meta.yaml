@@ -8,12 +8,22 @@ source:
 build:
   sharedlibrary: true
   script: |
-    emconfigure ./Configure gcc -no-ui-console -DHAVE_FORK=0 -DOPENSSL_NO_SECURE_MEMORY -DNO_SYSLOG -fPIC
+    emconfigure ./Configure \
+      gcc \
+      -no-ui-console \
+      -no-tests \
+      -DHAVE_FORK=0 \
+      -DOPENSSL_NO_SECURE_MEMORY \
+      -DNO_SYSLOG \
+      -fPIC \
+      --prefix=${WASM_LIBRARY_DIR}
+
     sed -i 's!^CROSS_COMPILE=.*!!g' Makefile
     make build_generated
     make -j ${PYODIDE_JOBS:-3} libcrypto.a
     make -j ${PYODIDE_JOBS:-3} libssl.a
     emar -d libcrypto.a liblegacy-lib-bn_asm.o liblegacy-lib-des_enc.o liblegacy-lib-fcrypt_b.o
     mkdir dist
-    emcc -sSIDE_MODULE=1 libcrypto.a -o dist/libcrypto.so
-    emcc -sSIDE_MODULE=1 libssl.a -o dist/libssl.so
+    emcc -sSIDE_MODULE=1 libcrypto.a -o libcrypto.so
+    emcc -sSIDE_MODULE=1 libssl.a -o libssl.so
+    make install_sw

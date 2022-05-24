@@ -21,6 +21,14 @@ from _pyodide._base import (
 from _pyodide._importhook import register_js_module, unregister_js_module
 
 from . import _state  # noqa: F401
+from ._browser_apis import (
+    add_event_listener,
+    clear_interval,
+    clear_timeout,
+    remove_event_listener,
+    set_interval,
+    set_timeout,
+)
 from ._core import (
     IN_BROWSER,
     ConversionError,
@@ -45,21 +53,31 @@ if IN_BROWSER:
 __version__ = "0.20.0"
 
 __all__ = [
-    "open_url",
-    "eval_code",
-    "eval_code_async",
     "CodeRunner",
-    "find_imports",
-    "JsProxy",
+    "ConversionError",
     "JsException",
-    "to_js",
-    "run_js",
-    "register_js_module",
-    "unregister_js_module",
+    "JsProxy",
+    "add_event_listener",
+    "clear_interval",
+    "clear_timeout",
+    "console",
     "create_once_callable",
     "create_proxy",
-    "console",
-    "should_quiet",
-    "ConversionError",
     "destroy_proxies",
+    "eval_code",
+    "eval_code_async",
+    "find_imports",
+    "open_url",
+    "register_js_module",
+    "remove_event_listener",
+    "run_js",
+    "set_interval",
+    "set_timeout",
+    "should_quiet",
+    "to_js",
+    "unregister_js_module",
 ]
+
+
+def __dir__() -> list[str]:
+    return __all__
