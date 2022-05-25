@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import importlib
 import json
+from asyncio import gather
 from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
@@ -24,7 +25,6 @@ from ._compat import (
     WHEEL_BASE,
     fetch_bytes,
     fetch_string,
-    gather,
     loadedPackages,
     pyodide_js,
 )
