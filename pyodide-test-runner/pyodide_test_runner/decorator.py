@@ -56,6 +56,7 @@ def _create_outer_test_function(
     the Python interpreter via the normal mechanism
     """
     node_args = deepcopy(node.args)
+    selenium_arg_name = node_args.args[0].arg
     new_node = ast.FunctionDef(
         name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
     )
@@ -67,11 +68,10 @@ def _create_outer_test_function(
     onwards_call = func_body[0].value
     onwards_call.args[0].id = selenium_arg_name  # Set variable name
     onwards_call.args[1].elts = [  # Set tuple elements
-        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args
+        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args[1:]
     ]
 
     # Add extra <selenium_arg_name> argument
-    node_args.args.insert(0, ast.arg(arg=selenium_arg_name))
     new_node.body = func_body
 
     # Make a best effort to show something that isn't total nonsense in the
@@ -177,7 +177,7 @@ class run_in_pyodide:
             d = {{}}
             exec(co, d)
             try:
-                result = d[{self._func_name!r}](*args)
+                result = d[{self._func_name!r}](None, *args)
                 if {self._async_func}:
                     result = await result
             except BaseException as e:
