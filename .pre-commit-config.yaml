@@ -22,13 +22,13 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v2.32.0"
+    rev: "v2.32.1"
     hooks:
       - id: pyupgrade
         args: ["--py310-plus"]
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v1.2.5"
+    rev: "v1.3.3"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml]
@@ -46,7 +46,7 @@ repos:
         additional_dependencies: [flake8-bugbear]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.942"
+    rev: "v0.950"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -58,6 +58,8 @@ repos:
           - types-pyyaml
           - types-setuptools
           - numpy
+          - build
+          - pytest
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
@@ -66,7 +68,7 @@ repos:
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v13.0.1"
+    rev: "v14.0.3"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -83,7 +85,7 @@ repos:
       - id: python-check-blanket-type-ignore
       - id: python-no-log-warn
       - id: python-no-eval
-        exclude: ^(src/py/_pyodide/_base\.py|src/tests/test_typeconversions\.py)$
+        exclude: ^(src/py/_pyodide/_base\.py|src/tests/test_typeconversions\.py|src/py/pyodide/_run_js.py)$
       - id: python-use-type-annotations
         exclude: docs/sphinx_pyodide/tests/test_directives\.py
       - id: rst-backticks

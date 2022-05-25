@@ -36,6 +36,14 @@ check_shasum() {
   check_binary_present "shasum"
 }
 
+check_cmake() {
+  check_binary_present "cmake"
+}
+
+check_libtool() {
+  check_binary_present "libtool"
+}
+
 check_fortran_dependencies() {
   check_binary_present "gfortran"
   check_binary_present "f2c"

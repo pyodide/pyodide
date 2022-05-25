@@ -16,7 +16,7 @@ const JsRef Js_false = ((JsRef)(6));
 const JsRef Js_null = ((JsRef)(8));
 
 // For when the return value would be Option<JsRef>
-const JsRef Js_novalue = ((JsRef)(1000));
+const JsRef Js_novalue = ((JsRef)(10));
 
 JsRef
 hiwire_from_bool(bool boolean)
@@ -34,9 +34,17 @@ EM_JS(bool, hiwire_to_bool, (JsRef val), {
 bool tracerefs;
 #endif
 
+#define HIWIRE_INIT_CONST(js_const, hiwire_attr, js_value)                     \
+  Hiwire.hiwire_attr = DEREF_U8(js_const, 0);                                  \
+  _hiwire.objects.set(Hiwire.hiwire_attr, [ js_value, -1 ]);                   \
+  _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
+
 EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
+    // The reverse of the object maps, needed to deduplicate keys so that key
+    // equality is object identity.
+    obj_to_key : new Map(),
     // counter is used to allocate keys for the objects map.
     // We use even integers to represent singleton constants which we won't
     // reference count. We only want to allocate odd keys so we start at 1 and
@@ -49,16 +57,11 @@ EM_JS_NUM(int, hiwire_init, (), {
     // conventions.
     counter : new Uint32Array([1])
   };
-  Hiwire.UNDEFINED = DEREF_U8(_Js_undefined, 0);
-  Hiwire.JSNULL = DEREF_U8(_Js_null, 0);
-  Hiwire.TRUE = DEREF_U8(_Js_true, 0);
-  Hiwire.FALSE = DEREF_U8(_Js_false, 0);
-
-  _hiwire.objects.set(Hiwire.UNDEFINED, [ undefined, -1 ]);
-  _hiwire.objects.set(Hiwire.JSNULL, [ null, -1 ]);
-  _hiwire.objects.set(Hiwire.TRUE, [ true, -1 ]);
-  _hiwire.objects.set(Hiwire.FALSE, [ false, -1 ]);
-  let hiwire_next_permanent = Hiwire.FALSE + 2;
+  HIWIRE_INIT_CONST(_Js_undefined, UNDEFINED, undefined);
+  HIWIRE_INIT_CONST(_Js_null, JSNULL, null);
+  HIWIRE_INIT_CONST(_Js_true, TRUE, true);
+  HIWIRE_INIT_CONST(_Js_false, FALSE, false);
+  let hiwire_next_permanent = HEAPU8[_Js_novalue] + 2;
 
 #ifdef DEBUG_F
   Hiwire._hiwire = _hiwire;
@@ -67,17 +70,23 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.new_value = function(jsval)
   {
-    // Should we guard against duplicating standard values?
-    // Probably not worth it for performance: it's harmless to occasionally
-    // duplicate. Maybe in test builds we could raise if jsval is a standard
-    // value?
+    // If jsval already has a hiwire key, then use existing key. We need this to
+    // ensure that obj1 === obj2 implies key1 == key2.
+    let idval = _hiwire.obj_to_key.get(jsval);
+    // clang-format off
+    if (idval !== undefined) {
+      _hiwire.objects.get(idval)[1]++;
+      return idval;
+    }
+    // clang-format on
     while (_hiwire.objects.has(_hiwire.counter[0])) {
       // Increment by two here (and below) because even integers are reserved
       // for singleton constants
       _hiwire.counter[0] += 2;
     }
-    let idval = _hiwire.counter[0];
+    idval = _hiwire.counter[0];
     _hiwire.objects.set(idval, [ jsval, 1 ]);
+    _hiwire.obj_to_key.set(jsval, idval);
     _hiwire.counter[0] += 2;
 #ifdef DEBUG_F
     if (_hiwire.objects.size > many_objects_warning_threshold) {
@@ -162,15 +171,19 @@ EM_JS_NUM(int, hiwire_init, (), {
       console.warn("hw.decref", idval, _hiwire.objects.get(idval));
     }
 #endif
-    let new_refcnt = --_hiwire.objects.get(idval)[1];
+    let pair = _hiwire.objects.get(idval);
+    let new_refcnt = --pair[1];
     if (new_refcnt === 0) {
       _hiwire.objects.delete(idval);
+      _hiwire.obj_to_key.delete(pair[0]);
     }
-    // clang-format on
   };
 
   Hiwire.incref = function(idval)
   {
+    if ((idval & 1) === 0) {
+      return;
+    }
     _hiwire.objects.get(idval)[1]++;
 #ifdef DEBUG_F
     if (DEREF_U8(_tracerefs, 0)) {
@@ -178,6 +191,7 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
 #endif
   };
+  // clang-format on
 
   Hiwire.pop_value = function(idval)
   {
@@ -204,10 +218,10 @@ EM_JS_NUM(int, hiwire_init, (), {
    * This respects slices: if the ArrayBuffer view is restricted to a slice of
    * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
    */
-  Module.typedArrayAsUint8Array = function(arg)
+  API.typedArrayAsUint8Array = function(arg)
   {
     // clang-format off
-    if(arg.buffer !== undefined){
+    if(ArrayBuffer.isView(arg)){
       // clang-format on
       return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
     } else {
@@ -387,8 +401,10 @@ EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
 });
 
-EM_JS(void, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
-  Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
+EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
+  const arr = Hiwire.get_value(idarr);
+  arr.push(Hiwire.get_value(idval));
+  return arr.length - 1;
 });
 
 // clang-format off
@@ -696,7 +712,7 @@ EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
   return Hiwire.new_value(Hiwire.get_value(idobj).toString());
 });
 
-EM_JS_REF(JsRef, hiwire_typeof, (JsRef idobj), {
+EM_JS(JsRef, hiwire_typeof, (JsRef idobj), {
   return Hiwire.new_value(typeof Hiwire.get_value(idobj));
 });
 
@@ -765,38 +781,38 @@ EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
 EM_JS(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
-  return ArrayBuffer.isView(jsobj) || jsobj.constructor.name === "ArrayBuffer";
+  return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");
   // clang-format on
 });
 
 EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
-  Module.HEAPU8.set(Module.typedArrayAsUint8Array(jsobj), ptr);
+  Module.HEAPU8.set(API.typedArrayAsUint8Array(jsobj), ptr);
 });
 
 EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
-  Module.typedArrayAsUint8Array(jsobj).set(
+  API.typedArrayAsUint8Array(jsobj).set(
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
 });
 
 EM_JS_NUM(errcode, hiwire_read_from_file, (JsRef idobj, int fd), {
   let jsobj = Hiwire.get_value(idobj);
-  let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
+  let uint8_buffer = API.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   Module.FS.read(stream, uint8_buffer, 0, uint8_buffer.byteLength);
 });
 
 EM_JS_NUM(errcode, hiwire_write_to_file, (JsRef idobj, int fd), {
   let jsobj = Hiwire.get_value(idobj);
-  let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
+  let uint8_buffer = API.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   Module.FS.write(stream, uint8_buffer, 0, uint8_buffer.byteLength);
 });
 
 EM_JS_NUM(errcode, hiwire_into_file, (JsRef idobj, int fd), {
   let jsobj = Hiwire.get_value(idobj);
-  let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
+  let uint8_buffer = API.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   // set canOwn param to true, leave position undefined.
   Module.FS.write(

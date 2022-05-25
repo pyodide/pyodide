@@ -1,7 +1,7 @@
 From 8de43377d0e72a4c5794f8494a06d81a9609090f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 2 Mar 2022 13:44:14 -0800
-Subject: [PATCH 4/4] Fix lookupPath when applied to a symlink loop
+Subject: [PATCH 4/7] Fix lookupPath when applied to a symlink loop
 
 The following code leads to an infinite loop in lookupPath:
 

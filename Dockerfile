@@ -1,14 +1,15 @@
 FROM node:14.16.1-buster-slim AS node-image
 FROM python:3.10.2-slim-buster
 
+# Requirements for building packages
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-        # building packages
-        bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
+        bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo
+        gnupg2 libdbus-glib-1-2 sudo \
+  && rm -rf /var/lib/apt/lists/*
 
 ADD docs/requirements-doc.txt requirements.txt /
 
@@ -68,6 +69,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; \
   fi \
   && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
+  && apt-get update \
   && apt install -qqy /tmp/google-chrome.deb \
   && rm -f /tmp/google-chrome.deb \
   && rm -rf /var/lib/apt/lists/* \

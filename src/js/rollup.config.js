@@ -3,19 +3,25 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
-function config({ input, format, minify, ext }) {
-  const dir = `build/`;
-  // const minifierSuffix = minify ? ".min" : "";
-  const minifierSuffix = "";
+function config({ input, output, name, format, minify }) {
   return {
     input: `./src/js/${input}.ts`,
     output: {
-      name: "loadPyodide",
-      file: `${dir}/pyodide${minifierSuffix}.${ext}`,
+      file: output,
+      name,
       format,
       sourcemap: true,
     },
-    external: ["path", "fs/promises", "node-fetch", "vm"],
+    external: [
+      "path",
+      "fs/promises",
+      "node-fetch",
+      "vm",
+      "fs",
+      "crypto",
+      "ws",
+      "child_process",
+    ],
     plugins: [
       commonjs(),
       ts({
@@ -36,8 +42,23 @@ function config({ input, format, minify, ext }) {
 }
 
 export default [
-  // { input: "pyodide", format: "esm", minify: false, ext: "mjs" },
-  { input: "pyodide", format: "esm", minify: true, ext: "mjs" },
-  // { input: "pyodide", format: "umd", minify: false },
-  { input: "pyodide.umd", format: "umd", minify: true, ext: "js" },
+  {
+    input: "pyodide",
+    output: "dist/pyodide.mjs",
+    format: "esm",
+    minify: true,
+  },
+  {
+    input: "pyodide.umd",
+    output: "dist/pyodide.js",
+    format: "umd",
+    name: "loadPyodide",
+    minify: true,
+  },
+  {
+    input: "api",
+    output: "src/js/_pyodide.out.js",
+    format: "iife",
+    minify: true,
+  },
 ].map(config);

@@ -53,7 +53,7 @@ ReplayArgs = namedtuple(
 )
 
 
-def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
+def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -107,7 +107,7 @@ def compile(env, **kwargs):
     args["orig__name__"] = __name__
     make_command_wrapper_symlinks(env)
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
+    env["_PYTHON_HOST_PLATFORM"] = common.platform()
 
     from pyodide_build.pypabuild import build
 
@@ -494,6 +494,7 @@ def handle_command_generate_args(
 
         if result:
             new_args.append(result)
+
     return new_args
 
 
@@ -526,6 +527,19 @@ def handle_command(
 
     if args.pkgname == "scipy":
         scipy_fixes(new_args)
+
+    # FIXME: For some unknown reason,
+    #        opencv-python tries to link a same library (libopencv_world.a) multiple times,
+    #        which leads to 'duplicated symbols' error.
+    if args.pkgname == "opencv-python":
+        duplicated_lib = "libopencv_world.a"
+        _new_args = []
+        for arg in new_args:
+            if duplicated_lib in arg and arg in _new_args:
+                continue
+            _new_args.append(arg)
+
+        new_args = _new_args
 
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:

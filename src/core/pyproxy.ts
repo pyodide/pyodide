@@ -14,7 +14,9 @@
  * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
-import { Module, API, Hiwire } from "./module.js";
+declare var Module: any;
+declare var Hiwire: any;
+declare var API: any;
 
 // pyodide-skip
 
@@ -62,8 +64,10 @@ declare var globalThis: any;
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
     ([ptr, cache]: [ptr: number, cache: PyProxyCache]) => {
-      cache.leaked = true;
-      pyproxy_decref_cache(cache);
+      if (cache) {
+        cache.leaked = true;
+        pyproxy_decref_cache(cache);
+      }
       try {
         Module._Py_DecRef(ptr);
       } catch (e) {
@@ -256,7 +260,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   try {
     proxy_repr = proxy.toString();
   } catch (e) {
-    if (e.pyodide_fatal_error) {
+    if ((e as any).pyodide_fatal_error) {
       throw e;
     }
   }
@@ -803,6 +807,9 @@ export class PyProxyIteratorMethods {
       Hiwire.decref(idarg);
     }
     let HEAPU32 = Module.HEAPU32;
+    // HEAPU32 is used in the DEREF_U32 C preprocessor macro. Typescript doesn't know this.
+    // So we "use" HEAPU32 once to trick Typescript, so we can enable strictUnusedLocalVariables.
+    HEAPU32;
     let idresult = DEREF_U32(res_ptr, 0);
     Module.stackRestore(stackTop);
     if (status === PYGEN_ERROR) {

@@ -1,7 +1,7 @@
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "ssl"])
+@run_in_pyodide(packages=["test", "ssl"], pytest_assert_rewrites=False)
 def test_ssl():
     import platform
     import unittest

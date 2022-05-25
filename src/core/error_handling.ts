@@ -1,5 +1,8 @@
 import ErrorStackParser from "error-stack-parser";
-import { Module, API, Hiwire, Tests } from "./module.js";
+declare var Module: any;
+declare var Hiwire: any;
+declare var API: any;
+declare var Tests: any;
 
 /**
  * Dump the Python traceback to the browser console.
@@ -11,7 +14,7 @@ API.dump_traceback = function () {
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
 
-function ensureCaughtObjectIsError(e: any) {
+function ensureCaughtObjectIsError(e: any): Error {
   if (typeof e === "string") {
     // Sometimes emscripten throws a raw string...
     e = new Error(e);
@@ -191,14 +194,14 @@ function convertCppException(ptr: number): CppException {
 Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
-  const fileName = frame.fileName || "";
-  if (fileName.includes("pyodide.asm")) {
-    return true;
+  if (!frame) {
+    return false;
   }
+  const fileName = frame.fileName || "";
   if (fileName.includes("wasm-function")) {
     return true;
   }
-  if (!fileName.includes("pyodide.js")) {
+  if (!fileName.includes("pyodide.asm.js")) {
     return false;
   }
   let funcName = frame.functionName || "";

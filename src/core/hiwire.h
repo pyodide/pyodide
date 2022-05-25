@@ -34,6 +34,11 @@ struct _JsRefStruct
 
 typedef struct _JsRefStruct* JsRef;
 
+_Static_assert(alignof(JsRef) == alignof(int),
+               "JsRef should have the same alignment as int.");
+_Static_assert(sizeof(JsRef) == sizeof(int),
+               "JsRef should have the same size as int.");
+
 // Error handling will want to see JsRef.
 #include "error_handling.h"
 
@@ -198,7 +203,7 @@ JsArray_Push(JsRef idobj, JsRef idval);
 /**
  * Same as JsArray_Push but panics on failure
  */
-void
+int
 JsArray_Push_unchecked(JsRef idobj, JsRef idval);
 
 /**

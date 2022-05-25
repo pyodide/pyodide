@@ -12,7 +12,7 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"></script>
+      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
   </head>
   <body>
     <script type="text/javascript">
@@ -120,4 +120,5 @@ For this same reason, installing Pyodide packages from the CDN is explicitly not
 
    webworker.md
    loading-custom-python-code.md
+   file-system.md
 ```

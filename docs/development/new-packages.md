@@ -77,7 +77,7 @@ Once the `meta.yaml` file is ready, build the package with the following
 commands from inside the package directory `packages/<package-name>`
 
 ```sh
-python -m pyodide_build buildpkg meta.yaml
+python -m pyodide_build buildall --only 'package-name' packages dist
 ```
 
 and see if there are any errors.
@@ -88,6 +88,43 @@ If there are errors you might need to
 - add the patch files to the `source/patches` field in the `meta.yaml` file
 
 then restart the build.
+
+If the build succeeds you can try to load the package by
+
+1. Serve the dist directory with `python -m http.server`
+2. Open `localhost:<port>/console.html` and try to import the package
+3. You can test the package in the repl
+
+#### Writing tests for your package
+
+The tests should go in one or more files like
+`packages/<package-name>/test_xxx.py`. Most packages have one test file named
+`test_<package-name>.py`. The tests should look like:
+
+```py
+from pyodide_test_runner import run_in_pyodide
+
+@run_in_pyodide(packages=["<package-name>"])
+def test_mytestname():
+  import <package-name>
+  assert package.do_something() == 5
+  # ...
+```
+
+If you want to run your package's full pytest test suite and your package
+vendors tests you can do it like:
+
+```py
+from pyodide_test_runner import run_in_pyodide
+
+@run_in_pyodide(packages=["<package-name>-tests", "pytest"])
+def test_mytestname():
+  import pytest
+  pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...])
+```
+
+you can put whatever command line arguments you would pass to `pytest` as
+separate entries in the list.
 
 #### Generating patches
 
@@ -227,9 +264,6 @@ libraries with Emscripten ports is
 here.](https://github.com/orgs/emscripten-ports/repositories?type=all)
 
 ## Structure of a Pyodide package
-
-This section describes the structure of a pure Python package, and how our build
-system creates it.
 
 Pyodide is obtained by compiling CPython into WebAssembly. As such, it loads
 packages the same way as CPython --- it looks for relevant files `.py` and `.so`

@@ -134,7 +134,7 @@ installs from PyPI.
   <body>
     <script
       type="text/javascript"
-      src="https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js"
+      src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"
     ></script>
     <script type="text/javascript">
       async function main() {

@@ -5,7 +5,7 @@ on:
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide
-  PYODIDE_ENV_VERSION: 20220317-chrome99-firefox98-py310
+  PYODIDE_ENV_VERSION: 20220411-chrome99-firefox98
 jobs:
   build_docker:
     runs-on: ubuntu-latest

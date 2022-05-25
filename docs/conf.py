@@ -130,7 +130,7 @@ except ImportError:
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
 if IN_READTHEDOCS:
-    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/v0.20.0/full/"}
+    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/dev/full/"}
     os.makedirs("_build/html", exist_ok=True)
     res = subprocess.check_output(
         ["make", "-C", "..", "docs/_build/html/console.html"],

@@ -105,7 +105,7 @@ shown below:
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
 // and `.wasm` files as well:
-importScripts("https://cdn.jsdelivr.net/pyodide/v0.20.0/full/pyodide.js");
+importScripts("https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js");
 
 async function loadPyodideAndPackages() {
   self.pyodide = await loadPyodide();
@@ -143,7 +143,7 @@ You would just need to call `.postMessages()` with the right arguments as
 this API does.
 
 ```js
-const pyodideWorker = new Worker("./build/webworker.js");
+const pyodideWorker = new Worker("./dist/webworker.js");
 
 const callbacks = {};
 

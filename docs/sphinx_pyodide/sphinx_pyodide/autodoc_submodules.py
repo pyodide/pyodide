@@ -43,7 +43,9 @@ def get_module_members(module: Any) -> list[tuple[str, Any]]:
     return sorted(list(members.values()))
 
 
-def get_object_members(self, want_all: bool):
+def get_object_members(
+    self: ModuleDocumenter, want_all: bool
+) -> tuple[bool, list[tuple[str, Any]] | list[ObjectMember]]:
     """
     For some reason I was unable to monkey patch get_module_members so we monkey
     patch get_object_members to call our updated `get_module_members`.

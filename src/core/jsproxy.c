@@ -119,6 +119,12 @@ static PyObject*
 JsProxy_Repr(PyObject* self)
 {
   JsRef idrepr = hiwire_to_string(JsProxy_REF(self));
+  if (idrepr == NULL) {
+    PyErr_Format(PyExc_TypeError,
+                 "Pyodide cannot generate a repr for this Javascript object "
+                 "because it has no 'toString' method");
+    return NULL;
+  }
   PyObject* pyrepr = js2python(idrepr);
   hiwire_decref(idrepr);
   return pyrepr;
@@ -134,6 +140,32 @@ JsProxy_typeof(PyObject* self, void* _unused)
   PyObject* result = js2python(idval);
   hiwire_decref(idval);
   return result;
+}
+
+static PyObject*
+JsProxy_js_id(PyObject* self, void* _unused)
+{
+  PyObject* result = NULL;
+
+  JsRef idval = JsProxy_REF(self);
+  int x[2] = { (int)Py_TYPE(self), (int)idval };
+  Py_hash_t result_c = _Py_HashBytes(x, 8);
+  FAIL_IF_MINUS_ONE(result_c);
+  result = PyLong_FromLong(result_c);
+finally:
+  return result;
+}
+
+static PyObject*
+JsProxy_js_id_private(PyObject* mod, PyObject* obj)
+{
+  if (!JsProxy_Check(obj)) {
+    PyErr_SetString(PyExc_TypeError, "Expected argument to be a JsProxy");
+    return NULL;
+  }
+
+  JsRef idval = JsProxy_REF(obj);
+  return PyLong_FromLong((int)idval);
 }
 
 /**
@@ -710,8 +742,7 @@ JsProxy_toPy(PyObject* self,
   static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
   int depth = -1;
   PyObject* default_converter = NULL;
-  if (kwnames != NULL &&
-      !_PyArg_ParseStackAndKeywords(
+  if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
@@ -972,6 +1003,7 @@ static PyNumberMethods JsProxy_NumberMethods = {
 // clang-format on
 
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
+                                        { "js_id", .get = JsProxy_js_id },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
@@ -2095,6 +2127,15 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
+static PyMethodDef methods[] = {
+  {
+    "hiwire_id",
+    JsProxy_js_id_private,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
+
 int
 JsProxy_init(PyObject* core_module)
 {
@@ -2136,6 +2177,8 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
 
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
+
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
 
@@ -2145,6 +2188,9 @@ JsProxy_init(PyObject* core_module)
 
   JsProxy_TypeDict = PyDict_New();
   FAIL_IF_NULL(JsProxy_TypeDict);
+
+  FAIL_IF_MINUS_ONE(
+    PyModule_AddObject(core_module, "jsproxy_typedict", JsProxy_TypeDict));
 
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;

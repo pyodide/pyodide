@@ -88,13 +88,13 @@ jobs:
           ccache -s
 
       - name: check-size
-        run: ls -lh build/
+        run: ls -lh dist/
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v2
         with:
           name: core-build
-          path: ./build/
+          path: ./dist/
           retention-days: 60
 
   test-core:
@@ -114,7 +114,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: core-build
-          path: ./build/
+          path: ./dist/
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
@@ -133,7 +133,7 @@ jobs:
         shell: bash -l {0}
         run: |
           ls -lh
-          ls -lh build/
+          ls -lh dist/
           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
 
       - name: run package tests
@@ -142,5 +142,5 @@ jobs:
         shell: bash -l {0}
         run: |
           ls -lh
-          ls -lh build/
+          ls -lh dist/
           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${SELENIUM_RUNNER}"
