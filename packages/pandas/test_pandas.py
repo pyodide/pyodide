@@ -1,9 +1,10 @@
 import random
+from typing import Any
 
 import pytest
 
 
-def generate_largish_json(n_rows: int = 91746) -> dict:
+def generate_largish_json(n_rows: int = 91746) -> dict[str, Any]:
     # with n_rows = 91746, the output JSON size will be ~15 MB/10k rows
 
     # Note: we don't fix the random seed here, but the actual values

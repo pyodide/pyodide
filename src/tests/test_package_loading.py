@@ -313,7 +313,7 @@ def test_load_bad_so_file(selenium):
     selenium.run_js(
         """
         pyodide.FS.writeFile("/a.so", new Uint8Array(4))
-        await pyodide._api.tests.loadDynlib("/a.so");
+        await pyodide._api.loadDynlib("/a.so");
         """
     )
     assert (
@@ -385,11 +385,11 @@ def test_get_dynlibs():
             x.addfile(tarfile.TarInfo(file))
         x.close()
         t.flush()
-        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
+        assert sorted(get_dynlibs(t, ".bz", Path("/p"))) == so_files
     with NamedTemporaryFile(suffix=".zip") as t:
         x2 = ZipFile(t, mode="w")
         for file in files:
             x2.writestr(file, "")
         x2.close()
         t.flush()
-        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
+        assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files

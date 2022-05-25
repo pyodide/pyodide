@@ -183,6 +183,7 @@ def unpack_buffer(
         extract_path = Path(extract_dir)
     else:
         extract_path = Path(".")
+    filename = filename.rpartition("/")[-1]
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
@@ -190,7 +191,8 @@ def unpack_buffer(
         if suffix == ".whl":
             set_wheel_installer(filename, f, extract_path, installer, source)
         if calculate_dynlibs:
-            return to_js(get_dynlibs(f, extract_path))
+            suffix = Path(f.name).suffix
+            return to_js(get_dynlibs(f, suffix, extract_path))
         else:
             return None
 
@@ -261,7 +263,7 @@ def set_wheel_installer(
         (dist_info / "PYODIDE_SOURCE").write_text(source)
 
 
-def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
+def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     """List out the paths to .so files in a zip or tar archive.
 
     Parameters
@@ -279,7 +281,6 @@ def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
         The list of paths to dynamic libraries ('.so' files) that were in the archive,
         but adjusted to point to their unpacked locations.
     """
-    suffix = Path(archive.name).suffix
     dynlib_paths_iter: Iterable[str]
     if suffix in ZIP_TYPES:
         dynlib_paths_iter = ZipFile(archive).namelist()

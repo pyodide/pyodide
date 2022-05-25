@@ -308,7 +308,7 @@ async function loadDynlib(lib: string, shared: boolean) {
     releaseDynlibLock();
   }
 }
-Tests.loadDynlib = loadDynlib;
+API.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 

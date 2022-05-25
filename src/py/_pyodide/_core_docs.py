@@ -154,7 +154,9 @@ class JsProxy:
         """
         pass
 
-    def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
+    def then(
+        self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
+    ) -> "Promise":
         """The ``Promise.then`` API, wrapped to manage the lifetimes of the
         handlers.
 
@@ -163,7 +165,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def catch(self, onrejected: Callable, /) -> "Promise":
+    def catch(self, onrejected: Callable[[Any], Any], /) -> "Promise":
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
@@ -172,7 +174,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def finally_(self, onfinally: Callable, /) -> "Promise":
+    def finally_(self, onfinally: Callable[[Any], Any], /) -> "Promise":
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -318,7 +320,7 @@ class JsProxy:
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable, /) -> JsProxy:
+def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
     """Wrap a Python callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count

@@ -51,7 +51,7 @@ shutil.register_unpack_format(
 )
 
 
-def exit_with_stdio(result: subprocess.CompletedProcess) -> NoReturn:
+def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
         print("  stdout:")
         print(textwrap.indent(result.stdout, "    "))
@@ -352,6 +352,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
             result = subprocess.run(
                 ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
                 check=False,
+                encoding="utf-8",
             )
             if result.returncode != 0:
                 print(f"ERROR: Patch {pkg_root/patch} failed")
@@ -368,7 +369,9 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
 def unpack_wheel(path):
     with chdir(path.parent):
         result = subprocess.run(
-            [sys.executable, "-m", "wheel", "unpack", path.name], check=False
+            [sys.executable, "-m", "wheel", "unpack", path.name],
+            check=False,
+            encoding="utf-8",
         )
         if result.returncode != 0:
             print(f"ERROR: Unpacking wheel {path.name} failed")
@@ -378,7 +381,9 @@ def unpack_wheel(path):
 def pack_wheel(path):
     with chdir(path.parent):
         result = subprocess.run(
-            [sys.executable, "-m", "wheel", "pack", path.name], check=False
+            [sys.executable, "-m", "wheel", "pack", path.name],
+            check=False,
+            encoding="utf-8",
         )
         if result.returncode != 0:
             print(f"ERROR: Packing wheel {path} failed")
