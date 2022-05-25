@@ -10,6 +10,7 @@ yaml = ruamel.yaml.YAML()
 
 from pathlib import Path
 from sys import version_info
+from typing import Any
 
 PYODIDE_ROOT = Path(__file__).parents[2]
 LIB_DIR = (
@@ -30,7 +31,7 @@ def get_old_yaml():
     return result
 
 
-def collect_tests(base_dir: Path) -> set:
+def collect_tests(base_dir: Path) -> set[str]:
     """Collect CPython unit tests"""
     # Note: this functionality is somewhat equivalent to pytest test
     # collection.
@@ -52,7 +53,7 @@ def collect_tests(base_dir: Path) -> set:
     return tests
 
 
-def get_test_name(test) -> str:
+def get_test_name(test: Any) -> str:
     if isinstance(test, dict):
         name = next(iter(test.keys()))
     else:

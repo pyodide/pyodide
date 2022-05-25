@@ -177,11 +177,13 @@ EM_JS_NUM(int, hiwire_init, (), {
       _hiwire.objects.delete(idval);
       _hiwire.obj_to_key.delete(pair[0]);
     }
-    // clang-format on
   };
 
   Hiwire.incref = function(idval)
   {
+    if ((idval & 1) === 0) {
+      return;
+    }
     _hiwire.objects.get(idval)[1]++;
 #ifdef DEBUG_F
     if (DEREF_U8(_tracerefs, 0)) {
@@ -189,6 +191,7 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
 #endif
   };
+  // clang-format on
 
   Hiwire.pop_value = function(idval)
   {
@@ -398,8 +401,10 @@ EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
 });
 
-EM_JS(void, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
-  Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
+EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
+  const arr = Hiwire.get_value(idarr);
+  arr.push(Hiwire.get_value(idval));
+  return arr.length - 1;
 });
 
 // clang-format off
@@ -707,7 +712,7 @@ EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
   return Hiwire.new_value(Hiwire.get_value(idobj).toString());
 });
 
-EM_JS_REF(JsRef, hiwire_typeof, (JsRef idobj), {
+EM_JS(JsRef, hiwire_typeof, (JsRef idobj), {
   return Hiwire.new_value(typeof Hiwire.get_value(idobj));
 });
 
@@ -776,7 +781,7 @@ EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
 EM_JS(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
-  return ArrayBuffer.isView(jsobj) || jsobj.constructor.name === "ArrayBuffer";
+  return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");
   // clang-format on
 });
 

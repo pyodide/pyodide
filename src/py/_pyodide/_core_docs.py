@@ -65,7 +65,7 @@ class JsProxy:
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
 
-    def new(self, *args, **kwargs) -> "JsProxy":
+    def new(self, *args: Any, **kwargs: Any) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
 
     def to_py(
@@ -154,7 +154,9 @@ class JsProxy:
         """
         pass
 
-    def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
+    def then(
+        self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
+    ) -> "Promise":
         """The ``Promise.then`` API, wrapped to manage the lifetimes of the
         handlers.
 
@@ -163,7 +165,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def catch(self, onrejected: Callable, /) -> "Promise":
+    def catch(self, onrejected: Callable[[Any], Any], /) -> "Promise":
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
@@ -172,7 +174,7 @@ class JsProxy:
         when the promise resolves.
         """
 
-    def finally_(self, onfinally: Callable, /) -> "Promise":
+    def finally_(self, onfinally: Callable[[Any], Any], /) -> "Promise":
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -299,7 +301,7 @@ class JsProxy:
         data.
         """
 
-    def to_string(self, encoding=None) -> str:
+    def to_string(self, encoding: str | None = None) -> str:
         """Convert a buffer to a string object.
 
         Copies the data twice.
@@ -318,7 +320,7 @@ class JsProxy:
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable, /) -> JsProxy:
+def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
     """Wrap a Python callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count

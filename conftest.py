@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+pytest_plugins = ("pytest_asyncio",)
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
@@ -186,7 +188,9 @@ ORIGINAL_MODULE_ASTS: dict[str, ast.Module] = {}
 REWRITTEN_MODULE_ASTS: dict[str, ast.Module] = {}
 
 
-def pytest_pycollect_makemodule(module_path: pathlib.Path, path: Any, parent: Any):
+def pytest_pycollect_makemodule(
+    module_path: pathlib.Path, path: Any, parent: Any
+) -> None:
     source = module_path.read_bytes()
     strfn = str(module_path)
     tree = ast.parse(source, filename=strfn)

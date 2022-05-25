@@ -119,8 +119,7 @@ $(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
-	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh && make install
+	. $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh && cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && pwd && ./build.sh && make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/

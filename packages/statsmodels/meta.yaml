@@ -9,8 +9,9 @@ source:
     - patches/fix-scipy-blas-cythonize.patch
 
 build:
-  ldflags: -L$(NUMPY_LIB)
-
+  ldflags: |
+    -L$(NUMPY_LIB)/core/lib/
+    -L$(NUMPY_LIB)/random/lib/
 requirements:
   run:
     - distutils

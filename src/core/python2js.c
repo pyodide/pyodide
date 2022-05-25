@@ -18,13 +18,13 @@ static inline JsRef
 _python2js_immutable(PyObject* x);
 
 int
-_python2js_add_to_cache(PyObject* cache, PyObject* pyparent, JsRef jsparent);
+_python2js_add_to_cache(JsRef cache, PyObject* pyparent, JsRef jsparent);
 
 struct ConversionContext_s;
 
 typedef struct ConversionContext_s
 {
-  PyObject* cache;
+  JsRef cache;
   int depth;
   JsRef proxies;
   JsRef jscontext;
@@ -34,11 +34,39 @@ typedef struct ConversionContext_s
                            JsRef key,
                            JsRef value);
   JsRef (*dict_postprocess)(struct ConversionContext_s context, JsRef dict);
+  JsRef jspostprocess_list;
   bool default_converter;
 } ConversionContext;
 
 JsRef
 _python2js(ConversionContext context, PyObject* x);
+
+EM_JS(void,
+      _python2js_addto_postprocess_list,
+      (JsRef idlist, JsRef idparent, JsRef idkey, PyObject* value),
+      {
+        const list = Hiwire.get_value(idlist);
+        const parent = Hiwire.get_value(idparent);
+        const key = Hiwire.get_value(idkey);
+        list.push([ parent, key, value ]);
+      });
+
+EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
+  const list = Hiwire.get_value(idlist);
+  const cache = Hiwire.get_value(idcache);
+  for (const[parent, key, value] of list) {
+    let out_value = Hiwire.get_value(cache.get(value));
+    // clang-format off
+    if(parent.constructor.name === "Map"){
+      parent.set(key, out_value)
+    } else {
+      // This is unfortunately a bit of a hack, if user does something weird
+      // enough in dict_converter then it won't work.
+      parent[key] = out_value;
+    }
+    // clang-format on
+  }
+});
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -139,7 +167,14 @@ _python2js_sequence(ConversionContext context, PyObject* x)
     FAIL_IF_NULL(pyitem);
     jsitem = _python2js(context, pyitem);
     FAIL_IF_NULL(jsitem);
-    JsArray_Push_unchecked(jsarray, jsitem);
+    if (jsitem == Js_novalue) {
+      JsRef index = hiwire_int(JsArray_Push_unchecked(jsarray, Js_null));
+      _python2js_addto_postprocess_list(
+        context.jspostprocess_list, jsarray, index, pyitem);
+      hiwire_CLEAR(index);
+    } else {
+      JsArray_Push_unchecked(jsarray, jsitem);
+    }
     Py_CLEAR(pyitem);
     hiwire_CLEAR(jsitem);
   }
@@ -168,7 +203,7 @@ _python2js_dict(ConversionContext context, PyObject* x)
 
   jsdict = context.dict_new(context);
   FAIL_IF_NULL(jsdict);
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, Js_novalue));
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
@@ -181,7 +216,13 @@ _python2js_dict(ConversionContext context, PyObject* x)
     }
     jsval = _python2js(context, pyval);
     FAIL_IF_NULL(jsval);
-    FAIL_IF_MINUS_ONE(context.dict_add_keyvalue(context, jsdict, jskey, jsval));
+    if (jsval == Js_novalue) {
+      _python2js_addto_postprocess_list(
+        context.jspostprocess_list, jsdict, jskey, pyval);
+    } else {
+      FAIL_IF_MINUS_ONE(
+        context.dict_add_keyvalue(context, jsdict, jskey, jsval));
+    }
     hiwire_CLEAR(jskey);
     hiwire_CLEAR(jsval);
   }
@@ -191,6 +232,7 @@ _python2js_dict(ConversionContext context, PyObject* x)
     hiwire_CLEAR(jsdict);
     jsdict = temp;
   }
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   success = true;
 finally:
   hiwire_CLEAR(jskey);
@@ -343,7 +385,8 @@ finally:
   return NULL;
 }
 
-/* During conversion of collection types (lists and dicts) from Python to
+/**
+ * During conversion of collection types (lists and dicts) from Python to
  * JavaScript, we need to make sure that those collections don't include
  * themselves, otherwise infinite recursion occurs. We also want to make sure
  * that if the list contains multiple copies of the same list that they point to
@@ -362,26 +405,31 @@ finally:
  * This cache only lives for each invocation of python2js.
  */
 
-int
-_python2js_add_to_cache(PyObject* cache, PyObject* pyparent, JsRef jsparent)
+// clang-format off
+EM_JS_NUM(
+int, _python2js_add_to_cache,
+(JsRef cacheid, PyObject* pyparent, JsRef jsparent),
 {
-  /* Use the pointer converted to an int so cache is by identity, not hash */
-  int result = -1;
-  PyObject* pyparentid = NULL;
-  PyObject* jsparentid = NULL;
+  const cache = Hiwire.get_value(cacheid);
+  const old_value = cache.get(pyparent);
+  if (old_value !== undefined) {
+    Hiwire.decref(old_value);
+  }
+  Hiwire.incref(jsparent);
+  cache.set(pyparent, jsparent);
+});
+// clang-format oh
 
-  pyparentid = PyLong_FromSize_t((size_t)pyparent);
-  FAIL_IF_NULL(pyparentid);
-  jsparent = hiwire_incref(jsparent);
-  jsparentid = PyLong_FromSize_t((size_t)jsparent);
-  FAIL_IF_NULL(jsparentid);
-  result = PyDict_SetItem(cache, pyparentid, jsparentid);
+EM_JS(void, _python2js_destroy_cache, (JsRef cacheid), {
+  const cache = Hiwire.get_value(cacheid);
+  for (const[k, v] of cache.entries()) {
+    Hiwire.decref(v);
+  }
+});
 
-finally:
-  Py_CLEAR(pyparentid);
-  Py_CLEAR(jsparentid);
-  return result;
-}
+EM_JS(JsRef, _python2js_cache_lookup, (JsRef cacheid, PyObject* pyparent), {
+  return Hiwire.get_value(cacheid).get(pyparent);
+});
 
 /**
  * This is a helper for python2js_with_depth. We need to create a cache for the
@@ -394,12 +442,9 @@ finally:
 JsRef
 _python2js(ConversionContext context, PyObject* x)
 {
-  PyObject* id = PyLong_FromSize_t((size_t)x);
-  FAIL_IF_NULL(id);
-  PyObject* val = PyDict_GetItemWithError(context.cache, id); /* borrowed */
-  Py_CLEAR(id);
-  if (val != NULL) {
-    return hiwire_incref((JsRef)PyLong_AsSize_t(val));
+  JsRef id = _python2js_cache_lookup(context.cache, x); /* borrowed */
+  if (id != NULL) {
+    return hiwire_incref(id);
   }
   FAIL_IF_ERR_OCCURRED();
   if (context.depth == 0) {
@@ -554,7 +599,7 @@ EM_JS_REF(
 JsRef,
 python2js_custom__create_jscontext,
 (ConversionContext context,
-  PyObject* cache,
+  JsRef idcache,
   JsRef dict_converter,
   JsRef default_converter),
 {
@@ -572,8 +617,7 @@ python2js_custom__create_jscontext,
       }
       let input_ptr = Module.PyProxy_getPtr(input);
       let output_key = Hiwire.new_value(output);
-      __python2js_add_to_cache(cache, input_ptr, output_key);
-      Hiwire.decref(output_key);
+      Hiwire.get_value(idcache).set(input_ptr, output_key);
     };
     jscontext.converter = function (x) {
       if (!API.isPyProxy(x)) {
@@ -600,17 +644,21 @@ python2js_custom(PyObject* x,
                  JsRef dict_converter,
                  JsRef default_converter)
 {
-  PyObject* cache = PyDict_New();
+  JsRef cache = JsMap_New();
   if (cache == NULL) {
     return NULL;
   }
-  ConversionContext context = {
-    .cache = cache,
-    .depth = depth,
-    .proxies = proxies,
-    .jscontext = NULL,
-    .default_converter = false,
-  };
+  JsRef postprocess_list = JsArray_New();
+  if (postprocess_list == NULL) {
+    hiwire_CLEAR(cache);
+    return NULL;
+  }
+  ConversionContext context = { .cache = cache,
+                                .depth = depth,
+                                .proxies = proxies,
+                                .jscontext = NULL,
+                                .default_converter = false,
+                                .jspostprocess_list = postprocess_list };
   if (dict_converter == NULL) {
     // No custom converter provided, go back to default conversion to Map.
     context.dict_new = _JsMap_New;
@@ -629,18 +677,15 @@ python2js_custom(PyObject* x,
       context, cache, dict_converter, default_converter);
   }
   JsRef result = _python2js(context, x);
+  _python2js_handle_postprocess_list(context.jspostprocess_list, context.cache);
+  hiwire_CLEAR(context.jspostprocess_list);
   if (context.jscontext) {
     hiwire_CLEAR(context.jscontext);
   }
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
   // manually dealloc them.
-  PyObject *pykey, *pyval;
-  Py_ssize_t pos = 0;
-  while (PyDict_Next(cache, &pos, &pykey, &pyval)) {
-    JsRef obj = (JsRef)PyLong_AsSize_t(pyval);
-    hiwire_decref(obj);
-  }
-  Py_DECREF(cache);
+  _python2js_destroy_cache(cache);
+  hiwire_CLEAR(cache);
   if (result == NULL || result == Js_novalue) {
     result = NULL;
     if (PyErr_Occurred()) {

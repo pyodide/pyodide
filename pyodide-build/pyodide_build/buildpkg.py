@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, TextIO
+from typing import Any, Generator, NoReturn, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -28,7 +28,7 @@ from .common import find_matching_wheels
 
 
 @contextmanager
-def chdir(new_dir: Path):
+def chdir(new_dir: Path) -> Generator[None, None, None]:
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
@@ -51,7 +51,7 @@ shutil.register_unpack_format(
 )
 
 
-def exit_with_stdio(result: subprocess.CompletedProcess) -> NoReturn:
+def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
         print("  stdout:")
         print(textwrap.indent(result.stdout, "    "))
@@ -136,6 +136,7 @@ def get_bash_runner():
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
             "HOSTINSTALLDIR",
+            "TARGETINSTALLDIR",
             "HOSTSITEPACKAGES",
             "PYMAJOR",
             "PYMINOR",
@@ -144,11 +145,18 @@ def get_bash_runner():
             "SIDE_MODULE_CFLAGS",
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
-            "OPEN_SSL_ROOT",
+            "UNISOLATED_PACKAGES",
+            "WASM_LIBRARY_DIR",
+            "WASM_PKG_CONFIG_PATH",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
+    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    if "PKG_CONFIG_PATH" in os.environ:
+        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+
     with BashRunnerWithSharedEnvironment(env=env) as b:
         b.run(
             f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL
@@ -344,6 +352,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
             result = subprocess.run(
                 ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
                 check=False,
+                encoding="utf-8",
             )
             if result.returncode != 0:
                 print(f"ERROR: Patch {pkg_root/patch} failed")
@@ -360,7 +369,9 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
 def unpack_wheel(path):
     with chdir(path.parent):
         result = subprocess.run(
-            [sys.executable, "-m", "wheel", "unpack", path.name], check=False
+            [sys.executable, "-m", "wheel", "unpack", path.name],
+            check=False,
+            encoding="utf-8",
         )
         if result.returncode != 0:
             print(f"ERROR: Unpacking wheel {path.name} failed")
@@ -370,7 +381,9 @@ def unpack_wheel(path):
 def pack_wheel(path):
     with chdir(path.parent):
         result = subprocess.run(
-            [sys.executable, "-m", "wheel", "pack", path.name], check=False
+            [sys.executable, "-m", "wheel", "pack", path.name],
+            check=False,
+            encoding="utf-8",
         )
         if result.returncode != 0:
             print(f"ERROR: Packing wheel {path} failed")
@@ -385,7 +398,7 @@ def compile(
     *,
     target_install_dir: str,
     host_install_dir: str,
-):
+) -> None:
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
     with compiler wrappers subbed in, which don't actually build the package but
@@ -454,6 +467,7 @@ def package_wheel(
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
+    host_install_dir,
 ):
     """Package a wheel
 
@@ -507,6 +521,18 @@ def package_wheel(
         if result.returncode != 0:
             print("ERROR: post failed")
             exit_with_stdio(result)
+
+    python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
+    if build_metadata.get("cross-build-env"):
+        subprocess.check_call(
+            ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"]
+        )
+
+    cross_build_files: list[str] | None = build_metadata.get("cross-build-files")
+    if cross_build_files:
+        for file in cross_build_files:
+            shutil.copy((wheel_dir / file), host_site_packages / file)
 
     test_dir = distdir / "tests"
     nmoved = 0
@@ -573,7 +599,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
-def create_packaged_token(buildpath: Path):
+def create_packaged_token(buildpath: Path) -> None:
     (buildpath / ".packaged").write_text("\n")
 
 
@@ -753,11 +779,7 @@ def build_package(
             )
         if not sharedlibrary:
             package_wheel(
-                name,
-                pkg_root,
-                srcpath,
-                build_metadata,
-                bash_runner,
+                name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
             )
 
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)

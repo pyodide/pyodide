@@ -1,6 +1,7 @@
 import sys
 from importlib.abc import Loader, MetaPathFinder
 from importlib.util import spec_from_loader
+from typing import Any
 
 
 class JsFinder(MetaPathFinder):
@@ -33,7 +34,7 @@ class JsFinder(MetaPathFinder):
         loader = JsLoader(jsproxy)
         return spec_from_loader(fullname, loader, origin="javascript")
 
-    def register_js_module(self, name: str, jsproxy):
+    def register_js_module(self, name: str, jsproxy: Any) -> None:
         """
         Registers ``jsproxy`` as a JavaScript module named ``name``. The module
         can then be imported from Python using the standard Python import
@@ -61,7 +62,7 @@ class JsFinder(MetaPathFinder):
             )
         self.jsproxies[name] = jsproxy
 
-    def unregister_js_module(self, name: str):
+    def unregister_js_module(self, name: str) -> None:
         """
         Unregisters a JavaScript module with given name that has been previously
         registered with :any:`pyodide.registerJsModule` or

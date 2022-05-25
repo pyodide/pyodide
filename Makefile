@@ -137,22 +137,18 @@ docs/_build/html/console.html: src/templates/console.html
 .PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 .PHONY: dist/module_webworker_dev.js
 dist/module_webworker_dev.js: src/templates/module_webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 
 update_base_url: \
-	dist/console.html \
-	dist/webworker.js
+	dist/console.html
 
 
 
@@ -210,6 +206,7 @@ dist/test.tar: $(CPYTHONLIB) node_modules/.installed
 	for testname in $(TEST_EXTENSIONS); do \
 		cd $(CPYTHONBUILD) && \
 		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
+		rm -f $(CPYTHONLIB)/$$testname && \
 		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
 	done
 
@@ -223,7 +220,7 @@ dist/distutils.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/distutils.tar distutils
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+$(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
