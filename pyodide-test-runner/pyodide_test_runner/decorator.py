@@ -56,7 +56,17 @@ def _create_outer_test_function(
     the Python interpreter via the normal mechanism
     """
     node_args = deepcopy(node.args)
+    if not node_args.args:
+        raise ValueError(
+            f"Function {node.name} should take at least one argument whose name should start with 'selenium'"
+        )
+
     selenium_arg_name = node_args.args[0].arg
+    if not selenium_arg_name.startswith("selenium"):
+        raise ValueError(
+            f"Function {node.name}'s first argument name '{selenium_arg_name}' should start with 'selenium'"
+        )
+
     new_node = ast.FunctionDef(
         name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
     )
