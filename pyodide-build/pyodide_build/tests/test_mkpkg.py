@@ -70,3 +70,61 @@ def test_mkpkg_update(tmpdir, old_dist_type, new_dist_type):
         assert db["source"]["url"].endswith(".tar.gz")
     else:
         assert db["source"]["url"].endswith(old_ext)
+
+# check that we correctly find the dependencies of the "examples" package, which depends on "pydantic"
+@pytest.mark.parametrize("source_fmt", ["wheel", "sdist"])
+def test_mkpkg_recursive(tmpdir, capsys, source_fmt):
+    base_dir = Path(str(tmpdir))
+
+    pyodide_build.mkpkg.make_package(base_dir, "examples", None, source_fmt=source_fmt,make_dependencies=True)
+
+    assert "examples" in os.listdir(base_dir)
+    meta_path = base_dir / "examples" / "meta.yaml"
+    assert meta_path.exists()
+    captured = capsys.readouterr()
+    assert f"Output written to {meta_path}" in captured.out
+
+    db = parse_package_config(meta_path)
+
+    assert db["package"]["name"] == "examples"
+    if source_fmt == "wheel":
+        assert db["source"]["url"].endswith(".whl")
+    else:
+        assert db["source"]["url"].endswith(".tar.gz")
+    assert "pydantic" in db["requirements"]["run"]
+
+    # examples depends on pydantic so it should make that too
+    assert "pydantic" in os.listdir(base_dir)
+    meta_path = base_dir / "pydantic" / "meta.yaml"
+    assert meta_path.exists()
+    db = parse_package_config(meta_path)
+    print("META PATH:",meta_path)
+    assert db["package"]["name"] == "pydantic"
+    if source_fmt == "wheel":
+        assert db["source"]["url"].endswith(".whl")
+    else:
+        assert db["source"]["url"].endswith(".tar.gz")
+
+# check that we correctly find the imports of attrs, which 
+# should have both 'attr' and 'attrs' as possible import names
+@pytest.mark.parametrize("source_fmt", ["wheel", "sdist"])
+def test_mkpkg_find_imports(tmpdir, capsys, source_fmt):
+    base_dir = Path(str(tmpdir))
+
+    pyodide_build.mkpkg.make_package(base_dir, "attrs", None, source_fmt=source_fmt,find_imports=True)
+
+    assert "attrs" in os.listdir(base_dir)
+    meta_path = base_dir / "attrs" / "meta.yaml"
+    assert meta_path.exists()
+    captured = capsys.readouterr()
+    assert f"Output written to {meta_path}" in captured.out
+
+    db = parse_package_config(meta_path)
+
+    assert db["package"]["name"] == "attrs"
+    if source_fmt == "wheel":
+        assert db["source"]["url"].endswith(".whl")
+    else:
+        assert db["source"]["url"].endswith(".tar.gz")
+    assert "attr" in db["test"]["imports"]
+    assert "attrs" in db["test"]["imports"]

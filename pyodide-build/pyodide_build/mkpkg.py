@@ -159,22 +159,29 @@ def _find_imports_from_package(url,project_name):
         with tempfile.NamedTemporaryFile(suffix=filetype) as tf:
             with urllib.request.urlopen(url) as fd:
                 tf.write(fd.read())
+            all_files=[]
             if url.endswith(".zip") or url.endswith(".whl"):
                 # wheel is zip
                 with ZipFile(tf) as package:
                     all_files=package.namelist()
-                    all_modules=[]
-                    for f in all_files:
-                        if f.endswith("__init__.py") and f.find("/test/")==-1:
-                            all_modules.append(PurePath("/"+f).parents[0])
             elif url.endswith(".tar.gz") or url.endswith(".tgz"):
                 # wheel is tar gz
                 with tarfile.open(tf.name) as package:
                     all_files=package.getnames()
                     all_modules=[]
-                    for f in all_files:
-                        if f.endswith("__init__.py") and f.find("/test/")==-1:
-                            all_modules.append(PurePath("/"+f).parents[0])
+            all_modules=[]
+            for f in all_files:
+                # find module folders
+                if f.endswith("__init__.py") and f.find("/test/")==-1:
+                    all_modules.append(PurePath("/"+f).parents[0])
+            if len(all_modules)==0:
+                # is this maybe a single file module with a file called 'modulename.py'?
+                for f in all_files:
+                    p=PurePath("/"+f)
+                    if p.suffix==".py":
+                        cleaned=_make_project_compare_name(p.stem)
+                        if cleaned==project_name:
+                            return [p.stem]
             if len(all_modules)==0:
                 print(f"WARNING: COuldn't find any imports in package {url}")
                 return []
@@ -193,15 +200,15 @@ def _find_imports_from_package(url,project_name):
             if main_prefix==None:
                 # not found a correctly named top level prefix, just find the highest up path
                 # that contains all modules and assume that is the base
-                test_prefix=str(all_modules[0])
-                found_prefix=false
+                test_prefix=all_modules[0]
+                found_prefix=False
                 while main_prefix==None:
                     found_prefix=True
                     for mod in all_modules:
-                        if not str(all_modules).startswith(test_prefix):
+                        if not str(all_modules).startswith(str(test_prefix)):
                             found_prefix=False
                             break
-                    if not found_prefix:
+                    if not found_prefix and len(test_prefix.parents)>1:
                         test_prefix=test_prefix.parents[0]
                     else:
                         main_prefix=test_prefix
@@ -229,8 +236,8 @@ def make_package(
     packages_dir: Path,
     package: str,
     version: str | None = None,
-    extra: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
+    extra: str | None = None,
     make_dependencies: bool = False,
     find_imports : bool= False
 ):
@@ -290,6 +297,9 @@ def make_package(
 
     class EnvironmentHelper(pkg_resources.Environment):
         def __init__(self):
+            super().__init__(search_path=[packages_dir])
+
+        def scan(self, search_path=None):
             pass
 
         def make_dist(self,proj_name,meta_path):
@@ -311,9 +321,8 @@ def make_package(
                 return None
             parser = make_parser(argparse.ArgumentParser())            
             print("Installing dependency:",req.project_name,str(req.specs))
-            args = parser.parse_args(['--make-dependencies','--version',str(req.specifier),req.project_name])
-            args.find_correct_imports=find_imports
-            main(args)
+            make_package(
+                packages_dir,req.project_name,str(req.specifier),source_fmt=source_fmt,make_dependencies=make_dependencies,find_imports=find_imports)
             return self.best_match(req,working_set,installer,replace_conflicting,True)
             
     if extra:
@@ -328,12 +337,16 @@ def make_package(
     dist=YamlDistribution(package_dir,project_name=package,version=version)
     requires_packages=dist.requires(extras=our_extras)
 
+    env=EnvironmentHelper()
+
     if make_dependencies:
         ws= pkg_resources.WorkingSet([])
-        ws.resolve(requires_packages,env=EnvironmentHelper(),extras=our_extras)
+        ws.resolve(requires_packages,env=env,extras=our_extras)
 
     for r in requires_packages:
         name=r.name
+        if r.marker and not r.marker.evaluate(environment=env):
+            continue
         if os.path.isfile(packages_dir / name / "meta.yaml"):
             yaml_requires.append(name)
         else:
@@ -362,7 +375,7 @@ def make_package(
     }
 
     package_dir.mkdir(parents=True, exist_ok=True)
-
+    
     meta_path = package_dir / "meta.yaml"
     if meta_path.exists():
         raise MkpkgFailedException(f"The package {package} already exists")
