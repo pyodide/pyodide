@@ -32,7 +32,6 @@ def _encode(obj: Any) -> str:
 
 def _create_outer_test_function(
     run_test: Callable,
-    selenium_arg_name: str,
     node: ast.stmt,
 ) -> Callable:
     """
@@ -44,7 +43,7 @@ def _create_outer_test_function(
         @outer_decorators
         @run_in_pyodide
         @inner_decorators
-        <async?> def func(arg1, arg2, arg3):
+        <async?> def func(<selenium_arg_name>, arg1, arg2, arg3):
             # do stuff
 
     This wrapper looks like:
@@ -123,7 +122,6 @@ class run_in_pyodide:
 
     def __init__(
         self,
-        selenium_fixture_name: str = "selenium",
         packages: Collection[str] = (),
         driver_timeout: float | None = None,
         pytest_assert_rewrites: bool = True,
@@ -138,9 +136,6 @@ class run_in_pyodide:
 
         Parameters
         ----------
-        selenium_fixture_name : str, default="selenium"
-            The name of the selenium fixture to use
-
         packages : List[str]
             List of packages to load before running the test
 
@@ -164,7 +159,6 @@ class run_in_pyodide:
             self._pkgs.append("pytest")
         self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
-        self._selenium_fixture_name = selenium_fixture_name
 
     def _code_template(self, args: tuple) -> str:
         """
@@ -270,8 +264,6 @@ class run_in_pyodide:
         self._func_name = func_name
         self._module_filename = module_filename
 
-        wrapper = _create_outer_test_function(
-            self._run_test, self._selenium_fixture_name, self._node
-        )
+        wrapper = _create_outer_test_function(self._run_test, self._node)
 
         return wrapper
