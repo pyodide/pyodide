@@ -96,7 +96,10 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     def call_soon(
-        self, callback: Callable, *args: Any, context: contextvars.Context | None = None
+        self,
+        callback: Callable[..., Any],
+        *args: Any,
+        context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Arrange for a callback to be called as soon as possible.
 
@@ -109,7 +112,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        self, callback: Callable, *args: Any, context: contextvars.Context | None = None
+        self,
+        callback: Callable[..., Any],
+        *args: Any,
+        context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Like ``call_soon()``, but thread-safe.
 
@@ -120,7 +126,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_later(  # type: ignore[override]
         self,
         delay: float,
-        callback: Callable,
+        callback: Callable[..., Any],
         *args: Any,
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
@@ -156,7 +162,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_at(  # type: ignore[override]
         self,
         when: float,
-        callback: Callable,
+        callback: Callable[..., Any],
         *args: Any,
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
@@ -201,7 +207,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_future(self) -> asyncio.Future:
+    def create_future(self) -> asyncio.Future[Any]:
         """Create a Future object attached to the loop.
 
         Copied from ``BaseEventLoop.create_future``
