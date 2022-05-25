@@ -3,7 +3,9 @@ from pyodide_test_runner import run_in_pyodide as run_in_pyodide_orig
 
 
 def run_in_pyodide(**kwargs):
-    return run_in_pyodide_orig(module_scope=True, packages=["numpy"])
+    return run_in_pyodide_orig(
+        selenium_fixture_name="selenium_module_scope", packages=["numpy"]
+    )
 
 
 def test_numpy(selenium):

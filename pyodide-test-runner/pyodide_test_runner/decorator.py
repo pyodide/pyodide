@@ -2,6 +2,7 @@ import ast
 import pickle
 import sys
 from base64 import b64decode, b64encode
+from copy import deepcopy
 from traceback import TracebackException
 from typing import Any, Callable, Collection
 
@@ -29,6 +30,74 @@ def _encode(obj: Any) -> str:
     return b64encode(pickle.dumps(obj)).decode()
 
 
+def _create_outer_test_function(
+    run_test: Callable,
+    selenium_arg_name: str,
+    node: ast.stmt,
+) -> Callable:
+    """
+    Create the top level item: it will be called by pytest and it calls
+    run_test.
+
+    If the original function looked like:
+
+        @outer_decorators
+        @run_in_pyodide
+        @inner_decorators
+        <async?> def func(arg1, arg2, arg3):
+            # do stuff
+
+    This wrapper looks like:
+
+        def <func_name>(<selenium_arg_name>, arg1, arg2, arg3):
+            run_test(<selenium_arg_name>, (arg1, arg2, arg3))
+
+    Any inner_decorators get ignored. Any outer_decorators get applied by
+    the Python interpreter via the normal mechanism
+    """
+    node_args = deepcopy(node.args)
+    new_node = ast.FunctionDef(
+        name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
+    )
+
+    # Make onwards call with two args:
+    # 1. <selenium_arg_name>
+    # 2. all other arguments in a tuple
+    func_body = ast.parse("run_test(selenium_arg_name, (arg1, arg2, ...))").body
+    onwards_call = func_body[0].value
+    onwards_call.args[0].id = selenium_arg_name  # Set variable name
+    onwards_call.args[1].elts = [  # Set tuple elements
+        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args
+    ]
+
+    # Add extra <selenium_arg_name> argument
+    node_args.args.insert(0, ast.arg(arg=selenium_arg_name))
+    new_node.body = func_body
+
+    # Make a best effort to show something that isn't total nonsense in the
+    # traceback for the generated function when there is an error.
+    # This will show:
+    # >   run_test(selenium_arg_name, (arg1, arg2, ...))
+    # in the traceback.
+    def fake_body_for_traceback(arg1, arg2, selenium_arg_name):
+        run_test(selenium_arg_name, (arg1, arg2, ...))
+
+    # Adjust line numbers to point into our fake function
+    lineno = fake_body_for_traceback.__code__.co_firstlineno
+    ast.increment_lineno(new_node, lineno)
+
+    mod = ast.Module([new_node], type_ignores=[])
+    ast.fix_missing_locations(mod)
+    co = compile(mod, __file__, "exec")
+
+    # Need to give our code access to the actual "run_test" object which it
+    # invokes.
+    globs = {"run_test": run_test}
+    exec(co, globs)
+
+    return globs[node.name]
+
+
 class run_in_pyodide:
     def __new__(cls, function: Callable | None = None, /, **kwargs):
         if function:
@@ -44,17 +113,15 @@ class run_in_pyodide:
 
     def __init__(
         self,
-        *,
-        standalone: bool = False,
-        module_scope: bool = False,
+        selenium_fixture_name: str = "selenium",
         packages: Collection[str] = (),
         xfail_browsers: dict[str, str] | None = None,
         driver_timeout: float | None = None,
         pytest_assert_rewrites: bool = True,
-    ) -> Callable:
+    ):
         """
         This decorator can be called in two ways --- with arguments and without
-        arguments. If it is called without arguments, then the `_function` kwarg
+        arguments. If it is called without arguments, then the `function` argument
         catches the function the decorator is applied to. Otherwise, standalone and
         packages are the actual arguments to the decorator.
 
@@ -62,8 +129,8 @@ class run_in_pyodide:
 
         Parameters
         ----------
-        standalone : bool, default=False
-            Whether to use a standalone selenium instance to run the test or not
+        selenium_fixture_name : str, default="selenium"
+            The name of the selenium fixture to use
 
         packages : List[str]
             List of packages to load before running the test
@@ -92,10 +159,9 @@ class run_in_pyodide:
         self._xfail_browsers = xfail_browsers or {}
         self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
-        self._standalone = standalone
-        self._module_scope = module_scope
+        self._selenium_fixture_name = selenium_fixture_name
 
-    def _code_template(self) -> str:
+    def _code_template(self, args: tuple) -> str:
         """
         Unpickle function ast and its arguments, compile and call function, and
         if the function is async await the result. Last, if there was an
@@ -106,11 +172,12 @@ class run_in_pyodide:
             from base64 import b64encode, b64decode
             import pickle
             mod = pickle.loads(b64decode({_encode(self._mod)!r}))
+            args = pickle.loads(b64decode({_encode(args)!r}))
             co = compile(mod, {self._module_filename!r}, "exec")
             d = {{}}
             exec(co, d)
             try:
-                result = d[{self._func_name!r}]()
+                result = d[{self._func_name!r}](*args)
                 if {self._async_func}:
                     result = await result
             except BaseException as e:
@@ -126,12 +193,14 @@ class run_in_pyodide:
         result
         """
 
-    def _run_test(self, selenium: SeleniumType, f):
+    def _run_test(self, selenium: SeleniumType, args: tuple):
+        """The main test runner, called from the AST generated in
+        _create_outer_test_function."""
         if selenium.browser in self._xfail_browsers:
             xfail_message = self._xfail_browsers[selenium.browser]
             pytest.xfail(xfail_message)
 
-        code = self._code_template()
+        code = self._code_template(args)
         with set_webdriver_script_timeout(selenium, self._driver_timeout):
             if self._pkgs:
                 selenium.load_package(self._pkgs)
@@ -185,9 +254,10 @@ class run_in_pyodide:
             raise Exception(
                 "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
             )
-
         self._mod = ast.Module(nodes, type_ignores=[])
         ast.fix_missing_locations(self._mod)
+
+        self._node = node
 
     def __call__(self, f: Callable) -> Callable:
         func_name = f.__name__
@@ -199,19 +269,8 @@ class run_in_pyodide:
         self._func_name = func_name
         self._module_filename = module_filename
 
-        if self._standalone:
-
-            def wrapper(selenium_standalone):
-                self._run_test(selenium_standalone, f)
-
-        elif self._module_scope:
-
-            def wrapper(selenium_module_scope):  # type: ignore[misc]
-                self._run_test(selenium_module_scope, f)
-
-        else:
-
-            def wrapper(selenium):  # type: ignore[misc]
-                self._run_test(selenium, f)
+        wrapper = _create_outer_test_function(
+            self._run_test, self._selenium_fixture_name, self._node
+        )
 
         return wrapper

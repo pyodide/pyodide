@@ -1,7 +1,7 @@
 from pyodide_test_runner import run_in_pyodide
 
 run_in_pyodide_scipy = run_in_pyodide(
-    module_scope=True,
+    selenium_fixture_name="selenium_module_scope",
     packages=["scipy"],
     # xfail_browsers={"chrome": "Times out in chrome"},
     driver_timeout=40,
@@ -45,7 +45,9 @@ def test_binom_ppf():
     assert binom.ppf(0.9, 1000, 0.1) == 112
 
 
-@run_in_pyodide(module_scope=True, packages=["pytest", "scipy-tests"])
+@run_in_pyodide(
+    selenium_fixture_name="selenium_module_scope", packages=["pytest", "scipy-tests"]
+)
 def test_scipy_pytest():
     import pytest
 
