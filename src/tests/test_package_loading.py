@@ -14,11 +14,10 @@ def get_pytz_wheel_name():
     return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
+@pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("Loading urls in node seems to time out right now")
     if active_server == "secondary":
         url, port, log_main = web_server_secondary
         log_backup = selenium.server_log

@@ -115,7 +115,6 @@ class run_in_pyodide:
         self,
         selenium_fixture_name: str = "selenium",
         packages: Collection[str] = (),
-        xfail_browsers: dict[str, str] | None = None,
         driver_timeout: float | None = None,
         pytest_assert_rewrites: bool = True,
     ):
@@ -135,9 +134,6 @@ class run_in_pyodide:
         packages : List[str]
             List of packages to load before running the test
 
-        xfail_browsers: dict[str, str]
-            A dictionary of browsers to xfail the test and reasons for the xfails.
-
         driver_timeout : Optional[float]
             selenium driver timeout (in seconds). If missing, use the default
             timeout.
@@ -156,7 +152,6 @@ class run_in_pyodide:
         self._pkgs = list(packages)
         if pytest_assert_rewrites:
             self._pkgs.append("pytest")
-        self._xfail_browsers = xfail_browsers or {}
         self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
         self._selenium_fixture_name = selenium_fixture_name
@@ -196,10 +191,6 @@ class run_in_pyodide:
     def _run_test(self, selenium: SeleniumType, args: tuple):
         """The main test runner, called from the AST generated in
         _create_outer_test_function."""
-        if selenium.browser in self._xfail_browsers:
-            xfail_message = self._xfail_browsers[selenium.browser]
-            pytest.xfail(xfail_message)
-
         code = self._code_template(args)
         with set_webdriver_script_timeout(selenium, self._driver_timeout):
             if self._pkgs:

@@ -45,7 +45,7 @@ def selenium_common(request, web_server_main, load_pyodide=True, script_type="cl
 def selenium_standalone(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             try:
                 yield selenium
@@ -59,7 +59,7 @@ def selenium_esm(request, web_server_main):
         request, web_server_main, load_pyodide=True, script_type="module"
     ) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             try:
                 yield selenium
@@ -73,7 +73,7 @@ def selenium_standalone_noload_common(request, web_server_main, script_type="cla
         request, web_server_main, load_pyodide=False, script_type=script_type
     ) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             try:
                 yield selenium
@@ -130,7 +130,7 @@ def selenium_context_manager(selenium_module_scope):
 def selenium(request, selenium_module_scope):
     with selenium_context_manager(selenium_module_scope) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             yield selenium
 
