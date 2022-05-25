@@ -37,7 +37,6 @@ def parse_driver_timeout(node) -> float | None:
 
 def parse_xfail_browsers(node) -> dict[str, str]:
     mark = node.get_closest_marker("xfail_browsers")
-    print("parse_xfail_browsers", node, mark)
     if mark is None:
         return {}
     return mark.kwargs
