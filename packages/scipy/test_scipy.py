@@ -4,7 +4,6 @@ from pyodide_test_runner import run_in_pyodide
 run_in_pyodide_inner = run_in_pyodide(
     selenium_fixture_name="selenium_module_scope",
     packages=["scipy"],
-    # xfail_browsers={"chrome": "Times out in chrome"},
 )
 
 run_in_pyodide_scipy = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)

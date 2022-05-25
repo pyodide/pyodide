@@ -2,9 +2,8 @@ import pytest
 from pyodide_test_runner import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_open_url(selenium, httpserver):
-    if selenium.browser == "node":
-        pytest.xfail("XMLHttpRequest not available in node")
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
     )
@@ -62,9 +61,8 @@ async def test_pyfetch_unpack_archive():
     ]
 
 
+@pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
-    if selenium.browser == "node":
-        pytest.xfail("XMLHttpRequest not available in node")
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO",
         content_type="text/plain",
@@ -84,9 +82,8 @@ def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     )
 
 
+@pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_coors_error(selenium, httpserver):
-    if selenium.browser == "node":
-        pytest.xfail("XMLHttpRequest not available in node")
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO",
         content_type="text/plain",

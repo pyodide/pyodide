@@ -113,7 +113,6 @@ class run_in_pyodide:
         self,
         selenium_fixture_name: str = "selenium",
         packages: Collection[str] = (),
-        xfail_browsers: dict[str, str] | None = None,
         pytest_assert_rewrites: bool = True,
     ):
         """
@@ -132,9 +131,6 @@ class run_in_pyodide:
         packages : List[str]
             List of packages to load before running the test
 
-        xfail_browsers: dict[str, str]
-            A dictionary of browsers to xfail the test and reasons for the xfails.
-
         pytest_assert_rewrites : bool, default = True
             If True, use pytest assertion rewrites. This gives better error messages
             when an assertion fails, but requires us to load pytest.
@@ -149,7 +145,6 @@ class run_in_pyodide:
         self._pkgs = list(packages)
         if pytest_assert_rewrites:
             self._pkgs.append("pytest")
-        self._xfail_browsers = xfail_browsers or {}
         self._pytest_assert_rewrites = pytest_assert_rewrites
         self._selenium_fixture_name = selenium_fixture_name
 
@@ -188,10 +183,6 @@ class run_in_pyodide:
     def _run_test(self, selenium: SeleniumType, args: tuple):
         """The main test runner, called from the AST generated in
         _create_outer_test_function."""
-        if selenium.browser in self._xfail_browsers:
-            xfail_message = self._xfail_browsers[selenium.browser]
-            pytest.xfail(xfail_message)
-
         code = self._code_template(args)
         if self._pkgs:
             selenium.load_package(self._pkgs)
