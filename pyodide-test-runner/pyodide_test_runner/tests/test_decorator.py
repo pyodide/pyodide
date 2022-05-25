@@ -174,7 +174,6 @@ def test_selenium(selenium, monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
-@pytest.mark.xfail_browsers(chrome="blah")
 @run_in_pyodide
 def test_trivial1():
     x = 7
