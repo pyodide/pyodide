@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner.utils import parse_driver_timeout
 
 from pyodide import eval_code_async
 
@@ -21,6 +22,9 @@ def example_func2():
     x = 6
     y = 7
     assert x == y
+
+
+run_in_pyodide_inner = run_in_pyodide()
 
 
 @run_in_pyodide
@@ -252,3 +256,11 @@ def test_hypothesis(obj):
     from pyodide import to_js
 
     to_js(obj)
+
+
+run_in_pyodide_alias2 = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
+
+
+@run_in_pyodide_alias2
+def test_run_in_pyodide_alias(request):
+    assert parse_driver_timeout(request.node) == 40
