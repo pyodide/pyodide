@@ -3,7 +3,6 @@ from pyodide_test_runner import run_in_pyodide
 run_in_pyodide_scipy = run_in_pyodide(
     selenium_fixture_name="selenium_module_scope",
     packages=["scipy"],
-    # xfail_browsers={"chrome": "Times out in chrome"},
     driver_timeout=40,
 )
 
