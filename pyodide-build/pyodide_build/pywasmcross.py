@@ -87,16 +87,18 @@ def compile(
     host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
-):
+) -> None:
     ...
 
 
 @overload
-def compile(*, mypy__Single_overload_definition_multiple_required: int):
+def compile(
+    env: dict[str, str], *, mypy__Single_overload_definition_multiple_required: str
+) -> None:
     ...
 
 
-def compile(env, **kwargs):
+def compile(env: dict[str, str], **kwargs: str) -> None:
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
 

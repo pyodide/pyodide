@@ -84,7 +84,7 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: dict[str, Any]) -> No
     node["parameters"] = new_params
 
 
-def _convert_node(self: TsAnalyzer, node: dict[str, Any]):
+def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
     """Monkey patch for TsAnalyzer._convert_node.
 
     Fixes two crashes and separates documentation for destructured object
