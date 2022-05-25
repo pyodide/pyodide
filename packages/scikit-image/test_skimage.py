@@ -1,5 +1,6 @@
 import os
 
+import pytest
 from pyodide_test_runner import run_in_pyodide
 
 if "CI" in os.environ:
@@ -8,9 +9,8 @@ else:
     xfail_browsers = {}
 
 
-@run_in_pyodide(
-    packages=["scikit-image"], driver_timeout=40, xfail_browsers=xfail_browsers
-)
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scikit-image"], xfail_browsers=xfail_browsers)
 def test_skimage():
     import numpy as np
     from skimage import color, data
