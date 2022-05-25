@@ -1,4 +1,3 @@
-from asyncio import gather
 from pathlib import Path
 
 from pyodide._core import IN_BROWSER
@@ -31,7 +30,6 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
 
 
 __all__ = [
-    "gather",
     "fetch_bytes",
     "fetch_string",
     "WHEEL_BASE",
