@@ -91,6 +91,7 @@ def compare_with_reference_image(selenium, reference_image):
     return deviation == 0.0
 
 
+@matplotlib_test_decorator
 def test_matplotlib(selenium):
     selenium.load_package("matplotlib")
     selenium.run(
