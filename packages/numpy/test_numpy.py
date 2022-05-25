@@ -1,11 +1,5 @@
 import pytest
-from pyodide_test_runner import run_in_pyodide as run_in_pyodide_orig
-
-
-def run_in_pyodide(**kwargs):
-    return run_in_pyodide_orig(
-        selenium_fixture_name="selenium_module_scope", packages=["numpy"]
-    )
+from pyodide_test_runner import run_in_pyodide
 
 
 def test_numpy(selenium):
@@ -364,7 +358,7 @@ def test_fft(selenium):
     )
 
 
-@run_in_pyodide()
+@run_in_pyodide(packages=["numpy"])
 def test_np_unique():
     """Numpy comparator functions formerly had a fatal error, see PR #2110"""
     import numpy as np
