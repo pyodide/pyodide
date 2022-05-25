@@ -22,7 +22,7 @@ def test_open_url(selenium, httpserver):
 
 
 @run_in_pyodide
-async def test_pyfetch_create_file():
+async def test_pyfetch_create_file(selenium):
     import pathlib
 
     from pyodide.http import pyfetch
@@ -36,7 +36,7 @@ async def test_pyfetch_create_file():
 
 
 @run_in_pyodide
-async def test_pyfetch_unpack_archive():
+async def test_pyfetch_unpack_archive(selenium):
     import pathlib
 
     from pyodide.http import pyfetch

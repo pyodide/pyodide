@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(selenium_fixture_name="selenium_standalone", packages=["msgpack"])
-def test_pack():
+def test_pack(selenium):
     from msgpack import Packer, Unpacker, pack, packb, unpackb  # noqa: F401
 
     def check(data, use_list=False):

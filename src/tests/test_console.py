@@ -281,7 +281,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
 
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
-async def test_console_imports():
+async def test_console_imports(selenium):
     from pyodide.console import PyodideConsole
 
     shell = PyodideConsole()
