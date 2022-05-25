@@ -129,8 +129,8 @@ class run_in_pyodide:
 
         Parameters
         ----------
-        standalone : bool, default=False
-            Whether to use a standalone selenium instance to run the test or not
+        selenium_fixture_name : str, default="selenium"
+            The name of the selenium fixture to use
 
         packages : List[str]
             List of packages to load before running the test
