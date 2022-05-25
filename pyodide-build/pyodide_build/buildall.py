@@ -260,7 +260,7 @@ def job_priority(pkg: BasePackage) -> int:
         return 1
 
 
-def print_with_progress_line(str: str, progress_line: Any) -> None:
+def print_with_progress_line(str: str, progress_line: str | None) -> None:
     if not sys.stdout.isatty():
         print(str)
         return
@@ -271,7 +271,7 @@ def print_with_progress_line(str: str, progress_line: Any) -> None:
         print(progress_line, end="\r")
 
 
-def get_progress_line(package_set: dict[str, Any]) -> str | None:
+def get_progress_line(package_set: dict[str, None]) -> str | None:
     if not package_set:
         return None
     return "In progress: " + ", ".join(package_set.keys())
@@ -328,7 +328,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
 
 
 def build_from_graph(
-    pkg_map: dict[str, BasePackage], outputdir: Path, args: Any
+    pkg_map: dict[str, BasePackage], outputdir: Path, args: argparse.Namespace
 ) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs

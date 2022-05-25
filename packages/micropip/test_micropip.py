@@ -512,7 +512,7 @@ async def test_list_wheel_package(
 
 @pytest.mark.asyncio
 async def test_list_wheel_name_mismatch(
-    mock_fetch: mock_fetch_cls, mock_importlib: Any
+    mock_fetch: mock_fetch_cls, mock_importlib: None
 ) -> None:
     dummy_pkg_name = "dummy-Dummy"
     mock_fetch.add_pkg_version(dummy_pkg_name)

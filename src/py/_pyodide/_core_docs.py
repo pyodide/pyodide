@@ -200,7 +200,7 @@ class JsProxy:
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
-    def assign_to(self, to: Any, /) -> Any:
+    def assign_to(self, to: Any, /) -> None:
         """Assign to a Python buffer from the JavaScript buffer.
 
         Present only if the wrapped JavaScript object is an ArrayBuffer or
