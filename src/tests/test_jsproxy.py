@@ -81,9 +81,8 @@ def test_jsproxy_getattr(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(node="No document in node")
 def test_jsproxy_document(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No document in node")
     selenium.run("from js import document")
     assert (
         selenium.run(
