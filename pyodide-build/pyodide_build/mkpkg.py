@@ -337,7 +337,7 @@ def make_package(
             )
             return dist
 
-        @overload 
+        @overload
         def best_match(
             self,
             req: pkg_resources.Requirement,
