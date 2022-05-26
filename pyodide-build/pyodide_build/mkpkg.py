@@ -6,6 +6,8 @@ import os
 import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 import urllib.error
 import urllib.request
 import warnings
@@ -16,10 +18,11 @@ import packaging.specifiers
 import setuptools
 import re
 
+import packaging.specifiers
+import pkg_resources
 from ruamel.yaml import YAML
 from zipfile import ZipFile
-import tarfile
-import tempfile
+
 
 
 class URLDict(TypedDict):
