@@ -312,7 +312,7 @@ def make_package(
                     m = req.marker
                     extra_name = None
                     if m is not None:
-                        for m in m._markers:
+                        for m in m._markers:  # noqa: B020
                             if str(m[0]) == "extra" and len(m) == 3:
                                 extra_name = str(m[2])
                     dm.setdefault(extra_name, []).append(req)
