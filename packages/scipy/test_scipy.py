@@ -1,14 +1,9 @@
 import pytest
 from pyodide_test_runner import run_in_pyodide
 
-run_in_pyodide_inner = run_in_pyodide(
-    packages=["scipy"],
-)
 
-run_in_pyodide_scipy = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
-
-
-@run_in_pyodide_scipy
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
 def test_scipy_linalg(selenium):
     import numpy as np
     import scipy.linalg
@@ -24,21 +19,24 @@ def test_scipy_linalg(selenium):
     assert_allclose(res, np.identity(N), rtol=1e-07, atol=1e-9)
 
 
-@run_in_pyodide_scipy
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
 def test_brentq(selenium):
     from scipy.optimize import brentq
 
     brentq(lambda x: x, -1, 1)
 
 
-@run_in_pyodide_scipy
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
 def test_dlamch(selenium):
     from scipy.linalg import lapack
 
     lapack.dlamch("Epsilon-Machine")
 
 
-@run_in_pyodide_scipy
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
 def test_binom_ppf(selenium):
     from scipy.stats import binom
 
