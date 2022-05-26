@@ -74,8 +74,8 @@ substitutions:
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
 
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
-  rewriting and various other improvements.
-  {pr}`2510`
+  rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
+  {pr}`2510`, {pr}`2541`
 
 - {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator
   can now be accessed through `pyodide_test_runner`.

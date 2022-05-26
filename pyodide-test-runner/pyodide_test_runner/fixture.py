@@ -102,7 +102,7 @@ def selenium_standalone(request, web_server_main, playwright_browsers):
         request, web_server_main, browsers=playwright_browsers
     ) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             try:
                 yield selenium
@@ -120,7 +120,7 @@ def selenium_esm(request, web_server_main, playwright_browsers):
         script_type="module",
     ) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             try:
                 yield selenium
@@ -140,7 +140,7 @@ def selenium_standalone_noload_common(
         script_type=script_type,
     ) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             try:
                 yield selenium
@@ -198,7 +198,7 @@ def selenium_context_manager(selenium_module_scope):
 def selenium(request, selenium_module_scope):
     with selenium_context_manager(selenium_module_scope) as selenium:
         with set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request)
+            selenium, script_timeout=parse_driver_timeout(request.node)
         ):
             yield selenium
 

@@ -1,12 +1,13 @@
+import pytest
 from pyodide_test_runner import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(
+    chrome="test_numcodecs triggers a recursion error in chrome"
+)
 @run_in_pyodide(
-    standalone=True,
+    selenium_fixture_name="selenium_standalone",
     packages=["numcodecs", "numpy"],
-    xfail_browsers={
-        "chrome": "test_numcodecs triggers a recursion error in chrome",
-    },
 )
 def test_blosc():
     import array

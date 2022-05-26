@@ -1,5 +1,6 @@
 import asyncio
 
+import pytest
 from pyodide_test_runner.decorator import run_in_pyodide
 
 from pyodide import eval_code_async
@@ -87,6 +88,80 @@ def test_local3(monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
+def complicated_decorator(attr_name: str):
+    def inner_func(value):
+        def dec(func):
+            def wrapper(*args, **kwargs):
+                wrapper.dec_info.append((attr_name, value))
+                return func(*args, **kwargs)
+
+            wrapper.dec_info = getattr(func, "dec_info", [])
+            wrapper.__name__ = func.__name__
+            return wrapper
+
+        return dec
+
+    return inner_func
+
+
+d1 = complicated_decorator("testdec1")
+d2 = complicated_decorator("testdec2")
+
+
+@d1("a")
+@d2("b")
+@d1("c")
+@run_in_pyodide
+def example_decorator_func():
+    pass
+
+
+def test_local4():
+    example_decorator_func(selenium_mock)
+    assert example_decorator_func.dec_info == [
+        ("testdec1", "a"),
+        ("testdec2", "b"),
+        ("testdec1", "c"),
+    ]
+
+
+def test_local5(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    example_func1(selenium_mock)
+    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+
+
+class selenium_mock_fail_load_package(selenium_mock):
+    @staticmethod
+    def load_package(*args, **kwargs):
+        raise OSError("STOP!")
+
+
+def test_local_fail_load_package(monkeypatch):
+    exc_list = []
+    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+
+    exc = None
+    try:
+        example_func1(selenium_mock_fail_load_package)
+    except OSError:
+        exc = pytest.ExceptionInfo.from_current()
+
+    assert exc
+    try:
+        exc.getrepr()
+    except IndexError as e:
+        import traceback
+
+        traceback.print_exception(e)
+        raise Exception(
+            "run_in_pyodide decorator badly messed up the line numbers."
+            " This could crash pytest. Printed the traceback to stdout."
+        )
+
+
 def test_selenium(selenium, monkeypatch):
     exc_list = []
     monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
@@ -117,6 +192,22 @@ def test_trivial3():
     assert x == 7
 
 
+@pytest.mark.parametrize("jinja2", ["jINja2", "Jinja2"])
+@run_in_pyodide
+def test_parametrize(jinja2):
+    try:
+        assert jinja2.lower() == "jinja2"
+    except Exception as e:
+        print(e)
+
+
+@pytest.mark.skip(reason="Nope!")
+@run_in_pyodide(pytest_assert_rewrites=False)
+def test_skip():
+    x = 6
+    assert x == 7
+
+
 @run_in_pyodide
 async def test_run_in_pyodide_async():
     from asyncio import sleep
@@ -124,3 +215,40 @@ async def test_run_in_pyodide_async():
     x = 6
     await sleep(0.01)
     assert x == 6
+
+
+import pickle
+from zoneinfo import ZoneInfo
+
+from hypothesis import HealthCheck, given, settings, strategies
+
+
+def is_picklable(x):
+    try:
+        pickle.dumps(x)
+        return True
+    except Exception:
+        return False
+
+
+strategy = (
+    strategies.from_type(type)
+    .flatmap(strategies.from_type)
+    .filter(lambda x: not isinstance(x, ZoneInfo))
+    .filter(is_picklable)
+)
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@given(obj=strategy)
+@settings(
+    deadline=2000,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=25,
+)
+@run_in_pyodide
+def test_hypothesis(obj):
+    from pyodide import to_js
+
+    to_js(obj)
