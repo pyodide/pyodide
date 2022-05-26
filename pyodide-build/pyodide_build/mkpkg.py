@@ -130,7 +130,7 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
                 all_versions = main_metadata["releases"].keys()
                 try:
                     spec = packaging.specifiers.SpecifierSet(version)
-                except packaging.specifiers.InvalidSpecifier as e:
+                except packaging.specifiers.InvalidSpecifier:
                     try:
                         spec = packaging.specifiers.SpecifierSet(f"=={version}")
                     except packaging.specifiers.InvalidSpecifier as e:
@@ -190,7 +190,7 @@ def _download_package(
         filetype = ".zip"
     elif url.endswith(".tar.gz") or url.endswith(".tgz"):
         filetype = ".tar.gz"
-    package = None  # type: None | ZipFile | tarfile.TarFile
+    package : None | ZipFile | tarfile.TarFile = None
     tf = tempfile.NamedTemporaryFile(suffix=filetype)
     try:
         with urllib.request.urlopen(url) as fd:
@@ -198,7 +198,7 @@ def _download_package(
         if filetype == ".zip":
             package = ZipFile(tf)
             all_files = package.namelist()
-            open_fn = package.open  # type: Callable[[Any],Any]
+            open_fn: Callable[[Any],Any] = package.open 
         elif filetype == ".tar.gz":
             package = tarfile.open(tf.name)
             all_files = package.getnames()
@@ -310,7 +310,7 @@ def make_package(
         def _build_dep_map(self) -> Dict[str | None, List[pkg_resources.Requirement]]:
             # read dependencies from pypi
             package_metadata = _get_metadata(self.project_name, self.version)
-            dm = {}  # type: Dict[str|None,List[pkg_resources.Requirement]]
+            dm : Dict[str|None,List[pkg_resources.Requirement]] = {}
             if (
                 "requires_dist" in package_metadata["info"]
                 and package_metadata["info"]["requires_dist"] is not None
