@@ -8,8 +8,6 @@ from typing import Any, Callable, Collection
 
 import pytest
 
-from .utils import set_webdriver_script_timeout
-
 
 class SeleniumType:
     JavascriptException: type
@@ -123,7 +121,6 @@ class run_in_pyodide:
     def __init__(
         self,
         packages: Collection[str] = (),
-        driver_timeout: float | None = None,
         pytest_assert_rewrites: bool = True,
     ):
         """
@@ -139,10 +136,6 @@ class run_in_pyodide:
         packages : List[str]
             List of packages to load before running the test
 
-        driver_timeout : Optional[float]
-            selenium driver timeout (in seconds). If missing, use the default
-            timeout.
-
         pytest_assert_rewrites : bool, default = True
             If True, use pytest assertion rewrites. This gives better error messages
             when an assertion fails, but requires us to load pytest.
@@ -157,7 +150,6 @@ class run_in_pyodide:
         self._pkgs = list(packages)
         if pytest_assert_rewrites:
             self._pkgs.append("pytest")
-        self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
 
     def _code_template(self, args: tuple) -> str:
@@ -196,11 +188,10 @@ class run_in_pyodide:
         """The main test runner, called from the AST generated in
         _create_outer_test_function."""
         code = self._code_template(args)
-        with set_webdriver_script_timeout(selenium, self._driver_timeout):
-            if self._pkgs:
-                selenium.load_package(self._pkgs)
+        if self._pkgs:
+            selenium.load_package(self._pkgs)
 
-            result = selenium.run_async(code)
+        result = selenium.run_async(code)
 
         if result:
             err: TracebackException = pickle.loads(b64decode(result))
