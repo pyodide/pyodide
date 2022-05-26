@@ -3,10 +3,7 @@ import pickle
 import sys
 from base64 import b64decode, b64encode
 from copy import deepcopy
-from traceback import TracebackException
 from typing import Any, Callable, Collection
-
-import pytest
 
 from .utils import set_webdriver_script_timeout
 
@@ -156,7 +153,7 @@ class run_in_pyodide:
 
         self._pkgs = list(packages)
         if pytest_assert_rewrites:
-            self._pkgs.append("pytest")
+            self._pkgs.extend(["pytest", "tblib"])
         self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
 
@@ -175,15 +172,17 @@ class run_in_pyodide:
             co = compile(mod, {self._module_filename!r}, "exec")
             d = {{}}
             exec(co, d)
+            def encode(x):
+                return b64encode(pickle.dumps(x)).decode()
             try:
                 result = d[{self._func_name!r}](None, *args)
                 if {self._async_func}:
                     result = await result
+                return [0, encode(result)]
             except BaseException as e:
-                import traceback
-                tb = traceback.TracebackException(type(e), e, e.__traceback__)
-                serialized_err = pickle.dumps(tb)
-                return b64encode(serialized_err).decode()
+                from tblib import pickling_support
+                pickling_support.install()
+                return [1, encode(e)]
 
         try:
             result = await __tmp()
@@ -200,23 +199,15 @@ class run_in_pyodide:
             if self._pkgs:
                 selenium.load_package(self._pkgs)
 
-            result = selenium.run_async(code)
+            r = selenium.run_async(code)
+            print("r:", r)
+            [status, result] = r
 
-        if result:
-            err: TracebackException = pickle.loads(b64decode(result))
-            err.stack.pop(0)  # Get rid of __tmp in traceback
-            self._fail(err)
-
-    def _fail(self, err: TracebackException):
-        """
-        Fail the test with a helpful message.
-
-        Separated out for test mock purposes.
-        """
-        pytest.fail(
-            "Error running function in pyodide\n\n" + "".join(err.format(chain=True)),
-            pytrace=False,
-        )
+        result = pickle.loads(b64decode(result))
+        if status:
+            raise result
+        else:
+            return result
 
     def _generate_pyodide_ast(
         self, module_ast: ast.Module, funcname: str
