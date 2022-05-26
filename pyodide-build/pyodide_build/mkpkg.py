@@ -15,15 +15,15 @@ import warnings
 from pathlib import Path
 from typing import (
     Any,
-    Literal,
-    TypedDict,
-    cast,
-    Tuple,
-    List,
     Callable,
     Dict,
+    List,
+    Literal,
     Optional,
     Sequence,
+    Tuple,
+    TypedDict,
+    cast,
 )
 from zipfile import ZipFile
 
@@ -183,7 +183,7 @@ def run_prettier(meta_path: Path) -> None:
 
 def _download_package(
     url: str, project_name: str
-) -> Tuple[ZipFile | tarfile.TarFile, List[str], str | None]:
+) -> tuple[ZipFile | tarfile.TarFile, list[str], str | None]:
     all_files = []
     toplevel_text = None
     if url.endswith(".zip") or url.endswith(".whl"):
@@ -224,7 +224,7 @@ def _download_package(
     return package, all_files, toplevel_text
 
 
-def _find_imports_from_package(url: str, project_name: str) -> List[str]:
+def _find_imports_from_package(url: str, project_name: str) -> list[str]:
     # first download the package and extract any top_level.txt
     compressed_package, all_files, toplevel_text = _download_package(url, project_name)
 
@@ -302,12 +302,12 @@ def make_package(
         #            self.__dep_map = self._filter_extras(self._build_dep_map())
 
         def requires(
-            self, extras: Tuple[str, ...] = ()
+            self, extras: tuple[str, ...] = ()
         ) -> list[pkg_resources.Requirement]:
             reqs = super().requires(extras)
             return reqs
 
-        def _build_dep_map(self) -> Dict[str | None, List[pkg_resources.Requirement]]:
+        def _build_dep_map(self) -> dict[str | None, list[pkg_resources.Requirement]]:
             # read dependencies from pypi
             package_metadata = _get_metadata(self.project_name, self.version)
             dm = {}  # type: Dict[str|None,List[pkg_resources.Requirement]]
@@ -334,7 +334,7 @@ def make_package(
         def __init__(self) -> None:
             super().__init__(search_path=[str(packages_dir)])
 
-        def scan(self, search_path: Optional[Sequence[str]] = None) -> None:
+        def scan(self, search_path: Sequence[str] | None = None) -> None:
             pass
 
         def make_dist(self, proj_name: str, meta_path: Path) -> YamlDistribution:
@@ -350,9 +350,10 @@ def make_package(
             self,
             req: pkg_resources.Requirement,
             working_set: pkg_resources.WorkingSet,
-            installer: Optional[
+            installer: None
+            | (
                 Callable[[pkg_resources.Requirement], pkg_resources.Distribution]
-            ] = None,
+            ) = None,
             replace_conflicting: bool = False,
         ) -> pkg_resources.Distribution:
             return self._best_match(
@@ -366,9 +367,10 @@ def make_package(
             self,
             req: pkg_resources.Requirement,
             working_set: pkg_resources.WorkingSet,
-            installer: Optional[
+            installer: None
+            | (
                 Callable[[pkg_resources.Requirement], pkg_resources.Distribution]
-            ] = None,
+            ) = None,
             replace_conflicting: bool = False,
             from_install: bool = False,
         ) -> pkg_resources.Distribution:
