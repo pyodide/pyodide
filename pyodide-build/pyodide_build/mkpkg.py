@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 import warnings
 from pathlib import Path
-from typing import Any, Callable, Literal, Sequence, TypedDict, cast, TypeVar, overload
+from typing import Any, Callable, Literal, Sequence, TypedDict, TypeVar, cast, overload
 from zipfile import ZipFile
 
 import packaging.specifiers
