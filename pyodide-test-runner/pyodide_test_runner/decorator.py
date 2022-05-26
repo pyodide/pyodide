@@ -234,7 +234,7 @@ class run_in_pyodide:
             except IndexError:
                 raise Exception(
                     "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
-                )
+                ) from None
             # We need to include the magic imports that pytest inserts
             if (
                 isinstance(node, ast.Import)
