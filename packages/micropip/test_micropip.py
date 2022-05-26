@@ -25,10 +25,27 @@ def _mock_importlib_version(name: str) -> str:
     raise PackageNotFoundError(name)
 
 
-def _mock_importlib_distributions():
-    from micropip._micropip import WHEEL_BASE
+WHEEL_BASE = None
 
-    return (Distribution.at(p) for p in WHEEL_BASE.glob("*.dist-info"))
+
+@pytest.fixture
+def wheel_base(monkeypatch):
+    with TemporaryDirectory() as tmpdirname:
+        global WHEEL_BASE
+        WHEEL_BASE = Path(tmpdirname).absolute()
+        import site
+
+        monkeypatch.setattr(
+            site, "getsitepackages", lambda: [WHEEL_BASE], raising=False
+        )
+        try:
+            yield
+        finally:
+            WHEEL_BASE = None
+
+
+def _mock_importlib_distributions():
+    return (Distribution.at(p) for p in WHEEL_BASE.glob("*.dist-info"))  # type: ignore[union-attr]
 
 
 @pytest.fixture
@@ -140,16 +157,6 @@ class mock_fetch_cls:
             tmp.seek(0)
 
             return tmp.read()
-
-
-@pytest.fixture
-def wheel_base():
-    pytest.importorskip("packaging")
-    from micropip import _micropip
-
-    with TemporaryDirectory() as tmpdirname:
-        _micropip.WHEEL_BASE = Path(tmpdirname).absolute()
-        yield
 
 
 @pytest.fixture
@@ -287,7 +294,7 @@ async def test_add_requirement():
 
 
 @pytest.mark.asyncio
-async def test_add_requirement_marker(mock_importlib):
+async def test_add_requirement_marker(mock_importlib, wheel_base):
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 

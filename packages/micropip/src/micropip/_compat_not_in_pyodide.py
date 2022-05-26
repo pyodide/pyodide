@@ -1,8 +1,5 @@
-from pathlib import Path
 from typing import Any
 
-# Provide stubs for testing in native python
-WHEEL_BASE = Path("/tmp/probably-does-not-exist")
 BUILTIN_PACKAGES: dict[str, dict[str, Any]] = {}
 
 
@@ -34,7 +31,6 @@ pyodide_js: Any = pyodide_js_()
 __all__ = [
     "fetch_bytes",
     "fetch_string",
-    "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
     "pyodide_js",

@@ -22,7 +22,6 @@ from pyodide._package_loader import parse_wheel_name, wheel_dist_info_dir
 
 from ._compat import (
     BUILTIN_PACKAGES,
-    WHEEL_BASE,
     fetch_bytes,
     fetch_string,
     loadedPackages,
@@ -62,7 +61,7 @@ class WheelInfo:
     digests: dict[str, str] | None = None
     data: BytesIO | None = None
     _dist: Any = None
-    _dist_info: Path | None = None
+    dist_info: Path | None = None
     _requires: list[Requirement] | None = None
 
     @staticmethod
@@ -123,10 +122,12 @@ class WheelInfo:
         if m.hexdigest() != sha256:
             raise ValueError("Contents don't match hash")
 
-    def extract(self):
+    def extract(self, target: Path) -> None:
         assert self.data
         with ZipFile(self.data) as zf:
-            zf.extractall(WHEEL_BASE)
+            zf.extractall(target)
+        dist_info_name: str = wheel_dist_info_dir(ZipFile(self.data), self.name)
+        self.dist_info = target / dist_info_name
 
     def requires(self, extras: set[str]) -> list[str]:
         if not self._dist:
@@ -137,20 +138,11 @@ class WheelInfo:
         self._requires = requires
         return requires
 
-    @property
-    def dist_info(self) -> Path:
-        if self._dist_info:
-            return self._dist_info
-        assert self.data
-        dist_info_name: str = wheel_dist_info_dir(ZipFile(self.data), self.name)
-        dist_info = WHEEL_BASE / dist_info_name
-        self._dist_info = dist_info
-        return dist_info
-
     def write_dist_info(self, file: str, content: str) -> None:
+        assert self.dist_info
         (self.dist_info / file).write_text(content)
 
-    def set_installer(self):
+    def set_installer(self) -> None:
         assert self.data
         wheel_source = "pypi" if self.digests is not None else self.url
 
@@ -163,14 +155,14 @@ class WheelInfo:
                 "PYODIDE_REQUIRES", json.dumps(sorted(x.name for x in self._requires))
             )
 
-    async def install(self):
+    async def install(self, target: Path) -> None:
         url = self.url
         if not self.data:
             raise RuntimeError(
                 "Micropip internal error: attempted to install wheel before downloading it?"
             )
         self.validate()
-        self.extract()
+        self.extract(target)
         self.set_installer()
         name = self.project_name
         assert name
@@ -429,6 +421,13 @@ async def install(
     if credentials:
         fetch_kwargs["credentials"] = credentials
 
+    # Note: getsitepackages is not available in a virtual environment...
+    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
+    # problem is not fixed)
+    from site import getsitepackages
+
+    wheel_base = Path(getsitepackages()[0])
+
     transaction = Transaction(
         ctx=ctx,
         keep_going=keep_going,
@@ -463,7 +462,7 @@ async def install(
     for wheel in transaction.wheels:
         # detect whether the wheel metadata is from PyPI or from custom location
         # wheel metadata from PyPI has SHA256 checksum digest.
-        wheel_promises.append(wheel.install())
+        wheel_promises.append(wheel.install(wheel_base))
 
     await gather(*wheel_promises)
 
