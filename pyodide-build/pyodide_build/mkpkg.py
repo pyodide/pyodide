@@ -200,7 +200,7 @@ def _download_package(url, project_name):
             f"Failed to load wheel or sdist for {project_name} from " f"{url} {e}"
         )
     for f in all_files:
-        if f.endswith(".dist-info/top_level.txt"):
+        if f.endswith(".dist-info/top_level.txt") or f.endswith(".egg-info/top_level.txt"):
             with open_fn(f) as tl:
                 toplevel_text = tl.read()
                 toplevel_text = toplevel_text.decode(errors="ignore")
