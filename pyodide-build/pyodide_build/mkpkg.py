@@ -13,7 +13,18 @@ import urllib.error
 import urllib.request
 import warnings
 from pathlib import Path
-from typing import Any, Literal, TypedDict
+from typing import (
+    Any,
+    Literal,
+    TypedDict,
+    cast,
+    Tuple,
+    List,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+)
 from zipfile import ZipFile
 
 import packaging.specifiers
@@ -156,7 +167,7 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
 
     try:
         with urllib.request.urlopen(url) as fd:
-            pypi_metadata = json.load(fd)
+            pypi_metadata = cast(MetadataDict, json.load(fd))
     except urllib.error.HTTPError as e:
         raise MkpkgFailedException(
             f"Failed to load metadata for {package}{version} from "
@@ -166,18 +177,20 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
     return pypi_metadata
 
 
-def run_prettier(meta_path):
+def run_prettier(meta_path: Path) -> None:
     subprocess.run(["npx", "prettier", "-w", meta_path])
 
 
-def _download_package(url, project_name):
+def _download_package(
+    url: str, project_name: str
+) -> Tuple[ZipFile | tarfile.TarFile, List[str], str | None]:
     all_files = []
     toplevel_text = None
     if url.endswith(".zip") or url.endswith(".whl"):
         filetype = ".zip"
     elif url.endswith(".tar.gz") or url.endswith(".tgz"):
         filetype = ".tar.gz"
-    package = None  # type: None | ZipFile | tarfile
+    package = None  # type: None | ZipFile | tarfile.TarFile
     tf = tempfile.NamedTemporaryFile(suffix=filetype)
     try:
         with urllib.request.urlopen(url) as fd:
@@ -185,7 +198,7 @@ def _download_package(url, project_name):
         if filetype == ".zip":
             package = ZipFile(tf)
             all_files = package.namelist()
-            open_fn = package.open
+            open_fn = package.open  # type: Callable[[Any],Any]
         elif filetype == ".tar.gz":
             package = tarfile.open(tf.name)
             all_files = package.getnames()
@@ -211,7 +224,7 @@ def _download_package(url, project_name):
     return package, all_files, toplevel_text
 
 
-def _find_imports_from_package(url, project_name):
+def _find_imports_from_package(url: str, project_name: str) -> List[str]:
     # first download the package and extract any top_level.txt
     compressed_package, all_files, toplevel_text = _download_package(url, project_name)
 
@@ -282,19 +295,22 @@ def make_package(
     pypi = "https://pypi.org/project/" + package
 
     class YamlDistribution(pkg_resources.Distribution):
-        def __init__(self, *args, **argv):
+        def __init__(self, *args: Any, **argv: Any) -> None:
             super().__init__(*args, **argv)
             # filter python version etc. extras now
-            self.__dep_map = self._filter_extras(self._build_dep_map())
 
-        def requires(self, extras=()):
+        #            self.__dep_map = self._filter_extras(self._build_dep_map())
+
+        def requires(
+            self, extras: Tuple[str, ...] = ()
+        ) -> list[pkg_resources.Requirement]:
             reqs = super().requires(extras)
             return reqs
 
-        def _build_dep_map(self):
+        def _build_dep_map(self) -> Dict[str | None, List[pkg_resources.Requirement]]:
             # read dependencies from pypi
-            package_metadata = _get_metadata(self.project_name, self._version)
-            dm = {}
+            package_metadata = _get_metadata(self.project_name, self.version)
+            dm = {}  # type: Dict[str|None,List[pkg_resources.Requirement]]
             if (
                 "requires_dist" in package_metadata["info"]
                 and package_metadata["info"]["requires_dist"] is not None
@@ -315,13 +331,13 @@ def make_package(
             return dm
 
     class EnvironmentHelper(pkg_resources.Environment):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__(search_path=[str(packages_dir)])
 
-        def scan(self, search_path=None):
+        def scan(self, search_path: Optional[Sequence[str]] = None) -> None:
             pass
 
-        def make_dist(self, proj_name, meta_path):
+        def make_dist(self, proj_name: str, meta_path: Path) -> YamlDistribution:
             yaml = YAML()
             p_yaml = yaml.load(meta_path.read_bytes())
             p_version = p_yaml["package"]["version"]
@@ -332,12 +348,30 @@ def make_package(
 
         def best_match(
             self,
-            req,
-            working_set,
-            installer=None,
-            replace_conflicting=False,
-            from_install=False,
-        ):
+            req: pkg_resources.Requirement,
+            working_set: pkg_resources.WorkingSet,
+            installer: Optional[
+                Callable[[pkg_resources.Requirement], pkg_resources.Distribution]
+            ] = None,
+            replace_conflicting: bool = False,
+        ) -> pkg_resources.Distribution:
+            return self._best_match(
+                req,
+                working_set,
+                installer=installer,
+                replace_conflicting=replace_conflicting,
+            )
+
+        def _best_match(
+            self,
+            req: pkg_resources.Requirement,
+            working_set: pkg_resources.WorkingSet,
+            installer: Optional[
+                Callable[[pkg_resources.Requirement], pkg_resources.Distribution]
+            ] = None,
+            replace_conflicting: bool = False,
+            from_install: bool = False,
+        ) -> pkg_resources.Distribution:
             proj_name = req.project_name
             if os.path.isfile(packages_dir / proj_name / "meta.yaml"):
                 return self.make_dist(
@@ -349,19 +383,22 @@ def make_package(
                     req.project_name, packages_dir / proj_name / "meta.yaml"
                 )
             # no package installed - try to install it
-            if from_install:
-                return None
             print("Installing dependency:", req.project_name, str(req.specs))
+            self.from_install = True
             make_package(
                 packages_dir,
                 req.project_name,
-                str(req.specifier),
+                ",".join(["".join(x) for x in req.specs]),
                 source_fmt=source_fmt,
                 make_dependencies=make_dependencies,
                 find_imports=find_imports,
             )
-            return self.best_match(
-                req, working_set, installer, replace_conflicting, True
+            return self._best_match(
+                req,
+                working_set,
+                installer=installer,
+                replace_conflicting=replace_conflicting,
+                from_install=True,
             )
 
     if extra:
@@ -374,17 +411,19 @@ def make_package(
     package_dir = packages_dir / package
 
     dist = YamlDistribution(package_dir, project_name=package, version=version)
-    requires_packages = dist.requires(extras=our_extras)
+    requires_packages = dist.requires(extras=tuple(our_extras))
 
     env = EnvironmentHelper()
 
     if make_dependencies:
         ws = pkg_resources.WorkingSet([])
         # bug in type specifications which are missing extras parameter
-        ws.resolve(requires_packages, env=env, extras=our_extras)  # type:ignore
+        ws.resolve(
+            requires_packages, env=env, extras=our_extras
+        )  # type:ignore[call-arg]
 
     for r in requires_packages:
-        name = r.name
+        name = r.project_name
         if r.marker and not r.marker.evaluate(environment=env):
             continue
         if os.path.isfile(packages_dir / name / "meta.yaml"):
