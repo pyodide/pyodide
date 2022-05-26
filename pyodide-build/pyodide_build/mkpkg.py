@@ -337,7 +337,7 @@ def make_package(
             )
             return dist
 
-        @overload # type: ignore[override]
+        @overload  # type: ignore[override]
         def best_match(
             self,
             req: pkg_resources.Requirement,
