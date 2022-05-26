@@ -15,9 +15,8 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 1. From the root directory of the repository,
 
    ```bash
-   pip install bump2version
-   bump2version --new-version "<version-string>" minor  # This will bump Python versions
-   cd src/js; npm version --no-git-tag-version minor; cd -  # This will bump JS versions
+   ./tools/bump_version.py --new-version <new_version>
+   # ./tools/bump_version.py --new_version <new_version> --dry-run
    ```
 
    check that the diff is correct with `git diff` before committing.
@@ -76,8 +75,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
    ```sh
    # For example, if you just released 0.22.0, then set the version to 0.22.1.dev0
-   bump2version --new-version "0.22.1.dev0" minor
-   cd src/js; npm version --no-git-tag-version --preid dev prepatch; cd -
+   ./tools/bump_version.py --new-version 0.22.1.dev0
    ```
 
 7. Update this file with any relevant changes.
