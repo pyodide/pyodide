@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide
-def test_bz2():
+def test_bz2(selenium):
     import bz2
 
     text = "Hello test test test test this is a test test test"

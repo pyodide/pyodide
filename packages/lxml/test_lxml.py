@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["lxml"])
-def test_lxml():
+def test_lxml(selenium):
     from lxml import etree
 
     root = etree.XML(
