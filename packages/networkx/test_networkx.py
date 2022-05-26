@@ -1,8 +1,8 @@
 from pyodide_test_runner import run_in_pyodide
 
 
-@run_in_pyodide(selenium_fixture_name="selenium_standalone", packages=["networkx"])
-def test_networkx_basicgraph():
+@run_in_pyodide(packages=["networkx"])
+def test_networkx_basicgraph(selenium_standalone):
     import networkx as nx
 
     G = nx.Graph()

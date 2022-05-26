@@ -25,9 +25,8 @@ def test_fnmatch(selenium_module_scope, pattern, name, flags, expected):
 
 @run_in_pyodide(
     packages=["cffi_example"],
-    selenium_fixture_name="selenium_module_scope",
 )
-def test_person():
+def test_person(selenium_module_scope):
     from cffi_example.person import Person
 
     p = Person("Alex", "Smith", 72)
