@@ -25,7 +25,7 @@ import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Any, MutableMapping, NoReturn, overload
+from typing import Any, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -76,7 +76,6 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
         env[var] = symlink
 
 
-@overload
 def compile(
     env: dict[str, str],
     *,
@@ -87,16 +86,17 @@ def compile(
     host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
-):
-    ...
+) -> None:
+    kwargs = dict(
+        pkgname=pkgname,
+        cflags=cflags,
+        cxxflags=cxxflags,
+        ldflags=ldflags,
+        host_install_dir=host_install_dir,
+        target_install_dir=target_install_dir,
+        replace_libs=replace_libs,
+    )
 
-
-@overload
-def compile(*, mypy__Single_overload_definition_multiple_required: int):
-    ...
-
-
-def compile(env, **kwargs):
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
 

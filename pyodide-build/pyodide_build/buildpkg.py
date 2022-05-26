@@ -164,7 +164,7 @@ def get_bash_runner():
         yield b
 
 
-def check_checksum(archive: Path, source_metadata: dict[str, Any]):
+def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -215,7 +215,9 @@ def trim_archive_extension(tarballname):
     return tarballname
 
 
-def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]):
+def download_and_extract(
+    buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
+) -> None:
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
@@ -269,7 +271,7 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: dict[str,
 
 def prepare_source(
     pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
-):
+) -> None:
     """
     Figure out from the "source" key in the package metadata where to get the source
     from, then get the source into srcpath (or somewhere else, if it goes somewhere
@@ -294,7 +296,7 @@ def prepare_source(
 
     Returns
     -------
-        The location where the source ended up.
+        The location where the source ended up. TODO: None, actually?
     """
     if buildpath.resolve().is_dir():
         shutil.rmtree(buildpath)
@@ -316,7 +318,7 @@ def prepare_source(
     shutil.copytree(srcdir, srcpath)
 
 
-def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
+def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]) -> None:
     """
     Apply patches to the source.
 
@@ -449,7 +451,7 @@ def compile(
         )
 
 
-def replace_so_abi_tags(wheel_dir: Path):
+def replace_so_abi_tags(wheel_dir: Path) -> None:
     """Replace native abi tag with emscripten abi tag in .so file names"""
     build_soabi = sysconfig.get_config_var("SOABI")
     assert build_soabi
@@ -467,8 +469,8 @@ def package_wheel(
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
-    host_install_dir,
-):
+    host_install_dir: str,
+) -> None:
     """Package a wheel
 
     This unpacks the wheel, unvendors tests if necessary, runs and "build.post"
@@ -608,7 +610,7 @@ def run_script(
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
-):
+) -> None:
     """
     Run the build script indicated in meta.yaml
 
@@ -691,7 +693,7 @@ def build_package(
     host_install_dir: str,
     force_rebuild: bool,
     continue_: bool,
-):
+) -> None:
     """
     Build the package. The main entrypoint in this module.
 
@@ -791,7 +793,7 @@ def build_package(
         create_packaged_token(build_dir)
 
 
-def make_parser(parser: argparse.ArgumentParser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = (
         "Build a pyodide package.\n\n"
         "Note: this is a private endpoint that should not be used "

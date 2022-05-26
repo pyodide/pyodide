@@ -83,7 +83,7 @@ def test_run_script_environment(tmpdir):
 
 
 def test_unvendor_tests(tmpdir):
-    def touch(path: Path):
+    def touch(path: Path) -> None:
         if path.is_dir():
             raise ValueError("Only files, not folders are supported")
         path.parent.mkdir(parents=True, exist_ok=True)

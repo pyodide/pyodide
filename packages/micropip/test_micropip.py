@@ -55,7 +55,7 @@ class Wildcard:
         return True
 
 
-def make_wheel_filename(name: str, version: str, platform: str = "generic"):
+def make_wheel_filename(name: str, version: str, platform: str = "generic") -> str:
     if platform == "generic":
         platform_str = "py3-none-any"
     elif platform == "emscripten":
@@ -83,7 +83,7 @@ class mock_fetch_cls:
         extras: dict[str, list[str]] | None = None,
         platform: str = "generic",
         top_level: list[str] | None = None,
-    ):
+    ) -> None:
         if requirements is None:
             requirements = []
         if extras is None:
@@ -405,7 +405,9 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
 
 
 @pytest.mark.asyncio
-async def test_install_keep_going(mock_fetch: mock_fetch_cls, dummy_pkg_name: str):
+async def test_install_keep_going(
+    mock_fetch: mock_fetch_cls, dummy_pkg_name: str
+) -> None:
     dep1 = f"{dummy_pkg_name}-dep1"
     dep2 = f"{dummy_pkg_name}-dep2"
     mock_fetch.add_pkg_version(dummy_pkg_name, requirements=[dep1, dep2])
@@ -421,7 +423,7 @@ async def test_install_keep_going(mock_fetch: mock_fetch_cls, dummy_pkg_name: st
 @pytest.mark.asyncio
 async def test_install_version_compare_prerelease(
     mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
-):
+) -> None:
     version_old = "3.2.0"
     version_new = "3.2.1a1"
 
@@ -439,7 +441,7 @@ async def test_install_version_compare_prerelease(
 @pytest.mark.asyncio
 async def test_install_no_deps(
     mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
-):
+) -> None:
     dep_pkg_name = "dependency_dummy"
     mock_fetch.add_pkg_version(dummy_pkg_name, requirements=[dep_pkg_name])
     mock_fetch.add_pkg_version(dep_pkg_name)
@@ -454,7 +456,7 @@ async def test_install_no_deps(
 @pytest.mark.parametrize("pre", [True, False])
 async def test_install_pre(
     mock_fetch: mock_fetch_cls, mock_importlib: None, pre: bool, dummy_pkg_name: str
-):
+) -> None:
     version_alpha = "2.0.1a1"
     version_stable = "1.0.0"
 
@@ -484,7 +486,7 @@ async def test_fetch_wheel_fail(monkeypatch):
 @pytest.mark.asyncio
 async def test_list_pypi_package(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
-):
+) -> None:
     mock_fetch.add_pkg_version(dummy_pkg_name)
 
     await micropip.install(dummy_pkg_name)
@@ -496,7 +498,7 @@ async def test_list_pypi_package(
 @pytest.mark.asyncio
 async def test_list_wheel_package(
     mock_fetch: mock_fetch_cls, mock_importlib: None, dummy_pkg_name: str
-):
+) -> None:
     mock_fetch.add_pkg_version(dummy_pkg_name)
     dummy_url = f"https://dummy.com/{dummy_pkg_name}-1.0.0-py3-none-any.whl"
 
@@ -508,7 +510,9 @@ async def test_list_wheel_package(
 
 
 @pytest.mark.asyncio
-async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls, mock_importlib):
+async def test_list_wheel_name_mismatch(
+    mock_fetch: mock_fetch_cls, mock_importlib: None
+) -> None:
     dummy_pkg_name = "dummy-Dummy"
     mock_fetch.add_pkg_version(dummy_pkg_name)
     dummy_url = "https://dummy.com/dummy_dummy-1.0.0-py3-none-any.whl"
@@ -592,7 +596,7 @@ async def test_install_with_credentials(selenium):
 @pytest.mark.asyncio
 async def test_freeze(
     mock_fetch: mock_fetch_cls, dummy_pkg_name: str, mock_importlib: None
-):
+) -> None:
     pkg = dummy_pkg_name
     dep1 = f"{pkg}-dep1"
     dep2 = f"{pkg}-dep2"
