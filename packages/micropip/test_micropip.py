@@ -9,7 +9,7 @@ from pyodide_test_runner import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
-from importlib.metadata import PackageNotFoundError, distributions
+from importlib.metadata import Distribution, PackageNotFoundError
 
 try:
     import micropip
@@ -28,7 +28,7 @@ def _mock_importlib_version(name: str) -> str:
 def _mock_importlib_distributions():
     from micropip._micropip import WHEEL_BASE
 
-    return distributions(path=[WHEEL_BASE])
+    return (Distribution.at(p) for p in WHEEL_BASE.glob("*.dist-info"))
 
 
 @pytest.fixture
@@ -106,7 +106,6 @@ class mock_fetch_cls:
 
     async def _get_pypi_json(self, pkgname, kwargs):
         try:
-            print("_get_pypi_json", pkgname, self.releases_map[pkgname])
             return self.releases_map[pkgname]
         except KeyError as e:
             raise ValueError(
