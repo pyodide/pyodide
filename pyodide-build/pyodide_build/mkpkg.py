@@ -13,18 +13,7 @@ import urllib.error
 import urllib.request
 import warnings
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    cast,
-)
+from typing import Any, Callable, Literal, Sequence, TypedDict, cast, TypeVar, overload
 from zipfile import ZipFile
 
 import packaging.specifiers
@@ -330,6 +319,8 @@ def make_package(
 
             return dm
 
+    _T = TypeVar("_T")
+
     class EnvironmentHelper(pkg_resources.Environment):
         def __init__(self) -> None:
             super().__init__(search_path=[str(packages_dir)])
@@ -346,16 +337,29 @@ def make_package(
             )
             return dist
 
+        @overload
         def best_match(
             self,
             req: pkg_resources.Requirement,
             working_set: pkg_resources.WorkingSet,
-            installer: None
-            | (
-                Callable[[pkg_resources.Requirement], pkg_resources.Distribution]
-            ) = None,
-            replace_conflicting: bool = False,
+            *,
+            replace_conflicting: bool = ...,
         ) -> pkg_resources.Distribution:
+            ...
+
+        @overload
+        def best_match(
+            self,
+            req: pkg_resources.Requirement,
+            working_set: pkg_resources.WorkingSet,
+            installer: Callable[[pkg_resources.Requirement], _T],
+            replace_conflicting: bool = ...,
+        ) -> _T:
+            ...
+
+        def best_match(
+            self, req, working_set, installer=None, replace_conflicting=False
+        ):
             return self._best_match(
                 req,
                 working_set,
