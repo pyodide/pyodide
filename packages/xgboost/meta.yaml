@@ -14,13 +14,14 @@ build:
     -DDMLC_CXX11_THREAD_LOCAL=0
     -DUSE_OPENMP=0
   script: |
-    export VERBOSE=1
+    # export VERBOSE=1
     export CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/xgboost/cmake/Toolchain.cmake
 requirements:
   run:
     - numpy
     - scipy
     - setuptools
+    - pandas
 test:
   imports:
     - xgboost
