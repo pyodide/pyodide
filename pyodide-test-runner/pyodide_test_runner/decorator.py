@@ -5,8 +5,6 @@ from base64 import b64decode, b64encode
 from copy import deepcopy
 from typing import Any, Callable, Collection
 
-from .utils import set_webdriver_script_timeout
-
 
 class SeleniumType:
     JavascriptException: type
@@ -120,7 +118,6 @@ class run_in_pyodide:
     def __init__(
         self,
         packages: Collection[str] = (),
-        driver_timeout: float | None = None,
         pytest_assert_rewrites: bool = True,
     ):
         """
@@ -136,10 +133,6 @@ class run_in_pyodide:
         packages : List[str]
             List of packages to load before running the test
 
-        driver_timeout : Optional[float]
-            selenium driver timeout (in seconds). If missing, use the default
-            timeout.
-
         pytest_assert_rewrites : bool, default = True
             If True, use pytest assertion rewrites. This gives better error messages
             when an assertion fails, but requires us to load pytest.
@@ -154,7 +147,6 @@ class run_in_pyodide:
         self._pkgs = list(packages)
         if pytest_assert_rewrites:
             self._pkgs.extend(["pytest", "tblib"])
-        self._driver_timeout = driver_timeout
         self._pytest_assert_rewrites = pytest_assert_rewrites
 
     def _code_template(self, args: tuple) -> str:
@@ -195,9 +187,8 @@ class run_in_pyodide:
         """The main test runner, called from the AST generated in
         _create_outer_test_function."""
         code = self._code_template(args)
-        with set_webdriver_script_timeout(selenium, self._driver_timeout):
-            if self._pkgs:
-                selenium.load_package(self._pkgs)
+        if self._pkgs:
+            selenium.load_package(self._pkgs)
 
             r = selenium.run_async(code)
             print("r:", r)
@@ -210,7 +201,7 @@ class run_in_pyodide:
             return result
 
     def _generate_pyodide_ast(
-        self, module_ast: ast.Module, funcname: str
+        self, module_ast: ast.Module, funcname: str, func_line_no: int
     ) -> tuple[ast.Module, bool, ast.expr]:
         """Generates appropriate AST for the test to run in Pyodide.
 
@@ -218,7 +209,14 @@ class run_in_pyodide:
         This will be pickled and sent to Pyodide.
         """
         nodes: list[ast.stmt] = []
-        for node in module_ast.body:
+        it = iter(module_ast.body)
+        while True:
+            try:
+                node = next(it)
+            except StopIteration:
+                raise Exception(
+                    f"Didn't find function {funcname} (line {func_line_no}) in module."
+                ) from None
             # We need to include the magic imports that pytest inserts
             if (
                 isinstance(node, ast.Import)
@@ -228,18 +226,25 @@ class run_in_pyodide:
                 nodes.append(node)
 
             # We also want the function definition for the current test
-            if isinstance(node, ast.FunctionDef) or isinstance(
-                node, ast.AsyncFunctionDef
-            ):
-                if node.name == funcname:
-                    self._async_func = isinstance(node, ast.AsyncFunctionDef)
-                    node.decorator_list = []
-                    nodes.append(node)
-                    break
-        else:
-            raise Exception(
-                "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
-            )
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if node.end_lineno > func_line_no and node.lineno < func_line_no:
+                it = iter(node.body)
+                continue
+
+            if node.lineno < func_line_no:
+                continue
+
+            if node.name != funcname:
+                raise RuntimeError(
+                    f"Internal run_in_pyodide error: looking for function '{funcname}' but found '{node.name}'"
+                )
+
+            self._async_func = isinstance(node, ast.AsyncFunctionDef)
+            node.decorator_list = []
+            nodes.append(node)
+            break
+
         self._mod = ast.Module(nodes, type_ignores=[])
         ast.fix_missing_locations(self._mod)
 
@@ -250,8 +255,10 @@ class run_in_pyodide:
         module_filename = sys.modules[f.__module__].__file__ or ""
         module_ast = self._module_asts_dict[module_filename]
 
+        func_line_no = f.__code__.co_firstlineno
+
         # _code_template needs this info.
-        self._generate_pyodide_ast(module_ast, func_name)
+        self._generate_pyodide_ast(module_ast, func_name, func_line_no)
         self._func_name = func_name
         self._module_filename = module_filename
 

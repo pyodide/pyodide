@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner.utils import parse_driver_timeout
 
 from pyodide import eval_code_async
 
@@ -21,6 +22,9 @@ def example_func2(selenium):
     x = 6
     y = 7
     assert x == y
+
+
+run_in_pyodide_inner = run_in_pyodide()
 
 
 @run_in_pyodide
@@ -86,6 +90,15 @@ def test_local3(monkeypatch):
 
     async_example_func(selenium_mock)
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+
+
+def test_local_inner_function():
+    @run_in_pyodide
+    def inner_function(selenium, x):
+        assert x == 6
+        return 7
+
+    inner_function(selenium_mock, 6)
 
 
 def complicated_decorator(attr_name: str):
@@ -252,3 +265,11 @@ def test_hypothesis(selenium, obj):
     from pyodide import to_js
 
     to_js(obj)
+
+
+run_in_pyodide_alias2 = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
+
+
+@run_in_pyodide_alias2
+def test_run_in_pyodide_alias(request):
+    assert parse_driver_timeout(request.node) == 40
