@@ -105,7 +105,7 @@ The tests should go in one or more files like
 from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide(packages=["<package-name>"])
-def test_mytestname():
+def test_mytestname(selenium):
   import <package-name>
   assert package.do_something() == 5
   # ...
@@ -118,7 +118,7 @@ vendors tests you can do it like:
 from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide(packages=["<package-name>-tests", "pytest"])
-def test_mytestname():
+def test_mytestname(selenium):
   import pytest
   pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...])
 ```

@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["lazy-object-proxy"])
-def test_lazy_object_proxy():
+def test_lazy_object_proxy(selenium):
     import lazy_object_proxy
 
     def expensive_func():

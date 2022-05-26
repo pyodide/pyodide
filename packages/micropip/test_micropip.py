@@ -561,7 +561,7 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
 
 @pytest.mark.skip_refcount_check
 @run_in_pyodide(packages=["micropip"])
-async def test_install_with_credentials():
+async def test_install_with_credentials(selenium):
     import json
     from unittest.mock import MagicMock, patch
 

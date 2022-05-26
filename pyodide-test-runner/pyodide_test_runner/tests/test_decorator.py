@@ -8,7 +8,7 @@ from pyodide import eval_code_async
 
 
 @run_in_pyodide
-def example_func1():
+def example_func1(selenium):
     x = 6
     y = 7
     assert x == y
@@ -18,7 +18,7 @@ run_in_pyodide_alias = run_in_pyodide()
 
 
 @run_in_pyodide_alias
-def example_func2():
+def example_func2(selenium):
     x = 6
     y = 7
     assert x == y
@@ -28,7 +28,7 @@ run_in_pyodide_inner = run_in_pyodide()
 
 
 @run_in_pyodide
-async def async_example_func():
+async def async_example_func(selenium):
     from asyncio import sleep
 
     await sleep(0.01)
@@ -116,7 +116,7 @@ d2 = complicated_decorator("testdec2")
 @d2("b")
 @d1("c")
 @run_in_pyodide
-def example_decorator_func():
+def example_decorator_func(selenium):
     pass
 
 
@@ -179,26 +179,26 @@ def test_selenium(selenium, monkeypatch):
 
 
 @run_in_pyodide
-def test_trivial1():
+def test_trivial1(selenium):
     x = 7
     assert x == 7
 
 
 @run_in_pyodide()
-def test_trivial2():
+def test_trivial2(selenium):
     x = 7
     assert x == 7
 
 
 @run_in_pyodide(pytest_assert_rewrites=False)
-def test_trivial3():
+def test_trivial3(selenium):
     x = 7
     assert x == 7
 
 
 @pytest.mark.parametrize("jinja2", ["jINja2", "Jinja2"])
 @run_in_pyodide
-def test_parametrize(jinja2):
+def test_parametrize(selenium, jinja2):
     try:
         assert jinja2.lower() == "jinja2"
     except Exception as e:
@@ -207,13 +207,13 @@ def test_parametrize(jinja2):
 
 @pytest.mark.skip(reason="Nope!")
 @run_in_pyodide(pytest_assert_rewrites=False)
-def test_skip():
+def test_skip(selenium):
     x = 6
     assert x == 7
 
 
 @run_in_pyodide
-async def test_run_in_pyodide_async():
+async def test_run_in_pyodide_async(selenium):
     from asyncio import sleep
 
     x = 6
@@ -252,7 +252,7 @@ strategy = (
     max_examples=25,
 )
 @run_in_pyodide
-def test_hypothesis(obj):
+def test_hypothesis(selenium, obj):
     from pyodide import to_js
 
     to_js(obj)

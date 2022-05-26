@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide
-async def test_set_timeout_succeeded():
+async def test_set_timeout_succeeded(selenium):
     success = False
 
     def foo():
@@ -20,7 +20,7 @@ async def test_set_timeout_succeeded():
 
 
 @run_in_pyodide
-async def test_clear_timeout_succeeded():
+async def test_clear_timeout_succeeded(selenium):
     success = False
 
     def foo():
@@ -39,7 +39,7 @@ async def test_clear_timeout_succeeded():
 
 
 @run_in_pyodide
-async def test_clear_timeout_destroyable_noop():
+async def test_clear_timeout_destroyable_noop(selenium):
     success = False
 
     def foo():
@@ -59,7 +59,7 @@ async def test_clear_timeout_destroyable_noop():
 
 
 @run_in_pyodide
-async def test_start_multiple_timeouts_and_clear_one():
+async def test_start_multiple_timeouts_and_clear_one(selenium):
     success1 = False
     success2 = False
     success3 = False
@@ -95,7 +95,7 @@ async def test_start_multiple_timeouts_and_clear_one():
 
 
 @run_in_pyodide
-async def test_set_interval_succeeded():
+async def test_set_interval_succeeded(selenium):
     num_times_ran = 0
 
     def foo():
@@ -115,7 +115,7 @@ async def test_set_interval_succeeded():
 
 
 @run_in_pyodide
-async def test_clear_interval_succeeded():
+async def test_clear_interval_succeeded(selenium):
     num_times_ran = 0
 
     def foo():
@@ -134,7 +134,7 @@ async def test_clear_interval_succeeded():
 
 
 @run_in_pyodide
-async def test_start_multiple_intervals_and_clear_one():
+async def test_start_multiple_intervals_and_clear_one(selenium):
     num_times_ran_1 = 0
     num_times_ran_2 = 0
     num_times_ran_3 = 0
@@ -172,7 +172,7 @@ async def test_start_multiple_intervals_and_clear_one():
 
 
 @run_in_pyodide
-async def test_trigger_event_listener():
+async def test_trigger_event_listener(selenium):
     from pyodide import run_js
 
     x = run_js(
@@ -225,7 +225,7 @@ x;
 
 
 @run_in_pyodide
-async def test_remove_event_listener():
+async def test_remove_event_listener(selenium):
     from pyodide import run_js
 
     x = run_js(
@@ -276,7 +276,7 @@ x;
 
 
 @run_in_pyodide
-async def test_trigger_some_of_multiple_event_listeners():
+async def test_trigger_some_of_multiple_event_listeners(selenium):
     from pyodide import run_js
 
     x = run_js(
@@ -346,7 +346,7 @@ x;
 
 
 @run_in_pyodide
-async def test_remove_event_listener_twice():
+async def test_remove_event_listener_twice(selenium):
     from pyodide import run_js
 
     x = run_js(
@@ -403,7 +403,7 @@ x;
 
 
 @run_in_pyodide
-async def test_nonexistant_remove_event_listener():
+async def test_nonexistant_remove_event_listener(selenium):
     from pyodide import run_js
 
     x = run_js(

@@ -30,7 +30,6 @@ def _encode(obj: Any) -> str:
 
 def _create_outer_test_function(
     run_test: Callable,
-    selenium_arg_name: str,
     node: ast.stmt,
 ) -> Callable:
     """
@@ -42,7 +41,7 @@ def _create_outer_test_function(
         @outer_decorators
         @run_in_pyodide
         @inner_decorators
-        <async?> def func(arg1, arg2, arg3):
+        <async?> def func(<selenium_arg_name>, arg1, arg2, arg3):
             # do stuff
 
     This wrapper looks like:
@@ -54,6 +53,17 @@ def _create_outer_test_function(
     the Python interpreter via the normal mechanism
     """
     node_args = deepcopy(node.args)
+    if not node_args.args:
+        raise ValueError(
+            f"Function {node.name} should take at least one argument whose name should start with 'selenium'"
+        )
+
+    selenium_arg_name = node_args.args[0].arg
+    if not selenium_arg_name.startswith("selenium"):
+        raise ValueError(
+            f"Function {node.name}'s first argument name '{selenium_arg_name}' should start with 'selenium'"
+        )
+
     new_node = ast.FunctionDef(
         name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
     )
@@ -65,11 +75,10 @@ def _create_outer_test_function(
     onwards_call = func_body[0].value
     onwards_call.args[0].id = selenium_arg_name  # Set variable name
     onwards_call.args[1].elts = [  # Set tuple elements
-        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args
+        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args[1:]
     ]
 
     # Add extra <selenium_arg_name> argument
-    node_args.args.insert(0, ast.arg(arg=selenium_arg_name))
     new_node.body = func_body
 
     # Make a best effort to show something that isn't total nonsense in the
@@ -111,7 +120,6 @@ class run_in_pyodide:
 
     def __init__(
         self,
-        selenium_fixture_name: str = "selenium",
         packages: Collection[str] = (),
         pytest_assert_rewrites: bool = True,
     ):
@@ -125,9 +133,6 @@ class run_in_pyodide:
 
         Parameters
         ----------
-        selenium_fixture_name : str, default="selenium"
-            The name of the selenium fixture to use
-
         packages : List[str]
             List of packages to load before running the test
 
@@ -146,7 +151,6 @@ class run_in_pyodide:
         if pytest_assert_rewrites:
             self._pkgs.append("pytest")
         self._pytest_assert_rewrites = pytest_assert_rewrites
-        self._selenium_fixture_name = selenium_fixture_name
 
     def _code_template(self, args: tuple) -> str:
         """
@@ -164,7 +168,7 @@ class run_in_pyodide:
             d = {{}}
             exec(co, d)
             try:
-                result = d[{self._func_name!r}](*args)
+                result = d[{self._func_name!r}](None, *args)
                 if {self._async_func}:
                     result = await result
             except BaseException as e:
@@ -251,8 +255,6 @@ class run_in_pyodide:
         self._func_name = func_name
         self._module_filename = module_filename
 
-        wrapper = _create_outer_test_function(
-            self._run_test, self._selenium_fixture_name, self._node
-        )
+        wrapper = _create_outer_test_function(self._run_test, self._node)
 
         return wrapper
