@@ -210,7 +210,7 @@ class run_in_pyodide:
         )
 
     def _generate_pyodide_ast(
-        self, module_ast: ast.Module, funcname: str
+        self, module_ast: ast.Module, funcname: str, func_line_no: int
     ) -> tuple[ast.Module, bool, ast.expr]:
         """Generates appropriate AST for the test to run in Pyodide.
 
@@ -218,7 +218,14 @@ class run_in_pyodide:
         This will be pickled and sent to Pyodide.
         """
         nodes: list[ast.stmt] = []
-        for node in module_ast.body:
+        it = iter(module_ast.body)
+        while True:
+            try:
+                node = next(it)
+            except StopIteration:
+                raise Exception(
+                    f"Didn't find function {funcname} (line {func_line_no}) in module."
+                ) from None
             # We need to include the magic imports that pytest inserts
             if (
                 isinstance(node, ast.Import)
@@ -228,18 +235,25 @@ class run_in_pyodide:
                 nodes.append(node)
 
             # We also want the function definition for the current test
-            if isinstance(node, ast.FunctionDef) or isinstance(
-                node, ast.AsyncFunctionDef
-            ):
-                if node.name == funcname:
-                    self._async_func = isinstance(node, ast.AsyncFunctionDef)
-                    node.decorator_list = []
-                    nodes.append(node)
-                    break
-        else:
-            raise Exception(
-                "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
-            )
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if node.end_lineno > func_line_no and node.lineno < func_line_no:
+                it = iter(node.body)
+                continue
+
+            if node.lineno < func_line_no:
+                continue
+
+            if node.name != funcname:
+                raise RuntimeError(
+                    f"Internal run_in_pyodide error: looking for function '{funcname}' but found '{node.name}'"
+                )
+
+            self._async_func = isinstance(node, ast.AsyncFunctionDef)
+            node.decorator_list = []
+            nodes.append(node)
+            break
+
         self._mod = ast.Module(nodes, type_ignores=[])
         ast.fix_missing_locations(self._mod)
 
@@ -250,8 +264,10 @@ class run_in_pyodide:
         module_filename = sys.modules[f.__module__].__file__ or ""
         module_ast = self._module_asts_dict[module_filename]
 
+        func_line_no = f.__code__.co_firstlineno
+
         # _code_template needs this info.
-        self._generate_pyodide_ast(module_ast, func_name)
+        self._generate_pyodide_ast(module_ast, func_name, func_line_no)
         self._func_name = func_name
         self._module_filename = module_filename
 
