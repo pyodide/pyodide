@@ -21,6 +21,7 @@ import pkg_resources
 import setuptools
 from ruamel.yaml import YAML
 
+
 class URLDict(TypedDict):
     comment_text: str
     digests: dict[str, Any]
@@ -116,23 +117,25 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
             with urllib.request.urlopen(url) as fd:
                 main_metadata = json.load(fd)
                 all_versions = main_metadata["releases"].keys()
-                all_versions = sorted(map(pkg_resources.parse_version, all_versions))
-                this_ver = pkg_resources.parse_version(version)
-                if this_ver in all_versions:
-                    chosen_version = str(this_ver)
-                else:
+                try:
+                    spec = packaging.specifiers.SpecifierSet(version)
+                except packaging.specifiers.InvalidSpecifier as e:
                     try:
-                        spec = packaging.specifiers.SpecifierSet(version)
-                        chosen_version = None
-                        for v in reversed(all_versions):
-                            if spec.contains(str(v)):
-                                chosen_version = str(v)
-                                break
+                        spec = packaging.specifiers.SpecifierSet(f"=={version}")
                     except packaging.specifiers.InvalidSpecifier as e:
                         raise MkpkgFailedException(
                             f"Bad specifier for  {package}{version} from "
                             f"https://pypi.org/pypi/{package}{version}/json: {e}"
                         )
+
+                filtered_versions = sorted(spec.filter(all_versions))
+                if len(filtered_versions) != 0:
+                    chosen_version = str(filtered_versions[-1])
+                else:
+                    raise MkpkgFailedException(
+                        f"No matching version for  {package}{version} from "
+                        f"https://pypi.org/pypi/{package}{version}/json:"
+                    )
 
         except urllib.error.HTTPError as e:
             raise MkpkgFailedException(
@@ -174,7 +177,7 @@ def _download_package(url, project_name):
         filetype = ".zip"
     elif url.endswith(".tar.gz") or url.endswith(".tgz"):
         filetype = ".tar.gz"
-    package = None
+    package = None  # type: None | ZipFile | tarfile
     tf = tempfile.NamedTemporaryFile(suffix=filetype)
     try:
         with urllib.request.urlopen(url) as fd:
@@ -188,11 +191,10 @@ def _download_package(url, project_name):
             all_files = package.getnames()
             open_fn = package.extractfile
         else:
+            tf.close()
             raise MkpkgFailedException(
                 f"Unknown archive type for {url}, can't determine imports"
             )
-            tf.close()
-            tf = None
     except urllib.error.URLError as e:
         tf.close()
         raise MkpkgFailedException(
@@ -314,7 +316,7 @@ def make_package(
 
     class EnvironmentHelper(pkg_resources.Environment):
         def __init__(self):
-            super().__init__(search_path=[packages_dir])
+            super().__init__(search_path=[str(packages_dir)])
 
         def scan(self, search_path=None):
             pass
@@ -378,7 +380,8 @@ def make_package(
 
     if make_dependencies:
         ws = pkg_resources.WorkingSet([])
-        ws.resolve(requires_packages, env=env, extras=our_extras)
+        # bug in type specifications which are missing extras parameter
+        ws.resolve(requires_packages, env=env, extras=our_extras)  # type:ignore
 
     for r in requires_packages:
         name = r.name
