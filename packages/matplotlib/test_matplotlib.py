@@ -1,10 +1,21 @@
 import base64
 import pathlib
 import textwrap
+from functools import reduce
 
 import pytest
 
 REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
+
+DECORATORS = [
+    pytest.mark.xfail_browsers(node="No supported matplotlib backends on node"),
+    pytest.mark.skip_refcount_check,
+    pytest.mark.skip_pyproxy_check,
+]
+
+
+def matplotlib_test_decorator(f):
+    return reduce(lambda x, g: g(x), DECORATORS, f)
 
 
 def run_with_resolve(selenium, code):
@@ -80,11 +91,8 @@ def compare_with_reference_image(selenium, reference_image):
     return deviation == 0.0
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_matplotlib(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     selenium.run(
         """
@@ -96,11 +104,8 @@ def test_matplotlib(selenium):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_svg(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     content = selenium.run(
         """
@@ -117,10 +122,8 @@ def test_svg(selenium):
     assert content.startswith("<?xml")
 
 
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_pdf(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     selenium.run(
         """
@@ -166,12 +169,9 @@ def test_font_manager(selenium):
     assert selenium.run("fontlist_built == fontlist_vendor")
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_rendering(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -198,12 +198,9 @@ def test_rendering(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_draw_image(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -238,12 +235,9 @@ def test_draw_image(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_draw_image_affine_transform(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -307,12 +301,9 @@ def test_draw_image_affine_transform(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_draw_text_rotated(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -362,12 +353,9 @@ def test_draw_text_rotated(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -489,12 +477,9 @@ def test_draw_math_text(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_custom_font_text(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -526,12 +511,9 @@ def test_custom_font_text(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_zoom_on_polar_plot(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)
@@ -569,12 +551,9 @@ def test_zoom_on_polar_plot(selenium_standalone):
     )
 
 
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
+@matplotlib_test_decorator
 def test_transparency(selenium_standalone):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("No supported matplotlib backends on node")
 
     selenium.load_package("matplotlib")
     selenium.set_script_timeout(60)

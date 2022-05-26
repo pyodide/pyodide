@@ -1,6 +1,6 @@
-from asyncio import gather
 from pathlib import Path
 
+from pyodide._core import IN_BROWSER
 from pyodide.http import pyfetch
 
 try:
@@ -16,8 +16,6 @@ try:
 
     WHEEL_BASE = Path(getsitepackages()[0])
 except ImportError:
-    from pyodide import IN_BROWSER
-
     if IN_BROWSER:
         raise
     # Otherwise, this is pytest test collection so let it go.
@@ -32,7 +30,6 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
 
 
 __all__ = [
-    "gather",
     "fetch_bytes",
     "fetch_string",
     "WHEEL_BASE",

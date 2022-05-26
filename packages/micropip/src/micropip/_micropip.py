@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import importlib
 import json
+from asyncio import gather
 from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
@@ -17,14 +18,13 @@ from packaging.utils import canonicalize_name
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import parse_wheel_name, set_wheel_installer
+from pyodide._package_loader import parse_wheel_name, wheel_dist_info_dir
 
 from ._compat import (
     BUILTIN_PACKAGES,
     WHEEL_BASE,
     fetch_bytes,
     fetch_string,
-    gather,
     loadedPackages,
     pyodide_js,
 )
@@ -62,6 +62,8 @@ class WheelInfo:
     digests: dict[str, str] | None = None
     data: BytesIO | None = None
     _dist: Any = None
+    _dist_info: Path | None = None
+    _requires: list[Requirement] | None = None
 
     @staticmethod
     def from_url(url: str) -> "WheelInfo":
@@ -131,14 +133,35 @@ class WheelInfo:
             raise RuntimeError(
                 "Micropip internal error: attempted to access wheel 'requires' before downloading it?"
             )
-        return self._dist.requires(extras)
+        requires = self._dist.requires(extras)
+        self._requires = requires
+        return requires
+
+    @property
+    def dist_info(self) -> Path:
+        if self._dist_info:
+            return self._dist_info
+        assert self.data
+        dist_info_name: str = wheel_dist_info_dir(ZipFile(self.data), self.name)
+        dist_info = WHEEL_BASE / dist_info_name
+        self._dist_info = dist_info
+        return dist_info
+
+    def write_dist_info(self, file: str, content: str):
+        (self.dist_info / file).write_text(content)
 
     def set_installer(self):
         assert self.data
         wheel_source = "pypi" if self.digests is not None else self.url
-        set_wheel_installer(
-            self.filename, self.data, WHEEL_BASE, "micropip", wheel_source
-        )
+
+        self.write_dist_info("PYODIDE_SOURCE", wheel_source)
+        self.write_dist_info("PYODIDE_URL", self.url)
+        self.write_dist_info("PYODIDE_SHA256", _generate_package_hash(self.data))
+        self.write_dist_info("INSTALLER", "micropip")
+        if self._requires:
+            self.write_dist_info(
+                "PYODIDE_REQUIRES", json.dumps(sorted(x.name for x in self._requires))
+            )
 
     async def install(self):
         url = self.url
@@ -357,7 +380,7 @@ async def install(
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPI
+          Pyodide repository at :any:`indexURL <globalThis.loadPyodide>` or on PyPI
 
     keep_going : ``bool``, default: False
 
@@ -443,6 +466,62 @@ async def install(
         wheel_promises.append(wheel.install())
 
     await gather(*wheel_promises)
+
+
+def _generate_package_hash(data: BytesIO) -> str:
+    sha256_hash = hashlib.sha256()
+    data.seek(0)
+    while chunk := data.read(4096):
+        sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def freeze() -> str:
+    """Produce a json string which can be used as the contents of the
+    ``packages.json`` lockfile.
+
+    If you later load pyodide with this lock file, you can use
+    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
+    time. Loading packages with :any:`pyodide.loadPackage` is much faster and you
+    will always get consistent versions of all your dependencies.
+    """
+    from copy import deepcopy
+
+    packages = deepcopy(BUILTIN_PACKAGES)
+    for dist in importlib_distributions():
+        name = dist.name
+        version = dist.version
+        url = dist.read_text("PYODIDE_URL")
+        if url is None:
+            continue
+
+        sha256 = dist.read_text("PYODIDE_SHA256")
+        assert sha256
+        imports = (dist.read_text("top_level.txt") or "").split()
+        requires = dist.read_text("PYODIDE_REQUIRES")
+        if requires:
+            depends = json.loads(requires)
+        else:
+            depends = []
+
+        pkg_entry: dict[str, Any] = dict(
+            name=name,
+            version=version,
+            file_name=url,
+            install_dir="site",
+            sha256=sha256,
+            imports=imports,
+            depends=depends,
+        )
+        packages[canonicalize_name(name)] = pkg_entry
+
+    # Sort
+    packages = dict(sorted(packages.items()))
+    package_data = {
+        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "packages": packages,
+    }
+    return json.dumps(package_data)
 
 
 def _list():

@@ -14,8 +14,9 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Integrity of Pyodide packages are now verified before loading them. This is for now only
-  limited to browser environments. {pr}`2513`
+- {{ Enhancement }} Integrity of Pyodide packages are now verified before
+  loading them. This is for now only limited to browser environments.
+  {pr}`2513`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
 
@@ -28,9 +29,13 @@ substitutions:
 - {{ Enhancement }} Update sqlite version to latest stable release
   {pr}`2477` and {pr}`2518`
 
-- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports
+  when packing files for the browser.
+  {pr}`2468`
 
-- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern
+  Javascript code.
+  {pr}`2471`
 
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
@@ -44,7 +49,8 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
-- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
+- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not
+  installed.
   {pr}`2423`
 
 - {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
@@ -61,17 +67,18 @@ substitutions:
   translated to negative Python ints.
   {pr}`2484`
 
-- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null` constructor.
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null`
+  constructor.
   {pr}`2520`
 
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
 
 - {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
-  rewriting and various other improvements.
-  {pr}`2510`
+  rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
+  {pr}`2510`, {pr}`2541`
 
-- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
-  through `pyodide_test_runner`.
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through `pyodide_test_runner`.
   {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
@@ -82,12 +89,23 @@ substitutions:
   `dictConverter` argument.
   {pr}`2533`
 
-- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`, `set_interval`,
-  `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
+- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`,
+  `set_interval`, `clear_interval`, `add_event_listener` and
+  `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
 
-- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and `ERRNO_CODES` APIs.
+- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and
+  `ERRNO_CODES` APIs.
   {pr}`2582`
+
+- {{ Fix }} If the request errors due to CORS, `pyfetch` now raises an `OSError`
+  not a `JSException`.
+  {pr}`2598`
+
+- {{ Enhancement }} The platform tags of wheels now include the Emscripten
+  version in them. This should help ensure ABI compatibility if Emscripten
+  wheels are distributed outside of the main Pyodide distribution.
+  {pr}`2610`
 
 ### micropip
 
@@ -108,7 +126,8 @@ substitutions:
   If set to `True`, micropip will include pre-release and development versions.
   {pr}`2542`
 
-- {{ Enhancement }} `micropip` was refactored to improve readability and ease of maintenance.
+- {{ Enhancement }} `micropip` was refactored to improve readability and ease of
+  maintenance.
   {pr}`2561`, {pr}`2563`, {pr}`2564`, {pr}`2565`, {pr}`2568`
 
 - {{ Enhancement }} Various error messages were fine tuned and improved.
@@ -118,6 +137,10 @@ substitutions:
   `.dist-info` directories which improves consistenency with the Python standard
   library and other tools used to install packages.
   {pr}`2572`
+
+- {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
+  packages into a `packages.json` file.
+  {pr}`2581`
 
 ### Packages
 

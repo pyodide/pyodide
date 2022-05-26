@@ -1,8 +1,9 @@
 import ast
 import pickle
 import sys
-import traceback
 from base64 import b64decode, b64encode
+from copy import deepcopy
+from traceback import TracebackException
 from typing import Any, Callable, Collection
 
 import pytest
@@ -10,59 +11,169 @@ import pytest
 from .utils import set_webdriver_script_timeout
 
 
-def _encode_ast(module_ast, funcname):
-    """Generates an appropriate AST for the test.
+class SeleniumType:
+    JavascriptException: type
+    browser: str
 
-    The test ast should include mypy magic imports and the test function
-    definition. Once we generate this module, we pickle it and base64 encode it
-    so we can send it to Pyodide using string templating.
+    def load_package(self, *args, **kwargs):
+        ...
+
+    def run_async(self, code: str):
+        ...
+
+
+def _encode(obj: Any) -> str:
     """
+    Pickle and base 64 encode obj so we can send it to Pyodide using string
+    templating.
+    """
+    return b64encode(pickle.dumps(obj)).decode()
 
-    nodes: list[Any] = []
-    for node in module_ast.body:
-        # We need to include the magic imports that pytest inserts
-        if (
-            isinstance(node, ast.Import)
-            and node.names[0].asname
-            and node.names[0].asname.startswith("@")
-        ):
-            nodes.append(node)
 
-        # We also want the function definition for the current test
-        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
-            if node.name == funcname:
-                async_func = isinstance(node, ast.AsyncFunctionDef)
-                node.decorator_list = []
-                nodes.append(node)
-                break
-    mod = ast.Module(nodes, type_ignores=[])
+def _create_outer_test_function(
+    run_test: Callable,
+    selenium_arg_name: str,
+    node: ast.stmt,
+) -> Callable:
+    """
+    Create the top level item: it will be called by pytest and it calls
+    run_test.
+
+    If the original function looked like:
+
+        @outer_decorators
+        @run_in_pyodide
+        @inner_decorators
+        <async?> def func(arg1, arg2, arg3):
+            # do stuff
+
+    This wrapper looks like:
+
+        def <func_name>(<selenium_arg_name>, arg1, arg2, arg3):
+            run_test(<selenium_arg_name>, (arg1, arg2, arg3))
+
+    Any inner_decorators get ignored. Any outer_decorators get applied by
+    the Python interpreter via the normal mechanism
+    """
+    node_args = deepcopy(node.args)
+    new_node = ast.FunctionDef(
+        name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
+    )
+
+    # Make onwards call with two args:
+    # 1. <selenium_arg_name>
+    # 2. all other arguments in a tuple
+    func_body = ast.parse("run_test(selenium_arg_name, (arg1, arg2, ...))").body
+    onwards_call = func_body[0].value
+    onwards_call.args[0].id = selenium_arg_name  # Set variable name
+    onwards_call.args[1].elts = [  # Set tuple elements
+        ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args
+    ]
+
+    # Add extra <selenium_arg_name> argument
+    node_args.args.insert(0, ast.arg(arg=selenium_arg_name))
+    new_node.body = func_body
+
+    # Make a best effort to show something that isn't total nonsense in the
+    # traceback for the generated function when there is an error.
+    # This will show:
+    # >   run_test(selenium_arg_name, (arg1, arg2, ...))
+    # in the traceback.
+    def fake_body_for_traceback(arg1, arg2, selenium_arg_name):
+        run_test(selenium_arg_name, (arg1, arg2, ...))
+
+    # Adjust line numbers to point into our fake function
+    lineno = fake_body_for_traceback.__code__.co_firstlineno
+    ast.increment_lineno(new_node, lineno)
+
+    mod = ast.Module([new_node], type_ignores=[])
     ast.fix_missing_locations(mod)
+    co = compile(mod, __file__, "exec")
 
-    serialized_mod = pickle.dumps(mod)
-    encoded_mod = b64encode(serialized_mod)
-    string_mod = encoded_mod.decode()
-    return string_mod, async_func
+    # Need to give our code access to the actual "run_test" object which it
+    # invokes.
+    globs = {"run_test": run_test}
+    exec(co, globs)
+
+    return globs[node.name]
 
 
-def _run_in_pyodide_run(
-    selenium: Any, f: Any, module_asts_dict: dict[str, ast.Module]
-) -> traceback.TracebackException | None:
-    module_fname = sys.modules[f.__module__].__file__ or ""
-    module_ast = module_asts_dict[module_fname]
-    string_mod, async_func = _encode_ast(module_ast, f.__name__)
-    result = selenium.run_async(
-        f"""
+class run_in_pyodide:
+    def __new__(cls, function: Callable | None = None, /, **kwargs):
+        if function:
+            # Probably we were used like:
+            #
+            # @run_in_pyodide
+            # def f():
+            #   pass
+            return run_in_pyodide(**kwargs)(function)
+        else:
+            # Just do normal __new__ behavior
+            return object.__new__(cls)
+
+    def __init__(
+        self,
+        selenium_fixture_name: str = "selenium",
+        packages: Collection[str] = (),
+        driver_timeout: float | None = None,
+        pytest_assert_rewrites: bool = True,
+    ):
+        """
+        This decorator can be called in two ways --- with arguments and without
+        arguments. If it is called without arguments, then the `function` argument
+        catches the function the decorator is applied to. Otherwise, standalone and
+        packages are the actual arguments to the decorator.
+
+        See docs/testing.md for details on how to use this.
+
+        Parameters
+        ----------
+        selenium_fixture_name : str, default="selenium"
+            The name of the selenium fixture to use
+
+        packages : List[str]
+            List of packages to load before running the test
+
+        driver_timeout : Optional[float]
+            selenium driver timeout (in seconds). If missing, use the default
+            timeout.
+
+        pytest_assert_rewrites : bool, default = True
+            If True, use pytest assertion rewrites. This gives better error messages
+            when an assertion fails, but requires us to load pytest.
+        """
+
+        from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
+
+        self._module_asts_dict = (
+            REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
+        )
+
+        self._pkgs = list(packages)
+        if pytest_assert_rewrites:
+            self._pkgs.append("pytest")
+        self._driver_timeout = driver_timeout
+        self._pytest_assert_rewrites = pytest_assert_rewrites
+        self._selenium_fixture_name = selenium_fixture_name
+
+    def _code_template(self, args: tuple) -> str:
+        """
+        Unpickle function ast and its arguments, compile and call function, and
+        if the function is async await the result. Last, if there was an
+        exception, pickle it and send it back.
+        """
+        return f"""
         async def __tmp():
             from base64 import b64encode, b64decode
             import pickle
-            serialized_mod = b64decode({string_mod!r})
-            mod = pickle.loads(serialized_mod)
-            co = compile(mod, {module_fname!r}, "exec")
+            mod = pickle.loads(b64decode({_encode(self._mod)!r}))
+            args = pickle.loads(b64decode({_encode(args)!r}))
+            co = compile(mod, {self._module_filename!r}, "exec")
             d = {{}}
             exec(co, d)
             try:
-                result = d[{f.__name__!r}]()
-                if {async_func}:
+                result = d[{self._func_name!r}](*args)
+                if {self._async_func}:
                     result = await result
             except BaseException as e:
                 import traceback
@@ -76,98 +187,81 @@ def _run_in_pyodide_run(
             del __tmp
         result
         """
-    )
-    if result:
-        return pickle.loads(b64decode(result))
-    else:
-        return None
 
+    def _run_test(self, selenium: SeleniumType, args: tuple):
+        """The main test runner, called from the AST generated in
+        _create_outer_test_function."""
+        code = self._code_template(args)
+        with set_webdriver_script_timeout(selenium, self._driver_timeout):
+            if self._pkgs:
+                selenium.load_package(self._pkgs)
 
-def run_in_pyodide(
-    _function: Callable | None = None,
-    *,
-    standalone: bool = False,
-    module_scope: bool = False,
-    packages: Collection[str] = (),
-    xfail_browsers: dict[str, str] | None = None,
-    driver_timeout: float | None = None,
-    pytest_assert_rewrites: bool = True,
-) -> Callable:
-    """
-    This decorator can be called in two ways --- with arguments and without
-    arguments. If it is called without arguments, then the `_function` kwarg
-    catches the function the decorator is applied to. Otherwise, standalone and
-    packages are the actual arguments to the decorator.
+            result = selenium.run_async(code)
 
-    See docs/testing.md for details on how to use this.
+        if result:
+            err: TracebackException = pickle.loads(b64decode(result))
+            err.stack.pop(0)  # Get rid of __tmp in traceback
+            self._fail(err)
 
-    Parameters
-    ----------
-    standalone : bool, default=False
-        Whether to use a standalone selenium instance to run the test or not
+    def _fail(self, err: TracebackException):
+        """
+        Fail the test with a helpful message.
 
-    packages : List[str]
-        List of packages to load before running the test
+        Separated out for test mock purposes.
+        """
+        pytest.fail(
+            "Error running function in pyodide\n\n" + "".join(err.format(chain=True)),
+            pytrace=False,
+        )
 
-    xfail_browsers: dict[str, str]
-        A dictionary of browsers to xfail the test and reasons for the xfails.
+    def _generate_pyodide_ast(
+        self, module_ast: ast.Module, funcname: str
+    ) -> tuple[ast.Module, bool, ast.expr]:
+        """Generates appropriate AST for the test to run in Pyodide.
 
-    driver_timeout : Optional[float]
-        selenium driver timeout (in seconds). If missing, use the default
-        timeout.
+        The test ast includes mypy magic imports and the test function definition.
+        This will be pickled and sent to Pyodide.
+        """
+        nodes: list[ast.stmt] = []
+        for node in module_ast.body:
+            # We need to include the magic imports that pytest inserts
+            if (
+                isinstance(node, ast.Import)
+                and node.names[0].asname
+                and node.names[0].asname.startswith("@")
+            ):
+                nodes.append(node)
 
-    pytest_assert_rewrites : bool, default = True
-        If True, use pytest assertion rewrites. This gives better error messages
-        when an assertion fails, but requires us to load pytest.
-    """
-    xfail_browsers_local = xfail_browsers or {}
-
-    from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
-
-    module_asts_dict = (
-        REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
-    )
-
-    pkgs = list(packages)
-    if pytest_assert_rewrites:
-        pkgs.append("pytest")
-
-    def decorator(f):
-        def run_test(selenium):
-            if selenium.browser in xfail_browsers_local:
-                xfail_message = xfail_browsers_local[selenium.browser]
-                pytest.xfail(xfail_message)
-
-            with set_webdriver_script_timeout(selenium, driver_timeout):
-                if pkgs:
-                    selenium.load_package(pkgs)
-                err = _run_in_pyodide_run(selenium, f, module_asts_dict)
-
-            if err:
-                pytest.fail(
-                    "Error running function in pyodide\n\n"
-                    + "".join(err.format(chain=True)),
-                    pytrace=False,
-                )
-
-        if standalone:
-
-            def wrapped(selenium_standalone):
-                run_test(selenium_standalone)
-
-        elif module_scope:
-
-            def wrapped(selenium_module_scope):  # type: ignore[misc]
-                run_test(selenium_module_scope)
-
+            # We also want the function definition for the current test
+            if isinstance(node, ast.FunctionDef) or isinstance(
+                node, ast.AsyncFunctionDef
+            ):
+                if node.name == funcname:
+                    self._async_func = isinstance(node, ast.AsyncFunctionDef)
+                    node.decorator_list = []
+                    nodes.append(node)
+                    break
         else:
+            raise Exception(
+                "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
+            )
+        self._mod = ast.Module(nodes, type_ignores=[])
+        ast.fix_missing_locations(self._mod)
 
-            def wrapped(selenium):  # type: ignore[misc]
-                run_test(selenium)
+        self._node = node
 
-        return wrapped
+    def __call__(self, f: Callable) -> Callable:
+        func_name = f.__name__
+        module_filename = sys.modules[f.__module__].__file__ or ""
+        module_ast = self._module_asts_dict[module_filename]
 
-    if _function is not None:
-        return decorator(_function)
-    else:
-        return decorator
+        # _code_template needs this info.
+        self._generate_pyodide_ast(module_ast, func_name)
+        self._func_name = func_name
+        self._module_filename = module_filename
+
+        wrapper = _create_outer_test_function(
+            self._run_test, self._selenium_fixture_name, self._node
+        )
+
+        return wrapper
