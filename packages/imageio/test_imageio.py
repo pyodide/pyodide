@@ -1,7 +1,9 @@
 from pyodide_test_runner import run_in_pyodide
 
 
-@run_in_pyodide(standalone=True, packages=["numpy", "imageio"])
+@run_in_pyodide(
+    selenium_fixture_name="selenium_standalone", packages=["numpy", "imageio"]
+)
 def test_imageio():
     import imageio
     import numpy as np
