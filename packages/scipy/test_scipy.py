@@ -46,6 +46,7 @@ def test_binom_ppf():
     assert binom.ppf(0.9, 1000, 0.1) == 112
 
 
+@pytest.mark.driver_timeout(40)
 @run_in_pyodide(
     selenium_fixture_name="selenium_module_scope", packages=["pytest", "scipy-tests"]
 )
