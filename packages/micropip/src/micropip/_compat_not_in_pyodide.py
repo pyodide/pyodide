@@ -1,9 +1,8 @@
-import tempfile
 from pathlib import Path
 from typing import Any
 
 # Provide stubs for testing in native python
-WHEEL_BASE = Path(tempfile.mkdtemp())
+WHEEL_BASE = Path("/tmp/probably-does-not-exist")
 BUILTIN_PACKAGES: dict[str, dict[str, Any]] = {}
 
 
