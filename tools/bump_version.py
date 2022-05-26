@@ -85,7 +85,7 @@ def python_version_to_js_version(version: str) -> Str:
     Convert Python version name to JS version name
     These two are different in prerelease or dev versions.
     e.g. 1.2.3a0 <==> 1.2.3-alpha.0
-         4.5.6.dev2 <==> 4.5.6.dev.2
+         4.5.6.dev2 <==> 4.5.6-dev.2
     """
     match = re.match(PYTHON_VERSION_REGEX, version)
     matches = match.groupdict()
@@ -99,7 +99,7 @@ def python_version_to_js_version(version: str) -> Str:
         matches["pre"] = matches["pre"].replace("a", "alpha").replace("b", "beta")
         return "{major}.{minor}.{patch}-{pre}.{preversion}".format(**matches)
     elif devrelease:
-        return "{major}.{minor}.{patch}-dev.{devversion}".format(**matches)
+        return "{major}.{minor}.{patch}-{dev}.{devversion}".format(**matches)
     else:
         return "{major}.{minor}.{patch}".format(**matches)
 
