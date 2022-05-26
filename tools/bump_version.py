@@ -3,6 +3,7 @@
 import argparse
 import difflib
 import functools
+import itertools
 import pathlib
 import re
 from ast import Str
@@ -124,22 +125,22 @@ def parse_current_version(target: Target) -> str:
     return match.groupdict()["version"]
 
 
-def update_version(
-    target: Target, current_version: str, new_version: str, dry_run: bool = False
+def generate_updated_content(
+    target: Target, current_version: str, new_version: str
 ) -> Callable:
     file = target.file
     pattern = target.pattern
     content = file.read_text()
 
     if current_version == new_version:
-        return lambda: None
+        return None
 
     # Some files only required to be bumped on core version release.
     # For example, we don't deploy prebuilt docker images for dev release.
     if not target.prerelease:
         if not is_core_version(new_version):
             print(f"[*] {file}: Skipped (not targeting a core version)")
-            return lambda: None
+            return None
 
     new_content = content
     startpos = 0
@@ -159,9 +160,7 @@ def update_version(
 
     show_diff(content, new_content, file)
 
-    if dry_run:
-        return lambda: None
-    return functools.partial(file.write_text, new_content)
+    return new_content
 
 
 def show_diff(before: str, after: str, file: pathlib.Path):
@@ -192,30 +191,31 @@ def main():
     else:
         new_version = args.new_version
 
-    if re.match(PYTHON_VERSION_REGEX, new_version) is None:
+    if re.fullmatch(PYTHON_VERSION_REGEX, new_version) is None:
         raise ValueError(f"Invalid new version: {new_version}")
+
+    new_version_py = new_version
+    new_version_js = python_version_to_js_version(new_version)
 
     # We want to update files in all-or-nothing strategy,
     # so we keep the queue of update functions
     update_queue = []
-    for target in PYTHON_TARGETS:
-        current_version = parse_current_version(target)
-        update_queue.append(
-            update_version(target, current_version, new_version, dry_run=args.dry_run)
-        )
-    for target in JS_TARGETS:
-        current_version = parse_current_version(target)
-        update_queue.append(
-            update_version(
-                target,
-                current_version,
-                python_version_to_js_version(new_version),
-                dry_run=args.dry_run,
-            )
-        )
 
-    for update_func in update_queue:
-        update_func()
+    targets = itertools.chain(
+        zip(PYTHON_TARGETS, [new_version_py] * len(PYTHON_TARGETS)),
+        zip(JS_TARGETS, [new_version_js] * len(JS_TARGETS)),
+    )
+    for target, new_version in targets:
+        current_version = parse_current_version(target)
+        new_content = generate_updated_content(target, current_version, new_version)
+        if new_content is not None:
+            update_queue.append((target, new_content))
+
+    if args.dry_run:
+        return
+
+    for file, content in update_queue:
+        file.write_text(content)
 
 
 if __name__ == "__main__":
