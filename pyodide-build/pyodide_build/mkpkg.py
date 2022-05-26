@@ -310,7 +310,7 @@ def make_package(
         def _build_dep_map(self) -> dict[str | None, list[pkg_resources.Requirement]]:
             # read dependencies from pypi
             package_metadata = _get_metadata(self.project_name, self.version)
-            dm: Dict[str | None, List[pkg_resources.Requirement]] = {}
+            dm: dict[str | None, list[pkg_resources.Requirement]] = {}
             if (
                 "requires_dist" in package_metadata["info"]
                 and package_metadata["info"]["requires_dist"] is not None
