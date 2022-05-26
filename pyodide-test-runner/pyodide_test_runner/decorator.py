@@ -231,7 +231,7 @@ class run_in_pyodide:
         while True:
             try:
                 node = next(it)
-            except IndexError:
+            except StopIteration:
                 raise Exception(
                     "Didn't find function in module. @run_in_pyodide can only be used with top-level names"
                 ) from None
