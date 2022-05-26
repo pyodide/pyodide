@@ -219,7 +219,7 @@ class run_in_pyodide:
         )
 
     def _generate_pyodide_ast(
-        self, module_ast: ast.Module, func_line_no: int
+        self, module_ast: ast.Module, funcname: str, func_line_no: int
     ) -> tuple[ast.Module, bool, ast.expr]:
         """Generates appropriate AST for the test to run in Pyodide.
 
@@ -244,14 +244,24 @@ class run_in_pyodide:
                 nodes.append(node)
 
             # We also want the function definition for the current test
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if node.lineno >= func_line_no:
-                    self._async_func = isinstance(node, ast.AsyncFunctionDef)
-                    node.decorator_list = []
-                    nodes.append(node)
-                    break
-                if node.end_lineno > func_line_no:
-                    it = iter(node.body)
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if node.end_lineno > func_line_no:
+                it = iter(node.body)
+                continue
+
+            if node.lineno < func_line_no:
+                continue
+
+            if node.name != funcname:
+                raise RuntimeError(
+                    f"Internal run_in_pyodide error: looking for function '{funcname}' but found '{node.name}'"
+                )
+
+            self._async_func = isinstance(node, ast.AsyncFunctionDef)
+            node.decorator_list = []
+            nodes.append(node)
+            break
 
         self._mod = ast.Module(nodes, type_ignores=[])
         ast.fix_missing_locations(self._mod)
@@ -266,7 +276,7 @@ class run_in_pyodide:
         func_line_no = f.__code__.co_firstlineno
 
         # _code_template needs this info.
-        self._generate_pyodide_ast(module_ast, func_line_no)
+        self._generate_pyodide_ast(module_ast, func_name, func_line_no)
         self._func_name = func_name
         self._module_filename = module_filename
 
