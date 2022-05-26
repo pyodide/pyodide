@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -13,16 +14,12 @@ import urllib.request
 import warnings
 from pathlib import Path
 from typing import Any, Literal, TypedDict
-import pkg_resources
-import packaging.specifiers
-import setuptools
-import re
-
-import packaging.specifiers
-import pkg_resources
-from ruamel.yaml import YAML
 from zipfile import ZipFile
 
+import packaging.specifiers
+import pkg_resources
+import setuptools
+from ruamel.yaml import YAML
 
 class URLDict(TypedDict):
     comment_text: str
