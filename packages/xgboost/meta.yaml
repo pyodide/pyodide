@@ -21,7 +21,6 @@ requirements:
     - numpy
     - scipy
     - setuptools
-    - pandas
 test:
   imports:
     - xgboost

@@ -80,7 +80,7 @@ def test_basic_classification(selenium):
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost"])
+@run_in_pyodide(packages=["xgboost", "pandas"])
 def test_pandas():
     import numpy as np
     import pandas as pd
@@ -184,7 +184,7 @@ def test_pandas():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost"])
+@run_in_pyodide(packages=["xgboost", "pandas"])
 def test_pandas_slice():
     import numpy as np
     import pandas as pd
@@ -203,7 +203,7 @@ def test_pandas_slice():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost"])
+@run_in_pyodide(packages=["xgboost", "pandas"])
 def test_pandas_categorical():
     import numpy as np
     import pandas as pd
@@ -245,7 +245,7 @@ def test_pandas_categorical():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost"])
+@run_in_pyodide(packages=["xgboost", "pandas"])
 def test_pandas_sparse():
     import numpy as np
     import pandas as pd
@@ -270,7 +270,7 @@ def test_pandas_sparse():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost"])
+@run_in_pyodide(packages=["xgboost", "pandas"])
 def test_pandas_label():
     import numpy as np
     import pandas as pd
@@ -297,7 +297,7 @@ def test_pandas_label():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost"])
+@run_in_pyodide(packages=["xgboost", "pandas"])
 def test_pandas_weight():
     import numpy as np
     import pandas as pd
