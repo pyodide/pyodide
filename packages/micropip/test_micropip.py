@@ -2,7 +2,6 @@ import io
 import sys
 import zipfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 from pyodide_test_runner import run_in_pyodide, spawn_web_server
