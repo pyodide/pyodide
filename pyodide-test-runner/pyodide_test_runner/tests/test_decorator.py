@@ -88,6 +88,15 @@ def test_local3(monkeypatch):
     check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
 
 
+def test_local_inner_function():
+    @run_in_pyodide
+    def inner_function(selenium, x):
+        assert x == 6
+        return 7
+
+    inner_function(selenium_mock, 6)
+
+
 def complicated_decorator(attr_name: str):
     def inner_func(value):
         def dec(func):
