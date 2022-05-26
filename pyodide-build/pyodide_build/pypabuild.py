@@ -94,7 +94,7 @@ def _build_in_isolated_env(
             return builder.build(distribution, outdir, {})
 
 
-def build(build_env: Mapping[str, str]):
+def build(build_env: Mapping[str, str]) -> None:
     srcdir = Path.cwd()
     outdir = srcdir / "dist"
     builder = _ProjectBuilder(str(srcdir))

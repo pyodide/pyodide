@@ -1,4 +1,4 @@
-from collections import namedtuple
+import argparse
 from pathlib import Path
 from time import sleep
 from typing import Any
@@ -64,9 +64,8 @@ def test_build_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
 
-    Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
     )
 
     assert set(build_list) == {
@@ -98,9 +97,8 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
 
-    Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=False)
+        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
     )
 
 
@@ -117,7 +115,6 @@ def test_build_error(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1"})
 
     with pytest.raises(ValueError, match="Failed build"):
-        Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
         buildall.build_from_graph(
-            pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+            pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
         )

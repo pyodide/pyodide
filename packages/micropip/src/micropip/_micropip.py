@@ -128,7 +128,7 @@ class WheelInfo:
         with ZipFile(self.data) as zf:
             zf.extractall(WHEEL_BASE)
 
-    def requires(self, extras: set[str]):
+    def requires(self, extras: set[str]) -> list[str]:
         if not self._dist:
             raise RuntimeError(
                 "Micropip internal error: attempted to access wheel 'requires' before downloading it?"
@@ -147,7 +147,7 @@ class WheelInfo:
         self._dist_info = dist_info
         return dist_info
 
-    def write_dist_info(self, file: str, content: str):
+    def write_dist_info(self, file: str, content: str) -> None:
         (self.dist_info / file).write_text(content)
 
     def set_installer(self):

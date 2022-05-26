@@ -4,7 +4,7 @@ from pyodide_test_runner import run_in_pyodide
 @run_in_pyodide(
     packages=["Pillow"],
 )
-def test_pillow():
+def test_pillow(selenium):
     import io
 
     from PIL import Image, ImageDraw, ImageOps
@@ -38,7 +38,7 @@ def test_pillow():
 @run_in_pyodide(
     packages=["Pillow"],
 )
-def test_jpeg_modes():
+def test_jpeg_modes(selenium):
     from PIL import Image
 
     rgb = Image.new("RGB", (4, 4))
