@@ -11,7 +11,7 @@ DATA_TRAIN = base64.b64encode((DEMO_PATH / "dermatology.data").read_bytes())
 
 @pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["xgboost"])
-def test_compat():
+def test_compat(selenium):
     import numpy as np
     from xgboost.compat import lazy_isinstance
 
@@ -80,10 +80,11 @@ def test_basic_classification(selenium):
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost", "pandas"])
-def test_pandas():
+@run_in_pyodide(packages=["xgboost", "pandas", "pytest"])
+def test_pandas(selenium):
     import numpy as np
     import pandas as pd
+    import pytest
     import xgboost as xgb
 
     df = pd.DataFrame([[1, 2.0, True], [2, 3.0, False]], columns=["a", "b", "c"])
@@ -185,7 +186,7 @@ def test_pandas():
 
 @pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["xgboost", "pandas"])
-def test_pandas_slice():
+def test_pandas_slice(selenium):
     import numpy as np
     import pandas as pd
     import xgboost as xgb
@@ -203,10 +204,11 @@ def test_pandas_slice():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost", "pandas"])
-def test_pandas_categorical():
+@run_in_pyodide(packages=["xgboost", "pandas", "pytest"])
+def test_pandas_categorical(selenium):
     import numpy as np
     import pandas as pd
+    import pytest
     import xgboost as xgb
 
     rng = np.random.RandomState(1994)
@@ -246,7 +248,7 @@ def test_pandas_categorical():
 
 @pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["xgboost", "pandas"])
-def test_pandas_sparse():
+def test_pandas_sparse(selenium):
     import numpy as np
     import pandas as pd
     import xgboost as xgb
@@ -270,10 +272,11 @@ def test_pandas_sparse():
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["xgboost", "pandas"])
-def test_pandas_label():
+@run_in_pyodide(packages=["xgboost", "pandas", "pytest"])
+def test_pandas_label(selenium):
     import numpy as np
     import pandas as pd
+    import pytest
     import xgboost as xgb
 
     # label must be a single column
@@ -298,7 +301,7 @@ def test_pandas_label():
 
 @pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["xgboost", "pandas"])
-def test_pandas_weight():
+def test_pandas_weight(selenium):
     import numpy as np
     import pandas as pd
     import xgboost as xgb
