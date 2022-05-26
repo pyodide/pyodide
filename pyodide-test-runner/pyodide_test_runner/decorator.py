@@ -129,6 +129,8 @@ class run_in_pyodide:
         self,
         packages: Collection[str] = (),
         pytest_assert_rewrites: bool = True,
+        *,
+        _force_assert_rewrites: bool = False,
     ):
         """
         This decorator can be called in two ways --- with arguments and without
@@ -152,7 +154,11 @@ class run_in_pyodide:
 
         self._pkgs = list(packages)
         self._pytest_not_built = False
-        if pytest_assert_rewrites and not package_is_built("pytest"):
+        if (
+            pytest_assert_rewrites
+            and not package_is_built("pytest")
+            and not _force_assert_rewrites
+        ):
             pytest_assert_rewrites = False
             self._pytest_not_built = True
 
@@ -221,7 +227,8 @@ class run_in_pyodide:
         if self._pytest_not_built:
             msg += (
                 "\n"
-                "Note: pytest not available in Pyodide. We could generate a better traceback if pytest were available."
+                "Note: pytest not available in Pyodide. We could generate a"
+                "better traceback if pytest were available."
             )
         pytest.fail(msg, pytrace=False)
 
