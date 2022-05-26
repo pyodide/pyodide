@@ -17,7 +17,7 @@ project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
 pyodide_version = "0.21.0.dev0"
 
-if any([(dev_ver in pyodide_version) for dev_ver in ("dev", "a", "b", "rc")]):
+if ".dev" in pyodide_version:
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
 else:
     CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full/"
