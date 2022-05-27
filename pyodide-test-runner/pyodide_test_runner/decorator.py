@@ -217,9 +217,8 @@ class run_in_pyodide:
         if self._pkgs:
             selenium.load_package(self._pkgs)
 
-            r = selenium.run_async(code)
-            print("r:", r)
-            [status, result] = r
+        r = selenium.run_async(code)
+        [status, result] = r
 
         result = pickle.loads(b64decode(result))
         if status:
