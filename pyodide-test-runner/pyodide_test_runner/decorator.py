@@ -6,6 +6,13 @@ from copy import deepcopy
 from traceback import TracebackException
 from typing import Any, Callable, Collection
 
+from pyodide_test_runner.utils import package_is_built as _package_is_built
+
+
+def package_is_built(package_name):
+    return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
 import pytest
 
 
@@ -122,6 +129,8 @@ class run_in_pyodide:
         self,
         packages: Collection[str] = (),
         pytest_assert_rewrites: bool = True,
+        *,
+        _force_assert_rewrites: bool = False,
     ):
         """
         This decorator can be called in two ways --- with arguments and without
@@ -143,13 +152,23 @@ class run_in_pyodide:
 
         from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
 
+        self._pkgs = list(packages)
+        self._pytest_not_built = False
+        if (
+            pytest_assert_rewrites
+            and not package_is_built("pytest")
+            and not _force_assert_rewrites
+        ):
+            pytest_assert_rewrites = False
+            self._pytest_not_built = True
+
+        if pytest_assert_rewrites:
+            self._pkgs.append("pytest")
+
         self._module_asts_dict = (
             REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
         )
 
-        self._pkgs = list(packages)
-        if pytest_assert_rewrites:
-            self._pkgs.append("pytest")
         self._pytest_assert_rewrites = pytest_assert_rewrites
 
     def _code_template(self, args: tuple) -> str:
@@ -204,10 +223,14 @@ class run_in_pyodide:
 
         Separated out for test mock purposes.
         """
-        pytest.fail(
-            "Error running function in pyodide\n\n" + "".join(err.format(chain=True)),
-            pytrace=False,
-        )
+        msg = "Error running function in pyodide\n\n" + "".join(err.format(chain=True))
+        if self._pytest_not_built:
+            msg += (
+                "\n"
+                "Note: pytest not available in Pyodide. We could generate a"
+                "better traceback if pytest were available."
+            )
+        pytest.fail(msg, pytrace=False)
 
     def _generate_pyodide_ast(
         self, module_ast: ast.Module, funcname: str, func_line_no: int
