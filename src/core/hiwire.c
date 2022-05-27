@@ -664,11 +664,13 @@ EM_JS_NUM(int, hiwire_get_length_helper, (JsRef idobj), {
 EM_JS_REF(char*, hiwire_get_length_string, (JsRef idobj), {
   const val = Hiwire.get_value(idobj);
   let result;
-  if (typeof val.size == = "number") {
+  // clang-format off
+  if (typeof val.size === "number") {
     result = val.size;
-  } else if (typeof val.length == = "number") {
+  } else if (typeof val.length === "number") {
     result = val.length;
   }
+  // clang-format on
   return stringToNewUTF8(" " + result.toString())
 })
 
@@ -679,7 +681,6 @@ hiwire_get_length(JsRef idobj)
   if (result >= 0) {
     return result;
   }
-  printf("result: %d\n", result);
   // Something went wrong. Case work:
   // * -1: Either `val.size` or `val.length` was a getter which managed to raise
   //    an error. Rude. (Also we don't defend against this in hiwire_has_length)
