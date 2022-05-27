@@ -5,6 +5,15 @@ from base64 import b64decode, b64encode
 from copy import deepcopy
 from typing import Any, Callable, Collection
 
+from pyodide_test_runner.utils import package_is_built as _package_is_built
+
+
+def package_is_built(package_name):
+    return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
+import pytest
+
 
 class SeleniumType:
     JavascriptException: type
@@ -119,6 +128,8 @@ class run_in_pyodide:
         self,
         packages: Collection[str] = (),
         pytest_assert_rewrites: bool = True,
+        *,
+        _force_assert_rewrites: bool = False,
     ):
         """
         This decorator can be called in two ways --- with arguments and without
@@ -140,13 +151,26 @@ class run_in_pyodide:
 
         from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
 
+        self._pkgs = list(packages)
+        self._pytest_not_built = False
+        if (
+            pytest_assert_rewrites
+            and not package_is_built("pytest")
+            and not _force_assert_rewrites
+        ):
+            pytest_assert_rewrites = False
+            self._pytest_not_built = True
+
+        if pytest_assert_rewrites:
+            self._pkgs.append("pytest")
+
         self._module_asts_dict = (
             REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
         )
 
-        self._pkgs = list(packages)
-        if pytest_assert_rewrites:
-            self._pkgs.extend(["pytest", "tblib"])
+        if package_is_built("tblib"):
+            self._pkgs.append("tblib")
+
         self._pytest_assert_rewrites = pytest_assert_rewrites
 
     def _code_template(self, args: tuple) -> str:
@@ -172,8 +196,11 @@ class run_in_pyodide:
                     result = await result
                 return [0, encode(result)]
             except BaseException as e:
-                from tblib import pickling_support
-                pickling_support.install()
+                try:
+                    from tblib import pickling_support
+                    pickling_support.install()
+                except ImportError:
+                    pass
                 return [1, encode(e)]
 
         try:

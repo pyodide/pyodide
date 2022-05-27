@@ -1,4 +1,6 @@
 import asyncio
+from dataclasses import dataclass, field
+from typing import Any
 
 import pytest
 from pyodide_test_runner.decorator import run_in_pyodide
@@ -7,14 +9,14 @@ from pyodide_test_runner.utils import parse_driver_timeout
 from pyodide import eval_code_async
 
 
-@run_in_pyodide
+@run_in_pyodide(_force_assert_rewrites=True)
 def example_func1(selenium):
     x = 6
     y = 7
     assert x == y
 
 
-run_in_pyodide_alias = run_in_pyodide()
+run_in_pyodide_alias = run_in_pyodide(_force_assert_rewrites=True)
 
 
 @run_in_pyodide_alias
@@ -27,7 +29,7 @@ def example_func2(selenium):
 run_in_pyodide_inner = run_in_pyodide()
 
 
-@run_in_pyodide
+@run_in_pyodide(_force_assert_rewrites=True)
 async def async_example_func(selenium):
     from asyncio import sleep
 
@@ -51,45 +53,43 @@ class selenium_mock:
         return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
 
 
-def make_patched_fail(exc_list):
-    def patched_fail(self, exc):
-        exc_list.append(exc)
+@dataclass
+class local_mocks_cls:
+    exc_list: list[Any] = field(default_factory=list)
 
-    return patched_fail
+    def check_err(self, ty, msg):
+        try:
+            assert self.exc_list
+            err = self.exc_list[0]
+            assert err
+            assert "".join(err.format_exception_only()) == msg
+        finally:
+            del self.exc_list[0]
+
+    def _patched_fail(self, exc):
+        self.exc_list.append(exc)
 
 
-def check_err(exc_list, ty, msg):
-    try:
-        assert exc_list
-        err = exc_list[0]
-        assert err
-        assert "".join(err.format_exception_only()) == msg
-    finally:
-        del exc_list[0]
+@pytest.fixture
+def local_mocks(monkeypatch):
+    mocks = local_mocks_cls()
+    monkeypatch.setattr(run_in_pyodide, "_fail", mocks._patched_fail)
+    return mocks
 
 
-def test_local1(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_local1(local_mocks):
     example_func1(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
 
 
-def test_local2(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_local2(local_mocks):
     example_func1(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
 
 
-def test_local3(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_local3(local_mocks):
     async_example_func(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
 
 
 def test_local_inner_function():
@@ -129,7 +129,7 @@ def example_decorator_func(selenium):
     pass
 
 
-def test_local4():
+def test_local4(local_mocks):
     example_decorator_func(selenium_mock)
     assert example_decorator_func.dec_info == [
         ("testdec1", "a"),
@@ -138,12 +138,9 @@ def test_local4():
     ]
 
 
-def test_local5(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_local5(local_mocks):
     example_func1(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
 
 
 class selenium_mock_fail_load_package(selenium_mock):
@@ -152,10 +149,7 @@ class selenium_mock_fail_load_package(selenium_mock):
         raise OSError("STOP!")
 
 
-def test_local_fail_load_package(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_local_fail_load_package(local_mocks):
     exc = None
     try:
         example_func1(selenium_mock_fail_load_package)
@@ -175,16 +169,13 @@ def test_local_fail_load_package(monkeypatch):
         )
 
 
-def test_selenium(selenium, monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_selenium(selenium, local_mocks):
     example_func1(selenium)
 
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
 
     example_func2(selenium)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
 
 
 @run_in_pyodide
