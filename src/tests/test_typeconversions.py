@@ -1445,3 +1445,35 @@ def test_dict_converter_cache(selenium):
         assert(() => d[0] === d[1]);
         """
     )
+
+
+@pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
+@run_in_pyodide
+def test_very_large_length(selenium, n):
+    from unittest import TestCase
+
+    raises = TestCase().assertRaises
+
+    from js import eval as run_js
+
+    o = run_js(f"({{length : {n}}})")
+    with raises(
+        OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
+    ):
+        len(o)
+
+
+@pytest.mark.parametrize(
+    "n", [-1, -2, -3, -100, -1 << 31, -1 << 32, -1 << 33, -1 << 63, -1 << 64, -1 << 65]
+)
+@run_in_pyodide
+def test_negative_length(selenium, n):
+    from unittest import TestCase
+
+    raises = TestCase().assertRaises
+
+    from js import eval as run_js
+
+    o = run_js(f"({{length : {n}}})")
+    with raises(ValueError, msg=f"length {n} of object is negative"):
+        len(o)
