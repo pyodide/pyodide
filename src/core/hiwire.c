@@ -370,7 +370,7 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Hiwire.pop_value(iderr);
 });
 
-EM_JS(bool, JsArray_Check, (JsRef idobj), {
+EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   if (Array.isArray(obj)) {
     return true;
@@ -539,7 +539,7 @@ EM_JS_REF(JsRef,
 });
 // clang-format on
 
-EM_JS(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
+EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off
   let obj = Hiwire.get_value(obj_id);
   return obj && typeof obj[Hiwire.get_value(name)] === "function";
@@ -631,7 +631,7 @@ EM_JS_REF(JsRef, hiwire_construct, (JsRef idobj, JsRef idargs), {
   return Hiwire.new_value(Reflect.construct(jsobj, jsargs));
 });
 
-EM_JS(bool, hiwire_has_length, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_has_length, (JsRef idobj), {
   let val = Hiwire.get_value(idobj);
   // clang-format off
   return (typeof val.size === "number") ||
@@ -717,7 +717,7 @@ hiwire_get_length(JsRef idobj)
   return -1;
 }
 
-EM_JS(bool, hiwire_get_bool, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   let val = Hiwire.get_value(idobj);
   // clang-format off
   if (!val) {
@@ -734,22 +734,22 @@ EM_JS(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS(bool, hiwire_is_pyproxy, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_pyproxy, (JsRef idobj), {
   return API.isPyProxy(Hiwire.get_value(idobj));
 });
 
-EM_JS(bool, hiwire_is_function, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Hiwire.get_value(idobj) === 'function';
   // clang-format on
 });
 
-EM_JS(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
   let value = Hiwire.get_value(idobj);
   return !!(API.Comlink && value[API.Comlink.createEndpoint]);
 });
 
-EM_JS(bool, hiwire_is_error, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_error, (JsRef idobj), {
   // From https://stackoverflow.com/a/45496068
   let value = Hiwire.get_value(idobj);
   // clang-format off
@@ -758,7 +758,7 @@ EM_JS(bool, hiwire_is_error, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS(bool, hiwire_is_promise, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_promise, (JsRef idobj), {
   // clang-format off
   let obj = Hiwire.get_value(idobj);
   return Hiwire.isPromise(obj);
@@ -786,7 +786,7 @@ EM_JS_REF(char*, hiwire_constructor_name, (JsRef idobj), {
 });
 
 #define MAKE_OPERATOR(name, op)                                                \
-  EM_JS(bool, hiwire_##name, (JsRef ida, JsRef idb), {                         \
+  EM_JS_BOOL(bool, hiwire_##name, (JsRef ida, JsRef idb), {                    \
     return !!(Hiwire.get_value(ida) op Hiwire.get_value(idb));                 \
   })
 
@@ -799,7 +799,7 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS(bool, hiwire_is_iterator, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_iterator, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
   return typeof jsobj.next === 'function';
@@ -816,7 +816,7 @@ EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   return done;
 });
 
-EM_JS(bool, hiwire_is_iterable, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_iterable, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
   return typeof jsobj[Symbol.iterator] === 'function';
@@ -843,7 +843,7 @@ EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
   return Hiwire.new_value(Object.values(jsobj));
 });
 
-EM_JS(bool, hiwire_is_typedarray, (JsRef idobj), {
+EM_JS_BOOL(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
   return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");

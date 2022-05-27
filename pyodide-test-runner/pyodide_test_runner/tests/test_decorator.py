@@ -1,6 +1,4 @@
 import asyncio
-from dataclasses import dataclass, field
-from typing import Any
 
 import pytest
 from pyodide_test_runner.decorator import run_in_pyodide
@@ -53,43 +51,19 @@ class selenium_mock:
         return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
 
 
-@dataclass
-class local_mocks_cls:
-    exc_list: list[Any] = field(default_factory=list)
-
-    def check_err(self, ty, msg):
-        try:
-            assert self.exc_list
-            err = self.exc_list[0]
-            assert err
-            assert "".join(err.format_exception_only()) == msg
-        finally:
-            del self.exc_list[0]
-
-    def _patched_fail(self, exc):
-        self.exc_list.append(exc)
+def test_local1():
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func1(selenium_mock)
 
 
-@pytest.fixture
-def local_mocks(monkeypatch):
-    mocks = local_mocks_cls()
-    monkeypatch.setattr(run_in_pyodide, "_fail", mocks._patched_fail)
-    return mocks
+def test_local2():
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func2(selenium_mock)
 
 
-def test_local1(local_mocks):
-    example_func1(selenium_mock)
-    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
-
-
-def test_local2(local_mocks):
-    example_func1(selenium_mock)
-    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
-
-
-def test_local3(local_mocks):
-    async_example_func(selenium_mock)
-    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
+def test_local3():
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        async_example_func(selenium_mock)
 
 
 def test_local_inner_function():
@@ -129,7 +103,7 @@ def example_decorator_func(selenium):
     pass
 
 
-def test_local4(local_mocks):
+def test_local4():
     example_decorator_func(selenium_mock)
     assert example_decorator_func.dec_info == [
         ("testdec1", "a"),
@@ -138,18 +112,13 @@ def test_local4(local_mocks):
     ]
 
 
-def test_local5(local_mocks):
-    example_func1(selenium_mock)
-    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
-
-
 class selenium_mock_fail_load_package(selenium_mock):
     @staticmethod
     def load_package(*args, **kwargs):
         raise OSError("STOP!")
 
 
-def test_local_fail_load_package(local_mocks):
+def test_local_fail_load_package():
     exc = None
     try:
         example_func1(selenium_mock_fail_load_package)
@@ -169,13 +138,12 @@ def test_local_fail_load_package(local_mocks):
         )
 
 
-def test_selenium(selenium, local_mocks):
-    example_func1(selenium)
+def test_selenium(selenium):
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func1(selenium)
 
-    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
-
-    example_func2(selenium)
-    local_mocks.check_err(AssertionError, "AssertionError: assert 6 == 7\n")
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func2(selenium)
 
 
 @run_in_pyodide
