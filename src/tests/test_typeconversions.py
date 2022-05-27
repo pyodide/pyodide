@@ -1429,7 +1429,7 @@ def test_buffer_format_string(selenium):
 def test_object_with_null_constructor(selenium):
     from unittest import TestCase
 
-    from js import eval as run_js
+    from pyodide import run_js
 
     o = run_js("Object.create(null)")
     with TestCase().assertRaises(TypeError):
@@ -1452,15 +1452,23 @@ def test_dict_converter_cache(selenium):
 def test_very_large_length(selenium, n):
     from unittest import TestCase
 
-    raises = TestCase().assertRaises
+    from pyodide import run_js
 
-    from js import eval as run_js
+    raises = TestCase().assertRaises(
+        OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
+    )
 
     o = run_js(f"({{length : {n}}})")
-    with raises(
-        OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
-    ):
+    with raises:
         len(o)
+
+    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
+    # as an array
+    # 2. Return a very large length
+    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
+    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    with raises:
+        a[-1]
 
 
 @pytest.mark.parametrize(
@@ -1470,10 +1478,20 @@ def test_very_large_length(selenium, n):
 def test_negative_length(selenium, n):
     from unittest import TestCase
 
-    raises = TestCase().assertRaises
+    from pyodide import run_js
 
-    from js import eval as run_js
+    raises = TestCase().assertRaises(
+        ValueError, msg=f"length {n} of object is negative"
+    )
 
     o = run_js(f"({{length : {n}}})")
-    with raises(ValueError, msg=f"length {n} of object is negative"):
+    with raises:
         len(o)
+
+    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
+    # as an array
+    # 2. Return a negative length
+    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
+    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    with raises:
+        a[-1]
