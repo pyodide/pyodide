@@ -131,7 +131,7 @@ EM_JS_NUM(int, hiwire_init, (), {
         let exc = _wrap_exception();
         let e = Hiwire.pop_value(exc);
         console.error(
-          `Internal error: Argument '${idval}' to hiwire.get_value is falsy. ` +
+          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy. ` +
           "This was probably because the Python error indicator was set when get_value was called. " +
           "The Python error that caused this was:",
           e
@@ -139,19 +139,20 @@ EM_JS_NUM(int, hiwire_init, (), {
         throw e;
       } else {
         console.error(
-          `Internal error: Argument '${idval}' to hiwire.get_value is falsy`
+          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
           + ' (but error indicator is not set).'
         );
         throw new Error(
-          `Internal error: Argument '${idval}' to hiwire.get_value is falsy`
+          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
           + ' (but error indicator is not set).'
         );
       }
       // clang-format on
     }
     if (!_hiwire.objects.has(idval)) {
+      API.fail_test = true;
       // clang-format off
-      console.error(`Undefined id ${ idval }`);
+      console.error(`Pyodide internal error: Undefined id ${ idval }`);
       throw new Error(`Undefined id ${ idval }`);
       // clang-format on
     }
