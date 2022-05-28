@@ -1047,6 +1047,8 @@ typedef struct
 static PyObject*
 JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
 {
+  // We can't pickle the js_error because it is a JsProxy.
+  // The point of this function is to convert it to a string.
   PyObject* res = NULL;
 
   PyObject* args;
@@ -1055,12 +1057,16 @@ JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
   tmp = PyTuple_GET_ITEM(self->args, 0);
 
   if (!JsProxy_Check(tmp)) {
+    // If for some reason js_error isn't a JsProxy, leave it alone.
     args = self->args;
     Py_INCREF(args);
   } else {
+    // Make a new tuple, for the first entry use the repr of js_error.
     args = PyTuple_New(PyTuple_GET_SIZE(self->args));
     tmp = PyObject_Repr(tmp);
     PyTuple_SET_ITEM(args, 0, tmp);
+
+    // Copy over all other entries
     for (int i = 1; i < PyTuple_GET_SIZE(self->args); i++) {
       tmp = PyTuple_GET_ITEM(self->args, i);
       Py_INCREF(tmp);
