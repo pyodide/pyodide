@@ -80,6 +80,10 @@ substitutions:
   `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
 
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
