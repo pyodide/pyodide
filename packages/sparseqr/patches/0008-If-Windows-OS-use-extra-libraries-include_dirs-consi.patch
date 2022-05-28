@@ -1,0 +1,64 @@
+From 039e040ec3695d8633c9ca667c063ac1524d8841 Mon Sep 17 00:00:00 2001
+From: sgbaird <sterling.baird@icloud.com>
+Date: Wed, 4 Aug 2021 20:57:16 -0600
+Subject: [PATCH 08/17] If Windows OS use extra libraries, include_dirs
+ considers conda env paths
+
+---
+ sparseqr/sparseqr_gen.py | 23 +++++++++++++++++++----
+ 1 file changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/sparseqr/sparseqr_gen.py b/sparseqr/sparseqr_gen.py
+index fcc464c..c5288ea 100644
+--- a/sparseqr/sparseqr_gen.py
++++ b/sparseqr/sparseqr_gen.py
+@@ -5,9 +5,24 @@ Description: Wrapper for SuiteSparse qr() and solve() functions. Matlab and Juli
+ '''
+ 
+ from __future__ import print_function, division, absolute_import
++import os
++from os.path import join, expanduser
++import platform
+ 
+ from cffi import FFI
+ 
++# for compatibility with conda envs
++homedir = expanduser("~")
++envdir1 = join(homedir, 'anaconda3', 'envs', os.environ['CONDA_DEFAULT_ENV'], 'Library', 'include', 'suitesparse')
++envdir2 = join(homedir, 'miniconda3', 'envs', os.environ['CONDA_DEFAULT_ENV'], 'Library', 'include', 'suitesparse')
++
++if platform.system() == 'Windows':
++    libraries = ['amd','btf','camd','ccolamd','cholmod','colamd','cxsparse'
++'klu','lapack','ldl','lumfpack','metis','suitesparseconfig','spqr','libblas']
++    # https://github.com/yig/PySPQR/issues/6
++else:
++    libraries = ['spqr']
++
+ ffibuilder = FFI()
+ 
+ ffibuilder.set_source( "sparseqr._sparseqr",
+@@ -15,8 +30,8 @@ ffibuilder.set_source( "sparseqr._sparseqr",
+ """,
+     ## You may need to modify the following line,
+     ## which is needed on Ubuntu and harmless on Mac OS.
+-    include_dirs = [ '/usr/include/suitesparse' ],
+-    libraries=['spqr'])
++    include_dirs = [ '/usr/include/suitesparse', join('C:', 'Program Files', 'Python', 'suitesparse') , envdir1, envdir2 ],
++    libraries=libraries) #libraries=['spqr']
+ 
+ ffibuilder.cdef("""
+ // The int... is a magic thing which tells the compiler to figure out what the right
+@@ -267,8 +282,8 @@ void *cholmod_l_free	/* always returns NULL */
+     cholmod_common *Common
+ ) ;
+ 
+-/* cs_spsolve 
+-int cs_spsolve 
++/* cs_spsolve
++int cs_spsolve
+ {
+ */
+ 
+-- 
+2.25.1
+

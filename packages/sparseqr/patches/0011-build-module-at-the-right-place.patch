@@ -1,0 +1,25 @@
+From 1d0835a397558d411f74301120522786ac27fa90 Mon Sep 17 00:00:00 2001
+From: Yotam Gingold <yotam@yotamgingold.com>
+Date: Mon, 9 Aug 2021 04:21:26 -0400
+Subject: [PATCH 11/17] build module at the right place
+
+---
+ sparseqr/sparseqr_gen.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sparseqr/sparseqr_gen.py b/sparseqr/sparseqr_gen.py
+index cbddbca..fe14806 100644
+--- a/sparseqr/sparseqr_gen.py
++++ b/sparseqr/sparseqr_gen.py
+@@ -367,7 +367,7 @@ cholmod_sparse *SuiteSparseQR_C_backslash_sparse   /* returns X, or NULL */
+ """)
+ 
+ def main():
+-    ffibuilder.compile( verbose = True )
++    ffibuilder.compile( verbose = True, tmpdir = os.path.dirname(__file__) )
+ 
+ if __name__ == "__main__":
+     main()
+-- 
+2.25.1
+

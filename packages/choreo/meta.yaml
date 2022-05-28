@@ -1,0 +1,17 @@
+package:
+  name: choreo
+  version: 0.1.0
+
+source:
+  sha256: c9ff441deb1b8f3926aefa2e13ba96ddc53fad9a92ae637962841509f82f1f40
+  url: https://github.com/gabrielfougeron/Choreographies2/archive/refs/heads/main.zip
+
+requirements:
+  run:
+    - sparseqr
+    - numpy
+    - scipy
+
+test:
+  imports:
+    - choreo

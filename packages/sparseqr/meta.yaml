@@ -1,0 +1,37 @@
+package:
+  name: sparseqr
+  version: 1.0.0
+
+source:
+  sha256: 56f3ea8f1d76518ced64a0c5123a27ed27ede3f340c0caeaa2ca64a57059aa03 
+  url: https://github.com/yig/PySPQR/archive/refs/tags/v1.0.0.tar.gz
+  patches:
+    - patches/0001-__init__.py-sparseqr.py-spqrseqr_gen.py-Added-a-qz-r.patch
+    - patches/0002-changed-qz-to-rz-which-is-a-better-description-of-wh.patch
+    - patches/0003-Updated-README.patch
+    - patches/0004-Added-support-for-economy-decomposition.patch
+    - patches/0005-Tweak-default-value-of-economy-parameter-and-update-.patch
+    - patches/0006-Update-README-with-economy-decomposition-example.patch
+    - patches/0007-setup.py-added-conda-environment-directory-to-includ.patch
+    - patches/0008-If-Windows-OS-use-extra-libraries-include_dirs-consi.patch
+    - patches/0009-Compiles-with-and-without-conda.-Added-pyproject.tom.patch
+    - patches/0010-instructions-for-publishing-to-PyPI.patch
+    - patches/0011-build-module-at-the-right-place.patch
+    - patches/0012-build-module-at-the-right-place-take-2.patch
+    - patches/0013-added-manifest-and-poetrys-version-and-bumped-the-ve.patch
+    - patches/0014-Mistake-in-pyproject.toml.-Bumped-version.patch
+    - patches/0015-Mentioned-known-issue-with-pip-uninstall-leaving-beh.patch
+    - patches/0016-updated-Changelog.patch
+    - patches/0017-Init.patch
+
+requirements:
+  run:
+    - pycparser
+    - cffi
+    - numpy
+    - scipy
+    - suitesparse
+
+test:
+  imports:
+    - sparseqr

@@ -1,0 +1,140 @@
+From ce735d437848f09828f41a9d40b634497e3e4f9f Mon Sep 17 00:00:00 2001
+From: Ben Smith <bsmith@apl.washington.edu>
+Date: Thu, 9 Aug 2018 13:06:24 -0700
+Subject: [PATCH 01/17] __init__.py, sparseqr.py, spqrseqr_gen.py: Added a qz
+ routine that exposes the qz decomposition, allowing q-less solutions of
+ least-squares problems and tools for error propagation.
+
+---
+ sparseqr/__init__.py     |  2 +-
+ sparseqr/sparseqr.py     | 46 +++++++++++++++++++++++++++++++++++++++-
+ sparseqr/sparseqr_gen.py | 31 +++++++++++++++++++++++++++
+ 3 files changed, 77 insertions(+), 2 deletions(-)
+
+diff --git a/sparseqr/__init__.py b/sparseqr/__init__.py
+index 287fbd5..b5392ba 100644
+--- a/sparseqr/__init__.py
++++ b/sparseqr/__init__.py
+@@ -20,5 +20,5 @@ from __future__ import absolute_import
+ __version__ = '1.0.0'
+ 
+ # import the important things into the package's top-level namespace.
+-from .sparseqr import qr, solve, permutation_vector_to_matrix
++from .sparseqr import qr, qz, solve, permutation_vector_to_matrix
+ 
+diff --git a/sparseqr/sparseqr.py b/sparseqr/sparseqr.py
+index 0f5e3a9..3d308a7 100644
+--- a/sparseqr/sparseqr.py
++++ b/sparseqr/sparseqr.py
+@@ -199,6 +199,51 @@ def cholmod_free_dense( A ):
+ 
+ 
+ ## Solvers
++#BS: I took the function definition for SuiteSpareQR_C and replaced everything that looked unnecessary with ffi.NULL.  
++def qz(A, B, tolerance = None):
++    getCTX=int(0)
++    chol_A = scipy2cholmodsparse( A )
++    chol_b = numpy2cholmoddense(  B )
++    chol_Z = ffi.new("cholmod_dense**")
++    chol_R = ffi.new("cholmod_sparse**")
++    chol_E = ffi.new("SuiteSparse_long**")
++    if tolerance is None:
++        tolerance=0.
++        
++    rank = lib.SuiteSparseQR_C(
++        ## Input
++        lib.SPQR_ORDERING_DEFAULT,
++        tolerance,
++        A.shape[1],
++        getCTX,
++        chol_A,
++        ffi.NULL,
++        chol_b,
++        ## Output
++        ffi.NULL,
++        chol_Z,
++        chol_R,
++        chol_E,
++        ffi.NULL,
++        ffi.NULL,
++        ffi.NULL,
++        cc
++        )
++    scipy_Z = cholmoddense2numpy( chol_Z[0] )
++    scipy_R = cholmodsparse2scipy( chol_R[0] )
++
++    ## If chol_E is null, there was no permutation.
++    if chol_E == ffi.NULL:
++        E = None
++    else:
++        E = asarray( ffi, chol_E[0], A.shape[1] ).copy()
++
++    ## Free cholmod stuff
++    cholmod_free_dense( chol_Z[0] )
++    cholmod_free_sparse( chol_R[0] )
++
++    return scipy_Z, scipy_R, E, rank
++
+ 
+ def qr( A, tolerance = None ):
+     '''
+@@ -355,7 +400,6 @@ def _solve_with_dense_rhs( A, b, tolerance = None ):
+     cholmod_free_sparse( chol_A )
+     cholmod_free_dense(  chol_b )
+     cholmod_free_dense(  chol_x )
+-
+     return numpy_x
+ 
+ def _solve_with_sparse_rhs( A, b, tolerance = None ):
+diff --git a/sparseqr/sparseqr_gen.py b/sparseqr/sparseqr_gen.py
+index 096ccd8..5c1fdfb 100644
+--- a/sparseqr/sparseqr_gen.py
++++ b/sparseqr/sparseqr_gen.py
+@@ -267,6 +267,36 @@ void *cholmod_l_free	/* always returns NULL */
+     cholmod_common *Common
+ ) ;
+ 
++/* cs_spsolve 
++int cs_spsolve 
++{
++*/
++
++
++
++/* [Z,R,E] = qz(A), returning Z, R, and E */
++SuiteSparse_long SuiteSparseQR_C /* returns ???, (-1) if failure */
++(
++    /* inputs: */
++    int ordering,               /* all, except 3:given treated as 0:fixed */
++    double tol,                 /* columns with 2-norm <= tol treated as 0 */
++    SuiteSparse_long econ,      /* e = max(min(m,econ),rank(A)) */
++    int getCTX,                 /* 0:Z=C, 1:Z=c', 2: z=X */
++    cholmod_sparse *A,          /* m-by-n sparse matrix to factorize */
++    cholmod_sparse *Bsparse,
++    cholmod_dense *Bdense,
++    /* outputs: */
++    cholmod_sparse **Zsparse,   /* m-by-e sparse matrix */
++    cholmod_dense **Zdense,
++    cholmod_sparse **R,         /* e-by-n sparse matrix */
++    SuiteSparse_long **E,       /* size n column perm, NULL if identity */
++    cholmod_sparse **H,         /* m-by-nh Householder vectors */
++    SuiteSparse_long **HPinv,   /* size m row permutation */
++    cholmod_dense **HTau,       /* 1-by-nh Householder coefficients */
++    cholmod_common *cc          /* workspace and parameters */
++) ;
++
++
+ /* [Q,R,E] = qr(A), returning Q as a sparse matrix */
+ SuiteSparse_long SuiteSparseQR_C_QR /* returns rank(A) est., (-1) if failure */
+ (
+@@ -282,6 +312,7 @@ SuiteSparse_long SuiteSparseQR_C_QR /* returns rank(A) est., (-1) if failure */
+     cholmod_common *cc          /* workspace and parameters */
+ ) ;
+ 
++
+ /* X = A\B where B is dense */
+ cholmod_dense *SuiteSparseQR_C_backslash    /* returns X, NULL if failure */
+ (
+-- 
+2.25.1
+
