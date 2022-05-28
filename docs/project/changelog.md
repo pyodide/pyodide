@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
 - {{ Enhancement }} Integrity of Pyodide packages are now verified before
   loading them. This is for now only limited to browser environments.
   {pr}`2513`
