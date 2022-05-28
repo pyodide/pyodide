@@ -11,7 +11,11 @@ from packaging.utils import parse_wheel_filename
 
 from .io import parse_package_config
 
-PLATFORM = "emscripten_wasm32"
+
+def platform():
+    emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    version = emscripten_version.replace(".", "_")
+    return f"emscripten_{version}_wasm32"
 
 
 def pyodide_tags() -> Iterator[Tag]:
@@ -22,6 +26,7 @@ def pyodide_tags() -> Iterator[Tag]:
     """
     PYMAJOR = get_make_flag("PYMAJOR")
     PYMINOR = get_make_flag("PYMINOR")
+    PLATFORM = platform()
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
     yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
@@ -71,6 +76,7 @@ CORE_PACKAGES = {
     "cpp-exceptions-test",
     "ssl",
     "pytest",
+    "tblib",
 }
 
 CORE_SCIPY_PACKAGES = {
@@ -240,7 +246,7 @@ def get_unisolated_packages():
     PYODIDE_ROOT = get_pyodide_root()
     unisolated_packages = []
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, False)
+        config = parse_package_config(pkg, check=False)
         if config.get("build", {}).get("cross-build-env", False):
             unisolated_packages.append(config["package"]["name"])
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)

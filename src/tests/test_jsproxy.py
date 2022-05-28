@@ -81,9 +81,8 @@ def test_jsproxy_getattr(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(node="No document in node")
 def test_jsproxy_document(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No document in node")
     selenium.run("from js import document")
     assert (
         selenium.run(
@@ -491,7 +490,7 @@ def test_call_pyproxy_return_arg(selenium):
 
 
 @run_in_pyodide
-def test_import_invocation():
+def test_import_invocation(selenium):
     import js
 
     def temp():
@@ -504,14 +503,14 @@ def test_import_invocation():
 
 
 @run_in_pyodide
-def test_import_bind():
+def test_import_bind(selenium):
     from js import fetch
 
     fetch("packages.json")
 
 
 @run_in_pyodide
-def test_nested_attribute_access():
+def test_nested_attribute_access(selenium):
     import js
     from js import self
 
@@ -558,7 +557,7 @@ def test_destroy_attribute(selenium):
 
 
 @run_in_pyodide
-def test_window_isnt_super_weird_anymore():
+def test_window_isnt_super_weird_anymore(selenium):
     import js
     from js import Array, self
 
@@ -1017,7 +1016,7 @@ def test_buffer(selenium):
 
 
 @run_in_pyodide
-def test_buffer_to_file():
+def test_buffer_to_file(selenium):
     from js import Uint8Array
 
     a = Uint8Array.new(range(10))
@@ -1036,7 +1035,7 @@ def test_buffer_to_file():
 
 
 @run_in_pyodide
-def test_buffer_into_file():
+def test_buffer_into_file(selenium):
     from js import Uint8Array
 
     a = Uint8Array.new(range(10))
@@ -1050,7 +1049,7 @@ def test_buffer_into_file():
 
 
 @run_in_pyodide
-def test_buffer_into_file2():
+def test_buffer_into_file2(selenium):
     """Check that no copy occurred."""
     import pyodide_js
     from js import Uint8Array
@@ -1157,7 +1156,7 @@ def test_memory_leaks(selenium):
 
 
 @run_in_pyodide
-def test_js_id():
+def test_js_id(selenium):
     from js import eval as run_js
 
     [x, y, z] = run_js("let a = {}; let b = {}; [a, a, b]")

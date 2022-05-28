@@ -26,6 +26,8 @@ export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
 export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
+export WASM_LIBRARY_DIR=$(PYODIDE_ROOT)/packages/.libs
+export WASM_PKG_CONFIG_PATH=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
@@ -35,7 +37,6 @@ export PYODIDE_BASE_URL?=./
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
 export NUMPY_LIB=$(HOSTSITEPACKAGES)/numpy/
-export OPEN_SSL_ROOT=$(PYODIDE_ROOT)/packages/openssl/build/openssl-1.1.1n/
 
 
 # This environment variable is used for packages to detect if they are built
@@ -64,6 +65,7 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	$(EXTRA_CFLAGS)
+
 
 export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
@@ -111,7 +113,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--exclude-file "*/tests/*" \
 	--exclude-file "*/distutils/*" \
 	--pre-js src/core/pre.js \
-	--pre-js src/js/_pyodide.out.js
+	--pre-js src/js/_pyodide.out.js \
+	--post-js src/core/post.js
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

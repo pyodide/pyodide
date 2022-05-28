@@ -1,8 +1,8 @@
 from pyodide_test_runner import run_in_pyodide
 
 
-@run_in_pyodide(standalone=True, packages=["msgpack"])
-def test_pack():
+@run_in_pyodide(packages=["msgpack"])
+def test_pack(selenium_standalone):
     from msgpack import Packer, Unpacker, pack, packb, unpackb  # noqa: F401
 
     def check(data, use_list=False):

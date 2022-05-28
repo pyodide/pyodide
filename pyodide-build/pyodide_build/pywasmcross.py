@@ -25,7 +25,7 @@ import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Any, MutableMapping, NoReturn, overload
+from typing import Any, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -53,7 +53,7 @@ ReplayArgs = namedtuple(
 )
 
 
-def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
+def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
@@ -76,7 +76,6 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]):
         env[var] = symlink
 
 
-@overload
 def compile(
     env: dict[str, str],
     *,
@@ -87,16 +86,17 @@ def compile(
     host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
-):
-    ...
+) -> None:
+    kwargs = dict(
+        pkgname=pkgname,
+        cflags=cflags,
+        cxxflags=cxxflags,
+        ldflags=ldflags,
+        host_install_dir=host_install_dir,
+        target_install_dir=target_install_dir,
+        replace_libs=replace_libs,
+    )
 
-
-@overload
-def compile(*, mypy__Single_overload_definition_multiple_required: int):
-    ...
-
-
-def compile(env, **kwargs):
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
 
@@ -107,7 +107,7 @@ def compile(env, **kwargs):
     args["orig__name__"] = __name__
     make_command_wrapper_symlinks(env)
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = common.PLATFORM
+    env["_PYTHON_HOST_PLATFORM"] = common.platform()
 
     from pyodide_build.pypabuild import build
 

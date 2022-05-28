@@ -737,7 +737,7 @@ def assert_py_to_js_to_py(selenium, name):
 
 
 @run_in_pyodide
-def test_recursive_list_to_js():
+def test_recursive_list_to_js(selenium):
     x: Any = []
     x.append(x)
     from pyodide import to_js
@@ -746,7 +746,7 @@ def test_recursive_list_to_js():
 
 
 @run_in_pyodide
-def test_recursive_dict_to_js():
+def test_recursive_dict_to_js(selenium):
     x: Any = {}
     x[0] = x
     from pyodide import to_js
@@ -1423,6 +1423,17 @@ def test_buffer_format_string(selenium):
         [array_name, is_big_endian] = process_fmt_string(fmt)
         assert is_big_endian == expected_is_big_endian
         assert array_name == expected_array_name
+
+
+@run_in_pyodide
+def test_object_with_null_constructor(selenium):
+    from unittest import TestCase
+
+    from js import eval as run_js
+
+    o = run_js("Object.create(null)")
+    with TestCase().assertRaises(TypeError):
+        repr(o)
 
 
 def test_dict_converter_cache(selenium):

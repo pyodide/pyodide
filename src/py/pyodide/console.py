@@ -27,7 +27,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
 
 
-class redirect_stdin(_RedirectStream):
+class redirect_stdin(_RedirectStream[Any]):
     _stream = "stdin"
 
 
@@ -86,7 +86,7 @@ class _Compile(Compile):
         self.return_mode = return_mode
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
 
-    def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore[override]
+    def __call__(self, source: str, filename: str, symbol: str) -> CodeRunner:  # type: ignore[override]
         return_mode = self.return_mode
         try:
             if self.quiet_trailing_semicolon and should_quiet(source):
@@ -135,7 +135,7 @@ class _CommandCompiler(CommandCompiler):
         )
 
     def __call__(  # type: ignore[override]
-        self, source, filename="<console>", symbol="single"
+        self, source: str, filename: str = "<console>", symbol: str = "single"
     ) -> CodeRunner | None:
         return super().__call__(source, filename, symbol)  # type: ignore[return-value]
 
@@ -145,7 +145,7 @@ SYNTAX_ERROR: Literal["syntax-error"] = "syntax-error"
 COMPLETE: Literal["complete"] = "complete"
 
 
-class ConsoleFuture(Future):
+class ConsoleFuture(Future[Any]):
     """A future with extra fields used as the return value for :any:`Console` apis.
 
     Attributes
@@ -229,7 +229,7 @@ class Console:
 
     def __init__(
         self,
-        globals: dict | None = None,
+        globals: dict[str, Any] | None = None,
         *,
         stdin_callback: Callable[[], str] | None = None,
         stdout_callback: Callable[[str], None] | None = None,

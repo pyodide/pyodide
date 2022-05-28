@@ -119,6 +119,12 @@ static PyObject*
 JsProxy_Repr(PyObject* self)
 {
   JsRef idrepr = hiwire_to_string(JsProxy_REF(self));
+  if (idrepr == NULL) {
+    PyErr_Format(PyExc_TypeError,
+                 "Pyodide cannot generate a repr for this Javascript object "
+                 "because it has no 'toString' method");
+    return NULL;
+  }
   PyObject* pyrepr = js2python(idrepr);
   hiwire_decref(idrepr);
   return pyrepr;

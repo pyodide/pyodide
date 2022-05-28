@@ -10,15 +10,18 @@ source:
     - - src/setup.cfg
       - ./setup.cfg
 build:
+  script: |
+    export LIBWEBP_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix libwebp)
+    export LIBWEBP_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix libwebp)
   cflags: |
     -s USE_ZLIB=1
     -s USE_LIBJPEG=1
     -s USE_FREETYPE=1
     -s SIDE_MODULE=1
-    -I$(PYODIDE_ROOT)/packages/libwebp/build/libwebp-1.2.2/build/lib/include
+    $(LIBWEBP_INCLUDE_PATH)
   ldflags: |
     -ljpeg
-    -L$(PYODIDE_ROOT)/packages/libwebp/build/libwebp-1.2.2/build/lib/lib/
+    $(LIBWEBP_LIBRARY_PATH)
 requirements:
   run:
     - libwebp
