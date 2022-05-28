@@ -65,6 +65,7 @@ pip install ./pyodide-build
 ```
 
 And now run this:
+
 ```bash
 python -m pyodide_build mkpkg <package-name>
 ```
@@ -91,8 +92,9 @@ The Pyodide `meta.yaml` file format was inspired by the one in conda, however it
 not strictly compatible.
 ```
 
-The package may have special build requirements  - e.g. specified in its Github
+The package may have special build requirements - e.g. specified in its Github
 README. If so, you can add extra build commands to the `meta.yaml` like this:
+
 ```yaml
 build:
   script: |
