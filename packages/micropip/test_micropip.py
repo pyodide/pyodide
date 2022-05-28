@@ -318,17 +318,15 @@ async def test_add_requirement_marker(mock_importlib, wheel_base):
 
 
 @pytest.mark.asyncio
-async def test_package_with_extra(mock_fetch, mock_importlib):
-    from micropip import _micropip
-
+async def test_package_with_extra(mock_fetch):
     mock_fetch.add_pkg_version("depa")
     mock_fetch.add_pkg_version("depb")
     mock_fetch.add_pkg_version("pkga", extras={"opt_feature": ["depa"]})
     mock_fetch.add_pkg_version("pkgb", extras={"opt_feature": ["depb"]})
 
-    await _micropip.install(["pkga[opt_feature]", "pkgb"])
+    await micropip.install(["pkga[opt_feature]", "pkgb"])
 
-    pkg_list = _micropip._list()
+    pkg_list = micropip.list()
 
     assert "pkga" in pkg_list
     assert "depa" in pkg_list
@@ -338,8 +336,7 @@ async def test_package_with_extra(mock_fetch, mock_importlib):
 
 
 @pytest.mark.asyncio
-async def test_package_with_extra_all(mock_fetch, mock_importlib):
-    from micropip import _micropip
+async def test_package_with_extra_all(mock_fetch):
 
     mock_fetch.add_pkg_version("depa")
     mock_fetch.add_pkg_version("depb")
@@ -351,14 +348,34 @@ async def test_package_with_extra_all(mock_fetch, mock_importlib):
         "pkgb", extras={"opt_feature": ["depc"], "all": ["depc", "depd"]}
     )
 
-    await _micropip.install(["pkga[all]", "pkgb[opt_feature]"])
+    await micropip.install(["pkga[all]", "pkgb[opt_feature]"])
 
-    pkg_list = _micropip._list()
+    pkg_list = micropip.list()
     assert "depa" in pkg_list
     assert "depb" in pkg_list
 
     assert "depc" in pkg_list
     assert "depd" not in pkg_list
+
+
+@pytest.mark.parametrize("transitive_req", [True, False])
+@pytest.mark.asyncio
+async def test_package_with_extra_transitive(
+    mock_fetch, transitive_req, mock_importlib
+):
+    mock_fetch.add_pkg_version("depb")
+
+    pkga_optional_dep = "depa[opt_feature]" if transitive_req else "depa"
+    mock_fetch.add_pkg_version("depa", extras={"opt_feature": ["depb"]})
+    mock_fetch.add_pkg_version("pkga", extras={"opt_feature": [pkga_optional_dep]})
+
+    await micropip.install(["pkga[opt_feature]"])
+    pkg_list = micropip.list()
+    assert "depa" in pkg_list
+    if transitive_req:
+        assert "depb" in pkg_list
+    else:
+        assert "depb" not in pkg_list
 
 
 def test_last_version_from_pypi():
