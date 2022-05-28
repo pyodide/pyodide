@@ -3,7 +3,6 @@ import pickle
 import sys
 from base64 import b64decode, b64encode
 from copy import deepcopy
-from traceback import TracebackException
 from typing import Any, Callable, Collection
 
 from pyodide_test_runner.utils import package_is_built as _package_is_built
@@ -169,6 +168,9 @@ class run_in_pyodide:
             REWRITTEN_MODULE_ASTS if pytest_assert_rewrites else ORIGINAL_MODULE_ASTS
         )
 
+        if package_is_built("tblib"):
+            self._pkgs.append("tblib")
+
         self._pytest_assert_rewrites = pytest_assert_rewrites
 
     def _code_template(self, args: tuple) -> str:
@@ -186,15 +188,20 @@ class run_in_pyodide:
             co = compile(mod, {self._module_filename!r}, "exec")
             d = {{}}
             exec(co, d)
+            def encode(x):
+                return b64encode(pickle.dumps(x)).decode()
             try:
                 result = d[{self._func_name!r}](None, *args)
                 if {self._async_func}:
                     result = await result
+                return [0, encode(result)]
             except BaseException as e:
-                import traceback
-                tb = traceback.TracebackException(type(e), e, e.__traceback__)
-                serialized_err = pickle.dumps(tb)
-                return b64encode(serialized_err).decode()
+                try:
+                    from tblib import pickling_support
+                    pickling_support.install()
+                except ImportError:
+                    pass
+                return [1, encode(e)]
 
         try:
             result = await __tmp()
@@ -210,27 +217,14 @@ class run_in_pyodide:
         if self._pkgs:
             selenium.load_package(self._pkgs)
 
-        result = selenium.run_async(code)
+        r = selenium.run_async(code)
+        [status, result] = r
 
-        if result:
-            err: TracebackException = pickle.loads(b64decode(result))
-            err.stack.pop(0)  # Get rid of __tmp in traceback
-            self._fail(err)
-
-    def _fail(self, err: TracebackException):
-        """
-        Fail the test with a helpful message.
-
-        Separated out for test mock purposes.
-        """
-        msg = "Error running function in pyodide\n\n" + "".join(err.format(chain=True))
-        if self._pytest_not_built:
-            msg += (
-                "\n"
-                "Note: pytest not available in Pyodide. We could generate a"
-                "better traceback if pytest were available."
-            )
-        pytest.fail(msg, pytrace=False)
+        result = pickle.loads(b64decode(result))
+        if status:
+            raise result
+        else:
+            return result
 
     def _generate_pyodide_ast(
         self, module_ast: ast.Module, funcname: str, func_line_no: int

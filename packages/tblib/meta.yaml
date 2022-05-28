@@ -1,0 +1,14 @@
+package:
+  name: tblib
+  version: 1.7.0
+source:
+  url: https://files.pythonhosted.org/packages/f8/cd/2fad4add11c8837e72f50a30e2bda30e67a10d70462f826b291443a55c7d/tblib-1.7.0-py2.py3-none-any.whl
+  sha256: 289fa7359e580950e7d9743eab36b0691f0310fce64dee7d9c31065b8f723e23
+test:
+  imports:
+    - tblib
+about:
+  home: https://github.com/ionelmc/python-tblib
+  PyPI: https://pypi.org/project/tblib
+  summary: Traceback serialization library.
+  license: BSD-2-Clause
