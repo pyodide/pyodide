@@ -93,7 +93,7 @@ substitutions:
   `set_interval`, `clear_interval`, `add_event_listener` and
   `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
-  
+
 - {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and
   `ERRNO_CODES` APIs.
   {pr}`2582`
@@ -106,11 +106,10 @@ substitutions:
   version in them. This should help ensure ABI compatibility if Emscripten
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
-  
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
-
 
 ### micropip
 
