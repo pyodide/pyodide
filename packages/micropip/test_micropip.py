@@ -620,6 +620,7 @@ async def test_load_binary_wheel2(selenium):
     import regex  # noqa: F401
 
 
+@pytest.mark.asyncio
 async def test_freeze(mock_fetch: mock_fetch_cls) -> None:
     dummy = "dummy"
     dep1 = "dep1"
