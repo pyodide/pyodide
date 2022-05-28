@@ -15,23 +15,24 @@ from pyodide_test_runner.hypothesis import (
 
 @given(s=text())
 @std_hypothesis_settings
-def test_string_conversion(selenium, s):
-    # careful string escaping here -- hypothesis will fuzz it.
-    # Note: using base 64 encoding would be much more compact...
-    sbytes = list(s.encode())
-    selenium.run_js(
-        f"""
-        self.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
-        pyodide.runPython('spy = bytes({sbytes}).decode()');
-        """
-    )
-    assert selenium.run_js("""return pyodide.runPython('spy') === sjs;""")
-    assert selenium.run(
-        """
-        from js import sjs
-        sjs == spy
-        """
-    )
+def test_string_conversion(selenium_module_scope, s):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        # careful string escaping here -- hypothesis will fuzz it.
+        # Note: using base 64 encoding would be much more compact...
+        sbytes = list(s.encode())
+        selenium.run_js(
+            f"""
+            self.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
+            pyodide.runPython('spy = bytes({sbytes}).decode()');
+            """
+        )
+        assert selenium.run_js("""return pyodide.runPython('spy') === sjs;""")
+        assert selenium.run(
+            """
+            from js import sjs
+            sjs == spy
+            """
+        )
 
 
 def test_large_string_conversion(selenium):
@@ -111,37 +112,38 @@ def test_nan_conversions(selenium):
 
 @given(n=strategies.integers())
 @std_hypothesis_settings
-def test_bigint_conversions(selenium, n):
-    h = hex(n)
-    selenium.run_js(f"self.h = {h!r};")
-    selenium.run_js(
-        """
-        let negative = false;
-        let h2 = h;
-        if(h2.startsWith('-')){
-            h2 = h2.slice(1);
-            negative = true;
-        }
-        self.n = BigInt(h2);
-        if(negative){
-            self.n = -n;
-        }
-        pyodide.runPython(`
-            from js import n, h
-            n2 = int(h, 16)
-            assert n == n2
-        `);
-        let n2 = pyodide.globals.get("n2");
-        let n3 = Number(n2);
-        if(Number.isSafeInteger(n3)){
-            assert(() => typeof n2 === "number");
-            assert(() => n2 === Number(n));
-        } else {
-            assert(() => typeof n2 === "bigint");
-            assert(() => n2 === n);
-        }
-        """
-    )
+def test_bigint_conversions(selenium_module_scope, n):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        h = hex(n)
+        selenium.run_js(f"self.h = {h!r};")
+        selenium.run_js(
+            """
+            let negative = false;
+            let h2 = h;
+            if(h2.startsWith('-')){
+                h2 = h2.slice(1);
+                negative = true;
+            }
+            self.n = BigInt(h2);
+            if(negative){
+                self.n = -n;
+            }
+            pyodide.runPython(`
+                from js import n, h
+                n2 = int(h, 16)
+                assert n == n2
+            `);
+            let n2 = pyodide.globals.get("n2");
+            let n3 = Number(n2);
+            if(Number.isSafeInteger(n3)){
+                assert(() => typeof n2 === "number");
+                assert(() => n2 === Number(n));
+            } else {
+                assert(() => typeof n2 === "bigint");
+                assert(() => n2 === n);
+            }
+            """
+        )
 
 
 @given(
@@ -151,33 +153,34 @@ def test_bigint_conversions(selenium, n):
     )
 )
 @std_hypothesis_settings
-def test_big_int_conversions2(selenium, n):
-    import json
+def test_big_int_conversions2(selenium_module_scope, n):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        import json
 
-    print("n:", n, end=" ")
-    s = json.dumps(n)
-    selenium.run_js(
-        f"""
-        self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
-        pyodide.runPython(`
-            import json
-            x_py = json.loads({s!r})
-        `);
-        """
-    )
-    try:
-        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
-        assert selenium.run(
-            """
-            from js import x_js
-            x_js == x_py
+        print("n:", n, end=" ")
+        s = json.dumps(n)
+        selenium.run_js(
+            f"""
+            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
+            pyodide.runPython(`
+                import json
+                x_py = json.loads({s!r})
+            `);
             """
         )
-    except Exception:
-        print("failed =(")
-        raise
-    else:
-        print("worked!!")
+        try:
+            assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
+            assert selenium.run(
+                """
+                from js import x_js
+                x_js == x_py
+                """
+            )
+        except Exception:
+            print("failed =(")
+            raise
+        else:
+            print("worked!!")
 
 
 @given(
@@ -185,32 +188,33 @@ def test_big_int_conversions2(selenium, n):
     exp=strategies.integers(min_value=1, max_value=10),
 )
 @std_hypothesis_settings
-def test_big_int_conversions3(selenium, n, exp):
-    import json
+def test_big_int_conversions3(selenium_module_scope, n, exp):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        import json
 
-    val = 2 ** (32 * exp) - n
-    s = json.dumps(val)
-    selenium.run_js(
-        f"""
-        self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
-        pyodide.runPython(`
-            import json
-            x_py = json.loads({s!r})
-        `);
-        """
-    )
-    [x1, x2] = selenium.run_js(
-        """return [pyodide.runPython('x_py').toString(), x_js.toString()]"""
-    )
-    assert x1 == x2
-    [x1, x2] = selenium.run(
-        """
-        from js import x_js
-        from pyodide import to_js
-        to_js([str(x_js), str(x_py)])
-        """
-    )
-    assert x1 == x2
+        val = 2 ** (32 * exp) - n
+        s = json.dumps(val)
+        selenium.run_js(
+            f"""
+            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
+            pyodide.runPython(`
+                import json
+                x_py = json.loads({s!r})
+            `);
+            """
+        )
+        [x1, x2] = selenium.run_js(
+            """return [pyodide.runPython('x_py').toString(), x_js.toString()]"""
+        )
+        assert x1 == x2
+        [x1, x2] = selenium.run(
+            """
+            from js import x_js
+            from pyodide import to_js
+            to_js([str(x_js), str(x_py)])
+            """
+        )
+        assert x1 == x2
 
 
 @given(obj=any_equal_to_self_strategy)
