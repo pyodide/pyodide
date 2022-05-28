@@ -1,13 +1,13 @@
 from collections import UserDict
 from dataclasses import astuple, dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
 from packaging.utils import canonicalize_name
 
 __all__ = ["PackageDict"]
 
 
-def _format_table(headers: list[str], table: list[Iterable]) -> str:
+def _format_table(headers: list[str], table: Iterable[Iterable[Any]]) -> str:
     """
     Returns a minimal formatted table
 
@@ -47,13 +47,13 @@ class PackageMetadata:
         return PackageMetadata.__dataclass_fields__.keys()
 
 
-class PackageDict(UserDict):
+class PackageDict(UserDict[str, PackageMetadata]):
     """
     A dictionary that holds list of metadata on packages.
     This class is used in micropip to keep the list of installed packages.
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._tabularize()
 
     def __getitem__(self, key):
@@ -64,11 +64,11 @@ class PackageDict(UserDict):
         normalized_key = canonicalize_name(key)
         return super().__setitem__(normalized_key, val)
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:  # type: ignore[override]
         normalized_key = canonicalize_name(key)
         return super().__contains__(normalized_key)
 
-    def _tabularize(self):
+    def _tabularize(self) -> str:
         headers = [key.capitalize() for key in PackageMetadata.keys()]
         table = list(self.values())
         return _format_table(headers, table)

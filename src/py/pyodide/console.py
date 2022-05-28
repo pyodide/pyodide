@@ -27,7 +27,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
 
 
-class redirect_stdin(_RedirectStream):
+class redirect_stdin(_RedirectStream[Any]):
     _stream = "stdin"
 
 
@@ -145,7 +145,7 @@ SYNTAX_ERROR: Literal["syntax-error"] = "syntax-error"
 COMPLETE: Literal["complete"] = "complete"
 
 
-class ConsoleFuture(Future):
+class ConsoleFuture(Future[Any]):
     """A future with extra fields used as the return value for :any:`Console` apis.
 
     Attributes
@@ -229,7 +229,7 @@ class Console:
 
     def __init__(
         self,
-        globals: dict | None = None,
+        globals: dict[str, Any] | None = None,
         *,
         stdin_callback: Callable[[], str] | None = None,
         stdout_callback: Callable[[str], None] | None = None,

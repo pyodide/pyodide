@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from pyodide._core import IN_BROWSER
 from pyodide.http import pyfetch
 
@@ -9,13 +7,6 @@ try:
     from pyodide_js._api import loadDynlib  # type: ignore[import]
 
     BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
-
-    # Random note: getsitepackages is not available in a virtual environment...
-    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
-    # problem is not fixed)
-    from site import getsitepackages
-
-    WHEEL_BASE = Path(getsitepackages()[0])
 except ImportError:
     if IN_BROWSER:
         raise
@@ -33,7 +24,6 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
 __all__ = [
     "fetch_bytes",
     "fetch_string",
-    "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
     "loadDynlib",

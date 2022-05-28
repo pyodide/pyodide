@@ -92,26 +92,19 @@ doesn't error. In this case, one can use the `run_in_pyodide` decorate from
 from pyodide_test_runner import run_in_pyodide
 
 @run_in_pyodide
-def test_add():
+def test_add(selenium):
     assert 1 + 1 == 2
 ```
 
-In this case, the body of the function will automatically be run in Pyodide.
-The decorator can also be called with arguments. It has two configuration
-options --- standalone and packages.
-
-Setting `standalone = True` starts a standalone browser session to run the test
-(the session is shared between tests by default). This is useful for testing
-things like package loading.
-
-The `packages` option lists packages to load before running the test. For
-example,
+In this case, the body of the function will automatically be run in Pyodide. The
+decorator can also be called with arguments. The `packages` argument lists
+packages to load before running the test. For example,
 
 ```python
 from pyodide_test_runner import run_in_pyodide
 
-@run_in_pyodide(standalone = True, packages = ["regex"])
-def test_regex():
+@run_in_pyodide(packages = ["regex"])
+def test_regex(selenium_standalone):
     import regex
     assert regex.search("o", "foo").end() == 2
 ```

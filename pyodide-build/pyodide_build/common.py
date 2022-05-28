@@ -76,6 +76,7 @@ CORE_PACKAGES = {
     "cpp-exceptions-test",
     "ssl",
     "pytest",
+    "tblib",
 }
 
 CORE_SCIPY_PACKAGES = {

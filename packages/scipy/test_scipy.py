@@ -1,15 +1,10 @@
+import pytest
 from pyodide_test_runner import run_in_pyodide
 
-run_in_pyodide_scipy = run_in_pyodide(
-    module_scope=True,
-    packages=["scipy"],
-    # xfail_browsers={"chrome": "Times out in chrome"},
-    driver_timeout=40,
-)
 
-
-@run_in_pyodide_scipy
-def test_scipy_linalg():
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_scipy_linalg(selenium):
     import numpy as np
     import scipy.linalg
     from numpy.testing import assert_allclose
@@ -24,29 +19,33 @@ def test_scipy_linalg():
     assert_allclose(res, np.identity(N), rtol=1e-07, atol=1e-9)
 
 
-@run_in_pyodide_scipy
-def test_brentq():
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_brentq(selenium):
     from scipy.optimize import brentq
 
     brentq(lambda x: x, -1, 1)
 
 
-@run_in_pyodide_scipy
-def test_dlamch():
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_dlamch(selenium):
     from scipy.linalg import lapack
 
     lapack.dlamch("Epsilon-Machine")
 
 
-@run_in_pyodide_scipy
-def test_binom_ppf():
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_binom_ppf(selenium):
     from scipy.stats import binom
 
     assert binom.ppf(0.9, 1000, 0.1) == 112
 
 
-@run_in_pyodide(module_scope=True, packages=["pytest", "scipy-tests"])
-def test_scipy_pytest():
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["pytest", "scipy-tests"])
+def test_scipy_pytest(selenium):
     import pytest
 
     def runtest(module, filter):

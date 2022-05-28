@@ -1,9 +1,5 @@
-import tempfile
-from pathlib import Path
 from typing import Any
 
-# Provide stubs for testing in native python
-WHEEL_BASE = Path(tempfile.mkdtemp())
 BUILTIN_PACKAGES: dict[str, dict[str, Any]] = {}
 
 
@@ -24,7 +20,7 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
     return (await fetch_bytes(url, kwargs)).decode()
 
 
-async def loadDynlib(dynlib: str, is_shared_lib: bool):
+async def loadDynlib(dynlib: str, is_shared_lib: bool) -> None:
     pass
 
 
@@ -40,7 +36,6 @@ __all__ = [
     "loadDynlib",
     "fetch_bytes",
     "fetch_string",
-    "WHEEL_BASE",
     "BUILTIN_PACKAGES",
     "loadedPackages",
     "pyodide_js",

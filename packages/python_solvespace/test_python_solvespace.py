@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["python_solvespace"])
-def test_regex():
+def test_regex(selenium):
     from python_solvespace import ResultFlag, SolverSystem
 
     sys = SolverSystem()
