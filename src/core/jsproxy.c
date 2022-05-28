@@ -1044,11 +1044,13 @@ typedef struct
   PyException_HEAD PyObject* js_error;
 } JsExceptionObject;
 
+// Pickle support
 static PyObject*
 JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
 {
   // We can't pickle the js_error because it is a JsProxy.
   // The point of this function is to convert it to a string.
+  // Compare OSError_reduce in cpython/Objects/exceptions.c which is similar.
   PyObject* res = NULL;
 
   PyObject* args;
@@ -1074,6 +1076,7 @@ JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
     }
   }
 
+  // This is now just like BaseException_reduce
   if (self->dict)
     res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
   else
