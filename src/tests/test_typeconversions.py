@@ -1,35 +1,37 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
-import pickle
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import pytest
-from hypothesis import HealthCheck, given, settings, strategies
+from hypothesis import given, strategies
 from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
+from pyodide_test_runner.hypothesis import (
+    any_equal_to_self_strategy,
+    any_strategy,
+    std_hypothesis_settings,
+)
 
 
 @given(s=text())
-@settings(deadline=2000)
-def test_string_conversion(selenium_module_scope, s):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        # careful string escaping here -- hypothesis will fuzz it.
-        # Note: using base 64 encoding would be much more compact...
-        sbytes = list(s.encode())
-        selenium.run_js(
-            f"""
-            self.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
-            pyodide.runPython('spy = bytes({sbytes}).decode()');
-            """
-        )
-        assert selenium.run_js("""return pyodide.runPython('spy') === sjs;""")
-        assert selenium.run(
-            """
-            from js import sjs
-            sjs == spy
-            """
-        )
+@std_hypothesis_settings
+def test_string_conversion(selenium, s):
+    # careful string escaping here -- hypothesis will fuzz it.
+    # Note: using base 64 encoding would be much more compact...
+    sbytes = list(s.encode())
+    selenium.run_js(
+        f"""
+        self.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
+        pyodide.runPython('spy = bytes({sbytes}).decode()');
+        """
+    )
+    assert selenium.run_js("""return pyodide.runPython('spy') === sjs;""")
+    assert selenium.run(
+        """
+        from js import sjs
+        sjs == spy
+        """
+    )
 
 
 def test_large_string_conversion(selenium):
@@ -65,7 +67,7 @@ def test_large_string_conversion(selenium):
         strategies.floats(allow_nan=False),
     )
 )
-@settings(deadline=2000)
+@std_hypothesis_settings
 def test_number_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import json
@@ -108,39 +110,38 @@ def test_nan_conversions(selenium):
 
 
 @given(n=strategies.integers())
-@settings(deadline=2000)
-def test_bigint_conversions(selenium_module_scope, n):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        h = hex(n)
-        selenium.run_js(f"self.h = {h!r};")
-        selenium.run_js(
-            """
-            let negative = false;
-            let h2 = h;
-            if(h2.startsWith('-')){
-                h2 = h2.slice(1);
-                negative = true;
-            }
-            self.n = BigInt(h2);
-            if(negative){
-                self.n = -n;
-            }
-            pyodide.runPython(`
-                from js import n, h
-                n2 = int(h, 16)
-                assert n == n2
-            `);
-            let n2 = pyodide.globals.get("n2");
-            let n3 = Number(n2);
-            if(Number.isSafeInteger(n3)){
-                assert(() => typeof n2 === "number");
-                assert(() => n2 === Number(n));
-            } else {
-                assert(() => typeof n2 === "bigint");
-                assert(() => n2 === n);
-            }
-            """
-        )
+@std_hypothesis_settings
+def test_bigint_conversions(selenium, n):
+    h = hex(n)
+    selenium.run_js(f"self.h = {h!r};")
+    selenium.run_js(
+        """
+        let negative = false;
+        let h2 = h;
+        if(h2.startsWith('-')){
+            h2 = h2.slice(1);
+            negative = true;
+        }
+        self.n = BigInt(h2);
+        if(negative){
+            self.n = -n;
+        }
+        pyodide.runPython(`
+            from js import n, h
+            n2 = int(h, 16)
+            assert n == n2
+        `);
+        let n2 = pyodide.globals.get("n2");
+        let n3 = Number(n2);
+        if(Number.isSafeInteger(n3)){
+            assert(() => typeof n2 === "number");
+            assert(() => n2 === Number(n));
+        } else {
+            assert(() => typeof n2 === "bigint");
+            assert(() => n2 === n);
+        }
+        """
+    )
 
 
 @given(
@@ -149,100 +150,71 @@ def test_bigint_conversions(selenium_module_scope, n):
         strategies.integers(max_value=-(2**53) - 1),
     )
 )
-@settings(deadline=2000)
-def test_big_int_conversions2(selenium_module_scope, n):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        import json
+@std_hypothesis_settings
+def test_big_int_conversions2(selenium, n):
+    import json
 
-        print("n:", n, end=" ")
-        s = json.dumps(n)
-        selenium.run_js(
-            f"""
-            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
-            pyodide.runPython(`
-                import json
-                x_py = json.loads({s!r})
-            `);
+    print("n:", n, end=" ")
+    s = json.dumps(n)
+    selenium.run_js(
+        f"""
+        self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
+        pyodide.runPython(`
+            import json
+            x_py = json.loads({s!r})
+        `);
+        """
+    )
+    try:
+        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
+        assert selenium.run(
+            """
+            from js import x_js
+            x_js == x_py
             """
         )
-        try:
-            assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
-            assert selenium.run(
-                """
-                from js import x_js
-                x_js == x_py
-                """
-            )
-        except Exception:
-            print("failed =(")
-            raise
-        else:
-            print("worked!!")
+    except Exception:
+        print("failed =(")
+        raise
+    else:
+        print("worked!!")
 
 
 @given(
     n=strategies.integers(),
     exp=strategies.integers(min_value=1, max_value=10),
 )
-def test_big_int_conversions3(selenium_module_scope, n, exp):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        import json
+@std_hypothesis_settings
+def test_big_int_conversions3(selenium, n, exp):
+    import json
 
-        val = 2 ** (32 * exp) - n
-        s = json.dumps(val)
-        selenium.run_js(
-            f"""
-            self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
-            pyodide.runPython(`
-                import json
-                x_py = json.loads({s!r})
-            `);
-            """
-        )
-        [x1, x2] = selenium.run_js(
-            """return [pyodide.runPython('x_py').toString(), x_js.toString()]"""
-        )
-        assert x1 == x2
-        [x1, x2] = selenium.run(
-            """
-            from js import x_js
-            from pyodide import to_js
-            to_js([str(x_js), str(x_py)])
-            """
-        )
-        assert x1 == x2
-
-
-def is_picklable(x):
-    try:
-        pickle.dumps(x)
-        return True
-    except Exception:
-        return False
+    val = 2 ** (32 * exp) - n
+    s = json.dumps(val)
+    selenium.run_js(
+        f"""
+        self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
+        pyodide.runPython(`
+            import json
+            x_py = json.loads({s!r})
+        `);
+        """
+    )
+    [x1, x2] = selenium.run_js(
+        """return [pyodide.runPython('x_py').toString(), x_js.toString()]"""
+    )
+    assert x1 == x2
+    [x1, x2] = selenium.run(
+        """
+        from js import x_js
+        from pyodide import to_js
+        to_js([str(x_js), str(x_py)])
+        """
+    )
+    assert x1 == x2
 
 
-def is_equal_to_self(x):
-    try:
-        return x == x
-    except Exception:
-        return False
-
-
-# Generate an object of any type
-any_strategy = (
-    strategies.from_type(type)
-    .flatmap(strategies.from_type)
-    .filter(lambda x: not isinstance(x, ZoneInfo))
-    .filter(is_picklable)
-    .filter(is_equal_to_self)
-)
-
-
-@given(obj=any_strategy)
-@settings(
-    deadline=2000,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-)
+@given(obj=any_equal_to_self_strategy)
+@std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_py2js2py(selenium, obj):
     import __main__
@@ -268,11 +240,8 @@ def test_hyp_py2js2py(selenium, obj):
         del __main__.obj
 
 
-@given(obj=any_strategy)
-@settings(
-    deadline=2000,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-)
+@given(obj=any_equal_to_self_strategy)
+@std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_py2js2py_2(selenium, obj):
     import __main__
@@ -305,10 +274,7 @@ def test_big_integer_py2js2py(selenium, a):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @given(obj=any_strategy)
-@settings(
-    deadline=2000,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
-)
+@std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_tojs_no_crash(selenium, obj):
     import __main__
