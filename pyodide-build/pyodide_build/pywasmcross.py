@@ -557,7 +557,7 @@ def handle_command(
     if line[0:2] == ["cargo", "rustc"]:
         p = Path(args.builddir)
         for x in p.glob("**/*.wasm"):
-            shutil.copy(x, x.with_suffix(".so"))
+            shutil.move(x, x.with_suffix(".so"))
 
     sys.exit(returncode)
 
