@@ -59,7 +59,7 @@ cd pyodide
 make
 ```
 
-Now install the tool with:
+Now install `pyodide_build` with:
 
 ```bash
 pip install ./pyodide-build
