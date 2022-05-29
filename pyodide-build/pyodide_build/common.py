@@ -103,7 +103,7 @@ def _parse_package_subset(query: str | None) -> set[str]:
      - 'min-scipy-stack': includes the "core" meta-package as well as some of the
        core packages from the scientific python stack and their dependencies:
        {"numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib", "pytest"}.
-       This option is non exaustive and is mainly intended to make build faster
+       This option is non exhaustive and is mainly intended to make build faster
        while testing a diverse set of scientific packages.
      - '*': corresponds to all packages (returns None)
 

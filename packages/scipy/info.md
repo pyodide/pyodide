@@ -1,5 +1,5 @@
 The biggest issue that comes up in building scipy is that we don't have a good
-fotran to wasm compiler. Some version of flang classic might work.
+fortran to wasm compiler. Some version of flang classic might work.
 
 Instead of compiling from fortran directly, we rely on f2c to cross compile
 the code to C and then compile C to wasm. We rely on f2c both directly and via
