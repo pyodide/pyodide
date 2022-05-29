@@ -121,6 +121,19 @@ console_error_obj(JsRef obj);
     }                                                                          \
     return 0;  /* some of these were void */                                   \
   })
+
+// If there is a Js error, catch it and return false.
+#define EM_JS_BOOL(ret, func_name, args, body...)                              \
+  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
+    "use strict";                                                              \
+    try    /* intentionally no braces, body already has them */                \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
+        return false;                                                          \
+    }                                                                          \
+  })
+
 // clang-format on
 
 /**

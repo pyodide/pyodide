@@ -5,9 +5,8 @@ def test_init(selenium_standalone):
     assert "Python initialization complete" in selenium_standalone.logs.splitlines()
 
 
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
 def test_webbrowser(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("Webbrowser doesn't work in node")
     selenium.run_async("import antigravity")
     assert len(selenium.driver.window_handles) == 2
 
@@ -17,9 +16,8 @@ def test_print(selenium):
     assert "This should be logged" in selenium.logs.splitlines()
 
 
+@pytest.mark.xfail_browsers(node="No window in node")
 def test_import_js(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No window in node")
     result = selenium.run(
         """
         import js

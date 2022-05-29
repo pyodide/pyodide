@@ -7,12 +7,14 @@ source:
   sha256: 94cc5ed4ceaefcbe5bf38c8fba6a21fc1d365bb8fb826ea1688e3370b2e24a1c
 build:
   cflags: |
-    -I$(OPEN_SSL_ROOT)/include/
     -Wno-implicit-function-declaration
+    $(OPENSSL_INCLUDE_PATH)
   ldflags: |
-    -L$(OPEN_SSL_ROOT)/dist/
+    $(OPENSSL_LIBRARY_PATH)
   script: |
     export CRYPTOGRAPHY_DONT_BUILD_RUST=1
+    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
+    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
 requirements:
   run:
     - openssl

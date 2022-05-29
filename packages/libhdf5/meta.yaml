@@ -16,7 +16,7 @@ build:
     mkdir -p build;
     cd build \
         && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
-        -DCMAKE_INSTALL_PREFIX=../../hdf5 \
+        -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
         -DH5_HAVE_GETPWUID=0 \
         -DH5_HAVE_SIGNAL=0 \
         -DBUILD_SHARED_LIBS=0 \
@@ -28,4 +28,4 @@ build:
         -DHDF5_BUILD_UTILS=0 \
         -DHDF5_ENABLE_Z_LIB_SUPPORT=1 \
         -DHDF5_ENABLE_ROS3_VFD=0;
-    emmake make -j ${PYODIDE_JOBS:-3} install;
+    emmake make -j ${PYODIDE_JOBS:-3} install

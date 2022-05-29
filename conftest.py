@@ -6,6 +6,8 @@ import sys
 
 import pytest
 
+pytest_plugins = ("pytest_asyncio",)
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
@@ -29,6 +31,7 @@ from pyodide_test_runner.fixture import (  # noqa: F401
 )
 from pyodide_test_runner.utils import maybe_skip_test
 from pyodide_test_runner.utils import package_is_built as _package_is_built
+from pyodide_test_runner.utils import parse_xfail_browsers
 
 
 def pytest_addoption(parser):
@@ -98,17 +101,24 @@ def pytest_runtest_call(item):
         if fixture.startswith("selenium"):
             browser = item.funcargs[fixture]
             break
-    if browser and browser.pyodide_loaded:
-        trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
-        trace_hiwire_refs = (
-            trace_pyproxies
-            and pytest.mark.skip_refcount_check.mark not in item.own_markers
-        )
-        yield from extra_checks_test_wrapper(
-            browser, trace_hiwire_refs, trace_pyproxies
-        )
-    else:
+
+    if not browser:
         yield
+        return
+
+    xfail_msg = parse_xfail_browsers(item).get(browser.browser, None)
+    if xfail_msg is not None:
+        pytest.xfail(xfail_msg)
+
+    if not browser.pyodide_loaded:
+        yield
+        return
+
+    trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
+    trace_hiwire_refs = (
+        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
+    )
+    yield from extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies)
 
 
 def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
@@ -186,7 +196,9 @@ ORIGINAL_MODULE_ASTS: dict[str, ast.Module] = {}
 REWRITTEN_MODULE_ASTS: dict[str, ast.Module] = {}
 
 
-def pytest_pycollect_makemodule(module_path: pathlib.Path, path: Any, parent: Any):
+def pytest_pycollect_makemodule(
+    module_path: pathlib.Path, path: Any, parent: Any
+) -> None:
     source = module_path.read_bytes()
     strfn = str(module_path)
     tree = ast.parse(source, filename=strfn)

@@ -26,13 +26,20 @@ def set_webdriver_script_timeout(selenium, script_timeout: float | None):
         selenium.set_script_timeout(selenium.script_timeout)
 
 
-def parse_driver_timeout(request) -> float | None:
+def parse_driver_timeout(node) -> float | None:
     """Parse driver timeout value from pytest request object"""
-    mark = request.node.get_closest_marker("driver_timeout")
+    mark = node.get_closest_marker("driver_timeout")
     if mark is None:
         return None
     else:
         return mark.args[0]
+
+
+def parse_xfail_browsers(node) -> dict[str, str]:
+    mark = node.get_closest_marker("xfail_browsers")
+    if mark is None:
+        return {}
+    return mark.kwargs
 
 
 def maybe_skip_test(item, dist_dir, delayed=False):
@@ -40,6 +47,8 @@ def maybe_skip_test(item, dist_dir, delayed=False):
 
     loading the selenium_standalone fixture which takes a long time.
     """
+    browsers = "|".join(["firefox", "chrome", "node"])
+
     skip_msg = None
     # Testing a package. Skip the test if the package is not built.
     match = re.match(
@@ -47,7 +56,9 @@ def maybe_skip_test(item, dist_dir, delayed=False):
     )
     if match:
         package_name = match.group("name")
-        if not package_is_built(package_name, dist_dir):
+        if not package_is_built(package_name, dist_dir) and re.match(
+            rf"test_[\w\-]+\[({browsers})\]", item.name
+        ):
             skip_msg = f"package '{package_name}' is not built."
 
     # Common package import test. Skip it if the package is not built.
@@ -56,9 +67,7 @@ def maybe_skip_test(item, dist_dir, delayed=False):
         and str(item.fspath).endswith("test_packages_common.py")
         and item.name.startswith("test_import")
     ):
-        match = re.match(
-            r"test_import\[(firefox|chrome|node)-(?P<name>[\w-]+)\]", item.name
-        )
+        match = re.match(rf"test_import\[({browsers})-(?P<name>[\w-]+)\]", item.name)
         if match:
             package_name = match.group("name")
             if not package_is_built(package_name, dist_dir):

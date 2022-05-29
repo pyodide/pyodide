@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide
-def test_sqlite3():
+def test_sqlite3(selenium):
     import sqlite3
 
     with sqlite3.connect(":memory:") as conn:

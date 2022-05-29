@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-from . import buildall, buildpkg, mkpkg, serve
+from . import buildall, buildpkg, create_xbuildenv, install_xbuildenv, mkpkg, serve
 from .common import init_environment
 
 
@@ -18,6 +18,8 @@ def make_parser() -> argparse.ArgumentParser:
         ("buildall", buildall),
         ("serve", serve),
         ("mkpkg", mkpkg),
+        ("create_xbuildenv", create_xbuildenv),
+        ("install_xbuildenv", install_xbuildenv),
     ):
         if "sphinx" in sys.modules and command_name in [
             "buildpkg",

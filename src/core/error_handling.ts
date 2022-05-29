@@ -194,6 +194,9 @@ function convertCppException(ptr: number): CppException {
 Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
+  if (!frame) {
+    return false;
+  }
   const fileName = frame.fileName || "";
   if (fileName.includes("wasm-function")) {
     return true;

@@ -188,7 +188,9 @@ def check_package_config_generate_errors(
     yield from _check_config_wheel_build(config)
 
 
-def check_package_config(config: dict[str, Any], file_path: Path | str | None = None):
+def check_package_config(
+    config: dict[str, Any], file_path: Path | str | None = None
+) -> None:
     errors_msg = list(check_package_config_generate_errors(config))
 
     if errors_msg:
@@ -199,7 +201,7 @@ def check_package_config(config: dict[str, Any], file_path: Path | str | None = 
         )
 
 
-def parse_package_config(path: Path | str, check: bool = True) -> dict[str, Any]:
+def parse_package_config(path: Path | str, *, check: bool = True) -> dict[str, Any]:
     """Load a meta.yaml file
 
     Parameters
