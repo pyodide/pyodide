@@ -45,7 +45,8 @@ any compilation commands.
 ### 1. Creating the `meta.yaml` file
 
 To build a Python package, you need to create a `meta.yaml` file that defines a
-"recipe" which includes build commands and "patches" (source code edits),
+"recipe" which may include build commands and "patches" (source code edits),
+among other things.
 amongst other things.
 
 If your package is on PyPI, the easiest place to start is with the
