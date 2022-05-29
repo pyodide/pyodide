@@ -1032,7 +1032,7 @@ def test_tojs8(selenium):
 
     from pyodide import ConversionError, to_js
 
-    msg = "Conversion from python to javascript failed"
+    msg = r"Cannot use \(2, 2\) as a key for a Javascript"
     with pytest.raises(ConversionError, match=msg):
         to_js({(2, 2): 0})
 
