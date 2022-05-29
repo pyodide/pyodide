@@ -109,6 +109,10 @@ substitutions:
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
 
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
