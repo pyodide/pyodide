@@ -69,7 +69,6 @@ This will mount the current working directory as `/src` within the container.
 Now run `make` to build the relevant Pyodide tools:
 
 ```bash
-cd /src
 make
 ```
 
