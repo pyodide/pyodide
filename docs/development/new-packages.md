@@ -45,7 +45,7 @@ any compilation commands.
 ### 1. Creating the `meta.yaml` file
 
 To build a Python package, you need to create a `meta.yaml` file that defines a
-"recipe" which may include build commands and "patches" (source code edits), 
+"recipe" which may include build commands and "patches" (source code edits),
 amongst other things.
 
 If your package is on PyPI, the easiest place to start is with the
@@ -59,9 +59,11 @@ cd pyodide
 ```
 
 If you'd like to use a Docker container, you can now run this command:
+
 ```bash
 ./run_docker --pre-built
 ```
+
 This will mount the current working directory as `/src` within the container.
 
 Now run `make` to build the relevant Pyodide tools:
