@@ -12,17 +12,11 @@ sys.path.append(str(Path(__file__).resolve().parent / "src"))
 from importlib.metadata import Distribution, PackageNotFoundError
 
 try:
-    from packaging.tags import Tag
-
     import micropip
 except ImportError:
     pass
 
-import os
-
 from pyodide_build import common
-
-os.environ["_PYTHON_HOST_PLATFORM"] = common.platform()
 
 
 def _mock_importlib_version(name: str) -> str:
@@ -216,6 +210,8 @@ def test_install_simple(selenium_standalone_micropip):
 
 def test_parse_wheel_url():
     pytest.importorskip("packaging")
+    from packaging.tags import Tag
+
     from micropip._micropip import WheelInfo
 
     url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
@@ -280,6 +276,8 @@ def create_transaction(Transaction):
 @pytest.mark.asyncio
 async def test_add_requirement():
     pytest.importorskip("packaging")
+    from packaging.tags import Tag
+
     from micropip._micropip import Transaction
 
     with spawn_web_server(Path(__file__).parent / "test") as server:
