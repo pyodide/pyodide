@@ -6,6 +6,7 @@ source:
   url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
   sha256: 70f8f4f7bb2ac9f340655cbac89d68c527af5bb4387522a8413e841e3e6628c9
   patches:
+    # TODO: remove this when chrono makes a release
     - patches/0001-Use-patched-chrono.patch
 build:
   script: |
@@ -23,6 +24,7 @@ build:
       -C target-feature=+mutable-globals \
       -C link-arg=-sSIDE_MODULE=1 \
     "
+    # TODO: remove this when chrono makes a release
     git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
   cflags: |
     -Wno-implicit-function-declaration
