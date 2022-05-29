@@ -109,6 +109,10 @@ substitutions:
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
 
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
