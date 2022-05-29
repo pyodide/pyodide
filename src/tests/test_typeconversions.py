@@ -2,14 +2,19 @@
 from typing import Any
 
 import pytest
-from hypothesis import assume, given, settings, strategies
-from hypothesis.strategies import from_type, text
+from hypothesis import given, strategies
+from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
+from pyodide_test_runner.hypothesis import (
+    any_equal_to_self_strategy,
+    any_strategy,
+    std_hypothesis_settings,
+)
 
 
 @given(s=text())
-@settings(deadline=2000)
+@std_hypothesis_settings
 def test_string_conversion(selenium_module_scope, s):
     with selenium_context_manager(selenium_module_scope) as selenium:
         # careful string escaping here -- hypothesis will fuzz it.
@@ -63,7 +68,7 @@ def test_large_string_conversion(selenium):
         strategies.floats(allow_nan=False),
     )
 )
-@settings(deadline=2000)
+@std_hypothesis_settings
 def test_number_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import json
@@ -87,25 +92,26 @@ def test_number_conversions(selenium_module_scope, n):
         )
 
 
+@run_in_pyodide
 def test_nan_conversions(selenium):
-    selenium.run_js(
+    from pyodide import run_js
+
+    jsnan = run_js("NaN")
+    from math import isnan
+
+    assert isnan(jsnan)
+    assert run_js(
         """
-        self.a = NaN;
-        pyodide.runPython(`
-            from js import a
-            from math import isnan, nan
-            assert isnan(a)
-        `);
-        let b = pyodide.runPython("nan");
-        if(!Number.isNaN(b)){
-            throw new Error();
-        }
+        let mathmod = pyodide.pyimport("math");
+        const res = Number.isNaN(mathmod.nan);
+        mathmod.destroy();
+        res
         """
     )
 
 
 @given(n=strategies.integers())
-@settings(deadline=2000)
+@std_hypothesis_settings
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
@@ -146,7 +152,7 @@ def test_bigint_conversions(selenium_module_scope, n):
         strategies.integers(max_value=-(2**53) - 1),
     )
 )
-@settings(deadline=2000)
+@std_hypothesis_settings
 def test_big_int_conversions2(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import json
@@ -181,6 +187,7 @@ def test_big_int_conversions2(selenium_module_scope, n):
     n=strategies.integers(),
     exp=strategies.integers(min_value=1, max_value=10),
 )
+@std_hypothesis_settings
 def test_big_int_conversions3(selenium_module_scope, n, exp):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import json
@@ -210,98 +217,77 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
         assert x1 == x2
 
 
-# Generate an object of any type
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
-@given(obj=from_type(type).flatmap(from_type))
-@settings(deadline=2000)
-def test_hyp_py2js2py(selenium_module_scope, obj):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        import pickle
-        from zoneinfo import ZoneInfo
+@given(obj=any_equal_to_self_strategy)
+@std_hypothesis_settings
+@run_in_pyodide
+def test_hyp_py2js2py(selenium, obj):
+    import __main__
 
-        assume(not isinstance(obj, ZoneInfo))
+    from pyodide import run_js
 
-        # When we compare x == x, there are three possible outcomes:
-        # 1. returns True
-        # 2. returns False (e.g., nan)
-        # 3. raises an exception
-        #
-        # Hypothesis *will* test this function on objects in case 2 and 3, so we
-        # have to defend against them here.
-        try:
-            assume(obj == obj)
-        except Exception:
-            assume(False)
-        try:
-            obj_bytes = list(pickle.dumps(obj))
-        except Exception:
-            assume(False)
-        selenium.run(
-            f"""
-            import pickle
-            x1 = pickle.loads(bytes({obj_bytes!r}))
+    __main__.obj = obj
+
+    try:
+        run_js('self.obj2 = pyodide.globals.get("obj"); 0;')
+        from js import obj2
+
+        assert obj2 == obj
+        run_js(
+            """
+            if(self.obj2 && self.obj2.destroy){
+                self.obj2.destroy();
+            }
+            delete self.obj2
             """
         )
-        selenium.run_js(
-            """
-            self.x2 = pyodide.globals.get("x1");
-            pyodide.runPython(`
-                from js import x2
-                if x1 != x2:
-                    print(f"Assertion Error: {x1!r} != {x2!r}")
-                    assert False
-            `);
-            """
-        )
+    finally:
+        del __main__.obj
 
 
-def test_big_integer_py2js2py(selenium):
-    a = 9992361673228537
-    selenium.run_js(
-        f"""
-        self.a = pyodide.runPython("{a}")
-        pyodide.runPython(`
-            from js import a
-            assert a == {a}
-        `);
-        """
-    )
-    a = -a
-    selenium.run_js(
-        f"""
-        self.a = pyodide.runPython("{a}")
-        pyodide.runPython(`
-            from js import a
-            assert a == {a}
-        `);
-        """
-    )
+@given(obj=any_equal_to_self_strategy)
+@std_hypothesis_settings
+@run_in_pyodide
+def test_hyp_py2js2py_2(selenium, obj):
+    import __main__
+
+    from pyodide import run_js
+
+    __main__.o = obj
+    try:
+        assert obj == run_js("pyodide.globals.get('o')")
+    finally:
+        del __main__.o
+
+
+@pytest.mark.parametrize("a", [9992361673228537, -9992361673228537])
+@run_in_pyodide
+def test_big_integer_py2js2py(selenium, a):
+    import __main__
+
+    from pyodide import run_js
+
+    __main__.a = a
+    try:
+        b = run_js("pyodide.globals.get('a')")
+        assert a == b
+    finally:
+        del __main__.a
 
 
 # Generate an object of any type
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=from_type(type).flatmap(from_type))
-@settings(deadline=2000)
-def test_hyp_tojs_no_crash(selenium_module_scope, obj):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        import pickle
-        from zoneinfo import ZoneInfo
+@given(obj=any_strategy)
+@std_hypothesis_settings
+@run_in_pyodide
+def test_hyp_tojs_no_crash(selenium, obj):
+    import __main__
 
-        assume(not isinstance(obj, ZoneInfo))
+    from pyodide import run_js
 
-        try:
-            obj_bytes = list(pickle.dumps(obj))
-        except Exception:
-            assume(False)
-        selenium.run(
-            f"""
-            import pickle
-            x = pickle.loads(bytes({obj_bytes!r}))
-            """
-        )
-        selenium.run_js(
+    __main__.x = obj
+    try:
+        run_js(
             """
             let x = pyodide.globals.get("x");
             if(x && x.toJs){
@@ -309,6 +295,8 @@ def test_hyp_tojs_no_crash(selenium_module_scope, obj):
             }
             """
         )
+    finally:
+        del __main__.x
 
 
 def test_python2js1(selenium):
@@ -1429,7 +1417,7 @@ def test_buffer_format_string(selenium):
 def test_object_with_null_constructor(selenium):
     from unittest import TestCase
 
-    from js import eval as run_js
+    from pyodide import run_js
 
     o = run_js("Object.create(null)")
     with TestCase().assertRaises(TypeError):

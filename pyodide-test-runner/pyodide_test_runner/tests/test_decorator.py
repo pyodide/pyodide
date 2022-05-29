@@ -1,7 +1,9 @@
 import asyncio
 
 import pytest
+from hypothesis import given, settings
 from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner.hypothesis import any_strategy, std_hypothesis_settings
 from pyodide_test_runner.utils import parse_driver_timeout
 
 from pyodide import eval_code_async
@@ -189,34 +191,11 @@ async def test_run_in_pyodide_async(selenium):
     assert x == 6
 
 
-import pickle
-from zoneinfo import ZoneInfo
-
-from hypothesis import HealthCheck, given, settings, strategies
-
-
-def is_picklable(x):
-    try:
-        pickle.dumps(x)
-        return True
-    except Exception:
-        return False
-
-
-strategy = (
-    strategies.from_type(type)
-    .flatmap(strategies.from_type)
-    .filter(lambda x: not isinstance(x, ZoneInfo))
-    .filter(is_picklable)
-)
-
-
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=strategy)
+@given(obj=any_strategy)
 @settings(
-    deadline=2000,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    std_hypothesis_settings,
     max_examples=25,
 )
 @run_in_pyodide
