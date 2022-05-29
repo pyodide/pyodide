@@ -1,3 +1,16 @@
+/** @private */
+export interface Module {
+  noImageDecoding: boolean;
+  noAudioDecoding: boolean;
+  noWasmDecoding: boolean;
+  preRun: { (): void }[];
+  print: (a: string) => void;
+  printErr: (a: string) => void;
+  ENV: { [key: string]: string };
+  preloadedWasm: any;
+  FS: any;
+}
+
 /**
  * The Emscripten Module.
  *
@@ -21,7 +34,7 @@ export function createModule(): any {
  * @private
  */
 export function setStandardStreams(
-  Module: any,
+  Module: Module,
   stdin?: () => string,
   stdout?: (a: string) => void,
   stderr?: (a: string) => void
@@ -95,7 +108,7 @@ function createStdinWrapper(stdin: () => string) {
  * @param path
  * @private
  */
-export function setHomeDirectory(Module: any, path: string) {
+export function setHomeDirectory(Module: Module, path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {

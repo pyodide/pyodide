@@ -14,7 +14,7 @@ API.dump_traceback = function () {
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
 
-function ensureCaughtObjectIsError(e: any) {
+function ensureCaughtObjectIsError(e: any): Error {
   if (typeof e === "string") {
     // Sometimes emscripten throws a raw string...
     e = new Error(e);
@@ -194,6 +194,9 @@ function convertCppException(ptr: number): CppException {
 Tests.convertCppException = convertCppException;
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
+  if (!frame) {
+    return false;
+  }
   const fileName = frame.fileName || "";
   if (fileName.includes("wasm-function")) {
     return true;

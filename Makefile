@@ -11,11 +11,13 @@ CXX=em++
 all: check \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
+	dist/pyodide.d.ts \
+	dist/package.json \
 	dist/console.html \
 	dist/distutils.tar \
+	dist/test.tar \
 	dist/packages.json \
 	dist/pyodide_py.tar \
-	dist/test.tar \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
@@ -75,8 +77,16 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
 	npx rollup -c src/js/rollup.config.js
 
+dist/package.json : src/js/package.json
+	cp $< $@
+
+.PHONY: npm-link
+npm-link: dist/package.json
+	cd src/test-js && npm ci && npm link ../../dist
+
 dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
-	npx dts-bundle-generator -o pyodide.d.ts pyodide.ts --export-referenced-types false
+	npx dts-bundle-generator src/js/pyodide.ts --export-referenced-types false
+	mv src/js/pyodide.d.ts dist
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
@@ -127,22 +137,18 @@ docs/_build/html/console.html: src/templates/console.html
 .PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 .PHONY: dist/module_webworker_dev.js
 dist/module_webworker_dev.js: src/templates/module_webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 
 update_base_url: \
-	dist/console.html \
-	dist/webworker.js
+	dist/console.html
 
 
 
@@ -200,6 +206,7 @@ dist/test.tar: $(CPYTHONLIB) node_modules/.installed
 	for testname in $(TEST_EXTENSIONS); do \
 		cd $(CPYTHONBUILD) && \
 		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
+		rm -f $(CPYTHONLIB)/$$testname && \
 		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
 	done
 
@@ -213,7 +220,7 @@ dist/distutils.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/distutils.tar distutils
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+$(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."

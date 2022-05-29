@@ -26,7 +26,10 @@ emsdk/emsdk
 geckodriver.log
 node_modules
 packages/.artifacts
+packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
 tools/symlinks
+
+xbuildenv/

@@ -3,7 +3,7 @@ import contextvars
 import sys
 import time
 import traceback
-from typing import Callable
+from typing import Any, Callable
 
 from ._core import IN_BROWSER, create_once_callable
 
@@ -96,8 +96,11 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     def call_soon(
-        self, callback: Callable, *args, context: contextvars.Context | None = None
-    ):
+        self,
+        callback: Callable[..., Any],
+        *args: Any,
+        context: contextvars.Context | None = None,
+    ) -> asyncio.Handle:
         """Arrange for a callback to be called as soon as possible.
 
         Any positional arguments after the callback will be passed to
@@ -109,21 +112,24 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        self, callback: Callable, *args, context: contextvars.Context | None = None
-    ):
+        self,
+        callback: Callable[..., Any],
+        *args: Any,
+        context: contextvars.Context | None = None,
+    ) -> asyncio.Handle:
         """Like ``call_soon()``, but thread-safe.
 
         We have no threads so everything is "thread safe", and we just use ``call_soon``.
         """
         return self.call_soon(callback, *args, context=context)
 
-    def call_later(
+    def call_later(  # type: ignore[override]
         self,
         delay: float,
-        callback: Callable,
-        *args,
+        callback: Callable[..., Any],
+        *args: Any,
         context: contextvars.Context | None = None,
-    ):
+    ) -> asyncio.Handle:
         """Arrange for a callback to be called at a given time.
 
         Return a Handle: an opaque object with a cancel() method that
@@ -153,13 +159,13 @@ class WebLoop(asyncio.AbstractEventLoop):
         setTimeout(create_once_callable(run_handle), delay * 1000)
         return h
 
-    def call_at(
+    def call_at(  # type: ignore[override]
         self,
         when: float,
-        callback: Callable,
-        *args,
+        callback: Callable[..., Any],
+        *args: Any,
         context: contextvars.Context | None = None,
-    ):
+    ) -> asyncio.Handle:
         """Like ``call_later()``, but uses an absolute time.
 
         Absolute time corresponds to the event loop's ``time()`` method.
@@ -190,7 +196,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     # The remaining methods are copied directly from BaseEventLoop
     #
 
-    def time(self):
+    def time(self) -> float:
         """Return the time according to the event loop's clock.
 
         This is a float expressed in seconds since an epoch, but the
@@ -201,7 +207,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_future(self):
+    def create_future(self) -> asyncio.Future[Any]:
         """Create a Future object attached to the loop.
 
         Copied from ``BaseEventLoop.create_future``
@@ -375,8 +381,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     traceback.print_exc()
 
 
-# Type issue fixed in next release of mypy (0.940)
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[misc, valid-type]
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
     A simple event loop policy for managing WebLoop based event loops.
     """
@@ -390,12 +395,12 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore[misc, valid
             return self._default_loop
         return self.new_event_loop()
 
-    def new_event_loop(self):
+    def new_event_loop(self) -> WebLoop:
         """Create a new event loop"""
         self._default_loop = WebLoop()  # type: ignore[abstract]
         return self._default_loop
 
-    def set_event_loop(self, loop: asyncio.AbstractEventLoop):
+    def set_event_loop(self, loop: Any) -> None:
         """Set the current event loop"""
         self._default_loop = loop
 

@@ -9,6 +9,8 @@ source:
     - patches/0001-Use-patched-chrono.patch
 build:
   script: |
+    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
+    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
     source $HOME/.cargo/env
     rustup update nightly
     rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
@@ -23,8 +25,8 @@ build:
     "
     git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
   cflags: |
-    -I$(OPEN_SSL_ROOT)/include/
     -Wno-implicit-function-declaration
+    $(OPENSSL_INCLUDE_PATH)
   ldflags: |
     -L$(OPEN_SSL_ROOT)/dist/
 requirements:

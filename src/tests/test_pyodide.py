@@ -3,9 +3,9 @@ from textwrap import dedent
 from typing import Any, Sequence
 
 import pytest
+from pyodide_test_runner import run_in_pyodide
 
 from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
-from pyodide_build.testing import run_in_pyodide
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -210,8 +210,25 @@ def test_deprecations(selenium_standalone):
     assert selenium.logs.count(dep_msg) == 1
 
 
+def test_unpack_archive(selenium_standalone):
+    selenium = selenium_standalone
+    js_error = selenium.run_js(
+        """
+        var error = "";
+        try {
+            pyodide.unpackArchive([1, 2, 3], "zip", "abc");
+        } catch (te) {
+            error = te.toString();
+        }
+        return error
+        """
+    )
+    expected_err_msg = "TypeError: Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view"
+    assert js_error == expected_err_msg
+
+
 @run_in_pyodide
-def test_dup_pipe():
+def test_dup_pipe(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/14640
     import os
 
@@ -230,7 +247,7 @@ def test_dup_pipe():
 
 
 @run_in_pyodide
-def test_dup_temp_file():
+def test_dup_temp_file(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/15012
     import os
     from tempfile import TemporaryFile
@@ -251,7 +268,7 @@ def test_dup_temp_file():
 
 
 @run_in_pyodide
-def test_dup_stdout():
+def test_dup_stdout(selenium):
     # Test redirecting stdout using low level os.dup operations.
     # This sort of redirection is used in pytest.
     import os
@@ -366,12 +383,9 @@ def test_keyboard_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
-                def f():
-                    pass
                 for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
-                    f()
             `);
         } catch(e){}
         pyodide.setInterruptBuffer(undefined);
@@ -689,7 +703,7 @@ def test_docstrings_b(selenium):
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj)"
+    sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
@@ -1063,7 +1077,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            indexURL : './',
             fullStdLib: false,
             jsglobals : self,
             stdin,
@@ -1112,7 +1125,6 @@ def test_home_directory(selenium_standalone_noload):
     selenium.run_js(
         """
         let pyodide = await loadPyodide({
-            indexURL : './',
             homedir : "%s",
         });
         return pyodide.runPython(`
@@ -1134,3 +1146,22 @@ def test_sys_path0(selenium):
         `)
         """
     )
+
+
+@run_in_pyodide
+def test_run_js(selenium):
+    from unittest import TestCase
+
+    from pyodide import run_js
+
+    raises = TestCase().assertRaises
+
+    with raises(TypeError, msg="argument should have type 'string' not type 'int'"):
+        run_js(3)  # type: ignore[arg-type]
+
+    assert run_js("(x)=> x+1")(7) == 8
+    assert run_js("[1,2,3]")[2] == 3
+    run_js("globalThis.x = 77")
+    from js import x
+
+    assert x == 77

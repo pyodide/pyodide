@@ -19,6 +19,8 @@ build:
         --disable-dependency-tracking \
         --disable-shared \
         --without-python \
-        --with-iconv="$PYODIDE_ROOT/packages/libiconv/build/libiconv-1.16/lib/.libs" \
-        --with-zlib="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/"
+        --with-iconv="${WASM_LIBRARY_DIR}/lib" \
+        --with-zlib="${WASM_LIBRARY_DIR}/lib" \
+        --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install

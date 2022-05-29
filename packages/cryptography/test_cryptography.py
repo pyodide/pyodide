@@ -1,12 +1,11 @@
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import binary, integers
-
-from conftest import selenium_context_manager
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
+from pyodide_test_runner.fixture import selenium_context_manager
 
 
 @run_in_pyodide(packages=["cryptography"])
-def test_cryptography():
+def test_cryptography(selenium):
     import base64
 
     from cryptography.fernet import Fernet, MultiFernet

@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20220411-chrome99-firefox98
+    - image: pyodide/pyodide-env:20220525-py310-chrome102-firefox100
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -111,84 +111,13 @@ jobs:
       - store_artifacts:
           path: /root/repo/packages/build-logs
 
-  build-packages-no-numpy-dependents:
-    <<: *defaults
-    resource_class: large
-
-    steps:
-      - checkout
-
-      - attach_workspace:
-          at: .
-
-      - restore_cache:
-          keys:
-            - -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg1-v20220303
-
-      - run:
-          name: install rust
-          command: |
-            wget https://sh.rustup.rs -O /rustup.sh
-            sh /rustup.sh -y
-
-      - run:
-          name: build packages
-          no_output_timeout: 30m
-          command: |
-            source pyodide_env.sh
-
-            # Set mtime for EM_CONFIG to avoid ccache cache misses
-            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
-
-            ccache -z
-            PYODIDE_PACKAGES='*, no-numpy-dependents' make -C packages
-            ccache -s
-          environment:
-            PYODIDE_JOBS: 5
-
-      - run:
-          name: check-size
-          command: ls -lh dist/
-
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg1-v20220303-{{ checksum "Makefile.envs" }}
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./packages
-            - ./dist
-
-      - run:
-          name: Zip build directory
-          command: |
-            tar cjf pyodide-build.tar.gz  dist
-            tar cjf build-logs.tar.gz  packages/build-logs
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-
-      - store_artifacts:
-          path: /root/repo/dist/
-
-      - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
-
-      - store_artifacts:
-          path: /root/repo/packages/build-logs
-
-      - store_artifacts:
-          path: /root/repo/build-logs.tar.gz
-
   build-packages:
+    parameters:
+      packages:
+        description: The packages to be built.
+        type: string
     <<: *defaults
     resource_class: large
-
     steps:
       - checkout
 
@@ -201,8 +130,14 @@ jobs:
             - -pkg2-v20220303
 
       - run:
+          name: install rust
+          command: |
+            wget https://sh.rustup.rs -O /rustup.sh
+            sh /rustup.sh -y
+
+      - run:
           name: build packages
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: |
             source pyodide_env.sh
 
@@ -210,7 +145,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='*' make -C packages
+            PYODIDE_PACKAGES='<< parameters.packages >>' make -C packages
             ccache -s
           environment:
             PYODIDE_JOBS: 5
@@ -227,23 +162,11 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz dist
+            tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./packages/.artifacts
-            - ./dist
-
-      - store_artifacts:
-          path: /root/repo/dist/
 
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
-
-      - store_artifacts:
-          path: /root/repo/packages/build-logs
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
@@ -261,11 +184,12 @@ jobs:
       - run:
           name: test
           command: |
+            make npm-link
             mkdir test-results
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
-              --durations 10 \
+              --durations 50 \
               << parameters.test-params >>
       - store_test_results:
           path: test-results
@@ -278,6 +202,7 @@ jobs:
       - run:
           name: stack-size
           command: |
+            make npm-link
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-python:
@@ -296,7 +221,7 @@ jobs:
               --verbose \
               -k 'not (chrome or firefox or node)' \
               --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/
+              src pyodide-build packages/micropip/ pyodide-test-runner
 
       - store_test_results:
           path: test-results
@@ -310,9 +235,10 @@ jobs:
       - run:
           name: test
           command: |
-            cd src/js
-            npx tsd
+            cd src/test-js
             npm ci
+            npm link ../../dist
+            npm run test-types
             npm test
       # - run:
       #     name: check if webpack cli works well with load-pyodide.js
@@ -333,7 +259,7 @@ jobs:
       - run:
           name: install requirements
           command: |
-            pip3 install numpy matplotlib
+            pip3 install numpy matplotlib pandas
       - run:
           name: benchmark
           command: |
@@ -426,23 +352,72 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages-no-numpy-dependents:
+      - build-packages:
+          name: build-packages-no-numpy-dependents
+          packages: "*,no-numpy-dependents"
           requires:
             - build-core
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
 
       - build-packages:
+          name: build-packages-opencv-python
+          packages: opencv-python
           requires:
             - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages/opencv-python/build
+                  - ./packages/opencv-python/dist
+                  - ./packages/build-logs/opencv*
+                  - ./dist/opencv*
+
+      - build-packages:
+          name: build-packages-numpy-dependents
+          packages: "*,!opencv-python"
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
+
+      - build-packages:
+          name: build-packages
+          packages: "*"
+          requires:
+            - build-packages-numpy-dependents
+            - build-packages-opencv-python
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages/.artifacts
+                  - ./dist
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner
           requires:
             - build-core
           filters:
@@ -451,7 +426,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner
           requires:
             - build-core
           filters:
@@ -460,7 +435,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner
           requires:
             - build-core
           filters:

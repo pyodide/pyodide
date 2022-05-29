@@ -1,8 +1,8 @@
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["numpy", "numcodecs", "zarr"])
-def test_zarr():
+def test_zarr(selenium):
     import numpy as np
     import zarr
     from numcodecs import Blosc

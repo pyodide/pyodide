@@ -33,6 +33,7 @@
 
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
+    int mod##_init();                                                          \
     if (mod##_init()) {                                                        \
       FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
@@ -40,6 +41,7 @@
 
 #define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
   do {                                                                         \
+    int mod##_init(PyObject* mod);                                             \
     if (mod##_init(core_module)) {                                             \
       FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
@@ -88,13 +90,6 @@ static struct PyModuleDef core_module_def = {
 int
 main(int argc, char** argv)
 {
-  EM_ASM({
-    // For some reason emscripten doesn't make UTF8ToString available on Module
-    // by default...
-    Module.UTF8ToString = UTF8ToString;
-    Module.wasmTable = wasmTable;
-  });
-
   // This exits and prints a message to stderr on failure,
   // no status code to check.
   initialize_python();

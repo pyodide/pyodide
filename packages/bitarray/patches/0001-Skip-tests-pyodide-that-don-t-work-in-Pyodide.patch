@@ -1,0 +1,34 @@
+From 0715af1c516856d19502d260975bf4d4f841c319 Mon Sep 17 00:00:00 2001
+From: Ilan Schnell <ilanschnell@gmail.com>
+Date: Mon, 2 May 2022 18:53:55 -0600
+Subject: [PATCH] Skip tests pyodide that don't work in Pyodide
+
+test_shelve needs dbm which we don't have
+test_mmap_2 hits a bug in emscripten mmap impl
+---
+ bitarray/test_bitarray.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/bitarray/test_bitarray.py b/bitarray/test_bitarray.py
+index e135528..6f45e60 100644
+--- a/bitarray/test_bitarray.py
++++ b/bitarray/test_bitarray.py
+@@ -3301,6 +3301,7 @@ class FileTests(unittest.TestCase, Util):
+             self.assertIsType(f, 'frozenbitarray')
+             self.check_obj(f)
+ 
++    @unittest.skip("not on pyodide")
+     def test_shelve(self):
+         if hasattr(sys, 'gettotalrefcount'):
+             return
+@@ -3547,6 +3548,7 @@ class FileTests(unittest.TestCase, Util):
+ 
+         self.assertEqual(self.read_file(), 1000 * b'\x55')
+ 
++    @unittest.skip("not on pyodide")
+     def test_mmap_2(self):
+         if not is_py3k:
+             return
+-- 
+2.25.1
+

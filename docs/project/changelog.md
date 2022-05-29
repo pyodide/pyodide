@@ -14,6 +14,31 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
+- {{ Enhancement }} Integrity of Pyodide packages are now verified before
+  loading them. This is for now only limited to browser environments.
+  {pr}`2513`
+
+- {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
+
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517`
+
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477` and {pr}`2518`
+
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports
+  when packing files for the browser.
+  {pr}`2468`
+
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern
+  Javascript code.
+  {pr}`2471`
+
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
 
@@ -25,6 +50,111 @@ substitutions:
   environments, for which you should use
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
+
+- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not
+  installed.
+  {pr}`2423`
+
+- {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
+  `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
+  {pr}`2451`
+
+- {{ Feature }} Added `pyodide.run_js` API.
+  {pr}`2426`
+
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
+  {pr}`2455`
+
+- {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
+  translated to negative Python ints.
+  {pr}`2484`
+
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null`
+  constructor.
+  {pr}`2520`
+
+- {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
+
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
+  {pr}`2510`, {pr}`2541`
+
+- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator
+  can now be accessed through `pyodide_test_runner`.
+  {pr}`2418`
+
+- {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
+  JavaScript object identity as a dictionary key.
+  {pr}`2515`
+
+- {{ Fix }} Fixed a bug with `toJs` when used with recursive structures and the
+  `dictConverter` argument.
+  {pr}`2533`
+
+- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`,
+  `set_interval`, `clear_interval`, `add_event_listener` and
+  `remove_event_listener` for the corresponding JavaScript functions.
+  {pr}`2456`
+
+- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and
+  `ERRNO_CODES` APIs.
+  {pr}`2582`
+
+- {{ Fix }} If the request errors due to CORS, `pyfetch` now raises an `OSError`
+  not a `JSException`.
+  {pr}`2598`
+
+- {{ Enhancement }} The platform tags of wheels now include the Emscripten
+  version in them. This should help ensure ABI compatibility if Emscripten
+  wheels are distributed outside of the main Pyodide distribution.
+  {pr}`2610`
+
+### micropip
+
+- {{ Fix }} micropip now correctly handles package names that include dashes
+  {pr}`2414`
+
+- {{ Enhancement }} Allow passing `credentials` to `micropip.install()`
+  {pr}`2458`
+
+- {{ Enhancement }} {func}`micropip.install` now accepts a `deps` parameter.
+  If set to `False`, micropip will not install dependencies of the package.
+  {pr}`2433`
+
+- {{ Fix }} micropip now correctly compares packages with prerelease version
+  {pr}`2532`
+
+- {{ Enhancement }} {func}`micropip.install` now accepts a `pre` parameter.
+  If set to `True`, micropip will include pre-release and development versions.
+  {pr}`2542`
+
+- {{ Enhancement }} `micropip` was refactored to improve readability and ease of
+  maintenance.
+  {pr}`2561`, {pr}`2563`, {pr}`2564`, {pr}`2565`, {pr}`2568`
+
+- {{ Enhancement }} Various error messages were fine tuned and improved.
+  {pr}`2562`, {pr}`2558`
+
+- {{ Enhancement }} `micropip` was adjusted to keep its state in the wheel
+  `.dist-info` directories which improves consistenency with the Python standard
+  library and other tools used to install packages.
+  {pr}`2572`
+
+- {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
+  packages into a `packages.json` file.
+  {pr}`2581`
+
+### Packages
+
+- {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
+
+- Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
+  on Chrome {pr}`2457`
+
+- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
+  svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
+  ruamel, msprime {pr}`4138`.
 
 ## Version 0.20.0
 

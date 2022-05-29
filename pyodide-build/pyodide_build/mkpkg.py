@@ -10,9 +10,35 @@ import urllib.error
 import urllib.request
 import warnings
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from ruamel.yaml import YAML
+
+
+class URLDict(TypedDict):
+    comment_text: str
+    digests: dict[str, Any]
+    downloads: int
+    filename: str
+    has_sig: bool
+    md5_digest: str
+    packagetype: str
+    python_version: str
+    requires_python: str
+    size: int
+    upload_time: str
+    upload_time_iso_8601: str
+    url: str
+    yanked: bool
+    yanked_reason: str | None
+
+
+class MetadataDict(TypedDict):
+    info: dict[str, Any]
+    last_serial: int
+    releases: dict[str, list[dict[str, Any]]]
+    urls: list[URLDict]
+    vulnerabilities: list[Any]
 
 
 class MkpkgFailedException(Exception):
@@ -26,7 +52,7 @@ SDIST_EXTENSIONS = tuple(
 )
 
 
-def _find_sdist(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
+def _find_sdist(pypi_metadata: MetadataDict) -> URLDict | None:
     """Get sdist file path from the metadata"""
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
@@ -37,7 +63,7 @@ def _find_sdist(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def _find_wheel(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
+def _find_wheel(pypi_metadata: MetadataDict) -> URLDict | None:
     """Get wheel file path from the metadata"""
     for entry in pypi_metadata["urls"]:
         if entry["packagetype"] == "bdist_wheel" and entry["filename"].endswith(
@@ -48,8 +74,8 @@ def _find_wheel(pypi_metadata: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _find_dist(
-    pypi_metadata: dict[str, Any], source_types=list[Literal["wheel", "sdist"]]
-) -> dict[str, Any]:
+    pypi_metadata: MetadataDict, source_types: list[Literal["wheel", "sdist"]]
+) -> URLDict:
     """Find a wheel or sdist, as appropriate.
 
     source_types controls which types (wheel and/or sdist) are accepted and also
@@ -72,7 +98,7 @@ def _find_dist(
     raise MkpkgFailedException(f"No {types_str} found for package {name} ({url})")
 
 
-def _get_metadata(package: str, version: str | None = None) -> dict:
+def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
     """Download metadata for a package from PyPI"""
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
@@ -98,7 +124,7 @@ def make_package(
     package: str,
     version: str | None = None,
     source_fmt: Literal["wheel", "sdist"] | None = None,
-):
+) -> None:
     """
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
@@ -145,7 +171,10 @@ def make_package(
         raise MkpkgFailedException(f"The package {package} already exists")
 
     yaml.dump(yaml_content, meta_path)
-    run_prettier(meta_path)
+    try:
+        run_prettier(meta_path)
+    except FileNotFoundError:
+        warnings.warn("'npx' executable missing, output has not been prettified.")
 
     success(f"Output written to {meta_path}")
 
@@ -182,7 +211,7 @@ def update_package(
     version: str | None = None,
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
-):
+) -> None:
 
     yaml = YAML()
 
@@ -282,9 +311,6 @@ def main(args):
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if PYODIDE_ROOT is None:
         raise ValueError("PYODIDE_ROOT is not set")
-
-    if shutil.which("npx") is None:
-        raise ValueError("npx is not installed")
 
     PACKAGES_ROOT = Path(PYODIDE_ROOT) / "packages"
 

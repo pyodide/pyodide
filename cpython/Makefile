@@ -17,9 +17,9 @@ ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
 ZLIBURL=https://zlib.net/zlib-$(ZLIBVERSION).tar.gz
 
-SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
-SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
-SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
+SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3380500.tar.gz
+SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3380500
+SQLITEURL=https://sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
 
 BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
@@ -119,8 +119,7 @@ $(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
-	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh && make install
+	. $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh && cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && pwd && ./build.sh && make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/

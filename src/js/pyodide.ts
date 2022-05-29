@@ -2,12 +2,13 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat.js";
+import { loadScript, _loadBinaryFile, initNodeModules } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+export type { PyodideInterface };
 
 export type {
   PyProxy,
@@ -158,13 +159,13 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  *  code.
  */
 function calculateIndexURL(): string {
-  let err;
+  let err: Error;
   try {
     throw new Error();
   } catch (e) {
-    err = e;
+    err = e as Error;
   }
-  const fileName = ErrorStackParser.parse(err)[0].fileName!;
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
   return fileName.slice(0, fileName.lastIndexOf("/"));
 }
 
@@ -289,7 +290,11 @@ export async function loadPyodide(
 
   const pyodide = finalizeBootstrap(API, config);
   // API.runPython works starting here.
-
+  if (!pyodide.version.includes("dev")) {
+    // Currently only used in Node to download packages the first time they are
+    // loaded. But in other cases it's harmless.
+    API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
+  }
   await API.packageIndexReady;
   if (config.fullStdLib) {
     await pyodide.loadPackage(["distutils"]);
