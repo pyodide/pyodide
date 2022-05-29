@@ -18,11 +18,12 @@ try:
 except ImportError:
     pass
 
-import os
-
 from pyodide_build import common
 
-os.environ["_PYTHON_HOST_PLATFORM"] = common.platform()
+
+@pytest.fixture
+def mock_platform(monkeypatch):
+    monkeypatch.setenv("_PYTHON_HOST_PLATFORM", common.platform())
 
 
 def _mock_importlib_version(name: str) -> str:
@@ -665,7 +666,7 @@ async def test_install_with_credentials(selenium):
 
 @pytest.mark.asyncio
 async def test_load_binary_wheel1(
-    mock_fetch: mock_fetch_cls, mock_importlib: None
+    mock_fetch: mock_fetch_cls, mock_importlib: None, mock_platform: None
 ) -> None:
     dummy = "dummy"
     mock_fetch.add_pkg_version(dummy, platform="emscripten")
