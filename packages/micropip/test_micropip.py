@@ -12,9 +12,17 @@ sys.path.append(str(Path(__file__).resolve().parent / "src"))
 from importlib.metadata import Distribution, PackageNotFoundError
 
 try:
+    from packaging.tags import Tag
+
     import micropip
 except ImportError:
     pass
+
+import os
+
+from pyodide_build import common
+
+os.environ["_PYTHON_HOST_PLATFORM"] = common.platform()
 
 
 def _mock_importlib_version(name: str) -> str:
@@ -67,7 +75,7 @@ def make_wheel_filename(name: str, version: str, platform: str = "generic") -> s
     if platform == "generic":
         platform_str = "py3-none-any"
     elif platform == "emscripten":
-        platform_str = "cp310-cp310-emscripten_wasm32"
+        platform_str = f"cp310-cp310-{common.platform()}"
     elif platform == "native":
         platform_str = "cp310-cp310-manylinux_2_31_x86_64"
     else:
@@ -216,21 +224,20 @@ def test_parse_wheel_url():
     assert str(wheel.version) == "2.0.0"
     assert wheel.digests is None
     assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    assert wheel.packagetype == "bdist_wheel"
-    assert wheel.python_version == "py2.py3"
-    assert wheel.abi_tag == "none"
-    assert wheel.platform == "any"
     assert wheel.url == url
+    assert wheel.tags == frozenset(
+        {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
+    )
 
-    msg = "not a valid wheel file name"
+    msg = r"Invalid wheel filename \(wrong number of parts\)"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
         wheel = WheelInfo.from_url(url)
 
     url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
     wheel = WheelInfo.from_url(url)
-    assert wheel.name == "scikit_learn"
-    assert wheel.platform == "macosx_10_9_intel"
+    assert wheel.name == "scikit-learn"
+    assert wheel.tags == frozenset({Tag("cp35", "cp35m", "macosx_10_9_intel")})
 
 
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
@@ -287,11 +294,10 @@ async def test_add_requirement():
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
     assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    assert wheel.packagetype == "bdist_wheel"
-    assert wheel.python_version == "py2.py3"
-    assert wheel.abi_tag == "none"
-    assert wheel.platform == "any"
     assert wheel.url == url
+    assert wheel.tags == frozenset(
+        {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
+    )
 
 
 @pytest.mark.asyncio
