@@ -1,4 +1,6 @@
 export PYVERSION ?= 3.10.2
+# Note: when updating EMSCRIPTEN_VERSION make sure to update
+# the version number in the "uname" patch.
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
 
 export PLATFORM_TRIPLET=wasm32-emscripten

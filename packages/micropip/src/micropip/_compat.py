@@ -5,6 +5,7 @@ if IN_BROWSER:
         BUILTIN_PACKAGES,
         fetch_bytes,
         fetch_string,
+        loadDynlib,
         loadedPackages,
         pyodide_js,
     )
@@ -13,6 +14,7 @@ else:
         BUILTIN_PACKAGES,
         fetch_bytes,
         fetch_string,
+        loadDynlib,
         loadedPackages,
         pyodide_js,
     )
@@ -22,5 +24,6 @@ __all__ = [
     "fetch_string",
     "BUILTIN_PACKAGES",
     "loadedPackages",
+    "loadDynlib",
     "pyodide_js",
 ]
