@@ -113,6 +113,11 @@ substitutions:
   Python rather than the host Python.
   {pr}`2516`
 
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading
+  {pr}`2635`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
