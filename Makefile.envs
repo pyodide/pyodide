@@ -4,6 +4,7 @@ export PYVERSION ?= 3.10.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
 
 export PLATFORM_TRIPLET=wasm32-emscripten
+export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each

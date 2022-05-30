@@ -109,9 +109,14 @@ substitutions:
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
 
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
 ### REPL
 
-- {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
+- {{ Enhancement }} Add a spinner while the REPL is loading
+  {pr}`2635`
 
 ### micropip
 
