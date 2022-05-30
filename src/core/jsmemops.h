@@ -34,7 +34,7 @@
   (BigInt(lower) | (BigInt(upper) << BigInt(32)))
 
 #define IBIGINT_FROM_PAIR(lower, upper)                                        \
-  (BigInt(lower) | (BigInt(upper - 2 * (upper & 0x80000000)) << BigInt(32)))
+  (BigInt(lower) | (BigInt(upper + 2 * (upper & 0x80000000)) << BigInt(32)))
 
 #define LOAD_U64(addr, offset)                                                 \
   UBIGINT_FROM_PAIR(DEREF_U32(addr, offset * 2),                               \
