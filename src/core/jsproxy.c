@@ -433,11 +433,7 @@ static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
-  int result = hiwire_get_length(self->js);
-  if (result == -1) {
-    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
-  }
-  return result;
+  return hiwire_get_length(self->js);
 }
 
 /**
