@@ -4,32 +4,50 @@
 
 ## Testing
 
-### Requirements
+### Running the Python test suite
+
+You can use either Selenium or Playwright to run the pytest suite of tests.
 
 Install the following dependencies into the default Python installation:
 
 ```bash
-pip install pytest selenium pytest-instafail pytest-httpserver
-```
-
-Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
-[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
-and check that they are in your `PATH`.
-
-### Running the Python test suite
-
-To run the pytest suite of tests, from the root directory of Pyodide, type on the command line:
-
-```bash
-pytest
+pip install pytest pytest-instafail pytest-httpserver
 ```
 
 There are 3 test locations that are collected by pytest,
 
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
-  (do not require selenium to run)
+  (do not require selenium or playwright to run)
 - `packages/*/test_*`: package specific tests.
+
+#### Selenium (default)
+
+```
+pip install selenium
+```
+
+Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
+[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
+and check that they are in your `PATH`.
+
+From the root directory of Pyodide, type on the command line:
+
+```bash
+pytest
+```
+
+#### Playwright
+
+```bash
+pip install playwright && python -m playwright install
+```
+
+From the root directory of Pyodide, type on the command line:
+
+```bash
+pytest --runner playwright
+```
 
 ### Running the JavaScript test suite
 
