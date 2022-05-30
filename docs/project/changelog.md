@@ -79,8 +79,8 @@ substitutions:
   rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
   {pr}`2510`, {pr}`2541`
 
-- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator
-  can now be accessed through `pyodide_test_runner`.
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through `pyodide_test_runner`.
   {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using

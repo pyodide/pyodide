@@ -16,5 +16,3 @@
   pytest-xdist
   selenium==4.1.0
   tblib
-  # maintenance
-  bump2version
