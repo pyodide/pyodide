@@ -96,6 +96,7 @@ def test_jsproxy_document(selenium):
     assert "appendChild" in dir(el)
 
 
+@pytest.mark.xfail_browsers(node="No ImageData in node")
 @run_in_pyodide
 def test_jsproxy_imagedata(selenium):
     from js import ImageData
