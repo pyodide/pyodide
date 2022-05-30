@@ -71,7 +71,6 @@ ifdef PYODIDE_ASSERTIONS
 endif
 
 
-
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
