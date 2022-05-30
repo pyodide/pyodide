@@ -17,7 +17,7 @@ import { PyProxy, isPyProxy } from "./pyproxy.gen";
  * @param lockFileURL
  * @private
  */
-export async function initializePackageIndex(lockFileURL: string) {
+async function initializePackageIndex(lockFileURL: string) {
   let package_json;
   if (IN_NODE) {
     await initNodeModules();
@@ -32,6 +32,7 @@ export async function initializePackageIndex(lockFileURL: string) {
       "Loaded packages.json does not contain the expected key 'packages'."
     );
   }
+  API.package_json_info = package_json.info;
   API.packages = package_json.packages;
 
   // compute the inverted index for imports to package names
@@ -42,6 +43,8 @@ export async function initializePackageIndex(lockFileURL: string) {
     }
   }
 }
+
+API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
 
 /**
  * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -461,5 +464,3 @@ export async function loadPackage(
  * install location for a particular ``package_name``.
  */
 export let loadedPackages: { [key: string]: string } = {};
-
-API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);

@@ -302,6 +302,9 @@ export async function loadPyodide(
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
+  if (API.package_json_info.version !== pyodide.version) {
+    throw new Error("Lock file version doesn't match Pyodide version");
+  }
   if (config.fullStdLib) {
     await pyodide.loadPackage(["distutils"]);
   }
