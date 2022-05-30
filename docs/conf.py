@@ -14,7 +14,13 @@ from unittest import mock
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
-copyright = "2019-2021, Pyodide contributors and Mozilla"
+copyright = "2019-2022, Pyodide contributors and Mozilla"
+pyodide_version = "0.21.0.dev0"
+
+if ".dev" in pyodide_version:
+    CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
+else:
+    CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full/"
 
 # -- General configuration ---------------------------------------------------
 
@@ -37,6 +43,7 @@ extensions = [
 ]
 
 myst_enable_extensions = ["substitution"]
+
 js_language = "typescript"
 jsdoc_config_path = "../src/js/tsconfig.json"
 root_for_relative_js_paths = "../src/"
@@ -130,7 +137,7 @@ except ImportError:
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
 if IN_READTHEDOCS:
-    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/dev/full/"}
+    env = {"PYODIDE_BASE_URL": CDN_URL}
     os.makedirs("_build/html", exist_ok=True)
     res = subprocess.check_output(
         ["make", "-C", "..", "docs/_build/html/console.html"],
@@ -197,3 +204,19 @@ if IN_SPHINX:
 
     for module in mock_modules:
         sys.modules[module] = mock.Mock()
+
+
+# https://github.com/sphinx-doc/sphinx/issues/4054
+def globalReplace(app, docname, source):
+    result = source[0]
+    for key in app.config.global_replacements:
+        result = result.replace(key, app.config.global_replacements[key])
+    source[0] = result
+
+
+global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
+
+
+def setup(app):
+    app.add_config_value("global_replacements", {}, True)
+    app.connect("source-read", globalReplace)

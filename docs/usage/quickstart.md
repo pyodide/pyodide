@@ -11,7 +11,7 @@ Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in 
 To include Pyodide in your project you can use the following CDN URL:
 
 ```text
-https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
+{{PYODIDE_CDN_URL}}pyodide.js
 ```
 
 You can also download a release from [GitHub
@@ -60,7 +60,7 @@ Create and save a test `index.html` page with the following contents:
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+      <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
@@ -86,7 +86,7 @@ Create and save a test `index.html` page with the following contents:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+    <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
 
   <body>

@@ -79,8 +79,8 @@ substitutions:
   rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
   {pr}`2510`, {pr}`2541`
 
-- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator
-  can now be accessed through `pyodide_test_runner`.
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through `pyodide_test_runner`.
   {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
@@ -108,6 +108,15 @@ substitutions:
   version in them. This should help ensure ABI compatibility if Emscripten
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
+
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading
+  {pr}`2635`
 
 ### micropip
 
@@ -139,6 +148,9 @@ substitutions:
   `.dist-info` directories which improves consistenency with the Python standard
   library and other tools used to install packages.
   {pr}`2572`
+
+- {{ Enhancement }} `micropip` can now be used to install Emscripten binary wheels.
+  {pr}`2591`
 
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
   packages into a `packages.json` file.
