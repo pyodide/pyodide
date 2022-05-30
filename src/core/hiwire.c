@@ -640,18 +640,83 @@ EM_JS_BOOL(bool, hiwire_has_length, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
+EM_JS_NUM(int, hiwire_get_length_helper, (JsRef idobj), {
   let val = Hiwire.get_value(idobj);
   // clang-format off
+  let result;
   if (typeof val.size === "number") {
-    return val.size;
+    result = val.size;
+  } else if (typeof val.length === "number") {
+    result = val.length;
+  } else {
+    return -2;
   }
-  if (typeof val.length === "number") {
-    return val.length;
+  if(result < 0){
+    return -3;
+  }
+  if(result > INT_MAX){
+    return -4;
+  }
+  return result;
+  // clang-format on
+});
+
+// Needed to render the length accurately when there is an error
+EM_JS_REF(char*, hiwire_get_length_string, (JsRef idobj), {
+  const val = Hiwire.get_value(idobj);
+  let result;
+  // clang-format off
+  if (typeof val.size === "number") {
+    result = val.size;
+  } else if (typeof val.length === "number") {
+    result = val.length;
   }
   // clang-format on
-  return ERROR_NUM;
-});
+  return stringToNewUTF8(" " + result.toString())
+})
+
+int
+hiwire_get_length(JsRef idobj)
+{
+  int result = hiwire_get_length_helper(idobj);
+  if (result >= 0) {
+    return result;
+  }
+  // Something went wrong. Case work:
+  // * -1: Either `val.size` or `val.length` was a getter which managed to raise
+  //    an error. Rude. (Also we don't defend against this in hiwire_has_length)
+  // * -2: Doesn't have a length or size, or they aren't of type "number".
+  //   But `hiwire_has_length` returned true? So it must have changed somehow.
+  // * -3: Length was >= 2^{31}
+  // * -4: Length was negative
+  if (result == -2) {
+    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
+  }
+  if (result == -1 || result == -2) {
+    return -1;
+  }
+
+  char* length_as_string_alloc = hiwire_get_length_string(idobj);
+  char* length_as_string = length_as_string_alloc;
+  if (length_as_string == NULL) {
+    // Really screwed up.
+    length_as_string = "";
+  }
+  if (result == -3) {
+    PyErr_Format(
+      PyExc_ValueError, "length%s of object is negative", length_as_string);
+  }
+  if (result == -4) {
+    PyErr_Format(PyExc_OverflowError,
+                 "length%s of object is larger than INT_MAX (%d)",
+                 length_as_string,
+                 INT_MAX);
+  }
+  if (length_as_string_alloc != NULL) {
+    free(length_as_string_alloc);
+  }
+  return -1;
+}
 
 EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   let val = Hiwire.get_value(idobj);

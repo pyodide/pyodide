@@ -109,9 +109,14 @@ substitutions:
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
 
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
 ### REPL
 
-- {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
+- {{ Enhancement }} Add a spinner while the REPL is loading
+  {pr}`2635`
 
 ### micropip
 
@@ -143,6 +148,9 @@ substitutions:
   `.dist-info` directories which improves consistenency with the Python standard
   library and other tools used to install packages.
   {pr}`2572`
+
+- {{ Enhancement }} `micropip` can now be used to install Emscripten binary wheels.
+  {pr}`2591`
 
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
   packages into a `packages.json` file.
