@@ -1,4 +1,4 @@
-From cb52db158213604e5c76298976f4753737cd792f Mon Sep 17 00:00:00 2001
+From 556da3d7a361c566d5150a79074211f982bca91a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 6 Jan 2022 09:40:39 -0800
 Subject: [PATCH 7/7] fix up rust linker errors
@@ -16,7 +16,7 @@ This fixes a few problems that come up when linking rust programs:
  1 file changed, 28 insertions(+), 2 deletions(-)
 
 diff --git a/tools/building.py b/tools/building.py
-index 512561c69..8b534e548 100644
+index 512561c69..579b42c44 100644
 --- a/tools/building.py
 +++ b/tools/building.py
 @@ -464,8 +464,34 @@ def link_lld(args, target, external_symbols=None):
@@ -25,7 +25,7 @@ index 512561c69..8b534e548 100644
  
 -  cmd = get_command_with_possible_response_file(cmd)
 -  check_call(cmd)
-+  if "EMSCRIPTEN_LINKING_RUST" in os.environ:
++  if any(arg.endswith(".rlib") for arg in cmd):
 +    from tempfile import mkstemp
 +    from pathlib import Path
 +    tempfiles = []
