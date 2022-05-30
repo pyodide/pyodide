@@ -1,7 +1,7 @@
-From db60466a899dab0c9d008b7ab27f4d4c11fe60da Mon Sep 17 00:00:00 2001
+From cb52db158213604e5c76298976f4753737cd792f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 6 Jan 2022 09:40:39 -0800
-Subject: [PATCH] fix up rust linker errors
+Subject: [PATCH 7/7] fix up rust linker errors
 
 This fixes a few problems that come up when linking rust programs:
 1. Rust .rlib archives contain an extra metadata file called lib.rmeta. The
