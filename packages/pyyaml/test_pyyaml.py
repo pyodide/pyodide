@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["pyyaml"])
-def test_pyyaml():
+def test_pyyaml(selenium):
     import yaml
     from yaml import CLoader as Loader
 

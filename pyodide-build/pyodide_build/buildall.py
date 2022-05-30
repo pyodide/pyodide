@@ -50,10 +50,10 @@ class BasePackage:
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Any) -> bool:
         return len(self.dependents) > len(other.dependents)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return len(self.dependents) == len(other.dependents)
 
     def __repr__(self) -> str:
@@ -260,7 +260,7 @@ def job_priority(pkg: BasePackage) -> int:
         return 1
 
 
-def print_with_progress_line(str, progress_line) -> None:
+def print_with_progress_line(str: str, progress_line: str | None) -> None:
     if not sys.stdout.isatty():
         print(str)
         return
@@ -271,7 +271,7 @@ def print_with_progress_line(str, progress_line) -> None:
         print(progress_line, end="\r")
 
 
-def get_progress_line(package_set) -> str | None:
+def get_progress_line(package_set: dict[str, None]) -> str | None:
     if not package_set:
         return None
     return "In progress: " + ", ".join(package_set.keys())
@@ -327,7 +327,9 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     return needs_build
 
 
-def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> None:
+def build_from_graph(
+    pkg_map: dict[str, BasePackage], outputdir: Path, args: argparse.Namespace
+) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
     packages at once.
@@ -524,7 +526,9 @@ def copy_packages_to_dist_dir(packages, output_dir):
             shutil.copy(test_path, output_dir)
 
 
-def build_packages(packages_dir: Path, output_dir: Path, args) -> None:
+def build_packages(
+    packages_dir: Path, output_dir: Path, args: argparse.Namespace
+) -> None:
     packages = common._parse_package_subset(args.only)
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
@@ -553,7 +557,7 @@ def build_packages(packages_dir: Path, output_dir: Path, args) -> None:
         fd.write("\n")
 
 
-def make_parser(parser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = (
         "Build all the packages in a given directory\n\n"
         "Unless the --only option is provided\n\n"

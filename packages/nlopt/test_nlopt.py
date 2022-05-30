@@ -4,7 +4,7 @@ from pyodide_test_runner import run_in_pyodide
 @run_in_pyodide(
     packages=["nlopt"],
 )
-def test_nlopt():
+def test_nlopt(selenium):
     import nlopt
     import numpy as np
 

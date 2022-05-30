@@ -1,30 +1,36 @@
 import asyncio
 
 import pytest
+from hypothesis import given, settings
 from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner.hypothesis import any_strategy, std_hypothesis_settings
+from pyodide_test_runner.utils import parse_driver_timeout
 
 from pyodide import eval_code_async
 
 
-@run_in_pyodide
-def example_func1():
+@run_in_pyodide(_force_assert_rewrites=True)
+def example_func1(selenium):
     x = 6
     y = 7
     assert x == y
 
 
-run_in_pyodide_alias = run_in_pyodide()
+run_in_pyodide_alias = run_in_pyodide(_force_assert_rewrites=True)
 
 
 @run_in_pyodide_alias
-def example_func2():
+def example_func2(selenium):
     x = 6
     y = 7
     assert x == y
 
 
-@run_in_pyodide
-async def async_example_func():
+run_in_pyodide_inner = run_in_pyodide()
+
+
+@run_in_pyodide(_force_assert_rewrites=True)
+async def async_example_func(selenium):
     from asyncio import sleep
 
     await sleep(0.01)
@@ -47,45 +53,28 @@ class selenium_mock:
         return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
 
 
-def make_patched_fail(exc_list):
-    def patched_fail(self, exc):
-        exc_list.append(exc)
-
-    return patched_fail
+def test_local1():
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func1(selenium_mock)
 
 
-def check_err(exc_list, ty, msg):
-    try:
-        assert exc_list
-        err = exc_list[0]
-        assert err
-        assert "".join(err.format_exception_only()) == msg
-    finally:
-        del exc_list[0]
+def test_local2():
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func2(selenium_mock)
 
 
-def test_local1(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
-    example_func1(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+def test_local3():
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        async_example_func(selenium_mock)
 
 
-def test_local2(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+def test_local_inner_function():
+    @run_in_pyodide
+    def inner_function(selenium, x):
+        assert x == 6
+        return 7
 
-    example_func1(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
-
-
-def test_local3(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
-    async_example_func(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    inner_function(selenium_mock, 6)
 
 
 def complicated_decorator(attr_name: str):
@@ -112,7 +101,7 @@ d2 = complicated_decorator("testdec2")
 @d2("b")
 @d1("c")
 @run_in_pyodide
-def example_decorator_func():
+def example_decorator_func(selenium):
     pass
 
 
@@ -125,24 +114,13 @@ def test_local4():
     ]
 
 
-def test_local5(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
-    example_func1(selenium_mock)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
-
-
 class selenium_mock_fail_load_package(selenium_mock):
     @staticmethod
     def load_package(*args, **kwargs):
         raise OSError("STOP!")
 
 
-def test_local_fail_load_package(monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
-
+def test_local_fail_load_package():
     exc = None
     try:
         example_func1(selenium_mock_fail_load_package)
@@ -162,39 +140,35 @@ def test_local_fail_load_package(monkeypatch):
         )
 
 
-def test_selenium(selenium, monkeypatch):
-    exc_list = []
-    monkeypatch.setattr(run_in_pyodide, "_fail", make_patched_fail(exc_list))
+def test_selenium(selenium):
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func1(selenium)
 
-    example_func1(selenium)
-
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
-
-    example_func2(selenium)
-    check_err(exc_list, AssertionError, "AssertionError: assert 6 == 7\n")
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        example_func2(selenium)
 
 
 @run_in_pyodide
-def test_trivial1():
+def test_trivial1(selenium):
     x = 7
     assert x == 7
 
 
 @run_in_pyodide()
-def test_trivial2():
+def test_trivial2(selenium):
     x = 7
     assert x == 7
 
 
 @run_in_pyodide(pytest_assert_rewrites=False)
-def test_trivial3():
+def test_trivial3(selenium):
     x = 7
     assert x == 7
 
 
 @pytest.mark.parametrize("jinja2", ["jINja2", "Jinja2"])
 @run_in_pyodide
-def test_parametrize(jinja2):
+def test_parametrize(selenium, jinja2):
     try:
         assert jinja2.lower() == "jinja2"
     except Exception as e:
@@ -203,13 +177,13 @@ def test_parametrize(jinja2):
 
 @pytest.mark.skip(reason="Nope!")
 @run_in_pyodide(pytest_assert_rewrites=False)
-def test_skip():
+def test_skip(selenium):
     x = 6
     assert x == 7
 
 
 @run_in_pyodide
-async def test_run_in_pyodide_async():
+async def test_run_in_pyodide_async(selenium):
     from asyncio import sleep
 
     x = 6
@@ -217,38 +191,47 @@ async def test_run_in_pyodide_async():
     assert x == 6
 
 
-import pickle
-from zoneinfo import ZoneInfo
-
-from hypothesis import HealthCheck, given, settings, strategies
-
-
-def is_picklable(x):
-    try:
-        pickle.dumps(x)
-        return True
-    except Exception:
-        return False
-
-
-strategy = (
-    strategies.from_type(type)
-    .flatmap(strategies.from_type)
-    .filter(lambda x: not isinstance(x, ZoneInfo))
-    .filter(is_picklable)
-)
-
-
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=strategy)
+@given(obj=any_strategy)
 @settings(
-    deadline=2000,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    std_hypothesis_settings,
     max_examples=25,
 )
 @run_in_pyodide
-def test_hypothesis(obj):
+def test_hypothesis(selenium, obj):
     from pyodide import to_js
 
     to_js(obj)
+
+
+run_in_pyodide_alias2 = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
+
+
+@run_in_pyodide_alias2
+def test_run_in_pyodide_alias(request):
+    assert parse_driver_timeout(request.node) == 40
+
+
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    import pytest
+
+    from pyodide import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)

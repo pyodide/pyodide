@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["wrapt"])
-def test_wrapt():
+def test_wrapt(selenium):
     import inspect
     import unittest
 

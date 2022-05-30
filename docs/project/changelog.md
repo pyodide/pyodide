@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
 - {{ Enhancement }} Integrity of Pyodide packages are now verified before
   loading them. This is for now only limited to browser environments.
   {pr}`2513`
@@ -77,8 +79,8 @@ substitutions:
   rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
   {pr}`2510`, {pr}`2541`
 
-- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator
-  can now be accessed through `pyodide_test_runner`.
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through `pyodide_test_runner`.
   {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
@@ -106,6 +108,10 @@ substitutions:
   version in them. This should help ensure ABI compatibility if Emscripten
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
+
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
 
 ### micropip
 

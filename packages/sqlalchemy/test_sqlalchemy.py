@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["sqlalchemy"])
-def test_sqlalchemy():
+def test_sqlalchemy(selenium):
     from sqlalchemy import create_engine, text
 
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)

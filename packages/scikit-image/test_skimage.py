@@ -12,9 +12,10 @@ else:
     xfail_browsers = lambda x: x
 
 
+@pytest.mark.driver_timeout(40)
 @xfail_browsers
-@run_in_pyodide(packages=["scikit-image"], driver_timeout=40)
-def test_skimage():
+@run_in_pyodide(packages=["scikit-image"])
+def test_skimage(selenium):
     import numpy as np
     from skimage import color, data
     from skimage.util import view_as_blocks
