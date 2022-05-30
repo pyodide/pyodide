@@ -33,7 +33,7 @@ def test_generate_packages_json(tmp_path):
 
     package_data = buildall.generate_packages_json(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
-    assert set(package_data["info"].keys()) == {"wasm32", "emscripten", "version"}
+    assert set(package_data["info"].keys()) == {"arch", "platform", "version"}
     assert package_data["info"]["arch"] == "wasm32"
     assert package_data["info"]["platform"].startswith("emscripten")
 
