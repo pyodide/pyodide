@@ -149,6 +149,9 @@ substitutions:
   library and other tools used to install packages.
   {pr}`2572`
 
+- {{ Enhancement }} `micropip` can now be used to install Emscripten binary wheels.
+  {pr}`2591`
+
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
   packages into a `packages.json` file.
   {pr}`2581`
