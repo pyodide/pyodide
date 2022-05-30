@@ -2,7 +2,7 @@
 from typing import Any
 
 import pytest
-from hypothesis import given, strategies
+from hypothesis import given, settings, strategies
 from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
@@ -14,7 +14,7 @@ from pyodide_test_runner.hypothesis import (
 
 
 @given(s=text())
-@std_hypothesis_settings
+@settings(deadline=4000)
 def test_string_conversion(selenium_module_scope, s):
     @run_in_pyodide
     def main(selenium, sbytes):
