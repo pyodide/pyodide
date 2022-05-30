@@ -150,6 +150,10 @@ def get_bash_runner():
             "UNISOLATED_PACKAGES",
             "WASM_LIBRARY_DIR",
             "WASM_PKG_CONFIG_PATH",
+            "CARGO_BUILD_TARGET",
+            "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
+            "RUSTFLAGS",
+            "PYO3_CONFIG_FILE",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
