@@ -3,20 +3,22 @@ from pyodide._core import IN_BROWSER
 if IN_BROWSER:
     from ._compat_in_pyodide import (
         BUILTIN_PACKAGES,
+        PACKAGE_INFO,
         fetch_bytes,
         fetch_string,
         loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 else:
     from ._compat_not_in_pyodide import (
         BUILTIN_PACKAGES,
+        PACKAGE_INFO,
         fetch_bytes,
         fetch_string,
         loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 
 __all__ = [
@@ -25,5 +27,6 @@ __all__ = [
     "BUILTIN_PACKAGES",
     "loadedPackages",
     "loadDynlib",
-    "pyodide_js",
+    "loadPackage",
+    "PACKAGE_INFO",
 ]

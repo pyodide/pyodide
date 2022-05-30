@@ -23,11 +23,12 @@ from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
 
 from ._compat import (
     BUILTIN_PACKAGES,
+    PACKAGE_INFO,
     fetch_bytes,
     fetch_string,
     loadDynlib,
     loadedPackages,
-    pyodide_js,
+    loadPackage,
 )
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
@@ -490,9 +491,7 @@ async def install(
         # that case BUILTIN_PACKAGES is empty.
         wheel_promises.append(
             asyncio.ensure_future(
-                pyodide_js.loadPackage(
-                    to_js([name for [name, _, _] in pyodide_packages])
-                )
+                loadPackage(to_js([name for [name, _, _] in pyodide_packages]))
             )
         )
 
@@ -555,7 +554,7 @@ def freeze() -> str:
     # Sort
     packages = dict(sorted(packages.items()))
     package_data = {
-        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "info": PACKAGE_INFO,
         "packages": packages,
     }
     return json.dumps(package_data)

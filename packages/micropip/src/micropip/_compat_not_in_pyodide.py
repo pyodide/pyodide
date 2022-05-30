@@ -29,7 +29,17 @@ class pyodide_js_:
         raise RuntimeError(f"Attempted to access property '{attr}' on pyodide_js dummy")
 
 
-pyodide_js: Any = pyodide_js_()
+from pyodide import __version__
+from pyodide_build.common import platform
+
+# Build package.json data.
+[platform, _, arch] = platform().rpartition("_")
+
+PACKAGE_INFO = {"arch": arch, "platform": platform, "version": __version__}
+
+
+def loadPackage(packages: str | list[str]) -> None:
+    pass
 
 
 __all__ = [
@@ -38,5 +48,6 @@ __all__ = [
     "fetch_string",
     "BUILTIN_PACKAGES",
     "loadedPackages",
-    "pyodide_js",
+    "loadPackage",
+    "PACKAGE_INFO",
 ]

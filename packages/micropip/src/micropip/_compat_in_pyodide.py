@@ -3,10 +3,11 @@ from pyodide.http import pyfetch
 
 try:
     import pyodide_js
-    from pyodide_js import loadedPackages
+    from pyodide_js import loadedPackages, loadPackage
     from pyodide_js._api import loadDynlib  # type: ignore[import]
 
     BUILTIN_PACKAGES = pyodide_js._api.packages.to_py()
+    PACKAGE_INFO = pyodide_js._api.package_json_info.to_py()
 except ImportError:
     if IN_BROWSER:
         raise
@@ -27,5 +28,6 @@ __all__ = [
     "BUILTIN_PACKAGES",
     "loadedPackages",
     "loadDynlib",
-    "pyodide_js",
+    "loadPackage",
+    "PACKAGE_INFO",
 ]
