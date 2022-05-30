@@ -13,8 +13,6 @@ build:
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
     export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
     source $HOME/.cargo/env
-    rustup update nightly
-    rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
 
     export EMSCRIPTEN_LINKING_RUST=1
     # TODO: remove this when chrono makes a release
