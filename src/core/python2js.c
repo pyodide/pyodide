@@ -208,7 +208,7 @@ _python2js_dict(ConversionContext context, PyObject* x)
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
     jskey = _python2js_immutable(pykey);
-    if (jskey == NULL) {
+    if (jskey == NULL || jskey == Js_novalue) {
       FAIL_IF_ERR_OCCURRED();
       PyErr_Format(
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
@@ -268,7 +268,7 @@ _python2js_set(ConversionContext context, PyObject* x)
   FAIL_IF_NULL(iter);
   while ((pykey = PyIter_Next(iter))) {
     jskey = _python2js_immutable(pykey);
-    if (jskey == NULL) {
+    if (jskey == NULL || jskey == Js_novalue) {
       FAIL_IF_ERR_OCCURRED();
       PyErr_Format(
         conversion_error, "Cannot use %R as a key for a Javascript set", pykey);

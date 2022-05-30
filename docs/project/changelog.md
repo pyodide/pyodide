@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
 - {{ Enhancement }} Integrity of Pyodide packages are now verified before
   loading them. This is for now only limited to browser environments.
   {pr}`2513`
@@ -106,6 +108,10 @@ substitutions:
   version in them. This should help ensure ABI compatibility if Emscripten
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
+
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading {pr}`2635`
 
 ### micropip
 

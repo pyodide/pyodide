@@ -75,7 +75,7 @@ simple example, we can implement an interruptible sleep function using
 let blockingSleepBuffer = new Int32Array(new SharedArrayBuffer(4));
 function blockingSleep(t) {
   for (let i = 0; i < t * 20; i++) {
-    // This Atomics.wait call blocks the thread until the buffer changes or a 50ms timeout ellapses.
+    // This Atomics.wait call blocks the thread until the buffer changes or a 50ms timeout elapses.
     // Since we won't change the value in the buffer, this blocks for 50ms.
     Atomics.wait(blockingSleepBuffer, 0, 0, 50);
     // Periodically check for an interrupt to allow a KeyboardInterrupt.

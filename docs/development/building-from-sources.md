@@ -139,7 +139,7 @@ Dependencies of the listed packages will be built automatically as well. The
 package names must match the folder names in `packages/` exactly; in particular
 they are case-sensitive.
 
-If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessairy to run
+If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessary to run
 the core test suite is installed, including "micropip", "pyparsing", "pytz",
 "packaging", "Jinja2", "regex". This is equivalent to setting
 `PYODIDE_PACKAGES='core'`
@@ -148,7 +148,7 @@ meta-package. Other supported meta-packages are,
 - "min-scipy-stack": includes the "core" meta-package as well as some
   core packages from the scientific python stack and their dependencies:
   "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
-  "pytest". This option is non exaustive and is mainly intended to make build
+  "pytest". This option is non exhaustive and is mainly intended to make build
   faster while testing a diverse set of scientific packages.
 - "\*" builds all packages
 

@@ -15,9 +15,53 @@
         --size: 1.5;
         --color: rgba(255, 255, 255, 0.8);
       }
+      body {
+        background-color: black;
+      }
+      #jquery-terminal-logo {
+        color: white;
+        border-color: white;
+        position: absolute;
+        top: 7px;
+        right: 18px;
+        z-index: 2;
+      }
+      #jquery-terminal-logo a {
+        color: gray;
+        text-decoration: none;
+        font-size: 0.7em;
+      }
+      #loading {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        border: 3px solid rgba(172, 237, 255, 0.5);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        -webkit-animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+      @-webkit-keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
+    <div id="jquery-terminal-logo">
+      <a href="https://terminal.jcubic.pl/">jQuery Terminal</a>
+    </div>
+    <div id="loading"></div>
     <script>
       "use strict";
       function sleep(s) {

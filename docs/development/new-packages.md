@@ -6,13 +6,12 @@ It is recommended to look into how other similar packages are built in Pyodide.
 If you encounter difficulties in building your package after trying the steps
 listed here, open a [new Pyodide issue](https://github.com/pyodide/pyodide/issues).
 
-## Quickstart
+## Determining if creating a Pyodide package is necessary
 
-If you wish to use a package in Pyodide that is not already included, first you
+If you wish to use a package in Pyodide that is not already included in the
+[`packages/`folder](https://github.com/pyodide/pyodide/tree/main/packages), first you
 need to determine whether it is necessary to package it for Pyodide. Ideally,
 you should start this process with package dependencies.
-
-### 1. Determining if creating a Pyodide package is necessary
 
 Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
@@ -21,7 +20,7 @@ case by trying `micropip.install("package-name")`.
 If the wheel is not on PyPI, but nevertheless you believe there is nothing
 preventing it (it is a Python package without C extensions):
 
-- you can create the wheel yourself by running,
+- you can create the wheel yourself by running
   ```py
   python -m pip install build
   python -m build
@@ -41,13 +40,49 @@ To determine if a package has C extensions, check if its `setup.py` contains
 any compilation commands.
 ```
 
-### 2. Creating the `meta.yaml` file
+## Building a Python package
+
+### 1. Creating the `meta.yaml` file
+
+To build a Python package, you need to create a `meta.yaml` file that defines a
+"recipe" which may include build commands and "patches" (source code edits),
+amongst other things.
 
 If your package is on PyPI, the easiest place to start is with the
-{ref}`mkpkg tool <pyodide-mkpkg>`. From the Pyodide root directory, install the
-tool with `pip install ./pyodide-build`, then run:
+{ref}`mkpkg tool <pyodide-mkpkg>`.
 
-`python -m pyodide_build mkpkg <package-name>`
+First clone and build the Pyodide git repo like this:
+
+```bash
+git clone https://github.com/pyodide/pyodide
+cd pyodide
+```
+
+If you'd like to use a Docker container, you can now run this command:
+
+```bash
+./run_docker --pre-built
+```
+
+This will mount the current working directory as `/src` within the container.
+
+Now run `make` to build the relevant Pyodide tools:
+
+```bash
+make
+```
+
+Now install `pyodide_build` with:
+
+```bash
+pip install ./pyodide-build
+```
+
+And now you can run `mkpkg`:
+
+```bash
+python -m pyodide_build mkpkg <package-name>
+```
 
 This will generate a `meta.yaml` file under `packages/<package-name>/` (see
 {ref}`meta-yaml-spec`) that should work out of the box for many simple Python
@@ -55,8 +90,8 @@ packages. This tool will populate the latest version, download link and sha256
 hash by querying PyPI. It doesn't currently handle package dependencies, so you
 will need to specify those yourself.
 
-You can also use the `meta.yaml` of other Pyodide packages in the `packages/`
-folder as a starting point.
+You can also use the `meta.yaml` of other Pyodide packages in the [`packages/`
+folder](https://github.com/pyodide/pyodide/tree/main/packages) as a starting point.
 
 ```{note}
 To reliably determine build and runtime dependencies, including for non Python
@@ -71,7 +106,17 @@ The Pyodide `meta.yaml` file format was inspired by the one in conda, however it
 not strictly compatible.
 ```
 
-### 3. Building the package and investigating issues
+The package may have special build requirements - e.g. specified in its Github
+README. If so, you can add extra build commands to the `meta.yaml` like this:
+
+```yaml
+build:
+  script: |
+    wget https://example.com/file.tar.gz
+    export MY_ENV_VARIABLE=FOO
+```
+
+### 2. Building the package and investigating issues
 
 Once the `meta.yaml` file is ready, build the package with the following
 commands from inside the package directory `packages/<package-name>`
@@ -95,7 +140,7 @@ If the build succeeds you can try to load the package by
 2. Open `localhost:<port>/console.html` and try to import the package
 3. You can test the package in the repl
 
-#### Writing tests for your package
+### Writing tests for your package
 
 The tests should go in one or more files like
 `packages/<package-name>/test_xxx.py`. Most packages have one test file named
@@ -126,7 +171,7 @@ def test_mytestname(selenium):
 you can put whatever command line arguments you would pass to `pytest` as
 separate entries in the list.
 
-#### Generating patches
+### Generating patches
 
 If the package has a git repository, the easiest way to make a patch is usually:
 
@@ -144,7 +189,7 @@ If the package has a git repository, the easiest way to make a patch is usually:
    to generate a patch file for your changes and store it directly into the
    patches folder.
 
-#### Migrating Patches
+### Migrating Patches
 
 When you want to upgrade the version of a package, you will need to migrate the
 patches. To do this:
@@ -163,14 +208,14 @@ patches. To do this:
 7. Use `git format-patch <version-tag> -o <pyodide-root>/packages/<package-name>/patches/`
    to generate new patch files.
 
-#### Upstream your patches!
+### Upstream your patches!
 
 Please create PRs or issues to discuss with the package maintainers to try to
 find ways to include your patches into the package. Many package maintainers are
 very receptive to including Pyodide-related patches and they reduce future
 maintenance work for us.
 
-## The package build pipeline
+### The package build pipeline
 
 Pyodide includes a toolchain to add new third-party Python libraries to the
 build. We automate the following steps:
@@ -204,7 +249,7 @@ Lastly, a `packages.json` file is created containing the dependency tree of all
 packages, so {any}`pyodide.loadPackage` can load a package's dependencies
 automatically.
 
-#### Partial Rebuilds
+### Partial Rebuilds
 
 By default, each time you run `buildpkg`, `pyodide-build` will delete the entire
 source directory and replace it with a fresh copy from the download url. This is
@@ -218,7 +263,7 @@ build, then when it works, copy the modified sources into your checked out copy
 of the package source repository and use `git format-patch` to generate the
 patch.
 
-## C library dependencies
+### C library dependencies
 
 Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
@@ -263,7 +308,7 @@ the Python package. See e.g. `matplotlib` for an example. [The full list of
 libraries with Emscripten ports is
 here.](https://github.com/orgs/emscripten-ports/repositories?type=all)
 
-## Structure of a Pyodide package
+### Structure of a Pyodide package
 
 Pyodide is obtained by compiling CPython into WebAssembly. As such, it loads
 packages the same way as CPython --- it looks for relevant files `.py` and `.so`
