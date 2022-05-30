@@ -422,7 +422,8 @@ def handle_command_generate_args(
     elif cmd == "cargo":
         if line[1] == "metadata":
             return line
-        line = line[0:1] + ["+nightly", "-Z", "build-std"] + line[1:]
+        nightly_version = common.get_make_flag("RUST_NIGHTLY_VERSION")
+        line = line[0:1] + [f"+nightly-{nightly_version}", "-Z", "build-std"] + line[1:]
         return line
     else:
         return line

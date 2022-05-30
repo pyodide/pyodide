@@ -145,6 +145,8 @@ export RUSTFLAGS= \
 	-C target-feature=+mutable-globals \
 	-C link-arg=-sSIDE_MODULE=1
 
+# Make sure this matches the version in .circleci/config.yml
+export RUST_NIGHTLY_VERSION=2022-05-28
 
 
 
