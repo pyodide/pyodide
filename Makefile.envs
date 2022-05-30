@@ -97,8 +97,8 @@ export CXXFLAGS_BASE=
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
-	-s EXPORT_NAME="'_createPyodideModule'" \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+	-s EXPORT_NAME="_createPyodideModule" \
+	-s EXCEPTION_CATCHING_ALLOWED=['we_only_want_to_allow_exception_handling_in_side_modules'] \
 	-s DEMANGLE_SUPPORT=1 \
 	-s USE_ZLIB=1 \
 	-s FORCE_FILESYSTEM=1 \
@@ -143,7 +143,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-I$(PYTHONINCLUDE) \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	-s EXCEPTION_CATCHING_ALLOWED=['we_only_want_to_allow_exception_handling_in_side_modules']
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
 

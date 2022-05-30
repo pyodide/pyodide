@@ -4,7 +4,7 @@ import rich_click.typer as typer
 from doit.cmd_base import ModuleTaskLoader
 from doit.doit_cmd import DoitMain
 
-from . import task
+from . import build_task
 
 app = typer.Typer()
 
@@ -26,28 +26,28 @@ def package(
     packages_root = Path(root) / "packages"
     package_dir = packages_root / name
     meta_yaml = package_dir / "meta.yaml"
-    DoitMain(ModuleTaskLoader(task)).run(["build_package", "--name", str(meta_yaml)])
+    DoitMain(ModuleTaskLoader(build_task)).run(["package", "--name", str(meta_yaml)])
+
+
+@app.command("emsdk")
+def emsdk():
+    """Prepare emsdk"""
+    DoitMain(ModuleTaskLoader(build_task)).run(["emsdk"])
 
 
 @app.command("cpython")
 def cpython():
     """Build a cpython"""
-    DoitMain(ModuleTaskLoader(task)).run(["build_cpython"])
+    DoitMain(ModuleTaskLoader(build_task)).run(["cpython"])
 
 
-@app.command("pyodide-core")
-def pyodide_core():
+@app.command("pyodide")
+def pyodide():
     """Build pyodide"""
-    DoitMain(ModuleTaskLoader(task)).run(["build_pyodide_core"])
+    DoitMain(ModuleTaskLoader(build_task)).run(["pyodide"])
 
 
-@app.command("pyodide-js")
-def pyodide_js():
-    """Build pyodide"""
-    DoitMain(ModuleTaskLoader(task)).run(["build_pyodide_js"])
-
-
-@app.command("pyodide-asm-js")
-def pyodide_asm_js():
-    """Build pyodide"""
-    DoitMain(ModuleTaskLoader(task)).run(["build_pyodide_asm_js"])
+@app.command("clean")
+def clean(target: str):
+    """Clean build artifacts"""
+    DoitMain(ModuleTaskLoader(build_task)).run(["clean", target])

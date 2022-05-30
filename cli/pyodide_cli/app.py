@@ -46,11 +46,45 @@ def get_config(config_file):
 
 @app.callback(no_args_is_help=True)
 def main(
+    ctx: typer.Context,
     version: bool = typer.Option(
         None, "--version", callback=version_callback, is_eager=True
     ),
 ):
     init_environment()
+    new_env = os.environ.copy()
+    os.environ.clear()
+
+    vars = [
+        "PATH",
+        "PYTHONPATH",
+        "PYODIDE_ROOT",
+        "PYTHONINCLUDE",
+        "NUMPY_LIB",
+        "PYODIDE_PACKAGE_ABI",
+        "HOME",
+        "HOSTINSTALLDIR",
+        "TARGETINSTALLDIR",
+        "SYSCONFIG_NAME",
+        "HOSTSITEPACKAGES",
+        "PYMAJOR",
+        "PYMINOR",
+        "PYMICRO",
+        "CPYTHONBUILD",
+        "SIDE_MODULE_CFLAGS",
+        "SIDE_MODULE_LDFLAGS",
+        "STDLIB_MODULE_CFLAGS",
+        "UNISOLATED_PACKAGES",
+        "WASM_LIBRARY_DIR",
+        "WASM_PKG_CONFIG_PATH",
+        "CARGO_BUILD_TARGET",
+        "CARGO_HOME",
+        "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
+        "RUSTFLAGS",
+        "PYO3_CONFIG_FILE",
+    ] + ["CPYTHONLIB", "MAIN_MODULE_CFLAGS", "MAIN_MODULE_LDFLAGS", "PYODIDE_BASE_URL"]
+    for var in vars:
+        os.environ[var] = new_env[var]
 
 
 if __name__ == "__main__":
