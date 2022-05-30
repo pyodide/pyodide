@@ -39,7 +39,7 @@ try:
 
     PACKAGE_INFO = {"arch": arch, "platform": platform, "version": __version__}
 except ImportError:
-    pass
+    PACKAGE_INFO = {}
 
 
 def loadPackage(packages: str | list[str]) -> None:
