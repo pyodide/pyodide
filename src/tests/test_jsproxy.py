@@ -158,7 +158,7 @@ def test_jsproxy_map(selenium):
     assert TEST == TEST
     assert TEST != "foo"
 
-    TEST = run_js("{foo: 'bar', baz: 'bap'}")
+    TEST = run_js("({foo: 'bar', baz: 'bap'})")
     assert dict(TEST.object_entries()) == {"foo": "bar", "baz": "bap"}
 
 
@@ -672,7 +672,7 @@ def test_register_jsmodule_docs_example(selenium_standalone):
 def test_object_entries_keys_values(selenium):
     from pyodide import run_js
 
-    x = run_js("{ a : 2, b : 3, c : 4 }")
+    x = run_js("({ a : 2, b : 3, c : 4 })")
     assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
     assert x.object_keys().to_py() == ["a", "b", "c"]
     assert x.object_values().to_py() == [2, 3, 4]
