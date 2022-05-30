@@ -1,16 +1,15 @@
-From 9ffdef955b9484f2f6d788e03f7da2412061869d Mon Sep 17 00:00:00 2001
+From 91e3222eb6b8144ab7ba76773fe13c70cb1b23eb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 29 May 2022 18:17:29 -0700
 Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
 
 https://github.com/emscripten-core/emscripten/pull/17103
 ---
- src/preamble.js                  | 95 +++++++++++++++++++++++++++++++-
- tests/third_party/posixtestsuite |  2 +-
- 2 files changed, 94 insertions(+), 3 deletions(-)
+ src/preamble.js | 95 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 93 insertions(+), 2 deletions(-)
 
 diff --git a/src/preamble.js b/src/preamble.js
-index 1094dd7dc..6ada623cc 100644
+index 1094dd7dc..101df1570 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -285,8 +285,99 @@ function updateGlobalBufferAndViews(buf) {
@@ -104,7 +103,7 @@ index 1094dd7dc..6ada623cc 100644
 +      }
 +      return createBigInt64Array;
 +    }
-+    
++
 +    var createBigUint64Array = createBigIntArrayShim(partsToBigIntUnsigned);
 +    var createBigInt64Array = createBigIntArrayShim(partsToBigIntSigned);
 +
@@ -115,13 +114,6 @@ index 1094dd7dc..6ada623cc 100644
  #endif
  }
  
-diff --git a/tests/third_party/posixtestsuite b/tests/third_party/posixtestsuite
-index a5e7ff5f9..869e266b0 160000
---- a/tests/third_party/posixtestsuite
-+++ b/tests/third_party/posixtestsuite
-@@ -1 +1 @@
--Subproject commit a5e7ff5f906c9a8f18d70f6472c4055bc311c34d
-+Subproject commit 869e266b090a8d44e51bb040904c942556b1e4ab
 -- 
 2.25.1
 
