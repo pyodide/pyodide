@@ -1,13 +1,12 @@
-From e00622496a731bd95eecf237c614f6cc49010b5d Mon Sep 17 00:00:00 2001
+From 6e19a12c8775ec0e6583296e93728f9ad9286d01 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 29 May 2022 18:17:29 -0700
 Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
 
 https://github.com/emscripten-core/emscripten/pull/17103
 ---
- src/preamble.js                  | 95 +++++++++++++++++++++++++++++++-
- tests/third_party/posixtestsuite |  2 +-
- 2 files changed, 94 insertions(+), 3 deletions(-)
+ src/preamble.js | 95 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 93 insertions(+), 2 deletions(-)
 
 diff --git a/src/preamble.js b/src/preamble.js
 index 1094dd7dc..aeb93e166 100644
@@ -115,13 +114,6 @@ index 1094dd7dc..aeb93e166 100644
  #endif
  }
  
-diff --git a/tests/third_party/posixtestsuite b/tests/third_party/posixtestsuite
-index a5e7ff5f9..869e266b0 160000
---- a/tests/third_party/posixtestsuite
-+++ b/tests/third_party/posixtestsuite
-@@ -1 +1 @@
--Subproject commit a5e7ff5f906c9a8f18d70f6472c4055bc311c34d
-+Subproject commit 869e266b090a8d44e51bb040904c942556b1e4ab
 -- 
 2.25.1
 
