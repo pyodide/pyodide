@@ -691,7 +691,7 @@ hiwire_get_length(JsRef idobj)
   if (result == -2) {
     PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
   }
-  if (result >= -2) {
+  if (result == -1 || result == -2) {
     return -1;
   }
 
