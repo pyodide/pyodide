@@ -400,7 +400,6 @@ def compile(
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
     target_install_dir: str,
-    host_install_dir: str,
 ) -> None:
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
@@ -429,10 +428,6 @@ def compile(
     target_install_dir
         The path to the target Python installation
 
-    host_install_dir
-        Directory for installing built host packages. Defaults to setup.py
-        default. Set to 'skip' to skip installation. Installation is
-        needed if you want to build other packages that depend on this one.
     """
     # This function runs setup.py. library and sharedlibrary don't have setup.py
     if build_metadata.get("sharedlibrary"):
@@ -446,7 +441,6 @@ def compile(
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
             ldflags=build_metadata["ldflags"],
-            host_install_dir=host_install_dir,
             target_install_dir=target_install_dir,
             replace_libs=replace_libs,
         )
@@ -780,7 +774,6 @@ def build_package(
                 build_metadata,
                 bash_runner,
                 target_install_dir=target_install_dir,
-                host_install_dir=host_install_dir,
             )
         if not sharedlibrary:
             package_wheel(
