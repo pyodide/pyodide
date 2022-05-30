@@ -211,3 +211,27 @@ run_in_pyodide_alias2 = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
 @run_in_pyodide_alias2
 def test_run_in_pyodide_alias(request):
     assert parse_driver_timeout(request.node) == 40
+
+
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    import pytest
+
+    from pyodide import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)
