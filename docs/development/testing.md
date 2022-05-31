@@ -85,6 +85,7 @@ pre-commit run -a
 You can have the linter automatically run whenever you commit by running
 
 ```bash
+pip install pre-commit
 pre-commit install
 ```
 
