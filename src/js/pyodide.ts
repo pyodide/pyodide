@@ -281,8 +281,25 @@ export async function loadPyodide(
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
+
+  // Just for the cryptography package: it tries to import _emscripten_get_now
+  // but Emscripten did not expect it to be imported.
+
+  // reportUndefinedSymbols calls resolveGlobalSymbol("_emscripten_get_now")
+  // https://github.com/emscripten-core/emscripten/blob/2.0.27/src/library_dylink.js#L153
+  // resolveSymbol calls resolveGlobalSymbol which looks up the function on
+  // Module:
+  // https://github.com/emscripten-core/emscripten/blob/2.0.27/src/library_dylink.js#L28
+  // Then it calls addFunctionWasm(value, value.sig); which creates a wasm
+  // wrapper for the function of signature "value.sig". This wrapper is just a
+  // tiny module which looks like 'I export a function of signature "sig", the
+  // implementation of that function is "call env.whatever_function()"'. Then
+  // the wrapper is inserted into the wasmTable and the associated function
+  // pointer is added to to GOT so that the dynamic library can look up the
+  // function pointer in the GOT.
   Module["__emscripten_get_now"] = Module["_emscripten_get_now"];
-  Module["__emscripten_get_now"].sig = "v";
+  // "d" = f64: we take 0 arguments and return a double.
+  Module["__emscripten_get_now"].sig = "d";
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
