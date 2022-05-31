@@ -241,7 +241,7 @@ emsdk/emsdk/.complete:
 rust:
 	wget https://sh.rustup.rs -O /rustup.sh
 	sh /rustup.sh -y
-	source $HOME/.cargo/env
+	source $(HOME)/.cargo/env
 	# We need nightly because we need to build the standard library.
 	# -Zbuild-std only works on nightly:
 	# https://doc.rust-lang.org/cargo/reference/unstable.html#requirements
