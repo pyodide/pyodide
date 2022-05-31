@@ -1,7 +1,7 @@
-From 7c7a8f37b79e357cc28cb44f99258c9841d7385a Mon Sep 17 00:00:00 2001
+From 60d67d97804a83a16af556c1705c4e677240d7d5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 8 Apr 2022 15:54:49 -0700
-Subject: [PATCH] Fix dyncall and dynamic linking
+Subject: [PATCH 8/8] Fix dyncall and dynamic linking
 
 We don't compile with WASM_BIGINT so if there is a 64 bit integer
 in the dynamic call, Emscripten tries to call a legalizer wrapper.
@@ -9,9 +9,8 @@ These legalizer wrappers are only generated in the main module so
 sometimes a side module tries to call a wrapper that doesn't exist.
 This adds an extra handler in that case.
 ---
- src/library.js                   | 22 ++++++++++++++++++++++
- tests/third_party/posixtestsuite |  2 +-
- 2 files changed, 23 insertions(+), 1 deletion(-)
+ src/library.js | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
 diff --git a/src/library.js b/src/library.js
 index ef8a618bb..cbc70bbe0 100644
@@ -47,3 +46,6 @@ index ef8a618bb..cbc70bbe0 100644
      }
  #endif
  #if ASSERTIONS
+-- 
+2.25.1
+
