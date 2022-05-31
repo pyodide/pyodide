@@ -284,6 +284,7 @@ export async function loadPyodide(
 
   // Just for the cryptography package: it tries to import _emscripten_get_now
   // but Emscripten did not expect it to be imported.
+  // See emscripten-core/emscripten#17106
 
   // reportUndefinedSymbols calls resolveGlobalSymbol("_emscripten_get_now")
   // https://github.com/emscripten-core/emscripten/blob/2.0.27/src/library_dylink.js#L153
