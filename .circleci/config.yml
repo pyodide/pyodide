@@ -132,16 +132,7 @@ jobs:
       - run:
           name: install rust
           command: |
-            wget https://sh.rustup.rs -O /rustup.sh
-            sh /rustup.sh -y
-            source $HOME/.cargo/env
-            # We need nightly because we need to build the standard library.
-            # -Zbuild-std only works on nightly:
-            # https://doc.rust-lang.org/cargo/reference/unstable.html#requirements
-
-            # Make sure nightly-2022-05-28 matches the version in Makefile.envs
-            rustup toolchain install nightly-2022-05-28
-            rustup component add rust-src --toolchain nightly-2022-05-28
+            make rust
 
       - run:
           name: build packages
