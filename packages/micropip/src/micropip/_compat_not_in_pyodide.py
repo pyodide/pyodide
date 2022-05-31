@@ -29,7 +29,8 @@ class pyodide_js_:
         raise RuntimeError(f"Attempted to access property '{attr}' on pyodide_js dummy")
 
 
-pyodide_js: Any = pyodide_js_()
+def loadPackage(packages: str | list[str]) -> None:
+    pass
 
 
 __all__ = [
@@ -38,5 +39,5 @@ __all__ = [
     "fetch_string",
     "BUILTIN_PACKAGES",
     "loadedPackages",
-    "pyodide_js",
+    "loadPackage",
 ]
