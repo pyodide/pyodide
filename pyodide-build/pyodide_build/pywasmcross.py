@@ -45,7 +45,6 @@ ReplayArgs = namedtuple(
         "cflags",
         "cxxflags",
         "ldflags",
-        "host_install_dir",
         "target_install_dir",
         "replace_libs",
         "builddir",
@@ -84,7 +83,6 @@ def compile(
     cflags: str,
     cxxflags: str,
     ldflags: str,
-    host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
 ) -> None:
@@ -93,7 +91,6 @@ def compile(
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
-        host_install_dir=host_install_dir,
         target_install_dir=target_install_dir,
         replace_libs=replace_libs,
     )
@@ -397,8 +394,8 @@ def handle_command_generate_args(
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'replace_libs','target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', replace_libs='',target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
     ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
@@ -482,13 +479,6 @@ def handle_command_generate_args(
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
             del new_args[-1]
-            continue
-
-        # don't include libraries from native builds
-        if args.host_install_dir and (
-            arg.startswith("-L" + args.host_install_dir)
-            or arg.startswith("-l" + args.host_install_dir)
-        ):
             continue
 
         replace_libs = parse_replace_libs(args.replace_libs)

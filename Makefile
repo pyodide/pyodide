@@ -50,6 +50,11 @@ dist/pyodide.asm.js: \
 	[ -d dist ] || mkdir dist
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS)
+
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \
+		cd dist && npx prettier -w pyodide.asm.js ; \
+	fi
+
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
