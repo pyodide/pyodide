@@ -1,4 +1,4 @@
-From e8e48f00d9c87b18e46bd14215b8b358aae93e57 Mon Sep 17 00:00:00 2001
+From 4462c2871933db0adc4b46a24f77b942caff969c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 29 May 2022 18:17:29 -0700
 Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
@@ -6,8 +6,8 @@ Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
 ---
  src/parseTools.js             |  2 +-
  src/polyfill/bigint64array.js | 87 +++++++++++++++++++++++++++++++++++
- src/preamble.js               | 10 +++-
- 3 files changed, 97 insertions(+), 2 deletions(-)
+ src/preamble.js               |  5 +-
+ 3 files changed, 92 insertions(+), 2 deletions(-)
  create mode 100644 src/polyfill/bigint64array.js
 
 diff --git a/src/parseTools.js b/src/parseTools.js
@@ -117,20 +117,15 @@ index 000000000..126c2b51f
 +    var BigInt64Array = createBigIntArrayShim(partsToBigIntSigned);
 +}
 diff --git a/src/preamble.js b/src/preamble.js
-index 1094dd7dc..ed4d6144a 100644
+index 1094dd7dc..6afca739b 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -285,9 +285,17 @@ function updateGlobalBufferAndViews(buf) {
+@@ -285,9 +285,12 @@ function updateGlobalBufferAndViews(buf) {
    Module['HEAPF32'] = HEAPF32 = new Float32Array(buf);
    Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
  #if WASM_BIGINT
 +#if MIN_SAFARI_VERSION < 150000
-+#if !POLYFILL
-+    assert(false, "Cannot support Safari 14 with WASM_BIGINT unless POLYFILL is also set");
-+#else // POLYFILL
-+    #include "polyfill/bigint64array.js"
-+#endif // POLYFILL
-+
++  #include "polyfill/bigint64array.js"
 +#endif // MIN_SAFARI_VERSION < 15000
    Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
    Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
