@@ -8,6 +8,7 @@ source:
   patches:
     # TODO: remove this when chrono makes a release
     - patches/0001-Use-patched-chrono.patch
+    - patches/0002-Add-instant-patch.patch
 build:
   script: |
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
@@ -16,6 +17,8 @@ build:
 
     # TODO: remove this when chrono makes a release
     git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
+    # TODO: remove this when instant makes a release
+    git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
   cflags: |
     -Wno-implicit-function-declaration
     $(OPENSSL_INCLUDE_PATH)

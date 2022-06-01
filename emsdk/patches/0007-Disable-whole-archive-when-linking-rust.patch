@@ -1,7 +1,7 @@
 From 645e1a4fb0a830a384a2971efeeb16a1584fea28 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 6 Jan 2022 09:40:39 -0800
-Subject: [PATCH 7/8] Disable whole-archive when linking rust
+Subject: [PATCH 7/9] Disable whole-archive when linking rust
 
 Rust .rlib archives contain an extra metadata file called lib.rmeta.
 Emscripten sets `--whole-archive` by default if LINKABLE is set.

@@ -1,7 +1,7 @@
 From 53ee3cee6aae5333d61ac687677cf2ca39cb831a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 8 Apr 2022 18:17:51 -0700
-Subject: [PATCH] Use patched chrono
+Subject: [PATCH 1/2] Use patched chrono
 
 ---
  src/rust/Cargo.toml | 3 +++

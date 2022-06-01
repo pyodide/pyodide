@@ -1,7 +1,7 @@
 From 60d67d97804a83a16af556c1705c4e677240d7d5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 8 Apr 2022 15:54:49 -0700
-Subject: [PATCH 8/8] Fix dyncall and dynamic linking
+Subject: [PATCH 8/9] Fix dyncall and dynamic linking
 
 We don't compile with WASM_BIGINT so if there is a 64 bit integer
 in the dynamic call, Emscripten tries to call a legalizer wrapper.
