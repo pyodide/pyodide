@@ -30,7 +30,6 @@ packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
-tools/symlinks
 
 xbuildenv/
 tools/symlinks
