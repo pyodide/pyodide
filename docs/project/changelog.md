@@ -113,6 +113,9 @@ substitutions:
   Python rather than the host Python.
   {pr}`2516`
 
+- {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`..
+  {pr}`2643`
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading
