@@ -64,8 +64,7 @@ There are 5 test locations that are collected by pytest:
   system.
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
   (do not require selenium to run)
-- `packages/test_common.py`: tests whether all packages can be imported
-  successfully
+- `packages/test_common.py`: common tests for packages.
 - `packages/*/test_*`: package specific tests.
 
 #### Running tests with Playwright
