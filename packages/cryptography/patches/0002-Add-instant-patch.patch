@@ -15,7 +15,7 @@ index 35bf38ae..23a64977 100644
  
  [patch.crates-io]
  chrono = { path =  "../../chrono" }
-+instant = { path = "../../../../instant" }
++instant = { path = "../../instant" }
  
  [dependencies]
  lazy_static = "1"
