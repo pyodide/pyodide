@@ -1,4 +1,4 @@
-From 565450d60c1457d60120d431c1f65417e21405a1 Mon Sep 17 00:00:00 2001
+From 61b64ff9dbacda5b010a555ca91c17f08536bec1 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 29 May 2022 18:17:29 -0700
 Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
@@ -6,8 +6,8 @@ Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
 ---
  src/parseTools.js             |  2 +-
  src/polyfill/bigint64array.js | 82 +++++++++++++++++++++++++++++++++++
- src/preamble.js               | 20 ++++++++-
- 3 files changed, 101 insertions(+), 3 deletions(-)
+ src/preamble.js               | 16 ++++++-
+ 3 files changed, 98 insertions(+), 2 deletions(-)
  create mode 100644 src/polyfill/bigint64array.js
 
 diff --git a/src/parseTools.js b/src/parseTools.js
@@ -112,36 +112,34 @@ index 000000000..13ed999ed
 +var createBigUint64Array = createBigIntArrayShim(partsToBigIntUnsigned);
 +var createBigInt64Array = createBigIntArrayShim(partsToBigIntSigned);
 diff --git a/src/preamble.js b/src/preamble.js
-index 1094dd7dc..7a8029fa9 100644
+index 1094dd7dc..c2f765d71 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -285,8 +285,24 @@ function updateGlobalBufferAndViews(buf) {
+@@ -285,9 +285,23 @@ function updateGlobalBufferAndViews(buf) {
    Module['HEAPF32'] = HEAPF32 = new Float32Array(buf);
    Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
  #if WASM_BIGINT
--  Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
--  Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
-+    #if MIN_SAFARI_VERSION < 150000
-+    // All browsers other than Safari added BigInt and BigInt64Array at the same
-+    // time, but Safari introduced BigInt in v14.0 and introduced BigInt64Array
-+    // in v15.0
-+    if (typeof BigInt64Array === "undefined") {
-+      #include "polyfill/bigint64array.js"
-+      Module['HEAP64'] = HEAP64 = createBigInt64Array(HEAPU32);
-+      Module['HEAPU64'] = HEAPU64 = createBigUint64Array(HEAPU32);
-+    } else {
-+      Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
-+      Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
-+    }
-+    #else
++#if MIN_SAFARI_VERSION < 150000
++  // All browsers other than Safari added BigInt and BigInt64Array at the same
++  // time, but Safari introduced BigInt in v14.0 and introduced BigInt64Array
++  // in v15.0
++  if (typeof BigInt64Array === "undefined") {
++    #include "polyfill/bigint64array.js"
++    Module['HEAP64'] = HEAP64 = createBigInt64Array(HEAPU32);
++    Module['HEAPU64'] = HEAPU64 = createBigUint64Array(HEAPU32);
++  } else {
 +    Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
 +    Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
-+    #endif
 +  }
-+
- #endif
++#else
+   Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
+   Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
+-#endif
++#endif // MIN_SAFARI_VERSION < 15000
++#endif // WASM_BIGINT
  }
  
+ var TOTAL_STACK = {{{ TOTAL_STACK }}};
 -- 
 2.25.1
 
