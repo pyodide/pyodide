@@ -7,7 +7,7 @@ if IN_BROWSER:
         fetch_string,
         loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 else:
     from ._compat_not_in_pyodide import (
@@ -16,7 +16,7 @@ else:
         fetch_string,
         loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 
 __all__ = [
@@ -25,5 +25,5 @@ __all__ = [
     "BUILTIN_PACKAGES",
     "loadedPackages",
     "loadDynlib",
-    "pyodide_js",
+    "loadPackage",
 ]

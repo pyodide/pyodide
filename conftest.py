@@ -16,6 +16,8 @@ sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 from pyodide_test_runner.fixture import (  # noqa: F401
+    console_html_fixture,
+    playwright_browsers,
     script_type,
     selenium,
     selenium_common,
@@ -46,6 +48,12 @@ def pytest_addoption(parser):
         "--run-xfail",
         action="store_true",
         help="If provided, tests marked as xfail will be run",
+    )
+    group.addoption(
+        "--runner",
+        default="selenium",
+        choices=["selenium", "playwright"],
+        help="Select testing frameworks, selenium or playwright (default: %(default)s)",
     )
 
 
@@ -169,8 +177,6 @@ from _pytest.python import (
 )
 
 # Handling for pytest assertion rewrites
-
-
 # First we find the pytest rewrite config. It's an attribute of the pytest
 # assertion rewriting meta_path_finder, so we locate that to get the config.
 
