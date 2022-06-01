@@ -535,7 +535,6 @@ def handle_command(
         new_args = _new_args
 
     returncode = subprocess.run(new_args).returncode
-
     if returncode != 0:
         sys.exit(returncode)
 

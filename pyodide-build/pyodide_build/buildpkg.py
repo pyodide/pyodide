@@ -678,7 +678,7 @@ def needs_rebuild(
         )
         src_path = source_metadata.get("path")
         if src_path:
-            yield from Path(pkg_root, src_path).glob("**/*")
+            yield from (pkg_root / src_path).resolve().glob("**/*")
 
     for source_file in source_files():
         source_file = Path(source_file)
@@ -761,7 +761,6 @@ def build_package(
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         bash_runner.env["PKG_VERSION"] = version
-        bash_runner.env["PKG_DIR"] = str(pkg_root)
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         if not continue_:
             prepare_source(pkg_root, build_dir, srcpath, source_metadata)
