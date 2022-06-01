@@ -155,9 +155,5 @@ export RUSTFLAGS= \
 	-C target-feature=+mutable-globals \
 	-C link-arg=-sSIDE_MODULE=1
 
-export RUST_NIGHTLY_VERSION=2022-05-28
-
-
-
 .output_vars:
 	set

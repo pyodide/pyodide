@@ -246,12 +246,7 @@ emsdk/emsdk/.complete:
 rust:
 	wget https://sh.rustup.rs -O /rustup.sh
 	sh /rustup.sh -y
-	# We need nightly because we need to build the standard library.
-	# -Zbuild-std only works on nightly:
-	# https://doc.rust-lang.org/cargo/reference/unstable.html#requirements
-
-	source $(HOME)/.cargo/env && rustup toolchain install nightly-$(RUST_NIGHTLY_VERSION)
-	source $(HOME)/.cargo/env && rustup component add rust-src --toolchain nightly-$(RUST_NIGHTLY_VERSION)
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
 
 
 FORCE:

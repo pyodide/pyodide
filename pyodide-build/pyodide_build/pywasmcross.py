@@ -416,12 +416,6 @@ def handle_command_generate_args(
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
-    elif cmd == "cargo":
-        if line[1] == "metadata":
-            return line
-        nightly_version = common.get_make_flag("RUST_NIGHTLY_VERSION")
-        line = line[0:1] + [f"+nightly-{nightly_version}", "-Z", "build-std"] + line[1:]
-        return line
     else:
         return line
 
