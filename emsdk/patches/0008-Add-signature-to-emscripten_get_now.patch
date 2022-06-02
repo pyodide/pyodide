@@ -1,4 +1,4 @@
-From 7a45823ce0899119a75a04a7998eca4bc0c8d0b8 Mon Sep 17 00:00:00 2001
+From b6839bba05c1a5eab390f47309a7bef1b7294eca Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 1 Jun 2022 10:54:08 -0700
 Subject: [PATCH 8/8] Add signature to emscripten_get_now

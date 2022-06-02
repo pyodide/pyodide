@@ -1,4 +1,4 @@
-From 925d0ba893c3ebc48cbd6e25eacd7cb2596120d2 Mon Sep 17 00:00:00 2001
+From 9fb8391c7e6b9f36f45a1448e49597f899cce29d Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 6 Jan 2022 09:40:39 -0800
 Subject: [PATCH 7/8] Disable whole-archive when linking rust
@@ -8,6 +8,9 @@ Emscripten sets `--whole-archive` by default if LINKABLE is set.
 But with `--whole-archive` the linker crashes with an error due to
 the extra files. This disables the problematic `--whole-archive`
 setting when we are linking rust.
+
+See emscripten issue:
+https://github.com/emscripten-core/emscripten/issues/17109
 ---
  tools/building.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
