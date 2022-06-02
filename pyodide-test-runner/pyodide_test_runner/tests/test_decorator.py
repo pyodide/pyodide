@@ -74,7 +74,28 @@ def test_local_inner_function():
         assert x == 6
         return 7
 
-    inner_function(selenium_mock, 6)
+    assert inner_function(selenium_mock, 6) == 7
+
+
+def test_local_inner_function_closure_error():
+    x = 6
+
+    @run_in_pyodide
+    def inner_function(selenium):
+        assert x == 6
+        return 7
+
+    with pytest.raises(NameError, match="'x' is not defined"):
+        inner_function(selenium_mock)
+
+
+def test_inner_function(selenium):
+    @run_in_pyodide
+    def inner_function(selenium, x):
+        assert x == 6
+        return 7
+
+    assert inner_function(selenium, 6) == 7
 
 
 def complicated_decorator(attr_name: str):

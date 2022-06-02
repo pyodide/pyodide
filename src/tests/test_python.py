@@ -7,8 +7,16 @@ def test_init(selenium_standalone):
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
 def test_webbrowser(selenium):
-    selenium.run_async("import antigravity")
-    assert len(selenium.driver.window_handles) == 2
+    # Selenium
+    if hasattr(selenium.driver, "window_handles"):
+        selenium.run_async("import antigravity")
+        assert len(selenium.driver.window_handles) == 2
+
+    # Playwright
+    elif hasattr(selenium.driver, "context"):
+        with selenium.driver.context.expect_page() as new_page:
+            selenium.run_async("import antigravity")
+        assert new_page
 
 
 def test_print(selenium):

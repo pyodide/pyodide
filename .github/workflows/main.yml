@@ -104,8 +104,10 @@ jobs:
 
     needs: [build-core]
     strategy:
+      fail-fast: false
       matrix:
-        selenium_runner: [firefox]
+        runner: [playwright]
+        browser: [firefox, chrome]
 
     steps:
       - uses: actions/checkout@v2
@@ -126,21 +128,24 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
+          pip install playwright && python -m playwright install
 
       - name: run core tests
         env:
-          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
         shell: bash -l {0}
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
+          tools/pytest_wrapper.py src packages/micropip/ -v -k "${BROWSER}" --runner "${RUNNER}"
 
       - name: run package tests
         env:
-          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
         shell: bash -l {0}
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${SELENIUM_RUNNER}"
+          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${BROWSER}" --runner "${RUNNER}"

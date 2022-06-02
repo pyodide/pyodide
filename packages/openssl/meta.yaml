@@ -15,7 +15,7 @@ build:
       -DHAVE_FORK=0 \
       -DOPENSSL_NO_SECURE_MEMORY \
       -DNO_SYSLOG \
-      -fPIC \
+      ${SIDE_MODULE_CFLAGS} \
       --prefix=${WASM_LIBRARY_DIR}
 
     sed -i 's!^CROSS_COMPILE=.*!!g' Makefile
@@ -24,6 +24,6 @@ build:
     make -j ${PYODIDE_JOBS:-3} libssl.a
     emar -d libcrypto.a liblegacy-lib-bn_asm.o liblegacy-lib-des_enc.o liblegacy-lib-fcrypt_b.o
     mkdir dist
-    emcc -sSIDE_MODULE=1 libcrypto.a -o libcrypto.so
-    emcc -sSIDE_MODULE=1 libssl.a -o libssl.so
+    emcc ${SIDE_MODULE_LDFLAGS} libcrypto.a -o libcrypto.so
+    emcc ${SIDE_MODULE_LDFLAGS} libssl.a -o libssl.so
     make install_sw

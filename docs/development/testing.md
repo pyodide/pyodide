@@ -4,32 +4,50 @@
 
 ## Testing
 
-### Requirements
+### Running the Python test suite
+
+You can use either Selenium or Playwright to run the pytest suite of tests.
 
 Install the following dependencies into the default Python installation:
 
 ```bash
-pip install pytest selenium pytest-instafail pytest-httpserver
-```
-
-Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
-[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
-and check that they are in your `PATH`.
-
-### Running the Python test suite
-
-To run the pytest suite of tests, from the root directory of Pyodide, type on the command line:
-
-```bash
-pytest
+pip install pytest pytest-instafail pytest-httpserver
 ```
 
 There are 3 test locations that are collected by pytest,
 
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
-  (do not require selenium to run)
+  (do not require selenium or playwright to run)
 - `packages/*/test_*`: package specific tests.
+
+#### Selenium (default)
+
+```
+pip install selenium
+```
+
+Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
+[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
+and check that they are in your `PATH`.
+
+From the root directory of Pyodide, type on the command line:
+
+```bash
+pytest
+```
+
+#### Playwright
+
+```bash
+pip install playwright && python -m playwright install
+```
+
+From the root directory of Pyodide, type on the command line:
+
+```bash
+pytest --runner playwright
+```
 
 ### Running the JavaScript test suite
 
@@ -70,15 +88,34 @@ PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 
 ## Linting
 
+We lint with `pre-commit`.
+
 Python is linted with `flake8`, `black` and `mypy`.
-JavaScript is linted with `prettier`.
+JavaScript, markdown, yaml, and html are linted with `prettier`.
 C is linted with `clang-format`.
 
 To lint the code, run:
 
 ```bash
-make lint
+pre-commit run -a
 ```
+
+You can have the linter automatically run whenever you commit by running
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+and this can later be disabled with
+
+```bash
+pre-commit uninstall
+```
+
+If you don't lint your code, certain lint errors will be fixed automatically by
+`pre-commit.ci` which will push fixes to your branch. If you want to push more
+commits, you will either have to pull in the remote changes or force push.
 
 ## Testing framework
 
