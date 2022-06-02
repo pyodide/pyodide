@@ -169,7 +169,8 @@ def test_mytestname(selenium):
 ```
 
 you can put whatever command line arguments you would pass to `pytest` as
-separate entries in the list.
+separate entries in the list. For more info on `run_in_pyodide` see
+{ref}`run-in-pyodide`.
 
 ### Generating patches
 
