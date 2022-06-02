@@ -150,6 +150,8 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
+
+# idealy we could automatically include all SIDE_MODULE_LDFLAGS here
 export RUSTFLAGS= \
 	-C relocation-model=pic \
 	-C target-feature=+mutable-globals \
