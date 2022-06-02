@@ -138,6 +138,8 @@ make lint
 
 ## Testing framework
 
+(run-in-pyodide)=
+
 ### run_in_pyodide
 
 Many tests simply involve running a chunk of code in Pyodide and ensuring it
