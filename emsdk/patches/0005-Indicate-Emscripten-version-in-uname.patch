@@ -1,7 +1,7 @@
-From 6aca63c041033835d08a99fb54b3327a36652ff8 Mon Sep 17 00:00:00 2001
+From 8eed4062c1a0bd6aa7859938240f8761e6e72114 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 18 May 2022 21:49:17 -0700
-Subject: [PATCH 7/7] Indicate Emscripten version in uname
+Subject: [PATCH 5/6] Indicate Emscripten version in uname
 
 This patch has been upstreamed:
 https://github.com/emscripten-core/emscripten/pull/17026

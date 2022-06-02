@@ -90,6 +90,7 @@ export LDFLAGS_BASE=\
 	-std=c++14 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
+	-s WASM_BIGINT \
 	$(EXTRA_LDFLAGS)
 
 export CXXFLAGS_BASE=
