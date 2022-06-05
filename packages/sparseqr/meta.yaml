@@ -3,7 +3,7 @@ package:
   version: 1.0.0
 
 source:
-  sha256: 56f3ea8f1d76518ced64a0c5123a27ed27ede3f340c0caeaa2ca64a57059aa03 
+  sha256: 56f3ea8f1d76518ced64a0c5123a27ed27ede3f340c0caeaa2ca64a57059aa03
   url: https://github.com/yig/PySPQR/archive/refs/tags/v1.0.0.tar.gz
   patches:
     - patches/0001-__init__.py-sparseqr.py-spqrseqr_gen.py-Added-a-qz-r.patch

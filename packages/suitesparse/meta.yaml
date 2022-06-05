@@ -2,18 +2,18 @@ package:
   name: suitesparse
   version: 5.11.0
 
-# source:
-#   sha256: fdd957ed06019465f7de73ce931afaf5d40e96e14ae57d91f60868b8c123c4c8 
-#   url: https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v5.11.0.tar.gz
-#   patches:
-#     - patches/0001-Changed-a-few-files.patch
-
 source:
-  sha256: de98a60823b0109d0904301361b9c7d2a419c46d1673ed3e30478cc7cf2cb960
+  sha256: fdd957ed06019465f7de73ce931afaf5d40e96e14ae57d91f60868b8c123c4c8 
+  url: https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v5.11.0.tar.gz
+  patches:
+    - patches/0001-Changed-a-few-files.patch
 
-  url: https://github.com/gabrielfougeron/SuiteSparse/archive/refs/heads/master.zip
-  # patches:
-  #   - patches/0001-Changed-a-few-files.patch
+# source:
+#   sha256: de98a60823b0109d0904301361b9c7d2a419c46d1673ed3e30478cc7cf2cb960
+# 
+#   url: https://github.com/gabrielfougeron/SuiteSparse/archive/refs/heads/master.zip
+#   # patches:
+#   #   - patches/0001-Changed-a-few-files.patch
 
 requirements:
   run:
