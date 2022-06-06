@@ -16,7 +16,6 @@ class BuildArgs:
     cxxflags: str = ""
     ldflags: str = ""
     replace_libs: str = ""
-    host_install_dir: str = ""
     target_install_dir: str = ""
     pythoninclude: str = "python/include"
 
@@ -92,7 +91,6 @@ def test_handle_command():
         cflags="",
         cxxflags="",
         ldflags="-lm",
-        host_install_dir="",
         replace_libs="",
         target_install_dir="",
     )

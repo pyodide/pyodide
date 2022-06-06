@@ -1,0 +1,27 @@
+package:
+  name: gmpy2
+  version: 2.1.2
+
+source:
+  url: https://files.pythonhosted.org/packages/80/02/a9f4de927fc1677a68b40d966f9ea757b58997cfe06cf305ffa2159979ce/gmpy2-2.1.2.tar.gz
+  sha256: da75140bca128ece795895477e53b43773e3748aa90ba6170eae7ca2c74b82d1
+
+requirements:
+  run:
+    - libmpc
+
+build:
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
+
+test:
+  imports:
+    - gmpy2
+
+about:
+  home: https://github.com/aleaxit/gmpy
+  PyPI: https://pypi.org/project/gmpy2
+  summary: gmpy2 interface to GMP/MPIR, MPFR, and MPC for Python 2.7 and 3.5+
+  license: LGPL-3.0+

@@ -457,9 +457,16 @@ def generate_packages_json(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
+
+    import sys
+
+    sys.path.append(str(common.get_pyodide_root() / "src/py"))
+    from pyodide import __version__
+
     # Build package.json data.
+    [platform, _, arch] = common.platform().rpartition("_")
     package_data: dict[str, dict[str, Any]] = {
-        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "info": {"arch": arch, "platform": platform, "version": __version__},
         "packages": {},
     }
 

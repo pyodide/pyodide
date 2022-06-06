@@ -32,3 +32,4 @@ packages/build-logs
 dist/
 
 xbuildenv/
+tools/symlinks

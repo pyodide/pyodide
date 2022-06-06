@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
 - {{ Enhancement }} Integrity of Pyodide packages are now verified before
   loading them. This is for now only limited to browser environments.
   {pr}`2513`
@@ -77,8 +79,8 @@ substitutions:
   rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
   {pr}`2510`, {pr}`2541`
 
-- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator
-  can now be accessed through `pyodide_test_runner`.
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through `pyodide_test_runner`.
   {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
@@ -106,6 +108,18 @@ substitutions:
   version in them. This should help ensure ABI compatibility if Emscripten
   wheels are distributed outside of the main Pyodide distribution.
   {pr}`2610`
+
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
+- {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`..
+  {pr}`2643`
+
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading
+  {pr}`2635`
 
 ### micropip
 
@@ -138,6 +152,9 @@ substitutions:
   library and other tools used to install packages.
   {pr}`2572`
 
+- {{ Enhancement }} `micropip` can now be used to install Emscripten binary wheels.
+  {pr}`2591`
+
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
   packages into a `packages.json` file.
   {pr}`2581`
@@ -152,7 +169,7 @@ substitutions:
 - New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
   h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
   svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
-  ruamel, msprime {pr}`4138`, xgboost {pr}`2537`.
+  ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`.
 
 ## Version 0.20.0
 

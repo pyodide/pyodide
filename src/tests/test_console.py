@@ -4,7 +4,6 @@ import time
 
 import pytest
 from pyodide_test_runner import run_in_pyodide
-from pyodide_test_runner.fixture import selenium_common
 
 from pyodide import CodeRunner, console  # noqa: E402
 from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
@@ -293,19 +292,6 @@ async def test_console_imports(selenium):
 
     assert await get_result("import pytz") is None
     assert await get_result("pytz.utc.zone") == "UTC"
-
-
-@pytest.fixture(params=["firefox", "chrome"], scope="function")
-def console_html_fixture(request, web_server_main):
-    with selenium_common(request, web_server_main, False) as selenium:
-        selenium.driver.get(
-            f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
-        )
-        selenium.javascript_setup()
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
 
 
 def test_console_html(console_html_fixture):

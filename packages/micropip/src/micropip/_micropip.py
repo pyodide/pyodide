@@ -14,19 +14,20 @@ from zipfile import ZipFile
 
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
+from packaging.tags import Tag, sys_tags
+from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
 from pyodide import to_js
-from pyodide._package_loader import parse_wheel_name, wheel_dist_info_dir
+from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
 
 from ._compat import (
     BUILTIN_PACKAGES,
-    WHEEL_BASE,
     fetch_bytes,
     fetch_string,
+    loadDynlib,
     loadedPackages,
-    pyodide_js,
+    loadPackage,
 )
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 from .package import PackageDict, PackageMetadata
@@ -44,25 +45,19 @@ async def _get_pypi_json(pkgname: str, fetch_kwargs: dict[str, str]) -> Any:
     return json.loads(metadata)
 
 
-def _is_pure_python_wheel(filename: str) -> bool:
-    return filename.endswith("py3-none-any.whl")
-
-
 @dataclass
 class WheelInfo:
     name: str
     version: Version
     filename: str
-    packagetype: str
-    python_version: str
-    abi_tag: str
-    platform: str
+    build: tuple[int, str] | tuple[()]
+    tags: frozenset[Tag]
     url: str
     project_name: str | None = None
     digests: dict[str, str] | None = None
     data: BytesIO | None = None
     _dist: Any = None
-    _dist_info: Path | None = None
+    dist_info: Path | None = None
     _requires: list[Requirement] | None = None
 
     @staticmethod
@@ -72,19 +67,23 @@ class WheelInfo:
         See https://www.python.org/dev/peps/pep-0427/#file-name-convention
         """
         file_name = Path(url).name
-        # also strip '.whl' extension.
-        wheel_name = Path(url).stem
-        name, version, python_tag, abi_tag, platform = parse_wheel_name(wheel_name)
+        name, version, build, tags = parse_wheel_filename(file_name)
         return WheelInfo(
             name=name,
-            version=Version(version),
+            version=version,
             filename=file_name,
-            packagetype="bdist_wheel",
-            python_version=python_tag,
-            abi_tag=abi_tag,
-            platform=platform,
+            build=build,
+            tags=tags,
             url=url,
         )
+
+    def is_compatible(self):
+        if self.filename.endswith("py3-none-any.whl"):
+            return True
+        for tag in sys_tags():
+            if tag in self.tags:
+                return True
+        return False
 
     async def download(self, fetch_kwargs):
         try:
@@ -123,10 +122,12 @@ class WheelInfo:
         if m.hexdigest() != sha256:
             raise ValueError("Contents don't match hash")
 
-    def extract(self):
+    def extract(self, target: Path) -> None:
         assert self.data
         with ZipFile(self.data) as zf:
-            zf.extractall(WHEEL_BASE)
+            zf.extractall(target)
+        dist_info_name: str = wheel_dist_info_dir(ZipFile(self.data), self.name)
+        self.dist_info = target / dist_info_name
 
     def requires(self, extras: set[str]) -> list[str]:
         if not self._dist:
@@ -137,20 +138,11 @@ class WheelInfo:
         self._requires = requires
         return requires
 
-    @property
-    def dist_info(self) -> Path:
-        if self._dist_info:
-            return self._dist_info
-        assert self.data
-        dist_info_name: str = wheel_dist_info_dir(ZipFile(self.data), self.name)
-        dist_info = WHEEL_BASE / dist_info_name
-        self._dist_info = dist_info
-        return dist_info
-
     def write_dist_info(self, file: str, content: str) -> None:
+        assert self.dist_info
         (self.dist_info / file).write_text(content)
 
-    def set_installer(self):
+    def set_installer(self) -> None:
         assert self.data
         wheel_source = "pypi" if self.digests is not None else self.url
 
@@ -163,15 +155,21 @@ class WheelInfo:
                 "PYODIDE_REQUIRES", json.dumps(sorted(x.name for x in self._requires))
             )
 
-    async def install(self):
+    async def load_libraries(self, target: Path) -> None:
+        assert self.data
+        dynlibs = get_dynlibs(self.data, ".whl", target)
+        await gather(*map(lambda dynlib: loadDynlib(dynlib, False), dynlibs))
+
+    async def install(self, target: Path) -> None:
         url = self.url
         if not self.data:
             raise RuntimeError(
                 "Micropip internal error: attempted to install wheel before downloading it?"
             )
         self.validate()
-        self.extract()
+        self.extract(target)
         self.set_installer()
+        await self.load_libraries(target)
         name = self.project_name
         assert name
         setattr(loadedPackages, name, url)
@@ -206,8 +204,11 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
     for ver in candidate_versions:
         release = releases[str(ver)]
         for fileinfo in release:
-            if _is_pure_python_wheel(fileinfo["filename"]):
-                wheel = WheelInfo.from_url(fileinfo["url"])
+            url = fileinfo["url"]
+            if not url.endswith(".whl"):
+                continue
+            wheel = WheelInfo.from_url(url)
+            if wheel.is_compatible():
                 wheel.digests = fileinfo["digests"]
                 return wheel
 
@@ -222,6 +223,7 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
 @dataclass
 class Transaction:
     ctx: dict[str, str]
+    ctx_extras: list[dict[str, str]]
     keep_going: bool
     deps: bool
     pre: bool
@@ -251,7 +253,7 @@ class Transaction:
 
         # custom download location
         wheel = WheelInfo.from_url(req)
-        if not _is_pure_python_wheel(wheel.filename):
+        if not wheel.is_compatible():
             raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
 
         await self.add_wheel(wheel, extras=set())
@@ -285,6 +287,8 @@ class Transaction:
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
+        for e in req.extras:
+            self.ctx_extras.append({"extra": e})
 
         if self.pre:
             req.specifier.prereleases = True
@@ -292,11 +296,37 @@ class Transaction:
         if req.marker:
             # handle environment markers
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
-            if not req.marker.evaluate(self.ctx):
+
+            # For a requirement being installed as part of an optional feature
+            # via the extra specifier, the evaluation of the marker requires
+            # the extra key in self.ctx to have the value specified in the
+            # primary requirement.
+
+            # The req.extras attribute is only set for the primary requirement
+            # and hence has to be available during the evaluation of the
+            # dependencies. Thus, we use the self.ctx_extras attribute above to
+            # store all the extra values we come across during the transaction and
+            # attempt the marker evaluation for all of these values. If any of the
+            # evaluations return true we include the dependency.
+
+            def eval_marker(e: dict[str, str]) -> bool:
+                self.ctx.update(e)
+                # need the assertion here to make mypy happy:
+                # https://github.com/python/mypy/issues/4805
+                assert req.marker is not None
+                return req.marker.evaluate(self.ctx)
+
+            self.ctx.update({"extra": ""})
+            # The current package may have been brought into the transaction
+            # without any of the optional requirement specification, but has
+            # another marker, such as implementation_name. In this scenario,
+            # self.ctx_extras is empty and hence the eval_marker() function
+            # will not be called at all.
+            if not req.marker.evaluate(self.ctx) and not any(
+                [eval_marker(e) for e in self.ctx_extras]
+            ):
                 return
-
         # Is some version of this package is already installed?
-
         req.name = canonicalize_name(req.name)
         if self.check_version_satisfied(req):
             return
@@ -420,7 +450,6 @@ async def install(
     """
     importlib.invalidate_caches()
     ctx = default_environment()
-    ctx.setdefault("extra", "")
     if isinstance(requirements, str):
         requirements = [requirements]
 
@@ -429,8 +458,16 @@ async def install(
     if credentials:
         fetch_kwargs["credentials"] = credentials
 
+    # Note: getsitepackages is not available in a virtual environment...
+    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
+    # problem is not fixed)
+    from site import getsitepackages
+
+    wheel_base = Path(getsitepackages()[0])
+
     transaction = Transaction(
         ctx=ctx,
+        ctx_extras=[],
         keep_going=keep_going,
         deps=deps,
         pre=pre,
@@ -453,9 +490,7 @@ async def install(
         # that case BUILTIN_PACKAGES is empty.
         wheel_promises.append(
             asyncio.ensure_future(
-                pyodide_js.loadPackage(
-                    to_js([name for [name, _, _] in pyodide_packages])
-                )
+                loadPackage(to_js([name for [name, _, _] in pyodide_packages]))
             )
         )
 
@@ -463,7 +498,7 @@ async def install(
     for wheel in transaction.wheels:
         # detect whether the wheel metadata is from PyPI or from custom location
         # wheel metadata from PyPI has SHA256 checksum digest.
-        wheel_promises.append(wheel.install())
+        wheel_promises.append(wheel.install(wheel_base))
 
     await gather(*wheel_promises)
 

@@ -433,11 +433,7 @@ static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
-  int result = hiwire_get_length(self->js);
-  if (result == -1) {
-    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
-  }
-  return result;
+  return hiwire_get_length(self->js);
 }
 
 /**
@@ -1044,6 +1040,52 @@ typedef struct
   PyException_HEAD PyObject* js_error;
 } JsExceptionObject;
 
+// Pickle support
+static PyObject*
+JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
+{
+  // We can't pickle the js_error because it is a JsProxy.
+  // The point of this function is to convert it to a string.
+  // Compare OSError_reduce in cpython/Objects/exceptions.c which is similar.
+  PyObject* res = NULL;
+
+  PyObject* args;
+
+  PyObject* tmp;
+  tmp = PyTuple_GET_ITEM(self->args, 0);
+
+  if (!JsProxy_Check(tmp)) {
+    // If for some reason js_error isn't a JsProxy, leave it alone.
+    args = self->args;
+    Py_INCREF(args);
+  } else {
+    // Make a new tuple, for the first entry use the repr of js_error.
+    args = PyTuple_New(PyTuple_GET_SIZE(self->args));
+    tmp = PyObject_Repr(tmp);
+    PyTuple_SET_ITEM(args, 0, tmp);
+
+    // Copy over all other entries
+    for (int i = 1; i < PyTuple_GET_SIZE(self->args); i++) {
+      tmp = PyTuple_GET_ITEM(self->args, i);
+      Py_INCREF(tmp);
+      PyTuple_SET_ITEM(self->args, i, tmp);
+    }
+  }
+
+  // This is now just like BaseException_reduce
+  if (self->dict)
+    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
+  else
+    res = PyTuple_Pack(2, Py_TYPE(self), args);
+  Py_DECREF(args);
+  return res;
+}
+
+static PyMethodDef JsException_methods[] = {
+  { "__reduce__", (PyCFunction)JsException_reduce, METH_NOARGS },
+  { NULL } /* Sentinel */
+};
+
 static PyMemberDef JsException_members[] = {
   { "js_error",
     T_OBJECT_EX,
@@ -1106,7 +1148,7 @@ JsException_traverse(JsExceptionObject* self, visitproc visit, void* arg)
 // Not sure we are interfacing with the GC correctly. There should be a call to
 // PyObject_GC_Track somewhere?
 static PyTypeObject _Exc_JsException = {
-  PyVarObject_HEAD_INIT(NULL, 0) "JsException",
+  PyVarObject_HEAD_INIT(NULL, 0) "pyodide.JsException",
   .tp_basicsize = sizeof(JsExceptionObject),
   .tp_dealloc = (destructor)JsException_dealloc,
   .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1116,6 +1158,7 @@ static PyTypeObject _Exc_JsException = {
   .tp_traverse = (traverseproc)JsException_traverse,
   .tp_clear = (inquiry)JsException_clear,
   .tp_members = JsException_members,
+  .tp_methods = JsException_methods,
   // PyExc_Exception isn't static so we fill in .tp_base in JsProxy_init
   // .tp_base = (PyTypeObject *)PyExc_Exception,
   .tp_dictoffset = offsetof(JsExceptionObject, dict),

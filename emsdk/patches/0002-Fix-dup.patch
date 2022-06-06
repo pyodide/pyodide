@@ -1,7 +1,7 @@
 From 40956dee436737d9dd40e0b57c6e2ebd26569920 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
-Subject: [PATCH 2/7] Fix dup
+Subject: [PATCH 2/6] Fix dup
 
 This fixes two problems with the `dup` system calls:
 1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
