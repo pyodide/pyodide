@@ -2,7 +2,7 @@ from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(packages=["gmpy2"])
-def test_sympy(selenium):
+def test_gmpy2(selenium):
     import gmpy2
     from gmpy2 import mpc, mpfr, mpq, mpz, sqrt
 
