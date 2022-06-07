@@ -3,8 +3,8 @@ package:
   version: 0.1.0
 
 source:
-  sha256: e9d0d26356f35c3129f3f58b976d791c81e4dffcdac4b95b35e1a6175ef84ce9
-  url: https://github.com/gabrielfougeron/Choreographies2/archive/refs/heads/main.zip
+  sha256: 1b63715d7c84068017abe1c11492001adeefdb7f2ab7a57b2234dc99556c23ca
+  url: https://github.com/gabrielfougeron/Choreographies2/archive/refs/tags/pyodide_stable.tar.gz
 
 requirements:
   run:
