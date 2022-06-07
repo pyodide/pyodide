@@ -121,6 +121,10 @@ substitutions:
 - {{ Enhancement }} Add a spinner while the REPL is loading
   {pr}`2635`
 
+- {{ Enhancement }} Cursor blinking in the REPL can be disabled by setting
+  `noblink` in URL search params.
+  {pr}`2666`
+
 ### micropip
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
