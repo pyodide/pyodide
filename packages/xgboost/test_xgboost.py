@@ -5,7 +5,7 @@ import pathlib
 import pytest
 from pyodide_test_runner import run_in_pyodide
 
-DEMO_PATH = pathlib.Path(__file__).parent / "demo"
+DEMO_PATH = pathlib.Path(__file__).parent / "test_data"
 DATA_TRAIN = base64.b64encode((DEMO_PATH / "dermatology.data").read_bytes())
 
 
