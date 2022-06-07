@@ -1,7 +1,7 @@
-From 40956dee436737d9dd40e0b57c6e2ebd26569920 Mon Sep 17 00:00:00 2001
+From a3b72ae6c36ad0e5212b28a36d010b797ccb0a9a Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
-Subject: [PATCH 2/6] Fix dup
+Subject: [PATCH 2/3] Fix dup
 
 This fixes two problems with the `dup` system calls:
 1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
@@ -12,15 +12,24 @@ This is a simplification of an upstream pull request that would fix this problem
 https://github.com/emscripten-core/emscripten/pull/9396/files
 This patch is simpler than the upstream one but leaves NODERAWFS broken.
 ---
- src/library_fs.js      |  7 ++++++-
- src/library_syscall.js | 12 ++++++------
- 2 files changed, 12 insertions(+), 7 deletions(-)
+ src/library_fs.js      |  8 ++++++--
+ src/library_syscall.js | 10 +++++-----
+ 2 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index 50b06c264..fc8d0193a 100644
+index bc5cc412c..98328e13a 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
-@@ -429,11 +429,16 @@ FS.staticInit();` +
+@@ -404,7 +404,7 @@ FS.staticInit();` +
+     // SOCKFS is completed.
+     createStream: (stream, fd_start, fd_end) => {
+       if (!FS.FSStream) {
+-        FS.FSStream = /** @constructor */ function(){};
++        FS.FSStream = /** @constructor */ function(){ this.shared = {}; };
+         FS.FSStream.prototype = {
+           object: {
+             get: function() { return this.node; },
+@@ -418,7 +418,11 @@ FS.staticInit();` +
            },
            isAppend: {
              get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
@@ -33,21 +42,16 @@ index 50b06c264..fc8d0193a 100644
          };
        }
        // clone it, so we can return an instance of FSStream
-       var newStream = new FS.FSStream();
-+      newStream.shared = {};
-       for (var p in stream) {
-         newStream[p] = stream[p];
-       }
 diff --git a/src/library_syscall.js b/src/library_syscall.js
-index c704a0604..09721d025 100644
+index 8a59a0442..107ae8455 100644
 --- a/src/library_syscall.js
 +++ b/src/library_syscall.js
-@@ -137,10 +137,10 @@ var SyscallsLibrary = {
+@@ -131,10 +131,10 @@ var SyscallsLibrary = {
        }
        return 0;
      },
 -    doDup: function(path, flags, suggestFD) {
-+    doDup: function(stream, suggestFD) {
++    doDup: function(stream, suggestFD, flags) {
        var suggest = FS.getStream(suggestFD);
        if (suggest) FS.close(suggest);
 -      return FS.open(path, flags, 0, suggestFD, suggestFD).fd;
@@ -55,25 +59,16 @@ index c704a0604..09721d025 100644
      },
      doReadv: function(stream, iov, iovcnt, offset) {
        var ret = 0;
-@@ -374,7 +374,7 @@ var SyscallsLibrary = {
+@@ -303,7 +303,7 @@ var SyscallsLibrary = {
    },
-   __sys_dup: function(fd) {
+   __syscall_dup: function(fd) {
      var old = SYSCALLS.getStreamFromFD(fd);
 -    return FS.open(old.path, old.flags, 0).fd;
 +    return FS.createStream(old, 0).fd;
    },
-   __sys_pipe__deps: ['$PIPEFS'],
-   __sys_pipe: function(fdPtr) {
-@@ -461,7 +461,7 @@ var SyscallsLibrary = {
-   __sys_dup2: function(oldfd, suggestFD) {
-     var old = SYSCALLS.getStreamFromFD(oldfd);
-     if (old.fd === suggestFD) return suggestFD;
--    return SYSCALLS.doDup(old.path, old.flags, suggestFD);
-+    return SYSCALLS.doDup(old, suggestFD);
-   },
-   __sys_getppid__nothrow: true,
-   __sys_getppid__proxy: false,
-@@ -1108,7 +1108,7 @@ var SyscallsLibrary = {
+   __syscall_pipe__deps: ['$PIPEFS'],
+   __syscall_pipe: function(fdPtr) {
+@@ -853,7 +853,7 @@ var SyscallsLibrary = {
            return -{{{ cDefine('EINVAL') }}};
          }
          var newStream;
@@ -82,15 +77,15 @@ index c704a0604..09721d025 100644
          return newStream.fd;
        }
        case {{{ cDefine('F_GETFD') }}}:
-@@ -1330,7 +1330,7 @@ var SyscallsLibrary = {
+@@ -1072,7 +1072,7 @@ var SyscallsLibrary = {
      assert(!flags);
  #endif
      if (old.fd === suggestFD) return -{{{ cDefine('EINVAL') }}};
 -    return SYSCALLS.doDup(old.path, old.flags, suggestFD);
-+    return SYSCALLS.doDup(old, suggestFD);
++    return SYSCALLS.doDup(old, suggestFD, flags);
    },
+ };
  
-   __sys_prlimit64: function(pid, resource, new_limit, old_limit) {
 -- 
 2.25.1
 
