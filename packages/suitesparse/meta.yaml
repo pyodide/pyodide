@@ -8,26 +8,15 @@ source:
   patches:
     - patches/0001-Changed-a-few-files.patch
 
-# source:
-#   sha256: de98a60823b0109d0904301361b9c7d2a419c46d1673ed3e30478cc7cf2cb960
-#
-#   url: https://github.com/gabrielfougeron/SuiteSparse/archive/refs/heads/master.zip
-#   # patches:
-#   #   - patches/0001-Changed-a-few-files.patch
-
 requirements:
   run:
     - CLAPACK
 
 build:
-  sharedlibrary: true
-  # set linker and C flags to error on anything to do with function declarations being wrong.
-  # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
-  # will fail. Better to fail at compile or link time.
+  library: true
   script: |
     sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\nset(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-    LDFLAGS="-sSIDE_MODULE=1" emmake make install BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so"
-    mkdir -p dist/lib
-    mkdir -p dist/include
-    cp -R include/* dist/include
-    cp -R lib/*  dist/lib
+    emmake make install \
+      BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
+      LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
+      INSTALL=${WASM_LIBRARY_DIR}
