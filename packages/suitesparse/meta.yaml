@@ -13,10 +13,21 @@ requirements:
     - CLAPACK
 
 build:
-  library: true
+  sharedlibrary: true
   script: |
     sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\nset(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-    emmake make install \
+    ls $PYODIDE_ROOT/packages/CLAPACK/dist/lib
+    emmake make -j ${PYODIDE_JOBS:-3} install \
+      LDFLAGS="-sSIDE_MODULE=1 -L${WASM_LIBRARY_DIR}/lib " \
       BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
       LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}
+    mkdir -p dist
+    cp ${WASM_LIBRARY_DIR}/lib/libspqr.so.2.1.0 dist/libspqr.so
+    cp ${WASM_LIBRARY_DIR}/lib/libamd.so.2.4.6 dist/libamd.so
+    cp ${WASM_LIBRARY_DIR}/lib/libcamd.so.2.4.6 dist/libcamd.so
+    cp ${WASM_LIBRARY_DIR}/lib/libcholmod.so.3.0.14 dist/libcholmod.so
+    cp ${WASM_LIBRARY_DIR}/lib/libccolamd.so.2.9.6 dist/libccolamd.so
+    cp ${WASM_LIBRARY_DIR}/lib/libcolamd.so.2.9.6 dist/libcolamd.so
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so.5.11.0 dist/libsuitesparseconfig.so
+    cp ${WASM_LIBRARY_DIR}/lib/libmetis.so dist/libmetis.so

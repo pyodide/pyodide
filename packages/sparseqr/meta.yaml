@@ -3,8 +3,9 @@ package:
   version: "1.2"
 
 source:
-  sha256: cca67680bb4d32f6a6dee303399a5f62badac255f8b8ee8f6d41a7e3a4e2c49d
-  url: https://files.pythonhosted.org/packages/8e/18/fd29b392a2b6902fd88e86a04c73a7af15a6f12046cee3a0632be9ef4f32/sparseqr-1.2.tar.gz
+  # It seems like PyPI release has invalid setup.py (missing cffi modules information)
+  sha256: 5611ec439b44f22ea86995c49a229e0a377768520ddc7804cef488a8615655a3
+  url: https://github.com/yig/PySPQR/archive/1a146649773911a1376ee9f60c6948004e11b57c.zip
 
 requirements:
   run:
@@ -13,16 +14,15 @@ requirements:
     - numpy
     - scipy
     - suitesparse
+    - distutils
 
 build:
-  cflags: |
-    -I${WASM_LIBRARY_DIR}/include
-  ldflags: |
-    -L${WASM_LIBRARY_DIR}/lib
-  script:
+  script: |
     # FIXME: We are not dealing with poetry build system correctly.
     #        So for now remove `pyproject.toml` to force pypabuild to use setup.py
-    rm pyproject.toml
+    rm -f pyproject.toml
+    sed -i "s@include_dirs = \[\]@include_dirs = ['\\${WASM_LIBRARY_DIR}/include']@" sparseqr/sparseqr_gen.py
+    sed -i "s@library_dirs = \[\]@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib']@" sparseqr/sparseqr_gen.py
 
 test:
   imports:
