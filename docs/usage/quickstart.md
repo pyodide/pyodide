@@ -11,7 +11,7 @@ Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in 
 To include Pyodide in your project you can use the following CDN URL:
 
 ```text
-https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
+{{PYODIDE_CDN_URL}}pyodide.js
 ```
 
 You can also download a release from [GitHub
@@ -24,7 +24,7 @@ and returns {js:mod}`the Pyodide top level namespace <pyodide>`.
 
 ```pyodide
 async function main() {
-  let pyodide = await loadPyodide({ indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/" });
+  let pyodide = await loadPyodide();
   // Pyodide is now ready to use...
   console.log(pyodide.runPython(`
     import sys
@@ -60,16 +60,14 @@ Create and save a test `index.html` page with the following contents:
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+      <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
     Open your browser console to see Pyodide output
     <script type="text/javascript">
       async function main(){
-        let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
-        });
+        let pyodide = await loadPyodide();
         console.log(pyodide.runPython(`
             import sys
             sys.version
@@ -88,7 +86,7 @@ Create and save a test `index.html` page with the following contents:
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+    <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
 
   <body>
@@ -114,9 +112,7 @@ Create and save a test `index.html` page with the following contents:
       output.value = "Initializing...\n";
       // init Pyodide
       async function main() {
-        let pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
-        });
+        let pyodide = await loadPyodide();
         output.value += "Ready!\n";
         return pyodide;
       }

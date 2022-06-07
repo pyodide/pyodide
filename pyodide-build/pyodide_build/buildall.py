@@ -5,6 +5,8 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import dataclasses
+import hashlib
 import json
 import os
 import shutil
@@ -15,7 +17,7 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Optional
+from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
@@ -29,36 +31,44 @@ class BuildError(Exception):
         super().__init__()
 
 
+@total_ordering
+@dataclasses.dataclass(eq=False, repr=False)
 class BasePackage:
     pkgdir: Path
     name: str
     version: str
-    meta: dict
+    meta: dict[str, Any]
     library: bool
     shared_library: bool
     dependencies: list[str]
     unbuilt_dependencies: set[str]
     dependents: set[str]
-    unvendored_tests: Optional[Path] = None
-    file_name: Optional[str] = None
+    unvendored_tests: Path | None = None
+    file_name: str | None = None
     install_dir: str = "site"
+    _queue_idx: int | None = None
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Any) -> bool:
         return len(self.dependents) > len(other.dependents)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return len(self.dependents) == len(other.dependents)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
 
     def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta)
+        return needs_rebuild(
+            self.pkgdir, self.pkgdir / "build", self.meta.get("source", {})
+        )
+
+    def build(self, outputdir: Path, args: Any) -> None:
+        raise NotImplementedError()
 
 
-@total_ordering
+@dataclasses.dataclass
 class StdLibPackage(BasePackage):
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
@@ -72,12 +82,18 @@ class StdLibPackage(BasePackage):
         self.dependents = set()
         self.install_dir = "lib"
 
-    def build(self, outputdir: Path, args) -> None:
+    def build(self, outputdir: Path, args: Any) -> None:
         # All build / packaging steps are already done in the main Makefile
         return
 
+    def wheel_path(self) -> Path:
+        raise RuntimeError("StdLibPackage has no wheel")
 
-@total_ordering
+    def tests_path(self) -> Path | None:
+        return None
+
+
+@dataclasses.dataclass
 class Package(BasePackage):
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
@@ -103,74 +119,57 @@ class Package(BasePackage):
 
     def wheel_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        wheel, *rest = find_matching_wheels(dist_dir.glob("*.whl"))
-        if rest:
-            raise Exception(
-                f"Unexpected number of wheels {len(rest) + 1} when building {self.name}"
+        wheels = list(find_matching_wheels(dist_dir.glob("*.whl")))
+        if len(wheels) != 1:
+            raise RuntimeError(
+                f"Unexpected number of wheels {len(wheels)} when building {self.name}"
             )
-        return wheel
+        return wheels[0]
 
-    def tests_path(self) -> Optional[Path]:
+    def tests_path(self) -> Path | None:
         tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
         assert len(tests) <= 1
         if tests:
             return tests[0]
         return None
 
-    def build(self, outputdir: Path, args) -> None:
+    def build(self, outputdir: Path, args: Any) -> None:
 
-        with open(self.pkgdir / "build.log.tmp", "w") as f:
-            p = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pyodide_build",
-                    "buildpkg",
-                    str(self.pkgdir / "meta.yaml"),
-                    "--cflags",
-                    args.cflags,
-                    "--cxxflags",
-                    args.cxxflags,
-                    "--ldflags",
-                    args.ldflags,
-                    "--target-install-dir",
-                    args.target_install_dir,
-                    "--host-install-dir",
-                    args.host_install_dir,
-                    # Either this package has been updated and this doesn't
-                    # matter, or this package is dependent on a package that has
-                    # been updated and should be rebuilt even though its own
-                    # files haven't been updated.
-                    "--force-rebuild",
-                ],
-                check=False,
-                stdout=f,
-                stderr=subprocess.STDOUT,
+        p = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pyodide_build",
+                "buildpkg",
+                str(self.pkgdir / "meta.yaml"),
+                "--cflags",
+                args.cflags,
+                "--cxxflags",
+                args.cxxflags,
+                "--ldflags",
+                args.ldflags,
+                "--target-install-dir",
+                args.target_install_dir,
+                "--host-install-dir",
+                args.host_install_dir,
+                # Either this package has been updated and this doesn't
+                # matter, or this package is dependent on a package that has
+                # been updated and should be rebuilt even though its own
+                # files haven't been updated.
+                "--force-rebuild",
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        log_dir = Path(args.log_dir).resolve() if args.log_dir else None
+        if log_dir and (self.pkgdir / "build.log").exists():
+            log_dir.mkdir(exist_ok=True, parents=True)
+            shutil.copy(
+                self.pkgdir / "build.log",
+                log_dir / f"{self.name}.log",
             )
-
-        # Don't overwrite build log if we didn't build the file.
-        # If the file didn't need to be rebuilt, the log will have exactly two lines.
-        rebuilt = True
-        with open(self.pkgdir / "build.log.tmp") as f:
-            try:
-                next(f)
-                next(f)
-                next(f)
-            except StopIteration:
-                rebuilt = False
-
-        if rebuilt:
-            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")
-            log_dir = Path(args.log_dir).resolve() if args.log_dir else None
-
-            if log_dir and (self.pkgdir / "build.log").exists():
-                log_dir.mkdir(exist_ok=True, parents=True)
-                shutil.copy(
-                    self.pkgdir / "build.log",
-                    log_dir / f"{self.name}.log",
-                )
-        else:
-            (self.pkgdir / "build.log.tmp").unlink()
 
         if p.returncode != 0:
             print(f"Error building {self.name}. Printing build logs.")
@@ -188,11 +187,6 @@ class Package(BasePackage):
             shutil.copy(file_path, outputdir)
             file_path.unlink()
             return
-
-        shutil.copy(self.wheel_path(), outputdir)
-        test_path = self.tests_path()
-        if test_path:
-            shutil.copy(test_path, outputdir)
 
 
 def generate_dependency_graph(
@@ -223,12 +217,17 @@ def generate_dependency_graph(
     if "*" in packages:
         packages.discard("*")
         packages.update(
-            str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
+            str(x.name) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
 
     no_numpy_dependents = "no-numpy-dependents" in packages
     if no_numpy_dependents:
         packages.discard("no-numpy-dependents")
+
+    packages_exclude = list(filter(lambda pkg: pkg.startswith("!"), packages))
+    for pkg_exclude in packages_exclude:
+        packages.discard(pkg_exclude)
+        packages.discard(pkg_exclude[1:])
 
     while packages:
         pkgname = packages.pop()
@@ -254,14 +253,14 @@ def generate_dependency_graph(
     return pkg_map
 
 
-def job_priority(pkg: BasePackage):
+def job_priority(pkg: BasePackage) -> int:
     if pkg.name == "numpy":
         return 0
     else:
         return 1
 
 
-def print_with_progress_line(str, progress_line):
+def print_with_progress_line(str: str, progress_line: str | None) -> None:
     if not sys.stdout.isatty():
         print(str)
         return
@@ -272,7 +271,7 @@ def print_with_progress_line(str, progress_line):
         print(progress_line, end="\r")
 
 
-def get_progress_line(package_set):
+def get_progress_line(package_set: dict[str, None]) -> str | None:
     if not package_set:
         return None
     return "In progress: " + ", ".join(package_set.keys())
@@ -297,7 +296,7 @@ def format_name_list(l: list[str]) -> str:
 
 def mark_package_needs_build(
     pkg_map: dict[str, BasePackage], pkg: BasePackage, needs_build: set[str]
-):
+) -> None:
     """
     Helper for generate_needs_build_set. Modifies needs_build in place.
     Recursively add pkg and all of its dependencies to needs_build.
@@ -328,7 +327,9 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     return needs_build
 
 
-def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> None:
+def build_from_graph(
+    pkg_map: dict[str, BasePackage], outputdir: Path, args: argparse.Namespace
+) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
     packages at once.
@@ -348,7 +349,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
-    build_queue: PriorityQueue = PriorityQueue()
+    build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
 
     if args.force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
@@ -379,7 +380,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
         if len(pkg.unbuilt_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
-    built_queue: Queue = Queue()
+    built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
     # Using dict keys for insertion order preservation
@@ -420,11 +421,15 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
 
     num_built = len(already_built)
     while num_built < len(pkg_map):
-        pkg = built_queue.get()
-        if isinstance(pkg, BuildError):
-            raise SystemExit(pkg.returncode)
-        if isinstance(pkg, Exception):
-            raise pkg
+        match built_queue.get():
+            case BuildError() as err:
+                raise SystemExit(err.returncode)
+            case Exception() as err:
+                raise err
+            case a_package:
+                # MyPy should understand that this is a BasePackage
+                assert not isinstance(a_package, Exception)
+                pkg = a_package
 
         num_built += 1
 
@@ -440,7 +445,17 @@ def build_from_graph(pkg_map: dict[str, BasePackage], outputdir: Path, args) -> 
     )
 
 
-def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
+def _generate_package_hash(full_path: Path) -> str:
+    sha256_hash = hashlib.sha256()
+    with open(full_path, "rb") as f:
+        while chunk := f.read(4096):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def generate_packages_json(
+    output_dir: Path, pkg_map: dict[str, BasePackage]
+) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
     # Build package.json data.
     package_data: dict[str, dict[str, Any]] = {
@@ -453,11 +468,14 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
             continue
+        if not Path(output_dir, pkg.file_name).exists():
+            continue
         pkg_entry: Any = {
             "name": name,
             "version": pkg.version,
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
+            "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
@@ -479,6 +497,9 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
                 "imports": [],
                 "file_name": pkg.unvendored_tests.name,
                 "install_dir": pkg.install_dir,
+                "sha256": _generate_package_hash(
+                    Path(output_dir, pkg.unvendored_tests.name)
+                ),
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
@@ -493,12 +514,26 @@ def generate_packages_json(pkg_map: dict[str, BasePackage]) -> dict:
     return package_data
 
 
-def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
+def copy_packages_to_dist_dir(packages, output_dir):
+    for pkg in packages:
+        try:
+            shutil.copy(pkg.wheel_path(), output_dir)
+        except RuntimeError:
+            pass
+
+        test_path = pkg.tests_path()
+        if test_path:
+            shutil.copy(test_path, output_dir)
+
+
+def build_packages(
+    packages_dir: Path, output_dir: Path, args: argparse.Namespace
+) -> None:
     packages = common._parse_package_subset(args.only)
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
-    build_from_graph(pkg_map, outputdir, args)
+    build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         if pkg.library:
             continue
@@ -514,14 +549,15 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         pkg.file_name = pkg.wheel_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
-    package_data = generate_packages_json(pkg_map)
+    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
+    package_data = generate_packages_json(output_dir, pkg_map)
 
-    with open(outputdir / "packages.json", "w") as fd:
+    with open(output_dir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 
 
-def make_parser(parser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = (
         "Build all the packages in a given directory\n\n"
         "Unless the --only option is provided\n\n"
@@ -532,12 +568,14 @@ def make_parser(parser):
         "dir",
         type=str,
         nargs=1,
+        default="packages",
         help="Input directory containing a tree of package definitions",
     )
     parser.add_argument(
         "output",
         type=str,
         nargs=1,
+        default="dist",
         help="Output directory in which to put all built packages",
     )
     parser.add_argument(
@@ -610,6 +648,7 @@ def make_parser(parser):
 def main(args):
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
+    outputdir.mkdir(exist_ok=True)
     if args.cflags is None:
         args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     if args.cxxflags is None:

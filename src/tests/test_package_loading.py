@@ -3,22 +3,21 @@ from pathlib import Path
 
 import pytest
 
-from conftest import BUILD_PATH
+from conftest import DIST_PATH
 
 
 def get_pyparsing_wheel_name():
-    return list(BUILD_PATH.glob("pyparsing*.whl"))[0].name
+    return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
 
 
 def get_pytz_wheel_name():
-    return list(BUILD_PATH.glob("pytz*.whl"))[0].name
+    return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
+@pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
     selenium = selenium_standalone
-    if selenium.browser == "node":
-        pytest.xfail("Loading urls in node seems to time out right now")
     if active_server == "secondary":
         url, port, log_main = web_server_secondary
         log_backup = selenium.server_log
@@ -159,17 +158,17 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    build_dir = Path(__file__).parents[2] / "build"
+    dist_dir = Path(__file__).parents[2] / "dist"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
-        build_dir / pyparsing_wheel_name,
-        build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
+        dist_dir / pyparsing_wheel_name,
+        dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
     )
 
     try:
         selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
-        (build_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
+        (dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
     assert selenium_standalone.run_js(
         "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
@@ -265,14 +264,14 @@ def test_test_unvendoring(selenium_standalone):
 
 
 def test_install_archive(selenium):
-    build_dir = Path(__file__).parents[2] / "build"
+    dist_dir = Path(__file__).parents[2] / "dist"
     test_dir = Path(__file__).parent
     # TODO: first argument actually works as a path due to implementation,
     # maybe it can be proposed to typeshed?
     shutil.make_archive(
         str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
-    build_test_pkg = build_dir / "test_pkg.tar.gz"
+    build_test_pkg = dist_dir / "test_pkg.tar.gz"
     if not build_test_pkg.exists():
         build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
@@ -303,8 +302,60 @@ def test_install_archive(selenium):
                 """
             )
     finally:
-        (build_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+        (dist_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+
+
+def test_load_bad_so_file(selenium):
+    # If we load a bad so file, we should catch the error, ignore it (and log a
+    # warning)
+    selenium.run_js(
+        """
+        pyodide.FS.writeFile("/a.so", new Uint8Array(4))
+        await pyodide._api.loadDynlib("/a.so");
+        """
+    )
+    assert (
+        "Failed to load dynlib /a.so. We probably just tried to load a linux .so file or something."
+        in selenium.logs
+    )
+
+
+def test_should_load_dynlib():
+    import sysconfig
+
+    from pyodide._package_loader import should_load_dynlib
+
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    assert ext_suffix
+    should_load = [
+        "a.so",
+        "a/b.so",
+        "b/b.so",
+        "a/b/c/d.so",
+        "a/b/c/d.abi3.so",
+        "x.abi3.so",
+        "a.b.c.so",
+        "a-weird-name.stuff-with-dashes.so",
+        f"x.{ext_suffix}",
+    ]
+    should_not_load = [
+        "a",
+        "a.py",
+        "a.txt",
+        "a/b.txt",
+        "a/b.py",
+        "b/a.py",
+        "q.cpython-38-x86_64-linux-gnu.so",
+        "q.cpython-38-x86_64-linux-gnu.so",
+        "q" + ext_suffix.replace("cpython", "pypy"),
+        "q.cpython-32mu.so",
+        "x.so.1",  # Any chance we'd want these at some point?
+    ]
+    for file in should_load:
+        assert should_load_dynlib(file)
+    for file in should_not_load:
+        assert not should_load_dynlib(file)
 
 
 def test_get_dynlibs():
@@ -315,6 +366,7 @@ def test_get_dynlibs():
     from pyodide._package_loader import get_dynlibs
 
     files = [
+        "a",
         "a.so",
         "a.py",
         "a.txt",
@@ -332,11 +384,11 @@ def test_get_dynlibs():
             x.addfile(tarfile.TarInfo(file))
         x.close()
         t.flush()
-        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
+        assert sorted(get_dynlibs(t, ".bz", Path("/p"))) == so_files
     with NamedTemporaryFile(suffix=".zip") as t:
         x2 = ZipFile(t, mode="w")
         for file in files:
             x2.writestr(file, "")
         x2.close()
         t.flush()
-        assert sorted(get_dynlibs(t, Path("/p"))) == so_files
+        assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files

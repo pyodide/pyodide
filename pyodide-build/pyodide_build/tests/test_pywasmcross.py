@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 
@@ -15,8 +16,8 @@ class BuildArgs:
     cxxflags: str = ""
     ldflags: str = ""
     replace_libs: str = ""
-    host_install_dir: str = ""
     target_install_dir: str = ""
+    pythoninclude: str = "python/include"
 
 
 def _args_wrapper(func):
@@ -40,7 +41,7 @@ def _args_wrapper(func):
 f2c_wrap = _args_wrapper(replay_f2c)
 
 
-def generate_args(line: str, args, is_link_cmd=False) -> str:
+def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
     splitline = line.split()
     res = handle_command_generate_args(splitline, args, is_link_cmd)
     for arg in [
@@ -50,6 +51,11 @@ def generate_args(line: str, args, is_link_cmd=False) -> str:
     ]:
         assert arg in res
         res.remove(arg)
+    if "-c" in splitline:
+        include_index = res.index("python/include")
+        del res[include_index]
+        del res[include_index - 1]
+
     if is_link_cmd:
         arg = "-Wl,--fatal-warnings"
         assert arg in res
@@ -85,7 +91,6 @@ def test_handle_command():
         cflags="",
         cxxflags="",
         ldflags="-lm",
-        host_install_dir="",
         replace_libs="",
         target_install_dir="",
     )

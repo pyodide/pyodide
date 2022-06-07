@@ -1,13 +1,10 @@
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
 
 
 @run_in_pyodide(
     packages=["nlopt"],
-    xfail_browsers={
-        "chrome": "nlopt set_min_objective triggers a fatal runtime error in chrome 89 see #1493",
-    },
 )
-def test_nlopt():
+def test_nlopt(selenium):
     import nlopt
     import numpy as np
 

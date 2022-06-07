@@ -1,6 +1,7 @@
 package:
   name: sharedlib-test-py
   version: "1.0"
+  _tag: pyodide.test
 requirements:
   run:
     - sharedlib-test

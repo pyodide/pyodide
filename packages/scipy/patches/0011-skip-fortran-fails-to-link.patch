@@ -1,0 +1,46 @@
+From d2107ce2e3edcd33adf41cf682bfc56358f52f00 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 25 Dec 2021 15:08:18 -0800
+Subject: [PATCH 11/14] skip fortran fails to link
+
+These are tests and they have both void vs int return value problems and implicit
+function argument cast problems. Not worth fixing for tests.
+---
+ scipy/integrate/setup.py | 6 ------
+ scipy/io/setup.py        | 3 ---
+ 2 files changed, 9 deletions(-)
+
+diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
+index 1ba82d18c..dd298a480 100644
+--- a/scipy/integrate/setup.py
++++ b/scipy/integrate/setup.py
+@@ -95,12 +95,6 @@ def configuration(parent_package='',top_path=None):
+     # Fortran+f2py extension module for testing odeint.
+     cfg = combine_dict(lapack_opt,
+                        libraries=['lsoda', 'mach'])
+-    ext = config.add_extension('_test_odeint_banded',
+-                               sources=odeint_banded_test_src,
+-                               depends=(lsoda_src + mach_src),
+-                               f2py_options=f2py_options,
+-                               **cfg)
+-    ext._pre_build_hook = pre_build_hook
+ 
+     config.add_subpackage('_ivp')
+ 
+diff --git a/scipy/io/setup.py b/scipy/io/setup.py
+index 0b936ceed..bf0c16d6c 100644
+--- a/scipy/io/setup.py
++++ b/scipy/io/setup.py
+@@ -3,9 +3,6 @@ def configuration(parent_package='',top_path=None):
+     from numpy.distutils.misc_util import Configuration
+     config = Configuration('io', parent_package, top_path)
+ 
+-    config.add_extension('_test_fortran',
+-                         sources=['_test_fortran.pyf', '_test_fortran.f'])
+-
+     config.add_data_dir('tests')
+     config.add_subpackage('matlab')
+     config.add_subpackage('arff')
+-- 
+2.25.1
+

@@ -7,11 +7,20 @@ extern "C"
 {
 
   EMSCRIPTEN_KEEPALIVE
-  const char* exc_what(exception& e) { return e.what(); }
+  const char* exc_what(exception& e)
+  {
+    return e.what();
+  }
 
   EMSCRIPTEN_KEEPALIVE
-  const std::type_info* exc_type() { return &typeid(exception); }
+  const std::type_info* exc_type()
+  {
+    return &typeid(exception);
+  }
 
   EMSCRIPTEN_KEEPALIVE
-  const char* exc_typename(std::type_info* type) { return type->name(); }
+  const char* exc_typename(std::type_info* type)
+  {
+    return type->name();
+  }
 }

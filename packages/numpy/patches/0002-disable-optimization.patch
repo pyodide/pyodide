@@ -1,0 +1,26 @@
+From 84d145e2d49f2ec659a30e3aa6268fce77e4dde7 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 31 Mar 2022 17:17:30 -0700
+Subject: [PATCH 02/14] disable optimization
+
+This is to disable SIMD optimization until SAFARI has good support for it.
+---
+ numpy/distutils/command/build.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/numpy/distutils/command/build.py b/numpy/distutils/command/build.py
+index a4fda537d..11fffe282 100644
+--- a/numpy/distutils/command/build.py
++++ b/numpy/distutils/command/build.py
+@@ -37,7 +37,7 @@ def initialize_options(self):
+         self.warn_error = False
+         self.cpu_baseline = "min"
+         self.cpu_dispatch = "max -xop -fma4" # drop AMD legacy features by default
+-        self.disable_optimization = False
++        self.disable_optimization = True
+         """
+         the '_simd' module is a very large. Adding more dispatched features
+         will increase binary size and compile time. By default we minimize
+-- 
+2.25.1
+

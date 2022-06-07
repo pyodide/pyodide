@@ -59,7 +59,7 @@ packages are finished loading:
 ```javascript
 let pyodide;
 async function main() {
-  pyodide = await loadPyodide({ indexURL: "<some-url>" });
+  pyodide = await loadPyodide();
   await pyodide.loadPackage("matplotlib");
   // matplotlib is now available
 }
@@ -134,13 +134,11 @@ installs from PyPI.
   <body>
     <script
       type="text/javascript"
-      src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"
+      src="{{PYODIDE_CDN_URL}}/pyodide.js"
     ></script>
     <script type="text/javascript">
       async function main() {
-        let pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
-        });
+        let pyodide = await loadPyodide();
         await pyodide.loadPackage("micropip");
         await pyodide.runPythonAsync(`
         import micropip

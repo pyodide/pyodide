@@ -33,8 +33,8 @@ build:
     rm -rf sphinxext
     cp $PKGDIR/src/fontlist.json matplotlib
     cp $PKGDIR/src/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
-    mkdir -p $PKGDIR/../../build/fonts
-    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
+    mkdir -p $PKGDIR/../../dist/fonts
+    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../dist/fonts/
 
 requirements:
   run:

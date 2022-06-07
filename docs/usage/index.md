@@ -12,14 +12,12 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+      <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
   <body>
     <script type="text/javascript">
       async function main(){
-        let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
-        });
+        let pyodide = await loadPyodide();
         console.log(pyodide.runPython("1 + 2"));
       }
       main();
@@ -67,8 +65,8 @@ Pyodide,
 
 | Browser | Minimal supported version | Release date      |
 | ------- | ------------------------- | ----------------- |
-| Safari  | 13.1                      | 19 September 2019 |
-| Edge    | 80                        | 26 Feb 2020       |
+| Safari  | 14.0                      | 15 September 2020 |
+| Edge    | 80                        | 26 February 2020  |
 
 Other browsers with WebAssembly support might also work however they are not
 officially supported.
@@ -100,9 +98,7 @@ Then you can load Pyodide in Node.js as follows,
 ```js
 let pyodide_pkg = await import("pyodide/pyodide.js");
 
-let pyodide = await pyodide_pkg.loadPyodide({
-  indexURL: "<pyodide artifacts folder>",
-});
+let pyodide = await pyodide_pkg.loadPyodide();
 
 await pyodide.runPythonAsync("1+1");
 ```
@@ -124,4 +120,5 @@ For this same reason, installing Pyodide packages from the CDN is explicitly not
 
    webworker.md
    loading-custom-python-code.md
+   file-system.md
 ```

@@ -12,13 +12,16 @@ requirements:
 
 build:
   library: true
+
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
         --disable-dependency-tracking \
         --disable-shared \
         --without-python \
-        --with-libxml-src="$PYODIDE_ROOT/packages/libxml/build/libxml-2.9.10" \
-        --without-crypto
+        --with-libxml-prefix="${WASM_LIBRARY_DIR}" \
+        --without-crypto \
+        --prefix=${WASM_LIBRARY_DIR}
+
     emmake make -j ${PYODIDE_JOBS:-3}
-    chmod 755 xslt-config
+    emmake make install

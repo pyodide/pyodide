@@ -1,9 +1,9 @@
 package:
   name: autograd
-  version: "1.3"
+  version: "1.4"
 source:
-  sha256: a15d147577e10de037de3740ca93bfa3b5a7cdfbc34cfb9105429c3580a33ec4
-  url: https://files.pythonhosted.org/packages/23/12/b58522dc2cbbd7ab939c7b8e5542c441c9a06a8eccb00b3ecac04a739896/autograd-1.3.tar.gz
+  sha256: 383de0f537ef2e38b85ff9692593b0cfae8958c9b3bd451b52c255fd9171ffce
+  url: https://files.pythonhosted.org/packages/04/6d/63beeb8c1f1964aa7d84e59657c7f5b85f6ae009ed80f51e0d3ec78e0f97/autograd-1.4.tar.gz
 test:
   imports:
     - autograd

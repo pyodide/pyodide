@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import os
-import pathlib
 import sys
 
-from . import buildall, buildpkg, mkpkg, serve
-from .common import get_make_environment_vars
+from . import buildall, buildpkg, create_xbuildenv, install_xbuildenv, mkpkg, serve
+from .common import init_environment
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -20,6 +18,8 @@ def make_parser() -> argparse.ArgumentParser:
         ("buildall", buildall),
         ("serve", serve),
         ("mkpkg", mkpkg),
+        ("create_xbuildenv", create_xbuildenv),
+        ("install_xbuildenv", install_xbuildenv),
     ):
         if "sphinx" in sys.modules and command_name in [
             "buildpkg",
@@ -34,21 +34,7 @@ def make_parser() -> argparse.ArgumentParser:
 
 
 def main():
-    if not os.environ.get("__LOADED_PYODIDE_ENV"):
-        from sys import version_info
-
-        PYODIDE_ROOT = str(pathlib.Path(__file__).parents[2].resolve())
-        os.environ["PYODIDE_ROOT"] = PYODIDE_ROOT
-        os.environ.update(get_make_environment_vars())
-        HOSTINSTALLDIR = os.environ["HOSTINSTALLDIR"]
-        PYVERSION = f"python{version_info.major}.{version_info.minor}"
-        pythonpath = [
-            f"{HOSTINSTALLDIR}/lib/{PYVERSION}/site-packages/",
-            f"{PYODIDE_ROOT}/pyodide-build/",
-        ]
-        os.environ["PYTHONPATH"] = ":".join(pythonpath)
-        os.environ["BASH_ENV"] = ""
-        os.environ["__LOADED_PYODIDE_ENV"] = "1"
+    init_environment()
 
     main_parser = make_parser()
 

@@ -1,0 +1,25 @@
+From 3f0c7d0265984d9a115432e3f2e8f5e027575076 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 31 Mar 2022 18:25:12 -0700
+Subject: [PATCH 14/14] disable svml
+
+---
+ numpy/core/setup.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/numpy/core/setup.py b/numpy/core/setup.py
+index cb31162d1..ba489c5ef 100644
+--- a/numpy/core/setup.py
++++ b/numpy/core/setup.py
+@@ -77,7 +77,7 @@ def can_link_svml():
+         return False
+     machine = platform.machine()
+     system = platform.system()
+-    return "x86_64" in machine and system == "Linux"
++    return False # "x86_64" in machine and system == "Linux"
+ 
+ def check_svml_submodule(svmlpath):
+     if not os.path.exists(svmlpath + "/README.md"):
+-- 
+2.25.1
+

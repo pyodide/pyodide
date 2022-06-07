@@ -119,6 +119,12 @@ static PyObject*
 JsProxy_Repr(PyObject* self)
 {
   JsRef idrepr = hiwire_to_string(JsProxy_REF(self));
+  if (idrepr == NULL) {
+    PyErr_Format(PyExc_TypeError,
+                 "Pyodide cannot generate a repr for this Javascript object "
+                 "because it has no 'toString' method");
+    return NULL;
+  }
   PyObject* pyrepr = js2python(idrepr);
   hiwire_decref(idrepr);
   return pyrepr;
@@ -134,6 +140,32 @@ JsProxy_typeof(PyObject* self, void* _unused)
   PyObject* result = js2python(idval);
   hiwire_decref(idval);
   return result;
+}
+
+static PyObject*
+JsProxy_js_id(PyObject* self, void* _unused)
+{
+  PyObject* result = NULL;
+
+  JsRef idval = JsProxy_REF(self);
+  int x[2] = { (int)Py_TYPE(self), (int)idval };
+  Py_hash_t result_c = _Py_HashBytes(x, 8);
+  FAIL_IF_MINUS_ONE(result_c);
+  result = PyLong_FromLong(result_c);
+finally:
+  return result;
+}
+
+static PyObject*
+JsProxy_js_id_private(PyObject* mod, PyObject* obj)
+{
+  if (!JsProxy_Check(obj)) {
+    PyErr_SetString(PyExc_TypeError, "Expected argument to be a JsProxy");
+    return NULL;
+  }
+
+  JsRef idval = JsProxy_REF(obj);
+  return PyLong_FromLong((int)idval);
 }
 
 /**
@@ -401,11 +433,7 @@ static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
-  int result = hiwire_get_length(self->js);
-  if (result == -1) {
-    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
-  }
-  return result;
+  return hiwire_get_length(self->js);
 }
 
 /**
@@ -710,8 +738,7 @@ JsProxy_toPy(PyObject* self,
   static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
   int depth = -1;
   PyObject* default_converter = NULL;
-  if (kwnames != NULL &&
-      !_PyArg_ParseStackAndKeywords(
+  if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
@@ -972,6 +999,7 @@ static PyNumberMethods JsProxy_NumberMethods = {
 // clang-format on
 
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
+                                        { "js_id", .get = JsProxy_js_id },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
@@ -1011,6 +1039,52 @@ typedef struct
 {
   PyException_HEAD PyObject* js_error;
 } JsExceptionObject;
+
+// Pickle support
+static PyObject*
+JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
+{
+  // We can't pickle the js_error because it is a JsProxy.
+  // The point of this function is to convert it to a string.
+  // Compare OSError_reduce in cpython/Objects/exceptions.c which is similar.
+  PyObject* res = NULL;
+
+  PyObject* args;
+
+  PyObject* tmp;
+  tmp = PyTuple_GET_ITEM(self->args, 0);
+
+  if (!JsProxy_Check(tmp)) {
+    // If for some reason js_error isn't a JsProxy, leave it alone.
+    args = self->args;
+    Py_INCREF(args);
+  } else {
+    // Make a new tuple, for the first entry use the repr of js_error.
+    args = PyTuple_New(PyTuple_GET_SIZE(self->args));
+    tmp = PyObject_Repr(tmp);
+    PyTuple_SET_ITEM(args, 0, tmp);
+
+    // Copy over all other entries
+    for (int i = 1; i < PyTuple_GET_SIZE(self->args); i++) {
+      tmp = PyTuple_GET_ITEM(self->args, i);
+      Py_INCREF(tmp);
+      PyTuple_SET_ITEM(self->args, i, tmp);
+    }
+  }
+
+  // This is now just like BaseException_reduce
+  if (self->dict)
+    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
+  else
+    res = PyTuple_Pack(2, Py_TYPE(self), args);
+  Py_DECREF(args);
+  return res;
+}
+
+static PyMethodDef JsException_methods[] = {
+  { "__reduce__", (PyCFunction)JsException_reduce, METH_NOARGS },
+  { NULL } /* Sentinel */
+};
 
 static PyMemberDef JsException_members[] = {
   { "js_error",
@@ -1074,7 +1148,7 @@ JsException_traverse(JsExceptionObject* self, visitproc visit, void* arg)
 // Not sure we are interfacing with the GC correctly. There should be a call to
 // PyObject_GC_Track somewhere?
 static PyTypeObject _Exc_JsException = {
-  PyVarObject_HEAD_INIT(NULL, 0) "JsException",
+  PyVarObject_HEAD_INIT(NULL, 0) "pyodide.JsException",
   .tp_basicsize = sizeof(JsExceptionObject),
   .tp_dealloc = (destructor)JsException_dealloc,
   .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
@@ -1084,6 +1158,7 @@ static PyTypeObject _Exc_JsException = {
   .tp_traverse = (traverseproc)JsException_traverse,
   .tp_clear = (inquiry)JsException_clear,
   .tp_members = JsException_members,
+  .tp_methods = JsException_methods,
   // PyExc_Exception isn't static so we fill in .tp_base in JsProxy_init
   // .tp_base = (PyTypeObject *)PyExc_Exception,
   .tp_dictoffset = offsetof(JsExceptionObject, dict),
@@ -1643,7 +1718,7 @@ finally:
 }
 
 static PyObject*
-JsBuffer_tomemoryview(PyObject* buffer)
+JsBuffer_tomemoryview(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoMemoryView(
@@ -1657,7 +1732,7 @@ static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_tobytes(PyObject* buffer)
+JsBuffer_tobytes(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoBytes(self->js, self->byteLength);
@@ -2095,6 +2170,15 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
+static PyMethodDef methods[] = {
+  {
+    "hiwire_id",
+    JsProxy_js_id_private,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
+
 int
 JsProxy_init(PyObject* core_module)
 {
@@ -2136,6 +2220,8 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
 
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
+
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
 
@@ -2145,6 +2231,9 @@ JsProxy_init(PyObject* core_module)
 
   JsProxy_TypeDict = PyDict_New();
   FAIL_IF_NULL(JsProxy_TypeDict);
+
+  FAIL_IF_MINUS_ONE(
+    PyModule_AddObject(core_module, "jsproxy_typedict", JsProxy_TypeDict));
 
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;

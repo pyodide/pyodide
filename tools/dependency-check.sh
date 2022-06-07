@@ -32,8 +32,16 @@ check_pkgconfig() {
   check_binary_present "pkg-config"
 }
 
-check_md5sum() {
-  check_binary_present "md5sum"
+check_shasum() {
+  check_binary_present "shasum"
+}
+
+check_cmake() {
+  check_binary_present "cmake"
+}
+
+check_libtool() {
+  check_binary_present "libtool"
 }
 
 check_fortran_dependencies() {
@@ -41,17 +49,8 @@ check_fortran_dependencies() {
   check_binary_present "f2c"
 }
 
-check_pyyaml() {
-  local pyyaml_import_check
-  pyyaml_import_check="$(python3 -c 'import yaml' 2>&1)"
-  if [ "${pyyaml_import_check}" ]; then
-    failure_exit "PyYAML"
-  fi
-}
-
 check_python_version
 check_pkgconfig
 #check_python_headers
 check_fortran_dependencies
-check_pyyaml
-check_md5sum
+check_shasum

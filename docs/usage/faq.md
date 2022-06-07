@@ -11,7 +11,7 @@ For that purpose, Pyodide provides {any}`pyodide.http.pyfetch`,
 which is a convenient wrapper of JavaScript `fetch`:
 
 ```pyodide
-pyodide.runPython(`
+await pyodide.runPythonAsync(`
   from pyodide.http import pyfetch
   response = await pyfetch("https://some_url/...")
   if response.status == 200:
@@ -82,35 +82,52 @@ and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
 
-The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
-The namespace is a Python dictionary.
+The second argument to {any}`pyodide.runPython` is an options object which may
+include a `globals` element which is a namespace for code to read from and write
+to. The provided namespace must be a Python dictionary.
 
-```javascript
-let my_namespace = pyodide.globals.dict();
-pyodide.runPython(`x = 1 + 1`, my_namespace);
-pyodide.runPython(`y = x ** x`, my_namespace);
-my_namespace.y; // ==> 4
+```pyodide
+let my_namespace = pyodide.globals.get("dict")();
+pyodide.runPython(`x = 1 + 1`, { globals: my_namespace });
+pyodide.runPython(`y = x ** x`, { globals: my_namespace });
+my_namespace.get("y"); // ==> 4
+```
+
+You can also use this approach to inject variables from JavaScript into the
+Python namespace, for example:
+
+```pyodide
+let my_namespace = pyodide.toPy({ x: 2, y: [1, 2, 3] });
+pyodide.runPython(
+  `
+  assert x == y[1]
+  z = x ** x
+  `,
+  { globals: my_namespace }
+);
+my_namespace.get("z"); // ==> 4
 ```
 
 ## How to detect that code is run with Pyodide?
 
-**At run time**, you can detect that a code is running with Pyodide using,
+**At run time**, you can check if Python is built with Emscripten (which is the
+case for Pyodide) with,
+
+```py
+import sys
+
+if sys.platform == 'emscripten':
+    # running in Pyodide or other Emscripten based build
+```
+
+To detect that a code is running with Pyodide specifically, you can check
+for the loaded `pyodide` module,
 
 ```py
 import sys
 
 if "pyodide" in sys.modules:
    # running in Pyodide
-```
-
-More generally you can detect Python built with Emscripten (which includes
-Pyodide) with,
-
-```py
-import platform
-
-if platform.system() == 'Emscripten':
-    # running in Pyodide or other Emscripten based build
 ```
 
 This however will not work at build time (i.e. in a `setup.py`) due to the way
@@ -268,7 +285,7 @@ you say
 
 ```
 loadPyodide({
-  ..., stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
+  stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
 });
 ```
 
@@ -320,3 +337,27 @@ functools.reduce = reduce(...)
 <...OMITTED LINES>
 You are now leaving help and returning to the Python interpreter.
 ```
+
+## Micropip can't find a pure Python wheel
+
+When installing a Python package from PyPI, micropip will produce an error if
+it cannot find a pure Python wheel. To determine if a package has a pure
+Python wheel manually, you can open its PyPi page (for instance
+https://pypi.org/project/snowballstemmer/) and go to the "Download files" tab.
+If this tab doesn't contain a file `*py3-none-any.whl` then the pure Python
+wheel is missing.
+
+This can happen for two reasons,
+
+1. either the package is pure Python (you can check language composition for a
+   package on Github), and its maintainers didn't upload a wheel.
+   In this case, you can report this issue to the package issue tracker. As a
+   temporary solution, you can also [build the
+   wheel](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
+   yourself, upload it to some temporary location and install it with micropip
+   from the corresponding URL.
+2. or the package has binary extensions (e.g. C, Fortran or Rust), in which
+   case it needs to be packaged in Pyodide. Please open [an
+   issue](https://github.com/pyodide/pyodide/issues) after checking than an
+   issue for this opackage doesn't exist already. Then follow
+   {ref}`new-packages`.

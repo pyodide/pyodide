@@ -1,0 +1,21 @@
+package:
+  name: gsw
+  version: 3.4.0
+
+source:
+  url: https://files.pythonhosted.org/packages/60/16/07a701ba09158d4b518061cc43ce689a0276156f9df28ff038e3550bec79/gsw-3.4.0.tar.gz
+  sha256: d45c835af0e539235e9cf46ae58d9447e206d145b13ecfe7447ad7b8fbdcf86d
+
+requirements:
+  run:
+    - numpy
+
+test:
+  imports:
+    - gsw
+
+about:
+  home: https://github.com/TEOS-10/GSW-python
+  PyPI: https://pypi.org/project/gsw
+  summary: Gibbs Seawater Oceanographic Package of TEOS-10
+  license: BSD

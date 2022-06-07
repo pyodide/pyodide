@@ -182,8 +182,8 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
         if dash_list is None:
             self.renderer.ctx.setLineDash([])
         else:
-            dl = np.asarray(dash_list)
-            dl = list(self.renderer.points_to_pixels(dl))
+            dln = np.asarray(dash_list)
+            dl = list(self.renderer.points_to_pixels(dln))
             self.renderer.ctx.setLineDash(dl)
 
     def set_joinstyle(self, js):
@@ -332,6 +332,8 @@ class RendererHTMLCanvas(RendererBase):
         return font, font_file_name
 
     def get_text_width_height_descent(self, s, prop, ismath):
+        w: float
+        h: float
         if ismath:
             image, d = self.mathtext_parser.parse(s, self.dpi, prop)
             image_arr = np.asarray(image)

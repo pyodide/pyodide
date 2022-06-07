@@ -1,6 +1,6 @@
 import json
 from io import StringIO
-from typing import Any, BinaryIO, TextIO, Union
+from typing import Any, BinaryIO, TextIO
 
 from ._core import JsProxy, to_js
 
@@ -9,8 +9,8 @@ try:
 except ImportError:
     pass
 
-from ._core import IN_BROWSER
-from ._util import unpack_buffer_archive
+from ._core import IN_BROWSER, JsException
+from ._package_loader import unpack_buffer
 
 __all__ = [
     "open_url",
@@ -130,7 +130,7 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.text()
 
-    async def json(self, **kwargs) -> Any:
+    async def json(self, **kwargs: Any) -> Any:
         """Return the response body as a Javascript JSON object.
 
         Any keyword arguments are passed to `json.loads
@@ -149,7 +149,7 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
-    async def _into_file(self, f: Union[TextIO, BinaryIO]):
+    async def _into_file(self, f: TextIO | BinaryIO) -> None:
         """Write the data into an empty file with no copy.
 
         Warning: should only be used when f is an empty file, otherwise it may
@@ -158,7 +158,7 @@ class FetchResponse:
         buf = await self.buffer()
         buf._into_file(f)
 
-    async def _create_file(self, path: str):
+    async def _create_file(self, path: str) -> None:
         """Uses the data to back a new file without copying it.
 
         This method avoids copying the data when creating a new file. If you
@@ -202,12 +202,10 @@ class FetchResponse:
         """
         buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]
-        unpack_buffer_archive(
-            buf, filename=filename, format=format, extract_dir=extract_dir
-        )
+        unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
 
 
-async def pyfetch(url: str, **kwargs) -> FetchResponse:
+async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     r"""Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function
@@ -229,6 +227,9 @@ async def pyfetch(url: str, **kwargs) -> FetchResponse:
         from js import Object
         from js import fetch as _jsfetch
 
-    return FetchResponse(
-        url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
-    )
+    try:
+        return FetchResponse(
+            url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+        )
+    except JsException as e:
+        raise OSError(e.js_error.message) from None

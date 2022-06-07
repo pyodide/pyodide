@@ -1,12 +1,10 @@
-  # core
-  cython<3.0
-  packaging
-  pyyaml
+  # build
+  cmake
   ruamel.yaml
-  build==0.7.0
   # lint
   pre-commit
   # testing
+  build==0.7.0
   hypothesis
   pexpect
   pytest
@@ -17,3 +15,4 @@
   pytest-rerunfailures
   pytest-xdist
   selenium==4.1.0
+  tblib

@@ -1,9 +1,9 @@
 package:
   name: regex
-  version: 2022.1.18
+  version: 2022.3.15
 source:
-  sha256: 97f32dc03a8054a4c4a5ab5d761ed4861e828b2c200febd4e46857069a483916
-  url: https://files.pythonhosted.org/packages/4c/75/b5b60055897d78882da8bc4c94609067cf531a42726df2e44ce69e8ec7a9/regex-2022.1.18.tar.gz
+  sha256: 0a7b75cc7bb4cc0334380053e4671c560e31272c9d2d5a6c4b8e9ae2c9bd0f82
+  url: https://files.pythonhosted.org/packages/0c/06/8d851419ff870cbe2bf65ecdcfda59d80f11f41157392d794ee544f15bf6/regex-2022.3.15.tar.gz
 test:
   imports:
     - regex

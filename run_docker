@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="20220317-chrome99-firefox98-py310"
-PYODIDE_PREBUILT_IMAGE_TAG="0.19.0"
+PYODIDE_IMAGE_TAG="20220525-py310-chrome102-firefox100"
+PYODIDE_PREBUILT_IMAGE_TAG="0.20.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
@@ -11,13 +11,12 @@ DOCKER_INTERACTIVE="--interactive"
 
 USER_HOME="/src/.docker_home"
 USER_NAME="$(id -u -n)"
-USER_PASS="x"
 USER_ID="$(id -u)"
 USER_GID="$(id -g)"
 USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
 USER_INTERPRETER="/sbin/nologin"
-USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
 USER_FLAG=("--user" "$USER_ID:$USER_GID")
+HEALTHCHECK_MESSAGE="Done initialization"
 
 set -eo pipefail
 
@@ -128,10 +127,26 @@ CONTAINER=$(\
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash -c " \
-      echo '${USER_ACCOUNT_INFO}' >> /etc/passwd ; \
+      groupadd '$USER_GID'; \
+      useradd \
+        --home-dir '$USER_HOME' \
+        --uid '$USER_ID' \
+        --gid '$USER_GID' \
+        --comment '$USER_COMMENT_FIELD' \
+        --shell '$USER_INTERPRETER' \
+        --groups sudo  \
+        $USER_NAME \
+      ; \
+      echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
+      echo '$HEALTHCHECK_MESSAGE'; \
       tail -f /dev/null \
     " \
 )
+
+until docker logs "$CONTAINER" 2>&1 | grep -q "$HEALTHCHECK_MESSAGE"; do
+  echo "Waiting for initialization to finish..."
+  sleep 0.2
+done
 
 EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src

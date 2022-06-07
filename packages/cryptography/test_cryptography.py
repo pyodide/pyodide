@@ -1,12 +1,11 @@
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import binary, integers
-
-from conftest import selenium_context_manager
-from pyodide_build.testing import run_in_pyodide
+from pyodide_test_runner import run_in_pyodide
+from pyodide_test_runner.fixture import selenium_context_manager
 
 
 @run_in_pyodide(packages=["cryptography"])
-def test_cryptography():
+def test_cryptography(selenium):
     import base64
 
     from cryptography.fernet import Fernet, MultiFernet
@@ -19,7 +18,7 @@ def test_cryptography():
 
 
 @run_in_pyodide(packages=["cryptography", "pytest"])
-def test_der_reader_basic():
+def test_der_reader_basic(selenium):
     import pytest
     from cryptography.hazmat._der import DERReader
 
@@ -41,7 +40,7 @@ def test_der_reader_basic():
 
 
 @run_in_pyodide(packages=["cryptography", "pytest"])
-def test_der():
+def test_der(selenium):
     import pytest
     from cryptography.hazmat._der import (
         INTEGER,
@@ -131,7 +130,7 @@ def test_der():
 
 
 @run_in_pyodide(packages=["cryptography"])
-def test_der_lengths():
+def test_der_lengths(selenium):
 
     from cryptography.hazmat._der import OCTET_STRING, DERReader, encode_der
 

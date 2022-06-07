@@ -1,0 +1,24 @@
+From 61f19d3c2da35468d1ae45b432d2ff37b1e89fcb Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 31 Mar 2022 17:17:17 -0700
+Subject: [PATCH 01/14] disable maybe uninitialized
+
+---
+ numpy/linalg/umath_linalg.c.src | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/numpy/linalg/umath_linalg.c.src b/numpy/linalg/umath_linalg.c.src
+index f8a154445..ab4d8369a 100644
+--- a/numpy/linalg/umath_linalg.c.src
++++ b/numpy/linalg/umath_linalg.c.src
+@@ -750,7 +750,6 @@ update_pointers(npy_uint8** bases, ptrdiff_t* offsets, size_t count)
+    positives with this warning
+ */
+ #pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+ 
+ /*
+  *****************************************************************************
+-- 
+2.25.1
+

@@ -1,5 +1,13 @@
-import { Module, API } from "./module.js";
-import { IN_NODE, nodeFsPromisesMod, _loadBinaryFile } from "./compat.js";
+declare var Module: any;
+declare var Tests: any;
+declare var API: any;
+
+import {
+  IN_NODE,
+  nodeFsPromisesMod,
+  _loadBinaryFile,
+  initNodeModules,
+} from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /** @private */
@@ -15,6 +23,7 @@ export async function initializePackageIndex(indexURL: string) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
+    await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}packages.json`
     );
@@ -38,6 +47,17 @@ export async function initializePackageIndex(indexURL: string) {
     }
   }
 }
+
+/**
+ * Only used in Node. If we can't find a package in node_modules, we'll use this
+ * to fetch the package from the cdn (and we'll store it into node_modules so
+ * subsequent loads don't require a web request).
+ * @private
+ */
+let cdnURL: string;
+API.setCdnUrl = function (url: string) {
+  cdnURL = url;
+};
 
 //
 // Dependency resolution
@@ -142,16 +162,37 @@ async function downloadPackage(
   name: string,
   channel: string
 ): Promise<Uint8Array> {
-  let file_name;
+  let file_name, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.packages[name].file_name;
+    file_sub_resource_hash = API.package_loader.sub_resource_hash(
+      API.packages[name].sha256
+    );
   } else {
     file_name = channel;
+    file_sub_resource_hash = undefined;
   }
-  return await _loadBinaryFile(baseURL, file_name);
+  try {
+    return await _loadBinaryFile(baseURL, file_name, file_sub_resource_hash);
+  } catch (e) {
+    if (!IN_NODE) {
+      throw e;
+    }
+  }
+  console.log(
+    `Didn't find package ${file_name}, attempting to load from ${cdnURL}`
+  );
+  // If we are IN_NODE, download the package from the cdn, then stash it into
+  // the node_modules directory for future use.
+  let binary = await _loadBinaryFile(cdnURL, file_name);
+  console.log(
+    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
+  );
+  await nodeFsPromisesMod.writeFile(`${baseURL}${file_name}`, binary);
+  return binary;
 }
 
 /**
@@ -160,7 +201,11 @@ async function downloadPackage(
  * @param buffer The binary data returned by downloadPkgBuffer
  * @private
  */
-async function installPackage(name: string, buffer: Uint8Array) {
+async function installPackage(
+  name: string,
+  buffer: Uint8Array,
+  channel: string
+) {
   let pkg = API.packages[name];
   if (!pkg) {
     pkg = {
@@ -171,13 +216,16 @@ async function installPackage(name: string, buffer: Uint8Array) {
       imports: [] as string[],
     };
   }
-  const file_name = pkg.file_name;
+  const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any so files therein.
-  const dynlibs = API.package_loader.unpack_buffer(
-    file_name,
+  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
     buffer,
-    pkg.install_dir
-  );
+    filename,
+    target: pkg.install_dir,
+    calculate_dynlibs: true,
+    installer: "pyodide.loadPackage",
+    source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
+  });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
@@ -248,10 +296,19 @@ async function loadDynlib(lib: string, shared: boolean) {
         nodelete: true,
       });
     }
+  } catch (e: any) {
+    if (e.message.includes("need to see wasm magic number")) {
+      console.warn(
+        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
+      );
+      return;
+    }
+    throw e;
   } finally {
     releaseDynlibLock();
   }
 }
+API.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 
@@ -348,11 +405,12 @@ export async function loadPackage(
     for (const [name, channel] of toLoadShared) {
       sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer);
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })
         .catch((err) => {
+          console.warn(err);
           failed[name] = err;
         });
     }
@@ -361,11 +419,12 @@ export async function loadPackage(
     for (const [name, channel] of toLoad) {
       packageInstallPromises[name] = packageLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer);
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })
         .catch((err) => {
+          console.warn(err);
           failed[name] = err;
         });
     }
@@ -400,3 +459,5 @@ export async function loadPackage(
  * install location for a particular ``package_name``.
  */
 export let loadedPackages: { [key: string]: string } = {};
+
+API.packageIndexReady = initializePackageIndex(API.config.indexURL);

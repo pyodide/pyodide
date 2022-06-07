@@ -1,0 +1,18 @@
+package:
+  name: jsonschema
+  version: 4.4.0
+source:
+  url: https://files.pythonhosted.org/packages/55/b2/2c4af6a97c3f12c6d5a72b41d328c3996e14e1e46701df3fac1ed65119c9/jsonschema-4.4.0-py3-none-any.whl
+  sha256: 77281a1f71684953ee8b3d488371b162419767973789272434bbc3f29d9c8823
+requirements:
+  run:
+    - attrs
+    - pyrsistent
+test:
+  imports:
+    - jsonschema
+about:
+  home: https://github.com/Julian/jsonschema
+  PyPI: https://pypi.org/project/jsonschema
+  summary: An implementation of JSON Schema validation for Python
+  license: MIT

@@ -11,6 +11,9 @@ sys.path.append(str(base_dir / "pyodide-build"))
 
 from pyodide_build.io import parse_package_config
 
+PYODIDE_TESTONLY = "pyodide.test"
+PYODIDE_STDLIB = "pyodide.stdlib"
+
 
 def get_packages_summary_directive(app):
     class PyodidePackagesSummary(Directive):
@@ -24,11 +27,14 @@ def get_packages_summary_directive(app):
 
             packages = {}
             for package in packages_list:
-                name, version, is_library = self.parse_package_info(package)
+                name, version, is_library, tag = self.parse_package_info(package)
 
-                # skip libraries (e.g. libxml, libyaml, ...)
-                if is_library:
+                # skip libraries (e.g. libxml, libyaml, ...) and test only packages
+                if is_library or tag == PYODIDE_TESTONLY:
                     continue
+
+                if tag == PYODIDE_STDLIB:
+                    version = "Pyodide standard library"
 
                 packages[name] = {
                     "name": name,
@@ -42,14 +48,17 @@ def get_packages_summary_directive(app):
 
             return result
 
-        def parse_package_info(self, config: pathlib.Path) -> tuple[str, str, bool]:
+        def parse_package_info(
+            self, config: pathlib.Path
+        ) -> tuple[str, str, bool, str]:
             yaml_data = parse_package_config(config)
 
             name = yaml_data["package"]["name"]
             version = yaml_data["package"]["version"]
+            tag = yaml_data["package"].get("_tag", "")
             is_library = yaml_data.get("build", {}).get("library", False)
 
-            return name, version, is_library
+            return name, version, is_library, tag
 
         def get_package_metadata_list(
             self, directory: pathlib.Path

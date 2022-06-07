@@ -1,0 +1,56 @@
+From 9e6c2ad31267a5ed0c30645e70a0b290b3973dd1 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 2 Apr 2022 14:20:25 -0700
+Subject: [PATCH 02/14] loadDynamicLibrary flapack
+
+We are using CLAPACK for our LAPACK, but CLAPACK only supports
+LAPACK v3.2 since starting in v3.3 LAPACK started adding fortran
+code from Fortran standards more recent that 1990 and f2c only
+supports Fortran '90. Scipy uses some functions that were added
+in LAPACK v3.4, but all of these are Fortran 77 compliant and so
+we *can* f2c them. In scipy/meta.yaml we inject these into
+`lapack_extras.f` which gets built into `_flapack.so`.
+
+Why do we do it this way? It was the first thing I tried that
+worked and I was so exhausted that I didn't have the energy to be
+bothered by the hack. Ideally we would copy these into our CLAPACK
+but CLAPACK is the result of hand modified f2c output. (In fact
+this is how f2c was always intended to be used, the output is not
+good C code by itself.) We are automating the patches that are
+necessary in `_f2c_fixes.py`, but these don't get applied to CLAPACK.
+
+Anyways, the issue is that CLAPACK is loaded as a "shared library"
+which means that we call `loadDynamicLibrary` on it so that all of
+its symbols are globally scoped (as opposed to needing to manually
+look them up with `dlsym`). Scipy is not loaded this way. But we
+need the `lapack_extras.f` symbols to have this global visibility.
+So we have to call loadDynamicLibrary on it, hence this patch.
+---
+ scipy/linalg/lapack.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/scipy/linalg/lapack.py b/scipy/linalg/lapack.py
+index 9850d80c4..a28c3c6ca 100644
+--- a/scipy/linalg/lapack.py
++++ b/scipy/linalg/lapack.py
+@@ -809,6 +809,17 @@ All functions
+    ilaver
+ 
+ """
++
++import sysconfig
++import pyodide_js
++from site import getsitepackages
++ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
++pyodide_js._module.loadDynamicLibrary(f'{getsitepackages()[0]}/scipy/linalg/_flapack{ext_suffix}')
++del getsitepackages
++del pyodide_js
++del sysconfig
++del ext_suffix
++
+ #
+ # Author: Pearu Peterson, March 2002
+ #
+-- 
+2.25.1
+

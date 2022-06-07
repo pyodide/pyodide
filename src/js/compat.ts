@@ -29,12 +29,38 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodePathMod = (await import(/* webpackIgnore: true */ "path")).default;
-  nodeFsPromisesMod = await import(/* webpackIgnore: true */ "fs/promises");
+  nodePathMod = (await import("path")).default;
+  nodeFsPromisesMod = await import("fs/promises");
   // @ts-ignore
-  nodeFetch = (await import(/* webpackIgnore: true */ "node-fetch")).default;
+  nodeFetch = (await import("node-fetch")).default;
   // @ts-ignore
-  nodeVmMod = (await import(/* webpackIgnore: true */ "vm")).default;
+  nodeVmMod = (await import("vm")).default;
+  if (typeof require !== "undefined") {
+    return;
+  }
+  // Emscripten uses `require`, so if it's missing (because we were imported as
+  // an ES6 module) we need to polyfill `require` with `import`. `import` is
+  // async and `require` is synchronous, so we import all packages that might be
+  // required up front and define require to look them up in this table.
+
+  // These are all the packages required in pyodide.asm.js. You can get this
+  // list with:
+  // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
+  const fs = await import("fs");
+  const crypto = await import("crypto");
+  const ws = await import("ws");
+  const child_process = await import("child_process");
+  const node_modules: { [mode: string]: any } = {
+    fs,
+    crypto,
+    ws,
+    child_process,
+  };
+  // Since we're in an ES6 module, this is only modifying the module namespace,
+  // it's still private to Pyodide.
+  (globalThis as any).require = function (mod: string): any {
+    return node_modules[mod];
+  };
 }
 
 /**
@@ -42,21 +68,35 @@ export async function initNodeModules() {
  * then fetch from a URL, else load from the file system.
  * @param indexURL base path to resolve relative paths
  * @param path the path to load
+ * @param checksum sha-256 checksum of the package
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
 async function node_loadBinaryFile(
   indexURL: string,
-  path: string
+  path: string,
+  _file_sub_resource_hash?: string | undefined // Ignoring sub resource hash. See issue-2431.
 ): Promise<Uint8Array> {
+  if (!path.startsWith("/") && !path.includes("://")) {
+    // If path starts with a "/" or starts with a protocol "blah://", we
+    // interpret it as an absolute path, otherwise "resolve" it by
+    // joining it with indexURL.
+    path = `${indexURL}${path}`;
+  }
+  if (path.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    path = path.slice("file://".length);
+  }
   if (path.includes("://")) {
+    // If it has a protocol, make a fetch request
     let response = await nodeFetch(path);
     if (!response.ok) {
       throw new Error(`Failed to load '${path}': request failed.`);
     }
-    return await response.arrayBuffer();
+    return new Uint8Array(await response.arrayBuffer());
   } else {
-    const data = await nodeFsPromisesMod.readFile(`${indexURL}${path}`);
+    // Otherwise get it from the file system
+    const data = await nodeFsPromisesMod.readFile(path);
     return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   }
 }
@@ -67,18 +107,21 @@ async function node_loadBinaryFile(
  *
  * @param indexURL base path to resolve relative paths
  * @param path the path to load
+ * @param subResourceHash the sub resource hash for fetch() integrity check
  * @returns A Uint8Array containing the binary data
  * @private
  */
 async function browser_loadBinaryFile(
   indexURL: string,
-  path: string
+  path: string,
+  subResourceHash: string | undefined
 ): Promise<Uint8Array> {
   // @ts-ignore
   const base = new URL(indexURL, location);
   const url = new URL(path, base);
+  let options = subResourceHash ? { integrity: subResourceHash } : {};
   // @ts-ignore
-  let response = await fetch(url);
+  let response = await fetch(url, options);
   if (!response.ok) {
     throw new Error(`Failed to load '${url}': request failed.`);
   }
@@ -88,7 +131,8 @@ async function browser_loadBinaryFile(
 /** @private */
 export let _loadBinaryFile: (
   indexURL: string,
-  path: string
+  path: string,
+  file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
   _loadBinaryFile = node_loadBinaryFile;
@@ -106,7 +150,7 @@ export let loadScript: (url: string) => Promise<void>;
 
 if (globalThis.document) {
   // browser
-  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
+  loadScript = async (url) => await import(url);
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
@@ -135,6 +179,10 @@ if (globalThis.document) {
  * @private
  */
 async function nodeLoadScript(url: string) {
+  if (url.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    url = url.slice("file://".length);
+  }
   if (url.includes("://")) {
     // If it's a url, load it with fetch then eval it.
     nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());

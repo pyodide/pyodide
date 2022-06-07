@@ -1,50 +1,73 @@
+from functools import cache
 from pathlib import Path
+from textwrap import dedent
+from typing import Any
 
 import pytest
+import yaml
+from yaml import CLoader as Loader
 
 from pyodide_build.common import UNVENDORED_STDLIB_MODULES
 
 
-def test_cpython_core(python_test, selenium, request):
-
-    name, error_flags = python_test
-
+def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
     # keep only flags related to the current browser
-    flags_to_remove = ["firefox", "chrome", "node"]
-    flags_to_remove.remove(selenium.browser)
-    for flag in flags_to_remove:
-        if "crash-" + flag in error_flags:
-            error_flags.remove("crash-" + flag)
+    suffix = "-" + browser
+    result = {key.removesuffix(suffix): value for key, value in info.items()}
+    if "skip" in info and f"skip{suffix}" in info:
+        result["skip"] = info["skip"] + info[f"skip{suffix}"]
+    return result
 
-    if any(flag.startswith("segfault") for flag in error_flags):
-        pytest.skip('known segfault: "{}"'.format(" ".join(error_flags)))
 
-    if error_flags:
+def possibly_skip_test(
+    request: pytest.FixtureRequest, info: dict[str, Any]
+) -> dict[str, Any]:
+    if "segfault" in info:
+        pytest.skip(f"known segfault: {info['segfault']}")
+
+    if "xfail" in info:
+        reason = info["xfail"]
         if request.config.option.run_xfail:
             request.applymarker(
                 pytest.mark.xfail(
                     run=False,
-                    reason='known failure: "{}"'.format(" ".join(error_flags)),
+                    reason=f"known failure: {reason}",
                 )
             )
         else:
-            pytest.xfail('known failure: "{}"'.format(" ".join(error_flags)))
+            pytest.xfail(f"known failure: {reason}")
+    return info
+
+
+def test_cpython_core(main_test, selenium, request):
+    [name, info] = main_test
+    info = filter_info(info, selenium.browser)
+    possibly_skip_test(request, info)
+
+    ignore_tests = info.get("skip", [])
+    if not isinstance(ignore_tests, list):
+        raise Exception("Invalid python_tests.yaml entry: 'skip' should be a list")
 
     selenium.load_package(list(UNVENDORED_STDLIB_MODULES))
     try:
         selenium.run(
-            """
-            from test.libregrtest import main
-            import unittest.case
+            dedent(
+                f"""
+            import platform
+            from test import libregrtest
+
+            platform.platform(aliased=True)
+            import _testcapi
+            if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
+                # This uses raise() which doesn't work.
+                del _testcapi.raise_SIGINT_then_send_None
+
             try:
-                main(['{}'], verbose=True, verbose3=True)
+                libregrtest.main(["{name}"], ignore_tests={ignore_tests}, verbose=True, verbose3=True)
             except SystemExit as e:
                 if e.code != 0:
-                    raise RuntimeError(f'Failed with code: {{e.code}}')
-            except unittest.case.SkipTest:
-                pass
-            """.format(
-                name
+                    raise RuntimeError(f"Failed with code: {{e.code}}")
+            """
             )
         )
     except selenium.JavascriptException:
@@ -52,19 +75,24 @@ def test_cpython_core(python_test, selenium, request):
         raise
 
 
+def get_test_info(test: dict[str, Any] | str) -> tuple[str, dict[str, Any]]:
+    if isinstance(test, dict):
+        (name, info) = next(iter(test.items()))
+    else:
+        name = test
+        info = {}
+    return (name, info)
+
+
+@cache
+def get_tests() -> list[tuple[str, dict[str, Any]]]:
+    with open(Path(__file__).parent / "python_tests.yaml") as file:
+        data = yaml.load(file, Loader)
+
+    return [get_test_info(test) for test in data]
+
+
 def pytest_generate_tests(metafunc):
-    if "python_test" in metafunc.fixturenames:
-        test_modules = []
-        test_modules_ids = []
-        with open(Path(__file__).parent / "python_tests.txt") as fp:
-            for line in fp:
-                line = line.strip()
-                if line.startswith("#") or not line:
-                    continue
-                error_flags = line.split()
-                name = error_flags.pop(0)
-                test_modules.append((name, error_flags))
-                # explicitly define test ids to keep
-                # a human readable test name in pytest
-                test_modules_ids.append(name)
-        metafunc.parametrize("python_test", test_modules, ids=test_modules_ids)
+    if "main_test" in metafunc.fixturenames:
+        tests = get_tests()
+        metafunc.parametrize("main_test", tests, ids=[t[0] for t in tests])

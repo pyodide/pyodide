@@ -369,10 +369,10 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         if fmt.lower() == "q":
             assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
         elif fmt == "f" or fmt == "d":
-            from math import isclose
+            from math import isclose, isnan
 
             for a, b in zip(result, list(mv.cast(fmt))):
-                if a and b:
+                if a and b and not (isnan(a) or isnan(b)):
                     assert isclose(a, b)
         else:
             assert result == list(mv.cast(fmt))
@@ -911,5 +911,24 @@ def test_pyproxy_borrow(selenium):
         assert(() => Tcopy.f() === 7);
         assertThrows(() => T.f(), "Error", "automatically destroyed in the process of destroying the proxy it was borrowed from");
         Tcopy.destroy();
+        """
+    )
+
+
+def test_coroutine_scheduling(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            async def f():
+                global x
+                print('hi!')
+                x += 1
+            f
+        `);
+        setTimeout(f, 100);
+        await sleep(200);
+        assert(() => pyodide.globals.get('x') === 1);
+        f.destroy();
         """
     )
