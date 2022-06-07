@@ -3,7 +3,7 @@ package:
   version: 0.1.0
 
 source:
-  sha256: c9ff441deb1b8f3926aefa2e13ba96ddc53fad9a92ae637962841509f82f1f40
+  sha256: e9d0d26356f35c3129f3f58b976d791c81e4dffcdac4b95b35e1a6175ef84ce9
   url: https://github.com/gabrielfougeron/Choreographies2/archive/refs/heads/main.zip
 
 requirements:
