@@ -13,7 +13,7 @@ build:
   script: |
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
     export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
-    source $HOME/.cargo/env
+    source $CARGO_HOME/env
 
     # TODO: remove this when chrono makes a release
     git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
