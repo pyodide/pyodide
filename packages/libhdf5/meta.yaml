@@ -1,6 +1,7 @@
 package:
   name: libhdf5
   version: 1.12.1
+  _disabled: true
 
 source:
   sha256: e6dde173c2d243551922d23a0387a79961205b018502e6a742acb30b61bc2d5f
