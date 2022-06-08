@@ -8,9 +8,8 @@ from .browser import (
     PlaywrightChromeWrapper,
     PlaywrightFirefoxWrapper,
     SeleniumChromeWrapper,
-    SeleniumSafariWrapper
     SeleniumFirefoxWrapper,
-
+    SeleniumSafariWrapper,
 )
 from .server import spawn_web_server
 from .utils import parse_driver_timeout, set_webdriver_script_timeout
@@ -98,7 +97,7 @@ def selenium_common(
     finally:
         runner.quit()
 
-        
+
 @pytest.fixture(params=RUNNERS, scope="function")
 def selenium_standalone(request, web_server_main, playwright_browsers):
     with selenium_common(

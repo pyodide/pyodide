@@ -95,7 +95,7 @@ class JavascriptException(Exception):
 
     def __str__(self):
         return "\n\n".join(x for x in [self.msg, self.stack] if x)
-   
+
 
 RUNNERS = ["firefox", "chrome", "node"]
 if sys.platform == "darwin":
@@ -456,6 +456,7 @@ class SeleniumChromeWrapper(SeleniumWrapper):
     def collect_garbage(self):
         self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
 
+
 class SeleniumSafariWrapper(SeleniumWrapper):
 
     browser = "safari"
@@ -468,7 +469,7 @@ class SeleniumSafariWrapper(SeleniumWrapper):
 
         return Safari(options=options)
 
-      
+
 class PlaywrightChromeWrapper(PlaywrightWrapper):
     browser = "chrome"
 
@@ -480,7 +481,7 @@ class PlaywrightChromeWrapper(PlaywrightWrapper):
 class PlaywrightFirefoxWrapper(PlaywrightWrapper):
     browser = "firefox"
 
-      
+
 class NodeWrapper(BrowserWrapper):
 
     browser = "node"
