@@ -1,15 +1,17 @@
 package:
-  name: libgsl
-  version: "2.7"
-  _disabled: true
+  name: libgmp
+  version: 6.2.1
+
 source:
-  sha256: efbbf3785da0e53038be7907500628b466152dbc3c173a87de1b5eba2e23602b
-  url: https://ftp.gnu.org/gnu/gsl/gsl-2.7.tar.gz
+  url: https://ftp.gnu.org/gnu/gmp/gmp-6.2.1.tar.xz
+  sha256: fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2
+
 build:
   library: true
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
+        --host none \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

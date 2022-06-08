@@ -15,6 +15,9 @@
         --size: 1.5;
         --color: rgba(255, 255, 255, 0.8);
       }
+      .noblink {
+        --animation: terminal-none;
+      }
       body {
         background-color: black;
       }
@@ -217,6 +220,11 @@
           await sleep(15);
           term.pause();
         };
+
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has("noblink")) {
+          $(".cmd-cursor").addClass("noblink");
+        }
       }
       window.console_ready = main();
     </script>
