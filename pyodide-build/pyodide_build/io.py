@@ -8,7 +8,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "name": str,
         "version": str,
         "_tag": str,
-        "disabled": bool,
+        "_disabled": bool,
     },
     "source": {
         "url": str,

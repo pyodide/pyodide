@@ -108,7 +108,7 @@ class Package(BasePackage):
         self.meta = parse_package_config(pkgpath)
         self.name = self.meta["package"]["name"]
         self.version = self.meta["package"]["version"]
-        self.disabled = self.meta["package"].get("disabled", False)
+        self.disabled = self.meta["package"].get("_disabled", False)
         self.meta["build"] = self.meta.get("build", {})
         self.meta["requirements"] = self.meta.get("requirements", {})
 

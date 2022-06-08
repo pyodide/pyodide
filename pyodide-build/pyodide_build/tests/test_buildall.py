@@ -44,7 +44,7 @@ def test_generate_dependency_graph_disabled(monkeypatch):
     def mock_parse_package_config(path):
         d = io.parse_package_config(path)
         if "numpy" in str(path):
-            d["package"]["disabled"] = True
+            d["package"]["_disabled"] = True
         return d
 
     monkeypatch.setattr(buildall, "parse_package_config", mock_parse_package_config)
