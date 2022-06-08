@@ -1,7 +1,7 @@
-From 887592f5b8005e13668adfa8c1af12af57d3c85d Mon Sep 17 00:00:00 2001
+From f0847509122fa24f7b4f28fd09057302c84c0b42 Mon Sep 17 00:00:00 2001
 From: Christian Heimes <christian@python.org>
 Date: Tue, 8 Mar 2022 20:22:32 +0200
-Subject: [PATCH 11/12] bpo-23325: Fix SIG_IGN and SIG_DFL int comparison in
+Subject: [PATCH 10/12] bpo-23325: Fix SIG_IGN and SIG_DFL int comparison in
  signal module (GH-31759)
 
 ---
@@ -19,7 +19,7 @@ index 0000000000..0801cbb448
 +The :mod:`signal` module no longer assumes that :const:`~signal.SIG_IGN` and
 +:const:`~signal.SIG_DFL` are small int singletons.
 diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
-index 7847b693f3..1a61fdaa59 100644
+index 96881d4a49..c3a5237bce 100644
 --- a/Modules/signalmodule.c
 +++ b/Modules/signalmodule.c
 @@ -174,6 +174,17 @@ get_signal_state(PyObject *module)
@@ -78,7 +78,7 @@ index 7847b693f3..1a61fdaa59 100644
          {
              PyOS_setsig(signum, SIG_DFL);
          }
-@@ -1816,8 +1824,9 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
+@@ -1812,8 +1820,9 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
           * (see bpo-43406).
           */
          PyObject *func = get_handler(i);
@@ -90,7 +90,7 @@ index 7847b693f3..1a61fdaa59 100644
              /* No Python signal handler due to aforementioned race condition.
               * We can't call raise() as it would break the assumption
               * that PyErr_SetInterrupt() only *simulates* an incoming
-@@ -1877,7 +1886,8 @@ PyErr_SetInterruptEx(int signum)
+@@ -1873,7 +1882,8 @@ PyErr_SetInterruptEx(int signum)
  
      signal_state_t *state = &signal_global_state;
      PyObject *func = get_handler(signum);
