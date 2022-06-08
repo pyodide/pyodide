@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 from functools import total_ordering
+from graphlib import TopologicalSorter
 from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
@@ -37,6 +38,7 @@ class BasePackage:
     pkgdir: Path
     name: str
     version: str
+    disabled: bool
     meta: dict[str, Any]
     library: bool
     shared_library: bool
@@ -75,6 +77,7 @@ class StdLibPackage(BasePackage):
         self.meta = {}
         self.name = pkgdir.stem
         self.version = "1.0"
+        self.disabled = False
         self.library = False
         self.shared_library = False
         self.dependencies = []
@@ -105,6 +108,7 @@ class Package(BasePackage):
         self.meta = parse_package_config(pkgpath)
         self.name = self.meta["package"]["name"]
         self.version = self.meta["package"]["version"]
+        self.disabled = self.meta["package"].get("_disabled", False)
         self.meta["build"] = self.meta.get("build", {})
         self.meta["requirements"] = self.meta.get("requirements", {})
 
@@ -211,7 +215,8 @@ def generate_dependency_graph(
     Returns:
      - pkg_map: dictionary mapping package names to BasePackage objects
     """
-
+    pkg: BasePackage
+    pkgname: str
     pkg_map: dict[str, BasePackage] = {}
 
     if "*" in packages:
@@ -224,33 +229,70 @@ def generate_dependency_graph(
     if no_numpy_dependents:
         packages.discard("no-numpy-dependents")
 
-    packages_exclude = list(filter(lambda pkg: pkg.startswith("!"), packages))
-    for pkg_exclude in packages_exclude:
-        packages.discard(pkg_exclude)
-        packages.discard(pkg_exclude[1:])
+    disabled_packages = set()
+    for pkgname in list(packages):
+        if pkgname.startswith("!"):
+            packages.discard(pkgname)
+            disabled_packages.add(pkgname[1:])
 
+    # Record which packages were requested. We need this information because
+    # some packages are reachable from the initial set but are only reachable
+    # via a disabled dependency.
+    # Example: scikit-learn needs joblib & scipy, scipy needs numpy but numpy disabled.
+    # We don't want to build joblib.
+    requested = set(packages)
+
+    # Create dependency graph.
+    # On first pass add all dependencies regardless of whether
+    # disabled since it might happen because of a transitive dependency
+    graph = {}
     while packages:
         pkgname = packages.pop()
 
-        pkg: BasePackage
         if pkgname in UNVENDORED_STDLIB_MODULES:
             pkg = StdLibPackage(packages_dir / pkgname)
         else:
             pkg = Package(packages_dir / pkgname)
-        if no_numpy_dependents and "numpy" in pkg.dependencies:
-            continue
-        pkg_map[pkg.name] = pkg
-
+        pkg_map[pkgname] = pkg
+        graph[pkgname] = pkg.dependencies
         for dep in pkg.dependencies:
             if pkg_map.get(dep) is None:
                 packages.add(dep)
 
-    # Compute dependents
-    for pkg in pkg_map.values():
+    # Traverse in build order (dependencies first then dependents)
+    # Mark a package as disabled if they've either been explicitly disabled
+    # or if any of its transitive dependencies were marked disabled.
+    for pkgname in TopologicalSorter(graph).static_order():
+        pkg = pkg_map[pkgname]
+        if pkgname in disabled_packages:
+            pkg.disabled = True
+            continue
+        if no_numpy_dependents and "numpy" in pkg.dependencies:
+            pkg.disabled = True
+            continue
+        for dep in pkg.dependencies:
+            if pkg_map[dep].disabled:
+                pkg.disabled = True
+                break
+
+    # Now traverse in reverse build order (dependents first then their
+    # dependencies).
+    # Locate the subset of packages that are transitive dependencies of packages
+    # that are requested and not disabled.
+    for pkgname in reversed(list(TopologicalSorter(graph).static_order())):
+        pkg = pkg_map[pkgname]
+        if pkg.disabled:
+            requested.discard(pkgname)
+            continue
+
+        if pkgname not in requested:
+            continue
+
+        requested.update(pkg.dependencies)
         for dep in pkg.dependencies:
             pkg_map[dep].dependents.add(pkg.name)
 
-    return pkg_map
+    return {name: pkg_map[name] for name in requested}
 
 
 def job_priority(pkg: BasePackage) -> int:
