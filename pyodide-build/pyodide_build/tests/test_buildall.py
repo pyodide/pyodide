@@ -1,6 +1,7 @@
-from collections import namedtuple
+import argparse
 from pathlib import Path
 from time import sleep
+from typing import Any
 
 import pytest
 
@@ -32,7 +33,10 @@ def test_generate_packages_json(tmp_path):
 
     package_data = buildall.generate_packages_json(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
-    assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
+    assert set(package_data["info"].keys()) == {"arch", "platform", "version"}
+    assert package_data["info"]["arch"] == "wasm32"
+    assert package_data["info"]["platform"].startswith("emscripten")
+
     assert set(package_data["packages"]) == {
         "pkg_1",
         "pkg_1_1",
@@ -56,16 +60,15 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, outputdir: Path, args: Any) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
 
-    Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
     )
 
     assert set(build_list) == {
@@ -87,7 +90,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
     class MockPackage(buildall.Package):
         n_builds = 0
 
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, outputdir: Path, args: Any) -> None:
             sleep(0.005)
             self.n_builds += 1
             # check that each build is only run once
@@ -97,9 +100,8 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
 
-    Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=False)
+        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
     )
 
 
@@ -108,7 +110,7 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, outputdir: Path, args: Any) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -116,7 +118,6 @@ def test_build_error(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1"})
 
     with pytest.raises(ValueError, match="Failed build"):
-        Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
         buildall.build_from_graph(
-            pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+            pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
         )

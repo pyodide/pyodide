@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, TextIO
+from typing import Any, Generator, NoReturn, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -28,7 +28,7 @@ from .common import find_matching_wheels
 
 
 @contextmanager
-def chdir(new_dir: Path):
+def chdir(new_dir: Path) -> Generator[None, None, None]:
     orig_dir = Path.cwd()
     try:
         os.chdir(new_dir)
@@ -51,7 +51,7 @@ shutil.register_unpack_format(
 )
 
 
-def exit_with_stdio(result: subprocess.CompletedProcess) -> NoReturn:
+def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
         print("  stdout:")
         print(textwrap.indent(result.stdout, "    "))
@@ -137,6 +137,7 @@ def get_bash_runner():
             "PYODIDE_PACKAGE_ABI",
             "HOSTINSTALLDIR",
             "TARGETINSTALLDIR",
+            "SYSCONFIG_NAME",
             "HOSTSITEPACKAGES",
             "PYMAJOR",
             "PYMINOR",
@@ -164,7 +165,7 @@ def get_bash_runner():
         yield b
 
 
-def check_checksum(archive: Path, source_metadata: dict[str, Any]):
+def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -215,7 +216,9 @@ def trim_archive_extension(tarballname):
     return tarballname
 
 
-def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]):
+def download_and_extract(
+    buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
+) -> None:
     """
     Download the source from specified in the meta data, then checksum it, then
     extract the archive into srcpath.
@@ -269,7 +272,7 @@ def download_and_extract(buildpath: Path, srcpath: Path, src_metadata: dict[str,
 
 def prepare_source(
     pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
-):
+) -> None:
     """
     Figure out from the "source" key in the package metadata where to get the source
     from, then get the source into srcpath (or somewhere else, if it goes somewhere
@@ -294,7 +297,7 @@ def prepare_source(
 
     Returns
     -------
-        The location where the source ended up.
+        The location where the source ended up. TODO: None, actually?
     """
     if buildpath.resolve().is_dir():
         shutil.rmtree(buildpath)
@@ -316,7 +319,7 @@ def prepare_source(
     shutil.copytree(srcdir, srcpath)
 
 
-def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
+def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]) -> None:
     """
     Apply patches to the source.
 
@@ -352,6 +355,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
             result = subprocess.run(
                 ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
                 check=False,
+                encoding="utf-8",
             )
             if result.returncode != 0:
                 print(f"ERROR: Patch {pkg_root/patch} failed")
@@ -368,7 +372,9 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]):
 def unpack_wheel(path):
     with chdir(path.parent):
         result = subprocess.run(
-            [sys.executable, "-m", "wheel", "unpack", path.name], check=False
+            [sys.executable, "-m", "wheel", "unpack", path.name],
+            check=False,
+            encoding="utf-8",
         )
         if result.returncode != 0:
             print(f"ERROR: Unpacking wheel {path.name} failed")
@@ -378,7 +384,9 @@ def unpack_wheel(path):
 def pack_wheel(path):
     with chdir(path.parent):
         result = subprocess.run(
-            [sys.executable, "-m", "wheel", "pack", path.name], check=False
+            [sys.executable, "-m", "wheel", "pack", path.name],
+            check=False,
+            encoding="utf-8",
         )
         if result.returncode != 0:
             print(f"ERROR: Packing wheel {path} failed")
@@ -392,8 +400,7 @@ def compile(
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
     target_install_dir: str,
-    host_install_dir: str,
-):
+) -> None:
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
     with compiler wrappers subbed in, which don't actually build the package but
@@ -421,10 +428,6 @@ def compile(
     target_install_dir
         The path to the target Python installation
 
-    host_install_dir
-        Directory for installing built host packages. Defaults to setup.py
-        default. Set to 'skip' to skip installation. Installation is
-        needed if you want to build other packages that depend on this one.
     """
     # This function runs setup.py. library and sharedlibrary don't have setup.py
     if build_metadata.get("sharedlibrary"):
@@ -438,13 +441,12 @@ def compile(
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
             ldflags=build_metadata["ldflags"],
-            host_install_dir=host_install_dir,
             target_install_dir=target_install_dir,
             replace_libs=replace_libs,
         )
 
 
-def replace_so_abi_tags(wheel_dir: Path):
+def replace_so_abi_tags(wheel_dir: Path) -> None:
     """Replace native abi tag with emscripten abi tag in .so file names"""
     build_soabi = sysconfig.get_config_var("SOABI")
     assert build_soabi
@@ -462,8 +464,8 @@ def package_wheel(
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
-    host_install_dir,
-):
+    host_install_dir: str,
+) -> None:
     """Package a wheel
 
     This unpacks the wheel, unvendors tests if necessary, runs and "build.post"
@@ -499,6 +501,7 @@ def package_wheel(
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
+    print(f"Unpacking wheel to {str(wheel)}")
     unpack_wheel(wheel)
     wheel.unlink()
     name, ver, _ = wheel.name.split("-", 2)
@@ -511,7 +514,8 @@ def package_wheel(
 
     post = build_metadata.get("post")
     if post:
-        bash_runner.env.update({"PKGDIR": str(pkg_root)})
+        print("Running post script in ", str(Path.cwd().absolute()))
+        bash_runner.env.update({"PKGDIR": str(pkg_root), "WHEELDIR": str(wheel_dir)})
         result = bash_runner.run(post)
         if result.returncode != 0:
             print("ERROR: post failed")
@@ -594,7 +598,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
-def create_packaged_token(buildpath: Path):
+def create_packaged_token(buildpath: Path) -> None:
     (buildpath / ".packaged").write_text("\n")
 
 
@@ -603,7 +607,7 @@ def run_script(
     srcpath: Path,
     build_metadata: dict[str, Any],
     bash_runner: BashRunnerWithSharedEnvironment,
-):
+) -> None:
     """
     Run the build script indicated in meta.yaml
 
@@ -686,7 +690,7 @@ def build_package(
     host_install_dir: str,
     force_rebuild: bool,
     continue_: bool,
-):
+) -> None:
     """
     Build the package. The main entrypoint in this module.
 
@@ -770,7 +774,6 @@ def build_package(
                 build_metadata,
                 bash_runner,
                 target_install_dir=target_install_dir,
-                host_install_dir=host_install_dir,
             )
         if not sharedlibrary:
             package_wheel(
@@ -786,7 +789,7 @@ def build_package(
         create_packaged_token(build_dir)
 
 
-def make_parser(parser: argparse.ArgumentParser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = (
         "Build a pyodide package.\n\n"
         "Note: this is a private endpoint that should not be used "

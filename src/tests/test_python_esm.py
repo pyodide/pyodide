@@ -10,9 +10,8 @@ def test_print(selenium_esm):
     assert "This should be logged" in selenium_esm.logs.splitlines()
 
 
+@pytest.mark.xfail_browsers(node="No window in node")
 def test_import_js(selenium_esm):
-    if selenium_esm.browser == "node":
-        pytest.xfail("No window in node")
     result = selenium_esm.run(
         """
         import js

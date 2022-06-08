@@ -9,6 +9,6 @@ source:
 build:
   sharedlibrary: true
   script: |
-    emcc -c main.c -o main.o -fPIC
+    emcc -c main.c -o main.o ${SIDE_MODULE_CFLAGS}
     mkdir dist
-    emcc main.o -sSIDE_MODULE -o dist/sharedlib-test.so
+    emcc main.o ${SIDE_MODULE_LDFLAGS} -o dist/sharedlib-test.so

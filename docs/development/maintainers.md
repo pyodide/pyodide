@@ -12,30 +12,19 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 ### Making a major release
 
-1. Make a new PR and for all occurrences of
-   `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
-   the release version `vX.Y.Z` (note the presence of the leading `v`). This
-   also applies to `docs/conf.py`, but you should skip this file and
-   `docs/usage/downloading-and-deploying.md`.
+1. From the root directory of the repository,
 
-2. Set the version in:
+   ```bash
+   ./tools/bump_version.py --new-version <new_version>
+   # ./tools/bump_version.py --new_version <new_version> --dry-run
+   ```
 
-   - `src/js/package.json`,
-   - `docs/project/about.md` (the Zenodo citation),
-   - `docs/development/building-from-sources.md`,
-   - `docs/usage/downloading-and-deploying.md`,
-   - Bump version in source code files by running `bump2version` command, for example,
-
-     ```bash
-     bump2version minor
-     ```
-
-     check that the diff is correct with `git diff` before committing.
+   check that the diff is correct with `git diff` before committing.
 
    After this, try using `ripgrep` to make sure there are no extra old versions
    lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
 
-3. Make sure the change log is up-to-date.
+2. Make sure the change log is up-to-date.
 
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
@@ -46,7 +35,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
      where `LAST_TAG` is the tag for the last release.
      Merge the PR.
 
-4. Assuming the upstream `stable` branch exists, rename it to a release branch
+3. Assuming the upstream `stable` branch exists, rename it to a release branch
    for the previous major version. For instance if last release was, `0.20.0`,
    the corresponding release branch would be `0.20.X`,
    ```bash
@@ -56,7 +45,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream 0.20.X
    git branch -D stable    # delete locally
    ```
-5. Create a tag `X.Y.Z` (without leading `v`) and push
+4. Create a tag `X.Y.Z` (without leading `v`) and push
    it to upstream,
 
    ```bash
@@ -73,7 +62,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
    Wait for the CI to pass and create the release on GitHub.
 
-6. Release the Pyodide JavaScript package:
+5. Release the Pyodide JavaScript package:
 
    ```bash
    cd dist
@@ -81,10 +70,15 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
    ```
 
-7. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
-   the next version specified by Semantic Versioning.
+6. Increment the version to the next version
+   specified by Semantic Versioning. Set `dev` version if needed.
 
-8. Update this file with any relevant changes.
+   ```sh
+   # For example, if you just released 0.22.0, then set the version to 0.22.1.dev0
+   ./tools/bump_version.py --new-version 0.22.1.dev0
+   ```
+
+7. Update this file with any relevant changes.
 
 ### Making a minor release
 
@@ -108,13 +102,13 @@ This can be done with either,
   ```
   and indicate which commits to take from `main` in the UI.
 
-Then follow steps 2, 3, and 6 from {ref}`making-major-release`.
+Then follow steps 1, 2, 5 and 6 from {ref}`making-major-release`.
 
 ### Making an alpha release
 
-Follow steps 2, 6, 7, and 9 from {ref}`making-major-release`. Name the first
-alpha release `x.x.xa1` and in subsequent alphas increment the final number. For
-the npm package the alpha should have version in the format `x.x.x-alpha.1`. For
+Follow steps 1, 5, and 6 from {ref}`making-major-release`. Name the first
+alpha release `x.x.xa0` and in subsequent alphas increment the final number. For
+the npm package the alpha should have version in the format `x.x.x-alpha.0`. For
 the node package make sure to use `npm publish --tag next` to avoid setting the
 alpha version as the stable release.
 

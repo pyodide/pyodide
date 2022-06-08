@@ -6,7 +6,7 @@ from pyodide_test_runner import run_in_pyodide
         "msprime",
     ]
 )
-def test_msprime():
+def test_msprime(selenium):
     import msprime
     import tskit
 

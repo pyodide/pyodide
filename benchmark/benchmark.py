@@ -10,8 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pyodide-test-runner"))
 
 from pyodide_test_runner import (  # noqa: E402
-    ChromeWrapper,
-    FirefoxWrapper,
+    SeleniumChromeWrapper,
+    SeleniumFirefoxWrapper,
     spawn_web_server,
 )
 
@@ -181,8 +181,8 @@ def main():
     results = {}
     selenium_backends = {}
     browser_cls = [
-        ("firefox", FirefoxWrapper),
-        ("chrome", ChromeWrapper),
+        ("firefox", SeleniumFirefoxWrapper),
+        ("chrome", SeleniumChromeWrapper),
     ]
 
     with spawn_web_server(args.dist_dir) as (hostname, port, log_path):

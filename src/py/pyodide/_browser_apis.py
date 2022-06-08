@@ -14,7 +14,9 @@ class Destroyable:
 EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], JsProxy] = {}
 
 
-def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+def add_event_listener(
+    elt: JsProxy, event: str, listener: Callable[[Any], None]
+) -> None:
     """Wrapper for JavaScript's addEventListener() which automatically manages the lifetime
     of a JsProxy corresponding to the listener param.
     """
@@ -23,7 +25,9 @@ def add_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]
     elt.addEventListener(event, proxy)
 
 
-def remove_event_listener(elt: JsProxy, event: str, listener: Callable[[Any], None]):
+def remove_event_listener(
+    elt: JsProxy, event: str, listener: Callable[[Any], None]
+) -> None:
     """Wrapper for JavaScript's removeEventListener() which automatically manages the lifetime
     of a JsProxy corresponding to the listener param.
     """
@@ -63,7 +67,7 @@ def set_timeout(callback: Callable[[], None], timeout: int) -> int | JsProxy:
 DUMMY_DESTROYABLE = Destroyable()
 
 
-def clear_timeout(timeout_retval: int | JsProxy):
+def clear_timeout(timeout_retval: int | JsProxy) -> None:
     """Wrapper for JavaScript's clearTimeout() which automatically manages the lifetime
     of a JsProxy corresponding to the callback param.
     """
@@ -86,7 +90,7 @@ def set_interval(callback: Callable[[], None], interval: int) -> int | JsProxy:
     return interval_retval
 
 
-def clear_interval(interval_retval: int | JsProxy):
+def clear_interval(interval_retval: int | JsProxy) -> None:
     """Wrapper for JavaScript's clearInterval() which automatically manages the lifetime
     of a JsProxy corresponding to the callback param.
     """

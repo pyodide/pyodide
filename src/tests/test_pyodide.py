@@ -228,7 +228,7 @@ def test_unpack_archive(selenium_standalone):
 
 
 @run_in_pyodide
-def test_dup_pipe():
+def test_dup_pipe(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/14640
     import os
 
@@ -247,7 +247,7 @@ def test_dup_pipe():
 
 
 @run_in_pyodide
-def test_dup_temp_file():
+def test_dup_temp_file(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/15012
     import os
     from tempfile import TemporaryFile
@@ -268,7 +268,7 @@ def test_dup_temp_file():
 
 
 @run_in_pyodide
-def test_dup_stdout():
+def test_dup_stdout(selenium):
     # Test redirecting stdout using low level os.dup operations.
     # This sort of redirection is used in pytest.
     import os
@@ -789,6 +789,8 @@ def test_fatal_error(selenium_standalone):
         x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
         x = re.sub(" +at .*\n", "", x)
         x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = re.sub(".*@debugger.*\n", "", x)
+        x = re.sub(".*@chrome.*\n", "", x)
         x = x.replace("\n\n", "\n")
         return x
 
@@ -895,7 +897,11 @@ def test_js_stackframes(selenium):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
-            if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
+            if (
+                re.fullmatch(r"\:[0-9]*", file)
+                or file == "evalmachine.<anonymous>"
+                or file == "debugger eval code"
+            ):
                 file = "test.html"
             res.append([file, name])
         return res
@@ -1149,7 +1155,7 @@ def test_sys_path0(selenium):
 
 
 @run_in_pyodide
-def test_run_js():
+def test_run_js(selenium):
     from unittest import TestCase
 
     from pyodide import run_js

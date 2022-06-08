@@ -11,7 +11,11 @@ from packaging.utils import parse_wheel_filename
 
 from .io import parse_package_config
 
-PLATFORM = "emscripten_wasm32"
+
+def platform():
+    emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    version = emscripten_version.replace(".", "_")
+    return f"emscripten_{version}_wasm32"
 
 
 def pyodide_tags() -> Iterator[Tag]:
@@ -22,6 +26,7 @@ def pyodide_tags() -> Iterator[Tag]:
     """
     PYMAJOR = get_make_flag("PYMAJOR")
     PYMINOR = get_make_flag("PYMINOR")
+    PLATFORM = platform()
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
     yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
@@ -71,6 +76,7 @@ CORE_PACKAGES = {
     "cpp-exceptions-test",
     "ssl",
     "pytest",
+    "tblib",
 }
 
 CORE_SCIPY_PACKAGES = {
@@ -97,7 +103,7 @@ def _parse_package_subset(query: str | None) -> set[str]:
      - 'min-scipy-stack': includes the "core" meta-package as well as some of the
        core packages from the scientific python stack and their dependencies:
        {"numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib", "pytest"}.
-       This option is non exaustive and is mainly intended to make build faster
+       This option is non exhaustive and is mainly intended to make build faster
        while testing a diverse set of scientific packages.
      - '*': corresponds to all packages (returns None)
 

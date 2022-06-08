@@ -1,9 +1,5 @@
 import pytest
-from pyodide_test_runner import run_in_pyodide as run_in_pyodide_orig
-
-
-def run_in_pyodide(**kwargs):
-    return run_in_pyodide_orig(module_scope=True, packages=["numpy"])
+from pyodide_test_runner import run_in_pyodide
 
 
 def test_numpy(selenium):
@@ -194,11 +190,11 @@ def test_runpythonasync_numpy(selenium_standalone):
         )
 
 
+@pytest.mark.xfail_browsers(
+    firefox="Timeout in WebWorker when using numpy in Firefox 87"
+)
 @pytest.mark.driver_timeout(30)
 def test_runwebworker_numpy(selenium_webworker_standalone):
-    if selenium_webworker_standalone.browser == "firefox":
-        pytest.xfail("Timeout in WebWorker when using numpy in Firefox 87")
-
     output = selenium_webworker_standalone.run_webworker(
         """
         import numpy as np
@@ -362,8 +358,8 @@ def test_fft(selenium):
     )
 
 
-@run_in_pyodide()
-def test_np_unique():
+@run_in_pyodide(packages=["numpy"])
+def test_np_unique(selenium):
     """Numpy comparator functions formerly had a fatal error, see PR #2110"""
     import numpy as np
 

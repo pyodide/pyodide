@@ -30,6 +30,65 @@ PLATFORM_TAG_REGEX = re.compile(
 )
 
 
+def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
+    tokens = filename.split("-")
+    # TODO: support optional build tags in the filename (cf PEP 427)
+    if len(tokens) < 5:
+        raise ValueError(f"{filename} is not a valid wheel file name.")
+    version, python_tag, abi_tag, platform = tokens[-4:]
+    name = "-".join(tokens[:-4])
+    return name, version, python_tag, abi_tag, platform
+
+
+# Vendored from packaging
+_canonicalize_regex = re.compile(r"[-_.]+")
+
+
+def canonicalize_name(name: str) -> str:
+    # This is taken from PEP 503.
+    return _canonicalize_regex.sub("-", name).lower()
+
+
+# Vendored from pip
+class UnsupportedWheel(Exception):
+    """Unsupported wheel."""
+
+
+def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
+    """Returns the name of the contained .dist-info directory.
+
+    Raises UnsupportedWheel if not found, >1 found, or it doesn't match the
+    provided name.
+    """
+    # Zip file path separators must be /
+    subdirs = {p.split("/", 1)[0] for p in source.namelist()}
+
+    info_dirs = [s for s in subdirs if s.endswith(".dist-info")]
+
+    if not info_dirs:
+        raise UnsupportedWheel(f".dist-info directory not found in wheel {name!r}")
+
+    if len(info_dirs) > 1:
+        raise UnsupportedWheel(
+            "multiple .dist-info directories found in wheel {!r}: {}".format(
+                name, ", ".join(info_dirs)
+            )
+        )
+
+    info_dir = info_dirs[0]
+
+    info_dir_name = canonicalize_name(info_dir)
+    canonical_name = canonicalize_name(name)
+    if not info_dir_name.startswith(canonical_name):
+        raise UnsupportedWheel(
+            ".dist-info directory {!r} does not start with {!r}".format(
+                info_dir, canonical_name
+            )
+        )
+
+    return info_dir
+
+
 def make_whlfile(*args, owner=None, group=None, **kwargs):
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
@@ -60,6 +119,8 @@ def unpack_buffer(
     target: Literal["site", "lib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
+    installer: str | None = None,
+    source: str | None = None,
 ) -> JsProxy | None:
     """Used to install a package either into sitepackages or into the standard
     library.
@@ -122,16 +183,21 @@ def unpack_buffer(
         extract_path = Path(extract_dir)
     else:
         extract_path = Path(".")
+    filename = filename.rpartition("/")[-1]
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
+        suffix = Path(filename).suffix
+        if suffix == ".whl":
+            set_wheel_installer(filename, f, extract_path, installer, source)
         if calculate_dynlibs:
-            return to_js(get_dynlibs(f, extract_path))
+            suffix = Path(f.name).suffix
+            return to_js(get_dynlibs(f, suffix, extract_path))
         else:
             return None
 
 
-def should_load_dynlib(path: str):
+def should_load_dynlib(path: str) -> bool:
     suffixes = Path(path).suffixes
     if not suffixes:
         return False
@@ -149,7 +215,55 @@ def should_load_dynlib(path: str):
     return not PLATFORM_TAG_REGEX.match(tag)
 
 
-def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
+def set_wheel_installer(
+    filename: str,
+    archive: IO[bytes],
+    target_dir: Path,
+    installer: str | None,
+    source: str | None,
+) -> None:
+    """Record the installer and source of a wheel into the `dist-info`
+    directory.
+
+    We put the installer into an INSTALLER file according to the packaging spec:
+    packaging.python.org/en/latest/specifications/recording-installed-packages/#the-dist-info-directory
+
+    We put the source into PYODIDE_SORUCE.
+
+    The packaging spec allows us to make custom files. It also allows wheels to
+    include custom files in their .dist-info directory. The spec has no attempt
+    to coordinate these so that installers don't trample files that wheels
+    include. We make a best effort with our PYODIDE prefix.
+
+    Parameters
+    ----------
+    filename
+        The file name of the wheel.
+
+    archive
+        A binary representation of a wheel archive
+
+    target_dir
+        The directory the wheel is being installed into. Probably site-packages.
+
+    installer
+        The name of the installer. Currently either `pyodide.unpackArchive`,
+        `pyodide.loadPackage` or `micropip`.
+
+    source
+        Where did the package come from? Either a url, `pyodide`, or `PyPI`.
+    """
+    z = ZipFile(archive)
+    wheel_name = parse_wheel_name(filename)[0]
+    dist_info_name = wheel_dist_info_dir(z, wheel_name)
+    dist_info = target_dir / dist_info_name
+    if installer:
+        (dist_info / "INSTALLER").write_text(installer)
+    if source:
+        (dist_info / "PYODIDE_SOURCE").write_text(source)
+
+
+def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     """List out the paths to .so files in a zip or tar archive.
 
     Parameters
@@ -167,7 +281,6 @@ def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
         The list of paths to dynamic libraries ('.so' files) that were in the archive,
         but adjusted to point to their unpacked locations.
     """
-    suffix = Path(archive.name).suffix
     dynlib_paths_iter: Iterable[str]
     if suffix in ZIP_TYPES:
         dynlib_paths_iter = ZipFile(archive).namelist()

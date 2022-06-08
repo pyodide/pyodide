@@ -28,7 +28,7 @@ repos:
         args: ["--py310-plus"]
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v1.3.2"
+    rev: "v1.3.3"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml]
@@ -46,7 +46,7 @@ repos:
         additional_dependencies: [flake8-bugbear]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.950"
+    rev: "v0.960"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -58,6 +58,8 @@ repos:
           - types-pyyaml
           - types-setuptools
           - numpy
+          - build
+          - pytest
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]

@@ -25,9 +25,6 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-$(CPYTHONLIB)/tzdata :
-	pip install tzdata --target=$(CPYTHONLIB)
-
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
@@ -44,12 +41,16 @@ dist/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS)
+
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \
+		cd dist && npx prettier -w pyodide.asm.js ; \
+	fi
+
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
@@ -137,22 +138,18 @@ docs/_build/html/console.html: src/templates/console.html
 .PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 .PHONY: dist/module_webworker_dev.js
 dist/module_webworker_dev.js: src/templates/module_webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 
 update_base_url: \
-	dist/console.html \
-	dist/webworker.js
+	dist/console.html
 
 
 
@@ -210,6 +207,7 @@ dist/test.tar: $(CPYTHONLIB) node_modules/.installed
 	for testname in $(TEST_EXTENSIONS); do \
 		cd $(CPYTHONBUILD) && \
 		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
+		rm -f $(CPYTHONLIB)/$$testname && \
 		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
 	done
 
@@ -223,7 +221,7 @@ dist/distutils.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/distutils.tar distutils
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+$(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."

@@ -201,7 +201,11 @@ async function downloadPackage(
  * @param buffer The binary data returned by downloadPkgBuffer
  * @private
  */
-async function installPackage(name: string, buffer: Uint8Array) {
+async function installPackage(
+  name: string,
+  buffer: Uint8Array,
+  channel: string
+) {
   let pkg = API.packages[name];
   if (!pkg) {
     pkg = {
@@ -219,6 +223,8 @@ async function installPackage(name: string, buffer: Uint8Array) {
     filename,
     target: pkg.install_dir,
     calculate_dynlibs: true,
+    installer: "pyodide.loadPackage",
+    source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
@@ -302,7 +308,7 @@ async function loadDynlib(lib: string, shared: boolean) {
     releaseDynlibLock();
   }
 }
-Tests.loadDynlib = loadDynlib;
+API.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 
@@ -399,7 +405,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoadShared) {
       sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer);
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })
@@ -413,7 +419,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoad) {
       packageInstallPromises[name] = packageLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer);
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })

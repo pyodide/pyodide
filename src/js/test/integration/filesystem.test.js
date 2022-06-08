@@ -25,3 +25,24 @@ describe("FS", () => {
     chai.assert.isTrue(result);
   });
 });
+
+describe("PATH", () => {
+  it("exists", async () => {
+    chai.assert.exists(pyodide.PATH);
+  });
+  it("has expected keys", async () => {
+    chai.assert.exists(pyodide.PATH.dirname);
+    chai.assert.exists(pyodide.PATH.normalize);
+  });
+});
+
+describe("ERRNO_CODES", () => {
+  it("exists", async () => {
+    chai.assert.exists(pyodide.ERRNO_CODES);
+  });
+  it("has expected keys", async () => {
+    chai.assert.exists(pyodide.ERRNO_CODES.ENOENT);
+    chai.assert.exists(pyodide.ERRNO_CODES.EPERM);
+    chai.assert.exists(pyodide.ERRNO_CODES.EEXIST);
+  });
+});

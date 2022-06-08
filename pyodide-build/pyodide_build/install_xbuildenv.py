@@ -6,7 +6,7 @@ from pathlib import Path
 from .common import get_make_flag, get_pyodide_root
 
 
-def make_parser(parser: argparse.ArgumentParser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = (
         "Install xbuild env.\n\n"
         "The installed environment is the same as the one that would result from\n"

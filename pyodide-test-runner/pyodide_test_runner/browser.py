@@ -95,14 +95,16 @@ class JavascriptException(Exception):
 
     def __str__(self):
         return "\n\n".join(x for x in [self.msg, self.stack] if x)
-
+   
 
 RUNNERS = ["firefox", "chrome", "node"]
 if sys.platform == "darwin":
     RUNNERS.append("safari")
 
 
-class SeleniumWrapper:
+class BrowserWrapper:
+    browser = ""
+
     JavascriptException = JavascriptException
 
     def __init__(
@@ -114,6 +116,8 @@ class SeleniumWrapper:
         script_timeout=20,
         script_type="classic",
         dist_dir=None,
+        *args,
+        **kwargs,
     ):
         self.server_port = server_port
         self.server_hostname = server_hostname
@@ -132,23 +136,31 @@ class SeleniumWrapper:
             self.save_state()
             self.restore_state()
 
-    def prepare_driver(self):
-        if self.script_type == "classic":
-            self.driver.get(f"{self.base_url}/test.html")
-        elif self.script_type == "module":
-            self.driver.get(f"{self.base_url}/module_test.html")
-        else:
-            raise Exception("Unknown script type to load!")
+    def get_driver(self):
+        raise NotImplementedError()
+
+    def goto(self, page):
+        raise NotImplementedError()
 
     def set_script_timeout(self, timeout):
-        self.driver.set_script_timeout(timeout)
+        raise NotImplementedError()
 
     def quit(self):
-        self.driver.quit()
+        raise NotImplementedError()
 
     def refresh(self):
-        self.driver.refresh()
-        self.javascript_setup()
+        raise NotImplementedError()
+
+    def run_js_inner(self, code, check_code):
+        raise NotImplementedError()
+
+    def prepare_driver(self):
+        if self.script_type == "classic":
+            self.goto(f"{self.base_url}/test.html")
+        elif self.script_type == "module":
+            self.goto(f"{self.base_url}/module_test.html")
+        else:
+            raise Exception("Unknown script type to load!")
 
     def javascript_setup(self):
         self.run_js(
@@ -258,27 +270,6 @@ class SeleniumWrapper:
             check_code = ""
         return self.run_js_inner(code, check_code)
 
-    def run_js_inner(self, code, check_code):
-        wrapper = """
-            let cb = arguments[arguments.length - 1];
-            let run = async () => { %s }
-            (async () => {
-                try {
-                    let result = await run();
-                    %s
-                    cb([0, result]);
-                } catch (e) {
-                    cb([1, e.toString(), e.stack, e.message]);
-                }
-            })()
-        """
-        retval = self.driver.execute_async_script(wrapper % (code, check_code))
-        if retval[0] == 0:
-            return retval[1]
-        else:
-            print("JavascriptException message: ", retval[3])
-            raise JavascriptException(retval[1], retval[2])
-
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
@@ -347,6 +338,42 @@ class SeleniumWrapper:
     def load_package(self, packages):
         self.run_js(f"await pyodide.loadPackage({packages!r})")
 
+
+class SeleniumWrapper(BrowserWrapper):
+    def goto(self, page):
+        self.driver.get(page)
+
+    def set_script_timeout(self, timeout):
+        self.driver.set_script_timeout(timeout)
+
+    def quit(self):
+        self.driver.quit()
+
+    def refresh(self):
+        self.driver.refresh()
+        self.javascript_setup()
+
+    def run_js_inner(self, code, check_code):
+        wrapper = """
+            let cb = arguments[arguments.length - 1];
+            let run = async () => { %s }
+            (async () => {
+                try {
+                    let result = await run();
+                    %s
+                    cb([0, result]);
+                } catch (e) {
+                    cb([1, e.toString(), e.stack, e.message]);
+                }
+            })()
+        """
+        retval = self.driver.execute_async_script(wrapper % (code, check_code))
+        if retval[0] == 0:
+            return retval[1]
+        else:
+            print("JavascriptException message: ", retval[3])
+            raise JavascriptException(retval[1], retval[2])
+
     @property
     def urls(self):
         for handle in self.driver.window_handles:
@@ -354,7 +381,51 @@ class SeleniumWrapper:
             yield self.driver.current_url
 
 
-class FirefoxWrapper(SeleniumWrapper):
+class PlaywrightWrapper(BrowserWrapper):
+    def __init__(self, browsers, *args, **kwargs):
+        self.browsers = browsers
+        super().__init__(*args, **kwargs)
+
+    def goto(self, page):
+        self.driver.goto(page)
+
+    def get_driver(self):
+        return self.browsers[self.browser].new_page()
+
+    def set_script_timeout(self, timeout):
+        # playwright uses milliseconds for timeout
+        self.driver.set_default_timeout(timeout * 1000)
+
+    def quit(self):
+        self.driver.close()
+
+    def refresh(self):
+        self.driver.reload()
+        self.javascript_setup()
+
+    def run_js_inner(self, code, check_code):
+        # playwright `evaluate` waits until primise to resolve,
+        # so we don't need to use a callback like selenium.
+        wrapper = """
+            let run = async () => { %s }
+            (async () => {
+                try {
+                    let result = await run();
+                    %s
+                    return [0, result];
+                } catch (e) {
+                    return [1, e.toString(), e.stack];
+                }
+            })()
+        """
+        retval = self.driver.evaluate(wrapper % (code, check_code))
+        if retval[0] == 0:
+            return retval[1]
+        else:
+            raise JavascriptException(retval[1], retval[2])
+
+
+class SeleniumFirefoxWrapper(SeleniumWrapper):
 
     browser = "firefox"
 
@@ -368,7 +439,7 @@ class FirefoxWrapper(SeleniumWrapper):
         return Firefox(executable_path="geckodriver", options=options)
 
 
-class ChromeWrapper(SeleniumWrapper):
+class SeleniumChromeWrapper(SeleniumWrapper):
 
     browser = "chrome"
 
@@ -385,8 +456,7 @@ class ChromeWrapper(SeleniumWrapper):
     def collect_garbage(self):
         self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
 
-
-class SafariWrapper(SeleniumWrapper):
+class SeleniumSafariWrapper(SeleniumWrapper):
 
     browser = "safari"
 
@@ -398,8 +468,21 @@ class SafariWrapper(SeleniumWrapper):
 
         return Safari(options=options)
 
+      
+class PlaywrightChromeWrapper(PlaywrightWrapper):
+    browser = "chrome"
 
-class NodeWrapper(SeleniumWrapper):
+    def collect_garbage(self):
+        client = self.driver.context.new_cdp_session(self.driver)
+        client.send("HeapProfiler.collectGarbage")
+
+
+class PlaywrightFirefoxWrapper(PlaywrightWrapper):
+    browser = "firefox"
+
+      
+class NodeWrapper(BrowserWrapper):
+
     browser = "node"
 
     def init_node(self):
