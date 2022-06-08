@@ -1,6 +1,7 @@
 import pytest
 from pyodide_test_runner import run_in_pyodide
 
+
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy","sparseqr"])
 def test_scipy_linalg(selenium):
