@@ -99,18 +99,11 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:$PATH \
     RUST_VERSION=1.61.0
 
-RUN rustArch='x86_64-unknown-linux-gnu'; rustupSha256='3dc5ef50861ee18657f9db2eeb7392f9c2a6c95c90ab41e45ab4ca71476b4338' ; \
-    url="https://static.rust-lang.org/rustup/archive/1.24.3/${rustArch}/rustup-init"; \
-    wget "$url"; \
-    echo "${rustupSha256} *rustup-init" | sha256sum -c -; \
-    chmod +x rustup-init; \
-    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
-    rm rustup-init; \
-    chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
-    rustup target add wasm32-unknown-emscripten --toolchain $RUST_VERSION; \
-    rustup --version; \
-    cargo --version; \
-    rustc --version;
+RUN wget https://sh.rustup.rs -O /rustup.sh \
+	  && sh /rustup.sh -y \
+    && rustup target add wasm32-unknown-emscripten --toolchain stable \
+    && rm /rustup.sh
+
 
 CMD ["/bin/sh"]
 WORKDIR /src

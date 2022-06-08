@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: hoodmane/pyodide-env:20220606-py310-chrome102-firefox101
+    - image: hoodmane/pyodide-env:20220607-py310-chrome102-firefox101
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
