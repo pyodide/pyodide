@@ -1,0 +1,17 @@
+package:
+  name: choreo
+  version: 0.1.0
+
+source:
+  sha256: 1b63715d7c84068017abe1c11492001adeefdb7f2ab7a57b2234dc99556c23ca
+  url: https://github.com/gabrielfougeron/Choreographies2/archive/refs/tags/pyodide_stable.tar.gz
+
+requirements:
+  run:
+    - sparseqr
+    - numpy
+    - scipy
+
+test:
+  imports:
+    - choreo
