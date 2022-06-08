@@ -94,16 +94,5 @@ RUN npm install -g \
   rollup \
   rollup-plugin-terser
 
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.61.0
-
-RUN wget https://sh.rustup.rs -O /rustup.sh \
-	  && sh /rustup.sh -y \
-    && rustup target add wasm32-unknown-emscripten --toolchain stable \
-    && rm /rustup.sh
-
-
 CMD ["/bin/sh"]
 WORKDIR /src
