@@ -1,7 +1,7 @@
-From a3b72ae6c36ad0e5212b28a36d010b797ccb0a9a Mon Sep 17 00:00:00 2001
+From 778870a108cbf33f1ec26a7f08e668ba3841e571 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
-Subject: [PATCH 2/4] Fix dup
+Subject: [PATCH 5/6] Fix dup
 
 This fixes two problems with the `dup` system calls:
 1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
@@ -17,7 +17,7 @@ This patch is simpler than the upstream one but leaves NODERAWFS broken.
  2 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index bc5cc412c..98328e13a 100644
+index d722d7449..47da3c67c 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
 @@ -404,7 +404,7 @@ FS.staticInit();` +
@@ -43,7 +43,7 @@ index bc5cc412c..98328e13a 100644
        }
        // clone it, so we can return an instance of FSStream
 diff --git a/src/library_syscall.js b/src/library_syscall.js
-index 8a59a0442..107ae8455 100644
+index 072d4cde3..47eab24aa 100644
 --- a/src/library_syscall.js
 +++ b/src/library_syscall.js
 @@ -131,10 +131,10 @@ var SyscallsLibrary = {
@@ -77,7 +77,7 @@ index 8a59a0442..107ae8455 100644
          return newStream.fd;
        }
        case {{{ cDefine('F_GETFD') }}}:
-@@ -1072,7 +1072,7 @@ var SyscallsLibrary = {
+@@ -1077,7 +1077,7 @@ var SyscallsLibrary = {
      assert(!flags);
  #endif
      if (old.fd === suggestFD) return -{{{ cDefine('EINVAL') }}};
