@@ -1,7 +1,7 @@
 From 9fead8aabbf3418ac1422cd4867815f9eb49e6e6 Mon Sep 17 00:00:00 2001
 From: Christian Heimes <christian@python.org>
 Date: Thu, 10 Mar 2022 18:30:11 +0200
-Subject: [PATCH 3/6] Fix utime() syscall (#16460)
+Subject: [PATCH 3/8] Fix utime() syscall (#16460)
 
 Fix off by factor 1000: ``FS.utime()`` expects mtime and atime in seconds.
 

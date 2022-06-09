@@ -1,0 +1,24 @@
+From 196ace04edb63a93000418f91d56a3cec11b8345 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 1 Jun 2022 10:11:44 -0700
+Subject: [PATCH 2/2] Add instant patch
+
+---
+ src/rust/Cargo.toml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/rust/Cargo.toml b/src/rust/Cargo.toml
+index 35bf38ae..23a64977 100644
+--- a/src/rust/Cargo.toml
++++ b/src/rust/Cargo.toml
+@@ -7,6 +7,7 @@ publish = false
+ 
+ [patch.crates-io]
+ chrono = { path =  "../../chrono" }
++instant = { path = "../../instant" }
+ 
+ [dependencies]
+ lazy_static = "1"
+-- 
+2.25.1
+

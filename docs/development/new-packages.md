@@ -328,3 +328,10 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 
    meta-yaml.md
 ```
+
+### Rust/PyO3 Packages
+
+We currently build Cryptography which is a Rust extension built with PyO3 and
+setuptools-rust. It should be reasonably easy to build other Rust extensions.
+Currently it is necessary to run `source $CARGO_HOME/env` in the build script,
+but other than that there may be no other issues if you are lucky.

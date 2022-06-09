@@ -239,6 +239,12 @@ emsdk/emsdk/.complete:
 	date +"[%F %T] done building emsdk."
 
 
+rust:
+	wget https://sh.rustup.rs -O /rustup.sh
+	sh /rustup.sh -y
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
+
+
 FORCE:
 
 
