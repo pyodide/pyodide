@@ -1,7 +1,7 @@
-From c0c31fed557f5d3afa03a66f5590677087d3dab9 Mon Sep 17 00:00:00 2001
+From eeaffd00a410a9eb663d27c39208be220935032f Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Mon, 23 May 2022 15:25:21 -0700
-Subject: [PATCH 3/3] Fix version reported by uname (#17026)
+Subject: [PATCH 2/3] Fix version reported by uname (#17026)
 
 Fixes: #16977
 ---
