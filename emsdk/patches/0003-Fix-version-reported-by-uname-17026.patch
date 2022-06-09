@@ -1,7 +1,7 @@
-From 6a514ed3a296c336f56d6150f2b9363074d31db3 Mon Sep 17 00:00:00 2001
+From c0c31fed557f5d3afa03a66f5590677087d3dab9 Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Mon, 23 May 2022 15:25:21 -0700
-Subject: [PATCH 6/6] Fix version reported by uname (#17026)
+Subject: [PATCH 3/3] Fix version reported by uname (#17026)
 
 Fixes: #16977
 ---
@@ -11,7 +11,7 @@ Fixes: #16977
  3 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/system/lib/libc/emscripten_syscall_stubs.c b/system/lib/libc/emscripten_syscall_stubs.c
-index 0a59d1a3d..68b1a2f11 100644
+index b42e852db..2a6d5d526 100644
 --- a/system/lib/libc/emscripten_syscall_stubs.c
 +++ b/system/lib/libc/emscripten_syscall_stubs.c
 @@ -22,6 +22,7 @@
@@ -29,7 +29,7 @@ index 0a59d1a3d..68b1a2f11 100644
 +#define STRINGIFY(s) #s
 +#define STR(s) STRINGIFY(s)
 +
- long __syscall_uname(long buf) {
+ int __syscall_uname(intptr_t buf) {
    if (!buf) {
      return -EFAULT;
    }
@@ -59,10 +59,10 @@ index 879d445a3..3806f84db 100644
  version: #1
  machine: wasm32
 diff --git a/tests/test_core.py b/tests/test_core.py
-index c334c8398..5800b6a72 100644
+index 6f145486a..72bfa69ce 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
-@@ -5773,7 +5773,7 @@ Module['onRuntimeInitialized'] = function() {
+@@ -5890,7 +5890,7 @@ Module['onRuntimeInitialized'] = function() {
      self.do_core_test('test_posixtime.c')
  
    def test_uname(self):

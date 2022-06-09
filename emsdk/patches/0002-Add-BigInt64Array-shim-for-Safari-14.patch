@@ -1,7 +1,7 @@
-From 2adc216acacef980cf2648e6d1f69f7c7ed2cdcd Mon Sep 17 00:00:00 2001
+From d91d56a2aaf19a0facf9de216e5899e66fa8eb11 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 29 May 2022 18:17:29 -0700
-Subject: [PATCH 3/6] Add BigInt64Array shim for Safari 14
+Subject: [PATCH 2/3] Add BigInt64Array shim for Safari 14
 
 ---
  src/parseTools.js             |  2 +-
@@ -11,7 +11,7 @@ Subject: [PATCH 3/6] Add BigInt64Array shim for Safari 14
  create mode 100644 src/polyfill/bigint64array.js
 
 diff --git a/src/parseTools.js b/src/parseTools.js
-index a9cfe8afb..3bdac7319 100644
+index f942a85a4..d5ee9f2db 100644
 --- a/src/parseTools.js
 +++ b/src/parseTools.js
 @@ -95,7 +95,7 @@ function preprocess(text, filenameHint) {
@@ -117,10 +117,10 @@ index 000000000..126c2b51f
 +    var BigInt64Array = createBigIntArrayShim(partsToBigIntSigned);
 +}
 diff --git a/src/preamble.js b/src/preamble.js
-index 430ac5568..e3f45bdec 100644
+index 7523f265b..14878bab0 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -265,9 +265,12 @@ function updateGlobalBufferAndViews(buf) {
+@@ -280,9 +280,12 @@ function updateGlobalBufferAndViews(buf) {
    Module['HEAPF32'] = HEAPF32 = new Float32Array(buf);
    Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
  #if WASM_BIGINT
