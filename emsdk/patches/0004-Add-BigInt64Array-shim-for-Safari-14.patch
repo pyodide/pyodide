@@ -1,7 +1,7 @@
-From cff825cdcba9e0571e5a025b5878fb82d3d79e17 Mon Sep 17 00:00:00 2001
+From e64413231e98b090b7c92069bd08c8b76d3a80b2 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 8 Jun 2022 19:08:18 -0700
-Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
+Subject: [PATCH 4/4] Add BigInt64Array shim for Safari 14
 
 ---
  src/polyfill/bigint64array.js | 94 +++++++++++++++++++++++++++++++++++
@@ -112,10 +112,10 @@ index 000000000..448a2d2a4
 +    var BigInt64Array = createBigIntArrayShim(partsToBigIntSigned);
 +}
 diff --git a/src/preamble.js b/src/preamble.js
-index 430ac5568..62f215ab4 100644
+index 30b432e6a..fd87a4af3 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -267,7 +267,7 @@ function updateGlobalBufferAndViews(buf) {
+@@ -282,7 +282,7 @@ function updateGlobalBufferAndViews(buf) {
  #if WASM_BIGINT
    Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
    Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
@@ -125,7 +125,7 @@ index 430ac5568..62f215ab4 100644
  
  var TOTAL_STACK = {{{ TOTAL_STACK }}};
 diff --git a/src/settings.js b/src/settings.js
-index a3d45c7a3..162d026e5 100644
+index 0431c0455..82ed3732f 100644
 --- a/src/settings.js
 +++ b/src/settings.js
 @@ -1334,6 +1334,10 @@ var DYNCALLS = 0;
@@ -140,7 +140,7 @@ index a3d45c7a3..162d026e5 100644
  var WASM_BIGINT = 0;
  
 diff --git a/src/shell.js b/src/shell.js
-index 021d7cf5f..774a7f411 100644
+index 8fa63d0ba..65d6afef1 100644
 --- a/src/shell.js
 +++ b/src/shell.js
 @@ -51,7 +51,12 @@ var Module = typeof {{{ EXPORT_NAME }}} != 'undefined' ? {{{ EXPORT_NAME }}} : {

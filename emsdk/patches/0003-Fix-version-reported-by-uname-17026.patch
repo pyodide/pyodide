@@ -1,7 +1,7 @@
-From 03a31e67f42161ed920e9a8a00094ce2d49fd667 Mon Sep 17 00:00:00 2001
+From 1c3f056abeed5f4f8dd70b845ac715b9f9a765b3 Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Mon, 23 May 2022 15:25:21 -0700
-Subject: [PATCH 5/6] Fix version reported by uname (#17026)
+Subject: [PATCH 3/4] Fix version reported by uname (#17026)
 
 Fixes: #16977
 ---
@@ -59,10 +59,10 @@ index 879d445a3..3806f84db 100644
  version: #1
  machine: wasm32
 diff --git a/tests/test_core.py b/tests/test_core.py
-index c334c8398..5800b6a72 100644
+index d34c26984..631379cbc 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
-@@ -5773,7 +5773,7 @@ Module['onRuntimeInitialized'] = function() {
+@@ -5839,7 +5839,7 @@ Module['onRuntimeInitialized'] = function() {
      self.do_core_test('test_posixtime.c')
  
    def test_uname(self):
