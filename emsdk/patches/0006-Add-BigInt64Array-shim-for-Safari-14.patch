@@ -1,7 +1,7 @@
 From 4462c2871933db0adc4b46a24f77b942caff969c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 29 May 2022 18:17:29 -0700
-Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
+Subject: [PATCH 6/8] Add BigInt64Array shim for Safari 14
 
 ---
  src/parseTools.js             |  2 +-
