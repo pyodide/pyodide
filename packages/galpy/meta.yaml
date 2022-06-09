@@ -1,0 +1,38 @@
+package:
+  name: galpy
+  version: 1.7.2
+source:
+  url: https://files.pythonhosted.org/packages/67/7f/ae16e887e78d42c8db0406ca7eec651502ebf3e1c9782a00f59e506a8db3/galpy-1.7.2.tar.gz
+  sha256: 4011b57b427d791addd8201754989a8f08d46925ee81cd571473d414ee38c04a
+  patches:
+    - patches/0001-Force-GSL-version-to-2.7-for-pyodide-build.patch
+    - patches/0002-Don-t-use-OpenMP-for-pyodide-build.patch
+build:
+  script:
+    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix gsl)
+    export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix gsl)
+  cflags: |
+    $(LIBGSL_INCLUDE_PATH)
+  ldflags: |
+    $(LIBGSL_LIBRARY_PATH)
+requirements:
+  run:
+    - numpy
+    - scipy
+    - matplotlib
+    - astropy
+    - libgsl
+    - future
+    - setuptools
+test:
+  imports:
+    - galpy
+    - galpy.potential
+    - galpy.orbit
+    - galpy.actionAngle
+    - galpy.df
+about:
+  home: http://github.com/jobovy/galpy
+  PyPI: https://pypi.org/project/galpy
+  summary: Galactic Dynamics in python
+  license: New BSD

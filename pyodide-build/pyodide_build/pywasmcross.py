@@ -10,6 +10,7 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
+import shutil
 import sys
 
 IS_MAIN = __name__ == "__main__"
@@ -30,7 +31,7 @@ from typing import Any, MutableMapping, NoReturn
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
 
 def symlink_dir():
@@ -536,6 +537,13 @@ def handle_command(
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:
         sys.exit(returncode)
+
+    # Rust gives output files a `.wasm` suffix, but we need them to have a `.so`
+    # suffix.
+    if line[0:2] == ["cargo", "rustc"]:
+        p = Path(args.builddir)
+        for x in p.glob("**/*.wasm"):
+            shutil.move(x, x.with_suffix(".so"))
 
     sys.exit(returncode)
 

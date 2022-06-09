@@ -6,6 +6,7 @@
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include <emscripten.h>
+#include <stdio.h>
 
 static PyObject* tbmod = NULL;
 
@@ -15,13 +16,12 @@ _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
 
 void
-_Py_DumpTraceback(int fd, void* tstate);
+_Py_DumpTraceback(int fd, PyThreadState* tstate);
 
-// We need this b/c otherwise Emscripten will eliminate the symbol.
 EMSCRIPTEN_KEEPALIVE void
-dump_traceback(int fd, void* tstate)
+dump_traceback()
 {
-  _Py_DumpTraceback(fd, tstate);
+  _Py_DumpTraceback(fileno(stdout), PyGILState_GetThisThreadState());
 }
 
 EM_JS(void, console_error, (char* msg), {

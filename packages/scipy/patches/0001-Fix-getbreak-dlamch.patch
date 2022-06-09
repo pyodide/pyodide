@@ -1,0 +1,40 @@
+From 3c96482aec096998e3497f7ca177309a2cef8c62 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 18 Mar 2022 16:06:48 -0700
+Subject: [PATCH] Fix getbreak dlamch
+
+---
+ doc/source/_static/scipy-mathjax                       | 2 +-
+ scipy/sparse/linalg/isolve/iterative/GMRESREVCOM.f.src | 2 +-
+ scipy/sparse/linalg/isolve/iterative/getbreak.f.src    | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/scipy/sparse/linalg/isolve/iterative/GMRESREVCOM.f.src b/scipy/sparse/linalg/isolve/iterative/GMRESREVCOM.f.src
+index da4bde8ec..5f47afde2 100644
+--- a/scipy/sparse/linalg/isolve/iterative/GMRESREVCOM.f.src
++++ b/scipy/sparse/linalg/isolve/iterative/GMRESREVCOM.f.src
+@@ -154,7 +154,7 @@
+       INFO = 0
+       MAXIT = ITER
+       BRKDWN = .FALSE.
+-      EPS = <sdsd>LAMCH('EPS')
++      EPS = <sdsd>LAMCH(69)
+ *
+ *     Alias workspace columns.
+ *
+diff --git a/scipy/sparse/linalg/isolve/iterative/getbreak.f.src b/scipy/sparse/linalg/isolve/iterative/getbreak.f.src
+index 6fc6605ac..5472f8f1a 100644
+--- a/scipy/sparse/linalg/isolve/iterative/getbreak.f.src
++++ b/scipy/sparse/linalg/isolve/iterative/getbreak.f.src
+@@ -9,7 +9,7 @@
+       IMPLICIT NONE
+       <rt> EPS, <sdsd=s,d,s,d>LAMCH
+ *
+-      EPS = <sdsd>LAMCH('EPS')
++      EPS = <sdsd>LAMCH(69)
+       <_c>GETBREAK = EPS**2
+ *
+       RETURN
+-- 
+2.25.1
+
