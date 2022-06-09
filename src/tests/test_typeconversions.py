@@ -21,11 +21,7 @@ def test_string_conversion(selenium_module_scope, s):
         from pyodide import run_js
 
         run_js("self.encoder = new TextEncoder()")
-        run_js("self.decoder = new TextDecoder()")
-
-        if run_js("(spy) => self.decoder(self.encoder(spy)) !== spy"):
-            # Apparently TextDecoder is not a left inverse of TextEncoder. *sigh*
-            return
+        run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
 
         spy = bytes(sbytes).decode()
         sjs = run_js(
@@ -51,11 +47,7 @@ def test_string_conversion2(selenium, s):
     from pyodide import run_js
 
     run_js("self.encoder = new TextEncoder()")
-    run_js("self.decoder = new TextDecoder()")
-
-    if run_js("(spy) => self.decoder(self.encoder(spy)) !== spy"):
-        # Apparently TextDecoder is not a left inverse of TextEncoder. *sigh*
-        return
+    run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
 
     s_encoded = s.encode()
     sjs = run_js(
