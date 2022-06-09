@@ -1,0 +1,26 @@
+From 65d4028693bd59bfe75813043b2470342c6a5fe5 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 1 Jun 2022 10:54:08 -0700
+Subject: [PATCH 8/8] Add signature to emscripten_get_now
+
+Upstream PR:
+https://github.com/emscripten-core/emscripten/pull/17123/files
+---
+ src/library.js | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/library.js b/src/library.js
+index b1947fc69..65bd4718c 100644
+--- a/src/library.js
++++ b/src/library.js
+@@ -2405,6 +2405,7 @@ LibraryManager.library = {
+   },
+ 
+   emscripten_get_now__import: true,
++  emscripten_get_now__sig: 'd',
+   emscripten_get_now: ';' +
+ #if ENVIRONMENT_MAY_BE_NODE
+                                "if (ENVIRONMENT_IS_NODE) {\n" +
+-- 
+2.25.1
+

@@ -25,9 +25,6 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-$(CPYTHONLIB)/tzdata :
-	pip install tzdata --target=$(CPYTHONLIB)
-
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
@@ -44,7 +41,6 @@ dist/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
@@ -241,6 +237,12 @@ emsdk/emsdk/.complete:
 	date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
+
+
+rust:
+	wget https://sh.rustup.rs -O /rustup.sh
+	sh /rustup.sh -y
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
 
 
 FORCE:

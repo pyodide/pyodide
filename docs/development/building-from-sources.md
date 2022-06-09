@@ -151,8 +151,17 @@ meta-package. Other supported meta-packages are,
   "pytest". This option is non exhaustive and is mainly intended to make build
   faster while testing a diverse set of scientific packages.
 - "\*" builds all packages
+- You can exclude a package by prefixing it with "!".
 
 micropip and distutils are always automatically included.
+
+The cryptography package is a Rust extension. If you want to build it, you will
+need Rust >= 1.41, you need the
+[CARGO_HOME](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-reads)
+environment variable set appropriately, and you need the
+`wasm32-unknown-emscripten` toolchain installed. If you run `make rust`, Pyodide
+will install this stuff automatically. If you want to build every package except
+for cryptography, you can set `PYODIDE_PACKAGES="*,!cryptography"`.
 
 ## Environment variables
 

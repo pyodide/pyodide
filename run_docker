@@ -127,9 +127,9 @@ CONTAINER=$(\
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash -c " \
-      groupadd '$USER_GID'; \
+      groupadd --gid '$USER_GID' '$USER_NAME'; \
       useradd \
-        --home-dir '$USER_HOME' \
+        --home '$USER_HOME' \
         --uid '$USER_ID' \
         --gid '$USER_GID' \
         --comment '$USER_COMMENT_FIELD' \

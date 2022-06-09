@@ -130,6 +130,11 @@ jobs:
             - -pkg2-v20220303
 
       - run:
+          name: install rust
+          command: |
+            make rust
+
+      - run:
           name: build packages
           no_output_timeout: 60m
           command: |

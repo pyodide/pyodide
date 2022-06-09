@@ -1,0 +1,147 @@
+From 9fead8aabbf3418ac1422cd4867815f9eb49e6e6 Mon Sep 17 00:00:00 2001
+From: Christian Heimes <christian@python.org>
+Date: Thu, 10 Mar 2022 18:30:11 +0200
+Subject: [PATCH 3/8] Fix utime() syscall (#16460)
+
+Fix off by factor 1000: ``FS.utime()`` expects mtime and atime in seconds.
+
+``times == NULL`` is now correctly handled. ``utimes(path, NULL)``
+updates atime and mtime to current time.
+
+https://nodejs.org/api/fs.html#fsutimespath-atime-mtime-callback
+
+Fixes: #16458
+Signed-off-by: Christian Heimes <christian@python.org>
+---
+ src/library_noderawfs.js       |  2 +-
+ src/library_syscall.js         | 19 ++++++++++++-------
+ system/lib/wasmfs/syscalls.cpp | 14 +++++++++++---
+ tests/utime/test_utime.c       | 27 +++++++++++++++++++++++----
+ 4 files changed, 47 insertions(+), 15 deletions(-)
+
+diff --git a/src/library_noderawfs.js b/src/library_noderawfs.js
+index 78f995830..f252e3a64 100644
+--- a/src/library_noderawfs.js
++++ b/src/library_noderawfs.js
+@@ -81,7 +81,7 @@ mergeInto(LibraryManager.library, {
+       }
+       fs.ftruncateSync.apply(void 0, arguments);
+     },
+-    utime: function() { fs.utimesSync.apply(void 0, arguments); },
++    utime: function(path, atime, mtime) { fs.utimesSync(path, atime/1000, mtime/1000); },
+     open: function(path, flags, mode, suggestFD) {
+       if (typeof flags == "string") {
+         flags = VFS.modeStringToFlags(flags)
+diff --git a/src/library_syscall.js b/src/library_syscall.js
+index 8a59a0442..072d4cde3 100644
+--- a/src/library_syscall.js
++++ b/src/library_syscall.js
+@@ -1046,13 +1046,18 @@ var SyscallsLibrary = {
+     assert(flags === 0);
+ #endif
+     path = SYSCALLS.calculateAt(dirfd, path, true);
+-    var seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i32') }}};
+-    var nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, 'i32') }}};
+-    var atime = (seconds*1000) + (nanoseconds/(1000*1000));
+-    times += {{{ C_STRUCTS.timespec.__size__ }}};
+-    seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i32') }}};
+-    nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, 'i32') }}};
+-    var mtime = (seconds*1000) + (nanoseconds/(1000*1000));
++    if (!times) {
++      var atime = Date.now();
++      var mtime = atime;
++    } else {
++      var seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i32') }}};
++      var nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, 'i32') }}};
++      atime = (seconds*1000) + (nanoseconds/(1000*1000));
++      times += {{{ C_STRUCTS.timespec.__size__ }}};
++      seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i32') }}};
++      nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, 'i32') }}};
++      mtime = (seconds*1000) + (nanoseconds/(1000*1000));
++    }
+     FS.utime(path, atime, mtime);
+     return 0;
+   },
+diff --git a/system/lib/wasmfs/syscalls.cpp b/system/lib/wasmfs/syscalls.cpp
+index a004b02dd..48f9b4677 100644
+--- a/system/lib/wasmfs/syscalls.cpp
++++ b/system/lib/wasmfs/syscalls.cpp
+@@ -992,9 +992,17 @@ long __syscall_utimensat(int dirFD,
+     return err;
+   }
+ 
+-  // TODO: tv_nsec (nanoseconds) as well? but time_t is seconds as an integer
+-  auto aSeconds = times[0].tv_sec;
+-  auto mSeconds = times[1].tv_sec;
++  // TODO: Set tv_nsec (nanoseconds) as well.
++  // TODO: Handle tv_nsec being UTIME_NOW or UTIME_OMIT.
++  // TODO: Check for write access to the file (see man page for specifics).
++  time_t aSeconds, mSeconds;
++  if (times == NULL) {
++    aSeconds = time(NULL);
++    mSeconds = aSeconds;
++  } else {
++    aSeconds = times[0].tv_sec;
++    mSeconds = times[1].tv_sec;
++  }
+ 
+   auto locked = parsedPath.child->locked();
+   locked.setATime(aSeconds);
+diff --git a/tests/utime/test_utime.c b/tests/utime/test_utime.c
+index b0f28bc4d..3a04100ce 100644
+--- a/tests/utime/test_utime.c
++++ b/tests/utime/test_utime.c
+@@ -11,6 +11,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ #include <unistd.h>
+ #include <utime.h>
+ #include <sys/stat.h>
+@@ -32,20 +33,38 @@ void test() {
+   // will fail
+   struct utimbuf t = {1000000000, 1000000000};
+ 
+-  utime("writeable", &t);
++  errno = 0;
++  int rv = utime("writeable", &t);
++  assert(rv == 0);
+   assert(!errno);
+   memset(&s, 0, sizeof s);
+-  stat("writeable", &s);
++  rv = stat("writeable", &s);
++  assert(rv == 0);
+   assert(s.st_atime == t.actime);
+   assert(s.st_mtime == t.modtime);
+ 
++  // NULL sets atime and mtime to current time.
++  long now = time(NULL);
++  rv = utime("writeable", NULL);
++  assert(rv == 0);
++  memset(&s, 0, sizeof s);
++  stat("writeable", &s);
++  assert(s.st_atime == s.st_mtime);
++  long diff = s.st_atime - now;
++  if (abs(diff) > 5) {
++    fprintf(stderr, "st_atime: %li, now: %li, diff: %li\n ", s.st_atime, now, diff);
++    assert(abs(diff) <= 5);
++  }
++
+   // write permissions aren't checked when setting node
+   // attributes unless the user uid isn't the owner (so
+   // therefor, this should work fine)
+-  utime("unwriteable", &t);
++  rv = utime("unwriteable", &t);
++  assert(rv == 0);
+   assert(!errno);
+   memset(&s, 0, sizeof s);
+-  stat("unwriteable", &s);
++  rv = stat("unwriteable", &s);
++  assert(rv == 0);
+   assert(s.st_atime == t.actime);
+   assert(s.st_mtime == t.modtime);
+ 
+-- 
+2.25.1
+
