@@ -1,14 +1,14 @@
-From 8ccd994fbfd3b31f86b74afbfac64e65190425c2 Mon Sep 17 00:00:00 2001
+From cedb7b1a5a341103707da7fbea435a7f4ed719f1 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 8 Jun 2022 22:06:54 -0700
 Subject: [PATCH 3/3] Fix dup again
 
 ---
- src/library_fs.js | 34 +++++++++++++++++++++++-----------
- 1 file changed, 23 insertions(+), 11 deletions(-)
+ src/library_fs.js | 40 ++++++++++++++++++++++++++--------------
+ 1 file changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index 88f3bd98c..2b8ae90f7 100644
+index 88f3bd98c..693a1988a 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
 @@ -400,32 +400,44 @@ FS.staticInit();` +
@@ -36,15 +36,18 @@ index 88f3bd98c..2b8ae90f7 100644
 +            enumerable : true,
            },
            isRead: {
-             get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_WRONLY') }}}; }
+-            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_WRONLY') }}}; }
++            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_WRONLY') }}}; },
 +            enumerable : true,
            },
            isWrite: {
-             get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_RDONLY') }}}; }
+-            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_RDONLY') }}}; }
++            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_RDONLY') }}}; },
 +            enumerable : true,
            },
            isAppend: {
-             get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
+-            get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
++            get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); },
 +            enumerable : true,
            },
            flags: {
