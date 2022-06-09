@@ -50,9 +50,9 @@ def test_actionAngle(selenium):
     ts = numpy.linspace(0.0, 100.0, 1001)
     o = Orbit()
     o.integrate(ts, MWPotential2014)
-    allos = o(ts)
-    jrs = allos.jr(pot=MWPotential2014)
-    jzs = allos.jz(pot=MWPotential2014)
+    all_os = o(ts)
+    jrs = all_os.jr(pot=MWPotential2014)
+    jzs = all_os.jz(pot=MWPotential2014)
     assert (
         numpy.fabs(numpy.std(jrs) / numpy.mean(jrs)) < 1e-4
     ), "Actions not conserved during orbit integration"
@@ -87,13 +87,13 @@ def test_isotropic_hernquist_sigmar(selenium):
             numpy.exp(numpy.amax(logrs))
         w, e = numpy.histogram(
             logrs,
-            range=[numpy.log(rmin), numpy.log(rmax)],
+            range=(numpy.log(rmin), numpy.log(rmax)),
             bins=bins,
             weights=numpy.ones_like(logrs),
         )
         mv2, _ = numpy.histogram(
             logrs,
-            range=[numpy.log(rmin), numpy.log(rmax)],
+            range=(numpy.log(rmin), numpy.log(rmax)),
             bins=bins,
             weights=vrs**2.0,
         )
