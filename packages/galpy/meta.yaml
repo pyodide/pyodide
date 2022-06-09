@@ -27,6 +27,10 @@ requirements:
 test:
   imports:
     - galpy
+    - galpy.potential
+    - galpy.orbit
+    - galpy.actionAngle
+    - galpy.df
 about:
   home: http://github.com/jobovy/galpy
   PyPI: https://pypi.org/project/galpy
