@@ -172,7 +172,7 @@ clean:
 clean-python: clean
 	make -C cpython clean
 
-clean-all:
+clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
