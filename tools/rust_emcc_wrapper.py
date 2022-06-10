@@ -16,7 +16,7 @@ def update_args(args):
 
     # remove -lc
     # https://github.com/emscripten-core/emscripten/issues/17191
-    for i in range(len(args)):
+    for i in reversed(range(len(args))):
         if args[i] == "c" and args[i - 1] == "-l":
             del args[i - 1 : i + 1]
 
