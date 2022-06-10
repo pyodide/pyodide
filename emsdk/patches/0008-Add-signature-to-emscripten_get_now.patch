@@ -1,4 +1,4 @@
-From b6839bba05c1a5eab390f47309a7bef1b7294eca Mon Sep 17 00:00:00 2001
+From 65d4028693bd59bfe75813043b2470342c6a5fe5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 1 Jun 2022 10:54:08 -0700
 Subject: [PATCH 8/8] Add signature to emscripten_get_now
@@ -10,10 +10,10 @@ https://github.com/emscripten-core/emscripten/pull/17123/files
  1 file changed, 1 insertion(+)
 
 diff --git a/src/library.js b/src/library.js
-index ef8a618bb..5b5a9d838 100644
+index b1947fc69..65bd4718c 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -2657,6 +2657,7 @@ LibraryManager.library = {
+@@ -2405,6 +2405,7 @@ LibraryManager.library = {
    },
  
    emscripten_get_now__import: true,

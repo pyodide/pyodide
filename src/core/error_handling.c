@@ -14,6 +14,16 @@ _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
 
+void
+_Py_DumpTraceback(int fd, void* tstate);
+
+// We need this b/c otherwise Emscripten will eliminate the symbol.
+EMSCRIPTEN_KEEPALIVE void
+dump_traceback(int fd, void* tstate)
+{
+  _Py_DumpTraceback(fd, tstate);
+}
+
 EM_JS(void, console_error, (char* msg), {
   let jsmsg = UTF8ToString(msg);
   console.error(jsmsg);

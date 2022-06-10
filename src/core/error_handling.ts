@@ -11,7 +11,7 @@ declare var Tests: any;
  */
 API.dump_traceback = function () {
   const fd_stdout = 1;
-  Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
+  Module._dump_traceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
 
 function ensureCaughtObjectIsError(e: any): Error {

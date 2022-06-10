@@ -1,7 +1,7 @@
-From 7b550d8ce20d48ebb1a4f240d6cd5e8a72a430b5 Mon Sep 17 00:00:00 2001
+From 580bb007ceb4b13f425395628b7a8e5989099a95 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 1 Apr 2022 18:55:11 -0700
-Subject: [PATCH 10/10] bpo-47197: Fix void return type handling in ctypes
+Subject: [PATCH 11/12] bpo-47197: Fix void return type handling in ctypes
 
 _ctypes_get_ffi_type never returns ffi_type_void. If the
 return type is specified as None, we need set the libffi
