@@ -1,7 +1,7 @@
-From b4140512b840263ca2f44f0b639e67b0928db601 Mon Sep 17 00:00:00 2001
+From c250eb29047c4341cdc1d13f3706eb6991cf0f9b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 6 Jan 2022 09:40:39 -0800
-Subject: [PATCH 7/8] Disable whole-archive when linking rust
+Subject: [PATCH 4/4] Disable whole-archive when linking rust
 
 Rust .rlib archives contain an extra metadata file called lib.rmeta.
 Emscripten sets `--whole-archive` by default if LINKABLE is set.
@@ -16,10 +16,10 @@ https://github.com/emscripten-core/emscripten/issues/17109
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tools/building.py b/tools/building.py
-index c69f9ec56..5de0b50ce 100644
+index 24ddaa13f..cb015e18f 100644
 --- a/tools/building.py
 +++ b/tools/building.py
-@@ -372,7 +372,7 @@ def link_lld(args, target, external_symbols=None):
+@@ -360,7 +360,7 @@ def link_lld(args, target, external_symbols=None):
  
    # Emscripten currently expects linkable output (SIDE_MODULE/MAIN_MODULE) to
    # include all archive contents.

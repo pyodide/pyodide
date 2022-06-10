@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.10.2
 # Note: when updating EMSCRIPTEN_VERSION make sure to update
 # the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.6
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.13
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -99,7 +99,6 @@ export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
-	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-s DEMANGLE_SUPPORT=1 \
 	-s USE_FREETYPE=1 \

@@ -4,16 +4,6 @@ declare var Hiwire: any;
 declare var API: any;
 declare var Tests: any;
 
-/**
- * Dump the Python traceback to the browser console.
- *
- * @private
- */
-API.dump_traceback = function () {
-  const fd_stdout = 1;
-  Module._dump_traceback(fd_stdout, Module._PyGILState_GetThisThreadState());
-};
-
 function ensureCaughtObjectIsError(e: any): Error {
   if (typeof e === "string") {
     // Sometimes emscripten throws a raw string...
@@ -90,7 +80,7 @@ API.fatal_error = function (e: any) {
     console.error(e);
   }
   try {
-    API.dump_traceback();
+    Module._dump_traceback();
     for (let key of Object.keys(API.public_api)) {
       if (key.startsWith("_") || key === "version") {
         continue;
