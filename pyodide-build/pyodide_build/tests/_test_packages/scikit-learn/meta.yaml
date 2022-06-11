@@ -1,0 +1,17 @@
+package:
+  name: scikit-learn
+  version: 1.1.0
+
+source:
+  url: https://files.pythonhosted.org/packages/8b/99/b1ec652f2d60a13871a3053f312f9d78977be57e420f2a49d52ba503f1f4/scikit-learn-1.1.0.tar.gz
+  sha256: 80f9904f5b1356adfc32406725dd94c8cc9c8d265047d98390033a6c238cbb29
+
+requirements:
+  run:
+    - scipy
+    - joblib
+    - threadpoolctl
+
+test:
+  imports:
+    - sklearn

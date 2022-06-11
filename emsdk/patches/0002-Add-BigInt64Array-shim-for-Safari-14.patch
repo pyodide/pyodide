@@ -1,35 +1,29 @@
-From 4462c2871933db0adc4b46a24f77b942caff969c Mon Sep 17 00:00:00 2001
+From 458c78230e6dd45d724b04904f15628c570ae904 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
-Date: Sun, 29 May 2022 18:17:29 -0700
-Subject: [PATCH 6/6] Add BigInt64Array shim for Safari 14
+Date: Wed, 8 Jun 2022 19:08:18 -0700
+Subject: [PATCH 2/4] Add BigInt64Array shim for Safari 14
 
 ---
- src/parseTools.js             |  2 +-
- src/polyfill/bigint64array.js | 87 +++++++++++++++++++++++++++++++++++
- src/preamble.js               |  5 +-
- 3 files changed, 92 insertions(+), 2 deletions(-)
+ src/polyfill/bigint64array.js | 94 +++++++++++++++++++++++++++++++++++
+ src/preamble.js               |  2 +-
+ src/settings.js               |  4 ++
+ src/shell.js                  |  7 ++-
+ 4 files changed, 105 insertions(+), 2 deletions(-)
  create mode 100644 src/polyfill/bigint64array.js
 
-diff --git a/src/parseTools.js b/src/parseTools.js
-index 92490fe71..8a183c610 100644
---- a/src/parseTools.js
-+++ b/src/parseTools.js
-@@ -94,7 +94,7 @@ function preprocess(text, filenameHint) {
-               showStack.push(truthy ? SHOW : IGNORE);
-             } else if (first === '#include') {
-               if (showCurrentLine()) {
--                let filename = line.substr(line.indexOf(' ') + 1);
-+                let filename = trimmed.substr(trimmed.indexOf(' ') + 1);
-                 if (filename.startsWith('"')) {
-                   filename = filename.substr(1, filename.length - 2);
-                 }
 diff --git a/src/polyfill/bigint64array.js b/src/polyfill/bigint64array.js
 new file mode 100644
-index 000000000..126c2b51f
+index 000000000..448a2d2a4
 --- /dev/null
 +++ b/src/polyfill/bigint64array.js
-@@ -0,0 +1,87 @@
-+if (typeof BigInt64Array === "undefined") {
+@@ -0,0 +1,94 @@
++// BigInt ==> globalThis so we can use globalThis.
++var BigInt64Array;
++var BigUint64Array;
++if (typeof globalThis.BigInt64Array !== "undefined") {
++    BigInt64Array = globalThis.BigInt64Array;
++    BigUint64Array = globalThis.BigUint64Array;
++} else {
 +    // BigInt64Array polyfill for Safari versions between v14.0 and v15.0.
 +    // All browsers other than Safari added BigInt and BigInt64Array at the same
 +    // time, but Safari introduced BigInt in v14.0 and introduced BigInt64Array in
@@ -76,7 +70,7 @@ index 000000000..126c2b51f
 +                    return proxy;
 +                },
 +                set: function(source, targetOffset) {
-+                    if(2*(source.length + targetOffset) > array.length) {
++                    if (2*(source.length + targetOffset) > array.length) {
 +                        // This is the Chrome error message
 +                        // Firefox: "invalid or out-of-range index"
 +                        throw new RangeError("offset is out of bounds");
@@ -106,6 +100,7 @@ index 000000000..126c2b51f
 +                    }
 +                    var pair = bigIntToParts(value);
 +                    array.set(pair, 2*idx);
++                    return true;
 +                }
 +            });
 +            return proxy;
@@ -117,16 +112,11 @@ index 000000000..126c2b51f
 +    var BigInt64Array = createBigIntArrayShim(partsToBigIntSigned);
 +}
 diff --git a/src/preamble.js b/src/preamble.js
-index 1094dd7dc..6afca739b 100644
+index ce24d8456..618ccd2ac 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -285,9 +285,12 @@ function updateGlobalBufferAndViews(buf) {
-   Module['HEAPF32'] = HEAPF32 = new Float32Array(buf);
-   Module['HEAPF64'] = HEAPF64 = new Float64Array(buf);
+@@ -297,7 +297,7 @@ function updateGlobalBufferAndViews(buf) {
  #if WASM_BIGINT
-+#if MIN_SAFARI_VERSION < 150000
-+  #include "polyfill/bigint64array.js"
-+#endif // MIN_SAFARI_VERSION < 15000
    Module['HEAP64'] = HEAP64 = new BigInt64Array(buf);
    Module['HEAPU64'] = HEAPU64 = new BigUint64Array(buf);
 -#endif
@@ -134,6 +124,39 @@ index 1094dd7dc..6afca739b 100644
  }
  
  var TOTAL_STACK = {{{ TOTAL_STACK }}};
+diff --git a/src/settings.js b/src/settings.js
+index 1a8b7f1fe..be5964519 100644
+--- a/src/settings.js
++++ b/src/settings.js
+@@ -1341,6 +1341,10 @@ var DYNCALLS = false;
+ // WebAssembly integration with JavaScript BigInt. When enabled we don't need
+ // to legalize i64s into pairs of i32s, as the wasm VM will use a BigInt where
+ // an i64 is used.
++// If WASM_BIGINT is present, the default minimum browser versions increase to
++// Safari v15.0, Firefox v68, and Edge v79. It is possible to use WASM_BIGINT
++// with Safari >= v14.0, in that case Emscripten will polyfill BigInt64Array.
++// Use `-sMIN_SAFARI_VERSION=140000` to request this.
+ // [link]
+ var WASM_BIGINT = false;
+ 
+diff --git a/src/shell.js b/src/shell.js
+index 22fac7f69..9d7558340 100644
+--- a/src/shell.js
++++ b/src/shell.js
+@@ -51,7 +51,12 @@ var Module = typeof {{{ EXPORT_NAME }}} != 'undefined' ? {{{ EXPORT_NAME }}} : {
+ #if MIN_CHROME_VERSION < 45 || MIN_EDGE_VERSION < 12 || MIN_FIREFOX_VERSION < 34 || MIN_IE_VERSION != TARGET_NOT_SUPPORTED || MIN_SAFARI_VERSION < 90000
+ #include "polyfill/objassign.js"
+ #endif
+-#endif // POLYFILL
++#endif
++
++// See https://caniuse.com/mdn-javascript_builtins_bigint64array
++#if WASM_BIGINT && MIN_SAFARI_VERSION < 150000
++#include "polyfill/bigint64array.js"
++#endif // MIN_SAFARI_VERSION < 15000// POLYFILL
+ 
+ #if MODULARIZE
+ // Set up the promise that indicates the Module is initialized
 -- 
 2.25.1
 

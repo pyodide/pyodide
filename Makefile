@@ -172,7 +172,7 @@ clean:
 clean-python: clean
 	make -C cpython clean
 
-clean-all:
+clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
@@ -237,6 +237,12 @@ emsdk/emsdk/.complete:
 	date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
+
+
+rust:
+	wget https://sh.rustup.rs -O /rustup.sh
+	sh /rustup.sh -y
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
 
 
 FORCE:

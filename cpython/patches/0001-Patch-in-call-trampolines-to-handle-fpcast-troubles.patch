@@ -1,7 +1,7 @@
 From 9e3b5aacb71deb2870ab589ca88aa126e1acc86a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 28 Feb 2022 00:44:13 -0500
-Subject: [PATCH 01/10] Patch in call trampolines to handle fpcast troubles
+Subject: [PATCH 01/12] Patch in call trampolines to handle fpcast troubles
 
 The wasm call_indirect instruction takes a function signature as an immediate
 argument (an immediate argument is one which is determined statically at compile

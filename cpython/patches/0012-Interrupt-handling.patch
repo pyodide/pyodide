@@ -1,7 +1,7 @@
-From e2e91c8940302f3c431d81c6ea2af2ea0571165d Mon Sep 17 00:00:00 2001
+From 9eecc9ad836920f382db8e147d2b44df557787af Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 30 Mar 2022 14:50:30 -0700
-Subject: [PATCH] Interrupt handling
+Subject: [PATCH 12/12] Interrupt handling
 
 ---
  Modules/signalmodule.c | 38 ++++++++++++++++++++++++++++++++++++++
@@ -9,10 +9,10 @@ Subject: [PATCH] Interrupt handling
  2 files changed, 67 insertions(+)
 
 diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
-index 96881d4a49..1926f650b6 100644
+index c3a5237bce..9f7f707a82 100644
 --- a/Modules/signalmodule.c
 +++ b/Modules/signalmodule.c
-@@ -1768,11 +1768,49 @@ PyErr_CheckSignals(void)
+@@ -1776,11 +1776,49 @@ PyErr_CheckSignals(void)
      return _PyErr_CheckSignalsTstate(tstate);
  }
  

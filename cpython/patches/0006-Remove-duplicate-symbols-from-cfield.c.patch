@@ -1,7 +1,7 @@
-From e053e51c4e4c84423c4389463b12defb5bca7b4d Mon Sep 17 00:00:00 2001
+From bd962d077896fe6d89700baf2b822e71d514d7e9 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Tue, 22 Jun 2021 20:12:45 -0700
-Subject: [PATCH 07/10] Remove duplicate symbols from cfield.c
+Subject: [PATCH 06/12] Remove duplicate symbols from cfield.c
 
 These symbols are already defined by libffi.
 ---
