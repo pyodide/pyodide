@@ -13,7 +13,6 @@ source:
     - patches/0006-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
     - patches/0007-BUG-Fix-the-return-type-of-random_float_fill.patch
     - patches/0008-fix-static-init-of-nditer-pywrap.patch
-    - patches/0009-init-alloc-cache.patch
     - patches/0010-make-int-return-values.patch
     - patches/0011-not-build-lapack-lite-as-64-bit.patch
     - patches/0012-use-local-blas-lapack.patch
