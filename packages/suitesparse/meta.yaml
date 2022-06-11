@@ -15,19 +15,32 @@ requirements:
 build:
   sharedlibrary: true
   script: |
-    sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\nset(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-    ls $PYODIDE_ROOT/packages/CLAPACK/dist/lib
+    # Skips compiler check as we are cross compiling
+    sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
+    sed -i '1s;^;set(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
+
+    # Fix return type to avoid linker error
+    grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'
+    grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'
+
     emmake make -j ${PYODIDE_JOBS:-3} install \
       LDFLAGS="-sSIDE_MODULE=1 -L${WASM_LIBRARY_DIR}/lib " \
       BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
       LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}
-    mkdir -p dist
-    cp ${WASM_LIBRARY_DIR}/lib/libspqr.so.2.1.0 dist/libspqr.so
-    cp ${WASM_LIBRARY_DIR}/lib/libamd.so.2.4.6 dist/libamd.so
-    cp ${WASM_LIBRARY_DIR}/lib/libcamd.so.2.4.6 dist/libcamd.so
-    cp ${WASM_LIBRARY_DIR}/lib/libcholmod.so.3.0.14 dist/libcholmod.so
-    cp ${WASM_LIBRARY_DIR}/lib/libccolamd.so.2.9.6 dist/libccolamd.so
-    cp ${WASM_LIBRARY_DIR}/lib/libcolamd.so.2.9.6 dist/libcolamd.so
-    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so.5.11.0 dist/libsuitesparseconfig.so
-    cp ${WASM_LIBRARY_DIR}/lib/libmetis.so dist/libmetis.so
+    mkdir -p dist/{1,2,3,4}
+
+    # FIXME: suitesparse library has multiple .so files
+    #        which needs to be loaded in the right order.
+    #        current Pyodide shared library loading system
+    #        has no ways to automatically detect the dependence
+    #        between libraries, so we manually set the order.
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig* dist/1/
+    cp ${WASM_LIBRARY_DIR}/lib/libamd* \
+       ${WASM_LIBRARY_DIR}/lib/libcamd* \
+       ${WASM_LIBRARY_DIR}/lib/libccolamd* \
+       ${WASM_LIBRARY_DIR}/lib/libcolamd* \
+       ${WASM_LIBRARY_DIR}/lib/libmetis* \
+       dist/2/
+    cp ${WASM_LIBRARY_DIR}/lib/libcholmod* dist/3/
+    cp ${WASM_LIBRARY_DIR}/lib/libspqr* dist/4/
