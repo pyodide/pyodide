@@ -297,7 +297,7 @@ async function loadDynlib(lib: string, shared: boolean) {
       });
     }
   } catch (e: any) {
-    if (e.message.includes("need to see wasm magic number")) {
+    if (e && e.message && e.message.includes("need to see wasm magic number")) {
       console.warn(
         `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
       );
