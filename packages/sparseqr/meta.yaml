@@ -3,7 +3,7 @@ package:
   version: "1.2"
 
 source:
-  # It seems like PyPI release has invalid setup.py (missing cffi modules information)
+  # PyPI release has invalid setup.py (missing cffi modules information) so we use github archive instead.
   sha256: 5611ec439b44f22ea86995c49a229e0a377768520ddc7804cef488a8615655a3
   url: https://github.com/yig/PySPQR/archive/1a146649773911a1376ee9f60c6948004e11b57c.zip
 
