@@ -156,8 +156,7 @@ export RUSTFLAGS= \
 	-C relocation-model=pic \
 	-C target-feature=+mutable-globals \
 	-C link-arg=-sSIDE_MODULE=1 \
-	-C link-arg=-sWASM_BIGINT \
-	-C link-arg=-Wl,--relocatable
+	-C link-arg=-sWASM_BIGINT
 
 .output_vars:
 	set

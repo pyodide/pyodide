@@ -24,6 +24,7 @@ build:
     $(OPENSSL_INCLUDE_PATH)
   ldflags: |
     $(OPENSSL_LIBRARY_PATH)
+    -Wl,--no-entry
 requirements:
   run:
     - openssl
