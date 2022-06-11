@@ -283,9 +283,9 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     """
     dynlib_paths_iter: Iterable[str]
     if suffix in ZIP_TYPES:
-        dynlib_paths_iter = ZipFile(archive).namelist()
+        dynlib_paths_iter = sorted(ZipFile(archive).namelist())
     elif suffix in TAR_TYPES:
-        dynlib_paths_iter = (tinfo.name for tinfo in tarfile.open(archive.name))
+        dynlib_paths_iter = sorted(tinfo.name for tinfo in tarfile.open(archive.name))
     else:
         raise ValueError(f"Unexpected suffix {suffix}")
 
