@@ -104,6 +104,7 @@ if sys.platform == "darwin":
 
 class BrowserWrapper:
     browser = ""
+    script_timeout = 20
 
     JavascriptException = JavascriptException
 
@@ -113,7 +114,6 @@ class BrowserWrapper:
         server_hostname="127.0.0.1",
         server_log=None,
         load_pyodide=True,
-        script_timeout=20,
         script_type="classic",
         dist_dir=None,
         *args,
@@ -126,8 +126,7 @@ class BrowserWrapper:
         self.script_type = script_type
         self.dist_dir = dist_dir
         self.driver = self.get_driver()  # type: ignore[attr-defined]
-        self.set_script_timeout(script_timeout)
-        self.script_timeout = script_timeout
+        self.set_script_timeout(self.script_timeout)
         self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:
@@ -345,6 +344,7 @@ class SeleniumWrapper(BrowserWrapper):
 
     def set_script_timeout(self, timeout):
         self.driver.set_script_timeout(timeout)
+        self.script_timeout = timeout
 
     def quit(self):
         self.driver.quit()
@@ -460,6 +460,7 @@ class SeleniumChromeWrapper(SeleniumWrapper):
 class SeleniumSafariWrapper(SeleniumWrapper):
 
     browser = "safari"
+    script_timeout = 30
 
     def get_driver(self):
         from selenium.webdriver import Safari
@@ -517,7 +518,7 @@ class NodeWrapper(BrowserWrapper):
         pass
 
     def set_script_timeout(self, timeout):
-        self._timeout = timeout
+        self.script_timeout = timeout
 
     def quit(self):
         self.p.sendeof()
@@ -553,7 +554,7 @@ class NodeWrapper(BrowserWrapper):
         self.p.sendline(cmd_id)
         self.p.sendline(wrapped)
         self.p.sendline(cmd_id)
-        self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self._timeout)
+        self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self.script_timeout)
         self.p.expect_exact(f"{cmd_id}:UUID\r\n")
         if self.p.before:
             self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
