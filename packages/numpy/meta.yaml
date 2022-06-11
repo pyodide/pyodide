@@ -8,7 +8,6 @@ source:
 
   patches:
     - patches/0001-disable-maybe-uninitialized.patch
-    - patches/0002-disable-optimization.patch
     - patches/0003-dont-include-execinfo.patch
     - patches/0004-Fix-ieee754.patch
     - patches/0005-fix-longdouble.patch
@@ -23,6 +22,7 @@ source:
     - patches/0014-disable-svml.patch
 
 build:
+  backend-flags: --disable-optimization
   cflags: |
     -Wno-return-type
   cross-build-env: true
