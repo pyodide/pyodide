@@ -28,6 +28,9 @@ def update_args(args):
     # Seems like --no-entry should be implied by SIDE_MODULE but apparently it
     # isn't?
     args.append("-Wl,--no-entry")
+    # Without this, the dylink section seems to get deleted which causes trouble
+    # at load time.
+    args.append("-Wl,--no-gc-sections")
 
     return args
 
