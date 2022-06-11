@@ -20,18 +20,24 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
     return (await fetch_bytes(url, kwargs)).decode()
 
 
+async def loadDynlib(dynlib: str, is_shared_lib: bool) -> None:
+    pass
+
+
 class pyodide_js_:
     def __get__(self, attr):
         raise RuntimeError(f"Attempted to access property '{attr}' on pyodide_js dummy")
 
 
-pyodide_js: Any = pyodide_js_()
+def loadPackage(packages: str | list[str]) -> None:
+    pass
 
 
 __all__ = [
+    "loadDynlib",
     "fetch_bytes",
     "fetch_string",
     "BUILTIN_PACKAGES",
     "loadedPackages",
-    "pyodide_js",
+    "loadPackage",
 ]

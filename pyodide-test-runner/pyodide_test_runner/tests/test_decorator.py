@@ -1,7 +1,9 @@
 import asyncio
 
 import pytest
+from hypothesis import given, settings
 from pyodide_test_runner.decorator import run_in_pyodide
+from pyodide_test_runner.hypothesis import any_strategy, std_hypothesis_settings
 from pyodide_test_runner.utils import parse_driver_timeout
 
 from pyodide import eval_code_async
@@ -72,7 +74,28 @@ def test_local_inner_function():
         assert x == 6
         return 7
 
-    inner_function(selenium_mock, 6)
+    assert inner_function(selenium_mock, 6) == 7
+
+
+def test_local_inner_function_closure_error():
+    x = 6
+
+    @run_in_pyodide
+    def inner_function(selenium):
+        assert x == 6
+        return 7
+
+    with pytest.raises(NameError, match="'x' is not defined"):
+        inner_function(selenium_mock)
+
+
+def test_inner_function(selenium):
+    @run_in_pyodide
+    def inner_function(selenium, x):
+        assert x == 6
+        return 7
+
+    assert inner_function(selenium, 6) == 7
 
 
 def complicated_decorator(attr_name: str):
@@ -189,34 +212,11 @@ async def test_run_in_pyodide_async(selenium):
     assert x == 6
 
 
-import pickle
-from zoneinfo import ZoneInfo
-
-from hypothesis import HealthCheck, given, settings, strategies
-
-
-def is_picklable(x):
-    try:
-        pickle.dumps(x)
-        return True
-    except Exception:
-        return False
-
-
-strategy = (
-    strategies.from_type(type)
-    .flatmap(strategies.from_type)
-    .filter(lambda x: not isinstance(x, ZoneInfo))
-    .filter(is_picklable)
-)
-
-
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=strategy)
+@given(obj=any_strategy)
 @settings(
-    deadline=2000,
-    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    std_hypothesis_settings,
     max_examples=25,
 )
 @run_in_pyodide
@@ -232,3 +232,27 @@ run_in_pyodide_alias2 = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
 @run_in_pyodide_alias2
 def test_run_in_pyodide_alias(request):
     assert parse_driver_timeout(request.node) == 40
+
+
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    import pytest
+
+    from pyodide import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)

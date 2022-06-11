@@ -5,16 +5,18 @@ if IN_BROWSER:
         BUILTIN_PACKAGES,
         fetch_bytes,
         fetch_string,
+        loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 else:
     from ._compat_not_in_pyodide import (
         BUILTIN_PACKAGES,
         fetch_bytes,
         fetch_string,
+        loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 
 __all__ = [
@@ -22,5 +24,6 @@ __all__ = [
     "fetch_string",
     "BUILTIN_PACKAGES",
     "loadedPackages",
-    "pyodide_js",
+    "loadDynlib",
+    "loadPackage",
 ]

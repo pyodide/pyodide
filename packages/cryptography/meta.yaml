@@ -1,20 +1,30 @@
 package:
   name: cryptography
-  version: 3.4.8
+  version: 36.0.2
+  _disabled: true
 
 source:
-  url: https://files.pythonhosted.org/packages/cc/98/8a258ab4787e6f835d350639792527d2eb7946ff9fc0caca9c3f4cf5dcfe/cryptography-3.4.8.tar.gz
-  sha256: 94cc5ed4ceaefcbe5bf38c8fba6a21fc1d365bb8fb826ea1688e3370b2e24a1c
+  url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
+  sha256: 70f8f4f7bb2ac9f340655cbac89d68c527af5bb4387522a8413e841e3e6628c9
+  patches:
+    # TODO: remove this when chrono makes a release
+    - patches/0001-Use-patched-chrono.patch
+    - patches/0002-Add-instant-patch.patch
 build:
+  script: |
+    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
+    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
+    source $CARGO_HOME/env
+
+    # TODO: remove this when chrono makes a release
+    git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
+    # TODO: remove this when instant makes a release
+    git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
   cflags: |
     -Wno-implicit-function-declaration
     $(OPENSSL_INCLUDE_PATH)
   ldflags: |
     $(OPENSSL_LIBRARY_PATH)
-  script: |
-    export CRYPTOGRAPHY_DONT_BUILD_RUST=1
-    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
-    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
 requirements:
   run:
     - openssl

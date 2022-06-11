@@ -15,7 +15,6 @@ build:
 
 requirements:
   run:
-    - numpy
     - scipy
     - joblib
     - threadpoolctl

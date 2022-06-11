@@ -81,7 +81,7 @@ We compose `TsAnalyzer` into `PyodideAnalyzer`. This prunes out private
 functions, marks functions as `async` so we can display `async` in front of
 them, and organizes functions into our three categories:
 
-- `globalThis`: globaly exposed functions
+- `globalThis`: globally exposed functions
 - `pyodide`: pyodide APIs
 - `PyProxy`: `PyProxy` APIs
 

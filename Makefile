@@ -25,9 +25,6 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-$(CPYTHONLIB)/tzdata :
-	pip install tzdata --target=$(CPYTHONLIB)
-
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
@@ -44,12 +41,16 @@ dist/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS)
+
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \
+		cd dist && npx prettier -w pyodide.asm.js ; \
+	fi
+
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
@@ -171,7 +172,7 @@ clean:
 clean-python: clean
 	make -C cpython clean
 
-clean-all:
+clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
@@ -236,6 +237,12 @@ emsdk/emsdk/.complete:
 	date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
+
+
+rust:
+	wget https://sh.rustup.rs -O /rustup.sh
+	sh /rustup.sh -y
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
 
 
 FORCE:

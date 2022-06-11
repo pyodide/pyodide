@@ -1,0 +1,75 @@
+From cedb7b1a5a341103707da7fbea435a7f4ed719f1 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 8 Jun 2022 22:06:54 -0700
+Subject: [PATCH 3/4] Fix dup again
+
+---
+ src/library_fs.js | 40 ++++++++++++++++++++++++++--------------
+ 1 file changed, 26 insertions(+), 14 deletions(-)
+
+diff --git a/src/library_fs.js b/src/library_fs.js
+index 88f3bd98c..693a1988a 100644
+--- a/src/library_fs.js
++++ b/src/library_fs.js
+@@ -400,32 +400,44 @@ FS.staticInit();` +
+     // SOCKFS is completed.
+     createStream: (stream, fd_start, fd_end) => {
+       if (!FS.FSStream) {
+-        FS.FSStream = /** @constructor */ function() {
+-          this.shared = { };
++        FS.FSStream = function FSStream() {
++          this.shared = {flags : 0, position : 0};
+         };
+-        FS.FSStream.prototype = {
++        FS.FSStream.prototype = Object.create(Object.prototype);
++        FS.FSStream.prototype.constructor = FS.FSStream;
++        Object.defineProperties(FS.FSStream.prototype, {
+           object: {
+-            get: function() { return this.node; },
+-            set: function(val) { this.node = val; }
++            get: function () {
++              return this.node;
++            },
++            set: function (val) {
++              this.node = val;
++            },
++            enumerable : true,
+           },
+           isRead: {
+-            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_WRONLY') }}}; }
++            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_WRONLY') }}}; },
++            enumerable : true,
+           },
+           isWrite: {
+-            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_RDONLY') }}}; }
++            get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_RDONLY') }}}; },
++            enumerable : true,
+           },
+           isAppend: {
+-            get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
++            get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); },
++            enumerable : true,
+           },
+           flags: {
+-            get: function() { return this.shared.flags; },
+-            set: function(val) { this.shared.flags = val; },
++            get: function () { return this.shared.flags; },
++            set: function (val) { this.shared.flags = val; },
++            enumerable : true,
+           },
+-          position : {
+-            get function() { return this.shared.position; },
+-            set: function(val) { this.shared.position = val; },
++          position: {
++            get: function() { return this.shared.position; },
++            set: function (val) { this.shared.position = val; },
++            enumerable : true,
+           },
+-        };
++        });
+       }
+       // clone it, so we can return an instance of FSStream
+       stream = Object.assign(new FS.FSStream(), stream);
+-- 
+2.25.1
+

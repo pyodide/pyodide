@@ -10,6 +10,7 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
+import shutil
 import sys
 
 IS_MAIN = __name__ == "__main__"
@@ -30,7 +31,7 @@ from typing import Any, MutableMapping, NoReturn
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran"}
+symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
 
 def symlink_dir():
@@ -44,7 +45,6 @@ ReplayArgs = namedtuple(
         "cflags",
         "cxxflags",
         "ldflags",
-        "host_install_dir",
         "target_install_dir",
         "replace_libs",
         "builddir",
@@ -83,7 +83,6 @@ def compile(
     cflags: str,
     cxxflags: str,
     ldflags: str,
-    host_install_dir: str,
     target_install_dir: str,
     replace_libs: str,
 ) -> None:
@@ -92,7 +91,6 @@ def compile(
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
-        host_install_dir=host_install_dir,
         target_install_dir=target_install_dir,
         replace_libs=replace_libs,
     )
@@ -103,11 +101,13 @@ def compile(
     env = dict(env)
     SYMLINKDIR = symlink_dir()
     env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-    args["PYTHONPATH"] = sys.path
+    sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
+    args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
     args["orig__name__"] = __name__
     make_command_wrapper_symlinks(env)
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = common.platform()
+    env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
 
     from pyodide_build.pypabuild import build
 
@@ -394,8 +394,8 @@ def handle_command_generate_args(
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host_install_dir','replace_libs','target_install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host_install_dir='',replace_libs='',target_install_dir='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'replace_libs','target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', replace_libs='',target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
     ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
@@ -475,13 +475,6 @@ def handle_command_generate_args(
             del new_args[-1]
             continue
 
-        # don't include libraries from native builds
-        if args.host_install_dir and (
-            arg.startswith("-L" + args.host_install_dir)
-            or arg.startswith("-l" + args.host_install_dir)
-        ):
-            continue
-
         replace_libs = parse_replace_libs(args.replace_libs)
         if arg.startswith("-l"):
             result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
@@ -544,6 +537,13 @@ def handle_command(
     returncode = subprocess.run(new_args).returncode
     if returncode != 0:
         sys.exit(returncode)
+
+    # Rust gives output files a `.wasm` suffix, but we need them to have a `.so`
+    # suffix.
+    if line[0:2] == ["cargo", "rustc"]:
+        p = Path(args.builddir)
+        for x in p.glob("**/*.wasm"):
+            shutil.move(x, x.with_suffix(".so"))
 
     sys.exit(returncode)
 

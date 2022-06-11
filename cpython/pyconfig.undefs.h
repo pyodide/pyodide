@@ -30,6 +30,9 @@
 
 /* Unsupported functionality */
 #undef HAVE_PTHREAD_H
+#undef HAVE_MEMFD_CREATE
 
 #define CONFIG_32
 #define ANSI
+
+#undef HAVE_MEMFD_CREATE

@@ -7,8 +7,8 @@ source:
 build:
   sharedlibrary: true
   script: |
-    em++ -c throw.cpp -o throw.o -fPIC -fexceptions -O2
-    em++ -c catch.cpp -o catch.o -fPIC -fexceptions -O2
+    em++ -c throw.cpp -o throw.o ${SIDE_MODULE_CFLAGS} -fexceptions
+    em++ -c catch.cpp -o catch.o ${SIDE_MODULE_CFLAGS} -fexceptions
     mkdir dist
-    em++ throw.o -sSIDE_MODULE -o dist/cpp-exceptions-test-throw.so -fexceptions
-    em++ catch.o -sSIDE_MODULE -o dist/cpp-exceptions-test-catch.so -fexceptions
+    em++ throw.o ${SIDE_MODULE_LDFLAGS} -o dist/cpp-exceptions-test-throw.so -fexceptions
+    em++ catch.o ${SIDE_MODULE_LDFLAGS} -o dist/cpp-exceptions-test-catch.so -fexceptions
