@@ -7,7 +7,6 @@ source:
   sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
 
   patches:
-    - patches/0001-disable-maybe-uninitialized.patch
     - patches/0002-disable-optimization.patch
     - patches/0003-dont-include-execinfo.patch
     - patches/0004-Fix-ieee754.patch
