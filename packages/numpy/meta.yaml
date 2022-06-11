@@ -10,7 +10,6 @@ source:
     - patches/0001-disable-maybe-uninitialized.patch
     - patches/0002-disable-optimization.patch
     - patches/0003-dont-include-execinfo.patch
-    - patches/0004-Fix-ieee754.patch
     - patches/0005-fix-longdouble.patch
     - patches/0006-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
     - patches/0007-BUG-Fix-the-return-type-of-random_float_fill.patch
@@ -21,6 +20,7 @@ source:
     - patches/0012-use-local-blas-lapack.patch
     - patches/0013-fix-invalid-asm-instruction.patch
     - patches/0014-disable-svml.patch
+    - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
 
 build:
   cflags: |
