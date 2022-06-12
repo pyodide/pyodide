@@ -13,6 +13,7 @@ source:
     - patches/0004-disable-optimization.patch
     - patches/0005-Fix-ieee754.patch
     - patches/0007-disable-svml.patch
+    - patches/0001-ENH-Fix-pointer-size-determination-for-cross-build.patch
 
 build:
   cflags: |
