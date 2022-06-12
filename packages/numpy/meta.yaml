@@ -7,12 +7,10 @@ source:
   sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
 
   patches:
-    - patches/0003-dont-include-execinfo.patch
     - patches/0004-Fix-ieee754.patch
     - patches/0006-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
     - patches/0007-BUG-Fix-the-return-type-of-random_float_fill.patch
     - patches/0008-fix-static-init-of-nditer-pywrap.patch
-    - patches/0009-init-alloc-cache.patch
     - patches/0010-make-int-return-values.patch
     - patches/0011-not-build-lapack-lite-as-64-bit.patch
     - patches/0012-use-local-blas-lapack.patch
