@@ -20,11 +20,14 @@ def test_string_conversion(selenium_module_scope, s):
     def main(selenium, sbytes):
         from pyodide import run_js
 
+        run_js("self.encoder = new TextEncoder()")
+        run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
+
         spy = bytes(sbytes).decode()
         sjs = run_js(
             """
             (sbytes) => {
-                self.sjs = (new TextDecoder("utf8")).decode(new Uint8Array(sbytes));
+                self.sjs = self.decoder.decode(new Uint8Array(sbytes));
                 return sjs;
             }
             """
@@ -43,12 +46,15 @@ def test_string_conversion(selenium_module_scope, s):
 def test_string_conversion2(selenium, s):
     from pyodide import run_js
 
+    run_js("self.encoder = new TextEncoder()")
+    run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
+
     s_encoded = s.encode()
     sjs = run_js(
         """
         (s_encoded) => {
             let buf = s_encoded.getBuffer();
-            self.sjs = (new TextDecoder("utf8")).decode(buf.data);
+            self.sjs = self.decoder.decode(buf.data);
             buf.release();
             return sjs
         }
