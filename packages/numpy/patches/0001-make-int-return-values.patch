@@ -1,7 +1,7 @@
-From 1760850bf0f763b19ea5cd9de8f2e578bcc08a98 Mon Sep 17 00:00:00 2001
+From 5dd3beed480298d67eabaa651a639c3070ed75e0 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:24:13 -0700
-Subject: [PATCH 10/14] make int return values
+Subject: [PATCH 1/7] make int return values
 
 Make return values to fortran subroutines be consistently int.
 

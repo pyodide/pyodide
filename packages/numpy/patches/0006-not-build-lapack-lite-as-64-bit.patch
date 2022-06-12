@@ -1,7 +1,7 @@
-From d2fccf7fc5611cfd60fbe7a8e0bd35d665ac00f7 Mon Sep 17 00:00:00 2001
+From c02b41282a9710ebb0c0efdbfe8c4db8f2fbc9bc Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 17:24:56 -0700
-Subject: [PATCH 11/14] not build lapack lite as 64-bit
+Subject: [PATCH 6/7] not build lapack lite as 64-bit
 
 This patch is to avoid adding macros which will build lapack-lite in  64 bit integer mode, which is not compatible with wasm's 32 bit pointers.
 ---

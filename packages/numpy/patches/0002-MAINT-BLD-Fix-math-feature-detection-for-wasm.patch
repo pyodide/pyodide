@@ -1,7 +1,7 @@
-From 2895d82a329e356d94c3f00762804f5fa23745fa Mon Sep 17 00:00:00 2001
+From 3b06c3c916024896d80726db771a88150d9753c8 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 5 Mar 2022 16:00:54 -0800
-Subject: [PATCH 06/14] MAINT, BLD Fix math feature detection for wasm
+Subject: [PATCH 2/7] MAINT, BLD Fix math feature detection for wasm
 
 The web assembly linker is strict about function types, it is unwilling
 to link a function defined with signature say `double f(double, double)`
