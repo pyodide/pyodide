@@ -1,7 +1,7 @@
-From 77cdba9a810726e01542ab330ee7ec49f446a50e Mon Sep 17 00:00:00 2001
+From 80b13edebec7e46dff5c8854c7ef91d0a7cadec7 Mon Sep 17 00:00:00 2001
 From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Thu, 31 Mar 2022 17:19:07 -0700
-Subject: [PATCH 04/14] Fix ieee754
+Subject: [PATCH 5/7] Fix ieee754
 
 Use float error status without external includes in numpy
 

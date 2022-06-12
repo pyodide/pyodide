@@ -1,7 +1,7 @@
-From 3f0c7d0265984d9a115432e3f2e8f5e027575076 Mon Sep 17 00:00:00 2001
+From facfda173a436ab0d4110b2782dba59d1ab3db0f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 31 Mar 2022 18:25:12 -0700
-Subject: [PATCH 14/14] disable svml
+Subject: [PATCH 7/7] disable svml
 
 ---
  numpy/core/setup.py | 2 +-
