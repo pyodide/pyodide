@@ -1678,7 +1678,7 @@ JsBuffer_DecodeString_js,
   if (encoding) {
     encoding_js = UTF8ToString(encoding);
   }
-  let decoder = new TextDecoder(encoding_js, {fatal : true});
+  let decoder = new TextDecoder(encoding_js, {fatal : true, ignoreBOM: true});
   let res;
   try {
     res = decoder.decode(buffer);
