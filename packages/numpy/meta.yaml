@@ -12,8 +12,8 @@ source:
     - patches/0003-BUG-Fix-the-return-type-of-random_float_fill.patch
     - patches/0004-disable-optimization.patch
     - patches/0005-Fix-ieee754.patch
-    - patches/0007-disable-svml.patch
     - patches/0001-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0001-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
 
 build:
   cflags: |

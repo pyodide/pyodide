@@ -1,0 +1,42 @@
+From ca2f8bb5d008541172e1d74ffb4963b175614c68 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 11 Jun 2022 14:09:05 -0700
+Subject: [PATCH] ENH: cross compilation: use sysconfig to determine if x86_64
+ linux
+
+Using `platform` is enquiring about the build system we want to know
+about the target system. We can use `sysconfig` for that.
+---
+ numpy/core/setup.py | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/numpy/core/setup.py b/numpy/core/setup.py
+index cb31162d1..8993291d5 100644
+--- a/numpy/core/setup.py
++++ b/numpy/core/setup.py
+@@ -1,9 +1,9 @@
+ import os
+ import sys
++import sysconfig
+ import pickle
+ import copy
+ import warnings
+-import platform
+ import textwrap
+ import glob
+ from os.path import join
+@@ -75,9 +75,8 @@ def can_link_svml():
+     """
+     if NPY_DISABLE_SVML:
+         return False
+-    machine = platform.machine()
+-    system = platform.system()
+-    return "x86_64" in machine and system == "Linux"
++    platform = sysconfig.get_platform()
++    return "x86_64" in platform and "linux" in platform
+ 
+ def check_svml_submodule(svmlpath):
+     if not os.path.exists(svmlpath + "/README.md"):
+-- 
+2.25.1
+
