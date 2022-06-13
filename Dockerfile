@@ -10,7 +10,7 @@ RUN apt-get update \
         build-essential prelink autoconf libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo curl \
   && rm -rf /var/lib/apt/lists/*
-  
+
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 RUN rustup target add wasm32-unknown-emscripten
 
