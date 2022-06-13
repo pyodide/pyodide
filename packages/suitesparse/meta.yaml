@@ -30,4 +30,12 @@ build:
       INSTALL=${WASM_LIBRARY_DIR}
     mkdir -p dist
 
-    cp ${WASM_LIBRARY_DIR}/lib/* dist/
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig* \
+       ${WASM_LIBRARY_DIR}/lib/libamd* \
+       ${WASM_LIBRARY_DIR}/lib/libcamd* \
+       ${WASM_LIBRARY_DIR}/lib/libccolamd* \
+       ${WASM_LIBRARY_DIR}/lib/libcolamd* \
+       ${WASM_LIBRARY_DIR}/lib/libmetis* \
+       ${WASM_LIBRARY_DIR}/lib/libcholmod* \
+       ${WASM_LIBRARY_DIR}/lib/libspqr* \
+       dist/
