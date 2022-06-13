@@ -282,11 +282,24 @@ async function loadDynlib(lib: string, shared: boolean) {
     byteArray = Module.FS.readFile(lib);
   }
   const releaseDynlibLock = await acquireDynlibLock();
+
+  // This is a fake FS-like object to make emscripten
+  // load shared libraries from the file system.
+  const libraryFS = {
+    _rootPath: lib.split("/").slice(0, -1).join("/"),
+    _resolvePath: (path: string) => libraryFS._rootPath + "/" + path,
+    findObject: (path: string, dontResolveLastLink: boolean) =>
+      Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
+    readFile: (path: string) =>
+      Module.FS.readFile(libraryFS._resolvePath(path)),
+  };
+
   try {
     const module = await Module.loadWebAssemblyModule(byteArray, {
       loadAsync: true,
       nodelete: true,
       allowUndefined: true,
+      fs: libraryFS,
     });
     Module.preloadedWasm[lib] = module;
     Module.preloadedWasm[lib.split("/").pop()!] = module;

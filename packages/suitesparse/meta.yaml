@@ -28,19 +28,6 @@ build:
       BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
       LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}
-    mkdir -p dist/{1,2,3,4}
+    mkdir -p dist
 
-    # FIXME: suitesparse library has multiple .so files
-    #        which needs to be loaded in the right order.
-    #        current Pyodide shared library loading system
-    #        has no ways to automatically detect the dependence
-    #        between libraries, so we manually set the order.
-    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig* dist/1/
-    cp ${WASM_LIBRARY_DIR}/lib/libamd* \
-       ${WASM_LIBRARY_DIR}/lib/libcamd* \
-       ${WASM_LIBRARY_DIR}/lib/libccolamd* \
-       ${WASM_LIBRARY_DIR}/lib/libcolamd* \
-       ${WASM_LIBRARY_DIR}/lib/libmetis* \
-       dist/2/
-    cp ${WASM_LIBRARY_DIR}/lib/libcholmod* dist/3/
-    cp ${WASM_LIBRARY_DIR}/lib/libspqr* dist/4/
+    cp ${WASM_LIBRARY_DIR}/lib/* dist/
