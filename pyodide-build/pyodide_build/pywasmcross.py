@@ -80,6 +80,7 @@ def compile(
     env: dict[str, str],
     *,
     pkgname: str,
+    backend_flags: str,
     cflags: str,
     cxxflags: str,
     ldflags: str,
@@ -88,6 +89,7 @@ def compile(
 ) -> None:
     kwargs = dict(
         pkgname=pkgname,
+        backend_flags=backend_flags,
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
@@ -96,6 +98,7 @@ def compile(
     )
 
     args = environment_substitute_args(kwargs, env)
+    backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
 
     env = dict(env)
@@ -109,10 +112,10 @@ def compile(
     env["_PYTHON_HOST_PLATFORM"] = common.platform()
     env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
 
-    from pyodide_build.pypabuild import build
+    from .pypabuild import build
 
     try:
-        build(env)
+        build(env, backend_flags)
     except BaseException:
         build_log_path = Path("build.log")
         if build_log_path.exists():
