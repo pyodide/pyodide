@@ -1,0 +1,15 @@
+package:
+  name: shapely
+  version: 1.7.1
+source:
+  url: https://files.pythonhosted.org/packages/42/f3/0e1bc2c4f15e05e30c6b99322b9ddaa2babb3f43bc7df2698efdc1553439/Shapely-1.7.1.tar.gz
+  sha256: 1641724c1055459a7e2b8bbe47ba25bdc89554582e62aec23cb3f3ca25f9b129
+build:
+  script: |
+    export GEOS_CONFIG=$PYODIDE_ROOT/packages/libgeos/build/geos-3.9.1/tools/geos-config
+requirements:
+  run:
+    - geos
+test:
+  imports:
+    - shapely
