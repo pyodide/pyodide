@@ -8,8 +8,9 @@ RUN apt-get update \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo \
+        gnupg2 libdbus-glib-1-2 sudo curl \
   && rm -rf /var/lib/apt/lists/*
+  && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ADD docs/requirements-doc.txt requirements.txt /
 
