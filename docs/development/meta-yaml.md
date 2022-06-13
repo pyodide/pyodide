@@ -103,6 +103,10 @@ Extra arguments to pass to the linker when building for WebAssembly.
 
 (This key is not in the Conda spec).
 
+### `build/backend-flags`
+
+Extra flags to pass to the build backend (e.g., `setuptools`, `flit`, etc).
+
 ### `build/library`
 
 Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml) for an example of a library package specification.
