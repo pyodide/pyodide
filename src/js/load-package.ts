@@ -283,7 +283,7 @@ async function loadDynlib(lib: string, shared: boolean) {
   }
   const releaseDynlibLock = await acquireDynlibLock();
 
-  // This is a fake file-system like object to make emscripten
+  // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
     _rootPath: lib.split("/").slice(0, -1).join("/"),
