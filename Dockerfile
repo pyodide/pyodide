@@ -12,6 +12,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN source $HOME/.cargo/env
 RUN rustup target add wasm32-unknown-emscripten
 
 ADD docs/requirements-doc.txt requirements.txt /
