@@ -12,6 +12,7 @@ source:
     - patches/0003-BUG-Fix-the-return-type-of-random_float_fill.patch
     - patches/0006-not-build-lapack-lite-as-64-bit.patch
     - patches/0001-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
+    - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
 
 build:
   backend-flags: --disable-optimization
