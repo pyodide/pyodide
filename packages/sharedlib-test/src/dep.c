@@ -3,5 +3,5 @@
 int
 dep_do_the_thing(int a, int b)
 {
-  return a;
+  return dep_dep_do_the_thing(a);
 }
