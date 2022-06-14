@@ -1,19 +1,29 @@
 package:
   name: geos
-  version: 3.9.1
+  version: 3.9.3
 
 source:
-  url: http://download.osgeo.org/geos/geos-3.9.1.tar.bz2
-  sha256: 7e630507dcac9dc07565d249a26f06a15c9f5b0c52dd29129a0e3d381d7e382a
+  url: http://download.osgeo.org/geos/geos-3.9.3.tar.bz2
+  sha256: f8b2314e311456f7a449144efb5e3188c2a28774752bc50fc882a3cd5c89ee35
 
 build:
-  library: true
+  sharedlibrary: true
   script: |
-    sed -i '1iset_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)' CMakeLists.txt
-    CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=.. -DDISABLE_GEOS_INLINE=ON -DBUILD_TESTING=OFF -DTARGET_SUPPORTS_SHARED_LIBS=TRUE .
+    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
+
+    LDFLAGS="-s SIDE_MODULE=1" emcmake cmake \
+      -DDISABLE_GEOS_INLINE=ON \
+      -DBUILD_TESTING=OFF \
+      -DBUILD_BENCHMARKS=OFF \
+      -DBUILD_DOCUMENTATION=OFF \
+      -DCMAKE_C_FLAGS="-fPIC" \
+      -DCMAKE_CXX_FLAGS="-fPIC" \
+      -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      ./
+
     emmake make -j ${PYODIDE_JOBS:-3}
-    ln -s geos-3.9.1/include/ ..
-    ln -s geos-3.9.1/lib/ ..
-    mkdir install
-    ln -s ../lib/ install
-    chmod 755 tools/geos-config
+    emmake make install
+
+    mkdir -p dist
+    cp ${WASM_LIBRARY_DIR}/lib/libgeos* dist/

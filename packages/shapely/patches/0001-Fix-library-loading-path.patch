@@ -1,0 +1,30 @@
+From 871a5896065dc6e8b75c6e9891896a1b61c1bb84 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Mon, 13 Jun 2022 18:43:06 +0900
+Subject: [PATCH] Fix library loading path
+
+---
+ shapely/geos.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/shapely/geos.py b/shapely/geos.py
+index 88c5f53..c49c6d8 100644
+--- a/shapely/geos.py
++++ b/shapely/geos.py
+@@ -25,7 +25,12 @@ LOG = logging.getLogger(__name__)
+ # If this ever gets any longer, we'll break it into separate modules
+ 
+ def load_dll(libname, fallbacks=None, mode=DEFAULT_MODE):
+-    lib = find_library(libname)
++    import site
++    import pathlib
++    library_dir = pathlib.Path(site.getsitepackages()[0])
++    lib = str(library_dir / libname)
++    fallbacks = [str(p) for p in library_dir.glob(f"lib{libname}.so*")] + fallbacks
++
+     dll = None
+     if lib is not None:
+         try:
+-- 
+2.29.2.windows.2
+

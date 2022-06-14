@@ -1,15 +1,23 @@
 package:
   name: shapely
-  version: 1.7.1
+  version: 1.8.2
 source:
-  url: https://files.pythonhosted.org/packages/42/f3/0e1bc2c4f15e05e30c6b99322b9ddaa2babb3f43bc7df2698efdc1553439/Shapely-1.7.1.tar.gz
-  sha256: 1641724c1055459a7e2b8bbe47ba25bdc89554582e62aec23cb3f3ca25f9b129
+  url: https://github.com/shapely/shapely/archive/a0aae53128482f5f5728f993a2c83d901332ba87.tar.gz
+  sha256: 648e7e68672d97614e9f8202541f6a0ac413d17219492917b18c0410563edf9e
+  # patches:
+  #   - patches/0001-Fix-library-loading-path.patch
 build:
   script: |
-    export GEOS_CONFIG=$PYODIDE_ROOT/packages/libgeos/build/geos-3.9.1/tools/geos-config
+    export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
 requirements:
   run:
     - geos
 test:
   imports:
     - shapely
+    - shapely.geos
+    - shapely.geometry
+    - shapely.ops
+    - shapely.prepared
+    - shapely.validation
+    - shapely.strtree
