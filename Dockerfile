@@ -11,9 +11,9 @@ RUN apt-get update \
         gnupg2 libdbus-glib-1-2 sudo curl \
   && rm -rf /var/lib/apt/lists/*
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-RUN source $HOME/.cargo/env
-RUN rustup target add wasm32-unknown-emscripten
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
+    source $HOME/.cargo/env &&
+    rustup target add wasm32-unknown-emscripten
 
 ADD docs/requirements-doc.txt requirements.txt /
 
