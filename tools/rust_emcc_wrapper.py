@@ -4,9 +4,6 @@ import sys
 
 
 def update_args(args):
-    # https://github.com/emscripten-core/emscripten/issues/17109
-    args.insert(0, "-Wl,--no-whole-archive")
-
     # Remove -s ASSERTIONS=1
     # See https://github.com/rust-lang/rust/pull/97928
     for i in range(len(args)):
