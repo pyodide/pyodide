@@ -444,6 +444,7 @@ def compile(
         pywasmcross.compile(
             env=bash_runner.env,
             pkgname=name,
+            backend_flags=build_metadata["backend-flags"],
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
             ldflags=build_metadata["ldflags"],
@@ -878,6 +879,7 @@ def main(args):
     pkg["source"] = pkg.get("source", {})
     pkg["build"] = pkg.get("build", {})
     build_metadata = pkg["build"]
+    build_metadata["backend-flags"] = build_metadata.get("backend-flags", "")
     build_metadata["cflags"] = build_metadata.get("cflags", "")
     build_metadata["cxxflags"] = build_metadata.get("cxxflags", "")
     build_metadata["ldflags"] = build_metadata.get("ldflags", "")
