@@ -1,7 +1,7 @@
-From f6125bff9fd373d86a222185b42ea7d1d5221cbe Mon Sep 17 00:00:00 2001
+From bf6668a416abad911a50f38f412ffc4daa82be40 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 11 Jun 2022 11:19:42 -0700
-Subject: [PATCH] ENH: Add support for platforms with missing fenv flags
+Subject: [PATCH 3/6] ENH: Add support for platforms with missing fenv flags
 
 For instance wasm has no fenv support. musl-libc defines all the
 fenv functions unconditionally (fesetexcept, feclearexcept, etc)
@@ -20,10 +20,10 @@ http://nsz.repo.hu/git/?p=libc-test;a=blob;f=src/common/mtest.h;h=706c1ba23ea898
  1 file changed, 54 insertions(+), 13 deletions(-)
 
 diff --git a/numpy/core/src/npymath/ieee754.c.src b/numpy/core/src/npymath/ieee754.c.src
-index 6aecb7577..857cdd31d 100644
+index 4e6ddb712..fc4692735 100644
 --- a/numpy/core/src/npymath/ieee754.c.src
 +++ b/numpy/core/src/npymath/ieee754.c.src
-@@ -775,10 +775,52 @@ int npy_clear_floatstatus_barrier(char *param)
+@@ -789,10 +789,52 @@ int npy_clear_floatstatus_barrier(char *param)
  /* General GCC code, should work on most platforms */
  #  include <fenv.h>
  
@@ -78,7 +78,7 @@ index 6aecb7577..857cdd31d 100644
      /*
       * By using a volatile, the compiler cannot reorder this call
       */
-@@ -786,10 +828,10 @@ int npy_get_floatstatus_barrier(char* param)
+@@ -800,10 +842,10 @@ int npy_get_floatstatus_barrier(char* param)
          volatile char NPY_UNUSED(c) = *(char*)param;
      }
  
@@ -93,7 +93,7 @@ index 6aecb7577..857cdd31d 100644
  }
  
  int npy_clear_floatstatus_barrier(char * param)
-@@ -797,8 +839,8 @@ int npy_clear_floatstatus_barrier(char * param)
+@@ -811,8 +853,8 @@ int npy_clear_floatstatus_barrier(char * param)
      /* testing float status is 50-100 times faster than clearing on x86 */
      int fpstatus = npy_get_floatstatus_barrier(param);
      if (fpstatus != 0) {
@@ -104,7 +104,7 @@ index 6aecb7577..857cdd31d 100644
      }
  
      return fpstatus;
-@@ -807,22 +849,21 @@ int npy_clear_floatstatus_barrier(char * param)
+@@ -821,22 +863,21 @@ int npy_clear_floatstatus_barrier(char * param)
  
  void npy_set_floatstatus_divbyzero(void)
  {
