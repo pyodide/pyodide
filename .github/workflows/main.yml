@@ -56,9 +56,6 @@ jobs:
           sudo apt install -y build-essential git
           conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
           pip install -r requirements.txt
-          # TODO: remove this after hypothesis 6.47.3 release
-          # (https://github.com/HypothesisWorks/hypothesis/commit/1c153d8688c4bf014ff5172739d2e529ed6d3ef3)
-          pip install exceptiongroup==1.0.0rc8
 
       - name: Build emsdk
         shell: bash -l {0}
@@ -131,6 +128,9 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
+          # TODO: remove this after hypothesis 6.47.3 release
+          # (https://github.com/HypothesisWorks/hypothesis/commit/1c153d8688c4bf014ff5172739d2e529ed6d3ef3)
+          pip install exceptiongroup==1.0.0rc8
           pip install playwright && python -m playwright install
 
       - name: run core tests
