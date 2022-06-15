@@ -528,6 +528,8 @@ def generate_packages_json(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
+            pkg_entry["install_dir"] = "dynlib"
+
         pkg_entry["depends"] = [
             x.lower() for x in pkg.dependencies if x not in libraries
         ]
