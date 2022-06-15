@@ -116,7 +116,7 @@ def unpack_buffer(
     *,
     filename: str = "",
     format: str | None = None,
-    target: Literal["site", "lib"] | None = None,
+    target: Literal["site", "lib", "dynlib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
     installer: str | None = None,

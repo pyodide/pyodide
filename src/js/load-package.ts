@@ -204,14 +204,12 @@ async function downloadPackage(
 async function installPackage(
   name: string,
   buffer: Uint8Array,
-  channel: string,
-  installDir: string
+  channel: string
 ) {
   let pkg = API.packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",
-      install_dir: installDir,
       shared_library: false,
       depends: [],
       imports: [] as string[],
@@ -419,7 +417,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoadShared) {
       sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer, channel, "dynlib");
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })
@@ -433,7 +431,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoad) {
       packageInstallPromises[name] = packageLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer, channel, "site");
+          await installPackage(name, buffer, channel);
           loaded.push(name);
           loadedPackages[name] = channel;
         })
