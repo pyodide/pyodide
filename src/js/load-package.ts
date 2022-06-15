@@ -211,7 +211,7 @@ async function installPackage(
   if (!pkg) {
     pkg = {
       file_name: ".whl",
-      install_dir: "site",
+      install_dir: installDir,
       shared_library: false,
       depends: [],
       imports: [] as string[],
