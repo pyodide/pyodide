@@ -286,8 +286,10 @@ async function loadDynlib(lib: string, shared: boolean) {
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    _rootPath: lib.split("/").slice(0, -1).join("/"),
-    _resolvePath: (path: string) => libraryFS._rootPath + "/" + path,
+    // If we are loading a library `/a/b/c/d.so`,
+    // We search its dependencies from `/a/b/c`.
+    _ldLibraryPath: lib.split("/").slice(0, -1).join("/"),
+    _resolvePath: (path: string) => libraryFS._ldLibraryPath + "/" + path,
     findObject: (path: string, dontResolveLastLink: boolean) =>
       Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
     readFile: (path: string) =>

@@ -1,7 +1,6 @@
 package:
   name: cryptography
   version: 36.0.2
-  _disabled: true
 
 source:
   url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
@@ -25,6 +24,7 @@ build:
     $(OPENSSL_INCLUDE_PATH)
   ldflags: |
     $(OPENSSL_LIBRARY_PATH)
+    -Wl,--no-entry
 requirements:
   run:
     - openssl

@@ -1,0 +1,88 @@
+From e6d94de69535b7dfa1941655217e1410199ef059 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 8 Jun 2022 22:06:54 -0700
+Subject: [PATCH 2/2] Fix dup again
+
+https://github.com/emscripten-core/emscripten/pull/17184
+---
+ src/library_fs.js  | 16 +++++++++++++---
+ tests/unistd/dup.c | 10 ++++++++++
+ 2 files changed, 23 insertions(+), 3 deletions(-)
+
+diff --git a/src/library_fs.js b/src/library_fs.js
+index 88f3bd98c..1e768763b 100644
+--- a/src/library_fs.js
++++ b/src/library_fs.js
+@@ -403,29 +403,39 @@ FS.staticInit();` +
+         FS.FSStream = /** @constructor */ function() {
+           this.shared = { };
+         };
+-        FS.FSStream.prototype = {
++        FS.FSStream.prototype = {};
++        Object.defineProperties(FS.FSStream.prototype, {
+           object: {
++            /** @this {FS.FSStream} */
+             get: function() { return this.node; },
++            /** @this {FS.FSStream} */
+             set: function(val) { this.node = val; }
+           },
+           isRead: {
++            /** @this {FS.FSStream} */
+             get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_WRONLY') }}}; }
+           },
+           isWrite: {
++            /** @this {FS.FSStream} */
+             get: function() { return (this.flags & {{{ cDefine('O_ACCMODE') }}}) !== {{{ cDefine('O_RDONLY') }}}; }
+           },
+           isAppend: {
++            /** @this {FS.FSStream} */
+             get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
+           },
+           flags: {
++            /** @this {FS.FSStream} */
+             get: function() { return this.shared.flags; },
++            /** @this {FS.FSStream} */
+             set: function(val) { this.shared.flags = val; },
+           },
+           position : {
+-            get function() { return this.shared.position; },
++            /** @this {FS.FSStream} */
++            get: function() { return this.shared.position; },
++            /** @this {FS.FSStream} */
+             set: function(val) { this.shared.position = val; },
+           },
+-        };
++        });
+       }
+       // clone it, so we can return an instance of FSStream
+       stream = Object.assign(new FS.FSStream(), stream);
+diff --git a/tests/unistd/dup.c b/tests/unistd/dup.c
+index c238678d3..814df5a25 100644
+--- a/tests/unistd/dup.c
++++ b/tests/unistd/dup.c
+@@ -10,6 +10,7 @@
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <emscripten.h>
++#include <assert.h>
+ 
+ 
+ int main() {
+@@ -59,5 +60,14 @@ int main() {
+   read(g, buf, 5);
+   // should print "buf: abc\n"
+   printf("buf: %s\n", buf);
++
++
++  int fd1 = open("./blah.txt", O_RDWR | O_CREAT | O_EXCL, 0600);
++  int fd2 = dup(fd1);
++  int n = write(fd1, "abcabc\n", 7);
++  assert(n == 7);
++  assert(lseek(fd1, 0, SEEK_CUR) == 7);
++  assert(lseek(fd2, 0, SEEK_CUR) == 7);
++
+   return 0;
+ }
+-- 
+2.25.1
+
