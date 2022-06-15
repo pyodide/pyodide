@@ -1,8 +1,8 @@
-From ca2f8bb5d008541172e1d74ffb4963b175614c68 Mon Sep 17 00:00:00 2001
+From 978e721cc5ef66988a55c17be17913f2a0fcc012 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 11 Jun 2022 14:09:05 -0700
-Subject: [PATCH] ENH: cross compilation: use sysconfig to determine if x86_64
- linux
+Subject: [PATCH 4/6] ENH: cross compilation: use sysconfig to determine if
+ x86_64 linux
 
 Using `platform` is enquiring about the build system we want to know
 about the target system. We can use `sysconfig` for that.

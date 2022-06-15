@@ -156,7 +156,7 @@ export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
 export RUSTFLAGS= \
 	-C relocation-model=pic \
 	-C target-feature=+mutable-globals \
-	-C link-arg=-sSIDE_MODULE=1 \
+	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT
 
 .output_vars:
