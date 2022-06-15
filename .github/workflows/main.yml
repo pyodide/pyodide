@@ -128,6 +128,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
+          pip install ./pyodide-test-runner
           pip install playwright && python -m playwright install
 
       - name: run core tests

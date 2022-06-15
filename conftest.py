@@ -6,31 +6,12 @@ import sys
 
 import pytest
 
-pytest_plugins = ("pytest_asyncio",)
-
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
-sys.path.append(str(ROOT_PATH / "pyodide-test-runner"))
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from pyodide_test_runner.fixture import (  # noqa: F401
-    console_html_fixture,
-    playwright_browsers,
-    script_type,
-    selenium,
-    selenium_common,
-    selenium_context_manager,
-    selenium_esm,
-    selenium_module_scope,
-    selenium_standalone,
-    selenium_standalone_noload,
-    selenium_standalone_noload_common,
-    selenium_webworker_standalone,
-    web_server_main,
-    web_server_secondary,
-)
 from pyodide_test_runner.utils import maybe_skip_test
 from pyodide_test_runner.utils import package_is_built as _package_is_built
 from pyodide_test_runner.utils import parse_xfail_browsers
@@ -39,21 +20,9 @@ from pyodide_test_runner.utils import parse_xfail_browsers
 def pytest_addoption(parser):
     group = parser.getgroup("general")
     group.addoption(
-        "--dist-dir",
-        action="store",
-        default=DIST_PATH,
-        help="Path to the dist directory",
-    )
-    group.addoption(
         "--run-xfail",
         action="store_true",
         help="If provided, tests marked as xfail will be run",
-    )
-    group.addoption(
-        "--runner",
-        default="selenium",
-        choices=["selenium", "playwright"],
-        help="Select testing frameworks, selenium or playwright (default: %(default)s)",
     )
 
 
