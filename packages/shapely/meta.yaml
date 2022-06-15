@@ -12,6 +12,7 @@ build:
 requirements:
   run:
     - geos
+    - numpy
 test:
   imports:
     - shapely
