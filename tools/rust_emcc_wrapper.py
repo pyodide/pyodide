@@ -22,9 +22,6 @@ def update_args(args):
     # contains symbols that should come from the main module.
     # https://github.com/emscripten-core/emscripten/issues/17202
     args.append("-sERROR_ON_UNDEFINED_SYMBOLS=0")
-    # Seems like --no-entry should be implied by SIDE_MODULE but apparently it
-    # isn't?
-    args.append("-Wl,--no-entry")
     # Without this, the dylink section seems to get deleted which causes trouble
     # at load time.
     args.append("-Wl,--no-gc-sections")
