@@ -204,7 +204,8 @@ async function downloadPackage(
 async function installPackage(
   name: string,
   buffer: Uint8Array,
-  channel: string
+  channel: string,
+  installDir: string
 ) {
   let pkg = API.packages[name];
   if (!pkg) {
@@ -286,9 +287,7 @@ async function loadDynlib(lib: string, shared: boolean) {
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    // If we are loading a library `/a/b/c/d.so`,
-    // We search its dependencies from `/a/b/c`.
-    _ldLibraryPath: lib.split("/").slice(0, -1).join("/"),
+    _ldLibraryPath: "/usr/lib",
     _resolvePath: (path: string) => libraryFS._ldLibraryPath + "/" + path,
     findObject: (path: string, dontResolveLastLink: boolean) =>
       Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
@@ -420,7 +419,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoadShared) {
       sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer, channel);
+          await installPackage(name, buffer, channel, "dynlib");
           loaded.push(name);
           loadedPackages[name] = channel;
         })
@@ -434,7 +433,7 @@ export async function loadPackage(
     for (const [name, channel] of toLoad) {
       packageInstallPromises[name] = packageLoadPromises[name]
         .then(async (buffer) => {
-          await installPackage(name, buffer, channel);
+          await installPackage(name, buffer, channel, "site");
           loaded.push(name);
           loadedPackages[name] = channel;
         })
