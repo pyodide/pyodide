@@ -331,7 +331,9 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 
 ### Rust/PyO3 Packages
 
-We currently build Cryptography which is a Rust extension built with PyO3 and
-setuptools-rust. It should be reasonably easy to build other Rust extensions.
-Currently it is necessary to run `source $CARGO_HOME/env` in the build script,
+We currently build `cryptography` which is a Rust extension built with PyO3 and
+`setuptools-rust`. It should be reasonably easy to build other Rust extensions.
+Currently it is necessary to run `source $CARGO_HOME/env` in the build script [as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
 but other than that there may be no other issues if you are lucky.
+
+As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224), by default certain wasm-related `RUSTFLAGS` are set during `build.script` and can be removed with `export RUSTFLAGS=""`.
