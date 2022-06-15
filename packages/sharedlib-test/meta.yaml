@@ -10,5 +10,10 @@ build:
   sharedlibrary: true
   script: |
     emcc -c main.c -o main.o ${SIDE_MODULE_CFLAGS}
-    mkdir dist
-    emcc main.o ${SIDE_MODULE_LDFLAGS} -o dist/sharedlib-test.so
+    emcc -c dep.c -o dep.o ${SIDE_MODULE_CFLAGS}
+    emcc -c dep2.c -o dep2.o ${SIDE_MODULE_CFLAGS}
+
+    mkdir -p dist
+    emcc dep2.o ${SIDE_MODULE_LDFLAGS} -o dist/sharedlib-test-dep2.so
+    emcc dep.o ${SIDE_MODULE_LDFLAGS} dist/sharedlib-test-dep2.so -o dist/sharedlib-test-dep.so
+    emcc main.o ${SIDE_MODULE_LDFLAGS} dist/sharedlib-test-dep.so -o dist/sharedlib-test.so
