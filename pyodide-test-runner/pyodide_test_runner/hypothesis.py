@@ -18,6 +18,12 @@ def is_equal_to_self(x):
     except Exception:
         return False
 
+try:
+    from exceptiongroup import ExceptionGroup
+except ImportError:
+    class ExceptionGroup:
+        pass
+
 
 # Generate an object of any type
 any_strategy = (
@@ -25,6 +31,7 @@ any_strategy = (
     .flatmap(strategies.from_type)
     .filter(lambda x: not isinstance(x, ZoneInfo))
     .filter(is_picklable)
+    .filter(lambda x: not isinstance(x, ExceptionGroup))
 )
 
 any_equal_to_self_strategy = any_strategy.filter(is_equal_to_self)
