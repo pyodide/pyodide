@@ -18,9 +18,11 @@ def is_equal_to_self(x):
     except Exception:
         return False
 
+
 try:
     from exceptiongroup import ExceptionGroup
 except ImportError:
+
     class ExceptionGroup:
         pass
 
