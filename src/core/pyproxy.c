@@ -890,6 +890,7 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
   result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
   result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
+success:
   // The result.view memory will be freed when (if?) the user calls
   // Py_Buffer.release().
   result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
