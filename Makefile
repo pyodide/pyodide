@@ -243,7 +243,7 @@ rust:
 	wget https://sh.rustup.rs -O /rustup.sh
 	sh /rustup.sh -y
 	source $(HOME)/.cargo/env && rustup toolchain install nightly-2022-06-14 && rustup default nightly
-	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain nightly-2022-06-14
 
 
 FORCE:
