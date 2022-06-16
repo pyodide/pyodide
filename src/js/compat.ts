@@ -32,7 +32,7 @@ export async function initNodeModules() {
   // @ts-ignore
   nodePathMod = (await import("path")).default;
   nodeFsPromisesMod = await import("fs/promises");
-  if(globalThis.fetch) {
+  if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
     // @ts-ignore
@@ -68,8 +68,8 @@ export async function initNodeModules() {
   };
 }
 
-export function getFetch(){
-  if(globalThis.fetch){
+export function getFetch() {
+  if (globalThis.fetch) {
     return fetch;
   } else {
     return nodeFetch;
