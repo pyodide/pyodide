@@ -68,8 +68,8 @@ export async function initNodeModules() {
   };
 }
 
-export function getFetch(){
-  if(globalThis.fetch){
+export function getFetch() {
+  if (globalThis.fetch) {
     return fetch.bind(globalThis);
   } else {
     return nodeFetch;
