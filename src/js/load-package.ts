@@ -33,7 +33,7 @@ export async function initializePackageIndex(indexURL: string) {
     let response = await fetch(`${indexURL}packages.json`);
     package_json = await response.json();
   }
-  API.fetch = getFetch();
+  API.fetch = getFetch(baseURL);
   if (!package_json.packages) {
     throw new Error(
       "Loaded packages.json does not contain the expected key 'packages'."

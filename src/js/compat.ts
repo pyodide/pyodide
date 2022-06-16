@@ -68,11 +68,14 @@ export async function initNodeModules() {
   };
 }
 
-export function getFetch() {
-  if (globalThis.fetch) {
-    return fetch.bind(globalThis);
+export function getFetch(baseUrl: string) {
+  if (IN_NODE) {
+    function nodeFetchWrapper(path: string) {
+      return nodeFetch(new URL(path, baseUrl).toString());
+    }
+    return nodeFetchWrapper;
   } else {
-    return nodeFetch;
+    return fetch.bind(globalThis);
   }
 }
 
