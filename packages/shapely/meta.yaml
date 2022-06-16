@@ -2,10 +2,8 @@ package:
   name: shapely
   version: 1.8.2
 source:
-  url: https://github.com/shapely/shapely/archive/a0aae53128482f5f5728f993a2c83d901332ba87.tar.gz
-  sha256: 648e7e68672d97614e9f8202541f6a0ac413d17219492917b18c0410563edf9e
-  # patches:
-  #   - patches/0001-Fix-library-loading-path.patch
+  url: https://files.pythonhosted.org/packages/93/3c/cda77e57a08c49569de5bd90376c547bcb981420100adcb0f3770ed681b1/Shapely-1.8.2.tar.gz
+  sha256: 572af9d5006fd5e3213e37ee548912b0341fb26724d6dc8a4e3950c10197ebb6
 build:
   script: |
     export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
