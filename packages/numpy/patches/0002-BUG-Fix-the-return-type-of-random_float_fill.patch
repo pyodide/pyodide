@@ -1,7 +1,7 @@
-From 84370919cee304f24f32cb0e85612a449d23ecea Mon Sep 17 00:00:00 2001
+From 1cf87ad6388409e40a1bfab5d335d044acc74f1a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 26 Jan 2022 18:59:47 -0800
-Subject: [PATCH 3/7] BUG: Fix the return type of random_float_fill
+Subject: [PATCH 2/6] BUG: Fix the return type of random_float_fill
 
 The `random_float_fill` function type is declared with return type `double` but
 I think this is a typo. The actual implementation of `random_float_fill` is

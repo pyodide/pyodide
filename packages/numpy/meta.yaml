@@ -7,12 +7,12 @@ source:
   sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
 
   patches:
-    - patches/0001-make-int-return-values.patch
-    - patches/0002-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
-    - patches/0003-BUG-Fix-the-return-type-of-random_float_fill.patch
-    - patches/0005-Fix-ieee754.patch
-    - patches/0001-ENH-Fix-pointer-size-determination-for-cross-build.patch
-    - patches/0001-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
+    - patches/0001-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
+    - patches/0002-BUG-Fix-the-return-type-of-random_float_fill.patch
+    - patches/0003-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
+    - patches/0004-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
+    - patches/0005-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0006-make-int-return-values.patch
 
 build:
   backend-flags: --disable-optimization
