@@ -1,6 +1,7 @@
 package:
   name: ssl
   version: 1.0.0 # Nonesense
+  _cpython_dynlib: true
 source:
   path: empty
 build:
