@@ -225,7 +225,7 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     """
     if IN_BROWSER:
         from js import Object
-        from js import fetch as _jsfetch
+        from pyodide_js._api import fetch as _jsfetch
 
     try:
         return FetchResponse(

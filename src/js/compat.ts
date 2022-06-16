@@ -17,6 +17,7 @@ export let nodeFsPromisesMod: any;
 declare var globalThis: {
   importScripts: (url: string) => void;
   document?: any;
+  fetch?: any;
 };
 
 /**
@@ -31,8 +32,12 @@ export async function initNodeModules() {
   // @ts-ignore
   nodePathMod = (await import("path")).default;
   nodeFsPromisesMod = await import("fs/promises");
-  // @ts-ignore
-  nodeFetch = (await import("node-fetch")).default;
+  if(globalThis.fetch) {
+    nodeFetch = fetch;
+  } else {
+    // @ts-ignore
+    nodeFetch = (await import("node-fetch")).default;
+  }
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   if (typeof require !== "undefined") {
@@ -61,6 +66,14 @@ export async function initNodeModules() {
   (globalThis as any).require = function (mod: string): any {
     return node_modules[mod];
   };
+}
+
+export function getFetch(){
+  if(globalThis.fetch){
+    return fetch;
+  } else {
+    return nodeFetch;
+  }
 }
 
 /**
