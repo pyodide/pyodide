@@ -155,7 +155,6 @@ export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
 # idealy we could automatically include all SIDE_MODULE_LDFLAGS here
 export RUSTFLAGS= \
 	-C relocation-model=pic \
-	-C target-feature=+mutable-globals \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT
 
