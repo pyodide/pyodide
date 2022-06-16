@@ -130,8 +130,7 @@ class FetchResponse:
         return await self.js_response.text()
 
     async def json(self) -> Any:
-        """Return the response body as a Javascript JSON object.
-        """
+        """Return the response body as a Javascript JSON object."""
         self._raise_if_failed()
         return await self.js_response.json()
 
