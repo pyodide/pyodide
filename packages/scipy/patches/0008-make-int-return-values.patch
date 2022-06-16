@@ -1,4 +1,4 @@
-From fb6fb30ac1d4f106c7fef514ed924a50f848819a Mon Sep 17 00:00:00 2001
+From e96f9c5c27ac6dee8e793b334517a0799b8a3f15 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
 Subject: [PATCH 08/14] make int return values
@@ -113,7 +113,7 @@ index 9974ae0f3..f74c379df 100644
  {
      /*
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
-index 89e50a990..1f134a296 100644
+index 89e50a990..0476e6a26 100644
 --- a/scipy/linalg/fblas_l1.pyf.src
 +++ b/scipy/linalg/fblas_l1.pyf.src
 @@ -279,14 +279,16 @@ end subroutine <prefix>axpy
@@ -218,7 +218,7 @@ index 89e50a990..1f134a296 100644
 -  callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
 -  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 +  double precision <prefix4>nrm2
-+  <ftype4> n2
++  <ftypereal4> n2
 +  fortranname F_FUNC(<prefix4>nrm2,<S,D>NRM2)
 +  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
 +  intent(c) <prefix4>nrm2
