@@ -27,3 +27,4 @@ build:
     emcc ${SIDE_MODULE_LDFLAGS} libcrypto.a -o libcrypto.so
     emcc ${SIDE_MODULE_LDFLAGS} libssl.a -o libssl.so
     make install_sw
+    cp libcrypto.so libssl.so dist

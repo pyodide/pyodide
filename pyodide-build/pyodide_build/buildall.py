@@ -39,6 +39,7 @@ class BasePackage:
     name: str
     version: str
     disabled: bool
+    cpython_dynlib: bool
     meta: dict[str, Any]
     library: bool
     shared_library: bool
@@ -109,6 +110,7 @@ class Package(BasePackage):
         self.name = self.meta["package"]["name"]
         self.version = self.meta["package"]["version"]
         self.disabled = self.meta["package"].get("_disabled", False)
+        self.cpython_dynlib = self.meta["package"].get("_cpython_dynlib", False)
         self.meta["build"] = self.meta.get("build", {})
         self.meta["requirements"] = self.meta.get("requirements", {})
 
@@ -528,6 +530,8 @@ def generate_packages_json(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
+            pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
+
         pkg_entry["depends"] = [
             x.lower() for x in pkg.dependencies if x not in libraries
         ]
