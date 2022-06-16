@@ -1,4 +1,3 @@
-import json
 from io import StringIO
 from typing import Any, BinaryIO, TextIO
 
@@ -130,14 +129,11 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.text()
 
-    async def json(self, **kwargs: Any) -> Any:
+    async def json(self) -> Any:
         """Return the response body as a Javascript JSON object.
-
-        Any keyword arguments are passed to `json.loads
-        <https://docs.python.org/3.8/library/json.html#json.loads>`_.
         """
         self._raise_if_failed()
-        return json.loads(await self.string(), **kwargs)
+        return await self.js_response.json()
 
     async def memoryview(self) -> memoryview:
         """Return the response body as a memoryview object"""
