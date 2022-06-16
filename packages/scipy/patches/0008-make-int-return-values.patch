@@ -1,4 +1,4 @@
-From b540dfc763970a818b70b520b7b1e0b365bc3825 Mon Sep 17 00:00:00 2001
+From fb6fb30ac1d4f106c7fef514ed924a50f848819a Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
 Subject: [PATCH 08/14] make int return values
@@ -113,7 +113,7 @@ index 9974ae0f3..f74c379df 100644
  {
      /*
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
-index 89e50a990..b7c77115d 100644
+index 89e50a990..1f134a296 100644
 --- a/scipy/linalg/fblas_l1.pyf.src
 +++ b/scipy/linalg/fblas_l1.pyf.src
 @@ -279,14 +279,16 @@ end subroutine <prefix>axpy
@@ -193,7 +193,7 @@ index 89e50a990..b7c77115d 100644
  function <prefix3>nrm2(n,x,offx,incx) result(n2)
  
 -  <ftypereal3> <prefix3>nrm2, n2
-+  <ftypereal3> nm2
++  <ftypereal3> n2
 +  double precision <prefix3>nrm2
  
 -  callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
