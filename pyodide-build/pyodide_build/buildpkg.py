@@ -455,9 +455,9 @@ def compile(
 
     with chdir(srcpath):
         if "cross-script" in build_metadata:
-            runner = BashRunnerWithSharedEnvironment(build_env)
-            runner.run(build_metadata["cross-script"])
-            build_env = runner.env
+            with BashRunnerWithSharedEnvironment(build_env) as runner:
+                runner.run(build_metadata["cross-script"])
+                build_env = runner.env
 
         try:
             build(build_env, backend_flags)
