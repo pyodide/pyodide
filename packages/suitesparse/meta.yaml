@@ -25,8 +25,8 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3} install \
       LDFLAGS="-sSIDE_MODULE=1 -L${WASM_LIBRARY_DIR}/lib " \
-      BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
-      LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/lib/clapack_all.so" \
+      BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
+      LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}
     mkdir -p dist
 
