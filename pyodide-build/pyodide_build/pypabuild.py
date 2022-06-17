@@ -31,8 +31,7 @@ def symlink_unisolated_packages(env: IsolatedEnv) -> None:
     )
     shutil.copy(sysconfigdata_path, env_site_packages)
     host_site_packages = Path(get_hostsitepackages())
-    # TODO: remove setuptools_rust from this when they release the next version.
-    for name in get_unisolated_packages() + ["setuptools_rust"]:
+    for name in get_unisolated_packages():
         for path in chain(
             host_site_packages.glob(f"{name}*"), host_site_packages.glob(f"_{name}*")
         ):
