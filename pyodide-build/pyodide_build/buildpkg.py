@@ -25,7 +25,6 @@ from urllib import request
 
 from . import pywasmcross
 from .common import find_matching_wheels
-from .pypabuild import build
 
 
 @contextmanager
@@ -458,6 +457,8 @@ def compile(
             with BashRunnerWithSharedEnvironment(build_env) as runner:
                 runner.run(build_metadata["cross-script"])
                 build_env = runner.env
+
+        from .pypabuild import build
 
         try:
             build(build_env, backend_flags)
