@@ -76,20 +76,18 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
         env[var] = symlink
 
 
-def compile(
+def get_build_env(
     env: dict[str, str],
     *,
     pkgname: str,
-    backend_flags: str,
     cflags: str,
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
     replace_libs: str,
-) -> None:
+) -> dict[str, str]:
     kwargs = dict(
         pkgname=pkgname,
-        backend_flags=backend_flags,
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
@@ -98,7 +96,6 @@ def compile(
     )
 
     args = environment_substitute_args(kwargs, env)
-    backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
 
     env = dict(env)
@@ -111,16 +108,8 @@ def compile(
     env["PYWASMCROSS_ARGS"] = json.dumps(args)
     env["_PYTHON_HOST_PLATFORM"] = common.platform()
     env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-
-    from .pypabuild import build
-
-    try:
-        build(env, backend_flags)
-    except BaseException:
-        build_log_path = Path("build.log")
-        if build_log_path.exists():
-            build_log_path.unlink()
-        raise
+    env["PYTHONPATH"] = str(sysconfig_dir)
+    return env
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:

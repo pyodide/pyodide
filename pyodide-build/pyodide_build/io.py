@@ -26,6 +26,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "ldflags": str,
         "library": bool,
         "sharedlibrary": bool,
+        "cross-script": str,
         "script": str,
         "post": str,
         "replace-libs": list,
