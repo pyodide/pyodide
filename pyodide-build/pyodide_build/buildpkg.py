@@ -441,7 +441,7 @@ def compile(
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
 
-    build_env = pywasmcross.get_build_env(
+    build_env_ctx = pywasmcross.get_build_env(
         env=bash_runner.env,
         pkgname=name,
         cflags=build_metadata["cflags"],
@@ -452,7 +452,7 @@ def compile(
     )
     backend_flags = build_metadata["backend-flags"]
 
-    with chdir(srcpath):
+    with chdir(srcpath), build_env_ctx as build_env:
         if "cross-script" in build_metadata:
             with BashRunnerWithSharedEnvironment(build_env) as runner:
                 runner.run(build_metadata["cross-script"])

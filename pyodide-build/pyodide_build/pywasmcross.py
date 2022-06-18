@@ -8,25 +8,27 @@ The gist is we compile the package replacing calls to the compiler and linker
 with wrappers that adjusting include paths and flags as necessary for
 cross-compiling and then pass the command long to emscripten.
 """
-import json
 import os
-import shutil
 import sys
+from pathlib import Path, PurePosixPath
 
 IS_MAIN = __name__ == "__main__"
 if IS_MAIN:
-    PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
+    sys.path.append(str(Path(__file__).parent))
+    from pywasmcross_env import PYWASMCROSS_ARGS  # type: ignore[import]
+
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
-
-    PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+    os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
 
 import re
+import shutil
 import subprocess
 from collections import namedtuple
-from pathlib import Path, PurePosixPath
-from typing import Any, MutableMapping, NoReturn
+from contextlib import contextmanager
+from tempfile import TemporaryDirectory
+from typing import Any, Iterator, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -53,15 +55,16 @@ ReplayArgs = namedtuple(
 )
 
 
-def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
+def make_command_wrapper_symlinks(
+    symlink_dir: Path, env: MutableMapping[str, str]
+) -> None:
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
     """
     exec_path = Path(__file__).resolve()
-    SYMLINKDIR = symlink_dir()
     for symlink in symlinks:
-        symlink_path = SYMLINKDIR / symlink
+        symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
@@ -76,6 +79,7 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
         env[var] = symlink
 
 
+@contextmanager
 def get_build_env(
     env: dict[str, str],
     *,
@@ -85,7 +89,7 @@ def get_build_env(
     ldflags: str,
     target_install_dir: str,
     replace_libs: str,
-) -> dict[str, str]:
+) -> Iterator[dict[str, str]]:
     kwargs = dict(
         pkgname=pkgname,
         cflags=cflags,
@@ -98,18 +102,28 @@ def get_build_env(
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
 
-    env = dict(env)
-    SYMLINKDIR = symlink_dir()
-    env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-    sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
-    args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
-    args["orig__name__"] = __name__
-    make_command_wrapper_symlinks(env)
-    env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = common.platform()
-    env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-    env["PYTHONPATH"] = str(sysconfig_dir)
-    return env
+    with TemporaryDirectory() as symlink_dir_str:
+        symlink_dir = Path(symlink_dir_str)
+        env = dict(env)
+        make_command_wrapper_symlinks(symlink_dir, env)
+
+        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
+        args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
+        args["orig__name__"] = __name__
+        args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+        args["PATH"] = env["PATH"]
+
+        from pprint import pprint
+
+        with open(symlink_dir / "pywasmcross_env.py", "w") as f:
+            f.write("PYWASMCROSS_ARGS = ")
+            pprint(args, stream=f)
+
+        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
+        env["_PYTHON_HOST_PLATFORM"] = common.platform()
+        env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
+        env["PYTHONPATH"] = str(sysconfig_dir)
+        yield env
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
@@ -555,12 +569,6 @@ def environment_substitute_args(
 
 
 if IS_MAIN:
-    path = os.environ["PATH"]
-    SYMLINKDIR = symlink_dir()
-    while f"{SYMLINKDIR}:" in path:
-        path = path.replace(f"{SYMLINKDIR}:", "")
-    os.environ["PATH"] = path
-
     REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
     basename = Path(sys.argv[0]).name
