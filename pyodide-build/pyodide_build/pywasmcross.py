@@ -8,14 +8,15 @@ The gist is we compile the package replacing calls to the compiler and linker
 with wrappers that adjusting include paths and flags as necessary for
 cross-compiling and then pass the command long to emscripten.
 """
+import json
 import os
 import sys
 from pathlib import Path, PurePosixPath
 
 IS_MAIN = __name__ == "__main__"
 if IS_MAIN:
-    sys.path.append(str(Path(__file__).parent))
-    from pywasmcross_env import PYWASMCROSS_ARGS  # type: ignore[import]
+    with open("pywasmcross_env.json") as f:
+        PYWASMCROSS_ARGS = json.load(f)
 
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
@@ -113,11 +114,8 @@ def get_build_env(
         args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
         args["PATH"] = env["PATH"]
 
-        from pprint import pprint
-
-        with open(symlink_dir / "pywasmcross_env.py", "w") as f:
-            f.write("PYWASMCROSS_ARGS = ")
-            pprint(args, stream=f)
+        with open(symlink_dir / "pywasmcross_env.json", "w") as f:
+            json.dump(args, f)
 
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = common.platform()
