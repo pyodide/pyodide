@@ -246,7 +246,7 @@ build. We automate the following steps:
   `<package name>-tests.zip`
 - Repack the wheel with `python -m wheel pack`
 
-Lastly, a `packages.json` file is created containing the dependency tree of all
+Lastly, a `repodata.json` file is created containing the dependency tree of all
 packages, so {any}`pyodide.loadPackage` can load a package's dependencies
 automatically.
 

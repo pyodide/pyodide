@@ -677,9 +677,9 @@ async def test_load_binary_wheel1(
 @run_in_pyodide(packages=["micropip"])
 async def test_load_binary_wheel2(selenium):
     import micropip
-    from pyodide_js._api import packages
+    from pyodide_js._api import repodata_packages
 
-    await micropip.install(packages.regex.file_name)
+    await micropip.install(repodata_packages.regex.file_name)
     import regex  # noqa: F401
 
 

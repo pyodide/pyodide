@@ -52,7 +52,7 @@ def test_generate_dependency_graph_disabled(monkeypatch):
     assert set(pkg_map.keys()) == set()
 
 
-def test_generate_packages_json(tmp_path):
+def test_generate_repodata(tmp_path):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".file"
@@ -60,7 +60,7 @@ def test_generate_packages_json(tmp_path):
         with open(tmp_path / pkg.file_name, "w") as f:
             f.write(pkg.name)
 
-    package_data = buildall.generate_packages_json(tmp_path, pkg_map)
+    package_data = buildall.generate_repodata(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
     assert set(package_data["info"].keys()) == {"arch", "platform", "version"}
     assert package_data["info"]["arch"] == "wasm32"

@@ -22,7 +22,7 @@ from pyodide import to_js
 from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
 
 from ._compat import (
-    BUILTIN_PACKAGES,
+    REPODATA_PACKAGES,
     fetch_bytes,
     fetch_string,
     loadDynlib,
@@ -333,10 +333,10 @@ class Transaction:
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
-        if req.name in BUILTIN_PACKAGES and req.specifier.contains(
-            BUILTIN_PACKAGES[req.name]["version"], prereleases=True
+        if req.name in REPODATA_PACKAGES and req.specifier.contains(
+            REPODATA_PACKAGES[req.name]["version"], prereleases=True
         ):
-            version = BUILTIN_PACKAGES[req.name]["version"]
+            version = REPODATA_PACKAGES[req.name]["version"]
             self.pyodide_packages.append(
                 PackageMetadata(name=req.name, version=str(version), source="pyodide")
             )
@@ -487,7 +487,7 @@ async def install(
     pyodide_packages = transaction.pyodide_packages
     if len(pyodide_packages):
         # Note: branch never happens in out-of-browser testing because in
-        # that case BUILTIN_PACKAGES is empty.
+        # that case REPODATA_PACKAGES is empty.
         wheel_promises.append(
             asyncio.ensure_future(
                 loadPackage(to_js([name for [name, _, _] in pyodide_packages]))
@@ -513,7 +513,7 @@ def _generate_package_hash(data: BytesIO) -> str:
 
 def freeze() -> str:
     """Produce a json string which can be used as the contents of the
-    ``packages.json`` lockfile.
+    ``repodata.json`` lockfile.
 
     If you later load pyodide with this lock file, you can use
     :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
@@ -522,7 +522,7 @@ def freeze() -> str:
     """
     from copy import deepcopy
 
-    packages = deepcopy(BUILTIN_PACKAGES)
+    packages = deepcopy(REPODATA_PACKAGES)
     for dist in importlib_distributions():
         name = dist.name
         version = dist.version
@@ -604,7 +604,7 @@ def _list():
         if name in packages:
             continue
 
-        version = BUILTIN_PACKAGES[name]["version"]
+        version = REPODATA_PACKAGES[name]["version"]
         source_ = "pyodide"
         if pkg_source != "default channel":
             # Pyodide package loaded from a custom URL

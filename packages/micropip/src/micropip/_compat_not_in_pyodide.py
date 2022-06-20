@@ -1,6 +1,6 @@
 from typing import Any
 
-BUILTIN_PACKAGES: dict[str, dict[str, Any]] = {}
+REPODATA_PACKAGES: dict[str, dict[str, Any]] = {}
 
 
 class loadedPackages:
@@ -37,7 +37,7 @@ __all__ = [
     "loadDynlib",
     "fetch_bytes",
     "fetch_string",
-    "BUILTIN_PACKAGES",
+    "REPODATA_PACKAGES",
     "loadedPackages",
     "loadPackage",
 ]

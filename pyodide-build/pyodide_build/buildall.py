@@ -497,7 +497,7 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def generate_packages_json(
+def generate_repodata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
@@ -603,9 +603,9 @@ def build_packages(
         pkg.unvendored_tests = pkg.tests_path()
 
     copy_packages_to_dist_dir(pkg_map.values(), output_dir)
-    package_data = generate_packages_json(output_dir, pkg_map)
+    package_data = generate_repodata(output_dir, pkg_map)
 
-    with open(output_dir / "packages.json", "w") as fd:
+    with open(output_dir / "repodata.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 
