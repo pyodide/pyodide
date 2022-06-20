@@ -214,8 +214,8 @@ def main():
     if args.dry_run:
         return
 
-    for file, content in update_queue:
-        file.write_text(content)
+    for target, content in update_queue:
+        target.file.write_text(content)
 
 
 if __name__ == "__main__":
