@@ -21,28 +21,28 @@ let baseURL: string;
  */
 export async function initializePackageIndex(indexURL: string) {
   baseURL = indexURL;
-  let package_json;
+  let repodata;
   if (IN_NODE) {
     await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(
       `${indexURL}repodata.json`
     );
-    package_json = JSON.parse(package_string);
+    repodata = JSON.parse(package_string);
   } else {
     let response = await fetch(`${indexURL}repodata.json`);
-    package_json = await response.json();
+    repodata = await response.json();
   }
-  if (!package_json.packages) {
+  if (!repodata.packages) {
     throw new Error(
       "Loaded repodata.json does not contain the expected key 'packages'."
     );
   }
-  API.packages = package_json.packages;
+  API.repodata_packages = repodata.packages;
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
-  for (let name of Object.keys(API.packages)) {
-    for (let import_name of API.packages[name].imports) {
+  for (let name of Object.keys(API.repodata_packages)) {
+    for (let import_name of API.repodata_packages[name].imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
   }
@@ -91,7 +91,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info = API.packages[name];
+  const pkg_info = API.repodata_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -164,12 +164,12 @@ async function downloadPackage(
 ): Promise<Uint8Array> {
   let file_name, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
-    if (!(name in API.packages)) {
+    if (!(name in API.repodata_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
-    file_name = API.packages[name].file_name;
+    file_name = API.repodata_packages[name].file_name;
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.packages[name].sha256
+      API.repodata_packages[name].sha256
     );
   } else {
     file_name = channel;
@@ -206,7 +206,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string
 ) {
-  let pkg = API.packages[name];
+  let pkg = API.repodata_packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",
