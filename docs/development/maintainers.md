@@ -68,7 +68,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 7. Release the Pyodide JavaScript package:
 
    ```bash
-   make clean && make
+   make clean && PYODIDE_PACKAGES="*" make
    cd dist
    # If making a major/minor release:
    npm publish
