@@ -1,4 +1,4 @@
-From f2dc9e437dfb746a17db863fcff3c097d6203918 Mon Sep 17 00:00:00 2001
+From 5e4cde22a2cf6b573c941a307ec1c5310b74715f Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Tue, 14 Jun 2022 01:14:13 +0000
 Subject: [PATCH 2/2] Remove non-essential build targets
@@ -9,8 +9,8 @@ some build targets of suitesparse that are not used by sparseqr.
 ---
  Makefile                                 | 23 +----------------------
  SuiteSparse_config/SuiteSparse_config.mk |  4 ++--
- metis-5.1.0/CMakeLists.txt               |  2 +-
- 3 files changed, 4 insertions(+), 25 deletions(-)
+ metis-5.1.0/CMakeLists.txt               |  1 -
+ 3 files changed, 3 insertions(+), 25 deletions(-)
 
 diff --git a/Makefile b/Makefile
 index ed722693..6af48982 100644
@@ -88,15 +88,14 @@ index a9536643..564ba84b 100644
          # Use rpath ORIGIN so that Linux/Unix *.so files can be moved without modification:
          SO_INSTALL_NAME = echo
 diff --git a/metis-5.1.0/CMakeLists.txt b/metis-5.1.0/CMakeLists.txt
-index 1a72ed0d..55c6313a 100644
+index 1a72ed0d..0134cd3a 100644
 --- a/metis-5.1.0/CMakeLists.txt
 +++ b/metis-5.1.0/CMakeLists.txt
-@@ -25,4 +25,4 @@ include_directories(include)
+@@ -25,4 +25,3 @@ include_directories(include)
  # Recursively look for CMakeLists.txt in subdirs.
  add_subdirectory("include")
  add_subdirectory("libmetis")
 -add_subdirectory("programs")
-+#add_subdirectory("programs")
 -- 
 2.36.1
 
