@@ -65,6 +65,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 5. Release the Pyodide JavaScript package:
 
    ```bash
+   make clean && make
    cd dist
    npm publish # Note: use "--tag next" for prereleases
    npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
