@@ -16,7 +16,7 @@ all: check \
 	dist/console.html \
 	dist/distutils.tar \
 	dist/test.tar \
-	dist/packages.json \
+	dist/repodata.json \
 	dist/pyodide_py.tar \
 	dist/test.html \
 	dist/module_test.html \
@@ -227,7 +227,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/packages.json: FORCE
+dist/repodata.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."

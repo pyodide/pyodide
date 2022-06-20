@@ -455,14 +455,14 @@ def test_import_invocation(selenium):
     from pyodide import create_once_callable
 
     js.setTimeout(create_once_callable(temp), 100)
-    js.fetch("packages.json")
+    js.fetch("repodata.json")
 
 
 @run_in_pyodide
 def test_import_bind(selenium):
     from js import fetch
 
-    fetch("packages.json")
+    fetch("repodata.json")
 
 
 @run_in_pyodide

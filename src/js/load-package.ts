@@ -14,7 +14,7 @@ import { PyProxy, isPyProxy } from "./pyproxy.gen";
 let baseURL: string;
 /**
  * Initialize the packages index. This is called as early as possible in
- * loadPyodide so that fetching packages.json can occur in parallel with other
+ * loadPyodide so that fetching repodata.json can occur in parallel with other
  * operations.
  * @param indexURL
  * @private
@@ -25,16 +25,16 @@ export async function initializePackageIndex(indexURL: string) {
   if (IN_NODE) {
     await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(
-      `${indexURL}packages.json`
+      `${indexURL}repodata.json`
     );
     package_json = JSON.parse(package_string);
   } else {
-    let response = await fetch(`${indexURL}packages.json`);
+    let response = await fetch(`${indexURL}repodata.json`);
     package_json = await response.json();
   }
   if (!package_json.packages) {
     throw new Error(
-      "Loaded packages.json does not contain the expected key 'packages'."
+      "Loaded repodata.json does not contain the expected key 'packages'."
     );
   }
   API.packages = package_json.packages;
@@ -150,7 +150,7 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to baseURL from `packages.json`, otherwise use the URL specified by
+ * relative to baseURL from `repodata.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the

@@ -513,7 +513,7 @@ def _generate_package_hash(data: BytesIO) -> str:
 
 def freeze() -> str:
     """Produce a json string which can be used as the contents of the
-    ``packages.json`` lockfile.
+    ``repodata.json`` lockfile.
 
     If you later load pyodide with this lock file, you can use
     :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
