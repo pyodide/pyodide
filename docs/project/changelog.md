@@ -62,7 +62,7 @@ substitutions:
 - {{ Feature }} Added `pyodide.run_js` API.
   {pr}`2426`
 
-- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `repodata.json`
   {pr}`2455`
 
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
@@ -115,6 +115,9 @@ substitutions:
 
 - {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`..
   {pr}`2643`
+- {{ API }} `packages.json` which contains the dependency graph for packages
+  was renamed to `repodata.json` to avoid confusion with `package.json` used
+  in JavaScript packages.
 
 ### REPL
 
@@ -160,7 +163,7 @@ substitutions:
   {pr}`2591`
 
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
-  packages into a `packages.json` file.
+  packages into a `repodata.json` file.
   {pr}`2581`
 
 ### Packages
