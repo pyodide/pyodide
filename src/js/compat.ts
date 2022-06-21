@@ -134,15 +134,15 @@ async function browser_loadBinaryFile(
 }
 
 /** @private */
-export let _loadBinaryFile: (
+export let loadBinaryFile: (
   indexURL: string,
   path: string,
   file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
-  _loadBinaryFile = node_loadBinaryFile;
+  loadBinaryFile = node_loadBinaryFile;
 } else {
-  _loadBinaryFile = browser_loadBinaryFile;
+  loadBinaryFile = browser_loadBinaryFile;
 }
 
 /**
