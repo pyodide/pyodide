@@ -19,7 +19,8 @@ download all packages that the code snippet imports. This is particularly useful
 for making a repl since users might import unexpected packages. At present,
 {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
 download packages from PyPI, it will only download packages included in the
-Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of packages included in Pyodide.
+Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of
+packages included in Pyodide.
 
 ## Loading packages with {any}`pyodide.loadPackage`
 
@@ -27,19 +28,20 @@ Packages included in the official Pyodide repository can be loaded using
 {any}`pyodide.loadPackage`:
 
 ```js
-pyodide.loadPackage("numpy");
+await pyodide.loadPackage("numpy");
 ```
 
 It is also possible to load packages from custom URLs:
 
 ```js
-pyodide.loadPackage("https://foo/bar/numpy.js");
+await pyodide.loadPackage(
+  "https://foo/bar/numpy-1.22.3-cp310-cp310-emscripten_3_1_13_wasm32.whl"
+);
 ```
 
-The file name in the URL must be `<package-name>.js` and there must be an
-accompanying file called `<package-name>.data` in the same directory.
+The file name must be a valid wheel name.
 
-When you request a package from the official repository, all of that package's
+When you request a package from the official repository, all of the package's
 dependencies are also loaded. Dependency resolution is not yet implemented when
 loading packages from custom URLs.
 
@@ -47,10 +49,11 @@ In general, loading a package twice is not permitted. However, one can override
 a dependency by loading a custom URL with the same package name before loading
 the dependent package.
 
-Multiple packages can also be loaded at the same time by passing a list to {any}`pyodide.loadPackage`.
+Multiple packages can also be loaded at the same time by passing a list to
+{any}`pyodide.loadPackage`.
 
 ```js
-pyodide.loadPackage(["cycler", "pytz"]);
+await pyodide.loadPackage(["cycler", "pytz"]);
 ```
 
 {any}`pyodide.loadPackage` returns a `Promise` which resolves when all the
@@ -79,9 +82,10 @@ the future or otherwise use the Python future API to do work once the packages
 have finished loading:
 
 ```pyodide
-pyodide.runPythonAsync(`
-  import micropip
-  await micropip.install('snowballstemmer')
+await pyodide.loadPackage("micropip");
+const micropip = pyodide.pyimport("micropip");
+await micropip.install('snowballstemmer');
+pyodide.runPython(`
   import snowballstemmer
   stemmer = snowballstemmer.stemmer('english')
   print(stemmer.stemWords('go goes going gone'.split()))
@@ -104,24 +108,22 @@ micropip.install(
 )
 ```
 
-Micropip decides whether a file is a URL based on whether it ends in ".whl" or not.
-The wheel name in the URL must follow [PEP 427 naming
+Micropip decides whether a file is a URL based on whether it ends in ".whl" or
+not. The wheel name in the URL must follow [PEP 427 naming
 convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
 be the case if the wheels is made using standard Python tools (`pip wheel`,
-`setup.py bdist_wheel`).
-
-All required dependencies must have been previously installed with {mod}`micropip`
-or {any}`pyodide.loadPackage`.
+`setup.py bdist_wheel`). Micropip will also install the dependencies of the
+wheel. If dependency resolution is not desired, you may pass `deps=False`.
 
 ```{admonition} Cross-Origin Resource Sharing (CORS)
 :class: info
 
 If the file is on a remote server, the server must set
 [Cross-Origin Resource Sharing (CORS) headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-to allow access. Otherwise, you can prepend a CORS proxy to the
-URL. Note however that using third-party CORS proxies has security implications,
+to allow access. If the server doesn't set CORS headers, you can use a CORS proxy.
+Note that using third-party CORS proxies has security implications,
 particularly since we are not able to check the file integrity, unlike with
-installs from PyPI.
+installs from PyPI. See [this stack overflow answer](https://stackoverflow.com/questions/43871637/no-access-control-allow-origin-header-is-present-on-the-requested-resource-whe/43881141#43881141) for more information about CORS.
 ```
 
 ## Example
@@ -140,9 +142,9 @@ installs from PyPI.
       async function main() {
         let pyodide = await loadPyodide();
         await pyodide.loadPackage("micropip");
-        await pyodide.runPythonAsync(`
-        import micropip
-        await micropip.install('snowballstemmer')
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install("snowballstemmer");
+        await pyodide.runPython(`
         import snowballstemmer
         stemmer = snowballstemmer.stemmer('english')
         print(stemmer.stemWords('go goes going gone'.split()))
