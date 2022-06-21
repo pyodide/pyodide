@@ -595,6 +595,24 @@ async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls) -> None:
     assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
 
 
+def test_list_load_package_from_url(selenium_standalone_micropip):
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+        selenium = selenium_standalone_micropip
+        selenium.run_js(
+            f"""
+            await pyodide.loadPackage({url!r});
+            await pyodide.runPythonAsync(`
+                import micropip
+                assert "snowballstemmer" in micropip.list()
+            `);
+            """
+        )
+
+
 def test_list_pyodide_package(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(

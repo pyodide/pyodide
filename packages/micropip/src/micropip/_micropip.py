@@ -604,10 +604,15 @@ def _list():
         if name in packages:
             continue
 
-        version = REPODATA_PACKAGES[name]["version"]
-        source_ = "pyodide"
-        if pkg_source != "default channel":
-            # Pyodide package loaded from a custom URL
+        if name in REPODATA_PACKAGES:
+            version = REPODATA_PACKAGES[name]["version"]
+            source_ = "pyodide"
+            if pkg_source != "default channel":
+                # Pyodide package loaded from a custom URL
+                source_ = pkg_source
+        else:
+            # TODO: calculate version from wheel metadata
+            version = "unknown"
             source_ = pkg_source
         packages[name] = PackageMetadata(name=name, version=version, source=source_)
     return packages
