@@ -1,9 +1,9 @@
 package:
   name: pydantic
-  version: 1.9.0
+  version: 1.9.1
 source:
-  sha256: 742645059757a56ecd886faf4ed2441b9c0cd406079c2b4bee51bcc3fbcd510a
-  url: https://files.pythonhosted.org/packages/60/a3/23a8a9378ff06853bda6527a39fe317b088d760adf41cf70fc0f6110e485/pydantic-1.9.0.tar.gz
+  sha256: 1ed987c3ff29fff7fd8c3ea3a3ea877ad310aae2ef9889a119e22d3f2db0691a
+  url: https://files.pythonhosted.org/packages/d0/a5/e4a25a0becf35530a3d90459a88855743e942f2e502da49ca5b10aa78568/pydantic-1.9.1.tar.gz
 test:
   imports:
     - pydantic
