@@ -550,7 +550,7 @@ async def test_install_version_invalid_pep440(
     mock_fetch: mock_fetch_cls,
     version_invalid: str,
 ) -> None:
-    # Micropip should skip package versions that doesn't follow PEP 440.
+    # Micropip should skip package versions which do not follow PEP 440.
     #
     #     [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
     #
