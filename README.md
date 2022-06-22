@@ -23,9 +23,8 @@ general-purpose packages such as regex, PyYAML, lxml and scientific Python
 packages including NumPy, pandas, SciPy, Matplotlib, and scikit-learn.
 
 Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
-that you can freely mix these two languages in your code with minimal
-friction. This includes full support for error handling (throw an error in one
-language, catch it in the other), async/await, and much more.
+that you can freely mix these two languages in your code with minimal friction.
+This includes full support for error handling, async/await, and much more.
 
 When used inside a browser, Python has full access to the Web APIs.
 
