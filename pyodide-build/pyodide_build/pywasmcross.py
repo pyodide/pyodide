@@ -99,7 +99,7 @@ def compile(
     )
 
     args = environment_substitute_args(kwargs, env)
-    args["export_all"] = False
+    args["export_all"] = export_all
     backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
 
