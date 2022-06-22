@@ -48,7 +48,7 @@ ReplayArgs = namedtuple(
         "replace_libs",
         "builddir",
         "pythoninclude",
-        "export_all",
+        "exports",
     ],
 )
 
@@ -86,7 +86,7 @@ def compile(
     ldflags: str,
     target_install_dir: str,
     replace_libs: str,
-    export_all: bool,
+    exports: str,
 ) -> None:
     kwargs = dict(
         pkgname=pkgname,
@@ -96,10 +96,10 @@ def compile(
         ldflags=ldflags,
         target_install_dir=target_install_dir,
         replace_libs=replace_libs,
+        exports=exports,
     )
 
     args = environment_substitute_args(kwargs, env)
-    args["export_all"] = export_all
     backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
 
@@ -389,7 +389,7 @@ def calculate_exports_flag(line: list[str], export_all: bool) -> str:
 
 
 def handle_command_generate_args(
-    line: list[str], args: ReplayArgs, is_link_command: bool, dry_run: bool = False
+    line: list[str], args: ReplayArgs, is_link_command: bool
 ) -> list[str]:
     """
     A helper command for `handle_command` that generates the new arguments for
@@ -456,9 +456,9 @@ def handle_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
-    if is_link_command and not dry_run:
+    if is_link_command and args.exports != "all":
         new_args.append("-sSIDE_MODULE=2")
-        new_args.append(calculate_exports_flag(line, args.export_all))
+        new_args.append(calculate_exports_flag(line, args.exports == "explicit"))
 
     if "-c" in line:
         if new_args[0] == "emcc":

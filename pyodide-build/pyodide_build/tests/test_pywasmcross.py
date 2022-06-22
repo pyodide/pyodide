@@ -18,7 +18,7 @@ class BuildArgs:
     replace_libs: str = ""
     target_install_dir: str = ""
     pythoninclude: str = "python/include"
-    export_all: bool = True
+    exports: str = "all"
 
 
 def _args_wrapper(func):
@@ -44,7 +44,7 @@ f2c_wrap = _args_wrapper(replay_f2c)
 
 def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
     splitline = line.split()
-    res = handle_command_generate_args(splitline, args, is_link_cmd, dry_run=True)
+    res = handle_command_generate_args(splitline, args, is_link_cmd)
     for arg in [
         "-Werror=implicit-function-declaration",
         "-Werror=mismatched-parameter-types",
@@ -135,8 +135,7 @@ def test_handle_command_ldflags():
 def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
-
-    args = BuildArgs(**{flag_name: "-Oz"})  # type: ignore[arg-type]
+    args = BuildArgs(**{flag_name: "-Oz"})
     assert (
         generate_args(f"gcc -O3 -c test.{in_ext} -o test.{out_ext}", args, True)
         == f"{executable} -Oz -c test.{in_ext} -o test.{out_ext}"
