@@ -18,6 +18,7 @@ try:
 except ImportError:
     pass
 
+from conftest import DIST_PATH
 from pyodide_build import common
 
 
@@ -51,6 +52,11 @@ def wheel_base(monkeypatch):
             yield
         finally:
             WHEEL_BASE = None
+
+
+@pytest.fixture
+def regex_wheel_name():
+    return list(DIST_PATH.glob("regex*.whl"))[0].name
 
 
 def _mock_importlib_distributions():
@@ -748,3 +754,13 @@ async def test_freeze(mock_fetch: mock_fetch_cls) -> None:
     assert pkg_metadata["imports"] == toplevel[0]
     assert dep1_metadata["imports"] == toplevel[1]
     assert dep2_metadata["imports"] == toplevel[2]
+
+
+@run_in_pyodide(packages=["micropip"])
+async def test_emfs_micropip(selenium_standalone_micropip, regex_wheel_name):
+    import micropip
+    from pyodide.http import pyfetch
+
+    resp = await pyfetch(regex_wheel_name)
+    await resp._into_file(open(regex_wheel_name, "wb"))
+    await micropip.install("emfs:" + regex_wheel_name)

@@ -8,9 +8,10 @@ from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
 from importlib.metadata import version as importlib_version
-from io import BytesIO
+from io import BufferedReader, BytesIO
 from pathlib import Path
 from typing import Any
+from urllib.parse import ParseResult, urlparse
 from zipfile import ZipFile
 
 from packaging.markers import default_environment
@@ -54,9 +55,10 @@ class WheelInfo:
     build: tuple[int, str] | tuple[()]
     tags: frozenset[Tag]
     url: str
+    parsed_url: ParseResult
     project_name: str | None = None
     digests: dict[str, str] | None = None
-    data: BytesIO | None = None
+    data: BytesIO | BufferedReader | None = None
     _dist: Any = None
     dist_info: Path | None = None
     _requires: list[Requirement] | None = None
@@ -68,7 +70,8 @@ class WheelInfo:
         See https://www.python.org/dev/peps/pep-0427/#file-name-convention
         """
         file_name = Path(url).name
-        name, version, build, tags = parse_wheel_filename(file_name)
+        parsed_url = urlparse(url)
+        name, version, build, tags = parse_wheel_filename(parsed_url.path)
         return WheelInfo(
             name=name,
             version=version,
@@ -76,6 +79,7 @@ class WheelInfo:
             build=build,
             tags=tags,
             url=url,
+            parsed_url=parsed_url,
         )
 
     def is_compatible(self):
@@ -86,23 +90,28 @@ class WheelInfo:
                 return True
         return False
 
-    async def download(self, fetch_kwargs):
+    async def _fetch_bytes(self, fetch_kwargs):
         try:
-            wheel_bytes = await fetch_bytes(self.url, fetch_kwargs)
+            return await fetch_bytes(self.url, fetch_kwargs)
         except OSError as e:
-            if self.url.startswith("https://files.pythonhosted.org/"):
+            if self.parsed_url.hostname != "files.pythonhosted.org":
                 raise e
             else:
                 raise ValueError(
-                    f"Can't fetch wheel from '{self.url}'."
+                    f"Can't fetch wheel from '{self.url}'. "
                     "One common reason for this is when the server blocks "
-                    "Cross-Origin Resource Sharing (CORS)."
+                    "Cross-Origin Resource Sharing (CORS). "
                     "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
                 ) from e
 
-        self.data = BytesIO(wheel_bytes)
-
-        with ZipFile(self.data) as zip_file:
+    async def download(self, fetch_kwargs):
+        data: BytesIO | BufferedReader
+        if self.parsed_url.scheme == "emfs":
+            data = open(self.parsed_url.path, "rb")
+        else:
+            data = BytesIO(await self._fetch_bytes(fetch_kwargs))
+        self.data = data
+        with ZipFile(data) as zip_file:
             self._dist = pkg_resources_distribution_for_wheel(
                 zip_file, self.name, "???"
             )
@@ -116,9 +125,10 @@ class WheelInfo:
             # No checksums available, e.g. because installing
             # from a different location than PyPI.
             return
+        if not isinstance(self.data, BytesIO):
+            return
         sha256 = self.digests["sha256"]
         m = hashlib.sha256()
-        assert self.data
         m.update(self.data.getvalue())
         if m.hexdigest() != sha256:
             raise ValueError("Contents don't match hash")
@@ -511,7 +521,7 @@ async def install(
     await gather(*wheel_promises)
 
 
-def _generate_package_hash(data: BytesIO) -> str:
+def _generate_package_hash(data: BytesIO | BufferedReader) -> str:
     sha256_hash = hashlib.sha256()
     data.seek(0)
     while chunk := data.read(4096):
