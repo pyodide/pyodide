@@ -10,9 +10,9 @@ the files and unpack them into the file system with
 {any}`pyodide.unpackArchive`:
 
 ```pyodide
-let zip_response = await fetch("myfiles.zip");
-let zip_binary = await zip_response.arrayBuffer();
-pyodide.unpackArchive(zip_binary, "zip");
+let zipResponse = await fetch("myfiles.zip");
+let zipBinary = await zipResponse.arrayBuffer();
+pyodide.unpackArchive(zipBinary, "zip");
 ```
 
 You can also download the files from Python using {any}`pyodide.http.pyfetch`,

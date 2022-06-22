@@ -14,7 +14,7 @@ with any native operating system as long as Docker is installed. You can also
 build on your native Linux OS if the correct build prerequisites are installed.
 Building on MacOS is possible, but there are known issues as of version 0.18
 that you will need to work around. It is not possible to build on Windows, but
-you can use [Windows Subsystem Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+you can use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 to create a Linux build environment.
 
 ## Build instructions
