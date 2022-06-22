@@ -18,7 +18,7 @@ class BuildArgs:
     replace_libs: str = ""
     target_install_dir: str = ""
     pythoninclude: str = "python/include"
-    export_all: bool = False
+    export_all: bool = True
 
 
 def _args_wrapper(func):
