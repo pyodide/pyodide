@@ -27,6 +27,7 @@ jobs:
           command: |
             mkdir test-results
             pip install ./pyodide-test-runner
+            npm install node-fetch base-64
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
@@ -187,6 +188,7 @@ jobs:
             make npm-link
             mkdir test-results
             pip install ./pyodide-test-runner
+            npm install node-fetch base-64
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
@@ -205,6 +207,7 @@ jobs:
           command: |
             make npm-link
             pip install ./pyodide-test-runner
+            npm install node-fetch base-64
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-python:
@@ -219,12 +222,13 @@ jobs:
             mkdir test-results
             python3 -m pip install ./pyodide-test-runner
             python3 -m pip install -e ./pyodide-build
+            npm install node-fetch base-64
             PYODIDE_ROOT=. pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
               -k 'not (chrome or firefox or node)' \
               --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/ pyodide-test-runner/pyodide_test_runner/tests
+              src pyodide-build packages/micropip/ pyodide-test-runner/pyodide_test_runner
 
       - store_test_results:
           path: test-results
@@ -267,6 +271,7 @@ jobs:
           name: benchmark
           command: |
             pip install ./pyodide-test-runner
+            npm install node-fetch base-64
             python benchmark/benchmark.py all --output dist/benchmarks.json
 
       - store_artifacts:
@@ -421,7 +426,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner/pyodide_test_runner/tests
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner/pyodide_test_runner
           requires:
             - build-core
           filters:
@@ -430,7 +435,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner/pyodide_test_runner/tests
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner/pyodide_test_runner
           requires:
             - build-core
           filters:
@@ -439,7 +444,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner/pyodide_test_runner/tests
+          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner/pyodide_test_runner
           requires:
             - build-core
           filters:
