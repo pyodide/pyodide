@@ -18,6 +18,7 @@ class BuildArgs:
     replace_libs: str = ""
     target_install_dir: str = ""
     pythoninclude: str = "python/include"
+    export_all: bool = False
 
 
 def _args_wrapper(func):
@@ -135,7 +136,7 @@ def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
 
-    args = BuildArgs(**{flag_name: "-Oz"})
+    args = BuildArgs(**{flag_name: "-Oz"})  # type: ignore[arg-type]
     assert (
         generate_args(f"gcc -O3 -c test.{in_ext} -o test.{out_ext}", args, True)
         == f"{executable} -Oz -c test.{in_ext} -o test.{out_ext}"
