@@ -443,7 +443,7 @@ async def test_install_non_pure_python_wheel():
 
     msg = "not a pure Python 3 wheel"
     with pytest.raises(ValueError, match=msg):
-        url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+        url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
         await transaction.add_requirement(url)
 
@@ -602,7 +602,7 @@ async def test_fetch_wheel_fail(monkeypatch, wheel_base):
     monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
 
     msg = "Access-Control-Allow-Origin"
-    with pytest.raises(ValueError, match=msg):
+    with pytest.raises(OSError, match=msg):
         await _micropip.install("htps://x.com/xxx-1.0.0-py3-none-any.whl")
 
 
