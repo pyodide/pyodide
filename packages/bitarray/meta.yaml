@@ -1,11 +1,9 @@
 package:
   name: bitarray
-  version: 2.4.1
+  version: 2.5.1
 source:
-  url: https://files.pythonhosted.org/packages/f3/de/5385fc4d88cb34a4d061f73ab4dbe27d78670ba90837af97384590a4a19a/bitarray-2.4.1.tar.gz
-  sha256: faeca03f979e992cc76f7406af7eb9795cb111b8d8969c891a032bd7497c87da
-  patches:
-    - patches/0001-Skip-tests-pyodide-that-don-t-work-in-Pyodide.patch
+  url: https://files.pythonhosted.org/packages/f6/a7/d9c9bb5b029faf4a1df9db638de7b2d8092cb57e2707e59657043a049b79/bitarray-2.5.1.tar.gz
+  sha256: 8d38f60751008099a659d5acfb35ef4150183effd5b2bfa6c10199270ddf4c9c
 test:
   imports:
     - bitarray
