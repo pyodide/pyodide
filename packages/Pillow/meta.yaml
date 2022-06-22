@@ -13,18 +13,23 @@ build:
   script: |
     export LIBWEBP_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix libwebp)
     export LIBWEBP_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix libwebp)
+    export LIBTIFF_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix libtiff-4)
+    export LIBTIFF_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix libtiff-4)
   cflags: |
     -s USE_ZLIB=1
     -s USE_LIBJPEG=1
     -s USE_FREETYPE=1
     -s SIDE_MODULE=1
     $(LIBWEBP_INCLUDE_PATH)
+    $(LIBTIFF_INCLUDE_PATH)
   ldflags: |
     -ljpeg
     $(LIBWEBP_LIBRARY_PATH)
+    $(LIBTIFF_LIBRARY_PATH)
 requirements:
   run:
     - libwebp
+    - libtiff
 test:
   imports:
     - PIL

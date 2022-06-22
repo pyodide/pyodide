@@ -53,6 +53,7 @@ def test_image_extensions(selenium):
         "jpeg": b"\xff\xd8\xff\xe0",
         "png": b"\x89PNG",
         "webp": b"RIFF",
+        "tiff": b"\x49\x49\x2a\x00",
     }
 
     for ext, signature in extensions.items():
