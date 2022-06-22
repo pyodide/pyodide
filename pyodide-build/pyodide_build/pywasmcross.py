@@ -48,6 +48,7 @@ ReplayArgs = namedtuple(
         "replace_libs",
         "builddir",
         "pythoninclude",
+        "export_all",
     ],
 )
 
@@ -97,6 +98,7 @@ def compile(
     )
 
     args = environment_substitute_args(kwargs, env)
+    args["export_all"] = False
     backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
 
@@ -368,6 +370,21 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
+def calculate_exports_flag(line):
+    objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
+    PYODIDE_ROOT = common.get_pyodide_root()
+    result = subprocess.run(
+        [PYODIDE_ROOT / "emsdk/emsdk/upstream/bin/llvm-nm", "-j", "--export-symbols"]
+        + objects,
+        encoding="utf8",
+        capture_output=True,
+    )
+    if result.returncode:
+        sys.exit(result.returncode)
+    exports = ["_" + x for x in result.stdout.splitlines() if x.startswith("PyInit")]
+    return f"-sEXPORTED_FUNCTIONS={exports!r}"
+
+
 def handle_command_generate_args(
     line: list[str], args: ReplayArgs, is_link_command: bool
 ) -> list[str]:
@@ -436,6 +453,10 @@ def handle_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
+        if not args.export_all:
+            new_args.append("-sSIDE_MODULE=2")
+            new_args.append(calculate_exports_flag(line))
+
     if "-c" in line:
         if new_args[0] == "emcc":
             new_args.extend(args.cflags.split())
@@ -537,8 +558,6 @@ def handle_command(
         new_args = _new_args
 
     returncode = subprocess.run(new_args).returncode
-    if returncode != 0:
-        sys.exit(returncode)
 
     sys.exit(returncode)
 
