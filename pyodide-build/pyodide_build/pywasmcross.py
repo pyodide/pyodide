@@ -389,7 +389,7 @@ def calculate_exports_flag(line: list[str], export_all: bool) -> str:
 
 
 def handle_command_generate_args(
-    line: list[str], args: ReplayArgs, is_link_command: bool
+    line: list[str], args: ReplayArgs, is_link_command: bool, dry_run: bool = False
 ) -> list[str]:
     """
     A helper command for `handle_command` that generates the new arguments for
@@ -457,6 +457,7 @@ def handle_command_generate_args(
     if is_link_command:
         new_args.extend(args.ldflags.split())
         new_args.append("-sSIDE_MODULE=2")
+    if is_link_command and not dry_run:
         new_args.append(calculate_exports_flag(line, args.export_all))
 
     if "-c" in line:

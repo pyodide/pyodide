@@ -447,9 +447,9 @@ def compile(
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
             ldflags=build_metadata["ldflags"],
-            export_all=build_metadata.get("export-all", False),
             target_install_dir=target_install_dir,
             replace_libs=replace_libs,
+            export_all=build_metadata.get("export-all", False),
         )
 
 

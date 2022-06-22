@@ -44,7 +44,7 @@ f2c_wrap = _args_wrapper(replay_f2c)
 
 def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
     splitline = line.split()
-    res = handle_command_generate_args(splitline, args, is_link_cmd)
+    res = handle_command_generate_args(splitline, args, is_link_cmd, dry_run=True)
     for arg in [
         "-Werror=implicit-function-declaration",
         "-Werror=mismatched-parameter-types",
