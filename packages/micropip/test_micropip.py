@@ -544,6 +544,27 @@ async def test_install_pre(
 
 
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::Warning")
+@pytest.mark.parametrize("version_invalid", ["1.2.3-1", "2.3.1-post1", "3.2.1-pre1"])
+async def test_install_version_invalid_pep440(
+    mock_fetch: mock_fetch_cls,
+    version_invalid: str,
+) -> None:
+    # Micropip should skip package versions which do not follow PEP 440.
+    #
+    #     [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+    #
+
+    dummy = "dummy"
+    version_stable = "1.0.0"
+
+    mock_fetch.add_pkg_version(dummy, version_stable)
+    mock_fetch.add_pkg_version(dummy, version_invalid)
+    await micropip.install(dummy)
+    assert micropip.list()[dummy].version == version_stable
+
+
+@pytest.mark.asyncio
 async def test_fetch_wheel_fail(monkeypatch, wheel_base):
     pytest.importorskip("packaging")
     from micropip import _micropip
