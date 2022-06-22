@@ -71,7 +71,6 @@ class WheelInfo:
         """
         parsed_url = urlparse(url)
         file_name = Path(parsed_url.path).name
-        print("url", url, "parsed_url.path", parsed_url.path, "file_name", file_name)
         name, version, build, tags = parse_wheel_filename(file_name)
         return WheelInfo(
             name=name,
@@ -95,7 +94,7 @@ class WheelInfo:
         try:
             return await fetch_bytes(self.url, fetch_kwargs)
         except OSError as e:
-            if self.parsed_url.hostname != "files.pythonhosted.org":
+            if self.parsed_url.hostname == "files.pythonhosted.org":
                 raise e
             else:
                 raise ValueError(

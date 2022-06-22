@@ -602,7 +602,7 @@ async def test_fetch_wheel_fail(monkeypatch, wheel_base):
     monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
 
     msg = "Access-Control-Allow-Origin"
-    with pytest.raises(OSError, match=msg):
+    with pytest.raises(ValueError, match=msg):
         await _micropip.install("htps://x.com/xxx-1.0.0-py3-none-any.whl")
 
 
