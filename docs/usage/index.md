@@ -1,12 +1,11 @@
 # Using Pyodide
 
-Pyodide may be used in any context where you want to run Python inside a web
-browser or a backend JavaScript environment.
+Pyodide may be used in a web browser or a backend JavaScript environment.
 
 ## Web browsers
 
-To use Pyodide on a web page you need to load `pyodide.js` and initialize
-Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL for packages:
+To use Pyodide in a web page you need to load `pyodide.js` and initialize
+Pyodide with {any}`loadPyodide <globalThis.loadPyodide>`.
 
 ```html-pyodide
 <!DOCTYPE html>
@@ -26,7 +25,7 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
 </html>
 ```
 
-See the {ref}`quickstart` for a walk through tutorial as well as
+See the {ref}`quickstart` for a walk-through tutorial as well as
 {ref}`loading_packages` and {ref}`type-translations` for a more in depth
 discussion about existing capabilities.
 
@@ -97,21 +96,12 @@ Then you can load Pyodide in Node.js as follows,
 
 ```js
 let pyodide_pkg = await import("pyodide/pyodide.js");
-
 let pyodide = await pyodide_pkg.loadPyodide();
-
 await pyodide.runPythonAsync("1+1");
 ```
 
 ```{note}
-To start Node.js REPL with support for top level await, use `node --experimental-repl-await`.
-```
-
-```{warning}
-Download of packages from PyPI is currently not cached when run in
-Node.js. Packages will be re-downloaded each time `micropip.install` is run.
-
-For this same reason, installing Pyodide packages from the CDN is explicitly not supported for now.
+To start the Node.js REPL with support for top level await, use `node --experimental-repl-await`.
 ```
 
 ```{eval-rst}
