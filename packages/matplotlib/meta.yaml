@@ -26,9 +26,9 @@ build:
   ldflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
   replace-libs:
     - png16=png
-  script: export SETUPTOOLS_SCM_PRETEND_VERSION=3.5.2
+  script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
-    cd build/matplotlib-3.5.2/dist/matplotlib-3.5.2/
+    cd build/matplotlib-$PKG_VERSION/dist/matplotlib-$PKG_VERSION/
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
     rm -rf sphinxext
