@@ -127,6 +127,8 @@ def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
     build_metadata = config["build"]
     library = build_metadata.get("library", False)
     sharedlibrary = build_metadata.get("sharedlibrary", False)
+    if build_metadata.get("exports", "pyinit") not in ["pyinit", "explicit", "all"]:
+        yield f"build/exports must be 'pyinit', 'explicit', or 'all' not {build_metadata['exports']}"
     if not library and not sharedlibrary:
         return
     if library and sharedlibrary:
