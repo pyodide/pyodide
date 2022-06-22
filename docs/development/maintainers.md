@@ -113,7 +113,7 @@ Then follow the relevant steps from {ref}`release-instructions`.
 
 ### Making an alpha release
 
-Name the first alpha release `x.x.xa0` and in subsequent alphas increment the
+Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
 final number. Follow the relevant steps from {ref}`release-instructions`.
 
 For the node package make sure to use `npm publish --tag next` to avoid setting
