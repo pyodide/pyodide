@@ -11,7 +11,6 @@ source:
     - patches/0002-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
     - patches/0003-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
     - patches/0004-ENH-Fix-pointer-size-determination-for-cross-build.patch
-    - patches/0005-make-int-return-values.patch
 
 build:
   backend-flags: --disable-optimization
