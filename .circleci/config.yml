@@ -79,7 +79,7 @@ jobs:
 
       - run:
           name: check-size
-          command: ls -lh dist/
+          command: du dist/ -abh --max-depth 1  | sort -k 2
 
       - save_cache:
           paths:
@@ -151,7 +151,7 @@ jobs:
 
       - run:
           name: check-size
-          command: ls -lh dist/
+          command: du dist/ -abh --max-depth 1  | sort -k 2
 
       - save_cache:
           paths:
