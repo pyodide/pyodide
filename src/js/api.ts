@@ -149,7 +149,7 @@ export async function loadPackagesFromImports(
  *
  *    let result = await pyodide.runPythonAsync(`
  *        from js import fetch
- *        response = await fetch("./packages.json")
+ *        response = await fetch("./repodata.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to JavaScript
  *        len(packages.packages.object_keys())

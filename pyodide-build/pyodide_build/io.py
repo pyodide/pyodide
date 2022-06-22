@@ -9,6 +9,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "version": str,
         "_tag": str,
         "_disabled": bool,
+        "_cpython_dynlib": bool,
     },
     "source": {
         "url": str,

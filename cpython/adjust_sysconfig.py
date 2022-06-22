@@ -23,7 +23,7 @@ def adjust_sysconfig(config_vars: dict[str, str]):
         MAINCC="cc",
         LDSHARED="cc",
         LINKCC="cc",
-        BLDSHARED="emcc -sSIDE_MODULE=1",  # setuptools-rust looks at this
+        BLDSHARED="cc",
         CXX="c++",
         LDCXXSHARED="c++",
     )

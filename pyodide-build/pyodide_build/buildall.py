@@ -39,6 +39,7 @@ class BasePackage:
     name: str
     version: str
     disabled: bool
+    cpython_dynlib: bool
     meta: dict[str, Any]
     library: bool
     shared_library: bool
@@ -109,6 +110,7 @@ class Package(BasePackage):
         self.name = self.meta["package"]["name"]
         self.version = self.meta["package"]["version"]
         self.disabled = self.meta["package"].get("_disabled", False)
+        self.cpython_dynlib = self.meta["package"].get("_cpython_dynlib", False)
         self.meta["build"] = self.meta.get("build", {})
         self.meta["requirements"] = self.meta.get("requirements", {})
 
@@ -495,7 +497,7 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def generate_packages_json(
+def generate_repodata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
@@ -528,6 +530,8 @@ def generate_packages_json(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
+            pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
+
         pkg_entry["depends"] = [
             x.lower() for x in pkg.dependencies if x not in libraries
         ]
@@ -599,9 +603,9 @@ def build_packages(
         pkg.unvendored_tests = pkg.tests_path()
 
     copy_packages_to_dist_dir(pkg_map.values(), output_dir)
-    package_data = generate_packages_json(output_dir, pkg_map)
+    package_data = generate_repodata(output_dir, pkg_map)
 
-    with open(output_dir / "packages.json", "w") as fd:
+    with open(output_dir / "repodata.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 

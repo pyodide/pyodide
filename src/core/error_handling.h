@@ -12,7 +12,7 @@ typedef int errcode;
 #define unlikely(x) __builtin_expect((x), 0)
 
 int
-error_handling_init();
+error_handling_init(PyObject* core_module);
 
 extern PyObject* internal_error;
 

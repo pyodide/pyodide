@@ -91,11 +91,11 @@ def maybe_skip_test(item, dist_dir, delayed=False):
 
 @functools.cache
 def built_packages(dist_dir: Path) -> list[str]:
-    """Returns the list of built package names from packages.json"""
-    packages_json_path = dist_dir / "packages.json"
-    if not packages_json_path.exists():
+    """Returns the list of built package names from repodata.json"""
+    repodata_path = dist_dir / "repodata.json"
+    if not repodata_path.exists():
         return []
-    return list(json.loads(packages_json_path.read_text())["packages"].keys())
+    return list(json.loads(repodata_path.read_text())["packages"].keys())
 
 
 def package_is_built(package_name: str, dist_dir: Path) -> bool:

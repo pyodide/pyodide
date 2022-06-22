@@ -218,7 +218,6 @@ _pyproxy_type(PyObject* ptrobj)
 int
 _pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
-  bool success = false;
   PyObject* pykey = NULL;
   int result = -1;
 
@@ -226,7 +225,6 @@ _pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
   FAIL_IF_NULL(pykey);
   result = PyObject_HasAttr(pyobj, pykey);
 
-  success = true;
 finally:
   Py_CLEAR(pykey);
   return result;
@@ -778,7 +776,7 @@ size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 /**
  * Convert a C array of Py_ssize_t to JavaScript.
  */
-EM_JS_REF(JsRef, array_to_js, (Py_ssize_t * array, int len), {
+EM_JS(JsRef, array_to_js, (Py_ssize_t * array, int len), {
   return Hiwire.new_value(
     Array.from(HEAP32.subarray(array / 4, array / 4 + len)));
 })
@@ -839,7 +837,6 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
     return -1;
   }
 
-  bool success = false;
   buffer_struct result = { 0 };
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
   result.readonly = view.readonly;
@@ -893,21 +890,12 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
   result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
 success:
-  success = true;
-finally:
-  if (success) {
-    // The result.view memory will be freed when (if?) the user calls
-    // Py_Buffer.release().
-    result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
-    *result.view = view;
-    *target = result;
-    return 0;
-  } else {
-    hiwire_CLEAR(result.shape);
-    hiwire_CLEAR(result.strides);
-    PyBuffer_Release(&view);
-    return -1;
-  }
+  // The result.view memory will be freed when (if?) the user calls
+  // Py_Buffer.release().
+  result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+  *result.view = view;
+  *target = result;
+  return 0;
 }
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {

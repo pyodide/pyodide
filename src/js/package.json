@@ -57,7 +57,7 @@
   },
   "files": [
     "pyodide*",
-    "packages.json",
+    "repodata.json",
     "distutils.tar",
     "console.html"
   ],

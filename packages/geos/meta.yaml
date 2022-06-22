@@ -1,0 +1,29 @@
+package:
+  name: geos
+  version: 3.10.3
+
+source:
+  url: http://download.osgeo.org/geos/geos-3.10.3.tar.bz2
+  sha256: 3c141b07d61958a758345d5f54e3c735834b2f4303edb9f67fb26914f0d44770
+
+build:
+  sharedlibrary: true
+  script: |
+    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
+
+    LDFLAGS="${SIDE_MODULE_LDFLAGS}" emcmake cmake \
+      -DDISABLE_GEOS_INLINE=ON \
+      -DBUILD_TESTING=OFF \
+      -DBUILD_BENCHMARKS=OFF \
+      -DBUILD_DOCUMENTATION=OFF \
+      -DCMAKE_C_FLAGS="-fPIC" \
+      -DCMAKE_CXX_FLAGS="-fPIC" \
+      -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      ./
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+
+    mkdir -p dist
+    cp ${WASM_LIBRARY_DIR}/lib/libgeos* dist/
