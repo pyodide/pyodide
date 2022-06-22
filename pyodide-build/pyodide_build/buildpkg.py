@@ -152,7 +152,6 @@ def get_bash_runner():
             "WASM_PKG_CONFIG_PATH",
             "CARGO_BUILD_TARGET",
             "CARGO_HOME",
-            "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
             "RUSTFLAGS",
             "PYO3_CONFIG_FILE",
         ]

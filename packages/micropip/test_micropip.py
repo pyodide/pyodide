@@ -252,15 +252,30 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
 
         selenium.run_js(
             f"""
-            let url = '{url}';
-            let resp = await fetch(url);
             await pyodide.runPythonAsync(`
                 import micropip
-                await micropip.install('${{url}}')
+                await micropip.install('{url}')
                 import snowballstemmer
             `);
             """
         )
+
+
+@pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
+def test_install_file_protocol_node(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    from conftest import DIST_PATH
+
+    pyparsing_wheel_name = list(DIST_PATH.glob("pyparsing*.whl"))[0].name
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install('file://{pyparsing_wheel_name}')
+            import pyparsing
+        `);
+        """
+    )
 
 
 def create_transaction(Transaction):
@@ -544,6 +559,27 @@ async def test_install_pre(
 
 
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::Warning")
+@pytest.mark.parametrize("version_invalid", ["1.2.3-1", "2.3.1-post1", "3.2.1-pre1"])
+async def test_install_version_invalid_pep440(
+    mock_fetch: mock_fetch_cls,
+    version_invalid: str,
+) -> None:
+    # Micropip should skip package versions which do not follow PEP 440.
+    #
+    #     [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+    #
+
+    dummy = "dummy"
+    version_stable = "1.0.0"
+
+    mock_fetch.add_pkg_version(dummy, version_stable)
+    mock_fetch.add_pkg_version(dummy, version_invalid)
+    await micropip.install(dummy)
+    assert micropip.list()[dummy].version == version_stable
+
+
+@pytest.mark.asyncio
 async def test_fetch_wheel_fail(monkeypatch, wheel_base):
     pytest.importorskip("packaging")
     from micropip import _micropip
@@ -593,6 +629,24 @@ async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls) -> None:
     pkg_list = micropip.list()
     assert dummy_pkg_name in pkg_list
     assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
+
+
+def test_list_load_package_from_url(selenium_standalone_micropip):
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+        selenium = selenium_standalone_micropip
+        selenium.run_js(
+            f"""
+            await pyodide.loadPackage({url!r});
+            await pyodide.runPythonAsync(`
+                import micropip
+                assert "snowballstemmer" in micropip.list()
+            `);
+            """
+        )
 
 
 def test_list_pyodide_package(selenium_standalone_micropip):
@@ -677,9 +731,9 @@ async def test_load_binary_wheel1(
 @run_in_pyodide(packages=["micropip"])
 async def test_load_binary_wheel2(selenium):
     import micropip
-    from pyodide_js._api import packages
+    from pyodide_js._api import repodata_packages
 
-    await micropip.install(packages.regex.file_name)
+    await micropip.install(repodata_packages.regex.file_name)
     import regex  # noqa: F401
 
 

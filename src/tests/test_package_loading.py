@@ -258,7 +258,7 @@ def test_test_unvendoring(selenium_standalone):
 
     assert selenium.run_js(
         """
-        return pyodide._api.packages['regex'].unvendored_tests;
+        return pyodide._api.repodata_packages['regex'].unvendored_tests;
         """
     )
 

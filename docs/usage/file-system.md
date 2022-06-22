@@ -47,3 +47,13 @@ let mountDir = "/mnt";
 pyodide.FS.mkdir(mountDir);
 pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, { root: "." }, mountDir);
 ```
+
+If you are using Node.js you can access the native file system by mounting `NODEFS`.
+
+```js
+let mountDir = "/mnt";
+pyodide.FS.mkdir(mountDir);
+pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, { root: "." }, mountDir);
+pyodide.runPython("import os; print(os.listdir('/mnt'))");
+// ==> The list of files in the Node working directory
+```

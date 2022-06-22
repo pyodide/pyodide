@@ -6,8 +6,11 @@ import "./module.ts";
 import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
+import { loadBinaryFile } from "./compat";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+
+API.loadBinaryFile = loadBinaryFile;
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -149,7 +152,7 @@ export async function loadPackagesFromImports(
  *
  *    let result = await pyodide.runPythonAsync(`
  *        from js import fetch
- *        response = await fetch("./packages.json")
+ *        response = await fetch("./repodata.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to JavaScript
  *        len(packages.packages.object_keys())

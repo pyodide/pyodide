@@ -62,7 +62,7 @@ substitutions:
 - {{ Feature }} Added `pyodide.run_js` API.
   {pr}`2426`
 
-- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `repodata.json`
   {pr}`2455`
 
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
@@ -115,6 +115,9 @@ substitutions:
 
 - {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`..
   {pr}`2643`
+- {{ API }} `packages.json` which contains the dependency graph for packages
+  was renamed to `repodata.json` to avoid confusion with `package.json` used
+  in JavaScript packages.
 
 ### REPL
 
@@ -160,8 +163,15 @@ substitutions:
   {pr}`2591`
 
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
-  packages into a `packages.json` file.
+  packages into a `repodata.json` file.
   {pr}`2581`
+
+- {{ Fix }} `micropip.list` now works correctly when there are packages
+  that are installed via `pyodide.loadPackage` from a custom URL.
+  {pr}`2743`
+
+- {{ Fix }} micropip now skips package versions which do not follow PEP440.
+  {pr}`2754`
 
 ### Packages
 
@@ -170,11 +180,11 @@ substitutions:
 - Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
   on Chrome {pr}`2457`
 
-- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
+- New packages: opencv-python {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
   h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
   svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
-  shapely, geos {pr}`2725`.
+  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`.
 
 ## Version 0.20.0
 

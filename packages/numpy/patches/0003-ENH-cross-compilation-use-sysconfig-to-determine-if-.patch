@@ -1,7 +1,7 @@
-From 978e721cc5ef66988a55c17be17913f2a0fcc012 Mon Sep 17 00:00:00 2001
+From 1411ceef335d14eb2e50284e044d3d3263bb2751 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 11 Jun 2022 14:09:05 -0700
-Subject: [PATCH 4/6] ENH: cross compilation: use sysconfig to determine if
+Subject: [PATCH 3/5] ENH: cross compilation: use sysconfig to determine if
  x86_64 linux
 
 Using `platform` is enquiring about the build system we want to know
@@ -11,7 +11,7 @@ about the target system. We can use `sysconfig` for that.
  1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/numpy/core/setup.py b/numpy/core/setup.py
-index cb31162d1..8993291d5 100644
+index 157c825d2..ad9a718a0 100644
 --- a/numpy/core/setup.py
 +++ b/numpy/core/setup.py
 @@ -1,9 +1,9 @@
