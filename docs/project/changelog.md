@@ -16,6 +16,11 @@ substitutions:
 
 - {{ Fix }} `micropip` supports extra markers in packages correctly now.
   {pr}`2584`
+
+- {{ Enhancement }} `micropip` supports loading wheels from the Emscripten file
+  system using the `emfs:` protocol now.
+  {pr}`2767`
+
 - {{ Enhancement }} Integrity of Pyodide packages are now verified before
   loading them. This is for now only limited to browser environments.
   {pr}`2513`
