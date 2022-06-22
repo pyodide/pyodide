@@ -221,27 +221,48 @@ def test_install_simple(selenium_standalone_micropip):
     )
 
 
-def test_parse_wheel_url():
+SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        SNOWBALL_WHEEL,
+        f"/{SNOWBALL_WHEEL}" f"a/{SNOWBALL_WHEEL}",
+        f"/a/{SNOWBALL_WHEEL}",
+        f"//a/{SNOWBALL_WHEEL}",
+    ],
+)
+@pytest.mark.parametrize("protocol", ["https:", "file:", "emfs:", ""])
+def test_parse_wheel_url1(protocol, path):
     pytest.importorskip("packaging")
     from micropip._micropip import WheelInfo
 
-    url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    url = protocol + path
     wheel = WheelInfo.from_url(url)
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
     assert wheel.digests is None
-    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.filename == SNOWBALL_WHEEL
     assert wheel.url == url
     assert wheel.tags == frozenset(
         {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
     )
 
+
+def test_parse_wheel_url2():
+    from micropip._micropip import WheelInfo
+
     msg = r"Invalid wheel filename \(wrong number of parts\)"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
-        wheel = WheelInfo.from_url(url)
+        WheelInfo.from_url(url)
 
-    url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+
+def test_parse_wheel_url3():
+    from micropip._micropip import WheelInfo
+
+    url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
     wheel = WheelInfo.from_url(url)
     assert wheel.name == "scikit-learn"
     assert wheel.tags == frozenset({Tag("cp35", "cp35m", "macosx_10_9_intel")})
