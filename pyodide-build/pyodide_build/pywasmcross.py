@@ -86,6 +86,7 @@ def compile(
     ldflags: str,
     target_install_dir: str,
     replace_libs: str,
+    export_all: bool,
 ) -> None:
     kwargs = dict(
         pkgname=pkgname,
@@ -370,7 +371,7 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_exports_flag(line):
+def calculate_exports_flag(line: list[str], export_all: bool) -> str:
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
     PYODIDE_ROOT = common.get_pyodide_root()
     result = subprocess.run(
@@ -381,7 +382,9 @@ def calculate_exports_flag(line):
     )
     if result.returncode:
         sys.exit(result.returncode)
-    exports = ["_" + x for x in result.stdout.splitlines() if x.startswith("PyInit")]
+
+    condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
+    exports = ["_" + x for x in result.stdout.splitlines() if condition(x)]
     return f"-sEXPORTED_FUNCTIONS={exports!r}"
 
 
@@ -453,9 +456,8 @@ def handle_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
-        if not args.export_all:
-            new_args.append("-sSIDE_MODULE=2")
-            new_args.append(calculate_exports_flag(line))
+        new_args.append("-sSIDE_MODULE=2")
+        new_args.append(calculate_exports_flag(line, args.export_all))
 
     if "-c" in line:
         if new_args[0] == "emcc":

@@ -16,6 +16,7 @@ build:
   script: |
     # export VERBOSE=1
     export CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/xgboost/cmake/Toolchain.cmake
+  export-all: true
 requirements:
   run:
     - numpy

@@ -20,6 +20,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "extras": list,  # List[Tuple[str, str]],
     },
     "build": {
+        "export-all": bool,
         "backend-flags": str,
         "cflags": str,
         "cxxflags": str,
