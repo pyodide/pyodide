@@ -5,7 +5,7 @@ declare var API: any;
 import {
   IN_NODE,
   nodeFsPromisesMod,
-  _loadBinaryFile,
+  loadBinaryFile,
   initNodeModules,
 } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
@@ -176,7 +176,7 @@ async function downloadPackage(
     file_sub_resource_hash = undefined;
   }
   try {
-    return await _loadBinaryFile(baseURL, file_name, file_sub_resource_hash);
+    return await loadBinaryFile(baseURL, file_name, file_sub_resource_hash);
   } catch (e) {
     if (!IN_NODE) {
       throw e;
@@ -187,7 +187,7 @@ async function downloadPackage(
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
-  let binary = await _loadBinaryFile(cdnURL, file_name);
+  let binary = await loadBinaryFile(cdnURL, file_name);
   console.log(
     `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
   );
