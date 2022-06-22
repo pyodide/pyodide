@@ -1,10 +1,10 @@
 package:
   name: matplotlib
-  version: 3.5.1
+  version: 3.5.2
 
 source:
-  url: https://files.pythonhosted.org/packages/8a/46/425a44ab9a71afd2f2c8a78b039c1af8ec21e370047f0ad6e43ca819788e/matplotlib-3.5.1.tar.gz
-  sha256: b2e9810e09c3a47b73ce9cab5a72243a1258f61e7900969097a817232246ce1c
+  url: https://files.pythonhosted.org/packages/2f/be/7d6e073a3eb740ebeba43a69f5de2b141fea50b801e24e0ae024ac94d4ac/matplotlib-3.5.2.tar.gz
+  sha256: 48cf850ce14fa18067f2d9e0d646763681948487a8080ec0af2686468b4607a2
 
   patches:
     - patches/disable_macosx_backend.patch
@@ -26,8 +26,9 @@ build:
   ldflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
   replace-libs:
     - png16=png
+  script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
-    cd build/matplotlib-3.5.1/dist/matplotlib-3.5.1/
+    cd build/matplotlib-$PKG_VERSION/dist/matplotlib-$PKG_VERSION/
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
     rm -rf sphinxext
