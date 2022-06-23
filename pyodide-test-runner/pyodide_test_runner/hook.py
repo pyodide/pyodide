@@ -12,6 +12,27 @@ from _pytest.python import (
 
 
 def pytest_configure(config):
+
+    config.addinivalue_line(
+        "markers",
+        "skip_refcount_check: Don't run refcount checks",
+    )
+
+    config.addinivalue_line(
+        "markers",
+        "skip_pyproxy_check: Don't run pyproxy allocation checks",
+    )
+
+    config.addinivalue_line(
+        "markers",
+        "driver_timeout: Set script timeout in WebDriver",
+    )
+
+    config.addinivalue_line(
+        "markers",
+        "xfail_browsers: xfail a test in specific browsers",
+    )
+
     pytest.pyodide_dist_dir = config.getoption("--dist-dir")
 
 

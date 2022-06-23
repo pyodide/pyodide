@@ -1171,3 +1171,25 @@ def test_run_js(selenium):
     from js import x
 
     assert x == 77
+
+
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    from pyodide import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)
