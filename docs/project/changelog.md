@@ -14,32 +14,12 @@ substitutions:
 
 ## Unreleased
 
-- {{ Fix }} `micropip` supports extra markers in packages correctly now.
-  {pr}`2584`
+### Build system
 
-- {{ Enhancement }} Integrity of Pyodide packages are now verified before
-  loading them. This is for now only limited to browser environments.
-  {pr}`2513`
-
-- {{ Enhancement }} It is now possible to use an alternate `repodata.json`
-  lockfile by passing the `lockFileURL` option to {any}`loadPyodide`. This is
-  particularly intended to be used with {any}`micropip.freeze`.
-  {pr}``
+- {{ Enhancement }} Emscripten was updated to Version 3.1.13
+  {pr}`2679`, {pr}`2672`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
-
-- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
-  {pr}`2517`
-
-- {{ Fix }} Fix output bug with using `input()` on online console
-  {pr}`2509`
-
-- {{ Enhancement }} Update sqlite version to latest stable release
-  {pr}`2477` and {pr}`2518`
-
-- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports
-  when packing files for the browser.
-  {pr}`2468`
 
 - {{ Enhancement }} Update Typescript target to ES2017 to generate more modern
   Javascript code.
@@ -47,6 +27,24 @@ substitutions:
 
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
+
+- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not
+  installed.
+  {pr}`2423`
+
+- {{ Enhancement }} The platform tags of wheels now include the Emscripten
+  version in them. This should help ensure ABI compatibility if Emscripten
+  wheels are distributed outside of the main Pyodide distribution.
+  {pr}`2610`
+
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
+- {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`.
+  {pr}`2643`
+
+### Pyodide Module and type conversions
 
 - {{ Enhancement }} `loadPyodide` no longer uses any global state, so it can be
   used more than once in the same thread. This is recommended if a network
@@ -57,19 +55,12 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
-- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not
-  installed.
-  {pr}`2423`
-
 - {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
   `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
   {pr}`2451`
 
 - {{ Feature }} Added `pyodide.run_js` API.
   {pr}`2426`
-
-- {{ Enhancement }} Add SHA-256 hash of package to entries in `repodata.json`
-  {pr}`2455`
 
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
   translated to negative Python ints.
@@ -80,14 +71,6 @@ substitutions:
   {pr}`2520`
 
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
-
-- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
-  rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
-  {pr}`2510`, {pr}`2541`
-
-- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
-  decorator can now be accessed through `pyodide_test_runner`.
-  {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
   JavaScript object identity as a dictionary key.
@@ -102,32 +85,13 @@ substitutions:
   `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
 
-- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and
-  `ERRNO_CODES` APIs.
-  {pr}`2582`
-
-- {{ Fix }} If the request errors due to CORS, `pyfetch` now raises an `OSError`
+- {{ Fix }} If a request fails due to CORS, `pyfetch` now raises an `OSError`
   not a `JSException`.
   {pr}`2598`
 
-- {{ Enhancement }} The platform tags of wheels now include the Emscripten
-  version in them. This should help ensure ABI compatibility if Emscripten
-  wheels are distributed outside of the main Pyodide distribution.
-  {pr}`2610`
-
-- {{ Enhancement }} The build system now uses the sysconfigdata from the target
-  Python rather than the host Python.
-  {pr}`2516`
-
-- {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`..
-  {pr}`2643`
-
-- {{ API }} `packages.json` which contains the dependency graph for packages
-  was renamed to `repodata.json` to avoid confusion with `package.json` used
-  in JavaScript packages.
-
-- {{ Enhancement }} Pillow and opencv-python now supports TIFF image format.
-  {pr}`2762`
+- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and
+  `ERRNO_CODES` APIs.
+  {pr}`2582`
 
 ### REPL
 
@@ -138,7 +102,29 @@ substitutions:
   `noblink` in URL search params.
   {pr}`2666`
 
-### micropip
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517`
+
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
+### micropip and package loading
+
+- {{ API }} `packages.json` which contains the dependency graph for packages
+  was renamed to `repodata.json` to avoid confusion with `package.json` used
+  in JavaScript packages.
+
+- {{ Enhancement }} Add SHA-256 hash of package to entries in `repodata.json`
+  {pr}`2455`
+
+- {{ Enhancement }} Integrity of Pyodide packages are now verified before
+  loading them. This is for now limited to browser environments.
+  {pr}`2513`
+
+- {{ Enhancement }} It is now possible to use an alternate `repodata.json`
+  lockfile by passing the `lockFileURL` option to {any}`loadPyodide`. This is
+  particularly intended to be used with {any}`micropip.freeze`.
+  {pr}``
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
@@ -183,9 +169,18 @@ substitutions:
 - {{ Fix }} micropip now skips package versions which do not follow PEP440.
   {pr}`2754`
 
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
+
 ### Packages
 
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477` and {pr}`2518`
+
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
+
+- {{ Enhancement }} Pillow and opencv-python now support the TIFF image format.
+  {pr}`2762`
 
 - Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
   on Chrome {pr}`2457`
@@ -195,6 +190,20 @@ substitutions:
   svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
   shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`.
+
+### Miscellaneous
+
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports
+  when packing files for the browser.
+  {pr}`2468`
+
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
+  {pr}`2510`, {pr}`2541`
+
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through `pyodide_test_runner`.
+  {pr}`2418`
 
 ## Version 0.20.0
 
