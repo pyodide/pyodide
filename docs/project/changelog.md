@@ -25,6 +25,11 @@ substitutions:
   loading them. This is for now only limited to browser environments.
   {pr}`2513`
 
+- {{ Enhancement }} It is now possible to use an alternate `repodata.json`
+  lockfile by passing the `lockFileURL` option to {any}`loadPyodide`. This is
+  particularly intended to be used with {any}`micropip.freeze`.
+  {pr}``
+
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
 
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.

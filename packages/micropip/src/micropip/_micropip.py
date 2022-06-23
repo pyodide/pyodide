@@ -23,6 +23,7 @@ from pyodide import to_js
 from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
 
 from ._compat import (
+    REPODATA_INFO,
     REPODATA_PACKAGES,
     fetch_bytes,
     fetch_string,
@@ -541,12 +542,15 @@ def _generate_package_hash(data: IO[bytes]) -> str:
 
 def freeze() -> str:
     """Produce a json string which can be used as the contents of the
-    ``repodata.json`` lockfile.
+    ``repodata.json`` lock file.
 
-    If you later load pyodide with this lock file, you can use
-    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
-    time. Loading packages with :any:`pyodide.loadPackage` is much faster and you
-    will always get consistent versions of all your dependencies.
+    If you later load Pyodide with this lock file, you can use
+    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip`
+    this time. Loading packages with :any:`pyodide.loadPackage` is much faster
+    and you will always get consistent versions of all your dependencies.
+
+    You can use your custom lock file by passing an appropriate url to the
+    `lockFileURL` argument to :any:`loadPyodide <globalThis.loadPyodide>`.
     """
     from copy import deepcopy
 
@@ -581,7 +585,7 @@ def freeze() -> str:
     # Sort
     packages = dict(sorted(packages.items()))
     package_data = {
-        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "info": REPODATA_INFO,
         "packages": packages,
     }
     return json.dumps(package_data)

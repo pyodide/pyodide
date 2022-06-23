@@ -25,7 +25,7 @@ import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Any, MutableMapping, NoReturn
+from typing import Any, Iterator, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -48,6 +48,7 @@ ReplayArgs = namedtuple(
         "replace_libs",
         "builddir",
         "pythoninclude",
+        "exports",
     ],
 )
 
@@ -85,6 +86,7 @@ def compile(
     ldflags: str,
     target_install_dir: str,
     replace_libs: str,
+    exports: str | list[str],
 ) -> None:
     kwargs = dict(
         pkgname=pkgname,
@@ -99,6 +101,7 @@ def compile(
     args = environment_substitute_args(kwargs, env)
     backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
+    args["exports"] = exports
 
     env = dict(env)
     SYMLINKDIR = symlink_dir()
@@ -368,6 +371,43 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
+def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
+    """
+    Collect up all the object files and archive files being linked and list out
+    symbols in them that are marked as public. If ``export_all`` is ``True``,
+    then return all public symbols. If not, return only the public symbols that
+    begin with `PyInit`.
+    """
+    objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
+    args = ["emnm", "-j", "--export-symbols"] + objects
+    result = subprocess.run(
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
+    )
+    if result.returncode:
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(result.stderr)
+        sys.exit(result.returncode)
+
+    condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
+    return (x for x in result.stdout.splitlines() if condition(x))
+
+
+def get_export_flags(line, exports):
+    """
+    If "whole_archive" was requested, no action is needed. Otherwise, add
+    `-sSIDE_MODULE=2` and the appropriate export list.
+    """
+    if exports == "whole_archive":
+        return
+    yield "-sSIDE_MODULE=2"
+    if isinstance(exports, str):
+        export_list = calculate_exports(line, exports == "requested")
+    else:
+        export_list = exports
+    prefixed_exports = ["_" + x for x in export_list]
+    yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
+
+
 def handle_command_generate_args(
     line: list[str], args: ReplayArgs, is_link_command: bool
 ) -> list[str]:
@@ -436,6 +476,8 @@ def handle_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
+        new_args.extend(get_export_flags(line, args.exports))
+
     if "-c" in line:
         if new_args[0] == "emcc":
             new_args.extend(args.cflags.split())
@@ -537,8 +579,6 @@ def handle_command(
         new_args = _new_args
 
     returncode = subprocess.run(new_args).returncode
-    if returncode != 0:
-        sys.exit(returncode)
 
     sys.exit(returncode)
 
