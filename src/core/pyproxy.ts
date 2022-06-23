@@ -1144,7 +1144,9 @@ export class PyProxyCallableMethods {
   /**
    * No-op bind function for compatibility with existing libraries
    */
-  bind(placeholder: any) { return this; }
+  bind(placeholder: any) {
+    return this;
+  }
 }
 // @ts-ignore
 PyProxyCallableMethods.prototype.prototype = Function.prototype;
