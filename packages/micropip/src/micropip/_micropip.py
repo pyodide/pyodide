@@ -8,9 +8,8 @@ from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
 from importlib.metadata import version as importlib_version
-from io import BufferedReader, BytesIO
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 from urllib.parse import ParseResult, urlparse
 from zipfile import ZipFile
 
@@ -58,7 +57,7 @@ class WheelInfo:
     parsed_url: ParseResult
     project_name: str | None = None
     digests: dict[str, str] | None = None
-    data: BytesIO | BufferedReader | None = None
+    data: IO[bytes] | None = None
     _dist: Any = None
     dist_info: Path | None = None
     _requires: list[Requirement] | None = None
@@ -94,7 +93,10 @@ class WheelInfo:
         try:
             return await fetch_bytes(self.url, fetch_kwargs)
         except OSError as e:
-            if self.parsed_url.hostname in ["files.pythonhosted.org", "cdn.jsdelivr.net"]:
+            if self.parsed_url.hostname in [
+                "files.pythonhosted.org",
+                "cdn.jsdelivr.net",
+            ]:
                 raise e
             else:
                 raise ValueError(
@@ -105,11 +107,7 @@ class WheelInfo:
                 ) from e
 
     async def download(self, fetch_kwargs):
-        data: BytesIO | BufferedReader
-        if self.parsed_url.scheme == "emfs":
-            data = open(self.parsed_url.path, "rb")
-        else:
-            data = BytesIO(await self._fetch_bytes(fetch_kwargs))
+        data = await self._fetch_bytes(fetch_kwargs)
         self.data = data
         with ZipFile(data) as zip_file:
             self._dist = pkg_resources_distribution_for_wheel(
@@ -125,12 +123,10 @@ class WheelInfo:
             # No checksums available, e.g. because installing
             # from a different location than PyPI.
             return
-        if not isinstance(self.data, BytesIO):
-            return
-        sha256 = self.digests["sha256"]
-        m = hashlib.sha256()
-        m.update(self.data.getvalue())
-        if m.hexdigest() != sha256:
+        sha256_expected = self.digests["sha256"]
+        assert self.data
+        sha256_actual = _generate_package_hash(self.data)
+        if sha256_actual != sha256_expected:
             raise ValueError("Contents don't match hash")
 
     def extract(self, target: Path) -> None:
@@ -532,7 +528,7 @@ async def install(
     await gather(*wheel_promises)
 
 
-def _generate_package_hash(data: BytesIO | BufferedReader) -> str:
+def _generate_package_hash(data: IO[bytes]) -> str:
     sha256_hash = hashlib.sha256()
     data.seek(0)
     while chunk := data.read(4096):

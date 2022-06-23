@@ -1,3 +1,7 @@
+from io import BytesIO
+from typing import IO
+from urllib.parse import urlparse
+
 from pyodide._core import IN_BROWSER
 from pyodide.http import pyfetch
 
@@ -13,8 +17,11 @@ except ImportError:
     # Otherwise, this is pytest test collection so let it go.
 
 
-async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
-    return await (await pyfetch(url, **kwargs)).bytes()
+async def fetch_bytes(url: str, kwargs: dict[str, str]) -> IO[bytes]:
+    parsed_url = urlparse(url)
+    if parsed_url.scheme == "emfs":
+        return open(parsed_url.path, "rb")
+    return BytesIO(await (await pyfetch(url, **kwargs)).bytes())
 
 
 async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
