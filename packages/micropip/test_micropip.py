@@ -18,7 +18,6 @@ try:
 except ImportError:
     pass
 
-from conftest import DIST_PATH
 from pyodide_build import common
 
 
@@ -52,11 +51,6 @@ def wheel_base(monkeypatch):
             yield
         finally:
             WHEEL_BASE = None
-
-
-@pytest.fixture
-def regex_wheel_name():
-    return list(DIST_PATH.glob("regex*.whl"))[0].name
 
 
 def _mock_importlib_distributions():
@@ -199,6 +193,9 @@ def selenium_standalone_micropip(selenium_standalone):
     yield selenium_standalone
 
 
+SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     assert (
@@ -219,9 +216,6 @@ def test_install_simple(selenium_standalone_micropip):
         )
         == ["go", "go", "goe", "gone"]
     )
-
-
-SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 
 @pytest.mark.parametrize(
@@ -275,7 +269,7 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         selenium.run_js(
             f"""
@@ -328,7 +322,7 @@ async def test_add_requirement():
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         transaction = create_transaction(Transaction)
         await transaction.add_requirement(url)
@@ -336,7 +330,7 @@ async def test_add_requirement():
     wheel = transaction.wheels[0]
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
-    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.filename == SNOWBALL_WHEEL
     assert wheel.url == url
     assert wheel.tags == frozenset(
         {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
@@ -662,7 +656,7 @@ def test_list_load_package_from_url(selenium_standalone_micropip):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         selenium = selenium_standalone_micropip
         selenium.run_js(
@@ -792,11 +786,27 @@ async def test_freeze(mock_fetch: mock_fetch_cls) -> None:
     assert dep2_metadata["imports"] == toplevel[2]
 
 
-@run_in_pyodide(packages=["micropip"])
-async def test_emfs_micropip(selenium_standalone_micropip, regex_wheel_name):
-    import micropip
-    from pyodide.http import pyfetch
+def test_emfs(selenium_standalone_micropip):
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        url = f"http://{server_hostname}:{server_port}/"
 
-    resp = await pyfetch(regex_wheel_name)
-    await resp._into_file(open(regex_wheel_name, "wb"))
-    await micropip.install("emfs:" + regex_wheel_name)
+        @run_in_pyodide(packages=["micropip"])
+        async def run_test(selenium, url, wheel_name):
+            import micropip
+            from pyodide.http import pyfetch
+
+            resp = await pyfetch(url + wheel_name)
+            await resp._into_file(open(wheel_name, "wb"))
+            await micropip.install("emfs:" + wheel_name)
+            import snowballstemmer
+
+            stemmer = snowballstemmer.stemmer("english")
+            assert stemmer.stemWords("go going goes gone".split()) == [
+                "go",
+                "go",
+                "goe",
+                "gone",
+            ]
+
+        run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
