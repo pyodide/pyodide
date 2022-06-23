@@ -1142,8 +1142,8 @@ export class PyProxyCallableMethods {
   }
 
   /**
-  * No-op bind function for compatibility with existing libraries
-  */
+   * No-op bind function for compatibility with existing libraries
+   */
   bind(placeholder: any) {}
 }
 // @ts-ignore
