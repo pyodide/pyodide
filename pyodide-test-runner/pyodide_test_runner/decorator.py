@@ -74,11 +74,14 @@ def _create_outer_test_function(
         name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
     )
 
+    run_test_id = "run-test-not-valid-identifier"
+
     # Make onwards call with two args:
     # 1. <selenium_arg_name>
     # 2. all other arguments in a tuple
     func_body = ast.parse("return run_test(selenium_arg_name, (arg1, arg2, ...))").body
     onwards_call = func_body[0].value
+    onwards_call.func = ast.Name(id=run_test_id, ctx=ast.Load())
     onwards_call.args[0].id = selenium_arg_name  # Set variable name
     onwards_call.args[1].elts = [  # Set tuple elements
         ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args[1:]
@@ -105,7 +108,7 @@ def _create_outer_test_function(
 
     # Need to give our code access to the actual "run_test" object which it
     # invokes.
-    globs = {"run_test": run_test}
+    globs = {run_test_id: run_test}
     exec(co, globs)
 
     return globs[node.name]
@@ -251,11 +254,16 @@ class run_in_pyodide:
             ):
                 nodes.append(node)
 
+            if (
+                node.end_lineno
+                and node.end_lineno > func_line_no
+                and node.lineno < func_line_no
+            ):
+                it = iter(node.body)
+                continue
+
             # We also want the function definition for the current test
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            if node.end_lineno > func_line_no and node.lineno < func_line_no:
-                it = iter(node.body)
                 continue
 
             if node.lineno < func_line_no:
