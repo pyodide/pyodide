@@ -94,7 +94,7 @@ class WheelInfo:
         try:
             return await fetch_bytes(self.url, fetch_kwargs)
         except OSError as e:
-            if self.parsed_url.hostname == "files.pythonhosted.org":
+            if self.parsed_url.hostname in ["files.pythonhosted.org", "cdn.jsdelivr.net"]:
                 raise e
             else:
                 raise ValueError(
