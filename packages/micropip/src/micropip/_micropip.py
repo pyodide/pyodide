@@ -522,12 +522,15 @@ def _generate_package_hash(data: BytesIO) -> str:
 
 def freeze() -> str:
     """Produce a json string which can be used as the contents of the
-    ``repodata.json`` lockfile.
+    ``repodata.json`` lock file.
 
-    If you later load pyodide with this lock file, you can use
-    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
-    time. Loading packages with :any:`pyodide.loadPackage` is much faster and you
-    will always get consistent versions of all your dependencies.
+    If you later load Pyodide with this lock file, you can use
+    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip`
+    this time. Loading packages with :any:`pyodide.loadPackage` is much faster
+    and you will always get consistent versions of all your dependencies.
+
+    You can use your custom lock file by passing an appropriate url to the
+    `lockFileURL` argument to :any:`loadPyodide <globalThis.loadPyodide>`.
     """
     from copy import deepcopy
 
