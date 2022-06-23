@@ -415,10 +415,10 @@ def test_custom_lockfile(selenium_standalone_noload):
         assert (
             selenium.run_js(
                 """
-            let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json" });
-            await pyodide.loadPackage("hypothesis");
-            return pyodide.runPython("import hypothesis; hypothesis.__version__")
-            """
+                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json" });
+                await pyodide.loadPackage("hypothesis");
+                return pyodide.runPython("import hypothesis; hypothesis.__version__")
+                """
             )
             == "6.47.3"
         )
