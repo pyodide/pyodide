@@ -392,6 +392,7 @@ def test_get_dynlibs():
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
 
 
+@pytest.mark.xfail_browsers(node="Some fetch trouble")
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 def test_custom_lockfile(selenium_standalone_noload):
