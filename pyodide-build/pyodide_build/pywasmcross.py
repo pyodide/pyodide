@@ -373,10 +373,8 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
 
 def calculate_exports_flag(line: list[str], export_all: bool) -> str:
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
-    PYODIDE_ROOT = common.get_pyodide_root()
     result = subprocess.run(
-        [PYODIDE_ROOT / "emsdk/emsdk/upstream/bin/llvm-nm", "-j", "--export-symbols"]
-        + objects,
+        ["emnm", "-j", "--export-symbols"] + objects,
         encoding="utf8",
         capture_output=True,
     )
