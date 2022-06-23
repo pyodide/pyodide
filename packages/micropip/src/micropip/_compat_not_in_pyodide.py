@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import IO, Any
 
 REPODATA_PACKAGES: dict[str, dict[str, Any]] = {}
@@ -13,7 +14,7 @@ from urllib.request import Request, urlopen
 
 
 async def fetch_bytes(url: str, kwargs: dict[str, str]) -> IO[bytes]:
-    return urlopen(Request(url, headers=kwargs))
+    return BytesIO(urlopen(Request(url, headers=kwargs)).read())
 
 
 async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
