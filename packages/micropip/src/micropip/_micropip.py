@@ -422,13 +422,23 @@ async def install(
         A requirement or list of requirements to install. Each requirement is a
         string, which should be either a package name or URL to a wheel:
 
-        - If the requirement ends in ``.whl`` it will be interpreted as a URL.
-          The file must be a wheel named in compliance with the
-          `PEP 427 naming convention <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+        - If the requirement ends in ``.whl``, the part of the requirement after
+          the last ``/``  must be a valid wheel name in compliance with the `PEP
+          427 naming convention.
 
-        - If the requirement does not end in ``.whl``, it will interpreted as the
-          name of a package. A package by this name must either be present in the
-          Pyodide repository at :any:`indexURL <globalThis.loadPyodide>` or on PyPI
+        - If the requirement ends in ``.whl`` and starts with ``emfs:``, it will
+          be interpreted as a path in the Emscripten file system (Pyodide's file
+          system). E.g., `emfs:../relative/path/wheel.whl` or
+          `emfs:/absolute/path/wheel.whl`.
+
+        - If the requirement ends in ``.whl`` and does not start with ``emfs:``
+          it will be interpreted as a URL. The file must be a wheel named in
+          compliance with the `PEP 427 naming convention
+          <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+
+        - If the requirement does not end in ``.whl``, it will interpreted as
+          the name of a package. A package with this name must either be present
+          in the Pyodide lock file or on PyPI.
 
     keep_going : ``bool``, default: False
 
@@ -436,28 +446,29 @@ async def install(
         Python package without a pure Python wheel while doing dependency
         resolution:
 
-        - If ``False``, an error will be raised on first package with a missing wheel.
+        - If ``False``, an error will be raised on first package with a missing
+          wheel.
 
-        - If ``True``, the micropip will keep going after the first error, and report a list
-          of errors at the end.
+        - If ``True``, the micropip will keep going after the first error, and
+          report a list of errors at the end.
 
     deps : ``bool``, default: True
 
-        If ``True``, install dependencies specified in METADATA file for
-        each package. Otherwise do not install dependencies.
+        If ``True``, install dependencies specified in METADATA file for each
+        package. Otherwise do not install dependencies.
 
     credentials : ``Optional[str]``
 
         This parameter specifies the value of ``credentials`` when calling the
-        `fetch() <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`__ function
-        which is used to download the package.
+        `fetch() <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`__
+        function which is used to download the package.
 
         When not specified, ``fetch()`` is called without ``credentials``.
 
     pre : ``bool``, default: False
 
-        If ``True``, include pre-release and development versions.
-        By default, micropip only finds stable versions.
+        If ``True``, include pre-release and development versions. By default,
+        micropip only finds stable versions.
 
     Returns
     -------
