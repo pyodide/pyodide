@@ -1,30 +1,28 @@
 package:
   name: Pillow
-  version: 9.1.0
+  version: 9.1.1
 source:
-  sha256: f401ed2bbb155e1ade150ccc63db1a4f6c1909d3d378f7d1235a44e90d75fb97
-  url: https://files.pythonhosted.org/packages/4b/83/090146d7871d90a2643d469c319c1d014e41b315ab5cf0f8b4b6a764ef31/Pillow-9.1.0.tar.gz
+  sha256: 7502539939b53d7565f3d11d87c78e7ec900d3c72945d4ee0e2f250d598309a0
+  url: https://files.pythonhosted.org/packages/43/6e/59853546226ee6200f9ba6e574d11604b60ad0754d2cbd1c8f3246b70418/Pillow-9.1.1.tar.gz
   patches:
     - patches/0001-Enable-image-formats.patch
   extras:
     - - src/setup.cfg
       - ./setup.cfg
 build:
-  script: |
-    export LIBWEBP_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix libwebp)
-    export LIBWEBP_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix libwebp)
   cflags: |
     -s USE_ZLIB=1
     -s USE_LIBJPEG=1
     -s USE_FREETYPE=1
     -s SIDE_MODULE=1
-    $(LIBWEBP_INCLUDE_PATH)
   ldflags: |
     -ljpeg
-    $(LIBWEBP_LIBRARY_PATH)
+
 requirements:
+  # Pillow will use `pkg-config` to find and link these libraries.
   run:
     - libwebp
+    - libtiff
 test:
   imports:
     - PIL

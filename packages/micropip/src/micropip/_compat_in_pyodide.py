@@ -8,7 +8,7 @@ from pyodide.http import pyfetch
 try:
     import pyodide_js
     from pyodide_js import loadedPackages, loadPackage
-    from pyodide_js._api import loadDynlib  # type: ignore[import]
+    from pyodide_js._api import loadBinaryFile, loadDynlib  # type: ignore[import]
 
     REPODATA_PACKAGES = pyodide_js._api.repodata_packages.to_py()
 except ImportError:
@@ -21,7 +21,11 @@ async def fetch_bytes(url: str, kwargs: dict[str, str]) -> IO[bytes]:
     parsed_url = urlparse(url)
     if parsed_url.scheme == "emfs":
         return open(parsed_url.path, "rb")
-    return BytesIO(await (await pyfetch(url, **kwargs)).bytes())
+    if parsed_url.scheme == "file":
+        result_bytes = (await loadBinaryFile("", url)).to_bytes()
+    else:
+        result_bytes = await (await pyfetch(url, **kwargs)).bytes()
+    return BytesIO(result_bytes)
 
 
 async def fetch_string(url: str, kwargs: dict[str, str]) -> str:

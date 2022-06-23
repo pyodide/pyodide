@@ -120,9 +120,13 @@ substitutions:
 
 - {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`..
   {pr}`2643`
+
 - {{ API }} `packages.json` which contains the dependency graph for packages
   was renamed to `repodata.json` to avoid confusion with `package.json` used
   in JavaScript packages.
+
+- {{ Enhancement }} Pillow and opencv-python now supports TIFF image format.
+  {pr}`2762`
 
 ### REPL
 
@@ -185,11 +189,11 @@ substitutions:
 - Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
   on Chrome {pr}`2457`
 
-- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
+- New packages: opencv-python {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
   h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
   svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
-  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`.
+  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`.
 
 ## Version 0.20.0
 

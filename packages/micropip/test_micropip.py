@@ -279,15 +279,30 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
 
         selenium.run_js(
             f"""
-            let url = '{url}';
-            let resp = await fetch(url);
             await pyodide.runPythonAsync(`
                 import micropip
-                await micropip.install('${{url}}')
+                await micropip.install('{url}')
                 import snowballstemmer
             `);
             """
         )
+
+
+@pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
+def test_install_file_protocol_node(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    from conftest import DIST_PATH
+
+    pyparsing_wheel_name = list(DIST_PATH.glob("pyparsing*.whl"))[0].name
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install('file://{pyparsing_wheel_name}')
+            import pyparsing
+        `);
+        """
+    )
 
 
 def create_transaction(Transaction):

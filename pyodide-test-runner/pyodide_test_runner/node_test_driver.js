@@ -9,6 +9,7 @@ let baseUrl = process.argv[2];
 let distDir = process.argv[3];
 
 let { loadPyodide } = require(`${distDir}/pyodide`);
+process.chdir(distDir);
 
 // node requires full paths.
 function fetch(path) {

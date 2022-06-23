@@ -1,10 +1,10 @@
 package:
   name: cryptography
-  version: 36.0.2
+  version: 37.0.3
 
 source:
-  url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
-  sha256: 70f8f4f7bb2ac9f340655cbac89d68c527af5bb4387522a8413e841e3e6628c9
+  url: https://files.pythonhosted.org/packages/67/82/9dd8ef695c7f928b25927e8956f73bdba09a752a51871678f320c498c535/cryptography-37.0.3.tar.gz
+  sha256: ae430d51c67ac638dfbb42edf56c669ca9c74744f4d225ad11c6f3d355858187
   patches:
     # TODO: remove this when chrono makes a release
     - patches/0001-Use-patched-chrono.patch

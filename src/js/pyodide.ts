@@ -2,7 +2,7 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat";
+import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
@@ -249,7 +249,7 @@ export async function loadPyodide(
     config.indexURL += "/";
   }
   await initNodeModules();
-  const pyodide_py_tar_promise = _loadBinaryFile(
+  const pyodide_py_tar_promise = loadBinaryFile(
     config.indexURL,
     "pyodide_py.tar"
   );
