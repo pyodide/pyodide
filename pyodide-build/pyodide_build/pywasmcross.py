@@ -25,7 +25,7 @@ import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Any, MutableMapping, NoReturn
+from typing import Any, Iterator, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -371,7 +371,13 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_exports(line: list[str], export_all: bool) -> list[str]:
+def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
+    """
+    Collect up all the object files and archive files being linked and list out
+    symbols in them that are marked as public. If ``export_all`` is ``True``,
+    then return all public symbols. If not, return only the public symbols that
+    begin with `PyInit`.
+    """
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
     result = subprocess.run(
         ["emnm", "-j", "--export-symbols"] + objects,
@@ -382,14 +388,23 @@ def calculate_exports(line: list[str], export_all: bool) -> list[str]:
         sys.exit(result.returncode)
 
     condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
-    return [x for x in result.stdout.splitlines() if condition(x)]
+    return (x for x in result.stdout.splitlines() if condition(x))
 
 
-def calculate_exports_flag(line: list[str], exports: str | list[str]) -> str:
+def get_export_flags(line, exports):
+    """
+    If "whole_archive" was requested, no action is needed. Otherwise, add
+    `-sSIDE_MODULE=2` and the appropriate export list.
+    """
+    if exports == "whole_archive":
+        return
+    yield "-sSIDE_MODULE=2"
     if isinstance(exports, str):
-        exports = calculate_exports(line, exports == "requested")
-    prefixed_exports = ["_" + x for x in exports]
-    return f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
+        export_list = calculate_exports(line, exports == "requested")
+    else:
+        export_list = exports
+    prefixed_exports = ["_" + x for x in export_list]
+    yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
 
 def handle_command_generate_args(
@@ -460,9 +475,7 @@ def handle_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
-    if is_link_command and args.exports != "whole_archive":
-        new_args.append("-sSIDE_MODULE=2")
-        new_args.append(calculate_exports_flag(line, args.exports))
+        new_args.extend(get_export_flags(line, args.exports))
 
     if "-c" in line:
         if new_args[0] == "emcc":
