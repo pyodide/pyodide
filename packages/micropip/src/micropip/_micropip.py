@@ -23,7 +23,7 @@ from pyodide import to_js
 from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
 
 from ._compat import (
-    PACKAGE_INFO,
+    REPODATA_INFO,
     REPODATA_PACKAGES,
     fetch_bytes,
     fetch_string,
@@ -562,7 +562,7 @@ def freeze() -> str:
     # Sort
     packages = dict(sorted(packages.items()))
     package_data = {
-        "info": PACKAGE_INFO,
+        "info": REPODATA_INFO,
         "packages": packages,
     }
     return json.dumps(package_data)

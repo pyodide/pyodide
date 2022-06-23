@@ -7,7 +7,7 @@ try:
     from pyodide_js._api import loadBinaryFile, loadDynlib  # type: ignore[import]
 
     REPODATA_PACKAGES = pyodide_js._api.repodata_packages.to_py()
-    PACKAGE_INFO = pyodide_js._api.repodata_info.to_py()
+    REPODATA_INFO = pyodide_js._api.repodata_info.to_py()
 except ImportError:
     if IN_BROWSER:
         raise
@@ -27,9 +27,9 @@ async def fetch_string(url: str, kwargs: dict[str, str]) -> str:
 __all__ = [
     "fetch_bytes",
     "fetch_string",
+    "REPODATA_INFO",
     "REPODATA_PACKAGES",
     "loadedPackages",
     "loadDynlib",
     "loadPackage",
-    "PACKAGE_INFO",
 ]

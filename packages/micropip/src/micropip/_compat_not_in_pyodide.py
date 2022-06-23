@@ -29,7 +29,7 @@ class pyodide_js_:
         raise RuntimeError(f"Attempted to access property '{attr}' on pyodide_js dummy")
 
 
-PACKAGE_INFO: dict[str, str] = {}
+REPODATA_INFO: dict[str, str] = {}
 
 
 def loadPackage(packages: str | list[str]) -> None:
@@ -40,8 +40,8 @@ __all__ = [
     "loadDynlib",
     "fetch_bytes",
     "fetch_string",
+    "REPODATA_INFO",
     "REPODATA_PACKAGES",
     "loadedPackages",
     "loadPackage",
-    "PACKAGE_INFO",
 ]
