@@ -27,7 +27,7 @@ jobs:
           command: |
             mkdir test-results
             pip install ./pyodide-test-runner
-            npm install node-fetch
+            npm install -g node-fetch
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
@@ -188,7 +188,7 @@ jobs:
             make npm-link
             mkdir test-results
             pip install ./pyodide-test-runner
-            npm install node-fetch
+            npm install -g node-fetch
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
@@ -207,7 +207,7 @@ jobs:
           command: |
             make npm-link
             pip install ./pyodide-test-runner
-            npm install node-fetch
+            npm install -g node-fetch
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-python:
@@ -222,7 +222,7 @@ jobs:
             mkdir test-results
             python3 -m pip install ./pyodide-test-runner
             python3 -m pip install -e ./pyodide-build
-            npm install node-fetch
+            npm install -g node-fetch
             PYODIDE_ROOT=. pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
@@ -283,7 +283,7 @@ jobs:
           name: benchmark
           command: |
             pip install ./pyodide-test-runner
-            npm install node-fetch
+            npm install -g node-fetch
             python benchmark/benchmark.py all --output dist/benchmarks.json
 
       - store_artifacts:
