@@ -419,7 +419,7 @@ async def install(
         string, which should be either a package name or URL to a wheel:
 
         - If the requirement is a URL it must end in ``.whl`` and the part of the requirement after
-          the last ``/``  must be a valid wheel name in compliance with the 
+          the last ``/``  must be a valid wheel name in compliance with the
           `PEP 427 naming convention
           <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
 
@@ -429,7 +429,7 @@ async def install(
           `emfs:/absolute/path/wheel.whl`. In this case, only .whl files are supported.
 
         - If the requirement starts with ``http:``, ``http:`` or ends with `.whl`
-          it will be interpreted as a URL. 
+          it will be interpreted as a URL.
 
         - Otherwise, it will be interpreted as
           the name of a package. A package with this name must either be present
