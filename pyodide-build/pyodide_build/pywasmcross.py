@@ -86,7 +86,7 @@ def compile(
     ldflags: str,
     target_install_dir: str,
     replace_libs: str,
-    exports: str,
+    exports: str | list[str],
 ) -> None:
     kwargs = dict(
         pkgname=pkgname,
@@ -96,12 +96,12 @@ def compile(
         ldflags=ldflags,
         target_install_dir=target_install_dir,
         replace_libs=replace_libs,
-        exports=exports,
     )
 
     args = environment_substitute_args(kwargs, env)
     backend_flags = args.pop("backend_flags")
     args["builddir"] = str(Path(".").absolute())
+    args["exports"] = exports
 
     env = dict(env)
     SYMLINKDIR = symlink_dir()
@@ -371,7 +371,7 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_exports_flag(line: list[str], export_all: bool) -> str:
+def calculate_exports(line: list[str], export_all: bool) -> list[str]:
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
     result = subprocess.run(
         ["emnm", "-j", "--export-symbols"] + objects,
@@ -382,8 +382,14 @@ def calculate_exports_flag(line: list[str], export_all: bool) -> str:
         sys.exit(result.returncode)
 
     condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
-    exports = ["_" + x for x in result.stdout.splitlines() if condition(x)]
-    return f"-sEXPORTED_FUNCTIONS={exports!r}"
+    return [x for x in result.stdout.splitlines() if condition(x)]
+
+
+def calculate_exports_flag(line: list[str], exports: str | list[str]) -> str:
+    if isinstance(exports, str):
+        exports = calculate_exports(line, exports == "requested")
+    prefixed_exports = ["_" + x for x in exports]
+    return f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
 
 def handle_command_generate_args(
@@ -454,9 +460,9 @@ def handle_command_generate_args(
 
     if is_link_command:
         new_args.extend(args.ldflags.split())
-    if is_link_command and args.exports != "all":
+    if is_link_command and args.exports != "whole_archive":
         new_args.append("-sSIDE_MODULE=2")
-        new_args.append(calculate_exports_flag(line, args.exports == "explicit"))
+        new_args.append(calculate_exports_flag(line, args.exports))
 
     if "-c" in line:
         if new_args[0] == "emcc":
