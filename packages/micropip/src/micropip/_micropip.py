@@ -403,9 +403,9 @@ async def install(
 
     See :ref:`loading packages <loading_packages>` for more information.
 
-    This only works for packages that are either pure Python or for packages
-    with C extensions that are built in Pyodide. If a pure Python package is not
-    found in the Pyodide repository it will be loaded from PyPI.
+    If a package is not found in the Pyodide repository it will be loaded from
+    PyPI. Micropip can only load pure Python packages or for packages with C
+    extensions that are built for Pyodide.
 
     When used in web browsers, downloads from PyPI will be cached. When run in
     Node.js, packages are currently not cached, and will be re-downloaded each
@@ -416,24 +416,28 @@ async def install(
     requirements : ``str | List[str]``
 
         A requirement or list of requirements to install. Each requirement is a
-        string, which should be either a package name or URL to a wheel:
+        string, which should be either a package name or a wheel URI:
 
-        - If the requirement is a URL it must end in ``.whl`` and the part of the requirement after
-          the last ``/``  must be a valid wheel name in compliance with the
-          `PEP 427 naming convention
+        - If the requirement does not end in ``.whl``, it will be interpreted as
+          a package name. A package with this name must either be present
+          in the Pyodide lock file or on PyPI.
+
+        - If the requirement ends in ``.whl``, it is a wheel URI. The part of
+          the requirement after the last ``/``  must be a valid wheel name in
+          compliance with the `PEP 427 naming convention
           <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
 
-        - If the requirement starts with ``emfs:``, it will
-          be interpreted as a path in the Emscripten file system (Pyodide's file
-          system). E.g., `emfs:../relative/path/wheel.whl` or
-          `emfs:/absolute/path/wheel.whl`. In this case, only .whl files are supported.
+        - If a wheel URI starts with ``emfs:``, it will be interpreted as a path
+          in the Emscripten file system (Pyodide's file system). E.g.,
+          `emfs:../relative/path/wheel.whl` or `emfs:/absolute/path/wheel.whl`.
+          In this case, only .whl files are supported.
 
-        - If the requirement starts with ``http:``, ``http:`` or ends with `.whl`
-          it will be interpreted as a URL.
+        - If a wheel URI requirement starts with ``http:`` or ``https:`` it will
+          be interpreted as a URL.
 
-        - Otherwise, it will be interpreted as
-          the name of a package. A package with this name must either be present
-          in the Pyodide lock file or on PyPI.
+        - In node, you can access the native file system using a URI that starts
+          with ``file:``. In the browser this will not work.
+
 
     keep_going : ``bool``, default: False
 
