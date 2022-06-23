@@ -153,19 +153,19 @@ class mock_fetch_cls:
 
         metadata_dir = f"{name}-{version}.dist-info"
 
-        with io.BytesIO() as tmp:
-            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
+        tmp = io.BytesIO()
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
 
-                def write_file(filename, contents):
-                    archive.writestr(f"{metadata_dir}/{filename}", contents)
+            def write_file(filename, contents):
+                archive.writestr(f"{metadata_dir}/{filename}", contents)
 
-                write_file("METADATA", metadata_str)
-                write_file("WHEEL", "Wheel-Version: 1.0")
-                write_file("top_level.txt", toplevel_str)
+            write_file("METADATA", metadata_str)
+            write_file("WHEEL", "Wheel-Version: 1.0")
+            write_file("top_level.txt", toplevel_str)
 
-            tmp.seek(0)
+        tmp.seek(0)
 
-            return tmp.read()
+        return tmp
 
 
 @pytest.fixture
@@ -193,6 +193,9 @@ def selenium_standalone_micropip(selenium_standalone):
     yield selenium_standalone
 
 
+SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     assert (
@@ -215,27 +218,45 @@ def test_install_simple(selenium_standalone_micropip):
     )
 
 
-def test_parse_wheel_url():
+@pytest.mark.parametrize(
+    "path",
+    [
+        SNOWBALL_WHEEL,
+        f"/{SNOWBALL_WHEEL}" f"a/{SNOWBALL_WHEEL}",
+        f"/a/{SNOWBALL_WHEEL}",
+        f"//a/{SNOWBALL_WHEEL}",
+    ],
+)
+@pytest.mark.parametrize("protocol", ["https:", "file:", "emfs:", ""])
+def test_parse_wheel_url1(protocol, path):
     pytest.importorskip("packaging")
     from micropip._micropip import WheelInfo
 
-    url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    url = protocol + path
     wheel = WheelInfo.from_url(url)
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
     assert wheel.digests is None
-    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.filename == SNOWBALL_WHEEL
     assert wheel.url == url
     assert wheel.tags == frozenset(
         {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
     )
 
+
+def test_parse_wheel_url2():
+    from micropip._micropip import WheelInfo
+
     msg = r"Invalid wheel filename \(wrong number of parts\)"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
-        wheel = WheelInfo.from_url(url)
+        WheelInfo.from_url(url)
 
-    url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+
+def test_parse_wheel_url3():
+    from micropip._micropip import WheelInfo
+
+    url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
     wheel = WheelInfo.from_url(url)
     assert wheel.name == "scikit-learn"
     assert wheel.tags == frozenset({Tag("cp35", "cp35m", "macosx_10_9_intel")})
@@ -248,7 +269,7 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         selenium.run_js(
             f"""
@@ -271,7 +292,7 @@ def test_install_file_protocol_node(selenium_standalone_micropip):
         f"""
         await pyodide.runPythonAsync(`
             import micropip
-            await micropip.install('file://{pyparsing_wheel_name}')
+            await micropip.install('file:{pyparsing_wheel_name}')
             import pyparsing
         `);
         """
@@ -301,7 +322,7 @@ async def test_add_requirement():
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         transaction = create_transaction(Transaction)
         await transaction.add_requirement(url)
@@ -309,7 +330,7 @@ async def test_add_requirement():
     wheel = transaction.wheels[0]
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
-    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.filename == SNOWBALL_WHEEL
     assert wheel.url == url
     assert wheel.tags == frozenset(
         {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
@@ -431,7 +452,7 @@ async def test_install_non_pure_python_wheel():
 
     msg = "not a pure Python 3 wheel"
     with pytest.raises(ValueError, match=msg):
-        url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+        url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
         await transaction.add_requirement(url)
 
@@ -635,7 +656,7 @@ def test_list_load_package_from_url(selenium_standalone_micropip):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         selenium = selenium_standalone_micropip
         selenium.run_js(
@@ -763,3 +784,29 @@ async def test_freeze(mock_fetch: mock_fetch_cls) -> None:
     assert pkg_metadata["imports"] == toplevel[0]
     assert dep1_metadata["imports"] == toplevel[1]
     assert dep2_metadata["imports"] == toplevel[2]
+
+
+def test_emfs(selenium_standalone_micropip):
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        url = f"http://{server_hostname}:{server_port}/"
+
+        @run_in_pyodide(packages=["micropip"])
+        async def run_test(selenium, url, wheel_name):
+            import micropip
+            from pyodide.http import pyfetch
+
+            resp = await pyfetch(url + wheel_name)
+            await resp._into_file(open(wheel_name, "wb"))
+            await micropip.install("emfs:" + wheel_name)
+            import snowballstemmer
+
+            stemmer = snowballstemmer.stemmer("english")
+            assert stemmer.stemWords("go going goes gone".split()) == [
+                "go",
+                "go",
+                "goe",
+                "gone",
+            ]
+
+        run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)

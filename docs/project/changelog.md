@@ -114,17 +114,21 @@ substitutions:
   was renamed to `repodata.json` to avoid confusion with `package.json` used
   in JavaScript packages.
 
-- {{ Enhancement }} Add SHA-256 hash of package to entries in `repodata.json`
+- {{ Enhancement }} Added SHA-256 hash of package to entries in `repodata.json`
   {pr}`2455`
 
-- {{ Enhancement }} Integrity of Pyodide packages are now verified before
+- {{ Enhancement }} Integrity of Pyodide packages is now verified before
   loading them. This is for now limited to browser environments.
   {pr}`2513`
+
+- {{ Enhancement }} `micropip` supports loading wheels from the Emscripten file
+  system using the `emfs:` protocol now.
+  {pr}`2767`
 
 - {{ Enhancement }} It is now possible to use an alternate `repodata.json`
   lockfile by passing the `lockFileURL` option to {any}`loadPyodide`. This is
   particularly intended to be used with {any}`micropip.freeze`.
-  {pr}``
+  {pr}`2645`
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
