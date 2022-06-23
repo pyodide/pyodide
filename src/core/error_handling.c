@@ -219,6 +219,7 @@ finally:
   return jserror;
 }
 
+#ifdef DEBUG_F
 EM_JS(void, log_python_error, (JsRef jserror), {
   // If a js error occurs in here, it's a weird edge case. This will probably
   // never happen, but for maximum paranoia let's double check.
@@ -229,6 +230,7 @@ EM_JS(void, log_python_error, (JsRef jserror), {
     API.fatal_error(e);
   }
 });
+#endif
 
 /**
  * Convert the current Python error to a javascript error and throw it.
@@ -237,7 +239,9 @@ void _Py_NO_RETURN
 pythonexc2js()
 {
   JsRef jserror = wrap_exception();
+#ifdef DEBUG_F
   log_python_error(jserror);
+#endif
   // hiwire_throw_error steals jserror
   hiwire_throw_error(jserror);
 }
