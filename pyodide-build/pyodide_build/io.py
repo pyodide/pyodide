@@ -133,7 +133,7 @@ def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
         "requested",
         "whole_archive",
     ]:
-        yield f"build/exports must be 'pyinit', 'explicit', 'all', or a list of strings not {build_metadata['exports']}"
+        yield f"build/exports must be 'pyinit', 'requested', or 'whole_archive' not {build_metadata['exports']}"
     if not library and not sharedlibrary:
         return
     if library and sharedlibrary:
