@@ -159,19 +159,19 @@ class mock_fetch_cls:
 
         metadata_dir = f"{name}-{version}.dist-info"
 
-        with io.BytesIO() as tmp:
-            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
+        tmp = io.BytesIO()
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
 
-                def write_file(filename, contents):
-                    archive.writestr(f"{metadata_dir}/{filename}", contents)
+            def write_file(filename, contents):
+                archive.writestr(f"{metadata_dir}/{filename}", contents)
 
-                write_file("METADATA", metadata_str)
-                write_file("WHEEL", "Wheel-Version: 1.0")
-                write_file("top_level.txt", toplevel_str)
+            write_file("METADATA", metadata_str)
+            write_file("WHEEL", "Wheel-Version: 1.0")
+            write_file("top_level.txt", toplevel_str)
 
-            tmp.seek(0)
+        tmp.seek(0)
 
-            return tmp.read()
+        return tmp
 
 
 @pytest.fixture
