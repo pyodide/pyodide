@@ -209,8 +209,8 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide "packages.json" lock
-     * file. Defaults to `${indexURL}/packages.json`.
+     * The URL from which Pyodide will load the Pyodide "repodata.json" lock
+     * file. Defaults to `${indexURL}/repodata.json`.
      */
     lockFileURL?: string;
 
@@ -253,7 +253,7 @@ export async function loadPyodide(
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
-    lockFileURL: options.indexURL! + "packages.json",
+    lockFileURL: options.indexURL! + "repodata.json",
   };
   const config = Object.assign(default_config, options) as ConfigType;
   await initNodeModules();
@@ -302,7 +302,7 @@ export async function loadPyodide(
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
-  if (API.package_json_info.version !== pyodide.version) {
+  if (API.repodata_info.version !== pyodide.version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   if (config.fullStdLib) {

@@ -6,8 +6,8 @@ try:
     from pyodide_js import loadedPackages, loadPackage
     from pyodide_js._api import loadBinaryFile, loadDynlib  # type: ignore[import]
 
-    REPODATA_PACKAGES = pyodide_js._api.packages.to_py()
-    PACKAGE_INFO = pyodide_js._api.package_json_info.to_py()
+    REPODATA_PACKAGES = pyodide_js._api.repodata_packages.to_py()
+    PACKAGE_INFO = pyodide_js._api.repodata_info.to_py()
 except ImportError:
     if IN_BROWSER:
         raise
