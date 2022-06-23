@@ -2,7 +2,7 @@ const vm = require("vm");
 const readline = require("readline");
 const path = require("path");
 const util = require("util");
-const node_fetch = require("node-fetch");
+import fetch from "node-fetch";
 
 let baseUrl = process.argv[2];
 let distDir = process.argv[3];
@@ -10,8 +10,8 @@ let distDir = process.argv[3];
 let { loadPyodide } = require(`${distDir}/pyodide`);
 
 // node requires full paths.
-function fetch(path) {
-  return node_fetch(new URL(path, baseUrl).toString());
+function _fetch(path) {
+  return fetch(new URL(path, baseUrl).toString());
 }
 
 const context = {
@@ -19,8 +19,8 @@ const context = {
   path,
   process,
   require,
-  fetch,
   setTimeout,
+  fetch: _fetch,
   TextDecoder: util.TextDecoder,
   TextEncoder: util.TextEncoder,
   URL,
