@@ -422,10 +422,10 @@ async def install(
           the last ``/``  must be a valid wheel name in compliance with the `PEP
           427 naming convention.
 
-        - If the requirement ends in ``.whl`` and starts with ``emfs:``, it will
+        - If the requirement starts with ``emfs:``, it will
           be interpreted as a path in the Emscripten file system (Pyodide's file
           system). E.g., `emfs:../relative/path/wheel.whl` or
-          `emfs:/absolute/path/wheel.whl`.
+          `emfs:/absolute/path/wheel.whl`. In this case, only .whl files are supported.
 
         - If the requirement ends in ``.whl`` and does not start with ``emfs:``
           it will be interpreted as a URL. The file must be a wheel named in
