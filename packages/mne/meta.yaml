@@ -1,9 +1,9 @@
 package:
   name: mne
-  version: 1.0.0
+  version: 1.0.3
 source:
-  sha256: fe754938aac35a4a1c3d321e6a584f100bfdbaa0a380de9f395cb95c48d1f9a7
-  url: https://files.pythonhosted.org/packages/cd/3c/223fd3fd4529c3d9f4786a9a8e6873adaaeff2c5fa873e233f50cfdeba44/mne-1.0.0-py3-none-any.whl
+  sha256: 5e6fad4b1a2358b4b383e69e542ec06044e950f313db279bec5676308b02a2c8
+  url: https://files.pythonhosted.org/packages/ca/66/68845a83a5bdd358262b921b34f7e80e1ab193e70b57ce90568603d78511/mne-1.0.3-py3-none-any.whl
 requirements:
   run:
     - distutils

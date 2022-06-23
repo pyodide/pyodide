@@ -1446,7 +1446,6 @@ Buffer_dealloc(PyObject* self)
 static int
 Buffer_GetBuffer(PyObject* obj, Py_buffer* view, int flags)
 {
-  bool success = false;
   Buffer* self = (Buffer*)obj;
   view->obj = NULL;
   // This gets decremented automatically by PyBuffer_Release (even though
@@ -1467,9 +1466,7 @@ Buffer_GetBuffer(PyObject* obj, Py_buffer* view, int flags)
   view->strides = NULL;
   view->suboffsets = NULL;
 
-  success = true;
-finally:
-  return success ? 0 : -1;
+  return 0;
 }
 
 static PyBufferProcs Buffer_BufferProcs = {
@@ -1678,7 +1675,7 @@ JsBuffer_DecodeString_js,
   if (encoding) {
     encoding_js = UTF8ToString(encoding);
   }
-  let decoder = new TextDecoder(encoding_js, {fatal : true});
+  let decoder = new TextDecoder(encoding_js, {fatal : true, ignoreBOM: true});
   let res;
   try {
     res = decoder.decode(buffer);

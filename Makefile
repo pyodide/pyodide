@@ -16,7 +16,7 @@ all: check \
 	dist/console.html \
 	dist/distutils.tar \
 	dist/test.tar \
-	dist/packages.json \
+	dist/repodata.json \
 	dist/pyodide_py.tar \
 	dist/test.html \
 	dist/module_test.html \
@@ -24,9 +24,6 @@ all: check \
 	dist/webworker_dev.js \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
-
-$(CPYTHONLIB)/tzdata :
-	pip install tzdata --target=$(CPYTHONLIB)
 
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
@@ -44,7 +41,6 @@ dist/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
@@ -176,7 +172,7 @@ clean:
 clean-python: clean
 	make -C cpython clean
 
-clean-all:
+clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
@@ -231,7 +227,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/packages.json: FORCE
+dist/repodata.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
@@ -241,6 +237,17 @@ emsdk/emsdk/.complete:
 	date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
+
+
+SETUPTOOLS_RUST_COMMIT=5e8c380429aba1e5df5815dcf921025c599cecec
+rust:
+	wget https://sh.rustup.rs -O /rustup.sh
+	sh /rustup.sh -y
+	source $(HOME)/.cargo/env && rustup toolchain install nightly-2022-06-14 && rustup default nightly-2022-06-14
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain nightly-2022-06-14
+	# Install setuptools-rust with a fix for Wasm targets
+	# TODO: Remove this when they release the next version.
+	pip install -t $(HOSTSITEPACKAGES) git+https://github.com/PyO3/setuptools-rust.git@$(SETUPTOOLS_RUST_COMMIT)
 
 
 FORCE:

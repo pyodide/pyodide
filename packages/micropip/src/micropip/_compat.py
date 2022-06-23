@@ -2,8 +2,8 @@ from pyodide._core import IN_BROWSER
 
 if IN_BROWSER:
     from ._compat_in_pyodide import (
-        BUILTIN_PACKAGES,
         PACKAGE_INFO,
+        REPODATA_PACKAGES,
         fetch_bytes,
         fetch_string,
         loadDynlib,
@@ -12,8 +12,8 @@ if IN_BROWSER:
     )
 else:
     from ._compat_not_in_pyodide import (
-        BUILTIN_PACKAGES,
         PACKAGE_INFO,
+        REPODATA_PACKAGES,
         fetch_bytes,
         fetch_string,
         loadDynlib,
@@ -24,7 +24,7 @@ else:
 __all__ = [
     "fetch_bytes",
     "fetch_string",
-    "BUILTIN_PACKAGES",
+    "REPODATA_PACKAGES",
     "loadedPackages",
     "loadDynlib",
     "loadPackage",

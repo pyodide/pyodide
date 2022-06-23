@@ -9,7 +9,7 @@ listed here, open a [new Pyodide issue](https://github.com/pyodide/pyodide/issue
 ## Determining if creating a Pyodide package is necessary
 
 If you wish to use a package in Pyodide that is not already included in the
-[`packages/`folder](https://github.com/pyodide/pyodide/tree/main/packages), first you
+[`packages` folder](https://github.com/pyodide/pyodide/tree/main/packages), first you
 need to determine whether it is necessary to package it for Pyodide. Ideally,
 you should start this process with package dependencies.
 
@@ -17,8 +17,8 @@ Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
 case by trying `micropip.install("package-name")`.
 
-If the wheel is not on PyPI, but nevertheless you believe there is nothing
-preventing it (it is a Python package without C extensions):
+If there is no wheel on PyPI, but you believe there is nothing preventing it (it
+is a Python package without C extensions):
 
 - you can create the wheel yourself by running
   ```py
@@ -169,7 +169,8 @@ def test_mytestname(selenium):
 ```
 
 you can put whatever command line arguments you would pass to `pytest` as
-separate entries in the list.
+separate entries in the list. For more info on `run_in_pyodide` see
+{ref}`run-in-pyodide`.
 
 ### Generating patches
 
@@ -245,7 +246,7 @@ build. We automate the following steps:
   `<package name>-tests.zip`
 - Repack the wheel with `python -m wheel pack`
 
-Lastly, a `packages.json` file is created containing the dependency tree of all
+Lastly, a `repodata.json` file is created containing the dependency tree of all
 packages, so {any}`pyodide.loadPackage` can load a package's dependencies
 automatically.
 
@@ -327,3 +328,12 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 
    meta-yaml.md
 ```
+
+### Rust/PyO3 Packages
+
+We currently build `cryptography` which is a Rust extension built with PyO3 and
+`setuptools-rust`. It should be reasonably easy to build other Rust extensions.
+Currently it is necessary to run `source $CARGO_HOME/env` in the build script [as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
+but other than that there may be no other issues if you are lucky.
+
+As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224), by default certain wasm-related `RUSTFLAGS` are set during `build.script` and can be removed with `export RUSTFLAGS=""`.

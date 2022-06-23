@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.10.2
 # Note: when updating EMSCRIPTEN_VERSION make sure to update
 # the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.27
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.13
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -90,6 +90,7 @@ export LDFLAGS_BASE=\
 	-std=c++14 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
+	-s WASM_BIGINT \
 	$(EXTRA_LDFLAGS)
 
 export CXXFLAGS_BASE=
@@ -98,7 +99,6 @@ export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
-	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-s DEMANGLE_SUPPORT=1 \
 	-s USE_FREETYPE=1 \
@@ -106,6 +106,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s POLYFILL \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
@@ -144,6 +145,19 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
+
+# For RUST
+export CARGO_HOME ?= $(HOME)/.cargo
+export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
+export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
+export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
+
+# idealy we could automatically include all SIDE_MODULE_LDFLAGS here
+export RUSTFLAGS= \
+	-C relocation-model=pic \
+	-C link-arg=-sSIDE_MODULE=2 \
+	-C link-arg=-sWASM_BIGINT \
+	-Z link-native-libraries=no
 
 .output_vars:
 	set

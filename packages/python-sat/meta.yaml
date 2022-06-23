@@ -1,10 +1,10 @@
 package:
   name: python-sat
-  version: 0.1.7.dev16
+  version: 0.1.7.dev18
 
 source:
-  sha256: 54ec89c031226c3f525b939b144a8a2a460a53d9a8e380cf6adcca3807f0bfe3
-  url: https://files.pythonhosted.org/packages/f4/ce/e809612cc36c60aea071d6127a4aac7d4eeb0785c64ae040436197ab6aae/python-sat-0.1.7.dev16.tar.gz
+  sha256: 2a9e0d61b62f535ccbe35f09bc0f2981994fbc6c786cf6a8e7572001929d8a00
+  url: https://files.pythonhosted.org/packages/21/a5/782af1c9c9ae64cead20be08f0239ccf24f374cc4c86ca9ead72d53e6db7/python-sat-0.1.7.dev18.tar.gz
 
   patches:
     - patches/force_malloc.patch

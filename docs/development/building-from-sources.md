@@ -9,13 +9,13 @@ version of the documentation at
 [pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
-Building on any operating system is easiest using the Pyodide Docker image. This approach works
-with any native operating system as long as Docker is installed. You can also build on your
-native Linux OS if the correct build prerequisites are installed. Building on MacOS is
-possible, but there are known issues as of version 0.18 that you will need to work around.
-It is not possible to build on Windows, but you can use
-[WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
-Linux build environment.
+Building Pyodide is easiest using the Pyodide Docker image. This approach works
+with any native operating system as long as Docker is installed. You can also
+build on your native Linux OS if the correct build prerequisites are installed.
+Building on MacOS is possible, but there are known issues as of version 0.18
+that you will need to work around. It is not possible to build on Windows, but
+you can use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+to create a Linux build environment.
 
 ## Build instructions
 
@@ -38,9 +38,9 @@ These Docker images are also available from the Github packages at
 
 1. Install Docker
 
-1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
+2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
-1. Run `make` to build.
+3. Run `make` to build.
 
 ```{note}
 You can control the resources allocated to the build by setting the env
@@ -151,8 +151,17 @@ meta-package. Other supported meta-packages are,
   "pytest". This option is non exhaustive and is mainly intended to make build
   faster while testing a diverse set of scientific packages.
 - "\*" builds all packages
+- You can exclude a package by prefixing it with "!".
 
 micropip and distutils are always automatically included.
+
+The cryptography package is a Rust extension. If you want to build it, you will
+need Rust >= 1.41, you need the
+[CARGO_HOME](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-reads)
+environment variable set appropriately, and you need the
+`wasm32-unknown-emscripten` toolchain installed. If you run `make rust`, Pyodide
+will install this stuff automatically. If you want to build every package except
+for cryptography, you can set `PYODIDE_PACKAGES="*,!cryptography"`.
 
 ## Environment variables
 

@@ -1,9 +1,9 @@
 package:
   name: Pygments
-  version: 2.11.2
+  version: 2.12.0
 source:
-  sha256: 44238f1b60a76d78fc8ca0528ee429702aae011c265fe6a8dd8b63049ae41c65
-  url: https://files.pythonhosted.org/packages/1d/17/ed4d2df187995561b28f1073df24137cb750e12f9879d291cc8ab67c65d2/Pygments-2.11.2-py3-none-any.whl
+  sha256: dc9c10fb40944260f6ed4c688ece0cd2048414940f1cea51b8b226318411c519
+  url: https://files.pythonhosted.org/packages/5c/8e/1d9017950034297fffa336c72e693a5b51bbf85141b24a763882cf1977b5/Pygments-2.12.0-py3-none-any.whl
 test:
   imports:
     - pygments

@@ -606,12 +606,13 @@ objects on the custom namespaces.
 
 ### Importing Python objects into JavaScript
 
-A Python object in the `__main__` global scope can be imported into JavaScript
-using the {any}`pyodide.globals.get <PyProxy.get>` method. Given the name of the
-Python object to import, it returns the object translated to JavaScript.
+A Python global variable in the `__main__` global scope can be imported into
+JavaScript using the {any}`pyodide.globals.get <PyProxy.get>` method. Given the
+name of the Python global variable, it returns the value of the variable
+translated to JavaScript.
 
 ```js
-let sys = pyodide.globals.get("sys");
+let x = pyodide.globals.get("x");
 ```
 
 As always, if the result is a `PyProxy` and you care about not leaking the
@@ -631,6 +632,12 @@ approach:
 let my_py_namespace = pyodide.globals.get("dict")();
 pyodide.runPython("x=2", my_py_namespace);
 let x = my_py_namespace.get("x");
+```
+
+To access a Python module from JavaScript, use {any}`pyodide.pyimport`:
+
+```js
+let sys = pyodide.pyimport("sys");
 ```
 
 (type-translations_using-js-obj-from-py)=

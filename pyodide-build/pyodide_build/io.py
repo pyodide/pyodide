@@ -8,6 +8,8 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "name": str,
         "version": str,
         "_tag": str,
+        "_disabled": bool,
+        "_cpython_dynlib": bool,
     },
     "source": {
         "url": str,
@@ -18,6 +20,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "extras": list,  # List[Tuple[str, str]],
     },
     "build": {
+        "backend-flags": str,
         "cflags": str,
         "cxxflags": str,
         "ldflags": str,

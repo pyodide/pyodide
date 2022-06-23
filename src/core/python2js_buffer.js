@@ -244,7 +244,7 @@ JS_FILE(python2js_buffer_init, () => {
     let formatChar = formatStr.slice(-1);
     switch (formatChar) {
       case "s":
-        let decoder = new TextDecoder("utf8");
+        let decoder = new TextDecoder("utf8", { ignoreBOM: true });
         return (buff) => decoder.decode(buff);
       case "?":
         return (buff) => Array.from(new Uint8Array(buff), (x) => !!x);

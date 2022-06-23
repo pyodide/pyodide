@@ -1,0 +1,41 @@
+package:
+  name: suitesparse
+  version: 5.11.0
+
+source:
+  sha256: fdd957ed06019465f7de73ce931afaf5d40e96e14ae57d91f60868b8c123c4c8
+  url: https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v5.11.0.tar.gz
+  patches:
+    - patches/0001-Remove-non-essential-build-targets.patch
+
+requirements:
+  run:
+    - CLAPACK
+
+build:
+  sharedlibrary: true
+  script: |
+    # Skips compiler check as we are cross compiling
+    sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
+    sed -i '1s;^;set(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
+
+    # Fix return type to avoid linker error
+    grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'
+    grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'
+
+    emmake make -j ${PYODIDE_JOBS:-3} install \
+      LDFLAGS="-sSIDE_MODULE=1 -L${WASM_LIBRARY_DIR}/lib " \
+      BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
+      LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
+      INSTALL=${WASM_LIBRARY_DIR}
+    mkdir -p dist
+
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig* \
+       ${WASM_LIBRARY_DIR}/lib/libamd* \
+       ${WASM_LIBRARY_DIR}/lib/libcamd* \
+       ${WASM_LIBRARY_DIR}/lib/libccolamd* \
+       ${WASM_LIBRARY_DIR}/lib/libcolamd* \
+       ${WASM_LIBRARY_DIR}/lib/libmetis* \
+       ${WASM_LIBRARY_DIR}/lib/libcholmod* \
+       ${WASM_LIBRARY_DIR}/lib/libspqr* \
+       dist/

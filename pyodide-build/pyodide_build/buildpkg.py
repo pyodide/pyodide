@@ -135,6 +135,7 @@ def get_bash_runner():
             "PYTHONINCLUDE",
             "NUMPY_LIB",
             "PYODIDE_PACKAGE_ABI",
+            "HOME",
             "HOSTINSTALLDIR",
             "TARGETINSTALLDIR",
             "SYSCONFIG_NAME",
@@ -149,6 +150,10 @@ def get_bash_runner():
             "UNISOLATED_PACKAGES",
             "WASM_LIBRARY_DIR",
             "WASM_PKG_CONFIG_PATH",
+            "CARGO_BUILD_TARGET",
+            "CARGO_HOME",
+            "RUSTFLAGS",
+            "PYO3_CONFIG_FILE",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
@@ -438,6 +443,7 @@ def compile(
         pywasmcross.compile(
             env=bash_runner.env,
             pkgname=name,
+            backend_flags=build_metadata["backend-flags"],
             cflags=build_metadata["cflags"],
             cxxflags=build_metadata["cxxflags"],
             ldflags=build_metadata["ldflags"],
@@ -872,6 +878,7 @@ def main(args):
     pkg["source"] = pkg.get("source", {})
     pkg["build"] = pkg.get("build", {})
     build_metadata = pkg["build"]
+    build_metadata["backend-flags"] = build_metadata.get("backend-flags", "")
     build_metadata["cflags"] = build_metadata.get("cflags", "")
     build_metadata["cxxflags"] = build_metadata.get("cxxflags", "")
     build_metadata["ldflags"] = build_metadata.get("ldflags", "")
