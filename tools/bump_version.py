@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# Warning: this file needs to work in Python 3.7 since it is used in the deploy
+# stage and the docker image cibuilds/github:0.13 is Alpine 3.10 which comes
+# with Python 3.7
+
 import argparse
 import difflib
 import functools
@@ -80,7 +84,7 @@ JS_TARGETS = [
 ]
 
 
-@functools.lru_cache
+@functools.lru_cache(1)
 def python_version_to_js_version(version: str) -> Str:
     """
     Convert Python version name to JS version name
@@ -105,7 +109,7 @@ def python_version_to_js_version(version: str) -> Str:
         return "{major}.{minor}.{patch}".format(**matches)
 
 
-@functools.lru_cache
+@functools.lru_cache(1)
 def is_core_version(version: str) -> bool:
     match = re.fullmatch(CORE_VERSION_REGEX, version)
     if match is None:
@@ -144,7 +148,10 @@ def generate_updated_content(
 
     new_content = content
     startpos = 0
-    while match := pattern.search(new_content, pos=startpos):
+    while True:
+        match = pattern.search(new_content, pos=startpos)
+        if not match:
+            break
         version = match.groupdict()["version"]
         if version == current_version:
             start, end = match.span()
