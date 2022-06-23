@@ -379,19 +379,13 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
     begin with `PyInit`.
     """
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
-    PYODIDE_ROOT = common.get_pyodide_root()
-    args = [
-        PYODIDE_ROOT / "emsdk/emsdk/upstream/bin/llvm-nm",
-        "-j",
-        "--export-symbols",
-    ] + objects
+    args = ["emnm", "-j", "--export-symbols"] + objects
     result = subprocess.run(
-        args,
-        encoding="utf8",
-        capture_output=True,
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
     )
     if result.returncode:
-        print(f"Command '{' '.join(args)}' failed.")
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(result.stderr)
         sys.exit(result.returncode)
 
     condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
