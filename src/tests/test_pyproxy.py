@@ -889,6 +889,7 @@ def test_pyproxy_call(selenium):
         selenium.run_js("f.callKwargs(76, {x : 6})")
 
     assert_call("f.bind({})()", [2, 3])
+    assert_call("f.bind({}).$$ == f.$$", True)
 
     selenium.run_js("f.destroy()")
 
