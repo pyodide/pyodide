@@ -888,6 +888,8 @@ def test_pyproxy_call(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
 
+    assert_call("f.bind({})()", [2, 3])
+
     selenium.run_js("f.destroy()")
 
 
