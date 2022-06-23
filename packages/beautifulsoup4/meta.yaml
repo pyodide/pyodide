@@ -1,12 +1,12 @@
 package:
   name: beautifulsoup4
-  version: 4.11.0
+  version: 4.11.1
 requirements:
   run:
     - soupsieve
 source:
-  sha256: 577b9e1c36d2ada780d807c5622e889d43172466658c2eb239e97296965cdddb
-  url: https://files.pythonhosted.org/packages/85/f6/fcd36aaa9697fa4d84a21c3e9d121fc2cb000ac952d08c606409e671319b/beautifulsoup4-4.11.0-py3-none-any.whl
+  sha256: 58d5c3d29f5a36ffeb94f02f0d786cd53014cf9b3b3951d42e0080d8a9498d30
+  url: https://files.pythonhosted.org/packages/9c/d8/909c4089dbe4ade9f9705f143c9f13f065049a9d5e7d34c828aefdd0a97c/beautifulsoup4-4.11.1-py3-none-any.whl
 test:
   imports:
     - bs4

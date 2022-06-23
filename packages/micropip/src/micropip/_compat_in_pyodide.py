@@ -4,7 +4,7 @@ from pyodide.http import pyfetch
 try:
     import pyodide_js
     from pyodide_js import loadedPackages, loadPackage
-    from pyodide_js._api import loadDynlib  # type: ignore[import]
+    from pyodide_js._api import loadBinaryFile, loadDynlib  # type: ignore[import]
 
     REPODATA_PACKAGES = pyodide_js._api.repodata_packages.to_py()
 except ImportError:
@@ -14,6 +14,8 @@ except ImportError:
 
 
 async def fetch_bytes(url: str, kwargs: dict[str, str]) -> bytes:
+    if url.startswith("file://"):
+        return (await loadBinaryFile("", url)).to_bytes()
     return await (await pyfetch(url, **kwargs)).bytes()
 
 
