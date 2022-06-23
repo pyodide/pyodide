@@ -104,13 +104,6 @@ Then follow the relevant steps from {ref}`release-instructions`.
 Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
 final number. Follow the relevant steps from {ref}`release-instructions`.
 
-For the node package make sure to use `npm publish --tag next` to avoid setting
-the alpha version as the stable release. If you accidentally publish the alpha
-release over the stable `latest` tag, you can fix it with:
-`npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be the latest
-stable version. Then use `npm dist-tag add pyodide@a.b.c-alpha.d next` to set
-the `next` tag to point to the just-published alpha release.
-
 ### Fixing documentation for a released version
 
 Cherry pick the corresponding documentation commits to the `stable` branch. Use
