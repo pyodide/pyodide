@@ -65,27 +65,15 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream stable --force
    ```
 
-7. Release the Pyodide JavaScript package:
-
-   ```bash
-   make clean && PYODIDE_PACKAGES="*" make
-   cd dist
-   # If making a major/minor release:
-   npm publish
-   npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
-   # If making an alpha release:
-   npm publish --tag next
-   ```
-
-8. Revert the release commit. If making major release, increment the version to
-   the next development version specified by Semantic Versioning.
+7. Revert the release commit. If making a major release, increment the version
+   to the next development version specified by Semantic Versioning.
 
    ```sh
    # If you just released 0.22.0, then set the next version to 0.23.0
    ./tools/bump_version.py --new-version 0.23.0.dev0
    ```
 
-9. Update these instructions with any relevant changes.
+8. Update these instructions with any relevant changes.
 
 ### Making a minor release
 
