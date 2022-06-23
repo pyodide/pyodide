@@ -292,7 +292,7 @@ def test_install_file_protocol_node(selenium_standalone_micropip):
         f"""
         await pyodide.runPythonAsync(`
             import micropip
-            await micropip.install('file://{pyparsing_wheel_name}')
+            await micropip.install('file:{pyparsing_wheel_name}')
             import pyparsing
         `);
         """
