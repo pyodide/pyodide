@@ -2,7 +2,7 @@
 
 set -e
 
-echo "//registry.npmjs.org/:_authToken=${NPM_PUBLISH_TOKEN}" > ~/.npmrc
+echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
 cd dist/
 
 PACKAGE_NAME=$(node -p "require('./package.json').name")
