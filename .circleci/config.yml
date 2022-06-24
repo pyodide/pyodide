@@ -295,9 +295,7 @@ jobs:
       - run:
           name: Deploy to npm
           command: |
-            cd dist
-            echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
-            python3 ../tools/deploy_to_npm.py "${CIRCLE_TAG}"
+            ./tools/deploy_to_npm.sh
 
       - run:
           name: Set PYODIDE_BASE_URL
