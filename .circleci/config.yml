@@ -282,7 +282,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make
+            apk add --no-cache --update python3 make npm
             python3 -m pip install awscli
       - run:
           name: Deploy Github Releases
@@ -291,6 +291,11 @@ jobs:
             cd /tmp/
             tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
+
+      - run:
+          name: Deploy to npm
+          command: |
+            ./tools/deploy_to_npm.sh
 
       - run:
           name: Set PYODIDE_BASE_URL
