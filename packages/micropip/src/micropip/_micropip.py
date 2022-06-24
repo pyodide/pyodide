@@ -9,6 +9,7 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
 from importlib.metadata import version as importlib_version
 from pathlib import Path
+from sysconfig import get_platform
 from typing import IO, Any
 from urllib.parse import ParseResult, urlparse
 from zipfile import ZipFile
@@ -89,6 +90,26 @@ class WheelInfo:
             if tag in self.tags:
                 return True
         return False
+
+    def check_compatible(self):
+        if self.is_compatible():
+            return
+        tag: Tag = next(iter(self.tags))
+        if "emscripten" not in tag.platform:
+            raise ValueError(
+                f"Wheel platform '{tag.platform}' is not compatible with "
+                "Pyodide's platform '{get_platform()}'"
+            )
+        wheel_emscripten_version = (
+            tag.platform.removeprefix("emscripten_")
+            .removesuffix("_wasm32")
+            .replace("_", ".")
+        )
+        pyodide_emscripten_version = get_platform().split("-")[1]
+        raise ValueError(
+            f"Wheel was built with Emscripten v{wheel_emscripten_version} but "
+            f"Pyodide was built with Emscripten v{pyodide_emscripten_version}"
+        )
 
     async def _fetch_bytes(self, fetch_kwargs):
         try:
@@ -268,8 +289,7 @@ class Transaction:
 
         # custom download location
         wheel = WheelInfo.from_url(req)
-        if not wheel.is_compatible():
-            raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
+        wheel.check_compatible()
 
         await self.add_wheel(wheel, extras=set())
 
