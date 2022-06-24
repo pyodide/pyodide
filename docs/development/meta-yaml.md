@@ -110,7 +110,7 @@ are:
 
 - `pyinit`: The default. Only export Python module initialization symbols of
   the form `PyInit_some_module`.
-- `explicit`: Export the functions that are marked as exported in the object
+- `requested`: Export the functions that are marked as exported in the object
   files. Switch to this if `pyinit` doesn't work. Useful for packages that use
   `ctypes` or `dlsym` to access symbols.
 - `whole_archive`: Uses `-Wl,--whole-archive` to force inclusion of all
