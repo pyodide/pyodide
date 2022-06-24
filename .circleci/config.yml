@@ -21,7 +21,6 @@ jobs:
     resource_class: small
     steps:
       - checkout
-
       - run:
           name: Test docs
           command: |
@@ -296,6 +295,17 @@ jobs:
           name: Deploy to npm
           command: |
             ./tools/deploy_to_npm.sh
+
+      - run:
+          name: Deploy to PyPI
+          command: |
+            # Ask github actions to deploy for us
+            curl \
+              -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/dispatches \
+              -d '{"event_type":"deploy-release","client_payload":{}}'
 
       - run:
           name: Set PYODIDE_BASE_URL
