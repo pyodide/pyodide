@@ -3,7 +3,9 @@ package:
   version: 4.4.0
 
 source:
-  url: https://download.osgeo.org/libtiff/tiff-4.4.0.tar.gz
+  # TODO: The root certificate of `download.osgeo.org` has been expired and requires the latest version (2022.6.15) of certifi.
+  # url: https://download.osgeo.org/libtiff/tiff-4.4.0.tar.gz
+  url: https://src.fedoraproject.org/repo/pkgs/libtiff/tiff-4.4.0.tar.gz/sha512/78ffab7667d0feb8d38571bc482390fc6dd20b93a798ab3a8b5cc7d5ab00b44a37f67eb8f19421e4ab33ad89ab40e382128f8a4bbdf097e0efb6d9fca5ac6f9e/tiff-4.4.0.tar.gz
   sha256: 917223b37538959aca3b790d2d73aa6e626b688e02dcda272aec24c2f498abed
 
 build:
