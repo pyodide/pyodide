@@ -55,9 +55,7 @@ if IN_BROWSER:
 
     from .webloop import WebLoopPolicy
 
-    policy = WebLoopPolicy()
-    asyncio.set_event_loop_policy(policy)
-    policy.get_event_loop()
+    asyncio.set_event_loop_policy(WebLoopPolicy())
 
 from warnings import warn
 

@@ -55,7 +55,6 @@ initialize_python()
   PyStatus status;
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
-  PySys_AddWarnOption(L"error::DeprecationWarning");
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
