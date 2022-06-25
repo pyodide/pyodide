@@ -377,5 +377,5 @@ function myRunPython(code){
 Then `myRunPython("2+7")` returns `[None, 9]` and
 `myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
 If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
-monkey patch {any}`pyodide.find_imports` which takes `code` as an argument
+monkey patch {any}`pyodide.code.find_imports` which takes `code` as an argument
 and returns a list of packages imported.

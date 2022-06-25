@@ -36,7 +36,6 @@ from .code import CodeRunner  # noqa: F401
 from .code import eval_code  # noqa: F401
 from .code import eval_code_async  # noqa: F401
 from .code import find_imports  # noqa: F401
-from .code import run_js  # noqa: F401
 from .code import should_quiet  # noqa: F401
 from .http import open_url
 
@@ -46,7 +45,6 @@ DEPRECATED_LIST = {
     "eval_code_async": "code",
     "find_imports": "code",
     "should_quiet": "code",
-    "run_js": "code",
 }
 
 
