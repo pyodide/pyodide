@@ -69,7 +69,6 @@ __all__ = [
     "add_event_listener",
     "clear_interval",
     "clear_timeout",
-    "console",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
