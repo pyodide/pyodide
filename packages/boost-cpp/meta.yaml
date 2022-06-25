@@ -1,0 +1,25 @@
+package:
+  name: boost-cpp
+  version: 1.79.0
+source:
+  url: https://boostorg.jfrog.io/artifactory/main/release/1.79.0/source/boost_1_79_0.tar.gz
+  sha256: 273f1be93238a068aba4f9735a4a2b003019af067b9c183ed227780b8f36062c
+
+build:
+  library: true
+  script: |
+    export INSTALL_DIR=${WASM_LIBRARY_DIR}
+    ./bootstrap.sh --prefix=${INSTALL_DIR}
+
+    ./b2 variant=release toolset=emscripten link=static threading=single \
+      --with-date_time --with-filesystem \
+      --with-system --with-regex --with-chrono --with-random --with-program_options --disable-icu \
+      cxxflags="$SIDE_MODULE_CXXFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1" \
+      cflags="$SIDE_MODULE_CFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1" \
+      linkflags="-fpic $SIDE_MODULE_LDFLAGS" \
+      --layout=system -j"${PYODIDE_JOBS:-3}" --prefix=${INSTALL_DIR} \
+      install
+
+about:
+  home: https://www.boost.org/
+  summary: Free peer-reviewed portable C++ source libraries.
