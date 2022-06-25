@@ -36,6 +36,7 @@ from .eval import CodeRunner  # noqa: F401
 from .eval import eval_code  # noqa: F401
 from .eval import eval_code_async  # noqa: F401
 from .eval import find_imports  # noqa: F401
+from .eval import run_js  # noqa: F401
 from .eval import should_quiet  # noqa: F401
 from .http import open_url
 
@@ -45,6 +46,7 @@ DEPRECATED_LIST = {
     "eval_code_async": "eval",
     "find_imports": "eval",
     "should_quiet": "eval",
+    "run_js": "eval",
 }
 
 
@@ -76,7 +78,6 @@ __all__ = [
     "open_url",
     "register_js_module",
     "remove_event_listener",
-    "run_js",
     "set_interval",
     "set_timeout",
     "to_js",
