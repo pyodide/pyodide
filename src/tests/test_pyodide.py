@@ -1171,3 +1171,24 @@ def test_run_js(selenium):
     from js import x
 
     assert x == 77
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_moved_deprecation_warnings(selenium_standalone):
+    import pytest
+
+    import pyodide
+
+    with pytest.warns() as record:
+        deprecated_funcs = [
+            "CodeRunner",
+            "eval_code",
+            "eval_code_async",
+            "find_imports",
+            "should_quiet",
+        ]
+        for func in deprecated_funcs:
+            getattr(pyodide, func)
+        assert len(record) == 5
+        for func in deprecated_funcs:
+            getattr(pyodide, func)
