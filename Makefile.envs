@@ -70,6 +70,19 @@ ifdef PYODIDE_ASSERTIONS
 	EXTRA_CFLAGS+=" -DDEBUG_F"
 endif
 
+ifdef PYODIDE_WASM_EXCEPTIONS
+	export MAIN_MODULE_EXCEPTION_CFLAGS=-fwasm-exceptions
+	export MAIN_MODULE_EXCEPTION_LDFLAGS=-fwasm-exceptions
+	export SIDE_MODULE_EXCEPTION_CFLAGS=-fwasm-exceptions
+	export SIDE_MODULE_EXCEPTION_CXXFLAGS=-fwasm-exceptions
+	export SIDE_MODULE_EXCEPTION_LDFLAGS=-fwasm-exceptions
+else
+	export MAIN_MODULE_EXCEPTION_CFLAGS=-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	export MAIN_MODULE_EXCEPTION_LDFLAGS=-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	export SIDE_MODULE_EXCEPTION_CFLAGS=-fexceptions
+	export SIDE_MODULE_EXCEPTION_CXXFLAGS=-fexceptions
+	export SIDE_MODULE_EXCEPTION_LDFLAGS=-fexceptions
+endif
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
@@ -96,7 +109,7 @@ export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+	$(MAIN_MODULE_EXCEPTION_LDFLAGS) \
 	-s DEMANGLE_SUPPORT=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
@@ -117,6 +130,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lworkerfs.js \
 	-lwebsocket.js \
 	-leventloop.js \
+	-lexceptions.js \
 	\
 	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
@@ -142,7 +156,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-I$(PYTHONINCLUDE) \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
+	$(MAIN_MODULE_EXCEPTION_CFLAGS)
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
 
