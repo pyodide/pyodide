@@ -94,7 +94,7 @@ def __getattr__(name):
         warn(
             f"pyodide.{name} has been moved to pyodide.{DEPRECATED_LIST[name]}.{name} "
             "Accessing it through the pyodide module is deprecated.",
-            DeprecationWarning,
+            FutureWarning,
         )
         # Put the name back so we won't warn next time this name is accessed
         globals()[name] = globals()[f"_deprecated_{name}"]
