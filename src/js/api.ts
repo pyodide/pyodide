@@ -86,7 +86,7 @@ export function runPython(
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return API.pyodide_py.eval_code(code, options.globals);
+  return API.pyodide_eval.eval_code(code, options.globals);
 }
 API.runPython = runPython;
 
@@ -116,7 +116,7 @@ export async function loadPackagesFromImports(
   messageCallback?: (msg: string) => void,
   errorCallback?: (err: string) => void
 ) {
-  let pyimports = API.pyodide_py.find_imports(code);
+  let pyimports = API.pyodide_eval.find_imports(code);
   let imports;
   try {
     imports = pyimports.toJs();
@@ -196,7 +196,7 @@ export async function runPythonAsync(
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return await API.pyodide_py.eval_code_async(code, options.globals);
+  return await API.pyodide_eval.eval_code_async(code, options.globals);
 }
 API.runPythonAsync = runPythonAsync;
 
