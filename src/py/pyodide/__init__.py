@@ -47,8 +47,9 @@ if IN_BROWSER:
 
     from .webloop import WebLoopPolicy
 
-    asyncio.set_event_loop_policy(WebLoopPolicy())
-
+    policy = WebLoopPolicy()
+    asyncio.set_event_loop_policy(policy)
+    policy.get_event_loop()
 
 __version__ = "0.21.0.dev0"
 
