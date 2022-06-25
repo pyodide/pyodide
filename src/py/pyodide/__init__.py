@@ -32,21 +32,21 @@ from ._core import (
     destroy_proxies,
     to_js,
 )
-from .eval import CodeRunner  # noqa: F401
-from .eval import eval_code  # noqa: F401
-from .eval import eval_code_async  # noqa: F401
-from .eval import find_imports  # noqa: F401
-from .eval import run_js  # noqa: F401
-from .eval import should_quiet  # noqa: F401
+from .code import CodeRunner  # noqa: F401
+from .code import eval_code  # noqa: F401
+from .code import eval_code_async  # noqa: F401
+from .code import find_imports  # noqa: F401
+from .code import run_js  # noqa: F401
+from .code import should_quiet  # noqa: F401
 from .http import open_url
 
 DEPRECATED_LIST = {
-    "CodeRunner": "eval",
-    "eval_code": "eval",
-    "eval_code_async": "eval",
-    "find_imports": "eval",
-    "should_quiet": "eval",
-    "run_js": "eval",
+    "CodeRunner": "code",
+    "eval_code": "code",
+    "eval_code_async": "code",
+    "find_imports": "code",
+    "should_quiet": "code",
+    "run_js": "code",
 }
 
 
@@ -97,10 +97,11 @@ for name in DEPRECATED_LIST:
 def __getattr__(name):
     if name in DEPRECATED_LIST:
         warn(
-            f"{name} has been moved to pyodide.{DEPRECATED_LIST[name]}. "
+            f"pyodide.{name} has been moved to pyodide.{DEPRECATED_LIST[name]}.{name} "
             "Accessing it through the pyodide module is deprecated.",
             DeprecationWarning,
         )
+        # Put the name back so we won't warn next time this name is accessed
         globals()[name] = globals()[f"_deprecated_{name}"]
         return globals()[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

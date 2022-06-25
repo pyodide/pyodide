@@ -180,9 +180,9 @@ class BrowserWrapper:
         self.run_js(
             """
             pyodide.globals.get;
-            pyodide._api.pyodide_eval.eval_code;
-            pyodide._api.pyodide_eval.eval_code_async;
-            pyodide._api.pyodide_eval.find_imports;
+            pyodide._api.pyodide_code.eval_code;
+            pyodide._api.pyodide_code.eval_code_async;
+            pyodide._api.pyodide_code.find_imports;
             pyodide.pyodide_py.register_js_module;
             pyodide.pyodide_py.unregister_js_module;
             pyodide._api.importlib.invalidate_caches;

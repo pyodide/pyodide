@@ -5,7 +5,7 @@ from typing import Any, Sequence
 import pytest
 from pyodide_test_runner import run_in_pyodide
 
-from pyodide.eval import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -298,11 +298,11 @@ def test_monkeypatch_eval_code(selenium):
         selenium.run(
             """
             import pyodide
-            old_eval_code = pyodide.eval.eval_code
+            old_eval_code = pyodide.code.eval_code
             x = 3
             def eval_code(code, ns):
                 return [ns["x"], old_eval_code(code, ns)]
-            pyodide.eval.eval_code = eval_code
+            pyodide.code.eval_code = eval_code
             """
         )
         assert selenium.run("x = 99; 5") == [3, 5]
@@ -310,7 +310,7 @@ def test_monkeypatch_eval_code(selenium):
     finally:
         selenium.run(
             """
-            pyodide.eval.eval_code = old_eval_code
+            pyodide.code.eval_code = old_eval_code
             """
         )
 
@@ -1158,7 +1158,7 @@ def test_sys_path0(selenium):
 def test_run_js(selenium):
     from unittest import TestCase
 
-    from pyodide.eval import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises
 
