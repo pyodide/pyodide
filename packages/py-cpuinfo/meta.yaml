@@ -6,7 +6,7 @@ source:
   sha256: 5f269be0e08e33fd959de96b34cd4aeeeacac014dd8305f70eb28d06de2345c5
 test:
   imports:
-    - py-cpuinfo
+    - py_cpuinfo
 about:
   home: https://github.com/workhorsy/py-cpuinfo
   PyPI: https://pypi.org/project/py-cpuinfo
