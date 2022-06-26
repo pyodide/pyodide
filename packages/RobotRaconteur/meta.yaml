@@ -3,8 +3,8 @@ package:
   version: 0.15.1
 
 source:
-  url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-Source.tar.gz
-  sha256: e61504f65ac533f4b28ad92142dea62c1f020db0cc71ced472d902d69e8d5b0e
+  url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-post1-Source.tar.gz
+  sha256: 224427d0922dcb34d17221c1f3b8b5e94ebddc109f24f8e9a3f7f5d090386dc6
 
 requirements:
   run:
