@@ -146,7 +146,7 @@ def test_jsproxy_class(selenium):
 def test_jsproxy_map(selenium):
     import pytest
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     TEST = run_js('new Map([["x", 42], ["y", 43]])')
     assert "y" in TEST
@@ -671,7 +671,7 @@ def test_register_jsmodule_docs_example(selenium_standalone):
 
 @run_in_pyodide
 def test_object_entries_keys_values(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     x = run_js("({ a : 2, b : 3, c : 4 })")
     assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
@@ -861,7 +861,7 @@ def test_mixins_errors_2(selenium):
 def test_mixins_errors_3(selenium):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises
 
@@ -897,7 +897,7 @@ def test_mixins_errors_3(selenium):
 def test_mixins_errors_4(selenium):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises
 
@@ -1049,7 +1049,7 @@ def test_buffer_assign_back(selenium):
 
 @run_in_pyodide
 def test_buffer_conversions(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     s, jsbytes = run_js(
         """
@@ -1067,7 +1067,7 @@ def test_buffer_conversions(selenium):
 
 @run_in_pyodide
 def test_tostring_encoding(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     bytes = run_js(
         """
@@ -1083,7 +1083,7 @@ def test_tostring_encoding(selenium):
 def test_tostring_error(selenium):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises
 
@@ -1100,7 +1100,7 @@ def test_tostring_error(selenium):
 
 @run_in_pyodide
 def test_duck_buffer_method_presence(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     bytes = run_js(
         "new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33])"

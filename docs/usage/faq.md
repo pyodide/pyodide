@@ -347,13 +347,13 @@ simple:
 
 ```javascript
 function runPython(code) {
-  pyodide.pyodide_py.eval_code(code, pyodide.globals);
+  pyodide.pyodide_py.code.eval_code(code, pyodide.globals);
 }
 ```
 
 ```javascript
 async function runPythonAsync(code) {
-  return await pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
+  return await pyodide.pyodide_py.code.eval_code_async(code, pyodide.globals);
 }
 ```
 
@@ -361,10 +361,10 @@ To make your own version of {any}`runPython <pyodide.runPython>` you could do:
 
 ```pyodide
 const my_eval_code = pyodide.runPython(`
-  import pyodide
+  from pyodide.code import eval_code
   def my_eval_code(code, ns):
     extra_info = None
-    result = pyodide.eval_code(code, ns)
+    result = eval_code(code, ns)
     return ns["extra_info"], result
   my_eval_code
 `)
@@ -377,5 +377,5 @@ function myRunPython(code){
 Then `myRunPython("2+7")` returns `[None, 9]` and
 `myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
 If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
-monkey patch {any}`pyodide.find_imports` which takes `code` as an argument
+monkey patch {any}`pyodide.code.find_imports` which takes `code` as an argument
 and returns a list of packages imported.

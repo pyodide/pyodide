@@ -173,7 +173,7 @@ async def test_start_multiple_intervals_and_clear_one(selenium):
 
 @run_in_pyodide
 async def test_trigger_event_listener(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     x = run_js(
         """
@@ -226,7 +226,7 @@ x;
 
 @run_in_pyodide
 async def test_remove_event_listener(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     x = run_js(
         """
@@ -277,7 +277,7 @@ x;
 
 @run_in_pyodide
 async def test_trigger_some_of_multiple_event_listeners(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     x = run_js(
         """
@@ -347,7 +347,7 @@ x;
 
 @run_in_pyodide
 async def test_remove_event_listener_twice(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     x = run_js(
         """
@@ -404,7 +404,7 @@ x;
 
 @run_in_pyodide
 async def test_nonexistant_remove_event_listener(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     x = run_js(
         """
