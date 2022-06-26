@@ -5,30 +5,16 @@ FROM python:3.10.2-slim-buster
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
         bzip2 ccache f2c g++ gfortran git make \
-        patch pkg-config unzip wget xz-utils \
+        patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo bison libpcre3-dev curl \
+        gnupg2 libdbus-glib-1-2 sudo \
   && rm -rf /var/lib/apt/lists/*
 
 ADD docs/requirements-doc.txt requirements.txt /
 
 RUN pip3 --no-cache-dir install -r /requirements.txt \
   && pip3 --no-cache-dir install -r /requirements-doc.txt
-
-# Build Swig to get version 4.0.2
-
-RUN cd /tmp \
-  && mkdir -p swig_build_dir \
-  && cd swig_build_dir \
-  && curl -s -L https://github.com/swig/swig/archive/refs/tags/v4.0.2.tar.gz --output swig-4.0.2.tar.gz \
-  && tar xf swig-4.0.2.tar.gz \
-  && cd swig-4.0.2 \
-  && ./autogen.sh \
-  && ./configure \
-  && make -j4 \
-  && sudo make install \
-  && cd /tmp && rm -rf swig_build_dir
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
