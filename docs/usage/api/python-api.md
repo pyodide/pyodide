@@ -17,11 +17,24 @@ By default there are two JavaScript modules. More can be added with
       - The JavaScript Pyodide module.
 ```
 
-```{eval-rst}
-.. currentmodule:: pyodide
+**Python Modules**
 
-.. automodule:: pyodide
-   :members:
-   :autosummary:
-   :autosummary-no-nesting:
+```{eval-rst}
+.. list-table::
+
+   *  - :py:mod:`pyodide.code`
+      - Utilities for evaluating Python and JavaScript code.
+   *  - :py:mod:`pyodide.ffi`
+      - The :any:`JsProxy` class and utilities to help interact with JavaScript code.
+   *  - :py:mod:`pyodide.http`
+      - Defines :any:`pyfetch` and other functions for making network requests.
+```
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   python-api-code.md
+   python-api-ffi.md
+   python-api-http.md
 ```
