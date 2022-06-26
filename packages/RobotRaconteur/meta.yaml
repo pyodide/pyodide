@@ -3,8 +3,8 @@ package:
   version: 0.15.1
 
 source:
-  url: https://github.com/robotraconteur/robotraconteur_pyodide/archive/refs/tags/v0.15.1-pyodide.tar.gz
-  sha256: eac9f45d23e5497f9ca0b848a699d65478d119379322d35a7e8f2201b112aab7
+  url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-Source.tar.gz
+  sha256: e61504f65ac533f4b28ad92142dea62c1f020db0cc71ced472d902d69e8d5b0e
 
 requirements:
   run:
@@ -36,6 +36,7 @@ build:
     -DBoost_RANDOM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_random.bc \
     -DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_program_options.bc \
     -DBoost_PROGRAM_OPTIONS_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_program_options.bc \
+    -DUSE_PREGENERATED_SOURCE=ON \
      .
     emmake make -j ${PYODIDE_JOBS:-3}
     emcc ${SIDE_MODULE_LDFLAGS} -fexceptions out/lib/libRobotRaconteurCore.a \
