@@ -363,7 +363,7 @@ particularly important for callbacks.
 
 ```pyodide
 let test = pyodide.runPython(`
-    from pyodide import to_js
+    from pyodide.ffi import to_js
     def test(x):
         return to_js([n*n for n in x])
     test
@@ -377,7 +377,7 @@ key value arguments.
 
 ```pyodide
 let test = pyodide.runPython(`
-    from pyodide import to_js
+    from pyodide.ffi import to_js
     def test(x, *, offset):
         return to_js([n*n + offset for n in x])
     to_js(test)

@@ -487,7 +487,7 @@ def test_wrong_way_track_proxies(selenium):
     from unittest import TestCase
 
     from js import Array, Object
-    from pyodide import ConversionError, destroy_proxies, to_js
+    from pyodide.ffi import ConversionError, destroy_proxies, to_js
 
     raises = TestCase().assertRaises
 
@@ -535,8 +535,8 @@ def test_wrong_way_conversions1(selenium):
 
 @run_in_pyodide
 def test_wrong_way_conversions2(selenium):
-    from pyodide import to_js
     from pyodide.code import run_js
+    from pyodide.ffi import to_js
 
     [astr, bstr] = run_js(
         """
@@ -551,8 +551,8 @@ def test_wrong_way_conversions2(selenium):
 
 @run_in_pyodide
 def test_wrong_way_conversions3(selenium):
-    from pyodide import to_js
     from pyodide.code import run_js
+    from pyodide.ffi import to_js
 
     class Test:
         pass
@@ -567,7 +567,7 @@ def test_wrong_way_conversions3(selenium):
 
 @run_in_pyodide
 def test_wrong_way_conversions4(selenium):
-    from pyodide import to_js
+    from pyodide.ffi import to_js
 
     s = "avafhjpa"
     t = 55
@@ -579,8 +579,8 @@ def test_wrong_way_conversions4(selenium):
 def test_dict_converter1(selenium):
     import json
 
-    from pyodide import to_js
     from pyodide.code import run_js
+    from pyodide.ffi import to_js
 
     arrayFrom = run_js("Array.from")
     d = {x: x + 2 for x in range(5)}
@@ -622,8 +622,8 @@ def test_dict_converter3(selenium):
     import json
 
     from js import Object
-    from pyodide import to_js
     from pyodide.code import run_js
+    from pyodide.ffi import to_js
 
     d = {x: x + 2 for x in range(5)}
 
@@ -825,7 +825,7 @@ def assert_py_to_js_to_py(selenium, name):
 def test_recursive_list_to_js(selenium):
     x: Any = []
     x.append(x)
-    from pyodide import to_js
+    from pyodide.ffi import to_js
 
     to_js(x)
 
@@ -834,7 +834,7 @@ def test_recursive_list_to_js(selenium):
 def test_recursive_dict_to_js(selenium):
     x: Any = {}
     x[0] = x
-    from pyodide import to_js
+    from pyodide.ffi import to_js
 
     to_js(x)
 
@@ -1091,7 +1091,7 @@ def test_tojs7(selenium):
 def test_tojs8(selenium):
     import pytest
 
-    from pyodide import ConversionError, to_js
+    from pyodide.ffi import ConversionError, to_js
 
     msg = r"Cannot use \(2, 2\) as a key for a Javascript"
     with pytest.raises(ConversionError, match=msg):
@@ -1107,7 +1107,7 @@ def test_tojs9(selenium):
             selenium.run_js(
                 """
                 return Array.from(pyodide.runPython(`
-                    from pyodide import to_js
+                    from pyodide.ffi import to_js
                     to_js({ 1, "1" })
                 `).values())
                 """
@@ -1121,7 +1121,7 @@ def test_tojs9(selenium):
             selenium.run_js(
                 """
                 return Array.from(pyodide.runPython(`
-                    from pyodide import to_js
+                    from pyodide.ffi import to_js
                     to_js({ 1 : 7, "1" : 9 })
                 `).entries())
                 """
@@ -1204,8 +1204,8 @@ def test_to_py3(selenium):
 def test_to_py4(selenium, obj, msg):
     import pytest
 
-    from pyodide import ConversionError, JsException
     from pyodide.code import run_js
+    from pyodide.ffi import ConversionError, JsException
 
     a = run_js(f"new {obj}")
 
@@ -1337,8 +1337,8 @@ def test_to_js_default_converter2(selenium):
     import pytest
 
     from js import JSON, Array
-    from pyodide import JsException, to_js
     from pyodide.code import run_js
+    from pyodide.ffi import JsException, to_js
 
     class Pair:
         def __init__(self, first, second):

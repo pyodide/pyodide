@@ -452,7 +452,7 @@ def test_import_invocation(selenium):
     def temp():
         print("okay?")
 
-    from pyodide import create_once_callable
+    from pyodide.ffi import create_once_callable
 
     js.setTimeout(create_once_callable(temp), 100)
     js.fetch("repodata.json")
@@ -833,7 +833,7 @@ def test_mixins_errors_2(selenium):
                 with TestCase().assertRaisesRegex(exc, match) as e:
                     yield e
 
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             msg = "^TypeError:.* is not a function$"
             with raises(JsException, match=msg):
                 next(c)
