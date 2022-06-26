@@ -46,6 +46,12 @@ declare var PYGEN_RETURN: number;
 declare var PYGEN_ERROR: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
+
+declare function PY(...args: any): void;
+declare function ENTER(...args: any): void;
+declare function WHILE(...args: any): void;
+declare function DO(...args: any): void;
+declare function FINALLY(...args: any): void;
 // end-pyodide-skip
 
 /**
@@ -68,13 +74,7 @@ if (globalThis.FinalizationRegistry) {
         cache.leaked = true;
         pyproxy_decref_cache(cache);
       }
-      try {
-        Module._Py_DecRef(ptr);
-      } catch (e) {
-        // I'm not really sure what happens if an error occurs inside of a
-        // finalizer...
-        API.fatal_error(e);
-      }
+      PY(ENTER(Module._Py_DecRef(ptr)));
     }
   );
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
@@ -276,12 +276,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   }
   proxy.$$.destroyed_msg = destroyed_msg;
   pyproxy_decref_cache(proxy.$$.cache);
-  try {
-    Module._Py_DecRef(ptrobj);
-    trace_pyproxy_dealloc(proxy);
-  } catch (e) {
-    API.fatal_error(e);
-  }
+  PY(ENTER(Module._Py_DecRef(ptrobj)), FINALLY(trace_pyproxy_dealloc(proxy)));
 };
 
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
@@ -300,20 +295,18 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   let idargs = Hiwire.new_value(jsargs);
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
-  try {
-    idresult = Module.__pyproxy_apply(
-      ptrobj,
-      idargs,
-      num_pos_args,
-      idkwnames,
-      num_kwargs
-    );
-  } catch (e) {
-    API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idargs);
-    Hiwire.decref(idkwnames);
-  }
+  PY(
+    ENTER(
+      (idresult = Module.__pyproxy_apply(
+        ptrobj,
+        idargs,
+        num_pos_args,
+        idkwnames,
+        num_kwargs
+      ))
+    ),
+    FINALLY(Hiwire.decref(idargs), Hiwire.decref(idkwnames))
+  );
   if (idresult === 0) {
     Module._pythonexc2js();
   }
@@ -365,11 +358,7 @@ export class PyProxyClass {
   toString(): string {
     let ptrobj = _getPtr(this);
     let jsref_repr;
-    try {
-      jsref_repr = Module.__pyproxy_repr(ptrobj);
-    } catch (e) {
-      API.fatal_error(e);
-    }
+    PY(ENTER((jsref_repr = Module.__pyproxy_repr(ptrobj))));
     if (jsref_repr === 0) {
       Module._pythonexc2js();
     }
@@ -465,21 +454,23 @@ export class PyProxyClass {
     if (default_converter) {
       default_converter_id = Hiwire.new_value(default_converter);
     }
-    try {
-      idresult = Module._python2js_custom(
-        ptrobj,
-        depth,
-        proxies_id,
-        dict_converter_id,
-        default_converter_id
-      );
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(proxies_id);
-      Hiwire.decref(dict_converter_id);
-      Hiwire.decref(default_converter_id);
-    }
+
+    PY(
+      ENTER(
+        (idresult = Module._python2js_custom(
+          ptrobj,
+          depth,
+          proxies_id,
+          dict_converter_id,
+          default_converter_id
+        ))
+      ),
+      FINALLY(
+        Hiwire.decref(proxies_id),
+        Hiwire.decref(dict_converter_id),
+        Hiwire.decref(default_converter_id)
+      )
+    );
     if (idresult === 0) {
       Module._pythonexc2js();
     }
@@ -564,11 +555,7 @@ export class PyProxyLengthMethods {
   get length(): number {
     let ptrobj = _getPtr(this);
     let length;
-    try {
-      length = Module._PyObject_Size(ptrobj);
-    } catch (e) {
-      API.fatal_error(e);
-    }
+    PY(ENTER((length = Module._PyObject_Size(ptrobj))));
     if (length === -1) {
       Module._pythonexc2js();
     }
@@ -593,13 +580,10 @@ export class PyProxyGetItemMethods {
     let ptrobj = _getPtr(this);
     let idkey = Hiwire.new_value(key);
     let idresult;
-    try {
-      idresult = Module.__pyproxy_getitem(ptrobj, idkey);
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
-    }
+    PY(
+      ENTER((idresult = Module.__pyproxy_getitem(ptrobj, idkey))),
+      FINALLY(Hiwire.decref(idkey))
+    );
     if (idresult === 0) {
       if (Module._PyErr_Occurred()) {
         Module._pythonexc2js();
@@ -628,14 +612,10 @@ export class PyProxySetItemMethods {
     let idkey = Hiwire.new_value(key);
     let idval = Hiwire.new_value(value);
     let errcode;
-    try {
-      errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
-      Hiwire.decref(idval);
-    }
+    PY(
+      ENTER((errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval))),
+      FINALLY(Hiwire.decref(idkey), Hiwire.decref(idval))
+    );
     if (errcode === -1) {
       Module._pythonexc2js();
     }
@@ -651,13 +631,10 @@ export class PyProxySetItemMethods {
     let ptrobj = _getPtr(this);
     let idkey = Hiwire.new_value(key);
     let errcode;
-    try {
-      errcode = Module.__pyproxy_delitem(ptrobj, idkey);
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
-    }
+    PY(
+      ENTER((errcode = Module.__pyproxy_delitem(ptrobj, idkey))),
+      FINALLY(Hiwire.decref(idkey))
+    );
     if (errcode === -1) {
       Module._pythonexc2js();
     }
@@ -681,13 +658,10 @@ export class PyProxyContainsMethods {
     let ptrobj = _getPtr(this);
     let idkey = Hiwire.new_value(key);
     let result;
-    try {
-      result = Module.__pyproxy_contains(ptrobj, idkey);
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
-    }
+    PY(
+      ENTER((result = Module.__pyproxy_contains(ptrobj, idkey))),
+      FINALLY(Hiwire.decref(idkey))
+    );
     if (result === -1) {
       Module._pythonexc2js();
     }
@@ -712,17 +686,17 @@ export class PyProxyContainsMethods {
  * @private
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
-  try {
-    let item;
-    while ((item = Module.__pyproxy_iter_next(iterptr))) {
-      yield Hiwire.pop_value(item);
-    }
-  } catch (e) {
-    API.fatal_error(e);
-  } finally {
-    Module.finalizationRegistry.unregister(token);
-    Module._Py_DecRef(iterptr);
-  }
+  let item;
+  PY(
+    ENTER(
+      WHILE(
+        (item = Module.__pyproxy_iter_next(iterptr)),
+        DO(yield Hiwire.pop_value(item))
+      ),
+      Module._Py_DecRef(iterptr)
+    ),
+    FINALLY(Module.finalizationRegistry.unregister(token))
+  );
   if (Module._PyErr_Occurred()) {
     Module._pythonexc2js();
   }
@@ -749,11 +723,7 @@ export class PyProxyIterableMethods {
     let ptrobj = _getPtr(this);
     let token = {};
     let iterptr;
-    try {
-      iterptr = Module._PyObject_GetIter(ptrobj);
-    } catch (e) {
-      API.fatal_error(e);
-    }
+    PY(ENTER((iterptr = Module._PyObject_GetIter(ptrobj))));
     if (iterptr === 0) {
       Module._pythonexc2js();
     }
@@ -799,13 +769,10 @@ export class PyProxyIteratorMethods {
     let done;
     let stackTop = Module.stackSave();
     let res_ptr = Module.stackAlloc(4);
-    try {
-      status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
-    }
+    PY(
+      ENTER((status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr))),
+      FINALLY(Hiwire.decref(idarg))
+    );
     let HEAPU32 = Module.HEAPU32;
     // HEAPU32 is used in the DEREF_U32 C preprocessor macro. Typescript doesn't know this.
     // So we "use" HEAPU32 once to trick Typescript, so we can enable strictUnusedLocalVariables.
@@ -829,13 +796,10 @@ function python_hasattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let result;
-  try {
-    result = Module.__pyproxy_hasattr(ptrobj, idkey);
-  } catch (e) {
-    API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
-  }
+  PY(
+    ENTER((result = Module.__pyproxy_hasattr(ptrobj, idkey))),
+    FINALLY(Hiwire.decref(idkey))
+  );
   if (result === -1) {
     Module._pythonexc2js();
   }
@@ -850,13 +814,10 @@ function python_getattr(jsobj: PyProxyClass, jskey: any) {
   let idkey = Hiwire.new_value(jskey);
   let idresult;
   let cacheId = jsobj.$$.cache.cacheId;
-  try {
-    idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
-  } catch (e) {
-    API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
-  }
+  PY(
+    ENTER((idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId))),
+    FINALLY(Hiwire.decref(idkey))
+  );
   if (idresult === 0) {
     if (Module._PyErr_Occurred()) {
       Module._pythonexc2js();
@@ -870,14 +831,10 @@ function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
   let idkey = Hiwire.new_value(jskey);
   let idval = Hiwire.new_value(jsval);
   let errcode;
-  try {
-    errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
-  } catch (e) {
-    API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
-    Hiwire.decref(idval);
-  }
+  PY(
+    ENTER((errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval))),
+    FINALLY(Hiwire.decref(idkey), Hiwire.decref(idval))
+  );
   if (errcode === -1) {
     Module._pythonexc2js();
   }
@@ -887,13 +844,10 @@ function python_delattr(jsobj: PyProxyClass, jskey: any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let errcode;
-  try {
-    errcode = Module.__pyproxy_delattr(ptrobj, idkey);
-  } catch (e) {
-    API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
-  }
+  PY(
+    ENTER((errcode = Module.__pyproxy_delattr(ptrobj, idkey))),
+    FINALLY(Hiwire.decref(idkey))
+  );
   if (errcode === -1) {
     Module._pythonexc2js();
   }
@@ -976,11 +930,7 @@ let PyProxyHandlers = {
   ownKeys(jsobj: PyProxyClass) {
     let ptrobj = _getPtr(jsobj);
     let idresult;
-    try {
-      idresult = Module.__pyproxy_ownKeys(ptrobj);
-    } catch (e) {
-      API.fatal_error(e);
-    }
+    PY(ENTER((idresult = Module.__pyproxy_ownKeys(ptrobj))));
     if (idresult === 0) {
       Module._pythonexc2js();
     }
@@ -1021,18 +971,16 @@ export class PyProxyAwaitableMethods {
     let resolve_handle_id = Hiwire.new_value(resolveHandle);
     let reject_handle_id = Hiwire.new_value(rejectHandle);
     let errcode;
-    try {
-      errcode = Module.__pyproxy_ensure_future(
-        ptrobj,
-        resolve_handle_id,
-        reject_handle_id
-      );
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(reject_handle_id);
-      Hiwire.decref(resolve_handle_id);
-    }
+    PY(
+      ENTER(
+        (errcode = Module.__pyproxy_ensure_future(
+          ptrobj,
+          resolve_handle_id,
+          reject_handle_id
+        ))
+      ),
+      FINALLY(Hiwire.decref(reject_handle_id), Hiwire.decref(resolve_handle_id))
+    );
     if (errcode === -1) {
       Module._pythonexc2js();
     }
@@ -1219,11 +1167,11 @@ export class PyProxyBufferMethods {
     );
     let this_ptr = _getPtr(this);
     let errcode;
-    try {
-      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
-    } catch (e) {
-      API.fatal_error(e);
-    }
+    PY(
+      ENTER(
+        (errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr))
+      )
+    );
     if (errcode === -1) {
       Module._pythonexc2js();
     }
@@ -1312,12 +1260,12 @@ export class PyProxyBufferMethods {
       return result;
     } finally {
       if (!success) {
-        try {
-          Module._PyBuffer_Release(view_ptr);
-          Module._PyMem_Free(view_ptr);
-        } catch (e) {
-          API.fatal_error(e);
-        }
+        PY(
+          ENTER(
+            Module._PyBuffer_Release(view_ptr),
+            Module._PyMem_Free(view_ptr)
+          )
+        );
       }
     }
   }
@@ -1500,12 +1448,12 @@ export class PyBuffer {
       return;
     }
     // Module.bufferFinalizationRegistry.unregister(this);
-    try {
-      Module._PyBuffer_Release(this._view_ptr);
-      Module._PyMem_Free(this._view_ptr);
-    } catch (e) {
-      API.fatal_error(e);
-    }
+    PY(
+      ENTER(
+        Module._PyBuffer_Release(this._view_ptr),
+        Module._PyMem_Free(this._view_ptr)
+      )
+    );
     this._released = true;
     // @ts-ignore
     this.data = null;
