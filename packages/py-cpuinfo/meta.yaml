@@ -1,0 +1,14 @@
+package:
+  name: py-cpuinfo
+  version: 8.0.0
+source:
+  url: https://files.pythonhosted.org/packages/e6/ba/77120e44cbe9719152415b97d5bfb29f4053ee987d6cb63f55ce7d50fadc/py-cpuinfo-8.0.0.tar.gz
+  sha256: 5f269be0e08e33fd959de96b34cd4aeeeacac014dd8305f70eb28d06de2345c5
+test:
+  imports:
+    - py-cpuinfo
+about:
+  home: https://github.com/workhorsy/py-cpuinfo
+  PyPI: https://pypi.org/project/py-cpuinfo
+  summary: Get CPU info with pure Python 2 & 3
+  license: MIT
