@@ -166,6 +166,12 @@ finally:
   return result;
 }
 
+int entry_depth = 0;
+int may_exit = 1;
+
+int
+_Py_HandleSystemExit(int*);
+
 /**
  * Wrap the exception in a JavaScript PythonError object.
  *
@@ -189,6 +195,12 @@ wrap_exception()
   PyObject* traceback = NULL;
   PyObject* pystr = NULL;
   JsRef jserror = NULL;
+  if (entry_depth == 0) {
+    int exitcode;
+    if (may_exit && _Py_HandleSystemExit(&exitcode)) {
+      Py_Exit(exitcode);
+    }
+  }
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 

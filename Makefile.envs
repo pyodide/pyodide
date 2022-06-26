@@ -105,6 +105,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s EXPORT_ALL=1 \
 	-s POLYFILL \
+	-s EXIT_RUNTIME=1 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \

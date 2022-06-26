@@ -1,3 +1,5 @@
+import type { ConfigType } from "./pyodide";
+
 /** @private */
 export interface Module {
   noImageDecoding: boolean;
@@ -9,31 +11,39 @@ export interface Module {
   ENV: { [key: string]: string };
   preloadedWasm: any;
   FS: any;
+  quit: (status: number, toThrow: Error) => void;
 }
 
 /**
- * The Emscripten Module.
+ * Create the Emscripten Module.
  *
  * @private
  */
-export function createModule(): any {
+export function createModule(config: ConfigType): any {
   let Module: any = {};
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
   Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
   Module.preRun = [];
+  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
+  if (config.homedir) {
+    setHomeDirectory(Module, config.homedir);
+  }
+  if (config.exitMode === "throw") {
+    Module.quit = function (status: number, toThrow: Error) {
+      throw toThrow;
+    };
+  }
+  if (config.exitMode === "no-exit") {
+    Module.preRun.push(() => {
+      Module.HEAP32[Module._may_exit / 4] = 0;
+    });
+  }
   return Module;
 }
 
-/**
- *
- * @param stdin
- * @param stdout
- * @param stderr
- * @private
- */
-export function setStandardStreams(
+function setStandardStreams(
   Module: Module,
   stdin?: () => string,
   stdout?: (a: string) => void,
@@ -108,7 +118,7 @@ function createStdinWrapper(stdin: () => string) {
  * @param path
  * @private
  */
-export function setHomeDirectory(Module: Module, path: string) {
+function setHomeDirectory(Module: Module, path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {

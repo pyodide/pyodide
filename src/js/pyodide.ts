@@ -4,7 +4,7 @@
 import ErrorStackParser from "error-stack-parser";
 import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
 
-import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import { createModule } from "./module";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
@@ -174,16 +174,7 @@ function calculateIndexURL(): string {
  * See documentation for loadPyodide.
  * @private
  */
-export type ConfigType = {
-  indexURL: string;
-  lockFileURL: string;
-  homedir: string;
-  fullStdLib?: boolean;
-  stdin?: () => string;
-  stdout?: (msg: string) => void;
-  stderr?: (msg: string) => void;
-  jsglobals?: object;
-};
+export type ConfigType = NonNullable<Parameters<typeof loadPyodide>[0]>;
 
 /**
  * Load the main Pyodide wasm module and initialize it.
@@ -241,6 +232,7 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
+    exitMode?: "no-exit" | "throw" | "quit-process";
   } = {}
 ): Promise<PyodideInterface> {
   if (!options.indexURL) {
@@ -256,20 +248,18 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
     lockFileURL: options.indexURL! + "repodata.json",
+    exitMode: "no-exit",
   };
   const config = Object.assign(default_config, options) as ConfigType;
   await initNodeModules();
   const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL,
+    config.indexURL!,
     "pyodide_py.tar"
   );
 
-  const Module = createModule();
+  const Module = createModule(config);
   const API: any = { config };
   Module.API = API;
-
-  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(Module, config.homedir);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -286,6 +276,8 @@ export async function loadPyodide(
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  Module.runtimeKeepalivePop();
 
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
