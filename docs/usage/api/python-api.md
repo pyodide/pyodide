@@ -31,9 +31,6 @@ By default there are two JavaScript modules. More can be added with
       - The :any:`JsProxy` class and utilities to help interact with JavaScript code.
    *  - :py:mod:`pyodide.http`
       - Defines :any:`pyfetch` and other functions for making network requests.
-   *  - :py:mod:`pyodide.js_wrappers`
-      - Wrappers for JavaScript APIs such as `setTimeout` to help ensure that resources
-        are properly released.
    *  - :py:mod:`pyodide.webloop`
       - The Pyodide event loop implementation. This is automatically configured
         correctly for most use cases it is unlikely you will need it outside of niche
@@ -47,6 +44,5 @@ By default there are two JavaScript modules. More can be added with
    python-api/console.md
    python-api/ffi.md
    python-api/http.md
-   python-api/js_wrappers.md
    python-api/webloop.md
 ````

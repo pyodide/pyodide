@@ -1,6 +1,6 @@
 from _pyodide._importhook import register_js_module, unregister_js_module
 
-from ._core import (
+from .._core import (
     IN_BROWSER,
     ConversionError,
     JsException,
