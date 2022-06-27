@@ -205,10 +205,12 @@ def find_wheel(metadata: dict[str, Any], req: Requirement) -> WheelInfo:
         The version of the Python wheel, or None if there is no pure Python wheel.
     """
     releases = metadata.get("releases", {})
-    candidate_versions = sorted(
-        (Version(v) for v in req.specifier.filter(releases)),
-        reverse=True,
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "LegacyVersion", DeprecationWarning)
+        candidate_versions = sorted(
+            (Version(v) for v in req.specifier.filter(releases)),
+            reverse=True,
+        )
     for ver in candidate_versions:
         if str(ver) not in releases:
             pkg_name = metadata.get("info", {}).get("name", "UNKNOWN")
