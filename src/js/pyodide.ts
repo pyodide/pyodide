@@ -241,6 +241,11 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
+    /**
+     * Environment variables to pass to Python. These can be used to set
+     * interpreter flag, use `python --help` to see the list of environment
+     * variables that Python considers.
+     */
     env?: { [key: string]: string | string[] };
   } = {}
 ): Promise<PyodideInterface> {
