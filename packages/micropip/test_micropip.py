@@ -1,6 +1,7 @@
 import io
 import sys
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -24,6 +25,9 @@ from pyodide_build import common
 @pytest.fixture
 def mock_platform(monkeypatch):
     monkeypatch.setenv("_PYTHON_HOST_PLATFORM", common.platform())
+    from micropip import _micropip
+
+    monkeypatch.setattr(_micropip, "get_platform", common.platform)
 
 
 def _mock_importlib_version(name: str) -> str:
@@ -810,3 +814,65 @@ def test_emfs(selenium_standalone_micropip):
             ]
 
         run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
+
+
+@contextmanager
+def does_not_raise():
+    yield
+
+
+def raiseValueError(msg):
+    return pytest.raises(ValueError, match=msg)
+
+
+@pytest.mark.parametrize(
+    "interp, abi, arch,ctx",
+    [
+        (
+            "cp35",
+            "cp35m",
+            "macosx_10_9_intel",
+            raiseValueError(
+                "Wheel platform 'macosx_10_9_intel' .* Pyodide's platform 'emscripten_3_1_14_wasm32'"
+            ),
+        ),
+        (
+            "cp35",
+            "cp35m",
+            "emscripten_2_0_27_wasm32",
+            raiseValueError(
+                r"Emscripten v2.0.27 but Pyodide was built with Emscripten v3.1.14"
+            ),
+        ),
+        (
+            "cp35",
+            "cp35m",
+            "emscripten_3_1_14_wasm32",
+            raiseValueError(
+                "Wheel abi 'cp35m' .* Supported abis are 'abi3' and 'cp310'."
+            ),
+        ),
+        ("cp35", "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
+        ("cp310", "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
+        ("cp310", "cp310", "emscripten_3_1_14_wasm32", does_not_raise()),
+        (
+            "cp35",
+            "cp310",
+            "emscripten_3_1_14_wasm32",
+            raiseValueError("Wheel interpreter version 'cp35' is not supported."),
+        ),
+        (
+            "cp391",
+            "abi3",
+            "emscripten_3_1_14_wasm32",
+            raiseValueError("Wheel interpreter version 'cp391' is not supported."),
+        ),
+    ],
+)
+def test_check_compatible(mock_platform, interp, abi, arch, ctx):
+    from micropip._micropip import WheelInfo
+
+    pkg = "scikit_learn-0.22.2.post1"
+    wheel_name = f"{pkg}-{interp}-{abi}-{arch}.whl"
+    with ctx:
+        WheelInfo.from_url(wheel_name).check_compatible()

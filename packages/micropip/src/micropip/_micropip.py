@@ -98,17 +98,42 @@ class WheelInfo:
         if "emscripten" not in tag.platform:
             raise ValueError(
                 f"Wheel platform '{tag.platform}' is not compatible with "
-                "Pyodide's platform '{get_platform()}'"
+                f"Pyodide's platform '{get_platform()}'"
             )
-        wheel_emscripten_version = (
-            tag.platform.removeprefix("emscripten_")
-            .removesuffix("_wasm32")
-            .replace("_", ".")
-        )
-        pyodide_emscripten_version = get_platform().split("-")[1]
+
+        def platform_to_version(platform: str) -> str:
+            return (
+                platform.replace("-", "_")
+                .removeprefix("emscripten_")
+                .removesuffix("_wasm32")
+                .replace("_", ".")
+            )
+
+        wheel_emscripten_version = platform_to_version(tag.platform)
+        pyodide_emscripten_version = platform_to_version(get_platform())
+        if wheel_emscripten_version != pyodide_emscripten_version:
+            raise ValueError(
+                f"Wheel was built with Emscripten v{wheel_emscripten_version} but "
+                f"Pyodide was built with Emscripten v{pyodide_emscripten_version}"
+            )
+
+        abi_incompatible = True
+        from sys import version_info
+
+        version = f"{version_info.major}{version_info.minor}"
+        abis = ["abi3", f"cp{version}"]
+        for tag in self.tags:
+            if tag.abi in abis:
+                abi_incompatible = False
+            break
+        if abi_incompatible:
+            abis_string = ",".join({tag.abi for tag in self.tags})
+            raise ValueError(
+                f"Wheel abi '{abis_string}' is not supported. Supported abis are 'abi3' and 'cp{version}'."
+            )
+
         raise ValueError(
-            f"Wheel was built with Emscripten v{wheel_emscripten_version} but "
-            f"Pyodide was built with Emscripten v{pyodide_emscripten_version}"
+            f"Wheel interpreter version '{tag.interpreter}' is not supported."
         )
 
     async def _fetch_bytes(self, fetch_kwargs):
