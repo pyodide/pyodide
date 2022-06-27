@@ -3,7 +3,7 @@ import math
 from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
 from js import document
-from pyodide.browser import (
+from pyodide.js_wrappers import (
     add_event_listener,
     clear_interval,
     clear_timeout,
