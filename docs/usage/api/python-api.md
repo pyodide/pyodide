@@ -43,7 +43,10 @@ By default there are two JavaScript modules. More can be added with
 .. toctree::
    :hidden:
 
-   python-api-code.md
-   python-api-ffi.md
-   python-api-http.md
+   python-api/code.md
+   python-api/console.md
+   python-api/ffi.md
+   python-api/http.md
+   python-api/js_wrappers.md
+   python-api/webloop.md
 ````
