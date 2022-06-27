@@ -240,7 +240,7 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
-    warnoptions?: string | string[];
+    env?: { [key: string]: string | string[] };
   } = {}
 ): Promise<PyodideInterface> {
   if (!options.indexURL) {
@@ -270,15 +270,19 @@ export async function loadPyodide(
 
   setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
   setHomeDirectory(Module, config.homedir);
-  if (options.warnoptions) {
-    let warnoptions: string[];
-    if (Array.isArray(options.warnoptions)) {
-      warnoptions = options.warnoptions;
-    } else {
-      warnoptions = [options.warnoptions];
+  if (options.env) {
+    let env: { [key: string]: string } = {};
+    for (let [key, value] of Object.entries(options.env)) {
+      let result: string;
+      if (Array.isArray(value)) {
+        result = value.join(",");
+      } else {
+        result = value;
+      }
+      env[key] = result;
     }
     Module.preRun.push(function () {
-      Module.ENV["PYTHONWARNINGS"] = warnoptions.join(",");
+      Object.assign(Module.ENV, env);
     });
   }
 
