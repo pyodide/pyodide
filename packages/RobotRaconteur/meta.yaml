@@ -1,0 +1,51 @@
+package:
+  name: RobotRaconteur
+  version: 0.15.1
+
+source:
+  url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-post1-Source.tar.gz
+  sha256: 224427d0922dcb34d17221c1f3b8b5e94ebddc109f24f8e9a3f7f5d090386dc6
+
+requirements:
+  run:
+    - boost-cpp
+    - numpy
+
+build:
+  cxxflags: -fexceptions -fPIC -DBOOST_SP_DISABLE_THREADS=1 -O2
+  ldflags: -fexceptions
+  script: |
+    export INSTALL_DIR=${WASM_LIBRARY_DIR}
+
+    emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_PYTHON=ON \
+    -DNUMPY_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/ \
+    -DPYTHON_INCLUDE_DIR=$PYTHONINCLUDE -DPYTHON_EXECUTABLE=python$PYMAJOR.$PYMINOR \
+    -DCMAKE_CXX_FLAGS="-fPIC -fexceptions -DBOOST_AP_DISABLE_THREADS=1 -O2 -DBOOST_BIND_GLOBAL_PLACEHOLDERS=1" \
+    -DBOOST_INCLUDEDIR=$WASM_LIBRARY_DIR/include -DBOOST_LIBRARYDIR=$WASM_LIBRARY_DIR/lib \
+    -DBoost_DATE_TIME_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_date_time.bc \
+    -DBoost_DATE_TIME_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_date_time.bc \
+    -DBoost_FILESYSTEM_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_filesystem.bc \
+    -DBoost_FILESYSTEM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_filesystem.bc \
+    -DBoost_SYSTEM_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_system.bc \
+    -DBoost_SYSTEM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_system.bc \
+    -DBoost_REGEX_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_regex.bc \
+    -DBoost_SYSTEM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_regex.bc \
+    -DBoost_CHRONO_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_chrono.bc \
+    -DBoost_CHRONO_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_crono.bc \
+    -DBoost_RANDOM_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_random.bc \
+    -DBoost_RANDOM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_random.bc \
+    -DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_program_options.bc \
+    -DBoost_PROGRAM_OPTIONS_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_program_options.bc \
+    -DUSE_PREGENERATED_SOURCE=ON \
+     .
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emcc ${SIDE_MODULE_LDFLAGS} -fexceptions out/lib/libRobotRaconteurCore.a \
+      out/Python/RobotRaconteur/_RobotRaconteurPython.a \
+      $WASM_LIBRARY_DIR/lib/libboost_chrono.bc \
+      $WASM_LIBRARY_DIR/lib/libboost_date_time.bc \
+      $WASM_LIBRARY_DIR/lib/libboost_filesystem.bc \
+      $WASM_LIBRARY_DIR/lib/libboost_program_options.bc \
+      $WASM_LIBRARY_DIR/lib/libboost_random.bc \
+      $WASM_LIBRARY_DIR/lib/libboost_regex.bc \
+      $WASM_LIBRARY_DIR/lib/libboost_system.bc \
+      -o out/Python/RobotRaconteur/_RobotRaconteurPython.so

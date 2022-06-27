@@ -59,7 +59,7 @@ substitutions:
   `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
   {pr}`2451`
 
-- {{ Feature }} Added `pyodide.run_js` API.
+- {{ Feature }} Added `pyodide.code.run_js` API.
   {pr}`2426`
 
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get

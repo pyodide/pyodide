@@ -18,7 +18,7 @@ from pyodide_test_runner.hypothesis import (
 def test_string_conversion(selenium_module_scope, s):
     @run_in_pyodide
     def main(selenium, sbytes):
-        from pyodide import run_js
+        from pyodide.code import run_js
 
         run_js("self.encoder = new TextEncoder()")
         run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
@@ -44,7 +44,7 @@ def test_string_conversion(selenium_module_scope, s):
 @std_hypothesis_settings
 @run_in_pyodide
 def test_string_conversion2(selenium, s):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     run_js("self.encoder = new TextEncoder()")
     run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
@@ -66,7 +66,7 @@ def test_string_conversion2(selenium, s):
 
 @run_in_pyodide
 def test_large_string_conversion(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     longstr = run_js('"ab".repeat(200_000)')
     res = longstr.count("ab")
@@ -115,7 +115,7 @@ def test_number_conversions(selenium_module_scope, n):
 
 @run_in_pyodide
 def test_nan_conversions(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     jsnan = run_js("NaN")
     from math import isnan
@@ -179,7 +179,7 @@ def test_big_int_conversions2(selenium_module_scope, n):
     def main(selenium, s):
         import json
 
-        from pyodide import run_js
+        from pyodide.code import run_js
 
         x_py = json.loads(s)
         x_js, check = run_js(
@@ -211,7 +211,7 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
     def main(selenium, s):
         import json
 
-        from pyodide import run_js
+        from pyodide.code import run_js
 
         x_py = json.loads(s)
         run_js(
@@ -251,7 +251,7 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
 def test_hyp_py2js2py(selenium, obj):
     import __main__
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     __main__.obj = obj
 
@@ -278,7 +278,7 @@ def test_hyp_py2js2py(selenium, obj):
 def test_hyp_py2js2py_2(selenium, obj):
     import __main__
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     __main__.o = obj
     try:
@@ -292,7 +292,7 @@ def test_hyp_py2js2py_2(selenium, obj):
 def test_big_integer_py2js2py(selenium, a):
     import __main__
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     __main__.a = a
     try:
@@ -311,7 +311,7 @@ def test_big_integer_py2js2py(selenium, a):
 def test_hyp_tojs_no_crash(selenium, obj):
     import __main__
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     __main__.x = obj
     try:
@@ -345,7 +345,7 @@ def test_hyp_tojs_no_crash(selenium, obj):
 )
 @run_in_pyodide
 def test_python2js1(selenium, py, js):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     assert run_js(
         f"""
@@ -356,7 +356,7 @@ def test_python2js1(selenium, py, js):
 
 @run_in_pyodide
 def test_python2js2(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     assert (
         list(
@@ -375,7 +375,7 @@ def test_python2js2(selenium):
 
 @run_in_pyodide
 def test_python2js3(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     l = [7, 9, 13]
     result = run_js(
@@ -391,7 +391,7 @@ def test_python2js3(selenium):
 
 @run_in_pyodide
 def test_python2js4(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     assert (
         list(
@@ -411,7 +411,7 @@ def test_python2js4(selenium):
 
 @run_in_pyodide
 def test_python2js5(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     assert run_js("(x) => x.tell()")(open("/foo.txt", "wb")) == 0
 
@@ -467,7 +467,7 @@ def test_python2js_track_proxies(selenium):
 
 @run_in_pyodide
 def test_wrong_way_track_proxies(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     checkDestroyed = run_js(
         """
@@ -535,7 +535,8 @@ def test_wrong_way_conversions1(selenium):
 
 @run_in_pyodide
 def test_wrong_way_conversions2(selenium):
-    from pyodide import run_js, to_js
+    from pyodide import to_js
+    from pyodide.code import run_js
 
     [astr, bstr] = run_js(
         """
@@ -550,7 +551,8 @@ def test_wrong_way_conversions2(selenium):
 
 @run_in_pyodide
 def test_wrong_way_conversions3(selenium):
-    from pyodide import run_js, to_js
+    from pyodide import to_js
+    from pyodide.code import run_js
 
     class Test:
         pass
@@ -577,7 +579,8 @@ def test_wrong_way_conversions4(selenium):
 def test_dict_converter1(selenium):
     import json
 
-    from pyodide import run_js, to_js
+    from pyodide import to_js
+    from pyodide.code import run_js
 
     arrayFrom = run_js("Array.from")
     d = {x: x + 2 for x in range(5)}
@@ -598,7 +601,7 @@ def test_dict_converter1(selenium):
 def test_dict_converter2(selenium):
     import json
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     d = {x: x + 2 for x in range(5)}
     constructor, serialized = run_js(
@@ -619,7 +622,8 @@ def test_dict_converter3(selenium):
     import json
 
     from js import Object
-    from pyodide import run_js, to_js
+    from pyodide import to_js
+    from pyodide.code import run_js
 
     d = {x: x + 2 for x in range(5)}
 
@@ -638,7 +642,7 @@ def test_dict_converter3(selenium):
 def test_dict_converter4(selenium):
     import json
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     d = {x: x + 2 for x in range(5)}
 
@@ -665,7 +669,7 @@ def test_python2js_long_ints(selenium, formula):
 
 @run_in_pyodide
 def test_python2js_long_ints2(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     assert run_js(
         """
@@ -753,7 +757,7 @@ def test_js2python(selenium):
 )
 @run_in_pyodide
 def test_js2python_bool(selenium, jsval, is_truthy):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     assert bool(run_js(jsval)) is is_truthy
 
@@ -774,7 +778,7 @@ def test_js2python_bool(selenium, jsval, is_truthy):
 )
 @run_in_pyodide
 def test_typed_arrays(selenium, jstype, pytype):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     array = run_js(f"new {jstype}([1, 2, 3, 4]);").to_py()
     print(array.format, array.tolist(), array.tobytes())
@@ -787,7 +791,7 @@ def test_typed_arrays(selenium, jstype, pytype):
 
 @run_in_pyodide
 def test_array_buffer(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     array = run_js("new ArrayBuffer(100);").to_py()
     assert len(array.tobytes()) == 100
@@ -869,7 +873,7 @@ def test_dict_py2js2py(selenium):
 def test_jsproxy_attribute_error(selenium):
     import pytest
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     point = run_js(
         """
@@ -909,7 +913,7 @@ def test_javascript_error(selenium):
 
 @run_in_pyodide
 def test_javascript_error_back_to_js(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     err = run_js('self.err = new Error("This is a js error"); err')
     assert type(err).__name__ == "JsException"
@@ -979,7 +983,7 @@ def test_python2js_with_depth(selenium):
 def test_tojs1(selenium, ty):
     import json
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     l = [1, 2, 3]
     x = ty(l)
@@ -992,7 +996,7 @@ def test_tojs1(selenium, ty):
 def test_tojs2(selenium):
     import json
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     o = [(1, 2), (3, 4), [5, 6], {2: 3, 4: 9}]
 
@@ -1129,7 +1133,7 @@ def test_tojs9(selenium):
 
 @run_in_pyodide
 def test_to_py1(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     a = run_js(
         """
@@ -1149,7 +1153,7 @@ def test_to_py1(selenium):
 
 @run_in_pyodide
 def test_to_py2(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     a = run_js(
         """
@@ -1169,7 +1173,7 @@ def test_to_py2(selenium):
 
 @run_in_pyodide
 def test_to_py3(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     a = run_js(
         """
@@ -1200,7 +1204,8 @@ def test_to_py3(selenium):
 def test_to_py4(selenium, obj, msg):
     import pytest
 
-    from pyodide import ConversionError, JsException, run_js
+    from pyodide import ConversionError, JsException
+    from pyodide.code import run_js
 
     a = run_js(f"new {obj}")
 
@@ -1210,7 +1215,7 @@ def test_to_py4(selenium, obj, msg):
 
 @run_in_pyodide
 def test_to_py_default_converter(selenium):
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     [r1, r2] = run_js(
         """
@@ -1254,7 +1259,7 @@ def test_to_py_default_converter(selenium):
 def test_to_py_default_converter2(selenium):
     from typing import Any
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     [p1, p2] = run_js(
         """
@@ -1332,7 +1337,8 @@ def test_to_js_default_converter2(selenium):
     import pytest
 
     from js import JSON, Array
-    from pyodide import JsException, run_js, to_js
+    from pyodide import JsException, to_js
+    from pyodide.code import run_js
 
     class Pair:
         def __init__(self, first, second):
@@ -1435,7 +1441,7 @@ def test_buffer_format_string(selenium):
 def test_object_with_null_constructor(selenium):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     o = run_js("Object.create(null)")
     with TestCase().assertRaises(TypeError):
@@ -1458,7 +1464,7 @@ def test_dict_converter_cache(selenium):
 def test_very_large_length(selenium, n):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises(
         OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
@@ -1484,7 +1490,7 @@ def test_very_large_length(selenium, n):
 def test_negative_length(selenium, n):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises(
         ValueError, msg=f"length {n} of object is negative"

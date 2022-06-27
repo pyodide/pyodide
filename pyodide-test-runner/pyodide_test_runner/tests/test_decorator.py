@@ -238,7 +238,7 @@ def test_run_in_pyodide_alias(request):
 def test_pickle_jsexception(selenium):
     import pickle
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     pickle.dumps(run_js("new Error('hi');"))
 
@@ -250,7 +250,7 @@ def test_raises_jsexception(selenium):
 
     @run_in_pyodide
     def raise_jsexception(selenium):
-        from pyodide import run_js
+        from pyodide.code import run_js
 
         run_js("throw new Error('hi');")
 

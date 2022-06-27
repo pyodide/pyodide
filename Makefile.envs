@@ -115,6 +115,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lnodefs.js \
 	-lproxyfs.js \
 	-lworkerfs.js \
+	-lwebsocket.js \
+	-leventloop.js \
 	\
 	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
@@ -149,10 +151,11 @@ export CARGO_HOME ?= $(HOME)/.cargo
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
+export RUST_TOOLCHAIN=nightly-2022-06-26
+
 
 # idealy we could automatically include all SIDE_MODULE_LDFLAGS here
 export RUSTFLAGS= \
-	-C relocation-model=pic \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-Z link-native-libraries=no

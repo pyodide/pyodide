@@ -128,6 +128,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
   API.pyodide_py = import_module("pyodide");
+  API.pyodide_code = import_module("pyodide.code");
   API.package_loader = import_module("pyodide._package_loader");
   API.version = API.pyodide_py.__version__;
 
