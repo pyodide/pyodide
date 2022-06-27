@@ -19,16 +19,25 @@ By default there are two JavaScript modules. More can be added with
 
 **Python Modules**
 
-```{eval-rst}
+````{eval-rst}
 .. list-table::
 
    *  - :py:mod:`pyodide.code`
       - Utilities for evaluating Python and JavaScript code.
+   *  - :py:mod:`pyodide.console`
+      - Similar to the Python builtin `code` module but handles top level await. Used
+        for implementing the Pyodide console.
    *  - :py:mod:`pyodide.ffi`
       - The :any:`JsProxy` class and utilities to help interact with JavaScript code.
    *  - :py:mod:`pyodide.http`
       - Defines :any:`pyfetch` and other functions for making network requests.
-```
+   *  - :py:mod:`pyodide.js_wrappers`
+      - Wrappers for JavaScript APIs such as `setTimeout` to help ensure that resources
+        are properly released.
+   *  - :py:mod:`pyodide.webloop`
+      - The Pyodide event loop implementation. This is automatically configured
+        correctly for most use cases it is unlikely you will need it outside of niche
+        use cases.
 
 ```{eval-rst}
 .. toctree::
@@ -37,4 +46,4 @@ By default there are two JavaScript modules. More can be added with
    python-api-code.md
    python-api-ffi.md
    python-api-http.md
-```
+````
