@@ -405,7 +405,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = loop
 
 
-def _initialize():
+def _initialize_event_loop():
     from ._core import IN_BROWSER
 
     if not IN_BROWSER:

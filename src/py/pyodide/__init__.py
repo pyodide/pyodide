@@ -50,10 +50,10 @@ DEPRECATED_LIST = {
 }
 
 
-from .webloop import _initialize
+from .webloop import _initialize_event_loop
 
-_initialize()
-del _initialize
+_initialize_event_loop()
+del _initialize_event_loop
 
 
 def __dir__() -> list[str]:
