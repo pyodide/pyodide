@@ -108,7 +108,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
-	-lbz2 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
