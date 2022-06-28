@@ -27,6 +27,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "ldflags": str,
         "library": bool,
         "sharedlibrary": bool,
+        "cross-script": str,
         "script": str,
         "post": str,
         "replace-libs": list,
@@ -139,7 +140,7 @@ def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
     if library and sharedlibrary:
         yield "build/library and build/sharedlibrary cannot both be true."
 
-    allowed_keys = {"library", "sharedlibrary", "script"}
+    allowed_keys = {"library", "sharedlibrary", "script", "cross-script"}
     typ = "library" if library else "sharedlibrary"
     for key in build_metadata.keys():
         if key not in PACKAGE_CONFIG_SPEC["build"]:

@@ -1,11 +1,10 @@
-import contextlib
 import os
 import shutil
 import sys
 import traceback
 from itertools import chain
 from pathlib import Path
-from typing import Generator, Mapping
+from typing import Mapping
 
 from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
 from build.__main__ import (
@@ -18,7 +17,12 @@ from build.__main__ import (
 from build.env import IsolatedEnv
 from packaging.requirements import Requirement
 
-from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
+from .common import (
+    get_hostsitepackages,
+    get_pyversion,
+    get_unisolated_packages,
+    replace_env,
+)
 
 
 def symlink_unisolated_packages(env: IsolatedEnv) -> None:
@@ -46,18 +50,6 @@ def remove_unisolated_requirements(requires: set[str]) -> set[str]:
             if avoid_name in req.name.lower():
                 requires.remove(reqstr)
     return requires
-
-
-@contextlib.contextmanager
-def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
-    old_environ = dict(os.environ)
-    os.environ.clear()
-    os.environ.update(build_env)
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(old_environ)
 
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:

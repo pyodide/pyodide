@@ -439,18 +439,34 @@ def compile(
         return
 
     replace_libs = ";".join(build_metadata.get("replace-libs", []))
+
+    build_env = pywasmcross.get_build_env(
+        env=bash_runner.env,
+        pkgname=name,
+        cflags=build_metadata["cflags"],
+        cxxflags=build_metadata["cxxflags"],
+        ldflags=build_metadata["ldflags"],
+        target_install_dir=target_install_dir,
+        replace_libs=replace_libs,
+        exports=build_metadata.get("exports", "pyinit"),
+    )
+    backend_flags = build_metadata["backend-flags"]
+
     with chdir(srcpath):
-        pywasmcross.compile(
-            env=bash_runner.env,
-            pkgname=name,
-            backend_flags=build_metadata["backend-flags"],
-            cflags=build_metadata["cflags"],
-            cxxflags=build_metadata["cxxflags"],
-            ldflags=build_metadata["ldflags"],
-            target_install_dir=target_install_dir,
-            replace_libs=replace_libs,
-            exports=build_metadata.get("exports", "pyinit"),
-        )
+        if "cross-script" in build_metadata:
+            with BashRunnerWithSharedEnvironment(build_env) as runner:
+                runner.run(build_metadata["cross-script"])
+                build_env = runner.env
+
+        from .pypabuild import build
+
+        try:
+            build(build_env, backend_flags)
+        except BaseException:
+            build_log_path = Path("build.log")
+            if build_log_path.exists():
+                build_log_path.unlink()
+            raise
 
 
 def replace_so_abi_tags(wheel_dir: Path) -> None:
