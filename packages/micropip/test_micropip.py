@@ -827,6 +827,10 @@ def raiseValueError(msg):
     return pytest.raises(ValueError, match=msg)
 
 
+PLATFORM = common.platform()
+EMSCRIPTEN_VER = common.emscripten_version()
+
+
 @pytest.mark.parametrize(
     "interp, abi, arch,ctx",
     [
@@ -835,7 +839,7 @@ def raiseValueError(msg):
             "cp35m",
             "macosx_10_9_intel",
             raiseValueError(
-                "Wheel platform 'macosx_10_9_intel' .* Pyodide's platform 'emscripten_3_1_14_wasm32'"
+                f"Wheel platform 'macosx_10_9_intel' .* Pyodide's platform '{PLATFORM}'"
             ),
         ),
         (
@@ -843,30 +847,30 @@ def raiseValueError(msg):
             "cp35m",
             "emscripten_2_0_27_wasm32",
             raiseValueError(
-                r"Emscripten v2.0.27 but Pyodide was built with Emscripten v3.1.14"
+                f"Emscripten v2.0.27 but Pyodide was built with Emscripten v{EMSCRIPTEN_VER}"
             ),
         ),
         (
             "cp35",
             "cp35m",
-            "emscripten_3_1_14_wasm32",
+            PLATFORM,
             raiseValueError(
                 f"Wheel abi 'cp35m' .* Supported abis are 'abi3' and '{cpver}'."
             ),
         ),
-        ("cp35", "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
-        (cpver, "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
-        (cpver, cpver, "emscripten_3_1_14_wasm32", does_not_raise()),
+        ("cp35", "abi3", PLATFORM, does_not_raise()),
+        (cpver, "abi3", PLATFORM, does_not_raise()),
+        (cpver, cpver, PLATFORM, does_not_raise()),
         (
             "cp35",
             cpver,
-            "emscripten_3_1_14_wasm32",
+            PLATFORM,
             raiseValueError("Wheel interpreter version 'cp35' is not supported."),
         ),
         (
             "cp391",
             "abi3",
-            "emscripten_3_1_14_wasm32",
+            PLATFORM,
             raiseValueError("Wheel interpreter version 'cp391' is not supported."),
         ),
     ],
