@@ -106,6 +106,9 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
+	-lbz2 \
+	-lz \
+	-lsqlite3 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -138,7 +141,6 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
 	-I$(PYTHONINCLUDE) \
-	-s USE_ZLIB=1 \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
