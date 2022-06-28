@@ -190,7 +190,7 @@ class BrowserWrapper:
             pyodide._api.package_loader.get_dynlibs;
             pyodide._api.package_loader.sub_resource_hash;
             pyodide.runPython("");
-            pyodide.pyimport("pyodide.browser").destroy();
+            pyodide.pyimport("pyodide.ffi.wrappers").destroy();
             """
         )
 
