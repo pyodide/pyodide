@@ -9,6 +9,7 @@ source:
 requirements:
   run:
     - sqlite3
+    - libtiff
 
 build:
   library: true
@@ -19,10 +20,11 @@ build:
         -DCMAKE_INSTALL_PREFIX=../../proj \
         -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_CURL=OFF \
-        -DENABLE_TIFF=OFF \
         -DBUILD_APPS=OFF \
         -DBUILD_SHARED_LIBS=OFF \
         -DBUILD_TESTING=OFF \
+        -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+        -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
         -DSQLITE3_LIBRARY=${WASM_LIBRARY_DIR}/lib/libsqlite3.a \
         -DSQLITE3_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
         -DCMAKE_C_FLAGS="-fPIC" \
