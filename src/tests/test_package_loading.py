@@ -158,17 +158,16 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    dist_dir = Path(__file__).parents[2] / "dist"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
-        dist_dir / pyparsing_wheel_name,
-        dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
+        DIST_PATH / pyparsing_wheel_name,
+        DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl",
     )
 
     try:
         selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
-        (dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
+        (DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
     assert selenium_standalone.run_js(
         "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
@@ -264,14 +263,13 @@ def test_test_unvendoring(selenium_standalone):
 
 
 def test_install_archive(selenium):
-    dist_dir = Path(__file__).parents[2] / "dist"
     test_dir = Path(__file__).parent
     # TODO: first argument actually works as a path due to implementation,
     # maybe it can be proposed to typeshed?
     shutil.make_archive(
         str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
-    build_test_pkg = dist_dir / "test_pkg.tar.gz"
+    build_test_pkg = DIST_PATH / "test_pkg.tar.gz"
     if not build_test_pkg.exists():
         build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
@@ -302,7 +300,7 @@ def test_install_archive(selenium):
                 """
             )
     finally:
-        (dist_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+        (DIST_PATH / "test_pkg.tar.gz").unlink(missing_ok=True)
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
@@ -392,3 +390,37 @@ def test_get_dynlibs():
         x2.close()
         t.flush()
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
+
+
+@pytest.mark.xfail_browsers(node="Some fetch trouble")
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_lockfile(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    lock = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({fullStdLib: false});
+        await pyodide.loadPackage("micropip")
+        return pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install("hypothesis==6.47.3")
+            micropip.freeze()
+        `);
+        """
+    )
+    custom_lockfile = DIST_PATH / "custom_lockfile.json"
+    custom_lockfile.write_text(lock)
+
+    try:
+        assert (
+            selenium.run_js(
+                """
+                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json" });
+                await pyodide.loadPackage("hypothesis");
+                return pyodide.runPython("import hypothesis; hypothesis.__version__")
+                """
+            )
+            == "6.47.3"
+        )
+    finally:
+        custom_lockfile.unlink()

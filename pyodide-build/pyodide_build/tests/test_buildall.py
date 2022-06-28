@@ -62,7 +62,7 @@ def test_generate_repodata(tmp_path):
 
     package_data = buildall.generate_repodata(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
-    assert set(package_data["info"].keys()) == {"arch", "platform", "version"}
+    assert set(package_data["info"].keys()) == {"arch", "platform", "version", "python"}
     assert package_data["info"]["arch"] == "wasm32"
     assert package_data["info"]["platform"].startswith("emscripten")
 

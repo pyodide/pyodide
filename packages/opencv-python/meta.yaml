@@ -23,6 +23,7 @@ requirements:
     - numpy
     - ffmpeg
     - libwebp
+    - libtiff
 build:
   cxxflags: |
     -fPIC

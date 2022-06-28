@@ -5,7 +5,7 @@ from typing import Any, Sequence
 import pytest
 from pyodide_test_runner import run_in_pyodide
 
-from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -298,11 +298,11 @@ def test_monkeypatch_eval_code(selenium):
         selenium.run(
             """
             import pyodide
-            old_eval_code = pyodide.eval_code
+            old_eval_code = pyodide.code.eval_code
             x = 3
             def eval_code(code, ns):
                 return [ns["x"], old_eval_code(code, ns)]
-            pyodide.eval_code = eval_code
+            pyodide.code.eval_code = eval_code
             """
         )
         assert selenium.run("x = 99; 5") == [3, 5]
@@ -310,7 +310,7 @@ def test_monkeypatch_eval_code(selenium):
     finally:
         selenium.run(
             """
-            pyodide.eval_code = old_eval_code
+            pyodide.code.eval_code = old_eval_code
             """
         )
 
@@ -1158,7 +1158,7 @@ def test_sys_path0(selenium):
 def test_run_js(selenium):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises
 
@@ -1171,3 +1171,24 @@ def test_run_js(selenium):
     from js import x
 
     assert x == 77
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_moved_deprecation_warnings(selenium_standalone):
+    import pytest
+
+    import pyodide
+
+    with pytest.warns() as record:
+        deprecated_funcs = [
+            "CodeRunner",
+            "eval_code",
+            "eval_code_async",
+            "find_imports",
+            "should_quiet",
+        ]
+        for func in deprecated_funcs:
+            getattr(pyodide, func)
+        assert len(record) == 5
+        for func in deprecated_funcs:
+            getattr(pyodide, func)

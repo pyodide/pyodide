@@ -16,6 +16,9 @@ build:
   script: |
     # export VERBOSE=1
     export CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/xgboost/cmake/Toolchain.cmake
+  # xgboost uses dlsym so we need to export more than just PyInit_xgboost.
+  # We can't currently use "explicit" because there are too many exports.
+  exports: "whole_archive"
 requirements:
   run:
     - numpy

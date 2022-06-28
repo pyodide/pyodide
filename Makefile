@@ -243,8 +243,8 @@ SETUPTOOLS_RUST_COMMIT=5e8c380429aba1e5df5815dcf921025c599cecec
 rust:
 	wget https://sh.rustup.rs -O /rustup.sh
 	sh /rustup.sh -y
-	source $(HOME)/.cargo/env && rustup toolchain install nightly-2022-06-14 && rustup default nightly-2022-06-14
-	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain nightly-2022-06-14
+	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
 	# Install setuptools-rust with a fix for Wasm targets
 	# TODO: Remove this when they release the next version.
 	pip install -t $(HOSTSITEPACKAGES) git+https://github.com/PyO3/setuptools-rust.git@$(SETUPTOOLS_RUST_COMMIT)

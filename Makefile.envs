@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.10.2
 # Note: when updating EMSCRIPTEN_VERSION make sure to update
 # the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.13
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.14
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -84,9 +84,6 @@ export LDFLAGS_BASE=\
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
 	-s MODULARIZE=1 \
-	-s LINKABLE=1 \
-	-s EXPORT_ALL=1 \
-	-s WASM=1 \
 	-std=c++14 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
@@ -106,6 +103,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s EXPORT_ALL=1 \
 	-s POLYFILL \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
@@ -117,6 +115,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lnodefs.js \
 	-lproxyfs.js \
 	-lworkerfs.js \
+	-lwebsocket.js \
+	-leventloop.js \
 	\
 	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
@@ -151,10 +151,11 @@ export CARGO_HOME ?= $(HOME)/.cargo
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
+export RUST_TOOLCHAIN=nightly-2022-06-26
+
 
 # idealy we could automatically include all SIDE_MODULE_LDFLAGS here
 export RUSTFLAGS= \
-	-C relocation-model=pic \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-Z link-native-libraries=no

@@ -448,6 +448,7 @@ def compile(
         ldflags=build_metadata["ldflags"],
         target_install_dir=target_install_dir,
         replace_libs=replace_libs,
+        exports=build_metadata.get("exports", "pyinit"),
     )
     backend_flags = build_metadata["backend-flags"]
 

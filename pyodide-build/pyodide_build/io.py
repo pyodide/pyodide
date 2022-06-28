@@ -20,6 +20,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "extras": list,  # List[Tuple[str, str]],
     },
     "build": {
+        "exports": str | list,  # list[str]
         "backend-flags": str,
         "cflags": str,
         "cxxflags": str,
@@ -127,6 +128,13 @@ def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
     build_metadata = config["build"]
     library = build_metadata.get("library", False)
     sharedlibrary = build_metadata.get("sharedlibrary", False)
+    exports = build_metadata.get("exports", "pyinit")
+    if isinstance(exports, str) and exports not in [
+        "pyinit",
+        "requested",
+        "whole_archive",
+    ]:
+        yield f"build/exports must be 'pyinit', 'requested', or 'whole_archive' not {build_metadata['exports']}"
     if not library and not sharedlibrary:
         return
     if library and sharedlibrary:

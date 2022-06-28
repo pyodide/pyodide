@@ -8,9 +8,9 @@ from dataclasses import dataclass, field
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
 from importlib.metadata import version as importlib_version
-from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
+from urllib.parse import ParseResult, urlparse
 from zipfile import ZipFile
 
 from packaging.markers import default_environment
@@ -23,6 +23,7 @@ from pyodide import to_js
 from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
 
 from ._compat import (
+    REPODATA_INFO,
     REPODATA_PACKAGES,
     fetch_bytes,
     fetch_string,
@@ -54,9 +55,10 @@ class WheelInfo:
     build: tuple[int, str] | tuple[()]
     tags: frozenset[Tag]
     url: str
+    parsed_url: ParseResult
     project_name: str | None = None
     digests: dict[str, str] | None = None
-    data: BytesIO | None = None
+    data: IO[bytes] | None = None
     _dist: Any = None
     dist_info: Path | None = None
     _requires: list[Requirement] | None = None
@@ -67,7 +69,8 @@ class WheelInfo:
 
         See https://www.python.org/dev/peps/pep-0427/#file-name-convention
         """
-        file_name = Path(url).name
+        parsed_url = urlparse(url)
+        file_name = Path(parsed_url.path).name
         name, version, build, tags = parse_wheel_filename(file_name)
         return WheelInfo(
             name=name,
@@ -76,6 +79,7 @@ class WheelInfo:
             build=build,
             tags=tags,
             url=url,
+            parsed_url=parsed_url,
         )
 
     def is_compatible(self):
@@ -86,23 +90,27 @@ class WheelInfo:
                 return True
         return False
 
-    async def download(self, fetch_kwargs):
+    async def _fetch_bytes(self, fetch_kwargs):
         try:
-            wheel_bytes = await fetch_bytes(self.url, fetch_kwargs)
+            return await fetch_bytes(self.url, fetch_kwargs)
         except OSError as e:
-            if self.url.startswith("https://files.pythonhosted.org/"):
+            if self.parsed_url.hostname in [
+                "files.pythonhosted.org",
+                "cdn.jsdelivr.net",
+            ]:
                 raise e
             else:
                 raise ValueError(
-                    f"Can't fetch wheel from '{self.url}'."
+                    f"Can't fetch wheel from '{self.url}'. "
                     "One common reason for this is when the server blocks "
-                    "Cross-Origin Resource Sharing (CORS)."
+                    "Cross-Origin Resource Sharing (CORS). "
                     "Check if the server is sending the correct 'Access-Control-Allow-Origin' header."
                 ) from e
 
-        self.data = BytesIO(wheel_bytes)
-
-        with ZipFile(self.data) as zip_file:
+    async def download(self, fetch_kwargs):
+        data = await self._fetch_bytes(fetch_kwargs)
+        self.data = data
+        with ZipFile(data) as zip_file:
             self._dist = pkg_resources_distribution_for_wheel(
                 zip_file, self.name, "???"
             )
@@ -116,11 +124,10 @@ class WheelInfo:
             # No checksums available, e.g. because installing
             # from a different location than PyPI.
             return
-        sha256 = self.digests["sha256"]
-        m = hashlib.sha256()
+        sha256_expected = self.digests["sha256"]
         assert self.data
-        m.update(self.data.getvalue())
-        if m.hexdigest() != sha256:
+        sha256_actual = _generate_package_hash(self.data)
+        if sha256_actual != sha256_expected:
             raise ValueError("Contents don't match hash")
 
     def extract(self, target: Path) -> None:
@@ -397,9 +404,9 @@ async def install(
 
     See :ref:`loading packages <loading_packages>` for more information.
 
-    This only works for packages that are either pure Python or for packages
-    with C extensions that are built in Pyodide. If a pure Python package is not
-    found in the Pyodide repository it will be loaded from PyPI.
+    If a package is not found in the Pyodide repository it will be loaded from
+    PyPI. Micropip can only load pure Python packages or for packages with C
+    extensions that are built for Pyodide.
 
     When used in web browsers, downloads from PyPI will be cached. When run in
     Node.js, packages are currently not cached, and will be re-downloaded each
@@ -410,15 +417,28 @@ async def install(
     requirements : ``str | List[str]``
 
         A requirement or list of requirements to install. Each requirement is a
-        string, which should be either a package name or URL to a wheel:
+        string, which should be either a package name or a wheel URI:
 
-        - If the requirement ends in ``.whl`` it will be interpreted as a URL.
-          The file must be a wheel named in compliance with the
-          `PEP 427 naming convention <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+        - If the requirement does not end in ``.whl``, it will be interpreted as
+          a package name. A package with this name must either be present
+          in the Pyodide lock file or on PyPI.
 
-        - If the requirement does not end in ``.whl``, it will interpreted as the
-          name of a package. A package by this name must either be present in the
-          Pyodide repository at :any:`indexURL <globalThis.loadPyodide>` or on PyPI
+        - If the requirement ends in ``.whl``, it is a wheel URI. The part of
+          the requirement after the last ``/``  must be a valid wheel name in
+          compliance with the `PEP 427 naming convention
+          <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+
+        - If a wheel URI starts with ``emfs:``, it will be interpreted as a path
+          in the Emscripten file system (Pyodide's file system). E.g.,
+          `emfs:../relative/path/wheel.whl` or `emfs:/absolute/path/wheel.whl`.
+          In this case, only .whl files are supported.
+
+        - If a wheel URI requirement starts with ``http:`` or ``https:`` it will
+          be interpreted as a URL.
+
+        - In node, you can access the native file system using a URI that starts
+          with ``file:``. In the browser this will not work.
+
 
     keep_going : ``bool``, default: False
 
@@ -426,28 +446,29 @@ async def install(
         Python package without a pure Python wheel while doing dependency
         resolution:
 
-        - If ``False``, an error will be raised on first package with a missing wheel.
+        - If ``False``, an error will be raised on first package with a missing
+          wheel.
 
-        - If ``True``, the micropip will keep going after the first error, and report a list
-          of errors at the end.
+        - If ``True``, the micropip will keep going after the first error, and
+          report a list of errors at the end.
 
     deps : ``bool``, default: True
 
-        If ``True``, install dependencies specified in METADATA file for
-        each package. Otherwise do not install dependencies.
+        If ``True``, install dependencies specified in METADATA file for each
+        package. Otherwise do not install dependencies.
 
     credentials : ``Optional[str]``
 
         This parameter specifies the value of ``credentials`` when calling the
-        `fetch() <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`__ function
-        which is used to download the package.
+        `fetch() <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`__
+        function which is used to download the package.
 
         When not specified, ``fetch()`` is called without ``credentials``.
 
     pre : ``bool``, default: False
 
-        If ``True``, include pre-release and development versions.
-        By default, micropip only finds stable versions.
+        If ``True``, include pre-release and development versions. By default,
+        micropip only finds stable versions.
 
     Returns
     -------
@@ -511,7 +532,7 @@ async def install(
     await gather(*wheel_promises)
 
 
-def _generate_package_hash(data: BytesIO) -> str:
+def _generate_package_hash(data: IO[bytes]) -> str:
     sha256_hash = hashlib.sha256()
     data.seek(0)
     while chunk := data.read(4096):
@@ -521,12 +542,15 @@ def _generate_package_hash(data: BytesIO) -> str:
 
 def freeze() -> str:
     """Produce a json string which can be used as the contents of the
-    ``repodata.json`` lockfile.
+    ``repodata.json`` lock file.
 
-    If you later load pyodide with this lock file, you can use
-    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip` this
-    time. Loading packages with :any:`pyodide.loadPackage` is much faster and you
-    will always get consistent versions of all your dependencies.
+    If you later load Pyodide with this lock file, you can use
+    :any:`pyodide.loadPackage` to load packages that were loaded with `micropip`
+    this time. Loading packages with :any:`pyodide.loadPackage` is much faster
+    and you will always get consistent versions of all your dependencies.
+
+    You can use your custom lock file by passing an appropriate url to the
+    `lockFileURL` argument to :any:`loadPyodide <globalThis.loadPyodide>`.
     """
     from copy import deepcopy
 
@@ -561,7 +585,7 @@ def freeze() -> str:
     # Sort
     packages = dict(sorted(packages.items()))
     package_data = {
-        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "info": REPODATA_INFO,
         "packages": packages,
     }
     return json.dumps(package_data)

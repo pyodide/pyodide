@@ -103,6 +103,19 @@ Extra arguments to pass to the linker when building for WebAssembly.
 
 (This key is not in the Conda spec).
 
+### `build/exports`
+
+Which symbols should be exported from the shared object files. Possible values
+are:
+
+- `pyinit`: The default. Only export Python module initialization symbols of
+  the form `PyInit_some_module`.
+- `requested`: Export the functions that are marked as exported in the object
+  files. Switch to this if `pyinit` doesn't work. Useful for packages that use
+  `ctypes` or `dlsym` to access symbols.
+- `whole_archive`: Uses `-Wl,--whole-archive` to force inclusion of all
+  symbols. Use this when neither `pyinit` nor `explicit` work.
+
 ### `build/backend-flags`
 
 Extra flags to pass to the build backend (e.g., `setuptools`, `flit`, etc).
@@ -121,7 +134,7 @@ The script section is required for a library package (`build/library` set to tru
 
 ### `build/cross-script`
 
-This script will run *after* `build/script`. The difference is that it runs with the target environment variables and `sysconfigdata` and with the `pywasmcross` compiler symlinks. Any changes to the environment will persist to the main build step but will not be seen in the `build/post` step (or anything else done outside of the cross build environment). The working directory for this script is the source directory.
+This script will run _after_ `build/script`. The difference is that it runs with the target environment variables and `sysconfigdata` and with the `pywasmcross` compiler symlinks. Any changes to the environment will persist to the main build step but will not be seen in the `build/post` step (or anything else done outside of the cross build environment). The working directory for this script is the source directory.
 
 ### `build/post`
 

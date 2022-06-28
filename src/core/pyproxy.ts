@@ -1140,6 +1140,13 @@ export class PyProxyCallableMethods {
     }
     return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
   }
+
+  /**
+   * No-op bind function for compatibility with existing libraries
+   */
+  bind(placeholder: any) {
+    return this;
+  }
 }
 // @ts-ignore
 PyProxyCallableMethods.prototype.prototype = Function.prototype;
