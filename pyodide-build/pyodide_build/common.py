@@ -13,6 +13,10 @@ from packaging.utils import parse_wheel_filename
 from .io import parse_package_config
 
 
+def emscripten_version():
+    return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+
+
 def platform():
     emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
@@ -250,6 +254,8 @@ def get_unisolated_packages():
         config = parse_package_config(pkg, check=False)
         if config.get("build", {}).get("cross-build-env", False):
             unisolated_packages.append(config["package"]["name"])
+    # TODO: remove setuptools_rust from this when they release the next version.
+    unisolated_packages.append("setuptools_rust")
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 

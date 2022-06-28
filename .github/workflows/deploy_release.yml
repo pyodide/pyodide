@@ -1,8 +1,7 @@
 name: deploy-release
 on:
-  push:
-    tags:
-      - "*.*.*"
+  repository_dispatch:
+    types: [deploy-release]
 jobs:
   deploy-pyodide-build-pypi:
     runs-on: ubuntu-latest

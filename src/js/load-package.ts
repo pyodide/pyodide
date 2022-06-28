@@ -5,48 +5,46 @@ declare var API: any;
 import {
   IN_NODE,
   nodeFsPromisesMod,
-  _loadBinaryFile,
+  loadBinaryFile,
   initNodeModules,
 } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
-/** @private */
-let baseURL: string;
 /**
  * Initialize the packages index. This is called as early as possible in
- * loadPyodide so that fetching packages.json can occur in parallel with other
+ * loadPyodide so that fetching repodata.json can occur in parallel with other
  * operations.
- * @param indexURL
+ * @param lockFileURL
  * @private
  */
-export async function initializePackageIndex(indexURL: string) {
-  baseURL = indexURL;
-  let package_json;
+async function initializePackageIndex(lockFileURL: string) {
+  let repodata;
   if (IN_NODE) {
     await initNodeModules();
-    const package_string = await nodeFsPromisesMod.readFile(
-      `${indexURL}packages.json`
-    );
-    package_json = JSON.parse(package_string);
+    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
+    repodata = JSON.parse(package_string);
   } else {
-    let response = await fetch(`${indexURL}packages.json`);
-    package_json = await response.json();
+    let response = await fetch(lockFileURL);
+    repodata = await response.json();
   }
-  if (!package_json.packages) {
+  if (!repodata.packages) {
     throw new Error(
-      "Loaded packages.json does not contain the expected key 'packages'."
+      "Loaded repodata.json does not contain the expected key 'packages'."
     );
   }
-  API.packages = package_json.packages;
+  API.repodata_info = repodata.info;
+  API.repodata_packages = repodata.packages;
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
-  for (let name of Object.keys(API.packages)) {
-    for (let import_name of API.packages[name].imports) {
+  for (let name of Object.keys(API.repodata_packages)) {
+    for (let import_name of API.repodata_packages[name].imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
   }
 }
+
+API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
 
 /**
  * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -91,7 +89,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info = API.packages[name];
+  const pkg_info = API.repodata_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -150,11 +148,11 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to baseURL from `packages.json`, otherwise use the URL specified by
+ * relative to indexURL from `repodata.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
- * wheel or the path to the wheel relative to baseURL.
+ * wheel or the path to the wheel relative to indexURL.
  * @returns The binary data for the package
  * @private
  */
@@ -164,19 +162,23 @@ async function downloadPackage(
 ): Promise<Uint8Array> {
   let file_name, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
-    if (!(name in API.packages)) {
+    if (!(name in API.repodata_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
-    file_name = API.packages[name].file_name;
+    file_name = API.repodata_packages[name].file_name;
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.packages[name].sha256
+      API.repodata_packages[name].sha256
     );
   } else {
     file_name = channel;
     file_sub_resource_hash = undefined;
   }
   try {
-    return await _loadBinaryFile(baseURL, file_name, file_sub_resource_hash);
+    return await loadBinaryFile(
+      API.config.indexURL,
+      file_name,
+      file_sub_resource_hash
+    );
   } catch (e) {
     if (!IN_NODE) {
       throw e;
@@ -187,11 +189,14 @@ async function downloadPackage(
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
-  let binary = await _loadBinaryFile(cdnURL, file_name);
+  let binary = await loadBinaryFile(cdnURL, file_name);
   console.log(
     `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
   );
-  await nodeFsPromisesMod.writeFile(`${baseURL}${file_name}`, binary);
+  await nodeFsPromisesMod.writeFile(
+    `${API.config.indexURL}${file_name}`,
+    binary
+  );
   return binary;
 }
 
@@ -206,7 +211,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string
 ) {
-  let pkg = API.packages[name];
+  let pkg = API.repodata_packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",
@@ -471,5 +476,3 @@ export async function loadPackage(
  * install location for a particular ``package_name``.
  */
 export let loadedPackages: { [key: string]: string } = {};
-
-API.packageIndexReady = initializePackageIndex(API.config.indexURL);

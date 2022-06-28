@@ -497,25 +497,11 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def generate_packages_json(
+def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
-) -> dict[str, dict[str, Any]]:
-    """Generate the package.json file"""
-
-    import sys
-
-    sys.path.append(str(common.get_pyodide_root() / "src/py"))
-    from pyodide import __version__
-
-    # Build package.json data.
-    [platform, _, arch] = common.platform().rpartition("_")
-    package_data: dict[str, dict[str, Any]] = {
-        "info": {"arch": arch, "platform": platform, "version": __version__},
-        "packages": {},
-    }
-
+) -> dict[str, Any]:
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
-
+    packages: dict[str, Any] = {}
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
             continue
@@ -537,10 +523,10 @@ def generate_packages_json(
         ]
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
-        package_data["packages"][name.lower()] = pkg_entry
+        packages[name.lower()] = pkg_entry
 
         if pkg.unvendored_tests:
-            package_data["packages"][name.lower()]["unvendored_tests"] = True
+            packages[name.lower()]["unvendored_tests"] = True
 
             # Create the test package if necessary
             pkg_entry = {
@@ -554,17 +540,38 @@ def generate_packages_json(
                     Path(output_dir, pkg.unvendored_tests.name)
                 ),
             }
-            package_data["packages"][name.lower() + "-tests"] = pkg_entry
+            packages[name.lower() + "-tests"] = pkg_entry
 
     # Workaround for circular dependency between soupsieve and beautifulsoup4
     # TODO: FIXME!!
-    if "soupsieve" in package_data["packages"]:
-        package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")
+    if "soupsieve" in packages:
+        packages["soupsieve"]["depends"].append("beautifulsoup4")
 
-    # re-order packages by name
-    package_data["packages"] = dict(sorted(package_data["packages"].items()))
+    # sort packages by name
+    packages = dict(sorted(packages.items()))
+    return packages
 
-    return package_data
+
+def generate_repodata(
+    output_dir: Path, pkg_map: dict[str, BasePackage]
+) -> dict[str, dict[str, Any]]:
+    """Generate the package.json file"""
+
+    import sys
+
+    sys.path.append(str(common.get_pyodide_root() / "src/py"))
+    from pyodide import __version__
+
+    # Build package.json data.
+    [platform, _, arch] = common.platform().rpartition("_")
+    info = {
+        "arch": arch,
+        "platform": platform,
+        "version": __version__,
+        "python": sys.version.partition(" ")[0],
+    }
+    packages = generate_packagedata(output_dir, pkg_map)
+    return dict(info=info, packages=packages)
 
 
 def copy_packages_to_dist_dir(packages, output_dir):
@@ -603,9 +610,9 @@ def build_packages(
         pkg.unvendored_tests = pkg.tests_path()
 
     copy_packages_to_dist_dir(pkg_map.values(), output_dir)
-    package_data = generate_packages_json(output_dir, pkg_map)
+    package_data = generate_repodata(output_dir, pkg_map)
 
-    with open(output_dir / "packages.json", "w") as fd:
+    with open(output_dir / "repodata.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 

@@ -12,7 +12,6 @@ build:
     pwd
     echo PYTHONPATH: $PYTHONPATH
     echo _PYTHON_HOST_PLATFORM: $_PYTHON_HOST_PLATFORM
-    echo PYTHONPATH: $PYTHONPATH
   cflags: |
     -I$(PYODIDE_ROOT)/packages/sharedlib-test/src/include
 test:

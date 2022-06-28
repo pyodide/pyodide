@@ -1,6 +1,7 @@
 import io
 import sys
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -20,10 +21,15 @@ except ImportError:
 
 from pyodide_build import common
 
+cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
+
 
 @pytest.fixture
 def mock_platform(monkeypatch):
     monkeypatch.setenv("_PYTHON_HOST_PLATFORM", common.platform())
+    from micropip import _micropip
+
+    monkeypatch.setattr(_micropip, "get_platform", common.platform)
 
 
 def _mock_importlib_version(name: str) -> str:
@@ -76,9 +82,9 @@ def make_wheel_filename(name: str, version: str, platform: str = "generic") -> s
     if platform == "generic":
         platform_str = "py3-none-any"
     elif platform == "emscripten":
-        platform_str = f"cp310-cp310-{common.platform()}"
+        platform_str = f"{cpver}-{cpver}-{common.platform()}"
     elif platform == "native":
-        platform_str = "cp310-cp310-manylinux_2_31_x86_64"
+        platform_str = f"{cpver}-{cpver}-manylinux_2_31_x86_64"
     else:
         platform_str = platform
 
@@ -153,19 +159,19 @@ class mock_fetch_cls:
 
         metadata_dir = f"{name}-{version}.dist-info"
 
-        with io.BytesIO() as tmp:
-            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
+        tmp = io.BytesIO()
+        with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
 
-                def write_file(filename, contents):
-                    archive.writestr(f"{metadata_dir}/{filename}", contents)
+            def write_file(filename, contents):
+                archive.writestr(f"{metadata_dir}/{filename}", contents)
 
-                write_file("METADATA", metadata_str)
-                write_file("WHEEL", "Wheel-Version: 1.0")
-                write_file("top_level.txt", toplevel_str)
+            write_file("METADATA", metadata_str)
+            write_file("WHEEL", "Wheel-Version: 1.0")
+            write_file("top_level.txt", toplevel_str)
 
-            tmp.seek(0)
+        tmp.seek(0)
 
-            return tmp.read()
+        return tmp
 
 
 @pytest.fixture
@@ -193,6 +199,9 @@ def selenium_standalone_micropip(selenium_standalone):
     yield selenium_standalone
 
 
+SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     assert (
@@ -215,27 +224,45 @@ def test_install_simple(selenium_standalone_micropip):
     )
 
 
-def test_parse_wheel_url():
+@pytest.mark.parametrize(
+    "path",
+    [
+        SNOWBALL_WHEEL,
+        f"/{SNOWBALL_WHEEL}" f"a/{SNOWBALL_WHEEL}",
+        f"/a/{SNOWBALL_WHEEL}",
+        f"//a/{SNOWBALL_WHEEL}",
+    ],
+)
+@pytest.mark.parametrize("protocol", ["https:", "file:", "emfs:", ""])
+def test_parse_wheel_url1(protocol, path):
     pytest.importorskip("packaging")
     from micropip._micropip import WheelInfo
 
-    url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    url = protocol + path
     wheel = WheelInfo.from_url(url)
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
     assert wheel.digests is None
-    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.filename == SNOWBALL_WHEEL
     assert wheel.url == url
     assert wheel.tags == frozenset(
         {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
     )
 
+
+def test_parse_wheel_url2():
+    from micropip._micropip import WheelInfo
+
     msg = r"Invalid wheel filename \(wrong number of parts\)"
     with pytest.raises(ValueError, match=msg):
         url = "https://a/snowballstemmer-2.0.0-py2.whl"
-        wheel = WheelInfo.from_url(url)
+        WheelInfo.from_url(url)
 
-    url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+
+def test_parse_wheel_url3():
+    from micropip._micropip import WheelInfo
+
+    url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
     wheel = WheelInfo.from_url(url)
     assert wheel.name == "scikit-learn"
     assert wheel.tags == frozenset({Tag("cp35", "cp35m", "macosx_10_9_intel")})
@@ -248,19 +275,34 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         selenium.run_js(
             f"""
-            let url = '{url}';
-            let resp = await fetch(url);
             await pyodide.runPythonAsync(`
                 import micropip
-                await micropip.install('${{url}}')
+                await micropip.install('{url}')
                 import snowballstemmer
             `);
             """
         )
+
+
+@pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
+def test_install_file_protocol_node(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    from conftest import DIST_PATH
+
+    pyparsing_wheel_name = list(DIST_PATH.glob("pyparsing*.whl"))[0].name
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install('file:{pyparsing_wheel_name}')
+            import pyparsing
+        `);
+        """
+    )
 
 
 def create_transaction(Transaction):
@@ -286,7 +328,7 @@ async def test_add_requirement():
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
         base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        url = base_url + SNOWBALL_WHEEL
 
         transaction = create_transaction(Transaction)
         await transaction.add_requirement(url)
@@ -294,7 +336,7 @@ async def test_add_requirement():
     wheel = transaction.wheels[0]
     assert wheel.name == "snowballstemmer"
     assert str(wheel.version) == "2.0.0"
-    assert wheel.filename == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert wheel.filename == SNOWBALL_WHEEL
     assert wheel.url == url
     assert wheel.tags == frozenset(
         {Tag("py2", "none", "any"), Tag("py3", "none", "any")}
@@ -414,9 +456,9 @@ async def test_install_non_pure_python_wheel():
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
-    msg = "not a pure Python 3 wheel"
+    msg = "Wheel platform 'macosx_10_9_intel' is not compatible with Pyodide's platform"
     with pytest.raises(ValueError, match=msg):
-        url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+        url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
         await transaction.add_requirement(url)
 
@@ -544,6 +586,27 @@ async def test_install_pre(
 
 
 @pytest.mark.asyncio
+@pytest.mark.filterwarnings("ignore::Warning")
+@pytest.mark.parametrize("version_invalid", ["1.2.3-1", "2.3.1-post1", "3.2.1-pre1"])
+async def test_install_version_invalid_pep440(
+    mock_fetch: mock_fetch_cls,
+    version_invalid: str,
+) -> None:
+    # Micropip should skip package versions which do not follow PEP 440.
+    #
+    #     [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+    #
+
+    dummy = "dummy"
+    version_stable = "1.0.0"
+
+    mock_fetch.add_pkg_version(dummy, version_stable)
+    mock_fetch.add_pkg_version(dummy, version_invalid)
+    await micropip.install(dummy)
+    assert micropip.list()[dummy].version == version_stable
+
+
+@pytest.mark.asyncio
 async def test_fetch_wheel_fail(monkeypatch, wheel_base):
     pytest.importorskip("packaging")
     from micropip import _micropip
@@ -593,6 +656,24 @@ async def test_list_wheel_name_mismatch(mock_fetch: mock_fetch_cls) -> None:
     pkg_list = micropip.list()
     assert dummy_pkg_name in pkg_list
     assert pkg_list[dummy_pkg_name].source.lower() == dummy_url
+
+
+def test_list_load_package_from_url(selenium_standalone_micropip):
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        url = base_url + SNOWBALL_WHEEL
+
+        selenium = selenium_standalone_micropip
+        selenium.run_js(
+            f"""
+            await pyodide.loadPackage({url!r});
+            await pyodide.runPythonAsync(`
+                import micropip
+                assert "snowballstemmer" in micropip.list()
+            `);
+            """
+        )
 
 
 def test_list_pyodide_package(selenium_standalone_micropip):
@@ -677,9 +758,9 @@ async def test_load_binary_wheel1(
 @run_in_pyodide(packages=["micropip"])
 async def test_load_binary_wheel2(selenium):
     import micropip
-    from pyodide_js._api import packages
+    from pyodide_js._api import repodata_packages
 
-    await micropip.install(packages.regex.file_name)
+    await micropip.install(repodata_packages.regex.file_name)
     import regex  # noqa: F401
 
 
@@ -709,3 +790,95 @@ async def test_freeze(mock_fetch: mock_fetch_cls) -> None:
     assert pkg_metadata["imports"] == toplevel[0]
     assert dep1_metadata["imports"] == toplevel[1]
     assert dep2_metadata["imports"] == toplevel[2]
+
+
+def test_emfs(selenium_standalone_micropip):
+    with spawn_web_server(Path(__file__).parent / "test") as server:
+        server_hostname, server_port, _ = server
+        url = f"http://{server_hostname}:{server_port}/"
+
+        @run_in_pyodide(packages=["micropip"])
+        async def run_test(selenium, url, wheel_name):
+            import micropip
+            from pyodide.http import pyfetch
+
+            resp = await pyfetch(url + wheel_name)
+            await resp._into_file(open(wheel_name, "wb"))
+            await micropip.install("emfs:" + wheel_name)
+            import snowballstemmer
+
+            stemmer = snowballstemmer.stemmer("english")
+            assert stemmer.stemWords("go going goes gone".split()) == [
+                "go",
+                "go",
+                "goe",
+                "gone",
+            ]
+
+        run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
+
+
+@contextmanager
+def does_not_raise():
+    yield
+
+
+def raiseValueError(msg):
+    return pytest.raises(ValueError, match=msg)
+
+
+PLATFORM = common.platform()
+EMSCRIPTEN_VER = common.emscripten_version()
+
+
+@pytest.mark.parametrize(
+    "interp, abi, arch,ctx",
+    [
+        (
+            "cp35",
+            "cp35m",
+            "macosx_10_9_intel",
+            raiseValueError(
+                f"Wheel platform 'macosx_10_9_intel' .* Pyodide's platform '{PLATFORM}'"
+            ),
+        ),
+        (
+            "cp35",
+            "cp35m",
+            "emscripten_2_0_27_wasm32",
+            raiseValueError(
+                f"Emscripten v2.0.27 but Pyodide was built with Emscripten v{EMSCRIPTEN_VER}"
+            ),
+        ),
+        (
+            "cp35",
+            "cp35m",
+            PLATFORM,
+            raiseValueError(
+                f"Wheel abi 'cp35m' .* Supported abis are 'abi3' and '{cpver}'."
+            ),
+        ),
+        ("cp35", "abi3", PLATFORM, does_not_raise()),
+        (cpver, "abi3", PLATFORM, does_not_raise()),
+        (cpver, cpver, PLATFORM, does_not_raise()),
+        (
+            "cp35",
+            cpver,
+            PLATFORM,
+            raiseValueError("Wheel interpreter version 'cp35' is not supported."),
+        ),
+        (
+            "cp391",
+            "abi3",
+            PLATFORM,
+            raiseValueError("Wheel interpreter version 'cp391' is not supported."),
+        ),
+    ],
+)
+def test_check_compatible(mock_platform, interp, abi, arch, ctx):
+    from micropip._micropip import WheelInfo
+
+    pkg = "scikit_learn-0.22.2.post1"
+    wheel_name = f"{pkg}-{interp}-{abi}-{arch}.whl"
+    with ctx:
+        WheelInfo.from_url(wheel_name).check_compatible()

@@ -31,7 +31,7 @@ class FigureCanvasAggWasm(backend_agg.FigureCanvasAgg, FigureCanvasWasm):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
 
     def draw(self):
-        from pyodide import create_proxy
+        from pyodide.ffi import create_proxy
 
         # Render the figure using Agg
         self._idle_scheduled = True

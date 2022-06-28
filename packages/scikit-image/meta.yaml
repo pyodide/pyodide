@@ -1,12 +1,12 @@
 package:
   name: scikit-image
-  version: 0.19.2
+  version: 0.19.3
 source:
   patches:
     - patches/preferred_plugins.patch
     - patches/make-tifffile-optional.patch
-  sha256: d433b4642a6f8219e749dfbbe4b5e742d560996540c9749ede510274d061866d
-  url: https://files.pythonhosted.org/packages/83/7d/756dcbf1f2fcbfd60e14842aeadefa2354eff714ed4ec3ae7a107a5787d1/scikit-image-0.19.2.tar.gz
+  sha256: 24b5367de1762da6ee126dd8f30cc4e7efda474e0d7d70685433f0e3aa2ec450
+  url: https://files.pythonhosted.org/packages/00/d4/6682033d02917b10a2024dbe5a0636d2338b0799f7bd1885508fb114aec9/scikit-image-0.19.3.tar.gz
 requirements:
   run:
     - distutils

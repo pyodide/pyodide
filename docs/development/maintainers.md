@@ -8,23 +8,22 @@ For branch organization we use a variation of the [GitHub
 Flow](https://guides.github.com/introduction/flow/) with
 the latest release branch named `stable` (due to ReadTheDocs constraints).
 
-(making-major-release)=
+(release-instructions)=
 
-### Making a major release
+### Release Instructions
 
-1. From the root directory of the repository,
+1. From the root directory of the repository run
 
    ```bash
    ./tools/bump_version.py --new-version <new_version>
    # ./tools/bump_version.py --new_version <new_version> --dry-run
    ```
 
-   check that the diff is correct with `git diff` before committing.
+   and check that the diff is correct with `git diff`. Try using `ripgrep` to
+   make sure there are no extra old versions lying around e.g., `rg -F "0.18"`,
+   `rg -F dev0`, `rg -F dev.0`.
 
-   After this, try using `ripgrep` to make sure there are no extra old versions
-   lying around e.g., `rg -F "0.18"`, `rg -F dev0`, `rg -F dev.0`.
-
-2. Make sure the change log is up-to-date.
+2. Make sure the change log is up-to-date. (Skip for alpha releases.)
 
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
@@ -33,11 +32,14 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
      git shortlog -s LAST_TAG.. | cut -f2- | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
      ```
      where `LAST_TAG` is the tag for the last release.
-     Merge the PR.
 
-3. Assuming the upstream `stable` branch exists, rename it to a release branch
-   for the previous major version. For instance if last release was, `0.20.0`,
-   the corresponding release branch would be `0.20.X`,
+3. Make a PR with the updates from steps 1 and 2. Merge the PR.
+
+4. (Major release only.) Assuming the upstream `stable` branch exists,
+   rename it to a release branch for the previous major version. For instance if
+   last release was, `0.20.0`, the corresponding release branch would be
+   `0.20.X`,
+
    ```bash
    git fetch upstream
    git checkout stable
@@ -45,7 +47,8 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream 0.20.X
    git branch -D stable    # delete locally
    ```
-4. Create a tag `X.Y.Z` (without leading `v`) and push
+
+5. Create a tag `X.Y.Z` (without leading `v`) and push
    it to upstream,
 
    ```bash
@@ -53,32 +56,24 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream X.Y.Z
    ```
 
-   Create a new `stable` branch from this tag,
+   Wait for the CI to pass and create the release on GitHub.
+
+6. (Major release only). Create a new `stable` branch from this tag,
 
    ```bash
    git checkout -b stable
    git push upstream stable --force
    ```
 
-   Wait for the CI to pass and create the release on GitHub.
-
-5. Release the Pyodide JavaScript package:
-
-   ```bash
-   cd dist
-   npm publish # Note: use "--tag next" for prereleases
-   npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
-   ```
-
-6. Increment the version to the next version
-   specified by Semantic Versioning. Set `dev` version if needed.
+7. Revert the release commit. If making a major release, increment the version
+   to the next development version specified by Semantic Versioning.
 
    ```sh
-   # For example, if you just released 0.22.0, then set the version to 0.22.1.dev0
-   ./tools/bump_version.py --new-version 0.22.1.dev0
+   # If you just released 0.22.0, then set the next version to 0.23.0
+   ./tools/bump_version.py --new-version 0.23.0.dev0
    ```
 
-7. Update this file with any relevant changes.
+8. Update these instructions with any relevant changes.
 
 ### Making a minor release
 
@@ -102,21 +97,12 @@ This can be done with either,
   ```
   and indicate which commits to take from `main` in the UI.
 
-Then follow steps 1, 2, 5 and 6 from {ref}`making-major-release`.
+Then follow the relevant steps from {ref}`release-instructions`.
 
 ### Making an alpha release
 
-Follow steps 1, 5, and 6 from {ref}`making-major-release`. Name the first
-alpha release `x.x.xa0` and in subsequent alphas increment the final number. For
-the npm package the alpha should have version in the format `x.x.x-alpha.0`. For
-the node package make sure to use `npm publish --tag next` to avoid setting the
-alpha version as the stable release.
-
-If you accidentally publish the alpha release over the stable `latest` tag, you
-can fix it with: `npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be
-the latest stable version. Then use
-`npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the
-just-published alpha release.
+Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
+final number. Follow the relevant steps from {ref}`release-instructions`.
 
 ### Fixing documentation for a released version
 
