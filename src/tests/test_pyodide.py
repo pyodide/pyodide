@@ -1173,7 +1173,8 @@ def test_run_js(selenium):
     assert x == 77
 
 
-def test_moved_deprecation_warnings():
+@run_in_pyodide(packages=["pytest"])
+def test_moved_deprecation_warnings(selenium_standalone):
     import pytest
 
     import pyodide
