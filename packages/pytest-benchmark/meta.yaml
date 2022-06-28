@@ -2,8 +2,8 @@ package:
   name: pytest-benchmark
   version: 3.4.1
 source:
-  url: https://files.pythonhosted.org/packages/2c/60/423a63fb190a0483d049786a121bd3dfd7d93bb5ff1bb5b5cd13e5df99a7/pytest_benchmark-3.4.1-py2.py3-none-any.whl
-  sha256: 36d2b08c4882f6f997fd3126a3d6dfd70f3249cde178ed8bbc0b73db7c20f809
+  url: https://files.pythonhosted.org/packages/32/6a/bd6037a4e44b47085c8df9689921ca8d5669b3dbb0ecc3a77f8806cf67cc/pytest-benchmark-3.4.1.tar.gz
+  sha256: 40e263f912de5a81d891619032983557d62a3d85843f9a9f30b98baea0cd7b47
   patches:
     - patches/0001-Remove-cpuinfo.patch
 test:
