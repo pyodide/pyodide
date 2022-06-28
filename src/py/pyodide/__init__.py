@@ -10,34 +10,26 @@
 # This package is imported by the test suite as well, and currently we don't use
 # pytest mocks for js or pyodide_js, so make sure to test "if IN_BROWSER" before
 # importing from these.
+__version__ = "0.21.0.dev0"
 
-from _pyodide._importhook import register_js_module, unregister_js_module
+__all__ = ["__version__"]
 
 from . import _state  # noqa: F401
-from ._browser_apis import (
-    add_event_listener,
-    clear_interval,
-    clear_timeout,
-    remove_event_listener,
-    set_interval,
-    set_timeout,
-)
-from ._core import (
-    IN_BROWSER,
-    ConversionError,
-    JsException,
-    JsProxy,
-    create_once_callable,
-    create_proxy,
-    destroy_proxies,
-    to_js,
-)
 from .code import CodeRunner  # noqa: F401
 from .code import eval_code  # noqa: F401
 from .code import eval_code_async  # noqa: F401
 from .code import find_imports  # noqa: F401
 from .code import should_quiet  # noqa: F401
-from .http import open_url
+from .ffi import ConversionError  # noqa: F401
+from .ffi import JsException  # noqa: F401
+from .ffi import JsProxy  # noqa: F401
+from .ffi import create_once_callable  # noqa: F401
+from .ffi import create_proxy  # noqa: F401
+from .ffi import destroy_proxies  # noqa: F401
+from .ffi import register_js_module  # noqa: F401
+from .ffi import to_js  # noqa: F401
+from .ffi import unregister_js_module  # noqa: F401
+from .http import open_url  # noqa: F401
 
 DEPRECATED_LIST = {
     "CodeRunner": "code",
@@ -45,39 +37,23 @@ DEPRECATED_LIST = {
     "eval_code_async": "code",
     "find_imports": "code",
     "should_quiet": "code",
+    "open_url": "http",
+    "ConversionError": "ffi",
+    "JsException": "ffi",
+    "JsProxy": "ffi",
+    "create_once_callable": "ffi",
+    "create_proxy": "ffi",
+    "destroy_proxies": "ffi",
+    "to_js": "ffi",
+    "register_js_module": "ffi",
+    "unregister_js_module": "ffi",
 }
 
 
-if IN_BROWSER:
-    import asyncio
+from .webloop import _initialize_event_loop
 
-    from .webloop import WebLoopPolicy
-
-    asyncio.set_event_loop_policy(WebLoopPolicy())
-
-from warnings import warn
-
-__version__ = "0.21.0.dev0"
-
-
-__all__ = [
-    "ConversionError",
-    "JsException",
-    "JsProxy",
-    "add_event_listener",
-    "clear_interval",
-    "clear_timeout",
-    "create_once_callable",
-    "create_proxy",
-    "destroy_proxies",
-    "open_url",
-    "register_js_module",
-    "remove_event_listener",
-    "set_interval",
-    "set_timeout",
-    "to_js",
-    "unregister_js_module",
-]
+_initialize_event_loop()
+del _initialize_event_loop
 
 
 def __dir__() -> list[str]:
@@ -91,6 +67,8 @@ for name in DEPRECATED_LIST:
 
 def __getattr__(name):
     if name in DEPRECATED_LIST:
+        from warnings import warn
+
         warn(
             f"pyodide.{name} has been moved to pyodide.{DEPRECATED_LIST[name]}.{name} "
             "Accessing it through the pyodide module is deprecated.",

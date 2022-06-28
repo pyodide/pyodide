@@ -170,7 +170,9 @@ if IN_SPHINX:
 
     # We hacked it so that autodoc will look for submodules, but only if we import
     # them here. TODO: look these up in the source directory?
+    import pyodide.code
     import pyodide.console
+    import pyodide.ffi.wrappers
     import pyodide.http
     import pyodide.webloop
 

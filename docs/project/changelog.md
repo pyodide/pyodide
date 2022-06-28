@@ -50,6 +50,11 @@ substitutions:
 
 ### Pyodide Module and type conversions
 
+- {{ API }} All functions were moved out of the root `pyodide` package into
+  various submodules. For backwards compatibility, they will be available from
+  the root package (raising a `FutureWarning`) until v0.23.0.
+  {pr}`2787`, {pr}`2790`
+
 - {{ Enhancement }} `loadPyodide` no longer uses any global state, so it can be
   used more than once in the same thread. This is recommended if a network
   request causes a loading failure, if there is a fatal error, if you damage the

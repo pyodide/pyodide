@@ -570,7 +570,7 @@ def test_run_python_js_error(selenium):
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             raises = TestCase().assertRaisesRegex
             with raises(JsException, "blah!"):
                 throwError()
@@ -586,7 +586,7 @@ def test_create_once_callable(selenium):
             return f(7);
         }
         pyodide.runPython(`
-            from pyodide import create_once_callable, JsException
+            from pyodide.ffi import create_once_callable, JsException
             from js import call7;
             from unittest import TestCase
             raises = TestCase().assertRaisesRegex
@@ -629,7 +629,7 @@ def test_create_proxy(selenium):
             return self.listener === f;
         }
         pyodide.runPython(`
-            from pyodide import create_proxy
+            from pyodide.ffi import create_proxy
             from js import testAddListener, testCallListener, testRemoveListener;
             class Test:
                 def __call__(self):
@@ -668,7 +668,7 @@ def test_return_destroyed_value(selenium):
         r"""
         self.f = function(x){ return x };
         pyodide.runPython(`
-            from pyodide import create_proxy, JsException
+            from pyodide.ffi import create_proxy, JsException
             from js import f
             p = create_proxy([])
             p.destroy()
@@ -686,7 +686,7 @@ def test_return_destroyed_value(selenium):
 
 def test_docstrings_a():
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
-    from pyodide import JsProxy
+    from pyodide.ffi import JsProxy
 
     jsproxy = JsProxy()
     c_docstring = get_cmeth_docstring(jsproxy.then)
@@ -697,7 +697,7 @@ def test_docstrings_a():
 
 def test_docstrings_b(selenium):
     from _pyodide.docstring import dedent_docstring
-    from pyodide import JsProxy, create_once_callable
+    from pyodide.ffi import JsProxy, create_once_callable
 
     jsproxy = JsProxy()
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
@@ -708,7 +708,7 @@ def test_docstrings_b(selenium):
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
-        from pyodide import create_once_callable as b
+        from pyodide.ffi import create_once_callable as b
         [
             a.then.__doc__, a.then.__text_signature__,
             b.__doc__, b.__text_signature__
@@ -876,7 +876,7 @@ def test_js_stackframes(selenium):
                 c1()
             def e():
                 from js import d4
-                from pyodide import to_js
+                from pyodide.ffi import to_js
                 from traceback import extract_tb
                 try:
                     d4()
@@ -967,7 +967,7 @@ def test_weird_throws(selenium):
         pyodide.runPython(`
             from js import funcs
             from unittest import TestCase
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             raises = TestCase().assertRaisesRegex
             msgs = {
                 "null" : ['type object .* tag .object Null.', '"""null"""',  'fails'],
@@ -1178,17 +1178,18 @@ def test_moved_deprecation_warnings(selenium_standalone):
     import pytest
 
     import pyodide
+    from pyodide import DEPRECATED_LIST, code, ffi, http  # noqa: F401
 
-    with pytest.warns() as record:
-        deprecated_funcs = [
-            "CodeRunner",
-            "eval_code",
-            "eval_code_async",
-            "find_imports",
-            "should_quiet",
-        ]
-        for func in deprecated_funcs:
+    for func, mod in DEPRECATED_LIST.items():
+        getattr(getattr(pyodide, mod), func)
+
+    for func, mod in DEPRECATED_LIST.items():
+        with pytest.warns(FutureWarning, match=mod):
             getattr(pyodide, func)
-        assert len(record) == 5
-        for func in deprecated_funcs:
+
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        for func in DEPRECATED_LIST.keys():
             getattr(pyodide, func)

@@ -212,7 +212,7 @@ API.runPythonAsync = runPythonAsync;
  * @param module JavaScript object backing the module
  */
 export function registerJsModule(name: string, module: object) {
-  API.pyodide_py.register_js_module(name, module);
+  API.pyodide_ffi.register_js_module(name, module);
 }
 
 /**
@@ -235,7 +235,7 @@ export function registerComlink(Comlink: any) {
  * @param name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name: string) {
-  API.pyodide_py.unregister_js_module(name);
+  API.pyodide_ffi.unregister_js_module(name);
 }
 
 /**

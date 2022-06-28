@@ -405,4 +405,19 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = loop
 
 
+def _initialize_event_loop():
+    from ._core import IN_BROWSER
+
+    if not IN_BROWSER:
+        return
+
+    import asyncio
+
+    from .webloop import WebLoopPolicy
+
+    policy = WebLoopPolicy()
+    asyncio.set_event_loop_policy(policy)
+    policy.get_event_loop()
+
+
 __all__ = ["WebLoop", "WebLoopPolicy"]

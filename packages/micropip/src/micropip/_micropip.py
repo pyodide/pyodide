@@ -20,8 +20,8 @@ from packaging.tags import Tag, sys_tags
 from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
-from pyodide import to_js
 from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
+from pyodide.ffi import to_js
 
 from ._compat import (
     REPODATA_INFO,
