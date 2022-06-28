@@ -19,7 +19,7 @@ By default there are two JavaScript modules. More can be added with
 
 **Python Modules**
 
-````{eval-rst}
+```{eval-rst}
 .. list-table::
 
    *  - :py:mod:`pyodide.code`
@@ -35,6 +35,7 @@ By default there are two JavaScript modules. More can be added with
       - The Pyodide event loop implementation. This is automatically configured
         correctly for most use cases it is unlikely you will need it outside of niche
         use cases.
+```
 
 ```{eval-rst}
 .. toctree::
@@ -45,4 +46,4 @@ By default there are two JavaScript modules. More can be added with
    python-api/ffi.md
    python-api/http.md
    python-api/webloop.md
-````
+```
