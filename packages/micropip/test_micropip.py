@@ -1,6 +1,7 @@
 import io
 import sys
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -20,10 +21,15 @@ except ImportError:
 
 from pyodide_build import common
 
+cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
+
 
 @pytest.fixture
 def mock_platform(monkeypatch):
     monkeypatch.setenv("_PYTHON_HOST_PLATFORM", common.platform())
+    from micropip import _micropip
+
+    monkeypatch.setattr(_micropip, "get_platform", common.platform)
 
 
 def _mock_importlib_version(name: str) -> str:
@@ -76,9 +82,9 @@ def make_wheel_filename(name: str, version: str, platform: str = "generic") -> s
     if platform == "generic":
         platform_str = "py3-none-any"
     elif platform == "emscripten":
-        platform_str = f"cp310-cp310-{common.platform()}"
+        platform_str = f"{cpver}-{cpver}-{common.platform()}"
     elif platform == "native":
-        platform_str = "cp310-cp310-manylinux_2_31_x86_64"
+        platform_str = f"{cpver}-{cpver}-manylinux_2_31_x86_64"
     else:
         platform_str = platform
 
@@ -450,7 +456,7 @@ async def test_install_non_pure_python_wheel():
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
-    msg = "not a pure Python 3 wheel"
+    msg = "Wheel platform 'macosx_10_9_intel' is not compatible with Pyodide's platform"
     with pytest.raises(ValueError, match=msg):
         url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
@@ -810,3 +816,69 @@ def test_emfs(selenium_standalone_micropip):
             ]
 
         run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
+
+
+@contextmanager
+def does_not_raise():
+    yield
+
+
+def raiseValueError(msg):
+    return pytest.raises(ValueError, match=msg)
+
+
+PLATFORM = common.platform()
+EMSCRIPTEN_VER = common.emscripten_version()
+
+
+@pytest.mark.parametrize(
+    "interp, abi, arch,ctx",
+    [
+        (
+            "cp35",
+            "cp35m",
+            "macosx_10_9_intel",
+            raiseValueError(
+                f"Wheel platform 'macosx_10_9_intel' .* Pyodide's platform '{PLATFORM}'"
+            ),
+        ),
+        (
+            "cp35",
+            "cp35m",
+            "emscripten_2_0_27_wasm32",
+            raiseValueError(
+                f"Emscripten v2.0.27 but Pyodide was built with Emscripten v{EMSCRIPTEN_VER}"
+            ),
+        ),
+        (
+            "cp35",
+            "cp35m",
+            PLATFORM,
+            raiseValueError(
+                f"Wheel abi 'cp35m' .* Supported abis are 'abi3' and '{cpver}'."
+            ),
+        ),
+        ("cp35", "abi3", PLATFORM, does_not_raise()),
+        (cpver, "abi3", PLATFORM, does_not_raise()),
+        (cpver, cpver, PLATFORM, does_not_raise()),
+        (
+            "cp35",
+            cpver,
+            PLATFORM,
+            raiseValueError("Wheel interpreter version 'cp35' is not supported."),
+        ),
+        (
+            "cp391",
+            "abi3",
+            PLATFORM,
+            raiseValueError("Wheel interpreter version 'cp391' is not supported."),
+        ),
+    ],
+)
+def test_check_compatible(mock_platform, interp, abi, arch, ctx):
+    from micropip._micropip import WheelInfo
+
+    pkg = "scikit_learn-0.22.2.post1"
+    wheel_name = f"{pkg}-{interp}-{abi}-{arch}.whl"
+    with ctx:
+        WheelInfo.from_url(wheel_name).check_compatible()

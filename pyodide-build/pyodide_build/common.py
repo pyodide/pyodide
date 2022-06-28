@@ -12,6 +12,10 @@ from packaging.utils import parse_wheel_filename
 from .io import parse_package_config
 
 
+def emscripten_version():
+    return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+
+
 def platform():
     emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
