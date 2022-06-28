@@ -11,16 +11,13 @@ TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
-FFIBUILD=$(ROOT)/build/libffi
-LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_TAG=2022-06-23
-
-all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
+all: $(INSTALL)/lib/$(LIB)
 
 $(BUILD)/.deps_complete: $(BUILD)/.patched
 	embuilder build zlib --pic
 	embuilder build bzip2 --pic
 	embuilder build sqlite --pic
+	embuilder build libffi --pic
 	touch $(BUILD)/.deps_complete
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/.deps_complete $(BUILD)/$(LIB) remove_modules.txt
@@ -63,14 +60,6 @@ $(BUILD)/.patched: $(TARBALL)
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
 
-$(INSTALL)/lib/libffi.a :
-	rm -rf $(FFIBUILD)
-	git clone $(LIBFFIREPO) --depth 1 --branch $(LIBFFI_TAG) $(FFIBUILD)
-	. $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh && cd $(FFIBUILD) && ./build.sh && make install
-	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
-	mkdir -p $(INSTALL)/lib
-	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
-
 $(BUILD)/Makefile: $(BUILD)/.patched
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
@@ -100,7 +89,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 $(BUILD)/Modules/Setup.local : Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
