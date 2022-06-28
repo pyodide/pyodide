@@ -21,6 +21,8 @@ except ImportError:
 
 from pyodide_build import common
 
+cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
+
 
 @pytest.fixture
 def mock_platform(monkeypatch):
@@ -80,9 +82,9 @@ def make_wheel_filename(name: str, version: str, platform: str = "generic") -> s
     if platform == "generic":
         platform_str = "py3-none-any"
     elif platform == "emscripten":
-        platform_str = f"cp310-cp310-{common.platform()}"
+        platform_str = f"{cpver}-{cpver}-{common.platform()}"
     elif platform == "native":
-        platform_str = "cp310-cp310-manylinux_2_31_x86_64"
+        platform_str = f"{cpver}-{cpver}-manylinux_2_31_x86_64"
     else:
         platform_str = platform
 
@@ -454,7 +456,7 @@ async def test_install_non_pure_python_wheel():
     pytest.importorskip("packaging")
     from micropip._micropip import Transaction
 
-    msg = "not a pure Python 3 wheel"
+    msg = "Wheel platform 'macosx_10_9_intel' is not compatible with Pyodide's platform"
     with pytest.raises(ValueError, match=msg):
         url = "http://a/scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
         transaction = create_transaction(Transaction)
@@ -849,15 +851,15 @@ def raiseValueError(msg):
             "cp35m",
             "emscripten_3_1_14_wasm32",
             raiseValueError(
-                "Wheel abi 'cp35m' .* Supported abis are 'abi3' and 'cp310'."
+                f"Wheel abi 'cp35m' .* Supported abis are 'abi3' and '{cpver}'."
             ),
         ),
         ("cp35", "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
-        ("cp310", "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
-        ("cp310", "cp310", "emscripten_3_1_14_wasm32", does_not_raise()),
+        (cpver, "abi3", "emscripten_3_1_14_wasm32", does_not_raise()),
+        (cpver, cpver, "emscripten_3_1_14_wasm32", does_not_raise()),
         (
             "cp35",
-            "cp310",
+            cpver,
             "emscripten_3_1_14_wasm32",
             raiseValueError("Wheel interpreter version 'cp35' is not supported."),
         ),
