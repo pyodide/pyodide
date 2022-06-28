@@ -346,6 +346,21 @@ jobs:
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+      - run:
+          name: Make debug version
+          command: |
+            rm dist/pyodide.asm.js
+            PYODIDE_SYMBOLS=1 make dist/pyodide.asm.js
+            cd dist
+            npx prettier -w pyodide.asm.js
+            cd ..
+      - run:
+          name: Deploy debug version to pyodide-cdn2.iodide.io
+          command: |
+            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
+            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/debug/"
+            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
 
 workflows:
   version: 2
