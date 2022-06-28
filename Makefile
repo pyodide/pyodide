@@ -147,12 +147,6 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
 
-
-update_base_url: \
-	dist/console.html
-
-
-
 .PHONY: lint
 lint:
 	pre-commit run -a --show-diff-on-failure

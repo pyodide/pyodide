@@ -169,6 +169,35 @@ jobs:
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
 
+  build-pyodide-debug:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: build pyodide debug
+          command: |
+            cp -r dist dist-release
+            rm dist/pyodide.asm.js
+            source pyodide_env.sh
+            ccache -z
+            make dist/pyodide.asm.js
+            ccache -s
+            cd dist
+            npx prettier -w pyodide.asm.js
+            cd ..
+            mv dist dist-debug
+            mv dist-release dist
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
   test-main:
     parameters:
       test-params:
@@ -309,14 +338,25 @@ jobs:
 
       - run:
           name: Set PYODIDE_BASE_URL
-          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make update_base_url
+          command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/debug/" make dist/console.html
+            cp dist/console.html dist-debug/console.html
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make dist/console.html
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
             find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
-            # update 301 redirect for the /latest/* route.
+      - run:
+          name: Deploy debug version to pyodide-cdn2.iodide.io
+          command: |
+            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
+            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*.data' --cache-control 'max-age=30758400, public' --content-encoding 'gzip'  # 1 year cache
+            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year cache
+      - run:
+          name: update 301 redirect for the /latest/* route.
+          command: |
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
   deploy-dev:
@@ -338,7 +378,10 @@ jobs:
             python3 -m pip install awscli
       - run:
           name: Set PYODIDE_BASE_URL
-          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
+          command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
+            cp dist/console.html dist-debug/console.html
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
@@ -347,20 +390,12 @@ jobs:
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
       - run:
-          name: Make debug version
-          command: |
-            rm dist/pyodide.asm.js
-            PYODIDE_SYMBOLS=1 make dist/pyodide.asm.js
-            cd dist
-            npx prettier -w pyodide.asm.js
-            cd ..
-      - run:
           name: Deploy debug version to pyodide-cdn2.iodide.io
           command: |
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
+            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/debug/"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
 
 workflows:
   version: 2
@@ -537,11 +572,19 @@ workflows:
             tags:
               only: /.*/
 
+      - build-pyodide-debug:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - deploy-release:
           requires:
             - test-python
             - test-core-firefox
             - test-packages-firefox
+            - build-pyodide-debug
           filters:
             branches:
               ignore: /.*/
@@ -552,6 +595,7 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
+            - build-pyodide-debug
           filters:
             branches:
               only: main
