@@ -15,7 +15,7 @@ from pathlib import Path, PurePosixPath
 
 IS_MAIN = __name__ == "__main__"
 if IS_MAIN:
-    # If possible load from envrionment variable, if necessary load from disk.
+    # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
     else:
