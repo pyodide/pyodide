@@ -49,6 +49,7 @@ def main(args):
         Path("Makefile.envs"),
         wasm_lib_dir / "CLAPACK",
         wasm_lib_dir / "cmake",
+        Path("tools/pyo3_config.ini"),
     ]
     # Some ad-hoc stuff here to moderate size. We'd like to include all of
     # wasm_lib_dir but there's 180mb of it. Better to leave out all the video
