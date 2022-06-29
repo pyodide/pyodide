@@ -1,4 +1,3 @@
-
 def test_pytest_benchmark(selenium):
     selenium.run_js(
         """
