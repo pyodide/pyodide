@@ -17,7 +17,7 @@ build:
     mkdir -p build;
     cd build \
         && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
-        -DCMAKE_INSTALL_PREFIX=../../proj \
+        -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
         -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_CURL=OFF \
         -DBUILD_APPS=OFF \
