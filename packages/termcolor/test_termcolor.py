@@ -5,7 +5,7 @@ from pyodide_test_runner.decorator import run_in_pyodide
 def test_termcolor(selenium):
     import sys
 
-    from termcolor import colored, cprint
+    from termcolor import colored, cprint  # type: ignore[import]
 
     text = colored("Hello, World!", "red", attrs=["reverse", "blink"])
     print(text)
