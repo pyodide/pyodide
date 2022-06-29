@@ -44,6 +44,10 @@ check_libtool() {
   check_binary_present "libtool"
 }
 
+check_sqlite3() {
+  check_binary_present "sqlite3"
+}
+
 check_fortran_dependencies() {
   check_binary_present "gfortran"
   check_binary_present "f2c"
@@ -51,6 +55,10 @@ check_fortran_dependencies() {
 
 check_python_version
 check_pkgconfig
+check_shasum
+check_cmake
+check_libtool
+check_sqlite3
 #check_python_headers
 check_fortran_dependencies
 check_shasum
