@@ -25,7 +25,7 @@ import re
 import subprocess
 from collections import namedtuple
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterator, MutableMapping, NoReturn
+from typing import Any, Iterator, Literal, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -33,7 +33,7 @@ from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
 
-def symlink_dir():
+def symlink_dir() -> Path:
     return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
 
 
@@ -283,7 +283,7 @@ def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> str | None
     return arg
 
 
-def replay_genargs_handle_linker_opts(arg):
+def replay_genargs_handle_linker_opts(arg: str) -> str | None:
     """
     ignore some link flags
     it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
@@ -381,7 +381,10 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
     return (x for x in result.stdout.splitlines() if condition(x))
 
 
-def get_export_flags(line, exports):
+def get_export_flags(
+    line: list[str],
+    exports: Literal["whole_archive", "explicit", "requested"] | list[str],
+) -> Iterator[str]:
     """
     If "whole_archive" was requested, no action is needed. Otherwise, add
     `-sSIDE_MODULE=2` and the appropriate export list.
@@ -392,7 +395,7 @@ def get_export_flags(line, exports):
     if isinstance(exports, str):
         export_list = calculate_exports(line, exports == "requested")
     else:
-        export_list = exports
+        export_list = iter(exports)
     prefixed_exports = ["_" + x for x in export_list]
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 

@@ -4,7 +4,7 @@ from textwrap import dedent  # for doctests
 from typing import Iterable, Iterator
 
 
-def prepare_doctest(x):
+def prepare_doctest(x: str) -> list[str]:
     return dedent(x).strip().splitlines(True)
 
 
@@ -94,7 +94,7 @@ def fix_f2c_input(f2c_input_path: str) -> None:
         f.writelines(new_lines)
 
 
-def fix_string_args(line):
+def fix_string_args(line: str) -> str:
     """
     The two functions ilaenv and xerbla have real string args, f2c generates
     inaccurate signatures for them. Instead of manually fixing the signatures
@@ -117,7 +117,7 @@ def fix_string_args(line):
         return re.sub("'[A-Za-z0-9]'", lambda y: str(ord(y.group(0)[1])), line)
 
 
-def char1_to_int(x):
+def char1_to_int(x: str) -> str:
     """
     Replace multicharacter strings with the ascii code of their first character.
 
@@ -127,7 +127,7 @@ def char1_to_int(x):
     return re.sub("'(.)[A-Za-z -]*'", lambda r: str(ord(r.group(1))), x)
 
 
-def char1_args_to_int(lines):
+def char1_args_to_int(lines: list[str]) -> list[str]:
     """
     Replace strings with the ascii code of their first character if they are
     arguments to one of a long list of hard coded LAPACK functions (see
@@ -235,7 +235,7 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     if f2c_output.name == "mvndst.c":
         lines = fix_inconsistent_decls(lines)
 
-        def fix_line(line):
+        def fix_line(line: str) -> str:
             if "12300" in line:
                 return (
                     line.replace("static", "")
@@ -248,7 +248,7 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
 
     if "PROPACK" in str(f2c_output):
 
-        def fix_line(line):
+        def fix_line(line: str) -> str:
             if f2c_output.name != "cgemm_ovwr.c":
                 line = line.replace("struct", "extern struct")
             if "12300" in line:
@@ -443,7 +443,7 @@ def get_subroutine_decl(sub: str) -> tuple[str, list[str]]:
     return (func_name, types)
 
 
-def scipy_fix_cfile(path):
+def scipy_fix_cfile(path: str) -> None:
     """
     Replace void return types with int return types in various generated .c and
     .h files. We can't achieve this with a simple patch because these files are
@@ -476,7 +476,7 @@ def scipy_fix_cfile(path):
             header_path.write_text(header_text)
 
 
-def scipy_fixes(args):
+def scipy_fixes(args: list[str]) -> None:
     for arg in args:
         if arg.endswith(".c"):
             scipy_fix_cfile(arg)

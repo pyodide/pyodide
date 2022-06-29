@@ -16,7 +16,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def copy_xbuild_files(xbuildenv_path):
+def copy_xbuild_files(xbuildenv_path: Path) -> None:
     PYODIDE_ROOT = get_pyodide_root()
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     xbuild_site_packages = xbuildenv_path / "site-packages"
@@ -29,7 +29,7 @@ def copy_xbuild_files(xbuildenv_path):
             shutil.copy(site_packages / path, target)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
     xbuildenv_path = pyodide_root / "xbuildenv"
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
