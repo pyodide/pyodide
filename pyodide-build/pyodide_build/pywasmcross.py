@@ -15,8 +15,12 @@ from pathlib import Path, PurePosixPath
 
 IS_MAIN = __name__ == "__main__"
 if IS_MAIN:
-    with open(Path(__file__).parent / "pywasmcross_env.json") as f:
-        PYWASMCROSS_ARGS = json.load(f)
+    # If possible load from envrionment variable, if necessary load from disk.
+    if "PYWASMCROSS_ARGS" in os.environ:
+        PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
+    else:
+        with open(Path(__file__).parent / "pywasmcross_env.json") as f:
+            PYWASMCROSS_ARGS = json.load(f)
 
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
@@ -116,8 +120,12 @@ def get_build_env(
         args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
         args["PATH"] = env["PATH"]
 
-        with open(symlink_dir / "pywasmcross_env.json", "w") as f:
-            json.dump(args, f)
+        pywasmcross_env = json.dumps(args)
+        # Store into environment variable and to disk. In most cases we will
+        # load from the environment variable but if some other tool filters
+        # environment variables we will load from disk instead.
+        env["PYWASMCROSS_ARGS"] = pywasmcross_env
+        (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
 
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = common.platform()
