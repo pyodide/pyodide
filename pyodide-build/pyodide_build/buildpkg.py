@@ -98,7 +98,11 @@ class BashRunnerWithSharedEnvironment:
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
         full_cmd = f"{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
-            ["bash", "-ce", full_cmd], pass_fds=[self._fd_write], env=self.env, **opts
+            ["bash", "-ce", full_cmd],
+            pass_fds=[self._fd_write],
+            env=self.env,
+            encoding="utf8",
+            **opts,
         )
         if result.returncode != 0:
             print("ERROR: bash command failed")
