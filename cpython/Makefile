@@ -5,7 +5,7 @@ ROOT=$(abspath .)
 
 PYTHON_CFLAGS=$(CFLAGS_BASE)
 
-BUILD=$(CPYTHONBUILD)
+BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
