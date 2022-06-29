@@ -2,4 +2,9 @@
 import setuptools
 
 if __name__ == "__main__":
-    setuptools.setup()
+    setuptools.setup(
+        # entry_points = {
+        #     "console_scripts" :
+        #     ["foo = foomod:main"]
+        # }
+    )
