@@ -23,7 +23,9 @@ def main(args):
     xbuildenv_path = Path(args.xbuild_env[0])
     pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
-    host_site_packages = xbuildenv_root / Path(get_make_flag("HOSTSITEPACKAGES")).relative_to(pyodide_root)
+    host_site_packages = xbuildenv_root / Path(
+        get_make_flag("HOSTSITEPACKAGES")
+    ).relative_to(pyodide_root)
     host_site_packages.mkdir(exist_ok=True, parents=True)
     subprocess.run(
         [
