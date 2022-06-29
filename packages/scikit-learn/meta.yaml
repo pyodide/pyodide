@@ -1,10 +1,10 @@
 package:
   name: scikit-learn
-  version: 1.1.0
+  version: 1.1.1
 
 source:
-  url: https://files.pythonhosted.org/packages/8b/99/b1ec652f2d60a13871a3053f312f9d78977be57e420f2a49d52ba503f1f4/scikit-learn-1.1.0.tar.gz
-  sha256: 80f9904f5b1356adfc32406725dd94c8cc9c8d265047d98390033a6c238cbb29
+  url: https://files.pythonhosted.org/packages/41/11/e931951f048908ceaf2423db48ca6ad10e0b818c2960a3bc2dacb4fa4c1d/scikit-learn-1.1.1.tar.gz
+  sha256: 3e77b71e8e644f86c8b5be7f1c285ef597de4c384961389ee3e9ca36c445b256
 
   patches:
     - patches/0001-Cythonize-_cython_blas.pyx-with-include-path-pointin.patch

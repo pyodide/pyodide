@@ -53,7 +53,8 @@
     },
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./repodata.json": "./repodata.json"
   },
   "files": [
     "pyodide*",

@@ -2,7 +2,7 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, _loadBinaryFile, initNodeModules } from "./compat";
+import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
@@ -128,6 +128,8 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
   API.pyodide_py = import_module("pyodide");
+  API.pyodide_code = import_module("pyodide.code");
+  API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
   API.version = API.pyodide_py.__version__;
 
@@ -175,6 +177,7 @@ function calculateIndexURL(): string {
  */
 export type ConfigType = {
   indexURL: string;
+  lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
   stdin?: () => string;
@@ -208,6 +211,13 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
+     * The URL from which Pyodide will load the Pyodide "repodata.json" lock
+     * file. Defaults to ``${indexURL}/repodata.json``. You can produce custom
+     * lock files with :any:`micropip.freze`
+     */
+    lockFileURL?: string;
+
+    /**
      * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
      */
     homedir?: string;
@@ -237,19 +247,20 @@ export async function loadPyodide(
   if (!options.indexURL) {
     options.indexURL = calculateIndexURL();
   }
+  if (!options.indexURL.endsWith("/")) {
+    options.indexURL += "/";
+  }
 
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
+    lockFileURL: options.indexURL! + "repodata.json",
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  if (!config.indexURL.endsWith("/")) {
-    config.indexURL += "/";
-  }
   await initNodeModules();
-  const pyodide_py_tar_promise = _loadBinaryFile(
+  const pyodide_py_tar_promise = loadBinaryFile(
     config.indexURL,
     "pyodide_py.tar"
   );
@@ -294,6 +305,9 @@ export async function loadPyodide(
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
+  if (API.repodata_info.version !== pyodide.version) {
+    throw new Error("Lock file version doesn't match Pyodide version");
+  }
   if (config.fullStdLib) {
     await pyodide.loadPackage(["distutils"]);
   }

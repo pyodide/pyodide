@@ -1,7 +1,7 @@
-From bf6668a416abad911a50f38f412ffc4daa82be40 Mon Sep 17 00:00:00 2001
+From 01a393540ae63e0a20124484143cc8cbebd4cdd5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 11 Jun 2022 11:19:42 -0700
-Subject: [PATCH 3/6] ENH: Add support for platforms with missing fenv flags
+Subject: [PATCH 2/5] ENH: Add support for platforms with missing fenv flags
 
 For instance wasm has no fenv support. musl-libc defines all the
 fenv functions unconditionally (fesetexcept, feclearexcept, etc)

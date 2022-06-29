@@ -68,13 +68,13 @@ repos:
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v14.0.4-1"
+    rev: "v14.0.5"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.6.2"
+    rev: "v2.7.1"
     hooks:
       - id: prettier
 

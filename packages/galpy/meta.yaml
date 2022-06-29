@@ -15,6 +15,7 @@ build:
     $(LIBGSL_INCLUDE_PATH)
   ldflags: |
     $(LIBGSL_LIBRARY_PATH)
+  exports: "requested"
 requirements:
   run:
     - numpy

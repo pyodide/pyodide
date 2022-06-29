@@ -1,18 +1,16 @@
 package:
   name: numpy
-  version: 1.22.3
+  version: 1.22.4
 
 source:
-  url: https://files.pythonhosted.org/packages/64/4a/b008d1f8a7b9f5206ecf70a53f84e654707e7616a771d84c05151a4713e9/numpy-1.22.3.zip
-  sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
+  url: https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip
+  sha256: 425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af
 
   patches:
-    - patches/0001-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
-    - patches/0002-BUG-Fix-the-return-type-of-random_float_fill.patch
-    - patches/0003-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
-    - patches/0004-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
-    - patches/0005-ENH-Fix-pointer-size-determination-for-cross-build.patch
-    - patches/0006-make-int-return-values.patch
+    - patches/0001-BUG-Fix-the-return-type-of-random_float_fill.patch
+    - patches/0002-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
+    - patches/0003-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
+    - patches/0004-ENH-Fix-pointer-size-determination-for-cross-build.patch
 
 build:
   backend-flags: --disable-optimization

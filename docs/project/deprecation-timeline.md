@@ -10,6 +10,11 @@ state, this list is subject to change and some features can be removed without
 deprecation warnings. More details about each item can often be found in the
 {ref}`changelog`.
 
+## 0.23.0
+
+Names that used to be in the root `pyodide` module and were moved to submodules
+will no longer be available in the root module.
+
 ## 0.21.0
 
 - The `globals` argument to `runPython` and `runPythonAsync` will be passed as a

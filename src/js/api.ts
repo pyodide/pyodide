@@ -6,8 +6,11 @@ import "./module.ts";
 import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
+import { loadBinaryFile } from "./compat";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+
+API.loadBinaryFile = loadBinaryFile;
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -48,7 +51,7 @@ API.runPythonInternal = function (code: string): any {
 
 let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
- * Runs a string of Python code from JavaScript, using :any:`pyodide.eval_code`
+ * Runs a string of Python code from JavaScript, using :any:`pyodide.code.eval_code`
  * to evaluate the code. If the last statement in the Python code is an
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
@@ -65,7 +68,7 @@ let runPythonPositionalGlobalsDeprecationWarned = false;
  * @param options.globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript. See the
- *          documentation for :any:`pyodide.eval_code` for more info.
+ *          documentation for :any:`pyodide.code.eval_code` for more info.
  */
 export function runPython(
   code: string,
@@ -83,14 +86,14 @@ export function runPython(
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return API.pyodide_py.eval_code(code, options.globals);
+  return API.pyodide_code.eval_code(code, options.globals);
 }
 API.runPython = runPython;
 
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
  * any known packages that the code chunk imports. Uses the Python API
- * :func:`pyodide.find\_imports` to inspect the code.
+ * :func:`pyodide.code.find\_imports` to inspect the code.
  *
  * For example, given the following code as input
  *
@@ -113,7 +116,7 @@ export async function loadPackagesFromImports(
   messageCallback?: (msg: string) => void,
   errorCallback?: (err: string) => void
 ) {
-  let pyimports = API.pyodide_py.find_imports(code);
+  let pyimports = API.pyodide_code.find_imports(code);
   let imports;
   try {
     imports = pyimports.toJs();
@@ -138,7 +141,7 @@ export async function loadPackagesFromImports(
 
 /**
  * Run a Python code string with top level await using
- * :any:`pyodide.eval_code_async` to evaluate the code. Returns a promise which
+ * :any:`pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
  * resolves when execution completes. If the last statement in the Python code
  * is an expression (and the code doesn't end with a semicolon), the returned
  * promise will resolve to the value of this expression.
@@ -193,7 +196,7 @@ export async function runPythonAsync(
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return await API.pyodide_py.eval_code_async(code, options.globals);
+  return await API.pyodide_code.eval_code_async(code, options.globals);
 }
 API.runPythonAsync = runPythonAsync;
 
@@ -209,7 +212,7 @@ API.runPythonAsync = runPythonAsync;
  * @param module JavaScript object backing the module
  */
 export function registerJsModule(name: string, module: object) {
-  API.pyodide_py.register_js_module(name, module);
+  API.pyodide_ffi.register_js_module(name, module);
 }
 
 /**
@@ -232,7 +235,7 @@ export function registerComlink(Comlink: any) {
  * @param name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name: string) {
-  API.pyodide_py.unregister_js_module(name);
+  API.pyodide_ffi.unregister_js_module(name);
 }
 
 /**
