@@ -8,6 +8,10 @@ requirements:
 source:
   path: src
 build:
+  cross-script: |
+    pwd
+    echo PYTHONPATH: $PYTHONPATH
+    echo _PYTHON_HOST_PLATFORM: $_PYTHON_HOST_PLATFORM
   cflags: |
     -I$(PYODIDE_ROOT)/packages/sharedlib-test/src/include
 test:

@@ -183,13 +183,14 @@ class BrowserWrapper:
             pyodide._api.pyodide_code.eval_code;
             pyodide._api.pyodide_code.eval_code_async;
             pyodide._api.pyodide_code.find_imports;
-            pyodide.pyodide_py.register_js_module;
-            pyodide.pyodide_py.unregister_js_module;
+            pyodide._api.pyodide_ffi.register_js_module;
+            pyodide._api.pyodide_ffi.unregister_js_module;
             pyodide._api.importlib.invalidate_caches;
             pyodide._api.package_loader.unpack_buffer;
             pyodide._api.package_loader.get_dynlibs;
             pyodide._api.package_loader.sub_resource_hash;
             pyodide.runPython("");
+            pyodide.pyimport("pyodide.ffi.wrappers").destroy();
             """
         )
 

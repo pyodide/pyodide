@@ -132,6 +132,10 @@ Should be set to true for shared library packages. Shared library packages are p
 
 The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the directory where the tarball was extracted.
 
+### `build/cross-script`
+
+This script will run _after_ `build/script`. The difference is that it runs with the target environment variables and `sysconfigdata` and with the `pywasmcross` compiler symlinks. Any changes to the environment will persist to the main build step but will not be seen in the `build/post` step (or anything else done outside of the cross build environment). The working directory for this script is the source directory.
+
 ### `build/post`
 
 Shell commands to run after building the library. These are run with

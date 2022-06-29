@@ -229,7 +229,7 @@ this correctly in one of two ways:
 
 ```py
 import json
-from pyodide import to_js
+from pyodide.ffi import to_js
 from js import Object
 resp = await js.fetch('example.com/some_api',
   method= "POST",
@@ -243,7 +243,7 @@ or:
 
 ```py
 import json
-from pyodide import to_js
+from pyodide.ffi import to_js
 from js import Object
 resp = await js.fetch('example.com/some_api', to_js({
   "method": "POST",

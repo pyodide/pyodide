@@ -84,7 +84,7 @@
         pyodide.runPython(
           `
             import sys
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             from pyodide.console import PyodideConsole, repr_shorten, BANNER
             import __main__
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER

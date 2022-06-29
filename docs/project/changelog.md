@@ -44,7 +44,16 @@ substitutions:
 - {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`.
   {pr}`2643`
 
+- {{ Enhancement }} Added `cross-script` key to the `meta.yaml` spec to allow
+  executing custom logic in the cross build environment.
+  {pr}`2734`
+
 ### Pyodide Module and type conversions
+
+- {{ API }} All functions were moved out of the root `pyodide` package into
+  various submodules. For backwards compatibility, they will be available from
+  the root package (raising a `FutureWarning`) until v0.23.0.
+  {pr}`2787`, {pr}`2790`
 
 - {{ Enhancement }} `loadPyodide` no longer uses any global state, so it can be
   used more than once in the same thread. This is recommended if a network

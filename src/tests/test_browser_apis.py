@@ -11,7 +11,7 @@ async def test_set_timeout_succeeded(selenium):
 
     import asyncio
 
-    from pyodide import set_timeout
+    from pyodide.ffi.wrappers import set_timeout
 
     set_timeout(foo, 500)
     await asyncio.sleep(1)
@@ -29,7 +29,7 @@ async def test_clear_timeout_succeeded(selenium):
 
     import asyncio
 
-    from pyodide import clear_timeout, set_timeout
+    from pyodide.ffi.wrappers import clear_timeout, set_timeout
 
     timeout_id = set_timeout(foo, 500)
     await asyncio.sleep(0.2)
@@ -48,7 +48,7 @@ async def test_clear_timeout_destroyable_noop(selenium):
 
     import asyncio
 
-    from pyodide import clear_timeout, set_timeout
+    from pyodide.ffi.wrappers import clear_timeout, set_timeout
 
     timeout_id = set_timeout(foo, 500)
     await asyncio.sleep(1)
@@ -78,7 +78,7 @@ async def test_start_multiple_timeouts_and_clear_one(selenium):
 
     import asyncio
 
-    from pyodide import clear_timeout, set_timeout
+    from pyodide.ffi.wrappers import clear_timeout, set_timeout
 
     timeout_id1 = set_timeout(foo1, 500)
     timeout_id2 = set_timeout(foo2, 500)
@@ -104,7 +104,7 @@ async def test_set_interval_succeeded(selenium):
 
     import asyncio
 
-    from pyodide import clear_interval, set_interval
+    from pyodide.ffi.wrappers import clear_interval, set_interval
 
     interval_id = set_interval(foo, 300)
     await asyncio.sleep(1)
@@ -124,7 +124,7 @@ async def test_clear_interval_succeeded(selenium):
 
     import asyncio
 
-    from pyodide import clear_interval, set_interval
+    from pyodide.ffi.wrappers import clear_interval, set_interval
 
     interval_id = set_interval(foo, 500)
     await asyncio.sleep(0.2)
@@ -153,7 +153,7 @@ async def test_start_multiple_intervals_and_clear_one(selenium):
 
     import asyncio
 
-    from pyodide import clear_interval, set_interval
+    from pyodide.ffi.wrappers import clear_interval, set_interval
 
     interval_id1 = set_interval(foo1, 300)
     interval_id2 = set_interval(foo2, 300)
@@ -214,7 +214,7 @@ x;
         nonlocal triggered
         triggered = True
 
-    from pyodide import add_event_listener, remove_event_listener
+    from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
 
     add_event_listener(x, "click", foo)
     x.triggerEvent("click")
@@ -267,7 +267,7 @@ x;
         nonlocal triggered
         triggered = True
 
-    from pyodide import add_event_listener, remove_event_listener
+    from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
 
     add_event_listener(x, "click", foo)
     remove_event_listener(x, "click", foo)
@@ -328,7 +328,7 @@ x;
         nonlocal triggered3
         triggered3 = True
 
-    from pyodide import add_event_listener, remove_event_listener
+    from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
 
     add_event_listener(x, "click", foo1)
     add_event_listener(x, "click", foo2)
@@ -389,7 +389,7 @@ x;
         nonlocal triggered
         triggered = True
 
-    from pyodide import add_event_listener, remove_event_listener
+    from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
 
     add_event_listener(x, "click", foo)
     remove_event_listener(x, "click", foo)
@@ -446,7 +446,7 @@ x;
         nonlocal triggered
         triggered = True
 
-    from pyodide import remove_event_listener
+    from pyodide.ffi.wrappers import remove_event_listener
 
     try:
         remove_event_listener(x, "click", foo)

@@ -9,6 +9,7 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import distributions as importlib_distributions
 from importlib.metadata import version as importlib_version
 from pathlib import Path
+from sysconfig import get_platform
 from typing import IO, Any
 from urllib.parse import ParseResult, urlparse
 from zipfile import ZipFile
@@ -19,8 +20,8 @@ from packaging.tags import Tag, sys_tags
 from packaging.utils import canonicalize_name, parse_wheel_filename
 from packaging.version import Version
 
-from pyodide import to_js
 from pyodide._package_loader import get_dynlibs, wheel_dist_info_dir
+from pyodide.ffi import to_js
 
 from ._compat import (
     REPODATA_INFO,
@@ -89,6 +90,51 @@ class WheelInfo:
             if tag in self.tags:
                 return True
         return False
+
+    def check_compatible(self):
+        if self.is_compatible():
+            return
+        tag: Tag = next(iter(self.tags))
+        if "emscripten" not in tag.platform:
+            raise ValueError(
+                f"Wheel platform '{tag.platform}' is not compatible with "
+                f"Pyodide's platform '{get_platform()}'"
+            )
+
+        def platform_to_version(platform: str) -> str:
+            return (
+                platform.replace("-", "_")
+                .removeprefix("emscripten_")
+                .removesuffix("_wasm32")
+                .replace("_", ".")
+            )
+
+        wheel_emscripten_version = platform_to_version(tag.platform)
+        pyodide_emscripten_version = platform_to_version(get_platform())
+        if wheel_emscripten_version != pyodide_emscripten_version:
+            raise ValueError(
+                f"Wheel was built with Emscripten v{wheel_emscripten_version} but "
+                f"Pyodide was built with Emscripten v{pyodide_emscripten_version}"
+            )
+
+        abi_incompatible = True
+        from sys import version_info
+
+        version = f"{version_info.major}{version_info.minor}"
+        abis = ["abi3", f"cp{version}"]
+        for tag in self.tags:
+            if tag.abi in abis:
+                abi_incompatible = False
+            break
+        if abi_incompatible:
+            abis_string = ",".join({tag.abi for tag in self.tags})
+            raise ValueError(
+                f"Wheel abi '{abis_string}' is not supported. Supported abis are 'abi3' and 'cp{version}'."
+            )
+
+        raise ValueError(
+            f"Wheel interpreter version '{tag.interpreter}' is not supported."
+        )
 
     async def _fetch_bytes(self, fetch_kwargs):
         try:
@@ -268,8 +314,7 @@ class Transaction:
 
         # custom download location
         wheel = WheelInfo.from_url(req)
-        if not wheel.is_compatible():
-            raise ValueError(f"'{wheel.filename}' is not a pure Python 3 wheel")
+        wheel.check_compatible()
 
         await self.add_wheel(wheel, extras=set())
 
