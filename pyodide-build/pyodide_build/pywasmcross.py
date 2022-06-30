@@ -68,6 +68,7 @@ def make_command_wrapper_symlinks(
     exist.
     """
     exec_path = Path(__file__).resolve()
+    os.chmod(__file__, 777)
     for symlink in symlinks:
         symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
