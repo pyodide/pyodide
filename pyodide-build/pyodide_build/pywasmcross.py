@@ -403,7 +403,7 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
 
 def get_export_flags(
     line: list[str],
-    exports: Literal["whole_archive", "explicit", "requested"] | list[str],
+    exports: Literal["whole_archive", "requested", "pyinit"] | list[str],
 ) -> Iterator[str]:
     """
     If "whole_archive" was requested, no action is needed. Otherwise, add
