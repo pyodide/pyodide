@@ -623,7 +623,7 @@ def environment_substitute_args(
     return subbed_args
 
 
-if IS_MAIN:
+def entry():
     REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
     basename = Path(sys.argv[0]).name
@@ -635,5 +635,5 @@ if IS_MAIN:
         raise Exception(f"Unexpected invocation '{basename}'")
 
 
-def entry():
-    pass
+if IS_MAIN:
+    entry()
