@@ -13,8 +13,17 @@ import os
 import sys
 from pathlib import Path, PurePosixPath
 
-IS_MAIN = __name__ == "__main__"
-if IS_MAIN:
+import __main__
+
+FILE = None
+IS_MAIN = False
+if __name__ == "__main__":
+    FILE = __file__
+if (Path(__main__.__file__).parent / "pywasmcross_env.json").exists():
+    FILE = __main__.__file__
+
+if FILE:
+    IS_MAIN = True
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
@@ -28,6 +37,7 @@ if IS_MAIN:
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
 
 import re
+import shutil
 import subprocess
 from collections import namedtuple
 from contextlib import contextmanager
@@ -68,14 +78,17 @@ def make_command_wrapper_symlinks(
     exist.
     """
     exec_path = Path(__file__).resolve()
-    os.chmod(__file__, 777)
     for symlink in symlinks:
         symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
         try:
-            symlink_path.symlink_to(exec_path)
+            pywasmcross_exe = shutil.which("_pywasmcross")
+            if pywasmcross_exe:
+                symlink_path.symlink_to(pywasmcross_exe)
+            else:
+                symlink_path.symlink_to(exec_path)
         except FileExistsError:
             pass
         if symlink == "c++":
