@@ -263,10 +263,6 @@ def replay_genargs_handle_dashl(
     if arg == "-lffi":
         return None
 
-    # See https://github.com/emscripten-core/emscripten/issues/8650
-    if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
-        return None
-
     # WASM link doesn't like libraries being included twice
     # skip second one
     if arg in used_libs:
