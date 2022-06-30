@@ -55,5 +55,22 @@ def main() -> None:
         main_parser.print_help()
 
 
+def out_of_tree_main():
+    import os
+    from pathlib import Path
+
+    env_str = ".pyodide-xbuildenv"
+    env = Path(env_str)
+    os.environ["PYODIDE_ROOT"] = env_str
+    if not env.exists():
+        from .install_xbuildenv import download_xbuild_env, install_xbuild_env
+        download_xbuild_env(env)
+        install_xbuild_env(env)
+
+    from .wrapper import run
+    import sys
+    run(sys.argv[1:])
+
+
 if __name__ == "__main__":
     main()
