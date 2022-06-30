@@ -102,6 +102,11 @@ substitutions:
   `ERRNO_CODES` APIs.
   {pr}`2582`
 
+- {{ Fix }} The `bool` operator on a `JsProxy` now behaves more consistently: it
+  returns `False` if JavaScript would say that `!!x` is `false`, or if `x` is an
+  empty container. Otherwise it returns `True`.
+  {pr}`2803`
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading
