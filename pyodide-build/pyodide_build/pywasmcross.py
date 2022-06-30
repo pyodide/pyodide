@@ -15,20 +15,15 @@ from pathlib import Path, PurePosixPath
 
 import __main__
 
-FILE = None
-IS_MAIN = False
-if __name__ == "__main__":
-    FILE = __file__
-if (Path(__main__.__file__).parent / "pywasmcross_env.json").exists():
-    FILE = __main__.__file__
+env_file = Path(__main__.__file__).parent / "pywasmcross_env.json"
+IS_MAIN = env_file.exists()
 
-if FILE:
-    IS_MAIN = True
+if IS_MAIN:
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
     else:
-        with open(Path(__file__).parent / "pywasmcross_env.json") as f:
+        with open(env_file) as f:
             PYWASMCROSS_ARGS = json.load(f)
 
     # restore __name__ so that relative imports work as we expect
