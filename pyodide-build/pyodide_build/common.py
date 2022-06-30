@@ -229,11 +229,14 @@ def init_environment() -> None:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
 
     os.environ.update(get_make_environment_vars())
-    hostsitepackages = get_hostsitepackages()
-    pythonpath = [
-        hostsitepackages,
-    ]
-    os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    try:
+        hostsitepackages = get_hostsitepackages()
+        pythonpath = [
+            hostsitepackages,
+        ]
+        os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    except KeyError:
+        pass
     os.environ["BASH_ENV"] = ""
     get_unisolated_packages()
 

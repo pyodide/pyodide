@@ -31,6 +31,7 @@ def download_xbuild_env(xbuildenv_path: Path):
         unpack_archive(f.name, xbuildenv_path)
 
 def install_xbuild_env(xbuildenv_path: Path) -> None:
+    xbuildenv_path = xbuildenv_path / "xbuildenv"
     pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
     host_site_packages = xbuildenv_root / Path(
