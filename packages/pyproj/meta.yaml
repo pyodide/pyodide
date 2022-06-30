@@ -11,6 +11,7 @@ source:
 requirements:
   run:
     - libproj
+    - certifi
 
 build:
   script: |
