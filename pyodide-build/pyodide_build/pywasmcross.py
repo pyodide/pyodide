@@ -620,3 +620,7 @@ if IS_MAIN:
         sys.exit(handle_command(args, REPLAY_ARGS))
     else:
         raise Exception(f"Unexpected invocation '{basename}'")
+
+
+def entry():
+    pass
