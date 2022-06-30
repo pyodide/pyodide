@@ -1,0 +1,14 @@
+package:
+  name: plotly
+  version: 5.9.0
+source:
+  url: https://files.pythonhosted.org/packages/2d/6a/2c2e9ed190066646bbf1620c0b67f8e363e0024ee7bf0d3ea1fdcc9af3ae/plotly-5.9.0-py2.py3-none-any.whl
+  sha256: 9acf168915101caac82ed6da3390840c622d9d4e4a78cbe1260f52501efc3117
+test:
+  imports:
+    - plotly
+about:
+  home: https://plotly.com/python/
+  PyPI: https://pypi.org/project/plotly
+  summary: An open-source, interactive data visualization library for Python
+  license: MIT
