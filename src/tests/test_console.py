@@ -230,7 +230,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
-    def stdin_callback() -> str:
+    def stdin_callback(n: int) -> str:
         return ""
 
     def stdout_callback(string: str) -> None:

@@ -14,9 +14,10 @@ from contextlib import (
 )
 from platform import python_build, python_version
 from tokenize import TokenError
+from types import TracebackType
 from typing import Any, Callable, Generator, Literal
 
-from _pyodide._base import CodeRunner, should_quiet
+from _pyodide._base import CodeRunner, ReturnMode, should_quiet
 
 __all__ = ["Console", "PyodideConsole", "BANNER", "repr_shorten", "ConsoleFuture"]
 
@@ -34,14 +35,16 @@ class redirect_stdin(_RedirectStream[Any]):
 class _WriteStream:
     """A utility class so we can specify our own handlers for writes to sdout, stderr"""
 
-    def __init__(self, write_handler, name=None):
+    def __init__(
+        self, write_handler: Callable[[str], Any], name: str | None = None
+    ) -> None:
         self.write_handler = write_handler
         self.name = name
 
-    def write(self, text):
+    def write(self, text: str) -> None:
         self.write_handler(text)
 
-    def flush(self):
+    def flush(self) -> None:
         pass
 
     def isatty(self) -> bool:
@@ -51,14 +54,16 @@ class _WriteStream:
 class _ReadStream:
     """A utility class so we can specify our own handler for reading from stdin"""
 
-    def __init__(self, read_handler, name=None):
+    def __init__(
+        self, read_handler: Callable[[int], str], name: str | None = None
+    ) -> None:
         self.read_handler = read_handler
         self.name = name
 
-    def readline(self, n=-1):
+    def readline(self, n: int = -1) -> str:
         return self.read_handler(n)
 
-    def flush(self):
+    def flush(self) -> None:
         pass
 
     def isatty(self) -> bool:
@@ -77,10 +82,10 @@ class _Compile(Compile):
     def __init__(
         self,
         *,
-        return_mode="last_expr",
-        quiet_trailing_semicolon=True,
-        flags=0x0,
-    ):
+        return_mode: ReturnMode = "last_expr",
+        quiet_trailing_semicolon: bool = True,
+        flags: int = 0x0,
+    ) -> None:
         super().__init__()
         self.flags |= flags
         self.return_mode = return_mode
@@ -90,7 +95,7 @@ class _Compile(Compile):
         return_mode = self.return_mode
         try:
             if self.quiet_trailing_semicolon and should_quiet(source):
-                return_mode = None
+                return_mode = "none"
         except (TokenError, SyntaxError):
             # Invalid code, let the Python parser throw the error later.
             pass
@@ -124,10 +129,10 @@ class _CommandCompiler(CommandCompiler):
     def __init__(
         self,
         *,
-        return_mode="last_expr",
-        quiet_trailing_semicolon=True,
-        flags=0x0,
-    ):
+        return_mode: ReturnMode = "last_expr",
+        quiet_trailing_semicolon: bool = True,
+        flags: int = 0x0,
+    ) -> None:
         self.compiler = _Compile(
             return_mode=return_mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
@@ -140,9 +145,10 @@ class _CommandCompiler(CommandCompiler):
         return super().__call__(source, filename, symbol)  # type: ignore[return-value]
 
 
-INCOMPLETE: Literal["incomplete"] = "incomplete"
-SYNTAX_ERROR: Literal["syntax-error"] = "syntax-error"
-COMPLETE: Literal["complete"] = "complete"
+ConsoleFutureStatus = Literal["incomplete", "syntax-error", "complete"]
+INCOMPLETE: ConsoleFutureStatus = "incomplete"
+SYNTAX_ERROR: ConsoleFutureStatus = "syntax-error"
+COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
@@ -166,12 +172,10 @@ class ConsoleFuture(Future[Any]):
 
     def __init__(
         self,
-        syntax_check: (Literal["incomplete", "syntax-error", "complete"]),
+        syntax_check: ConsoleFutureStatus,
     ):
         super().__init__()
-        self.syntax_check: (
-            Literal["incomplete", "syntax-error", "complete"]
-        ) = syntax_check
+        self.syntax_check: ConsoleFutureStatus = syntax_check
         self.formatted_error: str | None = None
 
 
@@ -190,7 +194,7 @@ class Console:
     globals : ``dict``
         The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
 
-    stdin_callback : ``Callable[[], str]``
+    stdin_callback : ``Callable[[int], str]``
         Function to call at each read from ``sys.stdin``. Defaults to ``None``.
 
     stdout_callback : ``Callable[[str], None]``
@@ -231,12 +235,12 @@ class Console:
         self,
         globals: dict[str, Any] | None = None,
         *,
-        stdin_callback: Callable[[], str] | None = None,
+        stdin_callback: Callable[[int], str] | None = None,
         stdout_callback: Callable[[str], None] | None = None,
         stderr_callback: Callable[[str], None] | None = None,
         persistent_stream_redirection: bool = False,
         filename: str = "<console>",
-    ):
+    ) -> None:
         if globals is None:
             globals = {"__name__": "__console__", "__doc__": None}
         self.globals = globals
@@ -262,7 +266,7 @@ class Console:
         )
         self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
-    def persistent_redirect_streams(self):
+    def persistent_redirect_streams(self) -> None:
         """Redirect stdin/stdout/stderr persistently"""
         if self._stream_generator:
             return
@@ -271,7 +275,7 @@ class Console:
         next(self._stream_generator)  # trigger stream redirection
         # streams will be reverted to normal when self._stream_generator is destroyed.
 
-    def persistent_restore_streams(self):
+    def persistent_restore_streams(self) -> None:
         """Restore stdin/stdout/stderr if they have been persistently redirected"""
         # allowing _stream_generator to be garbage collected restores the streams
         self._stream_generator = None
@@ -339,7 +343,7 @@ class Console:
 
         res = ConsoleFuture(COMPLETE)
 
-        def done_cb(fut):
+        def done_cb(fut: asyncio.Task[Any]) -> None:
             nonlocal res
             assert res is not None
             exc = fut.exception()
@@ -375,7 +379,7 @@ class Console:
         sys.last_traceback = None
         return "".join(traceback.format_exception_only(type(e), e))
 
-    def num_frames_to_keep(self, tb):
+    def num_frames_to_keep(self, tb: TracebackType | None) -> int:
         keep_frames = False
         kept_frames = 0
         # Try to trim out stack frames inside our code
@@ -386,7 +390,7 @@ class Console:
                 kept_frames += 1
         return kept_frames
 
-    def formattraceback(self, e: Exception) -> str:
+    def formattraceback(self, e: BaseException) -> str:
         """Format the exception that just occurred.
 
         The actual error object is stored into `sys.last_value`.

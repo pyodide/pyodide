@@ -16,22 +16,22 @@ def test_subprocess_with_shared_env():
         p.env.pop("A", None)
 
         res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == b"6\n"
+        assert res.stdout == "6\n"
         assert p.env.get("A", None) is None
 
         p.run("export A=2")
         assert p.env["A"] == "2"
 
         res = p.run("echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == b"2\n"
+        assert res.stdout == "2\n"
 
         res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == b"6\n"
+        assert res.stdout == "6\n"
         assert p.env.get("A", None) == "6"
 
         p.env["A"] = "7"
         res = p.run("echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == b"7\n"
+        assert res.stdout == "7\n"
         assert p.env["A"] == "7"
 
 
