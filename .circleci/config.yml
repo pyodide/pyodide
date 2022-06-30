@@ -185,10 +185,11 @@ jobs:
             rm dist/pyodide.asm.js
             source pyodide_env.sh
             ccache -z
-            make dist/pyodide.asm.js
+            PYODIDE_SYMBOLS=1 make dist/pyodide.asm.js
             ccache -s
             cd dist
             npx prettier -w pyodide.asm.js
+            npx prettier -w pyodide.js
             cd ..
             mv dist dist-debug
             mv dist-release dist
