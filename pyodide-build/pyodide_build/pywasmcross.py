@@ -14,43 +14,31 @@ import sys
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-PYWASMCROSS_ARGS: dict[str, Any] = {}
-IS_COMPILER_INVOCATION: bool = False
+from __main__ import __file__ as INVOKED_PATH_STR
 
+INVOKED_PATH = Path(INVOKED_PATH_STR)
 
-def _compiler_setup() -> None:
-    import __main__
+SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
+IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
 
-    env_folder = Path(__main__.__file__).parent
-
-    # Known cases where we aren't a compiler invocation
-    if env_folder.name in ["pyodide_build", "bin", "sphinx"]:
-        return
-
-    global PYWASMCROSS_ARGS
+if IS_COMPILER_INVOCATION:
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
     try:
-        with open(env_folder / "pywasmcross_env.json") as f:
+        with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
             PYWASMCROSS_ARGS = json.load(f)
     except FileNotFoundError:
         raise RuntimeError(
             "Invalid invocation: can't find PYWASMCROSS_ARGS."
-            f" Invoked from {env_folder}."
+            f" Invoked from {INVOKED_PATH}."
         )
-
-    global IS_COMPILER_INVOCATION
-    IS_COMPILER_INVOCATION = True
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
     # restore __name__ so that relative imports work as we expect
-    global __name__
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
-
-_compiler_setup()
 
 import re
 import shutil
@@ -62,8 +50,6 @@ from typing import Iterator, Literal, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
-
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
 
 def symlink_dir() -> Path:
@@ -94,7 +80,7 @@ def make_command_wrapper_symlinks(
     exist.
     """
     exec_path = Path(__file__).resolve()
-    for symlink in symlinks:
+    for symlink in SYMLINKS:
         symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
@@ -640,15 +626,11 @@ def environment_substitute_args(
 
 
 def compiler_main():
-    REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
-
+    replay_args = ReplayArgs(**PYWASMCROSS_ARGS)
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename
-    if basename in symlinks:
-        sys.exit(handle_command(args, REPLAY_ARGS))
-    else:
-        raise Exception(f"Unexpected invocation '{basename}'")
+    sys.exit(handle_command(args, replay_args))
 
 
 if IS_COMPILER_INVOCATION:
