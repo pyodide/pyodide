@@ -35,7 +35,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--exports",
         choices=["pyinit", "requested", "whole_archive"],
-        default="pyinit",
+        default="requested",
         help="Which symbols should be exported when linking .so files?",
     )
     parser.add_argument(
