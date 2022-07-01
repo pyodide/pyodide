@@ -1,16 +1,15 @@
 package:
   name: numpy
-  version: 1.22.4
+  version: 1.23.0
 
 source:
   url: https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip
   sha256: 425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af
 
   patches:
-    - patches/0001-BUG-Fix-the-return-type-of-random_float_fill.patch
-    - patches/0002-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
-    - patches/0003-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
-    - patches/0004-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
+    - patches/0002-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
+    - patches/0003-ENH-Fix-pointer-size-determination-for-cross-build.patch
 
 build:
   backend-flags: --disable-optimization
