@@ -389,7 +389,6 @@ def calculate_object_exports(objects):
         str((emcc / "../../bin/llvm-readobj").resolve()),
         "--section-details",
         "-st",
-        "--elf-output-style=JSON",
     ] + objects
     completedprocess = subprocess.run(
         args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
@@ -399,27 +398,37 @@ def calculate_object_exports(objects):
         print(completedprocess.stderr)
         sys.exit(completedprocess.returncode)
 
-    # llvm-readobj output is almost valid JSON...
-    output = completedprocess.stdout.replace('"File":"', '{"File":"').replace(
-        '"AddressSize":"32bit",', '"AddressSize":"32bit"},'
-    )
     result = []
-    try:
-        parsed_json = json.loads(output)
-    except json.decoder.JSONDecodeError:
-        print(output)
-        raise
-    for file in parsed_json[2::3]:
-        for entry in file["Symbols"]:
-            symbol = entry["Symbol"]
-            flags = [flag["Name"] for flag in symbol["Flags"]["Flags"]]
-            if (
-                "BINDING_LOCAL" in flags
-                or "UNDEFINED" in flags
-                or "VISIBILITY_HIDDEN" in flags
-            ):
-                continue
-            result.append(symbol["Name"])
+
+    insymbol = False
+    for line in completedprocess.stdout.split("\n"):
+        line = line.strip()
+        if line == "Symbol {":
+            insymbol = True
+            export = True
+            name = None
+            symbol_lines = [line]
+            continue
+        if not insymbol:
+            continue
+        symbol_lines.append(line)
+        if line.startswith("Name:"):
+            name = line.removeprefix("Name:").strip()
+        if (
+            line.startswith("BINDING_LOCAL")
+            or line.startswith("UNDEFINED")
+            or line.startswith("VISIBILITY_HIDDEN")
+        ):
+            export = False
+        if line == "}":
+            insymbol = False
+            if export:
+                if not name:
+                    raise RuntimeError(
+                        "Didn't find symbol's name:\n" + "\n".join(symbol_lines)
+                    )
+                result.append(name)
+    print(result)
     return result
 
 
