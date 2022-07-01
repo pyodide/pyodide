@@ -20,7 +20,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def download_xbuild_env(xbuildenv_path: Path) -> None:
+def download_xbuild_env(version: str, xbuildenv_path: Path) -> None:
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
     from urllib.request import urlretrieve
@@ -28,7 +28,7 @@ def download_xbuild_env(xbuildenv_path: Path) -> None:
     rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
-            "http://pyodide-cache.s3-website-us-east-1.amazonaws.com/xbuildenv/1.tar",
+            f"http://pyodide-cache.s3-website-us-east-1.amazonaws.com/xbuildenv/{version}.tar",
             f.name,
         )
         unpack_archive(f.name, xbuildenv_path)
@@ -61,6 +61,7 @@ def install_xbuild_env(xbuildenv_path: Path) -> None:
 
 def main(args: argparse.Namespace) -> None:
     xbuildenv_path = Path(args.xbuild_env[0])
+    version = "1"
     if args.download:
-        download_xbuild_env(xbuildenv_path)
+        download_xbuild_env(version, xbuildenv_path)
     install_xbuild_env(xbuildenv_path)

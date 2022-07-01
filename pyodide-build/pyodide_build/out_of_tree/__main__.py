@@ -10,7 +10,8 @@ def ensure_env_installed(env: Path) -> None:
         return
     from ..install_xbuildenv import download_xbuild_env, install_xbuild_env
 
-    download_xbuild_env(env)
+    version = "1"
+    download_xbuild_env(version, env)
     install_xbuild_env(env)
 
 
