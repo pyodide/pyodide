@@ -1,6 +1,5 @@
 import subprocess
 from dataclasses import dataclass
-from tempfile import NamedTemporaryFile
 from typing import Any
 
 import pytest
@@ -191,27 +190,30 @@ def test_environment_var_substitution(monkeypatch):
     )
 
 
-def test_exports():
-    with NamedTemporaryFile("w", suffix=".c") as input, NamedTemporaryFile(
-        suffix=".o"
-    ) as output:
-        input.write(
-            """
-            __attribute__((visibility("hidden")))
-            int f() {
-                return 0;
-            }
+def test_exports_node(tmp_path):
+    template = """
+        __attribute__((visibility("hidden")))
+        int f%s() {
+            return 0;
+        }
 
-            __attribute__ ((visibility ("default")))
-            int g() {
-                return 0;
-            }
+        __attribute__ ((visibility ("default")))
+        int g%s() {
+            return 0;
+        }
 
-            int h(){
-                return 0;
-            }
-            """
-        )
-        input.flush()
-        subprocess.run(["emcc", "-c", input.name, "-o", output.name, "-fPIC"])
-        assert set(calculate_object_exports([output.name])) == {"g", "h"}
+        int h%s(){
+            return 0;
+        }
+        """
+    (tmp_path / "f1.c").write_text(template % (1, 1, 1))
+    (tmp_path / "f2.c").write_text(template % (2, 2, 2))
+    subprocess.run(["emcc", "-c", tmp_path / "f1.c", "-o", tmp_path / "f1.o", "-fPIC"])
+    subprocess.run(["emcc", "-c", tmp_path / "f2.c", "-o", tmp_path / "f2.o", "-fPIC"])
+    assert set(calculate_object_exports([tmp_path / "f1.o"])) == {"g1", "h1"}
+    assert set(calculate_object_exports([tmp_path / "f1.o", tmp_path / "f2.o"])) == {
+        "g1",
+        "h1",
+        "g2",
+        "h2",
+    }

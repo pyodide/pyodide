@@ -400,23 +400,26 @@ def calculate_object_exports(objects):
         sys.exit(completedprocess.returncode)
 
     # llvm-readobj output is almost valid JSON...
-    output = '[{"Sections":' + completedprocess.stdout.partition('"Sections":')[-1]
+    output = completedprocess.stdout.replace('"File":"', '{"File":"').replace(
+        '"AddressSize":"32bit",', '"AddressSize":"32bit"},'
+    )
     result = []
     try:
         parsed_json = json.loads(output)
     except json.decoder.JSONDecodeError:
         print(output)
         raise
-    for x in parsed_json[1]["Symbols"]:
-        symbol = x["Symbol"]
-        flags = [x["Name"] for x in symbol["Flags"]["Flags"]]
-        if (
-            "BINDING_LOCAL" in flags
-            or "UNDEFINED" in flags
-            or "VISIBILITY_HIDDEN" in flags
-        ):
-            continue
-        result.append(symbol["Name"])
+    for file in parsed_json[2::3]:
+        for entry in file["Symbols"]:
+            symbol = entry["Symbol"]
+            flags = [flag["Name"] for flag in symbol["Flags"]["Flags"]]
+            if (
+                "BINDING_LOCAL" in flags
+                or "UNDEFINED" in flags
+                or "VISIBILITY_HIDDEN" in flags
+            ):
+                continue
+            result.append(symbol["Name"])
     return result
 
 
