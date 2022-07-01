@@ -10,6 +10,7 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
+import shutil
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -380,6 +381,40 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
+def calculate_object_exports(objects):
+    which_emcc = shutil.which("emcc")
+    assert which_emcc
+    emcc = Path(which_emcc)
+    args = [
+        str((emcc / "../../bin/llvm-readobj").resolve()),
+        "--section-details",
+        "-st",
+        "--elf-output-style=JSON",
+    ] + objects
+    completedprocess = subprocess.run(
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
+    )
+    if completedprocess.returncode:
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(completedprocess.stderr)
+        sys.exit(completedprocess.returncode)
+
+    # llvm-readobj output is almost valid JSON...
+    output = '[{"Sections":' + completedprocess.stdout.partition('"Sections":')[-1]
+    result = []
+    for x in json.loads(output)[1]["Symbols"]:
+        symbol = x["Symbol"]
+        flags = [x["Name"] for x in symbol["Flags"]["Flags"]]
+        if (
+            "BINDING_LOCAL" in flags
+            or "UNDEFINED" in flags
+            or "VISIBILITY_HIDDEN" in flags
+        ):
+            continue
+        result.append(symbol["Name"])
+    return result
+
+
 def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
     """
     Collect up all the object files and archive files being linked and list out
@@ -388,17 +423,9 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
     begin with `PyInit`.
     """
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
-    args = ["emnm", "-j", "--export-symbols"] + objects
-    result = subprocess.run(
-        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
-    )
-    if result.returncode:
-        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
-        print(result.stderr)
-        sys.exit(result.returncode)
-
+    exports = calculate_object_exports(objects)
     condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
-    return (x for x in result.stdout.splitlines() if condition(x))
+    return (x for x in exports if condition(x))
 
 
 def get_export_flags(
