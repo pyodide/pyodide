@@ -22,7 +22,7 @@ def run(args: list[str]):
         ldflags=ldflags,
         target_install_dir="",
         replace_libs="",
-        exports="pyinit",
+        exports="requested",
     )
 
     with build_env_ctx as env:
