@@ -1,8 +1,0 @@
-package:
-  name: libjpeg
-  version: _
-source:
-  path: empty
-build:
-  library: true
-  script: embuilder build libjpeg --pic
