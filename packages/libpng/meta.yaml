@@ -1,0 +1,8 @@
+package:
+  name: libpng
+  version: _
+source:
+  path: empty
+build:
+  library: true
+  script: embuilder build libpng --pic
