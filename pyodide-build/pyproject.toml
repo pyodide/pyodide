@@ -2,6 +2,3 @@
 requires = ["setuptools>=42", "wheel"]
 
 build-backend = "setuptools.build_meta"
-
-[entry_points]
-console_scripts = ["pywasmbuild = out_of_tree_main:out_of_tree_main"]
