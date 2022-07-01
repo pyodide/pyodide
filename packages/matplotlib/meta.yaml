@@ -22,6 +22,7 @@ source:
       - ./mplsetup.cfg
 
 build:
+  cflags: -s USE_FREETYPE=1
   replace-libs:
     - png16=png
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION

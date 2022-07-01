@@ -12,6 +12,7 @@ source:
 build:
   cflags: |
     -s USE_ZLIB=1
+    -s USE_FREETYPE=1
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.
