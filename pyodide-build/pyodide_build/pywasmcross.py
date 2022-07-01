@@ -18,6 +18,17 @@ PYWASMCROSS_ARGS: dict[str, Any] = {}
 IS_COMPILER_INVOCATION: bool = False
 
 
+def _get_pywasmcross_args(env_folder: Path) -> dict[str, Any]:
+    # If possible load from environment variable, if necessary load from disk.
+    if "PYWASMCROSS_ARGS" in os.environ:
+        return json.loads(os.environ["PYWASMCROSS_ARGS"])
+    try:
+        with open(env_folder / "pywasmcross_env.json") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(f"Unexpected invocation. Parent directory: {env_folder}")
+
+
 def _compiler_setup() -> None:
     import __main__
 
@@ -32,12 +43,7 @@ def _compiler_setup() -> None:
     IS_COMPILER_INVOCATION = True
 
     global PYWASMCROSS_ARGS
-    # If possible load from environment variable, if necessary load from disk.
-    if "PYWASMCROSS_ARGS" in os.environ:
-        PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
-    else:
-        with open(env_folder / "pywasmcross_env.json") as f:
-            PYWASMCROSS_ARGS = json.load(f)
+    PYWASMCROSS_ARGS = _get_pywasmcross_args(env_folder)
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
@@ -47,7 +53,6 @@ def _compiler_setup() -> None:
 
 
 _compiler_setup()
-del _compiler_setup
 
 import re
 import shutil
