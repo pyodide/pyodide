@@ -1,7 +1,7 @@
-From bcc55e29d5e85ca699f026c464715006488fda89 Mon Sep 17 00:00:00 2001
+From 312ba1b0975c8dad8dac3f43560d6f8b1ccf59e3 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 11 Jun 2022 12:19:42 -0700
-Subject: [PATCH 4/5] ENH: Fix pointer size determination for cross build
+Subject: [PATCH 3/3] ENH: Fix pointer size determination for cross build
 
 Using `sys` to ask about the build Python is hostile to cross
 building because it is very hard to replace the sys module with one
@@ -14,7 +14,7 @@ So instead of using `sys.maxsize` to determine pointer size, use
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/numpy/linalg/setup.py b/numpy/linalg/setup.py
-index 73c386f1c..e4c658062 100644
+index dc62dff8f..4643d8a30 100644
 --- a/numpy/linalg/setup.py
 +++ b/numpy/linalg/setup.py
 @@ -1,5 +1,6 @@

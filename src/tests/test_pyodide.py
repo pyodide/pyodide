@@ -183,33 +183,6 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
-def test_deprecations(selenium_standalone):
-    selenium = selenium_standalone
-    selenium.run_js(
-        """
-        let d = pyodide.runPython("{}");
-        pyodide.runPython("x=2", d);
-        pyodide.runPython("y=2", d);
-        assert(() => d.get("x") === 2);
-        d.destroy();
-        """
-    )
-    dep_msg = "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-    assert selenium.logs.count(dep_msg) == 1
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            import shutil
-            shutil.make_archive("blah", "zip")
-        `);
-        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
-        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
-        """
-    )
-    dep_msg = "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-    assert selenium.logs.count(dep_msg) == 1
-
-
 def test_unpack_archive(selenium_standalone):
     selenium = selenium_standalone
     js_error = selenium.run_js(

@@ -7,7 +7,7 @@ import sys
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
-    def end_headers(self):
+    def end_headers(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
         super().end_headers()
 
@@ -15,7 +15,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 Handler.extensions_map[".wasm"] = "application/wasm"
 
 
-def make_parser(parser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = "Start a server with the supplied dist-dir and port."
     parser.add_argument(
         "--dist-dir",
@@ -34,12 +34,12 @@ def make_parser(parser):
     return parser
 
 
-def server(port):
+def server(port: int) -> socketserver.TCPServer:
     httpd = socketserver.TCPServer(("", port), Handler)
     return httpd
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     build_dir = pathlib.Path(args.build_dir).resolve()
     port = args.port
     httpd = server(port)

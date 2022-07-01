@@ -77,7 +77,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
             shutil.copy(pyodide_root / path, xbuildenv_root / path)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
     xbuildenv_path = pyodide_root / "xbuildenv"
     shutil.rmtree(xbuildenv_path, ignore_errors=True)

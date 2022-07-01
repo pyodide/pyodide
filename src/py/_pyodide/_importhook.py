@@ -1,14 +1,21 @@
 import sys
 from importlib.abc import Loader, MetaPathFinder
+from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
-from typing import Any
+from types import ModuleType
+from typing import Any, Sequence
 
 
 class JsFinder(MetaPathFinder):
-    def __init__(self):
-        self.jsproxies = {}
+    def __init__(self) -> None:
+        self.jsproxies: dict[str, Any] = {}
 
-    def find_spec(self, fullname, path, target=None):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
         assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
@@ -86,17 +93,17 @@ class JsFinder(MetaPathFinder):
 
 
 class JsLoader(Loader):
-    def __init__(self, jsproxy):
+    def __init__(self, jsproxy: Any) -> None:
         self.jsproxy = jsproxy
 
-    def create_module(self, spec):
+    def create_module(self, spec: ModuleSpec) -> Any:
         return self.jsproxy
 
-    def exec_module(self, module):
+    def exec_module(self, module: ModuleType) -> None:
         pass
 
     # used by importlib.util.spec_from_loader
-    def is_package(self, fullname):
+    def is_package(self, fullname: str) -> bool:
         return True
 
 
@@ -106,7 +113,7 @@ register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
 
 
-def register_js_finder():
+def register_js_finder() -> None:
     """A bootstrap function, called near the end of Pyodide initialization.
 
     It is called in ``loadPyodide`` in ``pyodide.js`` once ``_pyodide_core`` is ready

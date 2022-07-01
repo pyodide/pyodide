@@ -14,6 +14,8 @@ __version__ = "0.21.0.dev0"
 
 __all__ = ["__version__"]
 
+from typing import Any
+
 from . import _state  # noqa: F401
 from .code import CodeRunner  # noqa: F401
 from .code import eval_code  # noqa: F401
@@ -65,7 +67,7 @@ for name in DEPRECATED_LIST:
     del globals()[name]
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     if name in DEPRECATED_LIST:
         from warnings import warn
 
