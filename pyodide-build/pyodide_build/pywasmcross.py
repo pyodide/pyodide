@@ -12,24 +12,39 @@ import json
 import os
 import sys
 from pathlib import Path, PurePosixPath
+from typing import Any
 
-import __main__
+PYWASMCROSS_ARGS: dict[str, Any] = {}
 
-env_file = Path(__main__.__file__).parent / "pywasmcross_env.json"
-IS_MAIN = env_file.exists()
 
-if IS_MAIN:
+def _compiler_setup() -> bool:
+    import __main__
+
+    env_folder = Path(__main__.__file__).parent
+
+    if env_folder.name in ["pyodide_build", "bin"]:
+        # ENV_FOLDER.name == "pyodide_build": we are being run via `python -m pyodide_build`,
+        # ENV_FOLDER.name == "bin": we are being run via a console entrypoint
+        return False
+
+    global PYWASMCROSS_ARGS
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
     else:
-        with open(env_file) as f:
+        with open(env_folder / "pywasmcross_env.json") as f:
             PYWASMCROSS_ARGS = json.load(f)
 
-    # restore __name__ so that relative imports work as we expect
-    __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
+    # restore __name__ so that relative imports work as we expect
+    global __name__
+    __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
+    return True
+
+
+IS_MAIN = _compiler_setup()
+del _compiler_setup
 
 import re
 import shutil
@@ -37,7 +52,7 @@ import subprocess
 from collections import namedtuple
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterator, Literal, MutableMapping, NoReturn
+from typing import Iterator, Literal, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -618,7 +633,7 @@ def environment_substitute_args(
     return subbed_args
 
 
-def entry():
+def main():
     REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
     basename = Path(sys.argv[0]).name
@@ -631,4 +646,4 @@ def entry():
 
 
 if IS_MAIN:
-    entry()
+    main()

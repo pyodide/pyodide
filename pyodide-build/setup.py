@@ -5,7 +5,7 @@ if __name__ == "__main__":
     setuptools.setup(
         entry_points={
             "console_scripts": [
-                "_pywasmcross = pyodide_build.pywasmcross:entry",
+                "_pywasmcross = pyodide_build.pywasmcross:main",
             ]
         }
     )
