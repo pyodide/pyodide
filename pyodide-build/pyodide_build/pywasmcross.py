@@ -13,13 +13,17 @@ import os
 import sys
 from pathlib import Path, PurePosixPath
 
-IS_MAIN = __name__ == "__main__"
+import __main__
+
+env_file = Path(__main__.__file__).parent / "pywasmcross_env.json"
+IS_MAIN = env_file.exists()
+
 if IS_MAIN:
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
     else:
-        with open(Path(__file__).parent / "pywasmcross_env.json") as f:
+        with open(env_file) as f:
             PYWASMCROSS_ARGS = json.load(f)
 
     # restore __name__ so that relative imports work as we expect
@@ -28,6 +32,7 @@ if IS_MAIN:
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
 
 import re
+import shutil
 import subprocess
 from collections import namedtuple
 from contextlib import contextmanager
@@ -74,7 +79,11 @@ def make_command_wrapper_symlinks(
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
         try:
-            symlink_path.symlink_to(exec_path)
+            pywasmcross_exe = shutil.which("_pywasmcross")
+            if pywasmcross_exe:
+                symlink_path.symlink_to(pywasmcross_exe)
+            else:
+                symlink_path.symlink_to(exec_path)
         except FileExistsError:
             pass
         if symlink == "c++":
@@ -609,7 +618,7 @@ def environment_substitute_args(
     return subbed_args
 
 
-if IS_MAIN:
+def entry():
     REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
     basename = Path(sys.argv[0]).name
@@ -619,3 +628,7 @@ if IS_MAIN:
         sys.exit(handle_command(args, REPLAY_ARGS))
     else:
         raise Exception(f"Unexpected invocation '{basename}'")
+
+
+if IS_MAIN:
+    entry()
