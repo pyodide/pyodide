@@ -1,11 +1,16 @@
+import subprocess
 from dataclasses import dataclass
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 import pytest
 
 from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
-from pyodide_build.pywasmcross import environment_substitute_args
+from pyodide_build.pywasmcross import (
+    calculate_object_exports,
+    environment_substitute_args,
+)
 
 
 @dataclass
@@ -184,3 +189,29 @@ def test_environment_var_substitution(monkeypatch):
         and args["ldflags"] == '"-lpyodide_build_dir"'
         and args["replace_libs"] == "James Ignatius Morrison:Jimmy"
     )
+
+
+def test_exports():
+    with NamedTemporaryFile("w", suffix=".c") as input, NamedTemporaryFile(
+        suffix=".o"
+    ) as output:
+        input.write(
+            """
+            __attribute__((visibility("hidden")))
+            int f() {
+                return 0;
+            }
+
+            __attribute__ ((visibility ("default")))
+            int g() {
+                return 0;
+            }
+
+            int h(){
+                return 0;
+            }
+            """
+        )
+        input.flush()
+        subprocess.run(["emcc", "-c", input.name, "-o", output.name, "-fPIC"])
+        assert set(calculate_object_exports([output.name])) == {"g", "h"}

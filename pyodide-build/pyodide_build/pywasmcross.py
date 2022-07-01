@@ -402,7 +402,12 @@ def calculate_object_exports(objects):
     # llvm-readobj output is almost valid JSON...
     output = '[{"Sections":' + completedprocess.stdout.partition('"Sections":')[-1]
     result = []
-    for x in json.loads(output)[1]["Symbols"]:
+    try:
+        parsed_json = json.loads(output)
+    except json.decoder.JSONDecodeError:
+        print(output)
+        raise
+    for x in parsed_json[1]["Symbols"]:
         symbol = x["Symbol"]
         flags = [x["Name"] for x in symbol["Flags"]["Flags"]]
         if (
