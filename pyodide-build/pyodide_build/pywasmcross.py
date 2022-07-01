@@ -15,9 +15,10 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 PYWASMCROSS_ARGS: dict[str, Any] = {}
+IS_COMPILER_INVOCATION: bool = False
 
 
-def _compiler_setup() -> bool:
+def _compiler_setup() -> None:
     import __main__
 
     env_folder = Path(__main__.__file__).parent
@@ -25,7 +26,10 @@ def _compiler_setup() -> bool:
     if env_folder.name in ["pyodide_build", "bin"]:
         # ENV_FOLDER.name == "pyodide_build": we are being run via `python -m pyodide_build`,
         # ENV_FOLDER.name == "bin": we are being run via a console entrypoint
-        return False
+        return
+
+    global IS_COMPILER_INVOCATION
+    IS_COMPILER_INVOCATION = True
 
     global PYWASMCROSS_ARGS
     # If possible load from environment variable, if necessary load from disk.
@@ -40,10 +44,9 @@ def _compiler_setup() -> bool:
     # restore __name__ so that relative imports work as we expect
     global __name__
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
-    return True
 
 
-IS_MAIN = _compiler_setup()
+_compiler_setup()
 del _compiler_setup
 
 import re
@@ -633,7 +636,7 @@ def environment_substitute_args(
     return subbed_args
 
 
-def main():
+def compiler_main():
     REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
 
     basename = Path(sys.argv[0]).name
@@ -645,5 +648,5 @@ def main():
         raise Exception(f"Unexpected invocation '{basename}'")
 
 
-if IS_MAIN:
-    main()
+if IS_COMPILER_INVOCATION:
+    compiler_main()
