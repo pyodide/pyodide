@@ -16,31 +16,33 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def copy_xbuild_files(xbuildenv_path):
+def copy_xbuild_files(xbuildenv_path: Path) -> None:
     PYODIDE_ROOT = get_pyodide_root()
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
-    xbuild_site_packages = xbuildenv_path / "site-packages-extras"
+    # Store package cross-build-files into site_packages_extras in the same tree
+    # structure as they would appear in the real package.
+    # In install_xbuildenv, we will use:
+    # pip install -t $HOSTSITEPACKAGES -r requirements.txt
+    # cp site-packages-extras $HOSTSITEPACKAGES
+    site_packages_extras = xbuildenv_path / "site-packages-extras"
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
         config = parse_package_config(pkg, check=False)
         xbuild_files = config.get("build", {}).get("cross-build-files", [])
         for path in xbuild_files:
-            target = xbuild_site_packages / path
+            target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(site_packages / path, target)
 
 
-def get_relative_path(pyodide_root, flag):
+def get_relative_path(pyodide_root: Path, flag: str) -> Path:
     return Path(get_make_flag(flag)).relative_to(pyodide_root)
 
 
-def main(args):
+def copy_wasm_libs(xbuildenv_path: Path) -> None:
     pyodide_root = get_pyodide_root()
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
     wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
-    xbuildenv_path = pyodide_root / "xbuildenv"
-    shutil.rmtree(xbuildenv_path, ignore_errors=True)
-
     xbuildenv_root = xbuildenv_path / "pyodide-root"
     xbuildenv_path.mkdir()
     to_copy: list[Path] = [
@@ -74,7 +76,14 @@ def main(args):
             (xbuildenv_root / path).parent.mkdir(exist_ok=True, parents=True)
             shutil.copy(pyodide_root / path, xbuildenv_root / path)
 
+
+def main(args):
+    pyodide_root = get_pyodide_root()
+    xbuildenv_path = pyodide_root / "xbuildenv"
+    shutil.rmtree(xbuildenv_path, ignore_errors=True)
+
     copy_xbuild_files(xbuildenv_path)
+    copy_wasm_libs(xbuildenv_path)
     res = subprocess.run(
         ["pip", "freeze", "--path", get_make_flag("HOSTSITEPACKAGES")],
         stdout=subprocess.PIPE,

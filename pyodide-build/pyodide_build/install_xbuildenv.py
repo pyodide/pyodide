@@ -37,6 +37,8 @@ def main(args):
             xbuildenv_path / "requirements.txt",
         ]
     )
+    # Copy the site-packages-extras (coming from the cross-build-files meta.yaml
+    # key) over the site-packages directory with the newly installed packages.
     shutil.copytree(
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
