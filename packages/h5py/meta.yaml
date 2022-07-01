@@ -24,3 +24,4 @@ build:
     export HDF5_MPI=OFF
     export H5PY_SETUP_REQUIRES="0"
     export HDF5_VERSION=1.12.1
+    export HDF5_DIR=${WASM_LIBRARY_DIR}
