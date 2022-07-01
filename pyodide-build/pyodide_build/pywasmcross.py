@@ -428,7 +428,6 @@ def calculate_object_exports(objects):
                         "Didn't find symbol's name:\n" + "\n".join(symbol_lines)
                     )
                 result.append(name)
-    print(result)
     return result
 
 
