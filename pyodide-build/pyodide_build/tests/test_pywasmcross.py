@@ -1,3 +1,4 @@
+import subprocess
 from dataclasses import dataclass
 from typing import Any
 
@@ -5,7 +6,10 @@ import pytest
 
 from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
-from pyodide_build.pywasmcross import environment_substitute_args
+from pyodide_build.pywasmcross import (
+    calculate_object_exports,
+    environment_substitute_args,
+)
 
 
 @dataclass
@@ -184,3 +188,32 @@ def test_environment_var_substitution(monkeypatch):
         and args["ldflags"] == '"-lpyodide_build_dir"'
         and args["replace_libs"] == "James Ignatius Morrison:Jimmy"
     )
+
+
+def test_exports_node(tmp_path):
+    template = """
+        __attribute__((visibility("hidden")))
+        int f%s() {
+            return 0;
+        }
+
+        __attribute__ ((visibility ("default")))
+        int g%s() {
+            return 0;
+        }
+
+        int h%s(){
+            return 0;
+        }
+        """
+    (tmp_path / "f1.c").write_text(template % (1, 1, 1))
+    (tmp_path / "f2.c").write_text(template % (2, 2, 2))
+    subprocess.run(["emcc", "-c", tmp_path / "f1.c", "-o", tmp_path / "f1.o", "-fPIC"])
+    subprocess.run(["emcc", "-c", tmp_path / "f2.c", "-o", tmp_path / "f2.o", "-fPIC"])
+    assert set(calculate_object_exports([tmp_path / "f1.o"])) == {"g1", "h1"}
+    assert set(calculate_object_exports([tmp_path / "f1.o", tmp_path / "f2.o"])) == {
+        "g1",
+        "h1",
+        "g2",
+        "h2",
+    }
