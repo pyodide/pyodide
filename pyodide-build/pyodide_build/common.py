@@ -13,11 +13,11 @@ from packaging.utils import parse_wheel_filename
 from .io import parse_package_config
 
 
-def emscripten_version():
+def emscripten_version() -> str:
     return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
 
 
-def platform():
+def platform() -> str:
     emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
     return f"emscripten_{version}_wasm32"
@@ -140,7 +140,7 @@ def _parse_package_subset(query: str | None) -> set[str]:
     return packages
 
 
-def get_make_flag(name):
+def get_make_flag(name: str) -> str:
     """Get flags from makefile.envs.
 
     For building packages we currently use:
@@ -152,18 +152,18 @@ def get_make_flag(name):
     return get_make_environment_vars()[name]
 
 
-def get_pyversion():
+def get_pyversion() -> str:
     PYMAJOR = get_make_flag("PYMAJOR")
     PYMINOR = get_make_flag("PYMINOR")
     return f"python{PYMAJOR}.{PYMINOR}"
 
 
-def get_hostsitepackages():
+def get_hostsitepackages() -> str:
     return get_make_flag("HOSTSITEPACKAGES")
 
 
 @functools.cache
-def get_make_environment_vars():
+def get_make_environment_vars() -> dict[str, str]:
     """Load environment variables from Makefile.envs
 
     This allows us to set all build vars in one place"""
@@ -215,7 +215,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     )
 
 
-def init_environment():
+def init_environment() -> None:
     if os.environ.get("__LOADED_PYODIDE_ENV"):
         return
     os.environ["__LOADED_PYODIDE_ENV"] = "1"
@@ -237,13 +237,13 @@ def init_environment():
 
 
 @functools.cache
-def get_pyodide_root():
+def get_pyodide_root() -> Path:
     init_environment()
     return Path(os.environ["PYODIDE_ROOT"])
 
 
 @functools.cache
-def get_unisolated_packages():
+def get_unisolated_packages() -> list[str]:
     import json
 
     if "UNISOLATED_PACKAGES" in os.environ:

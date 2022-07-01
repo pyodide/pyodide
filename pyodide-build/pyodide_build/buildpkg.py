@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, Generator, NoReturn, TextIO
+from typing import Any, Generator, Iterator, NoReturn, TextIO
 from urllib import request
 
 from . import pywasmcross
@@ -41,7 +41,9 @@ from . import common
 from .io import parse_package_config
 
 
-def _make_whlfile(*args, owner=None, group=None, **kwargs):
+def _make_whlfile(
+    *args: Any, owner: int | None = None, group: int | None = None, **kwargs: Any
+) -> str:
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
@@ -68,7 +70,7 @@ class BashRunnerWithSharedEnvironment:
     directly to adjust the environment, or read to get variables.
     """
 
-    def __init__(self, env=None):
+    def __init__(self, env: dict[str, str] | None = None) -> None:
         if env is None:
             env = dict(os.environ)
 
@@ -81,7 +83,7 @@ class BashRunnerWithSharedEnvironment:
         self._reader = os.fdopen(fd_read, "r")
         return self
 
-    def run(self, cmd, **opts):
+    def run(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
         assert self._fd_write is not None
         assert self._reader is not None
@@ -96,7 +98,11 @@ class BashRunnerWithSharedEnvironment:
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
         full_cmd = f"{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
-            ["bash", "-ce", full_cmd], pass_fds=[self._fd_write], env=self.env, **opts
+            ["bash", "-ce", full_cmd],
+            pass_fds=[self._fd_write],
+            env=self.env,
+            encoding="utf8",
+            **opts,
         )
         if result.returncode != 0:
             print("ERROR: bash command failed")
@@ -123,7 +129,7 @@ class BashRunnerWithSharedEnvironment:
 
 
 @contextmanager
-def get_bash_runner():
+def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
     env = {
         key: os.environ[key]
@@ -205,7 +211,7 @@ def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
         raise ValueError(f"Invalid {checksum_algorithm} checksum")
 
 
-def trim_archive_extension(tarballname):
+def trim_archive_extension(tarballname: str) -> str:
     for extension in [
         ".tar.gz",
         ".tgz",
@@ -375,7 +381,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]) -> None:
         fd.write(b"\n")
 
 
-def unpack_wheel(path):
+def unpack_wheel(path: Path) -> None:
     with chdir(path.parent):
         result = subprocess.run(
             [sys.executable, "-m", "wheel", "unpack", path.name],
@@ -387,7 +393,7 @@ def unpack_wheel(path):
             exit_with_stdio(result)
 
 
-def pack_wheel(path):
+def pack_wheel(path: Path) -> None:
     with chdir(path.parent):
         result = subprocess.run(
             [sys.executable, "-m", "wheel", "pack", path.name],
@@ -686,7 +692,7 @@ def needs_rebuild(
 
     package_time = packaged_token.stat().st_mtime
 
-    def source_files():
+    def source_files() -> Iterator[Path]:
         yield pkg_root / "meta.yaml"
         yield from (
             pkg_root / patch_path for patch_path in source_metadata.get("patches", [])
@@ -883,7 +889,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     continue_ = not not args.continue_
     # --continue implies --force-rebuild
     force_rebuild = args.force_rebuild or continue_

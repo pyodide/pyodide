@@ -18,7 +18,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
     host_site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     xbuildenv_path = pyodide_root / "xbuildenv"

@@ -2,6 +2,7 @@ import functools
 import os
 
 import pytest
+from pyodide_test_runner import SeleniumWrapper
 
 from conftest import ROOT_PATH, package_is_built
 from pyodide_build.io import parse_package_config
@@ -29,7 +30,7 @@ if "CI" in os.environ:
 
 
 @pytest.mark.parametrize("name", registered_packages())
-def test_parse_package(name):
+def test_parse_package(name: str) -> None:
     # check that we can parse the meta.yaml
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
@@ -43,7 +44,7 @@ def test_parse_package(name):
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
-def test_import(name, selenium_standalone):
+def test_import(name: str, selenium_standalone: SeleniumWrapper) -> None:
     if not package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
