@@ -79,9 +79,6 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
 
 def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
-    pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
-    wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
-    sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
     xbuildenv_path = pyodide_root / "xbuildenv"
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
 

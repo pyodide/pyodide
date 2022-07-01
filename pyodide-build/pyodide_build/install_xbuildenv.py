@@ -25,7 +25,6 @@ def download_xbuild_env(xbuildenv_path: Path) -> None:
     from tempfile import NamedTemporaryFile
     from urllib.request import urlretrieve
 
-    xbuildenv_path = Path(args.xbuild_env[0])
     rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
@@ -60,7 +59,7 @@ def install_xbuild_env(xbuildenv_path: Path) -> None:
     )
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     xbuildenv_path = Path(args.xbuild_env[0])
     if args.download:
         download_xbuild_env(xbuildenv_path)
