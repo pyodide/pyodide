@@ -724,11 +724,20 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   if (!val) {
     return false;
   }
+  // We want to return false on container types with size 0.
   if (val.size === 0) {
-    // I think things with a size are all container types.
+    if(/HTML[A-Za-z]*Element/.test(Object.prototype.toString.call(val))){
+      // HTMLSelectElement and HTMLInputElement can have size 0 but we still
+      // want to return true.
+      return true;
+    }
+    // I think other things with a size are container types.
     return false;
   }
-  if (Array.isArray(val) && val.length === 0) {
+  if (val.length === 0 && JsArray_Check(idobj)) {
+    return false;
+  }
+  if (val.byteLength === 0) {
     return false;
   }
   return true;
