@@ -445,8 +445,6 @@ def compile(
     if build_metadata.get("sharedlibrary"):
         return
 
-    replace_libs = ";".join(build_metadata.get("replace-libs", []))
-
     build_env_ctx = pywasmcross.get_build_env(
         env=bash_runner.env,
         pkgname=name,
@@ -454,7 +452,6 @@ def compile(
         cxxflags=build_metadata["cxxflags"],
         ldflags=build_metadata["ldflags"],
         target_install_dir=target_install_dir,
-        replace_libs=replace_libs,
         exports=build_metadata.get("exports", "pyinit"),
     )
     backend_flags = build_metadata["backend-flags"]
