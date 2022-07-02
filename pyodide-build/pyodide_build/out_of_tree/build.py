@@ -18,7 +18,6 @@ def run(exports, args):
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir="",
-        replace_libs="",
         exports=exports,
     )
 
