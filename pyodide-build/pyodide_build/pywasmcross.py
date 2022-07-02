@@ -11,7 +11,7 @@ cross-compiling and then pass the command long to emscripten.
 import json
 import os
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any
 
 from __main__ import __file__ as INVOKED_PATH_STR
@@ -64,7 +64,6 @@ ReplayArgs = namedtuple(
         "cxxflags",
         "ldflags",
         "target_install_dir",
-        "replace_libs",
         "builddir",
         "pythoninclude",
         "exports",
@@ -109,7 +108,6 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    replace_libs: str,
     exports: str | list[str],
 ) -> Iterator[dict[str, str]]:
     kwargs = dict(
@@ -118,7 +116,6 @@ def get_build_env(
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir=target_install_dir,
-        replace_libs=replace_libs,
     )
 
     args = environment_substitute_args(kwargs, env)
@@ -222,35 +219,7 @@ def get_library_output(line: list[str]) -> str | None:
     return None
 
 
-def parse_replace_libs(replace_libs: str) -> dict[str, str]:
-    """
-    Parameters
-    ----------
-    replace_libs
-        The `--replace-libs` argument, should be a string like "a=b;c=d".
-
-    Returns
-    -------
-        The input string converted to a dictionary
-
-    Examples
-    --------
-    >>> parse_replace_libs("a=b;c=d;e=f")
-    {'a': 'b', 'c': 'd', 'e': 'f'}
-    """
-    result = {}
-    for l in replace_libs.split(";"):
-        if not l:
-            continue
-        from_lib, to_lib = l.split("=")
-        if to_lib:
-            result[from_lib] = to_lib
-    return result
-
-
-def replay_genargs_handle_dashl(
-    arg: str, replace_libs: dict[str, str], used_libs: set[str]
-) -> str | None:
+def replay_genargs_handle_dashl(arg: str, used_libs: set[str]) -> str | None:
     """
     Figure out how to replace a `-lsomelib` argument.
 
@@ -258,9 +227,6 @@ def replay_genargs_handle_dashl(
     ----------
     arg
         The argument we are replacing. Must start with `-l`.
-
-    replace_libs
-        The dictionary of libraries we are replacing
 
     used_libs
         The libraries we've used so far in this command. emcc fails out if `-lsomelib`
@@ -271,10 +237,6 @@ def replay_genargs_handle_dashl(
         The new argument, or None to delete the argument.
     """
     assert arg.startswith("-l")
-    for lib_name in replace_libs.keys():
-        # this enables glob style **/* matching
-        if PurePosixPath(arg[2:]).match(lib_name):
-            arg = "-l" + replace_libs[lib_name]
 
     if arg == "-lffi":
         return None
@@ -464,8 +426,8 @@ def handle_command_generate_args(
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'replace_libs','target_install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', replace_libs='',target_install_dir='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
     ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
@@ -547,9 +509,8 @@ def handle_command_generate_args(
             del new_args[-1]
             continue
 
-        replace_libs = parse_replace_libs(args.replace_libs)
         if arg.startswith("-l"):
-            result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
+            result = replay_genargs_handle_dashl(arg, used_libs)
         elif arg.startswith("-I"):
             result = replay_genargs_handle_dashI(arg, args.target_install_dir)
         elif arg.startswith("-Wl"):
