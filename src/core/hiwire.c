@@ -324,7 +324,7 @@ hiwire_int_from_digits, (const unsigned int* digits, size_t ndigits), {
   }
   result += BigInt(DEREF_U32(digits, ndigits - 1) & 0x80000000)
             << BigInt(1 + 32 * (ndigits - 1));
-  if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
+  if (-Number.MAX_SAFE_INTEGER <= result && result <= Number.MAX_SAFE_INTEGER) {
     result = Number(result);
   }
   return Hiwire.new_value(result);

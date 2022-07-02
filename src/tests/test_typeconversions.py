@@ -2,7 +2,7 @@
 from typing import Any
 
 import pytest
-from hypothesis import given, settings, strategies
+from hypothesis import example, given, settings, strategies
 from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
@@ -89,6 +89,8 @@ def test_large_string_conversion(selenium):
         strategies.floats(allow_nan=False),
     )
 )
+@example(-(2**53))
+@example(2**53)
 @std_hypothesis_settings
 def test_number_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
@@ -132,6 +134,10 @@ def test_nan_conversions(selenium):
 
 
 @given(n=strategies.integers())
+@example(-(2**53))
+@example(2**53)
+@example(-(2**53) - 1)
+@example(2**53 + 1)
 @std_hypothesis_settings
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
