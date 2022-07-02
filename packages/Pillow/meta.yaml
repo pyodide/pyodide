@@ -17,6 +17,8 @@ build:
     -s USE_FREETYPE=1
     -s USE_LIBPNG=1
     -s USE_LIBJPEG=1
+  ldflags: |
+    -ljpeg
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.
