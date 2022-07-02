@@ -6,10 +6,7 @@ import pytest
 
 from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
-from pyodide_build.pywasmcross import (
-    calculate_object_exports,
-    environment_substitute_args,
-)
+from pyodide_build.pywasmcross import calculate_exports, environment_substitute_args
 
 
 @dataclass
@@ -210,10 +207,18 @@ def test_exports_node(tmp_path):
     (tmp_path / "f2.c").write_text(template % (2, 2, 2))
     subprocess.run(["emcc", "-c", tmp_path / "f1.c", "-o", tmp_path / "f1.o", "-fPIC"])
     subprocess.run(["emcc", "-c", tmp_path / "f2.c", "-o", tmp_path / "f2.o", "-fPIC"])
-    assert set(calculate_object_exports([tmp_path / "f1.o"])) == {"g1", "h1"}
-    assert set(calculate_object_exports([tmp_path / "f1.o", tmp_path / "f2.o"])) == {
+    assert set(calculate_exports([str(tmp_path / "f1.o")], True)) == {"g1", "h1"}
+    assert set(
+        calculate_exports([str(tmp_path / "f1.o"), str(tmp_path / "f2.o")], True)
+    ) == {
         "g1",
         "h1",
         "g2",
         "h2",
     }
+    # Currently if the object file contains bitcode we can't tell what the
+    # symbol visibility is.
+    subprocess.run(
+        ["emcc", "-c", tmp_path / "f1.c", "-o", tmp_path / "f1.o", "-fPIC", "-flto"]
+    )
+    assert set(calculate_exports([str(tmp_path / "f1.o")], True)) == {"f1", "g1", "h1"}
