@@ -33,7 +33,7 @@ import subprocess
 from collections import namedtuple
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterator, Literal, MutableMapping, NoReturn
+from typing import Any, Iterable, Iterator, Literal, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -111,7 +111,9 @@ def get_build_env(
     args["exports"] = exports
 
     with TemporaryDirectory() as symlink_dir_str:
+        symlink_dir_str = ".pyodide_build_env"
         symlink_dir = Path(symlink_dir_str)
+        symlink_dir.mkdir(exist_ok=True)
         env = dict(env)
         make_command_wrapper_symlinks(symlink_dir, env)
 
@@ -381,7 +383,7 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_object_exports(objects):
+def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
     which_emcc = shutil.which("emcc")
     assert which_emcc
     emcc = Path(which_emcc)
@@ -398,8 +400,10 @@ def calculate_object_exports(objects):
         print(completedprocess.stderr)
         sys.exit(completedprocess.returncode)
 
-    result = []
+    if "bitcode files are not supported" in completedprocess.stderr:
+        return None
 
+    result = []
     insymbol = False
     for line in completedprocess.stdout.split("\n"):
         line = line.strip()
@@ -431,7 +435,19 @@ def calculate_object_exports(objects):
     return result
 
 
-def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
+def calculate_object_exports_nm(objects: list[str]) -> list[str]:
+    args = ["emnm", "-j", "--export-symbols"] + objects
+    result = subprocess.run(
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
+    )
+    if result.returncode:
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(result.stderr)
+        sys.exit(result.returncode)
+    return result.stdout.splitlines()
+
+
+def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     """
     Collect up all the object files and archive files being linked and list out
     symbols in them that are marked as public. If ``export_all`` is ``True``,
@@ -439,9 +455,19 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
     begin with `PyInit`.
     """
     objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
-    exports = calculate_object_exports(objects)
-    condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
-    return (x for x in exports if condition(x))
+    exports = None
+    # Using emnm is simpler but it cannot handle bitcode. If we're only
+    # exporting the PyInit symbols, save effort by using nm.
+    if export_all:
+        exports = calculate_object_exports_readobj(objects)
+    if exports is None:
+        # Either export_all is false or we are linking at least one bitcode
+        # object. Fall back to a more conservative estimate of the symbols
+        # exported. This can export things with `__visibility__("hidden")`
+        exports = calculate_object_exports_nm(objects)
+    if export_all:
+        return exports
+    return (x for x in exports if x.startswith("PyInit"))
 
 
 def get_export_flags(
@@ -458,7 +484,7 @@ def get_export_flags(
     if isinstance(exports, str):
         export_list = calculate_exports(line, exports == "requested")
     else:
-        export_list = iter(exports)
+        export_list = exports
     prefixed_exports = ["_" + x for x in export_list]
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
