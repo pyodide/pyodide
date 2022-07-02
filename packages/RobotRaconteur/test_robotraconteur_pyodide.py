@@ -7,10 +7,12 @@ def test_robotraconteur_import(selenium):
     _ = RRN.RobotRaconteurVersion
 
 
+
 @run_in_pyodide(packages=["RobotRaconteur", "numpy"])
 def test_robotraconteur_exceptions(selenium):
-    import RobotRaconteur as RR
     import pytest
+    import RobotRaconteur as RR
+
     RRN = RR.RobotRaconteurNode.s
     RRN.SetNodeName("test_node")
     assert RRN.NodeName == "test_node"
