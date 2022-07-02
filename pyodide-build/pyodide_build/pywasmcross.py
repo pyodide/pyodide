@@ -122,9 +122,7 @@ def get_build_env(
     args["exports"] = exports
 
     with TemporaryDirectory() as symlink_dir_str:
-        symlink_dir_str = ".pyodide_build_env"
         symlink_dir = Path(symlink_dir_str)
-        symlink_dir.mkdir(exist_ok=True)
         env = dict(env)
         make_command_wrapper_symlinks(symlink_dir, env)
 
