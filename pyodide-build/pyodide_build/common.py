@@ -223,7 +223,9 @@ def init_environment() -> None:
     if "sphinx" in sys.modules:
         os.environ["PYODIDE_ROOT"] = ""
 
-    if "PYODIDE_ROOT" not in os.environ:
+    if "PYODIDE_ROOT" in os.environ:
+        os.environ["PYODIDE_ROOT"] = str(Path(os.environ["PYODIDE_ROOT"]).resolve())
+    else:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
 
     os.environ.update(get_make_environment_vars())

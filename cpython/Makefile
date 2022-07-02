@@ -5,8 +5,8 @@ ROOT=$(abspath .)
 
 PYTHON_CFLAGS=$(CFLAGS_BASE)
 
-BUILD=$(ROOT)/build/Python-$(PYVERSION)
-INSTALL=$(ROOT)/installs/python-$(PYVERSION)
+BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
+INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
@@ -46,8 +46,8 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
 	PYTHONPATH=$(PYBUILDDIR) python adjust_sysconfig.py
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
-	mkdir -p $(INSTALL)/sysconfigdata/
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/sysconfigdata/
+	mkdir -p $(SYSCONFIGDATA_DIR)
+	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
 	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
