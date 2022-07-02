@@ -4,8 +4,8 @@ from pyodide_test_runner import run_in_pyodide
 @run_in_pyodide(packages=["RobotRaconteur", "numpy"])
 def test_robotraconteur_import(selenium):
     from RobotRaconteur.Client import RRN
-    _ = RRN.RobotRaconteurVersion
 
+    _ = RRN.RobotRaconteurVersion
 
 
 @run_in_pyodide(packages=["RobotRaconteur", "numpy"])
