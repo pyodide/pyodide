@@ -263,6 +263,9 @@ def replay_genargs_handle_dashl(
     if arg == "-lffi":
         return None
 
+    if arg == "-lgfortran":
+        return None
+
     # WASM link doesn't like libraries being included twice
     # skip second one
     if arg in used_libs:
