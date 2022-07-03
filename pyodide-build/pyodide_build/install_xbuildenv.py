@@ -61,7 +61,7 @@ def install_xbuild_env(xbuildenv_path: Path) -> None:
 
 def main(args: argparse.Namespace) -> None:
     xbuildenv_path = Path(args.xbuild_env[0])
-    version = "1"
+    version = "2"
     if args.download:
         download_xbuild_env(version, xbuildenv_path)
     install_xbuild_env(xbuildenv_path)
