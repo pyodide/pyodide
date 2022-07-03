@@ -92,8 +92,9 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 ### `build/cxxflags`
 
 Extra arguments to pass to the compiler when building C++ files for WebAssembly.
-Note that both `cflags` and `cxxflags` will be used when compiling C++ files.
-A common example would be to use `-std=c++11` for code that makes use of C++11 features.
+Note that both `cflags` and `cxxflags` will be used when compiling C++ files. A
+common example would be to use `-std=c++11` for code that makes use of C++11
+features.
 
 (This key is not in the Conda spec).
 
@@ -108,13 +109,13 @@ Extra arguments to pass to the linker when building for WebAssembly.
 Which symbols should be exported from the shared object files. Possible values
 are:
 
-- `pyinit`: The default. Only export Python module initialization symbols of
-  the form `PyInit_some_module`.
+- `pyinit`: The default. Only export Python module initialization symbols of the
+  form `PyInit_some_module`.
 - `requested`: Export the functions that are marked as exported in the object
   files. Switch to this if `pyinit` doesn't work. Useful for packages that use
   `ctypes` or `dlsym` to access symbols.
-- `whole_archive`: Uses `-Wl,--whole-archive` to force inclusion of all
-  symbols. Use this when neither `pyinit` nor `explicit` work.
+- `whole_archive`: Uses `-Wl,--whole-archive` to force inclusion of all symbols.
+  Use this when neither `pyinit` nor `explicit` work.
 
 ### `build/backend-flags`
 
@@ -122,41 +123,58 @@ Extra flags to pass to the build backend (e.g., `setuptools`, `flit`, etc).
 
 ### `build/library`
 
-Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml) for an example of a library package specification.
+Should be set to true for library packages. Library packages are packages that
+are needed for other packages but are not Python packages themselves. For
+library packages, the script specified in the `build/script` section is run to
+compile the library. See the [zlib
+meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml)
+for an example of a library package specification.
 
 ### `build/sharedlibrary`
 
-Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy it into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
+Should be set to true for shared library packages. Shared library packages are
+packages that are needed for other packages, but are loaded dynamically when
+Pyodide is run. For shared library packages, the script specified in the
+`build/script` section is run to compile the library. The script should build
+the shared library and copy it into a subfolder of the source folder called
+`install`. Files or folders in this install folder will be packaged to make the
+Pyodide package. See the [CLAPACK
+meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml)
+for an example of a shared library specification.
 
 ### `build/script`
 
-The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the directory where the tarball was extracted.
+The script section is required for a library package (`build/library` set to
+true). For a Python package this section is optional. If it is specified for a
+Python package, the script section will be run before the build system runs
+`setup.py`. This script is run by `bash` in the directory where the tarball was
+extracted.
 
 ### `build/cross-script`
 
-This script will run _after_ `build/script`. The difference is that it runs with the target environment variables and `sysconfigdata` and with the `pywasmcross` compiler symlinks. Any changes to the environment will persist to the main build step but will not be seen in the `build/post` step (or anything else done outside of the cross build environment). The working directory for this script is the source directory.
+This script will run _after_ `build/script`. The difference is that it runs with
+the target environment variables and `sysconfigdata` and with the `pywasmcross`
+compiler symlinks. Any changes to the environment will persist to the main build
+step but will not be seen in the `build/post` step (or anything else done
+outside of the cross build environment). The working directory for this script
+is the source directory.
 
 ### `build/post`
 
-Shell commands to run after building the library. These are run with
-`bash`, and there are two special environment variables defined:
+Shell commands to run after building the library. These are run with `bash`, and
+there are two special environment variables defined:
 
-- `$SITEPACKAGES`: The `site-packages` directory into which the package has been installed.
+- `$SITEPACKAGES`: The `site-packages` directory into which the package has been
+  installed.
 - `$PKGDIR`: The directory in which the `meta.yaml` file resides.
 
 (This key is not in the Conda spec).
 
-### `build/replace-libs`
-
-A list of strings of the form `<old_name>=<new_name>`, to rename libraries when linking. This in particular
-might be necessary when using emscripten ports.
-For instance, `png16=png` is currently used in matplotlib.
-
 ### `build/unvendor-tests`
 
-Whether to unvendor tests found in the installation folder to a separate
-package `<package-name>-tests`. If this option is true and no tests are found,
-the test package will not be created. Default: true.
+Whether to unvendor tests found in the installation folder to a separate package
+`<package-name>-tests`. If this option is true and no tests are found, the test
+package will not be created. Default: true.
 
 ## `requirements`
 

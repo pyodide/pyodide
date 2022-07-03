@@ -15,7 +15,6 @@ class BuildArgs:
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
-    replace_libs: str = ""
     target_install_dir: str = ""
     pythoninclude: str = "python/include"
     exports: str = "whole_archive"
@@ -92,7 +91,6 @@ def test_handle_command():
         cflags="",
         cxxflags="",
         ldflags="-lm",
-        replace_libs="",
         target_install_dir="",
     )
     assert (
@@ -100,13 +98,10 @@ def test_handle_command():
         == "emcc -lm -c test.o -o test.so"
     )
 
-    # check library replacement and removal of double libraries
-    args = BuildArgs(
-        replace_libs="bob=fred",
-    )
+    # Test that repeated libraries are removed
     assert (
-        generate_args("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
-        == "emcc test.o -lfred -ljim -o test.so"
+        generate_args("gcc -shared test.o -lbob -ljim -ljim -lbob -o test.so", args)
+        == "emcc test.o -lbob -ljim -o test.so"
     )
 
 
@@ -175,12 +170,10 @@ def test_environment_var_substitution(monkeypatch):
             "ldflags": '"-l$(PYODIDE_BASE)"',
             "cxxflags": "$(BOB)",
             "cflags": "$(FRED)",
-            "replace_libs": "$(JIM)",
         }
     )
     assert (
         args["cflags"] == "Frederick F. Freddertson Esq."
         and args["cxxflags"] == "Robert Mc Roberts"
         and args["ldflags"] == '"-lpyodide_build_dir"'
-        and args["replace_libs"] == "James Ignatius Morrison:Jimmy"
     )

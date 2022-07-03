@@ -128,7 +128,8 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install playwright && python -m playwright install
+          # FIXME: playwright 1.23.0 has unknown performance issue on firefox
+          pip install "playwright<1.23.0" && python -m playwright install
 
       - name: run core tests
         env:
