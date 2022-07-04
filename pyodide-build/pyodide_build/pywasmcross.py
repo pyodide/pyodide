@@ -126,7 +126,7 @@ def get_build_env(
         env = dict(env)
         make_command_wrapper_symlinks(symlink_dir, env)
 
-        sysconfig_dir = Path(os.environ["SYSCONFIGDATA_DIR"])
+        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
         args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
         args["orig__name__"] = __name__
         args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
