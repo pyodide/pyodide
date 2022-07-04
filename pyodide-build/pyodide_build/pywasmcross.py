@@ -11,29 +11,48 @@ cross-compiling and then pass the command long to emscripten.
 import json
 import os
 import sys
+from pathlib import Path
+from typing import Any
 
-IS_MAIN = __name__ == "__main__"
-if IS_MAIN:
-    PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
+from __main__ import __file__ as INVOKED_PATH_STR
+
+INVOKED_PATH = Path(INVOKED_PATH_STR)
+
+SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
+IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
+
+if IS_COMPILER_INVOCATION:
+    # If possible load from environment variable, if necessary load from disk.
+    if "PYWASMCROSS_ARGS" in os.environ:
+        PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
+    try:
+        with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
+            PYWASMCROSS_ARGS = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Invalid invocation: can't find PYWASMCROSS_ARGS."
+            f" Invoked from {INVOKED_PATH}."
+        )
+
+    sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
+    os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
-    sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
 
-    PYWASMCROSS_ARGS["pythoninclude"] = os.environ["PYTHONINCLUDE"]
 
 import re
+import shutil
 import subprocess
 from collections import namedtuple
-from pathlib import Path, PurePosixPath
-from typing import Any, Iterator, MutableMapping, NoReturn
+from contextlib import contextmanager
+from tempfile import TemporaryDirectory
+from typing import Iterator, Literal, MutableMapping, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
-
-def symlink_dir():
+def symlink_dir() -> Path:
     return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
 
 
@@ -45,7 +64,6 @@ ReplayArgs = namedtuple(
         "cxxflags",
         "ldflags",
         "target_install_dir",
-        "replace_libs",
         "builddir",
         "pythoninclude",
         "exports",
@@ -53,20 +71,25 @@ ReplayArgs = namedtuple(
 )
 
 
-def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
+def make_command_wrapper_symlinks(
+    symlink_dir: Path, env: MutableMapping[str, str]
+) -> None:
     """
     Makes sure all the symlinks that make this script look like a compiler
     exist.
     """
     exec_path = Path(__file__).resolve()
-    SYMLINKDIR = symlink_dir()
-    for symlink in symlinks:
-        symlink_path = SYMLINKDIR / symlink
+    for symlink in SYMLINKS:
+        symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
         try:
-            symlink_path.symlink_to(exec_path)
+            pywasmcross_exe = shutil.which("_pywasmcross")
+            if pywasmcross_exe:
+                symlink_path.symlink_to(pywasmcross_exe)
+            else:
+                symlink_path.symlink_to(exec_path)
         except FileExistsError:
             pass
         if symlink == "c++":
@@ -76,6 +99,7 @@ def make_command_wrapper_symlinks(env: MutableMapping[str, str]) -> None:
         env[var] = symlink
 
 
+@contextmanager
 def get_build_env(
     env: dict[str, str],
     *,
@@ -84,34 +108,43 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    replace_libs: str,
     exports: str | list[str],
-) -> dict[str, str]:
+) -> Iterator[dict[str, str]]:
     kwargs = dict(
         pkgname=pkgname,
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir=target_install_dir,
-        replace_libs=replace_libs,
     )
 
     args = environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
     args["exports"] = exports
 
-    env = dict(env)
-    SYMLINKDIR = symlink_dir()
-    env["PATH"] = f"{SYMLINKDIR}:{env['PATH']}"
-    sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
-    args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
-    args["orig__name__"] = __name__
-    make_command_wrapper_symlinks(env)
-    env["PYWASMCROSS_ARGS"] = json.dumps(args)
-    env["_PYTHON_HOST_PLATFORM"] = common.platform()
-    env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-    env["PYTHONPATH"] = str(sysconfig_dir)
-    return env
+    with TemporaryDirectory() as symlink_dir_str:
+        symlink_dir = Path(symlink_dir_str)
+        env = dict(env)
+        make_command_wrapper_symlinks(symlink_dir, env)
+
+        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
+        args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
+        args["orig__name__"] = __name__
+        args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+        args["PATH"] = env["PATH"]
+
+        pywasmcross_env = json.dumps(args)
+        # Store into environment variable and to disk. In most cases we will
+        # load from the environment variable but if some other tool filters
+        # environment variables we will load from disk instead.
+        env["PYWASMCROSS_ARGS"] = pywasmcross_env
+        (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
+
+        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
+        env["_PYTHON_HOST_PLATFORM"] = common.platform()
+        env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
+        env["PYTHONPATH"] = str(sysconfig_dir)
+        yield env
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
@@ -186,35 +219,7 @@ def get_library_output(line: list[str]) -> str | None:
     return None
 
 
-def parse_replace_libs(replace_libs: str) -> dict[str, str]:
-    """
-    Parameters
-    ----------
-    replace_libs
-        The `--replace-libs` argument, should be a string like "a=b;c=d".
-
-    Returns
-    -------
-        The input string converted to a dictionary
-
-    Examples
-    --------
-    >>> parse_replace_libs("a=b;c=d;e=f")
-    {'a': 'b', 'c': 'd', 'e': 'f'}
-    """
-    result = {}
-    for l in replace_libs.split(";"):
-        if not l:
-            continue
-        from_lib, to_lib = l.split("=")
-        if to_lib:
-            result[from_lib] = to_lib
-    return result
-
-
-def replay_genargs_handle_dashl(
-    arg: str, replace_libs: dict[str, str], used_libs: set[str]
-) -> str | None:
+def replay_genargs_handle_dashl(arg: str, used_libs: set[str]) -> str | None:
     """
     Figure out how to replace a `-lsomelib` argument.
 
@@ -222,9 +227,6 @@ def replay_genargs_handle_dashl(
     ----------
     arg
         The argument we are replacing. Must start with `-l`.
-
-    replace_libs
-        The dictionary of libraries we are replacing
 
     used_libs
         The libraries we've used so far in this command. emcc fails out if `-lsomelib`
@@ -235,10 +237,6 @@ def replay_genargs_handle_dashl(
         The new argument, or None to delete the argument.
     """
     assert arg.startswith("-l")
-    for lib_name in replace_libs.keys():
-        # this enables glob style **/* matching
-        if PurePosixPath(arg[2:]).match(lib_name):
-            arg = "-l" + replace_libs[lib_name]
 
     if arg == "-lffi":
         return None
@@ -283,7 +281,7 @@ def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> str | None
     return arg
 
 
-def replay_genargs_handle_linker_opts(arg):
+def replay_genargs_handle_linker_opts(arg: str) -> str | None:
     """
     ignore some link flags
     it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
@@ -381,7 +379,10 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
     return (x for x in result.stdout.splitlines() if condition(x))
 
 
-def get_export_flags(line, exports):
+def get_export_flags(
+    line: list[str],
+    exports: Literal["whole_archive", "requested", "pyinit"] | list[str],
+) -> Iterator[str]:
     """
     If "whole_archive" was requested, no action is needed. Otherwise, add
     `-sSIDE_MODULE=2` and the appropriate export list.
@@ -392,7 +393,7 @@ def get_export_flags(line, exports):
     if isinstance(exports, str):
         export_list = calculate_exports(line, exports == "requested")
     else:
-        export_list = exports
+        export_list = iter(exports)
     prefixed_exports = ["_" + x for x in export_list]
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
@@ -425,8 +426,8 @@ def handle_command_generate_args(
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'replace_libs','target_install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', replace_libs='',target_install_dir='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
     ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
@@ -508,9 +509,8 @@ def handle_command_generate_args(
             del new_args[-1]
             continue
 
-        replace_libs = parse_replace_libs(args.replace_libs)
         if arg.startswith("-l"):
-            result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
+            result = replay_genargs_handle_dashl(arg, used_libs)
         elif arg.startswith("-I"):
             result = replay_genargs_handle_dashI(arg, args.target_install_dir)
         elif arg.startswith("-Wl"):
@@ -586,19 +586,13 @@ def environment_substitute_args(
     return subbed_args
 
 
-if IS_MAIN:
-    path = os.environ["PATH"]
-    SYMLINKDIR = symlink_dir()
-    while f"{SYMLINKDIR}:" in path:
-        path = path.replace(f"{SYMLINKDIR}:", "")
-    os.environ["PATH"] = path
-
-    REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
-
+def compiler_main():
+    replay_args = ReplayArgs(**PYWASMCROSS_ARGS)
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename
-    if basename in symlinks:
-        sys.exit(handle_command(args, REPLAY_ARGS))
-    else:
-        raise Exception(f"Unexpected invocation '{basename}'")
+    sys.exit(handle_command(args, replay_args))
+
+
+if IS_COMPILER_INVOCATION:
+    compiler_main()

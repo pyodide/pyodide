@@ -102,6 +102,11 @@ substitutions:
   `ERRNO_CODES` APIs.
   {pr}`2582`
 
+- {{ Fix }} The `bool` operator on a `JsProxy` now behaves more consistently: it
+  returns `False` if JavaScript would say that `!!x` is `false`, or if `x` is an
+  empty container. Otherwise it returns `True`.
+  {pr}`2803`
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading
@@ -202,7 +207,8 @@ substitutions:
   h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
   svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
-  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`.
+  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`,
+  pytest-benchmark {pr}`2799`, termcolor {pr}`2809`
 
 ### Miscellaneous
 

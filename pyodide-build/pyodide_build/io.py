@@ -30,7 +30,6 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
         "cross-script": str,
         "script": str,
         "post": str,
-        "replace-libs": list,
         "unvendor-tests": bool,
         "cross-build-env": bool,
         "cross-build-files": list,  # list[str]

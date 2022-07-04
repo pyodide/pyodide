@@ -23,7 +23,9 @@ export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
-export CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
+export CPYTHONINSTALL=$(CPYTHONROOT)/installs/python-$(PYVERSION)
+export CPYTHONLIB=$(CPYTHONINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)
+export SYSCONFIGDATA_DIR=$(CPYTHONINSTALL)/sysconfigdata/
 export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
@@ -132,7 +134,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
-export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE)
+export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE) -I$(PYTHONINCLUDE)
 export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Wall \
 	-Wno-warn-absolute-paths \

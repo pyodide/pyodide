@@ -11,7 +11,7 @@ from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
 from types import CodeType
-from typing import Any, Generator
+from typing import Any, Generator, Literal
 
 
 def should_quiet(source: str) -> bool:
@@ -86,7 +86,7 @@ class EvalCodeResultException(Exception):
     returned a generator or coroutine".
     """
 
-    def __init__(self, v):
+    def __init__(self, v: Any) -> None:
         super().__init__(v)
         self.value = v
 
@@ -158,6 +158,9 @@ def _parse_and_compile_gen(
     return compile(mod, filename, mode, flags=flags)
 
 
+ReturnMode = Literal["last_expr", "last_expr_or_assign", "none"]
+
+
 class CodeRunner:
     """This class allows fine control over the execution of a code block.
 
@@ -219,7 +222,7 @@ class CodeRunner:
         self,
         source: str,
         *,
-        return_mode: str = "last_expr",
+        return_mode: ReturnMode = "last_expr",
         mode: str = "exec",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
@@ -236,7 +239,7 @@ class CodeRunner:
         )
         self.ast = next(self._gen)
 
-    def compile(self):
+    def compile(self) -> "CodeRunner":
         """Compile the current value of ``self.ast`` and store the result in ``self.code``.
 
         Can only be used once. Returns ``self`` (chainable).
@@ -362,7 +365,7 @@ def eval_code(
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
     *,
-    return_mode: str = "last_expr",
+    return_mode: ReturnMode = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,
@@ -437,7 +440,7 @@ async def eval_code_async(
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
     *,
-    return_mode: str = "last_expr",
+    return_mode: ReturnMode = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,

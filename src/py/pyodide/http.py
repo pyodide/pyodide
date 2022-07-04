@@ -102,7 +102,7 @@ class FetchResponse:
         """
         return self.js_response.url
 
-    def _raise_if_failed(self):
+    def _raise_if_failed(self) -> None:
         if self.js_response.status >= 400:
             raise OSError(
                 f"Request for {self._url} failed with status {self.status}: {self.status_text}"
@@ -180,7 +180,9 @@ class FetchResponse:
         with open(path, "x") as f:
             await self._into_file(f)
 
-    async def unpack_archive(self, *, extract_dir=None, format=None):
+    async def unpack_archive(
+        self, *, extract_dir: str | None = None, format: str | None = None
+    ) -> None:
         """Treat the data as an archive and unpack it into target directory.
 
         Assumes that the file is an archive in a format that shutil has an
