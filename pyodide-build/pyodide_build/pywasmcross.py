@@ -392,11 +392,7 @@ def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
         symbol_lines.append(line)
         if line.startswith("Name:"):
             name = line.removeprefix("Name:").strip()
-        if (
-            line.startswith(("BINDING_LOCAL", "UNDEFINED", "VISIBILITY_HIDDEN"))
-            or line.startswith("UNDEFINED")
-            or line.startswith("VISIBILITY_HIDDEN")
-        ):
+        if line.startswith(("BINDING_LOCAL", "UNDEFINED", "VISIBILITY_HIDDEN")):
             export = False
         if line == "}":
             insymbol = False
