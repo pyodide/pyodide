@@ -161,6 +161,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
             "CARGO_HOME",
             "RUSTFLAGS",
             "PYO3_CONFIG_FILE",
+            "PYODIDE_CMAKE_TOOLCHAIN_FILE",
         ]
     } | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
