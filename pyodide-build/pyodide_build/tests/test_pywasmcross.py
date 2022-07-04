@@ -182,18 +182,20 @@ def test_environment_var_substitution(monkeypatch):
 
 def test_exports_node(tmp_path):
     template = """
+        int l();
+
         __attribute__((visibility("hidden")))
         int f%s() {
-            return 0;
+            return l();
         }
 
         __attribute__ ((visibility ("default")))
         int g%s() {
-            return 0;
+            return l();
         }
 
         int h%s(){
-            return 0;
+            return l();
         }
         """
     (tmp_path / "f1.c").write_text(template % (1, 1, 1))

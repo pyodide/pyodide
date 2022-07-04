@@ -1,83 +1,53 @@
-import asyncio
-
 import pytest
 from hypothesis import given, settings
 from pyodide_test_runner.decorator import run_in_pyodide
 from pyodide_test_runner.hypothesis import any_strategy, std_hypothesis_settings
 from pyodide_test_runner.utils import parse_driver_timeout
 
-from pyodide import eval_code_async
+
+@run_in_pyodide
+def example_func(selenium):
+    pass
 
 
 @run_in_pyodide(_force_assert_rewrites=True)
-def example_func1(selenium):
-    x = 6
-    y = 7
-    assert x == y
+def test_selenium1(selenium):
+    import pytest
+
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        x = 6
+        y = 7
+        assert x == y
 
 
 run_in_pyodide_alias = run_in_pyodide(_force_assert_rewrites=True)
 
 
 @run_in_pyodide_alias
-def example_func2(selenium):
+def test_selenium2(selenium):
+    import pytest
+
     x = 6
     y = 7
-    assert x == y
-
-
-run_in_pyodide_inner = run_in_pyodide()
+    with pytest.raises(AssertionError, match="assert 6 == 7"):
+        assert x == y
 
 
 @run_in_pyodide(_force_assert_rewrites=True)
-async def async_example_func(selenium):
+async def test_selenium3(selenium):
     from asyncio import sleep
+
+    import pytest
 
     await sleep(0.01)
     x = 6
     await sleep(0.01)
     y = 7
-    assert x == y
-
-
-class selenium_mock:
-    JavascriptException = Exception
-    browser = "none"
-
-    @staticmethod
-    def load_package(*args, **kwargs):
-        pass
-
-    @staticmethod
-    def run_async(code: str):
-        return asyncio.new_event_loop().run_until_complete(eval_code_async(code))
-
-
-def test_local1():
     with pytest.raises(AssertionError, match="assert 6 == 7"):
-        example_func1(selenium_mock)
+        assert x == y
 
 
-def test_local2():
-    with pytest.raises(AssertionError, match="assert 6 == 7"):
-        example_func2(selenium_mock)
-
-
-def test_local3():
-    with pytest.raises(AssertionError, match="assert 6 == 7"):
-        async_example_func(selenium_mock)
-
-
-def test_local_inner_function():
-    @run_in_pyodide
-    def inner_function(selenium, x):
-        assert x == 6
-        return 7
-
-    assert inner_function(selenium_mock, 6) == 7
-
-
-def test_local_inner_function_closure_error():
+def test_inner_function_closure_error(selenium):
     x = 6
 
     @run_in_pyodide
@@ -86,7 +56,7 @@ def test_local_inner_function_closure_error():
         return 7
 
     with pytest.raises(NameError, match="'x' is not defined"):
-        inner_function(selenium_mock)
+        inner_function(selenium)
 
 
 def test_inner_function(selenium):
@@ -126,25 +96,26 @@ def example_decorator_func(selenium):
     pass
 
 
-def test_local4():
-    example_decorator_func(selenium_mock)
-    assert example_decorator_func.dec_info == [
+def test_selenium4(selenium_standalone):
+    example_decorator_func(selenium_standalone)
+    assert example_decorator_func.dec_info[-3:] == [
         ("testdec1", "a"),
         ("testdec2", "b"),
         ("testdec1", "c"),
     ]
 
 
-class selenium_mock_fail_load_package(selenium_mock):
-    @staticmethod
-    def load_package(*args, **kwargs):
+def test_local_fail_load_package(selenium_standalone):
+    selenium = selenium_standalone
+
+    def _load_package_error(*args, **kwargs):
         raise OSError("STOP!")
 
+    selenium.load_package = _load_package_error
 
-def test_local_fail_load_package():
     exc = None
     try:
-        example_func1(selenium_mock_fail_load_package)
+        example_func(selenium)
     except OSError:
         exc = pytest.ExceptionInfo.from_current()
 
@@ -159,14 +130,6 @@ def test_local_fail_load_package():
             "run_in_pyodide decorator badly messed up the line numbers."
             " This could crash pytest. Printed the traceback to stdout."
         )
-
-
-def test_selenium(selenium):
-    with pytest.raises(AssertionError, match="assert 6 == 7"):
-        example_func1(selenium)
-
-    with pytest.raises(AssertionError, match="assert 6 == 7"):
-        example_func2(selenium)
 
 
 @run_in_pyodide
@@ -220,39 +183,16 @@ async def test_run_in_pyodide_async(selenium):
     max_examples=25,
 )
 @run_in_pyodide
-def test_hypothesis(selenium, obj):
+def test_hypothesis(selenium_standalone, obj):
     from pyodide import to_js
 
     to_js(obj)
 
 
+run_in_pyodide_inner = run_in_pyodide()
 run_in_pyodide_alias2 = pytest.mark.driver_timeout(40)(run_in_pyodide_inner)
 
 
 @run_in_pyodide_alias2
 def test_run_in_pyodide_alias(request):
     assert parse_driver_timeout(request.node) == 40
-
-
-@run_in_pyodide
-def test_pickle_jsexception(selenium):
-    import pickle
-
-    from pyodide.code import run_js
-
-    pickle.dumps(run_js("new Error('hi');"))
-
-
-def test_raises_jsexception(selenium):
-    import pytest
-
-    from pyodide import JsException
-
-    @run_in_pyodide
-    def raise_jsexception(selenium):
-        from pyodide.code import run_js
-
-        run_js("throw new Error('hi');")
-
-    with pytest.raises(JsException, match="Error: hi"):
-        raise_jsexception(selenium)

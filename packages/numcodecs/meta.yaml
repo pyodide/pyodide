@@ -6,10 +6,11 @@ source:
   url: https://files.pythonhosted.org/packages/2c/b0/980143fa7467569fd81f0d00530c46dcf41ff790738261985dc10a26d4ec/numcodecs-0.9.1.tar.gz
   patches:
     - patches/fixblosc.patch
-    - patches/fixsetup.patch
     - patches/fixzlib.patch
 build:
   script: |
+    export DISABLE_NUMCODECS_SSE2=1
+    export DISABLE_NUMCODECS_AVX2=1
     rm numcodecs/blosc.c
 requirements:
   run:

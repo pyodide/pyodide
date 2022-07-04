@@ -240,8 +240,7 @@ def replay_genargs_handle_dashl(arg: str, used_libs: set[str]) -> str | None:
     if arg == "-lffi":
         return None
 
-    # See https://github.com/emscripten-core/emscripten/issues/8650
-    if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
+    if arg == "-lgfortran":
         return None
 
     # WASM link doesn't like libraries being included twice
@@ -357,6 +356,63 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
+def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
+    """
+    >>> _calculate_object_exports_readobj_parse(
+    ...     '''
+    ...     Format: WASM \\n Arch: wasm32 \\n AddressSize: 32bit
+    ...     Sections [
+    ...         Section { \\n Type: TYPE (0x1)   \\n Size: 5  \\n Offset: 8  \\n }
+    ...         Section { \\n Type: IMPORT (0x2) \\n Size: 32 \\n Offset: 19 \\n }
+    ...     ]
+    ...     Symbol {
+    ...         Name: g2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x0) \\n ]
+    ...         ElementIndex: 0x2
+    ...     }
+    ...     Symbol {
+    ...         Name: f2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x4) \\n VISIBILITY_HIDDEN (0x4) \\n ]
+    ...         ElementIndex: 0x1
+    ...     }
+    ...     Symbol {
+    ...         Name: l  \\n Type: FUNCTION (0x0)
+    ...         Flags [ (0x10)\\n UNDEFINED (0x10) \\n ]
+    ...         ImportModule: env
+    ...         ElementIndex: 0x0
+    ...     }
+    ...     '''
+    ... )
+    ['g2']
+    """
+    result = []
+    insymbol = False
+    for line in output.split("\n"):
+        line = line.strip()
+        if line == "Symbol {":
+            insymbol = True
+            export = True
+            name = None
+            symbol_lines = [line]
+            continue
+        if not insymbol:
+            continue
+        symbol_lines.append(line)
+        if line.startswith("Name:"):
+            name = line.removeprefix("Name:").strip()
+        if line.startswith(("BINDING_LOCAL", "UNDEFINED", "VISIBILITY_HIDDEN")):
+            export = False
+        if line == "}":
+            insymbol = False
+            if export:
+                if not name:
+                    raise RuntimeError(
+                        "Didn't find symbol's name:\n" + "\n".join(symbol_lines)
+                    )
+                result.append(name)
+    return result
+
+
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
     which_emcc = shutil.which("emcc")
     assert which_emcc
@@ -377,36 +433,7 @@ def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
     if "bitcode files are not supported" in completedprocess.stderr:
         return None
 
-    result = []
-    insymbol = False
-    for line in completedprocess.stdout.split("\n"):
-        line = line.strip()
-        if line == "Symbol {":
-            insymbol = True
-            export = True
-            name = None
-            symbol_lines = [line]
-            continue
-        if not insymbol:
-            continue
-        symbol_lines.append(line)
-        if line.startswith("Name:"):
-            name = line.removeprefix("Name:").strip()
-        if (
-            line.startswith("BINDING_LOCAL")
-            or line.startswith("UNDEFINED")
-            or line.startswith("VISIBILITY_HIDDEN")
-        ):
-            export = False
-        if line == "}":
-            insymbol = False
-            if export:
-                if not name:
-                    raise RuntimeError(
-                        "Didn't find symbol's name:\n" + "\n".join(symbol_lines)
-                    )
-                result.append(name)
-    return result
+    return _calculate_object_exports_readobj_parse(completedprocess.stdout)
 
 
 def calculate_object_exports_nm(objects: list[str]) -> list[str]:
@@ -428,7 +455,7 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     then return all public symbols. If not, return only the public symbols that
     begin with `PyInit`.
     """
-    objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
+    objects = [arg for arg in line if arg.endswith((".a", ".o"))]
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
     # exporting the PyInit symbols, save effort by using nm.

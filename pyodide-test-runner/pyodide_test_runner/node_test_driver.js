@@ -3,7 +3,6 @@ const readline = require("readline");
 const path = require("path");
 const util = require("util");
 const node_fetch = require("node-fetch");
-const base64 = require("base-64");
 
 let baseUrl = process.argv[2];
 let distDir = process.argv[3];
@@ -26,8 +25,6 @@ const context = {
   TextDecoder: util.TextDecoder,
   TextEncoder: util.TextEncoder,
   URL,
-  atob: base64.decode,
-  btoa: base64.encode,
   clearInterval,
   clearTimeout,
   setInterval,
