@@ -67,18 +67,11 @@ def test_string_conversion2(selenium, s):
 
 
 def blns():
-    yield ""
     import base64
     import json
-    from urllib.request import urlopen
 
-    try:
-        with urlopen(
-            "https://raw.githubusercontent.com/minimaxir/big-list-of-naughty-strings/master/blns.base64.json"
-        ) as f:
-            BLNS = json.load(f)
-    except Exception:
-        return
+    with open("./src/tests/blns.base64.json") as f:
+        BLNS = json.load(f)
     for s in BLNS:
         yield base64.b64decode(s).decode(errors="ignore")
 
