@@ -379,7 +379,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
 
 def build_from_graph(
     pkg_map: dict[str, BasePackage], outputdir: Path, args: argparse.Namespace
-) -> None:
+) -> set[str]:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
     packages at once.
@@ -421,7 +421,7 @@ def build_from_graph(
         )
     if not needs_build:
         print("All packages already built. Quitting.")
-        return
+        return needs_build
     print(f"Building the following packages: {format_name_list(sorted(needs_build))}")
 
     t0 = perf_counter()
@@ -493,6 +493,7 @@ def build_from_graph(
         "\n===================================================\n"
         f"built all packages in {perf_counter() - t0:.2f} s"
     )
+    return needs_build
 
 
 def _generate_package_hash(full_path: Path) -> str:
@@ -601,7 +602,12 @@ def build_packages(
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
-    build_from_graph(pkg_map, output_dir, args)
+    built_packages = build_from_graph(pkg_map, output_dir, args)
+    if args.write_built_packages:
+        Path(args.write_built_packages).write_text(
+            "".join(sorted(x + "\n" for x in built_packages))
+        )
+
     for pkg in pkg_map.values():
         if pkg.library:
             continue
@@ -710,6 +716,13 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         default=4,
         help="Number of packages to build in parallel",
     )
+    parser.add_argument(
+        "--write-built-packages",
+        type=str,
+        nargs="?",
+        default=None,
+        help="Output the newly built packages into a file",
+    )
     return parser
 
 
@@ -717,16 +730,17 @@ def main(args: argparse.Namespace) -> None:
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
     outputdir.mkdir(exist_ok=True)
-    if args.cflags is None:
-        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
-    if args.cxxflags is None:
-        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
-    if args.ldflags is None:
-        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
-    if args.target_install_dir is None:
-        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
-    if args.host_install_dir is None:
-        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
+
+    def make_flag_default(name: str, flag: str) -> None:
+        if getattr(args, name) is not None:
+            return
+        setattr(args, name, common.get_make_flag(flag))
+
+    make_flag_default("cflags", "SIDE_MODULE_CFLAGS")
+    make_flag_default("cxxflags", "SIDE_MODULE_CXXFLAGS")
+    make_flag_default("ldflags", "SIDE_MODULE_LDFLAGS")
+    make_flag_default("target_install_dir", "TARGETINSTALLDIR")
+    make_flag_default("host_install_dir", "HOSTINSTALLDIR")
     build_packages(packages_dir, outputdir, args)
 
 

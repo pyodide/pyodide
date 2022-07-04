@@ -8,11 +8,18 @@ else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
 endif
 
+ifeq ($(strip $(WRITE_BUILT_PACKAGES)),)
+else
+	WRITE_BUILT_PACKAGES_FLAG=--write-built-packages ./build-logs/$(WRITE_BUILT_PACKAGES)
+endif
+
+
 all: pyodide-build
 	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build buildall . $(PYODIDE_ROOT)/dist \
-	$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
-	--log-dir=./build-logs
+		$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
+		--log-dir=./build-logs \
+		$(WRITE_BUILT_PACKAGES_FLAG)
 
 pyodide-build: ../pyodide-build/pyodide_build/**
 	$(HOSTPYTHON) -m pip install -e ../pyodide-build
