@@ -393,7 +393,7 @@ def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
         if line.startswith("Name:"):
             name = line.removeprefix("Name:").strip()
         if (
-            line.startswith("BINDING_LOCAL")
+            line.startswith(("BINDING_LOCAL", "UNDEFINED", "VISIBILITY_HIDDEN"))
             or line.startswith("UNDEFINED")
             or line.startswith("VISIBILITY_HIDDEN")
         ):
@@ -428,7 +428,7 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     then return all public symbols. If not, return only the public symbols that
     begin with `PyInit`.
     """
-    objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
+    objects = [arg for arg in line if arg.endswith((".a", ".o"))]
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
     # exporting the PyInit symbols, save effort by using nm.
