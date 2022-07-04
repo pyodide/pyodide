@@ -357,29 +357,38 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
-    which_emcc = shutil.which("emcc")
-    assert which_emcc
-    emcc = Path(which_emcc)
-    args = [
-        str((emcc / "../../bin/llvm-readobj").resolve()),
-        "--section-details",
-        "-st",
-    ] + objects
-    completedprocess = subprocess.run(
-        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
-    )
-    if completedprocess.returncode:
-        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
-        print(completedprocess.stderr)
-        sys.exit(completedprocess.returncode)
-
-    if "bitcode files are not supported" in completedprocess.stderr:
-        return None
-
+def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
+    """
+    >>> _calculate_object_exports_readobj_parse(
+    ...     '''
+    ...     Format: WASM \\n Arch: wasm32 \\n AddressSize: 32bit
+    ...     Sections [
+    ...         Section { \\n Type: TYPE (0x1)   \\n Size: 5  \\n Offset: 8  \\n }
+    ...         Section { \\n Type: IMPORT (0x2) \\n Size: 32 \\n Offset: 19 \\n }
+    ...     ]
+    ...     Symbol {
+    ...         Name: g2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x0) \\n ]
+    ...         ElementIndex: 0x2
+    ...     }
+    ...     Symbol {
+    ...         Name: f2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x4) \\n VISIBILITY_HIDDEN (0x4) \\n ]
+    ...         ElementIndex: 0x1
+    ...     }
+    ...     Symbol {
+    ...         Name: l  \\n Type: FUNCTION (0x0)
+    ...         Flags [ (0x10)\\n UNDEFINED (0x10) \\n ]
+    ...         ImportModule: env
+    ...         ElementIndex: 0x0
+    ...     }
+    ...     '''
+    ... )
+    ['g2']
+    """
     result = []
     insymbol = False
-    for line in completedprocess.stdout.split("\n"):
+    for line in output.split("\n"):
         line = line.strip()
         if line == "Symbol {":
             insymbol = True
@@ -403,6 +412,29 @@ def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
                     )
                 result.append(name)
     return result
+
+
+def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
+    which_emcc = shutil.which("emcc")
+    assert which_emcc
+    emcc = Path(which_emcc)
+    args = [
+        str((emcc / "../../bin/llvm-readobj").resolve()),
+        "--section-details",
+        "-st",
+    ] + objects
+    completedprocess = subprocess.run(
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
+    )
+    if completedprocess.returncode:
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(completedprocess.stderr)
+        sys.exit(completedprocess.returncode)
+
+    if "bitcode files are not supported" in completedprocess.stderr:
+        return None
+
+    return _calculate_object_exports_readobj_parse(completedprocess.stdout)
 
 
 def calculate_object_exports_nm(objects: list[str]) -> list[str]:
