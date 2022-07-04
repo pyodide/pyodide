@@ -72,7 +72,7 @@ def test_atmost1(selenium):
     for l in range(10, 20):
         for e in encs:
             cnf = CardEnc.atmost(
-                literals=list(range(1, l + 1)), bound=1, encoding=getattr(EncType, e)
+                lits=list(range(1, l + 1)), bound=1, encoding=getattr(EncType, e)
             )
 
             # enumerating all models
