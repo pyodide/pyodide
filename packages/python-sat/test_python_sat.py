@@ -30,8 +30,8 @@ def test_solvers(selenium, name):
         solver.solve()
         stats = solver.accum_stats()
         assert "conflicts" in stats, f"No conflicts for {name}"
-        # assert 'decisions' in stats, 'No decisions for {0}'.format(name)
-        # assert 'propagations' in stats, 'No propagations for {0}'.format(name)
+        assert "decisions" in stats, f"No decisions for {name}"
+        assert "propagations" in stats, f"No propagations for {name}"
         assert "restarts" in stats, f"No restarts for {name}"
 
 
