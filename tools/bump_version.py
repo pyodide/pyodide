@@ -64,6 +64,11 @@ PYTHON_TARGETS = [
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
         prerelease=False,
     ),
+    Target(
+        ROOT / "pyodide-test-runner/setup.cfg",
+        build_version_pattern("version = {python_version}"),
+        prerelease=False,
+    ),
 ]
 
 JS_TARGETS = [

@@ -22,8 +22,13 @@ source:
       - ./mplsetup.cfg
 
 build:
-  cflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
-  ldflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
+  # RELOCATABLE flag is required because if affects how emscripten build ports.
+  cflags: |
+    -s RELOCATABLE=1
+    -s USE_FREETYPE=1
+    -s USE_LIBPNG=1
+    -s USE_ZLIB=1
+    -fno-lto
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
     cd build/matplotlib-$PKG_VERSION/dist/matplotlib-$PKG_VERSION/

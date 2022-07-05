@@ -1146,6 +1146,28 @@ def test_run_js(selenium):
     assert x == 77
 
 
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide.code import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    from pyodide.ffi import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide.code import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)
+
+
 @run_in_pyodide(packages=["pytest"])
 def test_moved_deprecation_warnings(selenium_standalone):
     import pytest
