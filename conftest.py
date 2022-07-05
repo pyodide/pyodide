@@ -97,10 +97,14 @@ def pytest_terminal_summary(terminalreporter):
             continue
 
         for test in tr.stats[status]:
-            if test.longrepr[2] in "previously passed":
-                test_result[test.nodeid] = "skip_passed"
-            else:
-                test_result[test.nodeid] = test.outcome
+            try:
+                if test.longrepr[2] in "previously passed":
+                    test_result[test.nodeid] = "skip_passed"
+                else:
+                    test_result[test.nodeid] = test.outcome
+            except Exception:
+                # Doctest, etc...
+                pass
 
     result_file = tr.config.getoption("--test-result-file")
     cache.set(f"cache/{result_file}", test_result)
