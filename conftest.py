@@ -24,6 +24,19 @@ def pytest_addoption(parser):
         action="store_true",
         help="If provided, tests marked as xfail will be run",
     )
+    group.addoption(
+        "--skip-passed",
+        action="store_true",
+        help=(
+            "If provided, tests that passed on the last run will be skipped. "
+            "CAUTION: this will skip tests even if tests are modified"
+        ),
+    )
+    group.addoption(
+        "--test-result-file",
+        default="lasttestresult",
+        help="File to store test results in",
+    )
 
 
 def pytest_configure(config):
@@ -56,8 +69,41 @@ def pytest_collection_modifyitems(config, items):
     config : pytest config
     items : list of collected items
     """
+    prev_test_result = {}
+    if config.getoption("--skip-passed"):
+        cache = config.cache
+        result_file = config.getoption("--test-result-file")
+        prev_test_result = cache.get(f"cache/{result_file}", {})
+
     for item in items:
+        if prev_test_result.get(item.nodeid) in ("passed", "warnings", "skip_passed"):
+            item.add_marker(pytest.mark.skip(reason="previously passed"))
+            continue
+
         maybe_skip_test(item, config.getoption("--dist-dir"), delayed=True)
+
+
+# Save test results to a cache
+# Code adapted from: https://github.com/pytest-dev/pytest/blob/main/src/_pytest/pastebin.py
+@pytest.hookimpl(trylast=True)
+def pytest_terminal_summary(terminalreporter):
+    tr = terminalreporter
+    cache = tr.config.cache
+    assert cache
+
+    test_result = {}
+    for status in tr.stats:
+        if status == "warnings":
+            continue
+
+        for test in tr.stats[status]:
+            if test.longrepr[2] in "previously passed":
+                test_result[test.nodeid] = "skip_passed"
+            else:
+                test_result[test.nodeid] = test.outcome
+
+    result_file = tr.config.getoption("--test-result-file")
+    cache.set(f"cache/{result_file}", test_result)
 
 
 @pytest.hookimpl(hookwrapper=True)

@@ -206,8 +206,14 @@ jobs:
       test-params:
         description: The tests to run.
         type: string
+      test-result-file:
+        description: The path to save test results.
+        type: string
+        default: ""
     <<: *defaults
     resource_class: medium+
+    environment:
+      TEST_RESULT_FILE: << parameters.test-result-file >>
     steps:
       - attach_workspace:
           at: .
@@ -218,11 +224,20 @@ jobs:
             mkdir test-results
             pip install ./pyodide-test-runner
             npm install -g node-fetch@2
+            if [ -z "${TEST_RESULT_FILE}" ]; then
+              export TEST_RESULT_FILE="lasttestresult_$(echo $RANDOM | md5sum | head -c 10)"
+            fi
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
-              << parameters.test-params >>
+              << parameters.test-params >> \
+              --test-result-file ${TEST_RESULT_FILE}
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.pytest_cache/v/cache/${TEST_RESULT_FILE}
       - store_test_results:
           path: test-results
 
@@ -548,27 +563,57 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-chrome
-          test-params: -k chrome packages/test* packages/*/test*
+          name: test-packages-no-numpy-dependents-chrome
+          test-params: -k chrome packages/test* packages/*/test* --test-result-file pkgtest_chrome
           requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-packages-chrome
+          test-params: -k chrome packages/test* packages/*/test* --skip-passed --test-result-file pkgtest_chrome
+          requires:
+            - test-packages-no-numpy-dependents-chrome
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-packages-no-numpy-dependents-firefox
+          test-params: -k firefox packages/test* packages/*/test* --test-result-file pkgtest_firefox
+          requires:
+            - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/
 
       - test-main:
           name: test-packages-firefox
-          test-params: -k firefox packages/test* packages/*/test*
+          test-params: -k firefox packages/test* packages/*/test* --skip-passed --test-result-file pkgtest_firefox
           requires:
+            - test-packages-no-numpy-dependents-firefox
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-node
-          test-params: -k node packages/test* packages/*/test*
+          name: test-packages-no-numpy-dependents-node
+          test-params: -k node packages/test* packages/*/test* --test-result-file pkgtest_node
           requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-packages-node
+          test-params: -k node packages/test* packages/*/test* --skip-passed --test-result-file pkgtest_node
+          requires:
+            - test-packages-no-numpy-dependents-node
             - build-packages
           filters:
             tags:
