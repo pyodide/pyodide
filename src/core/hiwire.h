@@ -582,6 +582,15 @@ JsRef
 JsObject_Values(JsRef idobj);
 
 
+// ==================== JsString API  ====================
+
+JsRef
+JsString_InternFromCString(const char* str);
+
+JsRef
+JsString_FromId(Js_Identifier* id);
+
+
 // ==================== JsMap API  ====================
 
 /**
