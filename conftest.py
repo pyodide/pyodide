@@ -32,11 +32,6 @@ def pytest_addoption(parser):
             "CAUTION: this will skip tests even if tests are modified"
         ),
     )
-    group.addoption(
-        "--test-result-file",
-        default="lasttestresult",
-        help="File to store test results in",
-    )
 
 
 def pytest_configure(config):
@@ -72,8 +67,7 @@ def pytest_collection_modifyitems(config, items):
     prev_test_result = {}
     if config.getoption("--skip-passed"):
         cache = config.cache
-        result_file = config.getoption("--test-result-file")
-        prev_test_result = cache.get(f"cache/{result_file}", {})
+        prev_test_result = cache.get("cache/lasttestresult", {})
 
     for item in items:
         if prev_test_result.get(item.nodeid) in ("passed", "warnings", "skip_passed"):
@@ -105,8 +99,7 @@ def pytest_terminal_summary(terminalreporter):
             except Exception:
                 pass
 
-    result_file = tr.config.getoption("--test-result-file")
-    cache.set(f"cache/{result_file}", test_result)
+    cache.set("cache/lasttestresult", test_result)
 
 
 @pytest.hookimpl(hookwrapper=True)
