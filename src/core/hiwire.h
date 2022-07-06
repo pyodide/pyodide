@@ -524,7 +524,6 @@ JsArray_Set(JsRef idobj, int idx, JsRef idval);
 errcode WARN_UNUSED
 JsArray_Delete(JsRef idobj, int idx);
 
-
 // ==================== JsObject API  ====================
 
 /**
@@ -581,7 +580,6 @@ JsObject_Keys(JsRef idobj);
 JsRef
 JsObject_Values(JsRef idobj);
 
-
 // ==================== JsString API  ====================
 
 JsRef
@@ -589,7 +587,6 @@ JsString_InternFromCString(const char* str);
 
 JsRef
 JsString_FromId(Js_Identifier* id);
-
 
 // ==================== JsMap API  ====================
 
@@ -605,7 +602,6 @@ JsMap_New();
 errcode WARN_UNUSED
 JsMap_Set(JsRef mapid, JsRef keyid, JsRef valueid);
 
-
 // ==================== JsSet API  ====================
 
 /**
@@ -619,6 +615,5 @@ JsSet_New();
  */
 errcode WARN_UNUSED
 JsSet_Add(JsRef mapid, JsRef keyid);
-
 
 #endif /* HIWIRE_H */

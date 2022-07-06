@@ -280,7 +280,6 @@ EM_JS_NUM(int, hiwire_init, (), {
   return 0;
 });
 
-
 EM_JS(JsRef, hiwire_incref, (JsRef idval), {
   if (idval & 1) {
     // least significant bit unset ==> idval is a singleton.
@@ -778,7 +777,6 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   return Hiwire.new_value(jssub);
 });
 
-
 // ==================== JsArray API  ====================
 
 EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
@@ -927,7 +925,6 @@ JsString_FromId(Js_Identifier* id)
   }
   return id->object;
 }
-
 
 // ==================== JsMap API  ====================
 
