@@ -1,6 +1,7 @@
 package:
   name: opencv-python
   version: 4.6.0.66
+  _disabled: true
 about:
   home: https://github.com/skvark/opencv-python
   PyPI: https://pypi.org/project/opencv-python
