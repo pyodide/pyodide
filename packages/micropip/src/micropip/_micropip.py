@@ -522,7 +522,6 @@ async def install(
         A ``Future`` that resolves to ``None`` when all packages have been
         downloaded and installed.
     """
-    importlib.invalidate_caches()
     ctx = default_environment()
     if isinstance(requirements, str):
         requirements = [requirements]
@@ -575,6 +574,7 @@ async def install(
         wheel_promises.append(wheel.install(wheel_base))
 
     await gather(*wheel_promises)
+    importlib.invalidate_caches()
 
 
 def _generate_package_hash(data: IO[bytes]) -> str:
