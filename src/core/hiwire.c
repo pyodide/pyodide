@@ -18,8 +18,6 @@ const JsRef Js_null = ((JsRef)(8));
 // For when the return value would be Option<JsRef>
 const JsRef Js_novalue = ((JsRef)(10));
 
-
-
 JsRef
 hiwire_from_bool(bool boolean)
 {
