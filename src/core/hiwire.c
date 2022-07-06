@@ -280,20 +280,6 @@ EM_JS_NUM(int, hiwire_init, (), {
   return 0;
 });
 
-EM_JS_REF(JsRef, JsString_InternFromCString, (const char* str), {
-  let jsstring = UTF8ToString(str);
-  return Hiwire.intern_object(jsstring);
-})
-
-JsRef
-JsString_FromId(Js_Identifier* id)
-{
-  if (!id->object) {
-    id->object = JsString_InternFromCString(id->string);
-  }
-  return id->object;
-}
-
 EM_JS(JsRef, hiwire_incref, (JsRef idval), {
   if (idval & 1) {
     // least significant bit unset ==> idval is a singleton.
@@ -369,120 +355,6 @@ EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
 
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Hiwire.pop_value(iderr);
-});
-
-EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
-  let obj = Hiwire.get_value(idobj);
-  if (Array.isArray(obj)) {
-    return true;
-  }
-  let typeTag = Object.prototype.toString.call(obj);
-  // We want to treat some standard array-like objects as Array.
-  // clang-format off
-  if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
-    // clang-format on
-    return true;
-  }
-  // What if it's a TypedArray?
-  // clang-format off
-  if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
-    // clang-format on
-    return true;
-  }
-  return false;
-});
-
-// clang-format off
-EM_JS_REF(JsRef, JsArray_New, (), {
-  return Hiwire.new_value([]);
-});
-// clang-format on
-
-EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
-  Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
-});
-
-EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
-  const arr = Hiwire.get_value(idarr);
-  arr.push(Hiwire.get_value(idval));
-  return arr.length - 1;
-});
-
-// clang-format off
-EM_JS_REF(JsRef, JsObject_New, (), {
-  return Hiwire.new_value({});
-});
-// clang-format on
-
-EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  let result = jsobj[jskey];
-  // clang-format off
-  if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Hiwire.new_value(result);
-});
-
-// clang-format off
-EM_JS_NUM(errcode,
-          JsObject_SetString,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
-{
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  let jsval = Hiwire.get_value(idval);
-  jsobj[jskey] = jsval;
-});
-// clang-format on
-
-EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  delete jsobj[jskey];
-});
-
-EM_JS_REF(JsRef, JsArray_Get, (JsRef idobj, int idx), {
-  let obj = Hiwire.get_value(idobj);
-  let result = obj[idx];
-  // clang-format off
-  if (result === undefined && !(idx in obj)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Hiwire.new_value(result);
-});
-
-EM_JS_NUM(errcode, JsArray_Set, (JsRef idobj, int idx, JsRef idval), {
-  Hiwire.get_value(idobj)[idx] = Hiwire.get_value(idval);
-});
-
-EM_JS_NUM(errcode, JsArray_Delete, (JsRef idobj, int idx), {
-  let obj = Hiwire.get_value(idobj);
-  // Weird edge case: allow deleting an empty entry, but we raise a key error if
-  // access is attempted.
-  if (idx < 0 || idx >= obj.length) {
-    return ERROR_NUM;
-  }
-  obj.splice(idx, 1);
-});
-
-EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  let result = [];
-  do {
-    // clang-format off
-    result.push(... Object.getOwnPropertyNames(jsobj).filter(
-      s => {
-        let c = s.charCodeAt(0);
-        return c < 48 || c > 57; /* Filter out integer array indices */
-      }
-    ));
-    // clang-format on
-  } while (jsobj = Object.getPrototypeOf(jsobj));
-  return Hiwire.new_value(result);
 });
 
 static JsRef
@@ -838,21 +710,6 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
   return Hiwire.new_value(jsobj[Symbol.iterator]());
 })
 
-EM_JS_REF(JsRef, JsObject_Entries, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.entries(jsobj));
-});
-
-EM_JS_REF(JsRef, JsObject_Keys, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.keys(jsobj));
-});
-
-EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.values(jsobj));
-});
-
 EM_JS_BOOL(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
@@ -920,6 +777,157 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   return Hiwire.new_value(jssub);
 });
 
+// ==================== JsArray API  ====================
+
+EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
+  let obj = Hiwire.get_value(idobj);
+  if (Array.isArray(obj)) {
+    return true;
+  }
+  let typeTag = Object.prototype.toString.call(obj);
+  // We want to treat some standard array-like objects as Array.
+  // clang-format off
+  if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
+    // clang-format on
+    return true;
+  }
+  // What if it's a TypedArray?
+  // clang-format off
+  if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
+    // clang-format on
+    return true;
+  }
+  return false;
+});
+
+// clang-format off
+EM_JS_REF(JsRef, JsArray_New, (), {
+  return Hiwire.new_value([]);
+});
+// clang-format on
+
+EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
+  Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
+});
+
+EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
+  const arr = Hiwire.get_value(idarr);
+  arr.push(Hiwire.get_value(idval));
+  return arr.length - 1;
+});
+
+EM_JS_REF(JsRef, JsArray_Get, (JsRef idobj, int idx), {
+  let obj = Hiwire.get_value(idobj);
+  let result = obj[idx];
+  // clang-format off
+  if (result === undefined && !(idx in obj)) {
+    // clang-format on
+    return ERROR_REF;
+  }
+  return Hiwire.new_value(result);
+});
+
+EM_JS_NUM(errcode, JsArray_Set, (JsRef idobj, int idx, JsRef idval), {
+  Hiwire.get_value(idobj)[idx] = Hiwire.get_value(idval);
+});
+
+EM_JS_NUM(errcode, JsArray_Delete, (JsRef idobj, int idx), {
+  let obj = Hiwire.get_value(idobj);
+  // Weird edge case: allow deleting an empty entry, but we raise a key error if
+  // access is attempted.
+  if (idx < 0 || idx >= obj.length) {
+    return ERROR_NUM;
+  }
+  obj.splice(idx, 1);
+});
+
+// ==================== JsObject API  ====================
+
+// clang-format off
+EM_JS_REF(JsRef, JsObject_New, (), {
+  return Hiwire.new_value({});
+});
+// clang-format on
+
+EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
+  let jsobj = Hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  let result = jsobj[jskey];
+  // clang-format off
+  if (result === undefined && !(jskey in jsobj)) {
+    // clang-format on
+    return ERROR_REF;
+  }
+  return Hiwire.new_value(result);
+});
+
+// clang-format off
+EM_JS_NUM(errcode,
+          JsObject_SetString,
+          (JsRef idobj, const char* ptrkey, JsRef idval),
+{
+  let jsobj = Hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  let jsval = Hiwire.get_value(idval);
+  jsobj[jskey] = jsval;
+});
+// clang-format on
+
+EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
+  let jsobj = Hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  delete jsobj[jskey];
+});
+
+EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  let result = [];
+  do {
+    // clang-format off
+    result.push(... Object.getOwnPropertyNames(jsobj).filter(
+      s => {
+        let c = s.charCodeAt(0);
+        return c < 48 || c > 57; /* Filter out integer array indices */
+      }
+    ));
+    // clang-format on
+  } while (jsobj = Object.getPrototypeOf(jsobj));
+  return Hiwire.new_value(result);
+});
+
+EM_JS_REF(JsRef, JsObject_Entries, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  return Hiwire.new_value(Object.entries(jsobj));
+});
+
+EM_JS_REF(JsRef, JsObject_Keys, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  return Hiwire.new_value(Object.keys(jsobj));
+});
+
+EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  return Hiwire.new_value(Object.values(jsobj));
+});
+
+// ==================== JsString API  ====================
+
+EM_JS_REF(JsRef, JsString_InternFromCString, (const char* str), {
+  let jsstring = UTF8ToString(str);
+  return Hiwire.intern_object(jsstring);
+})
+
+JsRef
+JsString_FromId(Js_Identifier* id)
+{
+  if (!id->object) {
+    id->object = JsString_InternFromCString(id->string);
+  }
+  return id->object;
+}
+
+// ==================== JsMap API  ====================
+
 // clang-format off
 EM_JS_REF(JsRef, JsMap_New, (), {
   return Hiwire.new_value(new Map());
@@ -932,6 +940,8 @@ EM_JS_NUM(errcode, JsMap_Set, (JsRef mapid, JsRef keyid, JsRef valueid), {
   let value = Hiwire.get_value(valueid);
   map.set(key, value);
 })
+
+// ==================== JsSet API  ====================
 
 // clang-format off
 EM_JS_REF(JsRef, JsSet_New, (), {
