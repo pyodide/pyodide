@@ -206,14 +206,12 @@ jobs:
       test-params:
         description: The tests to run.
         type: string
-      test-result-file:
-        description: The path to save test results.
+      cache-dir:
+        description: pytest-cache-dir.
         type: string
         default: ""
     <<: *defaults
     resource_class: medium+
-    environment:
-      TEST_RESULT_FILE: << parameters.test-result-file >>
     steps:
       - attach_workspace:
           at: .
@@ -224,20 +222,23 @@ jobs:
             mkdir test-results
             pip install ./pyodide-test-runner
             npm install -g node-fetch@2
-            if [ -z "${TEST_RESULT_FILE}" ]; then
-              export TEST_RESULT_FILE="lasttestresult_$(echo $RANDOM | md5sum | head -c 10)"
+            if [ -z "<< parameters.cache-dir >>" ]; then
+              export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
+            else
+              export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
             fi
+            echo "pytest cache dir: $CACHE_DIR"
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
               << parameters.test-params >> \
-              --test-result-file ${TEST_RESULT_FILE}
+              -o cache_dir=$CACHE_DIR
           post-steps:
             - persist_to_workspace:
                 root: .
                 paths:
-                  - ./.pytest_cache/v/cache/${TEST_RESULT_FILE}
+                  - ./.test_cache
       - store_test_results:
           path: test-results
 
@@ -563,8 +564,9 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-no-numpy-dependents-chrome
-          test-params: -k chrome packages/test* packages/*/test* --test-result-file pkgtest_chrome
+          name: test-packages-chrome-no-numpy-dependents
+          test-params: -k chrome packages/test* packages/*/test*
+          cache-dir: .pytest_cache_chrome
           requires:
             - build-packages-no-numpy-dependents
           filters:
@@ -573,17 +575,19 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
-          test-params: -k chrome packages/test* packages/*/test* --skip-passed --test-result-file pkgtest_chrome
+          test-params: -k chrome packages/test* packages/*/test* --skip-passed
+          cache-dir: .pytest_cache_chrome
           requires:
-            - test-packages-no-numpy-dependents-chrome
+            - test-packages-chrome-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-no-numpy-dependents-firefox
-          test-params: -k firefox packages/test* packages/*/test* --test-result-file pkgtest_firefox
+          name: test-packages-firefox-no-numpy-dependents
+          test-params: -k firefox packages/test* packages/*/test*
+          cache-dir: .pytest_cache_firefox
           requires:
             - build-packages-no-numpy-dependents
           filters:
@@ -592,17 +596,19 @@ workflows:
 
       - test-main:
           name: test-packages-firefox
-          test-params: -k firefox packages/test* packages/*/test* --skip-passed --test-result-file pkgtest_firefox
+          test-params: -k firefox packages/test* packages/*/test* --skip-passed
+          cache-dir: .pytest_cache_firefox
           requires:
-            - test-packages-no-numpy-dependents-firefox
+            - test-packages-firefox-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-no-numpy-dependents-node
-          test-params: -k node packages/test* packages/*/test* --test-result-file pkgtest_node
+          name: test-packages-node-no-numpy-dependents
+          test-params: -k node packages/test* packages/*/test*
+          cache-dir: .pytest_cache_node
           requires:
             - build-packages-no-numpy-dependents
           filters:
@@ -611,9 +617,10 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: -k node packages/test* packages/*/test* --skip-passed --test-result-file pkgtest_node
+          test-params: -k node packages/test* packages/*/test* --skip-passed
+          cache-dir: .pytest_cache_node
           requires:
-            - test-packages-no-numpy-dependents-node
+            - test-packages-node-no-numpy-dependents
             - build-packages
           filters:
             tags:
