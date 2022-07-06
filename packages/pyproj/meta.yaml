@@ -19,7 +19,9 @@ build:
     export PROJ_DIR=${WASM_LIBRARY_DIR}
     export PROJ_INCDIR=${WASM_LIBRARY_DIR}/include
     export PROJ_LIBDIR=${WASM_LIBRARY_DIR}/lib
-
+    export PROJ_WHEEL=1
+    mkdir -p pyproj/proj_dir
+    cp -r ${WASM_LIBRARY_DIR}/share pyproj/proj_dir
 test:
   imports:
     - pyproj
