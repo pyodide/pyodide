@@ -93,17 +93,16 @@ def pytest_terminal_summary(terminalreporter):
 
     test_result = {}
     for status in tr.stats:
-        if status == "warnings":
+        if status in ("warnings", "deselected"):
             continue
 
         for test in tr.stats[status]:
             try:
-                if test.longrepr[2] in "previously passed":
+                if test.longrepr and test.longrepr[2] in "previously passed":
                     test_result[test.nodeid] = "skip_passed"
                 else:
                     test_result[test.nodeid] = test.outcome
             except Exception:
-                # Doctest, etc...
                 pass
 
     result_file = tr.config.getoption("--test-result-file")
