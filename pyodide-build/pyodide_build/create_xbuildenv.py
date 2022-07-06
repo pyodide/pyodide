@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .common import get_make_flag, get_pyodide_root
+from .common import get_make_flag, get_pyodide_root, get_unisolated_packages
 from .io import parse_package_config
 
 
@@ -44,7 +44,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
     wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
     xbuildenv_root = xbuildenv_path / "pyodide-root"
-    xbuildenv_path.mkdir()
+    xbuildenv_path.mkdir(exist_ok=True)
     to_copy: list[Path] = [
         pythoninclude,
         sysconfig_dir,
@@ -89,3 +89,6 @@ def main(args: argparse.Namespace) -> None:
         stdout=subprocess.PIPE,
     )
     (xbuildenv_path / "requirements.txt").write_bytes(res.stdout)
+    (xbuildenv_path / "pyodide-root/unisolated.txt").write_text(
+        "\n".join(get_unisolated_packages())
+    )
