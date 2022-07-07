@@ -4,7 +4,6 @@
 # with some modifications to make it work with Pyodide build system.                          #
 ###############################################################################################
 
-set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_CROSSCOMPILING TRUE)
 
 # Note: this is False in original Emscripten toolchain,
