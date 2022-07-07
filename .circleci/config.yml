@@ -212,8 +212,6 @@ jobs:
         default: ""
     <<: *defaults
     resource_class: medium+
-    environment:
-      CACHE_DIR: << parameters.cache-dir >>
     steps:
       - attach_workspace:
           at: .
@@ -224,8 +222,10 @@ jobs:
             mkdir test-results
             pip install ./pyodide-test-runner
             npm install -g node-fetch@2
-            if [ -z "${CACHE_DIR}" ]; then
+            if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
+            else
+              export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
             fi
             echo "pytest cache dir: $CACHE_DIR"
             tools/pytest_wrapper.py \
@@ -564,7 +564,7 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-no-numpy-dependents-chrome
+          name: test-packages-chrome-no-numpy-dependents
           test-params: -k chrome packages/test* packages/*/test*
           cache-dir: .pytest_cache_chrome
           requires:
@@ -578,14 +578,14 @@ workflows:
           test-params: -k chrome packages/test* packages/*/test* --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
-            - test-packages-no-numpy-dependents-chrome
+            - test-packages-chrome-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-no-numpy-dependents-firefox
+          name: test-packages-firefox-no-numpy-dependents
           test-params: -k firefox packages/test* packages/*/test*
           cache-dir: .pytest_cache_firefox
           requires:
@@ -599,14 +599,14 @@ workflows:
           test-params: -k firefox packages/test* packages/*/test* --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
-            - test-packages-no-numpy-dependents-firefox
+            - test-packages-firefox-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-no-numpy-dependents-node
+          name: test-packages-node-no-numpy-dependents
           test-params: -k node packages/test* packages/*/test*
           cache-dir: .pytest_cache_node
           requires:
@@ -620,7 +620,7 @@ workflows:
           test-params: -k node packages/test* packages/*/test* --skip-passed
           cache-dir: .pytest_cache_node
           requires:
-            - test-packages-no-numpy-dependents-node
+            - test-packages-node-no-numpy-dependents
             - build-packages
           filters:
             tags:
