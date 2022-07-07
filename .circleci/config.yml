@@ -234,11 +234,6 @@ jobs:
               --durations 50 \
               << parameters.test-params >> \
               -o cache_dir=$CACHE_DIR
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
       - store_test_results:
           path: test-results
 
@@ -572,6 +567,11 @@ workflows:
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
 
       - test-main:
           name: test-packages-chrome
@@ -593,6 +593,11 @@ workflows:
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
 
       - test-main:
           name: test-packages-firefox
@@ -614,6 +619,11 @@ workflows:
           filters:
             tags:
               only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
 
       - test-main:
           name: test-packages-node
