@@ -1,0 +1,22 @@
+package:
+  name: sqlite3
+  version: 3.38.5
+
+source:
+  sha256: 5af07de982ba658fd91a03170c945f99c971f6955bc79df3266544373e39869c
+  url: https://www.sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
+
+requirements:
+  run:
+    - zlib
+
+build:
+  library: true
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        CPPFLAGS=-DSQLITE_OMIT_POPEN \
+        --with-zlib="${WASM_LIBRARY_DIR}/lib" \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
