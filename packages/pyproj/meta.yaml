@@ -1,0 +1,33 @@
+package:
+  name: pyproj
+  version: 3.3.1
+
+source:
+  url: https://files.pythonhosted.org/packages/e3/4d/348402c2fb0d8a8e85a88b8babc6f4efaae9692b7524aedce5fddbef3baf/pyproj-3.3.1.tar.gz
+  sha256: b3d8e14d91cc95fb3dbc03a9d0588ac58326803eefa5bbb0978d109de3304fbe
+  patches:
+    - patches/fix-build.patch
+
+requirements:
+  run:
+    - libproj
+    - certifi
+
+build:
+  script: |
+    export PROJ_VERSION=8.2.1
+    export PROJ_DIR=${WASM_LIBRARY_DIR}
+    export PROJ_INCDIR=${WASM_LIBRARY_DIR}/include
+    export PROJ_LIBDIR=${WASM_LIBRARY_DIR}/lib
+    export PROJ_WHEEL=1
+    mkdir -p pyproj/proj_dir
+    cp -r ${WASM_LIBRARY_DIR}/share pyproj/proj_dir
+test:
+  imports:
+    - pyproj
+
+about:
+  home: https://github.com/pyproj4/pyproj
+  PyPI: https://pypi.org/project/pyproj/
+  summary: Python interface to PROJ (cartographic projections and coordinate transformations library)
+  license: "License :: OSI Approved :: MIT License"
