@@ -229,11 +229,14 @@ def init_environment() -> None:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
 
     os.environ.update(get_make_environment_vars())
-    hostsitepackages = get_hostsitepackages()
-    pythonpath = [
-        hostsitepackages,
-    ]
-    os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    try:
+        hostsitepackages = get_hostsitepackages()
+        pythonpath = [
+            hostsitepackages,
+        ]
+        os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    except KeyError:
+        pass
     os.environ["BASH_ENV"] = ""
     get_unisolated_packages()
 
@@ -251,13 +254,18 @@ def get_unisolated_packages() -> list[str]:
     if "UNISOLATED_PACKAGES" in os.environ:
         return json.loads(os.environ["UNISOLATED_PACKAGES"])
     PYODIDE_ROOT = get_pyodide_root()
-    unisolated_packages = []
-    for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, check=False)
-        if config.get("build", {}).get("cross-build-env", False):
-            unisolated_packages.append(config["package"]["name"])
-    # TODO: remove setuptools_rust from this when they release the next version.
-    unisolated_packages.append("setuptools_rust")
+    unisolated_file = PYODIDE_ROOT / "unisolated.txt"
+    if unisolated_file.exists():
+        # in xbuild env, read from file
+        unisolated_packages = unisolated_file.read_text().splitlines()
+    else:
+        unisolated_packages = []
+        for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
+            config = parse_package_config(pkg, check=False)
+            if config.get("build", {}).get("cross-build-env", False):
+                unisolated_packages.append(config["package"]["name"])
+        # TODO: remove setuptools_rust from this when they release the next version.
+        unisolated_packages.append("setuptools_rust")
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 

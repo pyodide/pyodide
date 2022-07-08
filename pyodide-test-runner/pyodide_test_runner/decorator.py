@@ -5,14 +5,14 @@ from base64 import b64decode, b64encode
 from copy import deepcopy
 from typing import Any, Callable, Collection
 
-from pyodide_test_runner.utils import package_is_built as _package_is_built
+import pytest
+
+from .hook import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
+from .utils import package_is_built as _package_is_built
 
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
-
-
-import pytest
 
 
 class SeleniumType:
@@ -151,8 +151,6 @@ class run_in_pyodide:
             If True, use pytest assertion rewrites. This gives better error messages
             when an assertion fails, but requires us to load pytest.
         """
-
-        from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
 
         self._pkgs = list(packages)
         self._pytest_not_built = False

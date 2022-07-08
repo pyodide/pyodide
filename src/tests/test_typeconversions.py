@@ -2,7 +2,7 @@
 from typing import Any
 
 import pytest
-from hypothesis import given, settings, strategies
+from hypothesis import example, given, settings, strategies
 from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
@@ -15,6 +15,7 @@ from pyodide_test_runner.hypothesis import (
 
 @given(s=text())
 @settings(deadline=4000)
+@example("\ufeff")
 def test_string_conversion(selenium_module_scope, s):
     @run_in_pyodide
     def main(selenium, sbytes):
@@ -42,8 +43,42 @@ def test_string_conversion(selenium_module_scope, s):
 
 @given(s=text())
 @std_hypothesis_settings
+@example("\ufeff")
 @run_in_pyodide
 def test_string_conversion2(selenium, s):
+    from pyodide.code import run_js
+
+    run_js("self.encoder = new TextEncoder()")
+    run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
+
+    s_encoded = s.encode()
+    sjs = run_js(
+        """
+        (s_encoded) => {
+            let buf = s_encoded.getBuffer();
+            self.sjs = self.decoder.decode(buf.data);
+            buf.release();
+            return sjs
+        }
+        """
+    )(s_encoded)
+    assert sjs == s
+    assert run_js("""(spy) => spy === self.sjs""")(s)
+
+
+def blns():
+    import base64
+    import json
+
+    with open("./src/tests/blns.base64.json") as f:
+        BLNS = json.load(f)
+    for s in BLNS:
+        yield base64.b64decode(s).decode(errors="ignore")
+
+
+@pytest.mark.parametrize("s", blns())
+@run_in_pyodide
+def test_string_conversion_blns(selenium, s):
     from pyodide.code import run_js
 
     run_js("self.encoder = new TextEncoder()")

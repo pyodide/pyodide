@@ -15,12 +15,27 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "on numpy or scipy.\n"
         "Note: this is a private endpoint that should not be used outside of the Pyodide Makefile."
     )
+    parser.add_argument("--download", action="store_true", help="Download xbuild env")
     parser.add_argument("xbuild_env", type=str, nargs=1)
     return parser
 
 
-def main(args: argparse.Namespace) -> None:
-    xbuildenv_path = Path(args.xbuild_env[0])
+def download_xbuild_env(version: str, xbuildenv_path: Path) -> None:
+    from shutil import rmtree, unpack_archive
+    from tempfile import NamedTemporaryFile
+    from urllib.request import urlretrieve
+
+    rmtree(xbuildenv_path, ignore_errors=True)
+    with NamedTemporaryFile(suffix=".tar") as f:
+        urlretrieve(
+            f"http://pyodide-cache.s3-website-us-east-1.amazonaws.com/xbuildenv/{version}.tar",
+            f.name,
+        )
+        unpack_archive(f.name, xbuildenv_path)
+
+
+def install_xbuild_env(xbuildenv_path: Path) -> None:
+    xbuildenv_path = xbuildenv_path / "xbuildenv"
     pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
     host_site_packages = xbuildenv_root / Path(
@@ -42,3 +57,11 @@ def main(args: argparse.Namespace) -> None:
     shutil.copytree(
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
+
+
+def main(args: argparse.Namespace) -> None:
+    xbuildenv_path = Path(args.xbuild_env[0])
+    version = "2"
+    if args.download:
+        download_xbuild_env(version, xbuildenv_path)
+    install_xbuild_env(xbuildenv_path)

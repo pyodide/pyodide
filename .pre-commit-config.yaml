@@ -35,7 +35,7 @@ repos:
         stages: [manual]
 
   - repo: https://github.com/psf/black
-    rev: "22.3.0"
+    rev: "22.6.0"
     hooks:
       - id: black
 
@@ -68,7 +68,7 @@ repos:
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v14.0.5"
+    rev: "v14.0.6"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -101,5 +101,5 @@ repos:
     rev: "v2.1.0"
     hooks:
       - id: codespell
-        args: ["-L", "te,slowy,aray,ba,nd,classs,crate,feld"]
+        args: ["-L", "te,slowy,aray,ba,nd,classs,crate,feld,lits"]
         exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$

@@ -6,13 +6,7 @@
   # testing
   build==0.7.0
   hypothesis
-  pexpect
   pytest
   pytest-asyncio
   pytest-cov
   pytest-httpserver
-  pytest-instafail
-  pytest-rerunfailures
-  pytest-xdist
-  selenium==4.1.0
-  tblib

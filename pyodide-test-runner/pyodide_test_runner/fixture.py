@@ -1,4 +1,6 @@
 import contextlib
+import os
+from pathlib import Path
 
 import pytest
 
@@ -80,7 +82,7 @@ def selenium_common(
             f"Unknown runner or browser: {runner_type} / {request.param}"
         )
 
-    dist_dir = request.config.getoption("--dist-dir")
+    dist_dir = Path(os.getcwd(), request.config.getoption("--dist-dir"))
     runner = cls(
         server_port=server_port,
         server_hostname=server_hostname,
