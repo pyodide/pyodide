@@ -347,7 +347,6 @@ def task_test():
         ("_testmultiphase.c", "_testmultiphase.o", ""),
         ("_ctypes/_ctypes_test.c", "_ctypes_test.o", ""),
     ]
-    side_module_ldflags = os.environ["SIDE_MODULE_LDFLAGS"]
     test_module_cflags = os.environ["SIDE_MODULE_CFLAGS"] + " -I Include/ -I ."
     cpythonbuild = Path(os.environ["CPYTHONBUILD"])
     cpythonlib = Path(os.environ["CPYTHONLIB"])
@@ -358,34 +357,35 @@ def task_test():
             "task_dep": ["cpython"],
             "actions": [
                 f"cd {cpythonbuild} && emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj} {flags}",
-                f"cd {cpythonbuild} && emcc Modules/{obj} -o {lib} {side_module_ldflags}",
-                f"rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
+                f"cd {cpythonbuild} && emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
+                f"cd {cpythonbuild} && rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
             ],
-            "targets": [cpythonlib / lib],
+            "targets": [cpythonbuild / lib, cpythonlib / lib],
+            "clean": True,
         }
 
 
 def task_dist_test():
-    cpythonlib = os.environ["CPYTHONLIB"]
     test_extensions = [
-        ("_testinternalcapi.c", "-I Include/internal/ -DPy_BUILD_CORE_MODULE"),
-        ("_testcapi.c", ""),
-        ("_testbuffer.c", ""),
-        ("_testimportmultiple.c", ""),
-        ("_testmultiphase.c", ""),
-        ("_ctypes_test.c", ""),
+        "_testinternalcapi.so",
+        "_testcapi.so",
+        "_testbuffer.so",
+        "_testimportmultiple.so",
+        "_testmultiphase.so",
+        "_ctypes_test.so",
     ]
-    test_extensions = [tst[0].replace(".c", ".so") for tst in test_extensions]
+    test_extensions_str = " ".join(test_extensions)
     return {
         "task_dep": ["test"],
         "actions": [
             (
-                f"cd {cpythonlib} && tar -h --exclude=__pycache__ -cf {DIST_DIR / 'test.tar'} "
-                f"test {' '.join(test_extensions)} unittest/test sqlite3/test ctypes/test"
+                f"cd $CPYTHONLIB && tar -h --exclude=__pycache__ -cf {DIST_DIR / 'test.tar'} "
+                f"test {test_extensions_str} unittest/test sqlite3/test ctypes/test"
             ),
-            f"cd {cpythonlib} && rm {' '.join(test_extensions)}",
+            f"cd $CPYTHONLIB && rm {test_extensions_str}",
         ],
         "targets": [DIST_DIR / "test.tar"],
+        "clean": True,
     }
 
 
