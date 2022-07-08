@@ -102,13 +102,13 @@ Once installed, you can run the following simple script:
 const { loadPyodide } = require("pyodide");
 
 async function hello_python() {
-    let pyodide = await loadPyodide();
-    return pyodide.runPythonAsync("1+1");
+  let pyodide = await loadPyodide();
+  return pyodide.runPythonAsync("1+1");
 }
 
-hello_python().then(result => {
-    console.log("Python says that 1+1 =", result);
-})
+hello_python().then((result) => {
+  console.log("Python says that 1+1 =", result);
+});
 ```
 
 ```
@@ -140,11 +140,10 @@ undefined
 ### Older versions of Node.js
 
 - `Node.js` versions 14.x and 16.x: to use certain features of Pyodide you
-  need to manually install `node-fetch`, e.g. by doing `npm install
-  node-fetch`.
+  need to manually install `node-fetch`, e.g. by doing `npm install node-fetch`.
 
 - `Node.js v14.x`: you need to pass the option `--experimental-wasm-bigint`
-  when starting node.  Note that this flag is not documented by `node --help`
+  when starting node. Note that this flag is not documented by `node --help`
   and moreover, if you pass `--experimental-wasm-bigint` to node >14 it is an
   error:
 
@@ -160,7 +159,6 @@ Loaded distutils
 Python initialization complete
 Python says that 1+1= 2
 ```
-
 
 ```{eval-rst}
 .. toctree::
