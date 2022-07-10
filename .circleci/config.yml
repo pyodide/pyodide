@@ -210,9 +210,9 @@ jobs:
           at: .
 
       - run:
-        name: create xbuild environment
-        command: |
-          PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
+          name: create xbuild environment
+          command: |
+            PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
 
       - persist_to_workspace:
           root: .
