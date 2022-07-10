@@ -301,11 +301,16 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
             "--as-needed",
         ]:
             continue
-        # ignore unsupported --sysroot compile argument used in conda
-        if opt.startswith("--sysroot="):
+
+        if opt.startswith(
+            (
+                "--sysroot=",  # ignore unsupported --sysroot compile argument used in conda
+                "--version-script=",
+                "-R/",  # wasm-ld does not accept -R (runtime libraries)
+            )
+        ):
             continue
-        if opt.startswith("--version-script="):
-            continue
+
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
         return ",".join(new_link_opts)
