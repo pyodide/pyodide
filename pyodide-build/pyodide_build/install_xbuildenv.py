@@ -28,7 +28,7 @@ def download_xbuild_env(version: str, xbuildenv_path: Path) -> None:
     rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
-            f"http://pyodide-cache.s3-website-us-east-1.amazonaws.com/xbuildenv/{version}.tar",
+            f"https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2",
             f.name,
         )
         unpack_archive(f.name, xbuildenv_path)
@@ -61,7 +61,8 @@ def install_xbuild_env(xbuildenv_path: Path) -> None:
 
 def main(args: argparse.Namespace) -> None:
     xbuildenv_path = Path(args.xbuild_env[0])
-    version = "2"
+    from . import __version__
+
     if args.download:
-        download_xbuild_env(version, xbuildenv_path)
+        download_xbuild_env(__version__, xbuildenv_path)
     install_xbuild_env(xbuildenv_path)

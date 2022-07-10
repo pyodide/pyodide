@@ -201,6 +201,24 @@ jobs:
           paths:
             - .
 
+  create-xbuild-env:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: create xbuild environment
+          command: |
+            PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
   test-main:
     parameters:
       test-params:
@@ -338,10 +356,16 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
-            cp -r dist /tmp/pyodide
-            cd /tmp/
-            tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
-            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
+            mkdir -p /tmp/ghr/dist
+            cp -r dist /tmp/ghr/pyodide
+            cp -r xbuildenv /tmp/ghr/xbuildenv
+            cd /tmp/ghr
+            tar cjf dist/pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
+            tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
+            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
+              -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
+              -delete "${CIRCLE_TAG}" \
+              dist
 
       - run:
           name: Deploy to npm
@@ -602,6 +626,13 @@ workflows:
             tags:
               only: /.*/
 
+      - create-xbuild-env:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - build-pyodide-debug:
           requires:
             - build-packages
@@ -615,6 +646,7 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - create-xbuild-env
           filters:
             branches:
               ignore: /.*/
