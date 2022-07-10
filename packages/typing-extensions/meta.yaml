@@ -1,9 +1,9 @@
 package:
   name: typing-extensions
-  version: 4.2.0
+  version: 4.3.0
 source:
-  url: https://files.pythonhosted.org/packages/75/e1/932e06004039dd670c9d5e1df0cd606bf46e29a28e65d5bb28e894ea29c9/typing_extensions-4.2.0-py3-none-any.whl
-  sha256: 6657594ee297170d19f67d55c05852a874e7eb634f4f753dbd667855e07c1708
+  url: https://files.pythonhosted.org/packages/ed/d6/2afc375a8d55b8be879d6b4986d4f69f01115e795e36827fd3a40166028b/typing_extensions-4.3.0-py3-none-any.whl
+  sha256: 25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02
 
 test:
   imports:

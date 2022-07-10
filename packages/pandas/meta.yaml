@@ -1,11 +1,9 @@
 package:
   name: pandas
-  version: 1.4.2
+  version: 1.4.3
 source:
-  url: https://files.pythonhosted.org/packages/5a/ac/b3b9aa2318de52e40c26ae7b9ce6d4e9d1bcdaf5da0899a691642117cf60/pandas-1.4.2.tar.gz
-  sha256: 92bc1fc585f1463ca827b45535957815b7deb218c549b7c18402c322c7549a12
-  patches:
-    - patches/fix_json_signature.patch
+  url: https://files.pythonhosted.org/packages/f4/00/2de395c769335956b8650f990ef2a15e860be83b544c408ff95713446329/pandas-1.4.3.tar.gz
+  sha256: 2ff7788468e75917574f080cd4681b27e1a7bf36461fe968b49a87b5a54d007c
 build:
   cflags:
     -Werror=implicit-function-declaration -Werror=mismatched-parameter-types

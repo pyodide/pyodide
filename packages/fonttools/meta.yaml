@@ -1,9 +1,9 @@
 package:
   name: fonttools
-  version: 4.33.3
+  version: 4.34.4
 source:
-  url: https://files.pythonhosted.org/packages/2f/85/2f6e42fb4b537b9998835410578fb1973175b81691e9a82ab6668cf64b0b/fonttools-4.33.3-py3-none-any.whl
-  sha256: f829c579a8678fa939a1d9e9894d01941db869de44390adb49ce67055a06cc2a
+  url: https://files.pythonhosted.org/packages/ad/27/094dd5d09d3a57f7a5f27414ae5c1405bae1164922f1bb61fd8a748e8f65/fonttools-4.34.4-py3-none-any.whl
+  sha256: d73f25b283cd8033367451122aa868a23de0734757a01984e4b30b18b9050c72
 test:
   imports:
     - fontTools

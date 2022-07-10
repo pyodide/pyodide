@@ -1,15 +1,14 @@
 package:
   name: numpy
-  version: 1.23.0
+  version: 1.23.1
 
 source:
-  url: https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip
-  sha256: 425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af
+  url: https://files.pythonhosted.org/packages/13/b1/0c22aa7ca1deda4915cdec9562f839546bb252eecf6ad596eaec0592bd35/numpy-1.23.1.tar.gz
+  sha256: d748ef349bfef2e1194b59da37ed5a29c19ea8d7e6342019921ba2ba4fd8b624
 
   patches:
     - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
-    - patches/0002-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
-    - patches/0003-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0002-ENH-Fix-pointer-size-determination-for-cross-build.patch
 
 build:
   backend-flags: --disable-optimization
