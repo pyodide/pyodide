@@ -1,0 +1,109 @@
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      test-params:
+        description: "Parameters to pass to pytest"
+        type: string
+        required: true
+      runner:
+        description: "Runner parameter passed to pytest-pyodide"
+        required: false
+        type: string
+        default: "playwright"
+      runtime:
+        description: "Runtime parameter passed to pytest-pyodide"
+        required: false
+        type: string
+        default: "chrome-no-host"
+      cache-dir:
+        description: "pytest cache directory"
+        required: false
+        type: string
+        default: ""
+      artifacts-prefix-build:
+        description: "prefix for build artifacts"
+        required: false
+        type: string
+        default: "pyodide"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: :99
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ inputs.artifacts-prefix-build }}-dist
+          path: ./dist/
+
+      - name: Download pytest cache
+        if: ${{ inputs.cache-dir != '' }}
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ inputs.cache-dir }}-pytest-cache
+          path: ./.pytest_cache/
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.10.2
+          channels: conda-forge
+
+      - name: install test requirements
+        shell: bash -l {0}
+        run: |
+          pip install pytest-pyodide
+          pip install -r requirements.txt
+          pip install -e pyodide-build
+          # npm install -g node-fetch@2
+          if [ -z "${{ inputs.cache-dir }}" ]; then
+            export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
+          else
+            export CACHE_DIR=".test_cache/${{ inputs.cache-dir }}"
+          fi
+          echo "pytest cache dir: $CACHE_DIR"
+          # FIXME: playwright 1.23.0 has unknown performance issue on firefox
+          pip install "playwright<1.23.0" && python -m playwright install
+          # python -m playwright install
+
+      - name: run tests
+        env:
+          RUNTIME: ${{ inputs.runtime }}
+          RUNNER: ${{ inputs.runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh dist/
+          tools/pytest_wrapper.py \
+            --runtime="${RUNTIME}" \
+            --runner "${RUNNER}" \
+            --verbose \
+            --durations 50 \
+            --benchmark-json=benchmark-time.json \
+            --benchmark-columns=mean,min,max,stddev \
+            ${{ inputs.test-params }} \
+            -o cache_dir=${CACHE_DIR} \
+            --junitxml=test-results/core_test.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v1
+        with:
+          paths: "test-results/*.xml"
+        if: always()
+
+      - name: Upload pytest cache
+        if: ${{ inputs.cache-dir != '' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ inputs.cache-dir }}-pytest-cache
+          path: ./.test_cache/
+          retention-days: 1

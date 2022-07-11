@@ -1,29 +1,16 @@
 name: main
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+on: [push]
 
 concurrency:
-  group: main-${{ github.head_ref }}
+  group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
-        with:
-          python-version: 3.10.2
-      - uses: pre-commit/action@v2.0.3
-
   test-python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v3
         with:
@@ -49,150 +36,84 @@ jobs:
           fail_ci_if_error: false
 
   build-core:
-    runs-on: ubuntu-latest
-    env:
-      EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      CCACHE_DIR: /tmp/ccache
+    uses: ./.github/workflows/build.yml
+    with:
+      packages: core
+      artifacts-prefix-prev: ""
+      artifacts-prefix: core
+      retention-days: 30
 
-    steps:
-      - uses: actions/checkout@v2
+  build-no-numpy-dependents:
+    needs: [build-core]
+    uses: ./.github/workflows/build.yml
+    with:
+      packages: "*,no-numpy-dependents"
+      artifacts-prefix-prev: core
+      artifacts-prefix: no-numpy-dependents
+      retention-days: 30
 
-      - name: Cache ccache output
-        uses: actions/cache@v2
-        with:
-          path: |
-            /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-v20211025-
-
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: pyodide-env
-          python-version: 3.10.2
-          channels: conda-forge
-
-      - name: Check Python versions
-        shell: bash -l {0}
-        run: |
-          python --version
-          which python
-
-      - name: Install dependencies
-        shell: bash -l {0}
-        run: |
-          sudo apt install -y build-essential git
-          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
-          pip install -r requirements.txt
-
-      - name: Build emsdk
-        shell: bash -l {0}
-        run: |
-          which ccache
-
-          ccache -z
-          make -C emsdk
-          ccache -s
-
-      - name: Build Cpython
-        shell: bash -l {0}
-        run: |
-          # This is necessary to use the ccache from emsdk
-          source pyodide_env.sh
-
-          which ccache
-
-          ccache -z
-          make -C cpython
-          ccache -s
-
-      - name: build Pyodide core + numpy
-        shell: bash -l {0}
-        run: |
-          # This is necessary to use the ccache from emsdk
-          source pyodide_env.sh
-          ccache -z
-          PYODIDE_PACKAGES="core,numpy" make
-          ccache -s
-
-      - name: check-size
-        run: ls -lh dist/
-
-      - name: Store artifacts build
-        uses: actions/upload-artifact@v2
-        with:
-          name: core-build
-          path: ./dist/
-          retention-days: 60
+  build-packages:
+    needs: [build-no-numpy-dependents]
+    uses: ./.github/workflows/build.yml
+    with:
+      packages: "*"
+      artifacts-prefix-prev: no-numpy-dependents
+      artifacts-prefix: packages
+      retention-days: 30
 
   test-core:
-    runs-on: ubuntu-latest
-    env:
-      DISPLAY: :99
-
-    needs: [build-core]
     strategy:
-      fail-fast: false
       matrix:
         runner: [playwright]
-        browser: [firefox, chrome]
+        runtime: [chrome-no-host, firefox-no-host]
+      fail-fast: false
+    needs: [build-core]
+    uses: ./.github/workflows/test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      runtime: ${{ matrix.runtime }}
+      test-params: -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ --skip-passed
+      artifacts-prefix-build: core
 
-    steps:
-      - uses: actions/checkout@v2
+  test-core-webworker:
+    strategy:
+      matrix:
+        runner: [playwright]
+        runtime: [chrome-no-host, firefox-no-host]
+      fail-fast: false
+    needs: [build-core]
+    uses: ./.github/workflows/test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      runtime: ${{ matrix.runtime }}
+      test-params: src/tests/test_webworker.py --skip-passed
+      artifacts-prefix-build: core
 
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: core-build
-          path: ./dist/
+  test-no-numpy-dependents:
+    strategy:
+      matrix:
+        runner: [playwright]
+        runtime: [chrome-no-host, firefox-no-host]
+      fail-fast: false
+    needs: [build-no-numpy-dependents]
+    uses: ./.github/workflows/test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      runtime: ${{ matrix.runtime }}
+      test-params: packages/*/test*.py --skip-passed
+      cache-dir: .pytest_cache_${{ matrix.runner }}_${{ matrix.runtime }}
+      artifacts-prefix-build: no-numpy-dependents
 
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: pyodide-env
-          python-version: 3.10.2
-          channels: conda-forge
-
-      - name: install test requirements
-        shell: bash -l {0}
-        run: |
-          pip install -r requirements.txt
-          cd pyodide-build && pip install -e ".[test]" && cd ..
-          # FIXME: playwright 1.23.0 has unknown performance issue on firefox
-          pip install "playwright<1.23.0" && python -m playwright install
-
-      - name: run core tests
-        env:
-          BROWSER: ${{ matrix.browser }}
-          RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
-        run: |
-          ls -lh
-          ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ \
-            -v \
-            --runtime="${BROWSER}-no-host" \
-            --runner "${RUNNER}" \
-            --durations 50 \
-            --junitxml=test-results/core_test.xml
-
-      - name: run package tests
-        env:
-          BROWSER: ${{ matrix.browser }}
-          RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
-        run: |
-          ls -lh
-          ls -lh dist/
-          tools/pytest_wrapper.py packages/*/test* \
-            -v \
-            -k "numpy and not joblib" \
-            --runtime="${BROWSER}-no-host" \
-            --runner "${RUNNER}" \
-            --durations 50 \
-            --junitxml=test-results/packages_test.xml
-
-      - name: Test Summary
-        uses: test-summary/action@v1
-        with:
-          paths: "test-results/*.xml"
-        if: always()
+  test-numpy-dependents:
+    strategy:
+      matrix:
+        runner: [playwright]
+        runtime: [chrome-no-host, firefox-no-host]
+      fail-fast: false
+    needs: [build-packages, test-no-numpy-dependents]
+    uses: ./.github/workflows/test.yml
+    with:
+      runner: ${{ matrix.runner }}
+      runtime: ${{ matrix.runtime }}
+      test-params: packages/*/test*.py --skip-passed
+      artifacts-prefix-build: numpy-dependents

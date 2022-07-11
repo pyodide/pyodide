@@ -1,0 +1,155 @@
+name: build
+
+env:
+  EMSDK_NUM_CORES: 2
+  EMCC_CORES: 2
+  CCACHE_DIR: /tmp/ccache
+
+on:
+  workflow_call:
+    inputs:
+      packages:
+        description: "packages to be built"
+        required: true
+        type: string
+        default: "core"
+      artifacts-prefix-prev:
+        description: "prefix for artifacts for previous build"
+        type: string
+        required: false
+        default: ""
+      artifacts-prefix:
+        description: "prefix for artifacts for current build"
+        type: string
+        required: false
+        default: "pyodide"
+      retention-days:
+        description: "days to keep dist artifacts"
+        type: number
+        required: false
+        default: 1
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.10.2
+          channels: conda-forge
+
+      - name: Check Python versions
+        shell: bash -l {0}
+        run: |
+          python --version
+          which python
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          sudo apt install -y build-essential git
+          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool sqlite
+          pip install -r requirements.txt
+          make rust
+
+      - name: calculate build hash for ccache
+        shell: bash -l {0}
+        run: |
+          python -m pip install pathspec
+          python ./tools/calculate_build_cache_key.py > build_hash.txt
+          # We can't directly use packages as a cache key because it contains asterisks
+          echo "PKG_KEY=$(sha256sum ${{ inputs.packages }})" >> $GITHUB_ENV
+
+      - name: Cache ccache output
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/ccache
+          key: -v20221017-${{ hashFiles('build_hash.txt') }}-${{ env.PKG_KEY }}
+
+      - name: Download build artifact from the previous build step
+        if: ${{ inputs.artifacts-prefix-prev != '' }}
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ inputs.artifacts-prefix-prev }}-build
+          path: ./
+
+      - name: Extract build artifact from the previous build step
+        if: ${{ inputs.artifacts-prefix-prev != '' }}
+        shell: bash -l {0}
+        run: |
+          tar -xf build.tar.gz
+
+      - name: Set PYODIDE_JOBS
+        shell: bash -l {0}
+        run: |
+          echo "nproc: $(nproc)"
+          echo "PYODIDE_JOBS=$(nproc)" >> $GITHUB_ENV
+
+      - name: Build emsdk
+        if: ${{ inputs.artifacts-prefix-prev == '' }}
+        shell: bash -l {0}
+        run: |
+          which ccache
+
+          ccache -z
+          make -C emsdk
+          ccache -s
+
+      - name: Build Cpython
+        if: ${{ inputs.artifacts-prefix-prev == '' }}
+        shell: bash -l {0}
+        run: |
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+
+          which ccache
+
+          ccache -z
+          make -C cpython
+          ccache -s
+
+      - name: build Pyodide and packages
+        shell: bash -l {0}
+        run: |
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+          ccache -z
+          PYODIDE_PACKAGES="${{ inputs.packages }}" make
+          ccache -s
+
+      - name: check-size
+        shell: bash -l {0}
+        run: ls -lh dist/
+
+      - name: Clean up workspace before storing artifacts
+        shell: bash -l {0}
+        run: |
+          rm -rf cpython/{build,downloads}
+          rm -rf emsdk/emsdk/binaryen
+          cd packages && find **/build ! -name '.packaged' -type f -exec rm -f {} +
+
+      - name: Compress build artifacts
+        shell: bash -l {0}
+        run: |
+          tar -czf ${{ github.workspace }}/build.tar.gz packages cpython emsdk
+
+      - name: Store build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.artifacts-prefix }}-build
+          path: ${{ github.workspace }}/build.tar.gz
+          retention-days: 1
+
+      - name: Store dist artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.artifacts-prefix }}-dist
+          path: ${{ github.workspace }}/dist/
+          retention-days: ${{ inputs.retention-days }}
