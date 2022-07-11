@@ -143,6 +143,7 @@ jobs:
           tools/pytest_wrapper.py src packages/micropip/ \
             -v -k "${BROWSER}" \
             --runner "${RUNNER}" \
+            --durations 50 \
             --junitxml=test-results/core_test.xml
 
       - name: run package tests
@@ -156,6 +157,7 @@ jobs:
           tools/pytest_wrapper.py packages/test* packages/*/test* \
             -v -k "numpy and not joblib and ${BROWSER}" \
             --runner "${RUNNER}" \
+            --durations 50 \
             --junitxml=test-results/packages_test.xml
 
       - name: Test Summary
