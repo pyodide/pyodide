@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-import pyodide_build.buildpkg
+from pyodide_build import buildall, buildpkg
 from pyodide_build.buildpkg import get_bash_runner
 from pyodide_build.common import search_pyodide_root
 
@@ -35,9 +35,9 @@ def bash_runner(cmds):
 
 def task_package():
     def build_package(name):
-        parser = pyodide_build.buildpkg.make_parser(argparse.ArgumentParser())
+        parser = buildpkg.make_parser(argparse.ArgumentParser())
         args = parser.parse_args([name])
-        pyodide_build.buildpkg.main(args)
+        buildpkg.main(args)
 
     return {
         "actions": [(build_package,)],
@@ -280,10 +280,36 @@ def task_pyodide_py():
 
 
 def task_repodata_json():
+    def build_packages(packages):
+        parser = buildall.make_parser(argparse.ArgumentParser())
+        packages_dir = PYODIDE_ROOT / "packages"
+        args = parser.parse_args(
+            [
+                str(packages_dir),
+                str(DIST_DIR),
+                "--only",
+                packages,
+                "--n-jobs",
+                os.environ.get("PYODIDE_JOBS", "4"),
+                "--log-dir",
+                str(packages_dir / "build-logs"),
+            ]
+        )
+        buildall.main(args)
+
     return {
+        "task_dep": ["cpython"],
+        "params": [
+            {
+                "name": "packages",
+                "long": "packages",
+                "type": str,
+                "default": "core",
+            }
+        ],
         "actions": [
             'date +"[%%F %%T] Building packages..."',
-            "make -C packages",
+            (build_packages, []),
             'date +"[%%F %%T] done building packages..."',
         ],
         "targets": [DIST_DIR / "repodata.json"],
@@ -360,7 +386,7 @@ def task_test():
                 f"cd {cpythonbuild} && emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
                 f"cd {cpythonbuild} && rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
             ],
-            "targets": [cpythonbuild / lib, cpythonlib / lib],
+            "targets": [cpythonbuild / lib],
             "clean": True,
         }
 
@@ -400,7 +426,6 @@ def task_pyodide():
             "console_html",
             "distutils",
             "dist_test",
-            "repodata_json",
             "pyodide_py",
             "templates",
         ],

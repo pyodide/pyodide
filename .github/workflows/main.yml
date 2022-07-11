@@ -212,7 +212,7 @@ jobs:
       - name: build Pyodide core
         shell: bash -l {0}
         run: |
-          pyodide build pyodide
+          pyodide build pyodide --packages "min-scipy-stack"
 
       - name: check-size
         run: ls -lh dist/

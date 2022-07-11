@@ -42,8 +42,13 @@ def cpython():
 
 
 @app.command("pyodide")
-def pyodide():
+def pyodide(
+    packages: str = typer.Option("core", help="The packages to be bundled."),
+):
     """Build pyodide"""
+    DoitMain(ModuleTaskLoader(build_task)).run(
+        ["repodata_json", "--packages", packages]
+    )
     DoitMain(ModuleTaskLoader(build_task)).run(["pyodide"])
 
 
