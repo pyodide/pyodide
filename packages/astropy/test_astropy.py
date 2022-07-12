@@ -1,7 +1,6 @@
 import pytest
+from pyodide_test_runner import run_in_pyodide
 
-
-@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize(
     "package,specific_test",
     [
@@ -28,17 +27,15 @@ import pytest
         ("cosmology", "test_units.py"),
     ],
 )
-def test_astropy(selenium, package, specific_test):
-    selenium.run_js(
-        f"""await pyodide.loadPackage(['micropip','astropy']);
-        const micropip = pyodide.pyimport("micropip");
-        await micropip.install(['pytest','pytest_remotedata','pytest_doctestplus','pytest_astropy_header']);
-        pyodide.runPython(`
-            import pytest
-            import astropy
-            assert astropy.test(package='{package}',
-                                verbose=False,
-                                args="-k '{specific_test} and not thread'") == pytest.ExitCode.OK
-        `);
-        """
-    )
+@pytest.mark.asyncio
+@pytest.mark.skip_refcount_check
+@run_in_pyodide(packages=["astropy", "pytest", "micropip"])
+async def test_astropy(selenium, package, specific_test):
+    import micropip
+    import pytest
+    import astropy
+    await micropip.install(['pytest_remotedata','pytest_doctestplus','pytest_astropy_header']);
+    assert astropy.test(package=package,
+                        verbose=False,
+                        args=f"-k '{specific_test} and not thread'") == pytest.ExitCode.OK
+
