@@ -137,11 +137,14 @@ def test_interactive_console():
                 == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
             )
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 def test_top_level_await():
     from asyncio import Queue, sleep
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     q: Queue[int] = Queue()
     shell = Console(locals())
@@ -153,7 +156,7 @@ def test_top_level_await():
         await q.put(5)
         assert await fut == 5
 
-    asyncio.get_event_loop().run_until_complete(test())
+    loop.run_until_complete(test())
 
 
 @pytest.fixture
@@ -211,7 +214,7 @@ def test_persistent_redirection(safe_sys_redirections):
         assert await get_result("1+1") == 2
         assert my_stdout == "foo\nfoobar\nfoobar\n"
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
     my_stderr = ""
 
@@ -276,7 +279,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert await get_result("sys.stdout.isatty()")
         assert await get_result("sys.stderr.isatty()")
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 @pytest.mark.skip_refcount_check

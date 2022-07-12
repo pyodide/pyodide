@@ -8,10 +8,10 @@ from . import build
 def ensure_env_installed(env: Path) -> None:
     if env.exists():
         return
+    from .. import __version__
     from ..install_xbuildenv import download_xbuild_env, install_xbuild_env
 
-    version = "2"
-    download_xbuild_env(version, env)
+    download_xbuild_env(__version__, env)
     install_xbuild_env(env)
 
 

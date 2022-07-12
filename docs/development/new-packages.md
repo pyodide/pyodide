@@ -119,7 +119,7 @@ build:
 ### 2. Building the package and investigating issues
 
 Once the `meta.yaml` file is ready, build the package with the following
-commands from inside the package directory `packages/<package-name>`
+command
 
 ```sh
 python -m pyodide_build buildall --only 'package-name' packages dist
