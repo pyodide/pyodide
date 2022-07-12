@@ -20,5 +20,3 @@ def test_integrate(selenium):
         numpy.fabs(sim.t-10.0) < 1e-10
     ), "Orbit integration not working"
     return None
-
-
