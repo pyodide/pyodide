@@ -9,7 +9,7 @@ source:
 requirements:
   run:
     - numpy
-test:    
+test:
   imports:
     - rebound
 about:
