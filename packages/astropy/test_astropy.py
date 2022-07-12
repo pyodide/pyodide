@@ -1,6 +1,7 @@
 import pytest
 from pyodide_test_runner import run_in_pyodide
 
+
 @pytest.mark.parametrize(
     "package,specific_test",
     [
@@ -31,11 +32,17 @@ from pyodide_test_runner import run_in_pyodide
 @pytest.mark.skip_refcount_check
 @run_in_pyodide(packages=["astropy", "pytest", "micropip"])
 async def test_astropy(selenium, package, specific_test):
-    import micropip
-    import pytest
     import astropy
-    await micropip.install(['pytest_remotedata','pytest_doctestplus','pytest_astropy_header']);
-    assert astropy.test(package=package,
-                        verbose=False,
-                        args=f"-k '{specific_test} and not thread'") == pytest.ExitCode.OK
+    import pytest
 
+    import micropip
+
+    await micropip.install(
+        ["pytest_remotedata", "pytest_doctestplus", "pytest_astropy_header"]
+    )
+    assert (
+        astropy.test(
+            package=package, verbose=False, args=f"-k '{specific_test} and not thread'"
+        )
+        == pytest.ExitCode.OK
+    )
