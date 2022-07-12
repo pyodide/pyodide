@@ -25,3 +25,9 @@ def test_sqlite3(selenium):
     assert content[0][0] == "John"
     assert content[1][0] == "Jane"
     assert content[2][0] == "Michael"
+
+
+@run_in_pyodide
+def test_fail(selenium):
+    a = False
+    assert a, "Fail!"
