@@ -14,6 +14,7 @@ def remove_num_threads_option(args: list[str]) -> None:
             del args[i : i + 2]
             break
 
+
 def cache_dir(args: list[str]) -> None:
     """Find the name of the cache-dir in the argument list"""
     for i in range(0, len(args)):
@@ -21,6 +22,7 @@ def cache_dir(args: list[str]) -> None:
             return args[i + 1].split("=")[1]
             break
     return ".pytest_cache"
+
 
 if __name__ == "__main__":
     try:
@@ -30,7 +32,7 @@ if __name__ == "__main__":
         pass
 
     # Failed tests. Look up number of failed tests
-    with open(os.path.join(cache_dir(args),"v/cache/lastfailed")) as f:
+    with open(os.path.join(cache_dir(args), "v/cache/lastfailed")) as f:
         num_failed = sum(1 for line in f) - 2
 
     if num_failed > 9:
