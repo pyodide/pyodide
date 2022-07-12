@@ -5,7 +5,6 @@ import pytest
     "package,specific_test",
     [
         ('constants','test_'),
-        ('units','test_logarithmic.py'),
         ('units','test_physical.py'),
         ('units','test_quantity.py'),
         ('units','test_quantity_ufuncs.py'),
@@ -25,8 +24,6 @@ import pytest
         ('coordinates','test_transformations.py'),
         ('cosmology','test_base.py'),
         ('cosmology','test_lambdacdm.py'),
-        ('cosmology','test_w0cdm.py'),
-        ('cosmology','test_w0wacdm.py'),
         ('cosmology','test_units.py'),
     ]
 )
