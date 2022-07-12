@@ -6,8 +6,8 @@ from pyodide_test_runner import run_in_pyodide
     ]
 )
 def test_integrate(selenium):
-    import rebound
     import numpy
+    import rebound
 
     sim = rebound.Simulation()
     sim.add(m=1)
