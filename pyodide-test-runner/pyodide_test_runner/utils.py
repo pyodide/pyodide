@@ -57,7 +57,7 @@ def maybe_skip_test(item, dist_dir, delayed=False):
     if match:
         package_name = match.group("name")
         if not package_is_built(package_name, dist_dir) and re.match(
-            rf"test_[\w\-]+\[({browsers})\]", item.name
+            rf"test_[\w\-]+\[({browsers})[^\]]*\]", item.name
         ):
             skip_msg = f"package '{package_name}' is not built."
 
