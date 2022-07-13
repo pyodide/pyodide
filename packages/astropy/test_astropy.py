@@ -28,7 +28,6 @@ from pyodide_test_runner import run_in_pyodide
         ("cosmology", "test_units.py"),
     ],
 )
-@pytest.mark.asyncio
 @pytest.mark.skip_refcount_check
 @run_in_pyodide(packages=["astropy", "pytest", "micropip"])
 async def test_astropy(selenium, package, specific_test):
