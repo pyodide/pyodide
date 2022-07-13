@@ -165,6 +165,11 @@ jobs:
             tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
 
+      - run:
+          name: Clean up package source files
+          command: |
+            cd packages && find **/build ! -name '.packaged' -type f -exec rm -f {} +
+
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
 
