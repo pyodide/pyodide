@@ -46,7 +46,6 @@ jobs:
         with:
           files: test-results/junit.xml
           fail_ci_if_error: true
-          verbose: true
 
   build-core:
     runs-on: ubuntu-latest
