@@ -298,9 +298,8 @@ jobs:
       - run:
           name: upload coverage
           command: |
-            curl -Os https://uploader.codecov.io/latest/linux/codecov
-            chmod +x codecov
-            ./codecov
+            wget -q -o codecov https://uploader.codecov.io/latest/linux/codecov
+            bash ./codecov
 
       - store_test_results:
           path: test-results
