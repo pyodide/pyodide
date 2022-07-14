@@ -299,7 +299,7 @@ jobs:
           name: upload coverage
           command: |
             wget -q -o codecov https://uploader.codecov.io/latest/linux/codecov
-            bash ./codecov
+            bash ./codecov -f test-results/junit.xml
 
       - store_test_results:
           path: test-results
