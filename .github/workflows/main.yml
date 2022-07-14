@@ -140,7 +140,11 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ -v -k "${BROWSER}" --runner "${RUNNER}"
+          tools/pytest_wrapper.py src packages/micropip/ \
+            -v -k "${BROWSER}" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/core_test.xml
 
       - name: run package tests
         env:
@@ -150,4 +154,14 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${BROWSER}" --runner "${RUNNER}"
+          tools/pytest_wrapper.py packages/test* packages/*/test* \
+            -v -k "numpy and not joblib and ${BROWSER}" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/packages_test.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v1
+        with:
+          paths: "test-results/*.xml"
+        if: always()
