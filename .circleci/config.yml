@@ -301,7 +301,6 @@ jobs:
             wget -q -o codecov https://uploader.codecov.io/latest/linux/codecov
             chmod +x codecov
             ./codecov -v -f test-results/junit.xml
-            1+2
 
       - store_test_results:
           path: test-results
