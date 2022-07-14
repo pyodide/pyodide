@@ -1,0 +1,82 @@
+package:
+  name: gdal
+  version: 3.5.1
+
+source:
+  url: https://github.com/OSGeo/gdal/releases/download/v3.5.1/gdal-3.5.1.tar.gz
+  sha256: 7c4406ca010dc8632703a0a326f39e9db25d9f1f6ebaaeca64a963e3fac123d1
+
+requirements:
+  run:
+    - sqlite3
+    - libtiff
+    - libproj
+    - geos
+    - libwebp
+
+build:
+  library: true
+  script: |
+    mkdir -p build
+    cd build
+
+    embuilder build zlib --pic
+    embuilder build libjpeg --pic
+    embuilder build libpng --pic
+
+    export EMSCRIPTEN_SYSROOT=$(em-config CACHE)/sysroot
+    export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include
+    export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
+
+    emcmake cmake .. \
+      -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=False \
+      -DBUILD_APPS=OFF \
+      -DCMAKE_C_FLAGS="-fPIC -Wno-deprecated-declarations" \
+      -DCMAKE_CXX_FLAGS="-fPIC -Wno-deprecated-declarations" \
+      -DGDAL_USE_EXTERNAL_LIBS=OFF \
+      -DGDAL_USE_INTERNAL_LIBS=OFF \
+      \
+      -DPROJ_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.a \
+      \
+      -DGDAL_USE_ICONV=ON \
+      -DIconv_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DIconv_LIBRARY=$WASM_LIBRARY_DIR/lib/libiconv.a \
+      \
+      -DGDAL_USE_TIFF=ON \
+      -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
+      \
+      -DGDAL_USE_SQLITE3=ON \
+      -DSQLITE3_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DSQLITE3_LIBRARY=$WASM_LIBRARY_DIR/lib/libsqlite3.a \
+      \
+      -DGDAL_USE_WEBP=ON \
+      -DWEBP_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DWEBP_LIBRARY=$WASM_LIBRARY_DIR/lib/libwebp.a \
+      \
+      -DGDAL_USE_ZLIB=ON \
+      -DZLIB_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DZLIB_LIBRARY=$EMSCRIPTEN_LIB/libz.a \
+      \
+      -DGDAL_USE_ZLIB=ON \
+      -DZLIB_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DZLIB_LIBRARY=$EMSCRIPTEN_LIB/libz.a \
+      \
+      -DGDAL_USE_PNG=ON \
+      -DPNG_PNG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng.a \
+      \
+      -DGDAL_USE_JPEG=ON \
+      -DJPEG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DJPEG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libjpeg.a \
+      \
+      -DGDAL_USE_GEOTIFF_INTERNAL=ON \
+      -DGDAL_USE_QHULL_INTERNAL=ON \
+      -DGDAL_USE_LERC_INTERNAL=ON \
+      -DGDAL_USE_JSONC_INTERNAL=ON
+
+    emmake make
+    emmake make install
