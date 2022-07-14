@@ -273,38 +273,6 @@ jobs:
             npm install -g node-fetch@2
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
-  test-python:
-    # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-      - run:
-          name: install requirements
-          command: |
-            mkdir test-results
-            python3 -m pip install ./pyodide-test-runner
-            python3 -m pip install -e ./pyodide-build
-            npm install -g node-fetch@2
-      - run:
-          name: test
-          command: |
-            PYODIDE_ROOT=. pytest \
-              --junitxml=test-results/junit.xml \
-              --verbose \
-              -k 'not (chrome or firefox or node)' \
-              --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/
-      - run:
-          name: upload coverage
-          command: |
-            wget -q -o codecov https://uploader.codecov.io/latest/linux/codecov
-            chmod +x codecov
-            ./codecov -v -f test-results/junit.xml
-
-      - store_test_results:
-          path: test-results
-
   test-test-runner:
     <<: *defaults
     resource_class: medium+
@@ -474,11 +442,6 @@ workflows:
   build-and-deploy:
     jobs:
       - test-docs:
-          filters:
-            tags:
-              only: /.*/
-
-      - test-python:
           filters:
             tags:
               only: /.*/
@@ -718,7 +681,6 @@ workflows:
 
       - deploy-release:
           requires:
-            - test-python
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
@@ -730,7 +692,6 @@ workflows:
               only: /^\d+\.\d+\.\w+$/
       - deploy-dev:
           requires:
-            - test-python
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug

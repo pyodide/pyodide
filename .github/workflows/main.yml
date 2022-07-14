@@ -20,6 +20,34 @@ jobs:
           python-version: 3.10.2
       - uses: pre-commit/action@v2.0.3
 
+  test-python:
+    runs-on: ubuntu-latest
+    container: pyodide/pyodide-env:20220629-py310-chrome102-firefox100
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          mkdir test-results
+          python3 -m pip install ./pyodide-test-runner
+          python3 -m pip install -e ./pyodide-build
+          npm install -g node-fetch@2
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          PYODIDE_ROOT=. pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              -k 'not (chrome or firefox or node)' \
+              --cov=pyodide_build --cov=pyodide \
+              src pyodide-build packages/micropip/
+      - uses: codecov/codecov-action@v3
+        with:
+          - files: test-results/junit.xml
+          - fail_ci_if_error: true
+          - verbose: true
+
   build-core:
     runs-on: ubuntu-latest
     env:
