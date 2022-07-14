@@ -280,18 +280,27 @@ jobs:
     steps:
       - checkout
       - run:
-          name: test
+          name: install requirements
           command: |
             mkdir test-results
             python3 -m pip install ./pyodide-test-runner
             python3 -m pip install -e ./pyodide-build
             npm install -g node-fetch@2
+      - run:
+          name: test
+          command: |
             PYODIDE_ROOT=. pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
               -k 'not (chrome or firefox or node)' \
               --cov=pyodide_build --cov=pyodide \
               src pyodide-build packages/micropip/
+      - run:
+          name: upload coverage
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov
 
       - store_test_results:
           path: test-results
