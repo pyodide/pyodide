@@ -44,7 +44,6 @@ jobs:
               src pyodide-build packages/micropip/
       - uses: codecov/codecov-action@v3
         with:
-          files: test-results/junit.xml
           fail_ci_if_error: true
 
   build-core:
