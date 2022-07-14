@@ -208,7 +208,8 @@ substitutions:
   svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
   shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`,
-  pytest-benchmark {pr}`2799`, termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`
+  pytest-benchmark {pr}`2799`, termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
+  rebound {pr}`2868`
 
 ### Miscellaneous
 
