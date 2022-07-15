@@ -281,15 +281,25 @@ jobs:
       # https://blog.bytesguy.com/enabling-remote-automation-in-safari-14
       - macos/add-safari-permissions
       - run:
-          name: test-macos
+          name: install miniforge
           command: |
             curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
             bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
             ~/miniforge3/bin/conda create -n pyodide python=3.10 -y
-            # TODO: activate the environment
-            ~/miniforge3/envs/pyodide/bin/python -m pip install -r requirements.txt
-            ~/miniforge3/envs/pyodide/bin/python -m pip install ./pyodide-test-runner
-            ~/miniforge3/envs/pyodide/bin/python tools/pytest_wrapper.py \
+      - run:
+          name: install dependencies
+          command: |
+            export PATH="$HOME/miniforge3/bin:$PATH"
+            conda create -n pyodide python=3.10 -y
+            source activate pyodide
+            python -m pip install -r requirements.txt
+            python -m pip install ./pyodide-test-runner
+      - run:
+          name: test safari
+          command: |
+            export PATH="$HOME/miniforge3/bin:$PATH"
+            source activate pyodide
+            python tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
@@ -580,7 +590,7 @@ workflows:
 
       - test-main-macos:
           name: test-core-safari
-          test-params: -k safari src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-test-runner
+          test-params: -k safari src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
