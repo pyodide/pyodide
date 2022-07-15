@@ -22,9 +22,12 @@ jobs:
 
   test-python:
     runs-on: ubuntu-latest
-    container: pyodide/pyodide-env:20220629-py310-chrome102-firefox100
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.10.2
 
       - name: Install requirements
         shell: bash -l {0}
@@ -32,7 +35,6 @@ jobs:
           mkdir test-results
           python3 -m pip install ./pyodide-test-runner
           python3 -m pip install -e ./pyodide-build
-          npm install -g node-fetch@2
       - name: Run tests
         shell: bash -l {0}
         run: |
