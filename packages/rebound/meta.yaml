@@ -1,0 +1,19 @@
+package:
+  name: rebound
+  version: 3.19.4
+build:
+  exports: requested
+source:
+  url: https://files.pythonhosted.org/packages/78/37/95ab84dfb72a37d78420ffa1ee087dfbb6f1098117435e2191f2deff9067/rebound-3.19.4.tar.gz
+  sha256: b705235c6619b4be5368faaa07a865e6d44f9856b9b31721d1032ebe0f2199ec
+requirements:
+  run:
+    - numpy
+test:
+  imports:
+    - rebound
+about:
+  home: https://github.com/hannorein/rebound/
+  PyPI: https://pypi.org/project/rebound
+  summary: An open-source multi-purpose N-body code
+  license: GPL
