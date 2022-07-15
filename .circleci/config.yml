@@ -719,6 +719,8 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
+          context:
+            - s3-deployment
       - deploy-dev:
           requires:
             - test-python
@@ -728,3 +730,5 @@ workflows:
           filters:
             branches:
               only: main
+          context:
+            - s3-deployment
