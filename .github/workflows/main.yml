@@ -35,6 +35,7 @@ jobs:
           mkdir test-results
           python3 -m pip install ./pyodide-test-runner
           python3 -m pip install -e ./pyodide-build
+          python3 -m pip install pytest-cov
       - name: Run tests
         shell: bash -l {0}
         run: |
