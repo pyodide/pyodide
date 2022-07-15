@@ -17,6 +17,7 @@ export let nodeFsPromisesMod: any;
 declare var globalThis: {
   importScripts: (url: string) => void;
   document?: any;
+  fetch?: any;
 };
 
 /**
@@ -31,8 +32,12 @@ export async function initNodeModules() {
   // @ts-ignore
   nodePathMod = (await import("path")).default;
   nodeFsPromisesMod = await import("fs/promises");
-  // @ts-ignore
-  nodeFetch = (await import("node-fetch")).default;
+  if (globalThis.fetch) {
+    nodeFetch = fetch;
+  } else {
+    // @ts-ignore
+    nodeFetch = (await import("node-fetch")).default;
+  }
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   if (typeof require !== "undefined") {
@@ -129,15 +134,15 @@ async function browser_loadBinaryFile(
 }
 
 /** @private */
-export let _loadBinaryFile: (
+export let loadBinaryFile: (
   indexURL: string,
   path: string,
   file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
-  _loadBinaryFile = node_loadBinaryFile;
+  loadBinaryFile = node_loadBinaryFile;
 } else {
-  _loadBinaryFile = browser_loadBinaryFile;
+  loadBinaryFile = browser_loadBinaryFile;
 }
 
 /**

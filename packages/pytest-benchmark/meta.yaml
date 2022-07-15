@@ -1,0 +1,18 @@
+package:
+  name: pytest-benchmark
+  version: 3.4.1
+source:
+  url: https://files.pythonhosted.org/packages/32/6a/bd6037a4e44b47085c8df9689921ca8d5669b3dbb0ecc3a77f8806cf67cc/pytest-benchmark-3.4.1.tar.gz
+  sha256: 40e263f912de5a81d891619032983557d62a3d85843f9a9f30b98baea0cd7b47
+  patches:
+    - patches/0001-Remove-cpuinfo.patch
+test:
+  imports:
+    - pytest_benchmark
+about:
+  home: https://github.com/ionelmc/pytest-benchmark
+  PyPI: https://pypi.org/project/pytest-benchmark
+  summary:
+    A ``pytest`` fixture for benchmarking code. It will group the tests into
+    rounds that are calibrated to the chosen timer.
+  license: BSD-2-Clause

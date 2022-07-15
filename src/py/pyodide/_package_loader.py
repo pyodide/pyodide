@@ -8,14 +8,14 @@ from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Iterable, Literal
+from typing import IO, Any, Iterable, Literal
 from zipfile import ZipFile
 
 from ._core import IN_BROWSER, JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 STD_LIB = Path(sysconfig.get_path("stdlib"))
-TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
+TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
@@ -89,7 +89,9 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     return info_dir
 
 
-def make_whlfile(*args, owner=None, group=None, **kwargs):
+def make_whlfile(
+    *args: Any, owner: int | None = None, group: int | None = None, **kwargs: Any
+) -> str:
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
@@ -116,7 +118,7 @@ def unpack_buffer(
     *,
     filename: str = "",
     format: str | None = None,
-    target: Literal["site", "lib"] | None = None,
+    target: Literal["site", "lib", "dynlib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
     installer: str | None = None,

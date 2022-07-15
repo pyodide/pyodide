@@ -1,28 +1,18 @@
 package:
   name: numpy
-  version: 1.22.3
+  version: 1.23.0
 
 source:
-  url: https://files.pythonhosted.org/packages/64/4a/b008d1f8a7b9f5206ecf70a53f84e654707e7616a771d84c05151a4713e9/numpy-1.22.3.zip
-  sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
+  url: https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip
+  sha256: 425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af
 
   patches:
-    - patches/0001-disable-maybe-uninitialized.patch
-    - patches/0002-disable-optimization.patch
-    - patches/0003-dont-include-execinfo.patch
-    - patches/0004-Fix-ieee754.patch
-    - patches/0005-fix-longdouble.patch
-    - patches/0006-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
-    - patches/0007-BUG-Fix-the-return-type-of-random_float_fill.patch
-    - patches/0008-fix-static-init-of-nditer-pywrap.patch
-    - patches/0009-init-alloc-cache.patch
-    - patches/0010-make-int-return-values.patch
-    - patches/0011-not-build-lapack-lite-as-64-bit.patch
-    - patches/0012-use-local-blas-lapack.patch
-    - patches/0013-fix-invalid-asm-instruction.patch
-    - patches/0014-disable-svml.patch
+    - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
+    - patches/0002-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
+    - patches/0003-ENH-Fix-pointer-size-determination-for-cross-build.patch
 
 build:
+  backend-flags: --disable-optimization
   cflags: |
     -Wno-return-type
   cross-build-env: true

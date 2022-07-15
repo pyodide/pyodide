@@ -5,14 +5,14 @@ from base64 import b64decode, b64encode
 from copy import deepcopy
 from typing import Any, Callable, Collection
 
-from pyodide_test_runner.utils import package_is_built as _package_is_built
+import pytest
+
+from .hook import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
+from .utils import package_is_built as _package_is_built
 
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
-
-
-import pytest
 
 
 class SeleniumType:
@@ -74,11 +74,14 @@ def _create_outer_test_function(
         name=node.name, args=node_args, body=[], lineno=1, decorator_list=[]
     )
 
+    run_test_id = "run-test-not-valid-identifier"
+
     # Make onwards call with two args:
     # 1. <selenium_arg_name>
     # 2. all other arguments in a tuple
     func_body = ast.parse("return run_test(selenium_arg_name, (arg1, arg2, ...))").body
     onwards_call = func_body[0].value
+    onwards_call.func = ast.Name(id=run_test_id, ctx=ast.Load())
     onwards_call.args[0].id = selenium_arg_name  # Set variable name
     onwards_call.args[1].elts = [  # Set tuple elements
         ast.Name(id=arg.arg, ctx=ast.Load()) for arg in node_args.args[1:]
@@ -105,7 +108,7 @@ def _create_outer_test_function(
 
     # Need to give our code access to the actual "run_test" object which it
     # invokes.
-    globs = {"run_test": run_test}
+    globs = {run_test_id: run_test}
     exec(co, globs)
 
     return globs[node.name]
@@ -148,8 +151,6 @@ class run_in_pyodide:
             If True, use pytest assertion rewrites. This gives better error messages
             when an assertion fails, but requires us to load pytest.
         """
-
-        from conftest import ORIGINAL_MODULE_ASTS, REWRITTEN_MODULE_ASTS
 
         self._pkgs = list(packages)
         self._pytest_not_built = False
@@ -251,11 +252,16 @@ class run_in_pyodide:
             ):
                 nodes.append(node)
 
+            if (
+                node.end_lineno
+                and node.end_lineno > func_line_no
+                and node.lineno < func_line_no
+            ):
+                it = iter(node.body)
+                continue
+
             # We also want the function definition for the current test
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            if node.end_lineno > func_line_no and node.lineno < func_line_no:
-                it = iter(node.body)
                 continue
 
             if node.lineno < func_line_no:

@@ -1,13 +1,12 @@
-import contextlib
 import os
 import shutil
 import sys
 import traceback
 from itertools import chain
 from pathlib import Path
-from typing import Generator, Mapping
+from typing import Mapping
 
-from build import BuildBackendException, ProjectBuilder
+from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
 from build.__main__ import (
     _STYLES,
     _error,
@@ -18,7 +17,12 @@ from build.__main__ import (
 from build.env import IsolatedEnv
 from packaging.requirements import Requirement
 
-from .common import get_hostsitepackages, get_pyversion, get_unisolated_packages
+from .common import (
+    get_hostsitepackages,
+    get_pyversion,
+    get_unisolated_packages,
+    replace_env,
+)
 
 
 def symlink_unisolated_packages(env: IsolatedEnv) -> None:
@@ -48,18 +52,6 @@ def remove_unisolated_requirements(requires: set[str]) -> set[str]:
     return requires
 
 
-@contextlib.contextmanager
-def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
-    old_environ = dict(os.environ)
-    os.environ.clear()
-    os.environ.update(build_env)
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(old_environ)
-
-
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     env.install(remove_unisolated_requirements(reqs))
     # Some packages (numcodecs) don't declare cython as a build dependency and
@@ -74,6 +66,7 @@ def _build_in_isolated_env(
     builder: ProjectBuilder,
     outdir: str,
     distribution: str,
+    config_settings: ConfigSettingsType,
 ) -> str:
     # For debugging: The following line disables removal of the isolated venv.
     # It will be left in the /tmp folder and can be inspected or entered as
@@ -87,7 +80,7 @@ def _build_in_isolated_env(
         install_reqs(env, builder.build_system_requires)
         installed_requires_for_build = False
         try:
-            build_reqs = builder.get_requires_for_build(distribution)
+            build_reqs = builder.get_requires_for_build(distribution, config_settings)
         except BuildBackendException:
             pass
         else:
@@ -96,19 +89,38 @@ def _build_in_isolated_env(
 
         with replace_env(build_env):
             if not installed_requires_for_build:
-                install_reqs(env, builder.get_requires_for_build(distribution))
-            return builder.build(distribution, outdir, {})
+                install_reqs(
+                    env, builder.get_requires_for_build(distribution, config_settings)
+                )
+            return builder.build(distribution, outdir, config_settings)
 
 
-def build(build_env: Mapping[str, str]) -> None:
+def parse_backend_flags(backend_flags: str) -> ConfigSettingsType:
+    config_settings: dict[str, str | list[str]] = {}
+    for arg in backend_flags.split():
+        setting, _, value = arg.partition("=")
+        if setting not in config_settings:
+            config_settings[setting] = value
+            continue
+
+        cur_value = config_settings[setting]
+        if isinstance(cur_value, str):
+            config_settings[setting] = [cur_value, value]
+        else:
+            cur_value.append(value)
+    return config_settings
+
+
+def build(build_env: Mapping[str, str], backend_flags: str) -> None:
     srcdir = Path.cwd()
     outdir = srcdir / "dist"
     builder = _ProjectBuilder(str(srcdir))
     distribution = "wheel"
+    config_settings = parse_backend_flags(backend_flags)
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(
-                build_env, builder, str(outdir), distribution
+                build_env, builder, str(outdir), distribution, config_settings
             )
             print("{bold}{green}Successfully built {}{reset}".format(built, **_STYLES))
     except Exception as e:  # pragma: no cover

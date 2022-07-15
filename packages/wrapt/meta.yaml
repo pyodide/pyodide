@@ -1,9 +1,9 @@
 package:
   name: wrapt
-  version: 1.14.0
+  version: 1.14.1
 source:
-  url: https://files.pythonhosted.org/packages/c7/b4/3a937c7f8ee4751b38274c8542e02f42ebf3e080f1344c4a2aff6416630e/wrapt-1.14.0.tar.gz
-  sha256: 8323a43bd9c91f62bb7d4be74cc9ff10090e7ef820e27bfe8815c57e68261311
+  url: https://files.pythonhosted.org/packages/11/eb/e06e77394d6cf09977d92bff310cb0392930c08a338f99af6066a5a98f92/wrapt-1.14.1.tar.gz
+  sha256: 380a85cf89e0e69b7cfbe2ea9f765f004ff419f34194018a6827ac0e3edfed4d
 test:
   imports:
     - wrapt

@@ -1,3 +1,4 @@
+import subprocess
 from dataclasses import dataclass
 from typing import Any
 
@@ -5,7 +6,7 @@ import pytest
 
 from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
-from pyodide_build.pywasmcross import environment_substitute_args
+from pyodide_build.pywasmcross import calculate_exports, environment_substitute_args
 
 
 @dataclass
@@ -15,9 +16,9 @@ class BuildArgs:
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
-    replace_libs: str = ""
     target_install_dir: str = ""
     pythoninclude: str = "python/include"
+    exports: str = "whole_archive"
 
 
 def _args_wrapper(func):
@@ -91,7 +92,6 @@ def test_handle_command():
         cflags="",
         cxxflags="",
         ldflags="-lm",
-        replace_libs="",
         target_install_dir="",
     )
     assert (
@@ -99,13 +99,10 @@ def test_handle_command():
         == "emcc -lm -c test.o -o test.so"
     )
 
-    # check library replacement and removal of double libraries
-    args = BuildArgs(
-        replace_libs="bob=fred",
-    )
+    # Test that repeated libraries are removed
     assert (
-        generate_args("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
-        == "emcc test.o -lfred -ljim -o test.so"
+        generate_args("gcc -shared test.o -lbob -ljim -ljim -lbob -o test.so", args)
+        == "emcc test.o -lbob -ljim -o test.so"
     )
 
 
@@ -134,7 +131,6 @@ def test_handle_command_ldflags():
 def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
-
     args = BuildArgs(**{flag_name: "-Oz"})
     assert (
         generate_args(f"gcc -O3 -c test.{in_ext} -o test.{out_ext}", args, True)
@@ -175,12 +171,49 @@ def test_environment_var_substitution(monkeypatch):
             "ldflags": '"-l$(PYODIDE_BASE)"',
             "cxxflags": "$(BOB)",
             "cflags": "$(FRED)",
-            "replace_libs": "$(JIM)",
         }
     )
     assert (
         args["cflags"] == "Frederick F. Freddertson Esq."
         and args["cxxflags"] == "Robert Mc Roberts"
         and args["ldflags"] == '"-lpyodide_build_dir"'
-        and args["replace_libs"] == "James Ignatius Morrison:Jimmy"
     )
+
+
+def test_exports_node(tmp_path):
+    template = """
+        int l();
+
+        __attribute__((visibility("hidden")))
+        int f%s() {
+            return l();
+        }
+
+        __attribute__ ((visibility ("default")))
+        int g%s() {
+            return l();
+        }
+
+        int h%s(){
+            return l();
+        }
+        """
+    (tmp_path / "f1.c").write_text(template % (1, 1, 1))
+    (tmp_path / "f2.c").write_text(template % (2, 2, 2))
+    subprocess.run(["emcc", "-c", tmp_path / "f1.c", "-o", tmp_path / "f1.o", "-fPIC"])
+    subprocess.run(["emcc", "-c", tmp_path / "f2.c", "-o", tmp_path / "f2.o", "-fPIC"])
+    assert set(calculate_exports([str(tmp_path / "f1.o")], True)) == {"g1", "h1"}
+    assert set(
+        calculate_exports([str(tmp_path / "f1.o"), str(tmp_path / "f2.o")], True)
+    ) == {
+        "g1",
+        "h1",
+        "g2",
+        "h2",
+    }
+    # Currently if the object file contains bitcode we can't tell what the
+    # symbol visibility is.
+    subprocess.run(
+        ["emcc", "-c", tmp_path / "f1.c", "-o", tmp_path / "f1.o", "-fPIC", "-flto"]
+    )
+    assert set(calculate_exports([str(tmp_path / "f1.o")], True)) == {"f1", "g1", "h1"}

@@ -45,8 +45,8 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        ROOT / "pyodide-build/setup.cfg",
-        build_version_pattern("version = {python_version}"),
+        ROOT / "pyodide-build/pyodide_build/__init__.py",
+        pattern=build_version_pattern('__version__ = "{python_version}"'),
         prerelease=True,
     ),
     Target(
@@ -62,6 +62,11 @@ PYTHON_TARGETS = [
     Target(
         ROOT / "docs/project/about.md",
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
+        prerelease=False,
+    ),
+    Target(
+        ROOT / "pyodide-test-runner/setup.cfg",
+        build_version_pattern("version = {python_version}"),
         prerelease=False,
     ),
 ]
@@ -214,8 +219,8 @@ def main():
     if args.dry_run:
         return
 
-    for file, content in update_queue:
-        file.write_text(content)
+    for target, content in update_queue:
+        target.file.write_text(content)
 
 
 if __name__ == "__main__":

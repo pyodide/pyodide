@@ -1,9 +1,9 @@
 package:
   name: xgboost
-  version: 1.6.0
+  version: 1.6.1
 source:
-  url: https://files.pythonhosted.org/packages/77/89/92b399140a7688443fc182b54240822c903e906121d63446eb2f84350e99/xgboost-1.6.0.tar.gz
-  sha256: 9c944c2495cb426b8a365021565755c39ee0b53156cf5e53a4346bdad2e3b734
+  url: https://files.pythonhosted.org/packages/0e/8c/19309bcaf9a88b0bab34b88935925153f3f3f646163acaae9aa148cf72bb/xgboost-1.6.1.tar.gz
+  sha256: 24072028656f3428e7b8aabf77340ece057f273e41f7f85d67ccaefb7454bb18
   patches:
     - patches/0001-Add-missing-template-type.patch
     - patches/0002-Add-library-loading-path.patch
@@ -16,6 +16,9 @@ build:
   script: |
     # export VERBOSE=1
     export CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/xgboost/cmake/Toolchain.cmake
+  # xgboost uses dlsym so we need to export more than just PyInit_xgboost.
+  # We can't currently use "explicit" because there are too many exports.
+  exports: "whole_archive"
 requirements:
   run:
     - numpy

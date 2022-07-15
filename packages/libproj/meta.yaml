@@ -1,0 +1,32 @@
+package:
+  name: libproj
+  version: 8.2.1
+
+source:
+  sha256: 76ed3d0c3a348a6693dfae535e5658bbfd47f71cb7ff7eb96d9f12f7e068b1cf
+  url: https://download.osgeo.org/proj/proj-8.2.1.tar.gz
+
+requirements:
+  run:
+    - sqlite3
+    - libtiff
+
+build:
+  library: true
+  script: |
+    mkdir -p build;
+    cd build \
+        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
+        -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DENABLE_CURL=OFF \
+        -DBUILD_APPS=OFF \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DBUILD_TESTING=OFF \
+        -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+        -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
+        -DSQLITE3_LIBRARY=${WASM_LIBRARY_DIR}/lib/libsqlite3.a \
+        -DSQLITE3_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
+        -DCMAKE_C_FLAGS="-fPIC" \
+        -DCMAKE_CXX_FLAGS="-fPIC";
+    emmake make -j ${PYODIDE_JOBS:-3} install;

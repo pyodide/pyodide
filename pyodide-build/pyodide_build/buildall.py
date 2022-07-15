@@ -18,7 +18,7 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any
+from typing import Any, Iterable
 
 from . import common
 from .buildpkg import needs_rebuild
@@ -27,7 +27,7 @@ from .io import parse_package_config
 
 
 class BuildError(Exception):
-    def __init__(self, returncode):
+    def __init__(self, returncode: int) -> None:
         self.returncode = returncode
         super().__init__()
 
@@ -39,6 +39,7 @@ class BasePackage:
     name: str
     version: str
     disabled: bool
+    cpython_dynlib: bool
     meta: dict[str, Any]
     library: bool
     shared_library: bool
@@ -68,6 +69,12 @@ class BasePackage:
 
     def build(self, outputdir: Path, args: Any) -> None:
         raise NotImplementedError()
+
+    def wheel_path(self) -> Path:
+        raise NotImplementedError()
+
+    def tests_path(self) -> Path | None:
+        return None
 
 
 @dataclasses.dataclass
@@ -109,6 +116,7 @@ class Package(BasePackage):
         self.name = self.meta["package"]["name"]
         self.version = self.meta["package"]["version"]
         self.disabled = self.meta["package"].get("_disabled", False)
+        self.cpython_dynlib = self.meta["package"].get("_cpython_dynlib", False)
         self.meta["build"] = self.meta.get("build", {})
         self.meta["requirements"] = self.meta.get("requirements", {})
 
@@ -428,7 +436,7 @@ def build_from_graph(
     # Using dict keys for insertion order preservation
     package_set: dict[str, None] = {}
 
-    def builder(n):
+    def builder(n: int) -> None:
         nonlocal queue_idx
         while True:
             pkg = build_queue.get()[1]
@@ -495,25 +503,11 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def generate_packages_json(
+def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
-) -> dict[str, dict[str, Any]]:
-    """Generate the package.json file"""
-
-    import sys
-
-    sys.path.append(str(common.get_pyodide_root() / "src/py"))
-    from pyodide import __version__
-
-    # Build package.json data.
-    [platform, _, arch] = common.platform().rpartition("_")
-    package_data: dict[str, dict[str, Any]] = {
-        "info": {"arch": arch, "platform": platform, "version": __version__},
-        "packages": {},
-    }
-
+) -> dict[str, Any]:
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
-
+    packages: dict[str, Any] = {}
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
             continue
@@ -528,15 +522,17 @@ def generate_packages_json(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
+            pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
+
         pkg_entry["depends"] = [
             x.lower() for x in pkg.dependencies if x not in libraries
         ]
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
-        package_data["packages"][name.lower()] = pkg_entry
+        packages[name.lower()] = pkg_entry
 
         if pkg.unvendored_tests:
-            package_data["packages"][name.lower()]["unvendored_tests"] = True
+            packages[name.lower()]["unvendored_tests"] = True
 
             # Create the test package if necessary
             pkg_entry = {
@@ -550,20 +546,43 @@ def generate_packages_json(
                     Path(output_dir, pkg.unvendored_tests.name)
                 ),
             }
-            package_data["packages"][name.lower() + "-tests"] = pkg_entry
+            packages[name.lower() + "-tests"] = pkg_entry
 
     # Workaround for circular dependency between soupsieve and beautifulsoup4
     # TODO: FIXME!!
-    if "soupsieve" in package_data["packages"]:
-        package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")
+    if "soupsieve" in packages:
+        packages["soupsieve"]["depends"].append("beautifulsoup4")
 
-    # re-order packages by name
-    package_data["packages"] = dict(sorted(package_data["packages"].items()))
+    # sort packages by name
+    packages = dict(sorted(packages.items()))
+    return packages
 
-    return package_data
+
+def generate_repodata(
+    output_dir: Path, pkg_map: dict[str, BasePackage]
+) -> dict[str, dict[str, Any]]:
+    """Generate the package.json file"""
+
+    import sys
+
+    sys.path.append(str(common.get_pyodide_root() / "src/py"))
+    from pyodide import __version__
+
+    # Build package.json data.
+    [platform, _, arch] = common.platform().rpartition("_")
+    info = {
+        "arch": arch,
+        "platform": platform,
+        "version": __version__,
+        "python": sys.version.partition(" ")[0],
+    }
+    packages = generate_packagedata(output_dir, pkg_map)
+    return dict(info=info, packages=packages)
 
 
-def copy_packages_to_dist_dir(packages, output_dir):
+def copy_packages_to_dist_dir(
+    packages: Iterable[BasePackage], output_dir: Path
+) -> None:
     for pkg in packages:
         try:
             shutil.copy(pkg.wheel_path(), output_dir)
@@ -599,9 +618,9 @@ def build_packages(
         pkg.unvendored_tests = pkg.tests_path()
 
     copy_packages_to_dist_dir(pkg_map.values(), output_dir)
-    package_data = generate_packages_json(output_dir, pkg_map)
+    package_data = generate_repodata(output_dir, pkg_map)
 
-    with open(output_dir / "packages.json", "w") as fd:
+    with open(output_dir / "repodata.json", "w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 
@@ -694,7 +713,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
     outputdir.mkdir(exist_ok=True)

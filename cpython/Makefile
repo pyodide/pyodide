@@ -5,8 +5,8 @@ ROOT=$(abspath .)
 
 PYTHON_CFLAGS=$(CFLAGS_BASE)
 
-BUILD=$(ROOT)/build/Python-$(PYVERSION)
-INSTALL=$(ROOT)/installs/python-$(PYVERSION)
+BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
+INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
@@ -26,7 +26,7 @@ BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_TAG=2022-04-03
+LIBFFI_TAG=2022-06-23
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -46,8 +46,8 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
 	PYTHONPATH=$(PYBUILDDIR) python adjust_sysconfig.py
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
-	mkdir -p $(INSTALL)/sysconfigdata/
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/sysconfigdata/
+	mkdir -p $(SYSCONFIGDATA_DIR)
+	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
 	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
