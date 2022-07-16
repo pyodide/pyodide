@@ -89,3 +89,26 @@ def pytest_pycollect_makemodule(module_path: Path, path: Any, parent: Any) -> No
     rewrite_asserts(tree2, source, strfn, REWRITE_CONFIG)
     REWRITTEN_MODULE_ASTS[strfn] = tree2
     orig_pytest_pycollect_makemodule(module_path, parent)
+
+
+def pytest_collection_modifyitems(session, config, items):
+    """Run all Safari standalone tests first
+
+    Since Safari doesn't support more than one simultaneous session, we run all
+    selenium_standalone Safari tests first. We preserve the order of other
+    tests.
+    """
+    OFFSET = 10000
+
+    counter = [0]
+
+    def _get_item_position(item):
+        counter[0] += 1
+        if (
+            item.keywords._markers.get("safari")
+            and "selenium_standalone" in item._request.fixturenames
+        ):
+            return counter[0] - OFFSET
+        return counter[0]
+
+    items[:] = sorted(items, key=_get_item_position)
