@@ -74,7 +74,7 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
 from sys import version_info
 pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/site-packages/")
+shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/")
 del shutil
 import importlib
 importlib.invalidate_caches()
@@ -192,6 +192,9 @@ export type ConfigType = {
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
+  args: string[];
+  _node_mounts?: { [src: string]: string };
+  _working_directory?: string;
 };
 
 /**
@@ -250,6 +253,9 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
+    args?: string[];
+    _node_mounts?: { [src: string]: string };
+    _working_directory?: string;
   } = {}
 ): Promise<PyodideInterface> {
   if (!options.indexURL) {
@@ -265,6 +271,7 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
     lockFileURL: options.indexURL! + "repodata.json",
+    args: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   await initNodeModules();
@@ -274,6 +281,21 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.preRun.push(() => {
+    const _node_mounts = options._node_mounts;
+    if (_node_mounts) {
+      for (let [mountSrc, mountTarget] of Object.entries(_node_mounts)) {
+        Module.FS.mkdirTree(mountSrc);
+        Module.FS.mount(Module.NODEFS, { root: mountSrc }, mountTarget);
+      }
+    }
+    const _working_directory = options._working_directory;
+    if (_working_directory) {
+      Module.FS.chdir(_working_directory);
+    }
+  });
+
+  Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
