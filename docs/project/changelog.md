@@ -224,6 +224,7 @@ substitutions:
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
   decorator can now be accessed through `pyodide_test_runner`.
   {pr}`2418`
+- {{ Enhancement }} The core test suite is now run in Safari {pr}`2578`.
 
 ## Version 0.20.0
 

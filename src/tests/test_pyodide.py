@@ -732,6 +732,7 @@ def test_restore_state(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
     assert selenium_standalone.run_js(

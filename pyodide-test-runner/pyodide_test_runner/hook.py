@@ -1,4 +1,5 @@
 import ast
+import re
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -105,7 +106,7 @@ def pytest_collection_modifyitems(session, config, items):
     def _get_item_position(item):
         counter[0] += 1
         if (
-            item.keywords._markers.get("safari")
+            any([re.match(r"^safari[\-$]", el) for el in item.keywords._markers.keys()])
             and "selenium_standalone" in item._request.fixturenames
         ):
             return counter[0] - OFFSET
