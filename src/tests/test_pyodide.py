@@ -823,6 +823,7 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not exactly the same on Safari")
 def test_js_stackframes(selenium):
     res = selenium.run_js(
         """
