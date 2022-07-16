@@ -99,9 +99,7 @@ To build on MacOS, you need:
 - cmake (`brew install cmake`)
 - pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
-- autoconf (`brew install autoconf`)
-- automake (`brew install automake`)
-- libtool (`brew install libtool`)
+- autoconf, automaker & libtool (`brew install autoconf automaker libtool`)
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from
   the root directory (`sudo ./tools/buildf2c`)
