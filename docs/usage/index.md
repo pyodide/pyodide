@@ -81,14 +81,14 @@ To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <us
 
 ```{note}
 The following instructions have been tested with Node.js 18.5.0. To use
-Pyodide with older versions of node, you might need special command line
-instructions, see below.
+Pyodide with older versions of Node, you might need to use  additional command line
+arguments, see below.
 ```
 
 It is now possible to install the
 [Pyodide npm package](https://www.npmjs.com/package/pyodide) in Node.js. To
-follow these instructions you need at least pyodide 0.21.0, which at the
-moment of writing has not been released yet. You can explicity ask npm to use
+follow these instructions you need at least Pyodide 0.21.0.
+You can explicitly ask npm to use
 the alpha version:
 
 ```
@@ -137,13 +137,13 @@ undefined
 2
 ```
 
-### Older versions of Node.js
+### Node.js versions <0.17
 
 - `Node.js` versions 14.x and 16.x: to use certain features of Pyodide you
   need to manually install `node-fetch`, e.g. by doing `npm install node-fetch`.
 
 - `Node.js v14.x`: you need to pass the option `--experimental-wasm-bigint`
-  when starting node. Note that this flag is not documented by `node --help`
+  when starting Node. Note that this flag is not documented by `node --help`
   and moreover, if you pass `--experimental-wasm-bigint` to node >14 it is an
   error:
 
