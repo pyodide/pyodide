@@ -5,6 +5,7 @@ import ErrorStackParser from "error-stack-parser";
 import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import { initializeNativeFS } from "./nativefs";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
@@ -287,6 +288,8 @@ export async function loadPyodide(
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  initializeNativeFS(Module);
 
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {

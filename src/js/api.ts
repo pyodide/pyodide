@@ -371,6 +371,42 @@ export function unpackArchive(
   });
 }
 
+export async function mountNativeFS(
+  path: string
+  // options: {
+  //   mode?: string;
+  // } = {},
+  // directoryHandle
+  // sync
+) {
+  const options = {
+    mode: "readwrite",
+  };
+  if (typeof (globalThis as any).showDirectoryPicker === "undefined") {
+    throw new Error("mountNativeFS requires the File System Access API");
+  }
+  const dirHandle = await (globalThis as any).showDirectoryPicker();
+  if ((await dirHandle.requestPermission(options)) !== "granted") {
+    throw new Error("Permission denied");
+  }
+
+  Module.FS.mkdir(path);
+  Module.FS.mount(
+    Module.FS.filesystems.NATIVEFS_ASYNC,
+    { dirHandle: dirHandle },
+    path
+  );
+
+  // sync native ==> browser
+  await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+
+  return {
+    // sync browser ==> native
+    sync: async () =>
+      new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+  };
+}
+
 /**
  * @private
  */
@@ -440,6 +476,7 @@ export type PyodideInterface = {
   toPy: typeof toPy;
   pyimport: typeof pyimport;
   unpackArchive: typeof unpackArchive;
+  mountNativeFS: typeof mountNativeFS;
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
@@ -503,6 +540,7 @@ API.makePublicAPI = function (): PyodideInterface {
     toPy,
     pyimport,
     unpackArchive,
+    mountNativeFS,
     registerComlink,
     PythonError,
     PyBuffer,
