@@ -18,7 +18,8 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Iterable
+from typing import Any
+from collections.abc import Iterable
 
 from . import common
 from .buildpkg import needs_rebuild

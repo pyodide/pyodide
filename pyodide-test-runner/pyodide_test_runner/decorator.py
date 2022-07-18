@@ -3,7 +3,8 @@ import pickle
 import sys
 from base64 import b64decode, b64encode
 from copy import deepcopy
-from typing import Any, Callable, Collection
+from typing import Any
+from collections.abc import Callable, Collection
 
 import pytest
 

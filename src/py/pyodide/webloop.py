@@ -3,7 +3,8 @@ import contextvars
 import sys
 import time
 import traceback
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from ._core import IN_BROWSER, create_once_callable
 

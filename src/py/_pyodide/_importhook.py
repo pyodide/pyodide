@@ -3,7 +3,8 @@ from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
 from types import ModuleType
-from typing import Any, Sequence
+from typing import Any
+from collections.abc import Sequence
 
 
 class JsFinder(MetaPathFinder):

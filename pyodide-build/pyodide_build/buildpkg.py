@@ -20,7 +20,8 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, Generator, Iterator, NoReturn, TextIO
+from typing import Any, NoReturn, TextIO
+from collections.abc import Generator, Iterator
 from urllib import request
 
 from . import pywasmcross

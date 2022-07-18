@@ -11,7 +11,8 @@ from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
 from types import CodeType
-from typing import Any, Generator, Literal
+from typing import Any, Literal
+from collections.abc import Generator
 
 
 def should_quiet(source: str) -> bool:

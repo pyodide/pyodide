@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from .._core import IN_BROWSER, JsProxy, create_once_callable, create_proxy
 

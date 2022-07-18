@@ -4,7 +4,7 @@ import sys
 import traceback
 from itertools import chain
 from pathlib import Path
-from typing import Mapping
+from collections.abc import Mapping
 
 from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
 from build.__main__ import (

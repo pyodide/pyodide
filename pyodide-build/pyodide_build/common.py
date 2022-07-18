@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Generator, Iterable, Iterator, Mapping
+from collections.abc import Generator, Iterable, Iterator, Mapping
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags

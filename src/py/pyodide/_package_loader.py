@@ -8,7 +8,8 @@ from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Any, Iterable, Literal
+from typing import IO, Any, Literal
+from collections.abc import Iterable
 from zipfile import ZipFile
 
 from ._core import IN_BROWSER, JsProxy, to_js

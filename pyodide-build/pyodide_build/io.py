@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
+from collections.abc import Iterator
 
 # TODO: support more complex types for validation
 

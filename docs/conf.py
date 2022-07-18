@@ -150,10 +150,10 @@ if IN_READTHEDOCS:
 if IN_SPHINX:
     # Compatibility shims. sphinx-js and sphinxcontrib-napoleon have not been updated for Python 3.10
     import collections
-    from typing import Callable, Mapping
+    from collections.abc import Callable, Mapping
 
-    collections.Mapping = Mapping  # type: ignore[attr-defined]
-    collections.Callable = Callable  # type: ignore[attr-defined]
+    collections.abc.Mapping = Mapping  # type: ignore[attr-defined]
+    collections.abc.Callable = Callable  # type: ignore[attr-defined]
 
     base_dir = Path(__file__).resolve().parent.parent
     path_dirs = [
