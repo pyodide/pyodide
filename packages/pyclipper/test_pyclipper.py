@@ -1,14 +1,18 @@
 from pyodide_test_runner import run_in_pyodide
 
+
 @run_in_pyodide(packages=["pyclipper"])
 def test_mytestname(selenium):
-    import pyclipper
     import numpy as np
+    import pyclipper
 
-    #重要的点，有的点可能会超出边界
-    subj = (((180, 200), (260, 200), (260, 150), (180, 150)), ((215, 160), (230, 190), (200, 190)))
+    # 重要的点，有的点可能会超出边界
+    subj = (
+        ((180, 200), (260, 200), (260, 150), (180, 150)),
+        ((215, 160), (230, 190), (200, 190)),
+    )
 
-    #边界
+    # 边界
     clip = ((190, 210), (240, 210), (240, 130), (190, 130))
 
     pc = pyclipper.Pyclipper()
@@ -17,7 +21,9 @@ def test_mytestname(selenium):
     pc.AddPaths(subj, pyclipper.PT_SUBJECT, True)
 
     solution = pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD)
-    assert solution == [[[240, 200], [190, 200], [190, 150], [240, 150]], [[200, 190], [230, 190], [215, 160]]]
+    assert solution == [
+        [[240, 200], [190, 200], [190, 150], [240, 150]],
+        [[200, 190], [230, 190], [215, 160]],
+    ]
     print(solution)
-    print('build pyclipper success!')
-
+    print("build pyclipper success!")
