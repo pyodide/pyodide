@@ -140,11 +140,11 @@ $(TERMCAP_BUILD)/.configured: $(TERMCAP_TARBALL)
 
 $(INSTALL)/lib/libreadline.a: $(READLINE_BUILD)/.configured
 	cd $(READLINE_BUILD); \
-		emmake make install 
+		emmake make install
 
 $(INSTALL)/lib/libtermcap.a: $(TERMCAP_BUILD)/.configured
 	cd $(TERMCAP_BUILD); \
-		emmake make install 
+		emmake make install
 	cp $(TERMCAP_BUILD)/libtermcap.a $@
 
 
