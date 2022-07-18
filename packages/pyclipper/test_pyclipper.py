@@ -10,4 +10,3 @@ def test_mytestname(selenium):
     pc.AddPaths(subj, pyclipper.PT_SUBJECT, True)
     solution = pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD)
     assert solution == [[[240, 200], [190, 200], [190, 150], [240, 150]], [[200, 190], [230, 190], [215, 160]]]
-
