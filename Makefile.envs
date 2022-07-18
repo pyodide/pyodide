@@ -111,6 +111,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lffi \
 	-lsqlite3 \
 	-lbz2 \
+	-lreadline \
+	-ltermcap \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
