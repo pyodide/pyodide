@@ -168,7 +168,9 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const indexOfLastSlash = fileName.includes("/") ? fileName.lastIndexOf("/") : fileName.lastIndexOf("\\");
+  const indexOfLastSlash = fileName.includes("/")
+    ? fileName.lastIndexOf("/")
+    : fileName.lastIndexOf("\\");
   return fileName.slice(0, indexOfLastSlash);
 }
 
