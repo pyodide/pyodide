@@ -12,13 +12,14 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable
 from functools import total_ordering
 from graphlib import TopologicalSorter
 from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any, Iterable
+from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild

@@ -8,7 +8,7 @@ import pathlib
 import re
 from ast import Str
 from collections import namedtuple
-from typing import Callable
+from collections.abc import Callable
 
 CORE_VERSION_REGEX = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
 

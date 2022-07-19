@@ -25,7 +25,9 @@ repos:
     rev: "v2.37.1"
     hooks:
       - id: pyupgrade
+        name: pyupgrade
         args: ["--py310-plus"]
+        exclude: docs
 
   - repo: https://github.com/hadialqattan/pycln
     rev: "v2.0.4"
