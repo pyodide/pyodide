@@ -5,11 +5,10 @@ from pytest_pyodide import run_in_pyodide
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy", "sparseqr"])
 def test_scipy_linalg(selenium):
+    import numpy
     import scipy.sparse.linalg
     import sparseqr
     from numpy.testing import assert_allclose
-
-    import numpy
 
     # QR decompose a sparse matrix M such that  Q R = M E
 

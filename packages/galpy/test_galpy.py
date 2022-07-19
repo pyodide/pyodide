@@ -23,10 +23,9 @@ def galpy_test_decorator(f):
     ]
 )
 def test_integrate(selenium):
+    import numpy
     from galpy.orbit import Orbit
     from galpy.potential import MWPotential2014
-
-    import numpy
 
     ts = numpy.linspace(0.0, 100.0, 1001)
     o = Orbit()
@@ -44,10 +43,9 @@ def test_integrate(selenium):
     ]
 )
 def test_actionAngle(selenium):
+    import numpy
     from galpy.orbit import Orbit
     from galpy.potential import MWPotential2014
-
-    import numpy
 
     ts = numpy.linspace(0.0, 100.0, 1001)
     o = Orbit()
@@ -71,10 +69,9 @@ def test_actionAngle(selenium):
     ]
 )
 def test_isotropic_hernquist_sigmar(selenium):
+    import numpy
     from galpy import potential
     from galpy.df import isotropicHernquistdf, jeans
-
-    import numpy
 
     def check_sigmar_against_jeans(
         samp, pot, tol, beta=0.0, dens=None, rmin=None, rmax=None, bins=31

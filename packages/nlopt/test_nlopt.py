@@ -6,7 +6,6 @@ from pytest_pyodide import run_in_pyodide
 )
 def test_nlopt(selenium):
     import nlopt
-
     import numpy as np
 
     # objective function

@@ -42,7 +42,6 @@ def test_import(selenium):
 @run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_image_extensions(selenium):
     import cv2 as cv
-
     import numpy as np
 
     shape = (16, 16, 3)
@@ -66,7 +65,6 @@ def test_image_extensions(selenium):
 @run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_io(selenium):
     import cv2 as cv
-
     import numpy as np
 
     shape = (16, 16, 3)
@@ -81,7 +79,6 @@ def test_io(selenium):
 @run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_drawing(selenium):
     import cv2 as cv
-
     import numpy as np
 
     width = 100
@@ -99,7 +96,6 @@ def test_drawing(selenium):
 @run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_pixel_access(selenium):
     import cv2 as cv
-
     import numpy as np
 
     shape = (16, 16, 3)
@@ -116,7 +112,6 @@ def test_pixel_access(selenium):
 @run_in_pyodide(packages=["opencv-python", "numpy"])
 def test_image_processing(selenium):
     import cv2 as cv
-
     import numpy as np
 
     # Masking

@@ -4,7 +4,6 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["numpy", "imageio"])
 def test_imageio(selenium_standalone):
     import imageio
-
     import numpy as np
 
     filename = "/tmp/foo.tif"
@@ -18,7 +17,6 @@ def test_imageio(selenium_standalone):
 @run_in_pyodide(packages=["numpy", "imageio"])
 def test_jpg(selenium):
     import imageio
-
     import numpy as np
 
     img = np.zeros((5, 5), dtype=np.uint8)

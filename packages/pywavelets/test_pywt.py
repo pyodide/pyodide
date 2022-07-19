@@ -6,9 +6,8 @@ from pytest_pyodide import run_in_pyodide
 @pytest.mark.xfail_browsers(chrome="xfail")
 @run_in_pyodide(packages=["pywavelets"])
 def test_pywt(selenium):
-    import pywt
-
     import numpy as np
+    import pywt
 
     def checkit(a, v):
         assert (np.rint(a) == v).all()

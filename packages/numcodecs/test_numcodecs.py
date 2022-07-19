@@ -11,13 +11,12 @@ from pytest_pyodide import run_in_pyodide
 def test_blosc(selenium_standalone):
     import array
 
+    import numpy as np
     from numcodecs.blosc import Blosc
     from numcodecs.compat import ensure_bytes, ensure_ndarray
     from numcodecs.lz4 import LZ4
     from numcodecs.zstd import Zstd
     from numpy.testing import assert_array_almost_equal, assert_array_equal
-
-    import numpy as np
 
     def compare_arrays(arr, res, precision=None):
         # ensure numpy array with matching dtype

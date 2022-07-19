@@ -17,10 +17,9 @@ else:
 @xfail_browsers
 @run_in_pyodide(packages=["scikit-image"])
 def test_skimage(selenium):
+    import numpy as np
     from skimage import color, data
     from skimage.util import view_as_blocks
-
-    import numpy as np
 
     # get astronaut from skimage.data in grayscale
     l = color.rgb2gray(data.astronaut())
