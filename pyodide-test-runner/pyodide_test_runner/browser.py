@@ -1,4 +1,5 @@
 import json
+import os
 import textwrap
 from pathlib import Path
 
@@ -125,7 +126,7 @@ class BrowserWrapper:
         self.javascript_setup()
         if load_pyodide:
             self.load_pyodide()
-            self.initialize_global_hiwire_objects()
+            self.initialize_pyodide()
             self.save_state()
             self.restore_state()
 
@@ -171,28 +172,14 @@ class BrowserWrapper:
             """
         )
 
-    def initialize_global_hiwire_objects(self):
-        """
-        There are a bunch of global objects that occasionally enter the hiwire cache
-        but never leave. The refcount checks get angry about them if they aren't preloaded.
-        We need to go through and touch them all once to keep everything okay.
-        """
-        self.run_js(
+    def initialize_pyodide(self):
+        initialize_script = os.environ.get(
+            "PYTEST_PYODIDE_INITIALIZE_SCRIPT",
             """
-            pyodide.globals.get;
-            pyodide._api.pyodide_code.eval_code;
-            pyodide._api.pyodide_code.eval_code_async;
-            pyodide._api.pyodide_code.find_imports;
-            pyodide._api.pyodide_ffi.register_js_module;
-            pyodide._api.pyodide_ffi.unregister_js_module;
-            pyodide._api.importlib.invalidate_caches;
-            pyodide._api.package_loader.unpack_buffer;
-            pyodide._api.package_loader.get_dynlibs;
-            pyodide._api.package_loader.sub_resource_hash;
             pyodide.runPython("");
-            pyodide.pyimport("pyodide.ffi.wrappers").destroy();
-            """
+            """,
         )
+        self.run_js(initialize_script)
 
     @property
     def pyodide_loaded(self):
