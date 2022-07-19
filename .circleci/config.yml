@@ -25,7 +25,7 @@ jobs:
           name: Test docs
           command: |
             mkdir test-results
-            pip install ./pyodide-test-runner
+            pip install pytest-pyodide
             npm install -g node-fetch@2
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
@@ -243,7 +243,7 @@ jobs:
           command: |
             make npm-link
             mkdir test-results
-            pip install ./pyodide-test-runner
+            pip install pytest-pyodide
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
@@ -269,21 +269,9 @@ jobs:
           name: stack-size
           command: |
             make npm-link
-            pip install ./pyodide-test-runner
+            pip install pytest-pyodide
             npm install -g node-fetch@2
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
-
-  test-test-runner:
-    <<: *defaults
-    resource_class: medium+
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            npm install -g node-fetch@2
-            cd pyodide-test-runner && pytest -v .
 
   test-js:
     <<: *defaults
@@ -322,7 +310,7 @@ jobs:
       - run:
           name: benchmark
           command: |
-            pip install ./pyodide-test-runner
+            pip install pytest-pyodide
             npm install -g node-fetch@2
             python benchmark/benchmark.py all --output dist/benchmarks.json
 

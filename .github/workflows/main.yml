@@ -33,7 +33,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          python3 -m pip install ./pyodide-test-runner
+          python3 -m pip install pytest-pyodide
           python3 -m pip install -e ./pyodide-build
           python3 -m pip install pytest-cov hypothesis pytz
       - name: Run tests
@@ -157,7 +157,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install ./pyodide-test-runner
+          pip install pytest-pyodide
           # FIXME: playwright 1.23.0 has unknown performance issue on firefox
           pip install "playwright<1.23.0" && python -m playwright install
 
