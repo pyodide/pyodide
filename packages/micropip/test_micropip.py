@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from pyodide_test_runner import run_in_pyodide, spawn_web_server
+from pytest_pyodide import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 

@@ -1,13 +1,14 @@
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy"])
 def test_scipy_linalg(selenium):
-    import numpy as np
     import scipy.linalg
     from numpy.testing import assert_allclose
+
+    import numpy as np
 
     N = 10
     X = np.random.RandomState(42).rand(N, N)

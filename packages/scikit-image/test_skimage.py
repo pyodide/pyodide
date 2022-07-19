@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 if "CI" in os.environ:
     xfail_browsers: Callable[[Any], Any] = pytest.mark.xfail_browsers(
@@ -17,9 +17,10 @@ else:
 @xfail_browsers
 @run_in_pyodide(packages=["scikit-image"])
 def test_skimage(selenium):
-    import numpy as np
     from skimage import color, data
     from skimage.util import view_as_blocks
+
+    import numpy as np
 
     # get astronaut from skimage.data in grayscale
     l = color.rgb2gray(data.astronaut())

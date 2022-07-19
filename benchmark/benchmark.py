@@ -8,7 +8,7 @@ from time import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pyodide_test_runner import (  # noqa: E402
+from pytest_pyodide import (  # noqa: E402
     SeleniumChromeWrapper,
     SeleniumFirefoxWrapper,
     spawn_web_server,

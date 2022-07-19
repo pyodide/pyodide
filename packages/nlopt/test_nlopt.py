@@ -1,4 +1,4 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(
@@ -6,6 +6,7 @@ from pyodide_test_runner import run_in_pyodide
 )
 def test_nlopt(selenium):
     import nlopt
+
     import numpy as np
 
     # objective function

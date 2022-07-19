@@ -1,13 +1,14 @@
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.driver_timeout(30)
 @pytest.mark.xfail_browsers(chrome="xfail")
 @run_in_pyodide(packages=["pywavelets"])
 def test_pywt(selenium):
-    import numpy as np
     import pywt
+
+    import numpy as np
 
     def checkit(a, v):
         assert (np.rint(a) == v).all()

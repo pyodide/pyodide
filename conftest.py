@@ -12,9 +12,9 @@ DIST_PATH = ROOT_PATH / "dist"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from pyodide_test_runner.utils import maybe_skip_test
-from pyodide_test_runner.utils import package_is_built as _package_is_built
-from pyodide_test_runner.utils import parse_xfail_browsers
+from pytest_pyodide.utils import maybe_skip_test
+from pytest_pyodide.utils import package_is_built as _package_is_built
+from pytest_pyodide.utils import parse_xfail_browsers
 
 
 def pytest_addoption(parser):

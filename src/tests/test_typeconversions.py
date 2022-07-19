@@ -4,9 +4,9 @@ from typing import Any
 import pytest
 from hypothesis import example, given, settings, strategies
 from hypothesis.strategies import text
-from pyodide_test_runner import run_in_pyodide
-from pyodide_test_runner.fixture import selenium_context_manager
-from pyodide_test_runner.hypothesis import (
+from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.fixture import selenium_context_manager
+from pytest_pyodide.hypothesis import (
     any_equal_to_self_strategy,
     any_strategy,
     std_hypothesis_settings,

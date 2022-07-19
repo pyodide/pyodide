@@ -1,4 +1,4 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(
@@ -8,8 +8,9 @@ from pyodide_test_runner import run_in_pyodide
     ]
 )
 def test_integrate(selenium):
-    import numpy
     import rebound
+
+    import numpy
 
     sim = rebound.Simulation()
     sim.add(m=1)
