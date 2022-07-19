@@ -625,13 +625,6 @@ workflows:
             tags:
               only: /.*/
 
-      - test-test-runner:
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-
       - test-js:
           requires:
             - build-core
