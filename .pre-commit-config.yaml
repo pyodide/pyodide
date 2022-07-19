@@ -22,13 +22,15 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v2.34.0"
+    rev: "v2.37.1"
     hooks:
       - id: pyupgrade
+        name: pyupgrade
         args: ["--py310-plus"]
+        exclude: docs
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v1.3.5"
+    rev: "v2.0.4"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml]

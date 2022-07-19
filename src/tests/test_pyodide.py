@@ -1,6 +1,7 @@
 import re
+from collections.abc import Sequence
 from textwrap import dedent
-from typing import Any, Sequence
+from typing import Any
 
 import pytest
 from pyodide_test_runner import run_in_pyodide

@@ -1,5 +1,6 @@
 import os
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from pyodide_test_runner import run_in_pyodide

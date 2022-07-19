@@ -43,9 +43,10 @@ import re
 import shutil
 import subprocess
 from collections import namedtuple
+from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, Iterator, Literal, MutableMapping, NoReturn
+from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
