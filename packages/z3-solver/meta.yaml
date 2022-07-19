@@ -5,11 +5,10 @@ source:
   url: https://files.pythonhosted.org/packages/91/be/d247b751fd779e2e6abb175347cf97893e8606a19deaeab4ed26581b81a0/z3-solver-4.9.1.0.tar.gz
   sha256: 5ed51c9748a23b6e21af9a526fa21f7ff0a76fd696aff436676300f162e10ddc
 test:
-  imports:
+  imports:pre-commit run --all-files
     - z3-solver
 about:
   home: https://github.com/Z3Prover/z3
   PyPI: https://pypi.org/project/z3-solver
   summary: an efficient SMT solver library
   license: MIT License
-
