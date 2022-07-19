@@ -175,9 +175,7 @@ class BrowserWrapper:
     def initialize_pyodide(self):
         initialize_script = os.environ.get(
             "PYTEST_PYODIDE_INITIALIZE_SCRIPT",
-            """
-            pyodide.runPython("");
-            """,
+            "pyodide.runPython('')",
         )
         self.run_js(initialize_script)
 
