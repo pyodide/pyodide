@@ -60,7 +60,6 @@ flexible.
 There are 5 test locations that are collected by pytest:
 
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
-- `pyodide-test-runner/pyodide_test_runner/tests/`: Tests for the testing
   system.
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
   (do not require selenium to run)
