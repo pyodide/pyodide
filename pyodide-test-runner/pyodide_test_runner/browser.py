@@ -1,5 +1,4 @@
 import json
-import os
 import textwrap
 from pathlib import Path
 
@@ -83,6 +82,8 @@ globalThis.assertThrowsAsync = async function (cb, errname, pattern) {
     checkError(err, errname, pattern, pat_str, thiscallstr);
 };
 """.strip()
+
+INITIALIZE_SCRIPT = "pyodide.runPython('');"
 
 
 class JavascriptException(Exception):
@@ -173,11 +174,7 @@ class BrowserWrapper:
         )
 
     def initialize_pyodide(self):
-        initialize_script = os.environ.get(
-            "PYTEST_PYODIDE_INITIALIZE_SCRIPT",
-            "pyodide.runPython('')",
-        )
-        self.run_js(initialize_script)
+        self.run_js(INITIALIZE_SCRIPT)
 
     @property
     def pyodide_loaded(self):
