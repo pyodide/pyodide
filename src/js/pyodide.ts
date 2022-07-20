@@ -168,7 +168,15 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  return fileName.slice(0, fileName.lastIndexOf("/"));
+  const indexOfLastSlash = fileName.includes("/")
+    ? fileName.lastIndexOf("/")
+    : fileName.lastIndexOf("\\");
+  if (indexOfLastSlash === -1) {
+    throw new Error(
+      "Could not extract indexURL path from pyodide module location"
+    );
+  }
+  return fileName.slice(0, indexOfLastSlash);
 }
 
 /**

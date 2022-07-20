@@ -165,6 +165,11 @@ jobs:
             tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
 
+      - run:
+          name: Clean up package source files
+          command: |
+            cd packages && find **/build ! -name '.packaged' -type f -exec rm -f {} +
+
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
 
@@ -201,11 +206,33 @@ jobs:
           paths:
             - .
 
+  create-xbuild-env:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: create xbuild environment
+          command: |
+            PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./xbuildenv
+
   test-main:
     parameters:
       test-params:
         description: The tests to run.
         type: string
+      cache-dir:
+        description: pytest-cache-dir.
+        type: string
+        default: ""
     <<: *defaults
     resource_class: medium+
     steps:
@@ -218,11 +245,18 @@ jobs:
             mkdir test-results
             pip install ./pyodide-test-runner
             npm install -g node-fetch@2
+            if [ -z "<< parameters.cache-dir >>" ]; then
+              export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
+            else
+              export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
+            fi
+            echo "pytest cache dir: $CACHE_DIR"
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
-              << parameters.test-params >>
+              << parameters.test-params >> \
+              -o cache_dir=$CACHE_DIR
       - store_test_results:
           path: test-results
 
@@ -238,29 +272,6 @@ jobs:
             pip install ./pyodide-test-runner
             npm install -g node-fetch@2
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
-
-  test-python:
-    # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-      - run:
-          name: test
-          command: |
-            mkdir test-results
-            python3 -m pip install ./pyodide-test-runner
-            python3 -m pip install -e ./pyodide-build
-            npm install -g node-fetch@2
-            PYODIDE_ROOT=. pytest \
-              --junitxml=test-results/junit.xml \
-              --verbose \
-              -k 'not (chrome or firefox or node)' \
-              --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/
-
-      - store_test_results:
-          path: test-results
 
   test-test-runner:
     <<: *defaults
@@ -338,10 +349,16 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
-            cp -r dist /tmp/pyodide
-            cd /tmp/
-            tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
-            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
+            mkdir -p /tmp/ghr/dist
+            cp -r dist /tmp/ghr/pyodide
+            cp -r xbuildenv /tmp/ghr/xbuildenv
+            cd /tmp/ghr
+            tar cjf dist/pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
+            tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
+            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
+              -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
+              -delete "${CIRCLE_TAG}" \
+              dist
 
       - run:
           name: Deploy to npm
@@ -425,11 +442,6 @@ workflows:
   build-and-deploy:
     jobs:
       - test-docs:
-          filters:
-            tags:
-              only: /.*/
-
-      - test-python:
           filters:
             tags:
               only: /.*/
@@ -548,27 +560,78 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-chrome
+          name: test-packages-chrome-no-numpy-dependents
           test-params: -k chrome packages/test* packages/*/test*
+          cache-dir: .pytest_cache_chrome
           requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
+
+      - test-main:
+          name: test-packages-chrome
+          test-params: -k chrome packages/test* packages/*/test* --skip-passed
+          cache-dir: .pytest_cache_chrome
+          requires:
+            - test-packages-chrome-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
+
+      - test-main:
+          name: test-packages-firefox-no-numpy-dependents
+          test-params: -k firefox packages/test* packages/*/test*
+          cache-dir: .pytest_cache_firefox
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
 
       - test-main:
           name: test-packages-firefox
-          test-params: -k firefox packages/test* packages/*/test*
+          test-params: -k firefox packages/test* packages/*/test* --skip-passed
+          cache-dir: .pytest_cache_firefox
           requires:
+            - test-packages-firefox-no-numpy-dependents
             - build-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-node
+          name: test-packages-node-no-numpy-dependents
           test-params: -k node packages/test* packages/*/test*
+          cache-dir: .pytest_cache_node
           requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
+
+      - test-main:
+          name: test-packages-node
+          test-params: -k node packages/test* packages/*/test* --skip-passed
+          cache-dir: .pytest_cache_node
+          requires:
+            - test-packages-node-no-numpy-dependents
             - build-packages
           filters:
             tags:
@@ -602,6 +665,13 @@ workflows:
             tags:
               only: /.*/
 
+      - create-xbuild-env:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - build-pyodide-debug:
           requires:
             - build-packages
@@ -611,21 +681,24 @@ workflows:
 
       - deploy-release:
           requires:
-            - test-python
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - create-xbuild-env
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
+          context:
+            - s3-deployment
       - deploy-dev:
           requires:
-            - test-python
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
           filters:
             branches:
               only: main
+          context:
+            - s3-deployment

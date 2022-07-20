@@ -43,9 +43,10 @@ import re
 import shutil
 import subprocess
 from collections import namedtuple
+from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, Iterator, Literal, MutableMapping, NoReturn
+from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -301,11 +302,16 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
             "--as-needed",
         ]:
             continue
-        # ignore unsupported --sysroot compile argument used in conda
-        if opt.startswith("--sysroot="):
+
+        if opt.startswith(
+            (
+                "--sysroot=",  # ignore unsupported --sysroot compile argument used in conda
+                "--version-script=",
+                "-R/",  # wasm-ld does not accept -R (runtime libraries)
+            )
+        ):
             continue
-        if opt.startswith("--version-script="):
-            continue
+
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
         return ",".join(new_link_opts)
