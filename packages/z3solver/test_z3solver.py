@@ -6,7 +6,7 @@ from pyodide_test_runner import run_in_pyodide
 )
 def test_z3_socrates(selenium):
     """ test to see if z3 is alive """
-    import z3solver as z3
+    import z3
     sObject = z3.DeclareSort('Object')
     fHuman = z3.Function('Human', sObject, z3.BoolSort())
     fMortal = z3.Function('Mortal', sObject, z3.BoolSort())
