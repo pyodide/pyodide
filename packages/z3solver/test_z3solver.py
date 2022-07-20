@@ -14,6 +14,7 @@ def test_z3_socrates(selenium):
     mortal = z3.Function("Mortal", obj, z3.BoolSort())
     # a well known philosopher
     socrates = z3.Const("socrates", obj)
+
     # free variables used in forall must be declared Const in python
     x = z3.Const("x", obj)
     axioms = [z3.ForAll([x], z3.Implies(human(x), mortal(x))), human(socrates)]
