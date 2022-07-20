@@ -27,5 +27,4 @@ def test_z3_socrates(selenium):
     print(is_sat)
     assert is_sat == z3.unsat
     # prints unsat so socrates is Mortal    
-    print(is_sat) 
-
+    print(is_sat)
