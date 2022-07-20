@@ -8,6 +8,7 @@ def test_z3_socrates(selenium):
     """test to see if z3 is alive"""
 
     import z3
+    
     obj = z3.DeclareSort("Object")
     human = z3.Function("Human", obj, z3.BoolSort())
     mortal = z3.Function("Mortal", obj, z3.BoolSort())
