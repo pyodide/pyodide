@@ -5,30 +5,19 @@ from pyodide_test_runner import run_in_pyodide
     packages=["z3solver"],
 )
 def test_z3_socrates(selenium):
-    import io
-
-    from z3 import *
-
-    Object = DeclareSort('Object')
-    Human = Function('Human', Object, BoolSort())
-    Mortal = Function('Mortal', Object, BoolSort())
-
+    """ test to see if z3 is alive """
+    import z3solver as z3
+    sObject = z3.DeclareSort('Object')
+    fHuman = z3.Function('Human', sObject, z3.BoolSort())
+    fMortal = z3.Function('Mortal', sObject, z3.BoolSort())
     # a well known philosopher
-    socrates = Const('socrates', Object)
-
+    socrates = z3.Const('socrates', sObject)
     # free variables used in forall must be declared Const in python
-    x = Const('x', Object)
-
-    axioms = [ForAll([x], Implies(Human(x), Mortal(x))), Human(socrates)]
-
-    s = Solver()
+    x = z3.Const('x', sObject)
+    axioms = [z3.ForAll([x], z3.Implies(fHuman(x), fMortal(x))), fHuman(socrates)]
+    s = z3.Solver()
     s.add(axioms)
-
     print(s.check()) # prints sat so axioms are coherent
-
     # classical refutation
-    s.add(Not(Mortal(socrates)))
-
+    s.add(z3.Not(fMortal(socrates)))
     print(s.check()) # prints unsat so socrates is Mortal
-
-
