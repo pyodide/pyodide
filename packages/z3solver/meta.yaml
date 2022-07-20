@@ -6,7 +6,7 @@ source:
   sha256: 5ed51c9748a23b6e21af9a526fa21f7ff0a76fd696aff436676300f162e10ddc
 test:
   imports:
-    - z3-solver
+    - z3solver
 about:
   home: https://github.com/Z3Prover/z3
   PyPI: https://pypi.org/project/z3-solver
