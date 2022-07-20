@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pyodide_build import buildall, buildpkg
 from pyodide_build.buildpkg import get_bash_runner
-from pyodide_build.common import search_pyodide_root
+from pyodide_build.common import get_make_flag, search_pyodide_root
 
 # from doit.reporter import ZeroReporter
 
@@ -17,6 +17,7 @@ DOIT_CONFIG = {
 }
 
 PYODIDE_ROOT = search_pyodide_root(os.getcwd())
+PACKAGES_DIR = PYODIDE_ROOT / "packages"
 JS_DIR = PYODIDE_ROOT / "src/js"
 PYTHON_DIR = PYODIDE_ROOT / "src/py"
 CORE_DIR = PYODIDE_ROOT / "src/core"
@@ -24,41 +25,45 @@ DIST_DIR = PYODIDE_ROOT / "dist"
 TEMPLATES_DIR = PYODIDE_ROOT / "src/templates"
 
 
-def bash_runner(cmds):
+def run_with_env(cmds):
     if isinstance(cmds, str):
         cmds = [cmds]
 
     with get_bash_runner() as runner:
         for cmd in cmds:
-            runner.run(cmd)
+            done = runner.run(cmd)
+            if done.returncode != 0:
+                raise Exception(f"Command failed: {cmd}")
 
 
 def task_package():
-    def build_package(name):
+    def build_package(pkg):
         parser = buildpkg.make_parser(argparse.ArgumentParser())
-        args = parser.parse_args([name])
+        args = parser.parse_args([pkg])
         buildpkg.main(args)
 
-    return {
-        "actions": [(build_package,)],
-        "params": [
-            {
-                "name": "name",
-                "long": "name",
-                "type": str,
-                "default": "",
-            }
-        ],
-        "clean": True,
-    }
+    pkgs = [f for f in PACKAGES_DIR.glob("**/meta.yaml")]
+    for pkg in pkgs:
+        yield {
+            "name": pkg.parent.name,
+            "file_dep": [pkg],
+            "actions": [(build_package, [pkg])],
+            "targets": [pkg.parent / "build" / ".packaged"],
+            "clean": True,
+        }
 
 
 def task_cpython():
-    cpythonlib = Path(os.environ["CPYTHONLIB"])
+    cpythonlib = Path(get_make_flag("CPYTHONLIB"))
     return {
         "file_dep": [PYODIDE_ROOT / "cpython/Makefile"],
         "actions": [
-            f". {PYODIDE_ROOT / 'emsdk/emsdk/emsdk_env.sh'} && make -C cpython",
+            (
+                run_with_env,
+                [
+                    "make -C cpython",
+                ],
+            )
         ],
         "targets": [
             cpythonlib.parent / "libpython3.10.a",
@@ -90,7 +95,7 @@ def task_pyodide_core():
                 "file_dep": [source],
                 "actions": [
                     (
-                        bash_runner,
+                        run_with_env,
                         [
                             f"{compiler} -c {source} -o {target} $MAIN_MODULE_CFLAGS -I{str(CORE_DIR)}"
                         ],
@@ -135,7 +140,7 @@ def task_pyproxy_gen():
         "file_dep": [*CORE_DIR.glob("pyproxy.*"), *CORE_DIR.glob("*.h")],
         "actions": [
             (
-                bash_runner,
+                run_with_env,
                 [
                     f"""
                     rm -f {JS_DIR}/pyproxy.gen.ts
@@ -173,7 +178,7 @@ def task_pyodide_js():
             *JS_DIR.glob("*.ts"),
         ],
         "actions": [
-            (bash_runner, [f"npx rollup -c {build_config}"]),
+            (run_with_env, [f"npx rollup -c {build_config}"]),
         ],
         "targets": [DIST_DIR / "pyodide.js", JS_DIR / "_pyodide.out.js"],
         "task_dep": [
@@ -194,7 +199,7 @@ def task_pyodide_asm_js():
         "actions": [
             (
                 # TODO: replace makefile internal filterfunc with a proper
-                bash_runner,
+                run_with_env,
                 [
                     (
                         'date +"[%F %T] Building pyodide.asm.js..."',
@@ -257,7 +262,7 @@ def task_templates():
             "file_dep": [source],
             "actions": [
                 (
-                    bash_runner,
+                    run_with_env,
                     [f"cp {source} {DIST_DIR / target}"],
                 ),
             ],
@@ -318,7 +323,7 @@ def task_repodata_json():
 
 
 def task_distutils():
-    cpythonlib = Path(os.environ["CPYTHONLIB"])
+    cpythonlib = Path(get_make_flag("CPYTHONLIB"))
     return {
         "task_dep": ["cpython"],
         "file_dep": [*(cpythonlib / "distutils").glob("**/*.py")],
@@ -342,7 +347,7 @@ def task_package_json():
 
 def task_console_html():
     console_html = TEMPLATES_DIR / "console.html"
-    base_url = os.environ["PYODIDE_BASE_URL"]
+    base_url = get_make_flag("PYODIDE_BASE_URL")
     return {
         "file_dep": [console_html],
         "actions": [
@@ -373,18 +378,25 @@ def task_test():
         ("_testmultiphase.c", "_testmultiphase.o", ""),
         ("_ctypes/_ctypes_test.c", "_ctypes_test.o", ""),
     ]
-    test_module_cflags = os.environ["SIDE_MODULE_CFLAGS"] + " -I Include/ -I ."
-    cpythonbuild = Path(os.environ["CPYTHONBUILD"])
-    cpythonlib = Path(os.environ["CPYTHONLIB"])
+    test_module_cflags = get_make_flag("SIDE_MODULE_CFLAGS") + " -I Include/ -I . "
+    cpythonbuild = Path(get_make_flag("CPYTHONBUILD"))
+    cpythonlib = Path(get_make_flag("CPYTHONLIB"))
     for source, obj, flags in test_extensions:
         lib = Path(obj).with_suffix(".so")
         yield {
             "name": source,
             "task_dep": ["cpython"],
             "actions": [
-                f"cd {cpythonbuild} && emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj} {flags}",
-                f"cd {cpythonbuild} && emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
-                f"cd {cpythonbuild} && rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
+                (
+                    run_with_env,
+                    [
+                        [
+                            f"cd {cpythonbuild} && emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj} {flags}",
+                            f"cd {cpythonbuild} && emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
+                            f"cd {cpythonbuild} && rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
+                        ],
+                    ],
+                )
             ],
             "targets": [cpythonbuild / lib],
             "clean": True,
@@ -405,10 +417,17 @@ def task_dist_test():
         "task_dep": ["test"],
         "actions": [
             (
-                f"cd $CPYTHONLIB && tar -h --exclude=__pycache__ -cf {DIST_DIR / 'test.tar'} "
-                f"test {test_extensions_str} unittest/test sqlite3/test ctypes/test"
-            ),
-            f"cd $CPYTHONLIB && rm {test_extensions_str}",
+                run_with_env,
+                [
+                    [
+                        (
+                            f"cd $CPYTHONLIB && tar -h --exclude=__pycache__ -cf {DIST_DIR / 'test.tar'} "
+                            f"test {test_extensions_str} unittest/test sqlite3/test ctypes/test"
+                        ),
+                        f"cd $CPYTHONLIB && rm {test_extensions_str}",
+                    ],
+                ],
+            )
         ],
         "targets": [DIST_DIR / "test.tar"],
         "clean": True,
