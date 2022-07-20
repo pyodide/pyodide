@@ -18,7 +18,7 @@ def test_z3_socrates(selenium):
     axioms = [z3.ForAll([x], z3.Implies(human(x), mortal(x))), human(socrates)]
     s = z3.Solver()
     s.add(axioms)
-    print(s.check())  
+    print(s.check())
     # prints sat so axioms are coherent
     assert z3.sat == s.check()
     # classical refutation
@@ -26,5 +26,5 @@ def test_z3_socrates(selenium):
     is_sat = s.check()
     print(is_sat)
     assert is_sat == z3.unsat
-    # prints unsat so socrates is Mortal    
+    # prints unsat so socrates is Mortal
     print(is_sat)
