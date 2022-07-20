@@ -18,6 +18,11 @@ def test_z3_socrates(selenium):
     s = z3.Solver()
     s.add(axioms)
     print(s.check()) # prints sat so axioms are coherent
+    assert(z3.sat == s.check())
     # classical refutation
     s.add(z3.Not(fMortal(socrates)))
-    print(s.check()) # prints unsat so socrates is Mortal
+    is_sat = s.check()
+    print(is_sat)
+    assert(is_sat == z3.unsat)
+    print(is_sat) # prints unsat so socrates is Mortal
+
