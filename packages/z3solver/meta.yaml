@@ -1,5 +1,5 @@
 package:
-  name: z3_solver
+  name: z3solver
   version: 4.9.1.0
 source:
   url: https://files.pythonhosted.org/packages/91/be/d247b751fd779e2e6abb175347cf97893e8606a19deaeab4ed26581b81a0/z3-solver-4.9.1.0.tar.gz
