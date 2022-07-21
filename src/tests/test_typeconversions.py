@@ -154,7 +154,7 @@ def test_number_conversions_2(selenium_module_scope, n):
     from pyodide.code import run_js
 
     assert run_js("(n) => typeof n")(n) == "number"
-    from math import isclose, isinf, isnan
+    from math import isinf, isnan
 
     if isnan(n):
         return
