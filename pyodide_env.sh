@@ -2,7 +2,6 @@
 
 # get the absolute path of the root folder
 # shellcheck disable=SC2164
-
 ROOT=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P)
 
 # emsdk_env.sh is fairly noisy, and suppress error message if the file doesn't
