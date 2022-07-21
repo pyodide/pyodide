@@ -3,6 +3,7 @@ from pathlib import Path
 
 import rich_click.typer as typer
 
+import pyodide_build.common
 import pyodide_build.mkpkg
 
 app = typer.Typer()
@@ -38,6 +39,9 @@ def new_package(
     """
     Create a new package.
     """
+    if root is None:
+        root = pyodide_build.common.search_pyodide_root(Path.cwd())
+
     pyodide_build.mkpkg.make_package(
         Path(root) / "packages", name, version, source_fmt=source_format
     )
@@ -65,6 +69,9 @@ def update_package(
     """
     Update an existing package.
     """
+    if root is None:
+        root = pyodide_build.common.search_pyodide_root(Path.cwd())
+
     pyodide_build.mkpkg.update_package(
         Path(root) / "packages",
         name,
