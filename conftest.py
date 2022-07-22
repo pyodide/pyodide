@@ -17,8 +17,6 @@ from pytest_pyodide.utils import maybe_skip_test
 from pytest_pyodide.utils import package_is_built as _package_is_built
 from pytest_pyodide.utils import parse_xfail_browsers
 
-
-
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
 # We need to go through and touch them all once to keep everything okay.
