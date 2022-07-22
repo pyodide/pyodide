@@ -15,22 +15,25 @@ def ensure_env_installed(env: Path) -> None:
     install_xbuild_env(env)
 
 
-def main():
-    main_parser = argparse.ArgumentParser(prog="pywasmbuild")
-    main_parser.description = "Tools for creating Python extension modules for the wasm32-unknown-emscripten platform"
-    subparsers = main_parser.add_subparsers(help="action")
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    parser.description = "Tools for creating Python extension modules for the wasm32-unknown-emscripten platform"
+
+    subparsers = parser.add_subparsers(help="action")
     for module in [build]:
         modname = module.__name__.rpartition(".")[-1]
-        parser = module.make_parser(subparsers.add_parser(modname))
-        parser.set_defaults(func=module.main)
+        subparser = module.make_parser(subparsers.add_parser(modname))
+        subparser.set_defaults(subfunc=module.main)
 
+    return parser
+
+
+def main(args: argparse.Namespace) -> None:
     env = Path(".pyodide-xbuildenv")
     os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
     ensure_env_installed(env)
 
-    args = main_parser.parse_args()
-    if hasattr(args, "func"):
+    if hasattr(args, "subfunc"):
         # run the selected action
-        args.func(args)
+        args.subfunc(args)
     else:
-        main_parser.print_help()
+        raise RuntimeError("No subcommand selected")

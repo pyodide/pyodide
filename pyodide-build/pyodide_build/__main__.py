@@ -4,12 +4,13 @@ import sys
 
 from . import buildall, buildpkg, create_xbuildenv, install_xbuildenv, mkpkg, serve
 from .common import init_environment
+from .out_of_tree import __main__ as out_of_tree
 
 
 def make_parser() -> argparse.ArgumentParser:
     """Create an argument parser with argparse"""
 
-    main_parser = argparse.ArgumentParser(prog="pyodide")
+    main_parser = argparse.ArgumentParser(prog="pyodide-build")
     main_parser.description = "A command line interface (CLI) for pyodide_build"
     subparsers = main_parser.add_subparsers(help="action")
 
@@ -20,6 +21,7 @@ def make_parser() -> argparse.ArgumentParser:
         ("mkpkg", mkpkg),
         ("create_xbuildenv", create_xbuildenv),
         ("install_xbuildenv", install_xbuildenv),
+        ("out_of_tree", out_of_tree),
     ):
         if "sphinx" in sys.modules and command_name in [
             "buildpkg",
