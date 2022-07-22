@@ -63,7 +63,7 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 # Add modules to be mocked.
-mock_modules = ["ruamel.yaml", "tomli", "build"]
+mock_modules = ["ruamel.yaml", "tomli", "build", "build.__main__", "build.env"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
