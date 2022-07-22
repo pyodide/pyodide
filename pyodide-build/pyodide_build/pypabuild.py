@@ -2,9 +2,9 @@ import os
 import shutil
 import sys
 import traceback
+from collections.abc import Mapping
 from itertools import chain
 from pathlib import Path
-from typing import Mapping
 
 from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
 from build.__main__ import (

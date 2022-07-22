@@ -8,7 +8,7 @@ export const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
-let nodePathMod: any;
+let nodeUrlMod: any;
 let nodeFetch: any;
 let nodeVmMod: any;
 /** @private */
@@ -30,7 +30,7 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodePathMod = (await import("path")).default;
+  nodeUrlMod = (await import("url")).default;
   nodeFsPromisesMod = await import("fs/promises");
   if (globalThis.fetch) {
     nodeFetch = fetch;
@@ -194,6 +194,6 @@ async function nodeLoadScript(url: string) {
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    await import(nodePathMod.resolve(url));
+    await import(nodeUrlMod.pathToFileURL(url).href);
   }
 }

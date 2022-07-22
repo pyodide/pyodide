@@ -1,9 +1,10 @@
 import sys
+from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
 from types import ModuleType
-from typing import Any, Sequence
+from typing import Any
 
 
 class JsFinder(MetaPathFinder):

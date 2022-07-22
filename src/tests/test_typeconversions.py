@@ -120,32 +120,77 @@ def test_large_string_conversion(selenium):
 
 @given(
     n=strategies.one_of(
-        strategies.integers(min_value=-(2**53), max_value=2**53),
+        strategies.integers(),
         strategies.floats(allow_nan=False),
     )
 )
 @std_hypothesis_settings
+@example(2**53)
+@example(2**53 - 1)
+@example(2**53 + 1)
+@example(-(2**53))
+@example(-(2**53) - 1)
+@example(-(2**53) + 1)
+@run_in_pyodide
 def test_number_conversions(selenium_module_scope, n):
-    with selenium_context_manager(selenium_module_scope) as selenium:
-        import json
+    import json
 
-        s = json.dumps(n)
-        selenium.run_js(
-            f"""
-            self.x_js = eval({s!r}); // JSON.parse apparently doesn't work
-            pyodide.runPython(`
-                import json
-                x_py = json.loads({s!r})
-            `);
-            """
-        )
-        assert selenium.run_js("""return pyodide.runPython('x_py') === x_js;""")
-        assert selenium.run(
-            """
-            from js import x_js
-            x_js == x_py
-            """
-        )
+    from pyodide.code import run_js
+
+    run_js("(s) => self.x_js = eval(s)")(json.dumps(n))
+    run_js("(x_py) => Number(x_py) === x_js")(n)
+    from js import x_js
+
+    if type(x_js) is float:
+        assert x_js == float(n)
+    else:
+        assert x_js == n
+
+
+@given(n=strategies.floats())
+@std_hypothesis_settings
+@run_in_pyodide
+def test_number_conversions_2(selenium_module_scope, n):
+    from pyodide.code import run_js
+
+    assert run_js("(n) => typeof n")(n) == "number"
+    from math import isinf, isnan
+
+    if isnan(n):
+        return
+    import json
+
+    n_js = run_js("(s) => eval(s)")(json.dumps(n))
+    if not isinf(n) and float(int(n)) == n and -(2**53) < n < 2**53:
+        assert isinstance(n_js, int)
+    else:
+        assert isinstance(n_js, float)
+
+
+@given(n=strategies.integers())
+@std_hypothesis_settings
+@example(2**53)
+@example(2**53 - 1)
+@example(2**53 + 1)
+@example(-(2**53))
+@example(-(2**53) - 1)
+@example(-(2**53) + 1)
+@run_in_pyodide
+def test_number_conversions_3(selenium_module_scope, n):
+    from pyodide.code import run_js
+
+    jsty = run_js("(n) => typeof n")(n)
+    if -(2**53) + 1 < n < 2**53 - 1:
+        assert jsty == "number"
+    else:
+        assert jsty == "bigint"
+    import json
+
+    n_js = run_js("(s) => eval(s)")(json.dumps(n))
+    if -(2**53) < n < 2**53:
+        assert isinstance(n_js, int)
+    else:
+        assert isinstance(n_js, float)
 
 
 @run_in_pyodide
