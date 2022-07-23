@@ -419,8 +419,8 @@ created in converting the arguments are also destroyed at this point.
 
 As a result of this, if a `PyProxy` is persisted to be used later, then it must
 either be copied using {any}`PyProxy.copy` in JavaScript, or it must be created
-with {any}`pyodide.ffi.create_proxy` or `pyodide.create_once_callable`. If it's only
-going to be called once use `pyodide.create_once_callable`:
+with {any}`pyodide.ffi.create_proxy` or {any}`pyodide.ffi.create_once_callable`. If it's only
+going to be called once use {any}`pyodide.ffi.create_once_callable`:
 
 ```py
 from pyodide import create_once_callable
