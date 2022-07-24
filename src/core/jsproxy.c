@@ -440,8 +440,9 @@ JsProxy_length(PyObject* o)
   return hiwire_get_length(self->js);
 }
 
-static PyObject *
-JsProxy_item_array(PyObject *o, Py_ssize_t i){
+static PyObject*
+JsProxy_item_array(PyObject* o, Py_ssize_t i)
+{
   PyObject* pyresult = NULL;
   JsProxy* self = (JsProxy*)o;
   JsRef jsresult = JsArray_Get(self->js, i);
@@ -1973,9 +1974,8 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsProxy_ass_subscript_array };
-    slots[cur_slot++] = 
-      (PyType_Slot) { .slot = Py_sq_item,
-        .pfunc = (void*)JsProxy_item_array };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsProxy_item_array };
   }
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
@@ -2032,13 +2032,18 @@ JsProxy_create_subtype(int flags)
   FAIL_IF_NULL(result);
   PyObject* register_result = NULL;
   if (flags & IS_ARRAY) {
-    register_result = _PyObject_CallMethodIdOneArg(Collections_MutableSequence, &PyId_register, result);
+    register_result = _PyObject_CallMethodIdOneArg(
+      Collections_MutableSequence, &PyId_register, result);
     FAIL_IF_NULL(register_result);
-  } else if((flags & HAS_SET) && (flags & HAS_GET) && (flags & IS_ITERABLE) && (flags &  HAS_LENGTH)) {
-    register_result = _PyObject_CallMethodIdOneArg(Collections_MutableMapping, &PyId_register, result);
+  } else if ((flags & HAS_SET) && (flags & HAS_GET) && (flags & IS_ITERABLE) &&
+             (flags & HAS_LENGTH)) {
+    register_result = _PyObject_CallMethodIdOneArg(
+      Collections_MutableMapping, &PyId_register, result);
     FAIL_IF_NULL(register_result);
-  } else if((flags & HAS_GET) && (flags & IS_ITERABLE) && (flags &  HAS_LENGTH)) {
-    register_result = _PyObject_CallMethodIdOneArg(Collections_Mapping, &PyId_register, result);
+  } else if ((flags & HAS_GET) && (flags & IS_ITERABLE) &&
+             (flags & HAS_LENGTH)) {
+    register_result =
+      _PyObject_CallMethodIdOneArg(Collections_Mapping, &PyId_register, result);
     FAIL_IF_NULL(register_result);
   }
   Py_CLEAR(register_result);
@@ -2227,9 +2232,11 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_NULL(jsproxy_mock);
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
-  Collections_MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  Collections_MutableSequence =
+    PyObject_GetAttrString(collections_abc, "MutableSequence");
   FAIL_IF_NULL(Collections_MutableSequence);
-  Collections_MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+  Collections_MutableMapping =
+    PyObject_GetAttrString(collections_abc, "MutableMapping");
   FAIL_IF_NULL(Collections_MutableMapping);
   Collections_Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
   FAIL_IF_NULL(Collections_Mapping);
