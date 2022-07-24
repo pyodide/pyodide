@@ -68,9 +68,13 @@ Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
 _Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(register);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
+static PyObject* Collections_MutableSequence;
+static PyObject* Collections_MutableMapping;
+static PyObject* Collections_Mapping;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -434,6 +438,18 @@ JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
   return hiwire_get_length(self->js);
+}
+
+static PyObject *
+JsProxy_item_array(PyObject *o, Py_ssize_t i){
+  PyObject* pyresult = NULL;
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = JsArray_Get(self->js, i);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
 }
 
 /**
@@ -1911,6 +1927,7 @@ JsProxy_create_subtype(int flags)
   if (flags & HAS_GET) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsProxy_subscript };
+    tp_flags |= Py_TPFLAGS_MAPPING;
   }
   if (flags & HAS_SET) {
     // It's assumed that if HAS_SET then also HAS_DELETE.
@@ -1938,7 +1955,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsProxy_finally_MethodDef;
   }
   if (flags & IS_CALLABLE) {
-    tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+    tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
     // We could test separately for whether a function is constructable,
@@ -1956,6 +1973,9 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsProxy_ass_subscript_array };
+    slots[cur_slot++] = 
+      (PyType_Slot) { .slot = Py_sq_item,
+        .pfunc = (void*)JsProxy_item_array };
   }
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
@@ -2010,6 +2030,19 @@ JsProxy_create_subtype(int flags)
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
+  PyObject* register_result = NULL;
+  if (flags & IS_ARRAY) {
+    register_result = _PyObject_CallMethodIdOneArg(Collections_MutableSequence, &PyId_register, result);
+    FAIL_IF_NULL(register_result);
+  } else if((flags & HAS_SET) && (flags & HAS_GET) && (flags & IS_ITERABLE) && (flags &  HAS_LENGTH)) {
+    register_result = _PyObject_CallMethodIdOneArg(Collections_MutableMapping, &PyId_register, result);
+    FAIL_IF_NULL(register_result);
+  } else if((flags & HAS_GET) && (flags & IS_ITERABLE) && (flags &  HAS_LENGTH)) {
+    register_result = _PyObject_CallMethodIdOneArg(Collections_Mapping, &PyId_register, result);
+    FAIL_IF_NULL(register_result);
+  }
+  Py_CLEAR(register_result);
+
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
     // member __vectorcall_offset__, we might consider switching to using that
@@ -2184,6 +2217,7 @@ JsProxy_init(PyObject* core_module)
   PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
+  PyObject* collections_abc = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
@@ -2191,6 +2225,14 @@ JsProxy_init(PyObject* core_module)
   jsproxy_mock =
     _PyObject_CallMethodIdNoArgs(_pyodide_core_docs, &PyId_JsProxy);
   FAIL_IF_NULL(jsproxy_mock);
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  Collections_MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(Collections_MutableSequence);
+  Collections_MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(Collections_MutableMapping);
+  Collections_Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
+  FAIL_IF_NULL(Collections_Mapping);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core_docs.set_method_docstring uses
@@ -2244,5 +2286,6 @@ finally:
   Py_CLEAR(_pyodide_core_docs);
   Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
+  Py_CLEAR(collections_abc);
   return success ? 0 : -1;
 }
