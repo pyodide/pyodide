@@ -475,15 +475,14 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
     if (length == -1) {
       return NULL;
     }
-    slicelength = PySlice_AdjustIndices(length, &start, &stop,
-                                        step);
+    slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
     JsRef jsresult = NULL;
-    if(slicelength <= 0){
+    if (slicelength <= 0) {
       jsresult = JsArray_New();
     } else {
       jsresult = JsArray_slice(self->js, slicelength, start, stop, step);
     }
-    if(jsresult == NULL){
+    if (jsresult == NULL) {
       return NULL;
     }
     PyObject* pyresult = js2python(jsresult);

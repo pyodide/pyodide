@@ -2,7 +2,8 @@
 from typing import Any
 
 import pytest
-from hypothesis import example, given, settings, strategies as st
+from hypothesis import example, given, settings
+from hypothesis import strategies as st
 from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
@@ -1595,6 +1596,7 @@ def test_negative_length(selenium, n):
 def test_array_slices(selenium, l, slice):
     expected = l[slice]
     from pyodide import to_js
+
     jsl = to_js(l)
     result = jsl[slice]
     assert result.to_py() == expected
