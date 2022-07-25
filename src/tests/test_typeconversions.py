@@ -1656,7 +1656,7 @@ def list_slice_and_value(draw):
 @std_hypothesis_settings
 @given(lsv=list_slice_and_value())
 @example(lsv=(list(range(5)), slice(5, 2), []))
-@example(lsv=(list(range(5)), slice(5, 2, -1), []))
+@example(lsv=(list(range(5)), slice(2, 5, -1), []))
 @example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
 @run_in_pyodide
 def test_array_slice_assign_1(selenium, lsv):
