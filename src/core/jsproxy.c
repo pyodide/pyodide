@@ -504,11 +504,52 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   JsProxy* self = (JsProxy*)o;
   bool success = false;
   JsRef idvalue = NULL;
+  PyObject* seq = NULL;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting isn't implemented");
-    return -1;
+    Py_ssize_t start, stop, step, slicelength;
+    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+      return -1;
+    }
+    int length = hiwire_get_length(self->js);
+    FAIL_IF_MINUS_ONE(length);
+    slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+
+    if (pyvalue != NULL) {
+      seq = PySequence_Fast(pyvalue,
+                            "must assign iterable "
+                            "to extended slice");
+      FAIL_IF_MINUS_ONE(seq);
+    }
+    if (pyvalue != NULL && step != 1 &&
+        PySequence_Fast_GET_SIZE(seq) != slicelength) {
+      PyErr_Format(PyExc_ValueError,
+                   "attempt to assign sequence of "
+                   "size %zd to extended slice of "
+                   "size %zd",
+                   PySequence_Fast_GET_SIZE(seq),
+                   slicelength);
+      FAIL();
+    }
+
+    if ((step < 0 && start < stop) || (step > 0 && start > stop)) {
+      stop = start;
+    }
+    if (pyvalue == NULL) {
+      JsArray_slice_assign(self->js, slicelength, start, stop, step, 0, NULL);
+    } else {
+      if (step != 1 && !slicelength) {
+        success = true;
+        goto finally;
+      }
+      JsArray_slice_assign(self->js,
+                           slicelength,
+                           start,
+                           stop,
+                           step,
+                           PySequence_Fast_GET_SIZE(seq),
+                           PySequence_Fast_ITEMS(seq));
+    }
   } else if (PyIndex_Check(item)) {
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
@@ -539,6 +580,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   }
   success = true;
 finally:
+  Py_CLEAR(seq);
   hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
 }

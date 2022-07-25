@@ -851,9 +851,31 @@ JsArray_slice,
   if (step === 1) {
     result = obj.slice(start, stop);
   } else {
-    result = Array.from({ length }, (_, i) = > obj[start + i * step]);
+    result = Array.from({ length }, (_, i) => obj[start + i * step]);
   }
   return Hiwire.new_value(result);
+});
+
+EM_JS_NUM(errcode,
+JsArray_slice_assign,
+(JsRef idobj, int slicelength, int start, int stop, int step, int values_length, PyObject **values),
+{
+  let obj = Hiwire.get_value(idobj);
+  let jsvalues = [];
+  for(let i = 0; i < values_length; i++){
+    let ref = python2js(HEAP32[(values + i) >> 2]);
+    if(ref === 0){
+      return -1;
+    }
+    jsvalues.push(Hiwire.pop_value(ref));
+  }
+  if (step === 1) {
+    obj.splice(start, slicelength, ...jsvalues);
+  } else {
+    for(let i = 0; i < slicelength; i ++){
+      obj.splice(start + i * step, 1, jsvalues[i]);
+    }
+  }
 });
 // clang-format on
 

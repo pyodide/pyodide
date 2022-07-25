@@ -527,12 +527,14 @@ JsArray_Delete(JsRef idobj, int idx);
 JsRef
 JsArray_slice(JsRef idobj, int slicelength, int start, int stop, int step);
 
-JsRef
+errcode
 JsArray_slice_assign(JsRef idobj,
                      int slicelength,
                      int start,
                      int stop,
-                     int step);
+                     int step,
+                     int values_length,
+                     PyObject** values);
 
 // ==================== JsObject API  ====================
 
