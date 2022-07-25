@@ -440,7 +440,7 @@ JsProxy_length(PyObject* o)
  * __getitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static PyObject*
-JsProxy_subscript_array(PyObject* o, PyObject* item)
+JsArray_subscript(PyObject* o, PyObject* item)
 {
   JsProxy* self = (JsProxy*)o;
   if (PyIndex_Check(item)) {
@@ -499,7 +499,7 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
-JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
+JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
   bool success = false;
@@ -508,7 +508,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   Py_ssize_t i;
   if (PySlice_Check(item)) {
     Py_ssize_t start, stop, step, slicelength;
-    FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step) < 0);
+    FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step));
     int length = hiwire_get_length(self->js);
     FAIL_IF_MINUS_ONE(length);
     slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
@@ -2018,10 +2018,10 @@ JsProxy_create_subtype(int flags)
     // will subclass Array.
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_subscript,
-                     .pfunc = (void*)JsProxy_subscript_array };
+                     .pfunc = (void*)JsArray_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
-                     .pfunc = (void*)JsProxy_ass_subscript_array };
+                     .pfunc = (void*)JsArray_ass_subscript };
   }
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
