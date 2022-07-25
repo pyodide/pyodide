@@ -841,19 +841,21 @@ EM_JS_NUM(errcode, JsArray_Delete, (JsRef idobj, int idx), {
   obj.splice(idx, 1);
 });
 
+// clang-format off
 EM_JS_REF(JsRef,
-          JsArray_slice,
-          (JsRef idobj, int length, int start, int stop, int step),
-          {
-            let obj = Hiwire.get_value(idobj);
-            let result;
-            if (step == = 1) {
-              result = obj.slice(start, stop);
-            } else {
-              result = Array.from({ length }, (_, i) = > obj[start + i * step]);
-            }
-            return Hiwire.new_value(result);
-          });
+JsArray_slice,
+(JsRef idobj, int length, int start, int stop, int step),
+{
+  let obj = Hiwire.get_value(idobj);
+  let result;
+  if (step === 1) {
+    result = obj.slice(start, stop);
+  } else {
+    result = Array.from({ length }, (_, i) = > obj[start + i * step]);
+  }
+  return Hiwire.new_value(result);
+});
+// clang-format on
 
 // ==================== JsObject API  ====================
 
