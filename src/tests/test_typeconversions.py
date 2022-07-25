@@ -1595,7 +1595,7 @@ def test_negative_length(selenium, n):
 @run_in_pyodide
 def test_array_slices(selenium, l, slice):
     expected = l[slice]
-    from pyodide import to_js
+    from pyodide.ffi import to_js
 
     jsl = to_js(l)
     result = jsl[slice]
