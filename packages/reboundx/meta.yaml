@@ -1,0 +1,21 @@
+package:
+  name: reboundx
+  version: 3.7.0
+build:
+  exports: requested
+source:
+  url: https://files.pythonhosted.org/packages/0f/08/8ae710e4c90acee5ec0d425deab4fa981d928098b546a3c7396262614712/reboundx-3.7.0.tar.gz
+  sha256: 29a39fbc1cea83cac3f025648c9a185df8583db551dc1fe3d1fc7bc2593bc030
+requirements:
+  run:
+    - rebound
+    - numpy
+test:
+  imports:
+    - rebound
+    - reboundx
+about:
+  home: https://github.com/dtamayo/reboundx
+  PyPI: https://pypi.org/project/reboundx
+  summary: A library for including additional forces in REBOUND
+  license: GPL
