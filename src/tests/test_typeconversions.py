@@ -1603,9 +1603,10 @@ def test_negative_length(selenium, n):
 @run_in_pyodide
 def test_array_slices(selenium, l, slice):
     expected = l[slice]
-    from pyodide.ffi import to_js
+    from pyodide.ffi import JsProxy, to_js
 
     jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
     result = jsl[slice]
     assert result.to_py() == expected
 
@@ -1622,14 +1623,12 @@ def test_array_slices(selenium, l, slice):
 @example(l=list(range(10)), slice=slice(12, -1, -2))
 @run_in_pyodide
 def test_array_slice_del(selenium, l, slice):
-    from pyodide.ffi import to_js
+    from pyodide.ffi import JsProxy, to_js
 
     jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
     del l[slice]
-    print(slice)
-    print(jsl)
     del jsl[slice]
-    print(jsl)
     assert jsl.to_py() == l
 
 
@@ -1660,10 +1659,11 @@ def list_slice_and_value(draw):
 @example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
 @run_in_pyodide
 def test_array_slice_assign_1(selenium, lsv):
-    from pyodide.ffi import to_js
+    from pyodide.ffi import JsProxy, to_js
 
     [l, s, v] = lsv
     jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
     l[s] = v
     jsl[s] = v
     assert jsl.to_py() == l
@@ -1673,13 +1673,14 @@ def test_array_slice_assign_1(selenium, lsv):
 def test_array_slice_assign_2(selenium):
     import pytest
 
-    from pyodide.ffi import to_js
+    from pyodide.ffi import JsProxy, to_js
 
     l = list(range(10))
     with pytest.raises(ValueError) as exc_info_1a:
         l[0:4:2] = [1, 2, 3, 4]
 
     jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
     with pytest.raises(ValueError) as exc_info_1b:
         jsl[0:4:2] = [1, 2, 3, 4]
 
@@ -1699,3 +1700,23 @@ def test_array_slice_assign_2(selenium):
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
     assert exc_info_3a.value.args == exc_info_3b.value.args
+
+
+@std_hypothesis_settings
+@given(l1=st.lists(st.integers()), l2=st.lists(st.integers()))
+@example(l1=[], l2=[])
+@example(l1=[], l2=[1])
+@run_in_pyodide
+def test_array_extend(selenium_module_scope, l1, l2):
+    from pyodide.ffi import to_js
+
+    l1js1 = to_js(l1)
+    l1js1.extend(l2)
+
+    l1js2 = to_js(l1)
+    l1js2 += l2
+
+    l1.extend(l2)
+
+    assert l1 == l1js1.to_py()
+    assert l1 == l1js2.to_py()
