@@ -7,4 +7,9 @@
    :members:
    :autosummary:
    :autosummary-no-nesting:
+
+.. automodule:: pyodide.ffi.wrappers
+   :members:
+   :autosummary:
+   :autosummary-no-nesting:
 ```
