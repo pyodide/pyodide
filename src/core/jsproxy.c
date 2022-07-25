@@ -508,9 +508,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   Py_ssize_t i;
   if (PySlice_Check(item)) {
     Py_ssize_t start, stop, step, slicelength;
-    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
-      return -1;
-    }
+    FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step) < 0);
     int length = hiwire_get_length(self->js);
     FAIL_IF_MINUS_ONE(length);
     slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
@@ -529,14 +527,22 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
                    slicelength);
       FAIL();
     }
-
-    if ((step < 0 && start < stop) || (step > 0 && start > stop)) {
-      stop = start;
-    }
     if (pyvalue == NULL) {
+      if (slicelength <= 0) {
+        success = true;
+        goto finally;
+      }
+      if (step < 0) {
+        // We have to delete in backwards order so make sure step > 0.
+        stop = start + 1;
+        start = stop + step * (slicelength - 1) - 1;
+        step = -step;
+      }
       JsArray_slice_assign(self->js, slicelength, start, stop, step, 0, NULL);
     } else {
       if (step != 1 && !slicelength) {
+        // At this point, assigning to an extended slice of length 0 must be a
+        // no-op
         success = true;
         goto finally;
       }
@@ -552,8 +558,8 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     goto finally;
   } else if (PyIndex_Check(item)) {
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred())
-      return -1;
+    if (i == -1)
+      FAIL_IF_ERR_OCCURRED();
     if (i < 0) {
       int length = hiwire_get_length(self->js);
       FAIL_IF_MINUS_ONE(length);
