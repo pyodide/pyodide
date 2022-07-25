@@ -13,6 +13,8 @@ DOIT_CONFIG = {
     "verbosity": 2,
     "minversion": "0.36.0",
     "action_string_formatting": "both",
+    "par_type": "thread",
+    "backend": "sqlite3",
     # "reporter": ZeroReporter,
 }
 
