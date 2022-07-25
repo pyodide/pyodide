@@ -78,6 +78,7 @@ class BashRunnerWithSharedEnvironment:
         self._reader: TextIO | None
         self._fd_write: int | None
         self.env: dict[str, str] = env
+        self.cwd = os.getcwd()
 
     def __enter__(self) -> "BashRunnerWithSharedEnvironment":
         fd_read, self._fd_write = os.pipe()
@@ -89,6 +90,7 @@ class BashRunnerWithSharedEnvironment:
         assert self._fd_write is not None
         assert self._reader is not None
 
+        chdir_cmd = f"cd {self.cwd}"
         write_env_pycode = ";".join(
             [
                 "import os",
@@ -97,7 +99,7 @@ class BashRunnerWithSharedEnvironment:
             ]
         )
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
-        full_cmd = f"{cmd}\n{write_env_shell_cmd}"
+        full_cmd = f"{chdir_cmd}\n{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
             ["bash", "-ce", full_cmd],
             pass_fds=[self._fd_write],
@@ -111,6 +113,7 @@ class BashRunnerWithSharedEnvironment:
             exit_with_stdio(result)
 
         self.env = json.loads(self._reader.readline())
+        self.cwd = self.env["PWD"]
         return result
 
     def __exit__(

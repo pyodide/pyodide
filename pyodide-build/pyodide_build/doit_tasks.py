@@ -1,6 +1,7 @@
 import argparse
 import os
 import shutil
+import tarfile
 from pathlib import Path
 
 from pyodide_build import buildall, buildpkg
@@ -27,15 +28,44 @@ DIST_DIR = PYODIDE_ROOT / "dist"
 TEMPLATES_DIR = PYODIDE_ROOT / "src/templates"
 
 
-def run_with_env(*cmds):
+def run_with_env(*cmds, cwd=None):
     def _run(cmds):
         with get_bash_runner() as runner:
+            if cwd is not None:
+                runner.run(f"cd {cwd}")
+
             for cmd in cmds:
                 done = runner.run(cmd)
                 if done.returncode != 0:
                     raise Exception(f"Command failed: {cmd}")
 
     return (_run, [cmds])
+
+
+def create_archive(name, files, mode="w"):
+    def filter_pycache(f):
+        if "__pycache__" in f.name:
+            return None
+        return f
+
+    with tarfile.open(name, mode, dereference=True) as tar:
+        for file in files:
+            tar.add(file, filter=filter_pycache)
+
+
+def copy(src, dst):
+    src = Path(src)
+    dst = Path(dst)
+
+    if not src.exists():
+        raise Exception(f"Source file {src} does not exist")
+
+    if src.is_dir():
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy(src, dst)
+
+    return True
 
 
 def task_package():
@@ -150,12 +180,12 @@ def task_pyproxy_gen():
 
 
 def task_error_handling():
+    source = CORE_DIR / "error_handling.ts"
+    target = JS_DIR / "error_handling.gen.ts"
     return {
-        "file_dep": [CORE_DIR / "error_handling.ts"],
-        "actions": [
-            f"cp {CORE_DIR / 'error_handling.ts'} {JS_DIR / 'error_handling.gen.ts'}"
-        ],
-        "targets": [JS_DIR / "error_handling.gen.ts"],
+        "file_dep": [source],
+        "actions": [(copy, [source, target])],
+        "targets": [target],
         "clean": True,
     }
 
@@ -237,21 +267,23 @@ def task_pyodide_d_ts():
 
 def task_templates():
     targets = {
-        "webworker.js": TEMPLATES_DIR / "webworker.js",
-        "webworker_dev.js": TEMPLATES_DIR / "webworker.js",
-        "module_webworker_dev.js": TEMPLATES_DIR / "module_webworker.js",
-        "test.html": TEMPLATES_DIR / "test.html",
-        "module_test.html": TEMPLATES_DIR / "module_test.html",
+        "webworker.js": "webworker.js",
+        "webworker_dev.js": "webworker.js",
+        "module_webworker_dev.js": "module_webworker.js",
+        "test.html": "test.html",
+        "module_test.html": "module_test.html",
     }
 
-    for target, source in targets.items():
+    for target_name, source_name in targets.items():
+        target_path = DIST_DIR / target_name
+        source_path = TEMPLATES_DIR / source_name
         yield {
-            "name": target,
-            "file_dep": [source],
+            "name": target_name,
+            "file_dep": [source_path],
             "actions": [
-                f"cp {source} {DIST_DIR / target}",
+                (copy, [source_path, target_path]),
             ],
-            "targets": [DIST_DIR / target],
+            "targets": [target_path],
             "clean": True,
         }
 
@@ -259,12 +291,20 @@ def task_templates():
 def task_pyodide_py():
     pyodide = PYTHON_DIR / "pyodide"
     pyodide_internal = PYTHON_DIR / "_pyodide"
+    target = DIST_DIR / "pyodide_py.tar"
     return {
         "file_dep": [*pyodide.glob("*.py"), *pyodide_internal.glob("*.py")],
         "actions": [
-            f"tar --exclude '*__pycache__*' -cf {DIST_DIR / 'pyodide_py.tar'} -C {PYTHON_DIR} {pyodide.name} {pyodide_internal.name}"
+            (
+                create_archive,
+                [],
+                {
+                    "name": target,
+                    "files": [pyodide, pyodide_internal],
+                },
+            )
         ],
-        "targets": [DIST_DIR / "pyodide_py.tar"],
+        "targets": [target],
         "clean": True,
     }
 
@@ -313,7 +353,14 @@ def task_distutils():
         "task_dep": ["cpython"],
         "file_dep": [*(cpythonlib / "distutils").glob("**/*.py")],
         "actions": [
-            f"tar --exclude=__pycache__ -cf {DIST_DIR / 'distutils.tar'} -C {cpythonlib} distutils"
+            (
+                create_archive,
+                [],
+                {
+                    "name": DIST_DIR / "distutils.tar",
+                    "files": [cpythonlib / "distutils"],
+                },
+            )
         ],
         "targets": [DIST_DIR / "distutils.tar"],
         "clean": True,
@@ -324,7 +371,7 @@ def task_package_json():
     package_json = JS_DIR / "package.json"
     return {
         "file_dep": [package_json],
-        "actions": [f"mkdir -p {DIST_DIR}", f"cp {package_json} {DIST_DIR}"],
+        "actions": [(copy, [package_json, DIST_DIR])],
         "targets": [DIST_DIR / "package.json"],
         "clean": True,
     }
@@ -355,7 +402,7 @@ def task_test():
         (
             "_testinternalcapi.c",
             "_testinternalcapi.o",
-            "-I Include/internal/ -DPy_BUILD_CORE_MODULE",
+            "",
         ),
         ("_testcapimodule.c", "_testcapi.o", ""),
         ("_testbuffer.c", "_testbuffer.o", ""),
@@ -363,9 +410,12 @@ def task_test():
         ("_testmultiphase.c", "_testmultiphase.o", ""),
         ("_ctypes/_ctypes_test.c", "_ctypes_test.o", ""),
     ]
-    test_module_cflags = get_make_flag("SIDE_MODULE_CFLAGS") + " -I Include/ -I . "
     cpythonbuild = Path(get_make_flag("CPYTHONBUILD"))
     cpythonlib = Path(get_make_flag("CPYTHONLIB"))
+    test_module_cflags = (
+        get_make_flag("SIDE_MODULE_CFLAGS")
+        + f" -I {cpythonbuild}/Include/ -I {cpythonbuild} -I {cpythonbuild}/Include/internal/ -DPy_BUILD_CORE_MODULE"
+    )
     for source, obj, flags in test_extensions:
         lib = Path(obj).with_suffix(".so")
         yield {
@@ -373,9 +423,10 @@ def task_test():
             "task_dep": ["cpython"],
             "actions": [
                 run_with_env(
-                    f"cd {cpythonbuild} && emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj} {flags}",
-                    f"cd {cpythonbuild} && emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
-                    f"cd {cpythonbuild} && rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
+                    f"emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj} {flags}",
+                    f"emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
+                    f"rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
+                    cwd=cpythonbuild,
                 )
             ],
             "targets": [cpythonbuild / lib],
@@ -384,27 +435,26 @@ def task_test():
 
 
 def task_dist_test():
-    test_extensions = [
-        "_testinternalcapi.so",
-        "_testcapi.so",
-        "_testbuffer.so",
-        "_testimportmultiple.so",
-        "_testmultiphase.so",
-        "_ctypes_test.so",
-    ]
-    test_extensions_str = " ".join(test_extensions)
+    cpythonlib = Path(get_make_flag("CPYTHONLIB"))
+    target = DIST_DIR / "test.tar"
     return {
         "task_dep": ["test"],
         "actions": [
-            run_with_env(
-                (
-                    f"cd $CPYTHONLIB && tar -h --exclude=__pycache__ -cf {DIST_DIR / 'test.tar'} "
-                    f"test {test_extensions_str} unittest/test sqlite3/test ctypes/test"
-                ),
-                f"cd $CPYTHONLIB && rm {test_extensions_str}",
-            )
+            (
+                create_archive,
+                [],
+                {
+                    "name": target,
+                    "files": [
+                        cpythonlib / "unittest/test",
+                        cpythonlib / "sqlite3/test",
+                        cpythonlib / "ctypes/test",
+                        *cpythonlib.glob("*test*.so"),
+                    ],
+                },
+            ),
         ],
-        "targets": [DIST_DIR / "test.tar"],
+        "targets": [target],
         "clean": True,
     }
 
