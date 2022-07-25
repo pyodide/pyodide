@@ -863,17 +863,29 @@ JsArray_slice_assign,
   let obj = Hiwire.get_value(idobj);
   let jsvalues = [];
   for(let i = 0; i < values_length; i++){
-    let ref = python2js(HEAP32[(values + i) >> 2]);
+    let ref = _python2js(DEREF_U32(values, i));
     if(ref === 0){
       return -1;
     }
     jsvalues.push(Hiwire.pop_value(ref));
   }
+  if(step < 0 && values === 0) {
+    // We have to delete in backwards order so make sure step > 0. Doing this
+    // here is more efficient in case someone uses `del l[start:stop:-1]`.
+    start = start + (slicelength - 1) * step;
+    step = -step;
+  }
   if (step === 1) {
     obj.splice(start, slicelength, ...jsvalues);
   } else {
-    for(let i = 0; i < slicelength; i ++){
-      obj.splice(start + i * step, 1, jsvalues[i]);
+    if(values !== 0) {
+      for(let i = 0; i < slicelength; i ++){
+        obj[start + i * step] = jsvalues[i];
+      }
+    } else {
+      for(let i = slicelength - 1; i >= 0; i --){
+        obj.splice(start + i * step, 1);
+      }
     }
   }
 });

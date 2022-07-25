@@ -1592,6 +1592,14 @@ def test_negative_length(selenium, n):
 
 @std_hypothesis_settings
 @given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
 @run_in_pyodide
 def test_array_slices(selenium, l, slice):
     expected = l[slice]
@@ -1600,3 +1608,84 @@ def test_array_slices(selenium, l, slice):
     jsl = to_js(l)
     result = jsl[slice]
     assert result.to_py() == expected
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slice_del(selenium, l, slice):
+    from pyodide.ffi import to_js
+
+    jsl = to_js(l)
+    del l[slice]
+    print(slice)
+    print(jsl)
+    del jsl[slice]
+    print(jsl)
+    assert jsl.to_py() == l
+
+
+@st.composite
+def list_slice_and_value(draw):
+    l = draw(st.lists(st.integers()))
+    step_one = draw(st.booleans())
+    if step_one:
+        start = draw(st.integers(0, max(len(l) - 1, 0)) | st.none())
+        stop = draw(st.integers(start, len(l)) | st.none())
+        if draw(st.booleans()) and start is not None:
+            start -= len(l)
+        if draw(st.booleans()) and stop is not None:
+            stop -= len(l)
+        s = slice(start, stop)
+        vals = draw(st.lists(st.integers()))
+    else:
+        s = draw(st.slices(50))
+        vals_len = len(l[s])
+        vals = draw(st.lists(st.integers(), min_size=vals_len, max_size=vals_len))
+    return (l, s, vals)
+
+
+@std_hypothesis_settings
+@given(lsv=list_slice_and_value())
+@run_in_pyodide
+def test_array_slice_assign_1(selenium, lsv):
+    from pyodide.ffi import to_js
+
+    [l, s, v] = lsv
+    jsl = to_js(l)
+    l[s] = v
+    jsl[s] = v
+    assert jsl.to_py() == l
+
+
+@run_in_pyodide
+def test_array_slice_assign_2(selenium):
+    import pytest
+
+    from pyodide.ffi import to_js
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_1a:
+        l[0:4:2] = [1, 2, 3, 4]
+
+    jsl = to_js(l)
+    with pytest.raises(ValueError) as exc_info_1b:
+        jsl[0:4:2] = [1, 2, 3, 4]
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_2a:
+        l[0:4:2] = []
+
+    with pytest.raises(ValueError) as exc_info_2b:
+        jsl[0:4:2] = []
+
+    assert exc_info_1a.value.args == exc_info_1b.value.args
+    assert exc_info_2a.value.args == exc_info_2b.value.args

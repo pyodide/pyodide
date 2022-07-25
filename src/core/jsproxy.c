@@ -519,7 +519,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
       seq = PySequence_Fast(pyvalue,
                             "must assign iterable "
                             "to extended slice");
-      FAIL_IF_MINUS_ONE(seq);
+      FAIL_IF_NULL(seq);
     }
     if (pyvalue != NULL && step != 1 &&
         PySequence_Fast_GET_SIZE(seq) != slicelength) {
@@ -550,6 +550,8 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
                            PySequence_Fast_GET_SIZE(seq),
                            PySequence_Fast_ITEMS(seq));
     }
+    success = true;
+    goto finally;
   } else if (PyIndex_Check(item)) {
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
