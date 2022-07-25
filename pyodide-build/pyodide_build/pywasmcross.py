@@ -39,7 +39,6 @@ if IS_COMPILER_INVOCATION:
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
 
-import re
 import shutil
 import subprocess
 from collections import namedtuple
@@ -592,9 +591,6 @@ def handle_command_generate_args(
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        # The native build is possibly multithreaded, but the emscripten one
-        # definitely isn't
-        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags

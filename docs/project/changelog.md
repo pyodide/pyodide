@@ -143,7 +143,7 @@ substitutions:
   {pr}`2767`
 
 - {{ Enhancement }} It is now possible to use an alternate `repodata.json`
-  lockfile by passing the `lockFileURL` option to {any}`loadPyodide`. This is
+  lockfile by passing the `lockFileURL` option to {any}`loadPyodide <globalThis.loadPyodide>`. This is
   particularly intended to be used with {any}`micropip.freeze`.
   {pr}`2645`
 
@@ -272,7 +272,7 @@ substitutions:
 - {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
   a built-in conversion to Python. Also added a `default_converter` argument to
-  {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
+  {any}`PyProxy.toJs` and {any}`pyodide.ffi.to_js` to convert.
   {pr}`2170` and {pr}`2208`
 
 - {{ Enhancement }} Async Python functions called from Javascript now have the
@@ -752,7 +752,7 @@ _August 3rd, 2021_
 
 ### Python package
 
-- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
+- {{ Enhancement }} Added a new {any}`CodeRunner <pyodide.code.CodeRunner>` API for finer control than
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
   {pr}`1563`
@@ -801,7 +801,7 @@ _August 3rd, 2021_
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
-- {{ API }} {any}`toJs <PyProxy.toJs>` and {any}`to_js <pyodide.to_js>` now
+- {{ API }} {any}`PyProxy.toJs` and {any}`to_js <pyodide.ffi.to_js>` now
   take an option `pyproxies`, if a JavaScript Array is passed for this, then
   any proxies created during conversion will be placed into this array. This
   allows easy cleanup later. The `create_pyproxies` option can be used to

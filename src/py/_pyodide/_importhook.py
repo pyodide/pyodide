@@ -74,7 +74,7 @@ class JsFinder(MetaPathFinder):
         """
         Unregisters a JavaScript module with given name that has been previously
         registered with :any:`pyodide.registerJsModule` or
-        :any:`pyodide.register_js_module`. If a JavaScript module with that name
+        :any:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
         imported module from ``sys.modules``. This is called by the JavaScript
