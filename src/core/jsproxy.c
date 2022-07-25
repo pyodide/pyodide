@@ -516,9 +516,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
 
     if (pyvalue != NULL) {
-      seq = PySequence_Fast(pyvalue,
-                            "must assign iterable "
-                            "to extended slice");
+      seq = PySequence_Fast(pyvalue, "can only assign an iterable");
       FAIL_IF_NULL(seq);
     }
     if (pyvalue != NULL && step != 1 &&

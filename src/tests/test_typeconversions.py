@@ -1687,5 +1687,12 @@ def test_array_slice_assign_2(selenium):
     with pytest.raises(ValueError) as exc_info_2b:
         jsl[0:4:2] = []
 
+    with pytest.raises(TypeError) as exc_info_3a:
+        l[:] = 1  # type: ignore[call-overload]
+
+    with pytest.raises(TypeError) as exc_info_3b:
+        jsl[:] = 1
+
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
+    assert exc_info_3a.value.args == exc_info_3b.value.args
