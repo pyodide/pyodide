@@ -2,7 +2,7 @@
 from typing import Any
 
 import pytest
-from hypothesis import example, given, settings, strategies
+from hypothesis import example, given, settings, strategies as st
 from hypothesis.strategies import text
 from pyodide_test_runner import run_in_pyodide
 from pyodide_test_runner.fixture import selenium_context_manager
@@ -119,9 +119,9 @@ def test_large_string_conversion(selenium):
 
 
 @given(
-    n=strategies.one_of(
-        strategies.integers(),
-        strategies.floats(allow_nan=False),
+    n=st.one_of(
+        st.integers(),
+        st.floats(allow_nan=False),
     )
 )
 @std_hypothesis_settings
@@ -147,7 +147,7 @@ def test_number_conversions(selenium_module_scope, n):
         assert x_js == n
 
 
-@given(n=strategies.floats())
+@given(n=st.floats())
 @std_hypothesis_settings
 @run_in_pyodide
 def test_number_conversions_2(selenium_module_scope, n):
@@ -167,7 +167,7 @@ def test_number_conversions_2(selenium_module_scope, n):
         assert isinstance(n_js, float)
 
 
-@given(n=strategies.integers())
+@given(n=st.integers())
 @std_hypothesis_settings
 @example(2**53)
 @example(2**53 - 1)
@@ -211,7 +211,7 @@ def test_nan_conversions(selenium):
     )
 
 
-@given(n=strategies.integers())
+@given(n=st.integers())
 @std_hypothesis_settings
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
@@ -248,9 +248,9 @@ def test_bigint_conversions(selenium_module_scope, n):
 
 
 @given(
-    n=strategies.one_of(
-        strategies.integers(min_value=2**53 + 1),
-        strategies.integers(max_value=-(2**53) - 1),
+    n=st.one_of(
+        st.integers(min_value=2**53 + 1),
+        st.integers(max_value=-(2**53) - 1),
     )
 )
 @std_hypothesis_settings
@@ -282,8 +282,8 @@ def test_big_int_conversions2(selenium_module_scope, n):
 
 
 @given(
-    n=strategies.integers(),
-    exp=strategies.integers(min_value=1, max_value=10),
+    n=st.integers(),
+    exp=st.integers(min_value=1, max_value=10),
 )
 @std_hypothesis_settings
 def test_big_int_conversions3(selenium_module_scope, n, exp):
@@ -1587,3 +1587,14 @@ def test_negative_length(selenium, n):
     a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
     with raises:
         a[-1]
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@run_in_pyodide
+def test_array_slices(selenium, l, slice):
+    expected = l[slice]
+    from pyodide import to_js
+    jsl = to_js(l)
+    result = jsl[slice]
+    assert result.to_py() == expected

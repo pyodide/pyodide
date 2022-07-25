@@ -467,9 +467,28 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
     return pyresult;
   }
   if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting isn't implemented");
-    return NULL;
+    Py_ssize_t start, stop, step, slicelength;
+    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
+      return NULL;
+    }
+    int length = hiwire_get_length(self->js);
+    if (length == -1) {
+      return NULL;
+    }
+    slicelength = PySlice_AdjustIndices(length, &start, &stop,
+                                        step);
+    JsRef jsresult = NULL;
+    if(slicelength <= 0){
+      jsresult = JsArray_New();
+    } else {
+      jsresult = JsArray_slice(self->js, slicelength, start, stop, step);
+    }
+    if(jsresult == NULL){
+      return NULL;
+    }
+    PyObject* pyresult = js2python(jsresult);
+    hiwire_decref(jsresult);
+    return pyresult;
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
