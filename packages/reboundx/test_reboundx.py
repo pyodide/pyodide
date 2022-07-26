@@ -10,6 +10,7 @@ from pyodide_test_runner import run_in_pyodide
 def test_modifymass(selenium):
     import rebound
     import reboundx
+    import numpy
 
     sim = rebound.Simulation()
     sim.add(m=1.0)
