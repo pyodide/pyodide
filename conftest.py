@@ -106,10 +106,11 @@ def pytest_terminal_summary(terminalreporter):
 
     test_result = {}
     for status in tr.stats:
-        if status in ("warnings", "deselected"):
+        if status in ("warnings", "deselected", ""):
             continue
 
         for test in tr.stats[status]:
+            assert test.when == "call"
             try:
                 if test.longrepr and test.longrepr[2] in "previously passed":
                     test_result[test.nodeid] = "skip_passed"
