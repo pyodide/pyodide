@@ -4,6 +4,8 @@ package:
 build:
   exports: requested
   post: |
+    mkdir -p $WASM_LIBRARY_DIR/include/rebound/
+    cp $WHEELDIR/rebound/*.h $WASM_LIBRARY_DIR/include/rebound/
     cp $WHEELDIR/librebound.cpython-$PYMAJOR$PYMINOR-*.so $WASM_LIBRARY_DIR/lib/
 source:
   url: https://files.pythonhosted.org/packages/78/37/95ab84dfb72a37d78420ffa1ee087dfbb6f1098117435e2191f2deff9067/rebound-3.19.4.tar.gz

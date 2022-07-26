@@ -4,6 +4,8 @@ package:
 build:
   cross-build-env: true
   exports: requested
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include/rebound/
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib/
 source:
