@@ -72,7 +72,7 @@ def test_handle_command():
     ]
     assert generate_args("gcc test.c", args) == "emcc test.c"
     assert (
-        generate_args("gcc -shared -c test.o -o test.so", args, True)
+        generate_args("gcc -c test.o -o test.so", args, True)
         == "emcc -c test.o -o test.so"
     )
 
@@ -95,13 +95,13 @@ def test_handle_command():
         target_install_dir="",
     )
     assert (
-        generate_args("gcc -shared -c test.o -o test.so", args, True)
+        generate_args("gcc -c test.o -o test.so", args, True)
         == "emcc -lm -c test.o -o test.so"
     )
 
     # Test that repeated libraries are removed
     assert (
-        generate_args("gcc -shared test.o -lbob -ljim -ljim -lbob -o test.so", args)
+        generate_args("gcc test.o -lbob -ljim -ljim -lbob -o test.so", args)
         == "emcc test.o -lbob -ljim -o test.so"
     )
 
@@ -112,7 +112,7 @@ def test_handle_command_ldflags():
     args = BuildArgs()
     assert (
         generate_args(
-            "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so",
+            "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -c test.o -o test.so",
             args,
             True,
         )
@@ -152,11 +152,11 @@ def test_conda_unsupported_args():
     # Check that compile arguments that are not supported by emcc and are sometimes
     # used in conda are removed.
     args = BuildArgs()
-    assert generate_args(
-        "gcc -shared -c test.o -B /compiler_compat -o test.so", args
-    ) == ("emcc -c test.o -o test.so")
+    assert generate_args("gcc -c test.o -B /compiler_compat -o test.so", args) == (
+        "emcc -c test.o -o test.so"
+    )
 
-    assert generate_args("gcc -shared -c test.o -Wl,--sysroot=/ -o test.so", args) == (
+    assert generate_args("gcc -c test.o -Wl,--sysroot=/ -o test.so", args) == (
         "emcc -c test.o -o test.so"
     )
 

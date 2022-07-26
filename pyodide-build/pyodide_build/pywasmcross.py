@@ -341,9 +341,6 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
 
     # fmt: off
     if arg in [
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        "-shared",
         # threading is disabled for now
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
