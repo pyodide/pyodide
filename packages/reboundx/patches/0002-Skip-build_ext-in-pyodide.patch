@@ -1,7 +1,7 @@
 From c0460391c2b71c6abaf3d01dd6fc7fb9c3cf6617 Mon Sep 17 00:00:00 2001
 From: Jo Bovy <bovy@astro.utoronto.ca>
 Date: Mon, 25 Jul 2022 23:44:45 -0400
-Subject: [PATCH 2/3] Skip build_ext in pyodide
+Subject: [PATCH 2/2] Skip build_ext in pyodide
 
 ---
  setup.py | 10 ++++++++++
