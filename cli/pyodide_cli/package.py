@@ -16,7 +16,7 @@ class PackageFormat(str, Enum):
 
 @app.callback(no_args_is_help=True)
 def callback():
-    """TODO: HELP STRING"""
+    """Add a new package or update an existing package"""
     return
 
 

@@ -4,6 +4,8 @@ import shutil
 import tarfile
 from pathlib import Path
 
+from doit import create_after  # type: ignore[import]
+
 from pyodide_build import buildall, buildpkg
 from pyodide_build.buildpkg import get_bash_runner
 from pyodide_build.common import get_make_flag, search_pyodide_root
@@ -31,26 +33,26 @@ TEMPLATES_DIR = PYODIDE_ROOT / "src/templates"
 def run_with_env(*cmds, cwd=None):
     def _run(cmds):
         with get_bash_runner() as runner:
-            if cwd is not None:
-                runner.run(f"cd {cwd}")
-
             for cmd in cmds:
-                done = runner.run(cmd)
+                done = runner.run(cmd, cwd=cwd)
                 if done.returncode != 0:
                     raise Exception(f"Command failed: {cmd}")
 
     return (_run, [cmds])
 
 
-def create_archive(name, files, mode="w"):
+def create_archive(name, files, base="", mode="w"):
     def filter_pycache(f):
         if "__pycache__" in f.name:
             return None
         return f
 
+    name = Path(name)
+    name.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(name, mode, dereference=True) as tar:
         for file in files:
-            tar.add(file, filter=filter_pycache)
+            arcname = file.relative_to(base)
+            tar.add(file, filter=filter_pycache, arcname=arcname)
 
 
 def copy(src, dst):
@@ -210,6 +212,7 @@ def task_pyodide_js():
     }
 
 
+@create_after(executed="pyodide_core")
 def task_pyodide_asm_js():
     target = DIST_DIR / "pyodide.asm.js"
     objs = [str(p) for p in CORE_DIR.glob("*.o")]
@@ -222,9 +225,9 @@ def task_pyodide_asm_js():
                 [ -d {DIST_DIR} ] || mkdir {DIST_DIR}
                 emcc -o {target} {" ".join(objs)} $MAIN_MODULE_LDFLAGS
                 """,
-                """
-                if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \\
-                    cd dist && npx prettier -w pyodide.asm.js ; \\
+                f"""
+                if [[ -n ${{PYODIDE_SOURCEMAP+x}} ]] || [[ -n ${{PYODIDE_SYMBOLS+x}} ]]; then \\
+                    cd {DIST_DIR} && npx prettier -w pyodide.asm.js ; \\
                 fi
                 """,
                 # Strip out C++ symbols which all start __Z.
@@ -293,13 +296,14 @@ def task_pyodide_py():
     pyodide_internal = PYTHON_DIR / "_pyodide"
     target = DIST_DIR / "pyodide_py.tar"
     return {
-        "file_dep": [*pyodide.glob("*.py"), *pyodide_internal.glob("*.py")],
+        "file_dep": [*pyodide.glob("**/*.py"), *pyodide_internal.glob("**/*.py")],
         "actions": [
             (
                 create_archive,
                 [],
                 {
                     "name": target,
+                    "base": PYTHON_DIR,
                     "files": [pyodide, pyodide_internal],
                 },
             )
@@ -358,6 +362,7 @@ def task_distutils():
                 [],
                 {
                     "name": DIST_DIR / "distutils.tar",
+                    "base": cpythonlib,
                     "files": [cpythonlib / "distutils"],
                 },
             )
@@ -369,10 +374,11 @@ def task_distutils():
 
 def task_package_json():
     package_json = JS_DIR / "package.json"
+    target = DIST_DIR / "package.json"
     return {
         "file_dep": [package_json],
-        "actions": [(copy, [package_json, DIST_DIR])],
-        "targets": [DIST_DIR / "package.json"],
+        "actions": [(copy, [package_json, target])],
+        "targets": [target],
         "clean": True,
     }
 
@@ -402,13 +408,12 @@ def task_test():
         (
             "_testinternalcapi.c",
             "_testinternalcapi.o",
-            "",
         ),
-        ("_testcapimodule.c", "_testcapi.o", ""),
-        ("_testbuffer.c", "_testbuffer.o", ""),
-        ("_testimportmultiple.c", "_testimportmultiple.o", ""),
-        ("_testmultiphase.c", "_testmultiphase.o", ""),
-        ("_ctypes/_ctypes_test.c", "_ctypes_test.o", ""),
+        ("_testcapimodule.c", "_testcapi.o"),
+        ("_testbuffer.c", "_testbuffer.o"),
+        ("_testimportmultiple.c", "_testimportmultiple.o"),
+        ("_testmultiphase.c", "_testmultiphase.o"),
+        ("_ctypes/_ctypes_test.c", "_ctypes_test.o"),
     ]
     cpythonbuild = Path(get_make_flag("CPYTHONBUILD"))
     cpythonlib = Path(get_make_flag("CPYTHONLIB"))
@@ -416,14 +421,14 @@ def task_test():
         get_make_flag("SIDE_MODULE_CFLAGS")
         + f" -I {cpythonbuild}/Include/ -I {cpythonbuild} -I {cpythonbuild}/Include/internal/ -DPy_BUILD_CORE_MODULE"
     )
-    for source, obj, flags in test_extensions:
+    for source, obj in test_extensions:
         lib = Path(obj).with_suffix(".so")
         yield {
             "name": source,
-            "task_dep": ["cpython"],
+            "task_dep": ["cpython", "pyodide_asm_js"],
             "actions": [
                 run_with_env(
-                    f"emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj} {flags}",
+                    f"emcc {test_module_cflags} -c Modules/{source} -o Modules/{obj}",
                     f"emcc Modules/{obj} -o {lib} $SIDE_MODULE_LDFLAGS",
                     f"rm -f {cpythonlib / lib} && ln -s {cpythonbuild / lib} {cpythonlib / lib}",
                     cwd=cpythonbuild,
@@ -434,6 +439,7 @@ def task_test():
         }
 
 
+@create_after(executed="test")
 def task_dist_test():
     cpythonlib = Path(get_make_flag("CPYTHONLIB"))
     target = DIST_DIR / "test.tar"
@@ -445,14 +451,17 @@ def task_dist_test():
                 [],
                 {
                     "name": target,
+                    "base": cpythonlib,
                     "files": [
+                        cpythonlib / "test",
                         cpythonlib / "unittest/test",
                         cpythonlib / "sqlite3/test",
                         cpythonlib / "ctypes/test",
-                        *cpythonlib.glob("*test*.so"),
+                        *cpythonlib.glob("_*test*.so"),
                     ],
                 },
             ),
+            f"cd {cpythonlib} && rm *test*.so",
         ],
         "targets": [target],
         "clean": True,

@@ -26,6 +26,7 @@ def main(
         None, "--version", callback=version_callback, is_eager=True
     ),
 ):
+    """A command line interface for Pyodide."""
     pass
 
 
