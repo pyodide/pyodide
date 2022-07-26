@@ -1,0 +1,33 @@
+From 81bce758e6c40f03e23c3c0bcab6463e79e51262 Mon Sep 17 00:00:00 2001
+From: Jo Bovy <bovy@astro.utoronto.ca>
+Date: Tue, 26 Jul 2022 11:38:12 -0400
+Subject: [PATCH] Load dynamical library to expose it's symbols
+
+---
+ rebound/__init__.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/rebound/__init__.py b/rebound/__init__.py
+index 13fed8b..27c2430 100644
+--- a/rebound/__init__.py
++++ b/rebound/__init__.py
+@@ -1,5 +1,16 @@
+ # -*- coding: utf-8 -*-
+ """An N-body integrator package for python."""
++
++import sysconfig
++import pyodide_js
++from site import getsitepackages
++ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
++pyodide_js._module.loadDynamicLibrary(f'{getsitepackages()[0]}/librebound{ext_suffix}')
++del getsitepackages
++del pyodide_js
++del sysconfig
++del ext_suffix
++
+ # Make changes for python 2 and 3 compatibility
+ try:
+     import builtins      # if this succeeds it's python 3.x
+-- 
+1.8.3.1
+
