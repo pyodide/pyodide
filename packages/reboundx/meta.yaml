@@ -3,6 +3,8 @@ package:
   version: 3.7.0
 build:
   exports: requested
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include/rebound/
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib/
 source:
