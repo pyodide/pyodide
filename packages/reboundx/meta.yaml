@@ -2,6 +2,7 @@ package:
   name: reboundx
   version: 3.7.0
 build:
+  cross-build-env: true
   exports: requested
 source:
   url: https://files.pythonhosted.org/packages/0f/08/8ae710e4c90acee5ec0d425deab4fa981d928098b546a3c7396262614712/reboundx-3.7.0.tar.gz
