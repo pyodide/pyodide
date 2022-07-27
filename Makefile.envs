@@ -100,6 +100,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-s DEMANGLE_SUPPORT=1 \
+	-s USE_ZLIB \
+	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
@@ -109,8 +111,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
-	-lbz2 \
-	-lz \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \

@@ -22,13 +22,7 @@ LIBFFI_TAG=2022-06-23
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
-$(BUILD)/.deps_complete: $(BUILD)/.patched
-	embuilder build zlib --pic
-	embuilder build bzip2 --pic
-	touch $(BUILD)/.deps_complete
-
-
-$(INSTALL)/lib/$(LIB): $(BUILD)/.deps_complete $(BUILD)/$(LIB) remove_modules.txt
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
