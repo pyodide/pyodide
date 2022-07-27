@@ -106,7 +106,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(INSTALL)/lib/libsqlite3.a
 		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-I$(SQLITEBUILD)" \
+			  CPPFLAGS="-I$(SQLITEBUILD) -sUSE_BZIP2=1 -sUSE_ZLIB=1" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \
