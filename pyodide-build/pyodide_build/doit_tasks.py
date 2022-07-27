@@ -216,6 +216,8 @@ def task_pyodide_js():
 def task_pyodide_asm_js():
     target = DIST_DIR / "pyodide.asm.js"
     objs = [str(p) for p in CORE_DIR.glob("*.o")]
+
+    ldflags = get_make_flag("MAIN_MODULE_LDFLAGS")
     return {
         "file_dep": [*objs],
         "actions": [
@@ -223,7 +225,7 @@ def task_pyodide_asm_js():
                 'date +"[%F %T] Building pyodide.asm.js..."',
                 f"""
                 [ -d {DIST_DIR} ] || mkdir {DIST_DIR}
-                emcc -o {target} {" ".join(objs)} $MAIN_MODULE_LDFLAGS
+                emcc -o {target} {" ".join(objs)} {ldflags}
                 """,
                 f"""
                 if [[ -n ${{PYODIDE_SOURCEMAP+x}} ]] || [[ -n ${{PYODIDE_SYMBOLS+x}} ]]; then \\
@@ -249,7 +251,7 @@ def task_pyodide_asm_js():
                 'date +"[%F %T] done building pyodide.asm.js."',
             )
         ],
-        "targets": [target],
+        "targets": [target, target.with_suffix(".data"), target.with_suffix(".wasm")],
         "task_dep": ["pyodide_core", "pyodide_js"],
         "clean": True,
     }
