@@ -28,7 +28,18 @@ FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
 LIBFFI_TAG=2022-06-23
 
-all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
+
+READLINE_NAME=readline-8.1
+READLINE_URL=https://ftp.gnu.org/gnu/readline/$(READLINE_NAME).tar.gz
+READLINE_TARBALL=$(ROOT)/downloads/$(READLINE_NAME).tar.gz
+READLINE_BUILD=$(ROOT)/build/$(READLINE_NAME)
+
+TERMCAP_NAME=termcap-1.3.1
+TERMCAP_URL=https://ftp.gnu.org/gnu/termcap/$(TERMCAP_NAME).tar.gz
+TERMCAP_TARBALL=$(ROOT)/downloads/$(TERMCAP_NAME).tar.gz
+TERMCAP_BUILD=$(ROOT)/build/$(TERMCAP_NAME)
+
+all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(INSTALL)/lib/libreadline.a $(INSTALL)/lib/libtermcap.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
@@ -81,6 +92,13 @@ $(BZIP2TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(BZIP2URL)
 
+$(READLINE_TARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(READLINE_URL)
+
+$(TERMCAP_TARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(TERMCAP_URL)
 
 
 $(BUILD)/.patched: $(TARBALL)
@@ -91,9 +109,43 @@ $(BUILD)/.patched: $(TARBALL)
 
 $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
+	tar -C $(ROOT)/build/ -xf $(ZLIBTARBALL)
 	cd $(ZLIBBUILD); emconfigure ./configure
 	touch $@
+
+$(READLINE_BUILD)/.configured: $(READLINE_TARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(READLINE_TARBALL)
+	( \
+		cd $(READLINE_BUILD); \
+		CFLAGS=-fpic emconfigure ./configure \
+			--disable-shared \
+			--prefix=$(INSTALL) \
+	)
+	echo "#define HAVE_POSIX_SIGNALS 1" >> $(READLINE_BUILD)/config.h
+	touch $@
+
+$(TERMCAP_BUILD)/.configured: $(TERMCAP_TARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(TERMCAP_TARBALL)
+	( \
+		cd $(TERMCAP_BUILD); \
+		emconfigure ./configure
+	)
+
+	echo "CFLAGS+= -fPIC" >> $(TERMCAP_BUILD)/Makefile
+	echo "DEFS+= -DSTDC_HEADERS=1" >> $(TERMCAP_BUILD)/Makefile
+	touch $@
+
+
+$(INSTALL)/lib/libreadline.a: $(READLINE_BUILD)/.configured
+	cd $(READLINE_BUILD); \
+		emmake make install
+
+$(INSTALL)/lib/libtermcap.a: $(TERMCAP_BUILD)/.configured
+	cd $(TERMCAP_BUILD); \
+		emmake make install
+	cp $(TERMCAP_BUILD)/libtermcap.a $@
 
 
 $(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
@@ -128,7 +180,7 @@ $(INSTALL)/lib/libffi.a :
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a $(INSTALL)/lib/libreadline.a
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -142,7 +194,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD) -I$(INSTALL)/include/" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \
