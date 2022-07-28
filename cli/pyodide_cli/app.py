@@ -2,7 +2,7 @@
 # import subprocess
 from importlib.metadata import entry_points
 
-import rich_click.typer as typer
+import typer
 
 from . import __version__
 

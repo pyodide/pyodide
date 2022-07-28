@@ -1,9 +1,9 @@
 from contextlib import redirect_stdout
 from io import StringIO
 
-import rich_click.typer as typer
-from doit.cmd_base import ModuleTaskLoader
-from doit.doit_cmd import DoitMain
+import typer  # type: ignore[import]
+from doit.cmd_base import ModuleTaskLoader  # type: ignore[import]
+from doit.doit_cmd import DoitMain  # type: ignore[import]
 
 from .. import doit_tasks
 
@@ -11,13 +11,13 @@ app = typer.Typer()
 runner = DoitMain(ModuleTaskLoader(doit_tasks))
 
 
-@app.callback(no_args_is_help=True)
+@app.callback(no_args_is_help=True)  # type: ignore[misc]
 def callback() -> None:
     """Build Pyodide core and packages"""
     return
 
 
-@app.command("package")
+@app.command("package")  # type: ignore[misc]
 def package(
     name: str,
 ) -> None:
@@ -25,19 +25,19 @@ def package(
     return runner.run([f"package:{name}"])
 
 
-@app.command("emsdk")
+@app.command("emsdk")  # type: ignore[misc]
 def emsdk() -> None:
     """Prepare emsdk"""
     return runner.run(["emsdk"])
 
 
-@app.command("cpython")
+@app.command("cpython")  # type: ignore[misc]
 def cpython() -> None:
     """Build a cpython"""
     return runner.run(["cpython"])
 
 
-@app.command("pyodide")
+@app.command("pyodide")  # type: ignore[misc]
 def pyodide(
     packages: str = typer.Option("core", help="The packages to be bundled."),
 ) -> None:
@@ -46,7 +46,7 @@ def pyodide(
     return runner.run(["pyodide"])
 
 
-@app.command("clean")
+@app.command("clean")  # type: ignore[misc]
 def clean(
     target: str = typer.Argument("pyodide", help="The target to be cleaned."),
     all: bool = typer.Option(False, help="Clean all targets."),
@@ -64,7 +64,7 @@ def clean(
         return runner.run(["clean", target])
 
 
-@app.command("build")
+@app.command("build")  # type: ignore[misc]
 def build(
     target: str,
 ) -> None:
