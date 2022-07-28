@@ -363,7 +363,20 @@ async def test_add_requirement_marker(mock_importlib, wheel_base):
             "python-socketio[client] ; extra == 'socketio'",
         ],
     )
-    assert len(transaction.wheels) == 1
+
+    non_targets = [
+        "contextvars",
+        "aiocontextvars",
+        "numpy",
+        "zarr",
+        "ipykernel",
+        "python-socketio",
+    ]
+
+    wheel_files = [wheel.name for wheel in transaction.wheels]
+    assert "werkzeug" in wheel_files
+    for t in non_targets:
+        assert t not in wheel_files
 
 
 @pytest.mark.asyncio
