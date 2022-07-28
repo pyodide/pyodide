@@ -231,7 +231,7 @@ async function installPackage(
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
   for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib, pkg.shared_library);
+    await loadDynlib(dynlib);
   }
   loadedPackages[name] = pkg;
 }
@@ -275,14 +275,17 @@ const acquireDynlibLock = createLock();
  * @param shared Is this a shared library or not?
  * @private
  */
-async function loadDynlib(lib: string, shared: boolean) {
+async function loadDynlib(lib: string) {
   const releaseDynlibLock = await acquireDynlibLock();
 
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
     _ldLibraryPath: "/usr/lib",
-    _resolvePath: (path: string) => libraryFS._ldLibraryPath + "/" + path,
+    _resolvePath: (path: string) =>
+      Module.PATH.isAbs(path)
+        ? path
+        : Module.PATH.join2(libraryFS._ldLibraryPath, path),
     findObject: (path: string, dontResolveLastLink: boolean) =>
       Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
     readFile: (path: string) =>
