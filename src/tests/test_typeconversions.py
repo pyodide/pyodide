@@ -14,7 +14,7 @@ from pyodide_test_runner.hypothesis import (
 
 
 @given(s=text())
-@settings(deadline=4000)
+@settings(deadline=10000)
 @example("\ufeff")
 def test_string_conversion(selenium_module_scope, s):
     @run_in_pyodide
