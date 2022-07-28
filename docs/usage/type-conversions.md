@@ -10,7 +10,7 @@ which is the equivalent of the object from the source language, for example
 converting a Python string to the equivalent a JavaScript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a JavaScript object into
-Python, the result is a {any}`JsProxy` object. When we proxy a Python object
+Python, the result is a {any}`JsProxy <pyodide.ffi.JsProxy>` object. When we proxy a Python object
 into JavaScript, the result is a {any}`PyProxy` object. A proxied object can be
 explicitly converted using the explicit conversion methods {any}`JsProxy.to_py`
 and {any}`PyProxy.toJs`.
@@ -28,7 +28,7 @@ JavaScript to Python translations occur:
 - when [importing from the `js` module](type-translations_using-js-obj-from-py)
 - when passing arguments to a Python function called from JavaScript
 - when returning the result of a JavaScript function called from Python
-- when accessing an attribute of a {any}`JsProxy`
+- when accessing an attribute of a {any}`JsProxy <pyodide.ffi.JsProxy>`
 
 ```{admonition} Memory Leaks and Python to JavaScript translations
 :class: warning
@@ -49,7 +49,7 @@ the sense that they live at the same memory address). There are a few
 exceptions:
 
 1. `nan` is converted to `nan` after a round trip but `nan != nan`
-2. proxies created using {any}`pyodide.create_proxy` will be unwrapped.
+2. proxies created using {any}`pyodide.ffi.create_proxy` will be unwrapped.
 
 Translating an object from JavaScript to Python and then back to JavaScript
 gives an object that is `===` to the original object. Furthermore, if the object
@@ -120,8 +120,8 @@ language.
 
 ### Proxying from JavaScript into Python
 
-When most JavaScript objects are translated into Python a {any}`JsProxy` is
-returned. The following operations are currently supported on a {any}`JsProxy`:
+When most JavaScript objects are translated into Python a {any}`JsProxy <pyodide.ffi.JsProxy>` is
+returned. The following operations are currently supported on a {any}`JsProxy <pyodide.ffi.JsProxy>`:
 
 | Python                             | JavaScript                        |
 | ---------------------------------- | --------------------------------- |
@@ -145,7 +145,7 @@ returned. The following operations are currently supported on a {any}`JsProxy`:
 | `await proxy`                      | `await x`                         |
 
 Note that each of these operations is only supported if the proxied JavaScript
-object supports the corresponding operation. See {any}`the JsProxy API docs <JsProxy>` for the rest of the methods supported on {any}`JsProxy`. Some other
+object supports the corresponding operation. See {any}`the JsProxy API docs <pyodide.ffi.JsProxy>` for the rest of the methods supported on {any}`JsProxy <pyodide.ffi.JsProxy>`. Some other
 code snippets:
 
 ```py
@@ -193,7 +193,7 @@ When most Python objects are translated to JavaScript a {any}`PyProxy` is
 produced.
 
 Fewer operations can be overloaded in JavaScript than in Python, so some
-operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy`. The
+operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy <pyodide.ffi.JsProxy>`. The
 following operations are supported:
 
 | JavaScript                          | Python              |
@@ -236,7 +236,7 @@ foo(); // throws Error: Object has already been destroyed
 
 Explicit conversion of a {any}`PyProxy` into a native JavaScript object is done
 with the {any}`PyProxy.toJs` method. You can also perform such a conversion in
-Python using {any}`to_js <pyodide.to_js>` which behaves in much the same way. By
+Python using {any}`to_js <pyodide.ffi.to_js>` which behaves in much the same way. By
 default, the `toJs` method does a recursive "deep" conversion, to do a shallow
 conversion use `proxy.toJs({depth : 1})`. In addition to [the normal type
 conversion](type-translations_py2js-table), `toJs` method performs the following
@@ -292,7 +292,7 @@ raised instead.
 
 ### JavaScript to Python
 
-Explicit conversion of a {any}`JsProxy` into a native Python object is done with
+Explicit conversion of a {any}`JsProxy <pyodide.ffi.JsProxy>` into a native Python object is done with
 the {any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive
 "deep" conversion, to do a shallow conversion use `proxy.to_py(depth=1)` The
 `to_py` method performs the following explicit conversions:
@@ -357,7 +357,7 @@ let result_js = result_py.toJs();
 result_py.destroy();
 ```
 
-If a function is intended to be used from JavaScript, you can use {any}`to_js <pyodide.to_js>` on the return value. This prevents the return value from
+If a function is intended to be used from JavaScript, you can use {any}`to_js <pyodide.ffi.to_js>` on the return value. This prevents the return value from
 leaking without requiring the JavaScript code to explicitly destroy it. This is
 particularly important for callbacks.
 
@@ -406,7 +406,7 @@ When a JavaScript function is called, and it returns anything but a promise, if
 the result is a `PyProxy` it is destroyed. Also, any arguments that are
 PyProxies that were created in the process of argument conversion are also
 destroyed. If the `PyProxy` was created in Python using
-{any}`pyodide.create_proxy` it is not destroyed.
+{any}`pyodide.ffi.create_proxy` it is not destroyed.
 
 When a JavaScript function returns a `Promise` (for example, if the function is
 an `async` function), it is assumed that the `Promise` is going to do some work
@@ -419,8 +419,8 @@ created in converting the arguments are also destroyed at this point.
 
 As a result of this, if a `PyProxy` is persisted to be used later, then it must
 either be copied using {any}`PyProxy.copy` in JavaScript, or it must be created
-with {any}`pyodide.create_proxy` or `pyodide.create_once_callable`. If it's only
-going to be called once use `pyodide.create_once_callable`:
+with {any}`pyodide.ffi.create_proxy` or {any}`pyodide.ffi.create_once_callable`. If it's only
+going to be called once use {any}`pyodide.ffi.create_once_callable`:
 
 ```py
 from pyodide import create_once_callable
