@@ -276,15 +276,6 @@ const acquireDynlibLock = createLock();
  * @private
  */
 async function loadDynlib(lib: string, shared: boolean) {
-  const node = Module.FS.lookupPath(lib).node;
-  let byteArray;
-  if (node.mount.type == Module.FS.filesystems.MEMFS) {
-    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
-      Module.FS.lookupPath(lib).node
-    );
-  } else {
-    byteArray = Module.FS.readFile(lib);
-  }
   const releaseDynlibLock = await acquireDynlibLock();
 
   // This is a fake FS-like object to make emscripten
@@ -299,20 +290,12 @@ async function loadDynlib(lib: string, shared: boolean) {
   };
 
   try {
-    const module = await Module.loadWebAssemblyModule(byteArray, {
+    await Module.loadDynamicLibrary(lib, {
       loadAsync: true,
       nodelete: true,
-      allowUndefined: true,
+      global: true,
       fs: libraryFS,
     });
-    Module.preloadedWasm[lib] = module;
-    Module.preloadedWasm[lib.split("/").pop()!] = module;
-    if (shared) {
-      Module.loadDynamicLibrary(lib, {
-        global: true,
-        nodelete: true,
-      });
-    }
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {
       console.warn(
