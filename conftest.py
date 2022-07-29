@@ -110,6 +110,10 @@ def pytest_terminal_summary(terminalreporter):
             continue
 
         for test in tr.stats[status]:
+
+            if test.when != "call":  # discard results from setup/teardown
+                continue
+
             try:
                 if test.longrepr and test.longrepr[2] in "previously passed":
                     test_result[test.nodeid] = "skip_passed"

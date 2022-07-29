@@ -504,7 +504,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime chrome -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -513,7 +513,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime firefox -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -522,7 +522,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -531,7 +531,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome-webworker
-          test-params: -k chrome src/tests/test_webworker.py
+          test-params: --runtime chrome src/tests/test_webworker.py
           requires:
             - test-core-chrome
           filters:
@@ -540,7 +540,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-webworker
-          test-params: -k firefox src/tests/test_webworker.py
+          test-params: --runtime firefox src/tests/test_webworker.py
           requires:
             - test-core-firefox
           filters:
@@ -549,7 +549,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome-no-numpy-dependents
-          test-params: -k chrome packages/test* packages/*/test*
+          test-params: --runtime chrome packages/test* packages/*/test*
           cache-dir: .pytest_cache_chrome
           requires:
             - build-packages-no-numpy-dependents
@@ -564,7 +564,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
-          test-params: -k chrome packages/test* packages/*/test* --skip-passed
+          test-params: --runtime chrome packages/test* packages/*/test* --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
             - test-packages-chrome-no-numpy-dependents
@@ -575,7 +575,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox-no-numpy-dependents
-          test-params: -k firefox packages/test* packages/*/test*
+          test-params: --runtime firefox packages/test* packages/*/test*
           cache-dir: .pytest_cache_firefox
           requires:
             - build-packages-no-numpy-dependents
@@ -590,7 +590,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox
-          test-params: -k firefox packages/test* packages/*/test* --skip-passed
+          test-params: --runtime firefox packages/test* packages/*/test* --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
             - test-packages-firefox-no-numpy-dependents
@@ -601,7 +601,7 @@ workflows:
 
       - test-main:
           name: test-packages-node-no-numpy-dependents
-          test-params: -k node packages/test* packages/*/test*
+          test-params: --runtime node packages/test* packages/*/test*
           cache-dir: .pytest_cache_node
           requires:
             - build-packages-no-numpy-dependents
@@ -616,7 +616,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: -k node packages/test* packages/*/test* --skip-passed
+          test-params: --runtime node packages/test* packages/*/test* --skip-passed
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents
