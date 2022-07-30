@@ -180,6 +180,7 @@ def test_environment_var_substitution(monkeypatch):
     )
 
 
+@pytest.mark.xfail(reason="FIXME: emcc is not available during test")
 def test_exports_node(tmp_path):
     template = """
         int l();
