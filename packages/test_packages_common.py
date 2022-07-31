@@ -2,7 +2,7 @@ import functools
 import os
 
 import pytest
-from pyodide_test_runner import SeleniumWrapper
+from pytest_pyodide import SeleniumWrapper
 
 from conftest import ROOT_PATH, package_is_built
 from pyodide_build.io import parse_package_config

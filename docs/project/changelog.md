@@ -225,7 +225,8 @@ substitutions:
   {pr}`2510`, {pr}`2541`
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
-  decorator can now be accessed through `pyodide_test_runner`.
+  decorator can now be accessed through
+  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
 
 ## Version 0.20.0

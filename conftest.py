@@ -12,15 +12,15 @@ DIST_PATH = ROOT_PATH / "dist"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-import pyodide_test_runner.browser
-from pyodide_test_runner.utils import maybe_skip_test
-from pyodide_test_runner.utils import package_is_built as _package_is_built
-from pyodide_test_runner.utils import parse_xfail_browsers
+import pytest_pyodide.browser
+from pytest_pyodide.utils import maybe_skip_test
+from pytest_pyodide.utils import package_is_built as _package_is_built
+from pytest_pyodide.utils import parse_xfail_browsers
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
 # We need to go through and touch them all once to keep everything okay.
-pyodide_test_runner.browser.INITIALIZE_SCRIPT = """
+pytest_pyodide.browser.INITIALIZE_SCRIPT = """
     pyodide.globals.get;
     pyodide._api.pyodide_code.eval_code;
     pyodide._api.pyodide_code.eval_code_async;

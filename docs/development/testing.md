@@ -60,7 +60,6 @@ flexible.
 There are 5 test locations that are collected by pytest:
 
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
-- `pyodide-test-runner/pyodide_test_runner/tests/`: Tests for the testing
   system.
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
   (do not require selenium to run)
@@ -163,10 +162,10 @@ commits, you will either have to pull in the remote changes or force push.
 
 Many tests simply involve running a chunk of code in Pyodide and ensuring it
 doesn't error. In this case, one can use the `run_in_pyodide` decorate from
-`pyodide_test_runner.decorator`, e.g.
+`pytest_pyodide.decorator`, e.g.
 
 ```python
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide
 def test_add(selenium):
@@ -178,7 +177,7 @@ decorator can also be called with a `packages` argument to load packages before
 running the test. For example:
 
 ```python
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages = ["regex"])
 def test_regex(selenium_standalone):
@@ -201,7 +200,7 @@ innermost decorator. Any decorators inside of `@run_in_pyodide` will be have no
 effect on the behavior of the test.
 
 ```python
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 @pytest.mark.parametrize("x", [1, 2, 3])
 @run_in_pyodide(packages = ["regex"])
