@@ -443,56 +443,51 @@ static PyObject*
 JsArray_subscript(PyObject* o, PyObject* item)
 {
   JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+
   if (PyIndex_Check(item)) {
     Py_ssize_t i;
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred())
-      return NULL;
+    if (i == -1)
+      FAIL_IF_ERR_OCCURRED();
     if (i < 0) {
       int length = hiwire_get_length(self->js);
-      if (length == -1) {
-        return NULL;
-      }
+      FAIL_IF_MINUS_ONE(length);
       i += length;
     }
-    JsRef result = JsArray_Get(self->js, i);
-    if (result == NULL) {
+    jsresult = JsArray_Get(self->js, i);
+    if (jsresult == NULL) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
       }
-      return NULL;
+      FAIL();
     }
-    PyObject* pyresult = js2python(result);
-    hiwire_decref(result);
-    return pyresult;
+    pyresult = js2python(jsresult);
+    goto success;
   }
   if (PySlice_Check(item)) {
     Py_ssize_t start, stop, step, slicelength;
-    if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
-      return NULL;
-    }
+    FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step));
     int length = hiwire_get_length(self->js);
-    if (length == -1) {
-      return NULL;
-    }
+    FAIL_IF_MINUS_ONE(length);
     slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
-    JsRef jsresult = NULL;
     if (slicelength <= 0) {
       jsresult = JsArray_New();
     } else {
       jsresult = JsArray_slice(self->js, slicelength, start, stop, step);
     }
-    if (jsresult == NULL) {
-      return NULL;
-    }
-    PyObject* pyresult = js2python(jsresult);
-    hiwire_decref(jsresult);
-    return pyresult;
+    FAIL_IF_NULL(jsresult);
+    pyresult = js2python(jsresult);
+    goto success;
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
                item->ob_type->tp_name);
-  return NULL;
+success:
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
 }
 
 /**
