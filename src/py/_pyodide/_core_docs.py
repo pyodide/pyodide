@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
 from io import IOBase
 from typing import Any
 
@@ -319,6 +319,12 @@ class JsProxy:
 
     def extend(self, other: Iterable[Any]) -> None:
         """Extend array by appending elements from the iterable.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def __reversed__(self) -> Iterator[Any]:
+        """Return a reverse iterator over the Array.
 
         Present only if the wrapped Javascript object is an array.
         """
