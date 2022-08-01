@@ -447,8 +447,7 @@ JsArray_subscript(PyObject* o, PyObject* item)
   PyObject* pyresult = NULL;
 
   if (PyIndex_Check(item)) {
-    Py_ssize_t i;
-    i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+    Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1)
       FAIL_IF_ERR_OCCURRED();
     if (i < 0) {
@@ -467,11 +466,12 @@ JsArray_subscript(PyObject* o, PyObject* item)
     goto success;
   }
   if (PySlice_Check(item)) {
-    Py_ssize_t start, stop, step, slicelength;
+    Py_ssize_t start, stop, step;
     FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step));
     int length = hiwire_get_length(self->js);
     FAIL_IF_MINUS_ONE(length);
-    slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+    // PySlice_AdjustIndices is "Always successful" per the docs.
+    Py_ssize_t slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
     if (slicelength <= 0) {
       jsresult = JsArray_New();
     } else {
@@ -506,6 +506,7 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
     FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step));
     int length = hiwire_get_length(self->js);
     FAIL_IF_MINUS_ONE(length);
+    // PySlice_AdjustIndices is "Always successful" per the docs.
     slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
 
     if (pyvalue != NULL) {
