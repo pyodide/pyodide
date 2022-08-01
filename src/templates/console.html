@@ -107,7 +107,9 @@
         let clear_console = namespace.get("clear_console");
         const echo = (msg, ...opts) =>
           term.echo(
-            msg.replace("]]", "&rsqb;&rsqb;").replace("[[", "&lsqb;&lsqb;"),
+            msg
+              .replaceAll("]]", "&rsqb;&rsqb;")
+              .replaceAll("[[", "&lsqb;&lsqb;"),
             ...opts
           );
         namespace.destroy();
