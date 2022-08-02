@@ -2,7 +2,8 @@
 from typing import Any
 
 import pytest
-from hypothesis import example, given, settings, strategies
+from hypothesis import example, given, settings
+from hypothesis import strategies as st
 from hypothesis.strategies import text
 from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.fixture import selenium_context_manager
@@ -119,9 +120,9 @@ def test_large_string_conversion(selenium):
 
 
 @given(
-    n=strategies.one_of(
-        strategies.integers(),
-        strategies.floats(allow_nan=False),
+    n=st.one_of(
+        st.integers(),
+        st.floats(allow_nan=False),
     )
 )
 @std_hypothesis_settings
@@ -147,7 +148,7 @@ def test_number_conversions(selenium_module_scope, n):
         assert x_js == n
 
 
-@given(n=strategies.floats())
+@given(n=st.floats())
 @std_hypothesis_settings
 @run_in_pyodide
 def test_number_conversions_2(selenium_module_scope, n):
@@ -167,7 +168,7 @@ def test_number_conversions_2(selenium_module_scope, n):
         assert isinstance(n_js, float)
 
 
-@given(n=strategies.integers())
+@given(n=st.integers())
 @std_hypothesis_settings
 @example(2**53)
 @example(2**53 - 1)
@@ -211,7 +212,7 @@ def test_nan_conversions(selenium):
     )
 
 
-@given(n=strategies.integers())
+@given(n=st.integers())
 @std_hypothesis_settings
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
@@ -248,9 +249,9 @@ def test_bigint_conversions(selenium_module_scope, n):
 
 
 @given(
-    n=strategies.one_of(
-        strategies.integers(min_value=2**53 + 1),
-        strategies.integers(max_value=-(2**53) - 1),
+    n=st.one_of(
+        st.integers(min_value=2**53 + 1),
+        st.integers(max_value=-(2**53) - 1),
     )
 )
 @std_hypothesis_settings
@@ -282,8 +283,8 @@ def test_big_int_conversions2(selenium_module_scope, n):
 
 
 @given(
-    n=strategies.integers(),
-    exp=strategies.integers(min_value=1, max_value=10),
+    n=st.integers(),
+    exp=st.integers(min_value=1, max_value=10),
 )
 @std_hypothesis_settings
 def test_big_int_conversions3(selenium_module_scope, n, exp):
@@ -1587,3 +1588,135 @@ def test_negative_length(selenium, n):
     a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
     with raises:
         a[-1]
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slices(selenium, l, slice):
+    expected = l[slice]
+    from pyodide.ffi import JsProxy, to_js
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
+    result = jsl[slice]
+    assert result.to_py() == expected
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slice_del(selenium, l, slice):
+    from pyodide.ffi import JsProxy, to_js
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
+    del l[slice]
+    del jsl[slice]
+    assert jsl.to_py() == l
+
+
+@st.composite
+def list_slice_and_value(draw):
+    l = draw(st.lists(st.integers()))
+    step_one = draw(st.booleans())
+    if step_one:
+        start = draw(st.integers(0, max(len(l) - 1, 0)) | st.none())
+        stop = draw(st.integers(start, len(l)) | st.none())
+        if draw(st.booleans()) and start is not None:
+            start -= len(l)
+        if draw(st.booleans()) and stop is not None:
+            stop -= len(l)
+        s = slice(start, stop)
+        vals = draw(st.lists(st.integers()))
+    else:
+        s = draw(st.slices(50))
+        vals_len = len(l[s])
+        vals = draw(st.lists(st.integers(), min_size=vals_len, max_size=vals_len))
+    return (l, s, vals)
+
+
+@std_hypothesis_settings
+@given(lsv=list_slice_and_value())
+@example(lsv=(list(range(5)), slice(5, 2), []))
+@example(lsv=(list(range(5)), slice(2, 5, -1), []))
+@example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
+@run_in_pyodide
+def test_array_slice_assign_1(selenium, lsv):
+    from pyodide.ffi import JsProxy, to_js
+
+    [l, s, v] = lsv
+    jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
+    l[s] = v
+    jsl[s] = v
+    assert jsl.to_py() == l
+
+
+@run_in_pyodide
+def test_array_slice_assign_2(selenium):
+    import pytest
+
+    from pyodide.ffi import JsProxy, to_js
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_1a:
+        l[0:4:2] = [1, 2, 3, 4]
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsProxy)
+    with pytest.raises(ValueError) as exc_info_1b:
+        jsl[0:4:2] = [1, 2, 3, 4]
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_2a:
+        l[0:4:2] = []
+
+    with pytest.raises(ValueError) as exc_info_2b:
+        jsl[0:4:2] = []
+
+    with pytest.raises(TypeError) as exc_info_3a:
+        l[:] = 1  # type: ignore[call-overload]
+
+    with pytest.raises(TypeError) as exc_info_3b:
+        jsl[:] = 1
+
+    assert exc_info_1a.value.args == exc_info_1b.value.args
+    assert exc_info_2a.value.args == exc_info_2b.value.args
+    assert exc_info_3a.value.args == exc_info_3b.value.args
+
+
+@std_hypothesis_settings
+@given(l1=st.lists(st.integers()), l2=st.lists(st.integers()))
+@example(l1=[], l2=[])
+@example(l1=[], l2=[1])
+@run_in_pyodide
+def test_array_extend(selenium_module_scope, l1, l2):
+    from pyodide.ffi import to_js
+
+    l1js1 = to_js(l1)
+    l1js1.extend(l2)
+
+    l1js2 = to_js(l1)
+    l1js2 += l2
+
+    l1.extend(l2)
+
+    assert l1 == l1js1.to_py()
+    assert l1 == l1js2.to_py()
