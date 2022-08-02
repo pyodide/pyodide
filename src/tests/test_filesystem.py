@@ -3,6 +3,7 @@
 for a basic nodejs-based test, see src/js/test/filesystem.test.js
 """
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.skip_refcount_check
@@ -105,3 +106,27 @@ def test_idbfs_persist_code(selenium_standalone):
     )
     # remove file
     selenium.run_js(f"""pyodide.FS.unlink("{mount_dir}/test_idbfs/__init__.py")""")
+
+
+@pytest.mark.xfail_browsers(node="Not available", firefox="Not available")
+@run_in_pyodide
+def test_nativefs(selenium_standalone):
+    import pyodide
+
+    pyodide.run_js(
+        """
+        const root = await navigator.storage.getDirectory();
+        const dirHandle = await root.getDirectoryHandle('testdir', { create: true });
+        fs = await pyodide.mountNativeFS("/nativefs", dirHandle);
+        """
+    )
+
+    import os
+
+    print(os.listdir("/nativefs"))
+
+    pyodide.run_js(
+        """
+        await fs.sync()
+        """
+    )

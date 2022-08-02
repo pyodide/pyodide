@@ -9,6 +9,7 @@ export interface Module {
   ENV: { [key: string]: string };
   preloadedWasm: any;
   FS: any;
+  PATH: any;
 }
 
 /**

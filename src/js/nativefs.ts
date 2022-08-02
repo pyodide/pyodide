@@ -1,4 +1,13 @@
-export function initializeNativeFS(module: any) {
+import { Module } from "./module";
+
+export interface EmscriptenFSNode {
+  name: string;
+  mode: number;
+  parent: EmscriptenFSNode;
+  mount: { opts: { root: string } };
+}
+
+export function initializeNativeFS(module: Module) {
   const FS = module.FS;
   const MEMFS = module.FS.filesystems.MEMFS;
   const PATH = module.PATH;
@@ -9,16 +18,16 @@ export function initializeNativeFS(module: any) {
     DIR_MODE: 16384 | 511,
     FILE_MODE: 32768 | 511,
     mount: function (mount: any) {
-      if (!mount.opts.dirHandle) {
-        throw new Error("opts.dirHandle is required");
+      if (!mount.opts.fileSystemHandle) {
+        throw new Error("opts.fileSystemHandle is required");
       }
 
       // reuse all of the core MEMFS functionality
       return MEMFS.mount.apply(null, arguments);
     },
-    syncfs: async (mount: any, populate: Boolean, callback: any) => {
+    syncfs: async (mount: any, populate: Boolean, callback: Function) => {
       try {
-        const local = await nativeFSAsync.getLocalSet(mount);
+        const local = nativeFSAsync.getLocalSet(mount);
         const remote = await nativeFSAsync.getRemoteSet(mount);
         const src = populate ? remote : local;
         const dst = populate ? local : remote;
@@ -30,24 +39,25 @@ export function initializeNativeFS(module: any) {
     },
     // Returns file set of emscripten's filesystem at the mountpoint.
     getLocalSet: (mount: any) => {
-      var entries = Object.create(null);
+      let entries = Object.create(null);
 
       function isRealDir(p: string) {
         return p !== "." && p !== "..";
       }
+
       function toAbsolute(root: string) {
         return (p: string) => {
           return PATH.join2(root, p);
         };
       }
 
-      var check = FS.readdir(mount.mountpoint)
+      let check = FS.readdir(mount.mountpoint)
         .filter(isRealDir)
         .map(toAbsolute(mount.mountpoint));
 
       while (check.length) {
-        var path = check.pop();
-        var stat = FS.stat(path);
+        let path = check.pop();
+        let stat = FS.stat(path);
 
         if (FS.isDir(stat.mode)) {
           check.push.apply(
@@ -66,7 +76,7 @@ export function initializeNativeFS(module: any) {
       // TODO: this should be a map.
       const entries = Object.create(null);
 
-      const handles = await getFsHandles(mount.opts.dirHandle);
+      const handles = await getFsHandles(mount.opts.fileSystemHandle);
       for (const [path, handle] of handles) {
         if (path === ".") continue;
 

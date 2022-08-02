@@ -371,40 +371,38 @@ export function unpackArchive(
   });
 }
 
+type NativeFS = {
+  syncfs: Function;
+};
+
 export async function mountNativeFS(
-  path: string
-  // options: {
-  //   mode?: string;
-  // } = {},
-  // directoryHandle
-  // sync
-) {
-  const options = {
-    mode: "readwrite",
-  };
-  if (typeof (globalThis as any).showDirectoryPicker === "undefined") {
-    throw new Error("mountNativeFS requires the File System Access API");
+  path: string,
+  fileSystemHandle: {
+    isSameEntry: Function;
+    queryPermission: Function;
+    requestPermission: Function;
+  },
+  sync: boolean = false
+): Promise<NativeFS> {
+  if (sync) {
+    throw new Error("Sync mounting is not supported yet");
+  } else {
+    Module.FS.mkdir(path);
+    Module.FS.mount(
+      Module.FS.filesystems.NATIVEFS_ASYNC,
+      { fileSystemHandle: fileSystemHandle },
+      path
+    );
+
+    // sync native ==> browser
+    await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+
+    return {
+      // sync browser ==> native
+      syncfs: async () =>
+        new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+    };
   }
-  const dirHandle = await (globalThis as any).showDirectoryPicker();
-  if ((await dirHandle.requestPermission(options)) !== "granted") {
-    throw new Error("Permission denied");
-  }
-
-  Module.FS.mkdir(path);
-  Module.FS.mount(
-    Module.FS.filesystems.NATIVEFS_ASYNC,
-    { dirHandle: dirHandle },
-    path
-  );
-
-  // sync native ==> browser
-  await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
-
-  return {
-    // sync browser ==> native
-    sync: async () =>
-      new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
-  };
 }
 
 /**
