@@ -841,6 +841,50 @@ EM_JS_NUM(errcode, JsArray_Delete, (JsRef idobj, int idx), {
   obj.splice(idx, 1);
 });
 
+// clang-format off
+EM_JS_REF(JsRef,
+JsArray_slice,
+(JsRef idobj, int length, int start, int stop, int step),
+{
+  let obj = Hiwire.get_value(idobj);
+  let result;
+  if (step === 1) {
+    result = obj.slice(start, stop);
+  } else {
+    result = Array.from({ length }, (_, i) => obj[start + i * step]);
+  }
+  return Hiwire.new_value(result);
+});
+
+EM_JS_NUM(errcode,
+JsArray_slice_assign,
+(JsRef idobj, int slicelength, int start, int stop, int step, int values_length, PyObject **values),
+{
+  let obj = Hiwire.get_value(idobj);
+  let jsvalues = [];
+  for(let i = 0; i < values_length; i++){
+    let ref = _python2js(DEREF_U32(values, i));
+    if(ref === 0){
+      return -1;
+    }
+    jsvalues.push(Hiwire.pop_value(ref));
+  }
+  if (step === 1) {
+    obj.splice(start, slicelength, ...jsvalues);
+  } else {
+    if(values !== 0) {
+      for(let i = 0; i < slicelength; i ++){
+        obj.splice(start + i * step, 1, jsvalues[i]);
+      }
+    } else {
+      for(let i = slicelength - 1; i >= 0; i --){
+        obj.splice(start + i * step, 1);
+      }
+    }
+  }
+});
+// clang-format on
+
 // ==================== JsObject API  ====================
 
 // clang-format off

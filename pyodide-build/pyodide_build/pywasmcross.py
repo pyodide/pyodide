@@ -39,13 +39,13 @@ if IS_COMPILER_INVOCATION:
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
 
-import re
 import shutil
 import subprocess
 from collections import namedtuple
+from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, Iterator, Literal, MutableMapping, NoReturn
+from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -341,9 +341,6 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
 
     # fmt: off
     if arg in [
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        "-shared",
         # threading is disabled for now
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
@@ -591,9 +588,6 @@ def handle_command_generate_args(
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        # The native build is possibly multithreaded, but the emscripten one
-        # definitely isn't
-        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags
