@@ -16,7 +16,7 @@ substitutions:
 
 _August XX, 2022_
 
-[See the release notes for a summary.](TODO)
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
 
 ### Build system
 
