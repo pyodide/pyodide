@@ -14,6 +14,8 @@ substitutions:
 
 ## Version 0.21.0
 
+_August XX, 2022_
+
 [See the release notes for a summary.](TODO)
 
 ### Build system
@@ -234,6 +236,17 @@ substitutions:
   decorator can now be accessed through
   [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
+
+### List of contributors
+
+Alexey Ignatiev, Andrey Smelter, andrzej, Antonio Cuni, Ben Jeffery, Brian
+Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
+Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
+Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
+Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Michael Droettboom, Michael
+Gilbert, Michael Neil, Nicholas Bollweg, pysathq, Ricardo Prins, Rob Gries,
+Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat, Tobias Megies, Vic
+Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 
