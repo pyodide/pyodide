@@ -11,16 +11,69 @@ releases](https://github.com/pyodide/pyodide/releases)
 Then you can load Pyodide in Node.js as follows,
 
 ```js
-let pyodide_pkg = await import("pyodide/pyodide.js");
+// hello_python.js
+const { loadPyodide } = require("pyodide");
 
-let pyodide = await pyodide_pkg.loadPyodide({
-  indexURL: "<pyodide artifacts folder>",
+async function hello_python() {
+  let pyodide = await loadPyodide({
+    indexURL: "<pyodide artifacts folder>",
+  });
+  return pyodide.runPythonAsync("1+1");
+}
+
+hello_python().then((result) => {
+  console.log("Python says that 1+1 =", result);
 });
-
-await pyodide.runPythonAsync("1+1");
 ```
 
-**Note**: To start node REPL with support for top level await, use `node --experimental-repl-await`.
+```
+$ node hello_python.js
+Loading distutils
+Loaded distutils
+Python initialization complete
+Python says that 1+1= 2
+```
+
+Or you can use the REPL. To start the Node.js REPL with support for top level
+await, use `node --experimental-repl-await`:
+
+```
+$ node --experimental-repl-await
+Welcome to Node.js v18.5.0.
+Type ".help" for more information.
+> const { loadPyodide } = require("pyodide");
+undefined
+> let pyodide = await loadPyodide();
+Loading distutils
+Loaded distutils
+Python initialization complete
+undefined
+> await pyodide.runPythonAsync("1+1");
+2
+```
+
+### Node.js versions <0.17
+
+- `Node.js` versions 14.x and 16.x: to use certain features of Pyodide you
+  need to manually install `node-fetch`, e.g. by doing `npm install node-fetch`.
+
+- `Node.js v14.x`: you need to pass the option `--experimental-wasm-bigint`
+  when starting Node. Note that this flag is not documented by `node --help`
+  and moreover, if you pass `--experimental-wasm-bigint` to node >14 it is an
+  error:
+
+```
+$ node -v
+v14.20.0
+
+$ node --experimental-wasm-bigint hello_python.js
+warning: no blob constructor, cannot create blobs with mimetypes
+warning: no BlobBuilder
+Loading distutils
+Loaded distutils
+Python initialization complete
+Python says that 1+1= 2
+```
 
 See the [documentation](https://pyodide.org/en/stable/) fore more details.
 

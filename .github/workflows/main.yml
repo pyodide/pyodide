@@ -33,8 +33,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          python3 -m pip install ./pyodide-test-runner
-          python3 -m pip install -e ./pyodide-build
+          cd pyodide-build && python3 -m pip install -e ".[test]" && cd ..
           python3 -m pip install pytest-cov hypothesis pytz
       - name: Run tests
         shell: bash -l {0}
@@ -42,7 +41,7 @@ jobs:
           PYODIDE_ROOT=. pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
-              -k 'not (chrome or firefox or node)' \
+              --runtime host \
               --cov=pyodide_build --cov=pyodide \
               src pyodide-build packages/micropip/
       - uses: codecov/codecov-action@v3
@@ -157,7 +156,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install ./pyodide-test-runner
+          cd pyodide-build && pip install -e ".[test]" && cd ..
           # FIXME: playwright 1.23.0 has unknown performance issue on firefox
           pip install "playwright<1.23.0" && python -m playwright install
 
@@ -170,7 +169,8 @@ jobs:
           ls -lh
           ls -lh dist/
           tools/pytest_wrapper.py src packages/micropip/ \
-            -v -k "${BROWSER}" \
+            -v \
+            --runtime "${BROWSER}" \
             --runner "${RUNNER}" \
             --durations 50 \
             --junitxml=test-results/core_test.xml
@@ -184,7 +184,9 @@ jobs:
           ls -lh
           ls -lh dist/
           tools/pytest_wrapper.py packages/test* packages/*/test* \
-            -v -k "numpy and not joblib and ${BROWSER}" \
+            -v \
+            -k "numpy and not joblib" \
+            --runtime "${BROWSER}" \
             --runner "${RUNNER}" \
             --durations 50 \
             --junitxml=test-results/packages_test.xml

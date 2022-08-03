@@ -12,15 +12,14 @@ DIST_PATH = ROOT_PATH / "dist"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-import pyodide_test_runner.browser
-from pyodide_test_runner.utils import maybe_skip_test
-from pyodide_test_runner.utils import package_is_built as _package_is_built
-from pyodide_test_runner.utils import parse_xfail_browsers
+import pytest_pyodide.runner
+from pytest_pyodide.utils import maybe_skip_test
+from pytest_pyodide.utils import package_is_built as _package_is_built
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
 # We need to go through and touch them all once to keep everything okay.
-pyodide_test_runner.browser.INITIALIZE_SCRIPT = """
+pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide.globals.get;
     pyodide._api.pyodide_code.eval_code;
     pyodide._api.pyodide_code.eval_code_async;
@@ -110,6 +109,10 @@ def pytest_terminal_summary(terminalreporter):
             continue
 
         for test in tr.stats[status]:
+
+            if test.when != "call":  # discard results from setup/teardown
+                continue
+
             try:
                 if test.longrepr and test.longrepr[2] in "previously passed":
                     test_result[test.nodeid] = "skip_passed"
@@ -140,15 +143,7 @@ def pytest_runtest_call(item):
             browser = item.funcargs[fixture]
             break
 
-    if not browser:
-        yield
-        return
-
-    xfail_msg = parse_xfail_browsers(item).get(browser.browser, None)
-    if xfail_msg is not None:
-        pytest.xfail(xfail_msg)
-
-    if not browser.pyodide_loaded:
+    if not browser or not browser.pyodide_loaded:
         yield
         return
 

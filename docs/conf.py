@@ -17,7 +17,7 @@ project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
 pyodide_version = "0.21.0a3"
 
-if ".dev" in pyodide_version:
+if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
 else:
     CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full/"

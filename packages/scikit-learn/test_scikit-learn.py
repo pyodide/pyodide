@@ -1,5 +1,5 @@
 import pytest
-from pyodide_test_runner.fixture import selenium_context_manager
+from pytest_pyodide.fixture import selenium_context_manager
 
 
 @pytest.mark.driver_timeout(40)

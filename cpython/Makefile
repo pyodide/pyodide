@@ -11,18 +11,9 @@ TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
-ZLIBVERSION=1.2.12
-ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
-ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
-ZLIBURL=https://zlib.net/zlib-$(ZLIBVERSION).tar.gz
-
 SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3380500.tar.gz
 SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3380500
 SQLITEURL=https://sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
-
-BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
-BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
-BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
@@ -67,32 +58,15 @@ $(TARBALL):
 	shasum --algorithm 256 --check checksums --quiet || (rm $@; false)
 
 
-$(ZLIBTARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(ZLIBURL)
-
-
 $(SQLITETARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(SQLITEURL)
-
-
-$(BZIP2TARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(BZIP2URL)
 
 
 
 $(BUILD)/.patched: $(TARBALL)
 	[ -d $(BUILD) ] || (mkdir -p $(dir $(BUILD)); tar -C $(dir $(BUILD)) -xf $(TARBALL))
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
-	touch $@
-
-
-$(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
-	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
-	cd $(ZLIBBUILD); emconfigure ./configure
 	touch $@
 
 
@@ -110,16 +84,6 @@ $(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
 	cp $(SQLITEBUILD)/.libs/libsqlite3.a $(INSTALL)/lib/libsqlite3.a
 
 
-$(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
-	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
-	( \
-		cd $(BZIP2BUILD); \
-		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
-	)
-	mkdir -p $(INSTALL)/lib
-	cp $(BZIP2BUILD)/libbz2.a $(INSTALL)/lib/libbz2.a
-
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) --depth 1 --branch $(LIBFFI_TAG) $(FFIBUILD)
@@ -128,7 +92,7 @@ $(INSTALL)/lib/libffi.a :
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(INSTALL)/lib/libsqlite3.a
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -142,7 +106,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+			  CPPFLAGS="-I$(SQLITEBUILD) -sUSE_BZIP2=1 -sUSE_ZLIB=1" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \

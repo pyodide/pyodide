@@ -110,6 +110,10 @@ substitutions:
 - {{ Fix }} Fix `loadPyodide` errors for the Windows Node environment.
   {pr}`2888`
 
+- {{ Enhancement }} Implemented slice subscripting, `+=`, and `extend` for
+  `JsProxy` of Javascript arrays.
+  {pr}`2907`
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading
@@ -225,7 +229,8 @@ substitutions:
   {pr}`2510`, {pr}`2541`
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
-  decorator can now be accessed through `pyodide_test_runner`.
+  decorator can now be accessed through
+  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
 
 ## Version 0.20.0
