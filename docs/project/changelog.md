@@ -110,6 +110,10 @@ substitutions:
 - {{ Fix }} Fix `loadPyodide` errors for the Windows Node environment.
   {pr}`2888`
 
+- {{ Enhancement }} Implemented slice subscripting, `+=`, and `extend` for
+  `JsProxy` of Javascript arrays.
+  {pr}`2907`
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading
