@@ -12,7 +12,9 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.21.0
+
+[See the release notes for a summary.](TODO)
 
 ### Build system
 
@@ -124,7 +126,7 @@ substitutions:
   {pr}`2666`
 
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
-  {pr}`2517`
+  {pr}`2517` {pr}`2919`
 
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
@@ -230,7 +232,7 @@ substitutions:
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
   decorator can now be accessed through
-  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
+  [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
 
 ## Version 0.20.0
