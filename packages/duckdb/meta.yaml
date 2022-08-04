@@ -1,0 +1,14 @@
+package:
+  name: duckdb
+  version: 0.4.0
+source:
+  url: https://files.pythonhosted.org/packages/56/42/1982b50b4ec54aca73b1478d9fa61143aa24755f4f2aba581246e6822700/duckdb-0.4.0.tar.gz
+  sha256: 569e5d618de871e21dd676925349a7a5e701b87ebda3433e0c1d57627a465c1c
+test:
+  imports:
+    - duckdb
+about:
+  home: https://www.duckdb.org
+  PyPI: https://pypi.org/project/duckdb
+  summary: DuckDB embedded database
+  license: MIT
