@@ -1,0 +1,25 @@
+package:
+  name: liblzma
+  version: 5.2.5
+
+source:
+  url: https://tukaani.org/xz/xz-5.2.5.tar.gz
+  sha256: f6f4910fd033078738bd82bfba4f49219d03b17eb0794eb91efbae419f4aba10
+
+build:
+  library: true
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-xz \
+        --disable-xzdec \
+        --disable-lzmadec \
+        --disable-lzmainfo \
+        --disable-lzma-links \
+        --disable-scripts \
+        --disable-doc \
+        --enable-shared=no \
+        --prefix=${WASM_LIBRARY_DIR}
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
