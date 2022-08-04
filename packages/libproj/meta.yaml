@@ -8,7 +8,7 @@ source:
 
 requirements:
   run:
-    - sqlite3
+    - libsqlite3
     - libtiff
 
 build:
