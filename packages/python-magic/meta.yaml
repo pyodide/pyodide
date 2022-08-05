@@ -15,7 +15,7 @@ requirements:
 
 test:
   imports:
-    - python-magic
+    - magic
 
 about:
   home: http://github.com/ahupp/python-magic
