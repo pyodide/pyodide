@@ -1756,21 +1756,8 @@ def test_html_array(selenium):
     from pyodide.code import run_js
 
     x = run_js("document.querySelectorAll('*')")
-    assert run_js(
-        """
-        (a, b) => {
-            a === b[0]
-        }
-        """
-    )(x[0], x)
-
-    assert run_js(
-        """
-        (a, b) => {
-            a === Array.from(b).pop()
-        }
-        """
-    )(x[-1], x)
+    assert run_js("(a, b) => a === b[0]")(x[0], x)
+    assert run_js("(a, b) => a === Array.from(b).pop()")(x[-1], x)
 
     import pytest
 
