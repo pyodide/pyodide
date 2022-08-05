@@ -1,6 +1,6 @@
 package:
   name: libmagic
-  version: '5.42'
+  version: "5.42"
 
 source:
   url: https://github.com/file/file/archive/refs/tags/FILE5_42.tar.gz
