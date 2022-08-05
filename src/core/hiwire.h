@@ -10,8 +10,8 @@
  * hiwire: A super-simple framework for converting values between C and
  * JavaScript.
  *
- * Arbitrary JavaScript objects are referenced from C using an opaque int value.
- * By convention, these ids are stored in variable names beginning with `id`.
+ * Arbitrary JavaScript objects are referenced from C using an opaque JsRef
+ * value.
  *
  * JavaScript objects passed to the C side must be manually reference-counted.
  * Use `hiwire_incref` if you plan to store the object on the C side. Use
@@ -19,16 +19,16 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
-// JsRef is a NewType of int.
-// I checked and
-//  alignof(JsRef) = alignof(int) = 4
-//  sizeof(JsRef) = sizeof(int) = 4
-// Just to be extra future proof, I added assertions about this to the beginning
-// of main.c So we are all good for using JsRef as a newtype for int. I also
-// added
-//  -Werror=int-conversion -Werror=incompatible-pointer-types
-// to the compile flags, so that no implicit casts will happen between JsRef
-// and any other type.
+// JsRef is a NewType of int. We need
+//
+// alignof(JsRef) = alignof(int) = 4 and
+// sizeof(JsRef) = sizeof(int) = 4
+//
+// To be future proof, we have _Static_asserts for this.
+// I also added
+// -Werror=int-conversion -Werror=incompatible-pointer-types
+// to the compile flags, to ensure that no implicit casts will happen between
+// JsRef and any other type.
 struct _JsRefStruct
 {};
 
@@ -523,6 +523,18 @@ JsArray_Set(JsRef idobj, int idx, JsRef idval);
 
 errcode WARN_UNUSED
 JsArray_Delete(JsRef idobj, int idx);
+
+JsRef
+JsArray_slice(JsRef idobj, int slicelength, int start, int stop, int step);
+
+errcode
+JsArray_slice_assign(JsRef idobj,
+                     int slicelength,
+                     int start,
+                     int stop,
+                     int step,
+                     int values_length,
+                     PyObject** values);
 
 // ==================== JsObject API  ====================
 
