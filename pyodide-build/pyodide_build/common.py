@@ -80,6 +80,7 @@ CORE_PACKAGES = {
     "sharedlib-test-py",
     "cpp-exceptions-test",
     "ssl",
+    "lzma",
     "pytest",
     "tblib",
 }
