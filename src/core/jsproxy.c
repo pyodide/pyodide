@@ -621,7 +621,7 @@ finally:
 
 /**
  * __setitem__ and __delitem__ for proxies of TypedArrays, controlled by
- * IS_TYPED_ARRAY
+ * IS_TYPEDARRAY
  */
 static int
 JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
@@ -2292,7 +2292,6 @@ finally:
 EM_JS_NUM(int, JsProxy_array_detect, (JsRef idobj), {
   try {
     let obj = Hiwire.get_value(idobj);
-    let result = 0;
     if (Array.isArray(obj)) {
       return IS_ARRAY;
     }
