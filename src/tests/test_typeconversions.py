@@ -1761,8 +1761,8 @@ def test_html_array(selenium):
 
     import pytest
 
-    with pytest.raises(TypeError, match="does not support item assignment"):
+    with pytest.raises(TypeError, match="does ?n[o']t support item assignment"):
         x[0] = 0
 
-    with pytest.raises(TypeError, match="does not support item deletion"):
+    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
         del x[0]
