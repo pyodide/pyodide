@@ -209,7 +209,7 @@ def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
             if len(chunk) < CHUNK_SIZE:
                 break
     if h.hexdigest() != checksum:
-        raise ValueError(f"Invalid {checksum_algorithm} checksum")
+        raise ValueError(f"Invalid {checksum_algorithm} checksum: {h.hexdigest()}")
 
 
 def trim_archive_extension(tarballname: str) -> str:
