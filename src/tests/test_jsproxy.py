@@ -1428,3 +1428,35 @@ def test_html_array(selenium):
 
     with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
         del x[0]
+
+
+@run_in_pyodide
+def test_jsproxy_match(selenium):
+    from pyodide.code import run_js
+
+    x: int
+    y: int
+    z: int
+    l: list[int]
+
+    a = run_js("[1, 2, 3]")
+    match a:
+        case [x, y, 3]:
+            pass
+    assert x == 1
+    assert y == 2
+
+    b = run_js("new Uint8Array([7, 3, 9, 10])")
+    match b:
+        case [x, y, *l]:
+            pass
+    assert x == 7
+    assert y == 3
+    assert l == [9, 10]
+
+    c = run_js("new Map([[1,2], [3,4]])")
+    match c:
+        case {1: x, 3: y}:
+            pass
+    assert x == 2
+    assert y == 4
