@@ -329,6 +329,19 @@ class JsProxy:
         Present only if the wrapped Javascript object is an array.
         """
 
+    def pop(self, /, index: int = -1) -> Any:
+        """Remove and return item at index (default last).
+
+        Raises IndexError if list is empty or index is out of range.
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def append(self, /, object: Any) -> None:
+        """Append object to the end of the list.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
 
 # from pyproxy.c
 
