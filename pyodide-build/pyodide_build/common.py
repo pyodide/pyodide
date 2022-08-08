@@ -82,6 +82,7 @@ CORE_PACKAGES = {
     "ssl",
     "pytest",
     "tblib",
+    "sqlite3",
 }
 
 CORE_SCIPY_PACKAGES = {
