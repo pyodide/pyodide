@@ -1,11 +1,11 @@
 ---
 substitutions:
-API: "<span class='badge badge-warning'>API Change</span>"
-Enhancement: "<span class='badge badge-info'>Enhancement</span>"
-Feature: "<span class='badge badge-success'>Feature</span>"
-Fix: "<span class='badge badge-danger'>Fix</span>"
-Update: "<span class='badge badge-success'>Update</span>"
-Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
+  API: "<span class='badge badge-warning'>API Change</span>"
+  Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+  Feature: "<span class='badge badge-success'>Feature</span>"
+  Fix: "<span class='badge badge-danger'>Fix</span>"
+  Update: "<span class='badge badge-success'>Update</span>"
+  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
