@@ -14,7 +14,7 @@ substitutions:
 
 ## Version 0.21.0
 
-_August XX, 2022_
+_August 8, 2022_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
 
@@ -244,9 +244,9 @@ Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
 Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
 Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
 Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Michael Droettboom, Michael
-Gilbert, Michael Neil, Nicholas Bollweg, pysathq, Ricardo Prins, Rob Gries,
-Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat, Tobias Megies, Vic
-Kumar, Victor, Wei Ji, Will Lachance
+Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo Prins,
+Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat, Tobias
+Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 
