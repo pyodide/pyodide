@@ -861,6 +861,76 @@ static PyMethodDef JsArray_reversed_MethodDef = {
   METH_NOARGS,
 };
 
+EM_JS_NUM(int,
+          JsArray_index_helper,
+          (JsRef list, JsRef value, int start, int stop),
+          {
+            let o = Hiwire.get_value(list);
+            let v = Hiwire.get_value(value);
+            for (let i = start; i < stop; i++) {
+              if (o[i] == = v) {
+                return i;
+              }
+            }
+            return -1;
+          })
+
+PyObject*
+JsArray_index(PyObject* o, PyObject* args)
+{
+  JsProxy* self = (JsProxy*)o;
+  PyObject* value;
+  Py_ssize_t start = 0;
+  Py_ssize_t stop = PY_SSIZE_T_MAX;
+  PyArg_ParseTuple(args, "O|nn:index", &value, &start, &stop);
+
+  int length = JsProxy_length(o);
+  if (start < 0) {
+    start += length;
+    if (start < 0)
+      start = 0;
+  }
+  if (stop < 0) {
+    stop += length;
+    if (stop < 0)
+      stop = 0;
+  }
+  if (stop > length) {
+    stop = length;
+  }
+
+  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  if (jsvalue == NULL) {
+    PyErr_Clear();
+    for (int i = start; i < stop; i++) {
+      JsRef jsobj = JsArray_Get(self->js, i);
+      PyObject* pyobj = js2python(jsobj);
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      hiwire_decref(jsobj);
+      if (cmp > 0)
+        return PyLong_FromSsize_t(i);
+      else if (cmp < 0)
+        return NULL;
+    }
+  } else {
+    int result = JsArray_index_helper(self->js, jsvalue, start, stop);
+    hiwire_decref(jsvalue);
+    if (result != -1) {
+      return PyLong_FromSsize_t(result);
+    }
+  }
+  if (!PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+  }
+  return NULL;
+}
+
+static PyMethodDef JsArray_index_MethodDef = {
+  "index",
+  (PyCFunction)JsArray_index,
+  METH_VARARGS,
+};
+
 // A helper method for jsproxy_subscript.
 EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
   let obj = Hiwire.get_value(idobj);
@@ -2294,6 +2364,7 @@ JsProxy_create_subtype(int flags)
                                        .pfunc = (void*)JsArray_inplace_concat };
     methods[cur_method++] = JsArray_extend_MethodDef;
     methods[cur_method++] = JsArray_pop_MethodDef;
+    methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_append_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
   }
@@ -2585,6 +2656,7 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsArray_reversed_MethodDef);
   SET_DOCSTRING(JsArray_pop_MethodDef);
   SET_DOCSTRING(JsArray_append_MethodDef);
+  SET_DOCSTRING(JsArray_index_MethodDef);
   SET_DOCSTRING(JsMethod_Construct_MethodDef);
   SET_DOCSTRING(JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer_assign_to_MethodDef);

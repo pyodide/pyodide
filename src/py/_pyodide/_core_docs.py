@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Callable, Iterable, Iterator
 from io import IOBase
 from typing import Any
@@ -340,6 +341,12 @@ class JsProxy:
         """Append object to the end of the list.
 
         Present only if the wrapped Javascript object is an array.
+        """
+
+    def index(self, /, value: Any, start: int = 0, stop: int = sys.maxsize) -> int:
+        """Return first index of value.
+
+        Raises ValueError if the value is not present.
         """
 
 
