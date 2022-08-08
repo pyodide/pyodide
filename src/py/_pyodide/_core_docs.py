@@ -317,6 +317,12 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+    def extend(self, other: Iterable[Any]) -> None:
+        """Extend array by appending elements from the iterable.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
 
 # from pyproxy.c
 
@@ -362,7 +368,7 @@ def to_js(
     object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this
     method will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had
-    used :any:`pyodide.create_proxy`.
+    used :any:`pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
 

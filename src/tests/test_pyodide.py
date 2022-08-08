@@ -4,7 +4,7 @@ from textwrap import dedent
 from typing import Any
 
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 

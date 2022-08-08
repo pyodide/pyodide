@@ -22,7 +22,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v2.37.1"
+    rev: "v2.37.2"
     hooks:
       - id: pyupgrade
         name: pyupgrade
@@ -48,7 +48,7 @@ repos:
         additional_dependencies: [flake8-bugbear]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.961"
+    rev: "v0.971"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)

@@ -439,7 +439,7 @@ export class PyProxyClass {
     dict_converter?: (array: Iterable<[key: string, value: any]>) => any;
     /**
      * Optional argument to convert objects with no default conversion. See the
-     * documentation of :any:`pyodide.to_js`.
+     * documentation of :any:`pyodide.ffi.to_js`.
      */
     default_converter?: (
       obj: PyProxy,

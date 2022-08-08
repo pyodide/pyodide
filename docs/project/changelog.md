@@ -1,11 +1,11 @@
 ---
 substitutions:
-  API: "<span class='badge badge-warning'>API Change</span>"
-  Enhancement: "<span class='badge badge-info'>Enhancement</span>"
-  Feature: "<span class='badge badge-success'>Feature</span>"
-  Fix: "<span class='badge badge-danger'>Fix</span>"
-  Update: "<span class='badge badge-success'>Update</span>"
-  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
+API: "<span class='badge badge-warning'>API Change</span>"
+Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+Feature: "<span class='badge badge-success'>Feature</span>"
+Fix: "<span class='badge badge-danger'>Fix</span>"
+Update: "<span class='badge badge-success'>Update</span>"
+Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
@@ -107,6 +107,13 @@ substitutions:
   empty container. Otherwise it returns `True`.
   {pr}`2803`
 
+- {{ Fix }} Fix `loadPyodide` errors for the Windows Node environment.
+  {pr}`2888`
+
+- {{ Enhancement }} Implemented slice subscripting, `+=`, and `extend` for
+  `JsProxy` of Javascript arrays.
+  {pr}`2907`
+
 ### REPL
 
 - {{ Enhancement }} Add a spinner while the REPL is loading
@@ -140,7 +147,7 @@ substitutions:
   {pr}`2767`
 
 - {{ Enhancement }} It is now possible to use an alternate `repodata.json`
-  lockfile by passing the `lockFileURL` option to {any}`loadPyodide`. This is
+  lockfile by passing the `lockFileURL` option to {any}`loadPyodide <globalThis.loadPyodide>`. This is
   particularly intended to be used with {any}`micropip.freeze`.
   {pr}`2645`
 
@@ -209,7 +216,7 @@ substitutions:
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
   shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`,
   pytest-benchmark {pr}`2799`, termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
-  rebound {pr}`2868`, pyclipper {pr}`2886`
+  rebound {pr}`2868`, reboundx {pr}`2909`, pyclipper {pr}`2886`, brotli {pr}`2925`
 
 ### Miscellaneous
 
@@ -222,7 +229,8 @@ substitutions:
   {pr}`2510`, {pr}`2541`
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
-  decorator can now be accessed through `pyodide_test_runner`.
+  decorator can now be accessed through
+  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
 
 ## Version 0.20.0
@@ -269,7 +277,7 @@ substitutions:
 - {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
   a built-in conversion to Python. Also added a `default_converter` argument to
-  {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
+  {any}`PyProxy.toJs` and {any}`pyodide.ffi.to_js` to convert.
   {pr}`2170` and {pr}`2208`
 
 - {{ Enhancement }} Async Python functions called from Javascript now have the
@@ -749,7 +757,7 @@ _August 3rd, 2021_
 
 ### Python package
 
-- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
+- {{ Enhancement }} Added a new {any}`CodeRunner <pyodide.code.CodeRunner>` API for finer control than
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
   {pr}`1563`
@@ -798,7 +806,7 @@ _August 3rd, 2021_
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
-- {{ API }} {any}`toJs <PyProxy.toJs>` and {any}`to_js <pyodide.to_js>` now
+- {{ API }} {any}`PyProxy.toJs` and {any}`to_js <pyodide.ffi.to_js>` now
   take an option `pyproxies`, if a JavaScript Array is passed for this, then
   any proxies created during conversion will be placed into this array. This
   allows easy cleanup later. The `create_pyproxies` option can be used to

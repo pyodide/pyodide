@@ -2,6 +2,7 @@
 Various common utilities for testing.
 """
 import pathlib
+import re
 import sys
 
 import pytest
@@ -12,9 +13,26 @@ DIST_PATH = ROOT_PATH / "dist"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from pyodide_test_runner.utils import maybe_skip_test
-from pyodide_test_runner.utils import package_is_built as _package_is_built
-from pyodide_test_runner.utils import parse_xfail_browsers
+import pytest_pyodide.runner
+from pytest_pyodide.utils import package_is_built as _package_is_built
+
+# There are a bunch of global objects that occasionally enter the hiwire cache
+# but never leave. The refcount checks get angry about them if they aren't preloaded.
+# We need to go through and touch them all once to keep everything okay.
+pytest_pyodide.runner.INITIALIZE_SCRIPT = """
+    pyodide.globals.get;
+    pyodide._api.pyodide_code.eval_code;
+    pyodide._api.pyodide_code.eval_code_async;
+    pyodide._api.pyodide_code.find_imports;
+    pyodide._api.pyodide_ffi.register_js_module;
+    pyodide._api.pyodide_ffi.unregister_js_module;
+    pyodide._api.importlib.invalidate_caches;
+    pyodide._api.package_loader.unpack_buffer;
+    pyodide._api.package_loader.get_dynlibs;
+    pyodide._api.package_loader.sub_resource_hash;
+    pyodide.runPython("");
+    pyodide.pyimport("pyodide.ffi.wrappers").destroy();
+"""
 
 
 def pytest_addoption(parser):
@@ -32,6 +50,49 @@ def pytest_addoption(parser):
             "CAUTION: this will skip tests even if tests are modified"
         ),
     )
+
+
+def maybe_skip_test(item, delayed=False):
+    """If necessary skip test at the fixture level, to avoid
+    loading the selenium_standalone fixture which takes a long time.
+    """
+    browsers = "|".join(["firefox", "chrome", "node"])
+    is_common_test = str(item.fspath).endswith("test_packages_common.py")
+
+    skip_msg = None
+    # Testing a package. Skip the test if the package is not built.
+    match = re.match(
+        r".*/packages/(?P<name>[\w\-]+)/test_[\w\-]+\.py", str(item.parent.fspath)
+    )
+    if match and not is_common_test:
+        package_name = match.group("name")
+        if not package_is_built(package_name) and re.match(
+            rf"test_[\w\-]+\[({browsers})[^\]]*\]", item.name
+        ):
+            skip_msg = f"package '{package_name}' is not built."
+
+    # Common package import test. Skip it if the package is not built.
+    if skip_msg is None and is_common_test and item.name.startswith("test_import"):
+        match = re.match(rf"test_import\[({browsers})-(?P<name>[\w-]+)\]", item.name)
+        if match:
+            package_name = match.group("name")
+            if not package_is_built(package_name):
+                # If the test is going to be skipped remove the
+                # selenium_standalone as it takes a long time to initialize
+                skip_msg = f"package '{package_name}' is not built."
+        else:
+            raise AssertionError(
+                f"Couldn't parse package name from {item.name}. This should not happen!"
+            )
+
+    # TODO: also use this hook to skip doctests we cannot run (or run them
+    # inside the selenium wrapper)
+
+    if skip_msg is not None:
+        if delayed:
+            item.add_marker(pytest.mark.skip(reason=skip_msg))
+        else:
+            pytest.skip(skip_msg)
 
 
 def pytest_configure(config):
@@ -74,7 +135,7 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.skip(reason="previously passed"))
             continue
 
-        maybe_skip_test(item, config.getoption("--dist-dir"), delayed=True)
+        maybe_skip_test(item, delayed=True)
 
 
 # Save test results to a cache
@@ -91,6 +152,10 @@ def pytest_terminal_summary(terminalreporter):
             continue
 
         for test in tr.stats[status]:
+
+            if test.when != "call":  # discard results from setup/teardown
+                continue
+
             try:
                 if test.longrepr and test.longrepr[2] in "previously passed":
                     test_result[test.nodeid] = "skip_passed"
@@ -121,15 +186,7 @@ def pytest_runtest_call(item):
             browser = item.funcargs[fixture]
             break
 
-    if not browser:
-        yield
-        return
-
-    xfail_msg = parse_xfail_browsers(item).get(browser.browser, None)
-    if xfail_msg is not None:
-        pytest.xfail(xfail_msg)
-
-    if not browser.pyodide_loaded:
+    if not browser or not browser.pyodide_loaded:
         yield
         return
 

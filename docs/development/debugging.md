@@ -170,7 +170,7 @@ cd devtools-frontend
 
 Apply the following change:
 
-```patch
+```diff
 --- a/front_end/entrypoints/wasmparser_worker/WasmParserWorker.ts
 +++ b/front_end/entrypoints/wasmparser_worker/WasmParserWorker.ts
 @@ -55,7 +55,7 @@ export function dissambleWASM(
