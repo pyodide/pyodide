@@ -41,17 +41,19 @@
 #include "structmember.h"
 
 // clang-format off
-#define IS_ITERABLE  (1<<0)
-#define IS_ITERATOR  (1<<1)
-#define HAS_LENGTH   (1<<2)
-#define HAS_GET      (1<<3)
-#define HAS_SET      (1<<4)
-#define HAS_HAS      (1<<5)
-#define HAS_INCLUDES (1<<6)
-#define IS_AWAITABLE (1<<7)
-#define IS_BUFFER    (1<<8)
-#define IS_CALLABLE  (1<<9)
-#define IS_ARRAY     (1<<10)
+#define IS_ITERABLE   (1<<0)
+#define IS_ITERATOR   (1<<1)
+#define HAS_LENGTH    (1<<2)
+#define HAS_GET       (1<<3)
+#define HAS_SET       (1<<4)
+#define HAS_HAS       (1<<5)
+#define HAS_INCLUDES  (1<<6)
+#define IS_AWAITABLE  (1<<7)
+#define IS_BUFFER     (1<<8)
+#define IS_CALLABLE   (1<<9)
+#define IS_ARRAY      (1<<10)
+#define IS_NODE_LIST  (1<<11)
+#define IS_TYPEDARRAY (1<<12)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -491,6 +493,36 @@ finally:
 }
 
 /**
+ * __getitem__ for proxies of Js TypedArrays, controlled by IS_TYPEDARRAY
+ */
+static PyObject*
+JsTypedArray_subscript(PyObject* o, PyObject* item)
+{
+  if (PySlice_Check(item)) {
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Slice subscripting isn't implemented for typed arrays");
+    return NULL;
+  }
+  return JsArray_subscript(o, item);
+}
+
+/**
+ * __getitem__ for proxies of HTMLCollection or NodeList, controlled by
+ * IS_NODE_LIST
+ */
+static PyObject*
+JsNodeList_subscript(PyObject* o, PyObject* item)
+{
+  if (PySlice_Check(item)) {
+    PyErr_SetString(
+      PyExc_NotImplementedError,
+      "Slice subscripting isn't implemented for HTMLCollection or NodeList");
+    return NULL;
+  }
+  return JsArray_subscript(o, item);
+}
+
+/**
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
@@ -585,6 +617,25 @@ finally:
   Py_CLEAR(seq);
   hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
+}
+
+/**
+ * __setitem__ and __delitem__ for proxies of TypedArrays, controlled by
+ * IS_TYPEDARRAY
+ */
+static int
+JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
+{
+  if (pyvalue == NULL) {
+    PyErr_SetString(PyExc_ValueError, "cannot delete array elements");
+    return -1;
+  }
+  if (PySlice_Check(item)) {
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Slice assignment isn't implemented for typed arrays");
+    return -1;
+  }
+  return JsArray_ass_subscript(o, item, pyvalue);
 }
 
 static PyObject*
@@ -2133,6 +2184,17 @@ JsProxy_create_subtype(int flags)
                                        .pfunc = (void*)JsArray_inplace_concat };
     methods[cur_method++] = JsArray_extend_MethodDef;
   }
+  if (flags & IS_TYPEDARRAY) {
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsTypedArray_subscript };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_mp_ass_subscript,
+                     .pfunc = (void*)JsTypedArray_ass_subscript };
+  }
+  if (flags & IS_NODE_LIST) {
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsNodeList_subscript };
+  }
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
     methods[cur_method++] = JsBuffer_assign_to_MethodDef;
@@ -2227,6 +2289,31 @@ finally:
   return (PyTypeObject*)type;
 }
 
+EM_JS_NUM(int, JsProxy_array_detect, (JsRef idobj), {
+  try {
+    let obj = Hiwire.get_value(idobj);
+    if (Array.isArray(obj)) {
+      return IS_ARRAY;
+    }
+    let typeTag = Object.prototype.toString.call(obj);
+    // We want to treat some standard array-like objects as Array.
+    // clang-format off
+    if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
+      // clang-format on
+      return IS_NODE_LIST;
+    }
+    // What if it's a TypedArray?
+    // clang-format off
+    if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
+      // clang-format on
+      return IS_TYPEDARRAY;
+    }
+    return 0;
+  } catch (e) {
+    return 0;
+  }
+});
+
 ////////////////////////////////////////////////////////////
 // Public functions
 
@@ -2284,9 +2371,8 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
   }
-  if (JsArray_Check(object)) {
-    type_flags |= IS_ARRAY;
-  }
+  type_flags |= JsProxy_array_detect(object);
+
 done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);

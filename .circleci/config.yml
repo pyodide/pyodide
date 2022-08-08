@@ -549,7 +549,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome-no-numpy-dependents
-          test-params: --runtime chrome packages/test* packages/*/test*
+          test-params: --runtime chrome packages/*/test*
           cache-dir: .pytest_cache_chrome
           requires:
             - build-packages-no-numpy-dependents
@@ -564,7 +564,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
-          test-params: --runtime chrome packages/test* packages/*/test* --skip-passed
+          test-params: --runtime chrome packages/*/test* --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
             - test-packages-chrome-no-numpy-dependents
@@ -575,7 +575,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox-no-numpy-dependents
-          test-params: --runtime firefox packages/test* packages/*/test*
+          test-params: --runtime firefox packages/*/test*
           cache-dir: .pytest_cache_firefox
           requires:
             - build-packages-no-numpy-dependents
@@ -590,7 +590,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox
-          test-params: --runtime firefox packages/test* packages/*/test* --skip-passed
+          test-params: --runtime firefox packages/*/test* --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
             - test-packages-firefox-no-numpy-dependents
@@ -601,7 +601,7 @@ workflows:
 
       - test-main:
           name: test-packages-node-no-numpy-dependents
-          test-params: --runtime node packages/test* packages/*/test*
+          test-params: --runtime node packages/*/test*
           cache-dir: .pytest_cache_node
           requires:
             - build-packages-no-numpy-dependents
@@ -616,7 +616,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: --runtime node packages/test* packages/*/test* --skip-passed
+          test-params: --runtime node packages/*/test* --skip-passed
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents
