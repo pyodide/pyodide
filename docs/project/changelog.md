@@ -1,11 +1,11 @@
 ---
 substitutions:
-  API: "<span class='badge badge-warning'>API Change</span>"
-  Enhancement: "<span class='badge badge-info'>Enhancement</span>"
-  Feature: "<span class='badge badge-success'>Feature</span>"
-  Fix: "<span class='badge badge-danger'>Fix</span>"
-  Update: "<span class='badge badge-success'>Update</span>"
-  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
+API: "<span class='badge badge-warning'>API Change</span>"
+Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+Feature: "<span class='badge badge-success'>Feature</span>"
+Fix: "<span class='badge badge-danger'>Fix</span>"
+Update: "<span class='badge badge-success'>Update</span>"
+Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
@@ -216,7 +216,7 @@ substitutions:
   ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
   shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`,
   pytest-benchmark {pr}`2799`, termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
-  rebound {pr}`2868`, pyclipper {pr}`2886`
+  rebound {pr}`2868`, reboundx {pr}`2909`, pyclipper {pr}`2886`, brotli {pr}`2925`
 
 ### Miscellaneous
 

@@ -1,11 +1,17 @@
 package:
   name: rebound
-  version: 3.19.4
+  version: 3.19.8
 build:
   exports: requested
+  post: |
+    mkdir -p $WASM_LIBRARY_DIR/include/rebound/
+    mkdir -p $WASM_LIBRARY_DIR/lib/
+    cp $WHEELDIR/rebound/*.h $WASM_LIBRARY_DIR/include/rebound/
+    cp $WHEELDIR/librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
+
 source:
-  url: https://files.pythonhosted.org/packages/78/37/95ab84dfb72a37d78420ffa1ee087dfbb6f1098117435e2191f2deff9067/rebound-3.19.4.tar.gz
-  sha256: b705235c6619b4be5368faaa07a865e6d44f9856b9b31721d1032ebe0f2199ec
+  url: https://files.pythonhosted.org/packages/b9/e4/aae78477fc9462ccdf2017ae1fa38c7048cdac0c2af60cff57f69c019cc9/rebound-3.19.8.tar.gz
+  sha256: 827c4f83785f129cbcaba46fd57f62d3a98af231d0ec8e5af3aa9302c424ffa6
 requirements:
   run:
     - numpy
