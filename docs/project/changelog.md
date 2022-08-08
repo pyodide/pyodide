@@ -245,10 +245,10 @@ Alexey Ignatiev, Andrey Smelter, andrzej, Antonio Cuni, Ben Jeffery, Brian
 Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
 Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
 Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
-Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Michael Droettboom, Michael
-Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo Prins,
-Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat, Tobias
-Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
+Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Matt Toad, Michael Droettboom,
+Michael Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo
+Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
+Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 
