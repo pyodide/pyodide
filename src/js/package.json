@@ -59,7 +59,6 @@
   "files": [
     "pyodide*",
     "repodata.json",
-    "distutils.tar",
     "console.html"
   ],
   "browser": {
