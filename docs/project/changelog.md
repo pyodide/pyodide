@@ -12,7 +12,11 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.21.0
+
+_August 9, 2022_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
 
 ### Build system
 
@@ -124,7 +128,7 @@ substitutions:
   {pr}`2666`
 
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
-  {pr}`2517`
+  {pr}`2517` {pr}`2919`
 
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
@@ -232,8 +236,19 @@ substitutions:
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
   decorator can now be accessed through
-  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
+  [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
+
+### List of contributors
+
+Alexey Ignatiev, Andrey Smelter, andrzej, Antonio Cuni, Ben Jeffery, Brian
+Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
+Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
+Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
+Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Matt Toad, Michael Droettboom,
+Michael Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo
+Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
+Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 
