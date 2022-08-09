@@ -861,19 +861,21 @@ static PyMethodDef JsArray_reversed_MethodDef = {
   METH_NOARGS,
 };
 
+// clang-format off
 EM_JS_NUM(int,
-          JsArray_index_helper,
-          (JsRef list, JsRef value, int start, int stop),
-          {
-            let o = Hiwire.get_value(list);
-            let v = Hiwire.get_value(value);
-            for (let i = start; i < stop; i++) {
-              if (o[i] == = v) {
-                return i;
-              }
-            }
-            return -1;
-          })
+JsArray_index_helper,
+(JsRef list, JsRef value, int start, int stop),
+{
+  let o = Hiwire.get_value(list);
+  let v = Hiwire.get_value(value);
+  for (let i = start; i < stop; i++) {
+    if (o[i] === v) {
+      return i;
+    }
+  }
+  return -1;
+})
+// clang-format on
 
 PyObject*
 JsArray_index(PyObject* o, PyObject* args)
