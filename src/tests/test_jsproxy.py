@@ -1203,3 +1203,30 @@ def test_jsarray_index(selenium):
     a.append([1, 2, 3])
     assert a.index([1, 2, 3]) == 6
     run_js("(a) => a.pop().destroy()")(a)
+
+
+@run_in_pyodide
+def test_jsarray_count(selenium):
+    import pytest
+
+    from js import eval as run_js
+
+    a = run_js("[5, 7, 9, -1, 3, 5]")
+    assert a.count(5) == 2
+    with pytest.raises(ValueError, match="5 is not in list"):
+        assert a.index(5, 1, -1) == 5
+
+    a.append([])
+    a.append([1])
+    a.append([])
+    assert a.count([]) == 2
+    assert a.count([1]) == 1
+    assert a.count([2]) == 0
+    run_js(
+        """(a) => {
+        a.pop().destroy();
+        a.pop().destroy();
+        a.pop().destroy();
+    }
+    """
+    )(a)

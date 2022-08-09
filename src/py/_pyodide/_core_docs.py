@@ -349,6 +349,9 @@ class JsProxy:
         Raises ValueError if the value is not present.
         """
 
+    def count(self, /, x):
+        """Return the number of times x appears in the list."""
+
 
 # from pyproxy.c
 
