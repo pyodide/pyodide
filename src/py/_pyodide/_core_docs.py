@@ -346,11 +346,15 @@ class JsProxy:
     def index(self, /, value: Any, start: int = 0, stop: int = sys.maxsize) -> int:
         """Return first index of value.
 
+        Present only if the wrapped Javascript object is an array.
         Raises ValueError if the value is not present.
         """
 
     def count(self, /, x):
-        """Return the number of times x appears in the list."""
+        """Return the number of times x appears in the list.
+
+        Present only if the wrapped Javascript object is an array.
+        """
 
 
 # from pyproxy.c
