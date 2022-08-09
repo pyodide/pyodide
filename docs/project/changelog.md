@@ -14,7 +14,7 @@ substitutions:
 
 ## Version 0.21.0
 
-_August 8, 2022_
+_August 9, 2022_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
 
