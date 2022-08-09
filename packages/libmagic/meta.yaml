@@ -1,0 +1,27 @@
+package:
+  name: libmagic
+  version: "5.42"
+
+source:
+  url: https://github.com/file/file/archive/refs/tags/FILE5_42.tar.gz
+  sha256: d7374d06451154a628831df58e835fa3263825d0ad593df0fb8a911418d27863
+
+  patches:
+    - patches/0001-Hardcode-magic.mgc-location.patch
+
+build:
+  sharedlibrary: true
+  script: |
+    mkdir -p dist
+    autoreconf --install
+    # build magic.mgc natively
+    ./configure
+    make -j ${PYODIDE_JOBS:-3}
+    cp magic/magic.mgc dist
+    # build libmagic.so
+    emconfigure ./configure \
+      CFLAGS="${SIDE_MODULE_CFLAGS}"
+    cd src
+    emmake make -j ${PYODIDE_JOBS:-3} libmagic.la \
+      LDFLAGS="-Xcompiler '${SIDE_MODULE_LDFLAGS}'"
+    cp .libs/libmagic.so.1.0.0 ../dist/libmagic.so
