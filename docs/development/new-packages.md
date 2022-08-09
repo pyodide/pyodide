@@ -47,6 +47,7 @@ This feature is still experimental in Pyodide 0.21.0.
 ```
 
 It is now possible to build Python wheels for WASM/Emscripten separately from the Pyodide package tree using the following steps,
+
 1. Install pyodide-build,
    ```
    pip install pyodide-build==0.21.0
@@ -75,9 +76,9 @@ runs-on: ubuntu-latest
 ```
 
 #### Notes
- - the resulting package wheels have a file name of the form `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a given Python and Emscripten version. In the Pyodide distribution Python and Emscripten are updated simultaneously.
- - PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
 
+- the resulting package wheels have a file name of the form `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a given Python and Emscripten version. In the Pyodide distribution Python and Emscripten are updated simultaneously.
+- PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
 
 ## Building a Python package (in tree)
 
