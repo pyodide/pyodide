@@ -50,16 +50,20 @@ It is now possible to build Python wheels for WASM/Emscripten separately from th
 
 1. Install pyodide-build,
    ```
-   pip install pyodide-build==0.21.0
+   pip install pyodide-build
    ```
 2. Build the WASM/Emscripten package wheel by running,
    ```
    pyodide build
    ```
-   in the package folder. This command would produce binary wheel in the `dist/` folder, similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/) command.
-3. Make the resulting file accessible as part of your web applications, and install it with `micropip.install` by URL.
+   in the package folder (where the `setup.py` or `pyproject.toml` file is
+   located). This command would produce a binary wheel in the `dist/` folder,
+   similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/)
+   command.
+3. Make the resulting file accessible as part of your web applications, and
+   install it with `micropip.install` by URL.
 
-Below is a more complete for building a Python wheel out of tree with Github Actions CI,
+Below is a more complete example for building a Python wheel out of tree with Github Actions CI,
 
 ```
 runs-on: ubuntu-latest
@@ -77,7 +81,10 @@ runs-on: ubuntu-latest
 
 #### Notes
 
-- the resulting package wheels have a file name of the form `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a given Python and Emscripten version. In the Pyodide distribution Python and Emscripten are updated simultaneously.
+- the resulting package wheels have a file name of the form
+  `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a
+  given Python and Emscripten versions. In the Pyodide distribution, Python and
+  Emscripten are updated simultaneously.
 - PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
 
 ## Building a Python package (in tree)
