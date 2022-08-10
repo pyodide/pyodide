@@ -2,8 +2,8 @@ package:
   name: tblib
   version: 1.7.0
 source:
-  url: https://files.pythonhosted.org/packages/f8/cd/2fad4add11c8837e72f50a30e2bda30e67a10d70462f826b291443a55c7d/tblib-1.7.0-py2.py3-none-any.whl
-  sha256: 289fa7359e580950e7d9743eab36b0691f0310fce64dee7d9c31065b8f723e23
+  url: https://files.pythonhosted.org/packages/6f/f0/84df460611f1d1c9c348fd4ac2295178083e54962b1be94d571602fafb4c/pyodide_tblib-1.7.1-py3-none-any.whl
+  sha256: 6e21535b5be695b4ee2751c5bde21eb5a003ed74aabafaecdca8ef5b3cfa3ea1
 test:
   imports:
     - tblib
