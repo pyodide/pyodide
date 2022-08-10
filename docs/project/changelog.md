@@ -20,8 +20,8 @@ _August 9, 2022_
 
 ### Build system
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.13
-  {pr}`2679`, {pr}`2672`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.14
+  {pr}`2775`, {pr}`2679`, {pr}`2672`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
 
