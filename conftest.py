@@ -233,3 +233,17 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
+@pytest.fixture(scope="function")
+def selenium_standalone(selenium):
+
+    selenium.clean_logs()
+
+    yield selenium
+
+    selenium.refresh()
+    selenium.load_pyodide()
+    selenium.initialize_pyodide()
+    selenium.save_state()
+    selenium.restore_state()
