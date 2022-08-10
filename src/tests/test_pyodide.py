@@ -1189,3 +1189,18 @@ def test_moved_deprecation_warnings(selenium_standalone):
         warnings.simplefilter("error")
         for func in DEPRECATED_LIST.keys():
             getattr(pyodide, func)
+
+
+@run_in_pyodide
+def test_unvendored_stdlib(selenium_standalone):
+
+    unvendored_stdlibs = ["distutils", "test"]
+    removed_stdlibs = ["pwd", "turtle", "tinkter"]
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(ModuleNotFoundError, match="unvendored from Pyodide stdlib"):
+            __import__(lib)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(ModuleNotFoundError, match="removed from Pyodide stdlib"):
+            __import__(lib)
