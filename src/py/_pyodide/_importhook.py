@@ -151,18 +151,17 @@ class StdlibFinder(MetaPathFinder):
             return None
 
         if parent in self.unvendored_stdlibs:
-            print(
+            raise ModuleNotFoundError(
                 f"The module '{parent}' is unvendored from Pyodide stdlib, "
-                f'you can install it separately by calling pyodide.loadPackage("{parent}"). '
+                f'you can install it by calling: await pyodide.loadPackage("{parent}"). '
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
         else:
-            print(
+            raise ModuleNotFoundError(
                 f"The module '{parent}' is removed from Pyodide stdlib "
                 "due to browser limitations. "
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
-        return None
 
 
 def register_stdlib_finder() -> None:
