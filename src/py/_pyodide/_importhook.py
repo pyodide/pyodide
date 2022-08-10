@@ -146,6 +146,10 @@ class StdlibFinder(MetaPathFinder):
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
         [parent, _, _] = fullname.rpartition(".")
+
+        if not parent:
+            return None
+
         if parent in self.unvendored_stdlibs:
             print(
                 f"The module '{parent}' is unvendored from Pyodide stdlib, "
