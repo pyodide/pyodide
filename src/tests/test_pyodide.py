@@ -1189,11 +1189,3 @@ def test_moved_deprecation_warnings(selenium_standalone):
         warnings.simplefilter("error")
         for func in DEPRECATED_LIST.keys():
             getattr(pyodide, func)
-
-
-@run_in_pyodide
-def test_blah(selenium):
-    def f():
-        raise Exception("hi!")
-
-    f()
