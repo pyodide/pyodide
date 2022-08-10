@@ -147,7 +147,7 @@ class StdlibFinder(MetaPathFinder):
     ) -> ModuleSpec | None:
         [parent, _, _] = fullname.rpartition(".")
 
-        if not parent:
+        if not parent or parent not in self.stdlibs:
             return None
 
         if parent in self.unvendored_stdlibs:
