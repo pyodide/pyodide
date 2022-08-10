@@ -131,3 +131,36 @@ def register_js_finder() -> None:
     global JsProxy
     JsProxy = _pyodide_core.JsProxy
     sys.meta_path.append(jsfinder)
+
+
+class StdlibFinder(MetaPathFinder):
+    def __init__(self) -> None:
+        self.stdlibs = sys.stdlib_module_names
+        # TODO: put list of unvendored stdlibs to somewhere else?
+        self.unvendored_stdlibs = {"distutils", "test"} & self.stdlibs
+
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        [parent, _, _] = fullname.rpartition(".")
+        if parent in self.unvendored_stdlibs:
+            print(
+                f"The module '{parent}' is unvendored from Pyodide stdlib, "
+                f'you can install it separately by calling pyodide.loadPackage("{parent}"). '
+                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
+            )
+        else:
+            print(
+                f"The module '{parent}' is removed from Pyodide stdlib "
+                "due to browser limitations. "
+                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
+            )
+        return None
+
+
+def register_stdlib_finder() -> None:
+    # Note: this finder must be placed in the end of meta paths.
+    sys.meta_path.append(StdlibFinder())
