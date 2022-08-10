@@ -317,6 +317,12 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+    def extend(self, other: Iterable[Any]) -> None:
+        """Extend array by appending elements from the iterable.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
 
 # from pyproxy.c
 

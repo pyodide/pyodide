@@ -3,7 +3,7 @@ import sys
 import time
 
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 from pyodide import console
 from pyodide.code import CodeRunner  # noqa: E402
