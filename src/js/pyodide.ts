@@ -133,6 +133,9 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.package_loader = import_module("pyodide._package_loader");
   API.version = API.pyodide_py.__version__;
 
+  API.site = import_module("site");
+  API.sitepackages = API.site.getsitepackages().toJs()[0];
+
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
   pyodide.version = API.version;
