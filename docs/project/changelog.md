@@ -12,12 +12,16 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.21.0
+
+_August 9, 2022_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
 
 ### Build system
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.13
-  {pr}`2679`, {pr}`2672`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.14
+  {pr}`2775`, {pr}`2679`, {pr}`2672`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
 
@@ -124,7 +128,7 @@ substitutions:
   {pr}`2666`
 
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
-  {pr}`2517`
+  {pr}`2517` {pr}`2919`
 
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
@@ -211,12 +215,14 @@ substitutions:
   on Chrome {pr}`2457`
 
 - New packages: opencv-python {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
-  svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
-  ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
-  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`,
-  pytest-benchmark {pr}`2799`, termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
-  rebound {pr}`2868`, pyclipper {pr}`2886`
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`,
+  cftime {pr}`2504`, svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`,
+  demes, libgsl, newick, ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`,
+  xgboost {pr}`2537`, galpy {pr}`2676`, shapely, geos {pr}`2725`, suitesparse,
+  sparseqr {pr}`2685`, libtiff {pr}`2762`, pytest-benchmark {pr}`2799`,
+  termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
+  rebound {pr}`2868`, reboundx {pr}`2909`, pyclipper {pr}`2886`,
+  brotli {pr}`2925`, python-magic {pr}`2941`
 
 ### Miscellaneous
 
@@ -230,8 +236,19 @@ substitutions:
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
   decorator can now be accessed through
-  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
+  [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
+
+### List of contributors
+
+Alexey Ignatiev, Andrey Smelter, andrzej, Antonio Cuni, Ben Jeffery, Brian
+Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
+Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
+Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
+Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Matt Toad, Michael Droettboom,
+Michael Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo
+Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
+Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 
