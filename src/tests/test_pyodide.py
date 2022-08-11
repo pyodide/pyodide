@@ -1193,6 +1193,7 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 @run_in_pyodide(packages=["pytest"])
 def test_unvendored_stdlib(selenium_standalone):
+    import pytest
 
     unvendored_stdlibs = ["test"]
     removed_stdlibs = ["pwd", "turtle", "tinkter"]

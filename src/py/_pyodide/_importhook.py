@@ -145,7 +145,7 @@ class StdlibFinder(MetaPathFinder):
         path: Sequence[bytes | str] | None,
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
-        [parent, _, _] = fullname.rpartition(".")
+        [parent, _, _] = fullname.partition(".")
 
         if not parent or parent not in self.stdlibs:
             return None
