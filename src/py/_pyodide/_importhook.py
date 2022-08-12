@@ -135,20 +135,11 @@ def register_js_finder() -> None:
 
 class StdlibFinder(MetaPathFinder):
     def __init__(self) -> None:
-        self.stdlibs = sys.stdlib_module_names
+        # `test`` is not a stdlib module, but we unvendors in anyway.
+        self.stdlibs = sys.stdlib_module_names | {"test"}
+
         # TODO: put list of unvendored stdlibs to somewhere else?
         self.unvendored_stdlibs = {"distutils", "test", "_ssl", "_lzma"} & self.stdlibs
-        self.removed_stdlibs = {
-            "curses",
-            "dbm",
-            "ensurepip",
-            "idlelib",
-            "tkinter",
-            "turtle",
-            "turtledemo",
-            "venv",
-            "pwd",
-        } & self.stdlibs
 
     def find_spec(
         self,
@@ -158,7 +149,7 @@ class StdlibFinder(MetaPathFinder):
     ) -> ModuleSpec | None:
         [parent, _, _] = fullname.partition(".")
 
-        if not parent or parent not in self.stdlibs:
+        if not parent or parent in sys.modules or parent not in self.stdlibs:
             return None
 
         if parent in self.unvendored_stdlibs:
@@ -167,14 +158,12 @@ class StdlibFinder(MetaPathFinder):
                 f'you can install it by calling: await pyodide.loadPackage("{parent}"). '
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
-        elif parent in self.removed_stdlibs:
+        else:
             raise ModuleNotFoundError(
                 f"The module '{parent}' is removed from Pyodide stdlib "
                 "due to browser limitations. "
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
-
-        return None
 
 
 def register_stdlib_finder() -> None:

@@ -1193,15 +1193,20 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 @run_in_pyodide(packages=["pytest"])
 def test_unvendored_stdlib(selenium_standalone):
+    import importlib
+
     import pytest
 
-    unvendored_stdlibs = ["_ssl", "_lzma"]
+    unvendored_stdlibs = ["test", "_ssl", "_lzma"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(ModuleNotFoundError, match="unvendored from Pyodide stdlib"):
-            __import__(lib)
+            importlib.import_module(lib)
 
     for lib in removed_stdlibs:
         with pytest.raises(ModuleNotFoundError, match="removed from Pyodide stdlib"):
-            __import__(lib)
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("urllib.there_is_no_such_module")
