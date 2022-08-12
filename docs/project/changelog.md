@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- {{ Fix }} Fix package loading error when a package depends on
+  a shared library of another package {pr}`2963`.
+
 - New packages: the standard library lzma module {pr}`2939`
 
 ## Version 0.21.0
