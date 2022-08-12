@@ -1,0 +1,103 @@
+From 9e7a17c0fa2df60c98c67cdafac8b61a18fd0f83 Mon Sep 17 00:00:00 2001
+From: Sam Clegg <sbc@chromium.org>
+Date: Thu, 11 Aug 2022 19:22:41 -0700
+Subject: [PATCH] Apply relocations before static constructor (#17628)
+
+This bug applied to libraries loaded after the runtime initialized.
+
+Fixes: #17601
+---
+ src/library_dylink.js | 16 ++++++++--------
+ test/test_other.py    | 42 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+), 8 deletions(-)
+
+diff --git a/src/library_dylink.js b/src/library_dylink.js
+index 9731c02e5..2e0275850 100644
+--- a/src/library_dylink.js
++++ b/src/library_dylink.js
+@@ -648,6 +648,14 @@ var LibraryDylink = {
+         registerTLSInit(moduleExports['_emscripten_tls_init'], instance.exports, metadata)
+         if (!ENVIRONMENT_IS_PTHREAD) {
+ #endif
++          var applyRelocs = moduleExports['__wasm_apply_data_relocs'];
++          if (applyRelocs) {
++            if (runtimeInitialized) {
++              applyRelocs();
++            } else {
++              __RELOC_FUNCS__.push(applyRelocs);
++            }
++          }
+           var init = moduleExports['__wasm_call_ctors'];
+           if (init) {
+             if (runtimeInitialized) {
+@@ -657,14 +665,6 @@ var LibraryDylink = {
+               __ATINIT__.push(init);
+             }
+           }
+-          var applyRelocs = moduleExports['__wasm_apply_data_relocs'];
+-          if (applyRelocs) {
+-            if (runtimeInitialized) {
+-              applyRelocs();
+-            } else {
+-              __RELOC_FUNCS__.push(applyRelocs);
+-            }
+-          }
+ #if USE_PTHREADS
+         }
+ #endif
+diff --git a/test/test_other.py b/test/test_other.py
+index abc017d92..1cab6f4b0 100644
+--- a/test/test_other.py
++++ b/test/test_other.py
+@@ -6107,6 +6107,48 @@ int main() {
+     out = self.run_js('a.out.js')
+     self.assertContained('invalid mode for dlopen(): Either RTLD_LAZY or RTLD_NOW is required', out)
+ 
++  def test_dlopen_contructors(self):
++    create_file('side.c', r'''
++      #include <stdio.h>
++      #include <assert.h>
++
++      static int foo;
++      static int* ptr = &foo;
++
++      void check_relocations(void) {
++        assert(ptr == &foo);
++      }
++
++      __attribute__((constructor)) void ctor(void) {
++        printf("foo address: %p\n", ptr);
++        // Check that relocations have already been applied by the time
++        // contructor functions run.
++        check_relocations();
++        printf("done ctor\n");
++      }
++      ''')
++    create_file('main.c', r'''
++      #include <assert.h>
++      #include <stdio.h>
++      #include <dlfcn.h>
++
++      int main() {
++        void (*check) (void);
++        void* h = dlopen("libside.wasm", RTLD_NOW|RTLD_GLOBAL);
++        assert(h);
++        check = dlsym(h, "check_relocations");
++        assert(check);
++        check();
++        printf("done\n");
++        return 0;
++      }''')
++    self.run_process([EMCC, '-g', '-o', 'libside.wasm', 'side.c', '-sSIDE_MODULE'])
++    self.run_process([EMCC, '-g', '-sMAIN_MODULE=2', 'main.c', 'libside.wasm', '-sNO_AUTOLOAD_DYLIBS'])
++    self.assertContained('done', self.run_js('a.out.js'))
++    # Repeat the test without NO_AUTOLOAD_DYLIBS
++    self.run_process([EMCC, '-g', '-sMAIN_MODULE=2', 'main.c', 'libside.wasm'])
++    self.assertContained('done', self.run_js('a.out.js'))
++
+   def test_dlopen_rtld_global(self):
+     # This test checks RTLD_GLOBAL where a module is loaded
+     # before the module providing a global it needs is. in asm.js we use JS
+-- 
+2.37.1
+
