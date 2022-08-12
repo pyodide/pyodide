@@ -9,8 +9,6 @@ source:
 requirements:
   host:
     - libxml
-  run:
-    - libxml
 
 build:
   library: true

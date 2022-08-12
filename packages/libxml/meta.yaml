@@ -10,9 +10,6 @@ requirements:
   host:
     - zlib
     - libiconv
-  run:
-    - zlib
-    - libiconv
 
 build:
   library: true
