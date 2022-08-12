@@ -46,6 +46,7 @@ class BasePackage:
     shared_library: bool
     run_dependencies: list[str]
     host_dependencies: list[str]
+    dependencies: set[str]  # run + host dependencies
     unbuilt_host_dependencies: set[str]
     host_dependents: set[str]
     unvendored_tests: Path | None = None
@@ -91,6 +92,7 @@ class StdLibPackage(BasePackage):
         self.shared_library = False
         self.run_dependencies = []
         self.host_dependencies = []
+        self.dependencies = set()
         self.unbuilt_host_dependencies = set()
         self.host_dependents = set()
         self.install_dir = "lib"
@@ -130,6 +132,7 @@ class Package(BasePackage):
 
         self.run_dependencies = self.meta["requirements"].get("run", [])
         self.host_dependencies = self.meta["requirements"].get("host", [])
+        self.dependencies = set(self.run_dependencies + self.host_dependencies)
         self.unbuilt_host_dependencies = set(self.host_dependencies)
         self.host_dependents = set()
 
@@ -267,8 +270,8 @@ def generate_dependency_graph(
             pkg = Package(packages_dir / pkgname)
 
         pkg_map[pkgname] = pkg
-        graph[pkgname] = pkg.run_dependencies
-        for dep in pkg.run_dependencies:
+        graph[pkgname] = pkg.dependencies
+        for dep in pkg.dependencies:
             if pkg_map.get(dep) is None:
                 packages.add(dep)
 
@@ -280,10 +283,10 @@ def generate_dependency_graph(
         if pkgname in disabled_packages:
             pkg.disabled = True
             continue
-        if no_numpy_dependents and "numpy" in pkg.run_dependencies:
+        if no_numpy_dependents and "numpy" in pkg.dependencies:
             pkg.disabled = True
             continue
-        for dep in pkg.run_dependencies:
+        for dep in pkg.dependencies:
             if pkg_map[dep].disabled:
                 pkg.disabled = True
                 break
@@ -301,7 +304,7 @@ def generate_dependency_graph(
         if pkgname not in requested:
             continue
 
-        requested.update(pkg.run_dependencies)
+        requested.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
 
