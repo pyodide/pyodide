@@ -137,7 +137,7 @@ class StdlibFinder(MetaPathFinder):
     def __init__(self) -> None:
         self.stdlibs = sys.stdlib_module_names
         # TODO: put list of unvendored stdlibs to somewhere else?
-        self.unvendored_stdlibs = {"distutils", "test", "_ssl", "lzma"} & self.stdlibs
+        self.unvendored_stdlibs = {"distutils", "test", "_ssl", "_lzma"} & self.stdlibs
         self.removed_stdlibs = {
             "curses",
             "dbm",

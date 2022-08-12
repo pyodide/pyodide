@@ -1196,7 +1196,7 @@ def test_unvendored_stdlib(selenium_standalone):
     import pytest
 
     unvendored_stdlibs = ["_ssl", "_lzma"]
-    removed_stdlibs = ["pwd", "turtle", "tinkter"]
+    removed_stdlibs = ["pwd", "turtle", "tkinter"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(ModuleNotFoundError, match="unvendored from Pyodide stdlib"):
