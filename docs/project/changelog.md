@@ -12,6 +12,10 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+- New packages: the standard library lzma module {pr}`2939`
+
 ## Version 0.21.0
 
 _August 9, 2022_
