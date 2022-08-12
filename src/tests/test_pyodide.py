@@ -1195,7 +1195,7 @@ def test_moved_deprecation_warnings(selenium_standalone):
 def test_unvendored_stdlib(selenium_standalone):
     import pytest
 
-    unvendored_stdlibs = ["test"]
+    unvendored_stdlibs = ["_ssl", "_lzma"]
     removed_stdlibs = ["pwd", "turtle", "tinkter"]
 
     for lib in unvendored_stdlibs:
