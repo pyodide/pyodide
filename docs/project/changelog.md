@@ -14,26 +14,54 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Integrity of Pyodide packages are now verified before loading them. This is for now only
-  limited to browser environments. {pr}`2513`
+- New packages: the standard library lzma module {pr}`2939`
+
+## Version 0.21.0
+
+_August 9, 2022_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
+
+### Build system
+
+- {{ Enhancement }} Emscripten was updated to Version 3.1.14
+  {pr}`2775`, {pr}`2679`, {pr}`2672`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
 
-- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
-  {pr}`2517`
-
-- {{ Fix }} Fix output bug with using `input()` on online console
-  {pr}`2509`
-
-- {{ Enhancement }} Update sqlite version to latest stable release
-  {pr}`2477` and {pr}`2518`
-
-- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports when packing files for the browser. {pr}`2468`
-
-- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern Javascript code. {pr}`2471`
+- {{ Enhancement }} Update Typescript target to ES2017 to generate more modern
+  Javascript code.
+  {pr}`2471`
 
 - {{ Enhancement }} We now put our built files into the `dist` directory rather
   than the `build` directory. {pr}`2387`
+
+- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not
+  installed.
+  {pr}`2423`
+
+- {{ Enhancement }} The platform tags of wheels now include the Emscripten
+  version in them. This should help ensure ABI compatibility if Emscripten
+  wheels are distributed outside of the main Pyodide distribution.
+  {pr}`2610`
+
+- {{ Enhancement }} The build system now uses the sysconfigdata from the target
+  Python rather than the host Python.
+  {pr}`2516`
+
+- {{ Enhancement }} Pyodide now builds with `-sWASM_BIGINT`.
+  {pr}`2643`
+
+- {{ Enhancement }} Added `cross-script` key to the `meta.yaml` spec to allow
+  executing custom logic in the cross build environment.
+  {pr}`2734`
+
+### Pyodide Module and type conversions
+
+- {{ API }} All functions were moved out of the root `pyodide` package into
+  various submodules. For backwards compatibility, they will be available from
+  the root package (raising a `FutureWarning`) until v0.23.0.
+  {pr}`2787`, {pr}`2790`
 
 - {{ Enhancement }} `loadPyodide` no longer uses any global state, so it can be
   used more than once in the same thread. This is recommended if a network
@@ -44,35 +72,22 @@ substitutions:
   `pyodide.runPython(code, { globals : some_dict})`;
   {pr}`2391`
 
-- {{ Fix }} The build will error out earlier if `cmake` or `libtool` are not installed.
-  {pr}`2423`
-
 - {{ Enhancement }} `pyodide.unpackArchive` now accepts any `ArrayBufferView` or
   `ArrayBuffer` as first argument, rather than only a `Uint8Array`.
   {pr}`2451`
 
-- {{ Feature }} Added `pyodide.run_js` API.
+- {{ Feature }} Added `pyodide.code.run_js` API.
   {pr}`2426`
-
-- {{ Enhancement }} Add SHA-256 hash of package to entries in `packages.json`
-  {pr}`2455`
 
 - {{ Fix }} BigInt's between 2^{32\*n - 1} and 2^{32\*n} no longer get
   translated to negative Python ints.
   {pr}`2484`
 
-- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null` constructor.
+- {{ Fix }} Pyodide now correctly handles JavaScript objects with `null`
+  constructor.
   {pr}`2520`
 
 - {{ Fix }} Fix garbage collection of `once_callable` {pr}`2401`
-
-- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
-  rewriting and various other improvements.
-  {pr}`2510`
-
-- {{ BREAKING }} `pyodide_build.testing` is removed. `run_in_pyodide` decorator can now be accessed
-  through `pyodide_test_runner`.
-  {pr}`2418`
 
 - {{ Enhancement }} Added the `js_id` attribute to `JsProxy` to allow using
   JavaScript object identity as a dictionary key.
@@ -82,14 +97,67 @@ substitutions:
   `dictConverter` argument.
   {pr}`2533`
 
-- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`, `set_interval`,
-  `clear_interval`, `add_event_listener` and `remove_event_listener` for the corresponding JavaScript functions.
+- {{ Enhancement }} Added Python wrappers `set_timeout`, `clear_timeout`,
+  `set_interval`, `clear_interval`, `add_event_listener` and
+  `remove_event_listener` for the corresponding JavaScript functions.
   {pr}`2456`
 
-- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and `ERRNO_CODES` APIs.
+- {{ Fix }} If a request fails due to CORS, `pyfetch` now raises an `OSError`
+  not a `JSException`.
+  {pr}`2598`
+
+- {{ Enhancement }} Pyodide now directly exposes the Emscripten `PATH` and
+  `ERRNO_CODES` APIs.
   {pr}`2582`
 
-### micropip
+- {{ Fix }} The `bool` operator on a `JsProxy` now behaves more consistently: it
+  returns `False` if JavaScript would say that `!!x` is `false`, or if `x` is an
+  empty container. Otherwise it returns `True`.
+  {pr}`2803`
+
+- {{ Fix }} Fix `loadPyodide` errors for the Windows Node environment.
+  {pr}`2888`
+
+- {{ Enhancement }} Implemented slice subscripting, `+=`, and `extend` for
+  `JsProxy` of Javascript arrays.
+  {pr}`2907`
+
+### REPL
+
+- {{ Enhancement }} Add a spinner while the REPL is loading
+  {pr}`2635`
+
+- {{ Enhancement }} Cursor blinking in the REPL can be disabled by setting
+  `noblink` in URL search params.
+  {pr}`2666`
+
+- {{ Fix }} Fix a REPL error in printing high-dimensional lists.
+  {pr}`2517` {pr}`2919`
+
+- {{ Fix }} Fix output bug with using `input()` on online console
+  {pr}`2509`
+
+### micropip and package loading
+
+- {{ API }} `packages.json` which contains the dependency graph for packages
+  was renamed to `repodata.json` to avoid confusion with `package.json` used
+  in JavaScript packages.
+
+- {{ Enhancement }} Added SHA-256 hash of package to entries in `repodata.json`
+  {pr}`2455`
+
+- {{ Enhancement }} Integrity of Pyodide packages is now verified before
+  loading them. This is for now limited to browser environments.
+  {pr}`2513`
+
+- {{ Enhancement }} `micropip` supports loading wheels from the Emscripten file
+  system using the `emfs:` protocol now.
+  {pr}`2767`
+
+- {{ Enhancement }} It is now possible to use an alternate `repodata.json`
+  lockfile by passing the `lockFileURL` option to {any}`loadPyodide <globalThis.loadPyodide>`. This is
+  particularly intended to be used with {any}`micropip.freeze`.
+  {pr}`2645`
 
 - {{ Fix }} micropip now correctly handles package names that include dashes
   {pr}`2414`
@@ -108,7 +176,8 @@ substitutions:
   If set to `True`, micropip will include pre-release and development versions.
   {pr}`2542`
 
-- {{ Enhancement }} `micropip` was refactored to improve readability and ease of maintenance.
+- {{ Enhancement }} `micropip` was refactored to improve readability and ease of
+  maintenance.
   {pr}`2561`, {pr}`2563`, {pr}`2564`, {pr}`2565`, {pr}`2568`
 
 - {{ Enhancement }} Various error messages were fine tuned and improved.
@@ -119,21 +188,71 @@ substitutions:
   library and other tools used to install packages.
   {pr}`2572`
 
+- {{ Enhancement }} `micropip` can now be used to install Emscripten binary wheels.
+  {pr}`2591`
+
 - {{ Enhancement }} Added `micropip.freeze` to record the current set of loaded
-  packages into a `packages.json` file.
+  packages into a `repodata.json` file.
   {pr}`2581`
+
+- {{ Fix }} `micropip.list` now works correctly when there are packages
+  that are installed via `pyodide.loadPackage` from a custom URL.
+  {pr}`2743`
+
+- {{ Fix }} micropip now skips package versions which do not follow PEP440.
+  {pr}`2754`
+
+- {{ Fix }} `micropip` supports extra markers in packages correctly now.
+  {pr}`2584`
 
 ### Packages
 
+- {{ Enhancement }} Update sqlite version to latest stable release
+  {pr}`2477` and {pr}`2518`
+
 - {{ Enhancement }} Pillow now supports WEBP image format {pr}`2407`.
+
+- {{ Enhancement }} Pillow and opencv-python now support the TIFF image format.
+  {pr}`2762`
 
 - Pandas is now compiled with `-Oz`, which significantly speeds up loading the library
   on Chrome {pr}`2457`
 
-- New packages: opencv-python v4.5.5.64 {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
-  svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
-  ruamel, msprime {pr}`4138`.
+- New packages: opencv-python {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`,
+  cftime {pr}`2504`, svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`,
+  demes, libgsl, newick, ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`,
+  xgboost {pr}`2537`, galpy {pr}`2676`, shapely, geos {pr}`2725`, suitesparse,
+  sparseqr {pr}`2685`, libtiff {pr}`2762`, pytest-benchmark {pr}`2799`,
+  termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
+  rebound {pr}`2868`, reboundx {pr}`2909`, pyclipper {pr}`2886`,
+  brotli {pr}`2925`, python-magic {pr}`2941`
+
+### Miscellaneous
+
+- {{ Fix }} We now tell packagers (e.g., Webpack) to ignore npm-specific imports
+  when packing files for the browser.
+  {pr}`2468`
+
+- {{ Enhancement }} `run_in_pyodide` now has support for pytest assertion
+  rewriting and decorators such as `pytest.mark.parametrize` and hypothesis.
+  {pr}`2510`, {pr}`2541`
+
+- {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
+  decorator can now be accessed through
+  [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
+  {pr}`2418`
+
+### List of contributors
+
+Alexey Ignatiev, Andrey Smelter, andrzej, Antonio Cuni, Ben Jeffery, Brian
+Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
+Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
+Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
+Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Matt Toad, Michael Droettboom,
+Michael Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo
+Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
+Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 
@@ -179,7 +298,7 @@ substitutions:
 - {{Enhancement}} Added a `default_converter` argument to {any}`JsProxy.to_py`
   and {any}`pyodide.toPy` which is used to process any object that doesn't have
   a built-in conversion to Python. Also added a `default_converter` argument to
-  {any}`PyProxy.toJs` and {any}`pyodide.to_js` to convert.
+  {any}`PyProxy.toJs` and {any}`pyodide.ffi.to_js` to convert.
   {pr}`2170` and {pr}`2208`
 
 - {{ Enhancement }} Async Python functions called from Javascript now have the
@@ -659,7 +778,7 @@ _August 3rd, 2021_
 
 ### Python package
 
-- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
+- {{ Enhancement }} Added a new {any}`CodeRunner <pyodide.code.CodeRunner>` API for finer control than
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
   {pr}`1563`
@@ -708,7 +827,7 @@ _August 3rd, 2021_
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
-- {{ API }} {any}`toJs <PyProxy.toJs>` and {any}`to_js <pyodide.to_js>` now
+- {{ API }} {any}`PyProxy.toJs` and {any}`to_js <pyodide.ffi.to_js>` now
   take an option `pyproxies`, if a JavaScript Array is passed for this, then
   any proxies created during conversion will be placed into this array. This
   allows easy cleanup later. The `create_pyproxies` option can be used to

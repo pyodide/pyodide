@@ -1,8 +1,8 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["sympy"])
-def test_sympy():
+def test_sympy(selenium):
     import sympy
 
     a, b = sympy.symbols("a,b")

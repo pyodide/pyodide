@@ -1,8 +1,8 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["boost-histogram"])
-def test_boost_histogram():
+def test_boost_histogram(selenium):
     import unittest
 
     import boost_histogram as bh

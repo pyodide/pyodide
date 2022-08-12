@@ -1,10 +1,11 @@
 package:
   name: libhdf5
-  version: 1.13.1
+  version: 1.12.1
+  _disabled: true
 
 source:
-  sha256: 92552458f35c7e58128ce1bfc2831abf901cc142ea0fdd2b056311e4452db7bf
-  url: https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_13_1.tar.gz
+  sha256: e6dde173c2d243551922d23a0387a79961205b018502e6a742acb30b61bc2d5f
+  url: https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_12_1.tar.gz
 
 requirements:
   run:

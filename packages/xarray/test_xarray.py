@@ -1,8 +1,8 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["xarray"])
-def test_xarray():
+def test_xarray(selenium):
     import xarray as xr
 
     da = xr.DataArray(data=[[0, 1, 2], [3, 4, 5]], dims=("x", "y"))

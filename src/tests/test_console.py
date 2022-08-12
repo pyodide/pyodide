@@ -3,10 +3,10 @@ import sys
 import time
 
 import pytest
-from pyodide_test_runner import run_in_pyodide
-from pyodide_test_runner.fixture import selenium_common
+from pytest_pyodide import run_in_pyodide
 
-from pyodide import CodeRunner, console  # noqa: E402
+from pyodide import console
+from pyodide.code import CodeRunner  # noqa: E402
 from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 
 
@@ -137,11 +137,14 @@ def test_interactive_console():
                 == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
             )
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 def test_top_level_await():
     from asyncio import Queue, sleep
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     q: Queue[int] = Queue()
     shell = Console(locals())
@@ -153,7 +156,7 @@ def test_top_level_await():
         await q.put(5)
         assert await fut == 5
 
-    asyncio.get_event_loop().run_until_complete(test())
+    loop.run_until_complete(test())
 
 
 @pytest.fixture
@@ -211,7 +214,7 @@ def test_persistent_redirection(safe_sys_redirections):
         assert await get_result("1+1") == 2
         assert my_stdout == "foo\nfoobar\nfoobar\n"
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
     my_stderr = ""
 
@@ -230,7 +233,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
-    def stdin_callback() -> str:
+    def stdin_callback(n: int) -> str:
         return ""
 
     def stdout_callback(string: str) -> None:
@@ -276,12 +279,12 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert await get_result("sys.stdout.isatty()")
         assert await get_result("sys.stderr.isatty()")
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
-async def test_console_imports():
+async def test_console_imports(selenium):
     from pyodide.console import PyodideConsole
 
     shell = PyodideConsole()
@@ -293,19 +296,6 @@ async def test_console_imports():
 
     assert await get_result("import pytz") is None
     assert await get_result("pytz.utc.zone") == "UTC"
-
-
-@pytest.fixture(params=["firefox", "chrome"], scope="function")
-def console_html_fixture(request, web_server_main):
-    with selenium_common(request, web_server_main, False) as selenium:
-        selenium.driver.get(
-            f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
-        )
-        selenium.javascript_setup()
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
 
 
 def test_console_html(console_html_fixture):

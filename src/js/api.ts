@@ -6,8 +6,11 @@ import "./module.ts";
 import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
+import { loadBinaryFile } from "./compat";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+
+API.loadBinaryFile = loadBinaryFile;
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -46,9 +49,8 @@ API.runPythonInternal = function (code: string): any {
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
 };
 
-let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
- * Runs a string of Python code from JavaScript, using :any:`pyodide.eval_code`
+ * Runs a string of Python code from JavaScript, using :any:`pyodide.code.eval_code`
  * to evaluate the code. If the last statement in the Python code is an
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
@@ -65,32 +67,23 @@ let runPythonPositionalGlobalsDeprecationWarned = false;
  * @param options.globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript. See the
- *          documentation for :any:`pyodide.eval_code` for more info.
+ *          documentation for :any:`pyodide.code.eval_code` for more info.
  */
 export function runPython(
   code: string,
   options: { globals?: PyProxy } = {}
 ): any {
-  if (API.isPyProxy(options)) {
-    options = { globals: options as PyProxy };
-    if (!runPythonPositionalGlobalsDeprecationWarned) {
-      console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-      );
-      runPythonPositionalGlobalsDeprecationWarned = true;
-    }
-  }
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return API.pyodide_py.eval_code(code, options.globals);
+  return API.pyodide_code.eval_code(code, options.globals);
 }
 API.runPython = runPython;
 
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
  * any known packages that the code chunk imports. Uses the Python API
- * :func:`pyodide.find\_imports` to inspect the code.
+ * :func:`pyodide.code.find\_imports` to inspect the code.
  *
  * For example, given the following code as input
  *
@@ -113,7 +106,7 @@ export async function loadPackagesFromImports(
   messageCallback?: (msg: string) => void,
   errorCallback?: (err: string) => void
 ) {
-  let pyimports = API.pyodide_py.find_imports(code);
+  let pyimports = API.pyodide_code.find_imports(code);
   let imports;
   try {
     imports = pyimports.toJs();
@@ -138,7 +131,7 @@ export async function loadPackagesFromImports(
 
 /**
  * Run a Python code string with top level await using
- * :any:`pyodide.eval_code_async` to evaluate the code. Returns a promise which
+ * :any:`pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
  * resolves when execution completes. If the last statement in the Python code
  * is an expression (and the code doesn't end with a semicolon), the returned
  * promise will resolve to the value of this expression.
@@ -149,7 +142,7 @@ export async function loadPackagesFromImports(
  *
  *    let result = await pyodide.runPythonAsync(`
  *        from js import fetch
- *        response = await fetch("./packages.json")
+ *        response = await fetch("./repodata.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to JavaScript
  *        len(packages.packages.object_keys())
@@ -181,19 +174,10 @@ export async function runPythonAsync(
   code: string,
   options: { globals?: PyProxy } = {}
 ): Promise<any> {
-  if (API.isPyProxy(options)) {
-    options = { globals: options as PyProxy };
-    if (!runPythonPositionalGlobalsDeprecationWarned) {
-      console.warn(
-        "Passing a PyProxy as the second argument to runPythonAsync is deprecated and will be removed in v0.21. Use 'runPythonAsync(code, {globals : some_dict})' instead."
-      );
-      runPythonPositionalGlobalsDeprecationWarned = true;
-    }
-  }
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return await API.pyodide_py.eval_code_async(code, options.globals);
+  return await API.pyodide_code.eval_code_async(code, options.globals);
 }
 API.runPythonAsync = runPythonAsync;
 
@@ -209,7 +193,7 @@ API.runPythonAsync = runPythonAsync;
  * @param module JavaScript object backing the module
  */
 export function registerJsModule(name: string, module: object) {
-  API.pyodide_py.register_js_module(name, module);
+  API.pyodide_ffi.register_js_module(name, module);
 }
 
 /**
@@ -232,7 +216,7 @@ export function registerComlink(Comlink: any) {
  * @param name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name: string) {
-  API.pyodide_py.unregister_js_module(name);
+  API.pyodide_ffi.unregister_js_module(name);
 }
 
 /**
@@ -341,7 +325,6 @@ export function pyimport(mod_name: string): PyProxy {
   return API.importlib.import_module(mod_name);
 }
 
-let unpackArchivePositionalExtractDirDeprecationWarned = false;
 /**
  * Unpack an archive into a target directory.
  *
@@ -369,15 +352,6 @@ export function unpackArchive(
     extractDir?: string;
   } = {}
 ) {
-  if (typeof options === "string") {
-    if (!unpackArchivePositionalExtractDirDeprecationWarned) {
-      console.warn(
-        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-      );
-      unpackArchivePositionalExtractDirDeprecationWarned = true;
-    }
-    options = { extractDir: options };
-  }
   if (
     !ArrayBuffer.isView(buffer) &&
     Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"

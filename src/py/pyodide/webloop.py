@@ -3,7 +3,8 @@ import contextvars
 import sys
 import time
 import traceback
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from ._core import IN_BROWSER, create_once_callable
 
@@ -96,7 +97,10 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     def call_soon(
-        self, callback: Callable, *args: Any, context: contextvars.Context | None = None
+        self,
+        callback: Callable[..., Any],
+        *args: Any,
+        context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Arrange for a callback to be called as soon as possible.
 
@@ -109,7 +113,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        self, callback: Callable, *args: Any, context: contextvars.Context | None = None
+        self,
+        callback: Callable[..., Any],
+        *args: Any,
+        context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Like ``call_soon()``, but thread-safe.
 
@@ -120,7 +127,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_later(  # type: ignore[override]
         self,
         delay: float,
-        callback: Callable,
+        callback: Callable[..., Any],
         *args: Any,
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
@@ -156,7 +163,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_at(  # type: ignore[override]
         self,
         when: float,
-        callback: Callable,
+        callback: Callable[..., Any],
         *args: Any,
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
@@ -201,7 +208,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_future(self) -> asyncio.Future:
+    def create_future(self) -> asyncio.Future[Any]:
         """Create a Future object attached to the loop.
 
         Copied from ``BaseEventLoop.create_future``
@@ -397,6 +404,21 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     def set_event_loop(self, loop: Any) -> None:
         """Set the current event loop"""
         self._default_loop = loop
+
+
+def _initialize_event_loop():
+    from ._core import IN_BROWSER
+
+    if not IN_BROWSER:
+        return
+
+    import asyncio
+
+    from .webloop import WebLoopPolicy
+
+    policy = WebLoopPolicy()
+    asyncio.set_event_loop_policy(policy)
+    policy.get_event_loop()
 
 
 __all__ = ["WebLoop", "WebLoopPolicy"]

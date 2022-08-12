@@ -2,31 +2,31 @@ from pyodide._core import IN_BROWSER
 
 if IN_BROWSER:
     from ._compat_in_pyodide import (
-        BUILTIN_PACKAGES,
-        WHEEL_BASE,
+        REPODATA_INFO,
+        REPODATA_PACKAGES,
         fetch_bytes,
         fetch_string,
-        gather,
+        loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 else:
-    from ._compat_not_in_pyodide import (  # type: ignore[no-redef]
-        BUILTIN_PACKAGES,
-        WHEEL_BASE,
+    from ._compat_not_in_pyodide import (
+        REPODATA_INFO,
+        REPODATA_PACKAGES,
         fetch_bytes,
         fetch_string,
-        gather,
+        loadDynlib,
         loadedPackages,
-        pyodide_js,
+        loadPackage,
     )
 
 __all__ = [
-    "gather",
+    "REPODATA_INFO",
+    "REPODATA_PACKAGES",
     "fetch_bytes",
     "fetch_string",
-    "WHEEL_BASE",
-    "BUILTIN_PACKAGES",
     "loadedPackages",
-    "pyodide_js",
+    "loadDynlib",
+    "loadPackage",
 ]

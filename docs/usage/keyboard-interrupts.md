@@ -66,16 +66,17 @@ self.addEventListener("message", (msg) => {
 
 The interrupt system above allows interruption of Python code and also of C code
 that opts to allow itself to be interrupted by periodically calling
-`PyErr_CheckSignals`. There is also a function {any}`pyodide.checkInterrupt` that
-allows JavasSript functions called from Python to check for an interrupt. As a
-simple example, we can implement an interruptible sleep function using
-`Atomics.wait`:
+[`PyErr_CheckSignals`](https://docs.python.org/3/c-api/exceptions.html?highlight=pyerr_checksignals#c.PyErr_CheckSignals).
+There is also a function {any}`pyodide.checkInterrupt` that allows JavaScript
+functions called from Python to check for an interrupt. As a simple example, we
+can implement an interruptible sleep function using
+[`Atomics.wait`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics/wait):
 
 ```js
 let blockingSleepBuffer = new Int32Array(new SharedArrayBuffer(4));
 function blockingSleep(t) {
   for (let i = 0; i < t * 20; i++) {
-    // This Atomics.wait call blocks the thread until the buffer changes or a 50ms timeout ellapses.
+    // This Atomics.wait call blocks the thread until the buffer changes or a 50ms timeout elapses.
     // Since we won't change the value in the buffer, this blocks for 50ms.
     Atomics.wait(blockingSleepBuffer, 0, 0, 50);
     // Periodically check for an interrupt to allow a KeyboardInterrupt.

@@ -32,7 +32,7 @@ index 16c355b..85a4f90 100644
 -            raise
  
 -        return int(major.value), int(minor.value), int(release.value)
-+        return (1, 13, 1)
++        return (1, 12, 1)
  
      def load_function(self, func_name):
          try:

@@ -9,6 +9,7 @@ build:
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
-        --prefix=${WASM_LIBRARY_DIR}
+        --prefix=${WASM_LIBRARY_DIR} \
+        --disable-shared
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

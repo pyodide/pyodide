@@ -58,7 +58,7 @@ create_promise_handles(PyObject* onfulfilled,
                        JsRef done_callback_id);
 
 int
-pyproxy_init();
+pyproxy_init(PyObject* core);
 
 // These are defined as an enum in Python.h but we want to use them in
 // pyproxy.ts.

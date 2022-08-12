@@ -1,17 +1,22 @@
 import os
+from collections.abc import Callable
+from typing import Any
 
-from pyodide_test_runner import run_in_pyodide
+import pytest
+from pytest_pyodide import run_in_pyodide
 
 if "CI" in os.environ:
-    xfail_browsers = {"chrome": "scikit-image takes too long to load in CI "}
+    xfail_browsers: Callable[[Any], Any] = pytest.mark.xfail_browsers(
+        chrome="scikit-image takes too long to load in CI "
+    )
 else:
-    xfail_browsers = {}
+    xfail_browsers = lambda x: x
 
 
-@run_in_pyodide(
-    packages=["scikit-image"], driver_timeout=40, xfail_browsers=xfail_browsers
-)
-def test_skimage():
+@pytest.mark.driver_timeout(40)
+@xfail_browsers
+@run_in_pyodide(packages=["scikit-image"])
+def test_skimage(selenium):
     import numpy as np
     from skimage import color, data
     from skimage.util import view_as_blocks

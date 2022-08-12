@@ -1,5 +1,6 @@
 import gc
 import sys
+from typing import Any
 
 import __main__
 
@@ -8,7 +9,7 @@ from _pyodide._importhook import jsfinder
 from ._core import JsProxy
 
 
-def save_state() -> dict:
+def save_state() -> dict[str, Any]:
     """Record the current global state.
 
     This includes which JavaScript packages are loaded and the global scope in
@@ -27,7 +28,7 @@ def save_state() -> dict:
     )
 
 
-def restore_state(state: dict) -> int:
+def restore_state(state: dict[str, Any]) -> int:
     """Restore the global state to a snapshot. The argument ``state`` should
     come from ``save_state``"""
     __main__.__dict__.clear()

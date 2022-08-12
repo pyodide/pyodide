@@ -4,18 +4,19 @@ import re
 import shutil
 import sysconfig
 import tarfile
+from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Iterable, Literal
+from typing import IO, Any, Literal
 from zipfile import ZipFile
 
 from ._core import IN_BROWSER, JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 STD_LIB = Path(sysconfig.get_path("stdlib"))
-TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
+TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
@@ -89,7 +90,9 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     return info_dir
 
 
-def make_whlfile(*args, owner=None, group=None, **kwargs):
+def make_whlfile(
+    *args: Any, owner: int | None = None, group: int | None = None, **kwargs: Any
+) -> str:
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
@@ -116,7 +119,7 @@ def unpack_buffer(
     *,
     filename: str = "",
     format: str | None = None,
-    target: Literal["site", "lib"] | None = None,
+    target: Literal["site", "lib", "dynlib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
     installer: str | None = None,
@@ -191,7 +194,8 @@ def unpack_buffer(
         if suffix == ".whl":
             set_wheel_installer(filename, f, extract_path, installer, source)
         if calculate_dynlibs:
-            return to_js(get_dynlibs(f, extract_path))
+            suffix = Path(f.name).suffix
+            return to_js(get_dynlibs(f, suffix, extract_path))
         else:
             return None
 
@@ -262,7 +266,7 @@ def set_wheel_installer(
         (dist_info / "PYODIDE_SOURCE").write_text(source)
 
 
-def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
+def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     """List out the paths to .so files in a zip or tar archive.
 
     Parameters
@@ -280,7 +284,6 @@ def get_dynlibs(archive: IO[bytes], target_dir: Path) -> list[str]:
         The list of paths to dynamic libraries ('.so' files) that were in the archive,
         but adjusted to point to their unpacked locations.
     """
-    suffix = Path(archive.name).suffix
     dynlib_paths_iter: Iterable[str]
     if suffix in ZIP_TYPES:
         dynlib_paths_iter = ZipFile(archive).namelist()

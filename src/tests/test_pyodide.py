@@ -1,11 +1,12 @@
 import re
+from collections.abc import Sequence
 from textwrap import dedent
-from typing import Any, Sequence
+from typing import Any
 
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
-from pyodide import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -183,33 +184,6 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
-def test_deprecations(selenium_standalone):
-    selenium = selenium_standalone
-    selenium.run_js(
-        """
-        let d = pyodide.runPython("{}");
-        pyodide.runPython("x=2", d);
-        pyodide.runPython("y=2", d);
-        assert(() => d.get("x") === 2);
-        d.destroy();
-        """
-    )
-    dep_msg = "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-    assert selenium.logs.count(dep_msg) == 1
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            import shutil
-            shutil.make_archive("blah", "zip")
-        `);
-        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
-        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
-        """
-    )
-    dep_msg = "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-    assert selenium.logs.count(dep_msg) == 1
-
-
 def test_unpack_archive(selenium_standalone):
     selenium = selenium_standalone
     js_error = selenium.run_js(
@@ -228,7 +202,7 @@ def test_unpack_archive(selenium_standalone):
 
 
 @run_in_pyodide
-def test_dup_pipe():
+def test_dup_pipe(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/14640
     import os
 
@@ -247,7 +221,7 @@ def test_dup_pipe():
 
 
 @run_in_pyodide
-def test_dup_temp_file():
+def test_dup_temp_file(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/15012
     import os
     from tempfile import TemporaryFile
@@ -268,7 +242,7 @@ def test_dup_temp_file():
 
 
 @run_in_pyodide
-def test_dup_stdout():
+def test_dup_stdout(selenium):
     # Test redirecting stdout using low level os.dup operations.
     # This sort of redirection is used in pytest.
     import os
@@ -298,11 +272,11 @@ def test_monkeypatch_eval_code(selenium):
         selenium.run(
             """
             import pyodide
-            old_eval_code = pyodide.eval_code
+            old_eval_code = pyodide.code.eval_code
             x = 3
             def eval_code(code, ns):
                 return [ns["x"], old_eval_code(code, ns)]
-            pyodide.eval_code = eval_code
+            pyodide.code.eval_code = eval_code
             """
         )
         assert selenium.run("x = 99; 5") == [3, 5]
@@ -310,7 +284,7 @@ def test_monkeypatch_eval_code(selenium):
     finally:
         selenium.run(
             """
-            pyodide.eval_code = old_eval_code
+            pyodide.code.eval_code = old_eval_code
             """
         )
 
@@ -400,7 +374,7 @@ def test_run_python_async_toplevel_await(selenium):
         """
         await pyodide.runPythonAsync(`
             from js import fetch
-            resp = await fetch("packages.json")
+            resp = await fetch("repodata.json")
             json = (await resp.json()).to_py()["packages"]
             assert "micropip" in json
         `);
@@ -570,7 +544,7 @@ def test_run_python_js_error(selenium):
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             raises = TestCase().assertRaisesRegex
             with raises(JsException, "blah!"):
                 throwError()
@@ -586,7 +560,7 @@ def test_create_once_callable(selenium):
             return f(7);
         }
         pyodide.runPython(`
-            from pyodide import create_once_callable, JsException
+            from pyodide.ffi import create_once_callable, JsException
             from js import call7;
             from unittest import TestCase
             raises = TestCase().assertRaisesRegex
@@ -629,7 +603,7 @@ def test_create_proxy(selenium):
             return self.listener === f;
         }
         pyodide.runPython(`
-            from pyodide import create_proxy
+            from pyodide.ffi import create_proxy
             from js import testAddListener, testCallListener, testRemoveListener;
             class Test:
                 def __call__(self):
@@ -668,7 +642,7 @@ def test_return_destroyed_value(selenium):
         r"""
         self.f = function(x){ return x };
         pyodide.runPython(`
-            from pyodide import create_proxy, JsException
+            from pyodide.ffi import create_proxy, JsException
             from js import f
             p = create_proxy([])
             p.destroy()
@@ -686,7 +660,7 @@ def test_return_destroyed_value(selenium):
 
 def test_docstrings_a():
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
-    from pyodide import JsProxy
+    from pyodide.ffi import JsProxy
 
     jsproxy = JsProxy()
     c_docstring = get_cmeth_docstring(jsproxy.then)
@@ -697,7 +671,7 @@ def test_docstrings_a():
 
 def test_docstrings_b(selenium):
     from _pyodide.docstring import dedent_docstring
-    from pyodide import JsProxy, create_once_callable
+    from pyodide.ffi import JsProxy, create_once_callable
 
     jsproxy = JsProxy()
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
@@ -708,7 +682,7 @@ def test_docstrings_b(selenium):
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
-        from pyodide import create_once_callable as b
+        from pyodide.ffi import create_once_callable as b
         [
             a.then.__doc__, a.then.__text_signature__,
             b.__doc__, b.__text_signature__
@@ -789,6 +763,8 @@ def test_fatal_error(selenium_standalone):
         x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
         x = re.sub(" +at .*\n", "", x)
         x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = re.sub(".*@debugger.*\n", "", x)
+        x = re.sub(".*@chrome.*\n", "", x)
         x = x.replace("\n\n", "\n")
         return x
 
@@ -874,7 +850,7 @@ def test_js_stackframes(selenium):
                 c1()
             def e():
                 from js import d4
-                from pyodide import to_js
+                from pyodide.ffi import to_js
                 from traceback import extract_tb
                 try:
                     d4()
@@ -895,7 +871,11 @@ def test_js_stackframes(selenium):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
-            if re.fullmatch(r"\:[0-9]*", file) or file == "evalmachine.<anonymous>":
+            if (
+                re.fullmatch(r"\:[0-9]*", file)
+                or file == "evalmachine.<anonymous>"
+                or file == "debugger eval code"
+            ):
                 file = "test.html"
             res.append([file, name])
         return res
@@ -961,7 +941,7 @@ def test_weird_throws(selenium):
         pyodide.runPython(`
             from js import funcs
             from unittest import TestCase
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             raises = TestCase().assertRaisesRegex
             msgs = {
                 "null" : ['type object .* tag .object Null.', '"""null"""',  'fails'],
@@ -1149,10 +1129,10 @@ def test_sys_path0(selenium):
 
 
 @run_in_pyodide
-def test_run_js():
+def test_run_js(selenium):
     from unittest import TestCase
 
-    from pyodide import run_js
+    from pyodide.code import run_js
 
     raises = TestCase().assertRaises
 
@@ -1165,3 +1145,47 @@ def test_run_js():
     from js import x
 
     assert x == 77
+
+
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide.code import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    from pyodide.ffi import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide.code import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_moved_deprecation_warnings(selenium_standalone):
+    import pytest
+
+    import pyodide
+    from pyodide import DEPRECATED_LIST, code, ffi, http  # noqa: F401
+
+    for func, mod in DEPRECATED_LIST.items():
+        getattr(getattr(pyodide, mod), func)
+
+    for func, mod in DEPRECATED_LIST.items():
+        with pytest.warns(FutureWarning, match=mod):
+            getattr(pyodide, func)
+
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        for func in DEPRECATED_LIST.keys():
+            getattr(pyodide, func)

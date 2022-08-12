@@ -1,14 +1,22 @@
 import sys
+from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
+from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
+from types import ModuleType
 from typing import Any
 
 
 class JsFinder(MetaPathFinder):
-    def __init__(self):
-        self.jsproxies = {}
+    def __init__(self) -> None:
+        self.jsproxies: dict[str, Any] = {}
 
-    def find_spec(self, fullname, path, target=None):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
         assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
@@ -66,7 +74,7 @@ class JsFinder(MetaPathFinder):
         """
         Unregisters a JavaScript module with given name that has been previously
         registered with :any:`pyodide.registerJsModule` or
-        :any:`pyodide.register_js_module`. If a JavaScript module with that name
+        :any:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
         imported module from ``sys.modules``. This is called by the JavaScript
@@ -86,17 +94,17 @@ class JsFinder(MetaPathFinder):
 
 
 class JsLoader(Loader):
-    def __init__(self, jsproxy):
+    def __init__(self, jsproxy: Any) -> None:
         self.jsproxy = jsproxy
 
-    def create_module(self, spec):
+    def create_module(self, spec: ModuleSpec) -> Any:
         return self.jsproxy
 
-    def exec_module(self, module):
+    def exec_module(self, module: ModuleType) -> None:
         pass
 
     # used by importlib.util.spec_from_loader
-    def is_package(self, fullname):
+    def is_package(self, fullname: str) -> bool:
         return True
 
 
@@ -106,7 +114,7 @@ register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
 
 
-def register_js_finder():
+def register_js_finder() -> None:
     """A bootstrap function, called near the end of Pyodide initialization.
 
     It is called in ``loadPyodide`` in ``pyodide.js`` once ``_pyodide_core`` is ready

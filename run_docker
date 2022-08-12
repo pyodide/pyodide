@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="20220504-py310-chrome101-firefox100"
-PYODIDE_PREBUILT_IMAGE_TAG="0.20.0"
+PYODIDE_IMAGE_TAG="20220629-py310-chrome102-firefox100"
+PYODIDE_PREBUILT_IMAGE_TAG="0.21.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
@@ -127,9 +127,9 @@ CONTAINER=$(\
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash -c " \
-      groupadd '$USER_GID'; \
+      groupadd --gid '$USER_GID' '$USER_NAME'; \
       useradd \
-        --home-dir '$USER_HOME' \
+        --home '$USER_HOME' \
         --uid '$USER_ID' \
         --gid '$USER_GID' \
         --comment '$USER_COMMENT_FIELD' \

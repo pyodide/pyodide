@@ -1,7 +1,7 @@
 import base64
 import pathlib
 
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
 
@@ -40,7 +40,7 @@ def test_import(selenium):
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
-def test_image_extensions():
+def test_image_extensions(selenium):
     import cv2 as cv
     import numpy as np
 
@@ -53,6 +53,7 @@ def test_image_extensions():
         "jpeg": b"\xff\xd8\xff\xe0",
         "png": b"\x89PNG",
         "webp": b"RIFF",
+        "tiff": b"\x49\x49\x2a\x00",
     }
 
     for ext, signature in extensions.items():
@@ -62,7 +63,7 @@ def test_image_extensions():
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
-def test_io():
+def test_io(selenium):
     import cv2 as cv
     import numpy as np
 
@@ -76,7 +77,7 @@ def test_io():
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
-def test_drawing():
+def test_drawing(selenium):
     import cv2 as cv
     import numpy as np
 
@@ -93,7 +94,7 @@ def test_drawing():
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
-def test_pixel_access():
+def test_pixel_access(selenium):
     import cv2 as cv
     import numpy as np
 
@@ -109,7 +110,7 @@ def test_pixel_access():
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
-def test_image_processing():
+def test_image_processing(selenium):
     import cv2 as cv
     import numpy as np
 

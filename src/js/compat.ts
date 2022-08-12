@@ -8,7 +8,7 @@ export const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
-let nodePathMod: any;
+let nodeUrlMod: any;
 let nodeFetch: any;
 let nodeVmMod: any;
 /** @private */
@@ -17,6 +17,7 @@ export let nodeFsPromisesMod: any;
 declare var globalThis: {
   importScripts: (url: string) => void;
   document?: any;
+  fetch?: any;
 };
 
 /**
@@ -29,10 +30,14 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodePathMod = (await import("path")).default;
+  nodeUrlMod = (await import("url")).default;
   nodeFsPromisesMod = await import("fs/promises");
-  // @ts-ignore
-  nodeFetch = (await import("node-fetch")).default;
+  if (globalThis.fetch) {
+    nodeFetch = fetch;
+  } else {
+    // @ts-ignore
+    nodeFetch = (await import("node-fetch")).default;
+  }
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   if (typeof require !== "undefined") {
@@ -129,15 +134,15 @@ async function browser_loadBinaryFile(
 }
 
 /** @private */
-export let _loadBinaryFile: (
+export let loadBinaryFile: (
   indexURL: string,
   path: string,
   file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
-  _loadBinaryFile = node_loadBinaryFile;
+  loadBinaryFile = node_loadBinaryFile;
 } else {
-  _loadBinaryFile = browser_loadBinaryFile;
+  loadBinaryFile = browser_loadBinaryFile;
 }
 
 /**
@@ -189,6 +194,6 @@ async function nodeLoadScript(url: string) {
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    await import(nodePathMod.resolve(url));
+    await import(nodeUrlMod.pathToFileURL(url).href);
   }
 }

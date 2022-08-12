@@ -1,10 +1,10 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(
     packages=["Pillow"],
 )
-def test_pillow():
+def test_pillow(selenium):
     import io
 
     from PIL import Image, ImageDraw, ImageOps
@@ -23,6 +23,7 @@ def test_pillow():
         "jpeg": b"\xff\xd8\xff\xe0",
         "png": b"\x89PNG",
         "webp": b"RIFF",
+        "tiff": b"\x49\x49\x2a\x00",
     }
 
     for ext, signature in extensions.items():
@@ -38,7 +39,7 @@ def test_pillow():
 @run_in_pyodide(
     packages=["Pillow"],
 )
-def test_jpeg_modes():
+def test_jpeg_modes(selenium):
     from PIL import Image
 
     rgb = Image.new("RGB", (4, 4))

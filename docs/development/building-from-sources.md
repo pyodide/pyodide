@@ -9,13 +9,13 @@ version of the documentation at
 [pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
-Building on any operating system is easiest using the Pyodide Docker image. This approach works
-with any native operating system as long as Docker is installed. You can also build on your
-native Linux OS if the correct build prerequisites are installed. Building on MacOS is
-possible, but there are known issues as of version 0.18 that you will need to work around.
-It is not possible to build on Windows, but you can use
-[WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
-Linux build environment.
+Building Pyodide is easiest using the Pyodide Docker image. This approach works
+with any native operating system as long as Docker is installed. You can also
+build on your native Linux OS if the correct build prerequisites are installed.
+Building on MacOS is possible, but there are known issues as of version 0.18
+that you will need to work around. It is not possible to build on Windows, but
+you can use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+to create a Linux build environment.
 
 ## Build instructions
 
@@ -38,9 +38,9 @@ These Docker images are also available from the Github packages at
 
 1. Install Docker
 
-1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
+2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
-1. Run `make` to build.
+3. Run `make` to build.
 
 ```{note}
 You can control the resources allocated to the build by setting the env
@@ -83,6 +83,7 @@ Additional build prerequisites are:
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 - (optional) SWIG to compile NLopt
+- (optional) sqlite3 to compile libproj
 
 ```
 
@@ -98,6 +99,7 @@ To build on MacOS, you need:
 - cmake (`brew install cmake`)
 - pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
+- autoconf, automaker & libtool (`brew install autoconf automaker libtool`)
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from
   the root directory (`sudo ./tools/buildf2c`)
@@ -105,6 +107,7 @@ To build on MacOS, you need:
   GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
 - (optional) SWIG to compile NLopt (`brew install swig`)
+- (optional) sqlite3 to compile libproj (`brew install sqlite3`)
 
 ```
 
@@ -139,7 +142,7 @@ Dependencies of the listed packages will be built automatically as well. The
 package names must match the folder names in `packages/` exactly; in particular
 they are case-sensitive.
 
-If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessairy to run
+If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessary to run
 the core test suite is installed, including "micropip", "pyparsing", "pytz",
 "packaging", "Jinja2", "regex". This is equivalent to setting
 `PYODIDE_PACKAGES='core'`
@@ -148,11 +151,20 @@ meta-package. Other supported meta-packages are,
 - "min-scipy-stack": includes the "core" meta-package as well as some
   core packages from the scientific python stack and their dependencies:
   "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
-  "pytest". This option is non exaustive and is mainly intended to make build
+  "pytest". This option is non exhaustive and is mainly intended to make build
   faster while testing a diverse set of scientific packages.
 - "\*" builds all packages
+- You can exclude a package by prefixing it with "!".
 
 micropip and distutils are always automatically included.
+
+The cryptography package is a Rust extension. If you want to build it, you will
+need Rust >= 1.41, you need the
+[CARGO_HOME](https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-reads)
+environment variable set appropriately, and you need the
+`wasm32-unknown-emscripten` toolchain installed. If you run `make rust`, Pyodide
+will install this stuff automatically. If you want to build every package except
+for cryptography, you can set `PYODIDE_PACKAGES="*,!cryptography"`.
 
 ## Environment variables
 
@@ -163,7 +175,7 @@ The following environment variables additionally impact the build:
 - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
   with a trailing `/`. Default: `./` to load Pyodide packages from the same
   base URL path as where `pyodide.js` is located. Example:
-  `https://cdn.jsdelivr.net/pyodide/v0.20.0/full/`
+  `{{PYODIDE_CDN_URL}}`
 - `EXTRA_CFLAGS` : Add extra compilation flags.
 - `EXTRA_LDFLAGS` : Add extra linker flags.
 

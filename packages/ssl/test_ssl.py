@@ -1,8 +1,8 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["test", "ssl"], pytest_assert_rewrites=False)
-def test_ssl():
+def test_ssl(selenium):
     import platform
     import unittest
     import unittest.mock

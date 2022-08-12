@@ -1,8 +1,8 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["fpcast-test"])
-def test_fpcasts():
+def test_fpcasts(selenium):
     import fpcast_test
 
     fpcast_test.noargs0()

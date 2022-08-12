@@ -1,0 +1,34 @@
+package:
+  name: xgboost
+  version: 1.6.1
+source:
+  url: https://files.pythonhosted.org/packages/0e/8c/19309bcaf9a88b0bab34b88935925153f3f3f646163acaae9aa148cf72bb/xgboost-1.6.1.tar.gz
+  sha256: 24072028656f3428e7b8aabf77340ece057f273e41f7f85d67ccaefb7454bb18
+  patches:
+    - patches/0001-Add-missing-template-type.patch
+    - patches/0002-Add-library-loading-path.patch
+build:
+  cflags: |
+    -DDMLC_USE_FOPEN64=0
+    -DDMLC_ENABLE_STD_THREAD=0
+    -DDMLC_CXX11_THREAD_LOCAL=0
+    -DUSE_OPENMP=0
+  script: |
+    # export VERBOSE=1
+    export CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/xgboost/cmake/Toolchain.cmake
+  # xgboost uses dlsym so we need to export more than just PyInit_xgboost.
+  # We can't currently use "explicit" because there are too many exports.
+  exports: "whole_archive"
+requirements:
+  run:
+    - numpy
+    - scipy
+    - setuptools
+test:
+  imports:
+    - xgboost
+about:
+  home: https://github.com/dmlc/xgboost
+  PyPI: https://pypi.org/project/xgboost
+  summary: XGBoost Python Package
+  license: Apache-2.0

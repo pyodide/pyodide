@@ -1,11 +1,11 @@
-from collections import namedtuple
+import argparse
 from pathlib import Path
 from time import sleep
 from typing import Any
 
 import pytest
 
-from pyodide_build import buildall
+from pyodide_build import buildall, io
 
 PACKAGES_DIR = Path(__file__).parent / "_test_packages"
 
@@ -18,7 +18,36 @@ def test_generate_dependency_graph():
     assert pkg_map["beautifulsoup4"].host_dependents == set()
 
 
-def test_generate_packages_json(tmp_path):
+@pytest.mark.parametrize(
+    "in_set, out_set",
+    [
+        ({"scipy"}, {"scipy", "numpy", "CLAPACK"}),
+        ({"scipy", "!numpy"}, set()),
+        ({"scipy", "!numpy", "CLAPACK"}, {"CLAPACK"}),
+        ({"scikit-learn", "!numpy"}, set()),
+        ({"scikit-learn", "scipy", "!joblib"}, {"scipy", "numpy", "CLAPACK"}),
+        ({"scikit-learn", "no-numpy-dependents"}, set()),
+        ({"scikit-learn", "no-numpy-dependents", "numpy"}, {"numpy"}),
+    ],
+)
+def test_generate_dependency_graph2(in_set, out_set):
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, in_set)
+    assert set(pkg_map.keys()) == out_set
+
+
+def test_generate_dependency_graph_disabled(monkeypatch):
+    def mock_parse_package_config(path):
+        d = io.parse_package_config(path)
+        if "numpy" in str(path):
+            d["package"]["_disabled"] = True
+        return d
+
+    monkeypatch.setattr(buildall, "parse_package_config", mock_parse_package_config)
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"scipy"})
+    assert set(pkg_map.keys()) == set()
+
+
+def test_generate_repodata(tmp_path):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".file"
@@ -26,9 +55,12 @@ def test_generate_packages_json(tmp_path):
         with open(tmp_path / pkg.file_name, "w") as f:
             f.write(pkg.name)
 
-    package_data = buildall.generate_packages_json(tmp_path, pkg_map)
+    package_data = buildall.generate_repodata(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
-    assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
+    assert set(package_data["info"].keys()) == {"arch", "platform", "version", "python"}
+    assert package_data["info"]["arch"] == "wasm32"
+    assert package_data["info"]["platform"].startswith("emscripten")
+
     assert set(package_data["packages"]) == {
         "pkg_1",
         "pkg_1_1",
@@ -59,9 +91,8 @@ def test_build_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
 
-    Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
     )
 
     assert set(build_list) == {
@@ -93,9 +124,8 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
 
-    Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
     buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=False)
+        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
     )
 
 
@@ -112,7 +142,6 @@ def test_build_error(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1"})
 
     with pytest.raises(ValueError, match="Failed build"):
-        Args = namedtuple("Args", ["n_jobs", "force_rebuild"])
         buildall.build_from_graph(
-            pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+            pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
         )

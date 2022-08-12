@@ -1,6 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):
@@ -67,64 +67,93 @@ def test_jsproxy_getattr(selenium):
     assert (
         selenium.run_js(
             """
-        self.a = { x : 2, y : "9", typeof : 7 };
-        let pyresult = pyodide.runPython(`
-            from js import a
-            [ a.x, a.y, a.typeof ]
-        `);
-        let result = pyresult.toJs();
-        pyresult.destroy();
-        return result;
-        """
+            self.a = { x : 2, y : "9", typeof : 7 };
+            let pyresult = pyodide.runPython(`
+                from js import a
+                [ a.x, a.y, a.typeof ]
+            `);
+            let result = pyresult.toJs();
+            pyresult.destroy();
+            return result;
+            """
         )
         == [2, "9", "object"]
     )
 
 
+@pytest.mark.xfail_browsers(node="No document in node")
+@run_in_pyodide
 def test_jsproxy_document(selenium):
-    if selenium.browser == "node":
-        pytest.xfail("No document in node")
-    selenium.run("from js import document")
-    assert (
-        selenium.run(
-            """
-            el = document.createElement('div')
-            document.body.appendChild(el)
-            document.body.children.length
-            """
-        )
-        == 1
-    )
-    assert selenium.run("document.body.children[0].tagName") == "DIV"
-    assert selenium.run("repr(document)") == "[object HTMLDocument]"
-    assert (
-        selenium.run(
-            """
-            from js import document
-            el = document.createElement('div')
-            len(dir(el)) >= 200 and 'appendChild' in dir(el)
-            """
-        )
-        is True
-    )
-    assert (
-        selenium.run(
-            """
-            from js import ImageData
-            ImageData.new(64, 64).width
-            """
-        )
-        == 64
-    )
-    assert (
-        selenium.run(
-            """
-            from js import ImageData
-            ImageData.typeof
-            """
-        )
-        == "function"
-    )
+    from js import document
+
+    el = document.createElement("div")
+    assert el.tagName == "DIV"
+    assert bool(el)
+    assert not document.body.children
+    document.body.appendChild(el)
+    assert document.body.children
+    assert document.body.children.length == 1
+    assert document.body.children[0] == el
+    assert repr(document) == "[object HTMLDocument]"
+    assert len(dir(el)) >= 200
+    assert "appendChild" in dir(el)
+
+
+@pytest.mark.parametrize(
+    "js,result",
+    [
+        ("{}", False),
+        ("{a:1}", True),
+        ("[]", False),
+        ("[1]", True),
+        ("new Map()", False),
+        ("new Map([[0, 0]])", True),
+        ("new Set()", False),
+        ("new Set([0])", True),
+        ("class T {}; T", True),
+        ("class T {}; new T()", True),
+        ("new Uint8Array(0)", False),
+        ("new Uint8Array(1)", True),
+        ("new ArrayBuffer(0)", False),
+        ("new ArrayBuffer(1)", True),
+    ],
+)
+@run_in_pyodide
+def test_jsproxy_bool(selenium, js, result):
+    from pyodide.code import run_js
+
+    assert bool(run_js(js)) == result
+
+
+@pytest.mark.xfail_browsers(node="No document in node")
+@pytest.mark.parametrize(
+    "js,result",
+    [
+        ("document.createElement('div')", True),
+        ("document.createElement('select')", True),
+        ("document.createElement('p')", True),
+        ("document.createElement('style')", True),
+        ("document.createElement('ul')", True),
+        ("document.createElement('ul').style", True),
+        ("document.querySelectorAll('x')", False),
+        ("document.querySelectorAll('body')", True),
+        ("document.all", False),
+    ],
+)
+@run_in_pyodide
+def test_jsproxy_bool_html(selenium, js, result):
+    from pyodide.code import run_js
+
+    assert bool(run_js(js)) == result
+
+
+@pytest.mark.xfail_browsers(node="No ImageData in node")
+@run_in_pyodide
+def test_jsproxy_imagedata(selenium):
+    from js import ImageData
+
+    assert ImageData.new(64, 64).width == 64
+    assert ImageData.typeof == "function"
 
 
 def test_jsproxy_function(selenium):
@@ -164,48 +193,25 @@ def test_jsproxy_class(selenium):
     )
 
 
+@run_in_pyodide
 def test_jsproxy_map(selenium):
-    selenium.run_js(
-        """
-        self.TEST = new Map([["x", 42], ["y", 43]]);
-        """
-    )
-    assert (
-        selenium.run(
-            """
-            from js import TEST
-            del TEST['y']
-            'y' in TEST
-            """
-        )
-        is False
-    )
-    assert selenium.run(
-        """
-        from js import TEST
-        TEST == TEST
-        """
-    )
-    assert selenium.run(
-        """
-        from js import TEST
-        TEST != 'foo'
-        """
-    )
-    selenium.run_js(
-        """
-        self.TEST = {foo: 'bar', baz: 'bap'}
-        """
-    )
-    assert (
-        selenium.run(
-            """
-            from js import TEST
-            dict(TEST.object_entries()) == {'foo': 'bar', 'baz': 'bap'}
-            """
-        )
-        is True
-    )
+    import pytest
+
+    from pyodide.code import run_js
+
+    TEST = run_js('new Map([["x", 42], ["y", 43]])')
+    assert "y" in TEST
+    del TEST["y"]
+    assert "y" not in TEST
+
+    with pytest.raises(KeyError):
+        del TEST["y"]
+
+    assert TEST == TEST
+    assert TEST != "foo"
+
+    TEST = run_js("({foo: 'bar', baz: 'bap'})")
+    assert dict(TEST.object_entries()) == {"foo": "bar", "baz": "bap"}
 
 
 def test_jsproxy_iter(selenium):
@@ -491,27 +497,27 @@ def test_call_pyproxy_return_arg(selenium):
 
 
 @run_in_pyodide
-def test_import_invocation():
+def test_import_invocation(selenium):
     import js
 
     def temp():
         print("okay?")
 
-    from pyodide import create_once_callable
+    from pyodide.ffi import create_once_callable
 
     js.setTimeout(create_once_callable(temp), 100)
-    js.fetch("packages.json")
+    js.fetch("repodata.json")
 
 
 @run_in_pyodide
-def test_import_bind():
+def test_import_bind(selenium):
     from js import fetch
 
-    fetch("packages.json")
+    fetch("repodata.json")
 
 
 @run_in_pyodide
-def test_nested_attribute_access():
+def test_nested_attribute_access(selenium):
     import js
     from js import self
 
@@ -558,7 +564,7 @@ def test_destroy_attribute(selenium):
 
 
 @run_in_pyodide
-def test_window_isnt_super_weird_anymore():
+def test_window_isnt_super_weird_anymore(selenium):
     import js
     from js import Array, self
 
@@ -714,18 +720,14 @@ def test_register_jsmodule_docs_example(selenium_standalone):
     )
 
 
+@run_in_pyodide
 def test_object_entries_keys_values(selenium):
-    selenium.run_js(
-        """
-        self.x = { a : 2, b : 3, c : 4 };
-        pyodide.runPython(`
-            from js import x
-            assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
-            assert x.object_keys().to_py() == ["a", "b", "c"]
-            assert x.object_values().to_py() == [2, 3, 4]
-        `);
-        """
-    )
+    from pyodide.code import run_js
+
+    x = run_js("({ a : 2, b : 3, c : 4 })")
+    assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
+    assert x.object_keys().to_py() == ["a", "b", "c"]
+    assert x.object_values().to_py() == [2, 3, 4]
 
 
 def test_mixins_feature_presence(selenium):
@@ -882,7 +884,7 @@ def test_mixins_errors_2(selenium):
                 with TestCase().assertRaisesRegex(exc, match) as e:
                     yield e
 
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             msg = "^TypeError:.* is not a function$"
             with raises(JsException, match=msg):
                 next(c)
@@ -906,59 +908,76 @@ def test_mixins_errors_2(selenium):
     )
 
 
+@run_in_pyodide
 def test_mixins_errors_3(selenium):
-    selenium.run_js(
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises
+
+    l = run_js(
         """
-        self.l = [0, false, NaN, undefined, null];
-        self.l[6] = 7;
-        await pyodide.runPythonAsync(`
-            from unittest import TestCase
-            raises = TestCase().assertRaises
-            from js import l
-            with raises(IndexError):
-                l[10]
-            with raises(IndexError):
-                l[5]
-            assert len(l) == 7
-            l[0]; l[1]; l[2]; l[3]
-            l[4]; l[6]
-            del l[1]
-            with raises(IndexError):
-                l[4]
-            l[5]
-            del l[4]
-            l[3]; l[4]
-        `);
+        const l = [0, false, NaN, undefined, null];
+        l[6] = 7;
+        l
         """
     )
 
+    with raises(IndexError):
+        l[10]
+    with raises(IndexError):
+        l[5]
+    assert len(l) == 7
+    l[0]
+    l[1]
+    l[2]
+    l[3]
+    l[4]
+    l[6]
+    del l[1]
+    with raises(IndexError):
+        l[4]
+    l[5]
+    del l[4]
+    l[3]
+    l[4]
 
+
+@run_in_pyodide
 def test_mixins_errors_4(selenium):
-    selenium.run_js(
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises
+
+    m = run_js(
         """
-        self.l = [0, false, NaN, undefined, null];
-        self.l[6] = 7;
+        l = [0, false, NaN, undefined, null];
+        l[6] = 7;
         let a = Array.from(self.l.entries());
         a.splice(5, 1);
-        self.m = new Map(a);
-        await pyodide.runPythonAsync(`
-            from js import m
-            from unittest import TestCase
-            raises = TestCase().assertRaises
-            with raises(KeyError):
-                m[10]
-            with raises(KeyError):
-                m[5]
-            assert len(m) == 6
-            m[0]; m[1]; m[2]; m[3]
-            m[4]; m[6]
-            del m[1]
-            with raises(KeyError):
-                m[1]
-            assert len(m) == 5
-        `);
+        m = new Map(a);
+        m
         """
     )
+
+    with raises(KeyError):
+        m[10]
+    with raises(KeyError):
+        m[5]
+    assert len(m) == 6
+    m[0]
+    m[1]
+    m[2]
+    m[3]
+    m[4]
+    m[6]
+    del m[1]
+    with raises(KeyError):
+        m[1]
+    assert len(m) == 5
 
 
 def test_buffer(selenium):
@@ -1017,7 +1036,7 @@ def test_buffer(selenium):
 
 
 @run_in_pyodide
-def test_buffer_to_file():
+def test_buffer_to_file(selenium):
     from js import Uint8Array
 
     a = Uint8Array.new(range(10))
@@ -1036,7 +1055,7 @@ def test_buffer_to_file():
 
 
 @run_in_pyodide
-def test_buffer_into_file():
+def test_buffer_into_file(selenium):
     from js import Uint8Array
 
     a = Uint8Array.new(range(10))
@@ -1050,7 +1069,7 @@ def test_buffer_into_file():
 
 
 @run_in_pyodide
-def test_buffer_into_file2():
+def test_buffer_into_file2(selenium):
     """Check that no copy occurred."""
     import pyodide_js
     from js import Uint8Array
@@ -1066,7 +1085,7 @@ def test_buffer_into_file2():
 def test_buffer_assign_back(selenium):
     result = selenium.run_js(
         """
-        self.jsarray = new Uint8Array([1,2,3, 4, 5, 6]);
+        self.jsarray = new Uint8Array([1, 2, 3, 4, 5, 6]);
         pyodide.runPython(`
             from js import jsarray
             array = jsarray.to_py()
@@ -1079,66 +1098,69 @@ def test_buffer_assign_back(selenium):
     assert result == [1, 20, 3, 77, 5, 9]
 
 
+@run_in_pyodide
 def test_buffer_conversions(selenium):
-    selenium.run_js(
-        """
-        self.s = "abcဴ";
-        self.jsbytes = new TextEncoder().encode(s);
-        pyodide.runPython(`
-            from js import s, jsbytes
-            memoryview_conversion = jsbytes.to_memoryview()
-            bytes_conversion = jsbytes.to_bytes()
+    from pyodide.code import run_js
 
-            assert bytes_conversion.decode() == s
-            assert bytes(memoryview_conversion) == bytes_conversion
-            del jsbytes
-        `);
+    s, jsbytes = run_js(
+        """
+        const s = "abcဴ";
+        const jsbytes = new TextEncoder().encode(s);
+        [s, jsbytes]
         """
     )
+    memoryview_conversion = jsbytes.to_memoryview()
+    bytes_conversion = jsbytes.to_bytes()
+
+    assert bytes_conversion.decode() == s
+    assert bytes(memoryview_conversion) == bytes_conversion
 
 
+@run_in_pyodide
 def test_tostring_encoding(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    bytes = run_js(
         """
         // windows-1251 encoded "Привет, мир!" which is Russian for "Hello, world!"
-        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
-        pyodide.runPython(`
-            from js import bytes
-            assert bytes.to_string('windows-1251') == "Привет, мир!"
-        `);
+        new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
         """
     )
 
+    assert bytes.to_string("windows-1251") == "Привет, мир!"
 
+
+@run_in_pyodide
 def test_tostring_error(selenium):
-    selenium.run_js(
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises
+
+    bytes = run_js(
         """
         // windows-1251 encoded "Привет, мир!" which is Russian for "Hello, world!"
-        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
-        pyodide.runPython(`
-            from js import bytes
-            from unittest import TestCase
-            raises = TestCase().assertRaises
-            with raises(ValueError):
-                bytes.to_string()
-        `);
+        new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
         """
     )
 
+    with raises(ValueError):
+        bytes.to_string()
 
+
+@run_in_pyodide
 def test_duck_buffer_method_presence(selenium):
-    selenium.run_js(
-        """
-        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
-        self.other = {};
-        pyodide.runPython(`
-            from js import bytes, other
-            buffer_methods = {"assign", "assign_to", "to_string", "to_memoryview", "to_bytes"}
-            assert buffer_methods < set(dir(bytes))
-            assert not set(dir(other)).intersection(buffer_methods)
-        `);
-        """
+    from pyodide.code import run_js
+
+    bytes = run_js(
+        "new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33])"
     )
+    other = run_js("{}")
+
+    buffer_methods = {"assign", "assign_to", "to_string", "to_memoryview", "to_bytes"}
+    assert buffer_methods < set(dir(bytes))
+    assert not set(dir(other)).intersection(buffer_methods)
 
 
 def test_memory_leaks(selenium):
@@ -1157,7 +1179,7 @@ def test_memory_leaks(selenium):
 
 
 @run_in_pyodide
-def test_js_id():
+def test_js_id(selenium):
     from js import eval as run_js
 
     [x, y, z] = run_js("let a = {}; let b = {}; [a, a, b]")

@@ -9,6 +9,18 @@ source:
 build:
   library: true
   script: |
-    mkdir build && cd build && emcmake cmake -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} ../
+    mkdir build && cd build && emcmake cmake \
+      -DCMAKE_C_FLAGS="-fPIC" \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DWEBP_BUILD_CWEBP=OFF \
+      -DWEBP_BUILD_DWEBP=OFF \
+      -DWEBP_BUILD_VWEBP=OFF \
+      -DWEBP_BUILD_GIF2WEBP=OFF \
+      -DWEBP_BUILD_IMG2WEBP=OFF \
+      -DWEBP_BUILD_WEBPINFO=OFF \
+      -DWEBP_BUILD_WEBPINFO=OFF \
+      -DWEBP_BUILD_WEBPMUX=OFF \
+      -DWEBP_BUILD_EXTRAS=OFF \
+      ../
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

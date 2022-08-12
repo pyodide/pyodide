@@ -31,7 +31,7 @@ def get_old_yaml():
     return result
 
 
-def collect_tests(base_dir: Path) -> set:
+def collect_tests(base_dir: Path) -> set[str]:
     """Collect CPython unit tests"""
     # Note: this functionality is somewhat equivalent to pytest test
     # collection.

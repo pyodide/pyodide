@@ -1,8 +1,8 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["cffi"])
-def test_cffi_asprintf():
+def test_cffi_asprintf(selenium):
     from cffi import FFI
 
     ffi = FFI()

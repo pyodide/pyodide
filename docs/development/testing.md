@@ -4,21 +4,24 @@
 
 ## Testing
 
-### Requirements
-
-Install the following dependencies into the default Python installation:
-
-```bash
-pip install pytest selenium pytest-instafail pytest-httpserver
-```
-
-Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
-[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
-and check that they are in your `PATH`.
-
 ### Running the Python test suite
 
-To run the pytest suite of tests, from the root directory of Pyodide, type on the command line:
+1. Install the following dependencies into the default Python installation:
+
+```bash
+pip install pytest-pyodide pytest-httpserver
+```
+
+`pytest-pyodide` is a pytest plugin for testing Pyodide
+and third-party applications that use Pyodide.
+
+> See: [pytest-pyodide](https://github.com/pyodide/pytest-pyodide) for more information.
+
+2. Install [geckodriver](https://github.com/mozilla/geckodriver/releases) or
+   [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
+   and check that they are in your `PATH`.
+
+3. To run the test suite, run `pytest` from the root directory of Pyodide:
 
 ```bash
 pytest
@@ -28,12 +31,39 @@ There are 3 test locations that are collected by pytest,
 
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
-  (do not require selenium to run)
+  (do not require selenium or playwright to run)
 - `packages/*/test_*`: package specific tests.
+
+You can run the tests from a specific file with:
+
+```bash
+pytest path/to/test/file.py
+```
+
+Some browsers sometimes produce informative errors than others
+so if you are getting confusing errors it is worth rerunning the test on each
+browser. You can use `--runtime` commandline option to specify the browser runtime.
+
+```bash
+pytest --runtime firefox
+pytest --runtime chrome
+pytest --runtime node
+```
+
+#### Custom test marks
+
+We support custom test marks:
+
+`@pytest.mark.skip_refcount_check` and `pytest.mark.skip_pyproxy_check` disable
+respectively the check for JavaScript references and the check for PyProxies.
+If a test creates JavaScript references or PyProxies and does not clean them up,
+by default the tests will fail. If a test is known to leak objects, it is
+possible to disable these checks with these markers.
 
 ### Running the JavaScript test suite
 
-To run tests on the JavaScript Pyodide package using Mocha, run the following commands,
+To run tests on the JavaScript Pyodide package using Mocha, run the following
+commands,
 
 ```sh
 cd src/js
@@ -45,6 +75,8 @@ To check TypeScript type definitions run,
 ```sh
 npx tsd
 ```
+
+(manual-testing)=
 
 ### Manual interactive testing
 
@@ -70,48 +102,31 @@ PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 
 ## Linting
 
+We lint with `pre-commit`.
+
 Python is linted with `flake8`, `black` and `mypy`.
-JavaScript is linted with `prettier`.
+JavaScript, markdown, yaml, and html are linted with `prettier`.
 C is linted with `clang-format`.
 
 To lint the code, run:
 
 ```bash
-make lint
+pre-commit run -a
 ```
 
-## Testing framework
+You can have the linter automatically run whenever you commit by running
 
-### run_in_pyodide
-
-Many tests simply involve running a chunk of code in Pyodide and ensuring it
-doesn't error. In this case, one can use the `run_in_pyodide` decorate from
-`pyodide_test_runner.decorator`, e.g.
-
-```python
-from pyodide_test_runner import run_in_pyodide
-
-@run_in_pyodide
-def test_add():
-    assert 1 + 1 == 2
+```bash
+pip install pre-commit
+pre-commit install
 ```
 
-In this case, the body of the function will automatically be run in Pyodide.
-The decorator can also be called with arguments. It has two configuration
-options --- standalone and packages.
+and this can later be disabled with
 
-Setting `standalone = True` starts a standalone browser session to run the test
-(the session is shared between tests by default). This is useful for testing
-things like package loading.
-
-The `packages` option lists packages to load before running the test. For
-example,
-
-```python
-from pyodide_test_runner import run_in_pyodide
-
-@run_in_pyodide(standalone = True, packages = ["regex"])
-def test_regex():
-    import regex
-    assert regex.search("o", "foo").end() == 2
+```bash
+pre-commit uninstall
 ```
+
+If you don't lint your code, certain lint errors will be fixed automatically by
+`pre-commit.ci` which will push fixes to your branch. If you want to push more
+commits, you will either have to pull in the remote changes or force push.
