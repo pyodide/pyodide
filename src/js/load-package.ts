@@ -414,7 +414,7 @@ export async function loadPackage(
     }
 
     const loaded: string[] = [];
-    const failed: { [name: string]: any } = {};
+    const failed = new Map<string, any>();
     // TODO: add support for prefetching modules by awaiting on a promise right
     // here which resolves in loadPyodide when the bootstrap is done.
     const sharedLibraryInstallPromises: { [name: string]: Promise<void> } = {};
@@ -427,8 +427,7 @@ export async function loadPackage(
           loadedPackages[name] = channel;
         })
         .catch((err) => {
-          console.warn(err);
-          failed[name] = err;
+          failed.set(name, err);
         });
     }
 
@@ -441,21 +440,46 @@ export async function loadPackage(
           loadedPackages[name] = channel;
         })
         .catch((err) => {
-          console.warn(err);
-          failed[name] = err;
+          failed.set(name, err);
         });
     }
     await Promise.all(Object.values(packageInstallPromises));
+
+    // Retry failed packages after all dependencies are downloaded.
+    const installPromisesRetry: { [name: string]: Promise<void> } = {};
+    const toLoadRetry = new Map(
+      [...toLoadShared, ...toLoad].filter(([name, channel]) => failed.has(name))
+    );
+    for (const [name, channel] of toLoadRetry) {
+      console.warn(
+        `Loading '${name}' failed with error '${failed.get(name)}', retrying...`
+      );
+      installPromisesRetry[name] = (
+        sharedLibraryLoadPromises[name] || packageLoadPromises[name]
+      )
+        .then(async (buffer) => {
+          await installPackage(name, buffer, channel);
+          loaded.push(name);
+          loadedPackages[name] = channel;
+          failed.delete(name);
+        })
+        .catch((err) => {
+          // it should be already in failed, but just in case...
+          failed.set(name, err);
+        });
+    }
+    await Promise.all(Object.values(installPromisesRetry));
 
     Module.reportUndefinedSymbols();
     if (loaded.length > 0) {
       const successNames = loaded.join(", ");
       messageCallback(`Loaded ${successNames}`);
     }
-    if (Object.keys(failed).length > 0) {
-      const failedNames = Object.keys(failed).join(", ");
+
+    if (failed.size > 0) {
+      const failedNames = Array.from(failed.keys()).join(", ");
       messageCallback(`Failed to load ${failedNames}`);
-      for (const [name, err] of Object.entries(failed)) {
+      for (const [name, err] of failed) {
         console.warn(`The following error occurred while loading ${name}:`);
         console.error(err);
       }
