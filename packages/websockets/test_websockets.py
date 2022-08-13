@@ -29,7 +29,7 @@ async def hello():
 
 
 @run_in_pyodide(packages=["websockets"])
-async def test_websockets():
+async def test_websockets(selenium):
     import asyncio
 
     server_task = asyncio.create_task(start_echo_server())
