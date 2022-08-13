@@ -1,0 +1,15 @@
+package:
+  name: websockets
+  version: "10.3"
+source:
+  url: https://files.pythonhosted.org/packages/f8/a3/622d9acbfb9a71144b5d7609906bc648c62e3ca5fdbb1c8cca222949d82c/websockets-10.3.tar.gz
+  sha256: fc06cc8073c8e87072138ba1e431300e2d408f054b27047d047b549455066ff4
+test:
+  imports:
+    - websockets
+    - asyncio
+about:
+  home: https://github.com/aaugustin/websockets
+  PyPI: https://pypi.org/project/websockets
+  summary: An implementation of the WebSocket Protocol (RFC 6455 & 7692)
+  license: BSD

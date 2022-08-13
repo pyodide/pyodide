@@ -14,7 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- New packages: the standard library lzma module {pr}`2939`
+- New packages: the standard library lzma module {pr}`2939`,
+  websockets {pr}`2967`
 
 ## Version 0.21.0
 
