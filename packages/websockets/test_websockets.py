@@ -1,11 +1,13 @@
 from pytest_pyodide import run_in_pyodide
 
+
 @run_in_pyodide(packages=["websockets"])
 async def echo(ws):
     async for msg in ws:
         await ws.send(msg)
         break
     running.set_result(False)
+
 
 @run_in_pyodide(
     packages=[
@@ -15,12 +17,14 @@ async def echo(ws):
 )
 async def start_echo_server():
     import asyncio
+
     from websockets import serve
 
     global running
     running = asyncio.Future()
     async with serve(echo, "localhost", 8765) as server:
         await running
+
 
 @run_in_pyodide(packages=["websockets"])
 async def hello():
