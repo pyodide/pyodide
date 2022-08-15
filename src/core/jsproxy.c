@@ -2745,6 +2745,7 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsProxy_catch_MethodDef);
   SET_DOCSTRING(JsProxy_finally_MethodDef);
   SET_DOCSTRING(JsArray_extend_MethodDef);
+  SET_DOCSTRING(JsArray_reverse_MethodDef);
   SET_DOCSTRING(JsArray_reversed_MethodDef);
   SET_DOCSTRING(JsArray_pop_MethodDef);
   SET_DOCSTRING(JsArray_append_MethodDef);
