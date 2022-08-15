@@ -995,6 +995,26 @@ static PyMethodDef JsArray_count_MethodDef = {
   METH_O,
 };
 
+EM_JS_NUM(errcode, JsArray_reverse_helper, (JsRef arrayid), {
+  Hiwire.get_value(arrayid).reverse();
+})
+
+PyObject*
+JsArray_reverse(PyObject* o, PyObject* _ignored)
+{
+  JsProxy* self = (JsProxy*)o;
+  if (JsArray_reverse_helper(self->js) == -1) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsArray_reverse_MethodDef = {
+  "reverse",
+  (PyCFunction)JsArray_reverse,
+  METH_NOARGS,
+};
+
 // A helper method for jsproxy_subscript.
 EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
   let obj = Hiwire.get_value(idobj);
@@ -2433,6 +2453,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
+    methods[cur_method++] = JsArray_reverse_MethodDef;
   }
   if (flags & IS_TYPEDARRAY) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
@@ -2443,6 +2464,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
+    methods[cur_method++] = JsArray_reverse_MethodDef;
   }
   if (flags & IS_NODE_LIST) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,

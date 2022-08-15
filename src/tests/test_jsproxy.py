@@ -1260,3 +1260,19 @@ def test_jsarray_reversed(selenium):
         next(it2)
     with pytest.raises(StopIteration):
         next(it3)
+
+
+@run_in_pyodide
+def test_jsarray_reverse(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, 0, 3, 1]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+
+    l.reverse()
+    a.reverse()
+    b.reverse()
+
+    assert a.to_py() == l
+    assert b.to_bytes() == bytes(l)

@@ -350,8 +350,14 @@ class JsProxy:
         Raises ValueError if the value is not present.
         """
 
-    def count(self, /, x):
+    def count(self, /, x: Any) -> int:
         """Return the number of times x appears in the list.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def reverse(self) -> None:
+        """Reverse the array in place.
 
         Present only if the wrapped Javascript object is an array.
         """
