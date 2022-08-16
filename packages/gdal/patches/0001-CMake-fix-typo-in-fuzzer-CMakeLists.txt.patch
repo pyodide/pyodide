@@ -3,6 +3,8 @@ From: Gyeongjae Choi <def6488@gmail.com>
 Date: Tue, 16 Aug 2022 14:17:31 +0900
 Subject: [PATCH] CMake: fix typo in fuzzer CMakeLists.txt
 
+Upstreamed: https://github.com/OSGeo/gdal/pull/6201
+
 ---
  fuzzers/CMakeLists.txt | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

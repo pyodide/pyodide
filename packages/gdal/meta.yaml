@@ -14,12 +14,16 @@ requirements:
     - libtiff
     - libproj
     - geos
-    - libwebp
     - libiconv
 
 build:
-  library: true
+  sharedlibrary: true
   script: |
+    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
+
+    mkdir -p dist
+    export DISTDIR=$(pwd)/dist
+
     mkdir -p build
     cd build
 
@@ -31,13 +35,17 @@ build:
     export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include
     export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
 
+    export VERBOSE=1
+
     emcmake cmake .. \
       -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
       -DCMAKE_BUILD_TYPE=Release \
-      -DBUILD_SHARED_LIBS=False \
+      -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \
+      -DBUILD_SHARED_LIBS=True \
       -DBUILD_APPS=OFF \
-      -DCMAKE_C_FLAGS="-fPIC -Wno-deprecated-declarations" \
-      -DCMAKE_CXX_FLAGS="-fPIC -Wno-deprecated-declarations" \
+      -DCMAKE_C_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations" \
+      -DCMAKE_CXX_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations" \
+      -DCMAKE_SHARED_LINKER_FLAGS="-sSIDE_MODULE=1" \
       -DGDAL_USE_EXTERNAL_LIBS=OFF \
       -DGDAL_USE_INTERNAL_LIBS=OFF \
       \
@@ -56,13 +64,9 @@ build:
       -DSQLITE3_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
       -DSQLITE3_LIBRARY=$WASM_LIBRARY_DIR/lib/libsqlite3.a \
       \
-      -DGDAL_USE_WEBP=ON \
-      -DWEBP_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
-      -DWEBP_LIBRARY=$WASM_LIBRARY_DIR/lib/libwebp.a \
-      \
-      -DGDAL_USE_ZLIB=ON \
-      -DZLIB_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
-      -DZLIB_LIBRARY=$EMSCRIPTEN_LIB/libz.a \
+      -DGDAL_USE_GEOS=ON \
+      -DGEOS_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DGEOS_LIBRARY=$WASM_LIBRARY_DIR/lib/libgeos.so \
       \
       -DGDAL_USE_ZLIB=ON \
       -DZLIB_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
@@ -79,7 +83,11 @@ build:
       -DGDAL_USE_GEOTIFF_INTERNAL=ON \
       -DGDAL_USE_QHULL_INTERNAL=ON \
       -DGDAL_USE_LERC_INTERNAL=ON \
-      -DGDAL_USE_JSONC_INTERNAL=ON
+      -DGDAL_USE_JSONC_INTERNAL=ON \
+      -DGDAL_USE_PCRE2=OFF \
+      -DBUILD_TESTING=OFF
 
-    emmake make
+    emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+
+    cp ${WASM_LIBRARY_DIR}/lib/libgdal.so ${DISTDIR}

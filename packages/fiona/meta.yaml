@@ -11,6 +11,7 @@ test:
 requirements:
   run:
     - gdal
+    - geos
     - attrs
     - certifi
     - setuptools
