@@ -233,7 +233,6 @@ async function installPackage(
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
-  loadedPackages[name] = pkg;
 }
 
 /**

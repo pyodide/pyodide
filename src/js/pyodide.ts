@@ -82,7 +82,7 @@ del importlib
     `);
   let errcode = Module._PyRun_SimpleString(code_ptr);
   if (errcode) {
-    throw new Error("OOPS!");
+    throw new Error("Fatal pyodide error");
   }
   Module._free(code_ptr);
   Module.FS.unlink(fileName);
@@ -338,6 +338,7 @@ export async function loadPyodide(
   if (API.repodata_info.version !== pyodide.version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
+  API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
     await pyodide.loadPackage(["distutils"]);
   }
