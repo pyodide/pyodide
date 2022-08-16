@@ -911,9 +911,16 @@ JsArray_index(PyObject* o, PyObject* args)
     PyErr_Clear();
     for (int i = start; i < stop; i++) {
       JsRef jsobj = JsArray_Get(self->js, i);
-      PyObject* pyobj = js2python(jsobj);
-      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      // We know `value` is not a `JsProxy`: if it were we would have taken the
+      // other branch. Thus, if `jsobj` is not a `PyProxy`,
+      // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
+      // up, only perform the check if the object is a `PyProxy`.
+      PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
       hiwire_decref(jsobj);
+      if (pyobj == NULL) {
+        continue;
+      }
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
       if (cmp > 0)
         return PyLong_FromSsize_t(i);
       else if (cmp < 0)
@@ -969,9 +976,16 @@ JsArray_count(PyObject* o, PyObject* value)
     }
     for (int i = 0; i < stop; i++) {
       JsRef jsobj = JsArray_Get(self->js, i);
-      PyObject* pyobj = js2python(jsobj);
-      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      // We know `value` is not a `JsProxy`: if it were we would have taken the
+      // other branch. Thus, if `jsobj` is not a `PyProxy`,
+      // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
+      // up, only perform the check if the object is a `PyProxy`.
+      PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
       hiwire_decref(jsobj);
+      if (pyobj == NULL) {
+        continue;
+      }
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
       if (cmp > 0)
         result++;
       else if (cmp < 0)
