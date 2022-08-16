@@ -50,7 +50,7 @@ build:
       -DGDAL_USE_INTERNAL_LIBS=OFF \
       \
       -DPROJ_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
-      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.a \
+      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.so \
       \
       -DGDAL_USE_ICONV=ON \
       -DIconv_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
