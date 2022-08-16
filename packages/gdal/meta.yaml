@@ -5,6 +5,8 @@ package:
 source:
   url: https://github.com/OSGeo/gdal/releases/download/v3.5.1/gdal-3.5.1.tar.gz
   sha256: 7c4406ca010dc8632703a0a326f39e9db25d9f1f6ebaaeca64a963e3fac123d1
+  patches:
+    - patches/0001-CMake-fix-typo-in-fuzzer-CMakeLists.txt.patch
 
 requirements:
   run:
@@ -13,6 +15,7 @@ requirements:
     - libproj
     - geos
     - libwebp
+    - libiconv
 
 build:
   library: true
