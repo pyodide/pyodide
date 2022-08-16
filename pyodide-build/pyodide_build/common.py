@@ -34,7 +34,7 @@ def check_emscripten_version() -> None:
     installed_version = None
     try:
         for x in reversed(version_info.partition("\n")[0].split(" ")):
-            if re.match(r"[0-9]+\.[0-9]+.[0-9]+", x):
+            if re.match(r"[0-9]+\.[0-9]+\.[0-9]+", x):
                 installed_version = x
                 break
     except Exception:
