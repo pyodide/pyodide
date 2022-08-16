@@ -20,6 +20,10 @@ build:
   sharedlibrary: true
   script: |
     echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
+    echo "set(CMAKE_C_USE_RESPONSE_FILE_FOR_LIBRARIES 0)" >> SupportSharedLib.cmake
+    echo "set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES 0)" >> SupportSharedLib.cmake
+    echo "set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 0)" >> SupportSharedLib.cmake
+    echo "set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 0)" >> SupportSharedLib.cmake
 
     mkdir -p dist
     export DISTDIR=$(pwd)/dist
