@@ -26,6 +26,17 @@ EM_JS(int, pyproxy_Check, (JsRef x), {
   return API.isPyProxy(val);
 });
 
+EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
+  if (x == 0) {
+    return 0;
+  }
+  let val = Hiwire.get_value(x);
+  if (!API.isPyProxy(val)) {
+    return 0;
+  }
+  return Module.PyProxy_getPtr(val);
+});
+
 EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {

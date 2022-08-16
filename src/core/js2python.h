@@ -8,11 +8,11 @@
 #include "Python.h"
 #include "hiwire.h"
 
-/** Convert a JavaScript object to a Python object.
+/**
+ * Convert a JavaScript object to a Python object.
  *  \param x The JavaScript object.
- *  \return The Python object. New reference. If NULL, a Python exception
- *    occurred during the conversion, and the Python exception API should be
- *    used to obtain the exception.
+ *  \return The Python object resulting from the conversion. Returns NULL and
+ *    sets the Python error indicator if a conversion error occurs.
  */
 PyObject*
 js2python(JsRef x);
