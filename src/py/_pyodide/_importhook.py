@@ -139,6 +139,14 @@ def register_js_finder() -> None:
 
 
 class UnvendoredStdlibFinder(MetaPathFinder):
+    """
+    A MetaPathFinder that handles unvendored and removed stdlib modules.
+
+    This class simply raises an error if a stdlib module is unvendored or removed.
+    This needs to be added to the end of sys.meta_path, so if a unvendored stdlib
+    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
+    """
+
     def __init__(self) -> None:
         # `test`` is not a stdlib module, but we unvendors in anyway.
         self.stdlibs = sys.stdlib_module_names | {"test"}
@@ -160,7 +168,7 @@ class UnvendoredStdlibFinder(MetaPathFinder):
         if parent in self.unvendored_stdlibs:
             raise ModuleNotFoundError(
                 f"The module '{parent}' is unvendored from the Python standard library in the Pyodide distribution, "
-                f'you can install it by calling: await pyodide.loadPackage("{parent}"). '
+                f'you can install it by calling: await micropip.install("{parent}"). '
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
         else:
@@ -172,7 +180,12 @@ class UnvendoredStdlibFinder(MetaPathFinder):
 
 
 def register_unvendored_stdlib_finder() -> None:
-    # Note: this finder must be placed in the end of meta paths.
+    """
+    A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
+
+    Note that this finder must be placed in the end of meta_paths
+    in order to prevent any unexpected side effects.
+    """
 
     for importer in sys.meta_path:
         if isinstance(importer, UnvendoredStdlibFinder):
