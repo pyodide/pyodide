@@ -8,7 +8,7 @@ build:
   exports: "requested"
 test:
   imports:
-    - pycryptodome
+    - Crypto
 about:
   home: https://www.pycryptodome.org
   PyPI: https://pypi.org/project/pycryptodome
