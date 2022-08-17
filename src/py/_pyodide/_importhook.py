@@ -130,6 +130,11 @@ def register_js_finder() -> None:
 
     global JsProxy
     JsProxy = _pyodide_core.JsProxy
+
+    for importer in sys.meta_path:
+        if isinstance(importer, JsFinder):
+            raise RuntimeError("JsFinder already registered")
+
     sys.meta_path.append(jsfinder)
 
 
@@ -168,4 +173,9 @@ class UnvendoredStdlibFinder(MetaPathFinder):
 
 def register_unvendored_stdlib_finder() -> None:
     # Note: this finder must be placed in the end of meta paths.
+
+    for importer in sys.meta_path:
+        if isinstance(importer, UnvendoredStdlibFinder):
+            raise RuntimeError("UnvendoredStdlibFinder already registered")
+
     sys.meta_path.append(UnvendoredStdlibFinder())
