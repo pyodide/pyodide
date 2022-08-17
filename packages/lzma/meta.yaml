@@ -1,0 +1,23 @@
+package:
+  name: lzma
+  version: 1.0.0 # Nonesense
+  _cpython_dynlib: true
+source:
+  path: empty
+build:
+  sharedlibrary: true
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD
+    emcc $STDLIB_MODULE_CFLAGS -c Modules/_lzmamodule.c -o Modules/_lzmamodule.o \
+      $(pkg-config --cflags --dont-define-prefix liblzma)
+
+    emcc Modules/_lzmamodule.o -o $DISTDIR/_lzma.so $SIDE_MODULE_LDFLAGS \
+      $(pkg-config --libs --dont-define-prefix liblzma)
+requirements:
+  run:
+    - liblzma
+test:
+  imports:
+    - lzma
