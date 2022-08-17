@@ -120,7 +120,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
 
-  importhook.register_stdlib_finder();
+  importhook.register_unvendored_stdlib_finder();
 
   let pyodide = API.makePublicAPI();
   importhook.register_js_module("pyodide_js", pyodide);

@@ -133,7 +133,7 @@ def register_js_finder() -> None:
     sys.meta_path.append(jsfinder)
 
 
-class StdlibFinder(MetaPathFinder):
+class UnvendoredStdlibFinder(MetaPathFinder):
     def __init__(self) -> None:
         # `test`` is not a stdlib module, but we unvendors in anyway.
         self.stdlibs = sys.stdlib_module_names | {"test"}
@@ -154,18 +154,18 @@ class StdlibFinder(MetaPathFinder):
 
         if parent in self.unvendored_stdlibs:
             raise ModuleNotFoundError(
-                f"The module '{parent}' is unvendored from Pyodide stdlib, "
+                f"The module '{parent}' is unvendored from the Python standard library in the Pyodide distribution, "
                 f'you can install it by calling: await pyodide.loadPackage("{parent}"). '
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
         else:
             raise ModuleNotFoundError(
-                f"The module '{parent}' is removed from Pyodide stdlib "
+                f"The module '{parent}' is removed from the Python standard library in the Pyodide distribution "
                 "due to browser limitations. "
                 "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
             )
 
 
-def register_stdlib_finder() -> None:
+def register_unvendored_stdlib_finder() -> None:
     # Note: this finder must be placed in the end of meta paths.
-    sys.meta_path.append(StdlibFinder())
+    sys.meta_path.append(UnvendoredStdlibFinder())
