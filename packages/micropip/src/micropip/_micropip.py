@@ -208,6 +208,9 @@ class WheelInfo:
             self.write_dist_info(
                 "PYODIDE_REQUIRES", json.dumps(sorted(x.name for x in self._requires))
             )
+        name = self.project_name
+        assert name
+        setattr(loadedPackages, name, wheel_source)
 
     async def load_libraries(self, target: Path) -> None:
         assert self.data
@@ -215,18 +218,14 @@ class WheelInfo:
         await gather(*map(lambda dynlib: loadDynlib(dynlib, False), dynlibs))
 
     async def install(self, target: Path) -> None:
-        url = self.url
         if not self.data:
             raise RuntimeError(
                 "Micropip internal error: attempted to install wheel before downloading it?"
             )
         self.validate()
         self.extract(target)
-        self.set_installer()
         await self.load_libraries(target)
-        name = self.project_name
-        assert name
-        setattr(loadedPackages, name, url)
+        self.set_installer()
 
 
 FAQ_URLS = {
