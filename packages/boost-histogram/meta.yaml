@@ -8,8 +8,8 @@ requirements:
   run:
     - numpy # runtime only
 build:
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
+  cxxflags: ${SIDE_MODULE_EXCEPTION_CXXFLAGS}
+  ldflags: ${SIDE_MODULE_EXCEPTION_LDFLAGS}
 test:
   imports:
     - boost_histogram
