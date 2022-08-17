@@ -11,6 +11,8 @@ source:
 requirements:
   run:
     - CLAPACK
+  host:
+    - CLAPACK
 
 build:
   sharedlibrary: true
