@@ -14,7 +14,12 @@ substitutions:
 
 ## Unreleased
 
-- New packages: the standard library lzma module {pr}`2939`
+- New packages: the standard library lzma module {pr}`2939`,
+  pycryptodomex {pr}`2966`
+
+- {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
+  `append`, and `pop` for `JsProxy` of Javascript arrays.
+  {pr}`2970`
 
 ## Version 0.21.0
 
