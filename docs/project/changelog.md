@@ -24,6 +24,10 @@ substitutions:
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing unvendored or removed stdlib modules fails.
+  {pr}`2973`
+
 ## Version 0.21.0
 
 _August 9, 2022_
