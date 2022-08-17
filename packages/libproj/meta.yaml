@@ -12,22 +12,16 @@ requirements:
     - libtiff
 
 build:
-  sharedlibrary: true
+  library: true
   script: |
-    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
-    mkdir -p dist
-    export DIST_DIR=$(pwd)/dist
-
     mkdir -p build;
     cd build \
-        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sFORCE_FILESYSTEM=1 ${SIDE_MODULE_LDFLAGS}" emcmake cmake ../ \
+        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
         -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
-        -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_CURL=OFF \
-        -DUSE_THREAD=OFF \
         -DBUILD_APPS=OFF \
-        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_SHARED_LIBS=OFF \
         -DBUILD_TESTING=OFF \
         -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
         -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
@@ -36,5 +30,3 @@ build:
         -DCMAKE_C_FLAGS="-fPIC" \
         -DCMAKE_CXX_FLAGS="-fPIC";
     emmake make -j ${PYODIDE_JOBS:-3} install;
-
-    cp ${WASM_LIBRARY_DIR}/lib/libproj.so ${DIST_DIR}

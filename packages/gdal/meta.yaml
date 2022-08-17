@@ -19,29 +19,22 @@ requirements:
 build:
   sharedlibrary: true
   script: |
+    export EMSCRIPTEN_SYSROOT=$(em-config CACHE)/sysroot
+    export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include
+    export EMSCRIPTEN_BIN=$EMSCRIPTEN_SYSROOT/bin
+    export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
+
     echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
-    echo "set(CMAKE_C_USE_RESPONSE_FILE_FOR_LIBRARIES 0)" >> SupportSharedLib.cmake
-    echo "set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES 0)" >> SupportSharedLib.cmake
-    echo "set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 0)" >> SupportSharedLib.cmake
-    echo "set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 0)" >> SupportSharedLib.cmake
 
     mkdir -p dist
     export DISTDIR=$(pwd)/dist
-
-    mkdir -p build
-    cd build
 
     embuilder build zlib --pic
     embuilder build libjpeg --pic
     embuilder build libpng --pic
 
-    export EMSCRIPTEN_SYSROOT=$(em-config CACHE)/sysroot
-    export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include
-    export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
-
-    export VERBOSE=1
-
-    emcmake cmake .. \
+    mkdir -p build
+    cd build && emcmake cmake .. \
       -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \
@@ -54,7 +47,7 @@ build:
       -DGDAL_USE_INTERNAL_LIBS=OFF \
       \
       -DPROJ_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
-      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.so \
+      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.a \
       \
       -DGDAL_USE_ICONV=ON \
       -DIconv_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
@@ -88,8 +81,22 @@ build:
       -DGDAL_USE_QHULL_INTERNAL=ON \
       -DGDAL_USE_LERC_INTERNAL=ON \
       -DGDAL_USE_JSONC_INTERNAL=ON \
+      -DGDAL_USE_ZLIB_INTERNAL=ON \
       -DGDAL_USE_PCRE2=OFF \
       -DBUILD_TESTING=OFF
+
+
+    # Note:
+    # CMake tries to link same libraries multiple times at the final link time.
+    # This is probably because same libraries are used in multiple submodules.
+    # This behavior is okay when those libraries are "shared" libraries,
+    # but we often build static libraries and linking static libraries
+    # multiple times results in a duplicated symbol error.
+    # I wasn't able to find a way to prevent CMake from emitting duplicated libraries.
+    # This is a hack which removes all duplicated appearance of static libs at the final link time.
+
+    export LINKLIBS=$(pwd)/CMakeFiles/GDAL.dir/linklibs.rsp
+    cat ${LINKLIBS} | grep -o '\S*' | sort | uniq | tr '\n' ' ' > ${LINKLIBS}
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
