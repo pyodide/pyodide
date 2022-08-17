@@ -616,7 +616,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: --runtime node packages/*/test* --skip-passed
+          test-params: --runtime node packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents
