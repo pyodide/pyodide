@@ -700,7 +700,7 @@ JsArray_extend(PyObject* o, PyObject* iterable)
   EM_ASM(
     {
       // clang-format off
-    Hiwire.get_value($1).push(...Hiwire.get_value($0));
+      Hiwire.get_value($1).push(...Hiwire.get_value($0));
       // clang-format on
     },
     temp,
@@ -750,6 +750,284 @@ JsArray_inplace_concat(PyObject* self, PyObject* other)
   Py_INCREF(self);
   return self;
 }
+
+static PyObject*
+JsArray_append(PyObject* o, PyObject* arg)
+{
+  JsProxy* self = (JsProxy*)o;
+  bool success = false;
+  JsRef jsarg = NULL;
+  jsarg = python2js(arg);
+  FAIL_IF_NULL(jsarg);
+  FAIL_IF_MINUS_ONE(JsArray_Push(self->js, jsarg));
+  success = true;
+finally:
+  hiwire_CLEAR(jsarg);
+  if (success) {
+    Py_RETURN_NONE;
+  } else {
+    return NULL;
+  }
+}
+
+static PyMethodDef JsArray_append_MethodDef = {
+  "append",
+  (PyCFunction)JsArray_append,
+  METH_O,
+};
+
+// Copied directly from Python
+static inline int
+valid_index(Py_ssize_t i, Py_ssize_t limit)
+{
+  /* The cast to size_t lets us use just a single comparison
+      to check whether i is in the range: 0 <= i < limit.
+
+      See:  Section 14.2 "Bounds Checking" in the Agner Fog
+      optimization manual found at:
+      https://www.agner.org/optimize/optimizing_cpp.pdf
+  */
+  return (size_t)i < (size_t)limit;
+}
+
+static PyObject*
+JsArray_pop(PyObject* o, PyObject* const* args, Py_ssize_t nargs)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+  PyObject* iobj = NULL;
+  Py_ssize_t index = -1;
+
+  if (!_PyArg_CheckPositional("pop", nargs, 0, 1)) {
+    FAIL();
+  }
+  if (nargs > 0) {
+    iobj = _PyNumber_Index(args[0]);
+    FAIL_IF_NULL(iobj);
+    index = PyLong_AsSsize_t(iobj);
+    if (index == -1) {
+      FAIL_IF_ERR_OCCURRED();
+    }
+  }
+
+  int length = hiwire_get_length(self->js);
+  FAIL_IF_MINUS_ONE(length);
+
+  if (length == 0) {
+    /* Special-case most common failure cause */
+    PyErr_SetString(PyExc_IndexError, "pop from empty list");
+    FAIL();
+  }
+  if (index < 0)
+    index += length;
+  if (!valid_index(index, length)) {
+    PyErr_SetString(PyExc_IndexError, "pop index out of range");
+    FAIL();
+  }
+
+  jsresult = JsArray_Splice(self->js, index);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+
+finally:
+  Py_CLEAR(iobj);
+  return pyresult;
+}
+
+static PyMethodDef JsArray_pop_MethodDef = {
+  "pop",
+  (PyCFunction)JsArray_pop,
+  METH_FASTCALL,
+};
+
+static PyObject*
+JsArray_reversed(PyObject* o, PyObject* ignored)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  JsRef iditer = hiwire_reversed_iterator(self->js);
+  if (iditer == NULL) {
+    return NULL;
+  }
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
+}
+
+static PyMethodDef JsArray_reversed_MethodDef = {
+  "__reversed__",
+  (PyCFunction)JsArray_reversed,
+  METH_NOARGS,
+};
+
+// clang-format off
+EM_JS_NUM(int,
+JsArray_index_helper,
+(JsRef list, JsRef value, int start, int stop),
+{
+  let o = Hiwire.get_value(list);
+  let v = Hiwire.get_value(value);
+  for (let i = start; i < stop; i++) {
+    if (o[i] === v) {
+      return i;
+    }
+  }
+  return -1;
+})
+// clang-format on
+
+PyObject*
+JsArray_index(PyObject* o, PyObject* args)
+{
+  JsProxy* self = (JsProxy*)o;
+  PyObject* value;
+  Py_ssize_t start = 0;
+  Py_ssize_t stop = PY_SSIZE_T_MAX;
+  if (!PyArg_ParseTuple(args, "O|nn:index", &value, &start, &stop)) {
+    return NULL;
+  }
+
+  int length = JsProxy_length(o);
+  if (length == -1) {
+    return NULL;
+  }
+  if (start < 0) {
+    start += length;
+    if (start < 0)
+      start = 0;
+  }
+  if (stop < 0) {
+    stop += length;
+    if (stop < 0)
+      stop = 0;
+  }
+  if (stop > length) {
+    stop = length;
+  }
+
+  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  if (jsvalue == NULL) {
+    PyErr_Clear();
+    for (int i = start; i < stop; i++) {
+      JsRef jsobj = JsArray_Get(self->js, i);
+      // We know `value` is not a `JsProxy`: if it were we would have taken the
+      // other branch. Thus, if `jsobj` is not a `PyProxy`,
+      // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
+      // up, only perform the check if the object is a `PyProxy`.
+      PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
+      hiwire_decref(jsobj);
+      if (pyobj == NULL) {
+        continue;
+      }
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      if (cmp > 0)
+        return PyLong_FromSsize_t(i);
+      else if (cmp < 0)
+        return NULL;
+    }
+  } else {
+    int result = JsArray_index_helper(self->js, jsvalue, start, stop);
+    hiwire_decref(jsvalue);
+    if (result != -1) {
+      return PyLong_FromSsize_t(result);
+    }
+  }
+  if (!PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+  }
+  return NULL;
+}
+
+static PyMethodDef JsArray_index_MethodDef = {
+  "index",
+  (PyCFunction)JsArray_index,
+  METH_VARARGS,
+};
+
+// clang-format off
+EM_JS_NUM(int,
+JsArray_count_helper,
+(JsRef list, JsRef value),
+{
+  let o = Hiwire.get_value(list);
+  let v = Hiwire.get_value(value);
+  let result = 0;
+  for (let i = 0; i < o.length; i++) {
+    if (o[i] === v) {
+      result++;
+    }
+  }
+  return result;
+})
+// clang-format on
+
+PyObject*
+JsArray_count(PyObject* o, PyObject* value)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  if (jsvalue == NULL) {
+    PyErr_Clear();
+    int result = 0;
+    Py_ssize_t stop = JsProxy_length(o);
+    if (stop == -1) {
+      return NULL;
+    }
+    for (int i = 0; i < stop; i++) {
+      JsRef jsobj = JsArray_Get(self->js, i);
+      // We know `value` is not a `JsProxy`: if it were we would have taken the
+      // other branch. Thus, if `jsobj` is not a `PyProxy`,
+      // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
+      // up, only perform the check if the object is a `PyProxy`.
+      PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
+      hiwire_decref(jsobj);
+      if (pyobj == NULL) {
+        continue;
+      }
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      if (cmp > 0)
+        result++;
+      else if (cmp < 0)
+        return NULL;
+    }
+    return PyLong_FromSsize_t(result);
+  } else {
+    int result = JsArray_count_helper(self->js, jsvalue);
+    hiwire_decref(jsvalue);
+    if (result == -1) {
+      return NULL;
+    } else {
+      return PyLong_FromSsize_t(result);
+    }
+  }
+}
+
+static PyMethodDef JsArray_count_MethodDef = {
+  "count",
+  (PyCFunction)JsArray_count,
+  METH_O,
+};
+
+EM_JS_NUM(errcode, JsArray_reverse_helper, (JsRef arrayid), {
+  Hiwire.get_value(arrayid).reverse();
+})
+
+PyObject*
+JsArray_reverse(PyObject* o, PyObject* _ignored)
+{
+  JsProxy* self = (JsProxy*)o;
+  if (JsArray_reverse_helper(self->js) == -1) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsArray_reverse_MethodDef = {
+  "reverse",
+  (PyCFunction)JsArray_reverse,
+  METH_NOARGS,
+};
 
 // A helper method for jsproxy_subscript.
 EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
@@ -2183,6 +2461,13 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_inplace_concat,
                                        .pfunc = (void*)JsArray_inplace_concat };
     methods[cur_method++] = JsArray_extend_MethodDef;
+    methods[cur_method++] = JsArray_pop_MethodDef;
+    methods[cur_method++] = JsArray_append_MethodDef;
+
+    methods[cur_method++] = JsArray_index_MethodDef;
+    methods[cur_method++] = JsArray_count_MethodDef;
+    methods[cur_method++] = JsArray_reversed_MethodDef;
+    methods[cur_method++] = JsArray_reverse_MethodDef;
   }
   if (flags & IS_TYPEDARRAY) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
@@ -2190,10 +2475,15 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsTypedArray_ass_subscript };
+    methods[cur_method++] = JsArray_index_MethodDef;
+    methods[cur_method++] = JsArray_count_MethodDef;
+    methods[cur_method++] = JsArray_reversed_MethodDef;
+    methods[cur_method++] = JsArray_reverse_MethodDef;
   }
   if (flags & IS_NODE_LIST) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsNodeList_subscript };
+    methods[cur_method++] = JsArray_reversed_MethodDef;
   }
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
@@ -2469,6 +2759,12 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsProxy_catch_MethodDef);
   SET_DOCSTRING(JsProxy_finally_MethodDef);
   SET_DOCSTRING(JsArray_extend_MethodDef);
+  SET_DOCSTRING(JsArray_reverse_MethodDef);
+  SET_DOCSTRING(JsArray_reversed_MethodDef);
+  SET_DOCSTRING(JsArray_pop_MethodDef);
+  SET_DOCSTRING(JsArray_append_MethodDef);
+  SET_DOCSTRING(JsArray_index_MethodDef);
+  SET_DOCSTRING(JsArray_count_MethodDef);
   SET_DOCSTRING(JsMethod_Construct_MethodDef);
   SET_DOCSTRING(JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer_assign_to_MethodDef);

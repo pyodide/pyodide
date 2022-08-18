@@ -435,6 +435,12 @@ JsRef
 hiwire_get_iterator(JsRef idobj);
 
 /**
+ * Returns the reversed iterator associated with an array.
+ */
+JsRef
+hiwire_reversed_iterator(JsRef idobj);
+
+/**
  * Returns 1 if the value is a typedarray.
  */
 bool
@@ -525,6 +531,9 @@ errcode WARN_UNUSED
 JsArray_Delete(JsRef idobj, int idx);
 
 JsRef
+JsArray_Splice(JsRef idobj, int idx);
+
+JsRef
 JsArray_slice(JsRef idobj, int slicelength, int start, int stop, int step);
 
 errcode
@@ -535,6 +544,9 @@ JsArray_slice_assign(JsRef idobj,
                      int step,
                      int values_length,
                      PyObject** values);
+
+errcode
+JsArray_Clear(JsRef idobj);
 
 // ==================== JsObject API  ====================
 
