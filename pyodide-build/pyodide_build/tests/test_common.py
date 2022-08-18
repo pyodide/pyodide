@@ -4,7 +4,6 @@ from pyodide_build.common import (
     ALWAYS_PACKAGES,
     CORE_PACKAGES,
     CORE_SCIPY_PACKAGES,
-    UNVENDORED_STDLIB_MODULES,
     _parse_package_subset,
     find_matching_wheels,
     get_make_environment_vars,
@@ -21,7 +20,6 @@ def test_parse_package_subset():
             "numpy",
             "pandas",
         }
-        | UNVENDORED_STDLIB_MODULES
         | ALWAYS_PACKAGES
     )
 
@@ -31,7 +29,6 @@ def test_parse_package_subset():
         == {
             "numpy",
         }
-        | UNVENDORED_STDLIB_MODULES
         | ALWAYS_PACKAGES
     )
 
@@ -45,23 +42,16 @@ def test_parse_package_subset():
             "c",
             "d",
         }
-        | UNVENDORED_STDLIB_MODULES
         | ALWAYS_PACKAGES
     )
 
-    assert (
-        _parse_package_subset("core")
-        == CORE_PACKAGES | UNVENDORED_STDLIB_MODULES | ALWAYS_PACKAGES
-    )
+    assert _parse_package_subset("core") == CORE_PACKAGES | ALWAYS_PACKAGES
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
 
     assert (
         _parse_package_subset("min-scipy-stack")
-        == CORE_SCIPY_PACKAGES
-        | CORE_PACKAGES
-        | UNVENDORED_STDLIB_MODULES
-        | ALWAYS_PACKAGES
+        == CORE_SCIPY_PACKAGES | CORE_PACKAGES | ALWAYS_PACKAGES
     )
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {

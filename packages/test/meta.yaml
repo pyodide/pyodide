@@ -1,0 +1,51 @@
+package:
+  name: test
+  version: 1.0.0 # Nonesense
+  _cpython_dynlib: true
+
+source:
+  path: empty
+
+# TODO: also include test directories included in other stdlib modules
+build:
+  sharedlibrary: true
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD
+
+    export TEST_EXTENSIONS="\
+      _testinternalcapi.so \
+      _testcapi.so \
+      _testbuffer.so \
+      _testimportmultiple.so \
+      _testmultiphase.so \
+      _ctypes_test.so \
+    "
+
+    export TEST_MODULE_CFLAGS="${SIDE_MODULE_CFLAGS} -I Include/ -I Include/internal/ -I ."
+
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
+          -DPy_BUILD_CORE_MODULE
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testcapimodule.c -o Modules/_testcapi.o
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testbuffer.c -o Modules/_testbuffer.o
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
+    emcc ${TEST_MODULE_CFLAGS} -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
+
+    for testname in ${TEST_EXTENSIONS}; do \
+      cd ${CPYTHONBUILD} && \
+      emcc Modules/${testname/.so/.o} -o $testname ${SIDE_MODULE_LDFLAGS} && \
+      rm -f ${CPYTHONLIB}/$testname && \
+      ln -s ${CPYTHONBUILD}/$testname ${CPYTHONLIB}/$testname
+    done
+
+    cd ${CPYTHONLIB} && \
+      tar --exclude=__pycache__ -cf - ${TEST_EXTENSIONS} \
+      test unittest/test sqlite3/test ctypes/test \
+      | tar -C $DISTDIR -xf -
+    cd ${CPYTHONLIB} && rm ${TEST_EXTENSIONS}
+
+test:
+  imports:
+    - test

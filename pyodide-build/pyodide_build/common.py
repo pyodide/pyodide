@@ -61,12 +61,12 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
                 yield wheel_path
 
 
-UNVENDORED_STDLIB_MODULES = {"test", "distutils"}
-
 ALWAYS_PACKAGES = {
     "pyparsing",
     "packaging",
     "micropip",
+    "distutils",
+    "test",
 }
 
 CORE_PACKAGES = {
@@ -124,7 +124,6 @@ def _parse_package_subset(query: str | None) -> set[str]:
 
     packages = {el.strip() for el in query.split(",")}
     packages.update(ALWAYS_PACKAGES)
-    packages.update(UNVENDORED_STDLIB_MODULES)
     # handle meta-packages
     if "core" in packages:
         packages |= CORE_PACKAGES
