@@ -1,12 +1,5 @@
 import { Module } from "./module";
 
-export interface EmscriptenFSNode {
-  name: string;
-  mode: number;
-  parent: EmscriptenFSNode;
-  mount: { opts: { root: string } };
-}
-
 export function initializeNativeFS(module: Module) {
   const FS = module.FS;
   const MEMFS = module.FS.filesystems.MEMFS;
