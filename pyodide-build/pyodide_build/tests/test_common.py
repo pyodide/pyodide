@@ -120,3 +120,58 @@ def test_search_pyodide_root(tmp_path):
     pyproject_file.unlink()
     with pytest.raises(FileNotFoundError):
         search_pyodide_root(tmp_path)
+
+
+def test_check_emscripten_version(monkeypatch):
+    from pyodide_build import common
+
+    s = None
+
+    def get_emscripten_version_info():
+        return s
+
+    needed_version = common.emscripten_version()
+    monkeypatch.setattr(
+        common, "get_emscripten_version_info", get_emscripten_version_info
+    )
+    s = """\
+emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.4 (14cd48e6ead13b02a79f47df1a252abc501a3269)
+clang version 15.0.0 (https://github.com/llvm/llvm-project ce5588fdf478b6af724977c11a405685cebc3d26)
+Target: wasm32-unknown-emscripten
+Thread model: posix
+"""
+    with pytest.raises(
+        RuntimeError,
+        match=f"Incorrect Emscripten version 3.1.4. Need Emscripten version {needed_version}",
+    ):
+        common.check_emscripten_version()
+
+    s = """\
+emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 1.39.20
+clang version 12.0.0 (/b/s/w/ir/cache/git/chromium.googlesource.com-external-github.com-llvm-llvm--project 55fa315b0352b63454206600d6803fafacb42d5e)
+"""
+
+    with pytest.raises(
+        RuntimeError,
+        match=f"Incorrect Emscripten version 1.39.20. Need Emscripten version {needed_version}",
+    ):
+        common.check_emscripten_version()
+
+    s = """\
+emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.14 (4343cbec72b7db283ea3bda1adc6cb1811ae9a73)
+clang version 15.0.0 (https://github.com/llvm/llvm-project 7effcbda49ba32991b8955821b8fdbd4f8f303e2)
+"""
+    common.check_emscripten_version()
+
+    def get_emscripten_version_info():  # type: ignore[no-redef]
+        raise FileNotFoundError()
+
+    monkeypatch.setattr(
+        common, "get_emscripten_version_info", get_emscripten_version_info
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match=f"No Emscripten compiler found. Need Emscripten version {needed_version}",
+    ):
+        common.check_emscripten_version()
