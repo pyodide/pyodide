@@ -83,6 +83,7 @@ Additional build prerequisites are:
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 - (optional) SWIG to compile NLopt
+- (optional) sqlite3 to compile libproj
 
 ```
 
@@ -98,6 +99,7 @@ To build on MacOS, you need:
 - cmake (`brew install cmake`)
 - pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
+- autoconf, automaker & libtool (`brew install autoconf automaker libtool`)
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from
   the root directory (`sudo ./tools/buildf2c`)
@@ -105,6 +107,7 @@ To build on MacOS, you need:
   GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
 - (optional) SWIG to compile NLopt (`brew install swig`)
+- (optional) sqlite3 to compile libproj (`brew install sqlite3`)
 
 ```
 

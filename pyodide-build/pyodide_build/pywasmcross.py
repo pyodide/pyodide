@@ -11,36 +11,47 @@ cross-compiling and then pass the command long to emscripten.
 import json
 import os
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
-IS_MAIN = __name__ == "__main__"
-if IS_MAIN:
+from __main__ import __file__ as INVOKED_PATH_STR
+
+INVOKED_PATH = Path(INVOKED_PATH_STR)
+
+SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
+IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
+
+if IS_COMPILER_INVOCATION:
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
-    else:
-        with open(Path(__file__).parent / "pywasmcross_env.json") as f:
+    try:
+        with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
             PYWASMCROSS_ARGS = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(
+            "Invalid invocation: can't find PYWASMCROSS_ARGS."
+            f" Invoked from {INVOKED_PATH}."
+        )
 
-    # restore __name__ so that relative imports work as we expect
-    __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
+    # restore __name__ so that relative imports work as we expect
+    __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
-import re
+
+import shutil
 import subprocess
 from collections import namedtuple
+from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterator, MutableMapping, NoReturn
+from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-symlinks = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
 
-
-def symlink_dir():
+def symlink_dir() -> Path:
     return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
 
 
@@ -52,7 +63,6 @@ ReplayArgs = namedtuple(
         "cxxflags",
         "ldflags",
         "target_install_dir",
-        "replace_libs",
         "builddir",
         "pythoninclude",
         "exports",
@@ -68,13 +78,17 @@ def make_command_wrapper_symlinks(
     exist.
     """
     exec_path = Path(__file__).resolve()
-    for symlink in symlinks:
+    for symlink in SYMLINKS:
         symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
         try:
-            symlink_path.symlink_to(exec_path)
+            pywasmcross_exe = shutil.which("_pywasmcross")
+            if pywasmcross_exe:
+                symlink_path.symlink_to(pywasmcross_exe)
+            else:
+                symlink_path.symlink_to(exec_path)
         except FileExistsError:
             pass
         if symlink == "c++":
@@ -93,7 +107,6 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    replace_libs: str,
     exports: str | list[str],
 ) -> Iterator[dict[str, str]]:
     kwargs = dict(
@@ -102,7 +115,6 @@ def get_build_env(
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir=target_install_dir,
-        replace_libs=replace_libs,
     )
 
     args = environment_substitute_args(kwargs, env)
@@ -206,35 +218,7 @@ def get_library_output(line: list[str]) -> str | None:
     return None
 
 
-def parse_replace_libs(replace_libs: str) -> dict[str, str]:
-    """
-    Parameters
-    ----------
-    replace_libs
-        The `--replace-libs` argument, should be a string like "a=b;c=d".
-
-    Returns
-    -------
-        The input string converted to a dictionary
-
-    Examples
-    --------
-    >>> parse_replace_libs("a=b;c=d;e=f")
-    {'a': 'b', 'c': 'd', 'e': 'f'}
-    """
-    result = {}
-    for l in replace_libs.split(";"):
-        if not l:
-            continue
-        from_lib, to_lib = l.split("=")
-        if to_lib:
-            result[from_lib] = to_lib
-    return result
-
-
-def replay_genargs_handle_dashl(
-    arg: str, replace_libs: dict[str, str], used_libs: set[str]
-) -> str | None:
+def replay_genargs_handle_dashl(arg: str, used_libs: set[str]) -> str | None:
     """
     Figure out how to replace a `-lsomelib` argument.
 
@@ -242,9 +226,6 @@ def replay_genargs_handle_dashl(
     ----------
     arg
         The argument we are replacing. Must start with `-l`.
-
-    replace_libs
-        The dictionary of libraries we are replacing
 
     used_libs
         The libraries we've used so far in this command. emcc fails out if `-lsomelib`
@@ -255,16 +236,11 @@ def replay_genargs_handle_dashl(
         The new argument, or None to delete the argument.
     """
     assert arg.startswith("-l")
-    for lib_name in replace_libs.keys():
-        # this enables glob style **/* matching
-        if PurePosixPath(arg[2:]).match(lib_name):
-            arg = "-l" + replace_libs[lib_name]
 
     if arg == "-lffi":
         return None
 
-    # See https://github.com/emscripten-core/emscripten/issues/8650
-    if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
+    if arg == "-lgfortran":
         return None
 
     # WASM link doesn't like libraries being included twice
@@ -303,7 +279,7 @@ def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> str | None
     return arg
 
 
-def replay_genargs_handle_linker_opts(arg):
+def replay_genargs_handle_linker_opts(arg: str) -> str | None:
     """
     ignore some link flags
     it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
@@ -325,11 +301,17 @@ def replay_genargs_handle_linker_opts(arg):
             "--as-needed",
         ]:
             continue
-        # ignore unsupported --sysroot compile argument used in conda
-        if opt.startswith("--sysroot="):
+
+        if opt.startswith(
+            (
+                "--sysroot=",  # ignore unsupported --sysroot compile argument used in conda
+                "--version-script=",
+                "-R/",  # wasm-ld does not accept -R (runtime libraries)
+                "-R.",  # wasm-ld does not accept -R (runtime libraries)
+            )
+        ):
             continue
-        if opt.startswith("--version-script="):
-            continue
+
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
         return ",".join(new_link_opts)
@@ -360,9 +342,6 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
 
     # fmt: off
     if arg in [
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        "-shared",
         # threading is disabled for now
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
@@ -380,14 +359,87 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
+def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
     """
-    Collect up all the object files and archive files being linked and list out
-    symbols in them that are marked as public. If ``export_all`` is ``True``,
-    then return all public symbols. If not, return only the public symbols that
-    begin with `PyInit`.
+    >>> _calculate_object_exports_readobj_parse(
+    ...     '''
+    ...     Format: WASM \\n Arch: wasm32 \\n AddressSize: 32bit
+    ...     Sections [
+    ...         Section { \\n Type: TYPE (0x1)   \\n Size: 5  \\n Offset: 8  \\n }
+    ...         Section { \\n Type: IMPORT (0x2) \\n Size: 32 \\n Offset: 19 \\n }
+    ...     ]
+    ...     Symbol {
+    ...         Name: g2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x0) \\n ]
+    ...         ElementIndex: 0x2
+    ...     }
+    ...     Symbol {
+    ...         Name: f2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x4) \\n VISIBILITY_HIDDEN (0x4) \\n ]
+    ...         ElementIndex: 0x1
+    ...     }
+    ...     Symbol {
+    ...         Name: l  \\n Type: FUNCTION (0x0)
+    ...         Flags [ (0x10)\\n UNDEFINED (0x10) \\n ]
+    ...         ImportModule: env
+    ...         ElementIndex: 0x0
+    ...     }
+    ...     '''
+    ... )
+    ['g2']
     """
-    objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
+    result = []
+    insymbol = False
+    for line in output.split("\n"):
+        line = line.strip()
+        if line == "Symbol {":
+            insymbol = True
+            export = True
+            name = None
+            symbol_lines = [line]
+            continue
+        if not insymbol:
+            continue
+        symbol_lines.append(line)
+        if line.startswith("Name:"):
+            name = line.removeprefix("Name:").strip()
+        if line.startswith(("BINDING_LOCAL", "UNDEFINED", "VISIBILITY_HIDDEN")):
+            export = False
+        if line == "}":
+            insymbol = False
+            if export:
+                if not name:
+                    raise RuntimeError(
+                        "Didn't find symbol's name:\n" + "\n".join(symbol_lines)
+                    )
+                result.append(name)
+    return result
+
+
+def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
+    which_emcc = shutil.which("emcc")
+    assert which_emcc
+    emcc = Path(which_emcc)
+    args = [
+        str((emcc / "../../bin/llvm-readobj").resolve()),
+        "--section-details",
+        "-st",
+    ] + objects
+    completedprocess = subprocess.run(
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
+    )
+    if completedprocess.returncode:
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(completedprocess.stderr)
+        sys.exit(completedprocess.returncode)
+
+    if "bitcode files are not supported" in completedprocess.stderr:
+        return None
+
+    return _calculate_object_exports_readobj_parse(completedprocess.stdout)
+
+
+def calculate_object_exports_nm(objects: list[str]) -> list[str]:
     args = ["emnm", "-j", "--export-symbols"] + objects
     result = subprocess.run(
         args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
@@ -396,12 +448,36 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
         print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
         print(result.stderr)
         sys.exit(result.returncode)
-
-    condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
-    return (x for x in result.stdout.splitlines() if condition(x))
+    return result.stdout.splitlines()
 
 
-def get_export_flags(line, exports):
+def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
+    """
+    Collect up all the object files and archive files being linked and list out
+    symbols in them that are marked as public. If ``export_all`` is ``True``,
+    then return all public symbols. If not, return only the public symbols that
+    begin with `PyInit`.
+    """
+    objects = [arg for arg in line if arg.endswith((".a", ".o"))]
+    exports = None
+    # Using emnm is simpler but it cannot handle bitcode. If we're only
+    # exporting the PyInit symbols, save effort by using nm.
+    if export_all:
+        exports = calculate_object_exports_readobj(objects)
+    if exports is None:
+        # Either export_all is false or we are linking at least one bitcode
+        # object. Fall back to a more conservative estimate of the symbols
+        # exported. This can export things with `__visibility__("hidden")`
+        exports = calculate_object_exports_nm(objects)
+    if export_all:
+        return exports
+    return (x for x in exports if x.startswith("PyInit"))
+
+
+def get_export_flags(
+    line: list[str],
+    exports: Literal["whole_archive", "requested", "pyinit"] | list[str],
+) -> Iterator[str]:
     """
     If "whole_archive" was requested, no action is needed. Otherwise, add
     `-sSIDE_MODULE=2` and the appropriate export list.
@@ -445,8 +521,8 @@ def handle_command_generate_args(
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'replace_libs','target_install_dir'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', replace_libs='',target_install_dir='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'target_install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
     ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
     """
@@ -513,9 +589,6 @@ def handle_command_generate_args(
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        # The native build is possibly multithreaded, but the emscripten one
-        # definitely isn't
-        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags
@@ -528,9 +601,8 @@ def handle_command_generate_args(
             del new_args[-1]
             continue
 
-        replace_libs = parse_replace_libs(args.replace_libs)
         if arg.startswith("-l"):
-            result = replay_genargs_handle_dashl(arg, replace_libs, used_libs)
+            result = replay_genargs_handle_dashl(arg, used_libs)
         elif arg.startswith("-I"):
             result = replay_genargs_handle_dashI(arg, args.target_install_dir)
         elif arg.startswith("-Wl"):
@@ -606,13 +678,13 @@ def environment_substitute_args(
     return subbed_args
 
 
-if IS_MAIN:
-    REPLAY_ARGS = ReplayArgs(**PYWASMCROSS_ARGS)
-
+def compiler_main():
+    replay_args = ReplayArgs(**PYWASMCROSS_ARGS)
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename
-    if basename in symlinks:
-        sys.exit(handle_command(args, REPLAY_ARGS))
-    else:
-        raise Exception(f"Unexpected invocation '{basename}'")
+    sys.exit(handle_command(args, replay_args))
+
+
+if IS_COMPILER_INVOCATION:
+    compiler_main()

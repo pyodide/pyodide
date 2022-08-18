@@ -1,9 +1,10 @@
 import re
+from collections.abc import Sequence
 from textwrap import dedent
-from typing import Any, Sequence
+from typing import Any
 
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
@@ -181,33 +182,6 @@ def test_eval_code_locals():
     with pytest.raises(NameError):
         eval_code("invalidate_caches()", globals, globals)
     eval_code("invalidate_caches()", globals, locals)
-
-
-def test_deprecations(selenium_standalone):
-    selenium = selenium_standalone
-    selenium.run_js(
-        """
-        let d = pyodide.runPython("{}");
-        pyodide.runPython("x=2", d);
-        pyodide.runPython("y=2", d);
-        assert(() => d.get("x") === 2);
-        d.destroy();
-        """
-    )
-    dep_msg = "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-    assert selenium.logs.count(dep_msg) == 1
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            import shutil
-            shutil.make_archive("blah", "zip")
-        `);
-        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
-        pyodide.unpackArchive(pyodide.FS.readFile("blah.zip"), "zip", "abc");
-        """
-    )
-    dep_msg = "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-    assert selenium.logs.count(dep_msg) == 1
 
 
 def test_unpack_archive(selenium_standalone):
@@ -1173,6 +1147,28 @@ def test_run_js(selenium):
     assert x == 77
 
 
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide.code import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    from pyodide.ffi import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide.code import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)
+
+
 @run_in_pyodide(packages=["pytest"])
 def test_moved_deprecation_warnings(selenium_standalone):
     import pytest
@@ -1193,3 +1189,48 @@ def test_moved_deprecation_warnings(selenium_standalone):
         warnings.simplefilter("error")
         for func in DEPRECATED_LIST.keys():
             getattr(pyodide, func)
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_unvendored_stdlib(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    unvendored_stdlibs = ["test", "_ssl", "_lzma"]
+    removed_stdlibs = ["pwd", "turtle", "tkinter"]
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("urllib.there_is_no_such_module")
+
+    from _pyodide._importhook import UnvendoredStdlibFinder
+
+    finder = UnvendoredStdlibFinder()
+
+    assert finder.find_spec("os", None) is None
+    assert finder.find_spec("os.path", None) is None
+    assert finder.find_spec("os.no_such_module", None) is None
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            finder.find_spec(lib, None)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            finder.find_spec(lib, None)

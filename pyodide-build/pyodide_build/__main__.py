@@ -33,7 +33,7 @@ def make_parser() -> argparse.ArgumentParser:
     return main_parser
 
 
-def main():
+def main() -> None:
     init_environment()
 
     main_parser = make_parser()

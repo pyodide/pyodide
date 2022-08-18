@@ -10,7 +10,7 @@ import urllib.error
 import urllib.request
 import warnings
 from pathlib import Path
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NoReturn, TypedDict
 
 from ruamel.yaml import YAML
 
@@ -115,7 +115,7 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
     return pypi_metadata
 
 
-def run_prettier(meta_path):
+def run_prettier(meta_path: str | Path) -> None:
     subprocess.run(["npx", "prettier", "-w", meta_path])
 
 
@@ -192,16 +192,16 @@ class bcolors:
     UNDERLINE = "\033[4m"
 
 
-def abort(msg):
+def abort(msg: str) -> NoReturn:
     print(bcolors.FAIL + msg + bcolors.ENDC)
     sys.exit(1)
 
 
-def warn(msg):
+def warn(msg: str) -> None:
     warnings.warn(bcolors.WARNING + msg + bcolors.ENDC)
 
 
-def success(msg):
+def success(msg: str) -> None:
     print(bcolors.OKBLUE + msg + bcolors.ENDC)
 
 
@@ -279,7 +279,7 @@ def update_package(
     success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
-def make_parser(parser):
+def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = """
 Make a new pyodide package. Creates a simple template that will work
 for most pure Python packages, but will have to be edited for more
@@ -307,7 +307,7 @@ complex things.""".strip()
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if PYODIDE_ROOT is None:
         raise ValueError("PYODIDE_ROOT is not set")

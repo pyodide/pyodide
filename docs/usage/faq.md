@@ -29,7 +29,7 @@ await pyodide.runPythonAsync(`
 If you are working in Node.js, you can mount a native folder into the file
 system as follows:
 
-```{pyodide}
+```pyodide
 FS.mkdir("/local_directory");
 FS.mount(NODEFS, { root: "some/local/filepath" }, "/local_directory");
 ```

@@ -12,6 +12,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable
 from functools import total_ordering
 from graphlib import TopologicalSorter
 from pathlib import Path
@@ -27,7 +28,7 @@ from .io import parse_package_config
 
 
 class BuildError(Exception):
-    def __init__(self, returncode):
+    def __init__(self, returncode: int) -> None:
         self.returncode = returncode
         super().__init__()
 
@@ -69,6 +70,12 @@ class BasePackage:
 
     def build(self, outputdir: Path, args: Any) -> None:
         raise NotImplementedError()
+
+    def wheel_path(self) -> Path:
+        raise NotImplementedError()
+
+    def tests_path(self) -> Path | None:
+        return None
 
 
 @dataclasses.dataclass
@@ -430,7 +437,7 @@ def build_from_graph(
     # Using dict keys for insertion order preservation
     package_set: dict[str, None] = {}
 
-    def builder(n):
+    def builder(n: int) -> None:
         nonlocal queue_idx
         while True:
             pkg = build_queue.get()[1]
@@ -574,7 +581,9 @@ def generate_repodata(
     return dict(info=info, packages=packages)
 
 
-def copy_packages_to_dist_dir(packages, output_dir):
+def copy_packages_to_dist_dir(
+    packages: Iterable[BasePackage], output_dir: Path
+) -> None:
     for pkg in packages:
         try:
             shutil.copy(pkg.wheel_path(), output_dir)
@@ -705,7 +714,7 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
     outputdir.mkdir(exist_ok=True)

@@ -3,8 +3,8 @@ import functools
 import os
 import subprocess
 import sys
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import Generator, Iterable, Iterator, Mapping
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
@@ -13,11 +13,11 @@ from packaging.utils import parse_wheel_filename
 from .io import parse_package_config
 
 
-def emscripten_version():
+def emscripten_version() -> str:
     return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
 
 
-def platform():
+def platform() -> str:
     emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
     return f"emscripten_{version}_wasm32"
@@ -79,7 +79,8 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
-    "ssl",
+    "_ssl",
+    "_lzma",
     "pytest",
     "tblib",
 }
@@ -140,7 +141,7 @@ def _parse_package_subset(query: str | None) -> set[str]:
     return packages
 
 
-def get_make_flag(name):
+def get_make_flag(name: str) -> str:
     """Get flags from makefile.envs.
 
     For building packages we currently use:
@@ -152,18 +153,18 @@ def get_make_flag(name):
     return get_make_environment_vars()[name]
 
 
-def get_pyversion():
+def get_pyversion() -> str:
     PYMAJOR = get_make_flag("PYMAJOR")
     PYMINOR = get_make_flag("PYMINOR")
     return f"python{PYMAJOR}.{PYMINOR}"
 
 
-def get_hostsitepackages():
+def get_hostsitepackages() -> str:
     return get_make_flag("HOSTSITEPACKAGES")
 
 
 @functools.cache
-def get_make_environment_vars():
+def get_make_environment_vars() -> dict[str, str]:
     """Load environment variables from Makefile.envs
 
     This allows us to set all build vars in one place"""
@@ -215,7 +216,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     )
 
 
-def init_environment():
+def init_environment() -> None:
     if os.environ.get("__LOADED_PYODIDE_ENV"):
         return
     os.environ["__LOADED_PYODIDE_ENV"] = "1"
@@ -223,39 +224,49 @@ def init_environment():
     if "sphinx" in sys.modules:
         os.environ["PYODIDE_ROOT"] = ""
 
-    if "PYODIDE_ROOT" not in os.environ:
+    if "PYODIDE_ROOT" in os.environ:
+        os.environ["PYODIDE_ROOT"] = str(Path(os.environ["PYODIDE_ROOT"]).resolve())
+    else:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
 
     os.environ.update(get_make_environment_vars())
-    hostsitepackages = get_hostsitepackages()
-    pythonpath = [
-        hostsitepackages,
-    ]
-    os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    try:
+        hostsitepackages = get_hostsitepackages()
+        pythonpath = [
+            hostsitepackages,
+        ]
+        os.environ["PYTHONPATH"] = ":".join(pythonpath)
+    except KeyError:
+        pass
     os.environ["BASH_ENV"] = ""
     get_unisolated_packages()
 
 
 @functools.cache
-def get_pyodide_root():
+def get_pyodide_root() -> Path:
     init_environment()
     return Path(os.environ["PYODIDE_ROOT"])
 
 
 @functools.cache
-def get_unisolated_packages():
+def get_unisolated_packages() -> list[str]:
     import json
 
     if "UNISOLATED_PACKAGES" in os.environ:
         return json.loads(os.environ["UNISOLATED_PACKAGES"])
     PYODIDE_ROOT = get_pyodide_root()
-    unisolated_packages = []
-    for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, check=False)
-        if config.get("build", {}).get("cross-build-env", False):
-            unisolated_packages.append(config["package"]["name"])
-    # TODO: remove setuptools_rust from this when they release the next version.
-    unisolated_packages.append("setuptools_rust")
+    unisolated_file = PYODIDE_ROOT / "unisolated.txt"
+    if unisolated_file.exists():
+        # in xbuild env, read from file
+        unisolated_packages = unisolated_file.read_text().splitlines()
+    else:
+        unisolated_packages = []
+        for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
+            config = parse_package_config(pkg, check=False)
+            if config.get("build", {}).get("cross-build-env", False):
+                unisolated_packages.append(config["package"]["name"])
+        # TODO: remove setuptools_rust from this when they release the next version.
+        unisolated_packages.append("setuptools_rust")
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 

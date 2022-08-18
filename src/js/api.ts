@@ -49,7 +49,6 @@ API.runPythonInternal = function (code: string): any {
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
 };
 
-let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
  * Runs a string of Python code from JavaScript, using :any:`pyodide.code.eval_code`
  * to evaluate the code. If the last statement in the Python code is an
@@ -74,15 +73,6 @@ export function runPython(
   code: string,
   options: { globals?: PyProxy } = {}
 ): any {
-  if (API.isPyProxy(options)) {
-    options = { globals: options as PyProxy };
-    if (!runPythonPositionalGlobalsDeprecationWarned) {
-      console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-      );
-      runPythonPositionalGlobalsDeprecationWarned = true;
-    }
-  }
   if (!options.globals) {
     options.globals = API.globals;
   }
@@ -184,15 +174,6 @@ export async function runPythonAsync(
   code: string,
   options: { globals?: PyProxy } = {}
 ): Promise<any> {
-  if (API.isPyProxy(options)) {
-    options = { globals: options as PyProxy };
-    if (!runPythonPositionalGlobalsDeprecationWarned) {
-      console.warn(
-        "Passing a PyProxy as the second argument to runPythonAsync is deprecated and will be removed in v0.21. Use 'runPythonAsync(code, {globals : some_dict})' instead."
-      );
-      runPythonPositionalGlobalsDeprecationWarned = true;
-    }
-  }
   if (!options.globals) {
     options.globals = API.globals;
   }
@@ -344,7 +325,6 @@ export function pyimport(mod_name: string): PyProxy {
   return API.importlib.import_module(mod_name);
 }
 
-let unpackArchivePositionalExtractDirDeprecationWarned = false;
 /**
  * Unpack an archive into a target directory.
  *
@@ -372,15 +352,6 @@ export function unpackArchive(
     extractDir?: string;
   } = {}
 ) {
-  if (typeof options === "string") {
-    if (!unpackArchivePositionalExtractDirDeprecationWarned) {
-      console.warn(
-        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-      );
-      unpackArchivePositionalExtractDirDeprecationWarned = true;
-    }
-    options = { extractDir: options };
-  }
   if (
     !ArrayBuffer.isView(buffer) &&
     Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"

@@ -120,6 +120,8 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
 
+  importhook.register_unvendored_stdlib_finder();
+
   let pyodide = API.makePublicAPI();
   importhook.register_js_module("pyodide_js", pyodide);
 
@@ -168,7 +170,15 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  return fileName.slice(0, fileName.lastIndexOf("/"));
+  const indexOfLastSlash = fileName.includes("/")
+    ? fileName.lastIndexOf("/")
+    : fileName.lastIndexOf("\\");
+  if (indexOfLastSlash === -1) {
+    throw new Error(
+      "Could not extract indexURL path from pyodide module location"
+    );
+  }
+  return fileName.slice(0, indexOfLastSlash);
 }
 
 /**
@@ -213,7 +223,7 @@ export async function loadPyodide(
     /**
      * The URL from which Pyodide will load the Pyodide "repodata.json" lock
      * file. Defaults to ``${indexURL}/repodata.json``. You can produce custom
-     * lock files with :any:`micropip.freze`
+     * lock files with :any:`micropip.freeze`
      */
     lockFileURL?: string;
 

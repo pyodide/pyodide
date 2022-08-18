@@ -1,14 +1,22 @@
 import sys
+from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
+from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
+from types import ModuleType
 from typing import Any
 
 
 class JsFinder(MetaPathFinder):
-    def __init__(self):
-        self.jsproxies = {}
+    def __init__(self) -> None:
+        self.jsproxies: dict[str, Any] = {}
 
-    def find_spec(self, fullname, path, target=None):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
         assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
@@ -66,7 +74,7 @@ class JsFinder(MetaPathFinder):
         """
         Unregisters a JavaScript module with given name that has been previously
         registered with :any:`pyodide.registerJsModule` or
-        :any:`pyodide.register_js_module`. If a JavaScript module with that name
+        :any:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
         imported module from ``sys.modules``. This is called by the JavaScript
@@ -86,17 +94,17 @@ class JsFinder(MetaPathFinder):
 
 
 class JsLoader(Loader):
-    def __init__(self, jsproxy):
+    def __init__(self, jsproxy: Any) -> None:
         self.jsproxy = jsproxy
 
-    def create_module(self, spec):
+    def create_module(self, spec: ModuleSpec) -> Any:
         return self.jsproxy
 
-    def exec_module(self, module):
+    def exec_module(self, module: ModuleType) -> None:
         pass
 
     # used by importlib.util.spec_from_loader
-    def is_package(self, fullname):
+    def is_package(self, fullname: str) -> bool:
         return True
 
 
@@ -106,7 +114,7 @@ register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
 
 
-def register_js_finder():
+def register_js_finder() -> None:
     """A bootstrap function, called near the end of Pyodide initialization.
 
     It is called in ``loadPyodide`` in ``pyodide.js`` once ``_pyodide_core`` is ready
@@ -122,4 +130,65 @@ def register_js_finder():
 
     global JsProxy
     JsProxy = _pyodide_core.JsProxy
+
+    for importer in sys.meta_path:
+        if isinstance(importer, JsFinder):
+            raise RuntimeError("JsFinder already registered")
+
     sys.meta_path.append(jsfinder)
+
+
+class UnvendoredStdlibFinder(MetaPathFinder):
+    """
+    A MetaPathFinder that handles unvendored and removed stdlib modules.
+
+    This class simply raises an error if a stdlib module is unvendored or removed.
+    This needs to be added to the end of sys.meta_path, so if a unvendored stdlib
+    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
+    """
+
+    def __init__(self) -> None:
+        # `test`` is not a stdlib module, but we unvendors in anyway.
+        self.stdlibs = sys.stdlib_module_names | {"test"}
+
+        # TODO: put list of unvendored stdlibs to somewhere else?
+        self.unvendored_stdlibs = {"distutils", "test", "_ssl", "_lzma"} & self.stdlibs
+
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        [parent, _, _] = fullname.partition(".")
+
+        if not parent or parent in sys.modules or parent not in self.stdlibs:
+            return None
+
+        if parent in self.unvendored_stdlibs:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is unvendored from the Python standard library in the Pyodide distribution, "
+                f'you can install it by calling: await micropip.install("{parent}"). '
+                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
+            )
+        else:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is removed from the Python standard library in the Pyodide distribution "
+                "due to browser limitations. "
+                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
+            )
+
+
+def register_unvendored_stdlib_finder() -> None:
+    """
+    A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
+
+    Note that this finder must be placed in the end of meta_paths
+    in order to prevent any unexpected side effects.
+    """
+
+    for importer in sys.meta_path:
+        if isinstance(importer, UnvendoredStdlibFinder):
+            raise RuntimeError("UnvendoredStdlibFinder already registered")
+
+    sys.meta_path.append(UnvendoredStdlibFinder())

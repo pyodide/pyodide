@@ -10,9 +10,11 @@
 # This package is imported by the test suite as well, and currently we don't use
 # pytest mocks for js or pyodide_js, so make sure to test "if IN_BROWSER" before
 # importing from these.
-__version__ = "0.21.0.dev0"
+__version__ = "0.22.0.dev0"
 
 __all__ = ["__version__"]
+
+from typing import Any
 
 from . import _state  # noqa: F401
 from .code import CodeRunner  # noqa: F401
@@ -65,7 +67,7 @@ for name in DEPRECATED_LIST:
     del globals()[name]
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     if name in DEPRECATED_LIST:
         from warnings import warn
 

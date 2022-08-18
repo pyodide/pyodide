@@ -4,11 +4,12 @@ import re
 import shutil
 import sysconfig
 import tarfile
+from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Iterable, Literal
+from typing import IO, Any, Literal
 from zipfile import ZipFile
 
 from ._core import IN_BROWSER, JsProxy, to_js
@@ -89,7 +90,9 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     return info_dir
 
 
-def make_whlfile(*args, owner=None, group=None, **kwargs):
+def make_whlfile(
+    *args: Any, owner: int | None = None, group: int | None = None, **kwargs: Any
+) -> str:
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 

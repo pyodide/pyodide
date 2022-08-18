@@ -1,5 +1,7 @@
+import sys
+from collections.abc import Callable, Iterable, Iterator
 from io import IOBase
-from typing import Any, Callable, Iterable
+from typing import Any
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -316,6 +318,50 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+    def extend(self, other: Iterable[Any]) -> None:
+        """Extend array by appending elements from the iterable.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def __reversed__(self) -> Iterator[Any]:
+        """Return a reverse iterator over the Array.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def pop(self, /, index: int = -1) -> Any:
+        """Remove and return item at index (default last).
+
+        Raises IndexError if list is empty or index is out of range.
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def append(self, /, object: Any) -> None:
+        """Append object to the end of the list.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def index(self, /, value: Any, start: int = 0, stop: int = sys.maxsize) -> int:
+        """Return first index of value.
+
+        Present only if the wrapped Javascript object is an array.
+        Raises ValueError if the value is not present.
+        """
+
+    def count(self, /, x: Any) -> int:
+        """Return the number of times x appears in the list.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def reverse(self) -> None:
+        """Reverse the array in place.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
 
 # from pyproxy.c
 
@@ -361,7 +407,7 @@ def to_js(
     object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this
     method will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had
-    used :any:`pyodide.create_proxy`.
+    used :any:`pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
 

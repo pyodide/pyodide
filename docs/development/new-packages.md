@@ -40,7 +40,56 @@ To determine if a package has C extensions, check if its `setup.py` contains
 any compilation commands.
 ```
 
-## Building a Python package
+## Building Python wheels (out of tree)
+
+```{warning}
+This feature is still experimental in Pyodide 0.21.0.
+```
+
+It is now possible to build Python wheels for WASM/Emscripten separately from the Pyodide package tree using the following steps,
+
+1. Install pyodide-build,
+   ```
+   pip install pyodide-build
+   ```
+2. Build the WASM/Emscripten package wheel by running,
+   ```
+   pyodide build
+   ```
+   in the package folder (where the `setup.py` or `pyproject.toml` file is
+   located). This command would produce a binary wheel in the `dist/` folder,
+   similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/)
+   command.
+3. Make the resulting file accessible as part of your web applications, and
+   install it with `micropip.install` by URL.
+
+Below is a more complete example for building a Python wheel out of tree with Github Actions CI,
+
+```
+runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@v3
+  - uses: actions/setup-python@v4
+     with:
+       python-version: 3.10.2
+  - uses: mymindstorm/setup-emsdk@v11
+     with:
+       version: 3.1.14
+  - run: pip install pyodide-build==0.21.0
+  - run: pyodide build
+```
+
+#### Notes
+
+- the resulting package wheels have a file name of the form
+  `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a
+  given Python and Emscripten versions. In the Pyodide distribution, Python and
+  Emscripten are updated simultaneously.
+- PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
+
+## Building a Python package (in tree)
+
+This section documents how to add a new package to the Pyodide distribution.
 
 ### 1. Creating the `meta.yaml` file
 
@@ -119,7 +168,7 @@ build:
 ### 2. Building the package and investigating issues
 
 Once the `meta.yaml` file is ready, build the package with the following
-commands from inside the package directory `packages/<package-name>`
+command
 
 ```sh
 python -m pyodide_build buildall --only 'package-name' packages dist
@@ -147,7 +196,7 @@ The tests should go in one or more files like
 `test_<package-name>.py`. The tests should look like:
 
 ```py
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["<package-name>"])
 def test_mytestname(selenium):
@@ -160,7 +209,7 @@ If you want to run your package's full pytest test suite and your package
 vendors tests you can do it like:
 
 ```py
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["<package-name>-tests", "pytest"])
 def test_mytestname(selenium):
@@ -170,7 +219,7 @@ def test_mytestname(selenium):
 
 you can put whatever command line arguments you would pass to `pytest` as
 separate entries in the list. For more info on `run_in_pyodide` see
-{ref}`run-in-pyodide`.
+[pytest-pyodide](https://github.com/pyodide/pytest-pyodide).
 
 ### Generating patches
 
