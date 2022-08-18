@@ -3,7 +3,6 @@
 for a basic nodejs-based test, see src/js/test/filesystem.test.js
 """
 import pytest
-from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.skip_refcount_check
@@ -109,24 +108,111 @@ def test_idbfs_persist_code(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(node="Not available", firefox="Not available")
-@run_in_pyodide
 def test_nativefs(selenium_standalone):
-    import pyodide
+    selenium = selenium_standalone
 
-    pyodide.run_js(
+    selenium.run_js(
         """
-        const root = await navigator.storage.getDirectory();
-        const dirHandle = await root.getDirectoryHandle('testdir', { create: true });
+        root = await navigator.storage.getDirectory();
+        dirHandle = await root.getDirectoryHandle('testdir', { create: true });
+        testFileHandle = await dirHandle.getFileHandle('test_read', { create: true });
+        writable = await testFileHandle.createWritable();
+        await writable.write("hello_read");
+        await writable.close();
         fs = await pyodide.mountNativeFS("/nativefs", dirHandle);
         """
     )
 
-    import os
+    # Read
 
-    print(os.listdir("/nativefs"))
-
-    pyodide.run_js(
+    selenium.run(
         """
-        await fs.sync()
+        import os
+        import pathlib
+        assert len(os.listdir("/nativefs")) == 1, str(os.listdir("/nativefs"))
+        assert os.listdir("/nativefs") == ["test_read"], str(os.listdir("/nativefs"))
+
+        pathlib.Path("/nativefs/test_read").read_text() == "hello_read"
         """
     )
+
+    # Write / Delete / Rename
+
+    selenium.run(
+        """
+        import os
+        import pathlib
+        pathlib.Path("/nativefs/test_write").write_text("hello_write")
+        pathlib.Path("/nativefs/test_write").read_text() == "hello_write"
+        pathlib.Path("/nativefs/test_delete").write_text("This file will be deleted")
+        pathlib.Path("/nativefs/test_rename").write_text("This file will be renamed")
+        """
+    )
+
+    entries = selenium.run_js(
+        """
+        await fs.syncfs();
+        entries = {};
+        for await (const [key, value] of dirHandle.entries()) {
+            entries[key] = value;
+        }
+        return entries;
+        """
+    )
+
+    assert "test_read" in entries
+    assert "test_write" in entries
+    assert "test_delete" in entries
+    assert "test_rename" in entries
+
+    selenium.run(
+        """
+        import os
+        os.remove("/nativefs/test_delete")
+        os.rename("/nativefs/test_rename", "/nativefs/test_rename_renamed")
+        """
+    )
+
+    entries = selenium.run_js(
+        """
+        await fs.syncfs();
+        entries = {};
+        for await (const [key, value] of dirHandle.entries()) {
+            entries[key] = value;
+        }
+        return entries;
+        """
+    )
+
+    assert "test_delete" not in entries
+    assert "test_rename" not in entries
+    assert "test_rename_renamed" in entries
+
+    # unmount
+
+    files = selenium.run(
+        """
+        import os
+        os.listdir("/nativefs")
+        """
+    )
+
+    assert "test_read" in entries
+    assert "test_write" in entries
+    assert "test_rename_renamed" in entries
+
+    selenium.run_js(
+        """
+        fs.syncfs();
+        pyodide.FS.unmount("/nativefs");
+        """
+    )
+
+    files = selenium.run(
+        """
+        import os
+        os.listdir("/nativefs")
+        """
+    )
+
+    assert not len(files)
