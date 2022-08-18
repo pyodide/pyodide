@@ -1,0 +1,46 @@
+From 9e7a17c0fa2df60c98c67cdafac8b61a18fd0f83 Mon Sep 17 00:00:00 2001
+From: Sam Clegg <sbc@chromium.org>
+Date: Thu, 11 Aug 2022 19:22:41 -0700
+Subject: [PATCH] Apply relocations before static constructor (#17628)
+
+This bug applied to libraries loaded after the runtime initialized.
+
+Fixes: #17601
+---
+diff --git a/src/library_dylink.js b/src/library_dylink.js
+index 9731c02e5..2e0275850 100644
+--- a/src/library_dylink.js
++++ b/src/library_dylink.js
+@@ -648,6 +648,14 @@ var LibraryDylink = {
+         registerTLSInit(moduleExports['_emscripten_tls_init'], instance.exports, metadata)
+         if (!ENVIRONMENT_IS_PTHREAD) {
+ #endif
++          var applyRelocs = moduleExports['__wasm_apply_data_relocs'];
++          if (applyRelocs) {
++            if (runtimeInitialized) {
++              applyRelocs();
++            } else {
++              __RELOC_FUNCS__.push(applyRelocs);
++            }
++          }
+           var init = moduleExports['__wasm_call_ctors'];
+           if (init) {
+             if (runtimeInitialized) {
+@@ -657,14 +665,6 @@ var LibraryDylink = {
+               __ATINIT__.push(init);
+             }
+           }
+-          var applyRelocs = moduleExports['__wasm_apply_data_relocs'];
+-          if (applyRelocs) {
+-            if (runtimeInitialized) {
+-              applyRelocs();
+-            } else {
+-              __RELOC_FUNCS__.push(applyRelocs);
+-            }
+-          }
+ #if USE_PTHREADS
+         }
+ #endif
+-- 
+2.37.1
+
