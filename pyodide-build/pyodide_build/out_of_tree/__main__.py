@@ -2,7 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
-from . import build
+from . import build, venv
 
 
 def ensure_env_installed(env: Path) -> None:
@@ -16,17 +16,18 @@ def ensure_env_installed(env: Path) -> None:
 
 
 def main():
-    main_parser = argparse.ArgumentParser(prog="pywasmbuild")
+    main_parser = argparse.ArgumentParser(prog="pyodide")
     main_parser.description = "Tools for creating Python extension modules for the wasm32-unknown-emscripten platform"
     subparsers = main_parser.add_subparsers(help="action")
-    for module in [build]:
+    for module in [build, venv]:
         modname = module.__name__.rpartition(".")[-1]
         parser = module.make_parser(subparsers.add_parser(modname))
         parser.set_defaults(func=module.main)
 
-    env = Path(".pyodide-xbuildenv")
-    os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
-    ensure_env_installed(env)
+    if "PYODIDE_ROOT" not in os.environ:
+        env = Path(".pyodide-xbuildenv")
+        os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
+        ensure_env_installed(env)
 
     args = main_parser.parse_args()
     if hasattr(args, "func"):
