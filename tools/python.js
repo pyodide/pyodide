@@ -30,19 +30,9 @@ function make_tty_ops(stream) {
             return res;
         },
         put_char(tty, val) {
-            try {
-                process.stdout.write(Buffer.from([val]));
-            } catch (e) {
-                console.warn(e);
-            }
+            stream.write(Buffer.from([val]));
         },
-        flush(tty) {
-            if (!tty.output || tty.output.length === 0) {
-                return;
-            }
-            stream.write(Buffer.from(tty.output));
-            tty.output = [];
-        },
+        flush(tty) {},
     };
 }
 
