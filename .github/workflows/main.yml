@@ -183,7 +183,7 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py packages/test* packages/*/test* \
+          tools/pytest_wrapper.py packages/*/test* \
             -v \
             -k "numpy and not joblib" \
             --runtime "${BROWSER}" \

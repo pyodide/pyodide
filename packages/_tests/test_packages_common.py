@@ -2,7 +2,7 @@ import functools
 import os
 
 import pytest
-from pytest_pyodide import SeleniumWrapper
+from pytest_pyodide.runner import _BrowserBaseRunner
 
 from conftest import ROOT_PATH, package_is_built
 from pyodide_build.io import parse_package_config
@@ -44,7 +44,7 @@ def test_parse_package(name: str) -> None:
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
-def test_import(name: str, selenium_standalone: SeleniumWrapper) -> None:
+def test_import(name: str, selenium_standalone: _BrowserBaseRunner) -> None:
     if not package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
