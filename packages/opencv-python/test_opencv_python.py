@@ -1,7 +1,7 @@
 import base64
 import pathlib
 
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
 

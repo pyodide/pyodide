@@ -58,7 +58,14 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     # only recythonize if it is present. We need them to always recythonize so
     # we always install cython. If the reqs included some cython version already
     # then this won't do anything.
-    env.install(["cython", "pythran"])
+    env.install(
+        [
+            "cython<0.29.31",  # cython 0.29.31 is incompatible with scipy 1.8.1. TODO: remove this after the scipy update.
+            "cmake<3.24",  # TODO: `_cmake_record_install_prefix` is not defined in Emscripten.
+            "setuptools<65",  # https://github.com/pyodide/pyodide/issues/2971
+            "pythran",
+        ]
+    )
 
 
 def _build_in_isolated_env(

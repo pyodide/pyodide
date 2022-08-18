@@ -1,4 +1,4 @@
-from pyodide_test_runner.decorator import run_in_pyodide
+from pytest_pyodide.decorator import run_in_pyodide
 
 
 @run_in_pyodide(packages=["termcolor"])

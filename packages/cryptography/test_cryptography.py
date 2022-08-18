@@ -1,7 +1,7 @@
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import binary, integers
-from pyodide_test_runner import run_in_pyodide
-from pyodide_test_runner.fixture import selenium_context_manager
+from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.fixture import selenium_context_manager
 
 
 @run_in_pyodide(packages=["cryptography"])

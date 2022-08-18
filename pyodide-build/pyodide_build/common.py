@@ -79,7 +79,8 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
-    "ssl",
+    "_ssl",
+    "_lzma",
     "pytest",
     "tblib",
 }
