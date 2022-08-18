@@ -710,6 +710,36 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
   return Hiwire.new_value(jsobj[Symbol.iterator]());
 })
 
+EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
+  if (!Module._reversedIterator) {
+    Module._reversedIterator = class ReversedIterator
+    {
+      constructor(array)
+      {
+        this._array = array;
+        this._i = array.length - 1;
+      }
+
+      __length_hint__() { return this._array.length; }
+
+      [Symbol.toStringTag]() { return "ReverseIterator"; }
+
+      next()
+      {
+        const i = this._i;
+        const a = this._array;
+        const done = i < 0;
+        const value = done ? undefined : a[i];
+        this._i--;
+        return { done, value };
+      }
+    };
+  }
+  let array = Hiwire.get_value(idarray);
+
+  return Hiwire.new_value(new Module._reversedIterator(array));
+})
+
 EM_JS_BOOL(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
@@ -841,6 +871,16 @@ EM_JS_NUM(errcode, JsArray_Delete, (JsRef idobj, int idx), {
   obj.splice(idx, 1);
 });
 
+EM_JS_REF(JsRef, JsArray_Splice, (JsRef idobj, int idx), {
+  let obj = Hiwire.get_value(idobj);
+  // Weird edge case: allow deleting an empty entry, but we raise a key error if
+  // access is attempted.
+  if (idx < 0 || idx >= obj.length) {
+    return 0;
+  }
+  return Hiwire.new_value(obj.splice(idx, 1));
+});
+
 // clang-format off
 EM_JS_REF(JsRef,
 JsArray_slice,
@@ -884,6 +924,11 @@ JsArray_slice_assign,
   }
 });
 // clang-format on
+
+EM_JS_NUM(errcode, JsArray_Clear, (JsRef idobj), {
+  let obj = Hiwire.get_value(idobj);
+  obj.splice(0, obj.length);
+})
 
 // ==================== JsObject API  ====================
 

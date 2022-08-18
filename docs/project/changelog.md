@@ -17,7 +17,19 @@ substitutions:
 - {{ Fix }} Fix package loading error when a package depends on
   a shared library of another package {pr}`2963`.
 
-- New packages: the standard library lzma module {pr}`2939`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.15
+  {pr}`2958`
+
+- New packages: the standard library lzma module {pr}`2939`,
+  pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+
+- {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
+  `append`, and `pop` for `JsProxy` of Javascript arrays.
+  {pr}`2970`
+
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing unvendored or removed stdlib modules fails.
+  {pr}`2973`
 
 ## Version 0.21.0
 
