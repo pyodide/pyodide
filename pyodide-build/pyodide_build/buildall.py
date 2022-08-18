@@ -23,7 +23,7 @@ from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import UNVENDORED_STDLIB_MODULES, find_matching_wheels
+from .common import find_matching_wheels
 from .io import parse_package_config
 
 
@@ -75,34 +75,6 @@ class BasePackage:
 
     def wheel_path(self) -> Path:
         raise NotImplementedError()
-
-    def tests_path(self) -> Path | None:
-        return None
-
-
-@dataclasses.dataclass
-class StdLibPackage(BasePackage):
-    def __init__(self, pkgdir: Path):
-        self.pkgdir = pkgdir
-        self.meta = {}
-        self.name = pkgdir.stem
-        self.version = "1.0"
-        self.disabled = False
-        self.library = False
-        self.shared_library = False
-        self.run_dependencies = []
-        self.host_dependencies = []
-        self.dependencies = set()
-        self.unbuilt_host_dependencies = set()
-        self.host_dependents = set()
-        self.install_dir = "lib"
-
-    def build(self, outputdir: Path, args: Any) -> None:
-        # All build / packaging steps are already done in the main Makefile
-        return
-
-    def wheel_path(self) -> Path:
-        raise RuntimeError("StdLibPackage has no wheel")
 
     def tests_path(self) -> Path | None:
         return None
@@ -264,11 +236,7 @@ def generate_dependency_graph(
     while packages:
         pkgname = packages.pop()
 
-        if pkgname in UNVENDORED_STDLIB_MODULES:
-            pkg = StdLibPackage(packages_dir / pkgname)
-        else:
-            pkg = Package(packages_dir / pkgname)
-
+        pkg = Package(packages_dir / pkgname)
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
         for dep in pkg.dependencies:
@@ -359,8 +327,6 @@ def mark_package_needs_build(
     Helper for generate_needs_build_set. Modifies needs_build in place.
     Recursively add pkg and all of its dependencies to needs_build.
     """
-    if isinstance(pkg, StdLibPackage):
-        return
     if pkg.name in needs_build:
         return
     needs_build.add(pkg.name)
@@ -612,9 +578,6 @@ def build_packages(
     build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         if pkg.library:
-            continue
-        if isinstance(pkg, StdLibPackage):
-            pkg.file_name = pkg.name + ".tar"
             continue
         if pkg.needs_rebuild():
             continue

@@ -14,8 +14,6 @@ all: check \
 	dist/pyodide.d.ts \
 	dist/package.json \
 	dist/console.html \
-	dist/distutils.tar \
-	dist/test.tar \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
 	dist/test.html \
@@ -177,44 +175,6 @@ src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
-# Stdlib modules that we repackage as standalone packages
-
-TEST_EXTENSIONS= \
-		_testinternalcapi.so \
-		_testcapi.so \
-		_testbuffer.so \
-		_testimportmultiple.so \
-		_testmultiphase.so \
-		_ctypes_test.so
-TEST_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
-
-# TODO: also include test directories included in other stdlib modules
-dist/test.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
-							   -I Include/internal/ -DPy_BUILD_CORE_MODULE
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testcapimodule.c -o Modules/_testcapi.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testbuffer.c -o Modules/_testbuffer.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
-
-	for testname in $(TEST_EXTENSIONS); do \
-		cd $(CPYTHONBUILD) && \
-		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
-		rm -f $(CPYTHONLIB)/$$testname && \
-		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
-	done
-
-	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/test.tar \
-		test $(TEST_EXTENSIONS) unittest/test sqlite3/test ctypes/test
-
-	cd $(CPYTHONLIB) && rm $(TEST_EXTENSIONS)
-
-
-dist/distutils.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/distutils.tar distutils
-
-
 $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
@@ -235,8 +195,7 @@ emsdk/emsdk/.complete:
 
 SETUPTOOLS_RUST_COMMIT=5e8c380429aba1e5df5815dcf921025c599cecec
 rust:
-	wget https://sh.rustup.rs -O /rustup.sh
-	sh /rustup.sh -y
+	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
 	# Install setuptools-rust with a fix for Wasm targets
