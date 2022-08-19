@@ -1,5 +1,5 @@
 package:
-  name: sqlite3
+  name: _sqlite3
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
 source:
@@ -23,18 +23,17 @@ build:
       "Modules/_sqlite/util.c"
     )
 
+    embuilder build --pic sqlite3
+
     for file in "${FILES[@]}"; do
       emcc $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \
-        $(pkg-config --cflags  --dont-define-prefix sqlite3) -DMODULENAME=sqlite
+        -sUSE_SQLITE3 -DMODULENAME=sqlite
     done
 
     OBJECT_FILES=$(find Modules/_sqlite/ -name "*.o")
     emcc $OBJECT_FILES -o $DISTDIR/_sqlite3.so $SIDE_MODULE_LDFLAGS \
-       $(pkg-config --libs --dont-define-prefix sqlite3)
+       -sUSE_SQLITE3 -lsqlite3
 
-requirements:
-  run:
-    - libsqlite3
 test:
   imports:
     - sqlite3

@@ -113,7 +113,7 @@ CORE_PACKAGES = {
     "_lzma",
     "pytest",
     "tblib",
-    "sqlite3",
+    "_sqlite3",
 }
 
 CORE_SCIPY_PACKAGES = {

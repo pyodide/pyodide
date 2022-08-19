@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "sqlite3"], pytest_assert_rewrites=False)
+@run_in_pyodide(packages=["test", "_sqlite3"], pytest_assert_rewrites=False)
 def test_sqlite3(selenium):
     from test import libregrtest
 
@@ -18,10 +18,7 @@ def test_sqlite3(selenium):
             raise RuntimeError(f"Failed with code: {e.code}")
 
 
-from pytest_pyodide import run_in_pyodide
-
-
-@run_in_pyodide
+@run_in_pyodide(packages=["_sqlite3"])
 def test_sqlite3_basic(selenium):
     import sqlite3
 
