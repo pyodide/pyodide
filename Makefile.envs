@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.10.2
 # Note: when updating EMSCRIPTEN_VERSION make sure to update
 # the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.14
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.15
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -144,7 +144,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-I$(PYTHONINCLUDE) \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
-export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
+export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
 
 # For RUST
 export CARGO_HOME ?= $(HOME)/.cargo

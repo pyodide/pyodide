@@ -1180,9 +1180,99 @@ def test_memory_leaks(selenium):
 
 @run_in_pyodide
 def test_js_id(selenium):
-    from js import eval as run_js
+    from pyodide.code import run_js
 
     [x, y, z] = run_js("let a = {}; let b = {}; [a, a, b]")
     assert x.js_id == y.js_id
     assert x is not y
     assert x.js_id != z.js_id
+
+
+@run_in_pyodide
+def test_jsarray_index(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    a = run_js("[5, 7, 9, -1, 3, 5]")
+    assert a.index(5) == 0
+    assert a.index(5, 1) == 5
+    with pytest.raises(ValueError, match="5 is not in list"):
+        assert a.index(5, 1, -1) == 5
+
+    a.append([1, 2, 3])
+    assert a.index([1, 2, 3]) == 6
+    run_js("(a) => a.pop().destroy()")(a)
+
+
+@run_in_pyodide
+def test_jsarray_count(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    assert a.count(1) == 0
+    assert a.count(-1) == 1
+    assert a.count(5) == 2
+
+    b = run_js(f"new Int8Array({repr(l)})")
+    assert b.count(1) == 0
+    assert b.count(-1) == 1
+    assert b.count(5) == 2
+
+    a.append([])
+    a.append([1])
+    a.append([])
+    assert a.count([]) == 2
+    assert a.count([1]) == 1
+    assert a.count([2]) == 0
+    run_js(
+        """(a) => {
+            a.pop().destroy();
+            a.pop().destroy();
+            a.pop().destroy();
+        }
+        """
+    )(a)
+
+
+@run_in_pyodide
+def test_jsarray_reversed(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+    it1 = reversed(l)
+    it2 = reversed(a)
+    it3 = reversed(b)
+
+    for _ in range(len(l)):
+        v = next(it1)
+        assert next(it2) == v
+        assert next(it3) == v
+
+    import pytest
+
+    with pytest.raises(StopIteration):
+        next(it1)
+    with pytest.raises(StopIteration):
+        next(it2)
+    with pytest.raises(StopIteration):
+        next(it3)
+
+
+@run_in_pyodide
+def test_jsarray_reverse(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, 0, 3, 1]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+
+    l.reverse()
+    a.reverse()
+    b.reverse()
+
+    assert a.to_py() == l
+    assert b.to_bytes() == bytes(l)

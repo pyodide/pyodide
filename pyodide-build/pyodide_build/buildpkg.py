@@ -151,6 +151,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
             "PYMINOR",
             "PYMICRO",
             "CPYTHONBUILD",
+            "CPYTHONLIB",
             "SIDE_MODULE_CFLAGS",
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
