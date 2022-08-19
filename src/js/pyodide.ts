@@ -137,6 +137,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   pyodide.pyodide_py = API.pyodide_py;
   pyodide.version = API.version;
   pyodide.globals = API.globals;
+  API.runPythonInternal("import sys; sys.executable = ''");
   return pyodide;
 }
 
