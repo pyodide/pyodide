@@ -138,6 +138,10 @@ def register_js_finder() -> None:
     sys.meta_path.append(jsfinder)
 
 
+UNVENDORED_STDLIBS = {"distutils", "_ssl", "_lzma"}
+UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS | {"test"}
+
+
 class UnvendoredStdlibFinder(MetaPathFinder):
     """
     A MetaPathFinder that handles unvendored and removed stdlib modules.
@@ -151,8 +155,7 @@ class UnvendoredStdlibFinder(MetaPathFinder):
         # `test`` is not a stdlib module, but we unvendors in anyway.
         self.stdlibs = sys.stdlib_module_names | {"test"}
 
-        # TODO: put list of unvendored stdlibs to somewhere else?
-        self.unvendored_stdlibs = {"distutils", "test", "_ssl", "_lzma"} & self.stdlibs
+        self.unvendored_stdlibs = UNVENDORED_STDLIBS_AND_TEST & self.stdlibs
 
     def find_spec(
         self,
