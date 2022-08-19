@@ -191,16 +191,6 @@ A list of Pyodide packages that are required when building a package. It represe
 For instance, when building `libxml`, `zlib` needs to be built for WASM first, and so it's a host dependency. This is unrelated to the fact that
 the build system might already have `zlib` present.
 
-````{note}
-Build dependencies for Python packages can be installed directly with pip, for instance,
-```yaml
-build:
-  script:
-     pip install Cython
-```
-In this case Cython is not a host dependency since it doesn't need to be packaged for WASM.
-````
-
 ## `test`
 
 ### `test/imports`
