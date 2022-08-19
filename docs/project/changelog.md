@@ -28,6 +28,12 @@ substitutions:
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
 
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load distutils by default.
+  If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  The full list of unvendored standard libraries can be found in
+  {pr}`2973`
+
 ## Version 0.21.0
 
 _August 9, 2022_

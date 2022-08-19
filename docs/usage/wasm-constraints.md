@@ -10,13 +10,17 @@ or via [patches](https://github.com/pyodide/pyodide/tree/main/cpython/patches).
 
 ### Optional modules
 
-The following stdlib modules are included by default, however
-they can be excluded with `loadPyodide({ fullStdLib : false })`.
-Individual modules can then be loaded as necessary using
-{any}`pyodide.loadPackage`,
+The following stdlib modules are unvendored by default,
+in order to reduce initial download size of Python distribution.
+You can load all unvendored stdlib modules
+when initializing Pyodide with, `loadPyodide({ fullStdLib : true })`.
+Otherwise, individual modules can then be loaded as necessary using
+{any}`pyodide.loadPackage` or {any}`micropip.install`,
 
 - distutils
-- test: it is an exception to the above, since it is excluded by default.
+- \_ssl
+- \_lzma
+- test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
 
 ### Removed modules
 
