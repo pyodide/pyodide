@@ -25,6 +25,7 @@ export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
 export CPYTHONINSTALL=$(CPYTHONROOT)/installs/python-$(PYVERSION)
 export CPYTHONLIB=$(CPYTHONINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)
+export CPYTHONPACK=$(CPYTHONROOT)/pack/
 export SYSCONFIGDATA_DIR=$(CPYTHONINSTALL)/sysconfigdata/
 export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 
@@ -120,12 +121,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-leventloop.js \
 	\
 	--use-preload-plugins \
-	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+	--preload-file $(CPYTHONPACK)/lib@/lib/ \
 	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
-	--exclude-file "*__pycache__*" \
-	--exclude-file "*/test/*" \
-	--exclude-file "*/tests/*" \
-	--exclude-file "*/distutils/*" \
 	--pre-js src/core/pre.js \
 	--pre-js src/js/_pyodide.out.js \
 	--post-js src/core/post.js

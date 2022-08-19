@@ -21,6 +21,7 @@ ccache
 cpython/downloads
 cpython/installs
 cpython/build.log
+cpython/pack
 docs/_build/
 emsdk/emsdk
 geckodriver.log

@@ -12,113 +12,50 @@ contains:
 import argparse
 import pathlib
 import shutil
-import sys
-import sysconfig
 import zipfile
 
-# source directory
-SRCDIR = pathlib.Path(__file__) / "build" / "Python-3.10.2"
-SRCDIR_LIB = SRCDIR / "Lib"
-
-
-# Library directory relative to $(prefix).
-WASM_LIB = pathlib.PurePath("lib")
-WASM_STDLIB_ZIP = (
-    WASM_LIB / f"python{sys.version_info.major}{sys.version_info.minor}.zip"
-)
-WASM_STDLIB = WASM_LIB / f"python{sys.version_info.major}.{sys.version_info.minor}"
-WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
-
-
-# Don't ship large files / packages that are not particularly useful at
-# the moment.
-OMIT_FILES = (
-    # regression tests
-    "test/",
+# This files are removed from the stdlib by default
+REMOVED_FILES = (
     # package management
     "ensurepip/",
     "venv/",
     # build system
-    "distutils/",
     "lib2to3/",
-    # deprecated
-    "asyncore.py",
-    "asynchat.py",
-    "uu.py",
-    "xdrlib.py",
     # other platforms
     "_aix_support.py",
     "_bootsubprocess.py",
     "_osx_support.py",
-    # webbrowser
-    "antigravity.py",
-    "webbrowser.py",
     # Pure Python implementations of C extensions
     "_pydecimal.py",
     "_pyio.py",
     # Misc unused or large files
     "pydoc_data/",
-    "msilib/",
+    # Not supported by browser
+    "curses/",
+    "dbm/",
+    "idlelib/",
+    "tkinter/",
+    "turtle.py",
+    "turtledemo",
+    "webbrowser.py",
 )
 
-# Synchronous network I/O and protocols are not supported; for example,
-# socket.create_connection() raises an exception:
-# "BlockingIOError: [Errno 26] Operation in progress".
-OMIT_NETWORKING_FILES = (
-    "cgi.py",
-    "cgitb.py",
-    "email/",
-    "ftplib.py",
-    "http/",
-    "imaplib.py",
-    "mailbox.py",
-    "mailcap.py",
-    "nntplib.py",
-    "poplib.py",
-    "smtplib.py",
-    "socketserver.py",
-    "telnetlib.py",
-    # keep urllib.parse for pydoc
-    "urllib/error.py",
-    "urllib/request.py",
-    "urllib/response.py",
-    "urllib/robotparser.py",
-    "wsgiref/",
+# This files are unvendored from the stdlib by default
+UNVENDORED_FILES = (
+    "test/",
+    "distutils/",
+    # TODO: These tests are moved to the subdirectory of test in Python 3.11,
+    #       So we don't need to handle them separately.
+    "sqlite3/test",
+    "ctypes/test",
+    "unittest/test",
 )
 
-OMIT_MODULE_FILES = {
-    "_asyncio": ["asyncio/"],
-    "audioop": ["aifc.py", "sunau.py", "wave.py"],
-    "_crypt": ["crypt.py"],
-    "_curses": ["curses/"],
-    "_ctypes": ["ctypes/"],
-    "_decimal": ["decimal.py"],
-    "_dbm": ["dbm/ndbm.py"],
-    "_gdbm": ["dbm/gnu.py"],
-    "_json": ["json/"],
-    "_multiprocessing": ["concurrent/", "multiprocessing/"],
-    "pyexpat": ["xml/", "xmlrpc/"],
-    "readline": ["rlcompleter.py"],
-    "_sqlite3": ["sqlite3/"],
-    "_ssl": ["ssl.py"],
-    "_tkinter": ["idlelib/", "tkinter/", "turtle.py", "turtledemo/"],
-    "_zoneinfo": ["zoneinfo/"],
-}
-
-
-def get_builddir(args: argparse.Namespace) -> pathlib.Path:
-    """Get builddir path from pybuilddir.txt"""
-    with open("pybuilddir.txt", encoding="utf-8") as f:
-        builddir = f.read()
-    return pathlib.Path(builddir)
-
-
-def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
-    """Get path to sysconfigdata relative to build root"""
-    data_name = sysconfig._get_sysconfigdata_name()
-    assert "emscripten_wasm32" in data_name
-    filename = data_name + ".py"
-    return args.builddir / filename
+# NOT_ZIPPED_FILES = (
+#     "sqlite3/",
+#     "ctypes/",
+#     "unittest/"
+# )
 
 
 def create_stdlib_zip(
@@ -131,7 +68,6 @@ def create_stdlib_zip(
     ) as pzf:
         if args.compresslevel is not None:
             pzf.compresslevel = args.compresslevel
-        pzf.writepy(args.sysconfig_data)
         for entry in sorted(args.srcdir_lib.iterdir()):
             if entry.name == "__pycache__":
                 continue
@@ -142,36 +78,6 @@ def create_stdlib_zip(
                 pzf.writepy(entry)
 
 
-def detect_extension_modules(args: argparse.Namespace):
-    modules = {}
-
-    # disabled by Modules/Setup.local ?
-    with open(args.buildroot / "Makefile") as f:
-        for line in f:
-            if line.startswith("MODDISABLED_NAMES="):
-                disabled = line.split("=", 1)[1].strip().split()
-                for modname in disabled:
-                    modules[modname] = False
-                break
-
-    # disabled by configure?
-    with open(args.sysconfig_data) as f:
-        data = f.read()
-    loc = {}
-    exec(data, globals(), loc)
-
-    for key, value in loc["build_time_vars"].items():
-        if not key.startswith("MODULE_") or not key.endswith("_STATE"):
-            continue
-        if value not in {"yes", "disabled", "missing", "n/a"}:
-            raise ValueError(f"Unsupported value '{value}' for {key}")
-
-        modname = key[7:-6].lower()
-        if modname not in modules:
-            modules[modname] = value == "yes"
-    return modules
-
-
 def path(val: str) -> pathlib.Path:
     return pathlib.Path(val).absolute()
 
@@ -180,24 +86,41 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--buildroot",
     help="absolute path to build root",
-    default=pathlib.Path(".").absolute(),
+    default=pathlib.Path(__file__).resolve().parent,
     type=path,
 )
 parser.add_argument(
-    "--prefix",
-    help="install prefix",
-    default=pathlib.Path("/usr/local"),
+    "--pack-dir",
+    default=pathlib.Path("pack"),
     type=path,
+)
+
+parser.add_argument(
+    "--python-version",
+    help="Python version in {major}.{minor}.{patch} format",
+    default="3.10.2",
 )
 
 
 def main():
     args = parser.parse_args()
 
-    relative_prefix = args.prefix.relative_to(pathlib.Path("/"))
+    version = args.python_version
+    version_major, version_minor, version_patch = version.split(".")
+
+    # source directory
+    SRCDIR = pathlib.Path(__file__).parent / "installs" / f"python-{version}"
+    SRCDIR_LIB = SRCDIR / "lib" / f"python{version_major}.{version_minor}"
+
+    # Library directory relative to $(prefix).
+    WASM_LIB = pathlib.PurePath("lib")
+    WASM_STDLIB_ZIP = WASM_LIB / f"python{version_major}{version_minor}.zip"
+    WASM_STDLIB = WASM_LIB / f"python{version_major}.{version_minor}"
+    WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
+
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
-    args.wasm_root = args.buildroot / relative_prefix
+    args.wasm_root = args.pack_dir.absolute()
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
@@ -207,17 +130,8 @@ def main():
     args.compression = zipfile.ZIP_DEFLATED
     args.compresslevel = 9
 
-    args.builddir = get_builddir(args)
-    args.sysconfig_data = get_sysconfigdata(args)
-    if not args.sysconfig_data.is_file():
-        raise ValueError(f"sysconfigdata file {args.sysconfig_data} missing.")
-
-    extmods = detect_extension_modules(args)
-    omit_files = list(OMIT_FILES)
-    omit_files.extend(OMIT_NETWORKING_FILES)
-    for modname, modfiles in OMIT_MODULE_FILES.items():
-        if not extmods.get(modname):
-            omit_files.extend(modfiles)
+    omit_files = list(REMOVED_FILES)
+    omit_files.extend(UNVENDORED_FILES)
 
     args.omit_files_absolute = {args.srcdir_lib / name for name in omit_files}
 

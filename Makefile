@@ -39,7 +39,8 @@ dist/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)
+	$(CPYTHONLIB) \
+	$(CPYTHONPACK)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
@@ -180,6 +181,8 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
 
+$(CPYTHONPACK): $(CPYTHONLIB)
+	make -C $(CPYTHONROOT) pack-assets
 
 dist/repodata.json: FORCE
 	date +"[%F %T] Building packages..."

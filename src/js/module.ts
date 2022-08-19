@@ -109,17 +109,15 @@ function createStdinWrapper(stdin: () => string) {
  * @private
  */
 export function setHomeDirectory(Module: Module, path: string) {
-  Module.preRun.push(function () {
-    const fallbackPath = "/";
-    try {
-      Module.FS.mkdirTree(path);
-    } catch (e) {
-      console.error(`Error occurred while making a home directory '${path}':`);
-      console.error(e);
-      console.error(`Using '${fallbackPath}' for a home directory instead`);
-      path = fallbackPath;
-    }
-    Module.ENV.HOME = path;
-    Module.FS.chdir(path);
-  });
+  const fallbackPath = "/";
+  try {
+    Module.FS.mkdirTree(path);
+  } catch (e) {
+    console.error(`Error occurred while making a home directory '${path}':`);
+    console.error(e);
+    console.error(`Using '${fallbackPath}' for a home directory instead`);
+    path = fallbackPath;
+  }
+  Module.ENV.HOME = path;
+  Module.FS.chdir(path);
 }

@@ -10,6 +10,7 @@ INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
+PYZIP=python$(PYMAJOR)$(PYMINOR).zip
 
 SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3380500.tar.gz
 SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3380500
@@ -21,8 +22,11 @@ LIBFFI_TAG=2022-06-23
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
+.PHONY: pack-assets
+pack-assets: $(INSTALL)/lib/$(LIB)
+	./wasm_assets.py --pack-dir $(CPYTHONPACK)
 
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
@@ -39,10 +43,8 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
-	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
-
 
 clean:
 	-rm -fr $(ROOT)/build
