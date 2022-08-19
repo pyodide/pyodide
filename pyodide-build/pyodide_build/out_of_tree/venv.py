@@ -55,13 +55,29 @@ def run(dest: Path) -> None:
     host_python_path = bin / "python3.10-host"
     host_python_path.symlink_to(sys.executable)
     pip_path = bin / "pip"
+    result = subprocess.run(
+        [
+            bin / "python",
+            "-c",
+            "import os, sys, sysconfig,  platform; print([os.name, sys.platform, sysconfig.get_platform()])",
+        ],
+        capture_output=True,
+        encoding="utf8",
+    )
+
     pip_path.write_text(
         dedent(
             f"""
             #!{host_python_path}
             # -*- coding: utf-8 -*-
             import os
-            os.environ["_PYTHON_HOST_PLATFORM"] = "emscripten_3_1_14_wasm32"
+            import sys
+
+            posix = os
+            os_name, sys_platform, host_platform = {result.stdout}
+            os.name = os_name
+            sys.platform = sys_platform
+            os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
 
             import re
             import sys
