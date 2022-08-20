@@ -42,10 +42,10 @@ def run(dest: Path) -> None:
     dest = Path(session.creator.dest).absolute()
     (dest / "pip.conf").write_text(
         dedent(
-            """
+            f"""
             [install]
             only-binary=:all:
-            find-links=/home/hood/Documents/programming/pyodide/dist/
+            find-links={get_pyodide_root()/"dist/pypi_index"}
             """
         ).strip()
     )

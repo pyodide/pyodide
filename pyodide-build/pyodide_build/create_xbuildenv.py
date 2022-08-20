@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 from .common import get_make_flag, get_pyodide_root, get_unisolated_packages
+from .create_index import create_index
 from .io import parse_package_config
 
 
@@ -53,6 +54,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
         Path("tools/python.js"),
+        Path("dist/pypi_index"),
     ]
     # Some ad-hoc stuff here to moderate size. We'd like to include all of
     # wasm_lib_dir but there's 180mb of it. Better to leave out all the video
@@ -82,6 +84,7 @@ def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
     xbuildenv_path = pyodide_root / "xbuildenv"
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
+    create_index(pyodide_root / "dist")
 
     copy_xbuild_files(xbuildenv_path)
     copy_wasm_libs(xbuildenv_path)
