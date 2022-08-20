@@ -141,8 +141,8 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   pyodide.globals = API.globals;
   // Reset sys.executable to empty string if it is fake.
   API.runPythonInternal(`\
-import sys
-if sys.executable.endswith("this.program"):
+import sys, pathlib
+if not pathlib.Path(sys.executable).exists():
   sys.executable = ''
 `);
   return pyodide;
