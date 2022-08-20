@@ -35,10 +35,10 @@ build:
 
     for testname in ${TEST_EXTENSIONS}; do \
       cd ${CPYTHONBUILD} && \
-      emcc $DISTDIR/${testname/.so/.o} -o $testname ${SIDE_MODULE_LDFLAGS}
+      emcc Modules/${testname/.so/.o} -o ${DISTDIR}/$testname ${SIDE_MODULE_LDFLAGS}
     done
 
-    cd ${CPYTHONBUILD} && \
+    cd ${CPYTHONBUILD}/Lib && \
       tar --exclude=__pycache__ -cf - \
       test unittest/test sqlite3/test ctypes/test \
       | tar -C $DISTDIR -xf -

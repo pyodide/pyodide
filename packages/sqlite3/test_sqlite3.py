@@ -18,7 +18,7 @@ def test_sqlite3(selenium):
             raise RuntimeError(f"Failed with code: {e.code}")
 
 
-@run_in_pyodide(packages=["_sqlite3"])
+@run_in_pyodide(packages=["sqlite3"])
 def test_sqlite3_basic(selenium):
     import sqlite3
 
