@@ -16,6 +16,8 @@ def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
         if msg.strip() in [
             "sigaction: signal type not supported: this is a no-op.",
             "Calling stub instead of siginterrupt()",
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
         ]:
             continue
         res.append(msg)
