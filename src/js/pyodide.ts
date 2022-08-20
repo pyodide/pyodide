@@ -137,7 +137,12 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   pyodide.pyodide_py = API.pyodide_py;
   pyodide.version = API.version;
   pyodide.globals = API.globals;
-  API.runPythonInternal("import sys; sys.executable = ''");
+  // Reset sys.executable to empty string if it is fake.
+  API.runPythonInternal(`\
+import sys
+if sys.executable.endswith("this.program"):
+  sys.executable = ''
+`);
   return pyodide;
 }
 
