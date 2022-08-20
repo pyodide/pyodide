@@ -20,6 +20,9 @@ substitutions:
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
 
+- {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
+  {pr}`2994`
+
 ## Version 0.21.0
 
 _August 9, 2022_
