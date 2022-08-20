@@ -1189,3 +1189,48 @@ def test_moved_deprecation_warnings(selenium_standalone):
         warnings.simplefilter("error")
         for func in DEPRECATED_LIST.keys():
             getattr(pyodide, func)
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_unvendored_stdlib(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    unvendored_stdlibs = ["test", "_ssl", "_lzma"]
+    removed_stdlibs = ["pwd", "turtle", "tkinter"]
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("urllib.there_is_no_such_module")
+
+    from _pyodide._importhook import UnvendoredStdlibFinder
+
+    finder = UnvendoredStdlibFinder()
+
+    assert finder.find_spec("os", None) is None
+    assert finder.find_spec("os.path", None) is None
+    assert finder.find_spec("os.no_such_module", None) is None
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            finder.find_spec(lib, None)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            finder.find_spec(lib, None)
