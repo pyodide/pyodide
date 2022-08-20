@@ -6,6 +6,7 @@ import sysconfig
 import tarfile
 from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
+from importlib.metadata import Distribution
 from importlib.metadata import distributions as importlib_distributions
 from pathlib import Path
 from site import getsitepackages
@@ -300,16 +301,32 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     ]
 
 
-def init_loaded_packages():
+def get_dist_source(dist: Distribution) -> str | None:
+    source = dist.read_text("PYODIDE_SOURCE")
+    if source == "pyodide":
+        return "default channel"
+    if source:
+        return source
+    direct_url = dist.read_text("direct_url.json")
+    if direct_url:
+        import json
+
+        return json.loads(direct_url)["url"]
+    installer = dist.read_text("INSTALLER")
+    if installer:
+        installer = installer.strip()
+    if installer == "pip":
+        return "pip (index unknown)"
+    return None
+
+
+def init_loaded_packages() -> None:
     from pyodide_js import loadedPackages
 
     for dist in importlib_distributions():
-        source = dist.read_text("PYODIDE_SOURCE")
-        if source is None:
-            continue
-        if source == "pyodide":
-            source = "default channel"
-        setattr(loadedPackages, dist.name, source)
+        source = get_dist_source(dist)
+        if source:
+            setattr(loadedPackages, dist.name, source)
 
 
 def sub_resource_hash(sha_256: str) -> str:
