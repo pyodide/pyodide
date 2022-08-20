@@ -24,9 +24,9 @@ substitutions:
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
-- {{ Breaking }} \_sqlite3 stdlib module is not unvendored by default.
-  Now it needs to be maually loaded by {any}`pyodide.loadPackage`
-  or {any}`micropip.install`.
+- {{ Breaking }} Unvendored the \_sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with 
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
   {pr}`2946`
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
