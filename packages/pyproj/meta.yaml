@@ -10,7 +10,7 @@ requirements:
   run:
     - libproj
     - certifi
-    - _sqlite3
+    - sqlite3
 
 build:
   script: |

@@ -6,7 +6,7 @@ source:
   sha256: 3688f92c62db6c5df268e2264891078f17ecb91e3141b400f2e28d0f75796dea
 requirements:
   run:
-    - _sqlite3
+    - sqlite3
 test:
   imports:
     - sqlalchemy

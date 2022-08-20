@@ -1,5 +1,5 @@
 package:
-  name: _sqlite3
+  name: sqlite3
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
 source:
@@ -33,6 +33,8 @@ build:
     OBJECT_FILES=$(find Modules/_sqlite/ -name "*.o")
     emcc $OBJECT_FILES -o $DISTDIR/_sqlite3.so $SIDE_MODULE_LDFLAGS \
        -sUSE_SQLITE3 -lsqlite3
+
+    cd Lib && tar --exclude=test -cf - sqlite3 | tar -C $DISTDIR -xf -
 
 test:
   imports:

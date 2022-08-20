@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "_sqlite3"], pytest_assert_rewrites=False)
+@run_in_pyodide(packages=["test", "sqlite3"], pytest_assert_rewrites=False)
 def test_sqlite3(selenium):
     from test import libregrtest
 

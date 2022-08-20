@@ -8,7 +8,6 @@ source:
 
 requirements:
   run:
-    - _sqlite3
     - libtiff
 
 build:
