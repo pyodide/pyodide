@@ -155,9 +155,9 @@ class UnvendoredStdlibFinder(MetaPathFinder):
         self.unvendored_stdlibs = {
             "distutils",
             "test",
-            "_ssl",
-            "_lzma",
-            "_sqlite3",
+            "ssl",
+            "lzma",
+            "sqlite3",
         } & self.stdlibs
 
     def find_spec(
