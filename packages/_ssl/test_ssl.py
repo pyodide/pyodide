@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "ssl"], pytest_assert_rewrites=False)
+@run_in_pyodide(packages=["test", "_ssl"], pytest_assert_rewrites=False)
 def test_ssl(selenium):
     import platform
     import unittest

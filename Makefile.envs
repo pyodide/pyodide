@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.10.2
 # Note: when updating EMSCRIPTEN_VERSION make sure to update
 # the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.14
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.15
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -107,6 +107,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s EXPORT_ALL=1 \
 	-s POLYFILL \
+	-s MIN_SAFARI_VERSION=140000 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \

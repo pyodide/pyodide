@@ -26,6 +26,7 @@ def run(exports, args):
 
 
 def main(parser_args: argparse.Namespace) -> None:
+    common.check_emscripten_version()
     run(parser_args.exports, parser_args.backend_args)
 
 
