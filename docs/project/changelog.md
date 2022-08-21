@@ -31,6 +31,10 @@ substitutions:
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
 
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
+
 ## Version 0.21.0
 
 _August 9, 2022_
