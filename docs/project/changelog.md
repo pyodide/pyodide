@@ -12,6 +12,12 @@ substitutions:
 
 # Change Log
 
+- {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
+  with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
+  they had a leading underscore and it was only possible to load them with
+  `pyodide.loadPackage`).
+  {issue}`3003`
+
 ## Version 0.21.1
 
 - New packages: the standard library lzma module {pr}`2939`
