@@ -305,7 +305,7 @@ async def test_pyodide_future():
         if x == 0:
             return 7
         await asyncio.sleep(0.1)
-        return f(x - 1)
+        return f1(x - 1)
 
     fut = PyodideFuture()
     rf = fut.then(f1)
