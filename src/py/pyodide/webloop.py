@@ -96,6 +96,7 @@ class PyodideFuture(Future[Any]):
         result = PyodideFuture()
 
         async def callback(fut: Future[Any]) -> None:
+            exc = fut.exception()
             try:
                 r = onfinally()
                 while inspect.isawaitable(r):
@@ -103,7 +104,6 @@ class PyodideFuture(Future[Any]):
             except Exception as e:
                 result.set_exception(e)
                 return
-            exc = fut.exception()
             if exc:
                 result.set_exception(exc)
             else:

@@ -254,6 +254,12 @@ async def test_pyodide_future():
     fut.set_exception(e)
     assert await rf == repr(e)
 
+    e = Exception("oops")
+    fut = PyodideFuture()
+    rf = fut.catch(tostring)
+    fut.set_exception(e)
+    assert await rf == repr(e)
+
     async def f(x):
         await asyncio.sleep(0.1)
         return x + 1
@@ -294,3 +300,36 @@ async def test_pyodide_future():
     except Exception:
         pass
     assert x == 4
+
+    async def f1(x):
+        if x == 0:
+            return 7
+        await asyncio.sleep(0.1)
+        return f(x - 1)
+
+    fut = PyodideFuture()
+    rf = fut.then(f1)
+    fut.set_result(3)
+    assert await rf == 7
+
+    async def f2():
+        await asyncio.sleep(0.1)
+        raise e
+
+    fut = PyodideFuture()
+    rf = fut.finally_(f2)
+    fut.set_result(3)
+    try:
+        await rf
+    except Exception:
+        pass
+    assert rf.exception() == e
+
+    fut = PyodideFuture()
+    rf = fut.finally_(f2)
+    fut.set_exception(Exception("oops!"))
+    try:
+        await rf
+    except Exception:
+        pass
+    assert rf.exception() == e
