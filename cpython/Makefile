@@ -11,10 +11,6 @@ TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
-SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3380500.tar.gz
-SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3380500
-SQLITEURL=https://sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
-
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
 LIBFFI_TAG=2022-06-23
@@ -58,30 +54,10 @@ $(TARBALL):
 	shasum --algorithm 256 --check checksums --quiet || (rm $@; false)
 
 
-$(SQLITETARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(SQLITEURL)
-
-
-
 $(BUILD)/.patched: $(TARBALL)
 	[ -d $(BUILD) ] || (mkdir -p $(dir $(BUILD)); tar -C $(dir $(BUILD)) -xf $(TARBALL))
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
-
-
-$(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
-	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
-	# sqlite fails to detect that popen is not available. We have to set it
-	# as a CPPFLAG
-	( \
-		cd $(SQLITEBUILD); \
-		emconfigure ./configure CFLAGS="$(PYTHON_CFLAGS)" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
-		emmake make -j $${PYODIDE_JOBS:-3}; \
-	)
-	mkdir -p $(INSTALL)/lib/
-	cp $(SQLITEBUILD)/.libs/libsqlite3.a $(INSTALL)/lib/libsqlite3.a
 
 
 $(INSTALL)/lib/libffi.a :
@@ -92,7 +68,7 @@ $(INSTALL)/lib/libffi.a :
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(INSTALL)/lib/libsqlite3.a
+$(BUILD)/Makefile: $(BUILD)/.patched
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -106,7 +82,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(INSTALL)/lib/libsqlite3.a
 		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-I$(SQLITEBUILD) -sUSE_BZIP2=1 -sUSE_ZLIB=1" \
+			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
 			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \
