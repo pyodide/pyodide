@@ -325,6 +325,9 @@ export async function loadPyodide(
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+  if (Module.exited) {
+    throw Module.exited.toThrow;
+  }
 
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {

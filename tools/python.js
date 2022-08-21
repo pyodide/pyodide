@@ -64,8 +64,6 @@ function isSubdirectory(parent, dir) {
 }
 
 async function main() {
-    let console_log = console.log;
-    console.log = () => {};
     let args = process.argv.slice(2);
     fs.writeFileSync("args.txt", args.toString());
     const homedir = require("os").homedir();
@@ -76,16 +74,33 @@ async function main() {
         );
     }
 
-    py = await loadPyodide({
-        args,
-        fullStdLib: true,
-        _node_mounts: { [homedir]: homedir },
-        _working_directory: process.cwd(),
-    });
+    try {
+        py = await loadPyodide({
+            args,
+            fullStdLib: false,
+            _node_mounts: { [homedir]: homedir },
+            _working_directory: process.cwd(),
+            stdout(e) {
+                if (
+                    [
+                        "warning: no blob constructor, cannot create blobs with mimetypes",
+                        "warning: no BlobBuilder",
+                        "Python initialization complete",
+                    ].includes(e)
+                ) {
+                    return;
+                }
+                console.log(e);
+            },
+        });
+    } catch (e) {
+        if (e.constructor.name != "ExitStatus") {
+            raise;
+        }
+        process.exit(e.status);
+    }
     const FS = py.FS;
     setupStreams(FS, py._module.TTY);
-    console.log = console_log;
-
     let sideGlobals = py.runPython("{}");
     let resolveExit;
     let finishedPromise = new Promise((resolve) => {
