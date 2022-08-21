@@ -229,3 +229,68 @@ def test_webloop_exception_handler(selenium_standalone):
         )
     finally:
         selenium.run("loop.set_exception_handler(None)")
+
+
+@pytest.mark.asyncio
+async def test_pyodide_future():
+    import asyncio
+
+    from pyodide.webloop import PyodideFuture
+
+    fut = PyodideFuture()
+    increment = lambda x: x + 1
+    tostring = lambda x: repr(x)
+
+    def raises(x):
+        raise Exception(x)
+
+    rf = fut.then(increment).then(increment)
+    fut.set_result(5)
+    assert await rf == 7
+
+    e = Exception("oops")
+    fut = PyodideFuture()
+    rf = fut.then(increment, tostring)
+    fut.set_exception(e)
+    assert await rf == repr(e)
+
+    async def f(x):
+        await asyncio.sleep(0.1)
+        return x + 1
+
+    fut = PyodideFuture()
+    rf = fut.then(f)
+
+    fut.set_result(6)
+    assert await rf == 7
+
+    fut = PyodideFuture()
+    rf = fut.then(raises)
+    fut.set_result(6)
+    try:
+        await rf
+    except Exception:
+        pass
+    assert repr(rf.exception()) == repr(Exception(6))
+
+    x = 0
+
+    def incx():
+        nonlocal x
+        x += 1
+
+    fut = PyodideFuture()
+    rf = fut.then(increment).then(increment).finally_(incx).finally_(incx)
+    assert x == 0
+    fut.set_result(5)
+    await rf
+    assert x == 2
+
+    fut = PyodideFuture()
+    rf = fut.then(increment).then(increment).finally_(incx).finally_(incx)
+    fut.set_exception(e)
+    try:
+        await rf
+    except Exception:
+        pass
+    assert x == 4
