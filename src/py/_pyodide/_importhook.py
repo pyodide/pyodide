@@ -152,7 +152,13 @@ class UnvendoredStdlibFinder(MetaPathFinder):
         self.stdlibs = sys.stdlib_module_names | {"test"}
 
         # TODO: put list of unvendored stdlibs to somewhere else?
-        self.unvendored_stdlibs = {"distutils", "test", "_ssl", "_lzma"} & self.stdlibs
+        self.unvendored_stdlibs = {
+            "distutils",
+            "test",
+            "ssl",
+            "lzma",
+            "sqlite3",
+        } & self.stdlibs
 
     def find_spec(
         self,

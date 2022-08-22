@@ -157,8 +157,8 @@ clang version 12.0.0 (/b/s/w/ir/cache/git/chromium.googlesource.com-external-git
     ):
         common.check_emscripten_version()
 
-    s = """\
-emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.14 (4343cbec72b7db283ea3bda1adc6cb1811ae9a73)
+    s = f"""\
+emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) {common.emscripten_version()} (4343cbec72b7db283ea3bda1adc6cb1811ae9a73)
 clang version 15.0.0 (https://github.com/llvm/llvm-project 7effcbda49ba32991b8955821b8fdbd4f8f303e2)
 """
     common.check_emscripten_version()

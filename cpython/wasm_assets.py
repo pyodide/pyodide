@@ -44,6 +44,9 @@ REMOVED_FILES = (
 UNVENDORED_FILES = (
     "test/",
     "distutils/",
+    "sqlite3",
+    "ssl.py",
+    "lzma.py",
     # TODO: These tests are moved to the subdirectory of test in Python 3.11,
     #       So we don't need to handle them separately.
     "sqlite3/test",
