@@ -36,6 +36,10 @@ substitutions:
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
 
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
 ## Version 0.21.0
 
 _August 9, 2022_

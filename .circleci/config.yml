@@ -96,7 +96,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz dist
+            tar cjf pyodide.tar.gz dist
 
       - persist_to_workspace:
           root: .
@@ -107,7 +107,7 @@ jobs:
           path: /root/repo/dist/
 
       - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
+          path: /root/repo/pyodide.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
@@ -162,7 +162,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
+            tar --exclude="node_modules" -cjf pyodide.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -171,7 +171,7 @@ jobs:
             cd packages && find **/build ! -name '.packaged' -type f -exec rm -f {} +
 
       - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
+          path: /root/repo/pyodide.tar.gz
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
@@ -341,7 +341,7 @@ jobs:
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
-            tar cjf dist/pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
+            tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
