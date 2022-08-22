@@ -1,4 +1,3 @@
-#!/bin/env node
 const { loadPyodide } = require("../dist/pyodide");
 const fs = require("fs");
 
@@ -122,6 +121,18 @@ async function main() {
         loop._no_in_progress_handler = handleExit
         loop._system_exit_handler = handleExit
         loop._keyboard_interrupt_handler = lambda: handleExit(130)
+        import shutil
+        from js.process import stdout
+        import os
+        def get_terminal_size(fallback=(80, 24)):
+            columns = stdout.columns
+            rows = stdout.rows
+            if columns is None:
+                columns = fallback[0]
+            if rows is None:
+                rows = fallback[1]
+            return os.terminal_size((rows, columns))
+        shutil.get_terminal_size = get_terminal_size
     `,
         { globals: sideGlobals }
     );
