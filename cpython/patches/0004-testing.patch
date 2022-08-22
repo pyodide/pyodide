@@ -1,7 +1,7 @@
-From 17c0cf37fa3a23bed2dbe3c365b24c20e7e862f0 Mon Sep 17 00:00:00 2001
+From 697ca6e1c24d817bb8cfb473a8da2fd670abf243 Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Mon, 28 Feb 2022 00:54:33 -0500
-Subject: [PATCH 04/12] testing
+Subject: [PATCH 04/13] testing
 
 ---
  Lib/platform.py                   | 2 +-
