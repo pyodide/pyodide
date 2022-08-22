@@ -154,7 +154,7 @@ if IN_READTHEDOCS:
             # insert the analytics script after the `pyodide.js` script
             console_html.insert(
                 idx,
-                '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>"\n',
+                '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
             )
             break
     else:
