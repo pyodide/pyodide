@@ -37,7 +37,7 @@ substitutions:
   changed to `false`. This means Pyodide now will not load distutils by default.
   If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
   The full list of unvendored standard libraries can be found in
-  {pr}`2973`
+  {pr}`2998`
 
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
