@@ -23,6 +23,7 @@ def test_distutils(selenium):
         "test_srcdir",  # /lib/python3.10/config-3.10-wasm32-emscripten not exists
         "test_mkpath_with_custom_mode",
         "test_finalize_options",  # no executable
+        "test_home_installation_scheme",  # platlib modified
     ]
 
     sys.modules["_osx_support"] = unittest.mock.Mock()

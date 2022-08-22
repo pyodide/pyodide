@@ -51,7 +51,9 @@
     xfail: slow, sometimes times out
 - test_array
 - test_asdl_parser
-- test_ast
+- test_ast:
+    skip:
+      - test_stdlib_validates # Not a directory: python310.zip
 - test_asyncgen:
     xfail: async
 - test_asynchat:
@@ -354,7 +356,10 @@
 - test_imaplib:
     xfail: socket
 - test_imghdr
-- test_imp
+- test_imp:
+    skip:
+      - test_multiple_calls_to_get_data # not available with zipimport
+      - test_issue1267 # not available with zipimport
 - test_importlib.builtin.test_finder
 - test_importlib.builtin.test_loader
 - test_importlib.extension.test_case_sensitivity
@@ -378,7 +383,10 @@
 - test_importlib.source.test_path_hook
 - test_importlib.source.test_source_encoding
 - test_importlib.test_abc
-- test_importlib.test_api
+- test_importlib.test_api:
+    skip:
+      # 'zipimporter' object has no attribute 'path'
+      - test_reload_missing_loader
 - test_importlib.test_files
 - test_importlib.test_lazy
 - test_importlib.test_locks:
@@ -443,7 +451,12 @@
     xfail: segfault-outofmemory ("Array buffer allocation failed")
 - test_lib2to3:
     xfail: nonsense
-- test_linecache
+- test_linecache:
+    skip:
+      # not available with zipimport
+      - test_clearcache
+      - test_getline
+      - test_memoryerror
 - test_list
 - test_listcomps
 - test_lltrace
@@ -564,11 +577,17 @@
 - test_py_compile:
     skip:
       - test_stdin # fork
-- test_pyclbr
+- test_pyclbr:
+    xfail:
+      # not available with .pyc file
+      - test_easy
+      - test_others
 - test_pydoc:
     skip:
       - test_server # fork
       - test_synopsis_sourceless # expects __pycache__
+      - test_mixed_case_module_names_are_lower_cased # not available with .pyc file
+      - test_importfile # not available with .pyc file
 - test_pyexpat
 - test_queue:
     # More than half of these make a thread
@@ -783,6 +802,7 @@
 - test_urllib2:
     skip:
       - test_http_body_pipe # fork
+      - test_trivial # zipimport
 - test_urllib2_localnet:
     xfail: socket
 - test_urllib2net
