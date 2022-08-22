@@ -277,6 +277,11 @@ def get_pyodide_root() -> Path:
     return Path(os.environ["PYODIDE_ROOT"])
 
 
+def in_xbuild_env() -> bool:
+    pyodide_root = get_pyodide_root()
+    return pyodide_root.name == "pyodide-root"
+
+
 @functools.cache
 def get_unisolated_packages() -> list[str]:
     import json

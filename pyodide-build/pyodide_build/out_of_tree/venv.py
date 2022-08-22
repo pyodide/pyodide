@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from textwrap import dedent
 
-from ..common import get_pyodide_root
+from ..common import get_pyodide_root, in_xbuild_env
 
 
 def main(parser_args: argparse.Namespace) -> None:
@@ -21,7 +21,7 @@ def run(dest: Path) -> None:
     from virtualenv import session_via_cli  # type: ignore[import]
 
     if dest.exists():
-        print(f"dest directory '{dest}' already exists")
+        print(f"dest directory '{dest}' already exists", file=sys.stderr)
         sys.exit(1)
 
     interp_path = get_pyodide_root() / "tools/python"
@@ -33,11 +33,17 @@ def run(dest: Path) -> None:
     ) or sys.version_info.minor != int(pyodide_version[1]):
         expected_version = ".".join(pyodide_version[:2])
         print(
-            f"Expected host Python version to be {expected_version} but got version {version_major_minor}"
+            f"Expected host Python version to be {expected_version} but got version {version_major_minor}",
+            file=sys.stderr,
         )
         sys.exit(1)
 
     session.run()
+
+    if in_xbuild_env():
+        repo = f'extra-index-url={get_pyodide_root()/"dist/pypi_index"}'
+    else:
+        repo = f'find-links={get_pyodide_root()/"dist"}'
 
     dest = Path(session.creator.dest).absolute()
     (dest / "pip.conf").write_text(
@@ -45,7 +51,7 @@ def run(dest: Path) -> None:
             f"""
             [install]
             only-binary=:all:
-            find-links={get_pyodide_root()/"dist/pypi_index"}
+            {repo}
             """
         ).strip()
     )
@@ -100,11 +106,5 @@ def run(dest: Path) -> None:
         pip.unlink()
         pip.symlink_to(pip_path)
 
-    toload = ["ssl", "micropip"]
-    subprocess.run(
-        [
-            bin / "python",
-            "-c",
-            f"from pyodide_js import loadPackage; loadPackage({toload!r})",
-        ]
-    )
+    toload = ["micropip"]
+    subprocess.run([bin / "pip", "install", *toload])
