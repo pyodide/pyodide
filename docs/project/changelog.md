@@ -12,13 +12,17 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.21.1
 
 - New packages: the standard library lzma module {pr}`2939`
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
+
+- {{ Enhancement }} `pyodide build` now checks that the correct version of the
+  Emscripten compiler is used.
+  {pr}`2975`, {pr}`2990`
 
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
