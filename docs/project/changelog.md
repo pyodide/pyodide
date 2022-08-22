@@ -14,11 +14,11 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Emscripten was updated to Version 3.1.18
+  {pr}`2958`, {pr}`2950`
+
 - {{ Fix }} Fix package loading error when a package depends on
   a shared library of another package {pr}`2963`.
-
-- {{ Enhancement }} Emscripten was updated to Version 3.1.15
-  {pr}`2958`
 
 - New packages: the standard library lzma module {pr}`2939`,
   pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -27,9 +27,21 @@ substitutions:
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
+  {pr}`2946`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
+
+- {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
+  {pr}`2994`
+
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
 
 ## Version 0.21.0
 
