@@ -19,7 +19,7 @@ build:
     cp Lib/lzma.py $DISTDIR
 
 requirements:
-  run:
+  host:
     - liblzma
 test:
   imports:

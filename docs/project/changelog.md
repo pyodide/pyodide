@@ -40,6 +40,12 @@ substitutions:
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
 
+### Build System
+
+- {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
+  host dependencies that are required for building packages.
+  {pr}`2132`
+
 ## Version 0.21.0
 
 _August 9, 2022_
