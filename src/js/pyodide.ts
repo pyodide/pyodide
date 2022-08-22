@@ -319,10 +319,7 @@ export async function loadPyodide(
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   if (config.fullStdLib) {
-    let unvendoredStdlibs = Array.from(
-      API._pyodide._importhook.UNVENDORED_STDLIBS
-    );
-    await pyodide.loadPackage(unvendoredStdlibs);
+    await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
