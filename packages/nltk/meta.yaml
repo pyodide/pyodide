@@ -7,7 +7,7 @@ source:
 requirements:
   run:
     - regex
+    - sqlite3
 test:
   imports:
     - nltk
-    - sqlite3
