@@ -686,6 +686,13 @@ workflows:
             tags:
               only: /.*/
 
+      - test-cmdline-runner:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - build-pyodide-debug:
           requires:
             - build-packages
