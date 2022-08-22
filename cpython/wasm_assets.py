@@ -120,6 +120,7 @@ def main():
     WASM_STDLIB_ZIP = WASM_LIB / f"python{version_major}{version_minor}.zip"
     WASM_STDLIB = WASM_LIB / f"python{version_major}.{version_minor}"
     WASM_DYNLOAD = WASM_STDLIB / "lib-dynload"
+    WASM_SITEPACKAGES = WASM_STDLIB / "site-packages"
 
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
@@ -127,6 +128,7 @@ def main():
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
+    args.wasm_sitepackages = args.wasm_root / WASM_SITEPACKAGES
 
     # bpo-17004: zipimport supports only zlib compression.
     # Emscripten ZIP_STORED + -sLZ4=1 linker flags results in larger file.
@@ -142,6 +144,11 @@ def main():
     args.wasm_dynload.mkdir(parents=True, exist_ok=True)
     marker = args.wasm_dynload / ".empty"
     marker.touch()
+
+    args.wasm_sitepackages.mkdir(parents=True, exist_ok=True)
+    marker = args.wasm_sitepackages / ".keep"
+    marker.touch()
+
     # os.py is a marker for finding the correct lib directory.
     shutil.copy(args.srcdir_lib / "os.py", args.wasm_stdlib)
     # The rest of stdlib that's useful in a WASM context.

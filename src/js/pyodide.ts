@@ -71,7 +71,6 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
   );
   Module.FS.close(stream);
   const code_ptr = Module.stringToNewUTF8(`
-print("hello")
 from sys import version_info
 pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
