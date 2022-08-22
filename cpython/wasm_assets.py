@@ -22,14 +22,7 @@ REMOVED_FILES = (
     # build system
     "lib2to3/",
     # other platforms
-    "_aix_support.py",
-    "_bootsubprocess.py",
     "_osx_support.py",
-    # Pure Python implementations of C extensions
-    "_pydecimal.py",
-    "_pyio.py",
-    # Misc unused or large files
-    "pydoc_data/",
     # Not supported by browser
     "curses/",
     "dbm/",
