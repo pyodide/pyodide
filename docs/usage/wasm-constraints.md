@@ -18,8 +18,9 @@ Otherwise, individual modules can then be loaded as necessary using
 {any}`pyodide.loadPackage` or {any}`micropip.install`,
 
 - distutils
-- \_ssl
-- \_lzma
+- ssl
+- lzma
+- sqlite3
 - test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
 
 ### Removed modules
