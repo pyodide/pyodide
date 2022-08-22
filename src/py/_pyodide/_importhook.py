@@ -154,8 +154,10 @@ class UnvendoredStdlibFinder(MetaPathFinder):
     def __init__(self) -> None:
         # `test`` is not a stdlib module, but we unvendors in anyway.
         self.stdlibs = sys.stdlib_module_names | {"test"}
-        # unvendored stdlibs should be a subset of stdlibs, but just in case.
-        self.unvendored_stdlibs = UNVENDORED_STDLIBS_AND_TEST & self.stdlibs
+        self.unvendored_stdlibs = UNVENDORED_STDLIBS_AND_TEST
+        assert not (
+            self.unvendored_stdlibs - self.stdlibs
+        ), "unvendored stdlibs not in stdlibs"
 
     def find_spec(
         self,
