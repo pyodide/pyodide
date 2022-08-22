@@ -14,8 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.15
-  {pr}`2958`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.18
+  {pr}`2958`, {pr}`2950`
 
 - New packages: the standard library lzma module {pr}`2939`,
   pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
