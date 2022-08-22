@@ -296,6 +296,39 @@ jobs:
       #       cp ../src/js/*.js node_modules/pyodide/
       #       npx webpack
 
+  test-cmdline-runner:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /pyodide
+
+      - run:
+          name: test
+          command: |
+            export PYODIDE_ROOT=/pyodide
+            cd ..
+            mkdir /test
+            cd /test
+            git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
+            git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
+            git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5
+            python3.10 -m venv .venv-host
+            source .venv-host/bin/activate
+            pip install /root/repo/pyodide-build
+            export PYODIDE_ROOT=/root/repo/
+            pyodide venv .venv-pyodide
+            cd zope.interface
+            pyodide build
+            cd ../coveragepy/
+            pyodide build
+            cd ..
+            source .venv-pyodide/bin/activate
+            pip install coveragepy/dist/*.whl
+            pip install zope.interface/dist/*.whl
+            cd attrs
+            pip install .[tests]
+            python -m pytest -k 'not mypy'
+
   benchmark:
     <<: *defaults
     resource_class: medium+
