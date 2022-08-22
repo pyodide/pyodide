@@ -109,10 +109,11 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
-    "_ssl",
-    "_lzma",
+    "ssl",
+    "lzma",
     "pytest",
     "tblib",
+    "sqlite3",
 }
 
 CORE_SCIPY_PACKAGES = {
