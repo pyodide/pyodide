@@ -235,8 +235,7 @@ emsdk/emsdk/.complete:
 
 SETUPTOOLS_RUST_COMMIT=5e8c380429aba1e5df5815dcf921025c599cecec
 rust:
-	wget https://sh.rustup.rs -O /rustup.sh
-	sh /rustup.sh -y
+	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
 	# Install setuptools-rust with a fix for Wasm targets
