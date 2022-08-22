@@ -102,7 +102,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-minimal.tar.gz dist/pyodide.asm.{js,wasm,data} dist/pyodide_py.tar dist/{package,repodata}.json
+            tar cjf pyodide-minimal.tar.gz pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} pyodide/{package,repodata}.json
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -167,7 +167,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-minimal.tar.gz dist/pyodide.asm.{js,wasm,data} dist/pyodide_py.tar dist/{package,repodata}.json
+            tar cjf pyodide-minimal.tar.gz pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} pyodide/{package,repodata}.json
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -358,7 +358,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-minimal-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide.asm.{js,wasm,data} pyodide/pyodide_py.tar pyodide/{package,repodata}.json
+            tar cjf dist/pyodide-minimal-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} pyodide/{package,repodata}.json
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
