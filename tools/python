@@ -16,4 +16,6 @@ if(major_version == 14){
 EOF
 )")
 
-exec node "$ARGS" "$DIRECTORY"/python.js "$@"
+FULL_ARGS="$ARGS" "$DIRECTORY"/python.js "$@"
+
+exec node "$FULL_ARGS"
