@@ -1,6 +1,8 @@
 package:
   name: bleach
   version: 5.0.0
+  top-level:
+    - bleach
 requirements:
   run:
     - webencodings
@@ -12,3 +14,8 @@ source:
 test:
   imports:
     - bleach
+about:
+  home: https://github.com/mozilla/bleach
+  PyPI: https://pypi.org/project/bleach
+  summary: An easy safelist-based HTML-sanitizing tool.
+  license: Apache Software License

@@ -1,6 +1,8 @@
 package:
   name: joblib
   version: 1.1.0
+  top-level:
+    - joblib
 
 requirements:
   run:
@@ -15,3 +17,8 @@ source:
 test:
   imports:
     - joblib
+about:
+  home: https://joblib.readthedocs.io
+  PyPI: https://pypi.org/project/joblib
+  summary: Lightweight pipelining with Python functions
+  license: BSD

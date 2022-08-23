@@ -1,6 +1,9 @@
 package:
   name: biopython
   version: "1.79"
+  top-level:
+    - Bio
+    - BioSQL
 requirements:
   run:
     - numpy
@@ -10,3 +13,9 @@ source:
 test:
   imports:
     - Bio
+    - BioSQL
+about:
+  home: https://biopython.org/
+  PyPI: https://pypi.org/project/biopython
+  summary: Freely available tools for computational molecular biology.
+  license: ""

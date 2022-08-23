@@ -1,6 +1,8 @@
 package:
   name: reboundx
   version: 3.7.1
+  top-level:
+    - reboundx
 build:
   exports: requested
   cflags: |

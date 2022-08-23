@@ -2,6 +2,8 @@ package:
   name: sqlite3
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
+  top-level:
+    - sqlite3
 source:
   path: empty
 build:

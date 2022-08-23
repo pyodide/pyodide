@@ -1,6 +1,8 @@
 package:
   name: sparseqr
   version: "1.2"
+  top-level:
+    - sparseqr
 
 source:
   # PyPI release has invalid setup.py (missing cffi modules information) so we use github archive instead.

@@ -1,6 +1,8 @@
 package:
   name: beautifulsoup4
   version: 4.11.1
+  top-level:
+    - bs4
 requirements:
   run:
     - soupsieve
@@ -10,3 +12,8 @@ source:
 test:
   imports:
     - bs4
+about:
+  home: https://www.crummy.com/software/BeautifulSoup/bs4/
+  PyPI: https://pypi.org/project/beautifulsoup4
+  summary: Screen-scraping library
+  license: MIT

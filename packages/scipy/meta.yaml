@@ -1,7 +1,8 @@
 package:
   name: scipy
   version: 1.8.1
-
+  top-level:
+    - scipy
 # See extra explanation in info.md
 #
 # For future reference: if you see the following errors:
@@ -147,3 +148,8 @@ test:
     - scipy.stats.distributions
     - scipy.stats.mstats
     - scipy.stats.qmc
+about:
+  home: https://www.scipy.org
+  PyPI: https://pypi.org/project/scipy
+  summary: "SciPy: Scientific Library for Python"
+  license: BSD

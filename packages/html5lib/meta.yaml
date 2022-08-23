@@ -1,6 +1,8 @@
 package:
   name: html5lib
   version: "1.1"
+  top-level:
+    - html5lib
 requirements:
   run:
     - webencodings
@@ -11,3 +13,8 @@ source:
 test:
   imports:
     - html5lib
+about:
+  home: https://github.com/html5lib/html5lib-python
+  PyPI: https://pypi.org/project/html5lib
+  summary: HTML parser based on the WHATWG HTML specification
+  license: MIT License

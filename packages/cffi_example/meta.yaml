@@ -1,6 +1,8 @@
 package:
   name: cffi_example
   version: "0.1"
+  top-level:
+    - cffi_example
 requirements:
   run:
     - cffi

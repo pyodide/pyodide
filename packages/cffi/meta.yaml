@@ -1,6 +1,8 @@
 package:
   name: cffi
   version: 1.15.0
+  top-level:
+    - cffi
 requirements:
   run:
     - pycparser

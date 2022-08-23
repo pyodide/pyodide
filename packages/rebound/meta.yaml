@@ -1,6 +1,8 @@
 package:
   name: rebound
   version: 3.19.8
+  top-level:
+    - rebound
 build:
   exports: requested
   post: |
