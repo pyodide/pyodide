@@ -182,7 +182,7 @@ def make_package(
         "package": {
             "name": package,
             "version": version,
-            "top_level": top_level or ["PUT_TOP_LEVEL_IMPORT_NAMES_HERE"],
+            "top-level": top_level or ["PUT_TOP_LEVEL_IMPORT_NAMES_HERE"],
         },
         "source": {"url": url, "sha256": sha256},
         "test": {"imports": top_level or ["PUT_IMPORTS_TO_BE_TESTED_HERE"]},
@@ -201,6 +201,7 @@ def make_package(
     if meta_path.exists():
         raise MkpkgFailedException(f"The package {package} already exists")
 
+    yaml.representer.ignore_aliases = lambda *_: True
     yaml.dump(yaml_content, meta_path)
     try:
         run_prettier(meta_path)
