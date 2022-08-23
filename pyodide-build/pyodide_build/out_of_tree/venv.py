@@ -24,7 +24,7 @@ def run(dest: Path) -> None:
         print(f"dest directory '{dest}' already exists", file=sys.stderr)
         sys.exit(1)
 
-    interp_path = get_pyodide_root() / "tools/python"
+    interp_path = get_pyodide_root() / "tools/python.js"
     version_major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
     pyodide_version = session.interpreter.version.partition(" ")[0].split(".")

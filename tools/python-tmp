@@ -1,0 +1,37 @@
+#!/bin/env python3
+
+import subprocess
+import shutil
+import os
+import sys
+
+from pathlib import Path
+
+node_proc = subprocess.run(
+    ["node", "-e",
+    """
+    let major_version = Number(process.version.split(".")[0].slice(1));
+    if(major_version < 14) {
+        console.error("Need node version >= 14. Got node version", process.version);
+        process.exit(1);
+    }
+    if(major_version == 14){
+        process.stdout.write("--experimental-wasm-bigint");
+    }
+    """],
+    capture_output=True,
+    encoding="utf8",
+)
+
+if node_proc.returncode:
+    print(node_proc.stderr)
+    sys.exit(node_proc.returncode)
+
+args = node_proc.stdout.split(" ")
+node = shutil.which("node")
+
+pythonjs = str(Path(__file__).absolute().parent / "python.js")
+print((node, *args, pythonjs, *sys.argv[1:]))
+os.execl(node, *args, pythonjs, *sys.argv[1:])
+
+# process.exit();

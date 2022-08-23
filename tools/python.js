@@ -1,3 +1,30 @@
+#!/bin/sh
+":"; /* // << "EOF"
+This file is a bash/node polyglot.
+*/
+`
+EOF
+# bash
+set -e
+
+which node > /dev/null  || { \
+    >&2 echo "No node executable found on the path" && exit 1; \
+}
+
+ARGS=$(node -e "$(cat <<EOF
+const major_version = Number(process.version.split(".")[0].slice(1));
+if(major_version < 14) {
+    console.error("Need node version >= 14. Got node version", process.version);
+    process.exit(1);
+}
+if(major_version === 14){
+    process.stdout.write("--experimental-wasm-bigint");
+}
+EOF
+)")
+exec node $ARGS "$0" "$@"
+`;
+
 const { loadPyodide } = require("../dist/pyodide");
 const fs = require("fs");
 
