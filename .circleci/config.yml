@@ -314,8 +314,7 @@ jobs:
             git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5
             python3.10 -m venv .venv-host
             source .venv-host/bin/activate
-            pip install /root/repo/pyodide-build
-            export PYODIDE_ROOT=/root/repo/
+            pip install $PYODIDE_ROOT/pyodide-build
             pyodide venv .venv-pyodide
             cd zope.interface
             pyodide build
