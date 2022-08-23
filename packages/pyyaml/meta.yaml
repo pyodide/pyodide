@@ -11,6 +11,8 @@ build:
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
 requirements:
+  host:
+    - libyaml
   run:
     - libyaml
 test:

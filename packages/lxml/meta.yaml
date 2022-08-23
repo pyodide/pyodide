@@ -8,6 +8,12 @@ build:
   cflags: |
     -Wno-implicit-function-declaration
 requirements:
+  host:
+    - libxml
+    - libxslt
+    - zlib
+    - libiconv
+
   run:
     - beautifulsoup4
     - cssselect

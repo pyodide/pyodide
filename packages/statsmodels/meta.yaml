@@ -11,6 +11,12 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
 requirements:
+  host:
+    - numpy
+    - scipy
+    # TODO: Check that pandas and patsy really host dependencies
+    - pandas
+    - patsy
   run:
     - distutils
     - numpy

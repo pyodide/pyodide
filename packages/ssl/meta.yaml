@@ -21,6 +21,8 @@ build:
     cp Lib/ssl.py $DISTDIR
 
 requirements:
+  host:
+    - openssl
   run:
     - openssl
 test:
