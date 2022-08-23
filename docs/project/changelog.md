@@ -46,6 +46,15 @@ substitutions:
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
 
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load some stdlib modules like
+  distutils, ssl, and sqlite3 by default.
+  See [Pyodide Python compatibility](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+  for detail. If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  However, setting `fullStdLib` to true will increase the initial Pyodide load time.
+  So it is preferable to explicitly load the required module.
+  {pr}`2998`
+
 - {{ Enhancement }} `pyodide build` now checks that the correct version of the
   Emscripten compiler is used.
   {pr}`2975`, {pr}`2990`

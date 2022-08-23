@@ -1130,6 +1130,27 @@ def test_sys_path0(selenium):
     )
 
 
+def test_fullstdlib(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: true,
+        });
+
+        await pyodide.loadPackage("micropip");
+
+        pyodide.runPython(`
+            import _pyodide
+            import micropip
+            loaded_packages = micropip.list()
+            print(loaded_packages)
+            assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
+        `);
+        """
+    )
+
+
 @run_in_pyodide
 def test_run_js(selenium):
     from unittest import TestCase
