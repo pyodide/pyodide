@@ -234,6 +234,7 @@ jobs:
           python3.10 -m venv .venv-host
           source .venv-host/bin/activate
           pip install $PYODIDE_ROOT/pyodide-build
+          $PYODIDE_ROOT/tools/python.js .venv-host/lib/python3.10/site-packages/virtualenv/discovery/py_info.py
           pyodide venv .venv-pyodide
           cd zope.interface
           pyodide build
