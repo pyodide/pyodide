@@ -1720,3 +1720,49 @@ def test_array_extend(selenium_module_scope, l1, l2):
 
     assert l1 == l1js1.to_py()
     assert l1 == l1js2.to_py()
+
+
+@run_in_pyodide
+def test_typed_array(selenium):
+    from pyodide.code import run_js
+
+    a = run_js("self.a = new Uint8Array([1,2,3,4]); a")
+    assert a[0] == 1
+    assert a[-1] == 4
+    a[-2] = 7
+    assert run_js("self.a[2]") == 7
+
+    import pytest
+
+    with pytest.raises(ValueError, match="cannot delete array elements"):
+        del a[0]
+
+    msg = "Slice subscripting isn't implemented for typed arrays"
+    with pytest.raises(NotImplementedError, match=msg):
+        a[:]
+
+    msg = "Slice assignment isn't implemented for typed arrays"
+    with pytest.raises(NotImplementedError, match=msg):
+        a[:] = [-1, -2, -3, -4]
+
+    assert not hasattr(a, "extend")
+    with pytest.raises(TypeError):
+        a += [1, 2, 3]
+
+
+@pytest.mark.xfail_browsers(node="No document in node")
+@run_in_pyodide
+def test_html_array(selenium):
+    from pyodide.code import run_js
+
+    x = run_js("document.querySelectorAll('*')")
+    assert run_js("(a, b) => a === b[0]")(x[0], x)
+    assert run_js("(a, b) => a === Array.from(b).pop()")(x[-1], x)
+
+    import pytest
+
+    with pytest.raises(TypeError, match="does ?n[o']t support item assignment"):
+        x[0] = 0
+
+    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
+        del x[0]

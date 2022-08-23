@@ -7,8 +7,7 @@ source:
   url: https://download.osgeo.org/proj/proj-8.2.1.tar.gz
 
 requirements:
-  run:
-    - sqlite3
+  host:
     - libtiff
 
 build:
@@ -16,7 +15,7 @@ build:
   script: |
     mkdir -p build;
     cd build \
-        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
+        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sUSE_SQLITE3 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
         -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
         -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_CURL=OFF \
@@ -25,8 +24,6 @@ build:
         -DBUILD_TESTING=OFF \
         -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
         -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
-        -DSQLITE3_LIBRARY=${WASM_LIBRARY_DIR}/lib/libsqlite3.a \
-        -DSQLITE3_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
         -DCMAKE_C_FLAGS="-fPIC" \
         -DCMAKE_CXX_FLAGS="-fPIC";
     emmake make -j ${PYODIDE_JOBS:-3} install;

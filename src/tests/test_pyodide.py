@@ -16,6 +16,8 @@ def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
         if msg.strip() in [
             "sigaction: signal type not supported: this is a no-op.",
             "Calling stub instead of siginterrupt()",
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
         ]:
             continue
         res.append(msg)
@@ -1128,6 +1130,27 @@ def test_sys_path0(selenium):
     )
 
 
+def test_fullstdlib(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: true,
+        });
+
+        await pyodide.loadPackage("micropip");
+
+        pyodide.runPython(`
+            import _pyodide
+            import micropip
+            loaded_packages = micropip.list()
+            print(loaded_packages)
+            assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
+        `);
+        """
+    )
+
+
 @run_in_pyodide
 def test_run_js(selenium):
     from unittest import TestCase
@@ -1189,3 +1212,48 @@ def test_moved_deprecation_warnings(selenium_standalone):
         warnings.simplefilter("error")
         for func in DEPRECATED_LIST.keys():
             getattr(pyodide, func)
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_unvendored_stdlib(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3"]
+    removed_stdlibs = ["pwd", "turtle", "tkinter"]
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("urllib.there_is_no_such_module")
+
+    from _pyodide._importhook import UnvendoredStdlibFinder
+
+    finder = UnvendoredStdlibFinder()
+
+    assert finder.find_spec("os", None) is None
+    assert finder.find_spec("os.path", None) is None
+    assert finder.find_spec("os.no_such_module", None) is None
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            finder.find_spec(lib, None)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            finder.find_spec(lib, None)

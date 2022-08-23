@@ -14,10 +14,64 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Emscripten was updated to Version 3.1.18
+  {pr}`2958`, {pr}`2950`
+
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+
+- {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
+  `append`, and `pop` for `JsProxy` of Javascript arrays.
+  {pr}`2970`
+
+- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
+  {pr}`2946`
+
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
+### Build System
+
+- {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
+  host dependencies that are required for building packages.
+  {pr}`2132`
+
+## Version 0.21.1
+
+- New packages: the standard library lzma module {pr}`2939`
+
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing unvendored or removed stdlib modules fails.
+  {pr}`2973`
+
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load some stdlib modules like
+  distutils, ssl, and sqlite3 by default.
+  See [Pyodide Python compatibility](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+  for detail. If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  However, setting `fullStdLib` to true will increase the initial Pyodide load time.
+  So it is preferable to explicitly load the required module.
+  {pr}`2998`
+
+- {{ Enhancement }} `pyodide build` now checks that the correct version of the
+  Emscripten compiler is used.
+  {pr}`2975`, {pr}`2990`
+
+- {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
+  {pr}`2994`
+
+## Version 0.21.0
+
+_August 9, 2022_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.21-release/)
+
 ### Build system
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.13
-  {pr}`2679`, {pr}`2672`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.14
+  {pr}`2775`, {pr}`2679`, {pr}`2672`
 
 - {{ Fix }} Fix building on macOS {issue}`2360` {pr}`2554`
 
@@ -124,7 +178,7 @@ substitutions:
   {pr}`2666`
 
 - {{ Fix }} Fix a REPL error in printing high-dimensional lists.
-  {pr}`2517`
+  {pr}`2517` {pr}`2919`
 
 - {{ Fix }} Fix output bug with using `input()` on online console
   {pr}`2509`
@@ -211,12 +265,14 @@ substitutions:
   on Chrome {pr}`2457`
 
 - New packages: opencv-python {pr}`2305`, ffmpeg {pr}`2305`, libwebp {pr}`2305`,
-  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`, cftime {pr}`2504`,
-  svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`, demes, libgsl, newick,
-  ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`, xgboost {pr}`2537`, galpy {pr}`2676`,
-  shapely, geos {pr}`2725`, suitesparse, sparseqr {pr}`2685`, libtiff {pr}`2762`,
-  pytest-benchmark {pr}`2799`, termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
-  rebound {pr}`2868`, pyclipper {pr}`2886`
+  h5py, pkgconfig and libhdf5 {pr}`2411`, bitarray {pr}`2459`, gsw {pr}`2511`,
+  cftime {pr}`2504`, svgwrite, jsonschema, tskit {pr}`2506`, xarray {pr}`2538`,
+  demes, libgsl, newick, ruamel, msprime {pr}`2548`, gmpy2 {pr}`2665`,
+  xgboost {pr}`2537`, galpy {pr}`2676`, shapely, geos {pr}`2725`, suitesparse,
+  sparseqr {pr}`2685`, libtiff {pr}`2762`, pytest-benchmark {pr}`2799`,
+  termcolor {pr}`2809`, sqlite3, libproj, pyproj, certifi {pr}`2555`,
+  rebound {pr}`2868`, reboundx {pr}`2909`, pyclipper {pr}`2886`,
+  brotli {pr}`2925`, python-magic {pr}`2941`
 
 ### Miscellaneous
 
@@ -230,8 +286,19 @@ substitutions:
 
 - {{ Breaking }} `pyodide_build.testing` is removed. `run_in_pyodide`
   decorator can now be accessed through
-  [`pytest-runner`](https://github.com/pyodide/pytest-pyodide) package.
+  [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
+
+### List of contributors
+
+Alexey Ignatiev, Andrey Smelter, andrzej, Antonio Cuni, Ben Jeffery, Brian
+Benjamin Maranville, David Lechner, dragoncoder047, echorand (Amit Saha),
+Filipe, Frank, Gyeongjae Choi, Hanno Rein, haoran1062, Henry Schreiner, Hood
+Chatham, Jason Grout, jmdyck, Jo Bovy, John Wason, josephrocca, Kyle Cutler,
+Lester Fan, Liumeo, lukemarsden, Mario Gersbach, Matt Toad, Michael Droettboom,
+Michael Gilbert, Michael Neil, Mu-Tsun Tsai, Nicholas Bollweg, pysathq, Ricardo
+Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
+Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
 

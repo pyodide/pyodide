@@ -7,7 +7,7 @@ source:
   sha256: 17503d2c395dfcf106b622dc142683c1199431d095367c6aacba6eec30340459
 
 requirements:
-  run:
+  host:
     - libmpfr
 
 build:

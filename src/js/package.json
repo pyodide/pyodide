@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.21.0-alpha.3",
+  "version": "0.22.0-dev.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -59,7 +59,6 @@
   "files": [
     "pyodide*",
     "repodata.json",
-    "distutils.tar",
     "console.html"
   ],
   "browser": {
