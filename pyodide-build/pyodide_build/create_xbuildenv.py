@@ -54,7 +54,6 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
         Path("tools/python.js"),
-        Path("tools/python"),
         Path("dist/pypi_index"),
     ]
     # Some ad-hoc stuff here to moderate size. We'd like to include all of

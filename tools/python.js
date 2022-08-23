@@ -1,7 +1,7 @@
 #!/bin/sh
-":"; /* // << "EOF"
+":" /* << "EOF"
 This file is a bash/node polyglot.
-*/
+*/;
 `
 EOF
 # bash
@@ -18,10 +18,11 @@ if(major_version < 14) {
     process.exit(1);
 }
 if(major_version === 14){
-    process.stdout.write("--experimental-wasm-bigint");
+    process.stdout.write("'--experimental-wasm-bigint'");
 }
 EOF
 )")
+
 exec node $ARGS "$0" "$@"
 `;
 
@@ -83,8 +84,8 @@ function setupStreams(FS, TTY) {
     FS.open("/dev/stderr", 1);
 }
 
+const path = require("path");
 function isSubdirectory(parent, dir) {
-    const path = require("path");
     const relative = path.relative(parent, dir);
     return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
 }
@@ -93,18 +94,16 @@ async function main() {
     let args = process.argv.slice(2);
     fs.writeFileSync("args.txt", args.toString());
     const homedir = require("os").homedir();
-
-    if (!isSubdirectory(homedir, process.cwd())) {
-        throw new Error(
-            "Working directory is not inside home directory, TODO handle this"
-        );
+    let cwd = process.cwd();
+    const _node_mounts = { [homedir]: homedir, "/usr/local": "/usr/local" };
+    if (!isSubdirectory(homedir, cwd)) {
+        _node_mounts[cwd] = cwd;
     }
-
     try {
         py = await loadPyodide({
             args,
             fullStdLib: false,
-            _node_mounts: { [homedir]: homedir },
+            _node_mounts,
             _working_directory: process.cwd(),
             stdout(e) {
                 if (
