@@ -225,7 +225,7 @@ jobs:
         shell: bash -l {0}
         run: |
           set -e
-          export PYODIDE_ROOT=$(pwd)/dist
+          export PYODIDE_ROOT=$(pwd)
           mkdir test
           cd test
           git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
