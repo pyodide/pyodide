@@ -78,8 +78,12 @@ into Pyodide Python file system.
 ```js
 const dirHandle = await showDirectoryPicker();
 
-if ((await fileHandle.queryPermission({ mode: "readwrite" })) === "granted") {
-  return true;
+if ((await dirHandle.queryPermission({ mode: "readwrite" })) !== "granted") {
+  if (
+    (await dirHandle.requestPermission({ mode: "readwrite" })) !== "granted"
+  ) {
+    throw Error("Unable to read and write directory");
+  }
 }
 
 const nativefs = await pyodide.mountNativeFS("/mount_dir", dirHandle);
@@ -98,7 +102,16 @@ to an native file system, you must call
 
 ```js
 // nativefs is the returned from: await pyodide.mountNativeFS('/mount_dir', dirHandle)
+pyodide.runPython(`
+  with open('/mount_dir/new_file.txt', 'w') as f:
+    f.write("hello");
+`);
+
+// new_file.txt does not exist in native file system
+
 await nativefs.syncfs();
+
+// new_file.txt will now exist in native file system
 ```
 
 or
