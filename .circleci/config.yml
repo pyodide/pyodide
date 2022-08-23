@@ -96,7 +96,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar cjf pyodide-build.tar.gz dist
+            tar cjf pyodide.tar.gz dist
 
       - persist_to_workspace:
           root: .
@@ -107,7 +107,7 @@ jobs:
           path: /root/repo/dist/
 
       - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
+          path: /root/repo/pyodide.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
@@ -162,7 +162,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar --exclude="node_modules" -cjf pyodide-build.tar.gz dist
+            tar --exclude="node_modules" -cjf pyodide.tar.gz dist
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -171,7 +171,7 @@ jobs:
             cd packages && find **/build ! -name '.packaged' -type f -exec rm -f {} +
 
       - store_artifacts:
-          path: /root/repo/pyodide-build.tar.gz
+          path: /root/repo/pyodide.tar.gz
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
@@ -341,7 +341,7 @@ jobs:
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
-            tar cjf dist/pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
+            tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
@@ -549,7 +549,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome-no-numpy-dependents
-          test-params: --runtime chrome packages/*/test*
+          test-params: --runtime chrome packages/*/test*.py
           cache-dir: .pytest_cache_chrome
           requires:
             - build-packages-no-numpy-dependents
@@ -564,7 +564,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
-          test-params: --runtime chrome packages/*/test* --skip-passed
+          test-params: --runtime chrome packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
             - test-packages-chrome-no-numpy-dependents
@@ -575,7 +575,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox-no-numpy-dependents
-          test-params: --runtime firefox packages/*/test*
+          test-params: --runtime firefox packages/*/test*.py
           cache-dir: .pytest_cache_firefox
           requires:
             - build-packages-no-numpy-dependents
@@ -590,7 +590,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox
-          test-params: --runtime firefox packages/*/test* --skip-passed
+          test-params: --runtime firefox packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
             - test-packages-firefox-no-numpy-dependents
@@ -601,7 +601,7 @@ workflows:
 
       - test-main:
           name: test-packages-node-no-numpy-dependents
-          test-params: --runtime node packages/*/test*
+          test-params: --runtime node packages/*/test*.py
           cache-dir: .pytest_cache_node
           requires:
             - build-packages-no-numpy-dependents
@@ -616,7 +616,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: --runtime node packages/*/test* --skip-passed
+          test-params: --runtime node packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents

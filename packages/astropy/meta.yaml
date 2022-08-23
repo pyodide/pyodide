@@ -10,6 +10,9 @@ build:
   unvendor-tests: false
   exports: "requested" # Astropy uses dlsym so we need to export more than just PyInit_astropy
 requirements:
+  host:
+    - packaging
+    - numpy
   run:
     - distutils
     - packaging

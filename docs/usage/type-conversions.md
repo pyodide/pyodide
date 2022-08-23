@@ -583,7 +583,7 @@ def reformat_exception():
     # Format a modified exception here
     # this just prints it normally but you could for instance filter some frames
     return "".join(
-        traceback.format_exception(sys.last_type, sys.last_value, sys.last_traceback)
+        format_exception(sys.last_type, sys.last_value, sys.last_traceback)
     )
 `);
 let reformat_exception = pyodide.globals.get("reformat_exception");

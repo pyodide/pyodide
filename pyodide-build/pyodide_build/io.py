@@ -37,6 +37,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
     },
     "requirements": {
         "run": list,  # List[str],
+        "host": list,
     },
     "test": {
         "imports": list,  # List[str]
@@ -92,6 +93,15 @@ def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
                     f"Wrong type for '{section_key}/{subsection_key}': "
                     f"expected {expected_type.__name__}, got {type(value).__name__}."
                 )
+    # Check that if sources is a wheel it shouldn't have host dependencies.
+    source_url = config.get("source", {}).get("url", "")
+    requirements_host = config.get("requirements", {}).get("host", [])
+
+    if source_url.endswith(".whl") and len(requirements_host):
+        yield (
+            f"When source -> url is a wheel ({source_url}) the package cannot have host "
+            f"dependencies. Found {requirements_host}'"
+        )
 
 
 def _check_config_source(config: dict[str, Any]) -> Iterator[str]:
@@ -201,16 +211,20 @@ def check_package_config_generate_errors(
 
 
 def check_package_config(
-    config: dict[str, Any], file_path: Path | str | None = None
-) -> None:
+    config: dict[str, Any],
+    file_path: Path | str | None = None,
+    raise_errors: bool = True,
+) -> list[str]:
     errors_msg = list(check_package_config_generate_errors(config))
 
     if errors_msg:
         if file_path is None:
             file_path = Path("meta.yaml")
-        raise ValueError(
-            f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
-        )
+        if raise_errors:
+            raise ValueError(
+                f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
+            )
+    return errors_msg
 
 
 def parse_package_config(path: Path | str, *, check: bool = True) -> dict[str, Any]:

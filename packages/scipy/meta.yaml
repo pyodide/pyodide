@@ -101,6 +101,9 @@ build:
     - scipy/linalg/cython_blas.pxd
 
 requirements:
+  host:
+    - numpy
+    - CLAPACK
   run:
     - numpy
     - CLAPACK

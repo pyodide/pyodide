@@ -11,6 +11,8 @@ source:
 requirements:
   run:
     - CLAPACK
+  host:
+    - CLAPACK
 
 build:
   sharedlibrary: true
@@ -24,7 +26,7 @@ build:
     grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'
 
     emmake make -j ${PYODIDE_JOBS:-3} install \
-      LDFLAGS="-sSIDE_MODULE=1 -L${WASM_LIBRARY_DIR}/lib " \
+      LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
       BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
       LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}

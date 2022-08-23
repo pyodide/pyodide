@@ -7,7 +7,7 @@ source:
   sha256: da75140bca128ece795895477e53b43773e3748aa90ba6170eae7ca2c74b82d1
 
 requirements:
-  run:
+  host:
     - libmpc
 
 build:

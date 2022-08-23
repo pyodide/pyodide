@@ -10,3 +10,6 @@ turtledemo
 venv
 distutils/command/wininst-*.exe
 webbrowser.py
+sqlite3
+ssl.py
+lzma.py
