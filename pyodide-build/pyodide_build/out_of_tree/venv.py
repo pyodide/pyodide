@@ -68,14 +68,14 @@ def run(dest: Path) -> None:
             "-c",
             dedent(
                 """
-            import os, sys, sysconfig,  platform
-            print([
-                os.name,
-                sys.platform,
-                sys.implementation._multiarch,
-                sysconfig.get_platform()
-            ])
-            """
+                import os, sys, sysconfig, platform
+                print([
+                    os.name,
+                    sys.platform,
+                    sys.implementation._multiarch,
+                    sysconfig.get_platform()
+                ])
+                """
             ),
         ],
         capture_output=True,
@@ -103,6 +103,7 @@ def run(dest: Path) -> None:
             sys.platform = sys_platform
             sys.implementation._multiarch = multiarch
             os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
+            os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = f'_sysconfigdata_{{sys.abiflags}}_{{sys.platform}}_{{sys.implementation._multiarch}}'
             sys.path.append("{sysconfigdata_dir}")
 
             import re

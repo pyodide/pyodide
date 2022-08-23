@@ -18,12 +18,12 @@ if(major_version < 14) {
     process.exit(1);
 }
 if(major_version === 14){
-    process.stdout.write("'--experimental-wasm-bigint'");
+    process.stdout.write("--experimental-wasm-bigint");
 }
 EOF
 )")
 
-exec node $ARGS "$0" "$@"
+exec node "$ARGS" "$0" "$@"
 `;
 
 const { loadPyodide } = require("../dist/pyodide");
