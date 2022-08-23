@@ -12,10 +12,11 @@ import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from collections.abc import Iterable
 from functools import total_ordering
 from graphlib import TopologicalSorter
-from pathlib import Path
+from pathlib import Path, PurePath
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
@@ -477,6 +478,26 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
+def parse_top_level_import_name(whlfile: Path) -> str | None:
+    """
+    Parse the top-level import name from a package file.
+    """
+
+    assert whlfile.name.endswith(".whl"), "Not a package file"
+
+    pkg_name_ver = "-".join(whlfile.name.split("-")[:2])
+    dist_info_dir = PurePath(f"{pkg_name_ver}.dist-info")
+    top_level_filename = str(dist_info_dir / "top_level.txt")
+
+    top_level_file = zipfile.Path(whlfile, at=str(top_level_filename))
+    if not top_level_file.is_file():
+        # TODO: only packages built with setuptools has `top_level.txt` file.
+        #       So if the package is built with flit or poetry, we can't parse top level import name.
+        return None
+
+    return top_level_file.read_text().strip()
+
+
 def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, Any]:
@@ -501,7 +522,14 @@ def generate_packagedata(
         pkg_entry["depends"] = [
             x.lower() for x in pkg.run_dependencies if x not in libraries
         ]
-        pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
+
+        top_level_import_name = name
+        if not (pkg.library or pkg.shared_library):
+            top_level_import_name = (
+                parse_top_level_import_name(output_dir / pkg.file_name) or name
+            )
+
+        pkg_entry["imports"] = top_level_import_name
 
         packages[name.lower()] = pkg_entry
 
