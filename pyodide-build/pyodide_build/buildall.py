@@ -493,6 +493,7 @@ def parse_top_level_import_name(whlfile: Path) -> str | None:
     if not top_level_file.is_file():
         # TODO: only packages built with setuptools has `top_level.txt` file.
         #       So if the package is built with flit or poetry, we can't parse top level import name.
+        print(f"Warning: failed to parse top level import name from {whlfile}.")
         return None
 
     return top_level_file.read_text().strip()
