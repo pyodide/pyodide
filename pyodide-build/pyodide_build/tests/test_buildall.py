@@ -85,6 +85,37 @@ def test_generate_repodata(tmp_path):
     }
 
 
+@pytest.mark.parametrize(
+    "pkg",
+    [
+        {
+            "name": "pkg_setuptools-1.0.0-py3-none-any.whl",
+            "file": "pkg_setuptools-1.0.0.dist-info/top_level.txt",
+            "content": "pkg_setuptools\npkg_setuptools2\n",
+            "top_level": ["pkg_setuptools", "pkg_setuptools2"],
+        },
+        {
+            "name": "pkg_singlefile-1.0.0-py3-none-any.whl",
+            "file": "singlefile.py",
+            "content": "pass\n",
+            "top_level": ["singlefile"],
+        },
+        {
+            "name": "pkg_flit-1.0.0-py3-none-any.whl",
+            "file": "pkg_flit/__init__.py",
+            "content": "pass\n",
+            "top_level": ["pkg_flit"],
+        },
+    ],
+)
+def test_parse_top_level_import_name(pkg, tmp_path):
+    with zipfile.ZipFile(tmp_path / pkg["name"], "w") as whlzip:
+        whlzip.writestr(pkg["file"], data=pkg["content"])
+
+    top_level = buildall.parse_top_level_import_name(tmp_path / pkg["name"])
+    assert top_level == pkg["top_level"]
+
+
 @pytest.mark.parametrize("n_jobs", [1, 4])
 def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
