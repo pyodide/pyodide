@@ -119,7 +119,7 @@ async function main() {
             },
         });
     } catch (e) {
-        if (e.constructor.name != "ExitStatus") {
+        if (e.constructor.name !== "ExitStatus") {
             throw e;
         }
         process.exit(e.status);
@@ -159,7 +159,7 @@ async function main() {
                 rows = fallback[1]
             return os.terminal_size((rows, columns))
         shutil.get_terminal_size = get_terminal_size
-    `,
+        `,
         { globals: sideGlobals }
     );
 
@@ -170,4 +170,7 @@ async function main() {
     py.runPython("loop._decrement_in_progress()", { globals: sideGlobals });
     process.exit(await finishedPromise);
 }
-main();
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});
