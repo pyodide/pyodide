@@ -120,7 +120,7 @@ async function main() {
         });
     } catch (e) {
         if (e.constructor.name != "ExitStatus") {
-            raise;
+            throw e;
         }
         process.exit(e.status);
     }
