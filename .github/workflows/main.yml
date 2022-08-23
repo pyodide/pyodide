@@ -210,6 +210,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.10.2
       - uses: actions/checkout@v2
 
       - name: Download build artifact
@@ -221,6 +224,7 @@ jobs:
       - name: cmdline runner test
         shell: bash -l {0}
         run: |
+          set -e
           export PYODIDE_ROOT=$(pwd)/dist
           mkdir test
           cd test
