@@ -38,9 +38,9 @@ substitutions:
   host dependencies that are required for building packages.
   {pr}`2132`
 
-- {{ Enhancement }} test/imports key in meta.yaml is not used for
-  top-level import names anymore. It is now calculated dynamically
-  using wheel file metadata.
+- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to calculate
+  top-level import names for the package. Previously `test/imports` key was used
+  for this purpose.
   {pr}`3006`
 
 ## Version 0.21.1
