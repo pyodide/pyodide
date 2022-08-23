@@ -498,14 +498,18 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
         # so even setuptools may remove this someday.
         return top_level_file.read_text().strip().split("\n")
 
-    # If there is no top_level.txt file, we will find packages
-    # which contains __init__.py inside its directory,
+    # If there is no top_level.txt file, we will find top level imports by
+    # 1) a python file on a top-level directory
+    # 2) a sub directory with __init__.py
     # following: https://github.com/pypa/setuptools/blob/d680efc8b4cd9aa388d07d3e298b870d26e9e04b/setuptools/discovery.py#L122
     top_level_imports = []
     for subdir in whlzip.iterdir():
-        init_py = subdir / "__init__.py"
-        if init_py.is_file():
-            top_level_imports.append(subdir.name)
+        if subdir.is_file() and subdir.name.endswith(".py"):
+            top_level_imports.append(subdir.name[:-3])
+        elif subdir.is_dir():
+            init_py = subdir / "__init__.py"
+            if init_py.is_file():
+                top_level_imports.append(subdir.name)
 
     # TODO: handle namespace packages without __init__.py?
 
