@@ -12,11 +12,10 @@ import os
 import shutil
 import subprocess
 import sys
-import zipfile
 from collections.abc import Iterable
 from functools import total_ordering
 from graphlib import TopologicalSorter
-from pathlib import Path, PurePath
+from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
@@ -478,48 +477,6 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
-    """
-    Parse the top-level import name from a package file.
-    """
-
-    assert whlfile.name.endswith(".whl"), "Not a package file"
-
-    pkg_name_ver = "-".join(whlfile.name.split("-")[:2])
-    dist_info_dir = PurePath(f"{pkg_name_ver}.dist-info")
-    top_level_filepath = str(dist_info_dir / "top_level.txt")
-
-    whlzip = zipfile.Path(whlfile)
-    top_level_file = whlzip / top_level_filepath
-    if top_level_file.is_file():
-        # only packages built with setuptools has `top_level.txt` file.
-        # So if the package is built with flit or poetry, it doesn't exist.
-        # Note that `top_level.txt` file comes from deprecated egg format,
-        # so even setuptools may remove this someday.
-        return top_level_file.read_text().strip().split("\n")
-
-    # If there is no top_level.txt file, we will find top level imports by
-    # 1) a python file on a top-level directory
-    # 2) a sub directory with __init__.py
-    # following: https://github.com/pypa/setuptools/blob/d680efc8b4cd9aa388d07d3e298b870d26e9e04b/setuptools/discovery.py#L122
-    top_level_imports = []
-    for subdir in whlzip.iterdir():
-        if subdir.is_file() and subdir.name.endswith(".py"):
-            top_level_imports.append(subdir.name[:-3])
-        elif subdir.is_dir():
-            init_py = subdir / "__init__.py"
-            if init_py.is_file():
-                top_level_imports.append(subdir.name)
-
-    # TODO: handle namespace packages without __init__.py?
-
-    if not top_level_imports:
-        print(f"Warning: failed to parse top level import name from {whlfile}.")
-        return None
-
-    return top_level_imports
-
-
 def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, Any]:
@@ -545,13 +502,7 @@ def generate_packagedata(
             x.lower() for x in pkg.run_dependencies if x not in libraries
         ]
 
-        top_level_import_name = [name]
-        if not (pkg.library or pkg.shared_library):
-            top_level_import_name = parse_top_level_import_name(
-                output_dir / pkg.file_name
-            ) or [name]
-
-        pkg_entry["imports"] = top_level_import_name
+        pkg_entry["imports"] = pkg.meta.get("package", {}).get("top-level", [name])
 
         packages[name.lower()] = pkg_entry
 

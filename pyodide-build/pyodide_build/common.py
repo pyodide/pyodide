@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+import zipfile
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from pathlib import Path
 
@@ -89,6 +90,37 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
         for wheel_path, wheel_tags in zip(wheel_paths, wheel_tags_list):
             if supported_tag in wheel_tags:
                 yield wheel_path
+
+
+def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
+    """
+    Parse the top-level import name from a package file.
+    """
+
+    assert whlfile.name.endswith(".whl"), "Not a package file"
+
+    whlzip = zipfile.Path(whlfile)
+
+    # If there is no top_level.txt file, we will find top level imports by
+    # 1) a python file on a top-level directory
+    # 2) a sub directory with __init__.py
+    # following: https://github.com/pypa/setuptools/blob/d680efc8b4cd9aa388d07d3e298b870d26e9e04b/setuptools/discovery.py#L122
+    top_level_imports = []
+    for subdir in whlzip.iterdir():
+        if subdir.is_file() and subdir.name.endswith(".py"):
+            top_level_imports.append(subdir.name[:-3])
+        elif subdir.is_dir():
+            init_py = subdir / "__init__.py"
+            if init_py.is_file():
+                top_level_imports.append(subdir.name)
+
+    # TODO: handle namespace packages without __init__.py?
+
+    if not top_level_imports:
+        print(f"Warning: failed to parse top level import name from {whlfile}.")
+        return None
+
+    return top_level_imports
 
 
 ALWAYS_PACKAGES = {
