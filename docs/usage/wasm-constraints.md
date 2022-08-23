@@ -14,8 +14,9 @@ The following stdlib modules are unvendored by default,
 in order to reduce initial download size of Python distribution.
 You can load all unvendored stdlib modules
 when initializing Pyodide with, `loadPyodide({ fullStdLib : true })`.
-Otherwise, individual modules can then be loaded as necessary using
-{any}`pyodide.loadPackage` or {any}`micropip.install`,
+However this has a significant impact on the download size.
+Instead, it is better to load individual modules as needed using
+{any}`pyodide.loadPackage` or {any}`micropip.install`.
 
 - distutils
 - ssl
