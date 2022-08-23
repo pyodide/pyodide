@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from textwrap import dedent
 
-from ..common import get_pyodide_root, in_xbuild_env
+from ..common import get_make_flag, get_pyodide_root, in_xbuild_env
 
 
 def main(parser_args: argparse.Namespace) -> None:
@@ -54,6 +54,7 @@ def run(dest: Path) -> None:
             {repo}
             """
         ).strip()
+        + "\n"
     )
 
     bin = dest / "bin"
@@ -65,12 +66,29 @@ def run(dest: Path) -> None:
         [
             bin / "python",
             "-c",
-            "import os, sys, sysconfig,  platform; print([os.name, sys.platform, sysconfig.get_platform()])",
+            dedent(
+                """
+            import os, sys, sysconfig,  platform
+            print([
+                os.name,
+                sys.platform,
+                sys.implementation._multiarch,
+                sysconfig.get_platform()
+            ])
+            """
+            ),
         ],
         capture_output=True,
         encoding="utf8",
     )
 
+    pymajor = get_make_flag("PYMAJOR")
+    pyminor = get_make_flag("PYMINOR")
+    pymicro = get_make_flag("PYMICRO")
+    pyversion = f"python-{pymajor}.{pyminor}.{pymicro}"
+    sysconfigdata_dir = (
+        get_pyodide_root() / "cpython/installs" / pyversion / "sysconfigdata"
+    )
     pip_path.write_text(
         dedent(
             f"""
@@ -80,10 +98,12 @@ def run(dest: Path) -> None:
             import sys
 
             posix = os
-            os_name, sys_platform, host_platform = {result.stdout}
+            os_name, sys_platform, multiarch, host_platform = {result.stdout}
             os.name = os_name
             sys.platform = sys_platform
+            sys.implementation._multiarch = multiarch
             os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
+            sys.path.append("{sysconfigdata_dir}")
 
             import re
             import sys
@@ -93,6 +113,7 @@ def run(dest: Path) -> None:
                 sys.exit(main())
             """
         ).strip()
+        + "\n"
     )
     pip_path.chmod(0o777)
 
