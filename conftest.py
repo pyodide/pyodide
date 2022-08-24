@@ -67,13 +67,13 @@ def maybe_skip_test(item, delayed=False):
     if match and not is_common_test:
         package_name = match.group("name")
         if not package_is_built(package_name) and re.match(
-            rf"test_[\w\-]+\[({browsers})[^\]]*\]", item.name
+            rf"test_[\w\-\.]+\[({browsers})[^\]]*\]", item.name
         ):
             skip_msg = f"package '{package_name}' is not built."
 
     # Common package import test. Skip it if the package is not built.
     if skip_msg is None and is_common_test and item.name.startswith("test_import"):
-        match = re.match(rf"test_import\[({browsers})-(?P<name>[\w-.]+)\]", item.name)
+        match = re.match(rf"test_import\[({browsers})-(?P<name>[\w\-\.]+)\]", item.name)
         if match:
             package_name = match.group("name")
             if not package_is_built(package_name):
