@@ -79,7 +79,7 @@ API.fatal_error = function (e: any) {
   }
   if (typeof e === "number") {
     // Hopefully a C++ exception?
-    e = new API.convertCppException(e);
+    e = convertCppException(e);
   } else {
     e = ensureCaughtObjectIsError(e);
   }
