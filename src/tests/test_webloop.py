@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide.decorator import run_in_pyodide
 
 
 def run_with_resolve(selenium, code):
@@ -333,3 +334,15 @@ async def test_pyodide_future():
     except Exception:
         pass
     assert rf.exception() == e
+
+
+@run_in_pyodide
+async def test_pyodide_future2(selenium):
+    from js import fetch
+
+    name = (
+        await fetch("https://pypi.org/pypi/pytest/json")
+        .then(lambda x: x.json())
+        .then(lambda x: x.info.name)
+    )
+    assert name == "pytest"
