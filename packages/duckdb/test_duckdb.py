@@ -8,10 +8,12 @@ def test_duckdb(selenium):
 
     example_df = pd.DataFrame({"col_1": [1, 2, 3, 4, 5], "col_2": [10, 20, 30, 40, 50]})
     con = duckdb.connection(":memory:")
+    con.register("example_table", example_df)
     query = """
     SELECT SUM(col_1) as sum_col_1, SUM(col_2) as sum_col_2
-    FROM example_df
+    FROM example_table
     """
     query_result = con.execute(query).fetchall()
     assert query_result[0][0] == 15
     assert query_result[1][0] == 150
+    con.close()
