@@ -5,6 +5,8 @@ source:
   sha256: cbaa9d62052d9daf8da765fc8e7c30c38ea2b8e9e1c18841913dfb4aec671ee5
   url: https://files.pythonhosted.org/packages/32/ab/b96b19cae562aecaa57f0cdb501be169a38ec685ddcc91f1de20f849b22e/PyWavelets-1.3.0.tar.gz
 requirements:
+  host:
+    - numpy
   run:
     - distutils
     - numpy

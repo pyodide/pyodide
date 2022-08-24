@@ -1,22 +1,41 @@
 package:
   name: sqlite3
-  version: 3.38.5
-
+  version: 1.0.0 # Nonesense
+  _cpython_dynlib: true
 source:
-  sha256: 5af07de982ba658fd91a03170c945f99c971f6955bc79df3266544373e39869c
-  url: https://www.sqlite.org/2022/sqlite-autoconf-3380500.tar.gz
-
-requirements:
-  run:
-    - zlib
-
+  path: empty
 build:
-  library: true
+  sharedlibrary: true
   script: |
-    emconfigure ./configure \
-        CFLAGS="-fPIC" \
-        CPPFLAGS=-DSQLITE_OMIT_POPEN \
-        --with-zlib="${WASM_LIBRARY_DIR}/lib" \
-        --prefix=${WASM_LIBRARY_DIR}
-    emmake make -j ${PYODIDE_JOBS:-3}
-    emmake make install
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD
+
+    export FILES=(
+      "Modules/_sqlite/cache.c"
+      "Modules/_sqlite/connection.c"
+      "Modules/_sqlite/cursor.c"
+      "Modules/_sqlite/microprotocols.c"
+      "Modules/_sqlite/module.c"
+      "Modules/_sqlite/prepare_protocol.c"
+      "Modules/_sqlite/row.c"
+      "Modules/_sqlite/statement.c"
+      "Modules/_sqlite/util.c"
+    )
+
+    embuilder build --pic sqlite3
+
+    for file in "${FILES[@]}"; do
+      emcc $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \
+        -sUSE_SQLITE3 -DMODULENAME=sqlite
+    done
+
+    OBJECT_FILES=$(find Modules/_sqlite/ -name "*.o")
+    emcc $OBJECT_FILES -o $DISTDIR/_sqlite3.so $SIDE_MODULE_LDFLAGS \
+       -sUSE_SQLITE3 -lsqlite3
+
+    cd Lib && tar --exclude=test -cf - sqlite3 | tar -C $DISTDIR -xf -
+
+test:
+  imports:
+    - sqlite3

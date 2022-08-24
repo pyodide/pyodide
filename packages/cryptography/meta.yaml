@@ -30,6 +30,9 @@ requirements:
     - openssl
     - six
     - cffi
+  host:
+    - openssl
+    - cffi
 test:
   imports:
     - cryptography

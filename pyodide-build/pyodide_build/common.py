@@ -97,6 +97,9 @@ ALWAYS_PACKAGES = {
     "micropip",
     "distutils",
     "test",
+    "ssl",
+    "lzma",
+    "sqlite3",
 }
 
 CORE_PACKAGES = {
@@ -109,8 +112,6 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
-    "_ssl",
-    "_lzma",
     "pytest",
     "tblib",
 }
