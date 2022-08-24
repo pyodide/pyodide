@@ -37,6 +37,15 @@ substitutions:
   current working directory (in Node) rather than relative to `indexURL`.
   {pr}`3013`, {issue}`3011`
 
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+  {pr}`2999`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
