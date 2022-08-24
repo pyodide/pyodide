@@ -84,6 +84,8 @@ def test_load_relative_url(request, runtime, web_server_main, playwright_browser
         ) as selenium, set_webdriver_script_timeout(
             selenium, script_timeout=parse_driver_timeout(request.node)
         ):
+            if selenium.browser == "node":
+                selenium.run_js(f"process.chdir('{directory.resolve()}')")
             selenium.load_package(pytz1_wheel)
             selenium.run(
                 "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz1)"
