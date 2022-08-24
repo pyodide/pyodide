@@ -40,6 +40,10 @@ substitutions:
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
 
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+
 ## Version 0.21.0
 
 _August 9, 2022_
