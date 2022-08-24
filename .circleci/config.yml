@@ -93,21 +93,25 @@ jobs:
             rm -rf cpython/{build,downloads}
             rm -rf emsdk/emsdk/binaryen
 
-      - run:
-          name: Zip build directory
-          command: |
-            tar cjf pyodide.tar.gz dist
-
       - persist_to_workspace:
           root: .
           paths:
             - .
+
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide.tar.gz dist
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} dist/{package,repodata}.json
 
       - store_artifacts:
           path: /root/repo/dist/
 
       - store_artifacts:
           path: /root/repo/pyodide.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/pyodide-core.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
@@ -162,7 +166,8 @@ jobs:
       - run:
           name: Zip build directory
           command: |
-            tar --exclude="node_modules" -cjf pyodide.tar.gz dist
+            tar cjf pyodide.tar.gz dist
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} dist/{package,repodata}.json
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -172,6 +177,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/pyodide.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/pyodide-core.tar.gz
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
@@ -218,6 +226,14 @@ jobs:
           name: create xbuild environment
           command: |
             PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
+
+      - run:
+          name: Zip xbuild environment
+          command: |
+            tar cjf xbuildenv.tar.gz  xbuildenv/
+
+      - store_artifacts:
+          path: /root/repo/xbuildenv.tar.gz
 
       - persist_to_workspace:
           root: .
@@ -342,6 +358,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} pyodide/{package,repodata}.json
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
