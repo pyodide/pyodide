@@ -49,16 +49,8 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-const OF_TYPE = "exception of type ";
 function convertCppException(e: number) {
-  let msg: string = Module.getExceptionMessage(e);
-  let ty: string;
-  if (msg.startsWith(OF_TYPE)) {
-    ty = msg.slice(OF_TYPE.length);
-    msg = `The exception is an object of type ${ty} at address ${e} which does not inherit from std::exception`;
-  } else {
-    [ty, msg] = msg.split(": ", 2);
-  }
+  let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
   return new CppException(ty, msg);
 }
 Tests.convertCppException = convertCppException;
