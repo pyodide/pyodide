@@ -19,6 +19,11 @@ substitutions:
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
 
+- {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
+  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
+  into the Pyodide file system.
+  {pr}`2987`
+
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
