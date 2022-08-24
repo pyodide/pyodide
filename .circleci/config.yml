@@ -300,15 +300,15 @@ jobs:
     <<: *defaults
     steps:
       - attach_workspace:
-          at: /pyodide
+          at: .
 
       - run:
           name: test
           command: |
-            export PYODIDE_ROOT=/pyodide
-            cd ..
-            mkdir /test
-            cd /test
+            export PYODIDE_ROOT=$(pwd)
+            cd ~
+            mkdir test
+            cd test
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
             git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5

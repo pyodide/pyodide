@@ -224,6 +224,7 @@ jobs:
       - name: cmdline runner test
         shell: bash -l {0}
         run: |
+          npm install -g node-fetch@2
           set -e
           export PYODIDE_ROOT=$(pwd)
           mkdir test
