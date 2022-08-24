@@ -1,0 +1,20 @@
+package:
+  name: arm_pyart
+  version: 1.12.7
+source:
+  url: https://files.pythonhosted.org/packages/a6/16/ce7a4c720f178fa6984a966bcca8a6e2cab38f8556e174cd8b2ee9140710/arm_pyart-1.12.7.tar.gz
+  sha256: b7b23ecef270c60b017d94603941f0c117de072a10125c5f58c0685d801f9161
+requirements:
+  run:
+    - numpy
+    - packaging
+    - xarray
+    - cftime
+test:
+  imports:
+    - pyart
+about:
+  home: https://github.com/ARM-DOE/pyart
+  PyPI: https://pypi.org/project/arm-pyart/
+  summary: A python based toolkit to work with weather radar data
+  license: BSD
