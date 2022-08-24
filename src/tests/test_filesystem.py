@@ -108,7 +108,11 @@ def test_idbfs_persist_code(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(node="Not available", firefox="Not available")
-def test_nativefs(selenium_standalone):
+def test_nativefs(request, selenium_standalone):
+
+    if request.config.option.runner == "playwright":
+        pytest.xfail("Playwright doesn't support file system access APIs")
+
     selenium = selenium_standalone
 
     selenium.run_js(
