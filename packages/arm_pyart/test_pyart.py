@@ -6,4 +6,4 @@ def test_xarray():
     import pyart
 
     radar = pyart.testing.make_empty_ppi_radar(100, 100, 1)
-    radar.range['data'][0] == 0.0
+    radar.range["data"][0] == 0.0
