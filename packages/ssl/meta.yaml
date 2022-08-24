@@ -17,7 +17,12 @@ build:
       -DOPENSSL_THREADS # This declares that OPENSSL is threadsafe. We are single threaded so everything is threadsafe.
     emcc Modules/_ssl.o -o $DISTDIR/_ssl.so $SIDE_MODULE_LDFLAGS $(pkg-config --libs --dont-define-prefix openssl)
     emcc Modules/socketmodule.o -o $DISTDIR/socketmodule.so $SIDE_MODULE_LDFLAGS
+
+    cp Lib/ssl.py $DISTDIR
+
 requirements:
+  host:
+    - openssl
   run:
     - openssl
 test:

@@ -1,7 +1,7 @@
 import re
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from textwrap import dedent  # for doctests
-from typing import Iterable, Iterator
 
 
 def prepare_doctest(x: str) -> list[str]:

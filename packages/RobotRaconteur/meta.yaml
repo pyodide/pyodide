@@ -1,6 +1,7 @@
 package:
   name: RobotRaconteur
   version: 0.15.1
+  _disabled: true
 
 source:
   url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-post1-Source.tar.gz

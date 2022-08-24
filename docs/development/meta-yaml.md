@@ -180,9 +180,16 @@ package will not be created. Default: true.
 
 ### `requirements/run`
 
-A list of required packages.
+A list of required packages at runtime.
 
 (Unlike conda, this only supports package names, not versions).
+
+### `requirements/host`
+
+A list of Pyodide packages that are required when building a package. It represents packages that need to be specific to the target platform.
+
+For instance, when building `libxml`, `zlib` needs to be built for WASM first, and so it's a host dependency. This is unrelated to the fact that
+the build system might already have `zlib` present.
 
 ## `test`
 

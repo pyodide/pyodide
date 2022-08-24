@@ -12,7 +12,6 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
 
 from __main__ import __file__ as INVOKED_PATH_STR
 
@@ -40,13 +39,13 @@ if IS_COMPILER_INVOCATION:
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
 
-import re
 import shutil
 import subprocess
 from collections import namedtuple
+from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Iterator, Literal, MutableMapping, NoReturn
+from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -241,8 +240,7 @@ def replay_genargs_handle_dashl(arg: str, used_libs: set[str]) -> str | None:
     if arg == "-lffi":
         return None
 
-    # See https://github.com/emscripten-core/emscripten/issues/8650
-    if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
+    if arg == "-lgfortran":
         return None
 
     # WASM link doesn't like libraries being included twice
@@ -303,11 +301,17 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
             "--as-needed",
         ]:
             continue
-        # ignore unsupported --sysroot compile argument used in conda
-        if opt.startswith("--sysroot="):
+
+        if opt.startswith(
+            (
+                "--sysroot=",  # ignore unsupported --sysroot compile argument used in conda
+                "--version-script=",
+                "-R/",  # wasm-ld does not accept -R (runtime libraries)
+                "-R.",  # wasm-ld does not accept -R (runtime libraries)
+            )
+        ):
             continue
-        if opt.startswith("--version-script="):
-            continue
+
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
         return ",".join(new_link_opts)
@@ -338,9 +342,6 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
 
     # fmt: off
     if arg in [
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        "-shared",
         # threading is disabled for now
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
@@ -358,14 +359,87 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
     return arg
 
 
-def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
+def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
     """
-    Collect up all the object files and archive files being linked and list out
-    symbols in them that are marked as public. If ``export_all`` is ``True``,
-    then return all public symbols. If not, return only the public symbols that
-    begin with `PyInit`.
+    >>> _calculate_object_exports_readobj_parse(
+    ...     '''
+    ...     Format: WASM \\n Arch: wasm32 \\n AddressSize: 32bit
+    ...     Sections [
+    ...         Section { \\n Type: TYPE (0x1)   \\n Size: 5  \\n Offset: 8  \\n }
+    ...         Section { \\n Type: IMPORT (0x2) \\n Size: 32 \\n Offset: 19 \\n }
+    ...     ]
+    ...     Symbol {
+    ...         Name: g2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x0) \\n ]
+    ...         ElementIndex: 0x2
+    ...     }
+    ...     Symbol {
+    ...         Name: f2 \\n Type: FUNCTION (0x0) \\n
+    ...         Flags [ (0x4) \\n VISIBILITY_HIDDEN (0x4) \\n ]
+    ...         ElementIndex: 0x1
+    ...     }
+    ...     Symbol {
+    ...         Name: l  \\n Type: FUNCTION (0x0)
+    ...         Flags [ (0x10)\\n UNDEFINED (0x10) \\n ]
+    ...         ImportModule: env
+    ...         ElementIndex: 0x0
+    ...     }
+    ...     '''
+    ... )
+    ['g2']
     """
-    objects = [arg for arg in line if arg.endswith(".a") or arg.endswith(".o")]
+    result = []
+    insymbol = False
+    for line in output.split("\n"):
+        line = line.strip()
+        if line == "Symbol {":
+            insymbol = True
+            export = True
+            name = None
+            symbol_lines = [line]
+            continue
+        if not insymbol:
+            continue
+        symbol_lines.append(line)
+        if line.startswith("Name:"):
+            name = line.removeprefix("Name:").strip()
+        if line.startswith(("BINDING_LOCAL", "UNDEFINED", "VISIBILITY_HIDDEN")):
+            export = False
+        if line == "}":
+            insymbol = False
+            if export:
+                if not name:
+                    raise RuntimeError(
+                        "Didn't find symbol's name:\n" + "\n".join(symbol_lines)
+                    )
+                result.append(name)
+    return result
+
+
+def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
+    which_emcc = shutil.which("emcc")
+    assert which_emcc
+    emcc = Path(which_emcc)
+    args = [
+        str((emcc / "../../bin/llvm-readobj").resolve()),
+        "--section-details",
+        "-st",
+    ] + objects
+    completedprocess = subprocess.run(
+        args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
+    )
+    if completedprocess.returncode:
+        print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
+        print(completedprocess.stderr)
+        sys.exit(completedprocess.returncode)
+
+    if "bitcode files are not supported" in completedprocess.stderr:
+        return None
+
+    return _calculate_object_exports_readobj_parse(completedprocess.stdout)
+
+
+def calculate_object_exports_nm(objects: list[str]) -> list[str]:
     args = ["emnm", "-j", "--export-symbols"] + objects
     result = subprocess.run(
         args, encoding="utf8", capture_output=True, env={"PATH": os.environ["PATH"]}
@@ -374,9 +448,30 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterator[str]:
         print(f"Command '{' '.join(args)}' failed. Output to stderr was:")
         print(result.stderr)
         sys.exit(result.returncode)
+    return result.stdout.splitlines()
 
-    condition = (lambda x: True) if export_all else (lambda x: x.startswith("PyInit"))
-    return (x for x in result.stdout.splitlines() if condition(x))
+
+def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
+    """
+    Collect up all the object files and archive files being linked and list out
+    symbols in them that are marked as public. If ``export_all`` is ``True``,
+    then return all public symbols. If not, return only the public symbols that
+    begin with `PyInit`.
+    """
+    objects = [arg for arg in line if arg.endswith((".a", ".o"))]
+    exports = None
+    # Using emnm is simpler but it cannot handle bitcode. If we're only
+    # exporting the PyInit symbols, save effort by using nm.
+    if export_all:
+        exports = calculate_object_exports_readobj(objects)
+    if exports is None:
+        # Either export_all is false or we are linking at least one bitcode
+        # object. Fall back to a more conservative estimate of the symbols
+        # exported. This can export things with `__visibility__("hidden")`
+        exports = calculate_object_exports_nm(objects)
+    if export_all:
+        return exports
+    return (x for x in exports if x.startswith("PyInit"))
 
 
 def get_export_flags(
@@ -393,7 +488,7 @@ def get_export_flags(
     if isinstance(exports, str):
         export_list = calculate_exports(line, exports == "requested")
     else:
-        export_list = iter(exports)
+        export_list = exports
     prefixed_exports = ["_" + x for x in export_list]
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
@@ -494,9 +589,6 @@ def handle_command_generate_args(
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        # The native build is possibly multithreaded, but the emscripten one
-        # definitely isn't
-        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags

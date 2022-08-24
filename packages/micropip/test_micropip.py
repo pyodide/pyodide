@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from pyodide_test_runner import run_in_pyodide, spawn_web_server
+from pytest_pyodide import run_in_pyodide, spawn_web_server
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
 
@@ -363,7 +363,20 @@ async def test_add_requirement_marker(mock_importlib, wheel_base):
             "python-socketio[client] ; extra == 'socketio'",
         ],
     )
-    assert len(transaction.wheels) == 1
+
+    non_targets = [
+        "contextvars",
+        "aiocontextvars",
+        "numpy",
+        "zarr",
+        "ipykernel",
+        "python-socketio",
+    ]
+
+    wheel_files = [wheel.name for wheel in transaction.wheels]
+    assert "werkzeug" in wheel_files
+    for t in non_targets:
+        assert t not in wheel_files
 
 
 @pytest.mark.asyncio
@@ -522,6 +535,7 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
     )
 
 
+@pytest.mark.xfail(reason="test fails in some environments")
 @pytest.mark.asyncio
 async def test_install_keep_going(mock_fetch: mock_fetch_cls) -> None:
     dummy = "dummy"

@@ -1,0 +1,24 @@
+From de01aaf38fb0f00d2e52b17d3c1c6bbb5549dfde Mon Sep 17 00:00:00 2001
+From: Qijia Liu <liumeo@pku.edu.cn>
+Date: Thu, 4 Aug 2022 17:33:51 -0400
+Subject: [PATCH] Hardcode libmagic.so location
+
+---
+ magic/loader.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/magic/loader.py b/magic/loader.py
+index 931f161..b2bb5ce 100644
+--- a/magic/loader.py
++++ b/magic/loader.py
+@@ -5,6 +5,7 @@ import glob
+ import os.path
+ 
+ def _lib_candidates():
++  yield '/usr/lib/libmagic.so'
+ 
+   yield find_library('magic')
+ 
+-- 
+2.34.1
+

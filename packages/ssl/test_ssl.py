@@ -1,4 +1,4 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["test", "ssl"], pytest_assert_rewrites=False)
@@ -17,6 +17,7 @@ def test_ssl(selenium):
         "test_verify_flags",
         "test_subclass",
         "test_lib_reason",
+        "test_unwrap",
     ]
 
     try:
