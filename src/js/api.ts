@@ -375,34 +375,39 @@ type NativeFS = {
   syncfs: Function;
 };
 
+/**
+ * Mounts FileSystemDirectoryHandle in to the target directory.
+ *
+ * @param path The target mount directory. If the directory does not exist,
+ * it will be created.
+ * @param fileSystemHandle FileSystemDirectoryHandle returned by
+ * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ */
 export async function mountNativeFS(
   path: string,
   fileSystemHandle: {
     isSameEntry: Function;
     queryPermission: Function;
     requestPermission: Function;
-  },
-  sync: boolean = false
-): Promise<NativeFS> {
-  if (sync) {
-    throw new Error("Sync mounting is not supported yet");
-  } else {
-    Module.FS.mkdir(path);
-    Module.FS.mount(
-      Module.FS.filesystems.NATIVEFS_ASYNC,
-      { fileSystemHandle: fileSystemHandle },
-      path
-    );
-
-    // sync native ==> browser
-    await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
-
-    return {
-      // sync browser ==> native
-      syncfs: async () =>
-        new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
-    };
   }
+  // TODO: support sync file system
+  // sync: boolean = false
+): Promise<NativeFS> {
+  Module.FS.mkdir(path);
+  Module.FS.mount(
+    Module.FS.filesystems.NATIVEFS_ASYNC,
+    { fileSystemHandle: fileSystemHandle },
+    path
+  );
+
+  // sync native ==> browser
+  await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+
+  return {
+    // sync browser ==> native
+    syncfs: async () =>
+      new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+  };
 }
 
 /**
