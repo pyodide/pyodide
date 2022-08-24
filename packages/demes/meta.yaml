@@ -9,7 +9,7 @@ source:
 requirements:
   run:
     - attrs
-    - ruamel
+    - ruamel.yaml
 test:
   imports:
     - demes
