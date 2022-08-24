@@ -306,6 +306,7 @@ jobs:
           name: test
           command: |
             export PYODIDE_ROOT=$(pwd)
+            echo $PYODIDE_ROOT
             cd ~
             mkdir test
             cd test
