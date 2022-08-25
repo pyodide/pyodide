@@ -204,6 +204,7 @@ jobs:
 
     needs: [build-core]
     strategy:
+      fail-fast: false
       matrix:
         node_version: [14, 16, 18]
     steps:
