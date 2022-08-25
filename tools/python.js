@@ -88,9 +88,10 @@ function setupStreams(FS, TTY) {
 
 async function main() {
     let args = process.argv.slice(2);
-    const _node_mounts = {};
+
+    let _node_mounts = {};
     const root = fs.readdirSync("/");
-    const skipDirs = ["dev", "lib", "proc"];
+    const skipDirs = ["dev", "lib", "proc", "tmp"];
     for (const dir of root) {
         if (skipDirs.includes(dir)) {
             continue;
@@ -156,7 +157,7 @@ async function main() {
                 columns = fallback[0]
             if rows is None:
                 rows = fallback[1]
-            return os.terminal_size((rows, columns))
+            return os.terminal_size((columns, rows))
         shutil.get_terminal_size = get_terminal_size
         `,
         { globals: sideGlobals }
