@@ -35,6 +35,10 @@ substitutions:
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
 
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -49,12 +53,25 @@ substitutions:
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
 
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load some stdlib modules like
+  distutils, ssl, and sqlite3 by default.
+  See [Pyodide Python compatibility](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+  for detail. If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  However, setting `fullStdLib` to true will increase the initial Pyodide load time.
+  So it is preferable to explicitly load the required module.
+  {pr}`2998`
+
 - {{ Enhancement }} `pyodide build` now checks that the correct version of the
   Emscripten compiler is used.
   {pr}`2975`, {pr}`2990`
 
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
 
 ## Version 0.21.0
 
