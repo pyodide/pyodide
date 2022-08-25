@@ -21,11 +21,11 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, TextIO
+from typing import Any, TextIO
 from urllib import request
 
 from . import pywasmcross
-from .common import find_matching_wheels
+from .common import exit_with_stdio, find_matching_wheels
 
 
 @contextmanager
@@ -52,16 +52,6 @@ shutil.register_archive_format("whl", _make_whlfile, description="Wheel file")
 shutil.register_unpack_format(
     "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore[attr-defined]
 )
-
-
-def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
-    if result.stdout:
-        print("  stdout:")
-        print(textwrap.indent(result.stdout, "    "))
-    if result.stderr:
-        print("  stderr:")
-        print(textwrap.indent(result.stderr, "    "))
-    raise SystemExit(result.returncode)
 
 
 class BashRunnerWithSharedEnvironment:

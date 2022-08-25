@@ -84,21 +84,18 @@ function setupStreams(FS, TTY) {
     FS.open("/dev/stderr", 1);
 }
 
-const path = require("path");
-function isSubdirectory(parent, dir) {
-    const relative = path.relative(parent, dir);
-    return relative && !relative.startsWith("..") && !path.isAbsolute(relative);
-}
-
 async function main() {
     let args = process.argv.slice(2);
-    fs.writeFileSync("args.txt", args.toString());
-    const homedir = require("os").homedir();
-    let cwd = process.cwd();
-    const _node_mounts = { [homedir]: homedir, "/usr/local": "/usr/local" };
-    if (!isSubdirectory(homedir, cwd)) {
-        _node_mounts[cwd] = cwd;
+    const _node_mounts = {};
+    const root = fs.readdirSync("/");
+    const skipDirs = ["dev", "lib", "proc"];
+    for (const dir of root) {
+        if (skipDirs.includes(dir)) {
+            continue;
+        }
+        _node_mounts["/" + dir] = "/" + dir;
     }
+
     try {
         py = await loadPyodide({
             args,
@@ -111,7 +108,7 @@ async function main() {
                         "warning: no blob constructor, cannot create blobs with mimetypes",
                         "warning: no BlobBuilder",
                         "Python initialization complete",
-                    ].includes(e)
+                    ].includes(e.trim())
                 ) {
                     return;
                 }
