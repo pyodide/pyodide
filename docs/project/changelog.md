@@ -17,7 +17,7 @@ substitutions:
 - {{ Enhancement }} Emscripten was updated to Version 3.1.18
   {pr}`2958`, {pr}`2950`
 
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`, arm_pyart {pr}`3012`, netcdf4 {pr}`3012`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
