@@ -321,6 +321,7 @@ jobs:
       - run:
           name: test
           command: |
+            set -x
             export PYODIDE_ROOT=$(pwd)
             echo $PYODIDE_ROOT
             cd ~
