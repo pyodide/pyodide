@@ -29,7 +29,6 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
-	src/core/error_handling_cpp.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -167,9 +166,6 @@ clean-python: clean
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
-
-src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
-	$(CXX) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
