@@ -6,9 +6,9 @@ source:
   sha256: 569e5d618de871e21dd676925349a7a5e701b87ebda3433e0c1d57627a465c1c
 requirements:
   host:
-    numpy
+    - numpy
   run:
-    numpy
+    - numpy
 test:
   imports:
     - duckdb
