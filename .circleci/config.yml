@@ -317,6 +317,13 @@ jobs:
             source .venv-host/bin/activate
             pip install $PYODIDE_ROOT/pyodide-build
             pyodide venv .venv-pyodide
+
+            echo ".venv-pyodide/bin/pip:"
+            echo ""
+            cat .venv-pyodide/bin/pip
+            echo "====================="
+            echo ""
+
             cd zope.interface
             pyodide build
             cd ../coveragepy/
