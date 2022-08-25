@@ -2,7 +2,13 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
+import {
+  loadScript,
+  loadBinaryFile,
+  initNodeModules,
+  getPathSep,
+  resolvePath,
+} from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
@@ -170,15 +176,21 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const indexOfLastSlash = fileName.includes("/")
-    ? fileName.lastIndexOf("/")
-    : fileName.lastIndexOf("\\");
+  const pathSep = getPathSep();
+  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
       "Could not extract indexURL path from pyodide module location"
     );
   }
-  return fileName.slice(0, indexOfLastSlash);
+  // Sometimes the source map seems to mess up the path? If it ends in
+  // `src/js/`, we assume this is a mistake and chop it off.
+  let result = fileName.slice(0, indexOfLastSlash);
+  const srcjs = ["src", "js", ""].join(pathSep);
+  if (fileName.endsWith(srcjs)) {
+    result = result.slice(0, result.length - srcjs.length + 1);
+  }
+  return result;
 }
 
 /**
@@ -254,22 +266,22 @@ export async function loadPyodide(
     jsglobals?: object;
   } = {}
 ): Promise<PyodideInterface> {
-  if (!options.indexURL) {
-    options.indexURL = calculateIndexURL();
+  await initNodeModules();
+  let indexURL = options.indexURL || calculateIndexURL();
+  indexURL = resolvePath(indexURL);
+  if (!indexURL.endsWith("/")) {
+    indexURL += "/";
   }
-  if (!options.indexURL.endsWith("/")) {
-    options.indexURL += "/";
-  }
+  options.indexURL = indexURL;
 
   const default_config = {
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
-    lockFileURL: options.indexURL! + "repodata.json",
+    lockFileURL: indexURL! + "repodata.json",
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  await initNodeModules();
   const pyodide_py_tar_promise = loadBinaryFile(
     config.indexURL,
     "pyodide_py.tar"
