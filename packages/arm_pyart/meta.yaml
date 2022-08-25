@@ -10,6 +10,7 @@ requirements:
     - packaging
     - xarray
     - cftime
+    - netcdf4
 test:
   imports:
     - pyart
