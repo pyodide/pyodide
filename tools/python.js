@@ -19,6 +19,8 @@ if(major_version < 14) {
 }
 if(major_version === 14){
     process.stdout.write("--experimental-wasm-bigint");
+} else {
+    process.stdout.write("--");
 }
 EOF
 )")
