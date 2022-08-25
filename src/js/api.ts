@@ -378,8 +378,8 @@ type NativeFS = {
 /**
  * Mounts FileSystemDirectoryHandle in to the target directory.
  *
- * @param path The target mount directory. If the directory does not exist,
- * it will be created.
+ * @param path The absolute path of the target mount directory.
+ * If the directory does not exist, it will be created.
  * @param fileSystemHandle FileSystemDirectoryHandle returned by
  * navigator.storage.getDirectory() or window.showDirectoryPicker().
  */
@@ -393,7 +393,16 @@ export async function mountNativeFS(
   // TODO: support sync file system
   // sync: boolean = false
 ): Promise<NativeFS> {
-  Module.FS.mkdir(path);
+  if (fileSystemHandle.constructor.name !== "FileSystemDirectoryHandle") {
+    throw new TypeError(
+      `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`
+    );
+  }
+
+  if (Module.FS.findObject(path) == null) {
+    Module.FS.mkdirTree(path);
+  }
+
   Module.FS.mount(
     Module.FS.filesystems.NATIVEFS_ASYNC,
     { fileSystemHandle: fileSystemHandle },

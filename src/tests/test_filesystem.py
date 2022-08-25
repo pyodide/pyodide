@@ -108,7 +108,7 @@ def test_idbfs_persist_code(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(node="Not available", firefox="Not available")
-def test_nativefs(request, selenium_standalone):
+def test_nativefs_dir(request, selenium_standalone):
 
     if request.config.option.runner == "playwright":
         pytest.xfail("Playwright doesn't support file system access APIs")
@@ -118,12 +118,12 @@ def test_nativefs(request, selenium_standalone):
     selenium.run_js(
         """
         root = await navigator.storage.getDirectory();
-        dirHandle = await root.getDirectoryHandle('testdir', { create: true });
-        testFileHandle = await dirHandle.getFileHandle('test_read', { create: true });
+        dirHandleMount = await root.getDirectoryHandle('testdir', { create: true });
+        testFileHandle = await dirHandleMount.getFileHandle('test_read', { create: true });
         writable = await testFileHandle.createWritable();
         await writable.write("hello_read");
         await writable.close();
-        fs = await pyodide.mountNativeFS("/nativefs", dirHandle);
+        fs = await pyodide.mountNativeFS("/mnt/nativefs", dirHandleMount);
         """
     )
 
@@ -133,10 +133,10 @@ def test_nativefs(request, selenium_standalone):
         """
         import os
         import pathlib
-        assert len(os.listdir("/nativefs")) == 1, str(os.listdir("/nativefs"))
-        assert os.listdir("/nativefs") == ["test_read"], str(os.listdir("/nativefs"))
+        assert len(os.listdir("/mnt/nativefs")) == 1, str(os.listdir("/mnt/nativefs"))
+        assert os.listdir("/mnt/nativefs") == ["test_read"], str(os.listdir("/mnt/nativefs"))
 
-        pathlib.Path("/nativefs/test_read").read_text() == "hello_read"
+        pathlib.Path("/mnt/nativefs/test_read").read_text() == "hello_read"
         """
     )
 
@@ -146,10 +146,10 @@ def test_nativefs(request, selenium_standalone):
         """
         import os
         import pathlib
-        pathlib.Path("/nativefs/test_write").write_text("hello_write")
-        pathlib.Path("/nativefs/test_write").read_text() == "hello_write"
-        pathlib.Path("/nativefs/test_delete").write_text("This file will be deleted")
-        pathlib.Path("/nativefs/test_rename").write_text("This file will be renamed")
+        pathlib.Path("/mnt/nativefs/test_write").write_text("hello_write")
+        pathlib.Path("/mnt/nativefs/test_write").read_text() == "hello_write"
+        pathlib.Path("/mnt/nativefs/test_delete").write_text("This file will be deleted")
+        pathlib.Path("/mnt/nativefs/test_rename").write_text("This file will be renamed")
         """
     )
 
@@ -157,7 +157,7 @@ def test_nativefs(request, selenium_standalone):
         """
         await fs.syncfs();
         entries = {};
-        for await (const [key, value] of dirHandle.entries()) {
+        for await (const [key, value] of dirHandleMount.entries()) {
             entries[key] = value;
         }
         return entries;
@@ -172,8 +172,8 @@ def test_nativefs(request, selenium_standalone):
     selenium.run(
         """
         import os
-        os.remove("/nativefs/test_delete")
-        os.rename("/nativefs/test_rename", "/nativefs/test_rename_renamed")
+        os.remove("/mnt/nativefs/test_delete")
+        os.rename("/mnt/nativefs/test_rename", "/mnt/nativefs/test_rename_renamed")
         """
     )
 
@@ -181,7 +181,7 @@ def test_nativefs(request, selenium_standalone):
         """
         await fs.syncfs();
         entries = {};
-        for await (const [key, value] of dirHandle.entries()) {
+        for await (const [key, value] of dirHandleMount.entries()) {
             entries[key] = value;
         }
         return entries;
@@ -197,7 +197,7 @@ def test_nativefs(request, selenium_standalone):
     files = selenium.run(
         """
         import os
-        os.listdir("/nativefs")
+        os.listdir("/mnt/nativefs")
         """
     )
 
@@ -207,16 +207,42 @@ def test_nativefs(request, selenium_standalone):
 
     selenium.run_js(
         """
-        fs.syncfs();
-        pyodide.FS.unmount("/nativefs");
+        await fs.syncfs();
+        pyodide.FS.unmount("/mnt/nativefs");
         """
     )
 
     files = selenium.run(
         """
         import os
-        os.listdir("/nativefs")
+        os.listdir("/mnt/nativefs")
         """
     )
 
     assert not len(files)
+
+    # Mount again
+
+    selenium.run_js(
+        """
+        fs2 = await pyodide.mountNativeFS("/mnt/nativefs", dirHandleMount);
+        """
+    )
+
+    # Read again
+
+    selenium.run(
+        """
+        import os
+        import pathlib
+        assert len(os.listdir("/mnt/nativefs")) == 3, str(os.listdir("/mnt/nativefs"))
+        pathlib.Path("/mnt/nativefs/test_read").read_text() == "hello_read"
+        """
+    )
+
+    selenium.run_js(
+        """
+        await fs2.syncfs();
+        pyodide.FS.unmount("/mnt/nativefs");
+        """
+    )
