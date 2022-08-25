@@ -24,6 +24,8 @@ def run(dest: Path) -> None:
         print(f"dest directory '{dest}' already exists", file=sys.stderr)
         sys.exit(1)
 
+    print("Creating Pyodide virtualenv")
+
     interp_path = get_pyodide_root() / "tools/python.js"
     version_major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
@@ -117,6 +119,10 @@ def run(dest: Path) -> None:
         + "\n"
     )
     pip_path.chmod(0o777)
+    print("pip:")
+    print("=" * 10)
+    print(pip_path.read_text())
+    print("=" * 10)
 
     other_pips = [
         bin / "pip3",
@@ -130,3 +136,4 @@ def run(dest: Path) -> None:
 
     toload = ["micropip"]
     subprocess.run([bin / "pip", "install", *toload])
+    print("Successfully created pyodide virtual environment!")
