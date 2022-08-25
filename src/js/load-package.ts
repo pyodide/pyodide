@@ -7,6 +7,7 @@ import {
   nodeFsPromisesMod,
   loadBinaryFile,
   initNodeModules,
+  resolvePath,
 } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -166,7 +167,7 @@ async function downloadPackage(
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.repodata_packages[name].file_name;
-    uri = new URL(file_name, API.config.indexURL).toString();
+    uri = resolvePath(file_name, API.config.indexURL);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
       API.repodata_packages[name].sha256
     );

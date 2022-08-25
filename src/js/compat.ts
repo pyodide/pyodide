@@ -11,6 +11,7 @@ export const IN_NODE =
 let nodeUrlMod: any;
 let nodeFetch: any;
 let nodeVmMod: any;
+let nodePath: any;
 /** @private */
 export let nodeFsPromisesMod: any;
 
@@ -40,6 +41,8 @@ export async function initNodeModules() {
   }
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
+  nodePath = await import("path");
+
   if (typeof require !== "undefined") {
     return;
   }
@@ -66,6 +69,21 @@ export async function initNodeModules() {
   (globalThis as any).require = function (mod: string): any {
     return node_modules[mod];
   };
+}
+
+function node_resolvePath(path: string, base?: string): string {
+  return nodePath.resolve(base || ".", path);
+}
+
+function browser_resolvePath(path: string, base?: string): string {
+  return new URL(path, base).toString();
+}
+
+export let resolvePath: (rest: string, base?: string) => string;
+if (IN_NODE) {
+  resolvePath = node_resolvePath;
+} else {
+  resolvePath = browser_resolvePath;
 }
 
 /**
