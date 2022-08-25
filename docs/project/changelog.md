@@ -14,22 +14,61 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.15
-  {pr}`2958`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.18
+  {pr}`2958`, {pr}`2950`
 
-- New packages: the standard library lzma module {pr}`2939`,
-  pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
+  {pr}`2946`
+
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+
+### Build System
+
+- {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
+  host dependencies that are required for building packages.
+  {pr}`2132`
+
+## Version 0.21.1
+
+- New packages: the standard library lzma module {pr}`2939`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
 
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load some stdlib modules like
+  distutils, ssl, and sqlite3 by default.
+  See [Pyodide Python compatibility](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+  for detail. If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  However, setting `fullStdLib` to true will increase the initial Pyodide load time.
+  So it is preferable to explicitly load the required module.
+  {pr}`2998`
+
+- {{ Enhancement }} `pyodide build` now checks that the correct version of the
+  Emscripten compiler is used.
+  {pr}`2975`, {pr}`2990`
+
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
 
 ## Version 0.21.0
 

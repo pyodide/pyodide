@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "_lzma"], pytest_assert_rewrites=False)
+@run_in_pyodide(packages=["test", "lzma"], pytest_assert_rewrites=False)
 def test_lzma(selenium):
     # TODO: libregrtest.main(["test_lzma"]) doesn't collect any tests for some unknown reason.
 

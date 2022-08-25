@@ -242,8 +242,8 @@ export async function loadPyodide(
     homedir?: string;
 
     /** Load the full Python standard library.
-     * Setting this to false excludes following modules: distutils.
-     * Default: true
+     * Setting this to false excludes unvendored modules from the standard library.
+     * Default: false
      */
     fullStdLib?: boolean;
     /**
@@ -274,7 +274,7 @@ export async function loadPyodide(
   }
 
   const default_config = {
-    fullStdLib: true,
+    fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
@@ -351,7 +351,7 @@ export async function loadPyodide(
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(["distutils"]);
+    await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;

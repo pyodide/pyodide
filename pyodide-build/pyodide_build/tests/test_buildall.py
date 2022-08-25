@@ -11,16 +11,11 @@ PACKAGES_DIR = Path(__file__).parent / "_test_packages"
 
 
 def test_generate_dependency_graph():
+    # beautifulsoup4 has a circular dependency on soupsieve
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"beautifulsoup4"})
-
-    assert set(pkg_map.keys()) == {
-        "soupsieve",
-        "beautifulsoup4",
-    }
-    assert pkg_map["soupsieve"].dependencies == []
-    assert pkg_map["soupsieve"].dependents == {"beautifulsoup4"}
-    assert pkg_map["beautifulsoup4"].dependencies == ["soupsieve"]
-    assert pkg_map["beautifulsoup4"].dependents == set()
+    assert pkg_map["beautifulsoup4"].run_dependencies == ["soupsieve"]
+    assert pkg_map["beautifulsoup4"].host_dependencies == []
+    assert pkg_map["beautifulsoup4"].host_dependents == set()
 
 
 @pytest.mark.parametrize(
