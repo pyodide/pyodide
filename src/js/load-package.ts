@@ -80,26 +80,23 @@ function loadPackageWithDeps(
 ): Promise<void> {
   const pkg = toLoad.get(name)!;
 
-  return pkg.depends
-    .reduce(function (chain: Promise<any>, dependency: string): Promise<void> {
-      return chain.then(function () {
-        return loadPackageWithDeps(dependency, toLoad, loaded, failed);
+  const promiseDependencies: Promise<void>[] = pkg.depends.map((dependency) =>
+    loadPackageWithDeps(dependency, toLoad, loaded, failed)
+  );
+  return Promise.all(promiseDependencies).then(() => {
+    return pkg
+      .downloadPromise!.then(async (buffer: Uint8Array) => {
+        if (loaded.has(name)) {
+          return;
+        }
+        await installPackage(pkg.name, buffer, pkg.channel);
+        loadedPackages[pkg.name] = pkg.channel;
+        loaded.add(pkg.name);
+      })
+      .catch((err: Error) => {
+        failed.set(name, err);
       });
-    }, Promise.resolve())
-    .then(function () {
-      return pkg
-        .downloadPromise!.then(async (buffer: Uint8Array) => {
-          if (loaded.has(name)) {
-            return;
-          }
-          await installPackage(pkg.name, buffer, pkg.channel);
-          loadedPackages[pkg.name] = pkg.channel;
-          loaded.add(pkg.name);
-        })
-        .catch((err: Error) => {
-          failed.set(name, err);
-        });
-    });
+  });
 }
 
 type PackageLoadMetadata = {
