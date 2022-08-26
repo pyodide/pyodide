@@ -12,11 +12,18 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
 - {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
   with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
   they had a leading underscore and it was only possible to load them with
   `pyodide.loadPackage`).
   {issue}`3003`
+
+- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
+  be resolved relative to `document.location` (in browser) or relative to the
+  current working directory (in Node) rather than relative to `indexURL`.
+  {pr}`3013`, {issue}`3011`
 
 ## Version 0.21.1
 
