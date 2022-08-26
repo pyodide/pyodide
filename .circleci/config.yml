@@ -345,7 +345,8 @@ jobs:
             pip install dist/*.whl
             cd ../attrs
             pyodide build
-            pip install dist/*.whl[tests]
+            WHEEL_NAME=$(echo dist/*.whl)
+            pip install $WHEEL_NAME[tests]
             python -m pytest -k 'not mypy'
 
   benchmark:
