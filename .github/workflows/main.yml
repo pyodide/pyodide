@@ -241,6 +241,7 @@ jobs:
           pip install $PYODIDE_ROOT/pyodide-build
           $PYODIDE_ROOT/tools/python.js .venv-host/lib/python3.10/site-packages/virtualenv/discovery/py_info.py
           pyodide venv .venv-pyodide
+          source .venv-pyodide/bin/activate
           cd zope.interface
           pyodide build
           cd ../coveragepy/
@@ -248,7 +249,6 @@ jobs:
           cd ../attrs
           pyodide build
           cd ..
-          source .venv-pyodide/bin/activate
           pip install coveragepy/dist/*.whl
           pip install zope.interface/dist/*.whl
           pip install attrs/dist/*.whl[tests]
