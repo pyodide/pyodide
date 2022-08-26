@@ -75,7 +75,7 @@ function _uri_to_package_name(package_uri: string): string | undefined {
 function loadPackageWithDeps(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
-  loaded: string[],
+  loaded: Set<string>,
   failed: Map<string, Error>
 ): Promise<void> {
   const pkg = toLoad.get(name)!;
@@ -89,9 +89,12 @@ function loadPackageWithDeps(
     .then(function () {
       return pkg
         .downloadPromise!.then(async (buffer: Uint8Array) => {
+          if (loaded.has(name)) {
+            return;
+          }
           await installPackage(pkg.name, buffer, pkg.channel);
           loadedPackages[pkg.name] = pkg.channel;
-          loaded.push(pkg.name);
+          loaded.add(pkg.name);
         })
         .catch((err: Error) => {
           failed.set(name, err);
@@ -447,7 +450,7 @@ export async function loadPackage(
       );
     }
 
-    const loaded: string[] = [];
+    const loaded = new Set<string>();
     const failed = new Map<string, Error>();
 
     // TODO: add support for prefetching modules by awaiting on a promise right
@@ -466,8 +469,8 @@ export async function loadPackage(
     );
 
     Module.reportUndefinedSymbols();
-    if (loaded.length > 0) {
-      const successNames = loaded.join(", ");
+    if (loaded.size > 0) {
+      const successNames = Array.from(loaded).join(", ");
       messageCallback(`Loaded ${successNames}`);
     }
 
