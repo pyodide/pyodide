@@ -161,18 +161,19 @@ def run(dest: Path) -> None:
 
     VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
     PATH = os.environ["PATH"]
-    emcc_which = shutil.which("emcc")
-    emcc_path = bin / "emcc"
-    emcc_path.write_text(
-        dedent(
-            f"""
-            #!/bin/sh
-            VIRTUAL_ENV="{VIRTUAL_ENV}" PATH="{PATH}" {emcc_which}
-            """
-        ).strip()
-        + "\n"
-    )
-    emcc_path.chmod(0o777)
+    for emlink in ["emcc", "em++", "emar"]:
+        em_which = shutil.which(emlink)
+        em_path = bin / emlink
+        em_path.write_text(
+            dedent(
+                f"""
+                #!/bin/sh
+                VIRTUAL_ENV="{VIRTUAL_ENV}" PATH="{PATH}" {em_which}
+                """
+            ).strip()
+            + "\n"
+        )
+        em_path.chmod(0o777)
 
     toload = ["micropip"]
     subprocess.run(
