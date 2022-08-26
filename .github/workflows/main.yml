@@ -228,7 +228,7 @@ jobs:
           set -x
           make -C emsdk
           source emsdk/emsdk/emsdk_env.sh
-          npm install -g node-fetch
+          npm install node-fetch
           set -e
           export PYODIDE_ROOT=$(pwd)
           mkdir test
