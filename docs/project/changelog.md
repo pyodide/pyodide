@@ -25,6 +25,9 @@ substitutions:
   current working directory (in Node) rather than relative to `indexURL`.
   {pr}`3013`, {issue}`3011`
 
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
 ## Version 0.21.1
 
 - New packages: the standard library lzma module {pr}`2939`
