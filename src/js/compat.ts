@@ -12,6 +12,7 @@ let nodeUrlMod: any;
 let nodeFetch: any;
 let nodePath: any;
 let nodeVmMod: any;
+let nodePath: any;
 /** @private */
 export let nodeFsPromisesMod: any;
 
@@ -42,6 +43,7 @@ export async function initNodeModules() {
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   nodePath = await import("path");
+
   // Emscripten uses `require`, so if it's missing (because we were imported as
   // an ES6 module) we need to polyfill `require` with `import`. `import` is
   // async and `require` is synchronous, so we import all packages that might be
@@ -70,30 +72,32 @@ export async function initNodeModules() {
   };
 }
 
+function node_resolvePath(path: string, base?: string): string {
+  return nodePath.resolve(base || ".", path);
+}
+
+function browser_resolvePath(path: string, base?: string): string {
+  return new URL(path, base).toString();
+}
+
+export let resolvePath: (rest: string, base?: string) => string;
+if (IN_NODE) {
+  resolvePath = node_resolvePath;
+} else {
+  resolvePath = browser_resolvePath;
+}
+
 /**
  * Get the path separator. If we are on Linux or in the browser, it's /.
  * In Windows, it's \.
  * @private
  */
-export function getPathSep(): string {
-  if (IN_NODE) {
-    return nodePath.sep;
-  } else {
-    return "/";
-  }
-}
+export let pathSep: string;
 
-/**
- * Convert a relative path into an absolute path
- * @private
- */
-export function resolvePath(path: string): string {
-  if (IN_NODE) {
-    return nodePath.resolve(path);
-  } else {
-    // @ts-ignore
-    return new URL(path, location).toString();
-  }
+if (IN_NODE) {
+  pathSep = nodePath.sep;
+} else {
+  pathSep = "/";
 }
 
 /**
@@ -106,16 +110,9 @@ export function resolvePath(path: string): string {
  * @private
  */
 async function node_loadBinaryFile(
-  indexURL: string,
   path: string,
   _file_sub_resource_hash?: string | undefined // Ignoring sub resource hash. See issue-2431.
 ): Promise<Uint8Array> {
-  if (!path.startsWith("/") && !path.includes("://")) {
-    // If path starts with a "/" or starts with a protocol "blah://", we
-    // interpret it as an absolute path, otherwise "resolve" it by
-    // joining it with indexURL.
-    path = `${indexURL}${path}`;
-  }
   if (path.startsWith("file://")) {
     // handle file:// with filesystem operations rather than with fetch.
     path = path.slice("file://".length);
@@ -138,20 +135,17 @@ async function node_loadBinaryFile(
  * Load a binary file, only for use in browser. Resolves relative paths against
  * indexURL.
  *
- * @param indexURL base path to resolve relative paths
  * @param path the path to load
  * @param subResourceHash the sub resource hash for fetch() integrity check
  * @returns A Uint8Array containing the binary data
  * @private
  */
 async function browser_loadBinaryFile(
-  indexURL: string,
   path: string,
   subResourceHash: string | undefined
 ): Promise<Uint8Array> {
   // @ts-ignore
-  const base = new URL(indexURL, location);
-  const url = new URL(path, base);
+  const url = new URL(path, location);
   let options = subResourceHash ? { integrity: subResourceHash } : {};
   // @ts-ignore
   let response = await fetch(url, options);
@@ -163,7 +157,6 @@ async function browser_loadBinaryFile(
 
 /** @private */
 export let loadBinaryFile: (
-  indexURL: string,
   path: string,
   file_sub_resource_hash?: string | undefined
 ) => Promise<Uint8Array>;

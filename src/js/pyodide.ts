@@ -6,7 +6,7 @@ import {
   loadScript,
   loadBinaryFile,
   initNodeModules,
-  getPathSep,
+  pathSep,
   resolvePath,
 } from "./compat";
 
@@ -176,7 +176,6 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const pathSep = getPathSep();
   const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
@@ -283,8 +282,7 @@ export async function loadPyodide(
   };
   const config = Object.assign(default_config, options) as ConfigType;
   const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL,
-    "pyodide_py.tar"
+    config.indexURL + "pyodide_py.tar"
   );
 
   const Module = createModule();
