@@ -333,6 +333,25 @@ jobs:
       - store_artifacts:
           path: /root/repo/dist/benchmarks.json
 
+  benchmark-load-time:
+    <<: *defaults
+    resource_class: medium+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: benchmark load time
+          command: |
+            pip install pytest-pyodide
+            pip3 install pytest-benchmark
+            npm install -g node-fetch@2
+
+            pytest -v --rt chrome benchmark/package_load_time.py --benchmark-save=dist/load-time-benchmark.json
+
+      - store_artifacts:
+          path: /root/repo/dist/load-time-benchmark.json
+
   deploy-release:
     # To reduce chance of deployment issues, try to keep the steps here as
     # similar as possible to the steps in deploy-dev!
@@ -657,6 +676,13 @@ workflows:
               only: /.*/
 
       - benchmark:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - benchmark-load-time:
           requires:
             - build-packages
           filters:
