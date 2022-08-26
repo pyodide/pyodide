@@ -32,9 +32,22 @@ substitutions:
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
 
+- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
+  be resolved relative to `document.location` (in browser) or relative to the
+  current working directory (in Node) rather than relative to `indexURL`.
+  {pr}`3013`, {issue}`3011`
+
 - {{ Enhancement }} Added a new release file called
   `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
   files needed to start Pyodide and no additional packages.
+  {pr}`2999`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
+
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
 
 ### Build System
 
@@ -65,10 +78,6 @@ substitutions:
 
 - {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
   {pr}`2994`
-
-- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
-  used by Pyodide's event loop.
-  {pr}`2997`
 
 ## Version 0.21.0
 

@@ -7,6 +7,7 @@ import {
   nodeFsPromisesMod,
   loadBinaryFile,
   initNodeModules,
+  resolvePath,
 } from "./compat.js";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
@@ -160,43 +161,37 @@ async function downloadPackage(
   name: string,
   channel: string
 ): Promise<Uint8Array> {
-  let file_name, file_sub_resource_hash;
+  let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.repodata_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.repodata_packages[name].file_name;
+    uri = resolvePath(file_name, API.config.indexURL);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
       API.repodata_packages[name].sha256
     );
   } else {
-    file_name = channel;
+    uri = channel;
     file_sub_resource_hash = undefined;
   }
   try {
-    return await loadBinaryFile(
-      API.config.indexURL,
-      file_name,
-      file_sub_resource_hash
-    );
+    return await loadBinaryFile(uri, file_sub_resource_hash);
   } catch (e) {
-    if (!IN_NODE) {
+    if (!IN_NODE || channel !== DEFAULT_CHANNEL) {
       throw e;
     }
   }
   console.log(
-    `Didn't find package ${file_name}, attempting to load from ${cdnURL}`
+    `Didn't find package ${file_name} locally, attempting to load from ${cdnURL}`
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
-  let binary = await loadBinaryFile(cdnURL, file_name);
+  let binary = await loadBinaryFile(cdnURL + file_name);
   console.log(
     `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
   );
-  await nodeFsPromisesMod.writeFile(
-    `${API.config.indexURL}${file_name}`,
-    binary
-  );
+  await nodeFsPromisesMod.writeFile(uri, binary);
   return binary;
 }
 

@@ -284,8 +284,7 @@ export async function loadPyodide(
   const config = Object.assign(default_config, options) as ConfigType;
   await initNodeModules();
   const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL,
-    "pyodide_py.tar"
+    config.indexURL + "pyodide_py.tar"
   );
 
   const Module = createModule();

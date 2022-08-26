@@ -2,15 +2,18 @@ import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide.fixture import selenium_common
+from pytest_pyodide.server import spawn_web_server
+from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH
+from conftest import DIST_PATH, ROOT_PATH
 
 
-def get_pyparsing_wheel_name():
+def get_pyparsing_wheel_name() -> str:
     return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
 
 
-def get_pytz_wheel_name():
+def get_pytz_wheel_name() -> str:
     return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
@@ -58,10 +61,33 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium.run("import pytz")
 
 
-def test_load_relative_url(selenium_standalone):
-    print(get_pytz_wheel_name())
-    selenium_standalone.load_package(f"./{get_pytz_wheel_name()}")
-    selenium_standalone.run("import pytz")
+def test_load_relative_url(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    url, port, _ = web_server_main
+    test_html = (ROOT_PATH / "src/templates/test.html").read_text()
+    test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
+    (tmp_path / "test.html").write_text(test_html)
+    pytz_wheel = get_pytz_wheel_name()
+    pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
+    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
+
+    with spawn_web_server(tmp_path) as web_server, selenium_common(
+        request,
+        runtime,
+        web_server,
+        load_pyodide=True,
+        browsers=playwright_browsers,
+        script_type="classic",
+    ) as selenium, set_webdriver_script_timeout(
+        selenium, script_timeout=parse_driver_timeout(request.node)
+    ):
+        if selenium.browser == "node":
+            selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
+        selenium.load_package(pytz1_wheel)
+        selenium.run(
+            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz1)"
+        )
 
 
 def test_list_loaded_urls(selenium_standalone):
