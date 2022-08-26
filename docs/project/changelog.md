@@ -46,6 +46,9 @@ substitutions:
   used by Pyodide's event loop.
   {pr}`2997`
 
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
