@@ -36,6 +36,9 @@ substitutions:
   `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
   files needed to start Pyodide and no additional packages.
 
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
