@@ -330,29 +330,22 @@ jobs:
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
             git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5
+
             python3.10 -m venv .venv-host
             source .venv-host/bin/activate
             pip install $PYODIDE_ROOT/pyodide-build
             pyodide venv .venv-pyodide
-
-            echo ".venv-pyodide/bin/pip:"
-            echo ""
-            cat .venv-pyodide/bin/pip
-            echo "====================="
-            echo ""
+            source .venv-pyodide/bin/activate
 
             cd zope.interface
             pyodide build
+            pip install dist/*.whl
             cd ../coveragepy/
             pyodide build
+            pip install dist/*.whl
             cd ../attrs
             pyodide build
-            cd ..
-            source .venv-pyodide/bin/activate
-            pip install coveragepy/dist/*.whl
-            pip install zope.interface/dist/*.whl
-            pip install attrs/dist/*.whl[tests]
-            cd attrs
+            pip install dist/*.whl[tests]
             python -m pytest -k 'not mypy'
 
   benchmark:
