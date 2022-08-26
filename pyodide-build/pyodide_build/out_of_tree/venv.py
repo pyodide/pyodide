@@ -1,5 +1,4 @@
 import argparse
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -143,37 +142,26 @@ def run(dest: Path) -> None:
 
     from .. import __main__
 
-    pyodide_pythonpath = str(Path(__main__.__file__).parent)
+    pyodide_pythonpath = str(Path(__main__.__file__).parents[1])
+    environment_vars = [f"PYTHONPATH={pyodide_pythonpath}"]
+    import os
+
+    for environment_var in ["VIRTUAL_ENV", "PATH", "PYODIDE_ROOT"]:
+        value = os.environ.get(environment_var, "''")
+        environment_vars.append(f"{environment_var}={value}")
+    environment = " ".join(environment_vars)
 
     pyodide_path = bin / "pyodide"
     pyodide_path.write_text(
         dedent(
             f"""
             #!/bin/sh
-            PYTHON_PATH="{pyodide_pythonpath}" exec {sys.executable} -m pyodide_build.out_of_tree $@
+            {environment} exec {sys.executable} -m pyodide_build.out_of_tree $@
             """
         ).strip()
         + "\n"
     )
     pyodide_path.chmod(0o777)
-
-    import os
-
-    VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
-    PATH = os.environ["PATH"]
-    for emlink in ["emcc", "em++", "emar"]:
-        em_which = shutil.which(emlink)
-        em_path = bin / emlink
-        em_path.write_text(
-            dedent(
-                f"""
-                #!/bin/sh
-                VIRTUAL_ENV="{VIRTUAL_ENV}" PATH="{PATH}" {em_which}
-                """
-            ).strip()
-            + "\n"
-        )
-        em_path.chmod(0o777)
 
     toload = ["micropip"]
     subprocess.run(
