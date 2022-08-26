@@ -1,10 +1,17 @@
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 from textwrap import dedent
 
-from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuild_env
+from ..common import (
+    check_emscripten_version,
+    exit_with_stdio,
+    get_make_flag,
+    get_pyodide_root,
+    in_xbuild_env,
+)
 
 
 def main(parser_args: argparse.Namespace) -> None:
@@ -18,13 +25,14 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 def run(dest: Path) -> None:
+    print("Creating Pyodide virtualenv")
     from virtualenv import session_via_cli  # type: ignore[import]
 
     if dest.exists():
         print(f"dest directory '{dest}' already exists", file=sys.stderr)
         sys.exit(1)
 
-    print("Creating Pyodide virtualenv")
+    check_emscripten_version()
 
     interp_path = get_pyodide_root() / "tools/python.js"
     version_major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -132,6 +140,39 @@ def run(dest: Path) -> None:
     for pip in other_pips:
         pip.unlink()
         pip.symlink_to(pip_path)
+
+    from .. import __main__
+
+    pyodide_pythonpath = str(Path(__main__.__file__).parent)
+
+    pyodide_path = bin / "pyodide"
+    pyodide_path.write_text(
+        dedent(
+            f"""
+            #!/bin/sh
+            PYTHON_PATH="{pyodide_pythonpath}" exec {sys.executable} -m pyodide_build.out_of_tree $@
+            """
+        ).strip()
+        + "\n"
+    )
+    pyodide_path.chmod(0o777)
+
+    import os
+
+    VIRTUAL_ENV = os.environ.get("VIRTUAL_ENV", "")
+    PATH = os.environ["PATH"]
+    emcc_which = shutil.which("emcc")
+    emcc_path = bin / "emcc"
+    emcc_path.write_text(
+        dedent(
+            f"""
+            #!/bin/sh
+            VIRTUAL_ENV="{VIRTUAL_ENV}" PATH="{PATH}" {emcc_which}
+            """
+        ).strip()
+        + "\n"
+    )
+    emcc_path.chmod(0o777)
 
     toload = ["micropip"]
     subprocess.run(

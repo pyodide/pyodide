@@ -35,3 +35,7 @@ def main():
         args.func(args)
     else:
         main_parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
