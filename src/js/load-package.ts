@@ -72,18 +72,51 @@ function _uri_to_package_name(package_uri: string): string | undefined {
   }
 }
 
+function loadPackageWithDeps(
+  name: string,
+  toLoad: Map<string, PackageLoadMetadata>,
+  loaded: string[],
+  failed: Map<string, Error>
+): Promise<void> {
+  const pkg = toLoad.get(name)!;
+
+  return pkg.depends
+    .reduce(function (chain: Promise<any>, dependency: string): Promise<void> {
+      return chain.then(function () {
+        return loadPackageWithDeps(dependency, toLoad, loaded, failed);
+      });
+    }, Promise.resolve())
+    .then(function () {
+      return pkg
+        .downloadPromise!.then(async (buffer: Uint8Array) => {
+          await installPackage(pkg.name, buffer, pkg.channel);
+          loadedPackages[pkg.name] = pkg.channel;
+          loaded.push(pkg.name);
+        })
+        .catch((err: Error) => {
+          failed.set(name, err);
+        });
+    });
+}
+
+type PackageLoadMetadata = {
+  name: string;
+  channel: string;
+  depends: string[];
+  downloadPromise?: Promise<Uint8Array>;
+  installPromise?: Promise<void>;
+};
+
 /**
- * Recursively add a package and its dependencies to toLoad and toLoadShared.
+ * Recursively add a package and its dependencies to toLoad.
  * A helper function for recursiveDependencies.
  * @param name The package to add
  * @param toLoad The set of names of packages to load
- * @param toLoadShared The set of names of shared libraries to load
  * @private
  */
 function addPackageToLoad(
   name: string,
-  toLoad: Map<string, string>,
-  toLoadShared: Map<string, string>
+  toLoad: Map<string, PackageLoadMetadata>
 ) {
   name = name.toLowerCase();
   if (toLoad.has(name)) {
@@ -93,11 +126,13 @@ function addPackageToLoad(
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
-  if (pkg_info.shared_library) {
-    toLoadShared.set(name, DEFAULT_CHANNEL);
-  } else {
-    toLoad.set(name, DEFAULT_CHANNEL);
-  }
+
+  toLoad.set(name, {
+    name: name,
+    channel: DEFAULT_CHANNEL,
+    depends: pkg_info.depends,
+  });
+
   // If the package is already loaded, we don't add dependencies, but warn
   // the user later. This is especially important if the loaded package is
   // from a custom url, in which case adding dependencies is wrong.
@@ -106,7 +141,7 @@ function addPackageToLoad(
   }
 
   for (let dep_name of pkg_info.depends) {
-    addPackageToLoad(dep_name, toLoad, toLoadShared);
+    addPackageToLoad(dep_name, toLoad);
   }
 }
 
@@ -121,15 +156,17 @@ function recursiveDependencies(
   names: string[],
   errorCallback: (err: string) => void
 ) {
-  const toLoad = new Map();
-  const toLoadShared = new Map();
+  const toLoad: Map<string, PackageLoadMetadata> = new Map();
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
     if (pkgname === undefined) {
-      addPackageToLoad(name, toLoad, toLoadShared);
+      addPackageToLoad(name, toLoad);
       continue;
     }
-    if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
+
+    const channel = name;
+
+    if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
       errorCallback(
         `Loading same package ${pkgname} from ${name} and ${toLoad.get(
           pkgname
@@ -137,9 +174,13 @@ function recursiveDependencies(
       );
       continue;
     }
-    toLoad.set(pkgname, name);
+    toLoad.set(pkgname, {
+      name: pkgname,
+      channel: channel, // name is url in this case
+      depends: [],
+    });
   }
-  return [toLoad, toLoadShared];
+  return toLoad;
 }
 
 //
@@ -360,104 +401,82 @@ export async function loadPackage(
     names = [names as string];
   }
 
-  const [toLoad, toLoadShared] = recursiveDependencies(names, errorCallback);
+  const toLoad = recursiveDependencies(names, errorCallback);
 
-  for (const [pkg, uri] of [...toLoad, ...toLoadShared]) {
+  for (const [pkg, pkg_metadata] of toLoad) {
     const loaded = loadedPackages[pkg];
     if (loaded === undefined) {
       continue;
     }
     toLoad.delete(pkg);
-    toLoadShared.delete(pkg);
     // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
     // dependency, which was previously overridden.
-    if (loaded === uri || uri === DEFAULT_CHANNEL) {
+    if (
+      loaded === pkg_metadata.channel ||
+      pkg_metadata.channel === DEFAULT_CHANNEL
+    ) {
       messageCallback(`${pkg} already loaded from ${loaded}`);
     } else {
       errorCallback(
-        `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
+        `URI mismatch, attempting to load package ${pkg} from ${pkg_metadata.channel} ` +
           `while it is already loaded from ${loaded}. To override a dependency, ` +
           `load the custom package first.`
       );
     }
   }
 
-  if (toLoad.size === 0 && toLoadShared.size === 0) {
+  if (toLoad.size === 0) {
     messageCallback("No new packages to load");
     return;
   }
 
-  const packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
+  const packageNames = [...toLoad.keys()].join(", ");
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    const sharedLibraryLoadPromises: { [name: string]: Promise<Uint8Array> } =
-      {};
-    const packageLoadPromises: { [name: string]: Promise<Uint8Array> } = {};
-    for (const [name, channel] of toLoadShared) {
-      if (loadedPackages[name]) {
-        // Handle the race condition where the package was loaded between when
-        // we did dependency resolution and when we acquired the lock.
-        toLoadShared.delete(name);
-        continue;
-      }
-      sharedLibraryLoadPromises[name] = downloadPackage(name, channel);
-    }
-    for (const [name, channel] of toLoad) {
+    for (const [name, metadata] of toLoad) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
         toLoad.delete(name);
         continue;
       }
-      packageLoadPromises[name] = downloadPackage(name, channel);
+      toLoad.get(name)!.downloadPromise = downloadPackage(
+        name,
+        metadata.channel
+      );
     }
 
     const loaded: string[] = [];
-    const failed: { [name: string]: any } = {};
+    const failed = new Map<string, Error>();
+
     // TODO: add support for prefetching modules by awaiting on a promise right
     // here which resolves in loadPyodide when the bootstrap is done.
-    const sharedLibraryInstallPromises: { [name: string]: Promise<void> } = {};
-    const packageInstallPromises: { [name: string]: Promise<void> } = {};
-    for (const [name, channel] of toLoadShared) {
-      sharedLibraryInstallPromises[name] = sharedLibraryLoadPromises[name]
-        .then(async (buffer) => {
-          await installPackage(name, buffer, channel);
-          loaded.push(name);
-          loadedPackages[name] = channel;
-        })
-        .catch((err) => {
-          console.warn(err);
-          failed[name] = err;
-        });
+    for (const [name] of toLoad) {
+      toLoad.get(name)!.installPromise = loadPackageWithDeps(
+        name,
+        toLoad,
+        loaded,
+        failed
+      );
     }
 
-    await Promise.all(Object.values(sharedLibraryInstallPromises));
-    for (const [name, channel] of toLoad) {
-      packageInstallPromises[name] = packageLoadPromises[name]
-        .then(async (buffer) => {
-          await installPackage(name, buffer, channel);
-          loaded.push(name);
-          loadedPackages[name] = channel;
-        })
-        .catch((err) => {
-          console.warn(err);
-          failed[name] = err;
-        });
-    }
-    await Promise.all(Object.values(packageInstallPromises));
+    await Promise.all(
+      Array.from(toLoad.values()).map(({ installPromise }) => installPromise)
+    );
 
     Module.reportUndefinedSymbols();
     if (loaded.length > 0) {
       const successNames = loaded.join(", ");
       messageCallback(`Loaded ${successNames}`);
     }
-    if (Object.keys(failed).length > 0) {
-      const failedNames = Object.keys(failed).join(", ");
+
+    if (failed.size > 0) {
+      const failedNames = Array.from(failed.keys()).join(", ");
       messageCallback(`Failed to load ${failedNames}`);
-      for (const [name, err] of Object.entries(failed)) {
-        console.warn(`The following error occurred while loading ${name}:`);
-        console.error(err);
+      for (const [name, err] of failed) {
+        errorCallback(`The following error occurred while loading ${name}:`);
+        errorCallback(err.message);
       }
     }
 
