@@ -12,7 +12,6 @@ let nodeUrlMod: any;
 let nodeFetch: any;
 let nodePath: any;
 let nodeVmMod: any;
-let nodePath: any;
 /** @private */
 export let nodeFsPromisesMod: any;
 
