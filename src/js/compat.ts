@@ -42,6 +42,7 @@ export async function initNodeModules() {
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   nodePath = await import("path");
+  pathSep = nodePath.sep;
 
   // Emscripten uses `require`, so if it's missing (because we were imported as
   // an ES6 module) we need to polyfill `require` with `import`. `import` is
@@ -93,9 +94,7 @@ if (IN_NODE) {
  */
 export let pathSep: string;
 
-if (IN_NODE) {
-  pathSep = nodePath.sep;
-} else {
+if (!IN_NODE) {
   pathSep = "/";
 }
 

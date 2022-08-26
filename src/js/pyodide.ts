@@ -182,14 +182,7 @@ function calculateIndexURL(): string {
       "Could not extract indexURL path from pyodide module location"
     );
   }
-  // Sometimes the source map seems to mess up the path? If it ends in
-  // `src/js/`, we assume this is a mistake and chop it off.
-  let result = fileName.slice(0, indexOfLastSlash);
-  const srcjs = ["src", "js", ""].join(pathSep);
-  if (fileName.endsWith(srcjs)) {
-    result = result.slice(0, result.length - srcjs.length + 1);
-  }
-  return result;
+  return fileName.slice(0, indexOfLastSlash);
 }
 
 /**
@@ -267,7 +260,7 @@ export async function loadPyodide(
 ): Promise<PyodideInterface> {
   await initNodeModules();
   let indexURL = options.indexURL || calculateIndexURL();
-  indexURL = resolvePath(indexURL);
+  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
   }
