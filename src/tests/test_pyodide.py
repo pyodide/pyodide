@@ -1257,3 +1257,33 @@ def test_unvendored_stdlib(selenium_standalone):
             ModuleNotFoundError, match="removed from the Python standard library"
         ):
             finder.find_spec(lib, None)
+
+
+def test_args(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    assert (
+        selenium.run_js(
+            """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            stdout,
+            stderr,
+            args: ['-c', 'print([x*x+1 for x in range(10)])']
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._run_main();
+        return stdoutStrings.pop()
+        """
+        )
+        == repr([x * x + 1 for x in range(10)])
+    )
