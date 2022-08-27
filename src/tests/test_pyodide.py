@@ -1,5 +1,6 @@
 import re
 from collections.abc import Sequence
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
@@ -1261,7 +1262,8 @@ def test_unvendored_stdlib(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
-def test_relative_index_url(selenium):
+def test_relative_index_url(selenium, tmp_path):
+    tmp_dir = Path(tmp_path)
     import subprocess
 
     version_result = subprocess.run(
@@ -1270,18 +1272,24 @@ def test_relative_index_url(selenium):
     extra_node_args = []
     if version_result.stdout.startswith("v14"):
         extra_node_args.append("--experimental-wasm-bigint")
+
+    import shutil
+
+    shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
+    shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
+
     result = subprocess.run(
         [
             "node",
             *extra_node_args,
             "-e",
-            r"""
-            const loadPyodide = require("./pyodide.js").loadPyodide;
-            async function main(){
-                py = await loadPyodide({indexURL: "dist"});
+            rf"""
+            const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
+            async function main(){{
+                py = await loadPyodide({{indexURL: "./dist"}});
                 console.log("\n");
                 console.log(py._module.API.config.indexURL);
-            }
+            }}
             main();
             """,
         ],
@@ -1291,13 +1299,19 @@ def test_relative_index_url(selenium):
     )
     import textwrap
 
-    if result.returncode:
+    def print_result(result):
         if result.stdout:
             print("  stdout:")
             print(textwrap.indent(result.stdout, "    "))
         if result.stderr:
             print("  stderr:")
             print(textwrap.indent(result.stderr, "    "))
+
+    if result.returncode:
+        print_result(result)
         result.check_returncode()
 
-    assert result.stdout.rpartition("\n")[-1] == str(ROOT_PATH / "dist")
+    try:
+        assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
+    finally:
+        print_result(result)
