@@ -1286,5 +1286,15 @@ def test_relative_index_url(selenium):
         capture_output=True,
         encoding="utf8",
     )
-    result.check_returncode()
+    import textwrap
+
+    if result.returncode:
+        if result.stdout:
+            print("  stdout:")
+            print(textwrap.indent(result.stdout, "    "))
+        if result.stderr:
+            print("  stderr:")
+            print(textwrap.indent(result.stderr, "    "))
+        result.check_returncode()
+
     assert result.stdout.rpartition("\n")[-1] == str(ROOT_PATH / "dist")
