@@ -46,6 +46,10 @@ substitutions:
   used by Pyodide's event loop.
   {pr}`2997`
 
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
+  now works even if `node` is run with `--enable-source-maps`.
+  {pr}`3015`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
