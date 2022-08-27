@@ -1260,8 +1260,8 @@ def test_unvendored_stdlib(selenium_standalone):
             finder.find_spec(lib, None)
 
 
-@pytest.mark.parametrize("browser", ["node"])
-def test_relative_index_url(browser):
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
+def test_relative_index_url(selenium):
     import subprocess
 
     version_result = subprocess.run(
