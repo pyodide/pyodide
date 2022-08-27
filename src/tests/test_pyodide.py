@@ -1267,7 +1267,7 @@ def test_relative_index_url(selenium):
     version_result = subprocess.run(
         ["node", "-v"], capture_output=True, encoding="utf8"
     )
-    extra_node_args = []
+    extra_node_args = ["--experimental-repl-await "]
     if version_result.stdout.startswith("v14"):
         extra_node_args.append("--experimental-wasm-bigint")
     result = subprocess.run(
@@ -1276,11 +1276,11 @@ def test_relative_index_url(selenium):
             *extra_node_args,
             "-e",
             r"""
-        const loadPyodide = require("./pyodide.js").loadPyodide;
-        py = await loadPyodide({indexURL: "dist"});
-        console.log("\n");
-        console.log(py._module.API.config.indexURL);
-    """,
+            const loadPyodide = require("./pyodide.js").loadPyodide;
+            py = await loadPyodide({indexURL: "dist"});
+            console.log("\n");
+            console.log(py._module.API.config.indexURL);
+            """,
         ],
         cwd=ROOT_PATH,
         capture_output=True,
