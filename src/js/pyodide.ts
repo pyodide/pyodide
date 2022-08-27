@@ -74,7 +74,7 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
 from sys import version_info
 pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/site-packages/")
+shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/")
 del shutil
 import importlib
 importlib.invalidate_caches()
