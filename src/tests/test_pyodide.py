@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
 
@@ -1257,3 +1258,33 @@ def test_unvendored_stdlib(selenium_standalone):
             ModuleNotFoundError, match="removed from the Python standard library"
         ):
             finder.find_spec(lib, None)
+
+
+@pytest.mark.parametrize("browser", ["node"])
+def test_relative_index_url(browser):
+    import subprocess
+
+    version_result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8"
+    )
+    extra_node_args = []
+    if version_result.stdout.startswith("v14"):
+        extra_node_args.append("--experimental-wasm-bigint")
+    result = subprocess.run(
+        [
+            "node",
+            *extra_node_args,
+            "-e",
+            r"""
+        const loadPyodide = require("./pyodide.js").loadPyodide;
+        py = await loadPyodide({indexURL: "dist"});
+        console.log("\n");
+        console.log(py._module.API.config.indexURL);
+    """,
+        ],
+        cwd=ROOT_PATH,
+        capture_output=True,
+        encoding="utf8",
+    )
+    result.check_returncode()
+    assert result.stdout.rpartition("\n")[-1] == str(ROOT_PATH / "dist")
