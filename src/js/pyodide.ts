@@ -82,7 +82,7 @@ del importlib
     `);
   let errcode = Module._PyRun_SimpleString(code_ptr);
   if (errcode) {
-    throw new Error("OOPS!");
+    Module.API.fatal_loading_error("Failed to unpack standard library");
   }
   Module._free(code_ptr);
   Module.FS.unlink(fileName);

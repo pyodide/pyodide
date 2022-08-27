@@ -127,6 +127,31 @@ API.fatal_error = function (e: any) {
   throw e;
 };
 
+class FatalPyodideError extends Error {}
+Object.defineProperty(FatalPyodideError.prototype, "name", {
+  value: FatalPyodideError.name,
+});
+
+API.fatal_loading_error = function (...args: string[]) {
+  let message = args.join(" ");
+  if (Module._PyErr_Occurred()) {
+    const FS = Module.FS;
+    // Redirect stderr
+    FS.closeStream(2);
+    FS.unlink("/dev/stderr");
+    const tracebackcodes: number[] = [];
+    FS.createDevice("/dev", "stderr", null, (e: number) =>
+      tracebackcodes.push(e)
+    );
+    FS.open("/dev/stderr", 1);
+    // Print traceback to stderr, decode it, and add it to message
+    Module._PyErr_Print();
+    let traceback = new TextDecoder().decode(new Uint8Array(tracebackcodes));
+    message += "\n" + traceback;
+  }
+  throw new FatalPyodideError(message);
+};
+
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   if (!frame) {
     return false;
