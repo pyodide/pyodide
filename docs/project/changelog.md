@@ -50,6 +50,9 @@ substitutions:
   now works even if `node` is run with `--enable-source-maps`.
   {pr}`3015`
 
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
