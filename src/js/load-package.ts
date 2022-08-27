@@ -216,7 +216,7 @@ async function installPackage(
     };
   }
   const filename = pkg.file_name;
-  // This Python helper function unpacks the buffer and lists out any so files therein.
+  // This Python helper function unpacks the buffer and lists out any .so files in it.
   const dynlibs = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
@@ -228,7 +228,6 @@ async function installPackage(
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
-  loadedPackages[name] = pkg;
 }
 
 /**
