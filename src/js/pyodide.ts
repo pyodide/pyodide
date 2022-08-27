@@ -194,6 +194,7 @@ export type ConfigType = {
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
+  args: string[];
 };
 
 /**
@@ -252,6 +253,7 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
+    args?: string[];
   } = {}
 ): Promise<PyodideInterface> {
   if (!options.indexURL) {
@@ -267,6 +269,7 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
     lockFileURL: options.indexURL! + "repodata.json",
+    args: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   await initNodeModules();
@@ -275,6 +278,7 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
