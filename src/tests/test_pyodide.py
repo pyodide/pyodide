@@ -1,11 +1,13 @@
 import re
 from collections.abc import Sequence
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
 
@@ -1257,3 +1259,59 @@ def test_unvendored_stdlib(selenium_standalone):
             ModuleNotFoundError, match="removed from the Python standard library"
         ):
             finder.find_spec(lib, None)
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
+def test_relative_index_url(selenium, tmp_path):
+    tmp_dir = Path(tmp_path)
+    import subprocess
+
+    version_result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8"
+    )
+    extra_node_args = []
+    if version_result.stdout.startswith("v14"):
+        extra_node_args.append("--experimental-wasm-bigint")
+
+    import shutil
+
+    shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
+    shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
+
+    result = subprocess.run(
+        [
+            "node",
+            *extra_node_args,
+            "-e",
+            rf"""
+            const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
+            async function main(){{
+                py = await loadPyodide({{indexURL: "./dist"}});
+                console.log("\n");
+                console.log(py._module.API.config.indexURL);
+            }}
+            main();
+            """,
+        ],
+        cwd=ROOT_PATH,
+        capture_output=True,
+        encoding="utf8",
+    )
+    import textwrap
+
+    def print_result(result):
+        if result.stdout:
+            print("  stdout:")
+            print(textwrap.indent(result.stdout, "    "))
+        if result.stderr:
+            print("  stderr:")
+            print(textwrap.indent(result.stderr, "    "))
+
+    if result.returncode:
+        print_result(result)
+        result.check_returncode()
+
+    try:
+        assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
+    finally:
+        print_result(result)
