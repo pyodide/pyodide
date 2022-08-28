@@ -28,6 +28,10 @@ substitutions:
 - {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
   {pr}`3014`
 
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
+  now works even if `node` is run with `--enable-source-maps`.
+  {pr}`3015`
+
 ## Version 0.21.1
 
 - New packages: the standard library lzma module {pr}`2939`
