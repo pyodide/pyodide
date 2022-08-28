@@ -14,4 +14,5 @@ build:
     CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+    rm -f ${INSTALL_DIR}/lib/libyaml.a
     ln -s libyaml_static.a ${INSTALL_DIR}/lib/libyaml.a
