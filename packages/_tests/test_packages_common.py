@@ -74,11 +74,11 @@ def test_import(
         """
     )
 
-    def _import_all():
+    def _import_pkg():
         for import_name in meta.get("test", {}).get("imports", []):
             selenium_standalone.run_async("import %s" % import_name)
 
-    benchmark(_import_all())
+    benchmark(_import_pkg)
 
     # Make sure that even after importing, there are no additional .pyc
     # files
