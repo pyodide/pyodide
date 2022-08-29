@@ -73,41 +73,32 @@ function _uri_to_package_name(package_uri: string): string | undefined {
   }
 }
 
-function loadPackageWithDeps(
-  name: string,
-  toLoad: Map<string, PackageLoadMetadata>,
-  loaded: Set<string>,
-  failed: Map<string, Error>
-): Promise<void> {
-  if (loadedPackages[name] !== undefined) {
-    return new Promise((resolve) => resolve());
-  }
-
-  const pkg = toLoad.get(name)!;
-
-  const promiseDependencies: Promise<void>[] = pkg.depends.map((dependency) =>
-    loadPackageWithDeps(dependency, toLoad, loaded, failed)
-  );
-  return Promise.all(promiseDependencies).then(() => {
-    return pkg
-      .downloadPromise!.then(async (buffer: Uint8Array) => {
-        await installPackage(pkg.name, buffer, pkg.channel);
-        loadedPackages[pkg.name] = pkg.channel;
-        loaded.add(pkg.name);
-      })
-      .catch((err: Error) => {
-        failed.set(name, err);
-      });
-  });
-}
-
 type PackageLoadMetadata = {
   name: string;
   channel: string;
   depends: string[];
-  downloadPromise?: Promise<Uint8Array>;
+  done: ResolvablePromise;
   installPromise?: Promise<void>;
 };
+
+interface ResolvablePromise extends Promise<void> {
+  resolve: (value?: any) => void;
+  reject: (err?: Error) => void;
+}
+
+function createDonePromise(): ResolvablePromise {
+  let _resolve: (value: any) => void = () => {};
+  let _reject: (err: Error) => void = () => {};
+
+  const p: any = new Promise<void>((resolve, reject) => {
+    _resolve = resolve;
+    _reject = reject;
+  });
+
+  p.resolve = _resolve;
+  p.reject = _reject;
+  return p;
+}
 
 /**
  * Recursively add a package and its dependencies to toLoad.
@@ -133,6 +124,8 @@ function addPackageToLoad(
     name: name,
     channel: DEFAULT_CHANNEL,
     depends: pkg_info.depends,
+    installPromise: undefined,
+    done: createDonePromise(),
   });
 
   // If the package is already loaded, we don't add dependencies, but warn
@@ -150,14 +143,13 @@ function addPackageToLoad(
 /**
  * Calculate the dependencies of a set of packages
  * @param names The list of names whose dependencies we need to calculate.
- * @returns Two sets, the set of normal dependencies and the set of shared
- * dependencies
+ * @returns The map of package names to PackageLoadMetadata
  * @private
  */
 function recursiveDependencies(
   names: string[],
   errorCallback: (err: string) => void
-) {
+): Map<string, PackageLoadMetadata> {
   const toLoad: Map<string, PackageLoadMetadata> = new Map();
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
@@ -170,9 +162,9 @@ function recursiveDependencies(
 
     if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
       errorCallback(
-        `Loading same package ${pkgname} from ${name} and ${toLoad.get(
-          pkgname
-        )}`
+        `Loading same package ${pkgname} from ${channel} and ${
+          toLoad.get(pkgname)!.channel
+        }`
       );
       continue;
     }
@@ -180,6 +172,8 @@ function recursiveDependencies(
       name: pkgname,
       channel: channel, // name is url in this case
       depends: [],
+      installPromise: undefined,
+      done: createDonePromise(),
     });
   }
   return toLoad;
@@ -240,7 +234,7 @@ async function downloadPackage(
 /**
  * Install the package into the file system.
  * @param name The name of the package
- * @param buffer The binary data returned by downloadPkgBuffer
+ * @param buffer The binary data returned by downloadPackage
  * @private
  */
 async function installPackage(
@@ -269,6 +263,50 @@ async function installPackage(
   });
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
+  }
+}
+
+/**
+ * Download then install the package.
+ * Downloads can be done in parallel, but installs must be done following the dependency.
+ * @param name The name of the package
+ * @param toLoad The map of package names to PackageLoadMetadata
+ * @param loaded The set of loaded package names, this will be updated by this function.
+ * @param failed The map of <failed package name, error message>, this will be updated by this function.
+ * @private
+ */
+async function downloadAndInstall(
+  name: string,
+  toLoad: Map<string, PackageLoadMetadata>,
+  loaded: Set<string>,
+  failed: Map<string, Error>
+) {
+  if (loadedPackages[name] !== undefined) {
+    return;
+  }
+
+  const pkg = toLoad.get(name)!;
+
+  try {
+    const buffer = await downloadPackage(pkg.name, pkg.channel);
+    const installPromisDependencies = pkg.depends.map((dependency) => {
+      return toLoad.has(dependency)
+        ? toLoad.get(dependency)!.done
+        : Promise.resolve();
+    });
+
+    // wait until all dependencies are installed
+    await Promise.all(installPromisDependencies);
+
+    await installPackage(pkg.name, buffer, pkg.channel);
+    loaded.add(pkg.name);
+    loadedPackages[pkg.name] = pkg.channel;
+  } catch (err: any) {
+    failed.set(name, err);
+    // We don't throw error when loading a package fails, but just report it.
+    // pkg.done.reject(err);
+  } finally {
+    pkg.done.resolve();
   }
 }
 
@@ -426,29 +464,22 @@ export async function loadPackage(
   }
 
   const packageNames = [...toLoad.keys()].join(", ");
+  const loaded = new Set<string>();
+  const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    for (const [name, metadata] of toLoad) {
+    for (const [name] of toLoad) {
       if (loadedPackages[name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
         toLoad.delete(name);
         continue;
       }
-      toLoad.get(name)!.downloadPromise = downloadPackage(
-        name,
-        metadata.channel
-      );
-    }
 
-    const loaded = new Set<string>();
-    const failed = new Map<string, Error>();
-
-    // TODO: add support for prefetching modules by awaiting on a promise right
-    // here which resolves in loadPyodide when the bootstrap is done.
-    for (const [name] of toLoad) {
-      toLoad.get(name)!.installPromise = loadPackageWithDeps(
+      // TODO: add support for prefetching modules by awaiting on a promise right
+      // here which resolves in loadPyodide when the bootstrap is done.
+      toLoad.get(name)!.installPromise = downloadAndInstall(
         name,
         toLoad,
         loaded,
