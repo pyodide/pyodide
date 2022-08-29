@@ -15,7 +15,7 @@ from unittest import mock
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.21.1"
+pyodide_version = "0.21.2"
 
 if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
