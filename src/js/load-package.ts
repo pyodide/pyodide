@@ -78,6 +78,10 @@ function loadPackageWithDeps(
   loaded: Set<string>,
   failed: Map<string, Error>
 ): Promise<void> {
+  if (loadedPackages[name] !== undefined) {
+    return new Promise((resolve) => resolve());
+  }
+
   const pkg = toLoad.get(name)!;
 
   const promiseDependencies: Promise<void>[] = pkg.depends.map((dependency) =>
@@ -86,9 +90,6 @@ function loadPackageWithDeps(
   return Promise.all(promiseDependencies).then(() => {
     return pkg
       .downloadPromise!.then(async (buffer: Uint8Array) => {
-        if (loaded.has(name)) {
-          return;
-        }
         await installPackage(pkg.name, buffer, pkg.channel);
         loadedPackages[pkg.name] = pkg.channel;
         loaded.add(pkg.name);
