@@ -2,7 +2,13 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
+import {
+  loadScript,
+  loadBinaryFile,
+  initNodeModules,
+  pathSep,
+  resolvePath,
+} from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 
@@ -74,7 +80,7 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
 from sys import version_info
 pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/site-packages/")
+shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/")
 del shutil
 import importlib
 importlib.invalidate_caches()
@@ -170,9 +176,7 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const indexOfLastSlash = fileName.includes("/")
-    ? fileName.lastIndexOf("/")
-    : fileName.lastIndexOf("\\");
+  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
       "Could not extract indexURL path from pyodide module location"
@@ -254,25 +258,24 @@ export async function loadPyodide(
     jsglobals?: object;
   } = {}
 ): Promise<PyodideInterface> {
-  if (!options.indexURL) {
-    options.indexURL = calculateIndexURL();
+  await initNodeModules();
+  let indexURL = options.indexURL || calculateIndexURL();
+  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
+  if (!indexURL.endsWith("/")) {
+    indexURL += "/";
   }
-  if (!options.indexURL.endsWith("/")) {
-    options.indexURL += "/";
-  }
+  options.indexURL = indexURL;
 
   const default_config = {
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
-    lockFileURL: options.indexURL! + "repodata.json",
+    lockFileURL: indexURL! + "repodata.json",
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  await initNodeModules();
   const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL,
-    "pyodide_py.tar"
+    config.indexURL + "pyodide_py.tar"
   );
 
   const Module = createModule();
@@ -297,6 +300,10 @@ export async function loadPyodide(
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+  // Handle early exit
+  if (Module.exited) {
+    throw Module.exited.toThrow;
+  }
 
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
