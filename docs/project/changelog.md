@@ -32,11 +32,6 @@ substitutions:
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
 
-- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
-  be resolved relative to `document.location` (in browser) or relative to the
-  current working directory (in Node) rather than relative to `indexURL`.
-  {pr}`3013`, {issue}`3011`
-
 - {{ Enhancement }} Added a new release file called
   `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
   files needed to start Pyodide and no additional packages.
@@ -46,14 +41,31 @@ substitutions:
   used by Pyodide's event loop.
   {pr}`2997`
 
-- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
-  {pr}`3014`
-
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
   host dependencies that are required for building packages.
   {pr}`2132`
+
+## Version 0.21.2
+
+- {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
+  with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
+  they had a leading underscore and it was only possible to load them with
+  `pyodide.loadPackage`).
+  {issue}`3003`
+
+- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
+  be resolved relative to `document.location` (in browser) or relative to the
+  current working directory (in Node) rather than relative to `indexURL`.
+  {pr}`3013`, {issue}`3011`
+
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
+  now works even if `node` is run with `--enable-source-maps`.
+  {pr}`3015`
 
 ## Version 0.21.1
 

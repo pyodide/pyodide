@@ -10,8 +10,8 @@ export const IN_NODE =
 
 let nodeUrlMod: any;
 let nodeFetch: any;
-let nodeVmMod: any;
 let nodePath: any;
+let nodeVmMod: any;
 /** @private */
 export let nodeFsPromisesMod: any;
 
@@ -42,15 +42,16 @@ export async function initNodeModules() {
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   nodePath = await import("path");
+  pathSep = nodePath.sep;
 
-  if (typeof require !== "undefined") {
-    return;
-  }
   // Emscripten uses `require`, so if it's missing (because we were imported as
   // an ES6 module) we need to polyfill `require` with `import`. `import` is
   // async and `require` is synchronous, so we import all packages that might be
   // required up front and define require to look them up in this table.
 
+  if (typeof require !== "undefined") {
+    return;
+  }
   // These are all the packages required in pyodide.asm.js. You can get this
   // list with:
   // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
@@ -84,6 +85,17 @@ if (IN_NODE) {
   resolvePath = node_resolvePath;
 } else {
   resolvePath = browser_resolvePath;
+}
+
+/**
+ * Get the path separator. If we are on Linux or in the browser, it's /.
+ * In Windows, it's \.
+ * @private
+ */
+export let pathSep: string;
+
+if (!IN_NODE) {
+  pathSep = "/";
 }
 
 /**
