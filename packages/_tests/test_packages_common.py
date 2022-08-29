@@ -45,6 +45,10 @@ def test_parse_package(name: str) -> None:
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
+@pytest.mark.benchmark(
+    max_time=3,
+    min_rounds=1,
+)
 def test_import(
     name: str, selenium_standalone: _BrowserBaseRunner, benchmark: Any
 ) -> None:
