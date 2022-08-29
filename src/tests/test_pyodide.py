@@ -1,11 +1,13 @@
 import re
 from collections.abc import Sequence
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 
 
@@ -767,6 +769,7 @@ def test_fatal_error(selenium_standalone):
         x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
         x = re.sub(".*@debugger.*\n", "", x)
         x = re.sub(".*@chrome.*\n", "", x)
+        x = re.sub("line [0-9]*", "line xxx", x)
         x = x.replace("\n\n", "\n")
         return x
 
@@ -785,8 +788,8 @@ def test_fatal_error(selenium_standalone):
                   File "<exec>", line 6 in g
                   File "<exec>", line 4 in f
                   File "<exec>", line 9 in <module>
-                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
-                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                  File "/lib/pythonxxx/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/pyodide/_base.py", line 344 in eval_code
                 """
             )
         ).strip()
@@ -1287,3 +1290,59 @@ def test_args(selenium_standalone_noload):
         )
         == repr([x * x + 1 for x in range(10)])
     )
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
+def test_relative_index_url(selenium, tmp_path):
+    tmp_dir = Path(tmp_path)
+    import subprocess
+
+    version_result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8"
+    )
+    extra_node_args = []
+    if version_result.stdout.startswith("v14"):
+        extra_node_args.append("--experimental-wasm-bigint")
+
+    import shutil
+
+    shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
+    shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
+
+    result = subprocess.run(
+        [
+            "node",
+            *extra_node_args,
+            "-e",
+            rf"""
+            const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
+            async function main(){{
+                py = await loadPyodide({{indexURL: "./dist"}});
+                console.log("\n");
+                console.log(py._module.API.config.indexURL);
+            }}
+            main();
+            """,
+        ],
+        cwd=ROOT_PATH,
+        capture_output=True,
+        encoding="utf8",
+    )
+    import textwrap
+
+    def print_result(result):
+        if result.stdout:
+            print("  stdout:")
+            print(textwrap.indent(result.stdout, "    "))
+        if result.stderr:
+            print("  stderr:")
+            print(textwrap.indent(result.stderr, "    "))
+
+    if result.returncode:
+        print_result(result)
+        result.check_returncode()
+
+    try:
+        assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
+    finally:
+        print_result(result)
