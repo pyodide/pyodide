@@ -347,10 +347,10 @@ jobs:
             pip3 install pytest-benchmark
             npm install -g node-fetch@2
 
-            pytest -v --rt chrome benchmark/package_load_time.py --benchmark-save=load-time-benchmark.json
+            pytest -v --rt chrome benchmark/package_load_time.py --benchmark-save=dist/load-time-benchmark.json
 
       - store_artifacts:
-          path: /root/repo/load-time-benchmark.json
+          path: /root/repo/dist/load-time-benchmark.json
 
   deploy-release:
     # To reduce chance of deployment issues, try to keep the steps here as
