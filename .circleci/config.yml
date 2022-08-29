@@ -272,6 +272,8 @@ jobs:
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
+              --benchmark-json=benchmark-time.json \
+              --benchmark-columns=mean,min,max,stddev \
               << parameters.test-params >> \
               -o cache_dir=$CACHE_DIR
       - store_test_results:
