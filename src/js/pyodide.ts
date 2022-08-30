@@ -150,12 +150,6 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   pyodide.pyodide_py = API.pyodide_py;
   pyodide.version = API.version;
   pyodide.globals = API.globals;
-  // Reset sys.executable to empty string if it is fake.
-  API.runPythonInternal(`\
-import sys, pathlib
-if not pathlib.Path(sys.executable).exists():
-  sys.executable = ''
-`);
   return pyodide;
 }
 
