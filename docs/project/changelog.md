@@ -41,6 +41,14 @@ substitutions:
   used by Pyodide's event loop.
   {pr}`2997`
 
+- {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
+  be passed as command line arguments to the Python interpreter at start up.
+  {pr}`3021`
+
+- {{ Breaking }} The Pyodide Python package is installed into `/lib/python3.10`
+  rather than `/lib/python3.10/site-packages`.
+  {pr}`3022`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
