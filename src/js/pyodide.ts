@@ -204,7 +204,7 @@ export type ConfigType = {
   stderr?: (msg: string) => void;
   jsglobals?: object;
   args: string[];
-  _node_mounts?: string[];
+  _node_mounts: string[];
   _working_directory?: string;
 };
 
@@ -284,6 +284,7 @@ export async function loadPyodide(
     homedir: "/home/pyodide",
     lockFileURL: indexURL! + "repodata.json",
     args: [],
+    _node_mounts: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   const pyodide_py_tar_promise = loadBinaryFile(
@@ -292,12 +293,9 @@ export async function loadPyodide(
 
   const Module = createModule();
   Module.preRun.push(() => {
-    const _node_mounts = options._node_mounts;
-    if (_node_mounts) {
-      for (let mount of _node_mounts) {
-        Module.FS.mkdirTree(mount);
-        Module.FS.mount(Module.NODEFS, { root: mount }, mount);
-      }
+    for (const mount of config._node_mounts) {
+      Module.FS.mkdirTree(mount);
+      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
     }
     const _working_directory = options._working_directory;
     if (_working_directory) {
