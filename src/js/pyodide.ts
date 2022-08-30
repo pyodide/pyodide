@@ -203,6 +203,7 @@ export type ConfigType = {
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
+  args: string[];
 };
 
 /**
@@ -261,6 +262,7 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
+    args?: string[];
   } = {}
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -277,6 +279,7 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
     lockFileURL: indexURL! + "repodata.json",
+    args: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   const pyodide_py_tar_promise = loadBinaryFile(
@@ -284,6 +287,7 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
