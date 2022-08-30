@@ -107,16 +107,21 @@ async function main() {
             _node_mounts,
             _working_directory: process.cwd(),
             stdout(e) {
+                if (e.trim() === "Python initialization complete") {
+                    return;
+                }
+                console.log(e);
+            },
+            stderr(e) {
                 if (
                     [
                         "warning: no blob constructor, cannot create blobs with mimetypes",
                         "warning: no BlobBuilder",
-                        "Python initialization complete",
-                    ].includes(e.trim())
+                    ].includes(e.trim)
                 ) {
                     return;
                 }
-                console.log(e);
+                console.warn(e);
             },
         });
     } catch (e) {
