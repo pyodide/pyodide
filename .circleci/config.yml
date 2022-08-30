@@ -260,6 +260,7 @@ jobs:
             make npm-link
             mkdir test-results
             pip install pytest-pyodide
+            pip install -r requirements.txt
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
@@ -271,6 +272,8 @@ jobs:
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
+              --benchmark-json=benchmark-time.json \
+              --benchmark-columns=mean,min,max,stddev \
               << parameters.test-params >> \
               -o cache_dir=$CACHE_DIR
       - store_test_results:

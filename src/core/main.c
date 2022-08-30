@@ -15,14 +15,7 @@
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
-    printf("FATAL ERROR: ");                                                   \
-    printf(args);                                                              \
-    printf("\n");                                                              \
-    if (PyErr_Occurred()) {                                                    \
-      printf("Error was triggered by Python exception:\n");                    \
-      PyErr_Print();                                                           \
-      EM_ASM(throw new Error("Fatal pyodide error"));                          \
-    }                                                                          \
+    EM_ASM(API.fatal_loading_error(args));                                     \
     return -1;                                                                 \
   } while (0)
 
@@ -35,7 +28,7 @@
   do {                                                                         \
     int mod##_init();                                                          \
     if (mod##_init()) {                                                        \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+      FATAL_ERROR("Failed to initialize module ", #mod, ".");                  \
     }                                                                          \
   } while (0)
 
@@ -43,7 +36,7 @@
   do {                                                                         \
     int mod##_init(PyObject* mod);                                             \
     if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
+      FATAL_ERROR("Failed to initialize module", #mod, ".");                   \
     }                                                                          \
   } while (0)
 
@@ -117,7 +110,7 @@ pyodide_init(void)
 
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {
-    FATAL_ERROR("Failed to import _pyodide module");
+    FATAL_ERROR("Failed to import _pyodide module.");
   }
 
   core_module = PyModule_Create(&core_module_def);
