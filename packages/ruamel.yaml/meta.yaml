@@ -6,6 +6,7 @@ source:
   sha256: 742b35d3d665023981bd6d16b3d24248ce5df75fdb4e2924e93a05c1f8b61ca7
 test:
   imports:
+    - ruamel
     - ruamel.yaml
 about:
   home: https://sourceforge.net/p/ruamel-yaml/code/ci/default/tree
