@@ -12,6 +12,8 @@ build:
     emconfigure ./configure \
         CFLAGS="-fPIC" \
         --host none \
+        --enable-shared=no \
+        --enable-static=yes \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
