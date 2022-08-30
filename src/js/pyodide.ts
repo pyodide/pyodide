@@ -334,6 +334,7 @@ export async function loadPyodide(
   if (API.repodata_info.version !== pyodide.version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
+  API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
