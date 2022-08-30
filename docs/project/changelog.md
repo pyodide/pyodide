@@ -14,8 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.18
-  {pr}`2958`, {pr}`2950`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.20
+  {pr}`2958`, {pr}`2950`, {pr}`3027`
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
 
