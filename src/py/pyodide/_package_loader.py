@@ -306,7 +306,12 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     ]
 
 
-def get_dist_source(dist: Distribution) -> str | None:
+def get_dist_source(dist: Distribution) -> str:
+    """Get a description of the source of a package.
+
+    This is used in loadPackage to explain where the package came from. Purely
+    for informative purposes.
+    """
     source = dist.read_text("PYODIDE_SOURCE")
     if source == "pyodide":
         return "default channel"
@@ -321,14 +326,18 @@ def get_dist_source(dist: Distribution) -> str | None:
     if installer:
         installer = installer.strip()
         return f"{installer} (index unknown)"
-    return None
+    return "Unknown"
 
 
 def init_loaded_packages() -> None:
+    """Initialize pyodide.loadedPackages with the packages that are already
+    present.
+
+    This ensures that `pyodide.loadPackage` knows that they are around and
+    doesn't install over them.
+    """
     for dist in importlib_distributions():
-        source = get_dist_source(dist)
-        if source:
-            setattr(loadedPackages, dist.name, source)
+        setattr(loadedPackages, dist.name, get_dist_source(dist))
 
 
 def sub_resource_hash(sha_256: str) -> str:

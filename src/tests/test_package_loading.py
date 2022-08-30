@@ -474,7 +474,7 @@ result_dist_pairs = [
     ),
     ("pip (index unknown)", DummyDistribution("F", installer="pip")),
     ("other (index unknown)", DummyDistribution("G", installer="other")),
-    (None, DummyDistribution("H")),
+    ("Unknown", DummyDistribution("H")),
 ]
 
 
@@ -498,9 +498,8 @@ def test_init_loaded_packages(monkeypatch):
     _package_loader.init_loaded_packages()
 
     for [result, dist] in result_dist_pairs:
-        assert hasattr(loadedPackages, dist.name) == bool(result)
-        if result:
-            assert getattr(loadedPackages, dist.name) == result
+        assert hasattr(loadedPackages, dist.name)
+        assert getattr(loadedPackages, dist.name) == result
 
 
 @pytest.mark.xfail_browsers(node="Some fetch trouble")
