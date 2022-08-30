@@ -1262,6 +1262,36 @@ def test_unvendored_stdlib(selenium_standalone):
             finder.find_spec(lib, None)
 
 
+def test_args(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    assert (
+        selenium.run_js(
+            """
+            self.stdoutStrings = [];
+            self.stderrStrings = [];
+            function stdout(s){
+                stdoutStrings.push(s);
+            }
+            function stderr(s){
+                stderrStrings.push(s);
+            }
+            let pyodide = await loadPyodide({
+                fullStdLib: false,
+                jsglobals : self,
+                stdout,
+                stderr,
+                args: ['-c', 'print([x*x+1 for x in range(10)])']
+            });
+            self.pyodide = pyodide;
+            globalThis.pyodide = pyodide;
+            pyodide._module._run_main();
+            return stdoutStrings.pop()
+            """
+        )
+        == repr([x * x + 1 for x in range(10)])
+    )
+
+
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
