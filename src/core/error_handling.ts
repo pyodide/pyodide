@@ -139,15 +139,17 @@ API.capture_stderr = function () {
   FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
     stderr_chars.push(e)
   );
-  FS.closeStream(2);
-  FS.open("/dev/capture_stderr", 1);
+  FS.closeStream(2 /* stderr */);
+  // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
+  FS.open("/dev/capture_stderr", 1 /* O_WRONLY */);
 };
 
 API.restore_stderr = function () {
   const FS = Module.FS;
-  FS.closeStream(2);
+  FS.closeStream(2 /* stderr */);
   FS.unlink("/dev/capture_stderr");
-  FS.open("/dev/stderr", 1);
+  // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
+  FS.open("/dev/stderr", 1 /* O_WRONLY */);
   return new TextDecoder().decode(new Uint8Array(stderr_chars));
 };
 
