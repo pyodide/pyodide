@@ -49,6 +49,9 @@ substitutions:
   rather than `/lib/python3.10/site-packages`.
   {pr}`3022`
 
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
