@@ -204,6 +204,8 @@ export type ConfigType = {
   stderr?: (msg: string) => void;
   jsglobals?: object;
   args: string[];
+  _node_mounts?: string[];
+  _working_directory?: string;
 };
 
 /**
@@ -263,6 +265,8 @@ export async function loadPyodide(
     stderr?: (msg: string) => void;
     jsglobals?: object;
     args?: string[];
+    _node_mounts?: string[];
+    _working_directory?: string;
   } = {}
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -287,6 +291,20 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.preRun.push(() => {
+    const _node_mounts = options._node_mounts;
+    if (_node_mounts) {
+      for (let mount of Object.entries(_node_mounts)) {
+        Module.FS.mkdirTree(mount);
+        Module.FS.mount(Module.NODEFS, { root: mount }, mount);
+      }
+    }
+    const _working_directory = options._working_directory;
+    if (_working_directory) {
+      Module.FS.chdir(_working_directory);
+    }
+  });
+
   Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
@@ -334,6 +352,7 @@ export async function loadPyodide(
   if (API.repodata_info.version !== pyodide.version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
+  API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
