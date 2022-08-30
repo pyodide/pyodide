@@ -14,6 +14,11 @@ from tempfile import NamedTemporaryFile
 from typing import IO, Any, Literal
 from zipfile import ZipFile
 
+try:
+    from pyodide_js import loadedPackages
+except ImportError:
+    loadedPackages = None
+
 from ._core import IN_BROWSER, JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
@@ -315,14 +320,11 @@ def get_dist_source(dist: Distribution) -> str | None:
     installer = dist.read_text("INSTALLER")
     if installer:
         installer = installer.strip()
-    if installer == "pip":
-        return "pip (index unknown)"
+        return f"{installer} (index unknown)"
     return None
 
 
 def init_loaded_packages() -> None:
-    from pyodide_js import loadedPackages
-
     for dist in importlib_distributions():
         source = get_dist_source(dist)
         if source:
