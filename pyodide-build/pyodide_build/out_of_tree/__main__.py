@@ -2,6 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
+from ..common import search_pyodide_root
 from . import build, venv
 
 
@@ -24,7 +25,9 @@ def main():
         parser = module.make_parser(subparsers.add_parser(modname))
         parser.set_defaults(func=module.main)
 
-    if "PYODIDE_ROOT" not in os.environ:
+    try:
+        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(__file__))
+    except FileNotFoundError:
         env = Path(".pyodide-xbuildenv")
         os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
         ensure_env_installed(env)

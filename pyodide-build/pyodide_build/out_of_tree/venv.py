@@ -1,8 +1,8 @@
 import argparse
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
-from textwrap import dedent
 
 from ..common import (
     check_emscripten_version,
@@ -21,6 +21,10 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = "Create a Pyodide virtual environment"
     parser.add_argument("dest", help="directory to create virtualenv at", type=str)
     return parser
+
+
+def dedent(s):
+    return textwrap.dedent(s).strip() + "\n"
 
 
 def run(dest: Path) -> None:
@@ -62,8 +66,7 @@ def run(dest: Path) -> None:
             only-binary=:all:
             {repo}
             """
-        ).strip()
-        + "\n"
+        )
     )
 
     bin = dest / "bin"
@@ -125,8 +128,7 @@ def run(dest: Path) -> None:
                 sys.argv[0] = re.sub(r'(-script\\.pyw|\\.exe)?$', '', sys.argv[0])
                 sys.exit(main())
             """
-        ).strip()
-        + "\n"
+        )
     )
     pip_path.chmod(0o777)
 
@@ -158,17 +160,40 @@ def run(dest: Path) -> None:
             #!/bin/sh
             {environment} exec {sys.executable} -m pyodide_build.out_of_tree $@
             """
-        ).strip()
-        + "\n"
+        )
     )
     pyodide_path.chmod(0o777)
 
     toload = ["micropip"]
-    subprocess.run(
+    result = subprocess.run(
         [bin / "pip", "install", *toload],
+        capture_output=True,
+        encoding="utf8",
     )
     if result.returncode != 0:
         print("ERROR: failed to invoke pip")
+        exit_with_stdio(result)
+
+    result = subprocess.run(
+        [
+            bin / "python.js",
+            "-c",
+            dedent(
+                """
+            from pyodide import _package_loader;
+            from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
+            _package_loader.TARGETS["lib"] = _package_loader.SITE_PACKAGES;
+            from pyodide_js import loadPackage;
+            loadPackage(UNVENDORED_STDLIBS_AND_TEST);
+            """
+            ),
+        ],
+        capture_output=True,
+        encoding="utf8",
+    )
+
+    if result.returncode != 0:
+        print("ERROR: failed to install unvendored stdlib modules")
         exit_with_stdio(result)
 
     print("Successfully created Pyodide virtual environment!")
