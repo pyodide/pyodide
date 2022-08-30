@@ -294,7 +294,7 @@ export async function loadPyodide(
   Module.preRun.push(() => {
     const _node_mounts = options._node_mounts;
     if (_node_mounts) {
-      for (let mount of Object.entries(_node_mounts)) {
+      for (let mount of _node_mounts) {
         Module.FS.mkdirTree(mount);
         Module.FS.mount(Module.NODEFS, { root: mount }, mount);
       }
