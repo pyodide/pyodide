@@ -41,6 +41,9 @@ substitutions:
   used by Pyodide's event loop.
   {pr}`2997`
 
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
