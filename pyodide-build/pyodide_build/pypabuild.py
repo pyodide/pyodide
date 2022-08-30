@@ -44,9 +44,12 @@ def symlink_unisolated_packages(env: IsolatedEnv) -> None:
 
 
 def remove_unisolated_requirements(requires: set[str]) -> set[str]:
+    avoid_names = get_unisolated_packages()
+    if os.environ.get("PYODIDE_BUILD_PACKAGE") == "scipy":
+        avoid_names.extend(["meson"])
     for reqstr in list(requires):
         req = Requirement(reqstr)
-        for avoid_name in get_unisolated_packages():
+        for avoid_name in avoid_names:
             if avoid_name in req.name.lower():
                 requires.remove(reqstr)
     return requires
@@ -54,6 +57,14 @@ def remove_unisolated_requirements(requires: set[str]) -> set[str]:
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     env.install(remove_unisolated_requirements(reqs))
+    if os.environ.get("PYODIDE_BUILD_PACKAGE") == "scipy":
+        env.install(
+            [
+                "git+https://github.com/hoodmane/meson-python.git@ff68f2a8ed8d30a21fca17e9377ebd34b56c1d16",
+                "meson",
+            ]
+        )
+
     # Some packages (numcodecs) don't declare cython as a build dependency and
     # only recythonize if it is present. We need them to always recythonize so
     # we always install cython. If the reqs included some cython version already
@@ -77,7 +88,7 @@ def _build_in_isolated_env(
     # For debugging: The following line disables removal of the isolated venv.
     # It will be left in the /tmp folder and can be inspected or entered as
     # needed.
-    # _IsolatedEnvBuilder.__exit__ = lambda *args: None
+    _IsolatedEnvBuilder.__exit__ = lambda *args: None  # type: ignore[assignment]
     with _IsolatedEnvBuilder() as env:
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir

@@ -466,6 +466,7 @@ def compile(
 
         from .pypabuild import build
 
+        os.environ["PYODIDE_BUILD_PACKAGE"] = name
         try:
             build(build_env, backend_flags)
         except BaseException:
