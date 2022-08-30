@@ -14,7 +14,7 @@ substitutions:
 
 ## Version 0.22.2
 
-_August 22, 2022_
+_August 29, 2022_
 
 - {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
   with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
