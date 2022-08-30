@@ -14,8 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.18
-  {pr}`2958`, {pr}`2950`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.20
+  {pr}`2958`, {pr}`2950`, {pr}`3027`
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
 
@@ -40,6 +40,9 @@ substitutions:
 - {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
   used by Pyodide's event loop.
   {pr}`2997`
+
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
 
 ### Build System
 

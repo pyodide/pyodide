@@ -127,6 +127,44 @@ API.fatal_error = function (e: any) {
   throw e;
 };
 
+class FatalPyodideError extends Error {}
+Object.defineProperty(FatalPyodideError.prototype, "name", {
+  value: FatalPyodideError.name,
+});
+
+let stderr_chars: number[] = [];
+API.capture_stderr = function () {
+  stderr_chars = [];
+  const FS = Module.FS;
+  FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
+    stderr_chars.push(e)
+  );
+  FS.closeStream(2 /* stderr */);
+  // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
+  FS.open("/dev/capture_stderr", 1 /* O_WRONLY */);
+};
+
+API.restore_stderr = function () {
+  const FS = Module.FS;
+  FS.closeStream(2 /* stderr */);
+  FS.unlink("/dev/capture_stderr");
+  // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
+  FS.open("/dev/stderr", 1 /* O_WRONLY */);
+  return new TextDecoder().decode(new Uint8Array(stderr_chars));
+};
+
+API.fatal_loading_error = function (...args: string[]) {
+  let message = args.join(" ");
+  if (Module._PyErr_Occurred()) {
+    API.capture_stderr();
+    // Prints traceback to stderr
+    Module._PyErr_Print();
+    const captured_stderr = API.restore_stderr();
+    message += "\n" + captured_stderr;
+  }
+  throw new FatalPyodideError(message);
+};
+
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   if (!frame) {
     return false;
