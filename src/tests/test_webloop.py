@@ -370,11 +370,11 @@ async def test_inprogress(selenium):
         nonlocal ran_keyboard_interrupt_handler
         ran_keyboard_interrupt_handler = True
 
-    ran_system_exit_handler = False
+    system_exit_code = None
 
-    def _system_exit_handler():
-        nonlocal ran_system_exit_handler
-        ran_system_exit_handler = True
+    def _system_exit_handler(exit_code):
+        nonlocal system_exit_code
+        system_exit_code = exit_code
 
     try:
 
@@ -396,7 +396,7 @@ async def test_inprogress(selenium):
         assert loop._in_progress == 0
         assert ran_no_in_progress_handler
         assert not ran_keyboard_interrupt_handler
-        assert not ran_system_exit_handler
+        assert not system_exit_code
 
         ran_no_in_progress_handler = False
 
@@ -416,7 +416,7 @@ async def test_inprogress(selenium):
         assert loop._in_progress == 0
         assert ran_no_in_progress_handler
         assert ran_keyboard_interrupt_handler
-        assert not ran_system_exit_handler  # type: ignore[unreachable]
+        assert not system_exit_code  # type: ignore[unreachable]
 
         ran_no_in_progress_handler = False
         ran_keyboard_interrupt_handler = False
@@ -436,10 +436,10 @@ async def test_inprogress(selenium):
         assert loop._in_progress == 0
         assert ran_no_in_progress_handler
         assert not ran_keyboard_interrupt_handler
-        assert ran_system_exit_handler
+        assert system_exit_code == 2
 
         ran_no_in_progress_handler = False
-        ran_system_exit_handler = False
+        system_exit_code = None
 
     finally:
         loop._in_progress = 1
