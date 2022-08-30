@@ -21,6 +21,9 @@ substitutions:
   their dependencies.
   {pr}`3020`
 
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
 ## Version 0.22.2
 
 _August 29, 2022_

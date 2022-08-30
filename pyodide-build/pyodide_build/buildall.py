@@ -124,7 +124,7 @@ class Package(BasePackage):
         self.library = self.meta["build"].get("library", False)
         self.shared_library = self.meta["build"].get("sharedlibrary", False)
 
-        assert self.name == pkgdir.stem
+        assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"
 
         self.dependencies = self.meta["requirements"].get("run", [])
         self.unbuilt_dependencies = set(self.dependencies)
