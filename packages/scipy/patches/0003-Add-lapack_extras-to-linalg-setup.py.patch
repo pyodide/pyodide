@@ -1,7 +1,7 @@
 From f6e479ea524c286f0a96d5df60d1f8edb595f643 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Dec 2021 22:27:07 -0800
-Subject: [PATCH 03/14] Add lapack_extras to linalg/setup.py
+Subject: [PATCH 03/15] Add lapack_extras to linalg/setup.py
 
 ---
  scipy/linalg/setup.py | 2 +-

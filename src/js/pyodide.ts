@@ -86,9 +86,14 @@ import importlib
 importlib.invalidate_caches()
 del importlib
     `);
+  Module.API.capture_stderr();
   let errcode = Module._PyRun_SimpleString(code_ptr);
+  const captured_stderr = Module.API.restore_stderr().trim();
   if (errcode) {
-    throw new Error("OOPS!");
+    Module.API.fatal_loading_error(
+      "Failed to unpack standard library.\n",
+      captured_stderr
+    );
   }
   Module._free(code_ptr);
   Module.FS.unlink(fileName);
