@@ -1,7 +1,7 @@
 From 665e3d2e94224c7ae394158a0a5992a72efa4221 Mon Sep 17 00:00:00 2001
 From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Wed, 6 Apr 2022 21:19:55 -0700
-Subject: [PATCH 05/14] disable blas detection
+Subject: [PATCH 05/17] disable blas detection
 
 BLAS and LAPACK aren't available on host because we only cross compile these
 libraries (see CLAPACK/meta.yaml). Scipy tries to detect these libraries and
