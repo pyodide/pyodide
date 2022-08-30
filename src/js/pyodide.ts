@@ -204,7 +204,7 @@ export type ConfigType = {
   stderr?: (msg: string) => void;
   jsglobals?: object;
   args: string[];
-  _node_mounts?: { [src: string]: string };
+  _node_mounts?: string[];
   _working_directory?: string;
 };
 
@@ -265,7 +265,7 @@ export async function loadPyodide(
     stderr?: (msg: string) => void;
     jsglobals?: object;
     args?: string[];
-    _node_mounts?: { [src: string]: string };
+    _node_mounts?: string[];
     _working_directory?: string;
   } = {}
 ): Promise<PyodideInterface> {
@@ -294,9 +294,9 @@ export async function loadPyodide(
   Module.preRun.push(() => {
     const _node_mounts = options._node_mounts;
     if (_node_mounts) {
-      for (let [mountSrc, mountTarget] of Object.entries(_node_mounts)) {
-        Module.FS.mkdirTree(mountSrc);
-        Module.FS.mount(Module.NODEFS, { root: mountSrc }, mountTarget);
+      for (let mount of Object.entries(_node_mounts)) {
+        Module.FS.mkdirTree(mount);
+        Module.FS.mount(Module.NODEFS, { root: mount }, mount);
       }
     }
     const _working_directory = options._working_directory;

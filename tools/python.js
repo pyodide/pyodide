@@ -90,14 +90,14 @@ function setupStreams(FS, TTY) {
 async function main() {
     let args = process.argv.slice(2);
 
-    let _node_mounts = {};
+    let _node_mounts = [];
     const root = fs.readdirSync("/");
     const skipDirs = ["dev", "lib", "proc", "tmp"];
     for (const dir of root) {
         if (skipDirs.includes(dir)) {
             continue;
         }
-        _node_mounts["/" + dir] = "/" + dir;
+        _node_mounts.push("/" + dir);
     }
 
     try {
