@@ -390,7 +390,7 @@ As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-
 #### Setting up Rust in the docker container
 
 This part is for developers who use the docker image and wish to compile Python packages containing Rust code.
-If you clone the Pyodide repo from Github the docker container will not have `rust` installed. For this you'd need to install `rust` using the preferred method described [here](https://www.rust-lang.org/tools/install). 
+If you clone the Pyodide repo from Github the docker container will not have `rust` installed. For this you'd need to install `rust` using the preferred method described [here](https://www.rust-lang.org/tools/install).
 
 ```
 apt update
@@ -398,11 +398,13 @@ apt install curl
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-After install, you'll need to switch to the nighly build, as a certain flag `-Z` -which is used to compile `cryptography`- is only available in the nighly builds. 
+After install, you'll need to switch to the nighly build, as a certain flag `-Z` -which is used to compile `cryptography`- is only available in the nighly builds.
+
 ```
 "$HOME/.cargo/env"
 rustup default nightly
 ```
+
 Finally, you'd need to add the `wasm32-unknown-emscripten` target.
 
 ```
