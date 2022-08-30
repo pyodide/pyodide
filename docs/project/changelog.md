@@ -52,6 +52,9 @@ substitutions:
 - {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
   {pr}`3036`
 
+- {{ Update }} Upgraded SciPy to version 1.9.1.
+  {pr}`3043`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
