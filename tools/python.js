@@ -62,6 +62,7 @@ function make_tty_ops(stream) {
             stream.write(Buffer.from([val]));
         },
         flush(tty) {},
+        fsync() {},
     };
 }
 
@@ -163,7 +164,13 @@ async function main() {
         { globals: sideGlobals }
     );
 
-    let errcode = py._module._run_main();
+    let errcode;
+    try {
+        errcode = py._module._run_main();
+    } catch (e) {
+        py._module._dump_traceback();
+        throw e;
+    }
     if (errcode) {
         process.exit(errcode);
     }
