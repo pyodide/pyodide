@@ -408,7 +408,10 @@ async def test_inprogress(selenium):
         fut2 = asyncio.ensure_future(temp())
         assert loop._in_progress == 2
         fut.set_exception(KeyboardInterrupt())
-        await fut2
+        try:
+            await fut2
+        except KeyboardInterrupt:
+            pass
 
         assert loop._in_progress == 0
         assert ran_no_in_progress_handler
@@ -426,7 +429,10 @@ async def test_inprogress(selenium):
         fut2 = asyncio.ensure_future(temp())
         assert loop._in_progress == 2
         fut.set_exception(SystemExit(2))
-        await fut2
+        try:
+            await fut2
+        except SystemExit:
+            pass
         assert loop._in_progress == 0
         assert ran_no_in_progress_handler
         assert not ran_keyboard_interrupt_handler
