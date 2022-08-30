@@ -1,14 +1,14 @@
-From 57a1a2f471d5f6ad25578cdc3472261254309785 Mon Sep 17 00:00:00 2001
+From 2307b669a1c63b760a635989d5dd07f2b2ce4b9c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 6 Apr 2022 21:52:29 -0700
-Subject: [PATCH 12/15] Disable lapack detection
+Subject: [PATCH 12/14] Disable lapack detection
 
 ---
  scipy/sparse/linalg/_propack/setup.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/scipy/sparse/linalg/_propack/setup.py b/scipy/sparse/linalg/_propack/setup.py
-index b593cbca9..824980e24 100644
+index 5c8f252ac..232af31b6 100644
 --- a/scipy/sparse/linalg/_propack/setup.py
 +++ b/scipy/sparse/linalg/_propack/setup.py
 @@ -21,7 +21,7 @@ def configuration(parent_package='', top_path=None):
