@@ -346,3 +346,97 @@ async def test_pyodide_future2(selenium):
         .then(lambda x: x.info.name)
     )
     assert name == "pytest"
+
+
+@run_in_pyodide
+async def test_inprogress(selenium):
+    import asyncio
+
+    from pyodide.webloop import WebLoop
+
+    loop: WebLoop = asyncio.get_event_loop()  # type: ignore[assignment]
+    loop._in_progress = 0
+
+    ran_no_in_progress_handler = False
+
+    def _no_in_progress_handler():
+        nonlocal ran_no_in_progress_handler
+        ran_no_in_progress_handler = True
+
+    ran_keyboard_interrupt_handler = False
+
+    def _keyboard_interrupt_handler():
+        print("_keyboard_interrupt_handler")
+        nonlocal ran_keyboard_interrupt_handler
+        ran_keyboard_interrupt_handler = True
+
+    ran_system_exit_handler = False
+
+    def _system_exit_handler():
+        nonlocal ran_system_exit_handler
+        ran_system_exit_handler = True
+
+    try:
+
+        loop._no_in_progress_handler = _no_in_progress_handler
+        loop._keyboard_interrupt_handler = _keyboard_interrupt_handler
+        loop._system_exit_handler = _system_exit_handler
+
+        fut = loop.create_future()
+
+        async def temp():
+            await fut
+
+        fut2 = asyncio.ensure_future(temp())
+        await asyncio.sleep(0)
+        assert loop._in_progress == 2
+        fut.set_result(0)
+        await fut2
+
+        assert loop._in_progress == 0
+        assert ran_no_in_progress_handler
+        assert not ran_keyboard_interrupt_handler
+        assert not ran_system_exit_handler
+
+        ran_no_in_progress_handler = False
+
+        fut = loop.create_future()
+
+        async def temp():
+            await fut
+
+        fut2 = asyncio.ensure_future(temp())
+        assert loop._in_progress == 2
+        fut.set_exception(KeyboardInterrupt())
+        await fut2
+
+        assert loop._in_progress == 0
+        assert ran_no_in_progress_handler
+        assert ran_keyboard_interrupt_handler
+        assert not ran_system_exit_handler  # type: ignore[unreachable]
+
+        ran_no_in_progress_handler = False
+        ran_keyboard_interrupt_handler = False
+
+        fut = loop.create_future()
+
+        async def temp():
+            await fut
+
+        fut2 = asyncio.ensure_future(temp())
+        assert loop._in_progress == 2
+        fut.set_exception(SystemExit(2))
+        await fut2
+        assert loop._in_progress == 0
+        assert ran_no_in_progress_handler
+        assert not ran_keyboard_interrupt_handler
+        assert ran_system_exit_handler
+
+        ran_no_in_progress_handler = False
+        ran_system_exit_handler = False
+
+    finally:
+        loop._in_progress = 1
+        loop._no_in_progress_handler = None
+        loop._keyboard_interrupt_handler = None
+        loop._system_exit_handler = None
