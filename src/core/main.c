@@ -42,12 +42,23 @@
 
 // Initialize python. exit() and print message to stderr on failure.
 static void
-initialize_python()
+initialize_python(int argc, char** argv)
 {
   bool success = false;
   PyStatus status;
+
+  PyPreConfig preconfig;
+  PyPreConfig_InitPythonConfig(&preconfig);
+
+  status = Py_PreInitializeFromBytesArgs(&preconfig, argc, argv);
+  FAIL_IF_STATUS_EXCEPTION(status);
+
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
+
+  status = PyConfig_SetBytesArgv(&config, argc, argv);
+  FAIL_IF_STATUS_EXCEPTION(status);
+
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
@@ -85,7 +96,7 @@ main(int argc, char** argv)
 {
   // This exits and prints a message to stderr on failure,
   // no status code to check.
-  initialize_python();
+  initialize_python(argc, argv);
   emscripten_exit_with_live_runtime();
   return 0;
 }
@@ -131,4 +142,15 @@ pyodide_init(void)
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
   return 0;
+}
+
+void
+pymain_run_python(int* exitcode);
+
+EMSCRIPTEN_KEEPALIVE int
+run_main()
+{
+  int exitcode;
+  pymain_run_python(&exitcode);
+  return exitcode;
 }
