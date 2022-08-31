@@ -16,7 +16,7 @@ build:
     emconfigure ./configure \
         CFLAGS="-fPIC" \
         --disable-dependency-tracking \
-        --disabled-shared \
+        --disable-shared \
         --with-gmp="${WASM_LIBRARY_DIR}" \
         --with-mpfr="${WASM_LIBRARY_DIR}" \
         --prefix=${WASM_LIBRARY_DIR}
