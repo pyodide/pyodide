@@ -44,6 +44,7 @@ class BasePackage:
     meta: dict[str, Any]
     library: bool
     shared_library: bool
+    global_: bool
     run_dependencies: list[str]
     host_dependencies: list[str]
     dependencies: set[str]  # run + host dependencies
@@ -99,6 +100,7 @@ class Package(BasePackage):
 
         self.library = self.meta["build"].get("library", False)
         self.shared_library = self.meta["build"].get("sharedlibrary", False)
+        self.global_ = self.meta["build"].get("global", False)
 
         assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"
 
@@ -496,6 +498,7 @@ def generate_packagedata(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
+            pkg_entry["global"] = pkg.global_
             pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
 
         pkg_entry["depends"] = [

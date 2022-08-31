@@ -22,6 +22,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
     },
     "build": {
         "exports": str | list,  # list[str]
+        "global": bool,
         "backend-flags": str,
         "cflags": str,
         "cxxflags": str,
@@ -151,6 +152,8 @@ def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
         yield "build/library and build/sharedlibrary cannot both be true."
 
     allowed_keys = {"library", "sharedlibrary", "script", "cross-script"}
+    if not library:
+        allowed_keys |= {"global"}
     typ = "library" if library else "sharedlibrary"
     for key in build_metadata.keys():
         if key not in PACKAGE_CONFIG_SPEC["build"]:

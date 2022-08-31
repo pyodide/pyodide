@@ -226,7 +226,7 @@ async function installPackage(
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
   for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib, pkg.shared_library);
+    await loadDynlib(dynlib, pkg.global);
   }
 }
 
@@ -269,7 +269,7 @@ const acquireDynlibLock = createLock();
  * @param shared Is this a shared library or not?
  * @private
  */
-async function loadDynlib(lib: string, shared: boolean) {
+async function loadDynlib(lib: string, global: boolean) {
   const node = Module.FS.lookupPath(lib).node;
   let byteArray;
   if (node.mount.type == Module.FS.filesystems.MEMFS) {
@@ -301,7 +301,7 @@ async function loadDynlib(lib: string, shared: boolean) {
     });
     Module.preloadedWasm[lib] = module;
     Module.preloadedWasm[lib.split("/").pop()!] = module;
-    if (shared) {
+    if (global) {
       Module.loadDynamicLibrary(lib, {
         global: true,
         nodelete: true,
