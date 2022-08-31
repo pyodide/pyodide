@@ -136,7 +136,7 @@ installs from PyPI. See [this stack overflow answer](https://stackoverflow.com/q
   <body>
     <script
       type="text/javascript"
-      src="{{PYODIDE_CDN_URL}}/pyodide.js"
+      src="{{PYODIDE_CDN_URL}}pyodide.js"
     ></script>
     <script type="text/javascript">
       async function main() {
