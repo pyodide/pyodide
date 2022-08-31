@@ -20,8 +20,7 @@ build:
     cp magic/magic.mgc dist
     # build libmagic.so
     emconfigure ./configure \
-      CFLAGS="${SIDE_MODULE_CFLAGS}" \
-      --disable-dependency-tracking
+      CFLAGS="${SIDE_MODULE_CFLAGS}"
     cd src
     emmake make -j ${PYODIDE_JOBS:-3} libmagic.la \
       LDFLAGS="-Xcompiler '${SIDE_MODULE_LDFLAGS}'"
