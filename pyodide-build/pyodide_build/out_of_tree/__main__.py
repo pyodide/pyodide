@@ -16,6 +16,19 @@ def ensure_env_installed(env: Path) -> None:
     install_xbuild_env(env)
 
 
+def initialize_pyodide_root() -> None:
+    if "PYODIDE_ROOT" in os.environ:
+        return
+    try:
+        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(__file__))
+        return
+    except FileNotFoundError:
+        pass
+    env = Path(".pyodide-xbuildenv")
+    os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
+    ensure_env_installed(env)
+
+
 def main():
     main_parser = argparse.ArgumentParser(prog="pyodide")
     main_parser.description = "Tools for creating Python extension modules for the wasm32-unknown-emscripten platform"
@@ -25,12 +38,7 @@ def main():
         parser = module.make_parser(subparsers.add_parser(modname))
         parser.set_defaults(func=module.main)
 
-    try:
-        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(__file__))
-    except FileNotFoundError:
-        env = Path(".pyodide-xbuildenv")
-        os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
-        ensure_env_installed(env)
+    initialize_pyodide_root()
 
     args = main_parser.parse_args()
     if hasattr(args, "func"):
