@@ -13,7 +13,7 @@ build:
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
-        --disabled-shared \
+        --disable-shared \
         --disable-dependency-tracking \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
