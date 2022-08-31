@@ -49,7 +49,7 @@ def test_parse_package(name: str) -> None:
 @pytest.mark.benchmark(
     max_time=3,
     min_rounds=1,
-    timer=time.time,
+    timer=time.perf_counter,
 )
 def test_import(
     name: str, selenium_standalone: _BrowserBaseRunner, benchmark: Any
