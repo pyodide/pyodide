@@ -1,3 +1,4 @@
+import json
 import shutil
 from pathlib import Path
 
@@ -416,6 +417,89 @@ def test_get_dynlibs():
         x2.close()
         t.flush()
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
+
+
+class DummyDistribution:
+    def __init__(
+        self,
+        name: str,
+        source: str | None = None,
+        direct_url: dict[str, str] | None = None,
+        installer: str | None = None,
+    ):
+        self.name = name
+        direct_url_json = json.dumps(direct_url) if direct_url else None
+        self._files: dict[str, str | None] = {
+            "PYODIDE_SOURCE": source,
+            "direct_url.json": direct_url_json,
+            "INSTALLER": installer,
+        }
+
+    def read_text(self, key: str) -> str | None:
+        return self._files.get(key)
+
+    def __repr__(self):
+        return self.name
+
+
+result_dist_pairs = [
+    ("default channel", DummyDistribution("A", source="pyodide")),
+    (
+        "default channel",
+        DummyDistribution(
+            "B",
+            source="pyodide",
+            direct_url={"url": "http://some.pkg.src/a/b/c.whl"},
+            installer="pip",
+        ),
+    ),
+    (
+        "http://some.pkg.src/a/b/c.whl",
+        DummyDistribution("C", source="http://some.pkg.src/a/b/c.whl"),
+    ),
+    (
+        "http://some.pkg.src/a/b/c.whl",
+        DummyDistribution(
+            "D",
+            source="http://some.pkg.src/a/b/c.whl",
+            direct_url={"url": "http://a.b.c/x/y/z.whl"},
+            installer="pip",
+        ),
+    ),
+    (
+        "http://a.b.c/x/y/z.whl",
+        DummyDistribution(
+            "E", direct_url={"url": "http://a.b.c/x/y/z.whl"}, installer="pip"
+        ),
+    ),
+    ("pip (index unknown)", DummyDistribution("F", installer="pip")),
+    ("other (index unknown)", DummyDistribution("G", installer="other")),
+    ("Unknown", DummyDistribution("H")),
+]
+
+
+@pytest.mark.parametrize("result,dist", result_dist_pairs)
+def test_get_dist_source(result, dist):
+    from pyodide._package_loader import get_dist_source
+
+    assert result == get_dist_source(dist)
+
+
+def test_init_loaded_packages(monkeypatch):
+    from pyodide import _package_loader
+
+    class loadedPackagesCls:
+        pass
+
+    loadedPackages = loadedPackagesCls()
+    monkeypatch.setattr(_package_loader, "loadedPackages", loadedPackages)
+    dists = [dist for [_, dist] in result_dist_pairs]
+    monkeypatch.setattr(_package_loader, "importlib_distributions", lambda: dists)
+    _package_loader.init_loaded_packages()
+
+    for [result, dist] in result_dist_pairs:
+        assert hasattr(loadedPackages, dist.name)
+        assert getattr(loadedPackages, dist.name) == result
 
 
 @pytest.mark.xfail_browsers(node="Some fetch trouble")

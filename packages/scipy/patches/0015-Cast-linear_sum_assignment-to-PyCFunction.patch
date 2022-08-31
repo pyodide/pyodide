@@ -1,7 +1,7 @@
-From a6b9d7f0251f78e87f6cfa1c57c234d0e204cb03 Mon Sep 17 00:00:00 2001
+From c66803ba6a52faf9265d4f08b8074b8c1d0af2fa Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 30 Aug 2022 11:58:35 -0700
-Subject: [PATCH 17/17] Cast linear_sum_assignment to PyCFunction
+Subject: [PATCH 15/15] Cast linear_sum_assignment to PyCFunction
 
 ---
  scipy/optimize/_lsap.c | 2 +-

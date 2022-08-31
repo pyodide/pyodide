@@ -1,7 +1,7 @@
-From 6c572eece24bc7e3b190c4dc9d1097f370950977 Mon Sep 17 00:00:00 2001
+From 09b98d625709d03e81fc8a98d82d5d395cbcd7a9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 30 Aug 2022 10:58:25 -0700
-Subject: [PATCH 15/17] Remove meson requirements
+Subject: [PATCH 13/15] Remove meson requirements
 
 ---
  pyproject.toml | 4 +---
