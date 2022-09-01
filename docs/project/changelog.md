@@ -52,7 +52,10 @@ substitutions:
 - {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
   {pr}`3036`
 
-- {{ Fix }} Packages are now loaded in a correct order regarding their dependencies.
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding their dependencies.
+  {pr}`3020`
+
+- {{ Breaking }} Loading the `soupseive` package will not automatically load `beautifulsoup4` together.
   {pr}`3020`
 
 ### Build System
