@@ -180,6 +180,16 @@ class Package(BasePackage):
             return
 
 
+def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
+    for pkg_name, pkg in pkg_map.items():
+        for runtime_dep_name in pkg.run_dependencies:
+            runtime_dep = pkg_map[runtime_dep_name]
+            if runtime_dep.library:
+                raise ValueError(
+                    f"{pkg_name} has an invalid dependency: {runtime_dep_name}. Static libraries must be a host dependency."
+                )
+
+
 def generate_dependency_graph(
     packages_dir: Path, packages: set[str]
 ) -> dict[str, BasePackage]:
@@ -242,6 +252,8 @@ def generate_dependency_graph(
         for dep in pkg.dependencies:
             if pkg_map.get(dep) is None:
                 packages.add(dep)
+
+    validate_dependencies(pkg_map)
 
     # Traverse in build order (dependencies first then dependents)
     # Mark a package as disabled if they've either been explicitly disabled
@@ -480,7 +492,6 @@ def _generate_package_hash(full_path: Path) -> str:
 def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, Any]:
-    libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
     packages: dict[str, Any] = {}
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
@@ -498,9 +509,7 @@ def generate_packagedata(
             pkg_entry["shared_library"] = True
             pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
 
-        pkg_entry["depends"] = [
-            x.lower() for x in pkg.run_dependencies if x not in libraries
-        ]
+        pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
         packages[name.lower()] = pkg_entry
