@@ -267,8 +267,8 @@ async function installPackage(
 }
 
 /**
- * Download then install the package.
- * Downloads can be done in parallel, but installs must be done following the dependency.
+ * Download and install the package.
+ * Downloads can be done in parallel, but installs must be done for dependencies first.
  * @param name The name of the package
  * @param toLoad The map of package names to PackageLoadMetadata
  * @param loaded The set of loaded package names, this will be updated by this function.
