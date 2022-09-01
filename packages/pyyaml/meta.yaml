@@ -13,8 +13,6 @@ build:
 requirements:
   host:
     - libyaml
-  run:
-    - libyaml
 test:
   imports:
     - yaml

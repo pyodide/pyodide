@@ -18,6 +18,7 @@ requirements:
     - newick
     - tskit
     - demes
+  host:
     - libgsl
 test:
   imports:
