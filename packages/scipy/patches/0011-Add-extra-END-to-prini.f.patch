@@ -1,7 +1,7 @@
-From ce60b3e7c5d1327c9b4fe00dbfc2292ffef6456f Mon Sep 17 00:00:00 2001
+From 00b8c46a16125f76a1b103a666993e2006e3a312 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 7 Apr 2022 10:41:26 -0700
-Subject: [PATCH 13/15] Add extra END to prini.f
+Subject: [PATCH 11/13] Add extra END to prini.f
 
 ---
  scipy/linalg/src/id_dist/src/prini.f | 1 +
