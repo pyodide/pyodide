@@ -4,7 +4,6 @@
 
 # pythran export canvas_custom_font()
 import matplotlib
-
 import numpy as np
 
 matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
