@@ -18,9 +18,9 @@ LIBFFI_TAG=2022-06-23
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
-.PHONY: pack-assets
-pack-assets: $(INSTALL)/lib/$(LIB)
-	./wasm_assets.py --pack-dir $(CPYTHONPACK)
+.PHONY: zip-stdlib
+zip-stdlib: $(INSTALL)/lib/$(LIB)
+	./wasm_assets.py --out $(CPYTHONZIP)
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	( \

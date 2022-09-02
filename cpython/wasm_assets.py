@@ -81,8 +81,9 @@ parser.add_argument(
     type=path,
 )
 parser.add_argument(
-    "--pack-dir",
-    default=pathlib.Path("pack"),
+    "-o",
+    "--out",
+    default=pathlib.Path("stdlib_zip"),
     type=path,
 )
 
@@ -112,7 +113,7 @@ def main():
 
     args.srcdir = SRCDIR
     args.srcdir_lib = SRCDIR_LIB
-    args.wasm_root = args.pack_dir.absolute()
+    args.wasm_root = args.out.absolute()
     args.wasm_stdlib_zip = args.wasm_root / WASM_STDLIB_ZIP
     args.wasm_stdlib = args.wasm_root / WASM_STDLIB
     args.wasm_dynload = args.wasm_root / WASM_DYNLOAD
