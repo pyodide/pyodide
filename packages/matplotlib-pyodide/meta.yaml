@@ -6,7 +6,7 @@ source:
   sha256: 40c8a1208266accfa372ac386e283725d5e9c22f145ccd1a6eccfcd269f90704
 test:
   imports:
-    - matplotlib-pyodide
+    - matplotlib_pyodide
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
