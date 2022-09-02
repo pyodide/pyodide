@@ -3,8 +3,10 @@ package:
   version: 1.0.0
 source:
   sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-  url: https://dummy-url-that-not-exists.com/pkg_2-py3-none-any.whl
+  url: https://dummy-url-that-not-exists.com/pkg_2.tar.gz
 requirements:
+  host:
+    - pkg_3
   run:
     - pkg_3
 test:

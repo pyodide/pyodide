@@ -97,6 +97,9 @@ ALWAYS_PACKAGES = {
     "micropip",
     "distutils",
     "test",
+    "ssl",
+    "lzma",
+    "sqlite3",
 }
 
 CORE_PACKAGES = {
@@ -109,11 +112,8 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
-    "ssl",
-    "lzma",
     "pytest",
     "tblib",
-    "sqlite3",
 }
 
 CORE_SCIPY_PACKAGES = {
@@ -163,10 +163,6 @@ def _parse_package_subset(query: str | None) -> set[str]:
         packages |= CORE_PACKAGES | CORE_SCIPY_PACKAGES
         packages.discard("min-scipy-stack")
 
-    # Hack to deal with the circular dependence between soupsieve and
-    # beautifulsoup4
-    if "beautifulsoup4" in packages:
-        packages.add("soupsieve")
     packages.discard("")
     return packages
 
@@ -295,8 +291,6 @@ def get_unisolated_packages() -> list[str]:
             config = parse_package_config(pkg, check=False)
             if config.get("build", {}).get("cross-build-env", False):
                 unisolated_packages.append(config["package"]["name"])
-        # TODO: remove setuptools_rust from this when they release the next version.
-        unisolated_packages.append("setuptools_rust")
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 

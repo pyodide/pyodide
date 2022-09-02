@@ -1,16 +1,20 @@
+import json
 import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide.fixture import selenium_common
+from pytest_pyodide.server import spawn_web_server
+from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH
+from conftest import DIST_PATH, ROOT_PATH
 
 
-def get_pyparsing_wheel_name():
+def get_pyparsing_wheel_name() -> str:
     return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
 
 
-def get_pytz_wheel_name():
+def get_pytz_wheel_name() -> str:
     return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
@@ -58,10 +62,33 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium.run("import pytz")
 
 
-def test_load_relative_url(selenium_standalone):
-    print(get_pytz_wheel_name())
-    selenium_standalone.load_package(f"./{get_pytz_wheel_name()}")
-    selenium_standalone.run("import pytz")
+def test_load_relative_url(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    url, port, _ = web_server_main
+    test_html = (ROOT_PATH / "src/templates/test.html").read_text()
+    test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
+    (tmp_path / "test.html").write_text(test_html)
+    pytz_wheel = get_pytz_wheel_name()
+    pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
+    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
+
+    with spawn_web_server(tmp_path) as web_server, selenium_common(
+        request,
+        runtime,
+        web_server,
+        load_pyodide=True,
+        browsers=playwright_browsers,
+        script_type="classic",
+    ) as selenium, set_webdriver_script_timeout(
+        selenium, script_timeout=parse_driver_timeout(request.node)
+    ):
+        if selenium.browser == "node":
+            selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
+        selenium.load_package(pytz1_wheel)
+        selenium.run(
+            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz1)"
+        )
 
 
 def test_list_loaded_urls(selenium_standalone):
@@ -390,6 +417,89 @@ def test_get_dynlibs():
         x2.close()
         t.flush()
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
+
+
+class DummyDistribution:
+    def __init__(
+        self,
+        name: str,
+        source: str | None = None,
+        direct_url: dict[str, str] | None = None,
+        installer: str | None = None,
+    ):
+        self.name = name
+        direct_url_json = json.dumps(direct_url) if direct_url else None
+        self._files: dict[str, str | None] = {
+            "PYODIDE_SOURCE": source,
+            "direct_url.json": direct_url_json,
+            "INSTALLER": installer,
+        }
+
+    def read_text(self, key: str) -> str | None:
+        return self._files.get(key)
+
+    def __repr__(self):
+        return self.name
+
+
+result_dist_pairs = [
+    ("default channel", DummyDistribution("A", source="pyodide")),
+    (
+        "default channel",
+        DummyDistribution(
+            "B",
+            source="pyodide",
+            direct_url={"url": "http://some.pkg.src/a/b/c.whl"},
+            installer="pip",
+        ),
+    ),
+    (
+        "http://some.pkg.src/a/b/c.whl",
+        DummyDistribution("C", source="http://some.pkg.src/a/b/c.whl"),
+    ),
+    (
+        "http://some.pkg.src/a/b/c.whl",
+        DummyDistribution(
+            "D",
+            source="http://some.pkg.src/a/b/c.whl",
+            direct_url={"url": "http://a.b.c/x/y/z.whl"},
+            installer="pip",
+        ),
+    ),
+    (
+        "http://a.b.c/x/y/z.whl",
+        DummyDistribution(
+            "E", direct_url={"url": "http://a.b.c/x/y/z.whl"}, installer="pip"
+        ),
+    ),
+    ("pip (index unknown)", DummyDistribution("F", installer="pip")),
+    ("other (index unknown)", DummyDistribution("G", installer="other")),
+    ("Unknown", DummyDistribution("H")),
+]
+
+
+@pytest.mark.parametrize("result,dist", result_dist_pairs)
+def test_get_dist_source(result, dist):
+    from pyodide._package_loader import get_dist_source
+
+    assert result == get_dist_source(dist)
+
+
+def test_init_loaded_packages(monkeypatch):
+    from pyodide import _package_loader
+
+    class loadedPackagesCls:
+        pass
+
+    loadedPackages = loadedPackagesCls()
+    monkeypatch.setattr(_package_loader, "loadedPackages", loadedPackages)
+    dists = [dist for [_, dist] in result_dist_pairs]
+    monkeypatch.setattr(_package_loader, "importlib_distributions", lambda: dists)
+    _package_loader.init_loaded_packages()
+
+    for [result, dist] in result_dist_pairs:
+        assert hasattr(loadedPackages, dist.name)
+        assert getattr(loadedPackages, dist.name) == result
 
 
 @pytest.mark.xfail_browsers(node="Some fetch trouble")
