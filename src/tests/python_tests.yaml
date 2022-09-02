@@ -536,6 +536,7 @@
 - test_platform:
     skip:
       - test_architecture_via_symlink # fork
+      - test_libc_ver # Can't open sys.executable
 - test_plistlib
 - test_poll:
     xfail: subprocess

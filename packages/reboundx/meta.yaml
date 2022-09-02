@@ -14,9 +14,10 @@ requirements:
   run:
     - rebound
     - numpy
+  host:
+    - rebound
 test:
   imports:
-    - rebound
     - reboundx
 about:
   home: https://github.com/dtamayo/reboundx

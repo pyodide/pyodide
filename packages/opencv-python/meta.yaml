@@ -21,6 +21,7 @@ source:
 requirements:
   run:
     - numpy
+  host:
     - ffmpeg
     - libwebp
     - libtiff

@@ -5,6 +5,8 @@ source:
   sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
   url: https://dummy-url-that-not-exists.com/pkg_3-py3-none-any.whls
 requirements:
+  host:
+    - pkg_3_1
   run:
     - pkg_3_1
 test:

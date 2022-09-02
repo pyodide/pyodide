@@ -14,19 +14,99 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.15
-  {pr}`2958`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.20
+  {pr}`2958`, {pr}`2950`, {pr}`3027`
 
-- New packages: the standard library lzma module {pr}`2939`,
-  pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
+  {pr}`2946`
+
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+  {pr}`2999`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
+
+- {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
+  be passed as command line arguments to the Python interpreter at start up.
+  {pr}`3021`
+
+- {{ Breaking }} The Pyodide Python package is installed into `/lib/python3.10`
+  rather than `/lib/python3.10/site-packages`.
+  {pr}`3022`
+
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding their dependencies.
+  {pr}`3020`
+
+- {{ Breaking }} Loading the `soupseive` package will not automatically load `beautifulsoup4` together.
+  {pr}`3020`
+
+### Build System
+
+- {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
+  host dependencies that are required for building packages.
+  {pr}`2132`
+
+## Version 0.21.2
+
+- {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
+  with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
+  they had a leading underscore and it was only possible to load them with
+  `pyodide.loadPackage`).
+  {issue}`3003`
+
+- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
+  be resolved relative to `document.location` (in browser) or relative to the
+  current working directory (in Node) rather than relative to `indexURL`.
+  {pr}`3013`, {issue}`3011`
+
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
+  now works even if `node` is run with `--enable-source-maps`.
+  {pr}`3015`
+
+## Version 0.21.1
+
+- New packages: the standard library lzma module {pr}`2939`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
+
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load some stdlib modules like
+  distutils, ssl, and sqlite3 by default.
+  See [Pyodide Python compatibility](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+  for detail. If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  However, setting `fullStdLib` to true will increase the initial Pyodide load time.
+  So it is preferable to explicitly load the required module.
+  {pr}`2998`
+
+- {{ Enhancement }} `pyodide build` now checks that the correct version of the
+  Emscripten compiler is used.
+  {pr}`2975`, {pr}`2990`
+
+- {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
+  {pr}`2994`
 
 ## Version 0.21.0
 

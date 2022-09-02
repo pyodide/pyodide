@@ -23,7 +23,7 @@ from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import UNVENDORED_STDLIB_MODULES, find_matching_wheels
+from .common import find_matching_wheels
 from .io import parse_package_config
 
 
@@ -44,9 +44,11 @@ class BasePackage:
     meta: dict[str, Any]
     library: bool
     shared_library: bool
-    dependencies: list[str]
-    unbuilt_dependencies: set[str]
-    dependents: set[str]
+    run_dependencies: list[str]
+    host_dependencies: list[str]
+    dependencies: set[str]  # run + host dependencies
+    unbuilt_host_dependencies: set[str]
+    host_dependents: set[str]
     unvendored_tests: Path | None = None
     file_name: str | None = None
     install_dir: str = "site"
@@ -55,10 +57,10 @@ class BasePackage:
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
     def __lt__(self, other: Any) -> bool:
-        return len(self.dependents) > len(other.dependents)
+        return len(self.host_dependents) > len(other.host_dependents)
 
     def __eq__(self, other: Any) -> bool:
-        return len(self.dependents) == len(other.dependents)
+        return len(self.host_dependents) == len(other.host_dependents)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
@@ -73,32 +75,6 @@ class BasePackage:
 
     def wheel_path(self) -> Path:
         raise NotImplementedError()
-
-    def tests_path(self) -> Path | None:
-        return None
-
-
-@dataclasses.dataclass
-class StdLibPackage(BasePackage):
-    def __init__(self, pkgdir: Path):
-        self.pkgdir = pkgdir
-        self.meta = {}
-        self.name = pkgdir.stem
-        self.version = "1.0"
-        self.disabled = False
-        self.library = False
-        self.shared_library = False
-        self.dependencies = []
-        self.unbuilt_dependencies = set()
-        self.dependents = set()
-        self.install_dir = "lib"
-
-    def build(self, outputdir: Path, args: Any) -> None:
-        # All build / packaging steps are already done in the main Makefile
-        return
-
-    def wheel_path(self) -> Path:
-        raise RuntimeError("StdLibPackage has no wheel")
 
     def tests_path(self) -> Path | None:
         return None
@@ -124,11 +100,13 @@ class Package(BasePackage):
         self.library = self.meta["build"].get("library", False)
         self.shared_library = self.meta["build"].get("sharedlibrary", False)
 
-        assert self.name == pkgdir.stem
+        assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"
 
-        self.dependencies = self.meta["requirements"].get("run", [])
-        self.unbuilt_dependencies = set(self.dependencies)
-        self.dependents = set()
+        self.run_dependencies = self.meta["requirements"].get("run", [])
+        self.host_dependencies = self.meta["requirements"].get("host", [])
+        self.dependencies = set(self.run_dependencies + self.host_dependencies)
+        self.unbuilt_host_dependencies = set(self.host_dependencies)
+        self.host_dependents = set()
 
     def wheel_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
@@ -258,10 +236,7 @@ def generate_dependency_graph(
     while packages:
         pkgname = packages.pop()
 
-        if pkgname in UNVENDORED_STDLIB_MODULES:
-            pkg = StdLibPackage(packages_dir / pkgname)
-        else:
-            pkg = Package(packages_dir / pkgname)
+        pkg = Package(packages_dir / pkgname)
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
         for dep in pkg.dependencies:
@@ -298,8 +273,8 @@ def generate_dependency_graph(
             continue
 
         requested.update(pkg.dependencies)
-        for dep in pkg.dependencies:
-            pkg_map[dep].dependents.add(pkg.name)
+        for dep in pkg.host_dependencies:
+            pkg_map[dep].host_dependents.add(pkg.name)
 
     return {name: pkg_map[name] for name in requested}
 
@@ -352,12 +327,10 @@ def mark_package_needs_build(
     Helper for generate_needs_build_set. Modifies needs_build in place.
     Recursively add pkg and all of its dependencies to needs_build.
     """
-    if isinstance(pkg, StdLibPackage):
-        return
     if pkg.name in needs_build:
         return
     needs_build.add(pkg.name)
-    for dep in pkg.dependents:
+    for dep in pkg.host_dependents:
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
@@ -414,7 +387,7 @@ def build_from_graph(
     # Remove the packages we've already built from the dependency sets of
     # the remaining ones
     for pkg_name in needs_build:
-        pkg_map[pkg_name].unbuilt_dependencies.difference_update(already_built)
+        pkg_map[pkg_name].unbuilt_host_dependencies.difference_update(already_built)
 
     if already_built:
         print(
@@ -428,7 +401,7 @@ def build_from_graph(
     t0 = perf_counter()
     for pkg_name in needs_build:
         pkg = pkg_map[pkg_name]
-        if len(pkg.unbuilt_dependencies) == 0:
+        if len(pkg.unbuilt_host_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
     built_queue: Queue[BasePackage | Exception] = Queue()
@@ -484,10 +457,10 @@ def build_from_graph(
 
         num_built += 1
 
-        for _dependent in pkg.dependents:
+        for _dependent in pkg.host_dependents:
             dependent = pkg_map[_dependent]
-            dependent.unbuilt_dependencies.remove(pkg.name)
-            if len(dependent.unbuilt_dependencies) == 0:
+            dependent.unbuilt_host_dependencies.remove(pkg.name)
+            if len(dependent.unbuilt_host_dependencies) == 0:
                 build_queue.put((job_priority(dependent), dependent))
 
     print(
@@ -526,7 +499,7 @@ def generate_packagedata(
             pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
 
         pkg_entry["depends"] = [
-            x.lower() for x in pkg.dependencies if x not in libraries
+            x.lower() for x in pkg.run_dependencies if x not in libraries
         ]
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
@@ -548,11 +521,6 @@ def generate_packagedata(
                 ),
             }
             packages[name.lower() + "-tests"] = pkg_entry
-
-    # Workaround for circular dependency between soupsieve and beautifulsoup4
-    # TODO: FIXME!!
-    if "soupsieve" in packages:
-        packages["soupsieve"]["depends"].append("beautifulsoup4")
 
     # sort packages by name
     packages = dict(sorted(packages.items()))
@@ -605,9 +573,6 @@ def build_packages(
     build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         if pkg.library:
-            continue
-        if isinstance(pkg, StdLibPackage):
-            pkg.file_name = pkg.name + ".tar"
             continue
         if pkg.needs_rebuild():
             continue

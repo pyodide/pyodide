@@ -22,7 +22,7 @@ build:
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.
-  run:
+  host:
     - libwebp
     - libtiff
 test:

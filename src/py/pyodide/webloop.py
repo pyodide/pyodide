@@ -1,8 +1,10 @@
 import asyncio
 import contextvars
+import inspect
 import sys
 import time
 import traceback
+from asyncio import Future
 from collections.abc import Callable
 from typing import Any
 
@@ -10,6 +12,108 @@ from ._core import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
+
+
+class PyodideFuture(Future[Any]):
+    """A future with extra then, catch, and finally_ methods based on the
+    Javascript promise API.
+    """
+
+    def then(
+        self,
+        onfulfilled: Callable[[Any], Any] | None,
+        onrejected: Callable[[Exception], Any] | None = None,
+    ) -> "PyodideFuture":
+        """When the Future is done, either execute onfulfilled with the result
+        or execute onrejected with the exception.
+
+        Returns a new Future which will be marked done when either the
+        onfulfilled or onrejected callback is completed. If the return value of
+        the executed callback is awaitable it will be awaited repeatedly until a
+        nonawaitable value is received. The returned Future will be resolved
+        with that value. If an error is raised, the returned Future will be
+        rejected with the error.
+
+        Parameters
+        ----------
+        onfulfilled:
+            A function called if the Future is fulfilled. This function receives
+            one argument, the fulfillment value.
+
+        onrejected:
+            A function called if the Future is rejected. This function receives
+            one argument, the rejection value.
+
+        Returns
+        -------
+        A new future to be resolved when the original future is done and the
+        appropriate callback is also done.
+        """
+        result = PyodideFuture()
+
+        onfulfilled_: Callable[[Any], Any]
+        onrejected_: Callable[[Any], Any]
+        if onfulfilled:
+            onfulfilled_ = onfulfilled
+        else:
+
+            def onfulfilled_(x):
+                return x
+
+        if onrejected:
+            onrejected_ = onrejected
+        else:
+
+            def onrejected_(x):
+                raise x
+
+        async def callback(fut: Future[Any]) -> Any:
+            if fut.exception():
+                val = fut.exception()
+                fun = onrejected_
+            else:
+                fun = onfulfilled_
+                val = fut.result()
+            try:
+                r = fun(val)
+                while inspect.isawaitable(r):
+                    r = await r
+            except Exception as result_exception:
+                result.set_exception(result_exception)
+                return
+            result.set_result(r)
+
+        def wrapper(fut: Future[Any]) -> None:
+            asyncio.ensure_future(callback(fut))
+
+        self.add_done_callback(wrapper)
+        return result
+
+    def catch(self, onrejected: Callable[[Exception], Any] | None) -> "PyodideFuture":
+        return self.then(None, onrejected)
+
+    def finally_(self, onfinally: Callable[[], Any]) -> "PyodideFuture":
+        result = PyodideFuture()
+
+        async def callback(fut: Future[Any]) -> None:
+            exc = fut.exception()
+            try:
+                r = onfinally()
+                while inspect.isawaitable(r):
+                    r = await r
+            except Exception as e:
+                result.set_exception(e)
+                return
+            if exc:
+                result.set_exception(exc)
+            else:
+                result.set_result(fut.result())
+
+        def wrapper(fut: Future[Any]) -> None:
+            asyncio.ensure_future(callback(fut))
+
+        self.add_done_callback(wrapper)
+        return result
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -193,6 +297,10 @@ class WebLoop(asyncio.AbstractEventLoop):
             fut.set_exception(e)
         return fut
 
+    def create_future(self) -> asyncio.Future[Any]:
+        """Create a Future object attached to the loop."""
+        return PyodideFuture(loop=self)
+
     #
     # The remaining methods are copied directly from BaseEventLoop
     #
@@ -207,13 +315,6 @@ class WebLoop(asyncio.AbstractEventLoop):
         Copied from ``BaseEventLoop.time``
         """
         return time.monotonic()
-
-    def create_future(self) -> asyncio.Future[Any]:
-        """Create a Future object attached to the loop.
-
-        Copied from ``BaseEventLoop.create_future``
-        """
-        return asyncio.futures.Future(loop=self)
 
     def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
