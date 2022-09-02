@@ -17,6 +17,10 @@ substitutions:
 - {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
   {issue}`3001`
 
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies.
+  {pr}`3020`
+
 ## Version 0.22.2
 
 _August 29, 2022_
