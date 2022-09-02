@@ -4,7 +4,6 @@
 
 # pythran export wasm_image()
 import matplotlib
-
 import numpy as np
 
 matplotlib.use("module://matplotlib_pyodide.wasm_backend")

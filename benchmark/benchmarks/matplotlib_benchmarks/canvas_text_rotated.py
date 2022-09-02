@@ -4,7 +4,6 @@
 
 # pythran export canvas_text_rotated()
 import matplotlib
-
 import numpy as np
 
 matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
