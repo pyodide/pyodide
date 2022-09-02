@@ -8,7 +8,7 @@ source:
   url: https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_12_1.tar.gz
 
 requirements:
-  run:
+  host:
     - zlib
 
 build:

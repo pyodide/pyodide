@@ -17,6 +17,7 @@ def test_ssl(selenium):
         "test_verify_flags",
         "test_subclass",
         "test_lib_reason",
+        "test_unwrap",
     ]
 
     try:

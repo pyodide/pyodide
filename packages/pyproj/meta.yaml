@@ -7,9 +7,11 @@ source:
   sha256: b3d8e14d91cc95fb3dbc03a9d0588ac58326803eefa5bbb0978d109de3304fbe
 
 requirements:
-  run:
+  host:
     - libproj
+  run:
     - certifi
+    - sqlite3
 
 build:
   script: |

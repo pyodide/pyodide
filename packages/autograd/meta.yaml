@@ -8,6 +8,8 @@ test:
   imports:
     - autograd
 requirements:
+  host:
+    - numpy
   run:
     - numpy
     - future

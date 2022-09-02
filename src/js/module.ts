@@ -3,6 +3,7 @@ export interface Module {
   noImageDecoding: boolean;
   noAudioDecoding: boolean;
   noWasmDecoding: boolean;
+  quit: (status: number, toThrow: Error) => void;
   preRun: { (): void }[];
   print: (a: string) => void;
   printErr: (a: string) => void;
@@ -21,6 +22,10 @@ export function createModule(): any {
   Module.noAudioDecoding = true;
   Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
   Module.preRun = [];
+  Module.quit = (status: number, toThrow: Error) => {
+    Module.exited = { status, toThrow };
+    throw toThrow;
+  };
   return Module;
 }
 
