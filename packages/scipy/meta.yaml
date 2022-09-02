@@ -18,18 +18,18 @@ source:
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
+    - patches/0002-loadDynamicLibrary-flapack.patch
     - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
     - patches/0004-int-to-string.patch
-    - patches/0005-disable-blas-detection.patch
-    - patches/0006-fix-fotran-files-minpack.patch
-    - patches/0007-gemm_-no-const.patch
-    - patches/0008-make-int-return-values.patch
-    - patches/0009-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0010-sasum-returns-double-not-float.patch
-    - patches/0011-skip-fortran-fails-to-link.patch
-    - patches/0012-Disable-lapack-detection.patch
-    - patches/0013-Add-extra-END-to-prini.f.patch
-    - patches/0014-BUG-Fix-signature-of-D_IIR_forback-1-2.patch
+    - patches/0005-fix-fotran-files-minpack.patch
+    - patches/0006-gemm_-no-const.patch
+    - patches/0007-make-int-return-values.patch
+    - patches/0008-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0009-sasum-returns-double-not-float.patch
+    - patches/0010-skip-fortran-fails-to-link.patch
+    - patches/0011-Add-extra-END-to-prini.f.patch
+    - patches/0012-BUG-Fix-signature-of-D_IIR_forback-1-2.patch
+    - patches/0013-Change-qh_eachvoronoi_all-FILE-type.patch
 
 build:
   cflags: |
@@ -46,6 +46,10 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
+    set -x
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE $WASM_LIBRARY_DIR/CLAPACK/LIB/clapack_all.so"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE"
+
     pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
@@ -100,6 +104,9 @@ build:
     - scipy/linalg/cython_blas.pxd
 
 requirements:
+  host:
+    - numpy
+    - CLAPACK
   run:
     - numpy
     - CLAPACK
