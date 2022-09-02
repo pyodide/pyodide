@@ -12,12 +12,6 @@ source:
     - patches/fix-threading.patch
 
   extras:
-    - - src/browser_backend.py
-      - lib/matplotlib/backends/browser_backend.py
-    - - src/wasm_backend.py
-      - lib/matplotlib/backends/wasm_backend.py
-    - - src/html5_canvas_backend.py
-      - lib/matplotlib/backends/html5_canvas_backend.py
     - - src/setup.cfg
       - ./mplsetup.cfg
 
@@ -54,6 +48,7 @@ requirements:
     - pyparsing
     - python-dateutil
     - pytz
+    - matplotlib-pyodide
 
 test:
   imports:
