@@ -29,7 +29,6 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
-	src/core/error_handling_cpp.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -168,9 +167,6 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
-	$(CXX) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
-
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
@@ -193,15 +189,10 @@ emsdk/emsdk/.complete:
 	date +"[%F %T] done building emsdk."
 
 
-SETUPTOOLS_RUST_COMMIT=5e8c380429aba1e5df5815dcf921025c599cecec
 rust:
 	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
-	# Install setuptools-rust with a fix for Wasm targets
-	# TODO: Remove this when they release the next version.
-	pip install -t $(HOSTSITEPACKAGES) git+https://github.com/PyO3/setuptools-rust.git@$(SETUPTOOLS_RUST_COMMIT)
-
 
 FORCE:
 

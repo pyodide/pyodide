@@ -20,7 +20,6 @@ requirements:
     - rebound
 test:
   imports:
-    - rebound
     - reboundx
 about:
   home: https://github.com/dtamayo/reboundx

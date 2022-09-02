@@ -411,7 +411,7 @@ def test_console_html(console_html_fixture):
         ).strip()
     )
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
-    result = re.sub(r"/lib/python3.\d+/site-packages", "...", result)
+    result = re.sub(r"/lib/python3.\d+", "/lib/pythonxxx", result)
 
     answer = dedent(
         """
@@ -422,7 +422,7 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \".../pyodide/console.py\", line xxx, in repr_shorten
+              File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
