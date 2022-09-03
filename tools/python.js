@@ -1,6 +1,20 @@
 #!/bin/sh
 ":" /* << "EOF"
-This file is a bash/node polyglot.
+This file is a bash/node polyglot. This is needed for a few reasons:
+
+1. In node 14 we must pass `--experimental-wasm-bigint`. In node >14 we cannot
+pass --experimental-wasm-bigint
+
+2. Emscripten vendors node 14 so it is desirable not to require node >= 16
+
+3. We could use a bash script in a separate file to determine the flags needed,
+but virtualenv looks up the current file and uses it directly. So if we make
+python.sh and have it invoke python.js, then the virtual env will invoke python.js
+directly without the `--experimental-wasm-bigint` flag and so the virtualenv won't
+work with node 14.
+
+Keeping the bash script and the JavaScript in the same file makes sure that even
+inside the virtualenv the proper shell code is executed.
 */;
 `
 EOF
@@ -20,6 +34,8 @@ if(major_version < 14) {
 if(major_version === 14){
     process.stdout.write("--experimental-wasm-bigint");
 } else {
+    // If $ARGS is empty, it breaks things in a weird way.
+    // ARGS=-- helpfully is not empty but does nothing.
     process.stdout.write("--");
 }
 EOF
@@ -31,7 +47,17 @@ exec node "$ARGS" "$0" "$@"
 const { loadPyodide } = require("../dist/pyodide");
 const fs = require("fs");
 
-function make_tty_ops(stream) {
+/**
+ * The default stderr/stdout do not handle newline or flush correctly, and stdin
+ * is also strange. Make a tty that connects std streams to node stdstreams. We
+ * will make one tty for stdout and one for stderr, the `outstream` argument
+ * controls which one we make.
+ *
+ * Note that setting Module.stdin / Module.stdout / Module.stderr does not work
+ * because these cause `isatty(stdstream)` to return false. We want `isatty` to
+ * be true. (IMO this is an Emscripten issue, maybe someday we can fix it.)
+ */
+function make_tty_ops(outstream) {
     let newline = false;
     return {
         // get_char has 3 particular return values:
@@ -47,6 +73,7 @@ function make_tty_ops(stream) {
                 var result = null;
                 var BUFSIZE = 256;
                 var buf = Buffer.alloc(BUFSIZE);
+                // read synchronously at most BUFSIZE bytes from file descriptor 0 (stdin)
                 var bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
                 if (bytesRead === 0) {
                     return null;
@@ -59,26 +86,33 @@ function make_tty_ops(stream) {
             return res;
         },
         put_char(tty, val) {
-            stream.write(Buffer.from([val]));
+            outstream.write(Buffer.from([val]));
         },
         flush(tty) {},
         fsync() {},
     };
 }
 
+/**
+ * Fix standard streams by replacing them with ttys that work better via make_tty_ops.
+ */
 function setupStreams(FS, TTY) {
+    // Create and register devices
     let mytty = FS.makedev(FS.createDevice.major++, 0);
     let myttyerr = FS.makedev(FS.createDevice.major++, 0);
     TTY.register(mytty, make_tty_ops(process.stdout));
     TTY.register(myttyerr, make_tty_ops(process.stderr));
+    // Attach devices to files
     FS.mkdev("/dev/mytty", mytty);
     FS.mkdev("/dev/myttyerr", myttyerr);
+    // Replace /dev/stdxx with our custom devices
     FS.unlink("/dev/stdin");
     FS.unlink("/dev/stdout");
     FS.unlink("/dev/stderr");
     FS.symlink("/dev/mytty", "/dev/stdin");
     FS.symlink("/dev/mytty", "/dev/stdout");
     FS.symlink("/dev/myttyerr", "/dev/stderr");
+    // Refresh std streams so they use our new versions
     FS.closeStream(0);
     FS.closeStream(1);
     FS.closeStream(2);
@@ -87,19 +121,25 @@ function setupStreams(FS, TTY) {
     FS.open("/dev/stderr", 1);
 }
 
+/**
+ * Determine which native top level directories to mount into the Emscripten
+ * file system.
+ *
+ * This is a bit brittle, if the machine has a top level directory with certain
+ * names it is possible this could break. The most surprising one here is tmp, I
+ * am not sure why but if we link tmp then the process silently fails.
+ */
+function nativeDirsToLink() {
+    const skipDirs = ["dev", "lib", "proc", "tmp"];
+    return fs
+        .readdirSync("/")
+        .filter((dir) => !skipDirs.includes(dir))
+        .map((dir) => "/" + dir);
+}
+
 async function main() {
     let args = process.argv.slice(2);
-
-    let _node_mounts = [];
-    const root = fs.readdirSync("/");
-    const skipDirs = ["dev", "lib", "proc", "tmp"];
-    for (const dir of root) {
-        if (skipDirs.includes(dir)) {
-            continue;
-        }
-        _node_mounts.push("/" + dir);
-    }
-
+    const _node_mounts = nativeDirsToLink();
     try {
         py = await loadPyodide({
             args,
@@ -107,6 +147,11 @@ async function main() {
             _node_mounts,
             _working_directory: process.cwd(),
             stdout(e) {
+                // Various applications expect output to be structured e.g.,
+                // JSON. So the "Python initialization complete" message is a
+                // hazard to us. Strip it out. Note that this is very temporary,
+                // we will replace stdout using `setupStreams` as soon as the
+                // interpreter is initialized.
                 if (e.trim() === "Python initialization complete") {
                     return;
                 }
@@ -117,6 +162,8 @@ async function main() {
         if (e.constructor.name !== "ExitStatus") {
             throw e;
         }
+        // If the user passed `--help`, `--version`, or a set of command line
+        // arguments that is invalid in some way, we will exit here.
         process.exit(e.status);
     }
     const FS = py.FS;
@@ -136,12 +183,17 @@ async function main() {
     py.runPython(
         `
         import asyncio
+        # Keep the event loop alive until all tasks are finished, or SystemExit or
+        # KeyboardInterupt is raised.
         loop = asyncio.get_event_loop()
+        # Make sure we don't run _no_in_progress_handler before we finish _run_main.
         loop._in_progress += 1
         from js import handleExit
         loop._no_in_progress_handler = handleExit
         loop._system_exit_handler = handleExit
         loop._keyboard_interrupt_handler = lambda: handleExit(130)
+
+        # Make shutil.get_terminal_size tell the terminal size accurately.
         import shutil
         from js.process import stdout
         import os
@@ -162,6 +214,8 @@ async function main() {
     try {
         errcode = py._module._run_main();
     } catch (e) {
+        // If there is some sort of error, add the Python tracebook in addition
+        // to the JavaScript traceback
         py._module._dump_traceback();
         throw e;
     }
