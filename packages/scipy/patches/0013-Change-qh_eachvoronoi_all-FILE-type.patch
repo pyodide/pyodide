@@ -1,7 +1,7 @@
-From e17fd39807ca476d4acf6ad0470040f3c772e4c1 Mon Sep 17 00:00:00 2001
+From 637cd45e932a8f66c0e593fa57da497757eab76c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 29 Aug 2022 16:45:21 -0700
-Subject: [PATCH 15/15] Change qh_eachvoronoi_all FILE type
+Subject: [PATCH 13/13] Change qh_eachvoronoi_all FILE type
 
 ---
  scipy/spatial/_qhull.pyx | 7 ++++---

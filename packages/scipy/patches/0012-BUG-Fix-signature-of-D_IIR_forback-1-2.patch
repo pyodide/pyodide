@@ -1,7 +1,7 @@
-From bf6124c9b92a8c536b6cfc02bd0467476d18129d Mon Sep 17 00:00:00 2001
+From d1230a8b448fd38d16d4f4bb34a3005b90f156b6 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 7 Apr 2022 11:02:29 -0700
-Subject: [PATCH 14/15] BUG Fix signature of D_IIR_forback(1,2)
+Subject: [PATCH 12/13] BUG Fix signature of D_IIR_forback(1,2)
 
 The precision parameter has type float but it is declared in `_splinemodule.c`
 with type double.

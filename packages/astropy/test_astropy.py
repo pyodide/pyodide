@@ -29,6 +29,7 @@ from pytest_pyodide import run_in_pyodide
     ],
 )
 @pytest.mark.skip_refcount_check
+@pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["astropy", "pytest", "micropip"])
 async def test_astropy(selenium, package, specific_test):
     import astropy
