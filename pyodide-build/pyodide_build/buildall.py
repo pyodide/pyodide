@@ -522,11 +522,6 @@ def generate_packagedata(
             }
             packages[name.lower() + "-tests"] = pkg_entry
 
-    # Workaround for circular dependency between soupsieve and beautifulsoup4
-    # TODO: FIXME!!
-    if "soupsieve" in packages:
-        packages["soupsieve"]["depends"].append("beautifulsoup4")
-
     # sort packages by name
     packages = dict(sorted(packages.items()))
     return packages

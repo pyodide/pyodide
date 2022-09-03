@@ -32,12 +32,12 @@ build:
       INSTALL=${WASM_LIBRARY_DIR}
     mkdir -p dist
 
-    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig* \
-       ${WASM_LIBRARY_DIR}/lib/libamd* \
-       ${WASM_LIBRARY_DIR}/lib/libcamd* \
-       ${WASM_LIBRARY_DIR}/lib/libccolamd* \
-       ${WASM_LIBRARY_DIR}/lib/libcolamd* \
-       ${WASM_LIBRARY_DIR}/lib/libmetis* \
-       ${WASM_LIBRARY_DIR}/lib/libcholmod* \
-       ${WASM_LIBRARY_DIR}/lib/libspqr* \
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
+       ${WASM_LIBRARY_DIR}/lib/libamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libcamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libccolamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libcolamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libmetis.so \
+       ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
+       ${WASM_LIBRARY_DIR}/lib/libspqr.so \
        dist/
