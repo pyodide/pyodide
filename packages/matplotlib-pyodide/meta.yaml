@@ -1,9 +1,9 @@
 package:
   name: matplotlib-pyodide
-  version: 0.1.0
+  version: 0.1.1
 source:
-  url: https://files.pythonhosted.org/packages/2c/2c/b646885eb750fbadcd687f5444756e87af6be6309a31f7a4851c98026553/matplotlib_pyodide-0.1.0-py3-none-any.whl
-  sha256: 40c8a1208266accfa372ac386e283725d5e9c22f145ccd1a6eccfcd269f90704
+  url: https://files.pythonhosted.org/packages/c9/d3/62f67e5bbaadab2ee777bfd609c288ea5818a4d75e8693a236dc211ecc0f/matplotlib_pyodide-0.1.1-py3-none-any.whl
+  sha256: b5bc28caaa56f189a9f13cf42e66fc277662d9e0a863622e5582a9b82b8ccc14
 test:
   imports:
     - matplotlib_pyodide
