@@ -5,22 +5,136 @@
 Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
 
-- {any}`pyodide.loadPackage` for packages built with Pyodide, or
-- {any}`micropip.install` for pure Python packages with wheels available on PyPI or
-  from other URLs.
+- {any}`micropip.install` (Python) for pure Python packages with wheels
+  as well as Pyodide packages (including Emscripten/wasm32 binary wheels). It
+  can install packages from PyPI, the JsDelivr CDN or from other URLs.
+- {any}`pyodide.loadPackage` (Javascript) for packages built with Pyodide. This
+  is a function with less overhead but also more limited functionality.
+  micropip uses this function to load Pyodide packages. In most cases you
+  should be using micropip.
 
-```{note}
-{mod}`micropip` can also be used to load packages built in Pyodide (in
-which case it relies on {any}`pyodide.loadPackage`).
-```
-
-If you use {any}`pyodide.loadPackagesFromImports` Pyodide will automatically
-download all packages that the code snippet imports. This is particularly useful
-for making a repl since users might import unexpected packages. At present,
+In some cases, and in particular in the REPL, packages are installed implicitly
+from imports. The Pyodide REPL uses {any}`pyodide.loadPackagesFromImports` to
+automatically download all packages that the code snippet imports. This is
+useful since users might import unexpected packages in REPL. At present,
 {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
 download packages from PyPI, it will only download packages included in the
 Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of
 packages included in Pyodide.
+
+## How to chose between `micropip.install` and `pyodide.loadPackage`?
+
+While {any}`micropip.install` is written in Python and
+{any}`pyodide.loadPackage` in Javascript this has no incidence on when
+to use each of these functions. Indeed, you can easily switch languages using
+the {ref}`type-translations` with,
+
+- from Javascript,
+  ```javascript
+  let micropip = pyodide.pyimport(package_name);
+  ```
+- from Python,
+  ```
+  import pyodide_js
+  await pyodide_js.loadPackage('package_name')
+  ```
+
+Instead, the general advice is to use {any}`micropip.install` for everything
+except in the following cases where {any}`pyodide.loadPackage` might be more
+appropriate,
+
+- to load micropip itself,
+- when you are optimizing for size, do not want to install the `micropip`
+  package, and do not need to install packages from PyPI.
+
+## Micropip
+
+### Installing packages
+
+Pyodide supports installing following types of packages with {mod}`micropip`,
+
+- pure Python wheels from PyPI with {mod}`micropip`.
+- pure Python and binary wasm32/emscripten wheels (also informally known as
+  "Pyodide packages" or "packages built by Pyodide") from the JsDelivr CDN and
+  custom URLs.
+  {func}`micropip.install` returns a Python
+  [Future](https://docs.python.org/3/library/asyncio-future.html) so you can
+  await the future or otherwise use the Python future API to do work once the
+  packages have finished loading:
+
+```pyodide
+await pyodide.loadPackage("micropip");
+const micropip = pyodide.pyimport("micropip");
+await micropip.install('snowballstemmer');
+pyodide.runPython(`
+  import snowballstemmer
+  stemmer = snowballstemmer.stemmer('english')
+  print(stemmer.stemWords('go goes going gone'.split()))
+`);
+```
+
+Micropip implements file integrity validation by checking the hash of the
+downloaded wheel against pre-recorded hash digests from the PyPI JSON API.
+
+(micropip-installing-from-arbitrary-urls)=
+
+### Installing wheels from arbitrary URLs
+
+Pure Python wheels can also be installed from any URL with {mod}`micropip`,
+
+```py
+import micropip
+micropip.install(
+    'https://example.com/files/snowballstemmer-2.0.0-py2.py3-none-any.whl'
+)
+```
+
+Micropip decides whether a file is a URL based on whether it ends in ".whl" or
+not. The wheel name in the URL must follow [PEP 427 naming
+convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
+be the case if the wheels is made using standard Python tools (`pip wheel`,
+`setup.py bdist_wheel`). Micropip will also install the dependencies of the
+wheel. If dependency resolution is not desired, you may pass `deps=False`.
+
+```{admonition} Cross-Origin Resource Sharing (CORS)
+:class: info
+
+If the file is on a remote server, the server must set
+[Cross-Origin Resource Sharing (CORS) headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+to allow access. If the server doesn't set CORS headers, you can use a CORS proxy.
+Note that using third-party CORS proxies has security implications,
+particularly since we are not able to check the file integrity, unlike with
+installs from PyPI. See [this stack overflow
+answer](https://stackoverflow.com/questions/43871637/no-access-control-allow-origin-header-is-present-on-the-requested-resource-whe/43881141#43881141)
+for more information about CORS.
+```
+
+## Example
+
+```html
+<html>
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <script type="text/javascript" src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
+    <script type="text/javascript">
+      async function main() {
+        let pyodide = await loadPyodide();
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install("snowballstemmer");
+        await pyodide.runPython(`
+        import snowballstemmer
+        stemmer = snowballstemmer.stemmer('english')
+        print(stemmer.stemWords('go goes going gone'.split()))
+      `);
+      }
+      main();
+    </script>
+  </body>
+</html>
+```
 
 ## Loading packages with {any}`pyodide.loadPackage`
 
@@ -70,88 +184,6 @@ main();
 ```
 
 (micropip)=
-
-## Micropip
-
-### Installing packages from PyPI
-
-Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`.
-{func}`micropip.install` returns a Python
-[Future](https://docs.python.org/3/library/asyncio-future.html) so you can await
-the future or otherwise use the Python future API to do work once the packages
-have finished loading:
-
-```pyodide
-await pyodide.loadPackage("micropip");
-const micropip = pyodide.pyimport("micropip");
-await micropip.install('snowballstemmer');
-pyodide.runPython(`
-  import snowballstemmer
-  stemmer = snowballstemmer.stemmer('english')
-  print(stemmer.stemWords('go goes going gone'.split()))
-`);
-```
-
-Micropip implements file integrity validation by checking the hash of the
-downloaded wheel against pre-recorded hash digests from the PyPI JSON API.
-
-(micropip-installing-from-arbitrary-urls)=
-
-### Installing wheels from arbitrary URLs
-
-Pure Python wheels can also be installed from any URL with {mod}`micropip`,
-
-```py
-import micropip
-micropip.install(
-    'https://example.com/files/snowballstemmer-2.0.0-py2.py3-none-any.whl'
-)
-```
-
-Micropip decides whether a file is a URL based on whether it ends in ".whl" or
-not. The wheel name in the URL must follow [PEP 427 naming
-convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
-be the case if the wheels is made using standard Python tools (`pip wheel`,
-`setup.py bdist_wheel`). Micropip will also install the dependencies of the
-wheel. If dependency resolution is not desired, you may pass `deps=False`.
-
-```{admonition} Cross-Origin Resource Sharing (CORS)
-:class: info
-
-If the file is on a remote server, the server must set
-[Cross-Origin Resource Sharing (CORS) headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-to allow access. If the server doesn't set CORS headers, you can use a CORS proxy.
-Note that using third-party CORS proxies has security implications,
-particularly since we are not able to check the file integrity, unlike with
-installs from PyPI. See [this stack overflow answer](https://stackoverflow.com/questions/43871637/no-access-control-allow-origin-header-is-present-on-the-requested-resource-whe/43881141#43881141) for more information about CORS.
-```
-
-## Example
-
-```html
-<html>
-  <head>
-    <meta charset="utf-8" />
-  </head>
-  <body>
-    <script type="text/javascript" src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
-    <script type="text/javascript">
-      async function main() {
-        let pyodide = await loadPyodide();
-        await pyodide.loadPackage("micropip");
-        const micropip = pyodide.pyimport("micropip");
-        await micropip.install("snowballstemmer");
-        await pyodide.runPython(`
-        import snowballstemmer
-        stemmer = snowballstemmer.stemmer('english')
-        print(stemmer.stemWords('go goes going gone'.split()))
-      `);
-      }
-      main();
-    </script>
-  </body>
-</html>
-```
 
 ```{eval-rst}
 .. toctree::
