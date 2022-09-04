@@ -316,8 +316,14 @@ export async function loadPyodide(
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
   Module.locateFile = (path: string) => config.indexURL + path;
-  const scriptSrc = `${config.indexURL}pyodide.asm.js`;
-  await loadScript(scriptSrc);
+
+  // If the pyodide.asm.js script has been imported, we can skip the dynamic import
+  // Users can then do a static import of the script in environments where
+  // dynamic importing is not allowed or not desirable, like module-type service workers
+  if (!(_createPyodideModule instanceof Function)) {
+    const scriptSrc = `${config.indexURL}pyodide.asm.js`;
+    await loadScript(scriptSrc);
+  }
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
