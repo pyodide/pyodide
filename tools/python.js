@@ -157,6 +157,17 @@ async function main() {
                 }
                 console.log(e);
             },
+            stderr(e) {
+                if (
+                    [
+                        "warning: no blob constructor, cannot create blobs with mimetypes",
+                        "warning: no BlobBuilder",
+                    ].includes(e.trim())
+                ) {
+                    return;
+                }
+                console.warn(e);
+            },
         });
     } catch (e) {
         if (e.constructor.name !== "ExitStatus") {
