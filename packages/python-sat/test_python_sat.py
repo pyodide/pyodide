@@ -1,5 +1,5 @@
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 solvers = [
     "cadical",

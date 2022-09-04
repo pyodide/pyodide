@@ -1,0 +1,25 @@
+From 86ae308adb000ee1243aa8d7b106cdd49a18153e Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 24 Aug 2022 16:24:48 -0700
+Subject: [PATCH] Fix assertion in file_packager for Jest
+
+---
+ tools/file_packager.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/file_packager.py b/tools/file_packager.py
+index 7d48556d6..d608f6738 100755
+--- a/tools/file_packager.py
++++ b/tools/file_packager.py
+@@ -996,7 +996,7 @@ def generate_js(data_target, data_files, metadata):
+     code += '''
+       function processPackageData(arrayBuffer) {
+         assert(arrayBuffer, 'Loading data file failed.');
+-        assert(arrayBuffer instanceof ArrayBuffer, 'bad input to processPackageData');
++        assert(arrayBuffer.constructor.name === ArrayBuffer.name, 'bad input to processPackageData');
+         var byteArray = new Uint8Array(arrayBuffer);
+         var curr;
+         %s
+-- 
+2.25.1
+

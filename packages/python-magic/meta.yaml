@@ -1,0 +1,24 @@
+package:
+  name: python-magic
+  version: 0.4.27
+
+source:
+  url: https://files.pythonhosted.org/packages/da/db/0b3e28ac047452d079d375ec6798bf76a036a08182dbb39ed38116a49130/python-magic-0.4.27.tar.gz
+  sha256: c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b
+
+  patches:
+    - patches/0001-Hardcode-libmagic.so-location.patch
+
+requirements:
+  run:
+    - libmagic
+
+test:
+  imports:
+    - magic
+
+about:
+  home: http://github.com/ahupp/python-magic
+  PyPI: https://pypi.org/project/python-magic
+  summary: File type identification using libmagic
+  license: MIT

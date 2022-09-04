@@ -1,7 +1,7 @@
 export PYVERSION ?= 3.10.2
 # Note: when updating EMSCRIPTEN_VERSION make sure to update
 # the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.14
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.20
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -98,19 +98,20 @@ export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s EXPORT_NAME="_createPyodideModule" \
+	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we_only_want_to_allow_exception_handling_in_side_modules'] \
 	-s DEMANGLE_SUPPORT=1 \
-	-s USE_ZLIB=1 \
+	-s USE_ZLIB \
+	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s EXPORT_ALL=1 \
 	-s POLYFILL \
+	-s MIN_SAFARI_VERSION=140000 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
-	-lsqlite3 \
-	-lbz2 \
 	-lstdc++ \
 	-lidbfs.js \
 	-lnodefs.js \
@@ -145,7 +146,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-I$(PYTHONINCLUDE) \
 	-s EXCEPTION_CATCHING_ALLOWED=['we_only_want_to_allow_exception_handling_in_side_modules']
 
-export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
+export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
 
 # For RUST
 export CARGO_HOME ?= $(HOME)/.cargo
