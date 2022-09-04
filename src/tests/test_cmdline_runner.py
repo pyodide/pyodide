@@ -33,6 +33,25 @@ def test_cmdline_runner(selenium):
     assert result.stderr == ""
 
     result = subprocess.run(
+        [
+            pyodide_root / "tools/python.js",
+            "-c",
+            """\
+import asyncio
+async def test():
+    await asyncio.sleep(0.5)
+    print("done")
+asyncio.ensure_future(test())
+""",
+        ],
+        capture_output=True,
+        encoding="utf8",
+    )
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout.strip() == "done"
+
+    result = subprocess.run(
         [pyodide_root / "tools/python.js", "-m", "platform"],
         capture_output=True,
         encoding="utf8",
