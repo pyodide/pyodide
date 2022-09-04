@@ -238,7 +238,6 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -e ./pyodide-build
-          pip install -e ./cli
 
           pyodide
           pyodide package
