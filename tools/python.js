@@ -34,8 +34,8 @@ if(major_version < 14) {
 if(major_version === 14){
     process.stdout.write("--experimental-wasm-bigint");
 } else {
-    // If $ARGS is empty, it breaks things in a weird way.
-    // ARGS=-- helpfully is not empty but does nothing.
+    // If $ARGS is empty, "let args = process.argv.slice(2)" removes the wrong
+    // number of arguments. ARGS=-- helpfully is not empty but does nothing.
     process.stdout.write("--");
 }
 EOF
