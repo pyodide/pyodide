@@ -287,7 +287,10 @@ jobs:
       test-params:
         description: The tests to run.
         type: string
-
+      cache-dir:
+        description: pytest-cache-dir.
+        type: string
+        default: ""
     resource_class: medium
     macos:
       xcode: 13.3.1
