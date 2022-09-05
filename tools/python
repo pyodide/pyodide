@@ -145,7 +145,7 @@ async function main() {
             args,
             fullStdLib: false,
             _node_mounts,
-            _working_directory: process.cwd(),
+            homedir: process.cwd(),
             stdout(e) {
                 // Various applications expect output to be structured e.g.,
                 // JSON. So the "Python initialization complete" message is a
