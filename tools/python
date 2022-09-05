@@ -9,14 +9,15 @@ pass --experimental-wasm-bigint
 
 3. We could use a bash script in a separate file to determine the flags needed,
 but virtualenv looks up the current file and uses it directly. So if we make
-python.sh and have it invoke python.js, then the virtual env will invoke python.js
+python.sh and have it invoke python.js, then the virtualenv will invoke python.js
 directly without the `--experimental-wasm-bigint` flag and so the virtualenv won't
 work with node 14.
 
 Keeping the bash script and the JavaScript in the same file makes sure that even
 inside the virtualenv the proper shell code is executed.
-*/;
-`
+*/
+
+/*
 EOF
 # bash
 set -e
@@ -25,7 +26,7 @@ which node > /dev/null  || { \
     >&2 echo "No node executable found on the path" && exit 1; \
 }
 
-ARGS=$(node -e "$(cat <<EOF
+ARGS=$(node -e "$(cat <<"EOF"
 const major_version = Number(process.version.split(".")[0].slice(1));
 if(major_version < 14) {
     console.error("Need node version >= 14. Got node version", process.version);
@@ -34,24 +35,25 @@ if(major_version < 14) {
 if(major_version === 14){
     process.stdout.write("--experimental-wasm-bigint");
 } else {
-    // If $ARGS is empty, "let args = process.argv.slice(2)" removes the wrong
-    // number of arguments. ARGS=-- helpfully is not empty but does nothing.
+    // If $ARGS is empty, `let args = process.argv.slice(2)` removes the wrong
+    // number of arguments. `ARGS=--` is not empty but does nothing.
     process.stdout.write("--");
 }
 EOF
 )")
 
 exec node "$ARGS" "$0" "$@"
-`;
+*/
+
 
 const { loadPyodide } = require("../dist/pyodide");
 const fs = require("fs");
 
 /**
  * The default stderr/stdout do not handle newline or flush correctly, and stdin
- * is also strange. Make a tty that connects std streams to node stdstreams. We
- * will make one tty for stdout and one for stderr, the `outstream` argument
- * controls which one we make.
+ * is also strange. Make a tty that connects Emscripten stdstreams to node
+ * stdstreams. We will make one tty for stdout and one for stderr, the
+ * `outstream` argument controls which one we make.
  *
  * Note that setting Module.stdin / Module.stdout / Module.stderr does not work
  * because these cause `isatty(stdstream)` to return false. We want `isatty` to
@@ -113,12 +115,12 @@ function setupStreams(FS, TTY) {
     FS.symlink("/dev/mytty", "/dev/stdout");
     FS.symlink("/dev/myttyerr", "/dev/stderr");
     // Refresh std streams so they use our new versions
-    FS.closeStream(0);
-    FS.closeStream(1);
-    FS.closeStream(2);
-    FS.open("/dev/stdin", 0);
-    FS.open("/dev/stdout", 1);
-    FS.open("/dev/stderr", 1);
+    FS.closeStream(0 /* stdin */);
+    FS.closeStream(1 /* stdout */);
+    FS.closeStream(2 /* stderr */);
+    FS.open("/dev/stdin", 0 /* write only */);
+    FS.open("/dev/stdout", 1 /* read only */);
+    FS.open("/dev/stderr", 1 /* read only */);
 }
 
 /**
@@ -146,12 +148,9 @@ async function main() {
             fullStdLib: false,
             _node_mounts,
             homedir: process.cwd(),
+            // Strip out standard messages written to stdout and stderr while loading
+            // After Pyodide is loaded we will replace stdstreams with setupStreams.
             stdout(e) {
-                // Various applications expect output to be structured e.g.,
-                // JSON. So the "Python initialization complete" message is a
-                // hazard to us. Strip it out. Note that this is very temporary,
-                // we will replace stdout using `setupStreams` as soon as the
-                // interpreter is initialized.
                 if (e.trim() === "Python initialization complete") {
                     return;
                 }
