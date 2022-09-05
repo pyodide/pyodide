@@ -312,17 +312,26 @@ jobs:
             conda create -n pyodide python=3.10 -y
             source activate pyodide
             python -m pip install -r requirements.txt
-            python -m pip install ./pyodide-test-runner
+            python -m pip install pytest-pyodide
       - run:
           name: test safari
           command: |
             export PATH="$HOME/miniforge3/bin:$PATH"
             source activate pyodide
-            python tools/pytest_wrapper.py \
+            mkdir test-results
+            pip install pytest-pyodide
+            if [ -z "<< parameters.cache-dir >>" ]; then
+              export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
+            else
+              export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
+            fi
+            echo "pytest cache dir: $CACHE_DIR"
+            STANDALONE_REFRESH=1 tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
-              << parameters.test-params >>
+              << parameters.test-params >> \
+              -o cache_dir=$CACHE_DIR
       - store_test_results:
           path: test-results
 
