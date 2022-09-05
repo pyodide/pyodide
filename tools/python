@@ -180,7 +180,11 @@ async function main() {
         if (code === undefined) {
             code = 0;
         }
-        resolveExit(code);
+        if (py._module._Py_FinalizeEx() < 0) {
+            code = 120;
+        }
+        Error.stackTraceLimit = Infinity;
+        process.exit(code);
     };
 
     py.runPython(
@@ -226,7 +230,6 @@ async function main() {
         process.exit(errcode);
     }
     py.runPython("loop._decrement_in_progress()", { globals: sideGlobals });
-    process.exit(await finishedPromise);
 }
 main().catch((e) => {
     console.error(e);
