@@ -16,7 +16,7 @@ substitutions:
 
 - {{ Enhancement }} Users can do a static import of `pyodide/pyodide.asm.js` to
   avoid issues with dynamic imports. This allows the use of Pyodide with
-  module-type service workers. 
+  module-type service workers.
   {pr}`3070`
 
 - {{ Enhancement }} Emscripten was updated to Version 3.1.21
