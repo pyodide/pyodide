@@ -23,9 +23,12 @@ requirements:
     - scipy
     - matplotlib
     - astropy
-    - libgsl
     - future
     - setuptools
+  host:
+    - libgsl
+    - numpy
+    - scipy
 test:
   imports:
     - galpy

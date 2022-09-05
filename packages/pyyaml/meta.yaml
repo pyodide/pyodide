@@ -16,8 +16,6 @@ build:
 requirements:
   host:
     - libyaml
-  run:
-    - libyaml
 test:
   imports:
     - _yaml

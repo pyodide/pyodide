@@ -9,8 +9,9 @@ source:
 
 requirements:
   run:
-    - boost-cpp
     - numpy
+  host:
+    - boost-cpp
 
 build:
   cxxflags: -fexceptions -fPIC -DBOOST_SP_DISABLE_THREADS=1 -O2

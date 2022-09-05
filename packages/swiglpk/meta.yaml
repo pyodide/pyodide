@@ -16,8 +16,6 @@ build:
 requirements:
   host:
     - glpk
-  run:
-    - glpk
 
 test:
   imports:
