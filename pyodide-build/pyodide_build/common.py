@@ -95,10 +95,11 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
 
 def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     """
-    Parse the top-level import name from a package file.
+    Parse the top-level import names from a wheel file.
     """
 
-    assert whlfile.name.endswith(".whl"), "Not a package file"
+    if not whlfile.name.endswith(".whl"):
+        raise RuntimeError(f"{whlfile} is not a wheel file.")
 
     whlzip = zipfile.Path(whlfile)
 

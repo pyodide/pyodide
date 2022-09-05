@@ -71,10 +71,9 @@ def _find_sdist(pypi_metadata: MetadataDict) -> URLDict | None:
 
 def _find_wheel(pypi_metadata: MetadataDict, native: bool = False) -> URLDict | None:
     """Get wheel file path from the metadata"""
-    if native:
-        predicate = lambda filename: filename.endswith(".whl")
-    else:
-        predicate = lambda filename: filename.endswith("py3-none-any.whl")
+    predicate = lambda filename: filename.endswith(
+        ".whl" if native else "py3-none-any.whl"
+    )
 
     for entry in pypi_metadata["urls"]:
         if entry["packagetype"] == "bdist_wheel" and predicate(entry["filename"]):
