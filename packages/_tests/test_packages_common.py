@@ -31,7 +31,7 @@ if "CI" in os.environ:
     UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
 XFAIL_PACKAGES: dict[str, str] = {
-    "soupseive": "Importing soupsieve without installing beautifulsoup4 fails.",
+    "soupsieve": "Importing soupsieve without installing beautifulsoup4 fails.",
 }
 
 
