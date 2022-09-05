@@ -183,7 +183,9 @@ async function main() {
         if (py._module._Py_FinalizeEx() < 0) {
             code = 120;
         }
-        Error.stackTraceLimit = Infinity;
+        // It's important to call `process.exit` immediately after
+        // `_Py_FinalizeEx` because otherwise any asynchronous tasks still
+        // scheduled will segfault.
         process.exit(code);
     };
 
