@@ -11,10 +11,6 @@ source:
     - patches/force_malloc.patch
     - patches/proper_build.patch
 
-test:
-  imports:
-    - pysat
-
 requirements:
   run:
     - six

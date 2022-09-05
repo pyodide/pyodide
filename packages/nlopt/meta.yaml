@@ -20,7 +20,3 @@ requirements:
 
 build:
   cxxflags: -std=c++11
-
-test:
-  imports:
-    - nlopt

@@ -16,7 +16,3 @@ build:
 requirements:
   host:
     - glpk
-
-test:
-  imports:
-    - swiglpk

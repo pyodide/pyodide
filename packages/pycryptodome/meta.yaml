@@ -8,9 +8,6 @@ source:
   sha256: 9135dddad504592bcc18b0d2d95ce86c3a5ea87ec6447ef25cfedea12d6018b8
 build:
   exports: "requested"
-test:
-  imports:
-    - Crypto
 about:
   home: https://www.pycryptodome.org
   PyPI: https://pypi.org/project/pycryptodome

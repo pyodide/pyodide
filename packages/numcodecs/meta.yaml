@@ -18,9 +18,6 @@ requirements:
   run:
     - numpy
     - msgpack
-test:
-  imports:
-    - numcodecs
 about:
   home: https://github.com/zarr-developers/numcodecs
   PyPI: https://pypi.org/project/numcodecs

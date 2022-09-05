@@ -13,9 +13,6 @@ requirements:
     - numpy
     - asciitree
     - numcodecs
-test:
-  imports:
-    - zarr
 about:
   home: https://github.com/zarr-developers/zarr-python
   PyPI: https://pypi.org/project/zarr

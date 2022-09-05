@@ -22,9 +22,6 @@ requirements:
     - python-dateutil
     - pytz
     - setuptools
-test:
-  imports:
-    - pandas
 about:
   home: https://pandas.pydata.org
   PyPI: https://pypi.org/project/pandas

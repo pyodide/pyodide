@@ -16,10 +16,6 @@ requirements:
   host:
     - libhdf5
 
-test:
-  imports:
-    - h5py
-
 build:
   script: |
     export HDF5_MPI=OFF

@@ -15,11 +15,6 @@ requirements:
   run:
     - distutils
     - pyparsing
-test:
-  imports:
-    - _distutils_hack
-    - pkg_resources
-    - setuptools
 about:
   home: https://github.com/pypa/setuptools
   PyPI: https://pypi.org/project/setuptools

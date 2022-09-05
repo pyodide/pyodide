@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - sqlite3
-test:
-  imports:
-    - coverage
 about:
   home: https://github.com/nedbat/coveragepy
   PyPI: https://pypi.org/project/coverage

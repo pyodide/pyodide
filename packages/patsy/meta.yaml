@@ -10,9 +10,6 @@ requirements:
   run:
     - numpy
     - six
-test:
-  imports:
-    - patsy
 about:
   home: https://github.com/pydata/patsy
   PyPI: https://pypi.org/project/patsy

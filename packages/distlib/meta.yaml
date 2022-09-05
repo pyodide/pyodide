@@ -9,10 +9,6 @@ source:
 build:
   post: |
     find build/distlib-0.3.4/dist -name '*.exe' -delete
-
-test:
-  imports:
-    - distlib
 about:
   home: https://github.com/pypa/distlib
   PyPI: https://pypi.org/project/distlib

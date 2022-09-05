@@ -44,7 +44,3 @@ build:
       tar --exclude=__pycache__ -cf - \
       test unittest/test sqlite3/test ctypes/test \
       | tar -C $DISTDIR -xf -
-
-test:
-  imports:
-    - test

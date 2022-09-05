@@ -58,11 +58,6 @@ requirements:
     - python-dateutil
     - pytz
 
-test:
-  imports:
-    - pylab
-    - mpl_toolkits
-    - matplotlib
 about:
   home: https://matplotlib.org
   PyPI: https://pypi.org/project/matplotlib

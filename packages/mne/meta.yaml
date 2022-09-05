@@ -13,9 +13,6 @@ requirements:
     - scipy
     - setuptools
     - decorator
-test:
-  imports:
-    - mne
 about:
   home: https://mne.tools/dev/
   PyPI: https://pypi.org/project/mne

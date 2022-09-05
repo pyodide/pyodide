@@ -11,10 +11,6 @@ requirements:
   run:
     - numpy
 
-test:
-  imports:
-    - cftime
-
 about:
   home: https://github.com/Unidata/cftime
   PyPI: https://pypi.org/project/cftime

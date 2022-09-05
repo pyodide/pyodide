@@ -23,6 +23,3 @@ build:
 requirements:
   host:
     - liblzma
-test:
-  imports:
-    - lzma

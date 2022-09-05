@@ -30,6 +30,10 @@ UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
 if "CI" in os.environ:
     UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
+XFAIL_PACKAGES: dict[str, str] = {
+    "soupseive": "Importing soupsieve without installing beautifulsoup4 fails.",
+}
+
 
 @pytest.mark.parametrize("name", registered_packages())
 def test_parse_package(name: str) -> None:
@@ -59,6 +63,9 @@ def test_import(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"
         )
+
+    if name in XFAIL_PACKAGES:
+        pytest.xfail(XFAIL_PACKAGES[name])
 
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 

@@ -15,6 +15,3 @@ build:
     cd $CPYTHONLIB
 
     tar --exclude=__pycache__ -cf - distutils | tar -C $DISTDIR -xf -
-test:
-  imports:
-    - distutils

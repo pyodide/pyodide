@@ -17,10 +17,6 @@ requirements:
     - setuptools
     - six
     - iniconfig
-test:
-  imports:
-    - _pytest
-    - pytest
 about:
   home: https://docs.pytest.org/en/latest/
   PyPI: https://pypi.org/project/pytest

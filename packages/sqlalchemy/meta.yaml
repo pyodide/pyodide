@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - sqlite3
-test:
-  imports:
-    - sqlalchemy
 about:
   home: https://www.sqlalchemy.org
   PyPI: https://pypi.org/project/sqlalchemy

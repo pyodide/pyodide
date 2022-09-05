@@ -14,9 +14,6 @@ requirements:
     - numpy
     - matplotlib
     - scipy
-test:
-  imports:
-    - pywt
 about:
   home: https://github.com/PyWavelets/pywt
   PyPI: https://pypi.org/project/pywavelets

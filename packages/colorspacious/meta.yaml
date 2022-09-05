@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - numpy
-test:
-  imports:
-    - colorspacious
 about:
   home: https://github.com/njsmith/colorspacious
   PyPI: https://pypi.org/project/colorspacious

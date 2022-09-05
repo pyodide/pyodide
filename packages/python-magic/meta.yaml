@@ -14,10 +14,6 @@ requirements:
   run:
     - libmagic
 
-test:
-  imports:
-    - magic
-
 about:
   home: http://github.com/ahupp/python-magic
   PyPI: https://pypi.org/project/python-magic

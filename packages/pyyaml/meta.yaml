@@ -16,10 +16,6 @@ build:
 requirements:
   host:
     - libyaml
-test:
-  imports:
-    - _yaml
-    - yaml
 about:
   home: https://pyyaml.org/
   PyPI: https://pypi.org/project/pyyaml

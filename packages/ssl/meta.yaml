@@ -25,6 +25,3 @@ requirements:
     - openssl
   run:
     - openssl
-test:
-  imports:
-    - ssl

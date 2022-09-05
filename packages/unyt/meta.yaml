@@ -10,9 +10,6 @@ requirements:
   run:
     - numpy
     - sympy
-test:
-  imports:
-    - unyt
 about:
   home: https://github.com/yt-project/unyt
   PyPI: https://pypi.org/project/unyt

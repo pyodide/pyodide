@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - six
-test:
-  imports:
-    - retrying
 about:
   home: https://github.com/rholder/retrying
   PyPI: https://pypi.org/project/retrying

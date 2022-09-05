@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - future
-test:
-  imports:
-    - uncertainties
 about:
   home: http://uncertainties-python-package.readthedocs.io/
   PyPI: https://pypi.org/project/uncertainties

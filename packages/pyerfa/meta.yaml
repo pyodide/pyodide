@@ -25,9 +25,6 @@ requirements:
     - numpy
   run:
     - numpy
-test:
-  imports:
-    - erfa
 about:
   home: https://github.com/liberfa/pyerfa
   PyPI: https://pypi.org/project/pyerfa

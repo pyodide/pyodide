@@ -12,9 +12,6 @@ requirements:
     - matplotlib
     - more-itertools
     - numpy
-test:
-  imports:
-    - cmyt
 about:
   home: https://github.com/yt-project/yt
   PyPI: https://pypi.org/project/cmyt

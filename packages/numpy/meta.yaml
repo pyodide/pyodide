@@ -22,9 +22,6 @@ build:
     - numpy/core/include/numpy/_numpyconfig.h
     - numpy/core/lib/libnpymath.a
     - numpy/random/lib/libnpyrandom.a
-test:
-  imports:
-    - numpy
 about:
   home: https://www.numpy.org
   PyPI: https://pypi.org/project/numpy

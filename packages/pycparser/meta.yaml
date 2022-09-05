@@ -8,9 +8,6 @@ source:
   sha256: 8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9
 build:
   cross-build-env: true
-test:
-  imports:
-    - pycparser
 about:
   home: https://github.com/eliben/pycparser
   PyPI: https://pypi.org/project/pycparser

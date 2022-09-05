@@ -12,9 +12,6 @@ requirements:
 build:
   cxxflags: -fexceptions
   ldflags: -fexceptions
-test:
-  imports:
-    - boost_histogram
 about:
   home: https://github.com/scikit-hep/boost-histogram
   PyPI: https://pypi.org/project/boost-histogram

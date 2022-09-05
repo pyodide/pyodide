@@ -27,9 +27,6 @@ requirements:
   host:
     - libwebp
     - libtiff
-test:
-  imports:
-    - PIL
 about:
   home: https://python-pillow.org
   PyPI: https://pypi.org/project/Pillow

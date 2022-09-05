@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - parso
-test:
-  imports:
-    - jedi
 about:
   home: https://github.com/davidhalter/jedi
   PyPI: https://pypi.org/project/jedi

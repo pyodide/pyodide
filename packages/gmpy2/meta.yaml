@@ -16,11 +16,6 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
-
-test:
-  imports:
-    - gmpy2
-
 about:
   home: https://github.com/aleaxit/gmpy
   PyPI: https://pypi.org/project/gmpy2

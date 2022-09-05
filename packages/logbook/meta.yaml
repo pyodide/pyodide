@@ -16,10 +16,6 @@ build:
   script: |
     python -c 'from Cython.Build.Cythonize import main; main(["./logbook/_speedups.pyx"])'
 
-test:
-  imports:
-    - logbook
-
 about:
   home: http://logbook.pocoo.org/
   PyPI: https://pypi.org/project/logbook

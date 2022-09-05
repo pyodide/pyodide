@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - pyparsing
-test:
-  imports:
-    - packaging
 about:
   home: https://github.com/pypa/packaging
   PyPI: https://pypi.org/project/packaging

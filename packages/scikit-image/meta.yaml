@@ -24,9 +24,6 @@ requirements:
     - imageio
     - pywavelets
 
-test:
-  imports:
-    - skimage
 about:
   home: https://scikit-image.org
   PyPI: https://pypi.org/project/scikit-image

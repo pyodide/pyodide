@@ -10,9 +10,6 @@ requirements:
   run:
     - numpy
     - Pillow
-test:
-  imports:
-    - imageio
 about:
   home: https://github.com/imageio/imageio
   PyPI: https://pypi.org/project/imageio

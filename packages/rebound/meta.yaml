@@ -17,9 +17,6 @@ source:
 requirements:
   run:
     - numpy
-test:
-  imports:
-    - rebound
 about:
   home: https://github.com/hannorein/rebound/
   PyPI: https://pypi.org/project/rebound

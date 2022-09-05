@@ -9,9 +9,6 @@ source:
 requirements:
   run:
     - six
-test:
-  imports:
-    - dateutil
 about:
   home: https://github.com/dateutil/dateutil
   PyPI: https://pypi.org/project/python-dateutil

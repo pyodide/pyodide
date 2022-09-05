@@ -22,9 +22,6 @@ requirements:
     - demes
   host:
     - libgsl
-test:
-  imports:
-    - msprime
 about:
   home: https://tskit.dev/msprime
   PyPI: https://pypi.org/project/msprime

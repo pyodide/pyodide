@@ -10,9 +10,6 @@ requirements:
   run:
     - attrs
     - ruamel.yaml
-test:
-  imports:
-    - demes
 about:
   home: https://github.com/popsim-consortium/demes-python
   PyPI: https://pypi.org/project/demes

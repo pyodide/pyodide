@@ -6,6 +6,3 @@ package:
     - fpcast_test
 source:
   path: fpcast-test
-test:
-  imports:
-    - fpcast_test

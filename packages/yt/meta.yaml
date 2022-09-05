@@ -31,9 +31,6 @@ build:
   # so it cannot be unvendored
   unvendor-tests: false
 
-test:
-  imports:
-    - yt
 about:
   home: https://github.com/yt-project/yt
   PyPI: https://pypi.org/project/yt

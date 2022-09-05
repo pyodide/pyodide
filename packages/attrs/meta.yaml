@@ -10,10 +10,6 @@ source:
 requirements:
   run:
     - six
-test:
-  imports:
-    - attr
-    - attrs
 about:
   home: https://www.attrs.org/
   PyPI: https://pypi.org/project/attrs

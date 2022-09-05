@@ -13,10 +13,6 @@ requirements:
   run:
     - numpy
 
-test:
-  imports:
-    - gsw
-
 about:
   home: https://github.com/TEOS-10/GSW-python
   PyPI: https://pypi.org/project/gsw

@@ -10,9 +10,6 @@ build:
   script: |
     wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz && tar -zxvf eigen-3.4.0.tar.gz
     cp -rn eigen-3.4.0/Eigen python_solvespace/include
-test:
-  imports:
-    - python_solvespace
 about:
   home: https://github.com/KmolYuan/solvespace/tree/python
   PyPI: https://pypi.org/project/python_solvespace

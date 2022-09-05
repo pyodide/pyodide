@@ -10,10 +10,6 @@ source:
 requirements:
   run:
     - setuptools
-
-test:
-  imports:
-    - nose
 about:
   home: http://readthedocs.org/docs/nose/
   PyPI: https://pypi.org/project/nose
