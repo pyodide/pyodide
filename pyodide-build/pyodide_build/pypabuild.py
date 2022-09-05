@@ -60,7 +60,7 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     # then this won't do anything.
     env.install(
         [
-            "cython<0.29.31",  # cython 0.29.31 is incompatible with scipy 1.8.1. TODO: remove this after the scipy update.
+            "cython",
             "cmake<3.24",  # TODO: `_cmake_record_install_prefix` is not defined in Emscripten.
             "pythran",
         ]
