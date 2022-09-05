@@ -185,7 +185,6 @@ def make_package(
             "top-level": top_level or ["PUT_TOP_LEVEL_IMPORT_NAMES_HERE"],
         },
         "source": {"url": url, "sha256": sha256},
-        "test": {"imports": top_level or ["PUT_IMPORTS_TO_BE_TESTED_HERE"]},
         "about": {
             "home": homepage,
             "PyPI": pypi,
