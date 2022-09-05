@@ -172,10 +172,6 @@ async function main() {
     const FS = py.FS;
     setupStreams(FS, py._module.TTY);
     let sideGlobals = py.runPython("{}");
-    let resolveExit;
-    let finishedPromise = new Promise((resolve) => {
-        resolveExit = resolve;
-    });
     globalThis.handleExit = function handleExit(code) {
         if (code === undefined) {
             code = 0;
