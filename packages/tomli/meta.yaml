@@ -10,7 +10,5 @@ test:
   imports:
     - tomli
 about:
-  home: ""
   PyPI: https://pypi.org/project/tomli
   summary: A lil' TOML parser
-  license: ""

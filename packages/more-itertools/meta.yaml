@@ -10,7 +10,5 @@ test:
   imports:
     - more_itertools
 about:
-  home: ""
   PyPI: https://pypi.org/project/more-itertools
   summary: More routines for operating on iterables, beyond itertools
-  license: ""
