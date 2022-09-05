@@ -79,7 +79,7 @@ Since a wheel package is actually a zip archive,
 you can use {any}`pyodide.unpackArchive()`
 to unpack a wheel package, instead of using {any}`micropip.install`.
 
-However, {any}`micropip` does dependency resolution when installing packages,
+However, {mod}`micropip` does dependency resolution when installing packages,
 while {any}`pyodide.unpackArchive()` simply unpacks the archive.
 So you must be aware of that each dependencies of a package need to be installed manually
 before unpacking a wheel.

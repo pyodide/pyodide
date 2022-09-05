@@ -32,7 +32,11 @@ if __name__ == "__main__":
         pass
 
     # Failed tests. Look up number of failed tests
-    with open(os.path.join(cache_dir(args), "v/cache/lastfailed")) as f:
+    lastfailed_path = os.path.join(cache_dir(args), "v/cache/lastfailed")
+    if not os.path.exists(lastfailed_path):
+        print("Test failed during collection. Not rerunning.")
+        sys.exit(1)
+    with open(lastfailed_path) as f:
         num_failed = sum(1 for line in f) - 2
 
     if num_failed > 9:

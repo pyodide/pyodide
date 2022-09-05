@@ -11,8 +11,9 @@ source:
 requirements:
   run:
     - numpy
-    - libhdf5
     - pkgconfig
+  host:
+    - libhdf5
 
 test:
   imports:

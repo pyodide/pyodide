@@ -1,6 +1,7 @@
 from collections import UserDict
+from collections.abc import Iterable
 from dataclasses import astuple, dataclass
-from typing import Any, Iterable
+from typing import Any
 
 from packaging.utils import canonicalize_name
 

@@ -29,7 +29,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
      ```bash
-     git shortlog -s LAST_TAG.. | cut -f2- | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
+     git shortlog -s LAST_TAG.. | cut -f2- | grep -v '\[bot\]' | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
      ```
      where `LAST_TAG` is the tag for the last release.
 

@@ -12,7 +12,7 @@ build:
   ldflags: -L$(WASM_LIBRARY_DIR)/lib
 
 requirements:
-  run:
+  host:
     - glpk
 
 test:

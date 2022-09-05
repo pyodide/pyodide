@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide.decorator import run_in_pyodide
 
 
 def run_with_resolve(selenium, code):
@@ -229,3 +230,219 @@ def test_webloop_exception_handler(selenium_standalone):
         )
     finally:
         selenium.run("loop.set_exception_handler(None)")
+
+
+@pytest.mark.asyncio
+async def test_pyodide_future():
+    import asyncio
+
+    from pyodide.webloop import PyodideFuture
+
+    fut = PyodideFuture()
+    increment = lambda x: x + 1
+    tostring = lambda x: repr(x)
+
+    def raises(x):
+        raise Exception(x)
+
+    rf = fut.then(increment).then(increment)
+    fut.set_result(5)
+    assert await rf == 7
+
+    e = Exception("oops")
+    fut = PyodideFuture()
+    rf = fut.then(increment, tostring)
+    fut.set_exception(e)
+    assert await rf == repr(e)
+
+    e = Exception("oops")
+    fut = PyodideFuture()
+    rf = fut.catch(tostring)
+    fut.set_exception(e)
+    assert await rf == repr(e)
+
+    async def f(x):
+        await asyncio.sleep(0.1)
+        return x + 1
+
+    fut = PyodideFuture()
+    rf = fut.then(f)
+
+    fut.set_result(6)
+    assert await rf == 7
+
+    fut = PyodideFuture()
+    rf = fut.then(raises)
+    fut.set_result(6)
+    try:
+        await rf
+    except Exception:
+        pass
+    assert repr(rf.exception()) == repr(Exception(6))
+
+    x = 0
+
+    def incx():
+        nonlocal x
+        x += 1
+
+    fut = PyodideFuture()
+    rf = fut.then(increment).then(increment).finally_(incx).finally_(incx)
+    assert x == 0
+    fut.set_result(5)
+    await rf
+    assert x == 2
+
+    fut = PyodideFuture()
+    rf = fut.then(increment).then(increment).finally_(incx).finally_(incx)
+    fut.set_exception(e)
+    try:
+        await rf
+    except Exception:
+        pass
+    assert x == 4
+
+    async def f1(x):
+        if x == 0:
+            return 7
+        await asyncio.sleep(0.1)
+        return f1(x - 1)
+
+    fut = PyodideFuture()
+    rf = fut.then(f1)
+    fut.set_result(3)
+    assert await rf == 7
+
+    async def f2():
+        await asyncio.sleep(0.1)
+        raise e
+
+    fut = PyodideFuture()
+    rf = fut.finally_(f2)
+    fut.set_result(3)
+    try:
+        await rf
+    except Exception:
+        pass
+    assert rf.exception() == e
+
+    fut = PyodideFuture()
+    rf = fut.finally_(f2)
+    fut.set_exception(Exception("oops!"))
+    try:
+        await rf
+    except Exception:
+        pass
+    assert rf.exception() == e
+
+
+@run_in_pyodide
+async def test_pyodide_future2(selenium):
+    from js import fetch
+
+    name = (
+        await fetch("https://pypi.org/pypi/pytest/json")
+        .then(lambda x: x.json())
+        .then(lambda x: x.info.name)
+    )
+    assert name == "pytest"
+
+
+@run_in_pyodide
+async def test_inprogress(selenium):
+    import asyncio
+
+    from pyodide.webloop import WebLoop
+
+    loop: WebLoop = asyncio.get_event_loop()  # type: ignore[assignment]
+    loop._in_progress = 0
+
+    ran_no_in_progress_handler = False
+
+    def _no_in_progress_handler():
+        nonlocal ran_no_in_progress_handler
+        ran_no_in_progress_handler = True
+
+    ran_keyboard_interrupt_handler = False
+
+    def _keyboard_interrupt_handler():
+        print("_keyboard_interrupt_handler")
+        nonlocal ran_keyboard_interrupt_handler
+        ran_keyboard_interrupt_handler = True
+
+    system_exit_code = None
+
+    def _system_exit_handler(exit_code):
+        nonlocal system_exit_code
+        system_exit_code = exit_code
+
+    try:
+
+        loop._no_in_progress_handler = _no_in_progress_handler
+        loop._keyboard_interrupt_handler = _keyboard_interrupt_handler
+        loop._system_exit_handler = _system_exit_handler
+
+        fut = loop.create_future()
+
+        async def temp():
+            await fut
+
+        fut2 = asyncio.ensure_future(temp())
+        await asyncio.sleep(0)
+        assert loop._in_progress == 2
+        fut.set_result(0)
+        await fut2
+
+        assert loop._in_progress == 0
+        assert ran_no_in_progress_handler
+        assert not ran_keyboard_interrupt_handler
+        assert not system_exit_code
+
+        ran_no_in_progress_handler = False
+
+        fut = loop.create_future()
+
+        async def temp():
+            await fut
+
+        fut2 = asyncio.ensure_future(temp())
+        assert loop._in_progress == 2
+        fut.set_exception(KeyboardInterrupt())
+        try:
+            await fut2
+        except KeyboardInterrupt:
+            pass
+
+        assert loop._in_progress == 0
+        assert ran_no_in_progress_handler
+        assert ran_keyboard_interrupt_handler
+        assert not system_exit_code  # type: ignore[unreachable]
+
+        ran_no_in_progress_handler = False
+        ran_keyboard_interrupt_handler = False
+
+        fut = loop.create_future()
+
+        async def temp():
+            await fut
+
+        fut2 = asyncio.ensure_future(temp())
+        assert loop._in_progress == 2
+        fut.set_exception(SystemExit(2))
+        try:
+            await fut2
+        except SystemExit:
+            pass
+        assert loop._in_progress == 0
+        assert ran_no_in_progress_handler
+        assert not ran_keyboard_interrupt_handler
+        assert system_exit_code == 2
+
+        ran_no_in_progress_handler = False
+        system_exit_code = None
+
+    finally:
+        loop._in_progress = 1
+        loop._no_in_progress_handler = None
+        loop._keyboard_interrupt_handler = None
+        loop._system_exit_handler = None

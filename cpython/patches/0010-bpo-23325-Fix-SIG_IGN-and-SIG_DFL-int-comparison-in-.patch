@@ -1,7 +1,7 @@
-From f0847509122fa24f7b4f28fd09057302c84c0b42 Mon Sep 17 00:00:00 2001
+From 54d724f1227edfd0bf4198c52c3302f128063b5c Mon Sep 17 00:00:00 2001
 From: Christian Heimes <christian@python.org>
 Date: Tue, 8 Mar 2022 20:22:32 +0200
-Subject: [PATCH 10/12] bpo-23325: Fix SIG_IGN and SIG_DFL int comparison in
+Subject: [PATCH 10/13] bpo-23325: Fix SIG_IGN and SIG_DFL int comparison in
  signal module (GH-31759)
 
 ---

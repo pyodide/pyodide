@@ -36,6 +36,28 @@ function ensureCaughtObjectIsError(e: any): Error {
   return e;
 }
 
+class CppException extends Error {
+  ty: string;
+  constructor(ty: string, msg: string | undefined, ptr: number) {
+    if (!msg) {
+      msg = `The exception is an object of type ${ty} at address ${ptr} which does not inherit from std::exception`;
+    }
+    super(msg);
+    this.ty = ty;
+  }
+}
+Object.defineProperty(CppException.prototype, "name", {
+  get() {
+    return `${this.constructor.name} ${this.ty}`;
+  },
+});
+
+function convertCppException(e: number) {
+  let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
+  return new CppException(ty, msg, e);
+}
+Tests.convertCppException = convertCppException;
+
 let fatal_error_occurred = false;
 /**
  * Signal a fatal error.
@@ -59,7 +81,7 @@ API.fatal_error = function (e: any) {
     return;
   }
   if (typeof e === "number") {
-    // Hopefully a C++ exception? Have to do some conversion work.
+    // Hopefully a C++ exception?
     e = convertCppException(e);
   } else {
     e = ensureCaughtObjectIsError(e);
@@ -105,83 +127,43 @@ API.fatal_error = function (e: any) {
   throw e;
 };
 
-class CppException extends Error {
-  ty: string;
-  constructor(ty: string, msg: string) {
-    super(msg);
-    this.ty = ty;
-  }
-}
-Object.defineProperty(CppException.prototype, "name", {
-  get() {
-    return `${this.constructor.name} ${this.ty}`;
-  },
+class FatalPyodideError extends Error {}
+Object.defineProperty(FatalPyodideError.prototype, "name", {
+  value: FatalPyodideError.name,
 });
 
-/**
- *
- * Return the type name, whether the pointer inherits from exception, and the
- * vtable pointer for the type.
- *
- * This code is based on imitating:
- * 1. the implementation of __cxa_find_matching_catch
- * 2. the disassembly from:
- * ```C++
- * try {
- *    ...
- * } catch(exception e){
- *    ...
- * }
- *
- * @param ptr
- * @returns
- * exc_type_name : the type name of the exception, as would be reported by
- * `typeid(type).name()` but also demangled.
- *
- * is_exception_subclass : true if the object is a subclass of exception. In
- * this case we will use `exc.what()` to get an error message.
- *
- * adjusted_ptr : The adjusted vtable pointer for the exception to use to invoke
- * exc.what().
- *
- * @private
- */
-function cppExceptionInfo(ptr: number): [string, boolean, number] {
-  const base_exception_type = Module._exc_type();
-  const ei = new Module.ExceptionInfo(ptr);
-  const caught_exception_type = ei.get_type();
-  const stackTop = Module.stackSave();
-  const exceptionThrowBuf = Module.stackAlloc(4);
-  Module.HEAP32[exceptionThrowBuf / 4] = ptr;
-  const exc_type_name = Module.demangle(
-    Module.UTF8ToString(Module._exc_typename(caught_exception_type))
+let stderr_chars: number[] = [];
+API.capture_stderr = function () {
+  stderr_chars = [];
+  const FS = Module.FS;
+  FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
+    stderr_chars.push(e)
   );
-  const is_exception_subclass = !!Module.___cxa_can_catch(
-    base_exception_type,
-    caught_exception_type,
-    exceptionThrowBuf
-  );
-  const adjusted_ptr = Module.HEAP32[exceptionThrowBuf / 4];
-  Module.stackRestore(stackTop);
-  return [exc_type_name, is_exception_subclass, adjusted_ptr];
-}
+  FS.closeStream(2 /* stderr */);
+  // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
+  FS.open("/dev/capture_stderr", 1 /* O_WRONLY */);
+};
 
-function convertCppException(ptr: number): CppException {
-  const [exc_type_name, is_exception_subclass, adjusted_ptr] =
-    cppExceptionInfo(ptr);
-  let msg;
-  if (is_exception_subclass) {
-    // If the ptr inherits from exception, we can use exception.what() to
-    // generate a message
-    const msgPtr = Module._exc_what(adjusted_ptr);
-    msg = Module.UTF8ToString(msgPtr);
-  } else {
-    msg = `The exception is an object of type ${exc_type_name} at address ${ptr} which does not inherit from std::exception`;
+API.restore_stderr = function () {
+  const FS = Module.FS;
+  FS.closeStream(2 /* stderr */);
+  FS.unlink("/dev/capture_stderr");
+  // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
+  FS.open("/dev/stderr", 1 /* O_WRONLY */);
+  return new TextDecoder().decode(new Uint8Array(stderr_chars));
+};
+
+API.fatal_loading_error = function (...args: string[]) {
+  let message = args.join(" ");
+  if (Module._PyErr_Occurred()) {
+    API.capture_stderr();
+    // Prints traceback to stderr
+    Module._PyErr_Print();
+    const captured_stderr = API.restore_stderr();
+    message += "\n" + captured_stderr;
   }
-  return new CppException(exc_type_name, msg);
-}
-// Expose for testing
-Tests.convertCppException = convertCppException;
+  throw new FatalPyodideError(message);
+};
 
 function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   if (!frame) {

@@ -355,7 +355,8 @@
     xfail: socket
 - test_imghdr
 - test_imp:
-    xfail-safari: test.test_imp.NullImporterTests fails
+    xfail:
+      - test_unencodeable # fails perioically
 - test_importlib.builtin.test_finder
 - test_importlib.builtin.test_loader
 - test_importlib.extension.test_case_sensitivity
@@ -537,6 +538,7 @@
 - test_platform:
     skip:
       - test_architecture_via_symlink # fork
+      - test_libc_ver # Can't open sys.executable
 - test_plistlib
 - test_poll:
     xfail: subprocess

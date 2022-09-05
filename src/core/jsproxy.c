@@ -41,17 +41,19 @@
 #include "structmember.h"
 
 // clang-format off
-#define IS_ITERABLE  (1<<0)
-#define IS_ITERATOR  (1<<1)
-#define HAS_LENGTH   (1<<2)
-#define HAS_GET      (1<<3)
-#define HAS_SET      (1<<4)
-#define HAS_HAS      (1<<5)
-#define HAS_INCLUDES (1<<6)
-#define IS_AWAITABLE (1<<7)
-#define IS_BUFFER    (1<<8)
-#define IS_CALLABLE  (1<<9)
-#define IS_ARRAY     (1<<10)
+#define IS_ITERABLE   (1<<0)
+#define IS_ITERATOR   (1<<1)
+#define HAS_LENGTH    (1<<2)
+#define HAS_GET       (1<<3)
+#define HAS_SET       (1<<4)
+#define HAS_HAS       (1<<5)
+#define HAS_INCLUDES  (1<<6)
+#define IS_AWAITABLE  (1<<7)
+#define IS_BUFFER     (1<<8)
+#define IS_CALLABLE   (1<<9)
+#define IS_ARRAY      (1<<10)
+#define IS_NODE_LIST  (1<<11)
+#define IS_TYPEDARRAY (1<<12)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -440,61 +442,152 @@ JsProxy_length(PyObject* o)
  * __getitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static PyObject*
-JsProxy_subscript_array(PyObject* o, PyObject* item)
+JsArray_subscript(PyObject* o, PyObject* item)
 {
   JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+
   if (PyIndex_Check(item)) {
-    Py_ssize_t i;
-    i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred())
-      return NULL;
+    Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+    if (i == -1)
+      FAIL_IF_ERR_OCCURRED();
     if (i < 0) {
       int length = hiwire_get_length(self->js);
-      if (length == -1) {
-        return NULL;
-      }
+      FAIL_IF_MINUS_ONE(length);
       i += length;
     }
-    JsRef result = JsArray_Get(self->js, i);
-    if (result == NULL) {
+    jsresult = JsArray_Get(self->js, i);
+    if (jsresult == NULL) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
       }
-      return NULL;
+      FAIL();
     }
-    PyObject* pyresult = js2python(result);
-    hiwire_decref(result);
-    return pyresult;
+    pyresult = js2python(jsresult);
+    goto success;
   }
   if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting isn't implemented");
-    return NULL;
+    Py_ssize_t start, stop, step;
+    FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step));
+    int length = hiwire_get_length(self->js);
+    FAIL_IF_MINUS_ONE(length);
+    // PySlice_AdjustIndices is "Always successful" per the docs.
+    Py_ssize_t slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+    if (slicelength <= 0) {
+      jsresult = JsArray_New();
+    } else {
+      jsresult = JsArray_slice(self->js, slicelength, start, stop, step);
+    }
+    FAIL_IF_NULL(jsresult);
+    pyresult = js2python(jsresult);
+    goto success;
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
                item->ob_type->tp_name);
-  return NULL;
+success:
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
+}
+
+/**
+ * __getitem__ for proxies of Js TypedArrays, controlled by IS_TYPEDARRAY
+ */
+static PyObject*
+JsTypedArray_subscript(PyObject* o, PyObject* item)
+{
+  if (PySlice_Check(item)) {
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Slice subscripting isn't implemented for typed arrays");
+    return NULL;
+  }
+  return JsArray_subscript(o, item);
+}
+
+/**
+ * __getitem__ for proxies of HTMLCollection or NodeList, controlled by
+ * IS_NODE_LIST
+ */
+static PyObject*
+JsNodeList_subscript(PyObject* o, PyObject* item)
+{
+  if (PySlice_Check(item)) {
+    PyErr_SetString(
+      PyExc_NotImplementedError,
+      "Slice subscripting isn't implemented for HTMLCollection or NodeList");
+    return NULL;
+  }
+  return JsArray_subscript(o, item);
 }
 
 /**
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
-JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
+JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
   bool success = false;
   JsRef idvalue = NULL;
+  PyObject* seq = NULL;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting isn't implemented");
-    return -1;
+    Py_ssize_t start, stop, step, slicelength;
+    FAIL_IF_MINUS_ONE(PySlice_Unpack(item, &start, &stop, &step));
+    int length = hiwire_get_length(self->js);
+    FAIL_IF_MINUS_ONE(length);
+    // PySlice_AdjustIndices is "Always successful" per the docs.
+    slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+
+    if (pyvalue != NULL) {
+      seq = PySequence_Fast(pyvalue, "can only assign an iterable");
+      FAIL_IF_NULL(seq);
+    }
+    if (pyvalue != NULL && step != 1 &&
+        PySequence_Fast_GET_SIZE(seq) != slicelength) {
+      PyErr_Format(PyExc_ValueError,
+                   "attempt to assign sequence of "
+                   "size %zd to extended slice of "
+                   "size %zd",
+                   PySequence_Fast_GET_SIZE(seq),
+                   slicelength);
+      FAIL();
+    }
+    if (pyvalue == NULL) {
+      if (slicelength <= 0) {
+        success = true;
+        goto finally;
+      }
+      if (step < 0) {
+        // We have to delete in backwards order so make sure step > 0.
+        stop = start + 1;
+        start = stop + step * (slicelength - 1) - 1;
+        step = -step;
+      }
+      JsArray_slice_assign(self->js, slicelength, start, stop, step, 0, NULL);
+    } else {
+      if (step != 1 && !slicelength) {
+        // At this point, assigning to an extended slice of length 0 must be a
+        // no-op
+        success = true;
+        goto finally;
+      }
+      JsArray_slice_assign(self->js,
+                           slicelength,
+                           start,
+                           stop,
+                           step,
+                           PySequence_Fast_GET_SIZE(seq),
+                           PySequence_Fast_ITEMS(seq));
+    }
+    success = true;
+    goto finally;
   } else if (PyIndex_Check(item)) {
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred())
-      return -1;
+    if (i == -1)
+      FAIL_IF_ERR_OCCURRED();
     if (i < 0) {
       int length = hiwire_get_length(self->js);
       FAIL_IF_MINUS_ONE(length);
@@ -521,9 +614,420 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   }
   success = true;
 finally:
+  Py_CLEAR(seq);
   hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
 }
+
+/**
+ * __setitem__ and __delitem__ for proxies of TypedArrays, controlled by
+ * IS_TYPEDARRAY
+ */
+static int
+JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
+{
+  if (pyvalue == NULL) {
+    PyErr_SetString(PyExc_ValueError, "cannot delete array elements");
+    return -1;
+  }
+  if (PySlice_Check(item)) {
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Slice assignment isn't implemented for typed arrays");
+    return -1;
+  }
+  return JsArray_ass_subscript(o, item, pyvalue);
+}
+
+static PyObject*
+JsArray_extend(PyObject* o, PyObject* iterable)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef temp = NULL;
+  PyObject* it = NULL;
+  bool success = false;
+
+  temp = JsArray_New();
+  FAIL_IF_NULL(temp);
+  if (PyList_CheckExact(iterable) || PyTuple_CheckExact(iterable)) {
+    iterable = PySequence_Fast(iterable, "argument must be iterable");
+    if (!iterable)
+      return NULL;
+    Py_ssize_t n = PySequence_Fast_GET_SIZE(iterable);
+    if (n == 0) {
+      /* short circuit when iterable is empty */
+      success = true;
+      goto finally;
+    }
+    /* note that we may still have self == iterable here for the
+     * situation a.extend(a), but the following code works
+     * in that case too.  Just make sure to resize self
+     * before calling PySequence_Fast_ITEMS.
+     */
+    /* populate the end of self with iterable's items */
+    PyObject** src = PySequence_Fast_ITEMS(iterable);
+    for (int i = 0; i < n; i++) {
+      PyObject* pyval = src[i];
+      JsRef jsval = python2js(pyval);
+      FAIL_IF_NULL(jsval);
+      FAIL_IF_MINUS_ONE(JsArray_Push(temp, jsval));
+      hiwire_decref(jsval);
+    }
+  } else {
+    Py_INCREF(iterable);
+    it = PyObject_GetIter(iterable);
+    PyObject* (*iternext)(PyObject*);
+    iternext = *Py_TYPE(it)->tp_iternext;
+
+    /* Run iterator to exhaustion. */
+    for (;;) {
+      PyObject* item = iternext(it);
+      if (item == NULL) {
+        if (PyErr_Occurred()) {
+          if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+          else {
+            FAIL();
+          }
+        }
+        break;
+      }
+      JsRef jsval = python2js(item);
+      FAIL_IF_NULL(jsval);
+      FAIL_IF_MINUS_ONE(JsArray_Push(temp, jsval));
+      hiwire_decref(jsval);
+    }
+  }
+  EM_ASM(
+    {
+      // clang-format off
+      Hiwire.get_value($1).push(...Hiwire.get_value($0));
+      // clang-format on
+    },
+    temp,
+    self->js);
+  success = true;
+finally:
+  Py_CLEAR(iterable);
+  Py_CLEAR(it);
+  if (!success) {
+    EM_ASM(
+      {
+        for (let v of Hiwire.get_value($0)) {
+          // clang-format off
+        if(typeof v.destroy === "function"){
+          try{
+            v.destroy();
+          } catch(e) {
+            console.warn("Weird error:", e);
+          }
+        }
+          // clang-format on
+        }
+      },
+      temp);
+  }
+  hiwire_CLEAR(temp);
+  if (success) {
+    Py_RETURN_NONE;
+  } else {
+    return NULL;
+  }
+}
+
+static PyMethodDef JsArray_extend_MethodDef = {
+  "extend",
+  (PyCFunction)JsArray_extend,
+  METH_O,
+};
+
+static PyObject*
+JsArray_inplace_concat(PyObject* self, PyObject* other)
+{
+  PyObject* result = JsArray_extend(self, other);
+  if (result == NULL)
+    return result;
+  Py_DECREF(result);
+  Py_INCREF(self);
+  return self;
+}
+
+static PyObject*
+JsArray_append(PyObject* o, PyObject* arg)
+{
+  JsProxy* self = (JsProxy*)o;
+  bool success = false;
+  JsRef jsarg = NULL;
+  jsarg = python2js(arg);
+  FAIL_IF_NULL(jsarg);
+  FAIL_IF_MINUS_ONE(JsArray_Push(self->js, jsarg));
+  success = true;
+finally:
+  hiwire_CLEAR(jsarg);
+  if (success) {
+    Py_RETURN_NONE;
+  } else {
+    return NULL;
+  }
+}
+
+static PyMethodDef JsArray_append_MethodDef = {
+  "append",
+  (PyCFunction)JsArray_append,
+  METH_O,
+};
+
+// Copied directly from Python
+static inline int
+valid_index(Py_ssize_t i, Py_ssize_t limit)
+{
+  /* The cast to size_t lets us use just a single comparison
+      to check whether i is in the range: 0 <= i < limit.
+
+      See:  Section 14.2 "Bounds Checking" in the Agner Fog
+      optimization manual found at:
+      https://www.agner.org/optimize/optimizing_cpp.pdf
+  */
+  return (size_t)i < (size_t)limit;
+}
+
+static PyObject*
+JsArray_pop(PyObject* o, PyObject* const* args, Py_ssize_t nargs)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+  PyObject* iobj = NULL;
+  Py_ssize_t index = -1;
+
+  if (!_PyArg_CheckPositional("pop", nargs, 0, 1)) {
+    FAIL();
+  }
+  if (nargs > 0) {
+    iobj = _PyNumber_Index(args[0]);
+    FAIL_IF_NULL(iobj);
+    index = PyLong_AsSsize_t(iobj);
+    if (index == -1) {
+      FAIL_IF_ERR_OCCURRED();
+    }
+  }
+
+  int length = hiwire_get_length(self->js);
+  FAIL_IF_MINUS_ONE(length);
+
+  if (length == 0) {
+    /* Special-case most common failure cause */
+    PyErr_SetString(PyExc_IndexError, "pop from empty list");
+    FAIL();
+  }
+  if (index < 0)
+    index += length;
+  if (!valid_index(index, length)) {
+    PyErr_SetString(PyExc_IndexError, "pop index out of range");
+    FAIL();
+  }
+
+  jsresult = JsArray_Splice(self->js, index);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+
+finally:
+  Py_CLEAR(iobj);
+  return pyresult;
+}
+
+static PyMethodDef JsArray_pop_MethodDef = {
+  "pop",
+  (PyCFunction)JsArray_pop,
+  METH_FASTCALL,
+};
+
+static PyObject*
+JsArray_reversed(PyObject* o, PyObject* ignored)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  JsRef iditer = hiwire_reversed_iterator(self->js);
+  if (iditer == NULL) {
+    return NULL;
+  }
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
+}
+
+static PyMethodDef JsArray_reversed_MethodDef = {
+  "__reversed__",
+  (PyCFunction)JsArray_reversed,
+  METH_NOARGS,
+};
+
+// clang-format off
+EM_JS_NUM(int,
+JsArray_index_helper,
+(JsRef list, JsRef value, int start, int stop),
+{
+  let o = Hiwire.get_value(list);
+  let v = Hiwire.get_value(value);
+  for (let i = start; i < stop; i++) {
+    if (o[i] === v) {
+      return i;
+    }
+  }
+  return -1;
+})
+// clang-format on
+
+PyObject*
+JsArray_index(PyObject* o, PyObject* args)
+{
+  JsProxy* self = (JsProxy*)o;
+  PyObject* value;
+  Py_ssize_t start = 0;
+  Py_ssize_t stop = PY_SSIZE_T_MAX;
+  if (!PyArg_ParseTuple(args, "O|nn:index", &value, &start, &stop)) {
+    return NULL;
+  }
+
+  int length = JsProxy_length(o);
+  if (length == -1) {
+    return NULL;
+  }
+  if (start < 0) {
+    start += length;
+    if (start < 0)
+      start = 0;
+  }
+  if (stop < 0) {
+    stop += length;
+    if (stop < 0)
+      stop = 0;
+  }
+  if (stop > length) {
+    stop = length;
+  }
+
+  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  if (jsvalue == NULL) {
+    PyErr_Clear();
+    for (int i = start; i < stop; i++) {
+      JsRef jsobj = JsArray_Get(self->js, i);
+      // We know `value` is not a `JsProxy`: if it were we would have taken the
+      // other branch. Thus, if `jsobj` is not a `PyProxy`,
+      // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
+      // up, only perform the check if the object is a `PyProxy`.
+      PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
+      hiwire_decref(jsobj);
+      if (pyobj == NULL) {
+        continue;
+      }
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      if (cmp > 0)
+        return PyLong_FromSsize_t(i);
+      else if (cmp < 0)
+        return NULL;
+    }
+  } else {
+    int result = JsArray_index_helper(self->js, jsvalue, start, stop);
+    hiwire_decref(jsvalue);
+    if (result != -1) {
+      return PyLong_FromSsize_t(result);
+    }
+  }
+  if (!PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+  }
+  return NULL;
+}
+
+static PyMethodDef JsArray_index_MethodDef = {
+  "index",
+  (PyCFunction)JsArray_index,
+  METH_VARARGS,
+};
+
+// clang-format off
+EM_JS_NUM(int,
+JsArray_count_helper,
+(JsRef list, JsRef value),
+{
+  let o = Hiwire.get_value(list);
+  let v = Hiwire.get_value(value);
+  let result = 0;
+  for (let i = 0; i < o.length; i++) {
+    if (o[i] === v) {
+      result++;
+    }
+  }
+  return result;
+})
+// clang-format on
+
+PyObject*
+JsArray_count(PyObject* o, PyObject* value)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  if (jsvalue == NULL) {
+    PyErr_Clear();
+    int result = 0;
+    Py_ssize_t stop = JsProxy_length(o);
+    if (stop == -1) {
+      return NULL;
+    }
+    for (int i = 0; i < stop; i++) {
+      JsRef jsobj = JsArray_Get(self->js, i);
+      // We know `value` is not a `JsProxy`: if it were we would have taken the
+      // other branch. Thus, if `jsobj` is not a `PyProxy`,
+      // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
+      // up, only perform the check if the object is a `PyProxy`.
+      PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
+      hiwire_decref(jsobj);
+      if (pyobj == NULL) {
+        continue;
+      }
+      int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
+      if (cmp > 0)
+        result++;
+      else if (cmp < 0)
+        return NULL;
+    }
+    return PyLong_FromSsize_t(result);
+  } else {
+    int result = JsArray_count_helper(self->js, jsvalue);
+    hiwire_decref(jsvalue);
+    if (result == -1) {
+      return NULL;
+    } else {
+      return PyLong_FromSsize_t(result);
+    }
+  }
+}
+
+static PyMethodDef JsArray_count_MethodDef = {
+  "count",
+  (PyCFunction)JsArray_count,
+  METH_O,
+};
+
+EM_JS_NUM(errcode, JsArray_reverse_helper, (JsRef arrayid), {
+  Hiwire.get_value(arrayid).reverse();
+})
+
+PyObject*
+JsArray_reverse(PyObject* o, PyObject* _ignored)
+{
+  JsProxy* self = (JsProxy*)o;
+  if (JsArray_reverse_helper(self->js) == -1) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsArray_reverse_MethodDef = {
+  "reverse",
+  (PyCFunction)JsArray_reverse,
+  METH_NOARGS,
+};
 
 // A helper method for jsproxy_subscript.
 EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
@@ -1950,12 +2454,36 @@ JsProxy_create_subtype(int flags)
     // subscripting `proxy[idx]` to go to `jsobj[idx]` instead of
     // `jsobj.get(idx)`. Hopefully anyone else who defines a custom array object
     // will subclass Array.
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_mp_subscript,
-                     .pfunc = (void*)JsProxy_subscript_array };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsArray_subscript };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
+                                       .pfunc = (void*)JsArray_ass_subscript };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_inplace_concat,
+                                       .pfunc = (void*)JsArray_inplace_concat };
+    methods[cur_method++] = JsArray_extend_MethodDef;
+    methods[cur_method++] = JsArray_pop_MethodDef;
+    methods[cur_method++] = JsArray_append_MethodDef;
+
+    methods[cur_method++] = JsArray_index_MethodDef;
+    methods[cur_method++] = JsArray_count_MethodDef;
+    methods[cur_method++] = JsArray_reversed_MethodDef;
+    methods[cur_method++] = JsArray_reverse_MethodDef;
+  }
+  if (flags & IS_TYPEDARRAY) {
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsTypedArray_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
-                     .pfunc = (void*)JsProxy_ass_subscript_array };
+                     .pfunc = (void*)JsTypedArray_ass_subscript };
+    methods[cur_method++] = JsArray_index_MethodDef;
+    methods[cur_method++] = JsArray_count_MethodDef;
+    methods[cur_method++] = JsArray_reversed_MethodDef;
+    methods[cur_method++] = JsArray_reverse_MethodDef;
+  }
+  if (flags & IS_NODE_LIST) {
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsNodeList_subscript };
+    methods[cur_method++] = JsArray_reversed_MethodDef;
   }
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
@@ -2051,6 +2579,31 @@ finally:
   return (PyTypeObject*)type;
 }
 
+EM_JS_NUM(int, JsProxy_array_detect, (JsRef idobj), {
+  try {
+    let obj = Hiwire.get_value(idobj);
+    if (Array.isArray(obj)) {
+      return IS_ARRAY;
+    }
+    let typeTag = Object.prototype.toString.call(obj);
+    // We want to treat some standard array-like objects as Array.
+    // clang-format off
+    if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
+      // clang-format on
+      return IS_NODE_LIST;
+    }
+    // What if it's a TypedArray?
+    // clang-format off
+    if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
+      // clang-format on
+      return IS_TYPEDARRAY;
+    }
+    return 0;
+  } catch (e) {
+    return 0;
+  }
+});
+
 ////////////////////////////////////////////////////////////
 // Public functions
 
@@ -2108,9 +2661,8 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
   }
-  if (JsArray_Check(object)) {
-    type_flags |= IS_ARRAY;
-  }
+  type_flags |= JsProxy_array_detect(object);
+
 done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);
@@ -2206,6 +2758,13 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsProxy_then_MethodDef);
   SET_DOCSTRING(JsProxy_catch_MethodDef);
   SET_DOCSTRING(JsProxy_finally_MethodDef);
+  SET_DOCSTRING(JsArray_extend_MethodDef);
+  SET_DOCSTRING(JsArray_reverse_MethodDef);
+  SET_DOCSTRING(JsArray_reversed_MethodDef);
+  SET_DOCSTRING(JsArray_pop_MethodDef);
+  SET_DOCSTRING(JsArray_append_MethodDef);
+  SET_DOCSTRING(JsArray_index_MethodDef);
+  SET_DOCSTRING(JsArray_count_MethodDef);
   SET_DOCSTRING(JsMethod_Construct_MethodDef);
   SET_DOCSTRING(JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer_assign_to_MethodDef);

@@ -1,10 +1,11 @@
 import contextlib
 import functools
 import os
+import re
 import subprocess
 import sys
+from collections.abc import Generator, Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import Generator, Iterable, Iterator, Mapping
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
@@ -15,6 +16,35 @@ from .io import parse_package_config
 
 def emscripten_version() -> str:
     return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+
+
+def get_emscripten_version_info() -> str:
+    """Extracted for testing purposes."""
+    return subprocess.run(["emcc", "-v"], capture_output=True, encoding="utf8").stderr
+
+
+def check_emscripten_version() -> None:
+    needed_version = emscripten_version()
+    try:
+        version_info = get_emscripten_version_info()
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"No Emscripten compiler found. Need Emscripten version {needed_version}"
+        ) from None
+    installed_version = None
+    try:
+        for x in reversed(version_info.partition("\n")[0].split(" ")):
+            if re.match(r"[0-9]+\.[0-9]+\.[0-9]+", x):
+                installed_version = x
+                break
+    except Exception:
+        raise RuntimeError("Failed to determine Emscripten version.")
+    if installed_version is None:
+        raise RuntimeError("Failed to determine Emscripten version.")
+    if installed_version != needed_version:
+        raise RuntimeError(
+            f"Incorrect Emscripten version {installed_version}. Need Emscripten version {needed_version}"
+        )
 
 
 def platform() -> str:
@@ -61,12 +91,15 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
                 yield wheel_path
 
 
-UNVENDORED_STDLIB_MODULES = {"test", "distutils"}
-
 ALWAYS_PACKAGES = {
     "pyparsing",
     "packaging",
     "micropip",
+    "distutils",
+    "test",
+    "ssl",
+    "lzma",
+    "sqlite3",
 }
 
 CORE_PACKAGES = {
@@ -79,7 +112,6 @@ CORE_PACKAGES = {
     "fpcast-test",
     "sharedlib-test-py",
     "cpp-exceptions-test",
-    "ssl",
     "pytest",
     "tblib",
 }
@@ -123,7 +155,6 @@ def _parse_package_subset(query: str | None) -> set[str]:
 
     packages = {el.strip() for el in query.split(",")}
     packages.update(ALWAYS_PACKAGES)
-    packages.update(UNVENDORED_STDLIB_MODULES)
     # handle meta-packages
     if "core" in packages:
         packages |= CORE_PACKAGES
@@ -132,10 +163,6 @@ def _parse_package_subset(query: str | None) -> set[str]:
         packages |= CORE_PACKAGES | CORE_SCIPY_PACKAGES
         packages.discard("min-scipy-stack")
 
-    # Hack to deal with the circular dependence between soupsieve and
-    # beautifulsoup4
-    if "beautifulsoup4" in packages:
-        packages.add("soupsieve")
     packages.discard("")
     return packages
 
@@ -264,8 +291,6 @@ def get_unisolated_packages() -> list[str]:
             config = parse_package_config(pkg, check=False)
             if config.get("build", {}).get("cross-build-env", False):
                 unisolated_packages.append(config["package"]["name"])
-        # TODO: remove setuptools_rust from this when they release the next version.
-        unisolated_packages.append("setuptools_rust")
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 

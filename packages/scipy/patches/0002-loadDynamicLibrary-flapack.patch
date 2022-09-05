@@ -1,7 +1,7 @@
-From 9e6c2ad31267a5ed0c30645e70a0b290b3973dd1 Mon Sep 17 00:00:00 2001
+From 9a4a3a14f8292d1ca3297b9774b4d432d293c8d4 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 2 Apr 2022 14:20:25 -0700
-Subject: [PATCH 02/14] loadDynamicLibrary flapack
+Subject: [PATCH 02/15] loadDynamicLibrary flapack
 
 We are using CLAPACK for our LAPACK, but CLAPACK only supports
 LAPACK v3.2 since starting in v3.3 LAPACK started adding fortran
@@ -30,10 +30,10 @@ So we have to call loadDynamicLibrary on it, hence this patch.
  1 file changed, 11 insertions(+)
 
 diff --git a/scipy/linalg/lapack.py b/scipy/linalg/lapack.py
-index 9850d80c4..a28c3c6ca 100644
+index d4427d044..05ba6aacd 100644
 --- a/scipy/linalg/lapack.py
 +++ b/scipy/linalg/lapack.py
-@@ -809,6 +809,17 @@ All functions
+@@ -800,6 +800,17 @@ All functions
     ilaver
  
  """

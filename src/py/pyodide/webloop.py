@@ -1,14 +1,119 @@
 import asyncio
 import contextvars
+import inspect
 import sys
 import time
 import traceback
-from typing import Any, Callable
+from asyncio import Future
+from collections.abc import Callable
+from typing import Any
 
 from ._core import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
+
+
+class PyodideFuture(Future[Any]):
+    """A future with extra then, catch, and finally_ methods based on the
+    Javascript promise API.
+    """
+
+    def then(
+        self,
+        onfulfilled: Callable[[Any], Any] | None,
+        onrejected: Callable[[Exception], Any] | None = None,
+    ) -> "PyodideFuture":
+        """When the Future is done, either execute onfulfilled with the result
+        or execute onrejected with the exception.
+
+        Returns a new Future which will be marked done when either the
+        onfulfilled or onrejected callback is completed. If the return value of
+        the executed callback is awaitable it will be awaited repeatedly until a
+        nonawaitable value is received. The returned Future will be resolved
+        with that value. If an error is raised, the returned Future will be
+        rejected with the error.
+
+        Parameters
+        ----------
+        onfulfilled:
+            A function called if the Future is fulfilled. This function receives
+            one argument, the fulfillment value.
+
+        onrejected:
+            A function called if the Future is rejected. This function receives
+            one argument, the rejection value.
+
+        Returns
+        -------
+        A new future to be resolved when the original future is done and the
+        appropriate callback is also done.
+        """
+        result = PyodideFuture()
+
+        onfulfilled_: Callable[[Any], Any]
+        onrejected_: Callable[[Any], Any]
+        if onfulfilled:
+            onfulfilled_ = onfulfilled
+        else:
+
+            def onfulfilled_(x):
+                return x
+
+        if onrejected:
+            onrejected_ = onrejected
+        else:
+
+            def onrejected_(x):
+                raise x
+
+        async def callback(fut: Future[Any]) -> Any:
+            if fut.exception():
+                val = fut.exception()
+                fun = onrejected_
+            else:
+                fun = onfulfilled_
+                val = fut.result()
+            try:
+                r = fun(val)
+                while inspect.isawaitable(r):
+                    r = await r
+            except Exception as result_exception:
+                result.set_exception(result_exception)
+                return
+            result.set_result(r)
+
+        def wrapper(fut: Future[Any]) -> None:
+            asyncio.ensure_future(callback(fut))
+
+        self.add_done_callback(wrapper)
+        return result
+
+    def catch(self, onrejected: Callable[[Exception], Any] | None) -> "PyodideFuture":
+        return self.then(None, onrejected)
+
+    def finally_(self, onfinally: Callable[[], Any]) -> "PyodideFuture":
+        result = PyodideFuture()
+
+        async def callback(fut: Future[Any]) -> None:
+            exc = fut.exception()
+            try:
+                r = onfinally()
+                while inspect.isawaitable(r):
+                    r = await r
+            except Exception as e:
+                result.set_exception(e)
+                return
+            if exc:
+                result.set_exception(exc)
+            else:
+                result.set_result(fut.result())
+
+        def wrapper(fut: Future[Any]) -> None:
+            asyncio.ensure_future(callback(fut))
+
+        self.add_done_callback(wrapper)
+        return result
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -35,6 +140,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
+        self._in_progress = 0
+        self._no_in_progress_handler = None
+        self._keyboard_interrupt_handler = None
+        self._system_exit_handler = None
 
     def get_debug(self):
         return False
@@ -154,10 +263,26 @@ class WebLoop(asyncio.AbstractEventLoop):
         def run_handle():
             if h.cancelled():
                 return
-            h._run()
+            try:
+                h._run()
+            except SystemExit as e:
+                if self._system_exit_handler:
+                    self._system_exit_handler(e.code)
+                else:
+                    raise
+            except KeyboardInterrupt:
+                if self._keyboard_interrupt_handler:
+                    self._keyboard_interrupt_handler()
+                else:
+                    raise
 
         setTimeout(create_once_callable(run_handle), delay * 1000)
         return h
+
+    def _decrement_in_progress(self, *args):
+        self._in_progress -= 1
+        if self._no_in_progress_handler and self._in_progress == 0:
+            self._no_in_progress_handler()
 
     def call_at(  # type: ignore[override]
         self,
@@ -192,6 +317,13 @@ class WebLoop(asyncio.AbstractEventLoop):
             fut.set_exception(e)
         return fut
 
+    def create_future(self) -> asyncio.Future[Any]:
+        self._in_progress += 1
+        fut = PyodideFuture(loop=self)
+        fut.add_done_callback(self._decrement_in_progress)
+        """Create a Future object attached to the loop."""
+        return fut
+
     #
     # The remaining methods are copied directly from BaseEventLoop
     #
@@ -206,13 +338,6 @@ class WebLoop(asyncio.AbstractEventLoop):
         Copied from ``BaseEventLoop.time``
         """
         return time.monotonic()
-
-    def create_future(self) -> asyncio.Future[Any]:
-        """Create a Future object attached to the loop.
-
-        Copied from ``BaseEventLoop.create_future``
-        """
-        return asyncio.futures.Future(loop=self)
 
     def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
@@ -233,6 +358,8 @@ class WebLoop(asyncio.AbstractEventLoop):
             task = self._task_factory(self, coro)
             asyncio.tasks._set_task_name(task, name)  # type: ignore[attr-defined]
 
+        self._in_progress += 1
+        task.add_done_callback(self._decrement_in_progress)
         return task
 
     def set_task_factory(self, factory):
