@@ -615,7 +615,7 @@ workflows:
 
       - test-main-macos:
           name: test-core-safari
-          test-params: -k safari src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime safari src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
