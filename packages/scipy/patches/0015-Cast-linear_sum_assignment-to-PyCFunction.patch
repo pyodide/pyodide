@@ -1,0 +1,25 @@
+From c66803ba6a52faf9265d4f08b8074b8c1d0af2fa Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 30 Aug 2022 11:58:35 -0700
+Subject: [PATCH 15/15] Cast linear_sum_assignment to PyCFunction
+
+---
+ scipy/optimize/_lsap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scipy/optimize/_lsap.c b/scipy/optimize/_lsap.c
+index 0d4727592..26f2f2712 100644
+--- a/scipy/optimize/_lsap.c
++++ b/scipy/optimize/_lsap.c
+@@ -103,7 +103,7 @@ cleanup:
+ 
+ static PyMethodDef lsap_methods[] = {
+     { "linear_sum_assignment",
+-      linear_sum_assignment,
++      (PyCFunction)linear_sum_assignment,
+       METH_VARARGS | METH_KEYWORDS,
+ "Solve the linear sum assignment problem.\n"
+ "\n"
+-- 
+2.25.1
+
