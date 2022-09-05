@@ -45,11 +45,11 @@ build:
         ../
 
     # TODO(ryanking13): These files need to be generated dynamically during the build process
-    # by running a executable which is also generated during the build process.
+    # by running a executable.
     # However, since we build a side module, the emitted executable is a wasm object
-    # so it is not runnable even with the emulator(node).
-    # I think there is should a proper way to emit a js file which is runnable with node,
-    # But I was to exhausted to find it. So I pre-created these files and copy them to the build directory.
+    # so it is not runnable even with the emulator (node).
+    # I think there should be a proper way to emit a js file which is runnable with node,
+    # But I was to exhausted to find it. So I created these files locally.
     cp ${PKGDIR}/settings/* src/
 
     emmake make -j ${PYODIDE_JOBS:-3} install
