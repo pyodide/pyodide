@@ -17,16 +17,9 @@ substitutions:
 - {{ Enhancement }} Emscripten was updated to Version 3.1.20
   {pr}`2958`, {pr}`2950`, {pr}`3027`
 
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
-
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
-
-- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
-  Before `sqlite3` was included by default. Now it needs to be loaded with
-  {any}`pyodide.loadPackage` or {any}`micropip.install`.
-  {pr}`2946`
 
 - {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
   rather than `pyodide-build-{version}.tar.gz`
@@ -45,6 +38,15 @@ substitutions:
   be passed as command line arguments to the Python interpreter at start up.
   {pr}`3021`
 
+### Build System / Package Loading
+
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+
+- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
+  {pr}`2946`
+
 - {{ Breaking }} The Pyodide Python package is installed into `/lib/python3.10`
   rather than `/lib/python3.10/site-packages`.
   {pr}`3022`
@@ -55,7 +57,11 @@ substitutions:
 - {{ Update }} Upgraded SciPy to version 1.9.1.
   {pr}`3043`
 
-### Build System
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding their dependencies.
+  {pr}`3020`
+
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load `beautifulsoup4` together.
+  {pr}`3020`
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
   host dependencies that are required for building packages.
