@@ -60,17 +60,12 @@ const fs = require("fs");
  * be true. (IMO this is an Emscripten issue, maybe someday we can fix it.)
  */
 function make_tty_ops(outstream) {
-    let newline = false;
     return {
         // get_char has 3 particular return values:
         // a.) the next character represented as an integer
         // b.) undefined to signal that no data is currently available
         // c.) null to signal an EOF
         get_char(tty) {
-            if (newline) {
-                newline = false;
-                return null;
-            }
             if (!tty.input.length) {
                 var result = null;
                 var BUFSIZE = 256;
@@ -83,9 +78,7 @@ function make_tty_ops(outstream) {
                 result = buf.slice(0, bytesRead);
                 tty.input = Array.from(result);
             }
-            let res = tty.input.shift();
-            newline = true;
-            return res;
+            return tty.input.shift();
         },
         put_char(tty, val) {
             outstream.write(Buffer.from([val]));
