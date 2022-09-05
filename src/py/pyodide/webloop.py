@@ -140,6 +140,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         asyncio._set_running_loop(self)
         self._exception_handler = None
         self._current_handle = None
+        self._in_progress = 0
+        self._no_in_progress_handler = None
+        self._keyboard_interrupt_handler = None
+        self._system_exit_handler = None
 
     def get_debug(self):
         return False
@@ -259,10 +263,26 @@ class WebLoop(asyncio.AbstractEventLoop):
         def run_handle():
             if h.cancelled():
                 return
-            h._run()
+            try:
+                h._run()
+            except SystemExit as e:
+                if self._system_exit_handler:
+                    self._system_exit_handler(e.code)
+                else:
+                    raise
+            except KeyboardInterrupt:
+                if self._keyboard_interrupt_handler:
+                    self._keyboard_interrupt_handler()
+                else:
+                    raise
 
         setTimeout(create_once_callable(run_handle), delay * 1000)
         return h
+
+    def _decrement_in_progress(self, *args):
+        self._in_progress -= 1
+        if self._no_in_progress_handler and self._in_progress == 0:
+            self._no_in_progress_handler()
 
     def call_at(  # type: ignore[override]
         self,
@@ -298,8 +318,11 @@ class WebLoop(asyncio.AbstractEventLoop):
         return fut
 
     def create_future(self) -> asyncio.Future[Any]:
+        self._in_progress += 1
+        fut = PyodideFuture(loop=self)
+        fut.add_done_callback(self._decrement_in_progress)
         """Create a Future object attached to the loop."""
-        return PyodideFuture(loop=self)
+        return fut
 
     #
     # The remaining methods are copied directly from BaseEventLoop
@@ -335,6 +358,8 @@ class WebLoop(asyncio.AbstractEventLoop):
             task = self._task_factory(self, coro)
             asyncio.tasks._set_task_name(task, name)  # type: ignore[attr-defined]
 
+        self._in_progress += 1
+        task.add_done_callback(self._decrement_in_progress)
         return task
 
     def set_task_factory(self, factory):
