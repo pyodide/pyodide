@@ -12,16 +12,16 @@ def test_cmdline_runner(selenium):
     pyodide_root = get_pyodide_root()
     import subprocess
 
-    result = subprocess.run(
-        [pyodide_root / "tools/python.js", "-V"], capture_output=True, encoding="utf8"
-    )
+    script_path = pyodide_root / "tools/python"
+
+    result = subprocess.run([script_path, "-V"], capture_output=True, encoding="utf8")
     assert result.returncode == 0
     assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
     assert result.stderr == ""
 
     result = subprocess.run(
         [
-            pyodide_root / "tools/python.js",
+            script_path,
             "-c",
             "from pyodide import __version__; print(__version__)",
         ],
@@ -34,7 +34,7 @@ def test_cmdline_runner(selenium):
 
     result = subprocess.run(
         [
-            pyodide_root / "tools/python.js",
+            script_path,
             "-c",
             """\
 import asyncio
@@ -52,7 +52,7 @@ asyncio.ensure_future(test())
     assert result.stdout.strip() == "done"
 
     result = subprocess.run(
-        [pyodide_root / "tools/python.js", "-m", "platform"],
+        [script_path, "-m", "platform"],
         capture_output=True,
         encoding="utf8",
     )
@@ -60,16 +60,14 @@ asyncio.ensure_future(test())
     assert result.stderr == ""
     assert result.stdout.strip() == f"Emscripten-{emscripten_version()}-wasm32-32bit"
 
-    result = subprocess.run(
-        [pyodide_root / "tools/python.js", "-c"], capture_output=True, encoding="utf8"
-    )
+    result = subprocess.run([script_path, "-c"], capture_output=True, encoding="utf8")
     assert result.returncode != 0
     assert result.stdout == ""
     assert (
-        re.sub("/[/a-z]*/tools/python.js", "<...>/tools/python.js", result.stderr)
+        re.sub("/[/a-z]*/tools/python", "<...>/tools/python", result.stderr)
         == """\
 Argument expected for the -c option
-usage: <...>/tools/python.js [option] ... [-c cmd | -m mod | file | -] [arg] ...
+usage: <...>/tools/python [option] ... [-c cmd | -m mod | file | -] [arg] ...
 Try `python -h' for more information.
 """
     )
