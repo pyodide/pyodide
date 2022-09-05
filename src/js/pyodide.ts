@@ -320,7 +320,7 @@ export async function loadPyodide(
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
   // dynamic importing is not allowed or not desirable, like module-type service workers
-  if (!('_createPyodideModule' in globalThis)) {
+  if (!("_createPyodideModule" in globalThis)) {
     const scriptSrc = `${config.indexURL}pyodide.asm.js`;
     await loadScript(scriptSrc);
   }
