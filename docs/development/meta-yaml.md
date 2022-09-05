@@ -150,6 +150,14 @@ Python package, the script section will be run before the build system runs
 `setup.py`. This script is run by `bash` in the directory where the tarball was
 extracted.
 
+There are special environment variables defined:
+
+- `$PKGDIR`: The directory in which the `meta.yaml` file resides.
+- `$PKG_VESRION`: The version of the package
+- `$PKG_BUILD_DIR`: The directory where the tarball was extracted.
+
+(These keys are not in the Conda spec).
+
 ### `build/cross-script`
 
 This script will run _after_ `build/script`. The difference is that it runs with
@@ -161,14 +169,7 @@ is the source directory.
 
 ### `build/post`
 
-Shell commands to run after building the library. These are run with `bash`, and
-there are two special environment variables defined:
-
-- `$SITEPACKAGES`: The `site-packages` directory into which the package has been
-  installed.
-- `$PKGDIR`: The directory in which the `meta.yaml` file resides.
-
-(This key is not in the Conda spec).
+Shell commands to run after building the library. These are run with `bash`.
 
 ### `build/unvendor-tests`
 
