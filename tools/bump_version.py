@@ -64,6 +64,11 @@ PYTHON_TARGETS = [
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
         prerelease=False,
     ),
+    Target(
+        ROOT / "src/js/version.ts",
+        build_version_pattern('version: string = "{python_version}"'),
+        prerelease=True,
+    ),
 ]
 
 JS_TARGETS = [
