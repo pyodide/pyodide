@@ -11,6 +11,7 @@ import {
 } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import version from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
@@ -33,6 +34,8 @@ export type {
 } from "./pyproxy.gen";
 
 export type Py2JsResult = any;
+
+export { version };
 
 /**
  * A proxy around globals that falls back to checking for a builtin if has or
@@ -335,9 +338,7 @@ export async function loadPyodide(
 
   if (pyodide.pyodide_py.__version__ !== pyodide.version) {
     throw new Error(
-      `Pyodide version mismatch: \
-      the version of JavaScript package: ${pyodide.version} <=> \
-      the version Python package: ${pyodide.pyodide_py.__version__}`
+      `Pyodide version does not match: '${pyodide.version}' (JS) <==> '${pyodide.pyodide_py.__version__} (Python)'`
     );
   }
 

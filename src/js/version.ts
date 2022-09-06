@@ -2,8 +2,8 @@
  *
  * The Pyodide version.
  *
- * The version scheme follows [PEP 440](https://www.python.org/dev/peps/pep-0440/).
- * We don't follow semver, because we want to compare this with the version of Pyodide Python package.
+ * The version here follows PEP440 which is different from the one in package.json,
+ * as we want to compare this with the version of Pyodide Python package without conversion.
  */
 const version: string = "0.22.0.dev0";
 
