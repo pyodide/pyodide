@@ -1,8 +1,10 @@
 import argparse
+import shutil
 import subprocess
 import sys
 import textwrap
 from pathlib import Path
+from typing import Any
 
 from ..common import (
     check_emscripten_version,
@@ -14,7 +16,7 @@ from ..common import (
 
 
 def main(parser_args: argparse.Namespace) -> None:
-    run(Path(parser_args.dest))
+    create_pyodide_venv(Path(parser_args.dest))
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -23,43 +25,47 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def dedent(s):
+def eprint(*args, **kwargs):
+    """Print to stderr"""
+    print(*args, **kwargs, file=sys.stderr)
+
+
+def check_result(result: subprocess.CompletedProcess[str], msg: str) -> None:
+    """Abort if the process returns a nonzero error code"""
+    if result.returncode != 0:
+        eprint(msg)
+        exit_with_stdio(result)
+
+
+def dedent(s: str) -> str:
     return textwrap.dedent(s).strip() + "\n"
 
 
-def run(dest: Path) -> None:
-    print("Creating Pyodide virtualenv")
-    from virtualenv import session_via_cli  # type: ignore[import]
-
-    if dest.exists():
-        print(f"dest directory '{dest}' already exists", file=sys.stderr)
-        sys.exit(1)
-
-    check_emscripten_version()
-
-    interp_path = get_pyodide_root() / "tools/python"
-    version_major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
-    session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
+def check_host_python_version(session: Any) -> None:
     pyodide_version = session.interpreter.version.partition(" ")[0].split(".")
-    if sys.version_info.major != int(
-        pyodide_version[0]
-    ) or sys.version_info.minor != int(pyodide_version[1]):
-        expected_version = ".".join(pyodide_version[:2])
-        print(
-            f"Expected host Python version to be {expected_version} but got version {version_major_minor}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    sys_version = [str(sys.version_info.major), str(sys.version_info.minor)]
+    if pyodide_version == sys_version:
+        return
+    pyodide_version_fmt = ".".join(pyodide_version[:2])
+    sys_version_fmt = ".".join(sys_version[:2])
+    eprint(
+        f"Expected host Python version to be {pyodide_version_fmt} but got version {sys_version_fmt}"
+    )
+    sys.exit(1)
 
-    session.run()
 
+def create_pip_conf(venv_root: Path) -> None:
     if in_xbuild_env():
+        # In the xbuild_env, we don't have the packages locally. We will include
+        # in the xbuildenv a PEP 503 index for the vendored Pyodide packages
+        # https://peps.python.org/pep-0503/
         repo = f'extra-index-url={get_pyodide_root()/"dist/pypi_index"}'
     else:
+        # In the Pyodide development environment, the Pyodide dist directory
+        # should contain the needed wheels. find-links
         repo = f'find-links={get_pyodide_root()/"dist"}'
 
-    dest = Path(session.creator.dest).absolute()
-    (dest / "pip.conf").write_text(
+    (venv_root / "pip.conf").write_text(
         dedent(
             f"""
             [install]
@@ -69,14 +75,15 @@ def run(dest: Path) -> None:
         )
     )
 
-    bin = dest / "bin"
 
-    host_python_path = bin / "python3.10-host"
-    host_python_path.symlink_to(sys.executable)
-    pip_path = bin / "pip"
+def get_pip_monkeypatch(venv_bin: Path) -> str:
+    """Monkey patch pip's environment to show info about Pyodide's environment.
+
+    The code returned is injected at the beginning of the pip script.
+    """
     result = subprocess.run(
         [
-            bin / "python",
+            venv_bin / "python",
             "-c",
             dedent(
                 """
@@ -93,34 +100,45 @@ def run(dest: Path) -> None:
         capture_output=True,
         encoding="utf8",
     )
-    if result.returncode != 0:
-        print("ERROR: failed to invoke Pyodide")
-        exit_with_stdio(result)
+    check_result(result, "ERROR: failed to invoke Pyodide")
+    platform_data = result.stdout
+    sysconfigdata_dir = Path(get_make_flag("TARGETINSTALLDIR")) / "sysconfigdata"
 
-    pymajor = get_make_flag("PYMAJOR")
-    pyminor = get_make_flag("PYMINOR")
-    pymicro = get_make_flag("PYMICRO")
-    pyversion = f"python-{pymajor}.{pyminor}.{pymicro}"
-    sysconfigdata_dir = (
-        get_pyodide_root() / "cpython/installs" / pyversion / "sysconfigdata"
+    return dedent(
+        f"""\
+        import os
+        import sys
+        os_name, sys_platform, multiarch, host_platform = {platform_data}
+        os.name = os_name
+        sys.platform = sys_platform
+        sys.implementation._multiarch = multiarch
+        os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
+        os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = f'_sysconfigdata_{{sys.abiflags}}_{{sys.platform}}_{{sys.implementation._multiarch}}'
+        sys.path.append("{sysconfigdata_dir}")
+        """
     )
-    pip_path.write_text(
+
+
+def create_pip_script(venv_bin):
+    """Create pip and write it into the virtualenv bin folder."""
+    # pip needs to run in the host Python not in Pyodide, so we'll use the host
+    # Python in the shebang. Use whichever Python was used to invoke
+    # pyodide venv.
+    host_python_path = venv_bin / "python3.10-host"
+    host_python_path.symlink_to(sys.executable)
+
+    (venv_bin / "pip").write_text(
+        # Other than the shebang and the monkey patch, this is exactly what
+        # normal pip looks like.
         dedent(
             f"""
             #!{host_python_path}
             # -*- coding: utf-8 -*-
-            import os
-            import sys
-
-            posix = os
-            os_name, sys_platform, multiarch, host_platform = {result.stdout}
-            os.name = os_name
-            sys.platform = sys_platform
-            sys.implementation._multiarch = multiarch
-            os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
-            os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = f'_sysconfigdata_{{sys.abiflags}}_{{sys.platform}}_{{sys.implementation._multiarch}}'
-            sys.path.append("{sysconfigdata_dir}")
-
+            """
+        )
+        + get_pip_monkeypatch(venv_bin)
+        + dedent(
+            """
             import re
             import sys
             from pip._internal.cli.main import main
@@ -130,30 +148,41 @@ def run(dest: Path) -> None:
             """
         )
     )
-    pip_path.chmod(0o777)
+    (venv_bin / "pip").chmod(0o777)
 
+    pyversion = f"{sys.version_info.major}.{sys.version_info.minor}"
     other_pips = [
-        bin / "pip3",
-        bin / f"pip{version_major_minor}",
-        bin / f"pip-{version_major_minor}",
+        venv_bin / "pip3",
+        venv_bin / f"pip{pyversion}",
+        venv_bin / f"pip-{pyversion}",
     ]
 
     for pip in other_pips:
         pip.unlink()
-        pip.symlink_to(pip_path)
+        pip.symlink_to(venv_bin / "pip")
 
-    from .. import __main__
 
-    pyodide_pythonpath = str(Path(__main__.__file__).parents[1])
-    environment_vars = [f"PYTHONPATH={pyodide_pythonpath}"]
+def create_pyodide_script(venv_bin: Path) -> None:
+    """Write pyodide cli script into the virtualenv bin folder"""
     import os
 
+    # The pyodide cli must be invoked outside of the virtual env. In order to
+    # ensure this, we have to restore VIRTUAL_ENV, PATH, and PYODIDE_ROOT to
+    # their current values before invoking it..
+    # In case we are inside an xbuildenv, make sure to make the path relative to
+    # this file and not relative to PYODIDE_ROOT.
+    pyodide_build_path = str(Path(__file__).parents[2])
+
+    # Resetting PATH and VIRTUAL_ENV will temporarily restore us to the virtual
+    # environment that 'pyodide venv' was invoked in (or no virtual environment
+    # if we aren't currently in one). To be extra careful, we set PYTHON_PATH too.
+    environment_vars = [f"PYTHONPATH={pyodide_build_path}"]
     for environment_var in ["VIRTUAL_ENV", "PATH", "PYODIDE_ROOT"]:
         value = os.environ.get(environment_var, "''")
         environment_vars.append(f"{environment_var}={value}")
     environment = " ".join(environment_vars)
 
-    pyodide_path = bin / "pyodide"
+    pyodide_path = venv_bin / "pyodide"
     pyodide_path.write_text(
         dedent(
             f"""
@@ -164,36 +193,67 @@ def run(dest: Path) -> None:
     )
     pyodide_path.chmod(0o777)
 
+
+def install_stdlib(venv_bin: Path) -> None:
+    """Install micropip and all unvendored stdlib modules"""
+    # Micropip we can install with pip!
     toload = ["micropip"]
     result = subprocess.run(
-        [bin / "pip", "install", *toload],
+        [venv_bin / "pip", "install", *toload],
         capture_output=True,
         encoding="utf8",
     )
-    if result.returncode != 0:
-        print("ERROR: failed to invoke pip")
-        exit_with_stdio(result)
+    check_result(result, "ERROR: failed to invoke pip")
 
+    # Other stuff we need to load with loadPackage
+    # TODO: Also load all shared libs.
     result = subprocess.run(
         [
-            bin / "python",
+            venv_bin / "python",
             "-c",
             dedent(
                 """
-            from pyodide import _package_loader;
-            from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
-            _package_loader.TARGETS["lib"] = _package_loader.SITE_PACKAGES;
-            from pyodide_js import loadPackage;
-            loadPackage(UNVENDORED_STDLIBS_AND_TEST);
-            """
+                from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
+                from pyodide_js import loadPackage;
+                loadPackage(UNVENDORED_STDLIBS_AND_TEST);
+                """
             ),
         ],
         capture_output=True,
         encoding="utf8",
     )
+    check_result(result, "ERROR: failed to install unvendored stdlib modules")
 
-    if result.returncode != 0:
-        print("ERROR: failed to install unvendored stdlib modules")
-        exit_with_stdio(result)
+
+def create_pyodide_venv(dest: Path) -> None:
+    """Create a Pyodide virtualenv and store it into dest"""
+    print("Creating Pyodide virtualenv")
+    from virtualenv import session_via_cli  # type: ignore[import]
+
+    if dest.exists():
+        eprint(f"ERROR: dest directory '{dest}' already exists")
+        sys.exit(1)
+
+    check_emscripten_version()
+
+    pyodide_root = get_pyodide_root()
+    interp_path = pyodide_root / "tools/python"
+    session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
+    check_host_python_version(session)
+
+    try:
+        session.run()
+        venv_root = Path(session.creator.dest).absolute()
+        venv_bin = venv_root / "bin"
+
+        print("...Configuring virtualenv")
+        create_pip_conf(venv_root)
+        create_pip_script(venv_bin)
+        create_pyodide_script(venv_bin)
+        print("...Installing standard library")
+        install_stdlib(venv_bin)
+    except (Exception, KeyboardInterrupt, SystemExit):
+        shutil.rmtree(session.creator.dest)
+        raise
 
     print("Successfully created Pyodide virtual environment!")
