@@ -1,4 +1,6 @@
 import argparse
+import hashlib
+import zipfile
 from pathlib import Path
 from time import sleep
 from typing import Any
@@ -49,11 +51,15 @@ def test_generate_dependency_graph_disabled(monkeypatch):
 
 def test_generate_repodata(tmp_path):
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
+    hashes = {}
     for pkg in pkg_map.values():
-        pkg.file_name = pkg.file_name or pkg.name + ".file"
+        pkg.file_name = pkg.file_name or pkg.name + ".whl"
         # Write dummy package file for SHA-256 hash verification
-        with open(tmp_path / pkg.file_name, "w") as f:
-            f.write(pkg.name)
+        with zipfile.ZipFile(tmp_path / pkg.file_name, "w") as whlzip:
+            whlzip.writestr(pkg.file_name, data=pkg.file_name)
+
+        with open(tmp_path / pkg.file_name, "rb") as f:
+            hashes[pkg.name] = hashlib.sha256(f.read()).hexdigest()
 
     package_data = buildall.generate_repodata(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
@@ -71,11 +77,11 @@ def test_generate_repodata(tmp_path):
     assert package_data["packages"]["pkg_1"] == {
         "name": "pkg_1",
         "version": "1.0.0",
-        "file_name": "pkg_1.file",
+        "file_name": "pkg_1.whl",
         "depends": ["pkg_1_1", "pkg_3"],
         "imports": ["pkg_1"],
         "install_dir": "site",
-        "sha256": "c1e38241013b5663e902fff97eb8585e98e6df446585da1dcf2ad121b52c2143",
+        "sha256": hashes["pkg_1"],
     }
 
 

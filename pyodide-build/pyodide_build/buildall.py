@@ -510,7 +510,7 @@ def generate_packagedata(
             pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
-        pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
+        pkg_entry["imports"] = pkg.meta.get("package", {}).get("top-level", [name])
 
         packages[name.lower()] = pkg_entry
 

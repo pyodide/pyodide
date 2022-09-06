@@ -1,6 +1,8 @@
 package:
   name: numcodecs
   version: 0.9.1
+  top-level:
+    - numcodecs
 source:
   sha256: 35adbcc746b95e3ac92e949a161811f5aa2602b9eb1ef241b5ea6f09bb220997
   url: https://files.pythonhosted.org/packages/2c/b0/980143fa7467569fd81f0d00530c46dcf41ff790738261985dc10a26d4ec/numcodecs-0.9.1.tar.gz
@@ -16,6 +18,10 @@ requirements:
   run:
     - numpy
     - msgpack
-test:
-  imports:
-    - numcodecs
+about:
+  home: https://github.com/zarr-developers/numcodecs
+  PyPI: https://pypi.org/project/numcodecs
+  summary:
+    A Python package providing buffer compression and transformation codecs
+    for use in data storage and communication applications.
+  license: MIT

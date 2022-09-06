@@ -2,6 +2,8 @@ package:
   name: ssl
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
+  top-level:
+    - ssl
 source:
   path: empty
 build:
@@ -23,6 +25,3 @@ requirements:
     - openssl
   run:
     - openssl
-test:
-  imports:
-    - ssl

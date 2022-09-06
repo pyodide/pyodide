@@ -1,7 +1,8 @@
 package:
   name: scikit-learn
   version: 1.1.1
-
+  top-level:
+    - sklearn
 source:
   url: https://files.pythonhosted.org/packages/41/11/e931951f048908ceaf2423db48ca6ad10e0b818c2960a3bc2dacb4fa4c1d/scikit-learn-1.1.1.tar.gz
   sha256: 3e77b71e8e644f86c8b5be7f1c285ef597de4c384961389ee3e9ca36c445b256
@@ -57,3 +58,8 @@ test:
     - sklearn.svm
     - sklearn.tree
     - sklearn.utils
+about:
+  home: http://scikit-learn.org
+  PyPI: https://pypi.org/project/scikit-learn
+  summary: A set of python modules for machine learning and data mining
+  license: new BSD

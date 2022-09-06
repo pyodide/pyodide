@@ -4,6 +4,8 @@ import os
 import re
 import subprocess
 import sys
+import zipfile
+from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from pathlib import Path
 
@@ -89,6 +91,50 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
         for wheel_path, wheel_tags in zip(wheel_paths, wheel_tags_list):
             if supported_tag in wheel_tags:
                 yield wheel_path
+
+
+def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
+    """
+    Parse the top-level import names from a wheel file.
+    """
+
+    if not whlfile.name.endswith(".whl"):
+        raise RuntimeError(f"{whlfile} is not a wheel file.")
+
+    whlzip = zipfile.Path(whlfile)
+
+    def _valid_package_name(dirname: str) -> bool:
+        return all([invalid_chr not in dirname for invalid_chr in ".- "])
+
+    def _has_python_file(subdir: zipfile.Path) -> bool:
+        queue = deque([subdir])
+        while queue:
+            nested_subdir = queue.pop()
+            for subfile in nested_subdir.iterdir():
+                if subfile.is_file() and subfile.name.endswith(".py"):
+                    return True
+                elif subfile.is_dir() and _valid_package_name(subfile.name):
+                    queue.append(subfile)
+
+        return False
+
+    # If there is no top_level.txt file, we will find top level imports by
+    # 1) a python file on a top-level directory
+    # 2) a sub directory with __init__.py
+    # following: https://github.com/pypa/setuptools/blob/d680efc8b4cd9aa388d07d3e298b870d26e9e04b/setuptools/discovery.py#L122
+    top_level_imports = []
+    for subdir in whlzip.iterdir():
+        if subdir.is_file() and subdir.name.endswith(".py"):
+            top_level_imports.append(subdir.name[:-3])
+        elif subdir.is_dir() and _valid_package_name(subdir.name):
+            if _has_python_file(subdir):
+                top_level_imports.append(subdir.name)
+
+    if not top_level_imports:
+        print(f"Warning: failed to parse top level import name from {whlfile}.")
+        return None
+
+    return top_level_imports
 
 
 ALWAYS_PACKAGES = {

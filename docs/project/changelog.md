@@ -67,6 +67,11 @@ substitutions:
   host dependencies that are required for building packages.
   {pr}`2132`
 
+- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to calculate
+  top-level import names for the package. Previously `test/imports` key was used
+  for this purpose.
+  {pr}`3006`
+
 ## Version 0.21.2
 
 - {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed

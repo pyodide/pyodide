@@ -2,6 +2,8 @@ package:
   name: sharedlib-test-py
   version: "1.0"
   _tag: pyodide.test
+  top-level:
+    - sharedlib_test
 requirements:
   run:
     - sharedlib-test
@@ -14,6 +16,3 @@ build:
     echo _PYTHON_HOST_PLATFORM: $_PYTHON_HOST_PLATFORM
   cflags: |
     -I$(PYODIDE_ROOT)/packages/sharedlib-test/src/include
-test:
-  imports:
-    - sharedlib_test
