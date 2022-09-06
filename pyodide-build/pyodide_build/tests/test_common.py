@@ -1,3 +1,5 @@
+import zipfile
+
 import pytest
 
 from pyodide_build.common import (
@@ -8,6 +10,7 @@ from pyodide_build.common import (
     find_matching_wheels,
     get_make_environment_vars,
     get_make_flag,
+    parse_top_level_import_name,
     platform,
     search_pyodide_root,
 )
@@ -175,3 +178,28 @@ clang version 15.0.0 (https://github.com/llvm/llvm-project 7effcbda49ba32991b895
         match=f"No Emscripten compiler found. Need Emscripten version {needed_version}",
     ):
         common.check_emscripten_version()
+
+
+@pytest.mark.parametrize(
+    "pkg",
+    [
+        {
+            "name": "pkg_singlefile-1.0.0-py3-none-any.whl",
+            "file": "singlefile.py",
+            "content": "pass\n",
+            "top_level": ["singlefile"],
+        },
+        {
+            "name": "pkg_flit-1.0.0-py3-none-any.whl",
+            "file": "pkg_flit/__init__.py",
+            "content": "pass\n",
+            "top_level": ["pkg_flit"],
+        },
+    ],
+)
+def test_parse_top_level_import_name(pkg, tmp_path):
+    with zipfile.ZipFile(tmp_path / pkg["name"], "w") as whlzip:
+        whlzip.writestr(pkg["file"], data=pkg["content"])
+
+    top_level = parse_top_level_import_name(tmp_path / pkg["name"])
+    assert top_level == pkg["top_level"]

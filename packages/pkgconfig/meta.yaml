@@ -1,11 +1,13 @@
 package:
   name: pkgconfig
   version: 1.5.5
-
+  top-level:
+    - pkgconfig
 source:
   url: https://files.pythonhosted.org/packages/32/af/89487c7bbf433f4079044f3dc32f9a9f887597fe04614a37a292e373e16b/pkgconfig-1.5.5-py3-none-any.whl
   sha256: d20023bbeb42ee6d428a0fac6e0904631f545985a10cdd71a20aa58bc47a4209
-
-test:
-  imports:
-    - pkgconfig
+about:
+  home: https://github.com/matze/pkgconfig
+  PyPI: https://pypi.org/project/pkgconfig
+  summary: Interface Python with pkg-config
+  license: MIT

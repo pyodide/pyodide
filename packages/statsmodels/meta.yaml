@@ -1,7 +1,8 @@
 package:
   name: statsmodels
   version: 0.13.2
-
+  top-level:
+    - statsmodels
 source:
   url: https://files.pythonhosted.org/packages/e1/4a/0eb4efa49cc352e2721e2aebfe8573264db2add195545ec3979c98040c3b/statsmodels-0.13.2.tar.gz
   sha256: 77dc292c9939c036a476f1770f9d08976b05437daa229928da73231147cde7d4
@@ -29,3 +30,8 @@ test:
   imports:
     - statsmodels
     - statsmodels.api
+about:
+  home: https://www.statsmodels.org/
+  PyPI: https://pypi.org/project/statsmodels
+  summary: Statistical computations and models for Python
+  license: BSD License

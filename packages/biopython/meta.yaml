@@ -1,12 +1,16 @@
 package:
   name: biopython
   version: "1.79"
+  top-level:
+    - Bio
+    - BioSQL
 requirements:
   run:
     - numpy
 source:
   sha256: edb07eac99d3b8abd7ba56ff4bedec9263f76dfc3c3f450e7d2e2bcdecf8559b
   url: https://files.pythonhosted.org/packages/28/73/4d61169ce1f15c65ea49af89e534b2089375a44b608cb65062b58ff414de/biopython-1.79.tar.gz
-test:
-  imports:
-    - Bio
+about:
+  home: https://biopython.org/
+  PyPI: https://pypi.org/project/biopython
+  summary: Freely available tools for computational molecular biology.

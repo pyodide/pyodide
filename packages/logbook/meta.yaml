@@ -1,7 +1,8 @@
 package:
   name: logbook
   version: 1.5.3
-
+  top-level:
+    - logbook
 source:
   url: https://files.pythonhosted.org/packages/2f/d9/16ac346f7c0102835814cc9e5b684aaadea101560bb932a2403bd26b2320/Logbook-1.5.3.tar.gz
   sha256: 66f454ada0f56eae43066f604a222b09893f98c1adc18df169710761b8f32fe8
@@ -15,6 +16,8 @@ build:
   script: |
     python -c 'from Cython.Build.Cythonize import main; main(["./logbook/_speedups.pyx"])'
 
-test:
-  imports:
-    - logbook
+about:
+  home: http://logbook.pocoo.org/
+  PyPI: https://pypi.org/project/logbook
+  summary: A logging replacement for Python
+  license: BSD

@@ -1,9 +1,13 @@
 package:
   name: cssselect
   version: 1.1.0
+  top-level:
+    - cssselect
 source:
   sha256: f612ee47b749c877ebae5bb77035d8f4202c6ad0f0fc1271b3c18ad6c4468ecf
   url: https://files.pythonhosted.org/packages/3b/d4/3b5c17f00cce85b9a1e6f91096e1cc8e8ede2e1be8e96b87ce1ed09e92c5/cssselect-1.1.0-py2.py3-none-any.whl
-test:
-  imports:
-    - cssselect
+about:
+  home: https://github.com/scrapy/cssselect
+  PyPI: https://pypi.org/project/cssselect
+  summary: cssselect parses CSS3 Selectors and translates them to XPath 1.0
+  license: BSD
