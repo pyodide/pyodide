@@ -144,11 +144,9 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.pyodide_code = import_module("pyodide.code");
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
-  API.version = API.pyodide_py.__version__;
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
-  pyodide.version = API.version;
   pyodide.globals = API.globals;
   return pyodide;
 }
@@ -334,6 +332,15 @@ export async function loadPyodide(
   Module._pyodide_init();
 
   const pyodide = finalizeBootstrap(API, config);
+
+  if (pyodide.pyodide_py.__version__ !== pyodide.version) {
+    throw new Error(
+      `Pyodide version mismatch: \
+      the version of JavaScript package: ${pyodide.version} <=> \
+      the version Python package: ${pyodide.pyodide_py.__version__}`
+    );
+  }
+
   // API.runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
