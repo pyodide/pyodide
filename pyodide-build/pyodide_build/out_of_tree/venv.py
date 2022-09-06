@@ -129,8 +129,6 @@ def create_pip_script(venv_bin):
     # Python in the shebang. Use whichever Python was used to invoke
     # pyodide venv.
     host_python_path = venv_bin / "python3.10-host"
-    host_python_path.symlink_to(sys.executable)
-
     (venv_bin / "pip").write_text(
         # Other than the shebang and the monkey patch, this is exactly what
         # normal pip looks like.
@@ -164,6 +162,31 @@ def create_pip_script(venv_bin):
     for pip in other_pips:
         pip.unlink()
         pip.symlink_to(venv_bin / "pip")
+
+
+def create_host_python_script(venv_bin: Path) -> None:
+    """Write script to invoke host python into the virtualenv bin folder"""
+    import os
+
+    # Resetting PATH and VIRTUAL_ENV will temporarily restore us to the virtual
+    # environment that 'pyodide venv' was invoked in (or no virtual environment
+    # if we aren't currently in one).
+    environment_vars = []
+    for environment_var in ["VIRTUAL_ENV", "PATH", "PYODIDE_ROOT"]:
+        value = os.environ.get(environment_var, "''")
+        environment_vars.append(f"{environment_var}={value}")
+    environment = " ".join(environment_vars)
+
+    host_python_path = venv_bin / "python3.10-host"
+    host_python_path.write_text(
+        dedent(
+            f"""
+            #!/bin/sh
+            {environment} exec {sys.executable} $@
+            """
+        )
+    )
+    host_python_path.chmod(0o777)
 
 
 def create_pyodide_script(venv_bin: Path) -> None:
@@ -253,6 +276,7 @@ def create_pyodide_venv(dest: Path) -> None:
         print("...Configuring virtualenv")
         create_pip_conf(venv_root)
         create_pip_script(venv_bin)
+        create_host_python_script(venv_bin)
         create_pyodide_script(venv_bin)
         print("...Installing standard library")
         install_stdlib(venv_bin)
