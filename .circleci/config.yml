@@ -329,7 +329,7 @@ jobs:
               export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
             fi
             echo "pytest cache dir: $CACHE_DIR"
-            STANDALONE_REFRESH=1 tools/pytest_wrapper.py \
+            tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
               --durations 50 \
