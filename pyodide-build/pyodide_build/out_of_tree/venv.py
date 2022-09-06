@@ -37,7 +37,7 @@ def run(dest: Path) -> None:
 
     check_emscripten_version()
 
-    interp_path = get_pyodide_root() / "tools/python.js"
+    interp_path = get_pyodide_root() / "tools/python"
     version_major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
     pyodide_version = session.interpreter.version.partition(" ")[0].split(".")
@@ -176,7 +176,7 @@ def run(dest: Path) -> None:
 
     result = subprocess.run(
         [
-            bin / "python.js",
+            bin / "python",
             "-c",
             dedent(
                 """
