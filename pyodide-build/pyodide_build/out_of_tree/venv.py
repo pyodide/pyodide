@@ -42,12 +42,12 @@ def dedent(s: str) -> str:
 
 
 def check_host_python_version(session: Any) -> None:
-    pyodide_version = session.interpreter.version.partition(" ")[0].split(".")
+    pyodide_version = session.interpreter.version.partition(" ")[0].split(".")[:2]
     sys_version = [str(sys.version_info.major), str(sys.version_info.minor)]
     if pyodide_version == sys_version:
         return
-    pyodide_version_fmt = ".".join(pyodide_version[:2])
-    sys_version_fmt = ".".join(sys_version[:2])
+    pyodide_version_fmt = ".".join(pyodide_version)
+    sys_version_fmt = ".".join(sys_version)
     eprint(
         f"Expected host Python version to be {pyodide_version_fmt} but got version {sys_version_fmt}"
     )
