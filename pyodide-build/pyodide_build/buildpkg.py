@@ -84,11 +84,14 @@ class BashRunnerWithSharedEnvironment:
         self._reader = os.fdopen(fd_read, "r")
         return self
 
-    def run(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
+    def run(
+        self, cmd: str, cwd: str | Path | None = None, **opts: Any
+    ) -> subprocess.CompletedProcess[str]:
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
         assert self._fd_write is not None
         assert self._reader is not None
 
+        chdir_cmd = f"cd {cwd}" if cwd is not None else ""
         write_env_pycode = ";".join(
             [
                 "import os",
@@ -97,7 +100,7 @@ class BashRunnerWithSharedEnvironment:
             ]
         )
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
-        full_cmd = f"{cmd}\n{write_env_shell_cmd}"
+        full_cmd = f"{chdir_cmd}\n{cmd}\n{write_env_shell_cmd}"
         result = subprocess.run(
             ["bash", "-ce", full_cmd],
             pass_fds=[self._fd_write],
@@ -152,6 +155,8 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
             "PYMICRO",
             "CPYTHONBUILD",
             "CPYTHONLIB",
+            "MAIN_MODULE_CFLAGS",
+            "MAIN_MODULE_LDFLAGS",
             "SIDE_MODULE_CFLAGS",
             "SIDE_MODULE_LDFLAGS",
             "STDLIB_MODULE_CFLAGS",
@@ -660,11 +665,10 @@ def run_script(
     if not script:
         return
 
-    with chdir(srcpath):
-        result = bash_runner.run(script)
-        if result.returncode != 0:
-            print("ERROR: script failed")
-            exit_with_stdio(result)
+    result = bash_runner.run(script, cwd=srcpath)
+    if result.returncode != 0:
+        print("ERROR: script failed")
+        exit_with_stdio(result)
 
 
 def needs_rebuild(

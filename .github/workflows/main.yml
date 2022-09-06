@@ -196,3 +196,142 @@ jobs:
         with:
           paths: "test-results/*.xml"
         if: always()
+
+  build-core-with-new-cli:
+    runs-on: ubuntu-latest
+    env:
+      EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
+      CCACHE_DIR: /tmp/ccache
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache ccache output
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/ccache
+          key: ${{ hashFiles('Makefile.envs') }}-v20211025-
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.10.2
+          channels: conda-forge
+
+      - name: Check Python versions
+        shell: bash -l {0}
+        run: |
+          python --version
+          which python
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          sudo apt install -y build-essential git
+          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
+          pip install -r requirements.txt
+
+      - name: Install cli
+        shell: bash -l {0}
+        run: |
+          pip install -e ./pyodide-build
+
+          pyodide
+          pyodide package
+          pyodide build
+
+      - name: Build emsdk
+        shell: bash -l {0}
+        run: |
+          pyodide build emsdk
+
+      - name: Build Cpython
+        shell: bash -l {0}
+        run: |
+          pyodide build cpython
+
+      - name: build Pyodide core
+        shell: bash -l {0}
+        run: |
+          pyodide build pyodide --packages "micropip"
+
+      - name: check-size
+        run: ls -lh dist/
+
+      - name: Store artifacts build
+        uses: actions/upload-artifact@v2
+        with:
+          name: core-build-with-new-cli
+          path: ./dist/
+          retention-days: 60
+
+  test-core-with-new-cli:
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: :99
+
+    needs: [build-core-with-new-cli]
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [playwright]
+        browser: [firefox, chrome]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: core-build-with-new-cli
+          path: ./dist/
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.10.2
+          channels: conda-forge
+
+      - name: install test requirements
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt
+          # FIXME: playwright 1.23.0 has unknown performance issue on firefox
+          pip install pytest-pyodide "playwright<1.23.0" && python -m playwright install
+
+      - name: run core tests
+        env:
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh dist/
+          tools/pytest_wrapper.py src packages/micropip/ \
+            -v -k "${BROWSER}" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/core_test.xml
+
+      - name: run package tests
+        env:
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh dist/
+          tools/pytest_wrapper.py packages/test* packages/*/test* \
+            -v -k "${BROWSER}" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/packages_test.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v1
+        with:
+          paths: "test-results/*.xml"
+        if: always()
