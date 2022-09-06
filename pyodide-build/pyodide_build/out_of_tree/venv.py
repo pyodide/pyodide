@@ -132,12 +132,7 @@ def create_pip_script(venv_bin):
     (venv_bin / "pip").write_text(
         # Other than the shebang and the monkey patch, this is exactly what
         # normal pip looks like.
-        dedent(
-            f"""
-            #!{host_python_path}
-            # -*- coding: utf-8 -*-
-            """
-        )
+        f"#!{host_python_path}"
         + get_pip_monkeypatch(venv_bin)
         + dedent(
             """
