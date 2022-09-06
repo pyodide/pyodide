@@ -55,6 +55,10 @@ def check_host_python_version(session: Any) -> None:
 
 
 def create_pip_conf(venv_root: Path) -> None:
+    """Create pip.conf file in venv root
+
+    This file adds a few options that will always be used by pip install.
+    """
     if in_xbuild_env():
         # In the xbuild_env, we don't have the packages locally. We will include
         # in the xbuildenv a PEP 503 index for the vendored Pyodide packages
