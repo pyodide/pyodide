@@ -182,7 +182,7 @@ def create_host_python_script(venv_bin: Path) -> None:
         dedent(
             f"""
             #!/bin/sh
-            {environment} exec {sys.executable} $@
+            {environment} exec {sys.executable} "$@"
             """
         )
     )
@@ -214,7 +214,7 @@ def create_pyodide_script(venv_bin: Path) -> None:
         dedent(
             f"""
             #!/bin/sh
-            {environment} exec {sys.executable} -m pyodide_build.out_of_tree $@
+            {environment} exec {sys.executable} -m pyodide_build.out_of_tree "$@"
             """
         )
     )
