@@ -1,17 +1,17 @@
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, Field
 
 
 class _PackageSpec(BaseModel):
     name: str
     version: str
-    top_level: list[str] = []
-    _tag: str | None = None
-    _disabled: bool = False
-    _cpython_dynlib: bool = False
+    top_level: list[str] = Field([], alias="top-level")
+    tag: str = Field("", alias="_tag")
+    disabled: bool = Field(False, alias="_disabled")
+    cpython_dynlib: bool = Field(False, alias="_cpython_dynlib")
 
     class Config:
         extra = Extra.forbid
@@ -19,7 +19,7 @@ class _PackageSpec(BaseModel):
 
 class _SourceSpec(BaseModel):
     url: str | None = None
-    extract_dir: Path | None = None
+    extract_dir: str | None = None
     path: Path | None = None
     sha256: str | None = None
     patches: list[str] = []
@@ -30,19 +30,19 @@ class _SourceSpec(BaseModel):
 
 
 class _BuildSpec(BaseModel):
-    exports: str | list[str] = []
-    backend_flags: str = ""
+    exports: str | list[str] = "pyinit"
+    backend_flags: str = Field("", alias="backend-flags")
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
     library: bool = False
     sharedlibrary: bool = False
-    cross_script: str | None = None
+    cross_script: str | None = Field(None, alias="cross-script")
     script: str | None = None
     post: str | None = None
-    unvendor_tests: bool = True
-    cross_build_env: bool = False
-    cross_build_files: list[str] = []
+    unvendor_tests: bool = Field(True, alias="unvendor-tests")
+    cross_build_env: bool = Field(False, alias="cross-build-env")
+    cross_build_files: list[str] = Field([], alias="cross-build-files")
 
     class Config:
         extra = Extra.forbid
@@ -73,28 +73,36 @@ class _AboutSpec(BaseModel):
         extra = Extra.forbid
 
 
-# TODO: support more complex types for validation
-
-
 class MetaConfig(BaseModel):
     package: _PackageSpec
     source: _SourceSpec
     build: _BuildSpec = _BuildSpec()
     requirements: _RequirementsSpec = _RequirementsSpec()
-    test: _RequirementsSpec = _TestSpec()
+    test: _TestSpec = _TestSpec()
     about: _AboutSpec = _AboutSpec()
+
+    class Config:
+        extra = Extra.forbid
 
     @classmethod
     def from_yaml(cls, path: Path) -> "MetaConfig":
-        """Load the meta.yaml from a path"""
+        """Load the meta.yaml from a path
 
+        Parameters
+        ----------
+        path
+            path to the meta.yaml file
+        """
         import yaml
 
-        with open(path, "rb") as fd:
-            config_raw = yaml.safe_load(fd)
+        stream = path.read_bytes()
+        config_raw = yaml.safe_load(stream)
 
         config = cls(**config_raw)
         return config
+
+
+PACKAGE_CONFIG_SPEC: dict[Any, Any] = {}
 
 
 def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
@@ -110,9 +118,6 @@ def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
 
 
 def _check_config_source(config: dict[str, Any]) -> Iterator[str]:
-    if "source" not in config:
-        yield "Missing source section"
-        return
 
     src_metadata = config["source"]
     patches = src_metadata.get("patches", [])
@@ -208,7 +213,6 @@ def check_package_config_generate_errors(
         optional meta.yaml file path. Only used for more explicit error output,
         when raise_errors = True.
     """
-    yield from _check_config_keys(config)
     yield from _check_config_types(config)
     yield from _check_config_source(config)
     yield from _check_config_build(config)
@@ -230,30 +234,3 @@ def check_package_config(
                 f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
             )
     return errors_msg
-
-
-def parse_package_config(path: Path | str, *, check: bool = True) -> dict[str, Any]:
-    """Load a meta.yaml file
-
-    Parameters
-    ----------
-    path
-       path to the meta.yaml file
-    check
-       check the consistency of the config file
-
-    Returns
-    -------
-    the loaded config as a Dict
-    """
-    # Import yaml here because pywasmcross needs to run in the built native
-    # Python, which won't have PyYAML
-    import yaml
-
-    with open(path, "rb") as fd:
-        config = yaml.safe_load(fd)
-
-    if check:
-        check_package_config(config, file_path=path)
-
-    return config

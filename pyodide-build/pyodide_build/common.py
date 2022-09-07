@@ -13,7 +13,7 @@ import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
-from .io import parse_package_config
+from .io import MetaConfig
 
 
 def emscripten_version() -> str:
@@ -334,9 +334,9 @@ def get_unisolated_packages() -> list[str]:
     else:
         unisolated_packages = []
         for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-            config = parse_package_config(pkg, check=False)
-            if config.get("build", {}).get("cross-build-env", False):
-                unisolated_packages.append(config["package"]["name"])
+            config = MetaConfig.from_yaml(pkg)
+            if config.build.cross_build_env:
+                unisolated_packages.append(config.package.name)
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 
