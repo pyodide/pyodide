@@ -358,20 +358,14 @@ async function loadDynlib(lib: string, shared: boolean) {
   const libraryFS = {
     _ldLibraryPaths: ["/usr/lib", API.sitepackages],
     _resolvePath: (path: string) => {
-      console.log("Searching: " + path);
       if (Module.PATH.isAbs(path)) return path;
-      console.log("Not abs: " + path);
 
       for (const dir of libraryFS._ldLibraryPaths) {
         const fullPath = Module.PATH.join2(dir, path);
         if (Module.FS.findObject(fullPath) !== null) {
-          console.log("Found: " + path + " at " + fullPath);
           return fullPath;
         }
-        console.log("Not found: " + path + " at " + fullPath);
       }
-
-      console.log("Failed to found: " + path);
       return path;
     },
     findObject: (path: string, dontResolveLastLink: boolean) =>
