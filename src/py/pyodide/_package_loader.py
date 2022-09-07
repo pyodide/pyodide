@@ -23,10 +23,12 @@ except ImportError:
 from ._core import IN_BROWSER, JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
-if sys.base_prefix != sys.prefix:  # Are we in a virtualenv?
+if sys.base_prefix == sys.prefix:
+    # not in a virtualenv
     STD_LIB = Path(sysconfig.get_path("stdlib"))
     TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
 else:
+    # in a virtualenv
     # Better not put stuff into /usr/lib or /lib/python3.10! For now let's stick
     # everyone into SITE_PACKAGES in this case
     TARGETS = {"site": SITE_PACKAGES, "lib": SITE_PACKAGES, "dynlib": SITE_PACKAGES}
