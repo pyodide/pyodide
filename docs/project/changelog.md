@@ -38,6 +38,8 @@ substitutions:
   be passed as command line arguments to the Python interpreter at start up.
   {pr}`3021`
 
+- {{ Enhancement }} The core test suite is now run in Safari {pr}`2578`.
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -342,7 +344,6 @@ _August 9, 2022_
   decorator can now be accessed through
   [`pytest-pyodide`](https://github.com/pyodide/pytest-pyodide) package.
   {pr}`2418`
-- {{ Enhancement }} The core test suite is now run in Safari {pr}`2578`.
 
 ### List of contributors
 
