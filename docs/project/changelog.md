@@ -62,7 +62,7 @@ substitutions:
 
 - {{ Breaking }} Loading the `soupsieve` package will not automatically load `beautifulsoup4` together.
   {pr}`3020`
-  
+
 - {{ Breaking }} The matplotlib HTML5 backends are now available as part of the
   [`matplotlib-pyodide`](https://github.com/pyodide/matplotlib-pyodide)
   package. If you use the default backend from Pyodide, no changes are
