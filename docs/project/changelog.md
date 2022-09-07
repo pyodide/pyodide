@@ -36,6 +36,10 @@ substitutions:
   next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
   {pr}`3075`
 
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
 - {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
   {pr}`3080`
 

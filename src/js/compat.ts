@@ -77,6 +77,10 @@ function node_resolvePath(path: string, base?: string): string {
 }
 
 function browser_resolvePath(path: string, base?: string): string {
+  if (base === undefined) {
+    // @ts-ignore
+    base = location;
+  }
   return new URL(path, base).toString();
 }
 

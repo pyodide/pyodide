@@ -1150,6 +1150,15 @@ def test_sys_path0(selenium):
     )
 
 
+def test_loadPyodide_relative_index_url(selenium_standalone_noload):
+    """Check that loading Pyodide with a relative URL works"""
+    selenium_standalone_noload.run_js(
+        """
+        self.pyodide = await loadPyodide({ indexURL: "./" });
+        """
+    )
+
+
 @run_in_pyodide
 def test_run_js(selenium):
     from unittest import TestCase
