@@ -38,6 +38,10 @@ substitutions:
   be passed as command line arguments to the Python interpreter at start up.
   {pr}`3021`
 
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -57,19 +61,21 @@ substitutions:
 - {{ Update }} Upgraded SciPy to version 1.9.1.
   {pr}`3043`
 
-- {{ Fix }} Packages are now loaded in a topologically sorted order regarding their dependencies.
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies. 
   {pr}`3020`
 
-- {{ Breaking }} Loading the `soupsieve` package will not automatically load `beautifulsoup4` together.
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load
+  `beautifulsoup4` together. 
   {pr}`3020`
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
   host dependencies that are required for building packages.
   {pr}`2132`
 
-- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to calculate
-  top-level import names for the package. Previously `test/imports` key was used
-  for this purpose.
+- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to
+  calculate top-level import names for the package. Previously `test/imports`
+  key was used for this purpose. 
   {pr}`3006`
 
 ## Version 0.21.2

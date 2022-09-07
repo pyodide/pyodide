@@ -1153,7 +1153,7 @@ def test_fullstdlib(selenium_standalone_noload):
         """
     )
 
-def test_loadPyodide_relative_url(selenium_standalone):
+def test_loadPyodide_relative_index_url(selenium_standalone):
     """Check that loading Pyodide with a relative URL works"""
     selenium_standalone.run_js(
         """
