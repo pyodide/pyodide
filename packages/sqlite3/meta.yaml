@@ -2,6 +2,8 @@ package:
   name: sqlite3
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
+  top-level:
+    - sqlite3
 source:
   path: empty
 build:
@@ -35,7 +37,3 @@ build:
        -sUSE_SQLITE3 -lsqlite3
 
     cd Lib && tar --exclude=test -cf - sqlite3 | tar -C $DISTDIR -xf -
-
-test:
-  imports:
-    - sqlite3

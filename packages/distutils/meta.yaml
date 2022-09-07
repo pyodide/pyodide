@@ -2,6 +2,8 @@ package:
   name: distutils
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
+  top-level:
+    - distutils
 source:
   path: empty
 build:
@@ -13,6 +15,3 @@ build:
     cd $CPYTHONLIB
 
     tar --exclude=__pycache__ -cf - distutils | tar -C $DISTDIR -xf -
-test:
-  imports:
-    - distutils

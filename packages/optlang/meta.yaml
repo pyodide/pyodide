@@ -1,6 +1,8 @@
 package:
   name: optlang
   version: 1.5.2
+  top-level:
+    - optlang
 source:
   sha256: 14464cff638b58670c1a7f5896f19dd7b595a12c1d30a27c59074700833c1677
   url: https://files.pythonhosted.org/packages/12/3e/9d0b72cf5a8ff660e5787a0797906e04942081f3ad4a95f860488affff2b/optlang-1.5.2-py2.py3-none-any.whl
@@ -14,3 +16,10 @@ test:
     - optlang
     - optlang.glpk_interface
     - optlang.symbolics
+about:
+  home: https://github.com/opencobra/optlang
+  PyPI: https://pypi.org/project/optlang
+  summary:
+    Formulate optimization problems using sympy expressions and solve them
+    using interfaces to third-party optimization software (e.g. GLPK).
+  license: Apache-2.0

@@ -1,6 +1,8 @@
 package:
   name: opencv-python
   version: 4.6.0.66
+  top-level:
+    - cv2
 about:
   home: https://github.com/skvark/opencv-python
   PyPI: https://pypi.org/project/opencv-python
@@ -56,7 +58,3 @@ build:
     export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
 
     source $PYODIDE_ROOT/packages/opencv-python/cmake/build_args.sh
-
-test:
-  imports:
-    - cv2
