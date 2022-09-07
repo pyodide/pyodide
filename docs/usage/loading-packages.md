@@ -45,7 +45,7 @@ appropriate,
 
 - to load micropip itself,
 - when you are optimizing for size, do not want to install the `micropip`
-  package, and do not need to install packages from PyPI.
+  package, and do not need to install packages from PyPI with dependency resolution.
 
 ## Micropip
 
@@ -57,10 +57,8 @@ Pyodide supports installing following types of packages with {mod}`micropip`,
 - pure Python and binary wasm32/emscripten wheels (also informally known as
   "Pyodide packages" or "packages built by Pyodide") from the JsDelivr CDN and
   custom URLs.
-  {func}`micropip.install` returns a Python
-  [Future](https://docs.python.org/3/library/asyncio-future.html) so you can
-  await the future or otherwise use the Python future API to do work once the
-  packages have finished loading:
+  {func}`micropip.install` is an async Python function which returns a
+  coroutine, so it need to be called with an `await` clause to run.
 
 ```pyodide
 await pyodide.loadPackage("micropip");
