@@ -41,6 +41,10 @@ def dedent(s: str) -> str:
     return textwrap.dedent(s).strip() + "\n"
 
 
+def get_pyversion() -> str:
+    return f"{sys.version_info.major}.{sys.version_info.minor}"
+
+
 def check_host_python_version(session: Any) -> None:
     pyodide_version = session.interpreter.version.partition(" ")[0].split(".")[:2]
     sys_version = [str(sys.version_info.major), str(sys.version_info.minor)]
@@ -131,7 +135,7 @@ def create_pip_script(venv_bin):
     # pip needs to run in the host Python not in Pyodide, so we'll use the host
     # Python in the shebang. Use whichever Python was used to invoke
     # pyodide venv.
-    host_python_path = venv_bin / "python3.10-host"
+    host_python_path = venv_bin / f"python{get_pyversion()}-host"
     host_python_path.symlink_to(sys.executable)
 
     (venv_bin / "pip").write_text(
@@ -152,7 +156,7 @@ def create_pip_script(venv_bin):
     )
     (venv_bin / "pip").chmod(0o777)
 
-    pyversion = f"{sys.version_info.major}.{sys.version_info.minor}"
+    pyversion = get_pyversion()
     other_pips = [
         venv_bin / "pip3",
         venv_bin / f"pip{pyversion}",
