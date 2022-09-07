@@ -245,7 +245,7 @@ def create_pyodide_venv(dest: Path) -> None:
         venv_root = Path(session.creator.dest).absolute()
         venv_bin = venv_root / "bin"
 
-        print("...Configuring virtualenv")
+        print("... Configuring virtualenv")
         create_pip_conf(venv_root)
         create_pip_script(venv_bin)
         create_pyodide_script(venv_bin)
