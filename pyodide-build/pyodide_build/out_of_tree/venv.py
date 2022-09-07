@@ -63,7 +63,10 @@ def create_pip_conf(venv_root: Path) -> None:
         # In the xbuild_env, we don't have the packages locally. We will include
         # in the xbuildenv a PEP 503 index for the vendored Pyodide packages
         # https://peps.python.org/pep-0503/
+
+        # TODO create the index as part of the xbuildenv
         repo = f'extra-index-url={get_pyodide_root()/"dist/pypi_index"}'
+        raise NotImplementedError()
     else:
         # In the Pyodide development environment, the Pyodide dist directory
         # should contain the needed wheels. find-links
