@@ -23,7 +23,7 @@ from ._core import IN_BROWSER, JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 STD_LIB = Path(sysconfig.get_path("stdlib"))
-TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": SITE_PACKAGES}
+TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
