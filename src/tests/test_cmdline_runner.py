@@ -201,22 +201,27 @@ def install_pkg(venv, pkgname):
     )
 
 
-def test_venv_pip_install_1(selenium, venv):
+def clean_pkg_install_stdout(stdout: str) -> str:
+    # delete lines indicating whether package was downloaded or used from cache
+    # since these don't reproduce.
+    stdout = re.sub(r"^  .*?\n", "", stdout, flags=re.MULTILINE)
+    # Remove version numbers
+    stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", stdout)
+    return stdout.strip()
+
+
+def test_pip_install_from_pypi_nodeps(selenium, venv):
     """pure Python package with no dependencies from pypi"""
     result = install_pkg(venv, "more-itertools")
     assert result.returncode == 0
-    cleaned_stdout = result.stdout.strip()
-    # delete lines indicating whether package was downloaded or used from cache
-    # since these don't reproduce.
-    cleaned_stdout = re.sub("^  .*?\n", "", cleaned_stdout, flags=re.MULTILINE)
     assert (
-        cleaned_stdout
+        clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
             Looking in links: /src/dist
             Collecting more-itertools
             Installing collected packages: more-itertools
-            Successfully installed more-itertools-8.14.0
+            Successfully installed more-itertools-*
             """
         ).strip()
     )
@@ -240,33 +245,31 @@ def test_venv_pip_install_1(selenium, venv):
     assert result.stdout == str([[0, 1, 2], [3, 4, 5], [6, 7, 8]]) + "\n"
 
 
-def test_venv_pip_install_2(selenium, venv):
+def test_pip_install_from_pypi_deps(selenium, venv):
     """pure Python package with dependencies from pypi"""
-    result = install_pkg(venv, "requests")
+    result = install_pkg(venv, "requests==2.28.1")
     assert result.returncode == 0
-    cleaned_stdout = result.stdout.strip()
-    # delete lines indicating whether package was downloaded or used from cache
-    # since these don't reproduce.
-    cleaned_stdout = re.sub("^  .*?\n", "", cleaned_stdout, flags=re.MULTILINE)
+    cleaned_stdout = clean_pkg_install_stdout(result.stdout)
+    # Sort packages since they don't come in a consistent order
     cleaned_stdout = "\n".join(sorted(cleaned_stdout.split("\n")))
     assert (
         cleaned_stdout
         == dedent(
             """
-            Collecting certifi>=2017.4.17
-            Collecting charset-normalizer<3,>=2
-            Collecting idna<4,>=2.5
-            Collecting requests
-            Collecting urllib3<1.27,>=1.21.1
+            Collecting certifi>=*
+            Collecting charset-normalizer<*,>=*
+            Collecting idna<*,>=*
+            Collecting requests==*
+            Collecting urllib3<*,>=*
             Installing collected packages: urllib3, idna, charset-normalizer, certifi, requests
             Looking in links: /src/dist
-            Successfully installed certifi-2022.6.15 charset-normalizer-2.1.1 idna-3.3 requests-2.28.1 urllib3-1.26.12
+            Successfully installed certifi-* charset-normalizer-* idna-* requests-* urllib3-*
             """
         ).strip()
     )
 
 
-def test_venv_pip_install_3(selenium, venv):
+def test_pip_install_impure(selenium, venv):
     """impure python package from pypi"""
     result = install_pkg(venv, "psutil")
     assert result.returncode != 0
@@ -282,28 +285,24 @@ def test_venv_pip_install_3(selenium, venv):
     )
 
 
-def test_venv_pip_install_4(selenium, venv):
+def test_pip_install_deps_impure(selenium, venv):
     """pure python package from pypi that depends on impure package"""
     result = install_pkg(venv, "psutil-extra")
     assert result.returncode != 0
 
 
-def test_venv_pip_install_regex(selenium, venv):
+def test_pip_install_from_pyodide(selenium, venv):
     """impure Python package built with Pyodide"""
     result = install_pkg(venv, "regex")
     assert result.returncode == 0
-    cleaned_stdout = result.stdout.strip()
-    # delete lines indicating whether package was downloaded or used from cache
-    # since these don't reproduce.
-    cleaned_stdout = re.sub("^  .*?\n", "", cleaned_stdout, flags=re.MULTILINE)
     assert (
-        cleaned_stdout
+        clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
             Looking in links: /src/dist
-            Processing ./dist/regex-2022.6.2-cp310-cp310-emscripten_3_1_20_wasm32.whl
+            Processing ./dist/regex-*-cp310-cp310-emscripten_3_1_20_wasm32.whl
             Installing collected packages: regex
-            Successfully installed regex-2022.6.2
+            Successfully installed regex-*
             """
         ).strip()
     )
