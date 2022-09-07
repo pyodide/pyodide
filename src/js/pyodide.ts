@@ -328,7 +328,7 @@ export async function loadPyodide(
   if (Module.version !== version) {
     throw new Error(
       `\
-Pyodide version does not match: '${version}' (JS) <==> '${Module.version} (WASM)'. \
+Pyodide version does not match: '${version}' <==> '${Module.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
 `
     );
