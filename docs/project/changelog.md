@@ -62,11 +62,11 @@ substitutions:
   {pr}`3043`
 
 - {{ Fix }} Packages are now loaded in a topologically sorted order regarding
-  their dependencies. 
+  their dependencies.
   {pr}`3020`
 
 - {{ Breaking }} Loading the `soupsieve` package will not automatically load
-  `beautifulsoup4` together. 
+  `beautifulsoup4` together.
   {pr}`3020`
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -75,7 +75,7 @@ substitutions:
 
 - {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to
   calculate top-level import names for the package. Previously `test/imports`
-  key was used for this purpose. 
+  key was used for this purpose.
   {pr}`3006`
 
 ## Version 0.21.2
