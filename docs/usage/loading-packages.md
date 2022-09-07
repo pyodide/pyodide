@@ -156,8 +156,8 @@ await pyodide.loadPackage(
 The file name must be a valid wheel name.
 
 When you request a package from the official repository, all of the package's
-dependencies are also loaded. Dependency resolution is not yet implemented when
-loading packages from custom URLs.
+dependencies are also loaded. There is no dependency resolution when
+loading packages from custom URLs. If you want dependency resolution for custom URLs, use `micropip`.
 
 In general, loading a package twice is not permitted. However, one can override
 a dependency by loading a custom URL with the same package name before loading
