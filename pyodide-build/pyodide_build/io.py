@@ -101,6 +101,19 @@ class MetaConfig(BaseModel):
         config = cls(**config_raw)
         return config
 
+    def to_yaml(self, path: Path) -> None:
+        """Serialize the configuration to meta.yaml file
+
+        Parameters
+        ----------
+        path
+            path to the meta.yaml file
+        """
+        import yaml
+
+        with open(path, "w") as f:
+            yaml.dump(self.dict(by_alias=True, exclude_unset=True), f)
+
 
 PACKAGE_CONFIG_SPEC: dict[Any, Any] = {}
 

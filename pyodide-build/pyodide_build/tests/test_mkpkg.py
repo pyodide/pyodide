@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pytest
-import yaml
 from pkg_resources import parse_version
 
 import pyodide_build.mkpkg
@@ -53,8 +52,7 @@ def test_mkpkg_update(tmpdir, old_dist_type, new_dist_type):
     package_dir = base_dir / "idna"
     package_dir.mkdir(parents=True)
     meta_path = package_dir / "meta.yaml"
-    with open(meta_path, "w") as f:
-        yaml.dump(db_init, f)
+    db_init.to_yaml(meta_path)
     source_fmt = new_dist_type
     if new_dist_type == "same":
         source_fmt = None
