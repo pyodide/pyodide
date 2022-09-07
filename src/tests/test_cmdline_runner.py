@@ -7,7 +7,7 @@ import pytest
 import pyodide
 from pyodide_build.common import emscripten_version, get_pyodide_root
 
-mark = pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
+mark = pytest.mark.xfail_browsers(chrome="node only", firefox="node only", safari="node only")
 
 pyodide_root = get_pyodide_root()
 script_path = pyodide_root / "tools/python"
