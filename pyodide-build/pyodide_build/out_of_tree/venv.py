@@ -132,7 +132,7 @@ def create_pip_script(venv_bin):
     (venv_bin / "pip").write_text(
         # Other than the shebang and the monkey patch, this is exactly what
         # normal pip looks like.
-        f"#!{host_python_path}"
+        f"#!{host_python_path}\n"
         + get_pip_monkeypatch(venv_bin)
         + dedent(
             """
@@ -249,7 +249,7 @@ def install_stdlib(venv_bin: Path) -> None:
 
 def create_pyodide_venv(dest: Path) -> None:
     """Create a Pyodide virtualenv and store it into dest"""
-    print("Creating Pyodide virtualenv")
+    print("Creating Pyodide virtualenv at", str(dest))
     from virtualenv import session_via_cli  # type: ignore[import]
 
     if dest.exists():
