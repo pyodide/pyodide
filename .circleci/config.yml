@@ -26,7 +26,7 @@ jobs:
           command: |
             mkdir test-results
             pip install pytest-pyodide
-            pip install -e ./pyodide_build
+            pip install -e ./pyodide-build
             npm install -g node-fetch@2
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
