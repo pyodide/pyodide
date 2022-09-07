@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from pyodide_build import buildpkg
-from pyodide_build.io import parse_package_config
+from pyodide_build.io import MetaConfig, parse_package_config
 
 PACKAGES_DIR = Path(__file__).parent / "_test_packages"
 
@@ -43,8 +43,8 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    test_pkgs.append(parse_package_config(PACKAGES_DIR / "packaging/meta.yaml"))
-    test_pkgs.append(parse_package_config(PACKAGES_DIR / "micropip/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
         pkg["source"]["patches"] = []

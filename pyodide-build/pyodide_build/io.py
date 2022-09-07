@@ -1,99 +1,84 @@
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Optional, Tuple
+
+from pydantic import BaseModel
+
+
+class _PackageSpec(BaseModel):
+    name: str
+    version: str
+    top_level: list[str] = []
+    _tag: str | None = None
+    _disabled: bool = False
+    _cpython_dynlib: bool = False
+
+
+class _SourceSpec(BaseModel):
+    url: str
+    extract_dir: str
+    path: str
+    sha256: str
+    patches: list[str] = []
+    extras: list[tuple[str, str]] = []
+
+
+class _BuildSpec(BaseModel):
+    exports: str | list[str]
+    backend_flags: str
+    cflags: str
+    cxxflags: str
+    ldflags: str
+    library: bool = False
+    sharedlibrary: bool = False
+    cross_script: str
+    script: str
+    post: str
+    unvendor_tests: bool = True
+    cross_build_env: bool
+    cross_build_files: list[str] = []
+
+
+class _RequirementsSpec(BaseModel):
+    run: list[str]
+    host: list[str]
+
+
+class _TestSpec(BaseModel):
+    imports = list[str]
+
+
+class _AboutSpec(BaseModel):
+    home: str
+    PyPI: str
+    summary: str
+    license: str
+
 
 # TODO: support more complex types for validation
 
-PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
-    "package": {
-        "name": str,
-        "version": str,
-        "top-level": list,  # List[str]
-        "_tag": str,
-        "_disabled": bool,
-        "_cpython_dynlib": bool,
-    },
-    "source": {
-        "url": str,
-        "extract_dir": str,
-        "path": str,
-        "sha256": str,
-        "patches": list,  # List[str]
-        "extras": list,  # List[Tuple[str, str]],
-    },
-    "build": {
-        "exports": str | list,  # list[str]
-        "backend-flags": str,
-        "cflags": str,
-        "cxxflags": str,
-        "ldflags": str,
-        "library": bool,
-        "sharedlibrary": bool,
-        "cross-script": str,
-        "script": str,
-        "post": str,
-        "unvendor-tests": bool,
-        "cross-build-env": bool,
-        "cross-build-files": list,  # list[str]
-    },
-    "requirements": {
-        "run": list,  # List[str],
-        "host": list,
-    },
-    "test": {
-        "imports": list,  # List[str]
-    },
-    "about": {
-        "home": str,
-        "PyPI": str,
-        "summary": str,
-        "license": str,
-    },
-}
 
+class MetaConfig(BaseModel):
+    package: _PackageSpec
+    source: _SourceSpec
+    build: _BuildSpec
+    requirements: _RequirementsSpec
+    test: _RequirementsSpec
+    about: _AboutSpec
 
-def _check_config_keys(config: dict[str, Any]) -> Iterator[str]:
-    # Check top level sections
-    wrong_keys = set(config.keys()).difference(PACKAGE_CONFIG_SPEC.keys())
-    if wrong_keys:
-        yield (
-            f"Found unknown sections {list(wrong_keys)}. Expected "
-            f"sections are {list(PACKAGE_CONFIG_SPEC)}."
-        )
+    def from_yaml(cls, path: Path) -> "MetaConfig":
+        """Load the meta.yaml from a path"""
 
-    # Check subsections
-    for section_key in config:
-        if section_key not in PACKAGE_CONFIG_SPEC:
-            # Don't check subsections if the main section is invalid
-            continue
-        actual_keys = set(config[section_key].keys())
-        expected_keys = set(PACKAGE_CONFIG_SPEC[section_key].keys())
+        import yaml
 
-        wrong_keys = set(actual_keys).difference(expected_keys)
-        if wrong_keys:
-            yield (
-                f"Found unknown keys "
-                f"{[section_key + '/' + key for key in wrong_keys]}. "
-                f"Expected keys are "
-                f"{[section_key + '/' + key for key in expected_keys]}."
-            )
+        with open(path, "rb") as fd:
+            config_raw = yaml.safe_load(fd)
+
+        config = cls(**config_raw)
+        return config
 
 
 def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
-    # Check value types
-    for section_key, section in config.items():
-        for subsection_key, value in section.items():
-            try:
-                expected_type = PACKAGE_CONFIG_SPEC[section_key][subsection_key]
-            except KeyError:
-                # Unknown key, which was already reported previously, don't
-                # check types
-                continue
-            if not isinstance(value, expected_type):
-                yield (
-                    f"Wrong type for '{section_key}/{subsection_key}': "
-                    f"expected {expected_type.__name__}, got {type(value).__name__}."
-                )
     # Check that if sources is a wheel it shouldn't have host dependencies.
     source_url = config.get("source", {}).get("url", "")
     requirements_host = config.get("requirements", {}).get("host", [])
