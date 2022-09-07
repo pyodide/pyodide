@@ -31,18 +31,30 @@ describe("PATH", () => {
     chai.assert.exists(await page.evaluate(() => globalThis.pyodide.PATH));
   });
   it("has expected keys", async () => {
-    chai.assert.exists(await page.evaluate(() => globalThis.pyodide.PATH.dirname));
-    chai.assert.exists(await page.evaluate(() => globalThis.pyodide.PATH.normalize));
+    chai.assert.exists(
+      await page.evaluate(() => globalThis.pyodide.PATH.dirname)
+    );
+    chai.assert.exists(
+      await page.evaluate(() => globalThis.pyodide.PATH.normalize)
+    );
   });
 });
 
 describe("ERRNO_CODES", () => {
   it("exists", async () => {
-    chai.assert.exists(await page.evaluate(() => globalThis.pyodide.ERRNO_CODES));
+    chai.assert.exists(
+      await page.evaluate(() => globalThis.pyodide.ERRNO_CODES)
+    );
   });
   it("has expected keys", async () => {
-    chai.assert.exists(await page.evaluate(() => globalThis.pyodide.ERRNO_CODES.ENOENT));
-    chai.assert.exists(await page.evaluate(() => globalThis.pyodide.ERRNO_CODES.EPERM));
-    chai.assert.exists(await page.evaluate(() => globalThis.pyodide.ERRNO_CODES.EEXIST));
+    chai.assert.exists(
+      await page.evaluate(() => globalThis.pyodide.ERRNO_CODES.ENOENT)
+    );
+    chai.assert.exists(
+      await page.evaluate(() => globalThis.pyodide.ERRNO_CODES.EPERM)
+    );
+    chai.assert.exists(
+      await page.evaluate(() => globalThis.pyodide.ERRNO_CODES.EEXIST)
+    );
   });
 });
