@@ -1153,6 +1153,14 @@ def test_fullstdlib(selenium_standalone_noload):
         """
     )
 
+def test_loadPyodide_relative_url(selenium_standalone):
+    """Check that loading Pyodide with a relative URL works"""
+    selenium_standalone.run_js(
+        """
+        self.pyodide = await loadPyodide({ indexURL: "./" });
+        """
+    )
+
 
 @run_in_pyodide
 def test_run_js(selenium):
