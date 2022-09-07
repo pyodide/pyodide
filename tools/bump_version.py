@@ -69,6 +69,11 @@ PYTHON_TARGETS = [
         build_version_pattern('version: string = "{python_version}"'),
         prerelease=True,
     ),
+    Target(
+        ROOT / "src/core/pre.js",
+        build_version_pattern('Module.version = "{python_version}"'),
+        prerelease=True,
+    ),
 ]
 
 JS_TARGETS = [
