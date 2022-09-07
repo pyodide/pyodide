@@ -325,6 +325,15 @@ export async function loadPyodide(
     throw Module.exited.toThrow;
   }
 
+  if (Module.version !== version) {
+    throw new Error(
+      `\
+Pyodide version does not match: '${version}' (JS) <==> '${Module.version} (WASM)'. \
+If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
+`
+    );
+  }
+
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
@@ -336,12 +345,6 @@ export async function loadPyodide(
 
   const pyodide = finalizeBootstrap(API, config);
 
-  if (pyodide.pyodide_py.__version__ !== pyodide.version) {
-    throw new Error(
-      `Pyodide version does not match: '${pyodide.version}' (JS) <==> '${pyodide.pyodide_py.__version__} (Python)'`
-    );
-  }
-
   // API.runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
@@ -349,7 +352,7 @@ export async function loadPyodide(
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
-  if (API.repodata_info.version !== pyodide.version) {
+  if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   API.package_loader.init_loaded_packages();

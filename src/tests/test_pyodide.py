@@ -1128,9 +1128,15 @@ def test_version_variable(selenium):
         """
     )
 
+    core_version = selenium.run_js(
+        """
+        return pyodide._module.version
+        """
+    )
+
     from pyodide import __version__ as py_version
 
-    assert js_version == py_version
+    assert js_version == py_version == core_version
 
 
 def test_sys_path0(selenium):
