@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
 import json
 import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 import warnings
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Literal, NoReturn, TypedDict
+from urllib import request
 
 from ruamel.yaml import YAML
+
+from .common import parse_top_level_import_name
 
 
 class URLDict(TypedDict):
@@ -63,12 +69,14 @@ def _find_sdist(pypi_metadata: MetadataDict) -> URLDict | None:
     return None
 
 
-def _find_wheel(pypi_metadata: MetadataDict) -> URLDict | None:
+def _find_wheel(pypi_metadata: MetadataDict, native: bool = False) -> URLDict | None:
     """Get wheel file path from the metadata"""
+    predicate = lambda filename: filename.endswith(
+        ".whl" if native else "py3-none-any.whl"
+    )
+
     for entry in pypi_metadata["urls"]:
-        if entry["packagetype"] == "bdist_wheel" and entry["filename"].endswith(
-            "py3-none-any.whl"
-        ):
+        if entry["packagetype"] == "bdist_wheel" and predicate(entry["filename"]):
             return entry
     return None
 
@@ -115,6 +123,17 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
     return pypi_metadata
 
 
+@contextlib.contextmanager
+def _download_wheel(pypi_metadata: URLDict) -> Iterator[Path]:
+    response = request.urlopen(pypi_metadata["url"])
+    whlname = Path(response.geturl()).name
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        whlpath = Path(tmpdirname, whlname)
+        whlpath.write_bytes(response.read())
+        yield whlpath
+
+
 def run_prettier(meta_path: str | Path) -> None:
     subprocess.run(["npx", "prettier", "-w", meta_path])
 
@@ -142,6 +161,13 @@ def make_package(
         sources = ["wheel", "sdist"]
     dist_metadata = _find_dist(pypi_metadata, sources)
 
+    native_wheel_metadata = _find_wheel(pypi_metadata, native=True)
+
+    top_level = None
+    if native_wheel_metadata is not None:
+        with _download_wheel(native_wheel_metadata) as native_wheel_path:
+            top_level = parse_top_level_import_name(native_wheel_path)
+
     url = dist_metadata["url"]
     sha256 = dist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
@@ -152,9 +178,12 @@ def make_package(
     pypi = "https://pypi.org/project/" + package
 
     yaml_content = {
-        "package": {"name": package, "version": version},
+        "package": {
+            "name": package,
+            "version": version,
+            "top-level": top_level or ["PUT_TOP_LEVEL_IMPORT_NAMES_HERE"],
+        },
         "source": {"url": url, "sha256": sha256},
-        "test": {"imports": [package]},
         "about": {
             "home": homepage,
             "PyPI": pypi,
@@ -170,6 +199,7 @@ def make_package(
     if meta_path.exists():
         raise MkpkgFailedException(f"The package {package} already exists")
 
+    yaml.representer.ignore_aliases = lambda *_: True
     yaml.dump(yaml_content, meta_path)
     try:
         run_prettier(meta_path)

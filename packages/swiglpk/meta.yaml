@@ -1,6 +1,8 @@
 package:
   name: swiglpk
   version: 5.0.3
+  top-level:
+    - swiglpk
 
 source:
   sha256: 32f9fa0a082d80e32234f060704b6d7f07843a7aefffa5008b315b0970bab199
@@ -14,9 +16,3 @@ build:
 requirements:
   host:
     - glpk
-  run:
-    - glpk
-
-test:
-  imports:
-    - swiglpk
