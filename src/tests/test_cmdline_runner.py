@@ -112,7 +112,13 @@ Try `python -h' for more information.
 
 @contextmanager
 def venv_ctxmgr(path):
-    from pyodide_build.out_of_tree.venv import create_pyodide_venv
+    import importlib
+
+    # Make sure mypy doesn't understand and follow this import because it forces
+    # venv.py to be processed in both mypy and mypy-tests which have
+    # contradictory settings
+    venv = importlib.import_module("pyodide_build.out_of_tree.venv")
+    create_pyodide_venv = venv.create_pyodide_venv
 
     create_pyodide_venv(path)
     try:
