@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 
 class _PackageSpec(BaseModel):
@@ -13,46 +13,64 @@ class _PackageSpec(BaseModel):
     _disabled: bool = False
     _cpython_dynlib: bool = False
 
+    class Config:
+        extra = Extra.forbid
+
 
 class _SourceSpec(BaseModel):
-    url: str
-    extract_dir: str
-    path: str
-    sha256: str
+    url: str | None = None
+    extract_dir: Path | None = None
+    path: Path | None = None
+    sha256: str | None = None
     patches: list[str] = []
     extras: list[tuple[str, str]] = []
 
+    class Config:
+        extra = Extra.forbid
+
 
 class _BuildSpec(BaseModel):
-    exports: str | list[str]
-    backend_flags: str
-    cflags: str
-    cxxflags: str
-    ldflags: str
+    exports: str | list[str] = []
+    backend_flags: str = ""
+    cflags: str = ""
+    cxxflags: str = ""
+    ldflags: str = ""
     library: bool = False
     sharedlibrary: bool = False
-    cross_script: str
-    script: str
-    post: str
+    cross_script: str | None = None
+    script: str | None = None
+    post: str | None = None
     unvendor_tests: bool = True
-    cross_build_env: bool
+    cross_build_env: bool = False
     cross_build_files: list[str] = []
+
+    class Config:
+        extra = Extra.forbid
 
 
 class _RequirementsSpec(BaseModel):
-    run: list[str]
-    host: list[str]
+    run: list[str] = []
+    host: list[str] = []
+
+    class Config:
+        extra = Extra.forbid
 
 
 class _TestSpec(BaseModel):
-    imports = list[str]
+    imports: list[str] = []
+
+    class Config:
+        extra = Extra.forbid
 
 
 class _AboutSpec(BaseModel):
-    home: str
-    PyPI: str
-    summary: str
-    license: str
+    home: str | None = None
+    PyPI: str | None = None
+    summary: str | None = None
+    license: str | None = None
+
+    class Config:
+        extra = Extra.forbid
 
 
 # TODO: support more complex types for validation
@@ -61,11 +79,12 @@ class _AboutSpec(BaseModel):
 class MetaConfig(BaseModel):
     package: _PackageSpec
     source: _SourceSpec
-    build: _BuildSpec
-    requirements: _RequirementsSpec
-    test: _RequirementsSpec
-    about: _AboutSpec
+    build: _BuildSpec = _BuildSpec()
+    requirements: _RequirementsSpec = _RequirementsSpec()
+    test: _RequirementsSpec = _TestSpec()
+    about: _AboutSpec = _AboutSpec()
 
+    @classmethod
     def from_yaml(cls, path: Path) -> "MetaConfig":
         """Load the meta.yaml from a path"""
 
