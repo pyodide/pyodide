@@ -2,6 +2,8 @@ package:
   name: lzma
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
+  top-level:
+    - lzma
 source:
   path: empty
 build:
@@ -21,6 +23,3 @@ build:
 requirements:
   host:
     - liblzma
-test:
-  imports:
-    - lzma

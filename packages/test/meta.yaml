@@ -2,6 +2,8 @@ package:
   name: test
   version: 1.0.0 # Nonesense
   _cpython_dynlib: true
+  top-level:
+    - test
 
 source:
   path: empty
@@ -42,7 +44,3 @@ build:
       tar --exclude=__pycache__ -cf - \
       test unittest/test sqlite3/test ctypes/test \
       | tar -C $DISTDIR -xf -
-
-test:
-  imports:
-    - test

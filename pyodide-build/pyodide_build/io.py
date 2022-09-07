@@ -8,6 +8,7 @@ PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
     "package": {
         "name": str,
         "version": str,
+        "top-level": list,  # List[str]
         "_tag": str,
         "_disabled": bool,
         "_cpython_dynlib": bool,

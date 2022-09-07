@@ -1,6 +1,8 @@
 package:
   name: mne
   version: 1.0.3
+  top-level:
+    - mne
 source:
   sha256: 5e6fad4b1a2358b4b383e69e542ec06044e950f313db279bec5676308b02a2c8
   url: https://files.pythonhosted.org/packages/ca/66/68845a83a5bdd358262b921b34f7e80e1ab193e70b57ce90568603d78511/mne-1.0.3-py3-none-any.whl
@@ -11,6 +13,8 @@ requirements:
     - scipy
     - setuptools
     - decorator
-test:
-  imports:
-    - mne
+about:
+  home: https://mne.tools/dev/
+  PyPI: https://pypi.org/project/mne
+  summary: MNE-Python project for MEG and EEG data analysis.
+  license: BSD-3-Clause

@@ -1,12 +1,11 @@
 package:
   name: tqdm
   version: 4.64.0
+  top-level:
+    - tqdm
 source:
   url: https://files.pythonhosted.org/packages/8a/c4/d15f1e627fff25443ded77ea70a7b5532d6371498f9285d44d62587e209c/tqdm-4.64.0-py2.py3-none-any.whl
   sha256: 74a2cdefe14d11442cedf3ba4e21a3b84ff9a2dbdc6cfae2c34addb2a14a5ea6
-test:
-  imports:
-    - tqdm
 about:
   home: https://tqdm.github.io
   PyPI: https://pypi.org/project/tqdm

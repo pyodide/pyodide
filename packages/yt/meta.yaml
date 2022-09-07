@@ -1,7 +1,8 @@
 package:
   name: yt
   version: 4.0.4
-
+  top-level:
+    - yt
 source:
   url: https://files.pythonhosted.org/packages/4b/88/280b68ca63861d34ef7f79e5e45a0476e320d25db2663981f9a1a3a85561/yt-4.0.4.tar.gz
   sha256: 2cd58c3579efb88c3aefadc343ee6e399d893a2be5c60e61606a0fba6148b692
@@ -30,6 +31,8 @@ build:
   # so it cannot be unvendored
   unvendor-tests: false
 
-test:
-  imports:
-    - yt
+about:
+  home: https://github.com/yt-project/yt
+  PyPI: https://pypi.org/project/yt
+  summary: An analysis and visualization toolkit for volumetric data
+  license: BSD 3-Clause

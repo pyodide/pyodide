@@ -1,6 +1,10 @@
 package:
   name: setuptools
   version: 62.6.0
+  top-level:
+    - _distutils_hack
+    - pkg_resources
+    - setuptools
 source:
   url: https://files.pythonhosted.org/packages/e9/86/b2ede1d87122a6d4da86d84cc35d0e48b4aa2476e4281d06101c772c1961/setuptools-62.6.0-py3-none-any.whl
   sha256: c1848f654aea2e3526d17fc3ce6aeaa5e7e24e66e645b5be2171f3f6b4e5a178
@@ -11,7 +15,7 @@ requirements:
   run:
     - distutils
     - pyparsing
-test:
-  imports:
-    - setuptools
-    - pkg_resources
+about:
+  home: https://github.com/pypa/setuptools
+  PyPI: https://pypi.org/project/setuptools
+  summary: Easily download, build, install, upgrade, and uninstall Python packages
