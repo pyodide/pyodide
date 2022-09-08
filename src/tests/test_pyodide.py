@@ -1359,9 +1359,9 @@ def test_relative_index_url(selenium, tmp_path):
         print_result(result)
 
 
-pytest.mark.xfail_browsers(node="Browser only")
-
-
+@pytest.mark.xfail_browsers(
+    node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
+)
 def test_csp(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     target_path = DIST_PATH / "test_csp.html"
