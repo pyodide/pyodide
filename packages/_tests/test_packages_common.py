@@ -25,6 +25,7 @@ def registered_packages() -> list[str]:
 UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],
+    "safari": [],
     "node": ["cmyt", "yt", "galpy"],
 }
 if "CI" in os.environ:
