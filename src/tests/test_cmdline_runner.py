@@ -5,6 +5,7 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -14,6 +15,17 @@ from pyodide_build.common import emscripten_version, get_pyodide_root
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
 )
+
+
+def check_emscripten():
+    if not shutil.which("emcc"):
+        pytest.skip("Needs Emscripten")
+
+
+def needs_emscripten(x):
+    check_emscripten()
+    return x
+
 
 pyodide_root = get_pyodide_root()
 script_path = pyodide_root / "tools/python"
@@ -114,13 +126,12 @@ Try `python -h' for more information.
 
 @contextmanager
 def venv_ctxmgr(path):
-    import importlib
+    check_emscripten()
 
-    # Make sure mypy doesn't understand and follow this import because it forces
-    # venv.py to be processed in both mypy and mypy-tests which have
-    # contradictory settings
-    venv = importlib.import_module("pyodide_build.out_of_tree.venv")
-    create_pyodide_venv = venv.create_pyodide_venv
+    if TYPE_CHECKING:
+        create_pyodide_venv: Any = None
+    else:
+        from pyodide_build.out_of_tree.venv import create_pyodide_venv
 
     create_pyodide_venv(path)
     try:
@@ -137,6 +148,7 @@ def venv():
 
 
 @only_node
+@needs_emscripten
 def test_venv_success_log(selenium, capsys):
     with venv_ctxmgr(Path(".venv-pyodide-tmp-test")):
         msg = dedent(
@@ -153,6 +165,7 @@ def test_venv_success_log(selenium, capsys):
 
 
 @only_node
+@needs_emscripten
 def test_venv_fail_log(selenium, capsys):
     path = Path(".venv-pyodide-tmp-test")
     try:
@@ -243,6 +256,7 @@ Successfully installed regex-*\
     )
 
 
+@only_node
 def test_pip_install_from_pypi_nodeps(selenium, venv):
     """pure Python package with no dependencies from pypi"""
     result = install_pkg(venv, "more-itertools")
@@ -278,6 +292,7 @@ def test_pip_install_from_pypi_nodeps(selenium, venv):
     assert result.stdout == str([[0, 1, 2], [3, 4, 5], [6, 7, 8]]) + "\n"
 
 
+@only_node
 def test_pip_install_from_pypi_deps(selenium, venv):
     """pure Python package with dependencies from pypi"""
     result = install_pkg(venv, "requests==2.28.1")
@@ -302,6 +317,7 @@ def test_pip_install_from_pypi_deps(selenium, venv):
     )
 
 
+@only_node
 def test_pip_install_impure(selenium, venv):
     """impure python package from pypi"""
     result = install_pkg(venv, "psutil")
@@ -318,12 +334,14 @@ def test_pip_install_impure(selenium, venv):
     )
 
 
+@only_node
 def test_pip_install_deps_impure(selenium, venv):
     """pure python package from pypi that depends on impure package"""
     result = install_pkg(venv, "psutil-extra")
     assert result.returncode != 0
 
 
+@only_node
 def test_pip_install_from_pyodide(selenium, venv):
     """impure Python package built with Pyodide"""
     result = install_pkg(venv, "regex")
