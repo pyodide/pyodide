@@ -143,6 +143,7 @@ def venv_ctxmgr(path):
 
 @pytest.fixture(scope="module")
 def venv():
+    check_emscripten()
     path = Path(".venv-pyodide-tmp-test")
     with venv_ctxmgr(path) as venv:
         yield venv
