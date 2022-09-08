@@ -44,6 +44,11 @@ substitutions:
   `indexURL` (this was a regression in v0.21.2).
   {pr}`3077`
 
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably will always be).
+  {pr}`3075`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
