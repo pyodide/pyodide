@@ -46,8 +46,11 @@ substitutions:
 
 - {{ Enhancement }} Pyodide now works with a content security policy that
   doesn't include `unsafe-eval`. It is still necessary to include
-  `wasm-unsafe-eval` (and probably will always be).
+  `wasm-unsafe-eval` (and probably always will be).
   {pr}`3075`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
 
 ### Build System / Package Loading
 
