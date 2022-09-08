@@ -213,8 +213,11 @@ def clean_pkg_install_stdout(stdout: str) -> str:
     # delete lines indicating whether package was downloaded or used from cache
     # since these don't reproduce.
     stdout = re.sub(r"^  .*?\n", "", stdout, flags=re.MULTILINE)
+    stdout = re.sub(r"^\[notice\]  .*?\n", "", stdout, flags=re.MULTILINE)
     # Remove version numbers
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", stdout)
+    stdout = re.sub(r" /[a-zA-Z0-9/]*/dist", " .../dist", stdout)
+
     return stdout.strip()
 
 
@@ -226,7 +229,7 @@ def test_pip_install_from_pypi_nodeps(selenium, venv):
         clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
-            Looking in links: /src/dist
+            Looking in links: .../dist
             Collecting more-itertools
             Installing collected packages: more-itertools
             Successfully installed more-itertools-*
@@ -270,7 +273,7 @@ def test_pip_install_from_pypi_deps(selenium, venv):
             Collecting requests==*
             Collecting urllib3<*,>=*
             Installing collected packages: urllib3, idna, charset-normalizer, certifi, requests
-            Looking in links: /src/dist
+            Looking in links: .../dist
             Successfully installed certifi-* charset-normalizer-* idna-* requests-* urllib3-*
             """
         ).strip()
@@ -281,7 +284,7 @@ def test_pip_install_impure(selenium, venv):
     """impure python package from pypi"""
     result = install_pkg(venv, "psutil")
     assert result.returncode != 0
-    assert result.stdout == "Looking in links: /src/dist\n"
+    assert clean_pkg_install_stdout(result.stdout) == "Looking in links: .../dist"
     assert (
         result.stderr.strip()
         == dedent(
@@ -307,7 +310,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
-            Looking in links: /src/dist
+            Looking in links: .../dist
             Processing ./dist/regex-*-cp310-cp310-emscripten_3_1_20_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
