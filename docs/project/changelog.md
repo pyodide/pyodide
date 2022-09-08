@@ -44,6 +44,8 @@ substitutions:
   `indexURL` (this was a regression in v0.21.2).
   {pr}`3077`
 
+- {{ Enhancement }} Add binary files to exports in JavaScript package {pr}`3085`.
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
