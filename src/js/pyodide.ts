@@ -174,6 +174,9 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  *  code.
  */
 function calculateIndexURL(): string {
+  if (typeof __dirname === "string") {
+    return __dirname;
+  }
   let err: Error;
   try {
     throw new Error();
