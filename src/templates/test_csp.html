@@ -1,0 +1,28 @@
+<!-- Bootstrap HTML for running the unit tests. -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>pyodide</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src http: 'wasm-unsafe-eval'"
+    />
+    <script type="text/javascript">
+      window.logs = [];
+      console.log = function (message) {
+        window.logs.push(message);
+      };
+      console.warn = function (message) {
+        window.logs.push(message);
+      };
+      console.info = function (message) {
+        window.logs.push(message);
+      };
+      console.error = function (message) {
+        window.logs.push(message);
+      };
+    </script>
+    <script src="./pyodide.js"></script>
+  </head>
+  <body></body>
+</html>

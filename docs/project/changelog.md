@@ -28,6 +28,14 @@ substitutions:
   JavaScript and Python Pyodide package does not match.
   {pr}`3074`
 
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
 - {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
   {pr}`3080`
 
