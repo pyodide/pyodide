@@ -213,12 +213,34 @@ def clean_pkg_install_stdout(stdout: str) -> str:
     # delete lines indicating whether package was downloaded or used from cache
     # since these don't reproduce.
     stdout = re.sub(r"^  .*?\n", "", stdout, flags=re.MULTILINE)
-    stdout = re.sub(r"^\[notice\]  .*?\n", "", stdout, flags=re.MULTILINE)
+    stdout = re.sub(r"^\[notice\].*?\n", "", stdout, flags=re.MULTILINE)
     # Remove version numbers
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", stdout)
     stdout = re.sub(r" /[a-zA-Z0-9/]*/dist", " .../dist", stdout)
 
     return stdout.strip()
+
+
+def test_clean_pkg_install_stdout():
+    assert (
+        clean_pkg_install_stdout(
+            """\
+Looking in links: /src/dist
+Processing ./dist/regex-2.0-cp310-cp310-emscripten_3_1_20_wasm32.whl
+Installing collected packages: regex
+Successfully installed regex-2.0
+
+[notice] A new release of pip available: 22.1.2 -> 22.2.2
+[notice] To update, run: /root/repo/.venv-pyodide-tmp-test/bin/python3.10-host -m pip install --upgrade pip
+"""
+        )
+        == """\
+Looking in links: .../dist
+Processing ./dist/regex-*-cp310-cp310-emscripten_3_1_20_wasm32.whl
+Installing collected packages: regex
+Successfully installed regex-*\
+"""
+    )
 
 
 def test_pip_install_from_pypi_nodeps(selenium, venv):
