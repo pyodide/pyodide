@@ -23,7 +23,8 @@ def check_emscripten():
 
 
 def needs_emscripten(x):
-    check_emscripten()
+    if not shutil.which("emcc"):
+        return pytest.mark.skip("Needs Emscripten")(x)
     return x
 
 
