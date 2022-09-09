@@ -422,6 +422,43 @@ def eval_code(
         ``None``. If the last statement is an expression, return the result of the
         expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
+
+    Examples
+    --------
+    >>> from pyodide import eval_code
+    >>> source = '''
+    1+1
+    '''
+    >>> eval_code(source)
+    2
+    # An example using quiet_trailing_semicolon
+    >>> source = '''
+    1+1;
+    '''
+    >>> eval_code(source, quiet_trailing_semicolon=True)
+    # No output
+    >>> eval_code(source, quiet_trailing_semicolon=False)
+    2
+    # An example using globals and locals
+    >>> my_globals = {"y": "100"}
+    >>> my_locals = {"y": "200"}
+    >>> source = '''
+    print(f"globally y is {y}")
+    def test_scope():
+        print(f"locally y is {y}")
+    test_scope()
+    '''
+    >>> eval_code(source, my_globals, my_locals)
+    globally y is 200
+    locally y is 100
+    # Using return mode
+    >>> source = '''
+    test = 1+1
+    '''
+    >>> eval_code(source, return_mode='last_expr_or_assign')
+    2
+    >>> eval_code(source, return_mode='last_expr')
+    # No output
     """
     return (
         CodeRunner(
