@@ -425,7 +425,7 @@ def eval_code(
 
     Examples
     --------
-    >>> from pyodide import eval_code
+    >>> from pyodide.code import eval_code
     >>> source = '''
     1 + 1
     '''
@@ -461,6 +461,14 @@ def eval_code(
     # Returns None
     >>> eval_code(source, return_mode='none')
     # Returns None
+    # An example using filename
+    >>> f = open('example_of_filename.py', 'w')
+    >>> _ = f.write('print("Hello from pyodide")')
+    >>> f.close()
+    >>> f = open('example_of_filename.py', 'r')
+    >>> temp = f.read()
+    >>> f.close()
+    >>> eval_code(temp, filename='test.py')
     """
     return (
         CodeRunner(
