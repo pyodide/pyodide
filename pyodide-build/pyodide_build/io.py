@@ -210,12 +210,15 @@ class MetaConfig(BaseModel):
             allowed_keys = {
                 "post",
                 "unvendor-tests",
-                "cross-build-env",
-                "cross-build-files",
+                # Note here names are with "_", after alias conversion
+                "cross_build_env",
+                "cross_build_files",
+                "exports",
+                "unvendor_tests",
             }
-            for key, val in values["build"].items():
+            for key, val in values["build"].dict().items():
                 if val and key not in allowed_keys:
                     raise ValueError(
-                        "If source is a wheel, 'build/{key}' key is not allowed"
+                        f"If source is a wheel, 'build/{key}' key is not allowed"
                     )
         return values

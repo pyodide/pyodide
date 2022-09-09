@@ -3,6 +3,7 @@ import subprocess
 import time
 from pathlib import Path
 
+import pydantic
 import pytest
 
 from pyodide_build import buildpkg
@@ -134,7 +135,13 @@ def test_needs_rebuild(tmpdir):
     extra_file = pkg_root / "extra"
     src_path = pkg_root / "src"
     src_path_file = src_path / "file"
-    source_metadata = _SourceSpec(
+
+    class MockSourceSpec(_SourceSpec):
+        @pydantic.root_validator
+        def _check_patches_extra(cls, values):
+            return values
+
+    source_metadata = MockSourceSpec(
         patches=[
             str(patch_file),
         ],
