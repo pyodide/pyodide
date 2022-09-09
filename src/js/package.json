@@ -67,6 +67,7 @@
     "fs": false,
     "fs/promises": false,
     "path": false,
+    "url": false,
     "vm": false,
     "ws": false
   },
