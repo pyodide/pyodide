@@ -182,7 +182,6 @@ if (globalThis.document) {
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
-    // This is async only for consistency
     try {
       // use importScripts in classic web worker
       globalThis.importScripts(url);
@@ -217,6 +216,7 @@ async function nodeLoadScript(url: string) {
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    await import(nodeUrlMod.pathToFileURL(url).href);
+    url = nodeUrlMod.pathToFileURL(url).href;
+    await import(url);
   }
 }
