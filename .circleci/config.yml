@@ -326,6 +326,7 @@ jobs:
             source activate pyodide
             mkdir test-results
             pip install pytest-pyodide
+            pip install -e ./pyodide-build
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
