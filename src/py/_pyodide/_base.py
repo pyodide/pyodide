@@ -469,6 +469,7 @@ def eval_code(
     >>> temp = f.read()
     >>> f.close()
     >>> eval_code(temp, filename='test.py')
+    Hello from pyodide
     """
     return (
         CodeRunner(
