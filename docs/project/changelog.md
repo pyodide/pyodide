@@ -90,6 +90,10 @@ substitutions:
   readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
   {pr}`3061`
 
+- {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
+  specification is now done more rigourously with Pydantic
+  {pr}`3079`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
