@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import pydantic
 from pydantic import BaseModel, Field
@@ -29,7 +29,7 @@ class _SourceSpec(BaseModel):
         extra = pydantic.Extra.forbid
 
     @pydantic.root_validator
-    def _check_url_has_hash(cls, values):
+    def _check_url_has_hash(cls, values: dict[str, Any]) -> dict[str, Any]:
         if values["url"] is not None and values["sha256"] is None:
             raise ValueError(
                 "If source is downloaded from url, it must have a 'source/sha256' hash."
@@ -37,7 +37,7 @@ class _SourceSpec(BaseModel):
         return values
 
     @pydantic.root_validator
-    def _check_in_tree_url(cls, values):
+    def _check_in_tree_url(cls, values: dict[str, Any]) -> dict[str, Any]:
         in_tree = values["path"] is not None
         from_url = values["url"] is not None
         if not (in_tree or from_url):
@@ -50,13 +50,13 @@ class _SourceSpec(BaseModel):
         return values
 
     @pydantic.root_validator
-    def _check_patches_extra(cls, values):
+    def _check_patches_extra(cls, values: dict[str, Any]) -> dict[str, Any]:
         patches = values["patches"]
         extras = values["extras"]
         in_tree = values["path"] is not None
         from_url = values["url"] is not None
 
-        url_is_wheel = from_url and values.endswith(".whl")
+        url_is_wheel = from_url and values["url"].endswith(".whl")
 
         if in_tree and (patches or extras):
             raise ValueError(
@@ -95,7 +95,7 @@ class _BuildSpec(BaseModel):
         extra = pydantic.Extra.forbid
 
     @pydantic.root_validator
-    def _check_config(cls, values):
+    def _check_config(cls, values: dict[str, Any]) -> dict[str, Any]:
         library = values["library"]
         sharedlibrary = values["sharedlibrary"]
         if not library and not sharedlibrary:
@@ -106,7 +106,14 @@ class _BuildSpec(BaseModel):
                 "build/library and build/sharedlibrary cannot both be true."
             )
 
-        allowed_keys = {"library", "sharedlibrary", "script", "cross-script"}
+        allowed_keys = {
+            "library",
+            "sharedlibrary",
+            "script",
+            "cross-script",
+            "exports",
+            "unvendor_tests",
+        }
         typ = "library" if library else "sharedlibrary"
         for key, val in values.items():
             if val and key not in allowed_keys:
@@ -183,7 +190,7 @@ class MetaConfig(BaseModel):
             yaml.dump(self.dict(by_alias=True, exclude_unset=True), f)
 
     @pydantic.root_validator
-    def _check_wheel_host_requirements(cls, values):
+    def _check_wheel_host_requirements(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Check that if sources is a wheel it shouldn't have host dependencies."""
         if "source" not in values:
             raise ValueError(

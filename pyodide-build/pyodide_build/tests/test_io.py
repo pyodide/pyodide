@@ -1,7 +1,7 @@
 import pytest
 from pydantic.error_wrappers import ValidationError
 
-from pyodide_build.io import MetaConfig, _SourceSpec
+from pyodide_build.io import MetaConfig, _BuildSpec, _SourceSpec
 
 
 def test_wheel_and_host_deps():
@@ -22,7 +22,7 @@ def test_wheel_and_host_deps():
 
 
 def test_source_fields():
-    """Test consistency of source fields"""
+    """Test consistency of source meta.yaml fields"""
 
     msg = "Source section should have a 'url' or 'path' key"
     with pytest.raises(ValidationError, match=msg):
@@ -32,10 +32,25 @@ def test_source_fields():
     with pytest.raises(ValidationError, match=msg):
         _SourceSpec(url="a", path="b")
 
+    msg = "If source is downloaded from url, it must have a 'source/sha256' hash"
+    with pytest.raises(ValidationError, match=msg):
+        _SourceSpec(url="a")
+
     msg = "If source is in tree, 'source/patches' and 'source/extras' keys are not allowed"
     with pytest.raises(ValidationError, match=msg):
         _SourceSpec(path="b", patches=["a"])
 
-    msg = "If source is downloaded from url, it must have a 'source/sha256' hash"
+    msg = "If source is a wheel, 'source/patches' and 'source/extras' keys are not allowed"
     with pytest.raises(ValidationError, match=msg):
-        _SourceSpec(url="a")
+        _SourceSpec(url="b.whl", patches=["a"])
+
+
+def test_build_fields():
+    """Test consistency of source meta.yaml fields"""
+    msg = "build/library and build/sharedlibrary cannot both be true"
+    with pytest.raises(ValidationError, match=msg):
+        _BuildSpec(library=True, sharedlibrary=True)
+
+    msg = "If building a library, 'build/post' key is not allowed."
+    with pytest.raises(ValidationError, match=msg):
+        _BuildSpec(library=True, post="a")
