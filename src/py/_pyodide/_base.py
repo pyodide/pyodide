@@ -427,21 +427,21 @@ def eval_code(
     --------
     >>> from pyodide import eval_code
     >>> source = '''
-    1+1
+    1 + 1
     '''
     >>> eval_code(source)
     2
     # An example using quiet_trailing_semicolon
     >>> source = '''
-    1+1;
+    1 + 1;
     '''
     >>> eval_code(source, quiet_trailing_semicolon=True)
-    # No output
+    # Returns None
     >>> eval_code(source, quiet_trailing_semicolon=False)
     2
     # An example using globals and locals
-    >>> my_globals = {"y": "100"}
-    >>> my_locals = {"y": "200"}
+    >>> my_globals = { "y": "100" }
+    >>> my_locals = { "y": "200" }
     >>> source = '''
     print(f"globally y is {y}")
     def test_scope():
@@ -451,14 +451,16 @@ def eval_code(
     >>> eval_code(source, my_globals, my_locals)
     globally y is 200
     locally y is 100
-    # Using return mode
+    # An example using return mode
     >>> source = '''
-    test = 1+1
+    test = 1 + 1
     '''
     >>> eval_code(source, return_mode='last_expr_or_assign')
     2
     >>> eval_code(source, return_mode='last_expr')
-    # No output
+    # Returns None
+    >>> eval_code(source, return_mode='none')
+    # Returns None
     """
     return (
         CodeRunner(
