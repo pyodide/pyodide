@@ -885,7 +885,7 @@ def test_mixins_errors_2(selenium):
                     yield e
 
             from pyodide.ffi import JsException
-            msg = "^TypeError:.* is not a function$"
+            msg = "^TypeError:.* is not a function.*"
             with raises(JsException, match=msg):
                 next(c)
             with raises(JsException, match=msg):

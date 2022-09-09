@@ -1,4 +1,5 @@
 import re
+import shutil
 from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
@@ -7,8 +8,9 @@ from typing import Any
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import ROOT_PATH
+from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide_build.common import get_pyodide_root
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -737,6 +739,7 @@ def test_restore_state(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
     assert selenium_standalone.run_js(
@@ -829,6 +832,7 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not exactly the same on Safari")
 def test_js_stackframes(selenium):
     res = selenium.run_js(
         """
@@ -1154,6 +1158,15 @@ def test_fullstdlib(selenium_standalone_noload):
     )
 
 
+def test_loadPyodide_relative_index_url(selenium_standalone_noload):
+    """Check that loading Pyodide with a relative URL works"""
+    selenium_standalone_noload.run_js(
+        """
+        self.pyodide = await loadPyodide({ indexURL: "./" });
+        """
+    )
+
+
 @run_in_pyodide
 def test_run_js(selenium):
     from unittest import TestCase
@@ -1292,7 +1305,7 @@ def test_args(selenium_standalone_noload):
     )
 
 
-@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
     import subprocess
@@ -1303,8 +1316,6 @@ def test_relative_index_url(selenium, tmp_path):
     extra_node_args = []
     if version_result.stdout.startswith("v14"):
         extra_node_args.append("--experimental-wasm-bigint")
-
-    import shutil
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
     shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
@@ -1346,3 +1357,18 @@ def test_relative_index_url(selenium, tmp_path):
         assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
     finally:
         print_result(result)
+
+
+@pytest.mark.xfail_browsers(
+    node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
+)
+def test_csp(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    target_path = DIST_PATH / "test_csp.html"
+    try:
+        shutil.copy(get_pyodide_root() / "src/templates/test_csp.html", target_path)
+        selenium.goto(f"{selenium.base_url}/test_csp.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+    finally:
+        target_path.unlink()
