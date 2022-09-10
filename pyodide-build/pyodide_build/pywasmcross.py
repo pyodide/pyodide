@@ -98,7 +98,7 @@ def make_command_wrapper_symlinks(
         env[var] = symlink
 
 
-# Also defined in pyodide_build.io (though aviding to import dependent modules here)
+# Also defined in pyodide_build.io (though avoiding to import dependent modules here)
 _BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
 
 
