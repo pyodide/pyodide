@@ -48,6 +48,9 @@ substitutions:
   when using Pyodide with webpack.
   {pr}`3080`
 
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
 ## Version 0.22.2
 
 _August 29, 2022_
