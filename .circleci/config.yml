@@ -29,6 +29,7 @@ jobs:
           command: |
             mkdir test-results
             pip install pytest-pyodide
+            pip install -e ./pyodide-build
             npm install -g node-fetch@2
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
@@ -228,7 +229,8 @@ jobs:
       - run:
           name: create xbuild environment
           command: |
-            PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
+            pip install -e ./pyodide-build
+            python -m pyodide_build create_xbuildenv
 
       - run:
           name: Zip xbuild environment
@@ -264,6 +266,7 @@ jobs:
             mkdir test-results
             pip install pytest-pyodide
             pip install -r requirements.txt
+            pip install -e pyodide-build
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
@@ -323,6 +326,7 @@ jobs:
             source activate pyodide
             mkdir test-results
             pip install pytest-pyodide
+            pip install -e ./pyodide-build
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
