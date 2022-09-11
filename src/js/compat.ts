@@ -182,7 +182,6 @@ if (globalThis.document) {
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
-    // This is async only for consistency
     try {
       // use importScripts in classic web worker
       globalThis.importScripts(url);
