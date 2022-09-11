@@ -44,6 +44,9 @@ substitutions:
   `indexURL` (this was a regression in v0.21.2).
   {pr}`3077`
 
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
 - {{ Enhancement }} Pyodide now works with a content security policy that
   doesn't include `unsafe-eval`. It is still necessary to include
   `wasm-unsafe-eval` (and probably always will be). Since current Safari
