@@ -68,11 +68,6 @@ are not available online in the required format.
 
 If a path is specified, any provided checksums are ignored.
 
-### `source/md5`
-
-The MD5 checksum of the tarball. It is recommended to use SHA256 instead of MD5.
-At most one checksum entry should be provided per package.
-
 ### `source/sha256`
 
 The SHA256 checksum of the tarball. It is recommended to use SHA256 instead of MD5.

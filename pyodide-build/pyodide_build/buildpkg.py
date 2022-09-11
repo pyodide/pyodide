@@ -21,11 +21,12 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from types import TracebackType
-from typing import Any, NoReturn, TextIO
+from typing import Any, NoReturn, TextIO, cast
 from urllib import request
 
-from . import pywasmcross
+from . import common, pywasmcross
 from .common import find_matching_wheels
+from .io import MetaConfig, _BuildSpec, _SourceSpec
 
 
 @contextmanager
@@ -36,10 +37,6 @@ def chdir(new_dir: Path) -> Generator[None, None, None]:
         yield
     finally:
         os.chdir(orig_dir)
-
-
-from . import common
-from .io import parse_package_config
 
 
 def _make_whlfile(
@@ -179,7 +176,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
         yield b
 
 
-def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
+def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -191,18 +188,11 @@ def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
     source_metadata
         The source section from meta.yaml.
     """
-    checksum_keys = {"md5", "sha256"}.intersection(source_metadata)
-    if not checksum_keys:
+    if source_metadata.sha256 is None:
         return
-    elif len(checksum_keys) != 1:
-        raise ValueError(
-            "Only one checksum should be included in a package "
-            "setup; found {}.".format(checksum_keys)
-        )
-    checksum_algorithm = checksum_keys.pop()
-    checksum = source_metadata[checksum_algorithm]
+    checksum = source_metadata.sha256
     CHUNK_SIZE = 1 << 16
-    h = getattr(hashlib, checksum_algorithm)()
+    h = hashlib.sha256()
     with open(archive, "rb") as fd:
         while True:
             chunk = fd.read(CHUNK_SIZE)
@@ -210,7 +200,7 @@ def check_checksum(archive: Path, source_metadata: dict[str, Any]) -> None:
             if len(chunk) < CHUNK_SIZE:
                 break
     if h.hexdigest() != checksum:
-        raise ValueError(f"Invalid {checksum_algorithm} checksum: {h.hexdigest()}")
+        raise ValueError(f"Invalid sha256 checksum: {h.hexdigest()}")
 
 
 def trim_archive_extension(tarballname: str) -> str:
@@ -231,7 +221,7 @@ def trim_archive_extension(tarballname: str) -> str:
 
 
 def download_and_extract(
-    buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
+    buildpath: Path, srcpath: Path, src_metadata: _SourceSpec
 ) -> None:
     """
     Download the source from specified in the meta data, then checksum it, then
@@ -251,7 +241,9 @@ def download_and_extract(
     src_metadata
         The source section from meta.yaml.
     """
-    response = request.urlopen(src_metadata["url"])
+    # We only call this function when the URL is defined
+    url = cast(str, src_metadata.url)
+    response = request.urlopen(url)
     _, parameters = cgi.parse_header(response.headers.get("Content-Disposition", ""))
     if "filename" in parameters:
         tarballname = parameters["filename"]
@@ -277,15 +269,15 @@ def download_and_extract(
     if not srcpath.is_dir():
         shutil.unpack_archive(tarballpath, buildpath)
 
-    extract_dir_name = src_metadata.get("extract_dir")
-    if not extract_dir_name:
+    extract_dir_name = src_metadata.extract_dir
+    if extract_dir_name is None:
         extract_dir_name = trim_archive_extension(tarballname)
 
     shutil.move(buildpath / extract_dir_name, srcpath)
 
 
 def prepare_source(
-    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: dict[str, Any]
+    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: _SourceSpec
 ) -> None:
     """
     Figure out from the "source" key in the package metadata where to get the source
@@ -317,15 +309,15 @@ def prepare_source(
         shutil.rmtree(buildpath)
     os.makedirs(buildpath)
 
-    if "url" in src_metadata:
+    if src_metadata.url is not None:
         download_and_extract(buildpath, srcpath, src_metadata)
         return
-    if "path" not in src_metadata:
+    if src_metadata.path is None:
         raise ValueError(
             "Incorrect source provided. Either a url or a path must be provided."
         )
 
-    srcdir = Path(src_metadata["path"]).resolve()
+    srcdir = src_metadata.path.resolve()
 
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
@@ -333,7 +325,7 @@ def prepare_source(
     shutil.copytree(srcdir, srcpath)
 
 
-def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]) -> None:
+def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
     """
     Apply patches to the source.
 
@@ -354,14 +346,14 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: dict[str, Any]) -> None:
     if (srcpath / ".patched").is_file():
         return
 
-    patches = src_metadata.get("patches", [])
-    extras = src_metadata.get("extras", [])
+    patches = src_metadata.patches
+    extras = src_metadata.extras
     if not patches and not extras:
         return
 
     # We checked these in check_package_config.
-    assert "url" in src_metadata
-    assert not src_metadata["url"].endswith(".whl")
+    assert src_metadata.url is not None
+    assert not src_metadata.url.endswith(".whl")
 
     # Apply all the patches
     with chdir(srcpath):
@@ -410,7 +402,7 @@ def pack_wheel(path: Path) -> None:
 def compile(
     name: str,
     srcpath: Path,
-    build_metadata: dict[str, Any],
+    build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
     *,
     target_install_dir: str,
@@ -444,24 +436,24 @@ def compile(
 
     """
     # This function runs setup.py. library and sharedlibrary don't have setup.py
-    if build_metadata.get("sharedlibrary"):
+    if build_metadata.sharedlibrary:
         return
 
     build_env_ctx = pywasmcross.get_build_env(
         env=bash_runner.env,
         pkgname=name,
-        cflags=build_metadata["cflags"],
-        cxxflags=build_metadata["cxxflags"],
-        ldflags=build_metadata["ldflags"],
+        cflags=build_metadata.cflags,
+        cxxflags=build_metadata.cxxflags,
+        ldflags=build_metadata.ldflags,
         target_install_dir=target_install_dir,
-        exports=build_metadata.get("exports", "pyinit"),
+        exports=build_metadata.exports,
     )
-    backend_flags = build_metadata["backend-flags"]
+    backend_flags = build_metadata.backend_flags
 
     with chdir(srcpath), build_env_ctx as build_env:
-        if "cross-script" in build_metadata:
+        if build_metadata.cross_script is not None:
             with BashRunnerWithSharedEnvironment(build_env) as runner:
-                runner.run(build_metadata["cross-script"])
+                runner.run(build_metadata.cross_script)
                 build_env = runner.env
 
         from .pypabuild import build
@@ -491,7 +483,7 @@ def package_wheel(
     pkg_name: str,
     pkg_root: Path,
     srcpath: Path,
-    build_metadata: dict[str, Any],
+    build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
     host_install_dir: str,
 ) -> None:
@@ -521,7 +513,7 @@ def package_wheel(
         The runner we will use to execute our bash commands. Preserves
         environment variables from one invocation to the next.
     """
-    if build_metadata.get("sharedlibrary"):
+    if build_metadata.sharedlibrary:
         return
 
     distdir = srcpath / "dist"
@@ -541,7 +533,7 @@ def package_wheel(
     # to maximize sanity.
     replace_so_abi_tags(wheel_dir)
 
-    post = build_metadata.get("post")
+    post = build_metadata.post
     if post:
         print("Running post script in ", str(Path.cwd().absolute()))
         bash_runner.env.update({"PKGDIR": str(pkg_root), "WHEELDIR": str(wheel_dir)})
@@ -552,19 +544,19 @@ def package_wheel(
 
     python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
     host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
-    if build_metadata.get("cross-build-env"):
+    if build_metadata.cross_build_env:
         subprocess.check_call(
             ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"]
         )
 
-    cross_build_files: list[str] | None = build_metadata.get("cross-build-files")
+    cross_build_files = build_metadata.cross_build_files
     if cross_build_files:
-        for file in cross_build_files:
-            shutil.copy((wheel_dir / file), host_site_packages / file)
+        for file_ in cross_build_files:
+            shutil.copy((wheel_dir / file_), host_site_packages / file_)
 
     test_dir = distdir / "tests"
     nmoved = 0
-    if build_metadata.get("unvendor-tests", True):
+    if build_metadata.unvendor_tests:
         nmoved = unvendor_tests(wheel_dir, test_dir)
     if nmoved:
         with chdir(distdir):
@@ -634,7 +626,7 @@ def create_packaged_token(buildpath: Path) -> None:
 def run_script(
     buildpath: Path,
     srcpath: Path,
-    build_metadata: dict[str, Any],
+    build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
 ) -> None:
     """
@@ -656,7 +648,7 @@ def run_script(
         The runner we will use to execute our bash commands. Preserves environment
         variables from one invocation to the next.
     """
-    script = build_metadata.get("script")
+    script = build_metadata.script
     if not script:
         return
 
@@ -668,7 +660,7 @@ def run_script(
 
 
 def needs_rebuild(
-    pkg_root: Path, buildpath: Path, source_metadata: dict[str, Any]
+    pkg_root: Path, buildpath: Path, source_metadata: _SourceSpec
 ) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
@@ -693,14 +685,9 @@ def needs_rebuild(
 
     def source_files() -> Iterator[Path]:
         yield pkg_root / "meta.yaml"
-        yield from (
-            pkg_root / patch_path for patch_path in source_metadata.get("patches", [])
-        )
-        yield from (
-            pkg_root / patch_path
-            for [patch_path, _] in source_metadata.get("extras", [])
-        )
-        src_path = source_metadata.get("path")
+        yield from (pkg_root / patch_path for patch_path in source_metadata.patches)
+        yield from (pkg_root / patch_path for [patch_path, _] in source_metadata.extras)
+        src_path = source_metadata.path
         if src_path:
             yield from (pkg_root / src_path).resolve().glob("**/*")
 
@@ -713,7 +700,7 @@ def needs_rebuild(
 
 def build_package(
     pkg_root: Path,
-    pkg: dict[str, Any],
+    pkg: MetaConfig,
     *,
     target_install_dir: str,
     host_install_dir: str,
@@ -736,28 +723,26 @@ def build_package(
     host_install_dir
         Directory for installing built host packages.
     """
-    pkg_metadata = pkg["package"]
-    source_metadata = pkg["source"]
-    build_metadata = pkg["build"]
-    name = pkg_metadata["name"]
-    version = pkg_metadata["version"]
+    source_metadata = pkg.source
+    build_metadata = pkg.build
+    name = pkg.package.name
+    version = pkg.package.version
     build_dir = pkg_root / "build"
     src_dir_name: str = f"{name}-{version}"
     srcpath = build_dir / src_dir_name
 
-    url = source_metadata.get("url")
+    url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
-    script = build_metadata.get("script")
-    library = build_metadata.get("library", False)
-    sharedlibrary = build_metadata.get("sharedlibrary", False)
-    post = build_metadata.get("post")
+    library = build_metadata.library
+    sharedlibrary = build_metadata.sharedlibrary
+    post = build_metadata.post
 
     # These are validated in io.check_package_config
     # If any of these assertions fail, the code path through here might get a
     # bit weird
     assert not (library and sharedlibrary)
     if finished_wheel:
-        assert not script
+        assert not build_metadata.script
         assert not library
         assert not sharedlibrary
     if post:
@@ -896,21 +881,13 @@ def main(args: argparse.Namespace) -> None:
     meta_file = Path(args.package[0]).resolve()
 
     pkg_root = meta_file.parent
-    pkg = parse_package_config(meta_file)
+    pkg = MetaConfig.from_yaml(meta_file)
 
-    pkg["source"] = pkg.get("source", {})
-    pkg["build"] = pkg.get("build", {})
-    build_metadata = pkg["build"]
-    build_metadata["backend-flags"] = build_metadata.get("backend-flags", "")
-    build_metadata["cflags"] = build_metadata.get("cflags", "")
-    build_metadata["cxxflags"] = build_metadata.get("cxxflags", "")
-    build_metadata["ldflags"] = build_metadata.get("ldflags", "")
+    pkg.build.cflags += f" {args.cflags}"
+    pkg.build.cxxflags += f" {args.cxxflags}"
+    pkg.build.ldflags += f" {args.ldflags}"
 
-    build_metadata["cflags"] += f" {args.cflags}"
-    build_metadata["cxxflags"] += f" {args.cxxflags}"
-    build_metadata["ldflags"] += f" {args.ldflags}"
-
-    name = pkg["package"]["name"]
+    name = pkg.package.name
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     success = True

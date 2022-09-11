@@ -44,7 +44,19 @@ substitutions:
   `indexURL` (this was a regression in v0.21.2).
   {pr}`3077`
 
-- {{ Enhancement }} Add binary files to exports in JavaScript package {pr}`3085`.
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
 
 ### Build System / Package Loading
 
@@ -72,6 +84,28 @@ substitutions:
 - {{ Breaking }} Loading the `soupsieve` package will not automatically load
   `beautifulsoup4` together.
   {pr}`3020`
+
+- {{ Breaking }} The matplotlib HTML5 backends are now available as part of the
+  [`matplotlib-pyodide`](https://github.com/pyodide/matplotlib-pyodide)
+  package. If you use the default backend from Pyodide, no changes are
+  necessary. However, if you previously specified the backend with
+  `matplotlib.use`, the URL is now different. See [package
+  readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
+  {pr}`3061`
+
+- {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
+  specification is now done more rigourously with Pydantic
+  {pr}`3079`
+
+- {{ Breaking }} `source/md5` checksum field is not longer supported in
+  `meta.yaml` files, use `source/sha256` instead
+  {pr}`3079`
+
+- {{ Breaking }} `pyodide_build.io.parse_package_config` function is removed in favor of
+  `pyodide_build.MetaConfig.from_yaml`
+  {pr}`3079`
+
+### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
   host dependencies that are required for building packages.

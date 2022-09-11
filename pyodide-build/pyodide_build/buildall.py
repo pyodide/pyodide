@@ -24,7 +24,7 @@ from typing import Any
 from . import common
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels
-from .io import parse_package_config
+from .io import MetaConfig
 
 
 class BuildError(Exception):
@@ -41,7 +41,7 @@ class BasePackage:
     version: str
     disabled: bool
     cpython_dynlib: bool
-    meta: dict[str, Any]
+    meta: MetaConfig
     library: bool
     shared_library: bool
     run_dependencies: list[str]
@@ -66,9 +66,7 @@ class BasePackage:
         return f"{type(self).__name__}({self.name})"
 
     def needs_rebuild(self) -> bool:
-        return needs_rebuild(
-            self.pkgdir, self.pkgdir / "build", self.meta.get("source", {})
-        )
+        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
 
     def build(self, outputdir: Path, args: Any) -> None:
         raise NotImplementedError()
@@ -89,21 +87,18 @@ class Package(BasePackage):
         if not pkgpath.is_file():
             raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
 
-        self.meta = parse_package_config(pkgpath)
-        self.name = self.meta["package"]["name"]
-        self.version = self.meta["package"]["version"]
-        self.disabled = self.meta["package"].get("_disabled", False)
-        self.cpython_dynlib = self.meta["package"].get("_cpython_dynlib", False)
-        self.meta["build"] = self.meta.get("build", {})
-        self.meta["requirements"] = self.meta.get("requirements", {})
-
-        self.library = self.meta["build"].get("library", False)
-        self.shared_library = self.meta["build"].get("sharedlibrary", False)
+        self.meta = MetaConfig.from_yaml(pkgpath)
+        self.name = self.meta.package.name
+        self.version = self.meta.package.version
+        self.disabled = self.meta.package.disabled
+        self.cpython_dynlib = self.meta.package.cpython_dynlib
+        self.library = self.meta.build.library
+        self.shared_library = self.meta.build.sharedlibrary
 
         assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"
 
-        self.run_dependencies = self.meta["requirements"].get("run", [])
-        self.host_dependencies = self.meta["requirements"].get("host", [])
+        self.run_dependencies = self.meta.requirements.run
+        self.host_dependencies = self.meta.requirements.host
         self.dependencies = set(self.run_dependencies + self.host_dependencies)
         self.unbuilt_host_dependencies = set(self.host_dependencies)
         self.host_dependents = set()
@@ -510,7 +505,9 @@ def generate_packagedata(
             pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
-        pkg_entry["imports"] = pkg.meta.get("package", {}).get("top-level", [name])
+        pkg_entry["imports"] = (
+            pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
+        )
 
         packages[name.lower()] = pkg_entry
 
