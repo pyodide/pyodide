@@ -51,7 +51,6 @@
       "require": "./pyodide.js",
       "import": "./pyodide.mjs"
     },
-    "./distutils.tar": "./distutils.tar",
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
     "./pyodide.asm.data": "./pyodide.asm.data",
