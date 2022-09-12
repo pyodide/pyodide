@@ -28,6 +28,14 @@ substitutions:
   JavaScript and Python Pyodide package does not match.
   {pr}`3074`
 
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
+
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
 ## Version 0.22.2
 
 _August 29, 2022_
