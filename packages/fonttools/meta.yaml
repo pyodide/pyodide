@@ -1,12 +1,11 @@
 package:
   name: fonttools
   version: 4.33.3
+  top-level:
+    - fontTools
 source:
   url: https://files.pythonhosted.org/packages/2f/85/2f6e42fb4b537b9998835410578fb1973175b81691e9a82ab6668cf64b0b/fonttools-4.33.3-py3-none-any.whl
   sha256: f829c579a8678fa939a1d9e9894d01941db869de44390adb49ce67055a06cc2a
-test:
-  imports:
-    - fontTools
 about:
   home: http://github.com/fonttools/fonttools
   PyPI: https://pypi.org/project/fontTools

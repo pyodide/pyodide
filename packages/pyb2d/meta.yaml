@@ -1,6 +1,8 @@
 package:
   name: pyb2d
   version: 0.7.2
+  top-level:
+    - b2d
 
 source:
   url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.7.2.tar.gz

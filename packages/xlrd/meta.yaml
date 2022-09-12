@@ -1,9 +1,15 @@
 package:
   name: xlrd
   version: 2.0.1
+  top-level:
+    - xlrd
 source:
   sha256: 6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd
   url: https://files.pythonhosted.org/packages/a6/0c/c2a72d51fe56e08a08acc85d13013558a2d793028ae7385448a6ccdfae64/xlrd-2.0.1-py2.py3-none-any.whl
-test:
-  imports:
-    - xlrd
+about:
+  home: http://www.python-excel.org/
+  PyPI: https://pypi.org/project/xlrd
+  summary:
+    Library for developers to extract data from Microsoft Excel (tm) .xls spreadsheet
+    files
+  license: BSD

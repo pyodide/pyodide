@@ -77,6 +77,10 @@ function node_resolvePath(path: string, base?: string): string {
 }
 
 function browser_resolvePath(path: string, base?: string): string {
+  if (base === undefined) {
+    // @ts-ignore
+    base = location;
+  }
   return new URL(path, base).toString();
 }
 
@@ -178,7 +182,6 @@ if (globalThis.document) {
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
-    // This is async only for consistency
     try {
       // use importScripts in classic web worker
       globalThis.importScripts(url);

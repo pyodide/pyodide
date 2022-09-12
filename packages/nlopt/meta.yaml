@@ -1,6 +1,8 @@
 package:
   name: nlopt
   version: 2.7.0
+  top-level:
+    - nlopt
 
 source:
   url: https://github.com/stevengj/nlopt/archive/v2.7.0.tar.gz
@@ -18,7 +20,3 @@ requirements:
 
 build:
   cxxflags: -std=c++11
-
-test:
-  imports:
-    - nlopt

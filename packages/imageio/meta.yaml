@@ -1,6 +1,8 @@
 package:
   name: imageio
   version: 2.19.3
+  top-level:
+    - imageio
 source:
   sha256: d36ab8616175a093676693a4dbc85c6cc767f981c9ce93041422569c76d06347
   url: https://files.pythonhosted.org/packages/b6/78/3cf2f60ef319d253d71870c6cb00774bfc5bdccf9e06c319678388f58f41/imageio-2.19.3-py3-none-any.whl
@@ -8,6 +10,10 @@ requirements:
   run:
     - numpy
     - Pillow
-test:
-  imports:
-    - imageio
+about:
+  home: https://github.com/imageio/imageio
+  PyPI: https://pypi.org/project/imageio
+  summary:
+    Library for reading and writing a wide range of image, video, scientific,
+    and volumetric data formats.
+  license: BSD-2-Clause

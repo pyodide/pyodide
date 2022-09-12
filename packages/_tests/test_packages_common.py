@@ -7,7 +7,7 @@ import pytest
 from pytest_pyodide.runner import _BrowserBaseRunner
 
 from conftest import ROOT_PATH, package_is_built
-from pyodide_build.io import parse_package_config
+from pyodide_build.io import MetaConfig
 
 PKG_DIR = ROOT_PATH / "packages"
 
@@ -30,13 +30,17 @@ UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
 if "CI" in os.environ:
     UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
+XFAIL_PACKAGES: dict[str, str] = {
+    "soupsieve": "Importing soupsieve without installing beautifulsoup4 fails.",
+}
+
 
 @pytest.mark.parametrize("name", registered_packages())
 def test_parse_package(name: str) -> None:
     # check that we can parse the meta.yaml
-    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
+    meta = MetaConfig.from_yaml(PKG_DIR / name / "meta.yaml")
 
-    sharedlibrary = meta.get("build", {}).get("sharedlibrary", False)
+    sharedlibrary = meta.build.sharedlibrary
     if name == "sharedlib-test":
         assert sharedlibrary is True
     elif name == "sharedlib-test-py":
@@ -60,7 +64,10 @@ def test_import(
             "should have been skipped in selenium_standalone fixture"
         )
 
-    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
+    if name in XFAIL_PACKAGES:
+        pytest.xfail(XFAIL_PACKAGES[name])
+
+    meta = MetaConfig.from_yaml(PKG_DIR / name / "meta.yaml")
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(
@@ -81,7 +88,11 @@ def test_import(
     )
 
     def _import_pkg():
-        for import_name in meta.get("test", {}).get("imports", []):
+        import_names = meta.test.imports
+        if not import_names:
+            import_names = meta.package.top_level
+
+        for import_name in import_names:
             selenium_standalone.run_async("import %s" % import_name)
 
     benchmark(_import_pkg)

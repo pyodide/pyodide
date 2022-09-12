@@ -1,12 +1,16 @@
 package:
   name: Jinja2
   version: 3.1.2
+  top-level:
+    - jinja2
 requirements:
   run:
     - MarkupSafe
 source:
   sha256: 6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61
   url: https://files.pythonhosted.org/packages/bc/c3/f068337a370801f372f2f8f6bad74a5c140f6fda3d9de154052708dd3c65/Jinja2-3.1.2-py3-none-any.whl
-test:
-  imports:
-    - jinja2
+about:
+  home: https://palletsprojects.com/p/jinja/
+  PyPI: https://pypi.org/project/Jinja2
+  summary: A very fast and expressive template engine.
+  license: BSD-3-Clause

@@ -1,9 +1,13 @@
 package:
   name: asciitree
   version: 0.3.3
-source:
-  sha256: 4aa4b9b649f85e3fcb343363d97564aa1fb62e249677f2e18a96765145cc0f6e
-  url: https://files.pythonhosted.org/packages/2d/6a/885bc91484e1aa8f618f6f0228d76d0e67000b0fdd6090673b777e311913/asciitree-0.3.3.tar.gz
-test:
-  imports:
+  top-level:
     - asciitree
+source:
+  url: https://files.pythonhosted.org/packages/2d/6a/885bc91484e1aa8f618f6f0228d76d0e67000b0fdd6090673b777e311913/asciitree-0.3.3.tar.gz
+  sha256: 4aa4b9b649f85e3fcb343363d97564aa1fb62e249677f2e18a96765145cc0f6e
+about:
+  home: http://github.com/mbr/asciitree
+  PyPI: https://pypi.org/project/asciitree
+  summary: Draws ASCII trees.
+  license: MIT

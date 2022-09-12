@@ -2,6 +2,8 @@ package:
   name: micropip
   version: "0.1"
   _tag: pyodide.stdlib
+  top-level:
+    - micropip
 requirements:
   run:
     - pyparsing
@@ -9,6 +11,3 @@ requirements:
     - distutils # TODO: remove once there is a release with https://github.com/pypa/packaging/pull/396
 source:
   path: src
-test:
-  imports:
-    - micropip
