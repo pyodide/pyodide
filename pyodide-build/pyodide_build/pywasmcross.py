@@ -31,7 +31,7 @@ if IS_COMPILER_INVOCATION:
         raise RuntimeError(
             "Invalid invocation: can't find PYWASMCROSS_ARGS."
             f" Invoked from {INVOKED_PATH}."
-        )
+        ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")

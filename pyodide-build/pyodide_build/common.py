@@ -42,7 +42,7 @@ def check_emscripten_version() -> None:
                 installed_version = x
                 break
     except Exception:
-        raise RuntimeError("Failed to determine Emscripten version.")
+        raise RuntimeError("Failed to determine Emscripten version.") from None
     if installed_version is None:
         raise RuntimeError("Failed to determine Emscripten version.")
     if installed_version != needed_version:
@@ -279,8 +279,8 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
         try:
             with pyproject_file.open("rb") as f:
                 configs = tomli.load(f)
-        except tomli.TOMLDecodeError:
-            raise ValueError(f"Could not parse {pyproject_file}.")
+        except tomli.TOMLDecodeError as e:
+            raise ValueError(f"Could not parse {pyproject_file}.") from e
 
         if "tool" in configs and "pyodide" in configs["tool"]:
             return base

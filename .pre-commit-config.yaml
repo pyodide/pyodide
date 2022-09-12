@@ -105,5 +105,6 @@ repos:
     rev: "v2.2.1"
     hooks:
       - id: codespell
-        args: ["-L", "te,slowy,aray,ba,nd,classs,crate,feld,lits"]
+        args:
+          ["-L", "te,slowy,aray,ba,nd,classs,crate,feld,lits,inflight,falsy,"]
         exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$
