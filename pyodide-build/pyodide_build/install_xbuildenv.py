@@ -1,9 +1,12 @@
 import argparse
+import json
 import shutil
 import subprocess
 from pathlib import Path
+from urllib.request import urlopen, urlretrieve
 
 from .common import get_make_flag, get_pyodide_root
+from .create_index import create_index
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -23,7 +26,6 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 def download_xbuild_env(version: str, xbuildenv_path: Path) -> None:
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
-    from urllib.request import urlretrieve
 
     rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
@@ -34,7 +36,7 @@ def download_xbuild_env(version: str, xbuildenv_path: Path) -> None:
         unpack_archive(f.name, xbuildenv_path)
 
 
-def install_xbuild_env(xbuildenv_path: Path) -> None:
+def install_xbuild_env(version: str, xbuildenv_path: Path) -> None:
     xbuildenv_path = xbuildenv_path / "xbuildenv"
     pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
@@ -57,12 +59,23 @@ def install_xbuild_env(xbuildenv_path: Path) -> None:
     shutil.copytree(
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
+    cdn_base = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
+    if (xbuildenv_root / "repodata.json").exists():
+        repodata_bytes = (xbuildenv_root / "repodata.json").read_bytes()
+    else:
+        repodata_url = cdn_base + "repodata.json"
+        with urlopen(repodata_url) as response:
+            repodata_bytes = response.read()
+    repodata = json.loads(repodata_bytes)
+    version = repodata["info"]["version"]
+    create_index(repodata["packages"], xbuildenv_root, cdn_base)
 
 
 def main(args: argparse.Namespace) -> None:
-    xbuildenv_path = Path(args.xbuild_env[0])
     from . import __version__
 
+    xbuildenv_path = Path(args.xbuild_env[0])
+    version = __version__
     if args.download:
-        download_xbuild_env(__version__, xbuildenv_path)
-    install_xbuild_env(xbuildenv_path)
+        download_xbuild_env(version, xbuildenv_path)
+    install_xbuild_env(version, xbuildenv_path)
