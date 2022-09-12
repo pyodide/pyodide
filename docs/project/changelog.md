@@ -51,6 +51,11 @@ substitutions:
 - {{ Enhancement }} Add binary files to exports in JavaScript package
   {pr}`3085`.
 
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+  {pr}`3088`
+
 ## Version 0.22.2
 
 _August 29, 2022_
@@ -69,8 +74,9 @@ _August 29, 2022_
 - {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
   {pr}`3014`
 
-- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
-  now works even if `node` is run with `--enable-source-maps`.
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the
+  calculated index URL now works even if `node` is run with
+  `--enable-source-maps`.
   {pr}`3015`
 
 ## Version 0.21.1
