@@ -4,10 +4,12 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from pathlib import Path
+from typing import NoReturn
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
@@ -351,3 +353,18 @@ def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
     finally:
         os.environ.clear()
         os.environ.update(old_environ)
+
+
+def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
+    if result.stdout:
+        print("  stdout:")
+        print(textwrap.indent(result.stdout, "    "))
+    if result.stderr:
+        print("  stderr:")
+        print(textwrap.indent(result.stderr, "    "))
+    raise SystemExit(result.returncode)
+
+
+def in_xbuild_env() -> bool:
+    pyodide_root = get_pyodide_root()
+    return pyodide_root.name == "pyodide-root"
