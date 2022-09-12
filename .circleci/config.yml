@@ -418,13 +418,6 @@ jobs:
             python3 -m pip install awscli
 
       - run:
-          name: Remove source maps
-          command: |
-            # Source maps mess up calculateIndexURL if node is used with
-            # --enable-source-maps and are not otherwise needed. We'll keep them
-            # in the debug version.
-            rm dist/*.map
-      - run:
           name: Deploy Github Releases
           command: |
             mkdir -p /tmp/ghr/dist

@@ -63,6 +63,10 @@ substitutions:
   when using Pyodide with webpack.
   {pr}`3080`
 
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -137,8 +141,9 @@ substitutions:
 - {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
   {pr}`3014`
 
-- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
-  now works even if `node` is run with `--enable-source-maps`.
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the
+  calculated index URL now works even if `node` is run with
+  `--enable-source-maps`.
   {pr}`3015`
 
 ## Version 0.21.1
