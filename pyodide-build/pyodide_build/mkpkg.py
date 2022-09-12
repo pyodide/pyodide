@@ -275,7 +275,7 @@ def update_package(
 
     print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
 
-    if "patches" in yaml_content["source"]:
+    if yaml_content["source"].get("patches"):
         if update_patched:
             warn(
                 f"Pyodide applies patches to {package}. Update the "

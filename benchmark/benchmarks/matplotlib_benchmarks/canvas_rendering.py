@@ -1,12 +1,12 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.html5_canvas_backend') ; from matplotlib import pyplot as plt
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib_pyodide.html5_canvas_backend') ; from matplotlib import pyplot as plt
 # run: canvas_rendering()
 
 # pythran export canvas_rendering()
 import matplotlib
 import numpy as np
 
-matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
 from matplotlib import pyplot as plt  # noqa: E402
 
 

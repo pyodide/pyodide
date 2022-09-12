@@ -1,255 +1,224 @@
-from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-# TODO: support more complex types for validation
-
-PACKAGE_CONFIG_SPEC: dict[str, dict[str, Any]] = {
-    "package": {
-        "name": str,
-        "version": str,
-        "top-level": list,  # List[str]
-        "_tag": str,
-        "_disabled": bool,
-        "_cpython_dynlib": bool,
-    },
-    "source": {
-        "url": str,
-        "extract_dir": str,
-        "path": str,
-        "sha256": str,
-        "patches": list,  # List[str]
-        "extras": list,  # List[Tuple[str, str]],
-    },
-    "build": {
-        "exports": str | list,  # list[str]
-        "backend-flags": str,
-        "cflags": str,
-        "cxxflags": str,
-        "ldflags": str,
-        "library": bool,
-        "sharedlibrary": bool,
-        "cross-script": str,
-        "script": str,
-        "post": str,
-        "unvendor-tests": bool,
-        "cross-build-env": bool,
-        "cross-build-files": list,  # list[str]
-    },
-    "requirements": {
-        "run": list,  # List[str],
-        "host": list,
-    },
-    "test": {
-        "imports": list,  # List[str]
-    },
-    "about": {
-        "home": str,
-        "PyPI": str,
-        "summary": str,
-        "license": str,
-    },
-}
+import pydantic
+from pydantic import BaseModel, Field
 
 
-def _check_config_keys(config: dict[str, Any]) -> Iterator[str]:
-    # Check top level sections
-    wrong_keys = set(config.keys()).difference(PACKAGE_CONFIG_SPEC.keys())
-    if wrong_keys:
-        yield (
-            f"Found unknown sections {list(wrong_keys)}. Expected "
-            f"sections are {list(PACKAGE_CONFIG_SPEC)}."
-        )
+class _PackageSpec(BaseModel):
+    name: str
+    version: str
+    top_level: list[str] = Field([], alias="top-level")
+    tag: str = Field("", alias="_tag")
+    disabled: bool = Field(False, alias="_disabled")
+    cpython_dynlib: bool = Field(False, alias="_cpython_dynlib")
 
-    # Check subsections
-    for section_key in config:
-        if section_key not in PACKAGE_CONFIG_SPEC:
-            # Don't check subsections if the main section is invalid
-            continue
-        actual_keys = set(config[section_key].keys())
-        expected_keys = set(PACKAGE_CONFIG_SPEC[section_key].keys())
-
-        wrong_keys = set(actual_keys).difference(expected_keys)
-        if wrong_keys:
-            yield (
-                f"Found unknown keys "
-                f"{[section_key + '/' + key for key in wrong_keys]}. "
-                f"Expected keys are "
-                f"{[section_key + '/' + key for key in expected_keys]}."
-            )
+    class Config:
+        extra = pydantic.Extra.forbid
 
 
-def _check_config_types(config: dict[str, Any]) -> Iterator[str]:
-    # Check value types
-    for section_key, section in config.items():
-        for subsection_key, value in section.items():
-            try:
-                expected_type = PACKAGE_CONFIG_SPEC[section_key][subsection_key]
-            except KeyError:
-                # Unknown key, which was already reported previously, don't
-                # check types
-                continue
-            if not isinstance(value, expected_type):
-                yield (
-                    f"Wrong type for '{section_key}/{subsection_key}': "
-                    f"expected {expected_type.__name__}, got {type(value).__name__}."
-                )
-    # Check that if sources is a wheel it shouldn't have host dependencies.
-    source_url = config.get("source", {}).get("url", "")
-    requirements_host = config.get("requirements", {}).get("host", [])
+class _SourceSpec(BaseModel):
+    url: str | None = None
+    extract_dir: str | None = None
+    path: Path | None = None
+    sha256: str | None = None
+    patches: list[str] = []
+    extras: list[tuple[str, str]] = []
 
-    if source_url.endswith(".whl") and len(requirements_host):
-        yield (
-            f"When source -> url is a wheel ({source_url}) the package cannot have host "
-            f"dependencies. Found {requirements_host}'"
-        )
+    class Config:
+        extra = pydantic.Extra.forbid
 
-
-def _check_config_source(config: dict[str, Any]) -> Iterator[str]:
-    if "source" not in config:
-        yield "Missing source section"
-        return
-
-    src_metadata = config["source"]
-    patches = src_metadata.get("patches", [])
-    extras = src_metadata.get("extras", [])
-
-    in_tree = "path" in src_metadata
-    from_url = "url" in src_metadata
-
-    if not (in_tree or from_url):
-        yield "Source section should have a 'url' or 'path' key"
-        return
-
-    if in_tree and from_url:
-        yield "Source section should not have both a 'url' and a 'path' key"
-        return
-
-    if in_tree and (patches or extras):
-        yield "If source is in tree, 'source/patches' and 'source/extras' keys are not allowed"
-
-    if from_url:
-        if "sha256" not in src_metadata:
-            yield "If source is downloaded from url, it must have a 'source/sha256' hash."
-
-
-def _check_config_build(config: dict[str, Any]) -> Iterator[str]:
-    if "build" not in config:
-        return
-    build_metadata = config["build"]
-    library = build_metadata.get("library", False)
-    sharedlibrary = build_metadata.get("sharedlibrary", False)
-    exports = build_metadata.get("exports", "pyinit")
-    if isinstance(exports, str) and exports not in [
-        "pyinit",
-        "requested",
-        "whole_archive",
-    ]:
-        yield f"build/exports must be 'pyinit', 'requested', or 'whole_archive' not {build_metadata['exports']}"
-    if not library and not sharedlibrary:
-        return
-    if library and sharedlibrary:
-        yield "build/library and build/sharedlibrary cannot both be true."
-
-    allowed_keys = {"library", "sharedlibrary", "script", "cross-script"}
-    typ = "library" if library else "sharedlibrary"
-    for key in build_metadata.keys():
-        if key not in PACKAGE_CONFIG_SPEC["build"]:
-            continue
-        if key not in allowed_keys:
-            yield f"If building a {typ}, 'build/{key}' key is not allowed."
-
-
-def _check_config_wheel_build(config: dict[str, Any]) -> Iterator[str]:
-    if "source" not in config:
-        return
-    src_metadata = config["source"]
-    if "url" not in src_metadata:
-        return
-    if not src_metadata["url"].endswith(".whl"):
-        return
-    patches = src_metadata.get("patches", [])
-    extras = src_metadata.get("extras", [])
-    if patches or extras:
-        yield "If source is a wheel, 'source/patches' and 'source/extras' keys are not allowed"
-    if "build" not in config:
-        return
-    build_metadata = config["build"]
-    allowed_keys = {"post", "unvendor-tests", "cross-build-env", "cross-build-files"}
-    for key in build_metadata.keys():
-        if key not in PACKAGE_CONFIG_SPEC["build"]:
-            continue
-        if key not in allowed_keys:
-            yield f"If source is a wheel, 'build/{key}' key is not allowed"
-
-
-def check_package_config_generate_errors(
-    config: dict[str, Any],
-) -> Iterator[str]:
-    """Check the validity of a loaded meta.yaml file
-
-    Currently the following checks are applied:
-     -
-
-    TODO:
-     - check for mandatory fields
-
-    Parameter
-    ---------
-    config
-        loaded meta.yaml as a dict
-    raise_errors
-        if true raise errors, otherwise return the list of error messages.
-    file_path
-        optional meta.yaml file path. Only used for more explicit error output,
-        when raise_errors = True.
-    """
-    yield from _check_config_keys(config)
-    yield from _check_config_types(config)
-    yield from _check_config_source(config)
-    yield from _check_config_build(config)
-    yield from _check_config_wheel_build(config)
-
-
-def check_package_config(
-    config: dict[str, Any],
-    file_path: Path | str | None = None,
-    raise_errors: bool = True,
-) -> list[str]:
-    errors_msg = list(check_package_config_generate_errors(config))
-
-    if errors_msg:
-        if file_path is None:
-            file_path = Path("meta.yaml")
-        if raise_errors:
+    @pydantic.root_validator
+    def _check_url_has_hash(cls, values: dict[str, Any]) -> dict[str, Any]:
+        if values["url"] is not None and values["sha256"] is None:
             raise ValueError(
-                f"{file_path} validation failed: \n  - " + "\n - ".join(errors_msg)
+                "If source is downloaded from url, it must have a 'source/sha256' hash."
             )
-    return errors_msg
+        return values
+
+    @pydantic.root_validator
+    def _check_in_tree_url(cls, values: dict[str, Any]) -> dict[str, Any]:
+        in_tree = values["path"] is not None
+        from_url = values["url"] is not None
+        if not (in_tree or from_url):
+            raise ValueError("Source section should have a 'url' or 'path' key")
+
+        if in_tree and from_url:
+            raise ValueError(
+                "Source section should not have both a 'url' and a 'path' key"
+            )
+        return values
+
+    @pydantic.root_validator
+    def _check_patches_extra(cls, values: dict[str, Any]) -> dict[str, Any]:
+        patches = values["patches"]
+        extras = values["extras"]
+        in_tree = values["path"] is not None
+        from_url = values["url"] is not None
+
+        url_is_wheel = from_url and values["url"].endswith(".whl")
+
+        if in_tree and (patches or extras):
+            raise ValueError(
+                "If source is in tree, 'source/patches' and 'source/extras' keys "
+                "are not allowed"
+            )
+
+        if url_is_wheel and (patches or extras):
+            raise ValueError(
+                "If source is a wheel, 'source/patches' and 'source/extras' "
+                "keys are not allowed"
+            )
+
+        return values
 
 
-def parse_package_config(path: Path | str, *, check: bool = True) -> dict[str, Any]:
-    """Load a meta.yaml file
+_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
 
-    Parameters
-    ----------
-    path
-       path to the meta.yaml file
-    check
-       check the consistency of the config file
 
-    Returns
-    -------
-    the loaded config as a Dict
-    """
-    # Import yaml here because pywasmcross needs to run in the built native
-    # Python, which won't have PyYAML
-    import yaml
+class _BuildSpec(BaseModel):
+    exports: _BuildSpecExports | list[_BuildSpecExports] = "pyinit"
+    backend_flags: str = Field("", alias="backend-flags")
+    cflags: str = ""
+    cxxflags: str = ""
+    ldflags: str = ""
+    library: bool = False
+    sharedlibrary: bool = False
+    cross_script: str | None = Field(None, alias="cross-script")
+    script: str | None = None
+    post: str | None = None
+    unvendor_tests: bool = Field(True, alias="unvendor-tests")
+    cross_build_env: bool = Field(False, alias="cross-build-env")
+    cross_build_files: list[str] = Field([], alias="cross-build-files")
 
-    with open(path, "rb") as fd:
-        config = yaml.safe_load(fd)
+    class Config:
+        extra = pydantic.Extra.forbid
 
-    if check:
-        check_package_config(config, file_path=path)
+    @pydantic.root_validator
+    def _check_config(cls, values: dict[str, Any]) -> dict[str, Any]:
+        library = values["library"]
+        sharedlibrary = values["sharedlibrary"]
+        if not library and not sharedlibrary:
+            return values
 
-    return config
+        if library and sharedlibrary:
+            raise ValueError(
+                "build/library and build/sharedlibrary cannot both be true."
+            )
+
+        allowed_keys = {
+            "library",
+            "sharedlibrary",
+            "script",
+            "cross-script",
+            "exports",
+            "unvendor_tests",
+        }
+        typ = "library" if library else "sharedlibrary"
+        for key, val in values.items():
+            if val and key not in allowed_keys:
+                raise ValueError(
+                    f"If building a {typ}, 'build/{key}' key is not allowed."
+                )
+        return values
+
+
+class _RequirementsSpec(BaseModel):
+    run: list[str] = []
+    host: list[str] = []
+
+    class Config:
+        extra = pydantic.Extra.forbid
+
+
+class _TestSpec(BaseModel):
+    imports: list[str] = []
+
+    class Config:
+        extra = pydantic.Extra.forbid
+
+
+class _AboutSpec(BaseModel):
+    home: str | None = None
+    PyPI: str | None = None
+    summary: str | None = None
+    license: str | None = None
+
+    class Config:
+        extra = pydantic.Extra.forbid
+
+
+class MetaConfig(BaseModel):
+    package: _PackageSpec
+    source: _SourceSpec
+    build: _BuildSpec = _BuildSpec()
+    requirements: _RequirementsSpec = _RequirementsSpec()
+    test: _TestSpec = _TestSpec()
+    about: _AboutSpec = _AboutSpec()
+
+    class Config:
+        extra = pydantic.Extra.forbid
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "MetaConfig":
+        """Load the meta.yaml from a path
+
+        Parameters
+        ----------
+        path
+            path to the meta.yaml file
+        """
+        import yaml
+
+        stream = path.read_bytes()
+        config_raw = yaml.safe_load(stream)
+
+        config = cls(**config_raw)
+        return config
+
+    def to_yaml(self, path: Path) -> None:
+        """Serialize the configuration to meta.yaml file
+
+        Parameters
+        ----------
+        path
+            path to the meta.yaml file
+        """
+        import yaml
+
+        with open(path, "w") as f:
+            yaml.dump(self.dict(by_alias=True, exclude_unset=True), f)
+
+    @pydantic.root_validator
+    def _check_wheel_host_requirements(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Check that if sources is a wheel it shouldn't have host dependencies."""
+        if "source" not in values:
+            raise ValueError(
+                'either "path" or "url" must be provided in the "source" section'
+            )
+
+        source_url = values["source"].url
+        requirements_host = values["requirements"].host
+
+        if source_url is not None and source_url.endswith(".whl"):
+            if len(requirements_host):
+                raise ValueError(
+                    f"When source -> url is a wheel ({source_url}) the package cannot have host "
+                    f"dependencies. Found {requirements_host}"
+                )
+
+            allowed_keys = {
+                "post",
+                "unvendor-tests",
+                # Note here names are with "_", after alias conversion
+                "cross_build_env",
+                "cross_build_files",
+                "exports",
+                "unvendor_tests",
+            }
+            for key, val in values["build"].dict().items():
+                if val and key not in allowed_keys:
+                    raise ValueError(
+                        f"If source is a wheel, 'build/{key}' key is not allowed"
+                    )
+        return values

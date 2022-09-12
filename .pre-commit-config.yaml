@@ -62,6 +62,7 @@ repos:
           - numpy
           - build
           - pytest
+          - pydantic
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
