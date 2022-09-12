@@ -27,7 +27,7 @@ async function main() {
       stdin: () => "a string",
       stdout: (x: string) => {},
       stderr: (err: string) => {},
-    })
+    }),
   );
 
   expectType<PyProxy>(pyodide.globals);
@@ -50,28 +50,28 @@ async function main() {
   expectType<Promise<void>>(pyodide.loadPackagesFromImports("import some_pkg"));
   expectType<Promise<void>>(
     pyodide.loadPackagesFromImports("import some_pkg", (x: any) =>
-      console.log(x)
-    )
+      console.log(x),
+    ),
   );
   expectType<Promise<void>>(
     pyodide.loadPackagesFromImports(
       "import some_pkg",
       (x: any) => console.log(x),
-      (x: any) => console.warn(x)
-    )
+      (x: any) => console.warn(x),
+    ),
   );
 
   expectType<Promise<void>>(pyodide.loadPackage("blah"));
   expectType<Promise<void>>(pyodide.loadPackage(["blah", "blah2"]));
   expectType<Promise<void>>(
-    pyodide.loadPackage("blah", (x: any) => console.log(x))
+    pyodide.loadPackage("blah", (x: any) => console.log(x)),
   );
   expectType<Promise<void>>(
     pyodide.loadPackage(
       ["blah", "blah2"],
       (x: any) => console.log(x),
-      (x: any) => console.warn(x)
-    )
+      (x: any) => console.warn(x),
+    ),
   );
   expectType<Promise<void>>(pyodide.loadPackage(px));
 

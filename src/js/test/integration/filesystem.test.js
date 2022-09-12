@@ -6,7 +6,7 @@ describe("FS", () => {
   it("no directory", async () => {
     const factory = async () => {
       const result = pyodide.runPython(
-        "import os; os.path.exists('/tmp/js-test')"
+        "import os; os.path.exists('/tmp/js-test')",
       );
       return result;
     };
@@ -17,7 +17,7 @@ describe("FS", () => {
     const factory = async () => {
       pyodide.FS.mkdir("/tmp/js-test");
       const result = pyodide.runPython(
-        "import os; os.path.exists('/tmp/js-test')"
+        "import os; os.path.exists('/tmp/js-test')",
       );
       return result;
     };

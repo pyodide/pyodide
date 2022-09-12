@@ -43,7 +43,7 @@ export type Py2JsResult = any;
  */
 function wrapPythonGlobals(
   globals_dict: PyProxyDict,
-  builtins_dict: PyProxyDict
+  builtins_dict: PyProxyDict,
 ) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
@@ -73,7 +73,7 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
     0,
     pyodide_py_tar.byteLength,
     undefined,
-    true
+    true,
   );
   Module.FS.close(stream);
   const code_ptr = Module.stringToNewUTF8(`
@@ -92,7 +92,7 @@ del importlib
   if (errcode) {
     Module.API.fatal_loading_error(
       "Failed to unpack standard library.\n",
-      captured_stderr
+      captured_stderr,
     );
   }
   Module._free(code_ptr);
@@ -119,10 +119,10 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   // Set up globals
   let globals = API.runPythonInternal(
-    "import __main__; __main__.__dict__"
+    "import __main__; __main__.__dict__",
   ) as PyProxyDict;
   let builtins = API.runPythonInternal(
-    "import builtins; builtins.__dict__"
+    "import builtins; builtins.__dict__",
   ) as PyProxyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
@@ -187,7 +187,7 @@ function calculateIndexURL(): string {
   const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
-      "Could not extract indexURL path from pyodide module location"
+      "Could not extract indexURL path from pyodide module location",
     );
   }
   return fileName.slice(0, indexOfLastSlash);
@@ -268,7 +268,7 @@ export async function loadPyodide(
     jsglobals?: object;
     args?: string[];
     _node_mounts?: string[];
-  } = {}
+  } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
   let indexURL = options.indexURL || calculateIndexURL();
@@ -289,7 +289,7 @@ export async function loadPyodide(
   };
   const config = Object.assign(default_config, options) as ConfigType;
   const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL + "pyodide_py.tar"
+    config.indexURL + "pyodide_py.tar",
   );
 
   const Module = createModule();
