@@ -375,7 +375,7 @@ jobs:
             git clone https://github.com/pyodide/pyodide-webpack-example.git
             export DEV_PYODIDE_PATH=`realpath dist`
             cd pyodide-webpack-example
-            git checkout c770f7f4f305c5c533b14e952b698c8c48cd4ab4
+            git checkout 2d4834c5b9840de63b980dc14e2e7af16490b99a
             ./build.sh
 
   benchmark:
