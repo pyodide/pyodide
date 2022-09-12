@@ -58,6 +58,11 @@ substitutions:
 - {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
   {pr}`3080`
 
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
