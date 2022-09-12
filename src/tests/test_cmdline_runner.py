@@ -142,7 +142,9 @@ def venv_ctxmgr(path):
 
 
 @pytest.fixture(scope="module")
-def venv():
+def venv(runtime):
+    if runtime != "node":
+        pytest.xfail("node only")
     check_emscripten()
     path = Path(".venv-pyodide-tmp-test")
     with venv_ctxmgr(path) as venv:
