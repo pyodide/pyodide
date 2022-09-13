@@ -63,7 +63,7 @@ JS_FILE(js2python_init, () => {
       ptr,
       length * 4 /* length in bytes */,
       true /* little endian */,
-      true /* signed? */
+      true /* signed? */,
     );
     stackRestore(stackTop);
     return result;
@@ -168,7 +168,7 @@ JS_FILE(js2python_init, () => {
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof key_js;
           throw new Error(
-            `Cannot use key of type ${key_type} as a key to a Python dict`
+            `Cannot use key of type ${key_type} as a key to a Python dict`,
           );
         }
         value_id = Hiwire.new_value(value_js);
@@ -208,7 +208,7 @@ JS_FILE(js2python_init, () => {
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof key_js;
           throw new Error(
-            `Cannot use key of type ${key_type} as a key to a Python set`
+            `Cannot use key of type ${key_type} as a key to a Python set`,
           );
         }
         let errcode = _PySet_Add(set, key_py);
@@ -230,13 +230,13 @@ JS_FILE(js2python_init, () => {
     if (obj.has(1) && obj.has(true)) {
       throw new Error(
         `Cannot faithfully convert ${ty} into Python since it ` +
-          "contains both 1 and true as keys."
+          "contains both 1 and true as keys.",
       );
     }
     if (obj.has(0) && obj.has(false)) {
       throw new Error(
         `Cannot faithfully convert ${ty} into Python since it ` +
-          "contains both 0 and false as keys."
+          "contains both 0 and false as keys.",
       );
     }
   }
@@ -276,7 +276,7 @@ JS_FILE(js2python_init, () => {
         id,
         value.byteLength,
         format_utf8,
-        itemsize
+        itemsize,
       );
     }
     return undefined;
@@ -311,7 +311,7 @@ JS_FILE(js2python_init, () => {
       let result_js = context.defaultConverter(
         value,
         context.converter,
-        context.cacheConversion
+        context.cacheConversion,
       );
       result = js2python_convertImmutable(result_js);
       if (API.isPyProxy(result_js)) {
@@ -342,7 +342,7 @@ JS_FILE(js2python_init, () => {
         let id = Module.hiwire.new_value(x);
         try {
           return Module.pyproxy_new(
-            js2python_convert_with_context(id, context)
+            js2python_convert_with_context(id, context),
           );
         } finally {
           Module.hiwire.decref(id);

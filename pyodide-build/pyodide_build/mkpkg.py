@@ -118,7 +118,7 @@ def _get_metadata(package: str, version: str | None = None) -> MetadataDict:
         raise MkpkgFailedException(
             f"Failed to load metadata for {package}{version} from "
             f"https://pypi.org/pypi/{package}{version}/json: {e}"
-        )
+        ) from e
 
     return pypi_metadata
 

@@ -70,7 +70,7 @@ async function main() {
     }
   } catch (e) {
     console.log(
-      `Error in pyodideWorker at ${e.filename}, Line: ${e.lineno}, ${e.message}`
+      `Error in pyodideWorker at ${e.filename}, Line: ${e.lineno}, ${e.message}`,
     );
   }
 }

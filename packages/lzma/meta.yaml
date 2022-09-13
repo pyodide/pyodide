@@ -1,6 +1,6 @@
 package:
   name: lzma
-  version: 1.0.0 # Nonesense
+  version: 1.0.0 # Nonsense
   _cpython_dynlib: true
   top-level:
     - lzma
