@@ -1,8 +1,17 @@
+From 7aea0dd0b4b86d9c607acc981d8055e55c9685bb Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Thu, 30 Jun 2022 05:30:27 +0000
+Subject: [PATCH] Fix feature detection
+
+---
+ setup_configure.py | 26 ++++----------------------
+ 1 file changed, 4 insertions(+), 22 deletions(-)
+
 diff --git a/setup_configure.py b/setup_configure.py
-index 16c355b..85a4f90 100644
+index c16ddeef..1180d3fa 100644
 --- a/setup_configure.py
 +++ b/setup_configure.py
-@@ -183,7 +183,7 @@ class BuildConfig:
+@@ -206,7 +206,7 @@ class BuildConfig:
  class HDF5LibWrapper:
  
      def __init__(self, libdirs):
@@ -11,13 +20,15 @@ index 16c355b..85a4f90 100644
  
      def _load_hdf5_lib(self, libdirs):
          """
-@@ -245,23 +245,9 @@ class HDF5LibWrapper:
+@@ -268,25 +268,7 @@ class HDF5LibWrapper:
+         self._lib = lib
+ 
      def autodetect_version(self):
-         """
-         Detect the current version of HDF5, and return X.Y.Z version string.
+-        """
+-        Detect the current version of HDF5, and return X.Y.Z version string.
 -
 -        Raises an exception if anything goes wrong.
-         """
+-        """
 -        import ctypes
 -        from ctypes import byref
 -
@@ -30,13 +41,13 @@ index 16c355b..85a4f90 100644
 -        except Exception:
 -            print("error: Unable to find HDF5 version")
 -            raise
- 
+-
 -        return int(major.value), int(minor.value), int(release.value)
 +        return (1, 12, 1)
  
      def load_function(self, func_name):
          try:
-@@ -277,7 +263,7 @@ class HDF5LibWrapper:
+@@ -302,10 +284,10 @@ class HDF5LibWrapper:
          return True
  
      def has_mpi_support(self):
@@ -46,3 +57,9 @@ index 16c355b..85a4f90 100644
      def has_ros3_support(self):
 -        return self.has_functions("H5Pget_fapl_ros3", "H5Pset_fapl_ros3")
 +        return False
+ 
+     def has_direct_vfd_support(self):
+         return self.has_functions("H5Pget_fapl_direct", "H5Pset_fapl_direct")
+-- 
+2.35.1
+

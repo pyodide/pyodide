@@ -58,9 +58,18 @@ substitutions:
 - {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
   {pr}`3080`
 
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
 - {{ Fix }} Source maps are included in the distribution again (reverting
   {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
   called `__dirname` we use that for the `indexURL`.
+
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
 
 ### Build System / Package Loading
 

@@ -526,7 +526,7 @@ def package_wheel(
     post = build_metadata.post
     if post:
         print("Running post script in ", str(Path.cwd().absolute()))
-        bash_runner.env.update({"PKGDIR": str(pkg_root), "WHEELDIR": str(wheel_dir)})
+        bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
         result = bash_runner.run(post)
         if result.returncode != 0:
             print("ERROR: post failed")
@@ -759,6 +759,7 @@ def build_package(
     os.dup2(tee.stdin.fileno(), sys.stderr.fileno())  # type: ignore[union-attr]
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
+        bash_runner.env["PKGDIR"] = str(pkg_root)
         bash_runner.env["PKG_VERSION"] = version
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         if not continue_:

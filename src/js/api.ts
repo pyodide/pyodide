@@ -7,6 +7,7 @@ import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
+import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 
@@ -28,16 +29,6 @@ export let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.
  * scope, use ``pyodide.globals.get("foo")``
  */
 export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
-
-/**
- *
- * The Pyodide version.
- *
- * It can be either the exact release version (e.g. ``0.1.0``), or
- * the latest release version followed by the number of commits since, and
- * the git hash of the current commit (e.g. ``0.1.0-1-bd84646``).
- */
-export let version: string = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * Just like `runPython` except uses a different globals dict and gets
