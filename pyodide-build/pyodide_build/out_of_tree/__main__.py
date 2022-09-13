@@ -10,10 +10,10 @@ def ensure_env_installed(env: Path) -> None:
     if env.exists():
         return
     from .. import __version__
-    from ..install_xbuildenv import download_xbuild_env, install_xbuild_env
+    from ..install_xbuildenv import download_xbuildenv, install_xbuildenv
 
-    download_xbuild_env(__version__, env)
-    install_xbuild_env(env)
+    download_xbuildenv(__version__, env)
+    install_xbuildenv(__version__, env)
 
 
 def initialize_pyodide_root() -> None:

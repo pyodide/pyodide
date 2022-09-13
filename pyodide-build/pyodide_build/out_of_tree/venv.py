@@ -11,7 +11,7 @@ from ..common import (
     exit_with_stdio,
     get_make_flag,
     get_pyodide_root,
-    in_xbuild_env,
+    in_xbuildenv,
 )
 
 
@@ -63,8 +63,8 @@ def create_pip_conf(venv_root: Path) -> None:
 
     This file adds a few options that will always be used by pip install.
     """
-    if in_xbuild_env():
-        # In the xbuild_env, we don't have the packages locally. We will include
+    if in_xbuildenv():
+        # In the xbuildenv, we don't have the packages locally. We will include
         # in the xbuildenv a PEP 503 index for the vendored Pyodide packages
         # https://peps.python.org/pep-0503/
         repo = f'extra-index-url=file:{get_pyodide_root()/"pypi_index"}'
