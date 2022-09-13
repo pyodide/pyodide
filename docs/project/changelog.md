@@ -67,6 +67,10 @@ substitutions:
   {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
   called `__dirname` we use that for the `indexURL`.
 
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
