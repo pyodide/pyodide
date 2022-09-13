@@ -757,7 +757,7 @@ workflows:
 
       - test-main-macos:
           name: test-packages-safari-no-numpy-dependents
-          test-params: --runtime safari -k "not webworker" packages/*/test*.py
+          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py
           cache-dir: .pytest_cache_safari
           requires:
             - build-packages-no-numpy-dependents
@@ -772,7 +772,7 @@ workflows:
 
       - test-main-macos:
           name: test-packages-safari
-          test-params: --runtime safari -k "not webworker" packages/*/test*.py --skip-passed
+          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_safari
           requires:
             - test-packages-safari-no-numpy-dependents
