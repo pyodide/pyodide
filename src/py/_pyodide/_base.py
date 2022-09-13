@@ -443,9 +443,10 @@ def eval_code(
     2
     >>> eval_code(source, return_mode="last_expr")
     >>> eval_code(source, return_mode="none")
-    >>> source = "print('Hello from pyodide')" # Pretend this is open('example_of_filename.py', 'r').read()
-    >>> eval_code(source, filename="example_of_filename.py")
-    Hello from pyodide
+    >>> source = "print(pyodide)" # Pretend this is open('example_of_filename.py', 'r').read()
+    >>> eval_code(source, filename="example_of_filename.py") # doctest: +SKIP
+    # Trackback will show where in the file the error happened
+    # ...File "example_of_filename.py", line 1, in <module>...NameError: name 'pyodide' is not defined
     """
     return (
         CodeRunner(
