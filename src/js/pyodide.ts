@@ -333,7 +333,7 @@ export async function loadPyodide(
       `\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
-`
+`,
     );
   }
 
