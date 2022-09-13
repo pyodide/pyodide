@@ -1426,9 +1426,8 @@ def test_csp(selenium_standalone_noload):
     finally:
         target_path.unlink()
 
-@pytest.mark.xfail_browsers(
-    node="Browser only"
-)
+
+@pytest.mark.xfail_browsers(node="Browser only")
 def test_static_import(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     target_path = DIST_PATH / "module_static_import_test.html"
