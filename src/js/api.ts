@@ -62,7 +62,7 @@ API.runPythonInternal = function (code: string): any {
  */
 export function runPython(
   code: string,
-  options: { globals?: PyProxy } = {}
+  options: { globals?: PyProxy } = {},
 ): any {
   if (!options.globals) {
     options.globals = API.globals;
@@ -95,7 +95,7 @@ API.runPython = runPython;
 export async function loadPackagesFromImports(
   code: string,
   messageCallback?: (msg: string) => void,
-  errorCallback?: (err: string) => void
+  errorCallback?: (err: string) => void,
 ) {
   let pyimports = API.pyodide_code.find_imports(code);
   let imports;
@@ -163,7 +163,7 @@ export async function loadPackagesFromImports(
  */
 export async function runPythonAsync(
   code: string,
-  options: { globals?: PyProxy } = {}
+  options: { globals?: PyProxy } = {},
 ): Promise<any> {
   if (!options.globals) {
     options.globals = API.globals;
@@ -240,9 +240,9 @@ export function toPy(
     defaultConverter?: (
       value: any,
       converter: (value: any) => any,
-      cacheConversion: (input: any, output: any) => any
+      cacheConversion: (input: any, output: any) => any,
     ) => any;
-  } = { depth: -1 }
+  } = { depth: -1 },
 ): any {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
@@ -341,14 +341,14 @@ export function unpackArchive(
   format: string,
   options: {
     extractDir?: string;
-  } = {}
+  } = {},
 ) {
   if (
     !ArrayBuffer.isView(buffer) &&
     Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"
   ) {
     throw new TypeError(
-      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`
+      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`,
     );
   }
   API.typedArrayAsUint8Array(buffer);

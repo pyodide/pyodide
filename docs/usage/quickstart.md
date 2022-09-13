@@ -57,7 +57,7 @@ See {ref}`loading_packages` for information about loading additional packages.
 Create and save a test `index.html` page with the following contents:
 
 ```html-pyodide
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
       <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
@@ -83,7 +83,7 @@ Create and save a test `index.html` page with the following contents:
 ## Alternative Example
 
 ```html
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>

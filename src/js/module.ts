@@ -40,7 +40,7 @@ export function setStandardStreams(
   Module: Module,
   stdin?: () => string,
   stdout?: (a: string) => void,
-  stderr?: (a: string) => void
+  stderr?: (a: string) => void,
 ) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
   if (stdout) {
@@ -75,7 +75,7 @@ function createStdinWrapper(stdin: () => string) {
         }
         if (typeof text !== "string") {
           throw new TypeError(
-            `Expected stdin to return string, null, or undefined, got type ${typeof text}.`
+            `Expected stdin to return string, null, or undefined, got type ${typeof text}.`,
           );
         }
         if (!text.endsWith("\n")) {

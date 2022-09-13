@@ -147,7 +147,7 @@ It is also possible to load packages from custom URLs:
 
 ```js
 await pyodide.loadPackage(
-  "https://foo/bar/numpy-1.22.3-cp310-cp310-emscripten_3_1_13_wasm32.whl"
+  "https://foo/bar/numpy-1.22.3-cp310-cp310-emscripten_3_1_13_wasm32.whl",
 );
 ```
 

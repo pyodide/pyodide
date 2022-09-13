@@ -422,6 +422,31 @@ def eval_code(
         ``None``. If the last statement is an expression, return the result of the
         expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
+
+    Examples
+    --------
+    >>> from pyodide.code import eval_code
+    >>> source = "1 + 1"
+    >>> eval_code(source)
+    2
+    >>> source = "1 + 1;"
+    >>> eval_code(source, quiet_trailing_semicolon=True)
+    >>> eval_code(source, quiet_trailing_semicolon=False)
+    2
+    >>> my_globals = { "y": "100" }
+    >>> my_locals = { "y": "200" }
+    >>> source = "print(locals()['y'], globals()['y'])"
+    >>> eval_code(source, globals=my_globals, locals=my_locals)
+    200 100
+    >>> source = "test = 1 + 1"
+    >>> eval_code(source, return_mode="last_expr_or_assign")
+    2
+    >>> eval_code(source, return_mode="last_expr")
+    >>> eval_code(source, return_mode="none")
+    >>> source = "print(pyodide)" # Pretend this is open('example_of_filename.py', 'r').read()
+    >>> eval_code(source, filename="example_of_filename.py") # doctest: +SKIP
+    # Trackback will show where in the file the error happened
+    # ...File "example_of_filename.py", line 1, in <module>...NameError: name 'pyodide' is not defined
     """
     return (
         CodeRunner(
