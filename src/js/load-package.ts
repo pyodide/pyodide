@@ -358,7 +358,15 @@ async function loadDynlib(lib: string, shared: boolean) {
   const libraryFS = {
     _ldLibraryPaths: ["/usr/lib", API.sitepackages],
     _resolvePath: (path: string) => {
-      if (Module.PATH.isAbs(path)) return path;
+      if (Module.PATH.isAbs(path)) {
+        if (Module.FS.findObject(path) !== null) {
+          return path;
+        }
+
+        // If the path is absolute but doesn't exist, we try to find it from
+        // the library paths.
+        path = path.substring(path.lastIndexOf("/") + 1);
+      }
 
       for (const dir of libraryFS._ldLibraryPaths) {
         const fullPath = Module.PATH.join2(dir, path);
