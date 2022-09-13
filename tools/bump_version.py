@@ -71,7 +71,7 @@ PYTHON_TARGETS = [
     ),
     Target(
         ROOT / "src/core/pre.js",
-        build_version_pattern('Module.version = "{python_version}"'),
+        build_version_pattern('API.version = "{python_version}"'),
         prerelease=True,
     ),
 ]

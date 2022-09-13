@@ -328,10 +328,10 @@ export async function loadPyodide(
     throw Module.exited.toThrow;
   }
 
-  if (Module.version !== version) {
+  if (API.version !== version) {
     throw new Error(
       `\
-Pyodide version does not match: '${version}' <==> '${Module.version}'. \
+Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
 `
     );
