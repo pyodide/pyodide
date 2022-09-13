@@ -1135,7 +1135,7 @@ def test_version_variable(selenium):
 
     core_version = selenium.run_js(
         """
-        return pyodide._module.version
+        return pyodide._api.version
         """
     )
 
