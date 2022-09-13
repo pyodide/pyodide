@@ -298,8 +298,12 @@ async def test_console_imports(selenium):
     assert await get_result("pytz.utc.zone") == "UTC"
 
 
-def test_console_html(console_html_fixture):
-    selenium = console_html_fixture
+@pytest.mark.xfail_browsers(node="Not available in node")
+def test_console_html(selenium):
+    selenium.goto(
+        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+    )
+    selenium.javascript_setup()
     selenium.run_js(
         """
         await window.console_ready;

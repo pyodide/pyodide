@@ -174,6 +174,9 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  *  code.
  */
 function calculateIndexURL(): string {
+  if (typeof __dirname === "string") {
+    return __dirname;
+  }
   let err: Error;
   try {
     throw new Error();
@@ -204,6 +207,7 @@ export type ConfigType = {
   stderr?: (msg: string) => void;
   jsglobals?: object;
   args: string[];
+  _node_mounts: string[];
 };
 
 /**
@@ -263,6 +267,7 @@ export async function loadPyodide(
     stderr?: (msg: string) => void;
     jsglobals?: object;
     args?: string[];
+    _node_mounts?: string[];
   } = {}
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -280,6 +285,7 @@ export async function loadPyodide(
     homedir: "/home/pyodide",
     lockFileURL: indexURL! + "repodata.json",
     args: [],
+    _node_mounts: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   const pyodide_py_tar_promise = loadBinaryFile(
@@ -287,6 +293,13 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.preRun.push(() => {
+    for (const mount of config._node_mounts) {
+      Module.FS.mkdirTree(mount);
+      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
+    }
+  });
+
   Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;

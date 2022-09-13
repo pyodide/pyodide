@@ -131,19 +131,23 @@ type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
 Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets
-  // the prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
   let target;
   if (flags & IS_CALLABLE) {
-    // To make a callable proxy, we must call the Function constructor.
-    // In this case we are effectively subclassing Function.
-    target = Reflect.construct(Function, [], cls);
+    // In this case we are effectively subclassing Function in order to ensure
+    // that the proxy is callable. With a Content Security Protocol that doesn't
+    // allow unsafe-eval, we can't invoke the Function constructor directly. So
+    // instead we create a function in the universally allowed way and then use
+    // `setPrototypeOf`. The documentation for `setPrototypeOf` says to use
+    // `Object.create` or `Reflect.construct` instead for performance reasons
+    // but neither of those work here.
+    target = function () {};
+    Object.setPrototypeOf(target, cls.prototype);
     // Remove undesirable properties added by Function constructor. Note: we
     // can't remove "arguments" or "caller" because they are not configurable
     // and not writable
+    // @ts-ignore
     delete target.length;
+    // @ts-ignore
     delete target.name;
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;

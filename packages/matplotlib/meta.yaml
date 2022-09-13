@@ -1,7 +1,10 @@
 package:
   name: matplotlib
   version: 3.5.2
-
+  top-level:
+    - pylab
+    - mpl_toolkits
+    - matplotlib
 source:
   url: https://files.pythonhosted.org/packages/2f/be/7d6e073a3eb740ebeba43a69f5de2b141fea50b801e24e0ae024ac94d4ac/matplotlib-3.5.2.tar.gz
   sha256: 48cf850ce14fa18067f2d9e0d646763681948487a8080ec0af2686468b4607a2
@@ -12,12 +15,6 @@ source:
     - patches/fix-threading.patch
 
   extras:
-    - - src/browser_backend.py
-      - lib/matplotlib/backends/browser_backend.py
-    - - src/wasm_backend.py
-      - lib/matplotlib/backends/wasm_backend.py
-    - - src/html5_canvas_backend.py
-      - lib/matplotlib/backends/html5_canvas_backend.py
     - - src/setup.cfg
       - ./mplsetup.cfg
 
@@ -54,8 +51,10 @@ requirements:
     - pyparsing
     - python-dateutil
     - pytz
+    - matplotlib-pyodide
 
-test:
-  imports:
-    - matplotlib
-    - mpl_toolkits
+about:
+  home: https://matplotlib.org
+  PyPI: https://pypi.org/project/matplotlib
+  summary: Python plotting package
+  license: PSF

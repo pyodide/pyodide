@@ -782,7 +782,8 @@
 - test_unpack
 - test_unpack_ex
 - test_unparse
-- test_urllib
+- test_urllib:
+    xfail-safari: crashes the runtime
 - test_urllib2:
     skip:
       - test_http_body_pipe # fork

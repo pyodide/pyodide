@@ -36,6 +36,15 @@ alphanumeric characters, `-`, and `_`.
 
 The version of the package.
 
+### `package/top-level`
+
+The list of top-level import name for the package.
+This key is used in {any}`pyodide.loadPackagesFromImports`.
+For example, the top-level import name for the `scikit-learn` is `sklearn`.
+Some packages may have multiple top-level import names.
+For instance, `setuptools` exposes `setuptools` and `pkg_resources`
+as a top-level import names.
+
 ## `source`
 
 ### `source/url`
@@ -58,11 +67,6 @@ as package source. This is useful for local testing or building packages which
 are not available online in the required format.
 
 If a path is specified, any provided checksums are ignored.
-
-### `source/md5`
-
-The MD5 checksum of the tarball. It is recommended to use SHA256 instead of MD5.
-At most one checksum entry should be provided per package.
 
 ### `source/sha256`
 

@@ -1,7 +1,8 @@
 package:
   name: cryptography
   version: 37.0.3
-
+  top-level:
+    - cryptography
 source:
   url: https://files.pythonhosted.org/packages/67/82/9dd8ef695c7f928b25927e8956f73bdba09a752a51871678f320c498c535/cryptography-37.0.3.tar.gz
   sha256: ae430d51c67ac638dfbb42edf56c669ca9c74744f4d225ad11c6f3d355858187
@@ -40,3 +41,10 @@ test:
     - cryptography.hazmat
     - cryptography.utils
     - cryptography.x509
+about:
+  home: https://github.com/pyca/cryptography
+  PyPI: https://pypi.org/project/cryptography
+  summary:
+    cryptography is a package which provides cryptographic recipes and primitives
+    to Python developers.
+  license: BSD-3-Clause OR Apache-2.0
