@@ -8,15 +8,15 @@ class PackageInfo(TypedDict):
     sha256: str
 
 
-def create_index(
+def create_pypa_index(
     packages: dict[str, PackageInfo], target_dir: Path, dist_url: str
 ) -> None:
-    """Create a pip-compatible package index to be used with a Pyodide virtual
+    """Create a pip-compatible Python package (pypa) index to be used with a Pyodide virtual
     environment.
 
     To use, pass as an `--index-url` or `--extra-index-url` parameter to pip.
-    The argument should be a `file:` url pointing to the `pypi_index` folder (or
-    if you serve `pypi_index` it can be a normal url). It is also used
+    The argument should be a `file:` url pointing to the `pypa_index` folder (or
+    if you serve `pypa_index` it can be a normal url). It is also used
     automatically by Pyodide virtual environments created from a release version
     of Pyodide.
 
@@ -27,9 +27,9 @@ def create_index(
         "packages" field from repodata.json.
 
     target_dir:
-        Where to put the pypi index. It will be placed in a subfolder of
-        target_dir called `pypi_index`. `target_dir` should exist but
-        `target_dir/pypi_index` should not exist.
+        Where to put the  index. It will be placed in a subfolder of
+        target_dir called `pypa_index`. `target_dir` should exist but
+        `target_dir/pypa_index` should not exist.
 
     dist_url:
         The CDN url to download packages from. This will be hard coded into the
@@ -43,7 +43,7 @@ def create_index(
         if pkginfo["file_name"].endswith(".whl")
     }
 
-    index_dir = target_dir / "pypi_index"
+    index_dir = target_dir / "pypa_index"
     index_dir.mkdir()
 
     # Create top level index

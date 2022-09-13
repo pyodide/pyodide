@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
 from .common import exit_with_stdio, get_make_flag, get_pyodide_root
-from .create_index import create_index
+from .create_pypa_index import create_pypa_index
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -74,7 +74,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
             repodata_bytes = response.read()
     repodata = json.loads(repodata_bytes)
     version = repodata["info"]["version"]
-    create_index(repodata["packages"], xbuildenv_root, cdn_base)
+    create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
 
 
 def main(args: argparse.Namespace) -> None:
