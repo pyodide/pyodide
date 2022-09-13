@@ -1,12 +1,12 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib_pyodide.wasm_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime
 # run: wasm_text_rotated()
 
 # pythran export wasm_text_rotated()
 import matplotlib
 import numpy as np
 
-matplotlib.use("module://matplotlib.backends.wasm_backend")
+matplotlib.use("module://matplotlib_pyodide.wasm_backend")
 import datetime  # noqa: E402
 
 from matplotlib import pyplot as plt  # noqa: E402

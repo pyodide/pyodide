@@ -3,10 +3,11 @@ import subprocess
 import time
 from pathlib import Path
 
+import pydantic
 import pytest
 
 from pyodide_build import buildpkg
-from pyodide_build.io import parse_package_config
+from pyodide_build.io import MetaConfig, _BuildSpec, _SourceSpec
 
 PACKAGES_DIR = Path(__file__).parent / "_test_packages"
 
@@ -43,17 +44,17 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    test_pkgs.append(parse_package_config(PACKAGES_DIR / "packaging/meta.yaml"))
-    test_pkgs.append(parse_package_config(PACKAGES_DIR / "micropip/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
-        pkg["source"]["patches"] = []
+        pkg.source.patches = []
 
     for pkg in test_pkgs:
-        source_dir_name = pkg["package"]["name"] + "-" + pkg["package"]["version"]
-        pkg_root = Path(pkg["package"]["name"])
+        source_dir_name = pkg.package.name + "-" + pkg.package.version
+        pkg_root = Path(pkg.package.name)
         buildpath = pkg_root / "build"
-        src_metadata = pkg["source"]
+        src_metadata = pkg.source
         srcpath = buildpath / source_dir_name
         buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
 
@@ -65,7 +66,7 @@ def test_run_script(is_library, tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
-    build_metadata = {"script": script, "library": is_library}
+    build_metadata = _BuildSpec(script=script, library=is_library)
     with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
         buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
         assert (src_dir / "out.txt").exists()
@@ -75,7 +76,7 @@ def test_run_script_environment(tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
-    build_metadata = {"script": script, "library": False}
+    build_metadata = _BuildSpec(script=script, library=False)
     with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
         shared_env.env.pop("A", None)
         buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
@@ -134,15 +135,21 @@ def test_needs_rebuild(tmpdir):
     extra_file = pkg_root / "extra"
     src_path = pkg_root / "src"
     src_path_file = src_path / "file"
-    source_metadata = {
-        "patches": [
+
+    class MockSourceSpec(_SourceSpec):
+        @pydantic.root_validator
+        def _check_patches_extra(cls, values):
+            return values
+
+    source_metadata = MockSourceSpec(
+        patches=[
             str(patch_file),
         ],
-        "extras": [
+        extras=[
             (str(extra_file), ""),
         ],
-        "path": str(src_path),
-    }
+        path=str(src_path),
+    )
 
     builddir.mkdir()
     meta_yaml.touch()

@@ -41,9 +41,9 @@ jobs:
           PYODIDE_ROOT=. pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
-              --runtime host \
+              --runtime=host \
               --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/
+              src pyodide-build packages/micropip/ packages/_tests
       - uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
@@ -170,7 +170,7 @@ jobs:
           ls -lh dist/
           tools/pytest_wrapper.py src packages/micropip/ \
             -v \
-            --runtime "${BROWSER}" \
+            --runtime="${BROWSER}-no-host" \
             --runner "${RUNNER}" \
             --durations 50 \
             --junitxml=test-results/core_test.xml
@@ -186,7 +186,7 @@ jobs:
           tools/pytest_wrapper.py packages/*/test* \
             -v \
             -k "numpy and not joblib" \
-            --runtime "${BROWSER}" \
+            --runtime="${BROWSER}-no-host" \
             --runner "${RUNNER}" \
             --durations 50 \
             --junitxml=test-results/packages_test.xml
