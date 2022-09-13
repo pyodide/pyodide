@@ -1,9 +1,13 @@
 package:
   name: astropy
   version: "5.1"
+  top-level:
+    - astropy
 source:
   url: https://files.pythonhosted.org/packages/67/3d/bf8dd07f37dd9d1b14bc92985734a3eb7fb15a136dba1ebcc3e3a76d9327/astropy-5.1.tar.gz
   sha256: 1db1b2c7eddfc773ca66fa33bd07b25d5b9c3b5eee2b934e0ca277fa5b1b7b7e
+  patches:
+    - patches/0001-Fix-types-of-_sigma_clip_fast.patch
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
@@ -41,3 +45,8 @@ test:
     - astropy.utils
     - astropy.visualization
     - astropy.wcs
+about:
+  home: http://astropy.org
+  PyPI: https://pypi.org/project/astropy
+  summary: Astronomy and astrophysics core library
+  license: BSD 3-Clause License

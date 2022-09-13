@@ -67,23 +67,28 @@ def maybe_skip_test(item, delayed=False):
     if match and not is_common_test:
         package_name = match.group("name")
         if not package_is_built(package_name) and re.match(
-            rf"test_[\w\-]+\[({browsers})[^\]]*\]", item.name
+            rf"test_[\w\-\.]+\[({browsers})[^\]]*\]", item.name
         ):
             skip_msg = f"package '{package_name}' is not built."
 
     # Common package import test. Skip it if the package is not built.
     if skip_msg is None and is_common_test and item.name.startswith("test_import"):
-        match = re.match(rf"test_import\[({browsers})-(?P<name>[\w-]+)\]", item.name)
-        if match:
-            package_name = match.group("name")
-            if not package_is_built(package_name):
-                # If the test is going to be skipped remove the
-                # selenium_standalone as it takes a long time to initialize
-                skip_msg = f"package '{package_name}' is not built."
+        if not pytest.pyodide_runtimes:  # type: ignore[truthy-bool]
+            skip_msg = "Not running browser tests"
+
         else:
-            raise AssertionError(
-                f"Couldn't parse package name from {item.name}. This should not happen!"
+            match = re.match(
+                rf"test_import\[({browsers})-(?P<name>[\w\-\.]+)\]", item.name
             )
+            if match:
+                package_name = match.group("name")
+                if not package_is_built(package_name):
+                    # selenium_standalone as it takes a long time to initialize
+                    skip_msg = f"package '{package_name}' is not built."
+            else:
+                raise AssertionError(
+                    f"Couldn't parse package name from {item.name}. This should not happen!"
+                )  # If the test is going to be skipped remove the
 
     # TODO: also use this hook to skip doctests we cannot run (or run them
     # inside the selenium wrapper)

@@ -1,6 +1,9 @@
 package:
   name: sympy
   version: 1.10.1
+  top-level:
+    - isympy
+    - sympy
 requirements:
   run:
     - distutils
@@ -8,6 +11,8 @@ requirements:
 source:
   sha256: df75d738930f6fe9ebe7034e59d56698f29e85f443f743e51e47df0caccc2130
   url: https://files.pythonhosted.org/packages/d0/04/66be21ceb305c66a4b326b0ae44cc4f027a43bc08cac204b48fb45bb3653/sympy-1.10.1-py3-none-any.whl
-test:
-  imports:
-    - sympy
+about:
+  home: https://sympy.org
+  PyPI: https://pypi.org/project/sympy
+  summary: Computer algebra system (CAS) in Python
+  license: BSD

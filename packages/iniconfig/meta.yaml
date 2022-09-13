@@ -1,9 +1,13 @@
 package:
   name: iniconfig
   version: 1.1.1
+  top-level:
+    - iniconfig
 source:
   sha256: 011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3
   url: https://files.pythonhosted.org/packages/9b/dd/b3c12c6d707058fa947864b67f0c4e0c39ef8610988d7baea9578f3c48f3/iniconfig-1.1.1-py2.py3-none-any.whl
-test:
-  imports:
-    - iniconfig
+about:
+  home: http://github.com/RonnyPfannschmidt/iniconfig
+  PyPI: https://pypi.org/project/iniconfig
+  summary: "iniconfig: brain-dead simple config-ini parsing"
+  license: MIT License

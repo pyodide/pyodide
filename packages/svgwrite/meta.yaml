@@ -1,12 +1,11 @@
 package:
   name: svgwrite
   version: 1.4.2
+  top-level:
+    - svgwrite
 source:
   url: https://files.pythonhosted.org/packages/cb/f3/5e44c3c6f36387afca7db6b6afbd47ea1e040ba362a6b9508d23123cc35f/svgwrite-1.4.2-py3-none-any.whl
   sha256: ca63d76396d1f6f099a2b2d8cf1419e1c1de8deece9a2b7f4da0632067d71d43
-test:
-  imports:
-    - svgwrite
 about:
   home: http://github.com/mozman/svgwrite.git
   PyPI: https://pypi.org/project/svgwrite

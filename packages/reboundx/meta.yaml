@@ -1,6 +1,8 @@
 package:
   name: reboundx
   version: 3.7.1
+  top-level:
+    - reboundx
 build:
   exports: requested
   cflags: |
@@ -16,10 +18,6 @@ requirements:
     - numpy
   host:
     - rebound
-test:
-  imports:
-    - rebound
-    - reboundx
 about:
   home: https://github.com/dtamayo/reboundx
   PyPI: https://pypi.org/project/reboundx

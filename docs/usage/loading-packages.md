@@ -5,81 +5,60 @@
 Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
 
-- {any}`pyodide.loadPackage` for packages built with Pyodide, or
-- {any}`micropip.install` for pure Python packages with wheels available on PyPI or
-  from other URLs.
+- {any}`micropip.install` (Python) for pure Python packages with wheels
+  as well as Pyodide packages (including Emscripten/wasm32 binary wheels). It
+  can install packages from PyPI, the JsDelivr CDN or from other URLs.
+- {any}`pyodide.loadPackage` (Javascript) for packages built with Pyodide. This
+  is a function with less overhead but also more limited functionality.
+  micropip uses this function to load Pyodide packages. In most cases you
+  should be using micropip.
 
-```{note}
-{mod}`micropip` can also be used to load packages built in Pyodide (in
-which case it relies on {any}`pyodide.loadPackage`).
-```
-
-If you use {any}`pyodide.loadPackagesFromImports` Pyodide will automatically
-download all packages that the code snippet imports. This is particularly useful
-for making a repl since users might import unexpected packages. At present,
+In some cases, and in particular in the REPL, packages are installed implicitly
+from imports. The Pyodide REPL uses {any}`pyodide.loadPackagesFromImports` to
+automatically download all packages that the code snippet imports. This is
+useful since users might import unexpected packages in REPL. At present,
 {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
 download packages from PyPI, it will only download packages included in the
 Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of
 packages included in Pyodide.
 
-## Loading packages with {any}`pyodide.loadPackage`
+## How to chose between `micropip.install` and `pyodide.loadPackage`?
 
-Packages included in the official Pyodide repository can be loaded using
-{any}`pyodide.loadPackage`:
+While {any}`micropip.install` is written in Python and
+{any}`pyodide.loadPackage` in Javascript this has no incidence on when
+to use each of these functions. Indeed, you can easily switch languages using
+the {ref}`type-translations` with,
 
-```js
-await pyodide.loadPackage("numpy");
-```
+- from Javascript,
+  ```javascript
+  let micropip = pyodide.pyimport(package_name);
+  ```
+- from Python,
+  ```
+  import pyodide_js
+  await pyodide_js.loadPackage('package_name')
+  ```
 
-It is also possible to load packages from custom URLs:
+Instead, the general advice is to use {any}`micropip.install` for everything
+except in the following cases where {any}`pyodide.loadPackage` might be more
+appropriate,
 
-```js
-await pyodide.loadPackage(
-  "https://foo/bar/numpy-1.22.3-cp310-cp310-emscripten_3_1_13_wasm32.whl"
-);
-```
-
-The file name must be a valid wheel name.
-
-When you request a package from the official repository, all of the package's
-dependencies are also loaded. Dependency resolution is not yet implemented when
-loading packages from custom URLs.
-
-In general, loading a package twice is not permitted. However, one can override
-a dependency by loading a custom URL with the same package name before loading
-the dependent package.
-
-Multiple packages can also be loaded at the same time by passing a list to
-{any}`pyodide.loadPackage`.
-
-```js
-await pyodide.loadPackage(["cycler", "pytz"]);
-```
-
-{any}`pyodide.loadPackage` returns a `Promise` which resolves when all the
-packages are finished loading:
-
-```javascript
-let pyodide;
-async function main() {
-  pyodide = await loadPyodide();
-  await pyodide.loadPackage("matplotlib");
-  // matplotlib is now available
-}
-main();
-```
-
-(micropip)=
+- to load micropip itself,
+- when you are optimizing for size, do not want to install the `micropip`
+  package, and do not need to install packages from PyPI with dependency resolution.
 
 ## Micropip
 
-### Installing packages from PyPI
+### Installing packages
 
-Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`.
-{func}`micropip.install` returns a Python
-[Future](https://docs.python.org/3/library/asyncio-future.html) so you can await
-the future or otherwise use the Python future API to do work once the packages
-have finished loading:
+Pyodide supports installing following types of packages with {mod}`micropip`,
+
+- pure Python wheels from PyPI with {mod}`micropip`.
+- pure Python and binary wasm32/emscripten wheels (also informally known as
+  "Pyodide packages" or "packages built by Pyodide") from the JsDelivr CDN and
+  custom URLs.
+  {func}`micropip.install` is an async Python function which returns a
+  coroutine, so it need to be called with an `await` clause to run.
 
 ```pyodide
 await pyodide.loadPackage("micropip");
@@ -123,7 +102,9 @@ If the file is on a remote server, the server must set
 to allow access. If the server doesn't set CORS headers, you can use a CORS proxy.
 Note that using third-party CORS proxies has security implications,
 particularly since we are not able to check the file integrity, unlike with
-installs from PyPI. See [this stack overflow answer](https://stackoverflow.com/questions/43871637/no-access-control-allow-origin-header-is-present-on-the-requested-resource-whe/43881141#43881141) for more information about CORS.
+installs from PyPI. See [this stack overflow
+answer](https://stackoverflow.com/questions/43871637/no-access-control-allow-origin-header-is-present-on-the-requested-resource-whe/43881141#43881141)
+for more information about CORS.
 ```
 
 ## Example
@@ -134,10 +115,7 @@ installs from PyPI. See [this stack overflow answer](https://stackoverflow.com/q
     <meta charset="utf-8" />
   </head>
   <body>
-    <script
-      type="text/javascript"
-      src="{{PYODIDE_CDN_URL}}/pyodide.js"
-    ></script>
+    <script type="text/javascript" src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
     <script type="text/javascript">
       async function main() {
         let pyodide = await loadPyodide();
@@ -155,6 +133,55 @@ installs from PyPI. See [this stack overflow answer](https://stackoverflow.com/q
   </body>
 </html>
 ```
+
+## Loading packages with {any}`pyodide.loadPackage`
+
+Packages included in the official Pyodide repository can be loaded using
+{any}`pyodide.loadPackage`:
+
+```js
+await pyodide.loadPackage("numpy");
+```
+
+It is also possible to load packages from custom URLs:
+
+```js
+await pyodide.loadPackage(
+  "https://foo/bar/numpy-1.22.3-cp310-cp310-emscripten_3_1_13_wasm32.whl"
+);
+```
+
+The file name must be a valid wheel name.
+
+When you request a package from the official repository, all of the package's
+dependencies are also loaded. There is no dependency resolution when
+loading packages from custom URLs. If you want dependency resolution for custom URLs, use `micropip`.
+
+In general, loading a package twice is not permitted. However, one can override
+a dependency by loading a custom URL with the same package name before loading
+the dependent package.
+
+Multiple packages can also be loaded at the same time by passing a list to
+{any}`pyodide.loadPackage`.
+
+```js
+await pyodide.loadPackage(["cycler", "pytz"]);
+```
+
+{any}`pyodide.loadPackage` returns a `Promise` which resolves when all the
+packages are finished loading:
+
+```javascript
+let pyodide;
+async function main() {
+  pyodide = await loadPyodide();
+  await pyodide.loadPackage("matplotlib");
+  // matplotlib is now available
+}
+main();
+```
+
+(micropip)=
 
 ```{eval-rst}
 .. toctree::

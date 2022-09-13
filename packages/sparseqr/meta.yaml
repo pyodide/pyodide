@@ -1,6 +1,8 @@
 package:
   name: sparseqr
   version: "1.2"
+  top-level:
+    - sparseqr
 
 source:
   # PyPI release has invalid setup.py (missing cffi modules information) so we use github archive instead.
@@ -23,7 +25,3 @@ build:
     rm -f pyproject.toml
     sed -i "s@include_dirs = \[\]@include_dirs = ['\\${WASM_LIBRARY_DIR}/include']@" sparseqr/sparseqr_gen.py
     sed -i "s@library_dirs = \[\]@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib']@" sparseqr/sparseqr_gen.py
-
-test:
-  imports:
-    - sparseqr

@@ -1,6 +1,8 @@
 package:
   name: nltk
   version: "3.7"
+  top-level:
+    - nltk
 source:
   sha256: ba3de02490308b248f9b94c8bc1ac0683e9aa2ec49ee78536d8667afb5e3eec8
   url: https://files.pythonhosted.org/packages/43/0b/8298798bc5a9a007b7cae3f846a3d9a325953e0f9c238affa478b4d59324/nltk-3.7-py3-none-any.whl
@@ -8,6 +10,8 @@ requirements:
   run:
     - regex
     - sqlite3
-test:
-  imports:
-    - nltk
+about:
+  home: https://www.nltk.org/
+  PyPI: https://pypi.org/project/nltk
+  summary: Natural Language Toolkit
+  license: Apache License, Version 2.0

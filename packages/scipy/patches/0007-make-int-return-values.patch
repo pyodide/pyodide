@@ -1,7 +1,7 @@
-From e96f9c5c27ac6dee8e793b334517a0799b8a3f15 Mon Sep 17 00:00:00 2001
+From 5b067d068debf32b285adee50527bfb3adc716fa Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
-Subject: [PATCH 08/14] make int return values
+Subject: [PATCH 07/15] make int return values
 
 The return values of f2c functions are insignificant in most cases, so often it
 is treated as returning void, when it really should return int (values are
@@ -22,9 +22,10 @@ we change everything to return int from subroutines, and signatures are altered
 to be consistent.
 ---
  scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
- scipy/integrate/_odepackmodule.c              |  6 +-
+ scipy/integrate/_odepackmodule.c              |  8 +-
  scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
- scipy/linalg/setup.py                         |  7 +-
+ scipy/linalg/setup.py                         |  1 +
+ scipy/odr/__odrpack.c                         |  2 +-
  scipy/optimize/_lsq/setup.py                  |  2 +-
  .../linalg/_dsolve/SuperLU/SRC/cgsrfs.c       |  7 --
  .../linalg/_dsolve/SuperLU/SRC/dgscon.c       |  3 -
@@ -47,7 +48,7 @@ to be consistent.
  scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +-
  .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 ++---
  .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++----
- 26 files changed, 109 insertions(+), 145 deletions(-)
+ 27 files changed, 108 insertions(+), 144 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
@@ -84,10 +85,15 @@ index caf99ac63..73cdebd96 100644
        COMPLEX            X, Y
        EXTERNAL           CLADIV
 diff --git a/scipy/integrate/_odepackmodule.c b/scipy/integrate/_odepackmodule.c
-index 9974ae0f3..f74c379df 100644
+index 2b2189f0b..17f3f9348 100644
 --- a/scipy/integrate/_odepackmodule.c
 +++ b/scipy/integrate/_odepackmodule.c
-@@ -158,13 +158,13 @@ typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
+@@ -154,17 +154,17 @@ static PyObject *odepack_error;
+     #endif
+ #endif
+ 
+-typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
++typedef int lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
  typedef int lsoda_jac_t(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
                          double *pd, F_INT *nrowpd);
  
@@ -271,23 +277,30 @@ index 89e50a990..0476e6a26 100644
    <ftype4> dimension(*), intent(in) :: x
    <ftypereal4> <prefix4>asum,s
 diff --git a/scipy/linalg/setup.py b/scipy/linalg/setup.py
-index d384081a2..d318fa8b8 100644
+index 20192f4cf..55a23ba7f 100644
 --- a/scipy/linalg/setup.py
 +++ b/scipy/linalg/setup.py
-@@ -45,9 +45,10 @@ def configuration(parent_package='', top_path=None):
+@@ -45,6 +45,7 @@ def configuration(parent_package='', top_path=None):
      # flapack:
      sources = ['flapack.pyf.src', 'lapack_extras.f']
      sources += get_g77_abi_wrappers(lapack_opt)
--    dep_pfx = join('src', 'lapack_deprecations')
--    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
--    sources += deprecated_lapack_routines
-+#   CLAPACK still has these routines (with conflicting signatures)
-+#    dep_pfx = join('src', 'lapack_deprecations')
-+#    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
-+#    sources += deprecated_lapack_routines
++
      depends = ['flapack_gen.pyf.src',
                 'flapack_gen_banded.pyf.src',
                 'flapack_gen_tri.pyf.src',
+diff --git a/scipy/odr/__odrpack.c b/scipy/odr/__odrpack.c
+index c806e33fb..c4b822eb9 100644
+--- a/scipy/odr/__odrpack.c
++++ b/scipy/odr/__odrpack.c
+@@ -13,7 +13,7 @@
+ #include "odrpack.h"
+ 
+ 
+-void F_FUNC(dodrc,DODRC)(void (*fcn)(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *ldm,
++void F_FUNC(dodrc,DODRC)(int (*fcn)(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *ldm,
+             F_INT *ldnp, double *beta, double *xplusd, F_INT *ifixb, F_INT *ifixx,
+             F_INT *ldifx, F_INT *ideval, double *f, double *fjacb, double *fjacd,
+             F_INT *istop),
 diff --git a/scipy/optimize/_lsq/setup.py b/scipy/optimize/_lsq/setup.py
 index 7ce589c0c..6412886e0 100644
 --- a/scipy/optimize/_lsq/setup.py

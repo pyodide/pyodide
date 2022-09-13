@@ -1,7 +1,7 @@
-From e3140b25165537ddc731f1d72e46ec9059faa6d6 Mon Sep 17 00:00:00 2001
+From bfb4bbdd09ce27ef1c1b042e0864813c40d0349c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 18 Dec 2021 11:41:15 -0800
-Subject: [PATCH 07/14] gemm_ no const
+Subject: [PATCH 06/15] gemm_ no const
 
 cgemm, dgemm, sgemm, and zgemm are declared with `const` in slu_cdefs.h, but
 other places don't have the cosnt causing compile errors.

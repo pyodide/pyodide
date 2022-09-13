@@ -1,22 +1,21 @@
-From 1bfafd7da4804e5d386159332365ae5e8090341a Mon Sep 17 00:00:00 2001
+From efc6c5ce389cbce810d9296259ab67c218541a8f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 7 Apr 2022 10:41:26 -0700
-Subject: [PATCH 13/14] Add extra END to prini.f
+Subject: [PATCH 11/15] Add extra END to prini.f
 
 ---
  scipy/linalg/src/id_dist/src/prini.f | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/scipy/linalg/src/id_dist/src/prini.f b/scipy/linalg/src/id_dist/src/prini.f
-index 33a0bc8d3..f93289925 100644
+index 679590d84..fb883fae6 100644
 --- a/scipy/linalg/src/id_dist/src/prini.f
 +++ b/scipy/linalg/src/id_dist/src/prini.f
-@@ -110,4 +110,5 @@ C
-      1     WRITE(IQ,1800) (MES(I),I=1,I1)
+@@ -111,3 +111,4 @@ C
   1800 FORMAT(1X,80A1)
           RETURN
-+         END
           END
++         END
 \ No newline at end of file
 -- 
 2.25.1

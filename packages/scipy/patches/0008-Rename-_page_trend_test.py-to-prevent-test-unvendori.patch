@@ -1,33 +1,47 @@
-From aa5efca2d530f6b8be78151a5873595514b75bf3 Mon Sep 17 00:00:00 2001
+From db6139078fcbf3cbb9cf28762c84246b03bc9f6b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 26 Dec 2021 07:34:40 -0800
-Subject: [PATCH 09/14] Rename _page_trend_test.py to prevent test unvendoring
+Subject: [PATCH 08/15] Rename _page_trend_test.py to prevent test unvendoring
 
 unvendor_tests will unvendor any file that ends in _test.py.
 Prevent that by changing the name of this file.
 ---
  scipy/stats/__init__.py                                   | 2 +-
  scipy/stats/{_page_trend_test.py => _page_trend_test_.py} | 0
- 2 files changed, 1 insertion(+), 1 deletion(-)
+ scipy/stats/meson.build                                   | 2 +-
+ 3 files changed, 2 insertions(+), 2 deletions(-)
  rename scipy/stats/{_page_trend_test.py => _page_trend_test_.py} (100%)
 
 diff --git a/scipy/stats/__init__.py b/scipy/stats/__init__.py
-index f416e1a4f..2268caa3e 100644
+index 70a527849..8ce1ae379 100644
 --- a/scipy/stats/__init__.py
 +++ b/scipy/stats/__init__.py
-@@ -466,7 +466,7 @@ from ._bootstrap import bootstrap, BootstrapDegenerateDistributionWarning
+@@ -480,7 +480,7 @@ from ._resampling import bootstrap, monte_carlo_test, permutation_test
  from ._entropy import *
  from ._hypotests import *
- from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
+ from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
 -from ._page_trend_test import page_trend_test
 +from ._page_trend_test_ import page_trend_test
  from ._mannwhitneyu import mannwhitneyu
+ from ._fit import fit
  
- # Deprecated namespaces, to be removed in v2.0.0
 diff --git a/scipy/stats/_page_trend_test.py b/scipy/stats/_page_trend_test_.py
 similarity index 100%
 rename from scipy/stats/_page_trend_test.py
 rename to scipy/stats/_page_trend_test_.py
+diff --git a/scipy/stats/meson.build b/scipy/stats/meson.build
+index 9539a26cb..e5d702158 100644
+--- a/scipy/stats/meson.build
++++ b/scipy/stats/meson.build
+@@ -204,7 +204,7 @@ py3.install_sources([
+     '_mstats_basic.py',
+     '_mstats_extras.py',
+     '_multivariate.py',
+-    '_page_trend_test.py',
++    '_page_trend_test_.py',
+     '_qmc.py',
+     '_relative_risk.py',
+     '_resampling.py',
 -- 
 2.25.1
 
