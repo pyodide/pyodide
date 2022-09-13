@@ -173,7 +173,13 @@ is the source directory.
 
 ### `build/post`
 
-Shell commands to run after building the library. These are run with `bash`.
+Shell commands to run after building the library. This script is run by `bash`
+in the directory where `meta.yaml` file resides. The `${PKG_BUILD_DIR}/dist`
+will contain the built wheel unpacked with `python -m wheel unpack`
+so it's possible to manually add, delete, change, move files etc.
+See the [setuptools meta.yaml](https://github.com/pyodide/pyodide/
+blob/main/packages/setuptools/meta.yaml)
+for an example of the usage of this key.
 
 ### `build/unvendor-tests`
 
