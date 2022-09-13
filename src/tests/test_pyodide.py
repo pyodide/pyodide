@@ -1425,3 +1425,21 @@ def test_csp(selenium_standalone_noload):
         selenium.load_pyodide()
     finally:
         target_path.unlink()
+
+def test_static_import(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    target_path = DIST_PATH / "module_static_import_test.html"
+    try:
+        shutil.copy(get_pyodide_root() / "src/templates/module_static_import_test.html", target_path)
+        selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                print('Static import works')
+            `);
+            """
+        )
+    finally:
+        target_path.unlink()
