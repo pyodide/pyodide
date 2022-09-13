@@ -38,6 +38,35 @@ substitutions:
   be passed as command line arguments to the Python interpreter at start up.
   {pr}`3021`
 
+- {{ Enhancement }} The core test suite is now run in Safari {pr}`2578`.
+
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
+
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -57,19 +86,43 @@ substitutions:
 - {{ Update }} Upgraded SciPy to version 1.9.1.
   {pr}`3043`
 
-- {{ Fix }} Packages are now loaded in a topologically sorted order regarding their dependencies.
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies.
   {pr}`3020`
 
-- {{ Breaking }} Loading the `soupsieve` package will not automatically load `beautifulsoup4` together.
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load
+  `beautifulsoup4` together.
   {pr}`3020`
+
+- {{ Breaking }} The matplotlib HTML5 backends are now available as part of the
+  [`matplotlib-pyodide`](https://github.com/pyodide/matplotlib-pyodide)
+  package. If you use the default backend from Pyodide, no changes are
+  necessary. However, if you previously specified the backend with
+  `matplotlib.use`, the URL is now different. See [package
+  readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
+  {pr}`3061`
+
+- {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
+  specification is now done more rigourously with Pydantic
+  {pr}`3079`
+
+- {{ Breaking }} `source/md5` checksum field is not longer supported in
+  `meta.yaml` files, use `source/sha256` instead
+  {pr}`3079`
+
+- {{ Breaking }} `pyodide_build.io.parse_package_config` function is removed in favor of
+  `pyodide_build.MetaConfig.from_yaml`
+  {pr}`3079`
+
+### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
   host dependencies that are required for building packages.
   {pr}`2132`
 
-- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to calculate
-  top-level import names for the package. Previously `test/imports` key was used
-  for this purpose.
+- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to
+  calculate top-level import names for the package. Previously `test/imports`
+  key was used for this purpose.
   {pr}`3006`
 
 ## Version 0.21.2
@@ -88,8 +141,9 @@ substitutions:
 - {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
   {pr}`3014`
 
-- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
-  now works even if `node` is run with `--enable-source-maps`.
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the
+  calculated index URL now works even if `node` is run with
+  `--enable-source-maps`.
   {pr}`3015`
 
 ## Version 0.21.1

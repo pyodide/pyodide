@@ -98,6 +98,10 @@ def make_command_wrapper_symlinks(
         env[var] = symlink
 
 
+# Also defined in pyodide_build.io (though avoiding to import dependent modules here)
+_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+
+
 @contextmanager
 def get_build_env(
     env: dict[str, str],
@@ -107,7 +111,7 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    exports: str | list[str],
+    exports: _BuildSpecExports | list[_BuildSpecExports],
 ) -> Iterator[dict[str, str]]:
     kwargs = dict(
         pkgname=pkgname,

@@ -1,12 +1,12 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm
+# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib_pyodide.wasm_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm
 # run: wasm_image()
 
 # pythran export wasm_image()
 import matplotlib
 import numpy as np
 
-matplotlib.use("module://matplotlib.backends.wasm_backend")
+matplotlib.use("module://matplotlib_pyodide.wasm_backend")
 
 import matplotlib.cm as cm  # noqa: E402
 from matplotlib import pyplot as plt  # noqa: E402
