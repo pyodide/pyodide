@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 from .common import get_make_flag, get_pyodide_root, get_unisolated_packages
-from .io import parse_package_config
+from .io import MetaConfig
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -26,8 +26,8 @@ def copy_xbuild_files(xbuildenv_path: Path) -> None:
     # cp site-packages-extras $HOSTSITEPACKAGES
     site_packages_extras = xbuildenv_path / "site-packages-extras"
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, check=False)
-        xbuild_files = config.get("build", {}).get("cross-build-files", [])
+        config = MetaConfig.from_yaml(pkg)
+        xbuild_files = config.build.cross_build_files
         for path in xbuild_files:
             target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)

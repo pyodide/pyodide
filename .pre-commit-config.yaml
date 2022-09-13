@@ -52,7 +52,7 @@ repos:
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
-        exclude: (setup.py|^src/tests|conftest.py)
+        exclude: (setup.py|src/tests|conftest.py|packages/.*/test)
         args: []
         additional_dependencies: &mypy-deps
           - packaging
@@ -62,6 +62,7 @@ repos:
           - numpy
           - build
           - pytest
+          - pydantic
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]

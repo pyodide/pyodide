@@ -35,8 +35,8 @@ def run_with_resolve(selenium, code):
 def patch_font_loading_and_dpi(target_font=""):
     """Monkey-patches font loading and dpi to allow testing"""
     return textwrap.dedent(
-        f"""from matplotlib.backends.html5_canvas_backend import RendererHTMLCanvas
-        from matplotlib.backends.html5_canvas_backend import FigureCanvasHTMLCanvas
+        f"""from matplotlib_pyodide.html5_canvas_backend import RendererHTMLCanvas
+        from matplotlib_pyodide.html5_canvas_backend import FigureCanvasHTMLCanvas
         FigureCanvasHTMLCanvas.get_dpi_ratio = lambda self, context: 2.0
         load_font_into_web = RendererHTMLCanvas.load_font_into_web
         def load_font_into_web_wrapper(self, loaded_font, font_url, orig_function=load_font_into_web):
@@ -180,7 +180,7 @@ def test_rendering(selenium_standalone):
         f"""
         {patch_font_loading_and_dpi()}
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import numpy as np
         from matplotlib import pyplot as plt
         t = np.arange(0.0, 2.0, 0.01)
@@ -209,7 +209,7 @@ def test_draw_image(selenium_standalone):
         f"""
         {patch_font_loading_and_dpi()}
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import numpy as np
         import matplotlib.cm as cm
         import matplotlib.pyplot as plt
@@ -246,7 +246,7 @@ def test_draw_image_affine_transform(selenium_standalone):
         f"""
         {patch_font_loading_and_dpi()}
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import numpy as np
         import matplotlib.pyplot as plt
         import matplotlib.transforms as mtransforms
@@ -315,7 +315,7 @@ def test_draw_text_rotated(selenium_standalone):
         os.environ["TESTING_MATPLOTLIB"] = "1"
 
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import matplotlib.pyplot as plt
         from matplotlib.dates import (
             YEARLY, DateFormatter,
@@ -369,7 +369,7 @@ def test_draw_math_text(selenium_standalone):
         os.environ["TESTING_MATPLOTLIB"] = "1"
 
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         from js import window
         window.testingMatplotlib = True
         import matplotlib.pyplot as plt
@@ -488,7 +488,7 @@ def test_custom_font_text(selenium_standalone):
         f"""
         {patch_font_loading_and_dpi(target_font='cmsy10')}
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import matplotlib.pyplot as plt
         import numpy as np
 
@@ -522,7 +522,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
         f"""
         {patch_font_loading_and_dpi()}
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import numpy as np
         import matplotlib.pyplot as plt
         np.random.seed(42)
@@ -562,7 +562,7 @@ def test_transparency(selenium_standalone):
         f"""
         {patch_font_loading_and_dpi()}
         import matplotlib
-        matplotlib.use("module://matplotlib.backends.html5_canvas_backend")
+        matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
         import numpy as np
         np.random.seed(19680801)
         import matplotlib.pyplot as plt
