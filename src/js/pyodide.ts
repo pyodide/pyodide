@@ -11,6 +11,7 @@ import {
 } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import version from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
@@ -33,6 +34,8 @@ export type {
 } from "./pyproxy.gen";
 
 export type Py2JsResult = any;
+
+export { version };
 
 /**
  * A proxy around globals that falls back to checking for a builtin if has or
@@ -139,11 +142,9 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.pyodide_code = import_module("pyodide.code");
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
-  API.version = API.pyodide_py.__version__;
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
-  pyodide.version = API.version;
   pyodide.globals = API.globals;
   return pyodide;
 }
@@ -301,6 +302,15 @@ export async function loadPyodide(
   // being called.
   await moduleLoaded;
 
+  if (API.version !== version) {
+    throw new Error(
+      `\
+Pyodide version does not match: '${version}' <==> '${API.version}'. \
+If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
+`
+    );
+  }
+
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
@@ -311,6 +321,7 @@ export async function loadPyodide(
   Module._pyodide_init();
 
   const pyodide = finalizeBootstrap(API, config);
+
   // API.runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
@@ -318,7 +329,7 @@ export async function loadPyodide(
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
-  if (API.repodata_info.version !== pyodide.version) {
+  if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   if (config.fullStdLib) {

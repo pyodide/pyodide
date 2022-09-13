@@ -24,6 +24,10 @@ substitutions:
 - {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
   {pr}`3036`
 
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
+
 ## Version 0.22.2
 
 _August 29, 2022_
