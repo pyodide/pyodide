@@ -45,13 +45,16 @@ f2c_wrap = _args_wrapper(replay_f2c)
 def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
     splitline = line.split()
     res = handle_command_generate_args(splitline, args, is_link_cmd)
-    for arg in [
-        "-Werror=implicit-function-declaration",
-        "-Werror=mismatched-parameter-types",
-        "-Werror=return-type",
-    ]:
-        assert arg in res
-        res.remove(arg)
+
+    if res[0] in ("emcc", "em++"):
+        for arg in [
+            "-Werror=implicit-function-declaration",
+            "-Werror=mismatched-parameter-types",
+            "-Werror=return-type",
+        ]:
+            assert arg in res
+            res.remove(arg)
+
     if "-c" in splitline:
         include_index = res.index("python/include")
         del res[include_index]
@@ -70,7 +73,20 @@ def test_handle_command():
         "echo",
         "wasm32-emscripten",
     ]
-    assert generate_args("gcc test.c", args) == "emcc test.c"
+
+    proxied_commands = {
+        "cc": "emcc",
+        "c++": "em++",
+        "gcc": "emcc",
+        "ld": "emcc",
+        "ar": "emar",
+        "ranlib": "emranlib",
+        "strip": "emstrip",
+    }
+
+    for cmd, proxied_cmd in proxied_commands.items():
+        assert generate_args(cmd, args) == proxied_cmd
+
     assert (
         generate_args("gcc -c test.o -o test.so", args, True)
         == "emcc -c test.o -o test.so"
