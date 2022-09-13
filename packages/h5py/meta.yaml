@@ -7,12 +7,14 @@ source:
   url: https://files.pythonhosted.org/packages/c5/40/7cf58e6230f0e76699f011c6d293dd47755997709a303a4e644823f3a753/h5py-3.7.0.tar.gz
   sha256: 3fcf37884383c5da64846ab510190720027dca0768def34dd8dcb659dbe5cbf3
   patches:
+    - patches/0001-Fix-incompatible-pointer-type.patch
     - patches/configure.patch
 
 requirements:
   run:
     - numpy
     - pkgconfig
+    - libhdf5
   host:
     - libhdf5
 
@@ -21,3 +23,4 @@ build:
     export HDF5_MPI=OFF
     export H5PY_SETUP_REQUIRES="0"
     export HDF5_VERSION=1.12.1
+    export HDF5_DIR=${WASM_LIBRARY_DIR}
