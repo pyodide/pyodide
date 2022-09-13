@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
-from .common import get_make_flag, get_pyodide_root
+from .common import exit_with_stdio, get_make_flag, get_pyodide_root
 from .create_index import create_index
 
 
@@ -27,6 +27,7 @@ def download_xbuildenv(version: str, xbuildenv_path: Path) -> None:
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
 
+    print("Downloading xbuild environment")
     rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
@@ -37,6 +38,7 @@ def download_xbuildenv(version: str, xbuildenv_path: Path) -> None:
 
 
 def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
+    print("Installing xbuild environment")
     xbuildenv_path = xbuildenv_path / "xbuildenv"
     pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
@@ -44,7 +46,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
         get_make_flag("HOSTSITEPACKAGES")
     ).relative_to(pyodide_root)
     host_site_packages.mkdir(exist_ok=True, parents=True)
-    subprocess.run(
+    result = subprocess.run(
         [
             "pip",
             "install",
@@ -52,8 +54,12 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
             host_site_packages,
             "-r",
             xbuildenv_path / "requirements.txt",
-        ]
+        ],
+        capture_output=True,
+        encoding="utf8",
     )
+    if result.returncode != 0:
+        exit_with_stdio(result)
     # Copy the site-packages-extras (coming from the cross-build-files meta.yaml
     # key) over the site-packages directory with the newly installed packages.
     shutil.copytree(
