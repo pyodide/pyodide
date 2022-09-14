@@ -8,7 +8,6 @@ export interface Module {
   print: (a: string) => void;
   printErr: (a: string) => void;
   ENV: { [key: string]: string };
-  preloadedWasm: any;
   FS: any;
 }
 
@@ -22,7 +21,6 @@ export function createModule(): any {
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
   Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
-  Module.preloadedWasm = {};
   Module.preRun = [];
   Module.quit = (status: number, toThrow: Error) => {
     Module.exited = { status, toThrow };

@@ -350,22 +350,32 @@ const acquireDynlibLock = createLock();
  * @private
  */
 async function loadDynlib(lib: string, shared: boolean) {
-  const node = Module.FS.lookupPath(lib).node;
-  let byteArray;
-  if (node.mount.type == Module.FS.filesystems.MEMFS) {
-    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
-      Module.FS.lookupPath(lib).node,
-    );
-  } else {
-    byteArray = Module.FS.readFile(lib);
-  }
   const releaseDynlibLock = await acquireDynlibLock();
+  const loadGlobally = shared;
 
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    _ldLibraryPath: "/usr/lib",
-    _resolvePath: (path: string) => libraryFS._ldLibraryPath + "/" + path,
+    _ldLibraryPaths: ["/usr/lib", API.sitepackages],
+    _resolvePath: (path: string) => {
+      if (Module.PATH.isAbs(path)) {
+        if (Module.FS.findObject(path) !== null) {
+          return path;
+        }
+
+        // If the path is absolute but doesn't exist, we try to find it from
+        // the library paths.
+        path = path.substring(path.lastIndexOf("/") + 1);
+      }
+
+      for (const dir of libraryFS._ldLibraryPaths) {
+        const fullPath = Module.PATH.join2(dir, path);
+        if (Module.FS.findObject(fullPath) !== null) {
+          return fullPath;
+        }
+      }
+      return path;
+    },
     findObject: (path: string, dontResolveLastLink: boolean) =>
       Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
     readFile: (path: string) =>
@@ -373,20 +383,12 @@ async function loadDynlib(lib: string, shared: boolean) {
   };
 
   try {
-    const module = await Module.loadWebAssemblyModule(byteArray, {
+    await Module.loadDynamicLibrary(lib, {
       loadAsync: true,
       nodelete: true,
-      allowUndefined: true,
+      global: loadGlobally,
       fs: libraryFS,
     });
-    Module.preloadedWasm[lib] = module;
-    Module.preloadedWasm[lib.split("/").pop()!] = module;
-    if (shared) {
-      Module.loadDynamicLibrary(lib, {
-        global: true,
-        nodelete: true,
-      });
-    }
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {
       console.warn(
