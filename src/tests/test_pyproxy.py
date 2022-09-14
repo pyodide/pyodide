@@ -962,10 +962,11 @@ def test_pyproxy_apply(selenium):
             assert(() => JSON.stringify(fpy.apply(undefined, input)) === JSON.stringify(fjs.apply(undefined, input)));
         }
 
-        assertThrows(() => fpy.apply(undefined, 1), "TypeError", "CreateListFromArrayLike called on non-object");
-        assertThrows(() => fpy.apply(undefined, "abc"), "TypeError", "CreateListFromArrayLike called on non-object");
-        assertThrows(() => fpy.apply(undefined, 1n), "TypeError", "CreateListFromArrayLike called on non-object");
-        assertThrows(() => fpy.apply(undefined, 1n), "TypeError", "CreateListFromArrayLike called on non-object");
+        for(let error_input of [1, "abc", 1n, Symbol.iterator, true]) {
+            assertThrows(() => fjs.apply(undefined, error_input), "TypeError", "CreateListFromArrayLike called on non-object");
+            assertThrows(() => fpy.apply(undefined, error_input), "TypeError", "CreateListFromArrayLike called on non-object");
+        }
+
         fpy.destroy();
         """
     )
