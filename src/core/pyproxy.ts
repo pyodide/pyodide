@@ -135,11 +135,12 @@ type PyProxyThisInfo = {
  */
 function pyproxy_new(
   ptrobj: number,
-  flags_arg: number,
+  flags_arg?: number,
   cache?: PyProxyCache,
   thisInfo?: PyProxyThisInfo,
 ) {
-  const flags = flags_arg ? flags_arg : Module._pyproxy_getflags(ptrobj);
+  const flags =
+    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
   let target;
   if (flags & IS_CALLABLE) {
