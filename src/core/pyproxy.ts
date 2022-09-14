@@ -1129,7 +1129,7 @@ export class PyProxyCallableMethods {
       if (typeof jsargs[Symbol.iterator] === "function") {
         jsargs = Array.from(jsargs);
       } else {
-        throw TypeError("Expected jsargs to be iterable.");
+        throw new TypeError("Expected jsargs to be iterable.");
       }
     }
     return Module.callPyObject(_getPtr(this), jsargs);
