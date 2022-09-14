@@ -356,7 +356,7 @@ async function loadDynlib(lib: string, shared: boolean) {
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    _ldLibraryPaths: ["/usr/lib", API.sitepackages],
+    _ldLibraryPaths: [API.dsodir, API.sitepackages],
     _resolvePath: (path: string) => {
       if (Module.PATH.isAbs(path)) {
         if (Module.FS.findObject(path) !== null) {
