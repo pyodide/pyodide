@@ -114,6 +114,7 @@ class _BuildSpec(BaseModel):
             "cross-script",
             "exports",
             "unvendor_tests",
+            "global_dso",
         }
         typ = "library" if library else "sharedlibrary"
         for key, val in values.items():
