@@ -42,9 +42,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}
-            - -core-v20220303
+            - -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220914-{{ checksum "cpython/Makefile" }}
+            - -core-v20220914
 
       - run:
           name: build emsdk
@@ -89,7 +89,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          key: -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -135,8 +135,8 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg2-v20220303
+            - -pkg2-v20220914-{{ checksum "Makefile.envs" }}
+            - -pkg2-v20220914
 
       - run:
           name: install rust
@@ -165,7 +165,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
+          key: -pkg2-v20220914-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Zip build directory
