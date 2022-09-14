@@ -1126,10 +1126,12 @@ export class PyProxyCallableMethods {
     if (jsargs === undefined || jsargs === null) {
       jsargs = [];
     } else if (!Array.isArray(jsargs)) {
-      if (typeof jsargs[Symbol.iterator] === "function") {
+      if (typeof jsargs !== "object") {
+        throw new TypeError("Expected args to an object.");
+      } else if (typeof jsargs[Symbol.iterator] === "function") {
         jsargs = Array.from(jsargs);
       } else {
-        throw new TypeError("Expected jsargs to be iterable.");
+        throw new TypeError("Expected args to be iterable.");
       }
     }
     return Module.callPyObject(_getPtr(this), jsargs);
