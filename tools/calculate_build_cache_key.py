@@ -29,7 +29,6 @@ def main():
         root / "Makefile.envs",
         root / "pyodide-build",
         root / "packages",
-        root / ".circleci",  # If something changes in CI, rebuild
     ]
 
     ignore_pattern = get_ignore_pattern(root)

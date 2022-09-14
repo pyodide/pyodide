@@ -13,7 +13,7 @@ defaults: &defaults
       PYODIDE_JOBS: 3
       # Make sure the ccache dir is consistent between core and package builds
       # (it's not the case otherwise)
-      CCACHE_DIR: /root/repo/.ccache/
+      CCACHE_DIR: /root/.ccache/
 
 orbs:
   macos: circleci/macos@2.2.0
@@ -42,9 +42,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220914-{{ checksum "cpython/Makefile" }}
-            - -core-v20220914
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}
+            - -core-v20220915
 
       - run:
           name: calculate build hash for ccache
@@ -94,8 +94,8 @@ jobs:
 
       - save_cache:
           paths:
-            - /root/repo/.ccache
-          key: -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - /root/.ccache
+          key: -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -141,7 +141,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg3-v20220914-{{ checksum "build_hash.txt" }}
+            - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
       - run:
           name: install rust
@@ -187,6 +187,11 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
+
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
   build-pyodide-debug:
     <<: *defaults
@@ -574,7 +579,6 @@ workflows:
                 paths:
                   - ./packages
                   - ./dist
-                  - ./.ccache
 
       - build-packages:
           name: build-packages-opencv-python
@@ -592,7 +596,6 @@ workflows:
                   - ./packages/opencv-python/dist
                   - ./packages/build-logs/opencv*
                   - ./dist/opencv*
-                  - ./.ccache
 
       - build-packages:
           name: build-packages-numpy-dependents
@@ -608,7 +611,6 @@ workflows:
                 paths:
                   - ./packages
                   - ./dist
-                  - ./.ccache
 
       - build-packages:
           name: build-packages
@@ -625,11 +627,6 @@ workflows:
                 paths:
                   - ./packages/.artifacts
                   - ./dist
-            # Save cache for final build result
-            - save_cache:
-                paths:
-                  - /root/repo/.ccache
-                key: -pkg3-v20220914-{{ checksum "build_hash.txt" }}
 
       - test-main:
           name: test-core-chrome
