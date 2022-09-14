@@ -11,6 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.common import emscripten_version, get_pyodide_root
+from pyodide_build.install_xbuildenv import download_xbuildenv, install_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -381,4 +382,45 @@ def test_pip_install_from_pyodide(selenium, venv):
     assert (
         result.stdout
         == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
+    )
+
+
+def test_pypa_index(tmp_path):
+    """Test that installing packages from the python package index works as
+    expected."""
+    path = Path(tmp_path)
+    version = "0.21.2"  # just need some version that already exists
+    download_xbuildenv(version, path)
+    install_xbuildenv(version, path)
+    pip_opts = [
+        "--index-url",
+        "file:" + str((path / "xbuildenv/pyodide-root/pypa_index").resolve()),
+        "--platform=emscripten_3_1_14_wasm32",
+        "--only-binary=:all:",
+        "-t",
+        str(path / "temp_lib"),
+    ]
+    to_install = [
+        "numpy",
+        "sharedlib-test-py",
+        "micropip",
+        "attrs",
+    ]
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            *pip_opts,
+            *to_install,
+        ],
+        capture_output=True,
+        encoding="utf8",
+    )
+    assert result.returncode == 0
+    stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
+    assert (
+        stdout.strip().rsplit("\n", 1)[-1]
+        == "Successfully installed attrs-* micropip-* numpy-* sharedlib-test-py-*"
     )
