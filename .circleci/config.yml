@@ -50,7 +50,7 @@ jobs:
           name: calculate build hash for ccache
           command: |
             pip install pathspec
-            ./tools/calculate_build_hash.py > build_hash.txt
+            ./tools/calculate_build_cache_key.py > build_hash.txt
 
       - run:
           name: build emsdk
