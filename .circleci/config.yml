@@ -755,6 +755,32 @@ workflows:
             tags:
               only: /.*/
 
+      - test-main-macos:
+          name: test-packages-safari-no-numpy-dependents
+          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py
+          cache-dir: .pytest_cache_safari
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
+
+      - test-main-macos:
+          name: test-packages-safari
+          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py --skip-passed
+          cache-dir: .pytest_cache_safari
+          requires:
+            - test-packages-safari-no-numpy-dependents
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - test-js:
           requires:
             - build-core

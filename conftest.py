@@ -56,7 +56,7 @@ def maybe_skip_test(item, delayed=False):
     """If necessary skip test at the fixture level, to avoid
     loading the selenium_standalone fixture which takes a long time.
     """
-    browsers = "|".join(["firefox", "chrome", "node"])
+    browsers = "|".join(["firefox", "chrome", "node", "safari"])
     is_common_test = str(item.fspath).endswith("test_packages_common.py")
 
     skip_msg = None

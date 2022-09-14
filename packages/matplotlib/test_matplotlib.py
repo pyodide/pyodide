@@ -5,7 +5,7 @@ from functools import reduce
 
 import pytest
 
-REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
+REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "test_data"
 
 DECORATORS = [
     pytest.mark.xfail_browsers(node="No supported matplotlib backends on node"),
