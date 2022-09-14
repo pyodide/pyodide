@@ -7,6 +7,7 @@ source:
   sha256: 40dceb51a4f6a5275bde0e6bf20ef4b91bfc32ed57c0552e2e8e15463372b17a
 build:
   sharedlibrary: true
+  global_dso: true
   script: |
     emconfigure ./Configure \
       gcc \
