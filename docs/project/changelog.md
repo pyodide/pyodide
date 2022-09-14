@@ -38,7 +38,7 @@ substitutions:
   be passed as command line arguments to the Python interpreter at start up.
   {pr}`3021`
 
-- {{ Enhancement }} The core test suite is now run in Safari {pr}`2578`.
+- {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
 - {{ Fix }} It works again to use `loadPyodide` with a relative URL as
   `indexURL` (this was a regression in v0.21.2).
