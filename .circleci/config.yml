@@ -574,6 +574,7 @@ workflows:
                 paths:
                   - ./packages
                   - ./dist
+                  - ./.ccache
 
       - build-packages:
           name: build-packages-opencv-python
@@ -591,6 +592,7 @@ workflows:
                   - ./packages/opencv-python/dist
                   - ./packages/build-logs/opencv*
                   - ./dist/opencv*
+                  - ./.ccache
 
       - build-packages:
           name: build-packages-numpy-dependents
@@ -606,6 +608,7 @@ workflows:
                 paths:
                   - ./packages
                   - ./dist
+                  - ./.ccache
 
       - build-packages:
           name: build-packages
