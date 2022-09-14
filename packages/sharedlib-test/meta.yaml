@@ -8,7 +8,7 @@ source:
 
 build:
   sharedlibrary: true
-  global: true
+  global_dso: true
   script: |
     emcc -c main.c -o main.o ${SIDE_MODULE_CFLAGS}
     emcc -c dep.c -o dep.o ${SIDE_MODULE_CFLAGS}

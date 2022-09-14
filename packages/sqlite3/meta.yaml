@@ -8,7 +8,7 @@ source:
   path: empty
 build:
   sharedlibrary: true
-  global: true
+  global_dso: true
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist

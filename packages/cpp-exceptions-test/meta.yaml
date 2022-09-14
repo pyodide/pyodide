@@ -6,7 +6,7 @@ source:
   path: src
 build:
   sharedlibrary: true
-  global: true
+  global_dso: true
   script: |
     em++ -c throw.cpp -o throw.o ${SIDE_MODULE_CFLAGS} -fexceptions
     em++ -c catch.cpp -o catch.o ${SIDE_MODULE_CFLAGS} -fexceptions
