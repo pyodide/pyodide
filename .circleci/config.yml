@@ -94,7 +94,7 @@ jobs:
 
       - save_cache:
           paths:
-            - $CCACHE_DIR
+            - /root/repo/.ccache
           key: -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
@@ -625,7 +625,7 @@ workflows:
             # Save cache for final build result
             - save_cache:
                 paths:
-                  - $CCACHE_DIR
+                  - /root/repo/.ccache
                 key: -pkg2-v20220914-{{ checksum "build_hash.txt" }}
 
       - test-main:
