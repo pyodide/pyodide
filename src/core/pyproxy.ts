@@ -291,10 +291,13 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in JavaScript functions.
 
-Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
+Module.callPyObjectKwargs = function (
+  ptrobj: number,
+  jsargs: any,
+  kwargs: any,
+) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
-  let kwargs = jsargs.pop();
   let num_pos_args = jsargs.length;
   let kwargs_names = Object.keys(kwargs);
   let kwargs_values = Object.values(kwargs);
@@ -329,8 +332,8 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   return result;
 };
 
-Module.callPyObject = function (ptrobj: number, ...jsargs: any) {
-  return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
+Module.callPyObject = function (ptrobj: number, jsargs: any) {
+  return Module.callPyObjectKwargs(ptrobj, jsargs, {});
 };
 
 export type PyProxy = PyProxyClass & { [x: string]: any };
@@ -1120,10 +1123,19 @@ export type PyProxyCallable = PyProxy &
 
 export class PyProxyCallableMethods {
   apply(jsthis: PyProxyClass, jsargs: any) {
-    return Module.callPyObject(_getPtr(this), ...jsargs);
+    if (jsargs === undefined || jsargs === null) {
+      jsargs = [];
+    } else if (!Array.isArray(jsargs)) {
+      if (typeof jsargs[Symbol.iterator] === "function") {
+        jsargs = Array.from(jsargs);
+      } else {
+        throw TypeError("Expected jsargs to be iterable.");
+      }
+    }
+    return Module.callPyObject(_getPtr(this), jsargs);
   }
   call(jsthis: PyProxyClass, ...jsargs: any) {
-    return Module.callPyObject(_getPtr(this), ...jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
    * Call the function with key word arguments.
@@ -1135,14 +1147,14 @@ export class PyProxyCallableMethods {
         "callKwargs requires at least one argument (the key word argument object)",
       );
     }
-    let kwargs = jsargs[jsargs.length - 1];
+    let kwargs = jsargs.pop();
     if (
       kwargs.constructor !== undefined &&
       kwargs.constructor.name !== "Object"
     ) {
       throw new TypeError("kwargs argument is not an object");
     }
-    return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
+    return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
   /**
