@@ -10,10 +10,15 @@ def ensure_env_installed(env: Path) -> None:
     if env.exists():
         return
     from .. import __version__
-    from ..install_xbuildenv import download_xbuild_env, install_xbuild_env
+    from ..install_xbuildenv import download_xbuildenv, install_xbuildenv
 
-    download_xbuild_env(__version__, env)
-    install_xbuild_env(env)
+    if "dev" in __version__:
+        raise RuntimeError(
+            "To use out of tree builds with development Pyodide, you must explicitly set PYODIDE_ROOT"
+        )
+
+    download_xbuildenv(__version__, env)
+    install_xbuildenv(__version__, env)
 
 
 def initialize_pyodide_root() -> None:

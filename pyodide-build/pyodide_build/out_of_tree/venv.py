@@ -11,7 +11,7 @@ from ..common import (
     exit_with_stdio,
     get_make_flag,
     get_pyodide_root,
-    in_xbuild_env,
+    in_xbuildenv,
 )
 
 
@@ -63,19 +63,19 @@ def create_pip_conf(venv_root: Path) -> None:
 
     This file adds a few options that will always be used by pip install.
     """
-    if in_xbuild_env():
-        # In the xbuild_env, we don't have the packages locally. We will include
+    if in_xbuildenv():
+        # In the xbuildenv, we don't have the packages locally. We will include
         # in the xbuildenv a PEP 503 index for the vendored Pyodide packages
         # https://peps.python.org/pep-0503/
-
-        # TODO create the index as part of the xbuildenv
-        repo = f'extra-index-url={get_pyodide_root()/"dist/pypi_index"}'
-        raise NotImplementedError()
+        repo = f'extra-index-url=file:{get_pyodide_root()/"pypa_index"}'
     else:
         # In the Pyodide development environment, the Pyodide dist directory
         # should contain the needed wheels. find-links
         repo = f'find-links={get_pyodide_root()/"dist"}'
 
+    # Prevent attempts to install binary wheels from source.
+    # Maybe some day we can convince pip to invoke `pyodide build` as the build
+    # front end for wheels...
     (venv_root / "pip.conf").write_text(
         dedent(
             f"""
@@ -202,26 +202,23 @@ def create_pyodide_script(venv_bin: Path) -> None:
 
 def install_stdlib(venv_bin: Path) -> None:
     """Install micropip and all unvendored stdlib modules"""
-    # Micropip we can install with pip!
-    toload = ["micropip"]
-    result = subprocess.run(
-        [venv_bin / "pip", "install", *toload],
-        capture_output=True,
-        encoding="utf8",
-    )
-    check_result(result, "ERROR: failed to invoke pip")
+    # Micropip we could install with pip hypothetically, but because we use
+    # `--extra-index-url` it would install the pypi version which we don't want.
 
     # Other stuff we need to load with loadPackage
     # TODO: Also load all shared libs.
+    to_load = ["micropip"]
     result = subprocess.run(
         [
             venv_bin / "python",
             "-c",
             dedent(
-                """
+                f"""
                 from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
                 from pyodide_js import loadPackage;
-                loadPackage(UNVENDORED_STDLIBS_AND_TEST);
+
+                to_load = [*UNVENDORED_STDLIBS_AND_TEST, *{to_load!r}]
+                loadPackage(to_load);
                 """
             ),
         ],

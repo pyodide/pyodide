@@ -365,6 +365,6 @@ def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     raise SystemExit(result.returncode)
 
 
-def in_xbuild_env() -> bool:
+def in_xbuildenv() -> bool:
     pyodide_root = get_pyodide_root()
     return pyodide_root.name == "pyodide-root"
