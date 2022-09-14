@@ -42,8 +42,12 @@ def create_pypa_index(
         for (pkgname, pkginfo) in packages.items()
         if pkginfo["file_name"].endswith(".whl")
     }
+    if not target_dir.exists():
+        raise RuntimeError(f"target_dir={target_dir} does not exist")
 
     index_dir = target_dir / "pypa_index"
+    if index_dir.exists():
+        raise RuntimeError(f"{index_dir} already exists")
     index_dir.mkdir()
 
     # Create top level index
