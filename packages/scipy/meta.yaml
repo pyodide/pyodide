@@ -44,6 +44,7 @@ build:
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
+    $(WASM_LIBRARY_DIR)/CLAPACK/LIB/clapack_all.so
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
@@ -52,7 +53,7 @@ build:
   script: |
     set -x
     export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
-    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE $WASM_LIBRARY_DIR/CLAPACK/LIB/clapack_all.so"
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE"
 
     pip install -t $HOSTSITEPACKAGES pythran
