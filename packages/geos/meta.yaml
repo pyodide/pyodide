@@ -8,6 +8,7 @@ source:
 
 build:
   sharedlibrary: true
+  global_dso: true
   script: |
     echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
 
