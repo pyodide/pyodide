@@ -13,7 +13,7 @@ defaults: &defaults
       PYODIDE_JOBS: 3
       # Make sure the ccache dir is consistent between core and package builds
       # (it's not the case otherwise)
-      CCACHE_DIR: /root/.ccache/
+      CCACHE_DIR: /root/repo/.ccache/
 
 orbs:
   macos: circleci/macos@2.2.0
@@ -45,6 +45,12 @@ jobs:
             - -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
             - -core-v20220914-{{ checksum "cpython/Makefile" }}
             - -core-v20220914
+
+      - run:
+          name: calculate build hash for ccache
+          command: |
+            pip install pathspec
+            ./tools/calculate_build_hash.py > build_hash.txt
 
       - run:
           name: build emsdk
@@ -88,7 +94,7 @@ jobs:
 
       - save_cache:
           paths:
-            - /root/.ccache
+            - $CCACHE_DIR
           key: -core-v20220914-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
@@ -135,8 +141,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220914-{{ checksum "Makefile.envs" }}
-            - -pkg2-v20220914
+            - -pkg2-v20220914-{{ checksum "build_hash.txt" }}
 
       - run:
           name: install rust
@@ -161,11 +166,6 @@ jobs:
       - run:
           name: check-size
           command: du dist/ -abh --max-depth 1  | sort -k 2
-
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg2-v20220914-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Zip build directory
@@ -622,6 +622,11 @@ workflows:
                 paths:
                   - ./packages/.artifacts
                   - ./dist
+            # Save cache for final build result
+            - save_cache:
+                paths:
+                  - $CCACHE_DIR
+                key: -pkg2-v20220914-{{ checksum "build_hash.txt" }}
 
       - test-main:
           name: test-core-chrome
