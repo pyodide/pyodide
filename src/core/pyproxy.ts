@@ -75,7 +75,7 @@ if (globalThis.FinalizationRegistry) {
         // finalizer...
         API.fatal_error(e);
       }
-    }
+    },
   );
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
   // fine in chrome and when I test it in browser. It seems to be sensitive to
@@ -131,19 +131,23 @@ type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
 Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets
-  // the prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
   let target;
   if (flags & IS_CALLABLE) {
-    // To make a callable proxy, we must call the Function constructor.
-    // In this case we are effectively subclassing Function.
-    target = Reflect.construct(Function, [], cls);
+    // In this case we are effectively subclassing Function in order to ensure
+    // that the proxy is callable. With a Content Security Protocol that doesn't
+    // allow unsafe-eval, we can't invoke the Function constructor directly. So
+    // instead we create a function in the universally allowed way and then use
+    // `setPrototypeOf`. The documentation for `setPrototypeOf` says to use
+    // `Object.create` or `Reflect.construct` instead for performance reasons
+    // but neither of those work here.
+    target = function () {};
+    Object.setPrototypeOf(target, cls.prototype);
     // Remove undesirable properties added by Function constructor. Note: we
     // can't remove "arguments" or "caller" because they are not configurable
     // and not writable
+    // @ts-ignore
     delete target.length;
+    // @ts-ignore
     delete target.name;
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
@@ -205,18 +209,18 @@ Module.getPyProxyClass = function (flags: number) {
     if (flags & feature_flag) {
       Object.assign(
         descriptors,
-        Object.getOwnPropertyDescriptors(methods.prototype)
+        Object.getOwnPropertyDescriptors(methods.prototype),
       );
     }
   }
   // Use base constructor (just throws an error if construction is attempted).
   descriptors.constructor = Object.getOwnPropertyDescriptor(
     PyProxyClass.prototype,
-    "constructor"
+    "constructor",
   );
   Object.assign(
     descriptors,
-    Object.getOwnPropertyDescriptors({ $$flags: flags })
+    Object.getOwnPropertyDescriptors({ $$flags: flags }),
   );
   let new_proto = Object.create(PyProxyClass.prototype, descriptors);
   function NewPyProxyClass() {}
@@ -306,7 +310,7 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
       idargs,
       num_pos_args,
       idkwnames,
-      num_kwargs
+      num_kwargs,
     );
   } catch (e) {
     API.fatal_error(e);
@@ -444,7 +448,7 @@ export class PyProxyClass {
     default_converter?: (
       obj: PyProxy,
       convert: (obj: PyProxy) => any,
-      cacheConversion: (obj: PyProxy, result: any) => void
+      cacheConversion: (obj: PyProxy, result: any) => void,
     ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
@@ -471,7 +475,7 @@ export class PyProxyClass {
         depth,
         proxies_id,
         dict_converter_id,
-        default_converter_id
+        default_converter_id,
       );
     } catch (e) {
       API.fatal_error(e);
@@ -1025,7 +1029,7 @@ export class PyProxyAwaitableMethods {
       errcode = Module.__pyproxy_ensure_future(
         ptrobj,
         resolve_handle_id,
-        reject_handle_id
+        reject_handle_id,
       );
     } catch (e) {
       API.fatal_error(e);
@@ -1062,7 +1066,7 @@ export class PyProxyAwaitableMethods {
    */
   then(
     onFulfilled: (value: any) => any,
-    onRejected: (reason: any) => any
+    onRejected: (reason: any) => any,
   ): Promise<any> {
     let promise = this._ensure_future();
     return promise.then(onFulfilled, onRejected);
@@ -1128,7 +1132,7 @@ export class PyProxyCallableMethods {
   callKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
       throw new TypeError(
-        "callKwargs requires at least one argument (the key word argument object)"
+        "callKwargs requires at least one argument (the key word argument object)",
       );
     }
     let kwargs = jsargs[jsargs.length - 1];
@@ -1215,7 +1219,7 @@ export class PyProxyBufferMethods {
     let HEAPU32 = Module.HEAPU32;
     let orig_stack_ptr = Module.stackSave();
     let buffer_struct_ptr = Module.stackAlloc(
-      DEREF_U32(Module._buffer_struct_size, 0)
+      DEREF_U32(Module._buffer_struct_size, 0),
     );
     let this_ptr = _getPtr(this);
     let errcode;
@@ -1252,7 +1256,7 @@ export class PyProxyBufferMethods {
       if (ArrayType === undefined) {
         [ArrayType, bigEndian] = Module.processBufferFormatString(
           format,
-          " In this case, you can pass an explicit type argument."
+          " In this case, you can pass an explicit type argument.",
         );
       }
       let alignment = parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
@@ -1263,7 +1267,7 @@ export class PyProxyBufferMethods {
             "For instance, `getBuffer('dataview')` will return a `DataView`" +
             "which has native support for reading big endian data. " +
             "Alternatively, toJs will automatically convert the buffer " +
-            "to little endian."
+            "to little endian.",
         );
       }
       let numBytes = maxByteOffset - minByteOffset;
@@ -1274,7 +1278,7 @@ export class PyProxyBufferMethods {
           maxByteOffset % alignment !== 0)
       ) {
         throw new Error(
-          `Buffer does not have valid alignment for a ${ArrayType.name}`
+          `Buffer does not have valid alignment for a ${ArrayType.name}`,
         );
       }
       let numEntries = numBytes / alignment;
@@ -1306,7 +1310,7 @@ export class PyProxyBufferMethods {
           f_contiguous,
           _view_ptr: view_ptr,
           _released: false,
-        })
+        }),
       );
       // Module.bufferFinalizationRegistry.register(result, view_ptr, result);
       return result;

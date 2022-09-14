@@ -1,9 +1,8 @@
 package:
   name: soupsieve
   version: 2.3.2.post1
+  top-level:
+    - soupsieve
 source:
   sha256: 3b2503d3c7084a42b1ebd08116e5f81aadfaea95863628c80a3b774a11b7c759
   url: https://files.pythonhosted.org/packages/16/e3/4ad79882b92617e3a4a0df1960d6bce08edfb637737ac5c3f3ba29022e25/soupsieve-2.3.2.post1-py3-none-any.whl
-test:
-  imports:
-    - soupsieve

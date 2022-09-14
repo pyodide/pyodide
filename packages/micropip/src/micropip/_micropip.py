@@ -449,8 +449,8 @@ async def install(
     See :ref:`loading packages <loading_packages>` for more information.
 
     If a package is not found in the Pyodide repository it will be loaded from
-    PyPI. Micropip can only load pure Python packages or for packages with C
-    extensions that are built for Pyodide.
+    PyPI. Micropip can only load pure Python wheels or wasm32/emscripten wheels
+    built by Pyodide.
 
     When used in web browsers, downloads from PyPI will be cached. When run in
     Node.js, packages are currently not cached, and will be re-downloaded each

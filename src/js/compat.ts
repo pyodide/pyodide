@@ -77,6 +77,10 @@ function node_resolvePath(path: string, base?: string): string {
 }
 
 function browser_resolvePath(path: string, base?: string): string {
+  if (base === undefined) {
+    // @ts-ignore
+    base = location;
+  }
   return new URL(path, base).toString();
 }
 
@@ -109,7 +113,7 @@ if (!IN_NODE) {
  */
 async function node_loadBinaryFile(
   path: string,
-  _file_sub_resource_hash?: string | undefined // Ignoring sub resource hash. See issue-2431.
+  _file_sub_resource_hash?: string | undefined, // Ignoring sub resource hash. See issue-2431.
 ): Promise<Uint8Array> {
   if (path.startsWith("file://")) {
     // handle file:// with filesystem operations rather than with fetch.
@@ -140,7 +144,7 @@ async function node_loadBinaryFile(
  */
 async function browser_loadBinaryFile(
   path: string,
-  subResourceHash: string | undefined
+  subResourceHash: string | undefined,
 ): Promise<Uint8Array> {
   // @ts-ignore
   const url = new URL(path, location);
@@ -156,7 +160,7 @@ async function browser_loadBinaryFile(
 /** @private */
 export let loadBinaryFile: (
   path: string,
-  file_sub_resource_hash?: string | undefined
+  file_sub_resource_hash?: string | undefined,
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
   loadBinaryFile = node_loadBinaryFile;
@@ -178,7 +182,6 @@ if (globalThis.document) {
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
-    // This is async only for consistency
     try {
       // use importScripts in classic web worker
       globalThis.importScripts(url);

@@ -1,7 +1,8 @@
 package:
   name: numpy
   version: 1.23.0
-
+  top-level:
+    - numpy
 source:
   url: https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip
   sha256: 425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af
@@ -21,6 +22,8 @@ build:
     - numpy/core/include/numpy/_numpyconfig.h
     - numpy/core/lib/libnpymath.a
     - numpy/random/lib/libnpyrandom.a
-test:
-  imports:
-    - numpy
+about:
+  home: https://www.numpy.org
+  PyPI: https://pypi.org/project/numpy
+  summary: NumPy is the fundamental package for array computing with Python.
+  license: BSD

@@ -1,9 +1,13 @@
 package:
   name: msgpack
   version: 1.0.4
+  top-level:
+    - msgpack
 source:
   sha256: f5d869c18f030202eb412f08b28d2afeea553d6613aee89e200d7aca7ef01f5f
   url: https://files.pythonhosted.org/packages/22/44/0829b19ac243211d1d2bd759999aa92196c546518b0be91de9cacc98122a/msgpack-1.0.4.tar.gz
-test:
-  imports:
-    - msgpack
+about:
+  home: https://msgpack.org/
+  PyPI: https://pypi.org/project/msgpack
+  summary: MessagePack serializer
+  license: Apache 2.0

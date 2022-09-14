@@ -15,7 +15,7 @@ def test_sqlite3(selenium):
         libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
     except SystemExit as e:
         if e.code != 0:
-            raise RuntimeError(f"Failed with code: {e.code}")
+            raise RuntimeError(f"Failed with code: {e.code}") from None
 
 
 @run_in_pyodide(packages=["sqlite3"])

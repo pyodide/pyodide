@@ -1,6 +1,8 @@
 package:
   name: rebound
   version: 3.19.8
+  top-level:
+    - rebound
 build:
   exports: requested
   post: |
@@ -15,9 +17,6 @@ source:
 requirements:
   run:
     - numpy
-test:
-  imports:
-    - rebound
 about:
   home: https://github.com/hannorein/rebound/
   PyPI: https://pypi.org/project/rebound

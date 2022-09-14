@@ -1,6 +1,9 @@
 package:
   name: scikit-image
   version: 0.19.3
+  top-level:
+    - skimage
+    # - doc  # scikit-image has top level `doc` directory... but it is too common name so we don't want to use it as a hint for top-level import.
 source:
   patches:
     - patches/preferred_plugins.patch
@@ -21,6 +24,8 @@ requirements:
     - imageio
     - pywavelets
 
-test:
-  imports:
-    - skimage
+about:
+  home: https://scikit-image.org
+  PyPI: https://pypi.org/project/scikit-image
+  summary: Image processing in Python
+  license: Modified BSD

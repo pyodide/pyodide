@@ -1,6 +1,8 @@
 package:
   name: networkx
   version: 2.8.4
+  top-level:
+    - networkx
 requirements:
   run:
     - decorator

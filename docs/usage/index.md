@@ -8,7 +8,7 @@ To use Pyodide in a web page you need to load `pyodide.js` and initialize
 Pyodide with {any}`loadPyodide <globalThis.loadPyodide>`.
 
 ```html-pyodide
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
       <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>

@@ -1,6 +1,8 @@
 package:
   name: py
   version: 1.11.0
+  top-level:
+    - py
 source:
   sha256: 607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378
   url: https://files.pythonhosted.org/packages/f6/f0/10642828a8dfb741e5f3fbaac830550a518a775c7fff6f04a007259b0548/py-1.11.0-py2.py3-none-any.whl
@@ -8,3 +10,8 @@ test:
   imports:
     - py
     - py.code
+about:
+  home: https://py.readthedocs.io/
+  PyPI: https://pypi.org/project/py
+  summary: library with cross-python path, ini-parsing, io, code, log facilities
+  license: MIT license

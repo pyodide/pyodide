@@ -22,7 +22,7 @@ JS_FILE(python2js_buffer_init, () => {
       throw new Error(
         "Expected format string to have length <= 2, " +
           `got '${formatStr}'.` +
-          errorMessage
+          errorMessage,
       );
     }
     let formatChar = formatStr.slice(-1);
@@ -41,7 +41,7 @@ JS_FILE(python2js_buffer_init, () => {
         break;
       default:
         throw new Error(
-          `Unrecognized alignment character ${alignChar}.` + errorMessage
+          `Unrecognized alignment character ${alignChar}.` + errorMessage,
         );
     }
     let arrayType;
@@ -76,7 +76,7 @@ JS_FILE(python2js_buffer_init, () => {
       case "q":
         if (globalThis.BigInt64Array === undefined) {
           throw new Error(
-            "BigInt64Array is not supported on this browser." + errorMessage
+            "BigInt64Array is not supported on this browser." + errorMessage,
           );
         }
         arrayType = BigInt64Array;
@@ -84,7 +84,7 @@ JS_FILE(python2js_buffer_init, () => {
       case "Q":
         if (globalThis.BigUint64Array === undefined) {
           throw new Error(
-            "BigUint64Array is not supported on this browser." + errorMessage
+            "BigUint64Array is not supported on this browser." + errorMessage,
           );
         }
         arrayType = BigUint64Array;
@@ -99,7 +99,7 @@ JS_FILE(python2js_buffer_init, () => {
         throw new Error("Javascript has no Float16 support.");
       default:
         throw new Error(
-          `Unrecognized format character '${formatChar}'.` + errorMessage
+          `Unrecognized format character '${formatChar}'.` + errorMessage,
         );
     }
     return [arrayType, bigEndian];
@@ -143,7 +143,7 @@ JS_FILE(python2js_buffer_init, () => {
     stride,
     suboffset,
     n,
-    itemsize
+    itemsize,
   ) {
     "use strict";
     let byteLength = itemsize * n;
@@ -199,7 +199,7 @@ JS_FILE(python2js_buffer_init, () => {
           stride,
           suboffset,
           n,
-          bufferData.itemsize
+          bufferData.itemsize,
         );
       }
       return bufferData.converter(arraybuffer);
@@ -214,7 +214,7 @@ JS_FILE(python2js_buffer_init, () => {
         curptr = DEREF_U32(curptr, 0) + suboffset;
       }
       result.push(
-        Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData)
+        Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData),
       );
     }
     return result;

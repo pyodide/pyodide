@@ -1,7 +1,8 @@
 package:
   name: cftime
   version: 1.6.0
-
+  top-level:
+    - cftime
 source:
   url: https://files.pythonhosted.org/packages/20/3f/607a69f1253e5c8835400641da91a6b54cc49e3e9f6ac5848a745638f9ea/cftime-1.6.0.tar.gz
   sha256: 13103e6650beea6552316bd5825d6aa3b7e98f5b8115026df4826798dff9f741
@@ -9,10 +10,6 @@ source:
 requirements:
   run:
     - numpy
-
-test:
-  imports:
-    - cftime
 
 about:
   home: https://github.com/Unidata/cftime

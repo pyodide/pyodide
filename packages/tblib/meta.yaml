@@ -1,12 +1,11 @@
 package:
   name: tblib
   version: 1.7.0
+  top-level:
+    - tblib
 source:
   url: https://files.pythonhosted.org/packages/6f/f0/84df460611f1d1c9c348fd4ac2295178083e54962b1be94d571602fafb4c/pyodide_tblib-1.7.1-py3-none-any.whl
   sha256: 6e21535b5be695b4ee2751c5bde21eb5a003ed74aabafaecdca8ef5b3cfa3ea1
-test:
-  imports:
-    - tblib
 about:
   home: https://github.com/ionelmc/python-tblib
   PyPI: https://pypi.org/project/tblib

@@ -30,4 +30,4 @@ def test_ssl(selenium):
             )
     except SystemExit as e:
         if e.code != 0:
-            raise RuntimeError(f"Failed with code: {e.code}")
+            raise RuntimeError(f"Failed with code: {e.code}") from None

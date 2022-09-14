@@ -29,7 +29,7 @@ describe("Pyodide", () => {
     it("install", async () => {
       const factory = async () => {
         await pyodide.runPythonAsync(
-          'import micropip; await micropip.install("snowballstemmer")'
+          'import micropip; await micropip.install("snowballstemmer")',
         );
         return pyodide.runPython(`
           import snowballstemmer
