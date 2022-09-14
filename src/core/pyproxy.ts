@@ -184,6 +184,7 @@ function pyproxy_new(
   Module.finalizationRegistry.register(proxy, [ptrobj, cache], proxy);
   return proxy;
 }
+Module.pyproxy_new = pyproxy_new;
 
 function _getPtr(jsobj: any) {
   let ptr: number = jsobj.$$.ptr;
@@ -192,7 +193,6 @@ function _getPtr(jsobj: any) {
   }
   return ptr;
 }
-Module.pyproxy_new = pyproxy_new;
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]) {
   const thisInfo = proxyobj.$$.thisInfo;
