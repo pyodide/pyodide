@@ -141,7 +141,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220914-{{ checksum "build_hash.txt" }}
+            - -pkg3-v20220914-{{ checksum "build_hash.txt" }}
 
       - run:
           name: install rust
@@ -626,7 +626,7 @@ workflows:
             - save_cache:
                 paths:
                   - /root/repo/.ccache
-                key: -pkg2-v20220914-{{ checksum "build_hash.txt" }}
+                key: -pkg3-v20220914-{{ checksum "build_hash.txt" }}
 
       - test-main:
           name: test-core-chrome
