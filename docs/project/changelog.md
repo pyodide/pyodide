@@ -40,7 +40,6 @@ substitutions:
 
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
-
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -87,7 +86,6 @@ substitutions:
   calculate top-level import names for the package. Previously `test/imports`
   key was used for this purpose.
   {pr}`3006`
-
 
 ## Version 0.21.3
 
