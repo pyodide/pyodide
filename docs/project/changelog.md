@@ -12,7 +12,9 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.21.3
+
+_September 15, 2022_
 
 - {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
   {issue}`3001`
@@ -60,7 +62,7 @@ substitutions:
   unexpected is passed as the second argument.
   {pr}`3101`
 
-## Version 0.22.2
+## Version 0.21.2
 
 _August 29, 2022_
 
