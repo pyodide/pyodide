@@ -14,8 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.20
-  {pr}`2958`, {pr}`2950`, {pr}`3027`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.21
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
