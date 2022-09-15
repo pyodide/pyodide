@@ -395,7 +395,6 @@ jobs:
             cd test
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
-            git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5
 
             python3.10 -m venv .venv-host
             source .venv-host/bin/activate
@@ -406,13 +405,8 @@ jobs:
             cd zope.interface
             pyodide build
             pip install dist/*.whl
-            cd ../coveragepy/
-            pyodide build
-            pip install dist/*.whl
             cd ../attrs
-            pyodide build
-            WHEEL_NAME=$(echo dist/*.whl)
-            pip install $WHEEL_NAME[tests]
+            pip install .[tests]
             python -m pytest -k 'not mypy'
 
   benchmark:
