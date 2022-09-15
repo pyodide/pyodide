@@ -15,7 +15,7 @@ substitutions:
 ## Unreleased
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
-  is for testing out of tree builds. For more information, see 
+  is for testing out of tree builds. For more information, see
   [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
   {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`, {pr}`3109`.
 
