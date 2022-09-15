@@ -14,6 +14,8 @@ substitutions:
 
 ## Unreleased
 
+- New packages: arm_pyart {pr}`3012`, netcdf4 {pr}`3012`
+
 - {{ Enhancement }} Emscripten was updated to Version 3.1.20
   {pr}`2958`, {pr}`2950`, {pr}`3027`
 

@@ -1,0 +1,20 @@
+package:
+  name: netcdf4
+  version: 1.6.0
+source:
+  url: https://files.pythonhosted.org/packages/f9/94/f23af3c2c7b6e1250898ca9e3408821702889d35f5cfb05f427354df728f/netCDF4-1.6.0.tar.gz
+  sha256: 95efa373d9a3e1cd0df7193e76e6680d9eca28e60097ca8139afea8a4346ba63
+requirements:
+  run:
+    - numpy
+    - packaging
+    - h5py
+    - cftime
+test:
+  imports:
+    - netCDF4
+about:
+  home: https://github.com/ARM-DOE/pyart
+  PyPI: https://pypi.org/project/arm-pyart/
+  summary: A python based toolkit to work with weather radar data
+  license: BSD
