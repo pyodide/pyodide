@@ -41,7 +41,7 @@ You'll also need to serve `data.json`, a JSON file containing a simple object - 
 HTML:
 
 ```html
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <script>
@@ -58,7 +58,7 @@ HTML:
           try {
             const registration = await navigator.serviceWorker.register(
               SERVICE_WORKER_PATH,
-              REGISTRATION_OPTIONS
+              REGISTRATION_OPTIONS,
             );
             if (registration.installing) {
               console.log("Service worker installing");
@@ -117,7 +117,7 @@ loadPyodide({}).then((_pyodide) => {
         counter += 1
         return dict
     `,
-    { globals: namespace }
+    { globals: namespace },
   );
 
   // assign the modify_data function from the Python context to our Javascript variable
@@ -133,7 +133,7 @@ self.addEventListener("fetch", (event) => {
       // If your service worker would return the same response as a server (eg. it's just performing calculations closer to home)
       // then you may want to let the event through without doing anything
       event.respondWith(
-        Promise.reject("Python code isn't set up yet, try again in a bit")
+        Promise.reject("Python code isn't set up yet, try again in a bit"),
       );
     } else {
       event.respondWith(
@@ -151,14 +151,14 @@ self.addEventListener("fetch", (event) => {
               Object.fromEntries(
                 proxy.toJs({
                   pyproxies,
-                })
-              )
+                }),
+              ),
             );
             // Craft our new JSON response
             return new Response(result, {
               headers: { "Content-Type": "application/json" },
             });
-          })
+          }),
       );
     }
   }
@@ -208,7 +208,7 @@ You'll also need to serve `data.json`, a JSON file containing a simple object - 
 HTML:
 
 ```html
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <script>
@@ -227,7 +227,7 @@ HTML:
           try {
             const registration = await navigator.serviceWorker.register(
               SERVICE_WORKER_PATH,
-              REGISTRATION_OPTIONS
+              REGISTRATION_OPTIONS,
             );
             if (registration.installing) {
               console.log("Service worker installing");
@@ -288,7 +288,7 @@ loadPyodide({}).then((_pyodide) => {
         counter += 1
         return dict
     `,
-    { globals: namespace }
+    { globals: namespace },
   );
 
   // assign the modify_data function from the Python context to our Javascript variable
@@ -304,7 +304,7 @@ self.addEventListener("fetch", (event) => {
       // If your service worker would return the same response as a server (eg. it's just performing calculations closer to home)
       // then you may want to let the event through without doing anything
       event.respondWith(
-        Promise.reject("Python code isn't set up yet, try again in a bit")
+        Promise.reject("Python code isn't set up yet, try again in a bit"),
       );
     } else {
       event.respondWith(
@@ -322,14 +322,14 @@ self.addEventListener("fetch", (event) => {
               Object.fromEntries(
                 proxy.toJs({
                   pyproxies,
-                })
-              )
+                }),
+              ),
             );
             // Craft our new JSON response
             return new Response(result, {
               headers: { "Content-Type": "application/json" },
             });
-          })
+          }),
       );
     }
   }
