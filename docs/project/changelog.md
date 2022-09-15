@@ -56,6 +56,10 @@ substitutions:
   called `__dirname` we use that for the `indexURL`.
   {pr}`3088`
 
+- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
+  unexpected is passed as the second argument.
+  {pr}`3101`
+
 ## Version 0.22.2
 
 _August 29, 2022_
