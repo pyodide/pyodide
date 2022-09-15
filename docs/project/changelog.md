@@ -12,6 +12,11 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
+  {issue}`3001`
+
 ## Version 0.22.2
 
 _August 29, 2022_
