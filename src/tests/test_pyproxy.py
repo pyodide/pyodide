@@ -935,3 +935,38 @@ def test_coroutine_scheduling(selenium):
         f.destroy();
         """
     )
+
+
+def test_pyproxy_apply(selenium):
+    # Try to match behavior of real .apply
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+        `);
+        let fpy = pyodide.globals.get("f");
+        let fjs = function(...args){ return args; };
+        let examples = [
+            undefined,
+            null,
+            {},
+            {0:1, 1:7, 2: -3},
+            { *[Symbol.iterator](){yield 3; yield 5; yield 7;} },
+            {0:1, 1:7, 2: -3, length: 2},
+            [1,7,9,5],
+            function(a,b,c){},
+        ];
+        for(let input of examples){
+            assert(() => JSON.stringify(fpy.apply(undefined, input)) === JSON.stringify(fjs.apply(undefined, input)));
+        }
+
+        for(let error_input of [1, "abc", 1n, Symbol.iterator, true]) {
+            assertThrows(() => fjs.apply(undefined, error_input), "TypeError", "");
+            assertThrows(() => fpy.apply(undefined, error_input), "TypeError", "");
+        }
+
+        fpy.destroy();
+        """
+    )

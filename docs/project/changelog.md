@@ -71,6 +71,10 @@ substitutions:
   JavaScript and Python Pyodide package does not match.
   {pr}`3074`
 
+- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
+  unexpected is passed as the second argument.
+  {pr}`3101`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
