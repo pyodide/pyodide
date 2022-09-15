@@ -73,9 +73,17 @@ officially supported.
 ## Web Workers
 
 By default, WebAssembly runs in the main browser thread, and it can make UI
-non-responsive for long-running computations.
+non-responsive for long-running computations. 
 
-To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
+To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`. 
+
+## Service Workers
+
+It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_worker>`. Service workers have some unique capabilities, one of them being running code in response to `fetch` calls on a webpage. 
+
+If you're not sure whether you need web workers or service workers, here's an [overview + comparison of the two][workers overview]. 
+
+[workers overview]: https://web.dev/workers-overview/
 
 ## Node.js
 
@@ -167,4 +175,5 @@ Python says that 1+1= 2
    webworker.md
    loading-custom-python-code.md
    file-system.md
+   service-worker.md
 ```
