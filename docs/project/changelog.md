@@ -23,6 +23,10 @@ _September 15, 2022_
   their dependencies.
   {pr}`3020`
 
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load
+  `beautifulsoup4` together.
+  {pr}`3020`
+
 - {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
   {pr}`3036`
 
@@ -341,6 +345,8 @@ Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
 Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
+
+_April 9, 2022_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
 
