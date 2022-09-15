@@ -131,19 +131,23 @@ type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
 Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets
-  // the prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
   let target;
   if (flags & IS_CALLABLE) {
-    // To make a callable proxy, we must call the Function constructor.
-    // In this case we are effectively subclassing Function.
-    target = Reflect.construct(Function, [], cls);
+    // In this case we are effectively subclassing Function in order to ensure
+    // that the proxy is callable. With a Content Security Protocol that doesn't
+    // allow unsafe-eval, we can't invoke the Function constructor directly. So
+    // instead we create a function in the universally allowed way and then use
+    // `setPrototypeOf`. The documentation for `setPrototypeOf` says to use
+    // `Object.create` or `Reflect.construct` instead for performance reasons
+    // but neither of those work here.
+    target = function () {};
+    Object.setPrototypeOf(target, cls.prototype);
     // Remove undesirable properties added by Function constructor. Note: we
     // can't remove "arguments" or "caller" because they are not configurable
     // and not writable
+    // @ts-ignore
     delete target.length;
+    // @ts-ignore
     delete target.name;
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
@@ -287,10 +291,13 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in JavaScript functions.
 
-Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
+Module.callPyObjectKwargs = function (
+  ptrobj: number,
+  jsargs: any,
+  kwargs: any
+) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
-  let kwargs = jsargs.pop();
   let num_pos_args = jsargs.length;
   let kwargs_names = Object.keys(kwargs);
   let kwargs_values = Object.values(kwargs);
@@ -325,8 +332,8 @@ Module.callPyObjectKwargs = function (ptrobj: number, ...jsargs: any) {
   return result;
 };
 
-Module.callPyObject = function (ptrobj: number, ...jsargs: any) {
-  return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
+Module.callPyObject = function (ptrobj: number, jsargs: any) {
+  return Module.callPyObjectKwargs(ptrobj, jsargs, {});
 };
 
 export type PyProxy = PyProxyClass & { [x: string]: any };
@@ -1116,10 +1123,15 @@ export type PyProxyCallable = PyProxy &
 
 export class PyProxyCallableMethods {
   apply(jsthis: PyProxyClass, jsargs: any) {
-    return Module.callPyObject(_getPtr(this), ...jsargs);
+    // Convert jsargs to an array using ordinary .apply in order to match the
+    // behavior of .apply very accurately.
+    jsargs = function (...args: any) {
+      return args;
+    }.apply(undefined, jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
   }
   call(jsthis: PyProxyClass, ...jsargs: any) {
-    return Module.callPyObject(_getPtr(this), ...jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
    * Call the function with key word arguments.
@@ -1131,14 +1143,14 @@ export class PyProxyCallableMethods {
         "callKwargs requires at least one argument (the key word argument object)"
       );
     }
-    let kwargs = jsargs[jsargs.length - 1];
+    let kwargs = jsargs.pop();
     if (
       kwargs.constructor !== undefined &&
       kwargs.constructor.name !== "Object"
     ) {
       throw new TypeError("kwargs argument is not an object");
     }
-    return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
+    return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
   /**

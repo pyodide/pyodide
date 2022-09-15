@@ -124,7 +124,7 @@ class Package(BasePackage):
         self.library = self.meta["build"].get("library", False)
         self.shared_library = self.meta["build"].get("sharedlibrary", False)
 
-        assert self.name == pkgdir.stem
+        assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"
 
         self.dependencies = self.meta["requirements"].get("run", [])
         self.unbuilt_dependencies = set(self.dependencies)
@@ -548,11 +548,6 @@ def generate_packagedata(
                 ),
             }
             packages[name.lower() + "-tests"] = pkg_entry
-
-    # Workaround for circular dependency between soupsieve and beautifulsoup4
-    # TODO: FIXME!!
-    if "soupsieve" in packages:
-        packages["soupsieve"]["depends"].append("beautifulsoup4")
 
     # sort packages by name
     packages = dict(sorted(packages.items()))

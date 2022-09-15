@@ -12,6 +12,54 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
+  {issue}`3001`
+
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies.
+  {pr}`3020`
+
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
+
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
+
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+  {pr}`3088`
+
+- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
+  unexpected is passed as the second argument.
+  {pr}`3101`
+
 ## Version 0.22.2
 
 _August 29, 2022_
@@ -30,8 +78,9 @@ _August 29, 2022_
 - {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
   {pr}`3014`
 
-- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the calculated index URL
-  now works even if `node` is run with `--enable-source-maps`.
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the
+  calculated index URL now works even if `node` is run with
+  `--enable-source-maps`.
   {pr}`3015`
 
 ## Version 0.21.1

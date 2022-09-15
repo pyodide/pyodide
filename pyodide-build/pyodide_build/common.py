@@ -163,10 +163,6 @@ def _parse_package_subset(query: str | None) -> set[str]:
         packages |= CORE_PACKAGES | CORE_SCIPY_PACKAGES
         packages.discard("min-scipy-stack")
 
-    # Hack to deal with the circular dependence between soupsieve and
-    # beautifulsoup4
-    if "beautifulsoup4" in packages:
-        packages.add("soupsieve")
     packages.discard("")
     return packages
 
