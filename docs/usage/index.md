@@ -77,14 +77,9 @@ non-responsive for long-running computations.
 
 To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
 
-## Service Workers
+It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_worker>`. 
 
-It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_worker>`. Service workers have some unique capabilities, one of them being running code in response to `fetch` calls on a webpage.
-
-If you're not sure whether you need web workers or service workers, here's an [overview + comparison of the two][workers overview].
-
-[workers overview]: https://web.dev/workers-overview/
-
+If you're not sure whether you need web workers or service workers, here's an [overview and comparison of the two](https://web.dev/workers-overview/).
 ## Node.js
 
 ```{note}
