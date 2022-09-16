@@ -7,10 +7,14 @@
 # - disable the usage of response file for object and libraries                               #
 # - allow to overwrite CMAKE_PROJECT_INCLUDE, CMAKE_PROJECT_INCLUDE_BEFORE with env variable  #
 # - append SIDE_MODULE_CFLAGS and SIDE_MODULE_LDFLAGS automatically                           #
+# - don't set CMAKE_SYSTEM_NAME to Emscripten                                                 #
 ###############################################################################################
 
-set(CMAKE_SYSTEM_NAME Emscripten)
-set(CMAKE_SYSTEM_VERSION 1)
+# TODO: Not sure why but setting CMAKE_SYSTEM_NAME to Emscripten makes
+#       properties set in toolchain file not persistent to CMakeLists.txt
+#       (Possibly related: https://stackoverflow.com/questions/40529970/is-there-are-rule-in-cmake-that-causes-properties-set-in-toolchain-file-to-not-p)
+# set(CMAKE_SYSTEM_NAME Emscripten)
+# set(CMAKE_SYSTEM_VERSION 1)
 
 set(CMAKE_CROSSCOMPILING TRUE)
 
