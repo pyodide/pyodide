@@ -64,7 +64,7 @@ if (NOT _emconfig_result EQUAL 0)
 endif()
 
 file(TO_CMAKE_PATH "${_emconfig_output}" _emcache_output)
-set(EMSCRIPTEN_ROOT_PATH "${_emconfig_output} CACHE FILEPATH "Path to Emscripten Root")
+set(EMSCRIPTEN_ROOT_PATH "${_emconfig_output}" CACHE FILEPATH "Path to Emscripten Root")
 
 list(APPEND CMAKE_MODULE_PATH "${EMSCRIPTEN_ROOT_PATH}/cmake/Modules")
 
