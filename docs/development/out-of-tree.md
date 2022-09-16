@@ -43,8 +43,9 @@ If you run into problems, please open an issue about it.
 ## Testing packages against Pyodide
 
 Pyodide provides an experimental command line runner for testing packages
-against Pyodide. The way it works is simple: you can create a virtual
-environment with:
+against Pyodide. Using it requires nodejs version 14 or newer.
+
+The way it works is simple: you can create a virtual environment with:
 
 ```sh
 pyodide venv .venv-pyodide
