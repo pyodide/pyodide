@@ -55,7 +55,7 @@ export function initializeNativeFS(module: Module) {
         if (FS.isDir(stat.mode)) {
           check.push.apply(
             check,
-            FS.readdir(path).filter(isRealDir).map(toAbsolute(path))
+            FS.readdir(path).filter(isRealDir).map(toAbsolute(path)),
           );
         }
 
@@ -203,7 +203,7 @@ export function initializeNativeFS(module: Module) {
 
       for (const path of create) {
         const relPath = PATH.normalize(
-          path.replace(mount.mountpoint, "/")
+          path.replace(mount.mountpoint, "/"),
         ).substring(1);
         if (dst.type === "local") {
           const handle = handles.get(relPath);
@@ -220,7 +220,7 @@ export function initializeNativeFS(module: Module) {
           nativeFSAsync.removeLocalEntry(path);
         } else {
           const relPath = PATH.normalize(
-            path.replace(mount.mountpoint, "/")
+            path.replace(mount.mountpoint, "/"),
           ).substring(1);
           await nativeFSAsync.removeRemoteEntry(handles, relPath);
         }
