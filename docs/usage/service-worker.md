@@ -2,31 +2,44 @@
 
 # Using Pyodide in a service worker
 
-This document describes how to use Pyodide to execute Python scripts in a service worker. Compared to typical web workers, service workers are more related to acting as a network proxy, handling background tasks, and things like caching and offline. See [this article](https://web.dev/workers-overview/#use-cases) for more info.
+This document describes how to use Pyodide to execute Python scripts in a
+service worker. Compared to typical web workers, service workers are more
+related to acting as a network proxy, handling background tasks, and things like
+caching and offline. See [this
+article](https://web.dev/workers-overview/#use-cases) for more info.
 
 ## Detailed example
 
-For our example, we'll be talking about how we can use a service worker to intercept a fetch call for some data and modify the data. We will have two parties involved:
+For our example, we'll be talking about how we can use a service worker to
+intercept a fetch call for some data and modify the data. We will have two
+parties involved:
 
-- The **service worker** which will be intercepting fetch calls for JSON, and modifying the data before returning it
+- The **service worker** which will be intercepting fetch calls for JSON, and
+  modifying the data before returning it
 - The **consumer** which will be fetching some JSON data
 
-To keep things simple, all we'll do is add a field to a fetched JSON object, but an example of a more interesting use case is transforming fetched tabular data using numpy, and caching the result before returning it.
+To keep things simple, all we'll do is add a field to a fetched JSON object, but
+an example of a more interesting use case is transforming fetched tabular data
+using numpy, and caching the result before returning it.
 
-Please note that service workers will only work on https and localhost, so you will require a server to be running for this example.
+Please note that service workers will only work on https and localhost, so you
+will require a server to be running for this example.
 
 ### Setup
 
-Setup your project to serve the service worker script `sw.js`, and the XMLHttpRequest polyfill script `xml-http-request.js`. You should also serve `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
+Setup your project to serve the service worker script `sw.js`, and the
+XMLHttpRequest polyfill script `xml-http-request.js`. You should also serve
+`pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
 files as well, though this is not strictly required if `pyodide.js` is pointing
-to a site serving current versions of these files.
-The simplest way to serve the required files is to use a CDN,
-such as `https://cdn.jsdelivr.net/pyodide`.
+to a site serving current versions of these files. The simplest way to serve the
+required files is to use a CDN, such as `https://cdn.jsdelivr.net/pyodide`.
 
 Update the `sw.js` sample so that it has a valid URL for `pyodide.js`, and sets
-{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
+{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting
+files.
 
-You'll also need to serve `data.json`, a JSON file containing a simple object - a sample is provided below:
+You'll also need to serve `data.json`, a JSON file containing a simple object -
+a sample is provided below:
 
 ```json
 {
@@ -36,7 +49,9 @@ You'll also need to serve `data.json`, a JSON file containing a simple object - 
 
 ### Consumer
 
-In our consumer, we want to register our service worker - in the html below, we're registering a classic-type service worker. For convenience, we also provide a button that fetches data and logs it.
+In our consumer, we want to register our service worker - in the html below,
+we're registering a classic-type service worker. For convenience, we also
+provide a button that fetches data and logs it.
 
 ```html
 <!doctype html>
@@ -94,11 +109,20 @@ In our consumer, we want to register our service worker - in the html below, we'
 
 To set up Pyodide in a service worker, you'll need to do the following:
 
-1. Polyfill `XMLHttpRequest` because it isn't available in service workers' global scopes.
+1. Polyfill `XMLHttpRequest` because it isn't available in service workers'
+   global scopes.
 2. Import Pyodide
-3. We don't need it for this example, but if you're planning on calling `loadPyodide` after [installation](https://web.dev/service-worker-lifecycle/) of the service worker, import `pyodide.asm.js` too.
+3. We don't need it for this example, but if you're planning on calling
+   `loadPyodide` after [installation](https://web.dev/service-worker-lifecycle/)
+   of the service worker, import `pyodide.asm.js` too.
 
-After all the required scripts are imported, we call `loadPyodide` to set up Pyodide, then create a Python function called `modify_data`. This function add a `count` property to an object, where `count` is equal to the number of times `modify_data` is called. We will access this function via a handle assigned to the Javascript variable `modifyData`. We also set up a fetch event handler that intercepts requests for json files so that any JSON object that is fetched is modified using `modifyData`.
+After all the required scripts are imported, we call `loadPyodide` to set up
+Pyodide, then create a Python function called `modify_data`. This function add a
+`count` property to an object, where `count` is equal to the number of times
+`modify_data` is called. We will access this function via a handle assigned to
+the Javascript variable `modifyData`. We also set up a fetch event handler that
+intercepts requests for json files so that any JSON object that is fetched is
+modified using `modifyData`.
 
 ```js
 /* sw.js */
@@ -190,7 +214,8 @@ self.addEventListener("activate", function (event) {
 
 ### XMLHttpRequest polyfill
 
-This script should be imported into your service worker, to assign `XMLHttpRequest` in the service worker's global scope.
+This script should be imported into your service worker, to assign
+`XMLHttpRequest` in the service worker's global scope.
 
 ```js
 /* xml-http-request.js */
@@ -367,15 +392,23 @@ self.XMLHttpRequest = XMLHttpRequestShim;
 
 ## Using module-type service workers
 
-While classic-type service workers have better cross-browser compatibility at the moment, module-type service workers make it easier to include external libraries in your service workers via ES module imports. There are environments where we can safely assume ES module support in service workers, such as Chromium-based browser extensions' background scripts. With the adjustments outlined below, you should be able to use our example with a module-type service worker.
+While classic-type service workers have better cross-browser compatibility at
+the moment, module-type service workers make it easier to include external
+libraries in your service workers via ES module imports. There are environments
+where we can safely assume ES module support in service workers, such as
+Chromium-based browser extensions' background scripts. With the adjustments
+outlined below, you should be able to use our example with a module-type service
+worker.
 
 ### Setup
 
-Serve `pyodide.mjs` instead of `pyodide.js`, the rest of the setup remains the same.
+Serve `pyodide.mjs` instead of `pyodide.js`, the rest of the setup remains the
+same.
 
 ### Consumers
 
-We need to use different registration options on the consumer side. Replace this section of the script:
+We need to use different registration options on the consumer side. Replace this
+section of the script:
 
 ```js
 /* IF USING MODULE-TYPE SERVICE WORKER, REPLACE THESE OPTIONS */
@@ -396,7 +429,8 @@ const REGISTRATION_OPTIONS = {
 
 ### Service worker
 
-On the service worker side, we need to change the way we import scripts. Replace the importScripts calls shown below:
+On the service worker side, we need to change the way we import scripts. Replace
+the importScripts calls shown below:
 
 ```js
 /* sw.js */
