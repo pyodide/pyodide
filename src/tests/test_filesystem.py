@@ -107,7 +107,9 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.run_js(f"""pyodide.FS.unlink("{mount_dir}/test_idbfs/__init__.py")""")
 
 
-@pytest.mark.xfail_browsers(node="Not available", firefox="Not available")
+@pytest.mark.xfail_browsers(
+    node="Not available", firefox="Not available", safari="Not available"
+)
 def test_nativefs_dir(request, selenium_standalone):
 
     if request.config.option.runner == "playwright":
