@@ -1,0 +1,102 @@
+From c1dc751721018fc473b103e2287cf14ff93b7cbd Mon Sep 17 00:00:00 2001
+From: Yizhi Liu <liuyizhi@apache.org>
+Date: Fri, 16 Sep 2022 12:00:40 -0700
+Subject: [PATCH] RowFunctionFromDenseMatricCB
+
+---
+ compile/src/c_api.cpp | 57 ++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 53 insertions(+), 4 deletions(-)
+
+diff --git a/compile/src/c_api.cpp b/compile/src/c_api.cpp
+index bc3bfc3..1a4ec03 100644
+--- a/compile/src/c_api.cpp
++++ b/compile/src/c_api.cpp
+@@ -853,6 +853,55 @@ using LightGBM::ReduceScatterFunction;
+ 
+ // some help functions used to convert data
+ 
++class RowFunctionFromDenseMatricCB {
++  public:
++   RowFunctionFromDenseMatricCB(const void* data, int num_row, int num_col, int data_type, int is_row_major)
++    : data_(data), num_row_(num_row), num_col_(num_col), data_type_(data_type), is_row_major_(is_row_major) {}
++   std::vector<double> invoke(int row_idx) {
++     if (is_row_major_) {
++       std::vector<double> ret(num_col_);
++       if (data_type_ == C_API_DTYPE_FLOAT32) {
++         const float* data_ptr = reinterpret_cast<const float*>(data_);
++         auto tmp_ptr = data_ptr + static_cast<size_t>(num_col_) * row_idx;
++         for (int i = 0; i < num_col_; ++i) {
++           ret[i] = static_cast<double>(*(tmp_ptr + i));
++         }
++       } else if (data_type_ == C_API_DTYPE_FLOAT64) {
++         const double* data_ptr = reinterpret_cast<const double*>(data_);
++         auto tmp_ptr = data_ptr + static_cast<size_t>(num_col_) * row_idx;
++         for (int i = 0; i < num_col_; ++i) {
++           ret[i] = static_cast<double>(*(tmp_ptr + i));
++         }
++       } else {
++         Log::Fatal("Unknown data type in RowFunctionFromDenseMatric");
++       }
++       return ret;
++     } else {
++       std::vector<double> ret(num_col_);
++       if (data_type_ == C_API_DTYPE_FLOAT32) {
++         const float* data_ptr = reinterpret_cast<const float*>(data_);
++         for (int i = 0; i < num_col_; ++i) {
++           ret[i] = static_cast<double>(*(data_ptr + static_cast<size_t>(num_row_) * i + row_idx));
++         }
++       } else if (data_type_ == C_API_DTYPE_FLOAT64) {
++         const double* data_ptr = reinterpret_cast<const double*>(data_);
++         for (int i = 0; i < num_col_; ++i) {
++           ret[i] = static_cast<double>(*(data_ptr + static_cast<size_t>(num_row_) * i + row_idx));
++         }
++       } else {
++         Log::Fatal("Unknown data type in RowFunctionFromDenseMatric");
++       }
++       return ret;
++     }
++   }
++  private:
++   const void* data_;
++   int num_row_;
++   int num_col_;
++   int is_row_major_;
++   int data_type_;
++ };
++
+ std::function<std::vector<double>(int row_idx)>
+ RowFunctionFromDenseMatric(const void* data, int num_row, int num_col, int data_type, int is_row_major);
+ 
+@@ -1105,9 +1154,9 @@ int LGBM_DatasetCreateFromMats(int32_t nmat,
+     total_nrow += nrow[j];
+   }
+ 
+-  std::vector<std::function<std::vector<double>(int row_idx)>> get_row_fun;
++  std::vector<RowFunctionFromDenseMatricCB> get_row_fun;
+   for (int j = 0; j < nmat; ++j) {
+-    get_row_fun.push_back(RowFunctionFromDenseMatric(data[j], nrow[j], ncol, data_type, is_row_major));
++    get_row_fun.push_back(RowFunctionFromDenseMatricCB(data[j], nrow[j], ncol, data_type, is_row_major));
+   }
+ 
+   if (reference == nullptr) {
+@@ -1126,7 +1175,7 @@ int LGBM_DatasetCreateFromMats(int32_t nmat,
+         ++j;
+       }
+ 
+-      auto row = get_row_fun[j](static_cast<int>(idx - offset));
++      auto row = get_row_fun[j].invoke(static_cast<int>(idx - offset));
+       for (size_t k = 0; k < row.size(); ++k) {
+         if (std::fabs(row[k]) > kZeroThreshold || std::isnan(row[k])) {
+           sample_values[k].emplace_back(row[k]);
+@@ -1155,7 +1204,7 @@ int LGBM_DatasetCreateFromMats(int32_t nmat,
+     for (int i = 0; i < nrow[j]; ++i) {
+       OMP_LOOP_EX_BEGIN();
+       const int tid = omp_get_thread_num();
+-      auto one_row = get_row_fun[j](i);
++      auto one_row = get_row_fun[j].invoke(i);
+       ret->PushOneRow(tid, start_row + i, one_row);
+       OMP_LOOP_EX_END();
+     }
+-- 
+2.24.3 (Apple Git-128)
+
