@@ -6,6 +6,7 @@
 # - set CMAKE_INSTALL_PREFIX to WASM_LIBRARY_DIR                                              #
 # - disable the usage of response file for object and libraries                               #
 # - allow to overwrite CMAKE_PROJECT_INCLUDE, CMAKE_PROJECT_INCLUDE_BEFORE with env variable  #
+# - append SIDE_MODULE_CFLAGS and SIDE_MODULE_LDFLAGS automatically                           #
 ###############################################################################################
 
 set(CMAKE_SYSTEM_NAME Emscripten)
@@ -323,6 +324,10 @@ set(CMAKE_HAVE_PTHREAD_H 1)
 set(CMAKE_HAVE_SYS_PRCTL_H 1)
 set(CMAKE_WORDS_BIGENDIAN 0)
 set(CMAKE_DL_LIBS)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{SIDE_MODULE_CFLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{SIDE_MODULE_CXXFLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} $ENV{SIDE_MODULE_LDFLAGS}")
 
 if (NOT DEFINED CMAKE_CROSSCOMPILING_EMULATOR)
   find_program(NODE_JS_EXECUTABLE NAMES nodejs node)
