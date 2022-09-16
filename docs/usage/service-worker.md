@@ -96,7 +96,7 @@ To set up Pyodide in a service worker, you'll need to do the following:
 
 1. Polyfill `XMLHttpRequest` because it isn't available in service workers' global scopes.
 2. Import Pyodide
-3. If you're planning on calling `loadPyodide` after [installation](https://web.dev/service-worker-lifecycle/) of the service worker, import `pyodide.asm.js` too.
+3. We don't need it for this example, but if you're planning on calling `loadPyodide` after [installation](https://web.dev/service-worker-lifecycle/) of the service worker, import `pyodide.asm.js` too.
 
 After all the required scripts are imported, we call `loadPyodide` to set up Pyodide, then create a Python function called `modify_data`. This function add a `count` property to an object, where `count` is equal to the number of times `modify_data` is called. We will access this function via a handle assigned to the Javascript variable `modifyData`. We also set up a fetch event handler that intercepts requests for json files so that any JSON object that is fetched is modified using `modifyData`.
 
@@ -412,6 +412,6 @@ With the following imports:
 /* sw.js */
 /* MODIFY IMPORT PATHS TO POINT TO YOUR SCRIPTS */
 import "./xml-http-request.js";
-import "./pyodide.asm.js"; // This is compulsory in a module-type service worker, which cannot use importScripts
+import "./pyodide.asm.js"; // IMPORTANT: This is compulsory in a module-type service worker, which cannot use importScripts
 import { loadPyodide } from "./pyodide.mjs"; // Note the .mjs extension
 ```
