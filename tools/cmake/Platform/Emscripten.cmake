@@ -5,6 +5,7 @@
 # - set TARGET_SUPPORTS_SHARED_LIBS to TRUE                                                   #
 # - set CMAKE_INSTALL_PREFIX to WASM_LIBRARY_DIR                                              #
 # - disable the usage of response file for object and libraries                               #
+# - allow to overwrite CMAKE_PROJECT_INCLUDE, CMAKE_PROJECT_INCLUDE_BEFORE with env variable  #
 ###############################################################################################
 
 set(CMAKE_SYSTEM_NAME Emscripten)
@@ -252,6 +253,17 @@ if (NOT CMAKE_FIND_ROOT_PATH_MODE_INCLUDE)
 endif()
 if (NOT CMAKE_FIND_ROOT_PATH_MODE_PACKAGE)
   set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+endif()
+
+# Allow some of the variables to be overridden by the user by env variable
+if ("${CMAKE_PROJECT_INCLUDE_BEFORE}" STREQUAL "" AND DEFINED ENV{CMAKE_PROJECT_INCLUDE_BEFORE})
+  message(STATUS "Set CMAKE_PROJECT_INCLUDE_BEFORE to $ENV{CMAKE_PROJECT_INCLUDE_BEFORE} using env variable")
+  set(CMAKE_PROJECT_INCLUDE_BEFORE "$ENV{CMAKE_PROJECT_INCLUDE_BEFORE}")
+endif()
+
+if ("${CMAKE_PROJECT_INCLUDE}" STREQUAL ""  AND DEFINED ENV{CMAKE_PROJECT_INCLUDE})
+  message(STATUS "Set CMAKE_PROJECT_INCLUDE to $ENV{CMAKE_PROJECT_INCLUDE} using env variable")
+  set(CMAKE_PROJECT_INCLUDE "$ENV{CMAKE_PROJECT_INCLUDE}")
 endif()
 
 set(_em_pkgconfig_libdir "${EMSCRIPTEN_SYSROOT}/local/lib/pkgconfig" "${EMSCRIPTEN_SYSROOT}/lib/pkgconfig")
