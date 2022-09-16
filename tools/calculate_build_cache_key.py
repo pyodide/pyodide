@@ -27,8 +27,10 @@ def main():
     targets: list[Path] = [
         root / "Makefile",
         root / "Makefile.envs",
-        root / "pyodide-build",
-        root / "packages",
+        root / "packages" / "Makefile",
+        root / "pyodide-build" / "setup.cfg",
+        root / "pyodide-build" / "pyodide_build" / "__init__.py",
+        root / "tools",
     ]
 
     ignore_pattern = get_ignore_pattern(root)
