@@ -19,6 +19,7 @@ build:
         --disable-scripts \
         --disable-doc \
         --enable-shared=no \
+        --disable-dependency-tracking \
         --prefix=${WASM_LIBRARY_DIR}
 
     emmake make -j ${PYODIDE_JOBS:-3}

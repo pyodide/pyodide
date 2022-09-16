@@ -314,7 +314,7 @@ functools.reduce = reduce(...)
 You are now leaving help and returning to the Python interpreter.
 ```
 
-## Micropip can't find a pure Python wheel
+## Why can't Micropip find a "pure Python wheel" for a package?
 
 When installing a Python package from PyPI, micropip will produce an error if
 it cannot find a pure Python wheel. To determine if a package has a pure
@@ -379,3 +379,33 @@ Then `myRunPython("2+7")` returns `[None, 9]` and
 If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
 monkey patch {any}`pyodide.code.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
+
+## Why can't I import a file I just wrote to the file system?
+
+For example:
+
+```py
+from pathlib import Path
+Path("mymodule.py").write_text("""\
+def hello():
+  print("hello world!")
+"""
+)
+from mymodule import hello # may raise "ModuleNotFoundError: No module named 'mymodule'"
+hello()
+```
+
+If you see this error, call `importlib.invalidate_caches()` before importing the module:
+
+```py
+import importlib
+from pathlib import Path
+Path("mymodule.py").write_text("""\
+def hello():
+  print("hello world!")
+"""
+)
+importlib.invalidate_caches() # Make sure Python notices the new .py file
+from mymodule import hello
+hello()
+```

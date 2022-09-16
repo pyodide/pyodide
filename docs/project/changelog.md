@@ -14,10 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.18
-  {pr}`2958`, {pr}`2950`
-
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.21
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -28,14 +26,60 @@ substitutions:
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+  {pr}`2999`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
+
+- {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
+  be passed as command line arguments to the Python interpreter at start up.
+  {pr}`3021`
+
+- {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
+
+### Build System / Package Loading
+
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
   {any}`pyodide.loadPackage` or {any}`micropip.install`.
   {pr}`2946`
 
-- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
-  rather than `pyodide-build-{version}.tar.gz`
-  {pr}`2996`
+- {{ Breaking }} The Pyodide Python package is installed into `/lib/python3.10`
+  rather than `/lib/python3.10/site-packages`.
+  {pr}`3022`
+
+- {{ Update }} Upgraded SciPy to version 1.9.1.
+  {pr}`3043`
+
+- {{ Breaking }} The matplotlib HTML5 backends are now available as part of the
+  [`matplotlib-pyodide`](https://github.com/pyodide/matplotlib-pyodide)
+  package. If you use the default backend from Pyodide, no changes are
+  necessary. However, if you previously specified the backend with
+  `matplotlib.use`, the URL is now different. See [package
+  readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
+  {pr}`3061`
+
+- {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
+  specification is now done more rigourously with Pydantic
+  {pr}`3079`
+
+- {{ Breaking }} `source/md5` checksum field is not longer supported in
+  `meta.yaml` files, use `source/sha256` instead
+  {pr}`3079`
+
+- {{ Breaking }} `pyodide_build.io.parse_package_config` function is removed in favor of
+  `pyodide_build.MetaConfig.from_yaml`
+  {pr}`3079`
 
 ### Build System
 
@@ -43,7 +87,91 @@ substitutions:
   host dependencies that are required for building packages.
   {pr}`2132`
 
+- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to
+  calculate top-level import names for the package. Previously `test/imports`
+  key was used for this purpose.
+  {pr}`3006`
+
+## Version 0.21.3
+
+_September 15, 2022_
+
+- {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
+  {issue}`3001`
+
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies.
+  {pr}`3020`
+
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load
+  `beautifulsoup4` together.
+  {pr}`3020`
+
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
+
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
+
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+  {pr}`3088`
+
+- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
+  unexpected is passed as the second argument.
+  {pr}`3101`
+
+## Version 0.21.2
+
+_August 29, 2022_
+
+- {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
+  with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
+  they had a leading underscore and it was only possible to load them with
+  `pyodide.loadPackage`).
+  {issue}`3003`
+
+- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
+  be resolved relative to `document.location` (in browser) or relative to the
+  current working directory (in Node) rather than relative to `indexURL`.
+  {pr}`3013`, {issue}`3011`
+
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the
+  calculated index URL now works even if `node` is run with
+  `--enable-source-maps`.
+  {pr}`3015`
+
 ## Version 0.21.1
+
+_August 22, 2022_
 
 - New packages: the standard library lzma module {pr}`2939`
 
@@ -306,6 +434,8 @@ Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
 Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
+
+_April 9th, 2022_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
 

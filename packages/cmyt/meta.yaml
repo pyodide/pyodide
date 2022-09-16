@@ -1,6 +1,8 @@
 package:
   name: cmyt
   version: 1.0.4
+  top-level:
+    - cmyt
 source:
   url: https://files.pythonhosted.org/packages/2e/b1/270a024f723fda150c1fcd441d0764760593db4115d09a462bce20ed5c13/cmyt-1.0.4-py3-none-any.whl
   sha256: aed700aa071fa216c548e3dbc0090c69d7b0dd6d528345f5f286cb0357f063cf
@@ -10,9 +12,6 @@ requirements:
     - matplotlib
     - more-itertools
     - numpy
-test:
-  imports:
-    - cmyt
 about:
   home: https://github.com/yt-project/yt
   PyPI: https://pypi.org/project/cmyt

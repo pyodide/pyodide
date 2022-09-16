@@ -9,6 +9,10 @@ source:
 build:
   library: true
   script: |
-    CFLAGS="-fPIC" emconfigure ./configure  --prefix=${WASM_LIBRARY_DIR}
+    CFLAGS="-fPIC" emconfigure ./configure \
+      --prefix=${WASM_LIBRARY_DIR} \
+      --disable-dependency-tracking \
+      --disable-shared \
+      --enable-static
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

@@ -1,12 +1,17 @@
 import re
+import shutil
+import subprocess
 from collections.abc import Sequence
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide_build.common import get_pyodide_root
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -735,6 +740,7 @@ def test_restore_state(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
     assert selenium_standalone.run_js(
@@ -767,6 +773,7 @@ def test_fatal_error(selenium_standalone):
         x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
         x = re.sub(".*@debugger.*\n", "", x)
         x = re.sub(".*@chrome.*\n", "", x)
+        x = re.sub("line [0-9]*", "line xxx", x)
         x = x.replace("\n\n", "\n")
         return x
 
@@ -785,8 +792,8 @@ def test_fatal_error(selenium_standalone):
                   File "<exec>", line 6 in g
                   File "<exec>", line 4 in f
                   File "<exec>", line 9 in <module>
-                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
-                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                  File "/lib/pythonxxx/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/pyodide/_base.py", line 344 in eval_code
                 """
             )
         ).strip()
@@ -826,6 +833,7 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not exactly the same on Safari")
 def test_js_stackframes(selenium):
     res = selenium.run_js(
         """
@@ -1118,6 +1126,24 @@ def test_home_directory(selenium_standalone_noload):
     )
 
 
+def test_version_variable(selenium):
+    js_version = selenium.run_js(
+        """
+        return pyodide.version
+        """
+    )
+
+    core_version = selenium.run_js(
+        """
+        return pyodide._api.version
+        """
+    )
+
+    from pyodide import __version__ as py_version
+
+    assert js_version == py_version == core_version
+
+
 def test_sys_path0(selenium):
     selenium.run_js(
         """
@@ -1147,6 +1173,15 @@ def test_fullstdlib(selenium_standalone_noload):
             print(loaded_packages)
             assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
         `);
+        """
+    )
+
+
+def test_loadPyodide_relative_index_url(selenium_standalone_noload):
+    """Check that loading Pyodide with a relative URL works"""
+    selenium_standalone_noload.run_js(
+        """
+        self.pyodide = await loadPyodide({ indexURL: "./" });
         """
     )
 
@@ -1257,3 +1292,136 @@ def test_unvendored_stdlib(selenium_standalone):
             ModuleNotFoundError, match="removed from the Python standard library"
         ):
             finder.find_spec(lib, None)
+
+
+def test_args(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    assert (
+        selenium.run_js(
+            """
+            self.stdoutStrings = [];
+            self.stderrStrings = [];
+            function stdout(s){
+                stdoutStrings.push(s);
+            }
+            function stderr(s){
+                stderrStrings.push(s);
+            }
+            let pyodide = await loadPyodide({
+                fullStdLib: false,
+                jsglobals : self,
+                stdout,
+                stderr,
+                args: ['-c', 'print([x*x+1 for x in range(10)])']
+            });
+            self.pyodide = pyodide;
+            globalThis.pyodide = pyodide;
+            pyodide._module._run_main();
+            return stdoutStrings.pop()
+            """
+        )
+        == repr([x * x + 1 for x in range(10)])
+    )
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_relative_index_url(selenium, tmp_path):
+    tmp_dir = Path(tmp_path)
+    version_result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8"
+    )
+    extra_node_args = []
+    if version_result.stdout.startswith("v14"):
+        extra_node_args.append("--experimental-wasm-bigint")
+
+    shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
+    shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
+
+    result = subprocess.run(
+        [
+            "node",
+            *extra_node_args,
+            "-e",
+            rf"""
+            const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
+            async function main(){{
+                py = await loadPyodide({{indexURL: "./dist"}});
+                console.log("\n");
+                console.log(py._module.API.config.indexURL);
+            }}
+            main();
+            """,
+        ],
+        cwd=ROOT_PATH,
+        capture_output=True,
+        encoding="utf8",
+    )
+    import textwrap
+
+    def print_result(result):
+        if result.stdout:
+            print("  stdout:")
+            print(textwrap.indent(result.stdout, "    "))
+        if result.stderr:
+            print("  stderr:")
+            print(textwrap.indent(result.stderr, "    "))
+
+    if result.returncode:
+        print_result(result)
+        result.check_returncode()
+
+    try:
+        assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
+    finally:
+        print_result(result)
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_index_url_calculation_source_map(selenium):
+    import os
+
+    node_options = ["--enable-source-maps"]
+
+    result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    if result.stdout.startswith("v14"):
+        node_options.append("--experimental-wasm-bigint")
+
+    DIST_DIR = str(Path.cwd() / "dist")
+
+    env = os.environ.copy()
+    env["DIST_DIR"] = DIST_DIR
+    result = subprocess.run(
+        [
+            "node",
+            *node_options,
+            "-e",
+            """
+            const { loadPyodide } = require(`${process.env.DIST_DIR}/pyodide`);
+            async function main() {
+                const py = await loadPyodide();
+                console.log("indexURL:", py._module.API.config.indexURL);
+            }
+            main();
+            """,
+        ],
+        env=env,
+        capture_output=True,
+        encoding="utf8",
+    )
+
+    assert f"indexURL: {DIST_DIR}" in result.stdout
+
+
+@pytest.mark.xfail_browsers(
+    node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
+)
+def test_csp(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    target_path = DIST_PATH / "test_csp.html"
+    try:
+        shutil.copy(get_pyodide_root() / "src/templates/test_csp.html", target_path)
+        selenium.goto(f"{selenium.base_url}/test_csp.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+    finally:
+        target_path.unlink()

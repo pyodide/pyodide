@@ -16,6 +16,7 @@ build:
       -DBUILD_TESTING=OFF \
       -DBUILD_BENCHMARKS=OFF \
       -DBUILD_DOCUMENTATION=OFF \
+      -DBUILD_GEOSOP=OFF \
       -DCMAKE_C_FLAGS="-fPIC" \
       -DCMAKE_CXX_FLAGS="-fPIC" \
       -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \

@@ -1,6 +1,8 @@
 package:
   name: bokeh
   version: 2.4.3
+  top-level:
+    - bokeh
 requirements:
   run:
     - distutils
@@ -14,6 +16,8 @@ requirements:
 source:
   sha256: 104d2f0a4ca7774ee4b11e545aa34ff76bf3e2ad6de0d33944361981b65da420
   url: https://files.pythonhosted.org/packages/15/06/706a9c43436cd0c3e2f4b94e93ae837e74965e59565c596b727974a74169/bokeh-2.4.3-py3-none-any.whl
-test:
-  imports:
-    - bokeh
+about:
+  home: https://github.com/bokeh/bokeh
+  PyPI: https://pypi.org/project/bokeh
+  summary: Interactive plots and applications in the browser from Python
+  license: BSD-3-Clause

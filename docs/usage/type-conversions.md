@@ -536,7 +536,7 @@ try {
     buffer.data,
     buffer.shape,
     buffer.strides,
-    buffer.offset
+    buffer.offset,
   );
   // manipulate array here
   // changes will be reflected in the Python ndarray!

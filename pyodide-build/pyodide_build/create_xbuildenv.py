@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 from .common import get_make_flag, get_pyodide_root, get_unisolated_packages
-from .io import parse_package_config
+from .io import MetaConfig
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -26,8 +26,8 @@ def copy_xbuild_files(xbuildenv_path: Path) -> None:
     # cp site-packages-extras $HOSTSITEPACKAGES
     site_packages_extras = xbuildenv_path / "site-packages-extras"
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, check=False)
-        xbuild_files = config.get("build", {}).get("cross-build-files", [])
+        config = MetaConfig.from_yaml(pkg)
+        xbuild_files = config.build.cross_build_files
         for path in xbuild_files:
             target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -52,7 +52,13 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "CLAPACK",
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
+        Path("tools/python"),
+        Path("dist/repodata.json"),
+        Path("dist/pyodide_py.tar"),
     ]
+    to_copy.extend(
+        x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")
+    )
     # Some ad-hoc stuff here to moderate size. We'd like to include all of
     # wasm_lib_dir but there's 180mb of it. Better to leave out all the video
     # codecs and stuff.
@@ -84,6 +90,7 @@ def main(args: argparse.Namespace) -> None:
 
     copy_xbuild_files(xbuildenv_path)
     copy_wasm_libs(xbuildenv_path)
+
     res = subprocess.run(
         ["pip", "freeze", "--path", get_make_flag("HOSTSITEPACKAGES")],
         stdout=subprocess.PIPE,

@@ -2,10 +2,17 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, loadBinaryFile, initNodeModules } from "./compat";
+import {
+  loadScript,
+  loadBinaryFile,
+  initNodeModules,
+  pathSep,
+  resolvePath,
+} from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
 import { initializeNativeFS } from "./nativefs";
+import version from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
@@ -29,6 +36,8 @@ export type {
 
 export type Py2JsResult = any;
 
+export { version };
+
 /**
  * A proxy around globals that falls back to checking for a builtin if has or
  * get fails to find a global with the given key. Note that this proxy is
@@ -38,7 +47,7 @@ export type Py2JsResult = any;
  */
 function wrapPythonGlobals(
   globals_dict: PyProxyDict,
-  builtins_dict: PyProxyDict
+  builtins_dict: PyProxyDict,
 ) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
@@ -68,22 +77,27 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
     0,
     pyodide_py_tar.byteLength,
     undefined,
-    true
+    true,
   );
   Module.FS.close(stream);
   const code_ptr = Module.stringToNewUTF8(`
 from sys import version_info
 pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/site-packages/")
+shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/")
 del shutil
 import importlib
 importlib.invalidate_caches()
 del importlib
     `);
+  Module.API.capture_stderr();
   let errcode = Module._PyRun_SimpleString(code_ptr);
+  const captured_stderr = Module.API.restore_stderr().trim();
   if (errcode) {
-    throw new Error("OOPS!");
+    Module.API.fatal_loading_error(
+      "Failed to unpack standard library.\n",
+      captured_stderr,
+    );
   }
   Module._free(code_ptr);
   Module.FS.unlink(fileName);
@@ -109,10 +123,10 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   // Set up globals
   let globals = API.runPythonInternal(
-    "import __main__; __main__.__dict__"
+    "import __main__; __main__.__dict__",
   ) as PyProxyDict;
   let builtins = API.runPythonInternal(
-    "import builtins; builtins.__dict__"
+    "import builtins; builtins.__dict__",
   ) as PyProxyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
@@ -134,11 +148,12 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.pyodide_code = import_module("pyodide.code");
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
-  API.version = API.pyodide_py.__version__;
+
+  API.site = import_module("site");
+  API.sitepackages = API.site.getsitepackages().toJs()[0];
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
-  pyodide.version = API.version;
   pyodide.globals = API.globals;
   return pyodide;
 }
@@ -164,6 +179,9 @@ declare function _createPyodideModule(Module: any): Promise<void>;
  *  code.
  */
 function calculateIndexURL(): string {
+  if (typeof __dirname === "string") {
+    return __dirname;
+  }
   let err: Error;
   try {
     throw new Error();
@@ -171,12 +189,10 @@ function calculateIndexURL(): string {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const indexOfLastSlash = fileName.includes("/")
-    ? fileName.lastIndexOf("/")
-    : fileName.lastIndexOf("\\");
+  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
-      "Could not extract indexURL path from pyodide module location"
+      "Could not extract indexURL path from pyodide module location",
     );
   }
   return fileName.slice(0, indexOfLastSlash);
@@ -195,6 +211,8 @@ export type ConfigType = {
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
+  args: string[];
+  _node_mounts: string[];
 };
 
 /**
@@ -253,30 +271,41 @@ export async function loadPyodide(
      */
     stderr?: (msg: string) => void;
     jsglobals?: object;
-  } = {}
+    args?: string[];
+    _node_mounts?: string[];
+  } = {},
 ): Promise<PyodideInterface> {
-  if (!options.indexURL) {
-    options.indexURL = calculateIndexURL();
+  await initNodeModules();
+  let indexURL = options.indexURL || calculateIndexURL();
+  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
+  if (!indexURL.endsWith("/")) {
+    indexURL += "/";
   }
-  if (!options.indexURL.endsWith("/")) {
-    options.indexURL += "/";
-  }
+  options.indexURL = indexURL;
 
   const default_config = {
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
-    lockFileURL: options.indexURL! + "repodata.json",
+    lockFileURL: indexURL! + "repodata.json",
+    args: [],
+    _node_mounts: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  await initNodeModules();
   const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL,
-    "pyodide_py.tar"
+    config.indexURL + "pyodide_py.tar",
   );
 
   const Module = createModule();
+  Module.preRun.push(() => {
+    for (const mount of config._node_mounts) {
+      Module.FS.mkdirTree(mount);
+      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
+    }
+  });
+
+  Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
@@ -298,6 +327,19 @@ export async function loadPyodide(
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+  // Handle early exit
+  if (Module.exited) {
+    throw Module.exited.toThrow;
+  }
+
+  if (API.version !== version) {
+    throw new Error(
+      `\
+Pyodide version does not match: '${version}' <==> '${API.version}'. \
+If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
+`,
+    );
+  }
 
   initializeNativeFS(Module);
 
@@ -311,6 +353,7 @@ export async function loadPyodide(
   Module._pyodide_init();
 
   const pyodide = finalizeBootstrap(API, config);
+
   // API.runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
@@ -318,9 +361,10 @@ export async function loadPyodide(
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
-  if (API.repodata_info.version !== pyodide.version) {
+  if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
+  API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }

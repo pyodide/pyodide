@@ -1,6 +1,8 @@
 package:
   name: scipy
-  version: 1.8.1
+  version: 1.9.1
+  top-level:
+    - scipy
 
 # See extra explanation in info.md
 #
@@ -13,24 +15,25 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/26/b5/9330f004b9a3b2b6a31f59f46f1617ce9ca15c0e7fe64288c20385a05c9d/scipy-1.8.1.tar.gz
-  sha256: 9e3fb1b0e896f14a85aa9a28d5f755daaeeb54c897b746df7a55ccb02b340f33
+  url: https://files.pythonhosted.org/packages/db/af/16906139f52bc6866c43401869ce247662739ad71afa11c6f18505eb0546/scipy-1.9.1.tar.gz
+  sha256: 26d28c468900e6d5fdb37d2812ab46db0ccd22c63baa095057871faa3a498bc9
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-loadDynamicLibrary-flapack.patch
     - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
     - patches/0004-int-to-string.patch
-    - patches/0005-disable-blas-detection.patch
-    - patches/0006-fix-fotran-files-minpack.patch
-    - patches/0007-gemm_-no-const.patch
-    - patches/0008-make-int-return-values.patch
-    - patches/0009-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0010-sasum-returns-double-not-float.patch
-    - patches/0011-skip-fortran-fails-to-link.patch
-    - patches/0012-Disable-lapack-detection.patch
-    - patches/0013-Add-extra-END-to-prini.f.patch
-    - patches/0014-BUG-Fix-signature-of-D_IIR_forback-1-2.patch
+    - patches/0005-fix-fotran-files-minpack.patch
+    - patches/0006-gemm_-no-const.patch
+    - patches/0007-make-int-return-values.patch
+    - patches/0008-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0009-sasum-returns-double-not-float.patch
+    - patches/0010-skip-fortran-fails-to-link.patch
+    - patches/0011-Add-extra-END-to-prini.f.patch
+    - patches/0012-Change-qh_eachvoronoi_all-FILE-type.patch
+    - patches/0013-Remove-meson-requirements.patch
+    - patches/0014-Fix-fitpack.patch
+    - patches/0015-Cast-linear_sum_assignment-to-PyCFunction.patch
 
 build:
   cflags: |
@@ -47,6 +50,11 @@ build:
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
+    set -x
+    export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE $WASM_LIBRARY_DIR/CLAPACK/LIB/clapack_all.so"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE"
+
     pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
@@ -60,12 +68,13 @@ build:
       sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
       zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
     >>  ../../scipy/linalg/lapack_extras.f
-    sed -i 's/CHARACTER/INTEGER/g' ../../scipy/linalg/lapack_extras.f
-    sed -i 's/RECURSIVE//g' ../../scipy/linalg/lapack_extras.f
     cd ../..
+    sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
+    sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
+    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
-    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
+    find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
 
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
     sed -i 's/^void/int/g' scipy/odr/odrpack.h
@@ -147,3 +156,8 @@ test:
     - scipy.stats.distributions
     - scipy.stats.mstats
     - scipy.stats.qmc
+about:
+  home: https://www.scipy.org
+  PyPI: https://pypi.org/project/scipy
+  summary: "SciPy: Scientific Library for Python"
+  license: BSD

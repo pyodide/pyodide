@@ -1,0 +1,25 @@
+From 4f1b155ea0121c62facfeb6241f542565630cfc0 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 17 Jul 2022 14:40:39 +0100
+Subject: [PATCH 13/13] Public pymain_run_python
+
+---
+ Modules/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Modules/main.c b/Modules/main.c
+index 2684d23067..e7c33106c5 100644
+--- a/Modules/main.c
++++ b/Modules/main.c
+@@ -530,7 +530,7 @@ pymain_repl(PyConfig *config, int *exitcode)
+ }
+ 
+ 
+-static void
++void
+ pymain_run_python(int *exitcode)
+ {
+     PyInterpreterState *interp = _PyInterpreterState_GET();
+-- 
+2.25.1
+

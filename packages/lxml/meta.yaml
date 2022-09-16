@@ -1,6 +1,8 @@
 package:
   name: lxml
   version: 4.9.0
+  top-level:
+    - lxml
 source:
   sha256: 520461c36727268a989790aef08884347cd41f2d8ae855489ccf40b50321d8d7
   url: https://files.pythonhosted.org/packages/aa/23/bda4e9881090f0f5e33e2efe89aacfa0668eb6e1ab2de28591e2912d78d4/lxml-4.9.0.tar.gz
@@ -13,15 +15,19 @@ requirements:
     - libxslt
     - zlib
     - libiconv
-
   run:
     - beautifulsoup4
     - cssselect
     - html5lib
-    - libxml
-    - libxslt
 test:
   imports:
     - lxml
     - lxml.etree
     - lxml.objectify
+about:
+  home: https://lxml.de/
+  PyPI: https://pypi.org/project/lxml
+  summary:
+    Powerful and Pythonic XML processing library combining libxml2/libxslt
+    with the ElementTree API.
+  license: BSD

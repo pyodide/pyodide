@@ -1,11 +1,13 @@
 import functools
 import os
+import time
+from typing import Any
 
 import pytest
 from pytest_pyodide.runner import _BrowserBaseRunner
 
 from conftest import ROOT_PATH, package_is_built
-from pyodide_build.io import parse_package_config
+from pyodide_build.io import MetaConfig
 
 PKG_DIR = ROOT_PATH / "packages"
 
@@ -23,18 +25,23 @@ def registered_packages() -> list[str]:
 UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
     "chrome": [],
     "firefox": [],
+    "safari": [],
     "node": ["cmyt", "yt", "galpy"],
 }
 if "CI" in os.environ:
     UNSUPPORTED_PACKAGES["chrome"].extend(["statsmodels"])
 
+XFAIL_PACKAGES: dict[str, str] = {
+    "soupsieve": "Importing soupsieve without installing beautifulsoup4 fails.",
+}
+
 
 @pytest.mark.parametrize("name", registered_packages())
 def test_parse_package(name: str) -> None:
     # check that we can parse the meta.yaml
-    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
+    meta = MetaConfig.from_yaml(PKG_DIR / name / "meta.yaml")
 
-    sharedlibrary = meta.get("build", {}).get("sharedlibrary", False)
+    sharedlibrary = meta.build.sharedlibrary
     if name == "sharedlib-test":
         assert sharedlibrary is True
     elif name == "sharedlib-test-py":
@@ -44,14 +51,24 @@ def test_parse_package(name: str) -> None:
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("name", registered_packages())
-def test_import(name: str, selenium_standalone: _BrowserBaseRunner) -> None:
+@pytest.mark.benchmark(
+    max_time=3,
+    min_rounds=1,
+    timer=time.perf_counter,
+)
+def test_import(
+    name: str, selenium_standalone: _BrowserBaseRunner, benchmark: Any
+) -> None:
     if not package_is_built(name):
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"
         )
 
-    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
+    if name in XFAIL_PACKAGES:
+        pytest.xfail(XFAIL_PACKAGES[name])
+
+    meta = MetaConfig.from_yaml(PKG_DIR / name / "meta.yaml")
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(
@@ -70,30 +87,39 @@ def test_import(name: str, selenium_standalone: _BrowserBaseRunner) -> None:
         ))
         """
     )
-    for import_name in meta.get("test", {}).get("imports", []):
-        selenium_standalone.run_async("import %s" % import_name)
-        # Make sure that even after importing, there are no additional .pyc
-        # files
-        assert (
-            selenium_standalone.run(
-                """
-                len(list(glob.glob(
-                    site.getsitepackages()[0] + '/**/*.pyc',
-                    recursive=True)
-                ))
-                """
-            )
-            == baseline_pyc
+
+    def _import_pkg():
+        import_names = meta.test.imports
+        if not import_names:
+            import_names = meta.package.top_level
+
+        for import_name in import_names:
+            selenium_standalone.run_async("import %s" % import_name)
+
+    benchmark(_import_pkg)
+
+    # Make sure that even after importing, there are no additional .pyc
+    # files
+    assert (
+        selenium_standalone.run(
+            """
+            len(list(glob.glob(
+                site.getsitepackages()[0] + '/**/*.pyc',
+                recursive=True)
+            ))
+            """
         )
-        # Make sure no exe files were loaded!
-        assert (
-            selenium_standalone.run(
-                """
-                len(list(glob.glob(
-                    site.getsitepackages()[0] + '/**/*.exe',
-                    recursive=True)
-                ))
-                """
-            )
-            == 0
+        == baseline_pyc
+    )
+    # Make sure no exe files were loaded!
+    assert (
+        selenium_standalone.run(
+            """
+            len(list(glob.glob(
+                site.getsitepackages()[0] + '/**/*.exe',
+                recursive=True)
+            ))
+            """
         )
+        == 0
+    )

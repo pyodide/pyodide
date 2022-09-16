@@ -6,7 +6,7 @@ describe("FS", () => {
   it("no directory", async () => {
     const factory = async () => {
       const result = pyodide.runPython(
-        "import os; os.path.exists('/tmp/js-test')"
+        "import os; os.path.exists('/tmp/js-test')",
       );
       return result;
     };
@@ -17,7 +17,7 @@ describe("FS", () => {
     const factory = async () => {
       pyodide.FS.mkdir("/tmp/js-test");
       const result = pyodide.runPython(
-        "import os; os.path.exists('/tmp/js-test')"
+        "import os; os.path.exists('/tmp/js-test')",
       );
       return result;
     };
@@ -28,21 +28,21 @@ describe("FS", () => {
 
 describe("PATH", () => {
   it("exists", async () => {
-    chai.assert.exists(pyodide.PATH);
+    chai.assert.exists(await page.evaluate(() => pyodide.PATH));
   });
   it("has expected keys", async () => {
-    chai.assert.exists(pyodide.PATH.dirname);
-    chai.assert.exists(pyodide.PATH.normalize);
+    chai.assert.exists(await page.evaluate(() => pyodide.PATH.dirname));
+    chai.assert.exists(await page.evaluate(() => pyodide.PATH.normalize));
   });
 });
 
 describe("ERRNO_CODES", () => {
   it("exists", async () => {
-    chai.assert.exists(pyodide.ERRNO_CODES);
+    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES));
   });
   it("has expected keys", async () => {
-    chai.assert.exists(pyodide.ERRNO_CODES.ENOENT);
-    chai.assert.exists(pyodide.ERRNO_CODES.EPERM);
-    chai.assert.exists(pyodide.ERRNO_CODES.EEXIST);
+    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.ENOENT));
+    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.EPERM));
+    chai.assert.exists(await page.evaluate(() => pyodide.ERRNO_CODES.EEXIST));
   });
 });

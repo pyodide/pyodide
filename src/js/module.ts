@@ -3,11 +3,11 @@ export interface Module {
   noImageDecoding: boolean;
   noAudioDecoding: boolean;
   noWasmDecoding: boolean;
+  quit: (status: number, toThrow: Error) => void;
   preRun: { (): void }[];
   print: (a: string) => void;
   printErr: (a: string) => void;
   ENV: { [key: string]: string };
-  preloadedWasm: any;
   FS: any;
   PATH: any;
 }
@@ -22,8 +22,11 @@ export function createModule(): any {
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
   Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
-  Module.preloadedWasm = {};
   Module.preRun = [];
+  Module.quit = (status: number, toThrow: Error) => {
+    Module.exited = { status, toThrow };
+    throw toThrow;
+  };
   return Module;
 }
 
@@ -38,7 +41,7 @@ export function setStandardStreams(
   Module: Module,
   stdin?: () => string,
   stdout?: (a: string) => void,
-  stderr?: (a: string) => void
+  stderr?: (a: string) => void,
 ) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
   if (stdout) {
@@ -73,7 +76,7 @@ function createStdinWrapper(stdin: () => string) {
         }
         if (typeof text !== "string") {
           throw new TypeError(
-            `Expected stdin to return string, null, or undefined, got type ${typeof text}.`
+            `Expected stdin to return string, null, or undefined, got type ${typeof text}.`,
           );
         }
         if (!text.endsWith("\n")) {

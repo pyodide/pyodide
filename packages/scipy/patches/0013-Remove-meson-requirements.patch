@@ -1,0 +1,28 @@
+From 09b98d625709d03e81fc8a98d82d5d395cbcd7a9 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 30 Aug 2022 10:58:25 -0700
+Subject: [PATCH 13/15] Remove meson requirements
+
+---
+ pyproject.toml | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index bd607fb88..e283ca75f 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -8,10 +8,8 @@
+ #     "pybind11>=2.4.3,<2.5.0",
+ 
+ [build-system]
+-build-backend = 'mesonpy'
+ requires = [
+-    "meson-python>=0.8.1",  # we need more fixes in meson-python, so no upper bound now
+-    "meson==0.62.2",  # workaround for wheel build issue, see https://github.com/FFY00/meson-python/issues/95
++    "setuptools<60.0.0",
+     "Cython>=0.29.21,<3.0",
+     "pybind11>=2.4.3,<2.11.0",
+     "pythran>=0.9.12,<0.12.0",
+-- 
+2.25.1
+

@@ -17,7 +17,7 @@ from __main__ import __file__ as INVOKED_PATH_STR
 
 INVOKED_PATH = Path(INVOKED_PATH_STR)
 
-SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
+SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "ranlib", "strip", "gfortran", "cargo"}
 IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
 
 if IS_COMPILER_INVOCATION:
@@ -31,7 +31,7 @@ if IS_COMPILER_INVOCATION:
         raise RuntimeError(
             "Invalid invocation: can't find PYWASMCROSS_ARGS."
             f" Invoked from {INVOKED_PATH}."
-        )
+        ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
@@ -98,6 +98,10 @@ def make_command_wrapper_symlinks(
         env[var] = symlink
 
 
+# Also defined in pyodide_build.io (though avoiding to import dependent modules here)
+_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+
+
 @contextmanager
 def get_build_env(
     env: dict[str, str],
@@ -107,7 +111,7 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    exports: str | list[str],
+    exports: _BuildSpecExports | list[_BuildSpecExports],
 ) -> Iterator[dict[str, str]]:
     kwargs = dict(
         pkgname=pkgname,
@@ -543,6 +547,12 @@ def handle_command_generate_args(
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
+    elif cmd == "ranlib":
+        line[0] = "emranlib"
+        return line
+    elif cmd == "strip":
+        line[0] = "emstrip"
+        return line
     else:
         return line
 

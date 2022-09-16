@@ -1422,6 +1422,8 @@ def test_to_js_default_converter2(selenium):
     from pyodide.ffi import JsException, to_js
 
     class Pair:
+        __slots__ = ("first", "second")
+
         def __init__(self, first, second):
             self.first = first
             self.second = second
