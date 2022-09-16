@@ -1,6 +1,6 @@
 (out-of-tree)=
 
-# Building and testing Python packages out of Tree
+# Building and testing Python packages out of tree
 
 This is some information about how to build and test Python packages against
 Pyodide out of tree (for instance in your package's CI or for use with private
@@ -14,13 +14,13 @@ Otherwise, the procedure is simple. In your package directory run the following
 command line commands:
 
 ```sh
-pip install pyodide-build`
-pyodide build`
+pip install pyodide-build
+pyodide build
 ```
 
 Pyodide currently only supports Linux for out of tree builds, though there is a
 good change it will work in MacOS too. If you are using Windows, try Windows
-Subsystem Linux.
+Subsystem for Linux.
 
 `pyodide build` invokes a slightly modified version of the `pypa/build` build
 frontend so the behavior should be similar to what happens if you do:
