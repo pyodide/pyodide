@@ -7,14 +7,10 @@
 # - disable the usage of response file for object and libraries                               #
 # - allow to overwrite CMAKE_PROJECT_INCLUDE, CMAKE_PROJECT_INCLUDE_BEFORE with env variable  #
 # - append SIDE_MODULE_CFLAGS and SIDE_MODULE_LDFLAGS automatically                           #
-# - don't set CMAKE_SYSTEM_NAME to Emscripten                                                 #
 ###############################################################################################
 
-# TODO: Not sure why but setting CMAKE_SYSTEM_NAME to Emscripten makes
-#       properties set in toolchain file not persistent to CMakeLists.txt
-#       (Possibly related: https://stackoverflow.com/questions/40529970/is-there-are-rule-in-cmake-that-causes-properties-set-in-toolchain-file-to-not-p)
-# set(CMAKE_SYSTEM_NAME Emscripten)
-# set(CMAKE_SYSTEM_VERSION 1)
+set(CMAKE_SYSTEM_NAME Emscripten)
+set(CMAKE_SYSTEM_VERSION 1)
 
 set(CMAKE_CROSSCOMPILING TRUE)
 
@@ -72,6 +68,10 @@ file(TO_CMAKE_PATH "${_emconfig_output}" _emcache_output)
 set(EMSCRIPTEN_ROOT_PATH "${_emconfig_output}" CACHE FILEPATH "Path to Emscripten Root")
 
 list(APPEND CMAKE_MODULE_PATH "${EMSCRIPTEN_ROOT_PATH}/cmake/Modules")
+
+# CMakeSystemSpecificInformation.cmake tries to include a Toolchain file from ${CMAKE_MODULE_PATH}/Platform/{CMAKE_SYSTEM_NAME}.cmake.
+# So in order to prevent CMake from including the original Emscripten toolchain file, we need to prepend our own toolchain file.
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/..")
 
 if (CMAKE_HOST_WIN32)
   set(EMCC_SUFFIX ".bat")
@@ -229,7 +229,7 @@ list(APPEND CMAKE_SYSTEM_PREFIX_PATH /)
 # We build libraries into WASM_LIBRARY_DIR, so lets tell CMake
 # to find libraries from there.
 if (NOT "$ENV{WASM_LIBRARY_DIR}" STREQUAL "")
-  list(APPEND CMAKE_FIND_ROOT_PATH "$ENV{WASM_LIBRARY_DIR}")
+  list(PREPEND CMAKE_FIND_ROOT_PATH "$ENV{WASM_LIBRARY_DIR}")
   if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "$ENV{WASM_LIBRARY_DIR}" CACHE PATH
       "Install path prefix, prepended onto install directories." FORCE)
