@@ -1428,6 +1428,7 @@ def test_csp(selenium_standalone_noload):
     finally:
         target_path.unlink()
 
+
 def test_static_import(
     request, runtime, web_server_main, playwright_browsers, tmp_path
 ):
