@@ -67,7 +67,7 @@ provide a button that fetches data and logs it.
         scope: "/",
       };
 
-      // modified snippet from 
+      // modified snippet from
       // https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers
       async function registerServiceWorker() {
         if ("serviceWorker" in navigator) {
