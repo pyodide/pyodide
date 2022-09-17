@@ -1428,11 +1428,14 @@ def test_csp(selenium_standalone_noload):
     finally:
         target_path.unlink()
 
-
-@pytest.mark.xfail_browsers(node="Browser only")
 def test_static_import(
     request, runtime, web_server_main, playwright_browsers, tmp_path
 ):
+    # the xfail_browsers mark won't work without using a selenium fixture
+    # so we manually xfail the node test
+    if runtime == "node":
+        pytest.xfail("static import test is browser-only")
+
     # copy dist to tmp_path to perform file changes safely
     shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
 
