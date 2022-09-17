@@ -8,6 +8,9 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.fixture import selenium_standalone_noload_common
+from pytest_pyodide.server import spawn_web_server
+
 
 from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
@@ -1428,14 +1431,28 @@ def test_csp(selenium_standalone_noload):
 
 
 @pytest.mark.xfail_browsers(node="Browser only")
-def test_static_import(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    target_path = DIST_PATH / "module_static_import_test.html"
-    try:
-        shutil.copy(
-            get_pyodide_root() / "src/templates/module_static_import_test.html",
-            target_path,
-        )
+def test_static_import(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    # copy dist to tmp_path to perform file changes safely
+    shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
+
+    # define the directory to hide the statically imported pyodide.asm.js in
+    hiding_dir = "hide_pyodide_asm_for_test"
+
+    # create the directory and move pyodide.asm.js to the directory 
+    # so that dynamic import won't find it
+    (tmp_path / hiding_dir).mkdir()
+    shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
+
+    # make sure the test html references the new directory when importing pyodide.asm.js
+    test_html = (ROOT_PATH / "src/templates/module_static_import_test.html").read_text()
+    test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
+    (tmp_path / "module_static_import_test.html").write_text(test_html)
+
+    with spawn_web_server(tmp_path) as web_server, selenium_standalone_noload_common(
+        request, runtime, web_server, playwright_browsers
+    ) as selenium:
         selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
         selenium.javascript_setup()
         selenium.load_pyodide()
@@ -1446,5 +1463,3 @@ def test_static_import(selenium_standalone_noload):
             `);
             """
         )
-    finally:
-        target_path.unlink()
