@@ -11,7 +11,6 @@ from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.fixture import selenium_standalone_noload_common
 from pytest_pyodide.server import spawn_web_server
 
-
 from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.common import get_pyodide_root
@@ -1440,7 +1439,7 @@ def test_static_import(
     # define the directory to hide the statically imported pyodide.asm.js in
     hiding_dir = "hide_pyodide_asm_for_test"
 
-    # create the directory and move pyodide.asm.js to the directory 
+    # create the directory and move pyodide.asm.js to the directory
     # so that dynamic import won't find it
     (tmp_path / hiding_dir).mkdir()
     shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
