@@ -86,7 +86,7 @@ substitutions:
   ```
 
   and call the same functions as above.
-  {pr}`3061`
+  {pr}`3122`
 
 - {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
   specification is now done more rigourously with Pydantic
