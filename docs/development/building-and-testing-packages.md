@@ -1,4 +1,4 @@
-(out-of-tree)=
+(building-and-testing-packages)=
 
 # Building and testing Python packages out of tree
 
