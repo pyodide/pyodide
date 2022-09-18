@@ -9,7 +9,7 @@ packages).
 ## Building binary packages for Pyodide
 
 If your package is a pure Python package (i.e., if the wheel ends in
-`py3-none-any.whl`) then it can be built in whichever way you normally build it.
+`py3-none-any.whl`) then follow the official PyPA documentation on building [wheels](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
 Otherwise, the procedure is simple. In your package directory run the following
 command line commands:
 
@@ -51,7 +51,7 @@ The way it works is simple: you can create a virtual environment with:
 pyodide venv .venv-pyodide
 ```
 
-Enter it just like a normal virtual environment:
+Activate it just like a normal virtual environment:
 
 ```sh
 source .venv-pyodide/bin/python
@@ -62,11 +62,10 @@ because `python` points to the Pyodide Python runtime. Any program that uses
 Python and is sensitive to the current virtual environment will probably break.
 
 You can install whatever dependencies you need with pip. For a pure Python
-package with a `tests` extra, the following will work:
+package, the following will work:
 
 ```sh
-pip install -e .[tests]
-```
+pip install -e .
 
 For a binary package, you will need to build a wheel with `pyodide build` and
 then point `pip` directly to the built wheel. For now, editable installs won't
