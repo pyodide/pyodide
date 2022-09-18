@@ -1,0 +1,26 @@
+From 7165bb910a6137c097ba12afc2e3c1ef57ce3840 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 18 Sep 2022 10:09:35 -0700
+Subject: [PATCH] Use parking_lot v0.12
+
+---
+ src/_bcrypt/Cargo.toml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/_bcrypt/Cargo.toml b/src/_bcrypt/Cargo.toml
+index 6c75126..c0c4ede 100644
+--- a/src/_bcrypt/Cargo.toml
++++ b/src/_bcrypt/Cargo.toml
+@@ -5,6 +5,9 @@ authors = ["The bcrypt developers <cryptography-dev@python.org>"]
+ edition = "2018"
+ publish = false
+ 
++[patch.crates-io]
++parking_lot = { git = "https://github.com/Amanieu/parking_lot/", tag = "0.12.1" }
++
+ [dependencies]
+ pyo3 = { version = "0.15.2" }
+ bcrypt = "0.13"
+-- 
+2.25.1
+
