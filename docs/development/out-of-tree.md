@@ -64,7 +64,7 @@ Python and is sensitive to the current virtual environment will probably break.
 You can install whatever dependencies you need with pip. For a pure Python
 package, the following will work:
 
-```sh
+````sh
 pip install -e .
 
 For a binary package, you will need to build a wheel with `pyodide build` and
@@ -76,7 +76,7 @@ work with binary packages.
 pyodide build
 # Install it
 pip install dist/the_wheel-cp310-cp310-emscripten_3_1_20_wasm32.whl[tests]
-```
+````
 
 To test, you can generally run the same script as you would usually do. For many
 packages this will be:
