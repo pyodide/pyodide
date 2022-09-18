@@ -33,7 +33,12 @@ function config({ input, output, name, format, minify }) {
       nodeResolve(),
       minify
         ? terser({
-            compress: true,
+            compress: {
+              dead_code: true,
+              global_defs: {
+                DEBUG: false,
+              },
+            },
             mangle: false,
           })
         : undefined,
