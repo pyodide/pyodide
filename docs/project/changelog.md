@@ -69,6 +69,25 @@ substitutions:
   readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
   {pr}`3061`
 
+- {{ Breaking }} The micropip package was moved to a separate repository
+  [pyodide/micropip](https://github.com/pyodide/micropip). In addion to
+  installing the version shipped with a given Pyodide release, you can also
+  install a different micropip version from [PyPi](https://pypi.org/project/micropip/) with,
+
+  ```
+  await pyodide.loadPackage('packaging')
+  await pyodide.loadPackage('<URL of the micropip wheel on PyPI>')
+  ```
+
+  from Javascript. From Python you can import the Javascript Pyodide package,
+
+  ```
+  import pyodide_js
+  ```
+
+  and call the same functions as above.
+  {pr}`3061`
+
 - {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
   specification is now done more rigourously with Pydantic
   {pr}`3079`
