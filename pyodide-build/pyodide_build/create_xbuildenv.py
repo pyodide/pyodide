@@ -101,7 +101,7 @@ def main(args: argparse.Namespace) -> None:
     res = subprocess.run(
         ["npm", "i", "node-fetch@2"],
         cwd=xbuildenv_root,
-        capture_stdout=True,
+        capture_output=True,
         encoding="utf8",
     )
     if res.returncode != 0:
@@ -110,7 +110,7 @@ def main(args: argparse.Namespace) -> None:
 
     res = subprocess.run(
         ["pip", "freeze", "--path", get_make_flag("HOSTSITEPACKAGES")],
-        capture_stdout=True,
+        capture_output=True,
         encoding="utf8",
     )
     if res.returncode != 0:
