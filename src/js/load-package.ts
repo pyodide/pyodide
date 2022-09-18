@@ -353,11 +353,19 @@ async function loadDynlib(lib: string, shared: boolean) {
   const releaseDynlibLock = await acquireDynlibLock();
   const loadGlobally = shared;
 
+  if (DEBUG) {
+    console.debug(`[DEBUG] Loading dynamic library ${lib}`);
+  }
+
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
     _ldLibraryPaths: ["/usr/lib", API.sitepackages],
     _resolvePath: (path: string) => {
+      if (DEBUG) {
+        console.debug(`Searching a library from ${path}, required by ${lib}.`);
+      }
+
       if (Module.PATH.isAbs(path)) {
         if (Module.FS.findObject(path) !== null) {
           return path;
@@ -376,8 +384,16 @@ async function loadDynlib(lib: string, shared: boolean) {
       }
       return path;
     },
-    findObject: (path: string, dontResolveLastLink: boolean) =>
-      Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
+    findObject: (path: string, dontResolveLastLink: boolean) => {
+      let obj = Module.FS.findObject(
+        libraryFS._resolvePath(path),
+        dontResolveLastLink,
+      );
+      if (DEBUG) {
+        console.log(`Library ${path} found at ${obj}`);
+      }
+      return obj;
+    },
     readFile: (path: string) =>
       Module.FS.readFile(libraryFS._resolvePath(path)),
   };
