@@ -7,17 +7,13 @@ source:
   url: https://files.pythonhosted.org/packages/67/82/9dd8ef695c7f928b25927e8956f73bdba09a752a51871678f320c498c535/cryptography-37.0.3.tar.gz
   sha256: ae430d51c67ac638dfbb42edf56c669ca9c74744f4d225ad11c6f3d355858187
   patches:
-    # TODO: remove this when chrono makes a release
-    - patches/0001-Use-patched-chrono.patch
-    - patches/0002-Add-instant-patch.patch
+    - patches/0001-Add-instant-patch.patch
 build:
   script: |
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
     export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
     source $CARGO_HOME/env
 
-    # TODO: remove this when chrono makes a release
-    git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
     # TODO: remove this when instant makes a release
     git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
   cflags: |
