@@ -1,6 +1,7 @@
 declare var Module: any;
 declare var Tests: any;
 declare var API: any;
+declare var DEBUG: boolean;
 
 import {
   IN_NODE,
@@ -354,7 +355,7 @@ async function loadDynlib(lib: string, shared: boolean) {
   const loadGlobally = shared;
 
   if (DEBUG) {
-    console.debug(`[DEBUG] Loading dynamic library ${lib}`);
+    console.debug(`Loading a dynamic library ${lib}`);
   }
 
   // This is a fake FS-like object to make emscripten

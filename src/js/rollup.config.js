@@ -3,6 +3,8 @@ import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { terser } from "rollup-plugin-terser";
 import ts from "rollup-plugin-ts";
 
+const DEBUG = !!process.env.PYODIDE_DEBUG_JS;
+
 function config({ input, output, name, format, minify }) {
   return {
     input: `./src/js/${input}.ts`,
@@ -36,7 +38,7 @@ function config({ input, output, name, format, minify }) {
             compress: {
               dead_code: true,
               global_defs: {
-                DEBUG: false,
+                DEBUG,
               },
             },
             mangle: false,
