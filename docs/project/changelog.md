@@ -17,10 +17,15 @@ substitutions:
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see
   [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
-  {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`, {pr}`3109`.
+  {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`, {pr}`3108`, {pr}`3109`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.20
-  {pr}`2958`, {pr}`2950`, {pr}`3027`
+- {{ Enhancement }} Users can do a static import of `pyodide/pyodide.asm.js` to
+  avoid issues with dynamic imports. This allows the use of Pyodide with
+  module-type service workers.
+  {pr}`3070`
+
+- {{ Enhancement }} Emscripten was updated to Version 3.1.21
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
@@ -45,42 +50,6 @@ substitutions:
 
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
-- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
-  `indexURL` (this was a regression in v0.21.2).
-  {pr}`3077`
-
-- {{ Enhancement }} Add binary files to exports in JavaScript package
-  {pr}`3085`.
-
-- {{ Enhancement }} Pyodide now works with a content security policy that
-  doesn't include `unsafe-eval`. It is still necessary to include
-  `wasm-unsafe-eval` (and probably always will be). Since current Safari
-  versions have no support for `wasm-unsafe-eval`, it is necessary to include
-  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
-  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
-  {pr}`3075`
-
-- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
-  {pr}`3080`
-
-- {{ Fix }} Fixed warnings like
-  `Critical dependency: the request of a dependency is an expression.`
-  when using Pyodide with webpack.
-  {pr}`3080`
-
-- {{ Fix }} Source maps are included in the distribution again (reverting
-  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
-  called `__dirname` we use that for the `indexURL`.
-  {pr}`3088`
-
-- {{ Fix }} `loadPyodide` will now raise error when the version of
-  JavaScript and Python Pyodide package does not match.
-  {pr}`3074`
-
-- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
-  unexpected is passed as the second argument.
-  {pr}`3101`
-
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
@@ -94,19 +63,8 @@ substitutions:
   rather than `/lib/python3.10/site-packages`.
   {pr}`3022`
 
-- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
-  {pr}`3036`
-
 - {{ Update }} Upgraded SciPy to version 1.9.1.
   {pr}`3043`
-
-- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
-  their dependencies.
-  {pr}`3020`
-
-- {{ Breaking }} Loading the `soupsieve` package will not automatically load
-  `beautifulsoup4` together.
-  {pr}`3020`
 
 - {{ Breaking }} The matplotlib HTML5 backends are now available as part of the
   [`matplotlib-pyodide`](https://github.com/pyodide/matplotlib-pyodide)
@@ -139,7 +97,63 @@ substitutions:
   key was used for this purpose.
   {pr}`3006`
 
+## Version 0.21.3
+
+_September 15, 2022_
+
+- {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
+  {issue}`3001`
+
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies.
+  {pr}`3020`
+
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load
+  `beautifulsoup4` together.
+  {pr}`3020`
+
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
+
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
+
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+  {pr}`3088`
+
+- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
+  unexpected is passed as the second argument.
+  {pr}`3101`
+
 ## Version 0.21.2
+
+_August 29, 2022_
 
 - {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
   with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
@@ -161,6 +175,8 @@ substitutions:
   {pr}`3015`
 
 ## Version 0.21.1
+
+_August 22, 2022_
 
 - New packages: the standard library lzma module {pr}`2939`
 
@@ -423,6 +439,8 @@ Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
 Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
+
+_April 9th, 2022_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
 

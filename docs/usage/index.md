@@ -77,6 +77,10 @@ non-responsive for long-running computations.
 
 To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
 
+It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_worker>`.
+
+If you're not sure whether you need web workers or service workers, here's an [overview and comparison of the two](https://web.dev/workers-overview/).
+
 ## Node.js
 
 ```{note}
@@ -167,4 +171,5 @@ Python says that 1+1= 2
    webworker.md
    loading-custom-python-code.md
    file-system.md
+   service-worker.md
 ```
