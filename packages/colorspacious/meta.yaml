@@ -1,15 +1,14 @@
 package:
   name: colorspacious
   version: 1.1.2
+  top-level:
+    - colorspacious
 source:
   url: https://files.pythonhosted.org/packages/ab/a1/318b9aeca7b9856410ededa4f52d6f82174d1a41e64bdd70d951e532675a/colorspacious-1.1.2-py2.py3-none-any.whl
   sha256: c78befa603cea5dccb332464e7dd29e96469eebf6cd5133029153d1e69e3fd6f
 requirements:
   run:
     - numpy
-test:
-  imports:
-    - colorspacious
 about:
   home: https://github.com/njsmith/colorspacious
   PyPI: https://pypi.org/project/colorspacious

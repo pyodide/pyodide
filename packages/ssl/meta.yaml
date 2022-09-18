@@ -1,7 +1,9 @@
 package:
   name: ssl
-  version: 1.0.0 # Nonesense
+  version: 1.0.0 # Nonsense
   _cpython_dynlib: true
+  top-level:
+    - ssl
 source:
   path: empty
 build:
@@ -10,16 +12,16 @@ build:
     mkdir dist
     export DISTDIR=$(pwd)/dist
     cd $CPYTHONBUILD
-    emcc $STDLIB_MODULE_CFLAGS -c Modules/socketmodule.c -o Modules/socketmodule.o
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_ssl.c -o Modules/_ssl.o \
       $(pkg-config --cflags --dont-define-prefix openssl) \
       $(pkg-config --libs --dont-define-prefix openssl) \
       -DOPENSSL_THREADS # This declares that OPENSSL is threadsafe. We are single threaded so everything is threadsafe.
     emcc Modules/_ssl.o -o $DISTDIR/_ssl.so $SIDE_MODULE_LDFLAGS $(pkg-config --libs --dont-define-prefix openssl)
-    emcc Modules/socketmodule.o -o $DISTDIR/socketmodule.so $SIDE_MODULE_LDFLAGS
+
+    cp Lib/ssl.py $DISTDIR
+
 requirements:
+  host:
+    - openssl
   run:
     - openssl
-test:
-  imports:
-    - ssl

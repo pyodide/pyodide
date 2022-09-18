@@ -1,6 +1,8 @@
 package:
   name: xgboost
   version: 1.6.1
+  top-level:
+    - xgboost
 source:
   url: https://files.pythonhosted.org/packages/0e/8c/19309bcaf9a88b0bab34b88935925153f3f3f646163acaae9aa148cf72bb/xgboost-1.6.1.tar.gz
   sha256: 24072028656f3428e7b8aabf77340ece057f273e41f7f85d67ccaefb7454bb18
@@ -24,9 +26,6 @@ requirements:
     - numpy
     - scipy
     - setuptools
-test:
-  imports:
-    - xgboost
 about:
   home: https://github.com/dmlc/xgboost
   PyPI: https://pypi.org/project/xgboost

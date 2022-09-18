@@ -45,13 +45,16 @@ f2c_wrap = _args_wrapper(replay_f2c)
 def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
     splitline = line.split()
     res = handle_command_generate_args(splitline, args, is_link_cmd)
-    for arg in [
-        "-Werror=implicit-function-declaration",
-        "-Werror=mismatched-parameter-types",
-        "-Werror=return-type",
-    ]:
-        assert arg in res
-        res.remove(arg)
+
+    if res[0] in ("emcc", "em++"):
+        for arg in [
+            "-Werror=implicit-function-declaration",
+            "-Werror=mismatched-parameter-types",
+            "-Werror=return-type",
+        ]:
+            assert arg in res
+            res.remove(arg)
+
     if "-c" in splitline:
         include_index = res.index("python/include")
         del res[include_index]
@@ -70,9 +73,22 @@ def test_handle_command():
         "echo",
         "wasm32-emscripten",
     ]
-    assert generate_args("gcc test.c", args) == "emcc test.c"
+
+    proxied_commands = {
+        "cc": "emcc",
+        "c++": "em++",
+        "gcc": "emcc",
+        "ld": "emcc",
+        "ar": "emar",
+        "ranlib": "emranlib",
+        "strip": "emstrip",
+    }
+
+    for cmd, proxied_cmd in proxied_commands.items():
+        assert generate_args(cmd, args) == proxied_cmd
+
     assert (
-        generate_args("gcc -shared -c test.o -o test.so", args, True)
+        generate_args("gcc -c test.o -o test.so", args, True)
         == "emcc -c test.o -o test.so"
     )
 
@@ -95,13 +111,13 @@ def test_handle_command():
         target_install_dir="",
     )
     assert (
-        generate_args("gcc -shared -c test.o -o test.so", args, True)
+        generate_args("gcc -c test.o -o test.so", args, True)
         == "emcc -lm -c test.o -o test.so"
     )
 
     # Test that repeated libraries are removed
     assert (
-        generate_args("gcc -shared test.o -lbob -ljim -ljim -lbob -o test.so", args)
+        generate_args("gcc test.o -lbob -ljim -ljim -lbob -o test.so", args)
         == "emcc test.o -lbob -ljim -o test.so"
     )
 
@@ -112,7 +128,7 @@ def test_handle_command_ldflags():
     args = BuildArgs()
     assert (
         generate_args(
-            "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so",
+            "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -c test.o -o test.so",
             args,
             True,
         )
@@ -152,11 +168,11 @@ def test_conda_unsupported_args():
     # Check that compile arguments that are not supported by emcc and are sometimes
     # used in conda are removed.
     args = BuildArgs()
-    assert generate_args(
-        "gcc -shared -c test.o -B /compiler_compat -o test.so", args
-    ) == ("emcc -c test.o -o test.so")
+    assert generate_args("gcc -c test.o -B /compiler_compat -o test.so", args) == (
+        "emcc -c test.o -o test.so"
+    )
 
-    assert generate_args("gcc -shared -c test.o -Wl,--sysroot=/ -o test.so", args) == (
+    assert generate_args("gcc -c test.o -Wl,--sysroot=/ -o test.so", args) == (
         "emcc -c test.o -o test.so"
     )
 
@@ -180,6 +196,7 @@ def test_environment_var_substitution(monkeypatch):
     )
 
 
+@pytest.mark.xfail(reason="FIXME: emcc is not available during test")
 def test_exports_node(tmp_path):
     template = """
         int l();

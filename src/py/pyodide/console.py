@@ -5,6 +5,7 @@ import sys
 import traceback
 from asyncio import Future, ensure_future
 from codeop import CommandCompiler, Compile, _features  # type: ignore[attr-defined]
+from collections.abc import Callable, Generator
 from contextlib import (
     ExitStack,
     _RedirectStream,
@@ -15,7 +16,7 @@ from contextlib import (
 from platform import python_build, python_version
 from tokenize import TokenError
 from types import TracebackType
-from typing import Any, Callable, Generator, Literal
+from typing import Any, Literal
 
 from _pyodide._base import CodeRunner, ReturnMode, should_quiet
 

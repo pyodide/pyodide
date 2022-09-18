@@ -17,7 +17,7 @@ from __main__ import __file__ as INVOKED_PATH_STR
 
 INVOKED_PATH = Path(INVOKED_PATH_STR)
 
-SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "gfortran", "cargo"}
+SYMLINKS = {"cc", "c++", "ld", "ar", "gcc", "ranlib", "strip", "gfortran", "cargo"}
 IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
 
 if IS_COMPILER_INVOCATION:
@@ -31,7 +31,7 @@ if IS_COMPILER_INVOCATION:
         raise RuntimeError(
             "Invalid invocation: can't find PYWASMCROSS_ARGS."
             f" Invoked from {INVOKED_PATH}."
-        )
+        ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
@@ -39,13 +39,13 @@ if IS_COMPILER_INVOCATION:
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
 
-import re
 import shutil
 import subprocess
 from collections import namedtuple
+from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from typing import Any, Iterable, Iterator, Literal, MutableMapping, NoReturn
+from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
@@ -98,6 +98,10 @@ def make_command_wrapper_symlinks(
         env[var] = symlink
 
 
+# Also defined in pyodide_build.io (though avoiding to import dependent modules here)
+_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+
+
 @contextmanager
 def get_build_env(
     env: dict[str, str],
@@ -107,7 +111,7 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    exports: str | list[str],
+    exports: _BuildSpecExports | list[_BuildSpecExports],
 ) -> Iterator[dict[str, str]]:
     kwargs = dict(
         pkgname=pkgname,
@@ -301,11 +305,17 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
             "--as-needed",
         ]:
             continue
-        # ignore unsupported --sysroot compile argument used in conda
-        if opt.startswith("--sysroot="):
+
+        if opt.startswith(
+            (
+                "--sysroot=",  # ignore unsupported --sysroot compile argument used in conda
+                "--version-script=",
+                "-R/",  # wasm-ld does not accept -R (runtime libraries)
+                "-R.",  # wasm-ld does not accept -R (runtime libraries)
+            )
+        ):
             continue
-        if opt.startswith("--version-script="):
-            continue
+
         new_link_opts.append(opt)
     if len(new_link_opts) > 1:
         return ",".join(new_link_opts)
@@ -336,9 +346,6 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
 
     # fmt: off
     if arg in [
-        # don't use -shared, SIDE_MODULE is already used
-        # and -shared breaks it
-        "-shared",
         # threading is disabled for now
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
@@ -540,6 +547,12 @@ def handle_command_generate_args(
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
+    elif cmd == "ranlib":
+        line[0] = "emranlib"
+        return line
+    elif cmd == "strip":
+        line[0] = "emstrip"
+        return line
     else:
         return line
 
@@ -586,9 +599,6 @@ def handle_command_generate_args(
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        # The native build is possibly multithreaded, but the emscripten one
-        # definitely isn't
-        arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg in optflags_valid and optflag is not None:
             # There are multiple contradictory optflags provided, use the one
             # from cflags/cxxflags/ldflags

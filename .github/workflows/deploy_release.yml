@@ -1,6 +1,6 @@
 name: deploy-release
 on:
-  repository_dispatch:
+  workflow_dispatch:
     types: [deploy-release]
 jobs:
   deploy-pyodide-build-pypi:

@@ -2,9 +2,9 @@ import os
 import shutil
 import sys
 import traceback
+from collections.abc import Mapping
 from itertools import chain
 from pathlib import Path
-from typing import Mapping
 
 from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
 from build.__main__ import (
@@ -58,7 +58,13 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     # only recythonize if it is present. We need them to always recythonize so
     # we always install cython. If the reqs included some cython version already
     # then this won't do anything.
-    env.install(["cython", "pythran"])
+    env.install(
+        [
+            "cython",
+            "cmake<3.24",  # TODO: `_cmake_record_install_prefix` is not defined in Emscripten.
+            "pythran",
+        ]
+    )
 
 
 def _build_in_isolated_env(

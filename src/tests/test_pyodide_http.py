@@ -1,5 +1,5 @@
 import pytest
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
@@ -82,7 +82,10 @@ def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     )
 
 
-@pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
+@pytest.mark.xfail_browsers(
+    node="XMLHttpRequest is not available in node",
+    safari="raises TypeError: exceptions must derive from BaseException",
+)
 def test_pyfetch_coors_error(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO",

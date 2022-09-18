@@ -1,0 +1,25 @@
+From 3d71b3dc10499b473eba715b28d03d6c4633be6b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 28 Aug 2022 09:15:55 -0700
+Subject: [PATCH] Fix function pointer disagreement
+
+---
+ galpy/orbit/orbit_c_ext/integratePlanarOrbit.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/galpy/orbit/orbit_c_ext/integratePlanarOrbit.c b/galpy/orbit/orbit_c_ext/integratePlanarOrbit.c
+index 8f34dbf3..4f185dcb 100644
+--- a/galpy/orbit/orbit_c_ext/integratePlanarOrbit.c
++++ b/galpy/orbit/orbit_c_ext/integratePlanarOrbit.c
+@@ -436,7 +436,7 @@ void parse_leapFuncArgs(int npot,struct potentialArg * potentialArgs,
+       potentialArgs->ntfuncs= 0;
+       break;
+     case 40: //NullPotential, no arguments (only supported for orbit int)
+-      potentialArgs->potentialEval= &ZeroPlanarForce;
++      potentialArgs->potentialEval= &ZeroForce;
+       potentialArgs->planarRforce= &ZeroPlanarForce;
+       potentialArgs->planarphitorque= &ZeroPlanarForce;
+       potentialArgs->planarR2deriv= &ZeroPlanarForce;
+-- 
+2.25.1
+

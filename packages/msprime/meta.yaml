@@ -1,6 +1,8 @@
 package:
   name: msprime
   version: 1.2.0
+  top-level:
+    - msprime
 source:
   url: https://files.pythonhosted.org/packages/e6/81/8b16831a9e58151da55fd63e13d052ba27ea647022b6555964115a38c6cd/msprime-1.2.0.tar.gz
   sha256: 60025ad9fd30d827a72ae6e760b6cff07a1d0e169b2c1da1024cb0fc23e4a7aa
@@ -18,10 +20,8 @@ requirements:
     - newick
     - tskit
     - demes
+  host:
     - libgsl
-test:
-  imports:
-    - msprime
 about:
   home: https://tskit.dev/msprime
   PyPI: https://pypi.org/project/msprime
