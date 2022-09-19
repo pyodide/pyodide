@@ -82,6 +82,7 @@ def test_handle_command():
         "ar": "emar",
         "ranlib": "emranlib",
         "strip": "emstrip",
+        "cmake": "emcmake",
     }
 
     for cmd, proxied_cmd in proxied_commands.items():
