@@ -39,6 +39,8 @@ def symlink_unisolated_packages(env: IsolatedEnv) -> None:
     sysconfigdata_path = (
         Path(os.environ["TARGETINSTALLDIR"]) / f"sysconfigdata/{sysconfigdata_name}.py"
     )
+
+    env_site_packages.mkdir(parents=True, exist_ok=True)
     shutil.copy(sysconfigdata_path, env_site_packages)
     host_site_packages = Path(get_hostsitepackages())
     for name in get_unisolated_packages():
