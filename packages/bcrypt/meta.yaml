@@ -11,6 +11,7 @@ source:
 build:
   script: |
     source $CARGO_HOME/env
+    git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
 about:
   home: https://github.com/pyca/bcrypt/
   PyPI: https://pypi.org/project/bcrypt
