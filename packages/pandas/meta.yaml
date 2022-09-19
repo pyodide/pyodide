@@ -6,8 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/2a/24/f5042daa59b91e94e6ea41edbb28d2b7e3712d0cf54a76f9ffde394efbe7/pandas-1.5.0.tar.gz
   sha256: 3ee61b881d2f64dd90c356eb4a4a4de75376586cd3c9341c6c0fcaae18d52977
-  patches:
-    - patches/fix_json_signature.patch
 build:
   cflags:
     -Werror=implicit-function-declaration -Werror=mismatched-parameter-types
