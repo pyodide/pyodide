@@ -172,7 +172,7 @@ function pyproxy_new(
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
     if (!thisInfo) {
-      thisInfo = { isBound: false, includeThis: false, boundArgs: undefined };
+      thisInfo = { isBound: false, includeThis: false, boundArgs: [] };
     }
   } else {
     target = Object.create(cls.prototype);
@@ -1229,12 +1229,7 @@ export class PyProxyCallableMethods {
     if (isBound) {
       boundThis = boundThisOld;
     }
-    let boundArgs: any[];
-    if (boundArgsOld) {
-      boundArgs = boundArgsOld.concat(jsargs);
-    } else {
-      boundArgs = jsargs;
-    }
+    let boundArgs = boundArgsOld.concat(jsargs);
     const thisInfo: PyProxyThisInfo = {
       includeThis,
       boundArgs,
