@@ -115,9 +115,10 @@ Module.disable_pyproxy_allocation_tracing();
 
 type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
 type PyProxyThisInfo = {
-  isBound: boolean;
   includeThis: boolean;
-  boundThis: any;
+  isBound: boolean;
+  boundThis?: any;
+  boundArgs: any[];
 };
 
 /**
@@ -135,13 +136,21 @@ type PyProxyThisInfo = {
  */
 function pyproxy_new(
   ptrobj: number,
-  flags_arg?: number,
-  cache?: PyProxyCache,
-  thisInfo?: PyProxyThisInfo,
+  {
+    flags: flags_arg,
+    cache,
+    thisInfo,
+    $$,
+  }: {
+    flags?: number;
+    cache?: PyProxyCache;
+    $$?: any;
+    thisInfo?: any;
+  } = {},
 ) {
   const flags =
     flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
-  let cls = Module.getPyProxyClass(flags);
+  const cls = Module.getPyProxyClass(flags);
   let target;
   if (flags & IS_CALLABLE) {
     // In this case we are effectively subclassing Function in order to ensure
@@ -163,26 +172,36 @@ function pyproxy_new(
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
     if (!thisInfo) {
-      thisInfo = { isBound: false, includeThis: false, boundThis: undefined };
+      thisInfo = { isBound: false, includeThis: false, boundArgs: undefined };
     }
   } else {
-    thisInfo = undefined;
     target = Object.create(cls.prototype);
   }
-  if (!cache) {
-    // The cache needs to be accessed primarily from the C function
-    // _pyproxy_getattr so we make a hiwire id.
-    let cacheId = Hiwire.new_value(new Map());
-    cache = { cacheId, refcnt: 0 };
+
+  const isAlias = !!$$;
+
+  if (!isAlias) {
+    if (!cache) {
+      // The cache needs to be accessed primarily from the C function
+      // _pyproxy_getattr so we make a hiwire id.
+      let cacheId = Hiwire.new_value(new Map());
+      cache = { cacheId, refcnt: 0 };
+    }
+    cache.refcnt++;
+    $$ = { ptr: ptrobj, type: "PyProxy", cache, flags };
+    Module.finalizationRegistry.register($$, [ptrobj, cache], $$);
+    Module._Py_IncRef(ptrobj);
   }
-  cache.refcnt++;
-  Object.defineProperty(target, "$$", {
-    value: { ptr: ptrobj, type: "PyProxy", cache, thisInfo, flags },
-  });
-  Module._Py_IncRef(ptrobj);
+
+  Object.defineProperty(target, "$$", { value: $$ });
+  if (flags & IS_CALLABLE) {
+    Object.defineProperty(target, "$$thisInfo", { value: thisInfo });
+  }
+
   let proxy = new Proxy(target, PyProxyHandlers);
-  trace_pyproxy_alloc(proxy);
-  Module.finalizationRegistry.register(proxy, [ptrobj, cache], proxy);
+  if (!isAlias) {
+    trace_pyproxy_alloc(proxy);
+  }
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
@@ -195,16 +214,20 @@ function _getPtr(jsobj: any) {
   return ptr;
 }
 
-function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]) {
-  const thisInfo = proxyobj.$$.thisInfo;
-  if (!thisInfo.includeThis) {
-    return;
+function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
+  const { includeThis, boundArgs, boundThis, isBound } =
+    proxyobj.$$thisInfo as PyProxyThisInfo;
+  if (includeThis) {
+    if (isBound) {
+      return [boundThis].concat(boundArgs, jsargs);
+    } else {
+      return [jsthis].concat(jsargs);
+    }
   }
-  if (thisInfo.isBound) {
-    jsargs.unshift(thisInfo.boundThis);
-  } else {
-    jsargs.unshift(jsthis);
+  if (isBound) {
+    return boundArgs.concat(jsargs);
   }
+  return jsargs;
 }
 
 let pyproxyClassMap = new Map();
@@ -285,7 +308,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
     return;
   }
   let ptrobj = _getPtr(proxy);
-  Module.finalizationRegistry.unregister(proxy);
+  Module.finalizationRegistry.unregister(proxy.$$);
   destroyed_msg = destroyed_msg || "Object has already been destroyed";
   let proxy_type = proxy.type;
   let proxy_repr;
@@ -371,9 +394,8 @@ export class PyProxyClass {
     ptr: number;
     cache: PyProxyCache;
     destroyed_msg?: string;
-    thisInfo: PyProxyThisInfo;
-    flags: number;
   };
+  $$thisInfo: PyProxyThisInfo;
   $$flags: number;
 
   /** @private */
@@ -438,7 +460,11 @@ export class PyProxyClass {
    */
   copy(): PyProxy {
     let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, this.$$.flags, this.$$.cache, this.$$.thisInfo);
+    return pyproxy_new(ptrobj, {
+      flags: this.$$flags,
+      cache: this.$$.cache,
+      thisInfo: this.$$thisInfo,
+    });
   }
   /**
    * Converts the ``PyProxy`` into a JavaScript object as best as possible. By
@@ -1162,11 +1188,11 @@ export class PyProxyCallableMethods {
     jsargs = function (...args: any) {
       return args;
     }.apply(undefined, jsargs);
-    _adjustArgs(this, jsthis, jsargs);
+    jsargs = _adjustArgs(this, jsthis, jsargs);
     return Module.callPyObject(_getPtr(this), jsargs);
   }
   call(jsthis: PyProxyClass, ...jsargs: any) {
-    _adjustArgs(this, jsthis, jsargs);
+    jsargs = _adjustArgs(this, jsthis, jsargs);
     return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
@@ -1192,23 +1218,40 @@ export class PyProxyCallableMethods {
   /**
    * No-op bind function for compatibility with existing libraries
    */
-  bind(boundThis: any) {
+  bind(boundThis: any, ...jsargs: any) {
     const self = this as unknown as PyProxy;
-    const includeThis = self.$$.thisInfo.includeThis;
-    const thisInfo: PyProxyThisInfo = {
-      isBound: true,
+    const {
       includeThis,
+      boundArgs: boundArgsOld,
+      boundThis: boundThisOld,
+      isBound,
+    } = self.$$thisInfo;
+    if (isBound) {
+      boundThis = boundThisOld;
+    }
+    let boundArgs: any[];
+    if (boundArgsOld) {
+      boundArgs = boundArgsOld.concat(jsargs);
+    } else {
+      boundArgs = jsargs;
+    }
+    const thisInfo: PyProxyThisInfo = {
+      includeThis,
+      boundArgs,
+      isBound: true,
       boundThis,
     };
+    const $$ = self.$$;
     let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, self.$$.flags, self.$$.cache, thisInfo);
+    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
   }
   captureThis() {
     const self = this as unknown as PyProxy;
-    const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$.thisInfo);
+    const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
+    const $$ = self.$$;
     thisInfo.includeThis = true;
     let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, self.$$.flags, self.$$.cache, thisInfo);
+    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
   }
 }
 // @ts-ignore
