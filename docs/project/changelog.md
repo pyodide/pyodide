@@ -86,6 +86,10 @@ substitutions:
   `pyodide_build.MetaConfig.from_yaml`
   {pr}`3079`
 
+- Pyodide JavaScript package can now built with
+  debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
+  {pr}`3129`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
