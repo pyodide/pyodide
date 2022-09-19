@@ -178,7 +178,7 @@ export let loadScript: (url: string) => Promise<void>;
 
 if (globalThis.document) {
   // browser
-  loadScript = async (url) => await import(url);
+  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
@@ -188,7 +188,7 @@ if (globalThis.document) {
     } catch (e) {
       // importScripts throws TypeError in a module type web worker, use import instead
       if (e instanceof TypeError) {
-        await import(url);
+        await import(/* webpackIgnore: true */ url);
       } else {
         throw e;
       }
@@ -216,6 +216,6 @@ async function nodeLoadScript(url: string) {
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
-    await import(nodeUrlMod.pathToFileURL(url).href);
+    await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
   }
 }
