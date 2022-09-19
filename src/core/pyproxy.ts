@@ -115,9 +115,24 @@ Module.disable_pyproxy_allocation_tracing();
 
 type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
 type PyProxyThisInfo = {
-  includeThis: boolean;
+  /**
+   * captureThis tracks whether this should be passed as the first argument to
+   * the Python function or not. We keep it false by default. To make a PyProxy
+   * where the `this` argument is included, call the `captureThis` method.
+   */
+  captureThis: boolean;
+  /**
+   * isBound tracks whether bind has been called
+   */
   isBound: boolean;
+  /**
+   * the `this` value that has been bound to the PyProxy
+   */
   boundThis?: any;
+  /**
+   * Any extra arguments passed to bind are used for partial function
+   * application. These are stored here.
+   */
   boundArgs: any[];
 };
 
@@ -172,7 +187,7 @@ function pyproxy_new(
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
     if (!thisInfo) {
-      thisInfo = { isBound: false, includeThis: false, boundArgs: [] };
+      thisInfo = { isBound: false, captureThis: false, boundArgs: [] };
     }
   } else {
     target = Object.create(cls.prototype);
@@ -215,9 +230,9 @@ function _getPtr(jsobj: any) {
 }
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
-  const { includeThis, boundArgs, boundThis, isBound } =
+  const { captureThis, boundArgs, boundThis, isBound } =
     proxyobj.$$thisInfo as PyProxyThisInfo;
-  if (includeThis) {
+  if (captureThis) {
     if (isBound) {
       return [boundThis].concat(boundArgs, jsargs);
     } else {
@@ -1215,13 +1230,10 @@ export class PyProxyCallableMethods {
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
-  /**
-   * No-op bind function for compatibility with existing libraries
-   */
   bind(boundThis: any, ...jsargs: any) {
     const self = this as unknown as PyProxy;
     const {
-      includeThis,
+      captureThis,
       boundArgs: boundArgsOld,
       boundThis: boundThisOld,
       isBound,
@@ -1231,7 +1243,7 @@ export class PyProxyCallableMethods {
     }
     let boundArgs = boundArgsOld.concat(jsargs);
     const thisInfo: PyProxyThisInfo = {
-      includeThis,
+      captureThis,
       boundArgs,
       isBound: true,
       boundThis,
@@ -1244,7 +1256,7 @@ export class PyProxyCallableMethods {
     const self = this as unknown as PyProxy;
     const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
     const $$ = self.$$;
-    thisInfo.includeThis = true;
+    thisInfo.captureThis = true;
     let ptrobj = _getPtr(this);
     return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
   }
