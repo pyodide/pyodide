@@ -35,6 +35,9 @@ function config({ input, output, name, format, minify }) {
         ? terser({
             compress: true,
             mangle: false,
+            format: {
+              comments: /^\s*webpackIgnore/,
+            },
           })
         : undefined,
     ].filter(Boolean),
