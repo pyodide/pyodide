@@ -87,7 +87,7 @@ substitutions:
   {pr}`3079`
 
 - Pyodide JavaScript package can now built with
-  debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
+  debug codes by setting `PYODIDE_DEBUG` env variable when building.
   {pr}`3129`
 
 ### Build System
