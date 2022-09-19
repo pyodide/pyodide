@@ -1,14 +1,14 @@
-From 31d4ef2a4f7a43e413322db211e4396c7fda8975 Mon Sep 17 00:00:00 2001
+From 1c579acc950f6cacfe1c2ff045708fc864dea684 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
-Date: Wed, 1 Jun 2022 10:11:44 -0700
-Subject: [PATCH] Add instant patch
+Date: Sun, 18 Sep 2022 17:44:03 -0700
+Subject: [PATCH] Use patched instant
 
 ---
  src/rust/Cargo.toml | 3 +++
  1 file changed, 3 insertions(+)
 
 diff --git a/src/rust/Cargo.toml b/src/rust/Cargo.toml
-index 617167d04..d75d537f6 100644
+index 617167d04..b51c2d2f2 100644
 --- a/src/rust/Cargo.toml
 +++ b/src/rust/Cargo.toml
 @@ -5,6 +5,9 @@ authors = ["The cryptography developers <cryptography-dev@python.org>"]
@@ -16,7 +16,7 @@ index 617167d04..d75d537f6 100644
  publish = false
  
 +[patch.crates-io]
-+parking_lot = { git = "https://github.com/Amanieu/parking_lot/", tag = "0.12.1" }
++instant = { path =  "../../instant" }
 +
  [dependencies]
  lazy_static = "1"
