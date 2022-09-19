@@ -1,7 +1,6 @@
 name: deploy-release
 on:
   workflow_dispatch:
-    types: [deploy-release]
 jobs:
   deploy-pyodide-build-pypi:
     runs-on: ubuntu-latest
