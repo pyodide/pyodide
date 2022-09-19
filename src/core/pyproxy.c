@@ -928,7 +928,7 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
       throw new Error("OnceProxy can only be called once");
     }
     try {
-      return Module.callPyObject(obj, ... args);
+      return Module.callPyObject(obj, args);
     } finally {
       wrapper.destroy();
     }
@@ -1016,7 +1016,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
     checkUsed();
     try {
       if(handle_result){
-        return Module.callPyObject(handle_result, res);
+        return Module.callPyObject(handle_result, [res]);
       }
     } finally {
       done_callback(res);
@@ -1027,7 +1027,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
     checkUsed();
     try {
       if(handle_exception){
-        return Module.callPyObject(handle_exception, err);
+        return Module.callPyObject(handle_exception, [err]);
       }
     } finally {
       done_callback(undefined);

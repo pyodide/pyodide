@@ -395,7 +395,6 @@ jobs:
             cd test
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
-            git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5
 
             python3.10 -m venv .venv-host
             source .venv-host/bin/activate
@@ -406,13 +405,8 @@ jobs:
             cd zope.interface
             pyodide build
             pip install dist/*.whl
-            cd ../coveragepy/
-            pyodide build
-            pip install dist/*.whl
             cd ../attrs
-            pyodide build
-            WHEEL_NAME=$(echo dist/*.whl)
-            pip install $WHEEL_NAME[tests]
+            pip install .[tests]
             python -m pytest -k 'not mypy'
 
   benchmark:
@@ -478,12 +472,13 @@ jobs:
           name: Deploy to PyPI
           command: |
             # Ask github actions to deploy for us
+            export PAYLOAD={"ref":"${CIRCLE_TAG}","inputs":{}}
             curl \
               -X POST \
               -H "Accept: application/vnd.github.v3+json" \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/dispatches \
-              -d '{"event_type":"deploy-release","client_payload":{}}'
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/dispatches/deploy-release \
+              -d "$PAYLOAD"
 
       - run:
           name: Set PYODIDE_BASE_URL
