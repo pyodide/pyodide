@@ -335,11 +335,6 @@ def test_checkpw_bad_salt(
             b"badpass",
             b"$2b$04$?Siw3Nv3Q/gTOIPetAyPr.GNj3aO0lb1E5E9UumYGKjP9BYqlNWJe",
         )
-    with pytest.raises(ValueError):
-        bcrypt.checkpw(
-            b"password",
-            b"$2b$3$mdEQPMOtfPX.WGZNXgF66OhmBlOGKEd66SQ7DyJPGucYYmvTJYviy",
-        )
 
 
 @run_in_pyodide(packages=["bcrypt"])
