@@ -1317,13 +1317,17 @@ export class PyProxyCallableMethods {
    *
    * .. code-block:: js
    *
-   *    let obj = { a : 7 }; pyodide.runPython(` def f(self): return self.a
+   *    let obj = { a : 7 };
+   *    pyodide.runPython(`
+   *      def f(self):
+   *        return self.a
    *    `);
-   *    // Without captureThis, it doesn't work to use ``f`` as a method for
-   *    `obj`: obj.f = pyodide.globals.get("f") obj.f(); // raises "TypeError:
-   *    f() missing 1 required positional argument: 'self'" // With captureThis,
-   *    it works fine: obj.f = pyodide.globals.get("f").captureThis(); obj.f();
-   *    // returns 7
+   *    // Without captureThis, it doesn't work to use ``f`` as a method for `obj`:
+   *    obj.f = pyodide.globals.get("f");
+   *    obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
+   *    // With captureThis, it works fine:
+   *    obj.f = pyodide.globals.get("f").captureThis();
+   *    obj.f(); // returns 7
    *
    */
   captureThis(): PyProxy {
