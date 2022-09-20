@@ -50,6 +50,10 @@ substitutions:
 
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing packages that are included in Pyodide fails.
+  {pr}`3137`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
