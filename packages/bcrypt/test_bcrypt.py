@@ -1,4 +1,3 @@
-import bcrypt
 import pytest
 from pytest_pyodide import run_in_pyodide
 
@@ -175,6 +174,8 @@ _2y_test_vectors = [
 def test_gensalt_basic(selenium, monkeypatch):
     import os
 
+    import bcrypt
+
     orig_urandom = os.urandom
     try:
         os.urandom = lambda n: b"0000000000000000"
@@ -213,6 +214,8 @@ def test_gensalt_basic(selenium, monkeypatch):
 def test_gensalt_rounds_valid(selenium, rounds, expected):
     import os
 
+    import bcrypt
+
     orig_urandom = os.urandom
     try:
         os.urandom = lambda n: b"0000000000000000"
@@ -224,12 +227,18 @@ def test_gensalt_rounds_valid(selenium, rounds, expected):
 @pytest.mark.parametrize("rounds", list(range(1, 4)))
 @run_in_pyodide(packages=["bcrypt"])
 def test_gensalt_rounds_invalid(selenium, rounds):
+    import bcrypt
+    import pytest
+
     with pytest.raises(ValueError):
         bcrypt.gensalt(rounds)
 
 
 @run_in_pyodide(packages=["bcrypt"])
 def test_gensalt_bad_prefix(selenium):
+    import bcrypt
+    import pytest
+
     with pytest.raises(ValueError):
         bcrypt.gensalt(prefix="bad")
 
@@ -237,6 +246,8 @@ def test_gensalt_bad_prefix(selenium):
 @run_in_pyodide(packages=["bcrypt"])
 def test_gensalt_2a_prefix(selenium):
     import os
+
+    import bcrypt
 
     orig_urandom = os.urandom
     try:
@@ -249,30 +260,40 @@ def test_gensalt_2a_prefix(selenium):
 @pytest.mark.parametrize(("password", "salt", "hashed"), _test_vectors)
 @run_in_pyodide(packages=["bcrypt"])
 def test_hashpw_new(selenium, password, salt, hashed):
+    import bcrypt
+
     assert bcrypt.hashpw(password, salt) == hashed
 
 
 @pytest.mark.parametrize(("password", "salt", "hashed"), _test_vectors)
 @run_in_pyodide(packages=["bcrypt"])
 def test_checkpw(selenium, password, salt, hashed):
+    import bcrypt
+
     assert bcrypt.checkpw(password, hashed) is True
 
 
 @pytest.mark.parametrize(("password", "salt", "hashed"), _test_vectors)
 @run_in_pyodide(packages=["bcrypt"])
 def test_hashpw_existing(selenium, password, salt, hashed):
+    import bcrypt
+
     assert bcrypt.hashpw(password, hashed) == hashed
 
 
 @pytest.mark.parametrize(("password", "hashed", "expected"), _2y_test_vectors)
 @run_in_pyodide(packages=["bcrypt"])
 def test_hashpw_2y_prefix(selenium, password, hashed, expected):
+    import bcrypt
+
     assert bcrypt.hashpw(password, hashed) == expected
 
 
 @pytest.mark.parametrize(("password", "hashed", "expected"), _2y_test_vectors)
 @run_in_pyodide(packages=["bcrypt"])
 def test_checkpw_2y_prefix(selenium, password, hashed, expected):
+    import bcrypt
+
     assert bcrypt.checkpw(password, hashed) is True
 
 
@@ -280,6 +301,9 @@ def test_checkpw_2y_prefix(selenium, password, hashed, expected):
 def test_hashpw_invalid(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(ValueError):
         bcrypt.hashpw(b"password", b"$2z$04$cVWp4XaNU8a4v1uMRum2SO")
 
@@ -288,6 +312,8 @@ def test_hashpw_invalid(
 def test_checkpw_wrong_password(
     selenium,
 ):
+    import bcrypt
+
     assert (
         bcrypt.checkpw(
             b"badpass",
@@ -301,6 +327,9 @@ def test_checkpw_wrong_password(
 def test_checkpw_bad_salt(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(ValueError):
         bcrypt.checkpw(
             b"badpass",
@@ -317,6 +346,9 @@ def test_checkpw_bad_salt(
 def test_checkpw_str_password(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(TypeError):
         bcrypt.checkpw("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
@@ -325,6 +357,9 @@ def test_checkpw_str_password(
 def test_checkpw_str_salt(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(TypeError):
         bcrypt.checkpw(b"password", "$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
@@ -333,6 +368,9 @@ def test_checkpw_str_salt(
 def test_hashpw_str_password(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(TypeError):
         bcrypt.hashpw("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
@@ -341,6 +379,9 @@ def test_hashpw_str_password(
 def test_hashpw_str_salt(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(TypeError):
         bcrypt.hashpw(b"password", "$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
@@ -349,6 +390,9 @@ def test_hashpw_str_salt(
 def test_checkpw_nul_byte(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     bcrypt.checkpw(
         b"abc\0def",
         b"$2b$04$2Siw3Nv3Q/gTOIPetAyPr.GNj3aO0lb1E5E9UumYGKjP9BYqlNWJe",
@@ -365,6 +409,8 @@ def test_checkpw_nul_byte(
 def test_hashpw_nul_byte(
     selenium,
 ):
+    import bcrypt
+
     salt = bcrypt.gensalt(4)
     hashed = bcrypt.hashpw(b"abc\0def", salt)
     assert bcrypt.checkpw(b"abc\0def", hashed)
@@ -379,6 +425,8 @@ def test_hashpw_nul_byte(
 def test_checkpw_extra_data(
     selenium,
 ):
+    import bcrypt
+
     salt = bcrypt.gensalt(4)
     hashed = bcrypt.hashpw(b"abc", salt)
 
@@ -500,6 +548,8 @@ def test_checkpw_extra_data(
 )
 @run_in_pyodide(packages=["bcrypt"])
 def test_kdf(selenium, rounds, password, salt, expected):
+    import bcrypt
+
     derived = bcrypt.kdf(password, salt, len(expected), rounds, ignore_few_rounds=True)
     assert derived == expected
 
@@ -508,6 +558,9 @@ def test_kdf(selenium, rounds, password, salt, expected):
 def test_kdf_str_password(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(TypeError):
         bcrypt.kdf("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 10, 10)
 
@@ -516,6 +569,9 @@ def test_kdf_str_password(
 def test_kdf_str_salt(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.raises(TypeError):
         bcrypt.kdf(b"password", "salt", 10, 10)
 
@@ -524,6 +580,8 @@ def test_kdf_str_salt(
 def test_kdf_no_warn_rounds(
     selenium,
 ):
+    import bcrypt
+
     bcrypt.kdf(b"password", b"salt", 10, 10, True)
 
 
@@ -531,6 +589,9 @@ def test_kdf_no_warn_rounds(
 def test_kdf_warn_rounds(
     selenium,
 ):
+    import bcrypt
+    import pytest
+
     with pytest.warns(UserWarning):
         bcrypt.kdf(b"password", b"salt", 10, 10)
 
@@ -550,6 +611,9 @@ def test_kdf_warn_rounds(
 )
 @run_in_pyodide(packages=["bcrypt"])
 def test_invalid_params(selenium, password, salt, desired_key_bytes, rounds, error):
+    import bcrypt
+    import pytest
+
     with pytest.raises(error):
         bcrypt.kdf(password, salt, desired_key_bytes, rounds)
 
@@ -558,6 +622,8 @@ def test_invalid_params(selenium, password, salt, desired_key_bytes, rounds, err
 def test_2a_wraparound_bug(
     selenium,
 ):
+    import bcrypt
+
     assert (
         bcrypt.hashpw((b"0123456789" * 26)[:255], b"$2a$04$R1lJ2gkNaoPGdafE.H.16.")
         == b"$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi"
