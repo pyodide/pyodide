@@ -45,6 +45,10 @@ substitutions:
 
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
+- {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
+  first argument using the {any}`captureThis` method.
+  {pr}`3103`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
