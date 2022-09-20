@@ -50,6 +50,10 @@ substitutions:
 
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
+- {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
+  first argument using the {any}`captureThis` method.
+  {pr}`3103`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
   {pr}`3137`
@@ -89,6 +93,9 @@ substitutions:
 - {{ Breaking }} `pyodide_build.io.parse_package_config` function is removed in favor of
   `pyodide_build.MetaConfig.from_yaml`
   {pr}`3079`
+
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
 
 ### Build System
 
