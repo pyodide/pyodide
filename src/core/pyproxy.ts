@@ -162,7 +162,7 @@ function pyproxy_new(
     $$?: any;
     thisInfo?: any;
   } = {},
-) {
+): PyProxy {
   const flags =
     flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
   const cls = Module.getPyProxyClass(flags);
@@ -1197,22 +1197,50 @@ export type PyProxyCallable = PyProxy &
   ((...args: any[]) => any);
 
 export class PyProxyCallableMethods {
-  apply(jsthis: PyProxyClass, jsargs: any) {
+  /**
+   * The apply() method calls the specified function with a given this value,
+   * and arguments provided as an array (or an array-like object). Like the
+   * `JavaScript apply function
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply>`_.
+   *
+   * Present only if the proxied Python object is callable.
+   *
+   * @param thisArg The `this` argument. Has no effect unless the `PyProxy` has
+   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as
+   * the first argument to the Python function.
+   * @param jsargs The array of arguments
+   * @returns The result from the function call.
+   */
+  apply(thisArg: any, jsargs: any) {
     // Convert jsargs to an array using ordinary .apply in order to match the
     // behavior of .apply very accurately.
     jsargs = function (...args: any) {
       return args;
     }.apply(undefined, jsargs);
-    jsargs = _adjustArgs(this, jsthis, jsargs);
-    return Module.callPyObject(_getPtr(this), jsargs);
-  }
-  call(jsthis: PyProxyClass, ...jsargs: any) {
-    jsargs = _adjustArgs(this, jsthis, jsargs);
+    jsargs = _adjustArgs(this, thisArg, jsargs);
     return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
-   * Call the function with key word arguments.
-   * The last argument must be an object with the keyword arguments.
+   * Calls the function with a given this value and arguments provided
+   * individually. Like the `JavaScript call
+   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
+   *
+   * Present only if the proxied Python object is callable.
+   *
+   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy` has
+   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as the first
+   * argument to the Python function.
+   * @param jsargs The arguments
+   * @returns The result from the function call.
+   */
+  call(thisArg: any, ...jsargs: any) {
+    jsargs = _adjustArgs(this, thisArg, jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
+  }
+  /**
+   * Call the function with key word arguments. The last argument must be an
+   * object with the keyword arguments. Present only if the proxied Python
+   * object is callable.
    */
   callKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
@@ -1230,7 +1258,26 @@ export class PyProxyCallableMethods {
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
-  bind(boundThis: any, ...jsargs: any) {
+  /**
+   * The bind() method creates a new function that, when called, has its
+   * ``this`` keyword set to the provided value, with a given sequence of
+   * arguments preceding any provided when the new function is called. See the
+   * documentation for the `JavaScript bind
+   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind>`_.
+   *
+   * If the `PyProxy` does not have :any:`captureThis` set, the ``this``
+   * parameter will be discarded. If it does have :any:`captureThis` set,
+   * ``thisArg`` will be set to the first argument of the Python function. The
+   * returned proxy and the original proxy have the same lifetime so destroying
+   * either destroys both.
+   *
+   * @param thisArg The value to be passed as the ``this`` parameter to the
+   * target function ``func`` when the bound function is called.
+   * @param jsargs Extra arguments to prepend to arguments provided to the bound
+   * function when invoking ``func``.
+   * @returns
+   */
+  bind(thisArg: any, ...jsargs: any) {
     const self = this as unknown as PyProxy;
     const {
       captureThis,
@@ -1238,6 +1285,7 @@ export class PyProxyCallableMethods {
       boundThis: boundThisOld,
       isBound,
     } = self.$$thisInfo;
+    let boundThis = thisArg;
     if (isBound) {
       boundThis = boundThisOld;
     }
@@ -1254,26 +1302,31 @@ export class PyProxyCallableMethods {
   }
 
   /**
-   * Returns a `PyProxy` that passes `this` as the first argument to the Python
-   * function. It can then be used as a method on a JavaScript object. For
-   * example:
+   * Returns a ``PyProxy`` that passes ``this`` as the first argument to the
+   * Python function. The returned ``PyProxy`` has the internal ``captureThis``
+   * property set.
+   *
+   * It can then be used as a method on a JavaScript object. The returned proxy
+   * and the original proxy have the same lifetime so destroying either destroys
+   * both.
+   *
+   * @returns The resulting ``PyProxy``. It has the same lifetime as the
+   * original ``PyProxy`` but passes ``this`` to the wrapped function.
+   *
+   * For example:
    *
    * .. code-block:: js
    *
-   *    let obj = { a : 7 };
-   *    pyodide.runPython(`
-   *       def f(self):
-   *         return self.a
+   *    let obj = { a : 7 }; pyodide.runPython(` def f(self): return self.a
    *    `);
-   *    // Without captureThis, it doesn't work to use `f` as a method for `obj`:
-   *    obj.f = pyodide.globals.get("f")
-   *    obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
-   *    // With captureThis, it works fine:
-   *    obj.f = pyodide.globals.get("f").captureThis();
-   *    obj.f(); // returns 7
+   *    // Without captureThis, it doesn't work to use ``f`` as a method for
+   *    `obj`: obj.f = pyodide.globals.get("f") obj.f(); // raises "TypeError:
+   *    f() missing 1 required positional argument: 'self'" // With captureThis,
+   *    it works fine: obj.f = pyodide.globals.get("f").captureThis(); obj.f();
+   *    // returns 7
    *
    */
-  captureThis() {
+  captureThis(): PyProxy {
     const self = this as unknown as PyProxy;
     const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
     const $$ = self.$$;
