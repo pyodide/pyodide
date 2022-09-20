@@ -45,6 +45,7 @@ function config({ input, output, name, format, minify }) {
             mangle: false,
             format: {
               beautify: DEBUG,
+              comments: /^\s*webpackIgnore/,
             },
           })
         : undefined,
