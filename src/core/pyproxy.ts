@@ -1258,19 +1258,20 @@ export class PyProxyCallableMethods {
    * function. It can then be used as a method on a JavaScript object. For
    * example:
    *
-   * ```js
-   * let obj = { a : 7 };
-   * pyodide.runPython(`
-   *    def f(self):
-   *      return self.a
-   * `);
-   * // Without captureThis, it doesn't work to use `f` as a method for `obj`:
-   * obj.f = pyodide.globals.get("f")
-   * obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
-   * // With captureThis, it works fine:
-   * obj.f = pyodide.globals.get("f").captureThis();
-   * obj.f(); // returns 7
-   * ```
+   * .. code-block:: js
+   *
+   *    let obj = { a : 7 };
+   *    pyodide.runPython(`
+   *       def f(self):
+   *         return self.a
+   *    `);
+   *    // Without captureThis, it doesn't work to use `f` as a method for `obj`:
+   *    obj.f = pyodide.globals.get("f")
+   *    obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
+   *    // With captureThis, it works fine:
+   *    obj.f = pyodide.globals.get("f").captureThis();
+   *    obj.f(); // returns 7
+   *
    */
   captureThis() {
     const self = this as unknown as PyProxy;
