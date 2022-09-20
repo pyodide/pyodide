@@ -114,6 +114,27 @@ Module.disable_pyproxy_allocation_tracing = function () {
 Module.disable_pyproxy_allocation_tracing();
 
 type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
+type PyProxyThisInfo = {
+  /**
+   * captureThis tracks whether this should be passed as the first argument to
+   * the Python function or not. We keep it false by default. To make a PyProxy
+   * where the `this` argument is included, call the `captureThis` method.
+   */
+  captureThis: boolean;
+  /**
+   * isBound tracks whether bind has been called
+   */
+  isBound: boolean;
+  /**
+   * the `this` value that has been bound to the PyProxy
+   */
+  boundThis?: any;
+  /**
+   * Any extra arguments passed to bind are used for partial function
+   * application. These are stored here.
+   */
+  boundArgs: any[];
+};
 
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
@@ -128,9 +149,23 @@ type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
  * many as possible.
  * @private
  */
-Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
-  let flags = Module._pyproxy_getflags(ptrobj);
-  let cls = Module.getPyProxyClass(flags);
+function pyproxy_new(
+  ptrobj: number,
+  {
+    flags: flags_arg,
+    cache,
+    thisInfo,
+    $$,
+  }: {
+    flags?: number;
+    cache?: PyProxyCache;
+    $$?: any;
+    thisInfo?: any;
+  } = {},
+): PyProxy {
+  const flags =
+    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
+  const cls = Module.getPyProxyClass(flags);
   let target;
   if (flags & IS_CALLABLE) {
     // In this case we are effectively subclassing Function in order to ensure
@@ -151,25 +186,40 @@ Module.pyproxy_new = function (ptrobj: number, cache?: PyProxyCache) {
     delete target.name;
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
+    if (!thisInfo) {
+      thisInfo = { isBound: false, captureThis: false, boundArgs: [] };
+    }
   } else {
     target = Object.create(cls.prototype);
   }
-  if (!cache) {
-    // The cache needs to be accessed primarily from the C function
-    // _pyproxy_getattr so we make a hiwire id.
-    let cacheId = Hiwire.new_value(new Map());
-    cache = { cacheId, refcnt: 0 };
+
+  const isAlias = !!$$;
+
+  if (!isAlias) {
+    if (!cache) {
+      // The cache needs to be accessed primarily from the C function
+      // _pyproxy_getattr so we make a hiwire id.
+      let cacheId = Hiwire.new_value(new Map());
+      cache = { cacheId, refcnt: 0 };
+    }
+    cache.refcnt++;
+    $$ = { ptr: ptrobj, type: "PyProxy", cache, flags };
+    Module.finalizationRegistry.register($$, [ptrobj, cache], $$);
+    Module._Py_IncRef(ptrobj);
   }
-  cache.refcnt++;
-  Object.defineProperty(target, "$$", {
-    value: { ptr: ptrobj, type: "PyProxy", cache },
-  });
-  Module._Py_IncRef(ptrobj);
+
+  Object.defineProperty(target, "$$", { value: $$ });
+  if (flags & IS_CALLABLE) {
+    Object.defineProperty(target, "$$thisInfo", { value: thisInfo });
+  }
+
   let proxy = new Proxy(target, PyProxyHandlers);
-  trace_pyproxy_alloc(proxy);
-  Module.finalizationRegistry.register(proxy, [ptrobj, cache], proxy);
+  if (!isAlias) {
+    trace_pyproxy_alloc(proxy);
+  }
   return proxy;
-};
+}
+Module.pyproxy_new = pyproxy_new;
 
 function _getPtr(jsobj: any) {
   let ptr: number = jsobj.$$.ptr;
@@ -177,6 +227,22 @@ function _getPtr(jsobj: any) {
     throw new Error(jsobj.$$.destroyed_msg);
   }
   return ptr;
+}
+
+function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
+  const { captureThis, boundArgs, boundThis, isBound } =
+    proxyobj.$$thisInfo as PyProxyThisInfo;
+  if (captureThis) {
+    if (isBound) {
+      return [boundThis].concat(boundArgs, jsargs);
+    } else {
+      return [jsthis].concat(jsargs);
+    }
+  }
+  if (isBound) {
+    return boundArgs.concat(jsargs);
+  }
+  return jsargs;
 }
 
 let pyproxyClassMap = new Map();
@@ -257,7 +323,7 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
     return;
   }
   let ptrobj = _getPtr(proxy);
-  Module.finalizationRegistry.unregister(proxy);
+  Module.finalizationRegistry.unregister(proxy.$$);
   destroyed_msg = destroyed_msg || "Object has already been destroyed";
   let proxy_type = proxy.type;
   let proxy_repr;
@@ -339,7 +405,12 @@ Module.callPyObject = function (ptrobj: number, jsargs: any) {
 export type PyProxy = PyProxyClass & { [x: string]: any };
 
 export class PyProxyClass {
-  $$: { ptr: number; cache: PyProxyCache; destroyed_msg?: string };
+  $$: {
+    ptr: number;
+    cache: PyProxyCache;
+    destroyed_msg?: string;
+  };
+  $$thisInfo: PyProxyThisInfo;
   $$flags: number;
 
   /** @private */
@@ -404,7 +475,11 @@ export class PyProxyClass {
    */
   copy(): PyProxy {
     let ptrobj = _getPtr(this);
-    return Module.pyproxy_new(ptrobj, this.$$.cache);
+    return pyproxy_new(ptrobj, {
+      flags: this.$$flags,
+      cache: this.$$.cache,
+      thisInfo: this.$$thisInfo,
+    });
   }
   /**
    * Converts the ``PyProxy`` into a JavaScript object as best as possible. By
@@ -1122,20 +1197,50 @@ export type PyProxyCallable = PyProxy &
   ((...args: any[]) => any);
 
 export class PyProxyCallableMethods {
-  apply(jsthis: PyProxyClass, jsargs: any) {
+  /**
+   * The apply() method calls the specified function with a given this value,
+   * and arguments provided as an array (or an array-like object). Like the
+   * `JavaScript apply function
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply>`_.
+   *
+   * Present only if the proxied Python object is callable.
+   *
+   * @param thisArg The `this` argument. Has no effect unless the `PyProxy` has
+   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as
+   * the first argument to the Python function.
+   * @param jsargs The array of arguments
+   * @returns The result from the function call.
+   */
+  apply(thisArg: any, jsargs: any) {
     // Convert jsargs to an array using ordinary .apply in order to match the
     // behavior of .apply very accurately.
     jsargs = function (...args: any) {
       return args;
     }.apply(undefined, jsargs);
-    return Module.callPyObject(_getPtr(this), jsargs);
-  }
-  call(jsthis: PyProxyClass, ...jsargs: any) {
+    jsargs = _adjustArgs(this, thisArg, jsargs);
     return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
-   * Call the function with key word arguments.
-   * The last argument must be an object with the keyword arguments.
+   * Calls the function with a given this value and arguments provided
+   * individually. Like the `JavaScript call
+   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
+   *
+   * Present only if the proxied Python object is callable.
+   *
+   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy` has
+   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as the first
+   * argument to the Python function.
+   * @param jsargs The arguments
+   * @returns The result from the function call.
+   */
+  call(thisArg: any, ...jsargs: any) {
+    jsargs = _adjustArgs(this, thisArg, jsargs);
+    return Module.callPyObject(_getPtr(this), jsargs);
+  }
+  /**
+   * Call the function with key word arguments. The last argument must be an
+   * object with the keyword arguments. Present only if the proxied Python
+   * object is callable.
    */
   callKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
@@ -1154,10 +1259,84 @@ export class PyProxyCallableMethods {
   }
 
   /**
-   * No-op bind function for compatibility with existing libraries
+   * The bind() method creates a new function that, when called, has its
+   * ``this`` keyword set to the provided value, with a given sequence of
+   * arguments preceding any provided when the new function is called. See the
+   * documentation for the `JavaScript bind
+   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind>`_.
+   *
+   * If the `PyProxy` does not have :any:`captureThis` set, the ``this``
+   * parameter will be discarded. If it does have :any:`captureThis` set,
+   * ``thisArg`` will be set to the first argument of the Python function. The
+   * returned proxy and the original proxy have the same lifetime so destroying
+   * either destroys both.
+   *
+   * @param thisArg The value to be passed as the ``this`` parameter to the
+   * target function ``func`` when the bound function is called.
+   * @param jsargs Extra arguments to prepend to arguments provided to the bound
+   * function when invoking ``func``.
+   * @returns
    */
-  bind(placeholder: any) {
-    return this;
+  bind(thisArg: any, ...jsargs: any) {
+    const self = this as unknown as PyProxy;
+    const {
+      captureThis,
+      boundArgs: boundArgsOld,
+      boundThis: boundThisOld,
+      isBound,
+    } = self.$$thisInfo;
+    let boundThis = thisArg;
+    if (isBound) {
+      boundThis = boundThisOld;
+    }
+    let boundArgs = boundArgsOld.concat(jsargs);
+    const thisInfo: PyProxyThisInfo = {
+      captureThis,
+      boundArgs,
+      isBound: true,
+      boundThis,
+    };
+    const $$ = self.$$;
+    let ptrobj = _getPtr(this);
+    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
+  }
+
+  /**
+   * Returns a ``PyProxy`` that passes ``this`` as the first argument to the
+   * Python function. The returned ``PyProxy`` has the internal ``captureThis``
+   * property set.
+   *
+   * It can then be used as a method on a JavaScript object. The returned proxy
+   * and the original proxy have the same lifetime so destroying either destroys
+   * both.
+   *
+   * @returns The resulting ``PyProxy``. It has the same lifetime as the
+   * original ``PyProxy`` but passes ``this`` to the wrapped function.
+   *
+   * For example:
+   *
+   * .. code-block:: js
+   *
+   *    let obj = { a : 7 };
+   *    pyodide.runPython(`
+   *      def f(self):
+   *        return self.a
+   *    `);
+   *    // Without captureThis, it doesn't work to use ``f`` as a method for `obj`:
+   *    obj.f = pyodide.globals.get("f");
+   *    obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
+   *    // With captureThis, it works fine:
+   *    obj.f = pyodide.globals.get("f").captureThis();
+   *    obj.f(); // returns 7
+   *
+   */
+  captureThis(): PyProxy {
+    const self = this as unknown as PyProxy;
+    const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
+    const $$ = self.$$;
+    thisInfo.captureThis = true;
+    let ptrobj = _getPtr(this);
+    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
   }
 }
 // @ts-ignore
@@ -1217,7 +1396,7 @@ export class PyProxyBufferMethods {
    * @returns :any:`PyBuffer <pyodide.PyBuffer>`
    */
   getBuffer(type?: string): PyBuffer {
-    let ArrayType = undefined;
+    let ArrayType: any = undefined;
     if (type) {
       ArrayType = type_to_array_map.get(type);
       if (ArrayType === undefined) {
