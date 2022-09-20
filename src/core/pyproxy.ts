@@ -1252,6 +1252,26 @@ export class PyProxyCallableMethods {
     let ptrobj = _getPtr(this);
     return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
   }
+
+  /**
+   * Returns a `PyProxy` that passes `this` as the first argument to the Python
+   * function. It can then be used as a method on a JavaScript object. For
+   * example:
+   *
+   * ```js
+   * let obj = { a : 7 };
+   * pyodide.runPython(`
+   *    def f(self):
+   *      return self.a
+   * `);
+   * // Without captureThis, it doesn't work to use `f` as a method for `obj`:
+   * obj.f = pyodide.globals.get("f")
+   * obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
+   * // With captureThis, it works fine:
+   * obj.f = pyodide.globals.get("f").captureThis();
+   * obj.f(); // returns 7
+   * ```
+   */
   captureThis() {
     const self = this as unknown as PyProxy;
     const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
