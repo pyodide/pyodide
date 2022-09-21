@@ -98,7 +98,6 @@ substitutions:
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
 
-
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
