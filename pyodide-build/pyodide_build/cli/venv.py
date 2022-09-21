@@ -2,8 +2,8 @@ from pathlib import Path
 
 import typer  # type: ignore[import]
 
-from pyodide_build.out_of_tree import venv
-from pyodide_build.out_of_tree.utils import initialize_pyodide_root
+from ..out_of_tree import venv
+from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def main(
