@@ -54,6 +54,10 @@ substitutions:
   first argument using the {any}`captureThis` method.
   {pr}`3103`
 
+- {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
+  method, so it's possible to use a JavaScript function as a Python method.
+  {pr}`3130`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
@@ -97,7 +101,6 @@ substitutions:
 
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
-
 
 ### Build System
 
