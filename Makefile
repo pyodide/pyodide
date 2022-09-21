@@ -44,7 +44,7 @@ dist/pyodide.asm.js: \
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS)
 
-	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
 	fi
 
@@ -74,10 +74,6 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
 	npx rollup -c src/js/rollup.config.js
-   # Add /* webpackIgnore: true */ to each dynamic import in `pyodide.js`.
-   # Rollup strips comments so this can't be done via the source file.
-   # We use ! as the sed separator because the replacement text includes /
-	sed -i 's!await import(!await import(/* webpackIgnore: true */ !g' dist/pyodide.js
 
 dist/package.json : src/js/package.json
 	cp $< $@
