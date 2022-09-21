@@ -91,8 +91,13 @@ substitutions:
   `pyodide_build.MetaConfig.from_yaml`
   {pr}`3079`
 
+- Pyodide JavaScript package can now built with
+  debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
+  {pr}`3129`
+
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
+
 
 ### Build System
 
