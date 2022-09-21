@@ -1,4 +1,3 @@
-import argparse
 import shutil
 import subprocess
 import sys
@@ -13,16 +12,6 @@ from ..common import (
     get_pyodide_root,
     in_xbuildenv,
 )
-
-
-def main(parser_args: argparse.Namespace) -> None:
-    create_pyodide_venv(Path(parser_args.dest))
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = "Create a Pyodide virtual environment"
-    parser.add_argument("dest", help="directory to create virtualenv at", type=str)
-    return parser
 
 
 def eprint(*args, **kwargs):
