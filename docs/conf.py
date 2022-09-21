@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+panels_add_bootstrap_css = False
+
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
