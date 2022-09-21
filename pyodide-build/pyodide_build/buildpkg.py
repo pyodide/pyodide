@@ -160,9 +160,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
         env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
-        b.run(
-            f"source {PYODIDE_ROOT}/emsdk/emsdk/emsdk_env.sh", stderr=subprocess.DEVNULL
-        )
+        b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
         yield b
 
 
