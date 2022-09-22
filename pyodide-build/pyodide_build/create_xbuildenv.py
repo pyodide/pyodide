@@ -58,6 +58,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
         Path("tools/python"),
+        Path("tools/cmake"),
         Path("dist/repodata.json"),
         Path("dist/pyodide_py.tar"),
     ]
