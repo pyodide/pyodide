@@ -98,8 +98,8 @@ def _build_in_isolated_env(
         symlink_unisolated_packages(env)
         install_reqs(env, builder.build_system_requires)
         installed_requires_for_build = False
-        # "--build-option" contains options that only apply to this package,
-        # pass it to the dependencies may cause error.
+        # "--build-option" contains custom options that only apply to current package,
+        # passing it to the dependencies may cause error.
         # e.g., lightgbm accepts "--nomp" as one of its setup.py arguments,
         # but "--nomp" isn't supported by its dependencies such as numpy, scipy, etc.
         reqs_config_settings = {k: v for k, v in config_settings.items() if k != "--build-option"}
