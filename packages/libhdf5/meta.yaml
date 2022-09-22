@@ -19,12 +19,10 @@ build:
     export DISTDIR=$(pwd)/dist
 
     mkdir -p build;
-    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > build/SupportSharedLib.cmake
 
     cd build \
         && emcmake cmake \
         -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
-        -DCMAKE_PROJECT_INCLUDE=$(pwd)/SupportSharedLib.cmake \
         -DH5_HAVE_GETPWUID=0 \
         -DH5_HAVE_SIGNAL=0 \
         -DCMAKE_BUILD_TYPE=Release \

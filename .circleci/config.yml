@@ -42,9 +42,15 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}
-            - -core-v20220303
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}
+            - -core-v20220915
+
+      - run:
+          name: calculate build hash for ccache
+          command: |
+            pip install pathspec
+            ./tools/calculate_build_cache_key.py > build_hash.txt
 
       - run:
           name: build emsdk
@@ -89,7 +95,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          key: -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -135,8 +141,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg2-v20220303
+            - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
       - run:
           name: install rust
@@ -162,11 +167,6 @@ jobs:
           name: check-size
           command: du dist/ -abh --max-depth 1  | sort -k 2
 
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-
       - run:
           name: Zip build directory
           command: |
@@ -187,6 +187,11 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
+
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
   build-pyodide-debug:
     <<: *defaults
@@ -467,18 +472,6 @@ jobs:
           name: Deploy to npm
           command: |
             ./tools/deploy_to_npm.sh
-
-      - run:
-          name: Deploy to PyPI
-          command: |
-            # Ask github actions to deploy for us
-            export PAYLOAD={"ref":"${CIRCLE_TAG}","inputs":{}}
-            curl \
-              -X POST \
-              -H "Accept: application/vnd.github.v3+json" \
-              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/dispatches/deploy-release \
-              -d "$PAYLOAD"
 
       - run:
           name: Set PYODIDE_BASE_URL

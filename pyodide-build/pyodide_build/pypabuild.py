@@ -24,6 +24,12 @@ from .common import (
     replace_env,
 )
 
+AVOIDED_REQUIREMENTS = [
+    # We don't want to install cmake Python package inside the isolated env as it will shadow
+    # the pywasmcross cmake wrapper.
+    "cmake",
+]
+
 
 def symlink_unisolated_packages(env: IsolatedEnv) -> None:
     pyversion = get_pyversion()
@@ -33,6 +39,8 @@ def symlink_unisolated_packages(env: IsolatedEnv) -> None:
     sysconfigdata_path = (
         Path(os.environ["TARGETINSTALLDIR"]) / f"sysconfigdata/{sysconfigdata_name}.py"
     )
+
+    env_site_packages.mkdir(parents=True, exist_ok=True)
     shutil.copy(sysconfigdata_path, env_site_packages)
     host_site_packages = Path(get_hostsitepackages())
     for name in get_unisolated_packages():
@@ -43,17 +51,23 @@ def symlink_unisolated_packages(env: IsolatedEnv) -> None:
             (env_site_packages / path.name).symlink_to(path)
 
 
-def remove_unisolated_requirements(requires: set[str]) -> set[str]:
+def remove_avoided_requirements(
+    requires: set[str], avoided_requirements: set[str] | list[str]
+) -> set[str]:
     for reqstr in list(requires):
         req = Requirement(reqstr)
-        for avoid_name in get_unisolated_packages():
+        for avoid_name in set(avoided_requirements):
             if avoid_name in req.name.lower():
                 requires.remove(reqstr)
     return requires
 
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
-    env.install(remove_unisolated_requirements(reqs))
+    env.install(
+        remove_avoided_requirements(
+            reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
+        )
+    )
     # Some packages (numcodecs) don't declare cython as a build dependency and
     # only recythonize if it is present. We need them to always recythonize so
     # we always install cython. If the reqs included some cython version already
@@ -61,7 +75,6 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     env.install(
         [
             "cython",
-            "cmake<3.24",  # TODO: `_cmake_record_install_prefix` is not defined in Emscripten.
             "pythran",
         ]
     )
