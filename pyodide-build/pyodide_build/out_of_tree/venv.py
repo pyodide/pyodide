@@ -181,11 +181,15 @@ def create_pyodide_script(venv_bin: Path) -> None:
     environment = " ".join(environment_vars)
 
     pyodide_path = venv_bin / "pyodide"
+    original_pyodide_cli = shutil.which("pyodide")
+    if original_pyodide_cli is None:
+        raise RuntimeError("ERROR: pyodide cli not found")
+
     pyodide_path.write_text(
         dedent(
             f"""
             #!/bin/sh
-            {environment} exec {sys.executable} -m pyodide_build.out_of_tree "$@"
+            {environment} exec {original_pyodide_cli} "$@"
             """
         )
     )
