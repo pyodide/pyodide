@@ -3,7 +3,12 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .common import get_make_flag, get_pyodide_root, get_unisolated_packages
+from .common import (
+    exit_with_stdio,
+    get_make_flag,
+    get_pyodide_root,
+    get_unisolated_packages,
+)
 from .io import MetaConfig
 
 
@@ -53,6 +58,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
         Path("tools/python"),
+        Path("tools/cmake"),
         Path("dist/repodata.json"),
         Path("dist/pyodide_py.tar"),
     ]
@@ -86,16 +92,31 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
 def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
     xbuildenv_path = pyodide_root / "xbuildenv"
+    xbuildenv_root = xbuildenv_path / "pyodide-root"
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
 
     copy_xbuild_files(xbuildenv_path)
     copy_wasm_libs(xbuildenv_path)
 
+    (xbuildenv_root / "package.json").write_text("{}")
+    res = subprocess.run(
+        ["npm", "i", "node-fetch@2"],
+        cwd=xbuildenv_root,
+        capture_output=True,
+        encoding="utf8",
+    )
+    if res.returncode != 0:
+        print("Failed to install node-fetch:")
+        exit_with_stdio(res)
+
     res = subprocess.run(
         ["pip", "freeze", "--path", get_make_flag("HOSTSITEPACKAGES")],
-        stdout=subprocess.PIPE,
+        capture_output=True,
+        encoding="utf8",
     )
-    (xbuildenv_path / "requirements.txt").write_bytes(res.stdout)
-    (xbuildenv_path / "pyodide-root/unisolated.txt").write_text(
-        "\n".join(get_unisolated_packages())
-    )
+    if res.returncode != 0:
+        print("Failed to run pip freeze:")
+        exit_with_stdio(res)
+
+    (xbuildenv_path / "requirements.txt").write_text(res.stdout)
+    (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))

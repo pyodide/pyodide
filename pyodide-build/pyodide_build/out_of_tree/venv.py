@@ -126,6 +126,9 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
         os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = f'_sysconfigdata_{{sys.abiflags}}_{{sys.platform}}_{{sys.implementation._multiarch}}'
         sys.path.append("{sysconfigdata_dir}")
+        import sysconfig
+        sysconfig.get_config_vars()
+        del os.environ["_PYTHON_SYSCONFIGDATA_NAME"]
         """
     )
 

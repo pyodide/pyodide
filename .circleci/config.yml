@@ -42,9 +42,15 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}
-            - -core-v20220303
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}
+            - -core-v20220915
+
+      - run:
+          name: calculate build hash for ccache
+          command: |
+            pip install pathspec
+            ./tools/calculate_build_cache_key.py > build_hash.txt
 
       - run:
           name: build emsdk
@@ -89,7 +95,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          key: -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -135,8 +141,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg2-v20220303
+            - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
       - run:
           name: install rust
@@ -162,11 +167,6 @@ jobs:
           name: check-size
           command: du dist/ -abh --max-depth 1  | sort -k 2
 
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-
       - run:
           name: Zip build directory
           command: |
@@ -188,6 +188,11 @@ jobs:
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
 
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
+
   build-pyodide-debug:
     <<: *defaults
     resource_class: large
@@ -204,7 +209,7 @@ jobs:
             rm dist/pyodide.asm.js
             source pyodide_env.sh
             ccache -z
-            PYODIDE_SYMBOLS=1 make dist/pyodide.asm.js
+            PYODIDE_DEBUG=1 make dist/pyodide.asm.js
             ccache -s
             cd dist
             npx prettier -w pyodide.asm.js
@@ -395,7 +400,6 @@ jobs:
             cd test
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
-            git clone https://github.com/nedbat/coveragepy.git --depth 1 --branch coverage-5.5
 
             python3.10 -m venv .venv-host
             source .venv-host/bin/activate
@@ -406,13 +410,8 @@ jobs:
             cd zope.interface
             pyodide build
             pip install dist/*.whl
-            cd ../coveragepy/
-            pyodide build
-            pip install dist/*.whl
             cd ../attrs
-            pyodide build
-            WHEEL_NAME=$(echo dist/*.whl)
-            pip install $WHEEL_NAME[tests]
+            pip install .[tests]
             python -m pytest -k 'not mypy'
 
   benchmark:
@@ -473,18 +472,6 @@ jobs:
           name: Deploy to npm
           command: |
             ./tools/deploy_to_npm.sh
-
-      - run:
-          name: Deploy to PyPI
-          command: |
-            # Ask github actions to deploy for us
-            export PAYLOAD={"ref":"${CIRCLE_TAG}","inputs":{}}
-            curl \
-              -X POST \
-              -H "Accept: application/vnd.github.v3+json" \
-              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/dispatches/deploy-release \
-              -d "$PAYLOAD"
 
       - run:
           name: Set PYODIDE_BASE_URL

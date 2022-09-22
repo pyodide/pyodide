@@ -18,4 +18,4 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
     rm -f ${INSTALL_DIR}/lib/libyaml.a
-    ln -s libyaml_static.a ${INSTALL_DIR}/lib/libyaml.a
+    ln -s ${INSTALL_DIR}/lib/libyaml_static.a ${INSTALL_DIR}/lib/libyaml.a

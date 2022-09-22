@@ -57,6 +57,12 @@ export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
 
+ifdef PYODIDE_DEBUG
+	export PYODIDE_SYMBOLS=1
+	export PYODIDE_DEBUG_JS=1
+	export PYODIDE_ASSERTIONS=1
+endif
+
 ifdef PYODIDE_SOURCEMAP
 	# Debug with source maps (less useful than WASMDEBUG but easier if it helps)
 	export DBGFLAGS=$(DBGFLAGS_SOURCEMAPDEBUG)
@@ -147,6 +153,8 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
+
+export PYODIDE_CMAKE_TOOLCHAIN_FILE=$(PYODIDE_ROOT)/tools/cmake/Modules/Platform/Emscripten.cmake
 
 # For RUST
 export CARGO_HOME ?= $(HOME)/.cargo

@@ -17,10 +17,6 @@ requirements:
 build:
   sharedlibrary: true
   script: |
-    # Skips compiler check as we are cross compiling
-    sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-    sed -i '1s;^;set(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-
     # Fix return type to avoid linker error
     grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'
     grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'

@@ -15,9 +15,6 @@ build:
     -DDMLC_ENABLE_STD_THREAD=0
     -DDMLC_CXX11_THREAD_LOCAL=0
     -DUSE_OPENMP=0
-  script: |
-    # export VERBOSE=1
-    export CMAKE_TOOLCHAIN_FILE=$PYODIDE_ROOT/packages/xgboost/cmake/Toolchain.cmake
   # xgboost uses dlsym so we need to export more than just PyInit_xgboost.
   # We can't currently use "explicit" because there are too many exports.
   exports: "whole_archive"
