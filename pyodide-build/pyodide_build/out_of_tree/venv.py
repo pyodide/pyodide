@@ -162,38 +162,11 @@ def create_pip_script(venv_bin):
 
 def create_pyodide_script(venv_bin: Path) -> None:
     """Write pyodide cli script into the virtualenv bin folder"""
-    import os
-
-    # The pyodide cli must be invoked outside of the virtual env. In order to
-    # ensure this, we have to restore VIRTUAL_ENV, PATH, and PYODIDE_ROOT to
-    # their current values before invoking it..
-    # In case we are inside an xbuildenv, make sure to make the path relative to
-    # this file and not relative to PYODIDE_ROOT.
-    pyodide_build_path = str(Path(__file__).parents[2])
-
-    # Resetting PATH and VIRTUAL_ENV will temporarily restore us to the virtual
-    # environment that 'pyodide venv' was invoked in (or no virtual environment
-    # if we aren't currently in one). To be extra careful, we set PYTHON_PATH too.
-    environment_vars = [f"PYTHONPATH={pyodide_build_path}"]
-    for environment_var in ["VIRTUAL_ENV", "PATH", "PYODIDE_ROOT"]:
-        value = os.environ.get(environment_var, "''")
-        environment_vars.append(f"{environment_var}={value}")
-    environment = " ".join(environment_vars)
-
     pyodide_path = venv_bin / "pyodide"
     original_pyodide_cli = shutil.which("pyodide")
     if original_pyodide_cli is None:
         raise RuntimeError("ERROR: pyodide cli not found")
-
-    pyodide_path.write_text(
-        dedent(
-            f"""
-            #!/bin/sh
-            {environment} exec {original_pyodide_cli} "$@"
-            """
-        )
-    )
-    pyodide_path.chmod(0o777)
+    pyodide_path.symlink_to(original_pyodide_cli)
 
 
 def install_stdlib(venv_bin: Path) -> None:
