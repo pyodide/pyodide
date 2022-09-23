@@ -11,8 +11,9 @@ build:
     export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
 requirements:
   run:
-    - geos
     - numpy
+  host:
+    - geos
 test:
   imports:
     - shapely
