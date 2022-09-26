@@ -228,7 +228,7 @@ def get_library_output(line: list[str]) -> str | None:
     Check if the command is a linker invocation. If so, return the name of the
     output file.
     """
-    SHAREDLIB_REGEX = re.compile(r"(\.dylib|\.so(.\d+)*)$")
+    SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
     for arg in line:
         if not arg.startswith("-") and SHAREDLIB_REGEX.search(arg):
             return arg
