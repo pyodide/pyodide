@@ -471,10 +471,7 @@ def replace_so_abi_tags(wheel_dir: Path) -> None:
 
 
 def copy_sharedlibs(wheel_file: Path, wheel_dir: Path) -> None:
-    from auditwheel_emscripten import (  # type: ignore[import]
-        repair_extracted,
-        resolve_sharedlib,
-    )
+    from auditwheel_emscripten import copylib, resolve_sharedlib  # type: ignore[import]
     from auditwheel_emscripten.wheel_utils import WHEEL_INFO_RE  # type: ignore[import]
 
     match = WHEEL_INFO_RE.match(wheel_file.name)
@@ -487,11 +484,11 @@ def copy_sharedlibs(wheel_file: Path, wheel_dir: Path) -> None:
     lib_sdir: str = match.group("name") + ".libs"
 
     if dep_map:
-        dep_map_new = repair_extracted(wheel_dir, dep_map, lib_sdir)
+        dep_map_new = copylib(wheel_dir, dep_map, lib_sdir)
         print("Copied shared libraries:")
         for lib, path in dep_map_new.items():
             original_path = dep_map[lib]
-            print(f"  {original_path} -> {path} (required by {lib})")
+            print(f"  {original_path} -> {path}")
 
 
 def package_wheel(
