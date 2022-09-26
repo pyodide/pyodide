@@ -254,7 +254,7 @@ async function installPackage(
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
-  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
+  const [pkgExtractDir, dynlibs] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
@@ -262,8 +262,12 @@ async function installPackage(
     installer: "pyodide.loadPackage",
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
+
+  const auditWheelLibDir =
+    pkgExtractDir + "/" + pkg.file_name.split("-")[0] + ".libs";
+
   for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib, pkg.shared_library);
+    await loadDynlib(dynlib, pkg.shared_library, [auditWheelLibDir]);
   }
 }
 
@@ -348,20 +352,26 @@ const acquireDynlibLock = createLock();
  *
  * @param lib The file system path to the library.
  * @param shared Is this a shared library or not?
+ * @param libDirs Directories to search for shared libs
  * @private
  */
-async function loadDynlib(lib: string, shared: boolean) {
+async function loadDynlib(lib: string, shared: boolean, libDirs: any[]) {
   const releaseDynlibLock = await acquireDynlibLock();
   const loadGlobally = shared;
 
+  libDirs = libDirs || [];
+  libDirs = libDirs.concat(["/usr/lib", API.sitepackages]);
+
   if (DEBUG) {
-    console.debug(`Loading a dynamic library ${lib}`);
+    console.debug(
+      `Loading a dynamic library ${lib}, searching libraries from: ${libDirs}`,
+    );
   }
 
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    _ldLibraryPaths: [Module.PATH.dirname(lib), "/usr/lib", API.sitepackages],
+    _ldLibraryPaths: libDirs,
     _resolvePath: (path: string) => {
       if (DEBUG) {
         if (path !== lib) {
