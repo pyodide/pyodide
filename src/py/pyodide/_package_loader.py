@@ -45,6 +45,7 @@ EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
 PLATFORM_TAG_REGEX = re.compile(
     r"\.(cpython|pypy|jython)-[0-9]{2,}[a-z]*(-[a-z0-9_-]*)?"
 )
+SHAREDLIB_REGEX = re.compile(r"(\.dylib|\.so(.\d+)*)$")
 
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
@@ -140,7 +141,7 @@ def unpack_buffer(
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsProxy | None:
+) -> tuple[str, JsProxy | None]:
     """Used to install a package either into sitepackages or into the standard
     library.
 
@@ -186,8 +187,11 @@ def unpack_buffer(
 
     Returns
     -------
-        If calculate_dynlibs is True, a Javascript Array of dynamic libraries.
+        Returns a tuple with two elements:
+        - The path string to the directory where the archive was unpacked.
+        - If calculate_dynlibs is True, a Javascript Array of dynamic libraries.
         Otherwise, return None.
+
 
     """
     if format:
@@ -211,22 +215,29 @@ def unpack_buffer(
             set_wheel_installer(filename, f, extract_path, installer, source)
         if calculate_dynlibs:
             suffix = Path(f.name).suffix
-            return to_js(get_dynlibs(f, suffix, extract_path))
+            return str(extract_path.resolve()), to_js(
+                get_dynlibs(f, suffix, extract_path)
+            )
         else:
-            return None
+            return str(extract_path.resolve()), None
 
 
-def should_load_dynlib(path: str) -> bool:
-    suffixes = Path(path).suffixes
-    if not suffixes:
+def should_load_dynlib(path: str | Path) -> bool:
+    path = Path(path)
+
+    if not SHAREDLIB_REGEX.search(path.name):
         return False
-    if suffixes[-1] != ".so":
+
+    suffixes = path.suffixes
+
+    try:
+        tag = suffixes[suffixes.index(".so") - 1]
+    except ValueError:  # This should not happen, but just in case
         return False
-    if len(suffixes) == 1:
-        return True
-    tag = suffixes[-2]
+
     if tag in EXTENSION_TAGS:
         return True
+
     # Okay probably it's not compatible now. But it might be an unrelated .so
     # file with a name with an extra dot: `some.name.so` vs
     # `some.cpython-39-x86_64-linux-gnu.so` Let's make a best effort here to
