@@ -12,3 +12,5 @@ sphinx-version-warning~=1.1.2
 sphinx-panels
 markupsafe<2.1.0
 pydantic
+# Version should be consistent with packages/micropip/meta.yaml
+micropip==0.1.0

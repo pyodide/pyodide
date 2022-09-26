@@ -34,6 +34,7 @@ build:
     -s USE_ZLIB=1
     -s USE_LIBJPEG=1
     -s USE_LIBPNG=1
+    -DOPENCV_HAVE_FILESYSTEM_SUPPORT=1
   ldflags: |
     -ljpeg
     -lz
@@ -54,7 +55,6 @@ build:
     # export VERBOSE=1
 
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
-    export EMSCRIPTEN="$PYODIDE_ROOT/emsdk/emsdk/upstream/emscripten/"
     export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
 
     source $PYODIDE_ROOT/packages/opencv-python/cmake/build_args.sh

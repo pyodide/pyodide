@@ -1,13 +1,16 @@
 package:
   name: micropip
-  version: "0.1"
+  # This version needs to be consistent with docs/requirements-doc.txt
+  version: "0.1.0"
   _tag: pyodide.stdlib
   top-level:
     - micropip
+
+source:
+  sha256: 693a7fd7ce92fd95eaf9d88fe243f45951ad5c694cccf89493cbcc3666bbdeab
+  url: https://files.pythonhosted.org/packages/14/19/e5d36b2cc156c66858493dc118956f6fed2b1408e62be12e4ffed392b7cb/micropip-0.1.0-py3-none-any.whl
+
 requirements:
   run:
     - pyparsing
     - packaging
-    - distutils # TODO: remove once there is a release with https://github.com/pypa/packaging/pull/396
-source:
-  path: src

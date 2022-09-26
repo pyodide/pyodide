@@ -14,6 +14,16 @@ substitutions:
 
 ## Unreleased
 
+- {{ Enhancement }} Added a system for making Pyodide virtual environments. This
+  is for testing out of tree builds. For more information, see
+  [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
+  {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`, {pr}`3108`, {pr}`3109`
+
+- {{ Enhancement }} Users can do a static import of `pyodide/pyodide.asm.js` to
+  avoid issues with dynamic imports. This allows the use of Pyodide with
+  module-type service workers.
+  {pr}`3070`
+
 - {{ Enhancement }} Emscripten was updated to Version 3.1.21
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
 
@@ -45,9 +55,20 @@ substitutions:
 
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
+- {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
+  first argument using the {any}`captureThis` method.
+  {pr}`3103`
+
+- {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
+  method, so it's possible to use a JavaScript function as a Python method. When
+  the method is called, `this` will be a `PyProxy` pointing to the Python object
+  the method is called on.
+  {pr}`3130`
+
 ### Build System / Package Loading
 
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
@@ -69,6 +90,25 @@ substitutions:
   readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
   {pr}`3061`
 
+- {{ Breaking }} The micropip package was moved to a separate repository
+  [pyodide/micropip](https://github.com/pyodide/micropip). In addion to
+  installing the version shipped with a given Pyodide release, you can also
+  install a different micropip version from [PyPi](https://pypi.org/project/micropip/) with,
+
+  ```
+  await pyodide.loadPackage('packaging')
+  await pyodide.loadPackage('<URL of the micropip wheel on PyPI>')
+  ```
+
+  from Javascript. From Python you can import the Javascript Pyodide package,
+
+  ```
+  import pyodide_js
+  ```
+
+  and call the same functions as above.
+  {pr}`3122`
+
 - {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
   specification is now done more rigourously with Pydantic
   {pr}`3079`
@@ -80,6 +120,13 @@ substitutions:
 - {{ Breaking }} `pyodide_build.io.parse_package_config` function is removed in favor of
   `pyodide_build.MetaConfig.from_yaml`
   {pr}`3079`
+
+- Pyodide JavaScript package can now built with
+  debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
+  {pr}`3129`
+
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
 
 ### Build System
 

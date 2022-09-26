@@ -1,14 +1,14 @@
-From 53ee3cee6aae5333d61ac687677cf2ca39cb831a Mon Sep 17 00:00:00 2001
+From 1c579acc950f6cacfe1c2ff045708fc864dea684 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
-Date: Fri, 8 Apr 2022 18:17:51 -0700
-Subject: [PATCH 1/2] Use patched chrono
+Date: Sun, 18 Sep 2022 17:44:03 -0700
+Subject: [PATCH] Use patched instant
 
 ---
  src/rust/Cargo.toml | 3 +++
  1 file changed, 3 insertions(+)
 
 diff --git a/src/rust/Cargo.toml b/src/rust/Cargo.toml
-index 617167d0..35bf38ae 100644
+index 617167d04..b51c2d2f2 100644
 --- a/src/rust/Cargo.toml
 +++ b/src/rust/Cargo.toml
 @@ -5,6 +5,9 @@ authors = ["The cryptography developers <cryptography-dev@python.org>"]
@@ -16,7 +16,7 @@ index 617167d0..35bf38ae 100644
  publish = false
  
 +[patch.crates-io]
-+chrono = { path =  "../../chrono" }
++instant = { path =  "../../instant" }
 +
  [dependencies]
  lazy_static = "1"
