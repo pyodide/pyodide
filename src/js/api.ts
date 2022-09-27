@@ -87,10 +87,13 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param code The code to inspect.
- * @param messageCallback The ``messageCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
- * @param errorCallback The ``errorCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
+ * @param options Options passed to :any:`pyodide.loadPackage`.
+ * @param options.messageCallback A callback, called with progress messages
+ *    (optional)
+ * @param options.errorCallback A callback, called with error/warning messages
+ *    (optional)
+ * @param options.checkIntegrity If true, check the integrity of the downloaded
+ *    packages (default: true)
  * @async
  */
 export async function loadPackagesFromImports(
