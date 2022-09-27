@@ -19,7 +19,9 @@ build:
   script: |
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
 
+    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)" > ForceStaticLib.cmake
     emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_PYTHON=ON \
+    -DCMAKE_PROJECT_INCLUDE=ForceStaticLib.cmake \
     -DNUMPY_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/ \
     -DPYTHON_INCLUDE_DIR=$PYTHONINCLUDE -DPYTHON_EXECUTABLE=python$PYMAJOR.$PYMINOR \
     -DCMAKE_CXX_FLAGS="-fPIC -fexceptions -DBOOST_AP_DISABLE_THREADS=1 -O2 -DBOOST_BIND_GLOBAL_PLACEHOLDERS=1 -Wno-enum-constexpr-conversion" \
