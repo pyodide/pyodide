@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
+  {pr}`3150`.
+
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see
   [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
@@ -68,7 +71,7 @@ substitutions:
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
