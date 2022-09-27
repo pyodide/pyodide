@@ -599,8 +599,13 @@ def test_create_once_callable(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_proxy(selenium):
-    selenium.run_js(
+    from js import testAddListener, testCallListener, testRemoveListener
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    run_js(
         """
         self.testAddListener = function(f){
             self.listener = f;
@@ -611,39 +616,54 @@ def test_create_proxy(selenium):
         self.testRemoveListener = function(f){
             return self.listener === f;
         }
-        pyodide.runPython(`
-            from pyodide.ffi import create_proxy
-            from js import testAddListener, testCallListener, testRemoveListener;
-            class Test:
-                def __call__(self):
-                    return 7
-
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
-
-            f = Test()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_proxy(f)
-            assert sys.getrefcount(f) == 3
-            assert proxy() == 7
-            testAddListener(proxy)
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testRemoveListener(proxy)
-            assert sys.getrefcount(f) == 3
-            proxy.destroy()
-            assert sys.getrefcount(f) == 2
-            destroyed = False
-            del f
-            assert destroyed == True
-        `);
         """
     )
+
+    destroyed = False
+
+    class Test:
+        def __call__(self):
+            return 7
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Test()
+    import sys
+
+    assert sys.getrefcount(f) == 2
+    proxy = create_proxy(f)
+    assert sys.getrefcount(f) == 3
+    assert proxy() == 7
+    testAddListener(proxy)
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 3
+    proxy.destroy()
+    assert sys.getrefcount(f) == 2
+    destroyed = False
+    del f
+    assert destroyed
+
+
+@run_in_pyodide
+def test_create_proxy_capture_this(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    o = run_js("{}")
+
+    def f(self):
+        assert self == o
+
+    o.f = create_proxy(f, capture_this=True)
+    o.f()
+    run_js("(o) => o.f.destroy()")(o)
 
 
 def test_return_destroyed_value(selenium):
