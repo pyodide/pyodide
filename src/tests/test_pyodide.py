@@ -601,21 +601,21 @@ def test_create_once_callable(selenium):
 
 @run_in_pyodide
 def test_create_proxy(selenium):
-    from js import testAddListener, testCallListener, testRemoveListener
     from pyodide.code import run_js
     from pyodide.ffi import create_proxy
 
-    run_js(
+    [testAddListener, testCallListener, testRemoveListener] = run_js(
         """
-        self.testAddListener = function(f){
+        function testAddListener(f){
             self.listener = f;
         }
-        self.testCallListener = function(f){
+        function testCallListener(f){
             return self.listener();
         }
-        self.testRemoveListener = function(f){
+        function testRemoveListener(f){
             return self.listener === f;
         }
+        [testAddListener, testCallListener, testRemoveListener]
         """
     )
 
@@ -656,14 +656,13 @@ def test_create_proxy_capture_this(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import create_proxy
 
-    o = run_js("{}")
+    o = run_js("({})")
 
     def f(self):
         assert self == o
 
     o.f = create_proxy(f, capture_this=True)
-    o.f()
-    run_js("(o) => o.f.destroy()")(o)
+    run_js("(o) => { o.f(); o.f.destroy(); }")(o)
 
 
 def test_return_destroyed_value(selenium):
