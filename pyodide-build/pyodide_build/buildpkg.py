@@ -15,6 +15,7 @@ import subprocess
 import sys
 import sysconfig
 import textwrap
+import urllib
 from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -234,7 +235,19 @@ def download_and_extract(
     """
     # We only call this function when the URL is defined
     url = cast(str, src_metadata.url)
-    response = request.urlopen(url)
+    retry_cnt = 3
+    while True:
+        try:
+            response = request.urlopen(url)
+        except urllib.error.URLError as e:
+            if retry_cnt == 0:
+                raise RuntimeError(f"Failed to download {url}") from e
+
+            retry_cnt -= 1
+            continue
+
+        break
+
     _, parameters = cgi.parse_header(response.headers.get("Content-Disposition", ""))
     if "filename" in parameters:
         tarballname = parameters["filename"]
