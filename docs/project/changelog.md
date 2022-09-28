@@ -57,6 +57,10 @@ substitutions:
   first argument using the {any}`captureThis` method.
   {pr}`3103`
 
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing packages that are included in Pyodide fails.
+  {pr}`3137`
+
 - {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
   method, so it's possible to use a JavaScript function as a Python method. When
   the method is called, `this` will be a `PyProxy` pointing to the Python object
