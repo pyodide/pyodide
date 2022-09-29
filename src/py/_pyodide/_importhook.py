@@ -197,3 +197,53 @@ def register_unvendored_stdlib_finder() -> None:
             raise RuntimeError("UnvendoredStdlibFinder already registered")
 
     sys.meta_path.append(UnvendoredStdlibFinder())
+
+
+class RepodataPackagesFinder(MetaPathFinder):
+    """
+    A MetaPathFinder that handles packages in repodata.json.
+
+    This class simply raises an error if a package is in repodata.json but not loaded yet.
+    This needs to be added to the end of sys.meta_path, so if a package
+    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
+    """
+
+    def __init__(self, packages: dict[str, Any]) -> None:
+        self.repodata_packages = packages
+
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        [parent, _, _] = fullname.partition(".")
+
+        if not parent or parent in sys.modules or parent not in self.repodata_packages:
+            return None
+
+        if parent in self.repodata_packages:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is included in the Pyodide distribution, "
+                f"but it is not installed. "
+                f'You can install it by calling: await micropip.install("{parent}") in Python or '
+                f'await pyodide.loadPackage("{parent}") in JavaScript. '
+                "See https://pyodide.org/en/stable/usage/loading-packages.html for more details."
+            )
+
+        return None
+
+
+def register_repodata_packages_finder(packages: Any) -> None:
+    """
+    A function that adds RepodataPackagesFinder to the end of sys.meta_path.
+
+    Note that this finder must be placed in the end of meta_paths
+    in order to prevent any unexpected side effects.
+    """
+
+    for importer in sys.meta_path:
+        if isinstance(importer, RepodataPackagesFinder):
+            raise RuntimeError("RepodataPackagesFinder already registered")
+
+    sys.meta_path.append(RepodataPackagesFinder(packages.to_py()))

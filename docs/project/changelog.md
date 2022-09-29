@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
+  {pr}`3150`.
+
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see
   [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
@@ -59,6 +62,10 @@ substitutions:
   first argument using the {any}`captureThis` method.
   {pr}`3103`
 
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing packages that are included in Pyodide fails.
+  {pr}`3137`
+
 - {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
   method, so it's possible to use a JavaScript function as a Python method. When
   the method is called, `this` will be a `PyProxy` pointing to the Python object
@@ -68,7 +75,7 @@ substitutions:
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with

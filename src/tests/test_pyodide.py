@@ -1252,7 +1252,7 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_unvendored_stdlib(selenium_standalone):
+def test_unvendored_stdlib_import_hook(selenium_standalone):
     import importlib
 
     import pytest
@@ -1292,6 +1292,38 @@ def test_unvendored_stdlib(selenium_standalone):
     for lib in removed_stdlibs:
         with pytest.raises(
             ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            finder.find_spec(lib, None)
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_repodata_import_hook(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    from _pyodide._importhook import RepodataPackagesFinder
+
+    repodata_packages = ["micropip", "packaging", "regex"]
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("pytest.there_is_no_such_module")
+
+    finder = RepodataPackagesFinder({"micropip": "", "packaging": "", "regex": ""})
+
+    assert finder.find_spec("os", None) is None
+    assert finder.find_spec("os.path", None) is None
+    assert finder.find_spec("os.no_such_module", None) is None
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
         ):
             finder.find_spec(lib, None)
 

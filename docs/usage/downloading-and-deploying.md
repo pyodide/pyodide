@@ -13,10 +13,6 @@ Pyodide is available from the JsDelivr CDN
 | Latest release      | `{{PYODIDE_CDN_URL}}`                        | Recommended, cached by the browser                                                       | [link](https://pyodide.org/en/stable/console.html) |
 | Dev (`main` branch) | `https://cdn.jsdelivr.net/pyodide/dev/full/` | Re-deployed for each commit on main, no browser caching, should only be used for testing | [link](https://pyodide.org/en/latest/console.html) |
 
-```{warning}
-The previous CDN `pyodide-cdn2.iodide.io` is deprecated and should not be used.
-```
-
 ### GitHub releases
 
 You can also download Pyodide packages from [GitHub
