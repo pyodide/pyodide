@@ -235,7 +235,7 @@ class JsProxy:
         ArrayBuffer view.
 
         Example
-        ------------
+        -------
         >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> x = Uint8Array.new(range(10))
@@ -259,7 +259,7 @@ class JsProxy:
         ArrayBuffer view.
 
         Example
-        ------------
+        -------
         >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> # the JsProxy need to be pre-allocated
@@ -289,7 +289,7 @@ class JsProxy:
         ArrayBuffer view.
 
         Example
-        ------------
+        -------
         >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> x = Uint8Array.new(range(10))
@@ -376,11 +376,20 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
     return obj  # type: ignore[return-value]
 
 
-def create_proxy(obj: Any, /) -> JsProxy:
+def create_proxy(obj: Any, /, *, capture_this: bool = False) -> JsProxy:
     """Create a ``JsProxy`` of a ``PyProxy``.
 
     This allows explicit control over the lifetime of the ``PyProxy`` from
     Python: call the ``destroy`` API when done.
+
+    Parameters
+    ----------
+    obj: any
+        The object to wrap.
+
+    capture_this : bool, default=False
+        If the object is callable, should `this` be passed as the first argument
+        when calling it from JavaScript.
     """
     return obj
 

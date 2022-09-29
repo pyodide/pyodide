@@ -11,6 +11,9 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsRef
+pyproxy_new_ex(PyObject* obj, bool capture_this);
+
+JsRef
 pyproxy_new(PyObject* obj);
 
 /**

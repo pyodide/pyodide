@@ -54,8 +54,10 @@ substitutions:
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
 - {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
-  first argument using the {any}`captureThis` method.
-  {pr}`3103`
+  first argument using the {any}`captureThis` method. The {any}`create_proxy`
+  method also has a `capture_this` argument which causes the `PyProxy` to
+  receive `this` as the first argument if set to `True`
+  {pr}`3103`, {pr}`3145`
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
