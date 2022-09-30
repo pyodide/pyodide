@@ -674,9 +674,10 @@ def test_create_proxy_roundtrip(selenium):
     o = run_js("({})")
     o.f = create_proxy(f, roundtrip=True)
     assert isinstance(o.f, JsProxy)
+    assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert isinstance(o.f, dict)
+    assert o.f is f
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
