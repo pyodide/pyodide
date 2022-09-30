@@ -1,6 +1,7 @@
 declare var Module: any;
 declare var Tests: any;
 declare var API: any;
+declare var DEBUG: boolean;
 
 import {
   IN_NODE,
@@ -30,7 +31,7 @@ async function initializePackageIndex(lockFileURL: string) {
   }
   if (!repodata.packages) {
     throw new Error(
-      "Loaded repodata.json does not contain the expected key 'packages'."
+      "Loaded repodata.json does not contain the expected key 'packages'.",
     );
   }
   API.repodata_info = repodata.info;
@@ -109,7 +110,7 @@ function createDonePromise(): ResolvablePromise {
  */
 function addPackageToLoad(
   name: string,
-  toLoad: Map<string, PackageLoadMetadata>
+  toLoad: Map<string, PackageLoadMetadata>,
 ) {
   name = name.toLowerCase();
   if (toLoad.has(name)) {
@@ -148,7 +149,7 @@ function addPackageToLoad(
  */
 function recursiveDependencies(
   names: string[],
-  errorCallback: (err: string) => void
+  errorCallback: (err: string) => void,
 ): Map<string, PackageLoadMetadata> {
   const toLoad: Map<string, PackageLoadMetadata> = new Map();
   for (let name of names) {
@@ -164,7 +165,7 @@ function recursiveDependencies(
       errorCallback(
         `Loading same package ${pkgname} from ${channel} and ${
           toLoad.get(pkgname)!.channel
-        }`
+        }`,
       );
       continue;
     }
@@ -195,7 +196,7 @@ function recursiveDependencies(
  */
 async function downloadPackage(
   name: string,
-  channel: string
+  channel: string,
 ): Promise<Uint8Array> {
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
@@ -205,7 +206,7 @@ async function downloadPackage(
     file_name = API.repodata_packages[name].file_name;
     uri = resolvePath(file_name, API.config.indexURL);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.repodata_packages[name].sha256
+      API.repodata_packages[name].sha256,
     );
   } else {
     uri = channel;
@@ -219,13 +220,13 @@ async function downloadPackage(
     }
   }
   console.log(
-    `Didn't find package ${file_name} locally, attempting to load from ${cdnURL}`
+    `Didn't find package ${file_name} locally, attempting to load from ${cdnURL}`,
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
   let binary = await loadBinaryFile(cdnURL + file_name);
   console.log(
-    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`
+    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`,
   );
   await nodeFsPromisesMod.writeFile(uri, binary);
   return binary;
@@ -240,7 +241,7 @@ async function downloadPackage(
 async function installPackage(
   name: string,
   buffer: Uint8Array,
-  channel: string
+  channel: string,
 ) {
   let pkg = API.repodata_packages[name];
   if (!pkg) {
@@ -279,7 +280,7 @@ async function downloadAndInstall(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
   loaded: Set<string>,
-  failed: Map<string, Error>
+  failed: Map<string, Error>,
 ) {
   if (loadedPackages[name] !== undefined) {
     return;
@@ -350,47 +351,65 @@ const acquireDynlibLock = createLock();
  * @private
  */
 async function loadDynlib(lib: string, shared: boolean) {
-  const node = Module.FS.lookupPath(lib).node;
-  let byteArray;
-  if (node.mount.type == Module.FS.filesystems.MEMFS) {
-    byteArray = Module.FS.filesystems.MEMFS.getFileDataAsTypedArray(
-      Module.FS.lookupPath(lib).node
-    );
-  } else {
-    byteArray = Module.FS.readFile(lib);
-  }
   const releaseDynlibLock = await acquireDynlibLock();
+  const loadGlobally = shared;
+
+  if (DEBUG) {
+    console.debug(`Loading a dynamic library ${lib}`);
+  }
 
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    _ldLibraryPath: "/usr/lib",
-    _resolvePath: (path: string) => libraryFS._ldLibraryPath + "/" + path,
-    findObject: (path: string, dontResolveLastLink: boolean) =>
-      Module.FS.findObject(libraryFS._resolvePath(path), dontResolveLastLink),
+    _ldLibraryPaths: ["/usr/lib", API.sitepackages],
+    _resolvePath: (path: string) => {
+      if (DEBUG) {
+        console.debug(`Searching a library from ${path}, required by ${lib}.`);
+      }
+
+      if (Module.PATH.isAbs(path)) {
+        if (Module.FS.findObject(path) !== null) {
+          return path;
+        }
+
+        // If the path is absolute but doesn't exist, we try to find it from
+        // the library paths.
+        path = path.substring(path.lastIndexOf("/") + 1);
+      }
+
+      for (const dir of libraryFS._ldLibraryPaths) {
+        const fullPath = Module.PATH.join2(dir, path);
+        if (Module.FS.findObject(fullPath) !== null) {
+          return fullPath;
+        }
+      }
+      return path;
+    },
+    findObject: (path: string, dontResolveLastLink: boolean) => {
+      let obj = Module.FS.findObject(
+        libraryFS._resolvePath(path),
+        dontResolveLastLink,
+      );
+      if (DEBUG) {
+        console.log(`Library ${path} found at ${obj}`);
+      }
+      return obj;
+    },
     readFile: (path: string) =>
       Module.FS.readFile(libraryFS._resolvePath(path)),
   };
 
   try {
-    const module = await Module.loadWebAssemblyModule(byteArray, {
+    await Module.loadDynamicLibrary(lib, {
       loadAsync: true,
       nodelete: true,
-      allowUndefined: true,
+      global: loadGlobally,
       fs: libraryFS,
     });
-    Module.preloadedWasm[lib] = module;
-    Module.preloadedWasm[lib.split("/").pop()!] = module;
-    if (shared) {
-      Module.loadDynamicLibrary(lib, {
-        global: true,
-        nodelete: true,
-      });
-    }
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {
       console.warn(
-        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`
+        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`,
       );
       return;
     }
@@ -423,7 +442,7 @@ const acquirePackageLock = createLock();
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
   messageCallback?: (msg: string) => void,
-  errorCallback?: (msg: string) => void
+  errorCallback?: (msg: string) => void,
 ) {
   messageCallback = messageCallback || console.log;
   errorCallback = errorCallback || console.error;
@@ -453,7 +472,7 @@ export async function loadPackage(
       errorCallback(
         `URI mismatch, attempting to load package ${pkg} from ${pkg_metadata.channel} ` +
           `while it is already loaded from ${loaded}. To override a dependency, ` +
-          `load the custom package first.`
+          `load the custom package first.`,
       );
     }
   }
@@ -483,12 +502,12 @@ export async function loadPackage(
         name,
         toLoad,
         loaded,
-        failed
+        failed,
       );
     }
 
     await Promise.all(
-      Array.from(toLoad.values()).map(({ installPromise }) => installPromise)
+      Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
     );
 
     Module.reportUndefinedSymbols();

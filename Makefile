@@ -45,7 +45,7 @@ dist/pyodide.asm.js: \
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS)
 
-	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
 	fi
 

@@ -103,6 +103,9 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
+  if (pyproxy_Check(self->this_)) {
+    destroy_proxy(self->this_, NULL);
+  }
 #ifdef DEBUG_F
   extern bool tracerefs;
   if (tracerefs) {
@@ -1239,7 +1242,7 @@ JsProxy_toPy(PyObject* self,
              PyObject* kwnames)
 {
   static const char* const _keywords[] = { "depth", "default_converter", 0 };
-  static struct _PyArg_Parser _parser = { "|$iO:toPy", _keywords, 0 };
+  static struct _PyArg_Parser _parser = { "|$iO:to_py", _keywords, 0 };
   int depth = -1;
   PyObject* default_converter = NULL;
   if (!_PyArg_ParseStackAndKeywords(
@@ -1897,6 +1900,26 @@ static PyMethodDef JsMethod_Construct_MethodDef = {
 };
 // clang-format on
 
+static PyObject*
+JsMethod_descr_get(PyObject* self, PyObject* obj, PyObject* type)
+{
+  JsRef jsobj = NULL;
+  PyObject* result = NULL;
+
+  if (obj == Py_None || obj == NULL) {
+    Py_INCREF(self);
+    return self;
+  }
+
+  jsobj = python2js(obj);
+  FAIL_IF_NULL(jsobj);
+  result = JsProxy_create_with_this(JsProxy_REF(self), jsobj);
+
+finally:
+  hiwire_CLEAR(jsobj);
+  return result;
+}
+
 static int
 JsMethod_cinit(PyObject* obj, JsRef this_)
 {
@@ -2445,6 +2468,8 @@ JsProxy_create_subtype(int flags)
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_tp_descr_get,
+                                       .pfunc = (void*)JsMethod_descr_get };
     // We could test separately for whether a function is constructable,
     // but it generates a lot of false positives.
     methods[cur_method++] = JsMethod_Construct_MethodDef;

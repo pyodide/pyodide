@@ -1,9 +1,13 @@
 package:
   name: pytz
   version: "2022.1"
+  top-level:
+    - pytz
 source:
   sha256: e68985985296d9a66a881eb3193b0906246245294a881e7c8afe623866ac6a5c
   url: https://files.pythonhosted.org/packages/60/2e/dec1cc18c51b8df33c7c4d0a321b084cf38e1733b98f9d15018880fb4970/pytz-2022.1-py2.py3-none-any.whl
-test:
-  imports:
-    - pytz
+about:
+  home: http://pythonhosted.org/pytz
+  PyPI: https://pypi.org/project/pytz
+  summary: World timezone definitions, modern and historical
+  license: MIT

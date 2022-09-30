@@ -15,6 +15,9 @@ defaults: &defaults
       # (it's not the case otherwise)
       CCACHE_DIR: /root/.ccache/
 
+orbs:
+  macos: circleci/macos@2.2.0
+
 jobs:
   test-docs:
     <<: *defaults
@@ -26,6 +29,7 @@ jobs:
           command: |
             mkdir test-results
             pip install pytest-pyodide
+            pip install -e ./pyodide-build
             npm install -g node-fetch@2
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
@@ -38,9 +42,15 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
-            - -core-v20220303-{{ checksum "cpython/Makefile" }}
-            - -core-v20220303
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+            - -core-v20220915-{{ checksum "cpython/Makefile" }}
+            - -core-v20220915
+
+      - run:
+          name: calculate build hash for ccache
+          command: |
+            pip install pathspec
+            ./tools/calculate_build_cache_key.py > build_hash.txt
 
       - run:
           name: build emsdk
@@ -85,7 +95,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-v20220303-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
+          key: -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
 
       - run:
           name: Clean up workspace
@@ -131,8 +141,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-            - -pkg2-v20220303
+            - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
       - run:
           name: install rust
@@ -158,11 +167,6 @@ jobs:
           name: check-size
           command: du dist/ -abh --max-depth 1  | sort -k 2
 
-      - save_cache:
-          paths:
-            - /root/.ccache
-          key: -pkg2-v20220303-{{ checksum "Makefile.envs" }}
-
       - run:
           name: Zip build directory
           command: |
@@ -184,6 +188,11 @@ jobs:
       - store_artifacts:
           path: /root/repo/build-logs.tar.gz
 
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
+
   build-pyodide-debug:
     <<: *defaults
     resource_class: large
@@ -200,7 +209,7 @@ jobs:
             rm dist/pyodide.asm.js
             source pyodide_env.sh
             ccache -z
-            PYODIDE_SYMBOLS=1 make dist/pyodide.asm.js
+            PYODIDE_DEBUG=1 make dist/pyodide.asm.js
             ccache -s
             cd dist
             npx prettier -w pyodide.asm.js
@@ -225,7 +234,8 @@ jobs:
       - run:
           name: create xbuild environment
           command: |
-            PYTHONPATH=pyodide-build python -m pyodide_build create_xbuildenv
+            pip install -e ./pyodide-build
+            python -m pyodide_build create_xbuildenv
 
       - run:
           name: Zip xbuild environment
@@ -261,6 +271,7 @@ jobs:
             mkdir test-results
             pip install pytest-pyodide
             pip install -r requirements.txt
+            pip install -e pyodide-build
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
@@ -274,6 +285,63 @@ jobs:
               --durations 50 \
               --benchmark-json=benchmark-time.json \
               --benchmark-columns=mean,min,max,stddev \
+              << parameters.test-params >> \
+              -o cache_dir=$CACHE_DIR
+      - store_test_results:
+          path: test-results
+
+  test-main-macos:
+    parameters:
+      test-params:
+        description: The tests to run.
+        type: string
+      cache-dir:
+        description: pytest-cache-dir.
+        type: string
+        default: ""
+    resource_class: medium
+    macos:
+      xcode: 13.3.1
+
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: .
+      # The standard way of enabling safaridriver no longer works for Safari 14+
+      # https://blog.bytesguy.com/enabling-remote-automation-in-safari-14
+      - macos/add-safari-permissions
+      - run:
+          name: install miniforge
+          command: |
+            curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
+            bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
+            ~/miniforge3/bin/conda create -n pyodide python=3.10 -y
+      - run:
+          name: install dependencies
+          command: |
+            export PATH="$HOME/miniforge3/bin:$PATH"
+            conda create -n pyodide python=3.10 -y
+            source activate pyodide
+            python -m pip install -r requirements.txt
+            python -m pip install pytest-pyodide
+      - run:
+          name: test safari
+          command: |
+            export PATH="$HOME/miniforge3/bin:$PATH"
+            source activate pyodide
+            mkdir test-results
+            pip install pytest-pyodide
+            pip install -e ./pyodide-build
+            if [ -z "<< parameters.cache-dir >>" ]; then
+              export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
+            else
+              export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
+            fi
+            echo "pytest cache dir: $CACHE_DIR"
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --durations 50 \
               << parameters.test-params >> \
               -o cache_dir=$CACHE_DIR
       - store_test_results:
@@ -306,14 +374,45 @@ jobs:
             npm link ../../dist
             npm run test-types
             npm test
-      # - run:
-      #     name: check if webpack cli works well with load-pyodide.js
-      #     command: |
-      #       git clone https://github.com/pyodide/pyodide-webpack-example.git
-      #       cd pyodide-webpack-example
-      #       npm ci
-      #       cp ../src/js/*.js node_modules/pyodide/
-      #       npx webpack
+      - run:
+          name: check if Pyodide works with Webpack
+          command: |
+            git clone https://github.com/pyodide/pyodide-webpack-example.git
+            export DEV_PYODIDE_PATH=`realpath dist`
+            cd pyodide-webpack-example
+            git checkout 164054a9c6fbd2176f386b6552ed8d079c6bcc04
+            ./build.sh
+
+  test-cmdline-runner:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: test
+          command: |
+            set -x
+            export PYODIDE_ROOT=$(pwd)
+            echo $PYODIDE_ROOT
+            cd ~
+            mkdir test
+            cd test
+            git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
+            git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
+
+            python3.10 -m venv .venv-host
+            source .venv-host/bin/activate
+            pip install $PYODIDE_ROOT/pyodide-build
+            pyodide venv .venv-pyodide
+            source .venv-pyodide/bin/activate
+
+            cd zope.interface
+            pyodide build
+            pip install dist/*.whl
+            cd ../attrs
+            pip install .[tests]
+            python -m pytest -k 'not mypy'
 
   benchmark:
     <<: *defaults
@@ -355,13 +454,6 @@ jobs:
             python3 -m pip install awscli
 
       - run:
-          name: Remove source maps
-          command: |
-            # Source maps mess up calculateIndexURL if node is used with
-            # --enable-source-maps and are not otherwise needed. We'll keep them
-            # in the debug version.
-            rm dist/*.map
-      - run:
           name: Deploy Github Releases
           command: |
             mkdir -p /tmp/ghr/dist
@@ -380,17 +472,6 @@ jobs:
           name: Deploy to npm
           command: |
             ./tools/deploy_to_npm.sh
-
-      - run:
-          name: Deploy to PyPI
-          command: |
-            # Ask github actions to deploy for us
-            curl \
-              -X POST \
-              -H "Accept: application/vnd.github.v3+json" \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/dispatches \
-              -d '{"event_type":"deploy-release","client_payload":{}}'
 
       - run:
           name: Set PYODIDE_BASE_URL
@@ -532,7 +613,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: --runtime chrome -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=chrome-no-host -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -541,7 +622,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: --runtime firefox -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=firefox-no-host -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -550,7 +631,16 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: --runtime node src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main-macos:
+          name: test-core-safari
+          test-params: --runtime=safari-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:
@@ -559,7 +649,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome-webworker
-          test-params: --runtime chrome src/tests/test_webworker.py
+          test-params: --runtime=chrome-no-host src/tests/test_webworker.py
           requires:
             - test-core-chrome
           filters:
@@ -568,7 +658,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-webworker
-          test-params: --runtime firefox src/tests/test_webworker.py
+          test-params: --runtime=firefox-no-host src/tests/test_webworker.py
           requires:
             - test-core-firefox
           filters:
@@ -577,7 +667,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome-no-numpy-dependents
-          test-params: --runtime chrome packages/*/test*.py
+          test-params: --runtime=chrome-no-host packages/*/test*.py
           cache-dir: .pytest_cache_chrome
           requires:
             - build-packages-no-numpy-dependents
@@ -592,7 +682,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
-          test-params: --runtime chrome packages/*/test*.py --skip-passed
+          test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
             - test-packages-chrome-no-numpy-dependents
@@ -603,7 +693,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox-no-numpy-dependents
-          test-params: --runtime firefox packages/*/test*.py
+          test-params: --runtime=firefox-no-host packages/*/test*.py
           cache-dir: .pytest_cache_firefox
           requires:
             - build-packages-no-numpy-dependents
@@ -618,7 +708,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox
-          test-params: --runtime firefox packages/*/test*.py --skip-passed
+          test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
             - test-packages-firefox-no-numpy-dependents
@@ -629,7 +719,7 @@ workflows:
 
       - test-main:
           name: test-packages-node-no-numpy-dependents
-          test-params: --runtime node packages/*/test*.py
+          test-params: --runtime=node-no-host packages/*/test*.py
           cache-dir: .pytest_cache_node
           requires:
             - build-packages-no-numpy-dependents
@@ -644,10 +734,36 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          test-params: --runtime node packages/*/test*.py --skip-passed
+          test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main-macos:
+          name: test-packages-safari-no-numpy-dependents
+          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py
+          cache-dir: .pytest_cache_safari
+          requires:
+            - build-packages-no-numpy-dependents
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./.test_cache
+
+      - test-main-macos:
+          name: test-packages-safari
+          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py --skip-passed
+          cache-dir: .pytest_cache_safari
+          requires:
+            - test-packages-safari-no-numpy-dependents
             - build-packages
           filters:
             tags:
@@ -675,6 +791,13 @@ workflows:
               only: /.*/
 
       - create-xbuild-env:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-cmdline-runner:
           requires:
             - build-packages
           filters:

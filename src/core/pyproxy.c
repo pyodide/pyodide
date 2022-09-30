@@ -909,6 +909,12 @@ success:
   return 0;
 }
 
+EM_JS_REF(JsRef, pyproxy_new_ex, (PyObject * ptrobj, bool capture_this), {
+  return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
+    thisInfo : { captureThis : !!capture_this, isBound : false, boundArgs : [] }
+  }));
+});
+
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
@@ -928,7 +934,7 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
       throw new Error("OnceProxy can only be called once");
     }
     try {
-      return Module.callPyObject(obj, ... args);
+      return Module.callPyObject(obj, args);
     } finally {
       wrapper.destroy();
     }
@@ -1016,7 +1022,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
     checkUsed();
     try {
       if(handle_result){
-        return Module.callPyObject(handle_result, res);
+        return Module.callPyObject(handle_result, [res]);
       }
     } finally {
       done_callback(res);
@@ -1027,7 +1033,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
     checkUsed();
     try {
       if(handle_exception){
-        return Module.callPyObject(handle_exception, err);
+        return Module.callPyObject(handle_exception, [err]);
       }
     } finally {
       done_callback(undefined);
@@ -1043,9 +1049,21 @@ EM_JS_REF(JsRef, create_promise_handles, (
 // clang-format on
 
 static PyObject*
-create_proxy(PyObject* _mod, PyObject* obj)
+create_proxy(PyObject* self,
+             PyObject* const* args,
+             Py_ssize_t nargs,
+             PyObject* kwnames)
 {
-  JsRef ref = pyproxy_new(obj);
+  static const char* const _keywords[] = { "", "capture_this", 0 };
+  bool capture_this;
+  PyObject* obj;
+  static struct _PyArg_Parser _parser = { "O|$p:create_proxy", _keywords, 0 };
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &obj, &capture_this)) {
+    return NULL;
+  }
+
+  JsRef ref = pyproxy_new_ex(obj, capture_this);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1059,8 +1077,8 @@ static PyMethodDef methods[] = {
   },
   {
     "create_proxy",
-    create_proxy,
-    METH_O,
+    (PyCFunction)create_proxy,
+    METH_FASTCALL | METH_KEYWORDS,
   },
   { NULL } /* Sentinel */
 };

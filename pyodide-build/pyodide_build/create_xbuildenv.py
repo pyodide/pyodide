@@ -3,8 +3,13 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .common import get_make_flag, get_pyodide_root, get_unisolated_packages
-from .io import parse_package_config
+from .common import (
+    exit_with_stdio,
+    get_make_flag,
+    get_pyodide_root,
+    get_unisolated_packages,
+)
+from .io import MetaConfig
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -26,8 +31,8 @@ def copy_xbuild_files(xbuildenv_path: Path) -> None:
     # cp site-packages-extras $HOSTSITEPACKAGES
     site_packages_extras = xbuildenv_path / "site-packages-extras"
     for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = parse_package_config(pkg, check=False)
-        xbuild_files = config.get("build", {}).get("cross-build-files", [])
+        config = MetaConfig.from_yaml(pkg)
+        xbuild_files = config.build.cross_build_files
         for path in xbuild_files:
             target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -52,7 +57,14 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "CLAPACK",
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
+        Path("tools/python"),
+        Path("tools/cmake"),
+        Path("dist/repodata.json"),
+        Path("dist/pyodide_py.tar"),
     ]
+    to_copy.extend(
+        x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")
+    )
     # Some ad-hoc stuff here to moderate size. We'd like to include all of
     # wasm_lib_dir but there's 180mb of it. Better to leave out all the video
     # codecs and stuff.
@@ -80,15 +92,31 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
 def main(args: argparse.Namespace) -> None:
     pyodide_root = get_pyodide_root()
     xbuildenv_path = pyodide_root / "xbuildenv"
+    xbuildenv_root = xbuildenv_path / "pyodide-root"
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
 
     copy_xbuild_files(xbuildenv_path)
     copy_wasm_libs(xbuildenv_path)
+
+    (xbuildenv_root / "package.json").write_text("{}")
+    res = subprocess.run(
+        ["npm", "i", "node-fetch@2"],
+        cwd=xbuildenv_root,
+        capture_output=True,
+        encoding="utf8",
+    )
+    if res.returncode != 0:
+        print("Failed to install node-fetch:")
+        exit_with_stdio(res)
+
     res = subprocess.run(
         ["pip", "freeze", "--path", get_make_flag("HOSTSITEPACKAGES")],
-        stdout=subprocess.PIPE,
+        capture_output=True,
+        encoding="utf8",
     )
-    (xbuildenv_path / "requirements.txt").write_bytes(res.stdout)
-    (xbuildenv_path / "pyodide-root/unisolated.txt").write_text(
-        "\n".join(get_unisolated_packages())
-    )
+    if res.returncode != 0:
+        print("Failed to run pip freeze:")
+        exit_with_stdio(res)
+
+    (xbuildenv_path / "requirements.txt").write_text(res.stdout)
+    (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))

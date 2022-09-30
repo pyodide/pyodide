@@ -1,4 +1,6 @@
 import re
+import shutil
+import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
@@ -6,9 +8,12 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.fixture import selenium_standalone_noload_common
+from pytest_pyodide.server import spawn_web_server
 
-from conftest import ROOT_PATH
+from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide_build.common import get_pyodide_root
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -594,51 +599,70 @@ def test_create_once_callable(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_proxy(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    [testAddListener, testCallListener, testRemoveListener] = run_js(
         """
-        self.testAddListener = function(f){
+        function testAddListener(f){
             self.listener = f;
         }
-        self.testCallListener = function(f){
+        function testCallListener(f){
             return self.listener();
         }
-        self.testRemoveListener = function(f){
+        function testRemoveListener(f){
             return self.listener === f;
         }
-        pyodide.runPython(`
-            from pyodide.ffi import create_proxy
-            from js import testAddListener, testCallListener, testRemoveListener;
-            class Test:
-                def __call__(self):
-                    return 7
-
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
-
-            f = Test()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_proxy(f)
-            assert sys.getrefcount(f) == 3
-            assert proxy() == 7
-            testAddListener(proxy)
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testRemoveListener(proxy)
-            assert sys.getrefcount(f) == 3
-            proxy.destroy()
-            assert sys.getrefcount(f) == 2
-            destroyed = False
-            del f
-            assert destroyed == True
-        `);
+        [testAddListener, testCallListener, testRemoveListener]
         """
     )
+
+    destroyed = False
+
+    class Test:
+        def __call__(self):
+            return 7
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Test()
+    import sys
+
+    assert sys.getrefcount(f) == 2
+    proxy = create_proxy(f)
+    assert sys.getrefcount(f) == 3
+    assert proxy() == 7
+    testAddListener(proxy)
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 3
+    proxy.destroy()
+    assert sys.getrefcount(f) == 2
+    destroyed = False
+    del f
+    assert destroyed
+
+
+@run_in_pyodide
+def test_create_proxy_capture_this(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    o = run_js("({})")
+
+    def f(self):
+        assert self == o
+
+    o.f = create_proxy(f, capture_this=True)
+    run_js("(o) => { o.f(); o.f.destroy(); }")(o)
 
 
 def test_return_destroyed_value(selenium):
@@ -737,6 +761,7 @@ def test_restore_state(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
     assert selenium_standalone.run_js(
@@ -829,6 +854,7 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not exactly the same on Safari")
 def test_js_stackframes(selenium):
     res = selenium.run_js(
         """
@@ -1121,6 +1147,24 @@ def test_home_directory(selenium_standalone_noload):
     )
 
 
+def test_version_variable(selenium):
+    js_version = selenium.run_js(
+        """
+        return pyodide.version
+        """
+    )
+
+    core_version = selenium.run_js(
+        """
+        return pyodide._api.version
+        """
+    )
+
+    from pyodide import __version__ as py_version
+
+    assert js_version == py_version == core_version
+
+
 def test_sys_path0(selenium):
     selenium.run_js(
         """
@@ -1150,6 +1194,15 @@ def test_fullstdlib(selenium_standalone_noload):
             print(loaded_packages)
             assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
         `);
+        """
+    )
+
+
+def test_loadPyodide_relative_index_url(selenium_standalone_noload):
+    """Check that loading Pyodide with a relative URL works"""
+    selenium_standalone_noload.run_js(
+        """
+        self.pyodide = await loadPyodide({ indexURL: "./" });
         """
     )
 
@@ -1218,7 +1271,7 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_unvendored_stdlib(selenium_standalone):
+def test_unvendored_stdlib_import_hook(selenium_standalone):
     import importlib
 
     import pytest
@@ -1262,6 +1315,38 @@ def test_unvendored_stdlib(selenium_standalone):
             finder.find_spec(lib, None)
 
 
+@run_in_pyodide(packages=["pytest"])
+def test_repodata_import_hook(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    from _pyodide._importhook import RepodataPackagesFinder
+
+    repodata_packages = ["micropip", "packaging", "regex"]
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("pytest.there_is_no_such_module")
+
+    finder = RepodataPackagesFinder({"micropip": "", "packaging": "", "regex": ""})
+
+    assert finder.find_spec("os", None) is None
+    assert finder.find_spec("os.path", None) is None
+    assert finder.find_spec("os.no_such_module", None) is None
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
+        ):
+            finder.find_spec(lib, None)
+
+
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     assert (
@@ -1292,19 +1377,15 @@ def test_args(selenium_standalone_noload):
     )
 
 
-@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only")
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
-    import subprocess
-
     version_result = subprocess.run(
         ["node", "-v"], capture_output=True, encoding="utf8"
     )
     extra_node_args = []
     if version_result.stdout.startswith("v14"):
         extra_node_args.append("--experimental-wasm-bigint")
-
-    import shutil
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
     shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
@@ -1346,3 +1427,93 @@ def test_relative_index_url(selenium, tmp_path):
         assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
     finally:
         print_result(result)
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_index_url_calculation_source_map(selenium):
+    import os
+
+    node_options = ["--enable-source-maps"]
+
+    result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    if result.stdout.startswith("v14"):
+        node_options.append("--experimental-wasm-bigint")
+
+    DIST_DIR = str(Path.cwd() / "dist")
+
+    env = os.environ.copy()
+    env["DIST_DIR"] = DIST_DIR
+    result = subprocess.run(
+        [
+            "node",
+            *node_options,
+            "-e",
+            """
+            const { loadPyodide } = require(`${process.env.DIST_DIR}/pyodide`);
+            async function main() {
+                const py = await loadPyodide();
+                console.log("indexURL:", py._module.API.config.indexURL);
+            }
+            main();
+            """,
+        ],
+        env=env,
+        capture_output=True,
+        encoding="utf8",
+    )
+
+    assert f"indexURL: {DIST_DIR}" in result.stdout
+
+
+@pytest.mark.xfail_browsers(
+    node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
+)
+def test_csp(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    target_path = DIST_PATH / "test_csp.html"
+    try:
+        shutil.copy(get_pyodide_root() / "src/templates/test_csp.html", target_path)
+        selenium.goto(f"{selenium.base_url}/test_csp.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+    finally:
+        target_path.unlink()
+
+
+def test_static_import(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    # the xfail_browsers mark won't work without using a selenium fixture
+    # so we manually xfail the node test
+    if runtime == "node":
+        pytest.xfail("static import test is browser-only")
+
+    # copy dist to tmp_path to perform file changes safely
+    shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
+
+    # define the directory to hide the statically imported pyodide.asm.js in
+    hiding_dir = "hide_pyodide_asm_for_test"
+
+    # create the directory and move pyodide.asm.js to the directory
+    # so that dynamic import won't find it
+    (tmp_path / hiding_dir).mkdir()
+    shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
+
+    # make sure the test html references the new directory when importing pyodide.asm.js
+    test_html = (ROOT_PATH / "src/templates/module_static_import_test.html").read_text()
+    test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
+    (tmp_path / "module_static_import_test.html").write_text(test_html)
+
+    with spawn_web_server(tmp_path) as web_server, selenium_standalone_noload_common(
+        request, runtime, web_server, playwright_browsers
+    ) as selenium:
+        selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                print('Static import works')
+            `);
+            """
+        )

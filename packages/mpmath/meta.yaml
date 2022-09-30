@@ -1,9 +1,13 @@
 package:
   name: mpmath
   version: 1.2.1
+  top-level:
+    - mpmath
 source:
   sha256: 604bc21bd22d2322a177c73bdb573994ef76e62edd595d17e00aff24b0667e5c
   url: https://files.pythonhosted.org/packages/d4/cf/3965bddbb4f1a61c49aacae0e78fd1fe36b5dc36c797b31f30cf07dcbbb7/mpmath-1.2.1-py3-none-any.whl
-test:
-  imports:
-    - mpmath
+about:
+  home: http://mpmath.org/
+  PyPI: https://pypi.org/project/mpmath
+  summary: Python library for arbitrary-precision floating-point arithmetic
+  license: BSD
