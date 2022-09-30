@@ -335,8 +335,11 @@ def get_unisolated_packages() -> list[str]:
         unisolated_packages = unisolated_file.read_text().splitlines()
     else:
         unisolated_packages = []
-        for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-            config = MetaConfig.from_yaml(pkg)
+        for pkg in (PYODIDE_ROOT / "packages").glob("*/meta.yaml"):
+            try:
+                config = MetaConfig.from_yaml(pkg)
+            except Exception as e:
+                raise ValueError(f"Could not parse {pkg}.") from e
             if config.build.cross_build_env:
                 unisolated_packages.append(config.package.name)
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
