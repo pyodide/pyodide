@@ -10,6 +10,7 @@ from pyodide_build.pywasmcross import (
     calculate_exports,
     environment_substitute_args,
     get_cmake_compiler_flags,
+    get_library_output,
 )
 
 
@@ -262,3 +263,12 @@ def test_get_cmake_compiler_flags():
 
     for emscripten_compiler in emscripten_compilers:
         assert emscripten_compiler not in cmake_flags
+
+
+def test_get_library_output():
+    assert get_library_output(["test.so"]) == "test.so"
+    assert get_library_output(["test.so.1.2.3"]) == "test.so.1.2.3"
+    assert (
+        get_library_output(["test", "test.a", "test.o", "test.c", "test.cpp", "test.h"])
+        is None
+    )

@@ -74,6 +74,9 @@ substitutions:
   the method is called on.
   {pr}`3130`
 
+- {{ Fix }} Shared libraries with version suffix are now handled correctly.
+  {pr}`3154`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
