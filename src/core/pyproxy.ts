@@ -114,7 +114,7 @@ Module.disable_pyproxy_allocation_tracing = function () {
 Module.disable_pyproxy_allocation_tracing();
 
 type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
-type PyProxyThisInfo = {
+type PyProxyProps = {
   /**
    * captureThis tracks whether this should be passed as the first argument to
    * the Python function or not. We keep it false by default. To make a PyProxy
@@ -134,6 +134,7 @@ type PyProxyThisInfo = {
    * application. These are stored here.
    */
   boundArgs: any[];
+  roundtrip: boolean;
 };
 
 /**
@@ -154,13 +155,14 @@ function pyproxy_new(
   {
     flags: flags_arg,
     cache,
-    thisInfo,
+    props,
     $$,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     $$?: any;
-    thisInfo?: any;
+    roundtrip?: boolean;
+    props?: any;
   } = {},
 ): PyProxy {
   const flags =
@@ -186,9 +188,6 @@ function pyproxy_new(
     delete target.name;
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
-    if (!thisInfo) {
-      thisInfo = { isBound: false, captureThis: false, boundArgs: [] };
-    }
   } else {
     target = Object.create(cls.prototype);
   }
@@ -209,9 +208,14 @@ function pyproxy_new(
   }
 
   Object.defineProperty(target, "$$", { value: $$ });
-  if (flags & IS_CALLABLE) {
-    Object.defineProperty(target, "$$thisInfo", { value: thisInfo });
+  if (!props) {
+    props = {};
   }
+  props = Object.assign(
+    { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
+    props,
+  );
+  Object.defineProperty(target, "$$props", { value: props });
 
   let proxy = new Proxy(target, PyProxyHandlers);
   if (!isAlias) {
@@ -231,7 +235,7 @@ function _getPtr(jsobj: any) {
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
   const { captureThis, boundArgs, boundThis, isBound } =
-    proxyobj.$$thisInfo as PyProxyThisInfo;
+    proxyobj.$$props as PyProxyProps;
   if (captureThis) {
     if (isBound) {
       return [boundThis].concat(boundArgs, jsargs);
@@ -410,7 +414,7 @@ export class PyProxyClass {
     cache: PyProxyCache;
     destroyed_msg?: string;
   };
-  $$thisInfo: PyProxyThisInfo;
+  $$props: PyProxyProps;
   $$flags: number;
 
   /** @private */
@@ -478,7 +482,7 @@ export class PyProxyClass {
     return pyproxy_new(ptrobj, {
       flags: this.$$flags,
       cache: this.$$.cache,
-      thisInfo: this.$$thisInfo,
+      props: this.$$props,
     });
   }
   /**
@@ -1280,25 +1284,23 @@ export class PyProxyCallableMethods {
   bind(thisArg: any, ...jsargs: any) {
     const self = this as unknown as PyProxy;
     const {
-      captureThis,
       boundArgs: boundArgsOld,
       boundThis: boundThisOld,
       isBound,
-    } = self.$$thisInfo;
+    } = self.$$props;
     let boundThis = thisArg;
     if (isBound) {
       boundThis = boundThisOld;
     }
     let boundArgs = boundArgsOld.concat(jsargs);
-    const thisInfo: PyProxyThisInfo = {
-      captureThis,
+    const props: PyProxyProps = Object.assign({}, self.$$props, {
       boundArgs,
       isBound: true,
       boundThis,
-    };
+    });
     const $$ = self.$$;
     let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
+    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, props });
   }
 
   /**
@@ -1332,11 +1334,14 @@ export class PyProxyCallableMethods {
    */
   captureThis(): PyProxy {
     const self = this as unknown as PyProxy;
-    const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
-    const $$ = self.$$;
-    thisInfo.captureThis = true;
-    let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
+    const props: PyProxyProps = Object.assign({}, self.$$props, {
+      captureThis: true,
+    });
+    return pyproxy_new(_getPtr(this), {
+      $$: self.$$,
+      flags: self.$$flags,
+      props,
+    });
   }
 }
 // @ts-ignore

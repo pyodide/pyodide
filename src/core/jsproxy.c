@@ -54,6 +54,7 @@
 #define IS_ARRAY      (1<<10)
 #define IS_NODE_LIST  (1<<11)
 #define IS_TYPEDARRAY (1<<12)
+#define IS_DOUBLE_PROXY (1 << 13)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -2685,6 +2686,9 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   }
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
+  }
+  if (pyproxy_Check(object)) {
+    type_flags |= IS_DOUBLE_PROXY;
   }
   type_flags |= JsProxy_array_detect(object);
 
