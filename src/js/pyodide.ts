@@ -11,6 +11,7 @@ import {
 } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import { initializeNativeFS } from "./nativefs";
 import version from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -343,6 +344,8 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 `,
     );
   }
+
+  initializeNativeFS(Module);
 
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
