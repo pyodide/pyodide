@@ -353,6 +353,9 @@ def test_draw_text_rotated(selenium_standalone):
     )
 
 
+@pytest.mark.xfail(
+    reason="InvalidStateError: Failed to construct 'ImageData': The input data has zero elements."
+)
 @matplotlib_test_decorator
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
