@@ -385,6 +385,54 @@ export function unpackArchive(
   });
 }
 
+type NativeFS = {
+  syncfs: Function;
+};
+
+/**
+ * Mounts FileSystemDirectoryHandle in to the target directory.
+ *
+ * @param path The absolute path of the target mount directory.
+ * If the directory does not exist, it will be created.
+ * @param fileSystemHandle FileSystemDirectoryHandle returned by
+ * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ */
+export async function mountNativeFS(
+  path: string,
+  fileSystemHandle: {
+    isSameEntry: Function;
+    queryPermission: Function;
+    requestPermission: Function;
+  },
+  // TODO: support sync file system
+  // sync: boolean = false
+): Promise<NativeFS> {
+  if (fileSystemHandle.constructor.name !== "FileSystemDirectoryHandle") {
+    throw new TypeError(
+      `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`,
+    );
+  }
+
+  if (Module.FS.findObject(path) == null) {
+    Module.FS.mkdirTree(path);
+  }
+
+  Module.FS.mount(
+    Module.FS.filesystems.NATIVEFS_ASYNC,
+    { fileSystemHandle: fileSystemHandle },
+    path,
+  );
+
+  // sync native ==> browser
+  await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+
+  return {
+    // sync browser ==> native
+    syncfs: async () =>
+      new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+  };
+}
+
 /**
  * @private
  */
@@ -454,6 +502,7 @@ export type PyodideInterface = {
   toPy: typeof toPy;
   pyimport: typeof pyimport;
   unpackArchive: typeof unpackArchive;
+  mountNativeFS: typeof mountNativeFS;
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
@@ -517,6 +566,7 @@ API.makePublicAPI = function (): PyodideInterface {
     toPy,
     pyimport,
     unpackArchive,
+    mountNativeFS,
     registerComlink,
     PythonError,
     PyBuffer,

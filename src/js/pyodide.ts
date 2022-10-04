@@ -11,6 +11,7 @@ import {
 } from "./compat";
 
 import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import { initializeNativeFS } from "./nativefs";
 import version from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -133,8 +134,6 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   let importhook = API._pyodide._importhook;
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
-
-  importhook.register_unvendored_stdlib_finder();
 
   let pyodide = API.makePublicAPI();
   importhook.register_js_module("pyodide_js", pyodide);
@@ -346,6 +345,8 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     );
   }
 
+  initializeNativeFS(Module);
+
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
@@ -364,6 +365,11 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
   await API.packageIndexReady;
+
+  let importhook = API._pyodide._importhook;
+  importhook.register_unvendored_stdlib_finder();
+  importhook.register_repodata_packages_finder(API.repodata_packages);
+
   if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }

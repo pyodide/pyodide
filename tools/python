@@ -203,8 +203,8 @@ async function main() {
         from js.process import stdout
         import os
         def get_terminal_size(fallback=(80, 24)):
-            columns = stdout.columns
-            rows = stdout.rows
+            columns = getattr(stdout, "columns", None)
+            rows = getattr(stdout, "rows", None)
             if columns is None:
                 columns = fallback[0]
             if rows is None:
