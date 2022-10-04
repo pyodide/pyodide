@@ -235,15 +235,16 @@ def download_and_extract(
     """
     # We only call this function when the URL is defined
     url = cast(str, src_metadata.url)
-    retry_cnt = 3
-    while True:
+    max_retry = 3
+    for retry_cnt in range(max_retry):
         try:
             response = request.urlopen(url)
         except urllib.error.URLError as e:
-            if retry_cnt == 0:
-                raise RuntimeError(f"Failed to download {url}") from e
+            if retry_cnt == max_retry - 1:
+                raise RuntimeError(
+                    f"Failed to download {url} after {max_retry} trials"
+                ) from e
 
-            retry_cnt -= 1
             continue
 
         break
