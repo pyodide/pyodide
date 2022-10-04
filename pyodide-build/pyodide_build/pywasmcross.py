@@ -10,6 +10,7 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -227,8 +228,9 @@ def get_library_output(line: list[str]) -> str | None:
     Check if the command is a linker invocation. If so, return the name of the
     output file.
     """
+    SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
     for arg in line:
-        if arg.endswith(".so") and not arg.startswith("-"):
+        if not arg.startswith("-") and SHAREDLIB_REGEX.search(arg):
             return arg
     return None
 

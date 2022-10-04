@@ -30,6 +30,11 @@ substitutions:
 - {{ Enhancement }} Emscripten was updated to Version 3.1.21
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
 
+- {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
+  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
+  into the Pyodide file system.
+  {pr}`2987`
+
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
@@ -54,8 +59,10 @@ substitutions:
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
 - {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
-  first argument using the {any}`captureThis` method.
-  {pr}`3103`
+  first argument using the {any}`captureThis` method. The {any}`create_proxy`
+  method also has a `capture_this` argument which causes the `PyProxy` to
+  receive `this` as the first argument if set to `True`
+  {pr}`3103`, {pr}`3145`
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
@@ -66,6 +73,21 @@ substitutions:
   the method is called, `this` will be a `PyProxy` pointing to the Python object
   the method is called on.
   {pr}`3130`
+
+- {{ Breaking }} The messageCallback and errorCallback argument to
+  {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>`
+  is now passed as named arguments.
+  The old usage still works with a deprecation warning.
+  {pr}`3149`
+
+- {{ Enhancement }} {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` now accepts
+  a new option `checkIntegrity`. If set to False, integrity check for Python Packages
+  will be disabled.
+
+- {{ Fix }} Shared libraries with version suffix are now handled correctly.
+  {pr}`3154`
 
 ### Build System / Package Loading
 
@@ -140,6 +162,9 @@ substitutions:
   calculate top-level import names for the package. Previously `test/imports`
   key was used for this purpose.
   {pr}`3006`
+
+- {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
+  {pr}`3153`
 
 ## Version 0.21.3
 
