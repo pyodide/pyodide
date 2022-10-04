@@ -74,6 +74,18 @@ substitutions:
   the method is called on.
   {pr}`3130`
 
+- {{ Breaking }} The messageCallback and errorCallback argument to
+  {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>`
+  is now passed as named arguments.
+  The old usage still works with a deprecation warning.
+  {pr}`3149`
+
+- {{ Enhancement }} {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` now accepts
+  a new option `checkIntegrity`. If set to False, integrity check for Python Packages
+  will be disabled.
+
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 

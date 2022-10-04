@@ -1248,6 +1248,18 @@ def test_raises_jsexception(selenium):
         raise_jsexception(selenium)
 
 
+def test_deprecations(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.run_js(
+        """
+        pyodide.loadPackage("micropip", (x) => x);
+        pyodide.loadPackagesFromImports("import micropip", (x) => x);
+        """
+    )
+    dep_msg = "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }"
+    assert selenium.logs.count(dep_msg) == 1
+
+
 @run_in_pyodide(packages=["pytest"])
 def test_moved_deprecation_warnings(selenium_standalone):
     import pytest
