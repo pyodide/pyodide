@@ -376,7 +376,7 @@ def test_should_load_dynlib():
         "q.cpython-38-x86_64-linux-gnu.so",
         "q" + ext_suffix.replace("cpython", "pypy"),
         "q.cpython-32mu.so",
-        "a.so.a.b.c",
+        "x.so.a.b.c",
     ]
     for file in should_load:
         assert should_load_dynlib(file)

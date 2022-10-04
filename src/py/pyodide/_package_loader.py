@@ -45,7 +45,7 @@ EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
 PLATFORM_TAG_REGEX = re.compile(
     r"\.(cpython|pypy|jython)-[0-9]{2,}[a-z]*(-[a-z0-9_-]*)?"
 )
-SHAREDLIB_REGEX = re.compile(r"(\.dylib|\.so(.\d+)*)$")
+SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
 
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
