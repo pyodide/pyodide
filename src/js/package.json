@@ -61,7 +61,12 @@
     "./repodata.json": "./repodata.json"
   },
   "files": [
-    "pyodide*",
+    "pyodide.asm.js",
+    "pyodide.asm.wasm",
+    "pyodide_py.tar",
+    "pyodide.mjs",
+    "pyodide.js.map",
+    "pyodide.mjs.map",
     "repodata.json",
     "console.html"
   ],
