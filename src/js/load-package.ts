@@ -267,6 +267,25 @@ async function installPackage(
     pkgExtractDir + "/" + pkg.file_name.split("-")[0] + ".libs";
 
   for (const dynlib of dynlibs) {
+    // If it is a known shared library, we load it globally.
+    let loadGlobally = pkg.shared_library;
+
+    if (!loadGlobally) {
+      // It is possible that a Python wheel internally ship a shared library,
+      // which is required by some other Python native extension module.
+      // This is a heuristic to determine if the library is a shared library.
+      // Normally a system library would start with "lib",
+      // and will not contain extension suffixes like "cpython-3.10-wasm32-emscripten.so"
+      const libname = dynlib.substring(dynlib.lastIndexOf("/") + 1);
+
+      if (
+        libname.startsWith("lib") &&
+        !libname.includes(API.extension_suffix)
+      ) {
+        loadGlobally = true;
+      }
+    }
+
     await loadDynlib(dynlib, pkg.shared_library, [auditWheelLibDir]);
   }
 }
@@ -351,13 +370,12 @@ const acquireDynlibLock = createLock();
  * import hook.
  *
  * @param lib The file system path to the library.
- * @param shared Is this a shared library or not?
+ * @param loadGlobally Should this library loaded globally?
  * @param libDirs Directories to search for shared libs
  * @private
  */
-async function loadDynlib(lib: string, shared: boolean, libDirs: any[]) {
+async function loadDynlib(lib: string, loadGlobally: boolean, libDirs: any[]) {
   const releaseDynlibLock = await acquireDynlibLock();
-  const loadGlobally = shared;
 
   libDirs = libDirs || [];
   libDirs = libDirs.concat(["/usr/lib", API.sitepackages]);
