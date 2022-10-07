@@ -237,13 +237,28 @@ async function downloadPackage(
  * @param lib The path to the library to load
  * @private
  */
-function shouldLoadGlobally(lib: string): boolean {
+function shouldLoadGlobally(lib: string, neededLibs: Set<string>): boolean {
   // We need to load libraries globally if they are required by other libraries
   // This is a heuristic to determine if the library is a shared library.
   // Normally a system library would start with "lib",
   // and will not contain extension suffixes like "cpython-3.10-wasm32-emscripten.so"
-  const libname = Module.PATH.basename(lib);
-  return libname.startsWith("lib") && !libname.includes(API.extension_suffix);
+  // const libname = Module.PATH.basename(lib);
+  // return libname.startsWith("lib") && !libname.includes(API.extension_suffix);
+
+  const basename = Module.PATH.basename(lib);
+  return neededLibs.has(basename);
+}
+
+function calculateNeededLibs(libs: string[]): Set<string> {
+  const neededLibs = new Set<string>();
+  for (const lib of libs) {
+    const binary = Module.FS.readFile(lib);
+    Module.getDylinkMetadata(binary).neededDynlibs.forEach((lib: string) => {
+      neededLibs.add(lib);
+    });
+  }
+
+  return neededLibs;
 }
 
 /**
@@ -281,12 +296,15 @@ async function installPackage(
     pkg.file_name.split("-")[0]
   }.libs`;
 
+  const neededLibs = calculateNeededLibs(dynlibs);
+
   // Sort the libraries so that global libraries can be loaded first
   // TODO: load libraries following the dependency graph?
-  dynlibs.sort((a: string) => (shouldLoadGlobally(a) ? -1 : 1));
+  dynlibs.sort((a: string) => (shouldLoadGlobally(a, neededLibs) ? -1 : 1));
 
   for (const dynlib of dynlibs) {
-    let loadGlobally = pkg.shared_library || shouldLoadGlobally(dynlib);
+    let loadGlobally =
+      pkg.shared_library || shouldLoadGlobally(dynlib, neededLibs);
     await loadDynlib(dynlib, loadGlobally, [auditWheelLibDir]);
   }
 }
