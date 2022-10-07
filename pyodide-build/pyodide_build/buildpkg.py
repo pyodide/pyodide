@@ -545,7 +545,9 @@ def package_wheel(
     # to maximize sanity.
     replace_so_abi_tags(wheel_dir)
 
-    copy_sharedlibs(wheel, wheel_dir)
+    vendor_sharedlib = build_metadata.vendor_sharedlib
+    if vendor_sharedlib:
+        copy_sharedlibs(wheel, wheel_dir)
 
     post = build_metadata.post
     if post:
