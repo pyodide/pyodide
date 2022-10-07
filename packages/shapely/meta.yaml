@@ -9,6 +9,7 @@ source:
   patches:
     - patches/0001-Search-libs-from-auditwheel-repaired-directory.patch
 build:
+  vendor-sharedlib: true
   script: |
     export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
 requirements:
