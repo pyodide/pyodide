@@ -233,6 +233,20 @@ async function downloadPackage(
 }
 
 /**
+ * Decide whether a library should be loaded globally or locally.
+ * @param lib The path to the library to load
+ * @private
+ */
+function shouldLoadGlobally(lib: string): boolean {
+  // We need to load libraries globally if they are required by other libraries
+  // This is a heuristic to determine if the library is a shared library.
+  // Normally a system library would start with "lib",
+  // and will not contain extension suffixes like "cpython-3.10-wasm32-emscripten.so"
+  const libname = Module.PATH.basename(lib);
+  return libname.startsWith("lib") && !libname.includes(API.extension_suffix);
+}
+
+/**
  * Install the package into the file system.
  * @param name The name of the package
  * @param buffer The binary data returned by downloadPackage
@@ -266,27 +280,13 @@ async function installPackage(
   const auditWheelLibDir =
     pkgExtractDir + "/" + pkg.file_name.split("-")[0] + ".libs";
 
+  // Sort the libraries so that global libraries can be loaded first
+  // TODO: load libraries following the dependency graph?
+  dynlibs.sort((a: string) => (shouldLoadGlobally(a) ? -1 : 1));
+
   for (const dynlib of dynlibs) {
-    // If it is a known shared library, we load it globally.
-    let loadGlobally = pkg.shared_library;
-
-    if (!loadGlobally) {
-      // It is possible that a Python wheel internally ship a shared library,
-      // which is required by some other Python native extension module.
-      // This is a heuristic to determine if the library is a shared library.
-      // Normally a system library would start with "lib",
-      // and will not contain extension suffixes like "cpython-3.10-wasm32-emscripten.so"
-      const libname = dynlib.substring(dynlib.lastIndexOf("/") + 1);
-
-      if (
-        libname.startsWith("lib") &&
-        !libname.includes(API.extension_suffix)
-      ) {
-        loadGlobally = true;
-      }
-    }
-
-    await loadDynlib(dynlib, pkg.shared_library, [auditWheelLibDir]);
+    let loadGlobally = pkg.shared_library || shouldLoadGlobally(dynlib);
+    await loadDynlib(dynlib, loadGlobally, [auditWheelLibDir]);
   }
 }
 
@@ -380,9 +380,21 @@ async function loadDynlib(lib: string, loadGlobally: boolean, libDirs: any[]) {
   libDirs = libDirs || [];
   libDirs = libDirs.concat(["/usr/lib", API.sitepackages]);
 
+  // If we do Module.loadDynamicLibrary("lib.so") and
+  // Module.loadDynamicLibrary("/abspath/lib.so"),
+  // Emscripten does not detect that these two are the same library.
+  // This is problematic because we want to load the same library
+  // but with different "global" flag.
+  // So we strip the parent directory and load the library with its basename.
+  // if (Module.PATH.isAbs(lib)) {
+  //   const dirname = Module.PATH.dirname(lib);
+  //   lib = Module.PATH.basename(lib);
+  //   libDirs.unshift([dirname]);
+  // }
+
   if (DEBUG) {
     console.debug(
-      `Loading a dynamic library ${lib}, searching libraries from: ${libDirs}`,
+      `Loading a dynamic library ${lib} (global: ${loadGlobally}), searching libraries from: ${libDirs}`,
     );
   }
 
@@ -397,16 +409,6 @@ async function loadDynlib(lib: string, loadGlobally: boolean, libDirs: any[]) {
             `Searching a library from ${path}, required by ${lib}.`,
           );
         }
-      }
-
-      if (Module.PATH.isAbs(path)) {
-        if (Module.FS.findObject(path) !== null) {
-          return path;
-        }
-
-        // If the path is absolute but doesn't exist, we try to find it from
-        // the library paths.
-        path = path.substring(path.lastIndexOf("/") + 1);
       }
 
       for (const dir of libraryFS._ldLibraryPaths) {
