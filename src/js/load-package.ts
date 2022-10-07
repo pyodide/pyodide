@@ -268,7 +268,7 @@ async function installPackage(
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
-  const [pkgExtractDir, dynlibs] = API.package_loader.unpack_buffer.callKwargs({
+  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
@@ -277,8 +277,9 @@ async function installPackage(
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
 
-  const auditWheelLibDir =
-    pkgExtractDir + "/" + pkg.file_name.split("-")[0] + ".libs";
+  const auditWheelLibDir = `${API.sitepackages}/${
+    pkg.file_name.split("-")[0]
+  }.libs`;
 
   // Sort the libraries so that global libraries can be loaded first
   // TODO: load libraries following the dependency graph?
@@ -379,18 +380,6 @@ async function loadDynlib(lib: string, loadGlobally: boolean, libDirs: any[]) {
 
   libDirs = libDirs || [];
   libDirs = libDirs.concat(["/usr/lib", API.sitepackages]);
-
-  // If we do Module.loadDynamicLibrary("lib.so") and
-  // Module.loadDynamicLibrary("/abspath/lib.so"),
-  // Emscripten does not detect that these two are the same library.
-  // This is problematic because we want to load the same library
-  // but with different "global" flag.
-  // So we strip the parent directory and load the library with its basename.
-  // if (Module.PATH.isAbs(lib)) {
-  //   const dirname = Module.PATH.dirname(lib);
-  //   lib = Module.PATH.basename(lib);
-  //   libDirs.unshift([dirname]);
-  // }
 
   if (DEBUG) {
     console.debug(
