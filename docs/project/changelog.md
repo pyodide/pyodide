@@ -93,7 +93,7 @@ substitutions:
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
   coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
