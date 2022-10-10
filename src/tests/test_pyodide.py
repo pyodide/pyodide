@@ -665,6 +665,22 @@ def test_create_proxy_capture_this(selenium):
     run_js("(o) => { o.f(); o.f.destroy(); }")(o)
 
 
+@run_in_pyodide
+def test_create_proxy_roundtrip(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy, create_proxy
+
+    f = {}  # type: ignore[var-annotated]
+    o = run_js("({})")
+    o.f = create_proxy(f, roundtrip=True)
+    assert isinstance(o.f, JsProxy)
+    assert o.f.unwrap() is f
+    o.f.destroy()
+    o.f = create_proxy(f, roundtrip=False)
+    assert o.f is f
+    run_js("(o) => { o.f.destroy(); }")(o)
+
+
 def test_return_destroyed_value(selenium):
     selenium.run_js(
         r"""

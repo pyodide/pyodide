@@ -64,6 +64,12 @@ substitutions:
   receive `this` as the first argument if set to `True`
   {pr}`3103`, {pr}`3145`
 
+- {{ Enhancement }} `create_proxy` now takes an optional `roundtrip` parameter.
+  If this is set to `True`, then when the proxy is converted back to Python, it
+  is converted back to the same double proxy. This allows the proxy to be
+  destroyed from Python even if no reference is retained.
+  {pr}`3163`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
   {pr}`3137`
