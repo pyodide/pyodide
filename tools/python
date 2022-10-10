@@ -193,7 +193,7 @@ async function main() {
         SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
         dynlibs_to_load = to_js([
             str(path) for path in SITE_PACKAGES.glob("**/*.so*")
-            if SHAREDLIB_REGEX.search(path) and should_load_dynlib(path)
+            if SHAREDLIB_REGEX.search(path.name) and should_load_dynlib(path)
         ])
         `,
         { globals: sideGlobals }
