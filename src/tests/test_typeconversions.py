@@ -77,7 +77,8 @@ def blns():
         yield base64.b64decode(s).decode(errors="ignore")
 
 
-def test_string_conversion_blns(selenium, s):
+@pytest.mark.driver_timeout(60)
+def test_string_conversion_blns(selenium):
     @run_in_pyodide
     def _string_conversion_blns_internal(selenium, s):
         from pyodide.code import run_js
