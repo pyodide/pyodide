@@ -304,7 +304,7 @@ async function installPackage(
 
   for (const dynlib of dynlibs) {
     let loadGlobally =
-      pkg.shared_library || shouldLoadGlobally(dynlib, neededLibs);
+      !!pkg.shared_library || shouldLoadGlobally(dynlib, neededLibs);
     await loadDynlib(dynlib, loadGlobally, [auditWheelLibDir]);
   }
 }

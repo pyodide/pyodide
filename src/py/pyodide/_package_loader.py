@@ -144,41 +144,52 @@ def unpack_buffer(
 ) -> JsProxy | None:
     """Used to install a package either into sitepackages or into the standard
     library.
+
     This is a helper method called from ``loadPackage``.
+
     Parameters
     ----------
     buffer
         A Javascript ``Uint8Array`` with the binary data for the archive.
+
     filename
         The name of the file we are extracting. We only care about it to figure
         out whether the buffer represents a tar file or a zip file. Ignored if
         format argument is present.
+
     format
         Controls the format that we assume the archive has. Overrides the file
         extension of filename. In particular we decide the file format as
         follows:
+
         1. If format is present, we use that.
         2. If file name is present, it should have an extension, like a.zip,
            a.tar, etc. Then we use that.
         3. If neither is present or the file name has no extension, we throw an
            error.
+
+
     extract_dir
         Controls which directory the file is unpacked into. Default is the
         working directory. Mutually exclusive with target.
+
     target
         Controls which directory the file is unpacked into. Either "site" which
         unpacked the file into the sitepackages directory or "lib" which
         unpacked the file into the standard library. Mutually exclusive with
         extract_dir.
+
     calculate_dynlibs
         If true, will return a Javascript Array of paths to dynamic libraries
         ('.so' files) that were in the archive. We need to precompile these Wasm
         binaries in `load-pyodide.js`. These paths point to the unpacked
         locations of the .so files.
+
     Returns
     -------
         If calculate_dynlibs is True, a Javascript Array of dynamic libraries.
         Otherwise, return None.
+
     """
     if format:
         format = get_format(format)
@@ -221,7 +232,6 @@ def should_load_dynlib(path: str | Path) -> bool:
 
     if tag in EXTENSION_TAGS:
         return True
-
     # Okay probably it's not compatible now. But it might be an unrelated .so
     # file with a name with an extra dot: `some.name.so` vs
     # `some.cpython-39-x86_64-linux-gnu.so` Let's make a best effort here to
