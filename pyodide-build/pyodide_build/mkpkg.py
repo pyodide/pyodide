@@ -348,14 +348,13 @@ def main(args: argparse.Namespace) -> None:
 
     warnings.warn(
         "'pyodide-build mkpkg' command is deprecated, use 'pyodide package' instead.",
-        DeprecationWarning,
     )
 
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if PYODIDE_ROOT is None:
         raise ValueError("PYODIDE_ROOT is not set")
 
-    if os.path.isabs(args.packages_dir.startswith("/")):
+    if os.path.isabs(args.packages_dir):
         packages_dir = Path(args.packages_dir)
     else:
         packages_dir = (Path(PYODIDE_ROOT) / args.packages_dir).resolve()
