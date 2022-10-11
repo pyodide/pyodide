@@ -488,6 +488,29 @@ def repr_shorten(
     If it is longer than ``limit`` then return the firsts ``split``
     characters and the last ``split`` characters separated by '...'.
     Default value for ``split`` is `limit // 2`.
+
+    Examples
+    --------
+    >>> from pyodide.console import repr_shorten
+    >>> sep = ".."
+    >>> for i in range(7):
+    ...   repr_shorten("1234", limit=i, separator=sep)
+    "..'1234'"
+    "..'1234'"
+    "'..'"
+    "'..'"
+    "'1..4'"
+    "'1..4'"
+    "'1234'"
+    >>> for i in range(7):
+    ...   repr_shorten("5678", limit=i, split=i, separator=sep)
+    "..'5678'"
+    "'..'"
+    "'5..8'"
+    "'56..78'"
+    "'567..678'"
+    "'5678..5678'"
+    "'5678'"
     """
     if split is None:
         split = limit // 2
