@@ -492,25 +492,22 @@ def repr_shorten(
     Examples
     --------
     >>> from pyodide.console import repr_shorten
-    >>> sep = ".."
+    >>> sep = "_"
     >>> for i in range(7):
     ...   repr_shorten("1234", limit=i, separator=sep)
-    "..'1234'"
-    "..'1234'"
-    "'..'"
-    "'..'"
-    "'1..4'"
-    "'1..4'"
+    "_'1234'"
+    "_'1234'"
+    "'_'"
+    "'_'"
+    "'1_4'"
+    "'1_4'"
     "'1234'"
-    >>> for i in range(7):
-    ...   repr_shorten("5678", limit=i, split=i, separator=sep)
-    "..'5678'"
-    "'..'"
-    "'5..8'"
-    "'56..78'"
-    "'567..678'"
-    "'5678..5678'"
-    "'5678'"
+    >>> len("0123456789")
+    10
+    >>> repr_shorten("0123456789", limit=1, split=4, separator=sep)
+    "'012_789'"
+    >>> repr_shorten("0123456789", limit=15, split=4, separator=sep)
+    "'0123456789'"
     """
     if split is None:
         split = limit // 2
