@@ -249,7 +249,17 @@ function shouldLoadGlobally(lib: string, neededLibs: Set<string>): boolean {
   return neededLibs.has(basename);
 }
 
+/**
+ * Calculate which libraries are dependencies of other libraries.
+ * @param libs The list of path to libraries
+ * @private
+ */
 function calculateNeededLibs(libs: string[]): Set<string> {
+  // Note: For scipy which contains 111 shared libraries,
+  //       This function took around ~150ms.
+  // TODO: We are reading a library twice here and inside loadDynamicLibrary().
+  //      Finding a way to read a file only once would avoid the extra
+  //      overhead.
   const neededLibs = new Set<string>();
   for (const lib of libs) {
     const binary = Module.FS.readFile(lib);
@@ -283,7 +293,7 @@ async function installPackage(
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
-  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
+  const dynlibNames: string[] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
@@ -296,16 +306,25 @@ async function installPackage(
     pkg.file_name.split("-")[0]
   }.libs`;
 
-  const neededLibs = calculateNeededLibs(dynlibs);
+  const neededLibs = calculateNeededLibs(dynlibNames);
+  const dynlibs = dynlibNames.map((lib) => ({
+    name: lib,
+    global: !!pkg.shared_library || shouldLoadGlobally(lib, neededLibs),
+  }));
 
-  // Sort the libraries so that global libraries can be loaded first
-  // TODO: load libraries following the dependency graph?
-  dynlibs.sort((a: string) => (shouldLoadGlobally(a, neededLibs) ? -1 : 1));
+  // Sort libraries so that global libraries can be loaded first.
+  // TODO(ryanking13): It is not clear why global libraries should be loaded first.
+  //    But without this, we get a fatal error when loading the libraries.
+  dynlibs.sort((lib: { global: boolean }) => (lib.global ? -1 : 1));
 
-  for (const dynlib of dynlibs) {
-    let loadGlobally =
-      !!pkg.shared_library || shouldLoadGlobally(dynlib, neededLibs);
-    await loadDynlib(dynlib, loadGlobally, [auditWheelLibDir]);
+  if (DEBUG) {
+    console.debug(
+      `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
+    );
+  }
+
+  for (const { name, global } of dynlibs) {
+    await loadDynlib(name, global, [auditWheelLibDir]);
   }
 }
 
@@ -454,6 +473,7 @@ async function loadDynlib(lib: string, loadGlobally: boolean, libDirs: any[]) {
       nodelete: true,
       global: loadGlobally,
       fs: libraryFS,
+      allowUndefined: true,
     });
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {
