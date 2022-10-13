@@ -9,7 +9,7 @@ REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
 
 
 def compare_with_reference_image(selenium, reference_image, var="img", grayscale=True):
-    reference_image_encoded = base64.b64encode(reference_image.read_bytes())
+    reference_image_encoded = reference_image.read_bytes()
     grayscale = "cv.IMREAD_GRAYSCALE" if grayscale else "cv.IMREAD_COLOR"
     match_ratio = selenium.run(
         f"""
@@ -122,14 +122,14 @@ def test_edge_detection(selenium):
         import cv2 as cv
         import numpy as np
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
         sobel = cv.Sobel(gray, cv.CV_8U, 1, 0, 3)
         laplacian = cv.Laplacian(gray, cv.CV_8U, ksize=3)
         canny = cv.Canny(src, 100, 255)
 
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
+    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     run(selenium, original_img)
 
     assert compare_with_reference_image(
@@ -151,11 +151,11 @@ def test_photo_decolor(selenium):
         import cv2 as cv
         import numpy as np
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         grayscale, color_boost = cv.decolor(src)
 
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
+    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     run(selenium, original_img)
 
     assert compare_with_reference_image(
@@ -177,9 +177,9 @@ def test_stitch(selenium):
         import cv2 as cv
         import numpy as np
 
-        left = np.frombuffer(base64.b64decode(img1), np.uint8)
+        left = np.frombuffer(img1, np.uint8)
         left = cv.imdecode(left, cv.IMREAD_COLOR)
-        right = np.frombuffer(base64.b64decode(img2), np.uint8)
+        right = np.frombuffer(img2, np.uint8)
         right = cv.imdecode(right, cv.IMREAD_COLOR)
         stitcher = cv.Stitcher.create(cv.Stitcher_PANORAMA)
         status, panorama = stitcher.stitch([left, right])
@@ -189,25 +189,19 @@ def test_stitch(selenium):
         assert panorama.shape[0] >= max(left.shape[0], right.shape[0])
         assert panorama.shape[1] >= max(left.shape[1], right.shape[1])
 
-    original_img_left = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "mountain1.png").read_bytes()
-    )
-    original_img_right = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "mountain2.png").read_bytes()
-    )
+    original_img_left = (REFERENCE_IMAGES_PATH / "mountain1.png").read_bytes()
+    original_img_right = (REFERENCE_IMAGES_PATH / "mountain2.png").read_bytes()
 
     run(selenium, original_img_left, original_img_right)
 
 
 def test_video_optical_flow(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
+    def run(selenium, src):
         import base64
 
         import cv2 as cv
         import numpy as np
-
-        src = base64.b64decode(img)
 
         video_path = "video.mp4"
         with open(video_path, "wb") as f:
@@ -261,9 +255,7 @@ def test_video_optical_flow(selenium):
 
         optical_flow = img
 
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
-    )
+    original_img = (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
 
     run(selenium, original_img)
 
@@ -283,9 +275,9 @@ def test_flann_sift(selenium):
         import cv2 as cv
         import numpy as np
 
-        src1 = np.frombuffer(base64.b64decode(img1), np.uint8)
+        src1 = np.frombuffer(img1, np.uint8)
         src1 = cv.imdecode(src1, cv.IMREAD_GRAYSCALE)
-        src2 = np.frombuffer(base64.b64decode(img2), np.uint8)
+        src2 = np.frombuffer(img2, np.uint8)
         src2 = cv.imdecode(src2, cv.IMREAD_GRAYSCALE)
 
         # -- Step 1: Detect the keypoints using SIFT Detector, compute the descriptors
@@ -322,12 +314,8 @@ def test_flann_sift(selenium):
 
         sift_result = cv.cvtColor(matches, cv.COLOR_BGR2GRAY)
 
-    original_img_src1 = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "box.png").read_bytes()
-    )
-    original_img_src2 = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
-    )
+    original_img_src1 = (REFERENCE_IMAGES_PATH / "box.png").read_bytes()
+    original_img_src2 = (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
 
     run(selenium, original_img_src1, original_img_src2)
 
@@ -352,12 +340,12 @@ def test_dnn_mnist(selenium):
         import cv2 as cv
         import numpy as np
 
-        model_weights = base64.b64decode(model)
+        model_weights = model
         model_weights_path = "./mnist.onnx"
         with open(model_weights_path, "wb") as f:
             f.write(model_weights)
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_GRAYSCALE)
 
         net = cv.dnn.readNet(model_weights_path)
@@ -368,11 +356,8 @@ def test_dnn_mnist(selenium):
         assert "output_0" in net.getLayerNames()
         assert np.argmax(prob) == 2
 
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "mnist_2.png").read_bytes()
-    )
-
-    tf_model = base64.b64encode((REFERENCE_IMAGES_PATH / "mnist.onnx").read_bytes())
+    original_img = (REFERENCE_IMAGES_PATH / "mnist_2.png").read_bytes()
+    tf_model = (REFERENCE_IMAGES_PATH / "mnist.onnx").read_bytes()
 
     run(selenium, original_img, tf_model)
 
@@ -457,7 +442,7 @@ def test_ml_pca(selenium):
 
             return angle
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
 
@@ -477,7 +462,7 @@ def test_ml_pca(selenium):
 
         pca_result = src
 
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "pca.png").read_bytes())
+    original_img = (REFERENCE_IMAGES_PATH / "pca.png").read_bytes()
 
     run(selenium, original_img)
 
@@ -498,7 +483,7 @@ def test_objdetect_face(selenium):
         import cv2 as cv
         import numpy as np
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
         gray = cv.equalizeHist(gray)
@@ -525,9 +510,7 @@ def test_objdetect_face(selenium):
                     face_detected, eye_center, radius, (255, 0, 0), 4
                 )
 
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
-    )
+    original_img = (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
 
     run(selenium, original_img)
 
@@ -547,7 +530,7 @@ def test_feature2d_kaze(selenium):
         import cv2 as cv
         import numpy as np
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
 
         detector = cv.KAZE_create()
@@ -561,7 +544,7 @@ def test_feature2d_kaze(selenium):
             flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
         )
 
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
+    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
 
     run(selenium, original_img)
 
@@ -581,7 +564,7 @@ def test_calib3d_chessboard(selenium):
         import cv2 as cv
         import numpy as np
 
-        src = np.frombuffer(base64.b64decode(img), np.uint8)
+        src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
 
         criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -591,9 +574,7 @@ def test_calib3d_chessboard(selenium):
         cv.drawChessboardCorners(gray, (9, 6), corners, ret)
         chessboard_corners = gray
 
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
-    )
+    original_img = (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
 
     run(selenium, original_img)
 

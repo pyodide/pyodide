@@ -1,12 +1,10 @@
 # xgboost tests are copied from: https://github.com/dmlc/xgboost/tree/master/tests/python
-import base64
 import pathlib
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
 DEMO_PATH = pathlib.Path(__file__).parent / "test_data"
-DATA_TRAIN = base64.b64encode((DEMO_PATH / "dermatology.data").read_bytes())
 
 
 @pytest.mark.driver_timeout(60)
@@ -24,10 +22,9 @@ def test_compat(selenium):
 def test_basic_classification(selenium):
     @run_in_pyodide(packages=["xgboost"])
     def run(selenium, data_train):
-        import base64
 
         with open("dermatology.data", "wb") as f:
-            f.write(base64.b64decode(data_train))
+            f.write(data_train)
 
         import numpy as np
         import xgboost as xgb
@@ -79,6 +76,7 @@ def test_basic_classification(selenium):
         error_rate = np.sum(pred_label != test_Y) / test_Y.shape[0]
         assert error_rate < 0.1
 
+    DATA_TRAIN = (DEMO_PATH / "dermatology.data").read_bytes()
     run(selenium, DATA_TRAIN)
 
 
