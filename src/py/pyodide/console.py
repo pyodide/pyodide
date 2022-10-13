@@ -512,6 +512,8 @@ def repr_shorten(
     if split is None:
         split = limit // 2
     text = repr(value)
-    if len(text) > limit:
+    if split > len(text) / 2:
+        split = int(len(text) / 2)
+    if len(text) - 2 > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
