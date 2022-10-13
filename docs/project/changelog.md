@@ -95,6 +95,10 @@ substitutions:
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
+- Added a new CLI command `pyodide package`.
+  `pyodide-build mkpkg` will be replaced by `pyodide package`.
+  {pr}`3175`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
