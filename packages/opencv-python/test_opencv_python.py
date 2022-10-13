@@ -1,33 +1,42 @@
 # flake8: noqa
+# mypy: disable-error-code=attr-defined
 
-import base64
 import pathlib
+from ast import Compare
 
+import pytest
 from pytest_pyodide import run_in_pyodide
 
-REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "reference-images"
+REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "test_data"
 
 
-def compare_with_reference_image(selenium, reference_image, var="img", grayscale=True):
-    reference_image_encoded = reference_image.read_bytes()
-    grayscale = "cv.IMREAD_GRAYSCALE" if grayscale else "cv.IMREAD_COLOR"
-    match_ratio = selenium.run(
-        f"""
-        import base64
-        import numpy as np
+@pytest.fixture(autouse=True)
+def setup_compare_function(selenium):
+    @run_in_pyodide(packages=["opencv-python"])
+    def prepare(selenium):
         import cv2 as cv
-        DIFF_THRESHOLD = 2
-        arr = np.frombuffer(base64.b64decode({reference_image_encoded!r}), np.uint8)
-        ref_data = cv.imdecode(arr, {grayscale})
+        import numpy as np
 
-        pixels_match = np.count_nonzero(np.abs({var}.astype(np.int16) - ref_data.astype(np.int16)) <= DIFF_THRESHOLD)
-        pixels_total = ref_data.size
-        float(pixels_match / pixels_total)
-        """
-    )
+        def compare(ref, image, colormode):
+            DIFF_THRESHOLD = 2
+            MIN_MATCH_RATIO = 0.95
 
-    # Due to some randomness in the result, we allow a small difference
-    return match_ratio > 0.95
+            arr = np.frombuffer(ref, np.uint8)
+            ref_image = cv.imdecode(arr, colormode)
+
+            pixels_match = np.count_nonzero(
+                np.abs(image.astype(np.int16) - ref_image.astype(np.int16))
+                <= DIFF_THRESHOLD
+            )
+            pixels_total = image.size
+
+            match_ratio = float(pixels_match / pixels_total)
+            assert match_ratio > MIN_MATCH_RATIO
+
+        # TODO: this is a hack to make the function available in the global scope
+        np.compare_ = compare
+
+    prepare(selenium)
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
@@ -116,64 +125,58 @@ def test_image_processing(selenium):
 
 def test_edge_detection(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
-        import base64
-
+    def run(selenium, img, ref_sobel, ref_laplacian, ref_canny):
         import cv2 as cv
         import numpy as np
 
         src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+
         sobel = cv.Sobel(gray, cv.CV_8U, 1, 0, 3)
         laplacian = cv.Laplacian(gray, cv.CV_8U, ksize=3)
         canny = cv.Canny(src, 100, 255)
 
-    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
-    run(selenium, original_img)
+        np.compare_(ref_sobel, sobel, cv.IMREAD_GRAYSCALE)
+        np.compare_(ref_laplacian, laplacian, cv.IMREAD_GRAYSCALE)
+        np.compare_(ref_canny, canny, cv.IMREAD_GRAYSCALE)
 
-    assert compare_with_reference_image(
-        selenium, REFERENCE_IMAGES_PATH / "baboon_sobel.png", "sobel"
-    )
-    assert compare_with_reference_image(
-        selenium, REFERENCE_IMAGES_PATH / "baboon_laplacian.png", "laplacian"
-    )
-    assert compare_with_reference_image(
-        selenium, REFERENCE_IMAGES_PATH / "baboon_canny.png", "canny"
-    )
+    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
+    ref_sobel = (REFERENCE_IMAGES_PATH / "baboon_sobel.png").read_bytes()
+    ref_laplacian = (REFERENCE_IMAGES_PATH / "baboon_laplacian.png").read_bytes()
+    ref_canny = (REFERENCE_IMAGES_PATH / "baboon_canny.png").read_bytes()
+
+    run(selenium, original_img, ref_sobel, ref_laplacian, ref_canny)
 
 
 def test_photo_decolor(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
-        import base64
-
+    def run(selenium, img, ref_grayscale, ref_color_boost):
         import cv2 as cv
         import numpy as np
 
         src = np.frombuffer(img, np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
+
         grayscale, color_boost = cv.decolor(src)
 
-    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
-    run(selenium, original_img)
+        np.compare_(ref_grayscale, grayscale, cv.IMREAD_GRAYSCALE)
+        np.compare_(ref_color_boost, color_boost, cv.IMREAD_COLOR)
 
-    assert compare_with_reference_image(
-        selenium, REFERENCE_IMAGES_PATH / "baboon_decolor_grayscale.png", "grayscale"
-    )
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "baboon_decolor_color_boost.png",
-        "color_boost",
-        grayscale=False,
-    )
+    original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
+    ref_grayscale = (
+        REFERENCE_IMAGES_PATH / "baboon_decolor_grayscale.png"
+    ).read_bytes()
+    ref_color_boost = (
+        REFERENCE_IMAGES_PATH / "baboon_decolor_color_boost.png"
+    ).read_bytes()
+
+    run(selenium, original_img, ref_grayscale, ref_color_boost)
 
 
 def test_stitch(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, img1, img2):
-        import base64
-
         import cv2 as cv
         import numpy as np
 
@@ -197,9 +200,7 @@ def test_stitch(selenium):
 
 def test_video_optical_flow(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, src):
-        import base64
-
+    def run(selenium, src, ref_optical_flow):
         import cv2 as cv
         import numpy as np
 
@@ -255,23 +256,17 @@ def test_video_optical_flow(selenium):
 
         optical_flow = img
 
+        np.compare_(ref_optical_flow, optical_flow, cv.IMREAD_COLOR)
+
     original_img = (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
+    ref_optical_flow = (REFERENCE_IMAGES_PATH / "traffic_optical_flow.png").read_bytes()
 
-    run(selenium, original_img)
-
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "traffic_optical_flow.png",
-        "optical_flow",
-        grayscale=False,
-    )
+    run(selenium, original_img, ref_optical_flow)
 
 
 def test_flann_sift(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img1, img2):
-        import base64
-
+    def run(selenium, img1, img2, ref_sift):
         import cv2 as cv
         import numpy as np
 
@@ -314,17 +309,13 @@ def test_flann_sift(selenium):
 
         sift_result = cv.cvtColor(matches, cv.COLOR_BGR2GRAY)
 
+        np.compare_(ref_sift, sift_result, cv.IMREAD_GRAYSCALE)
+
     original_img_src1 = (REFERENCE_IMAGES_PATH / "box.png").read_bytes()
     original_img_src2 = (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
+    ref_sift_result = (REFERENCE_IMAGES_PATH / "box_sift.png").read_bytes()
 
-    run(selenium, original_img_src1, original_img_src2)
-
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "box_sift.png",
-        "sift_result",
-        grayscale=True,
-    )
+    run(selenium, original_img_src1, original_img_src2, ref_sift_result)
 
 
 def test_dnn_mnist(selenium):
@@ -335,8 +326,6 @@ def test_dnn_mnist(selenium):
 
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, img, model):
-        import base64
-
         import cv2 as cv
         import numpy as np
 
@@ -364,8 +353,7 @@ def test_dnn_mnist(selenium):
 
 def test_ml_pca(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
-        import base64
+    def run(selenium, img, ref_pca):
         from math import atan2, cos, pi, sin, sqrt
 
         import cv2 as cv
@@ -462,22 +450,17 @@ def test_ml_pca(selenium):
 
         pca_result = src
 
+        np.compare_(ref_pca, pca_result, cv.IMREAD_COLOR)
+
     original_img = (REFERENCE_IMAGES_PATH / "pca.png").read_bytes()
+    ref_pca = (REFERENCE_IMAGES_PATH / "pca_result.png").read_bytes()
 
-    run(selenium, original_img)
-
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "pca_result.png",
-        "pca_result",
-        grayscale=False,
-    )
+    run(selenium, original_img, ref_pca)
 
 
 def test_objdetect_face(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
-        import base64
+    def run(selenium, img, ref_face):
         from pathlib import Path
 
         import cv2 as cv
@@ -510,23 +493,17 @@ def test_objdetect_face(selenium):
                     face_detected, eye_center, radius, (255, 0, 0), 4
                 )
 
+        np.compare_(ref_face, face_detected, cv.IMREAD_COLOR)
+
     original_img = (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
+    ref_face = (REFERENCE_IMAGES_PATH / "monalisa_facedetect.png").read_bytes()
 
-    run(selenium, original_img)
-
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "monalisa_facedetect.png",
-        "face_detected",
-        grayscale=False,
-    )
+    run(selenium, original_img, ref_face)
 
 
 def test_feature2d_kaze(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
-        import base64
-
+    def run(selenium, img, ref_kaze):
         import cv2 as cv
         import numpy as np
 
@@ -544,23 +521,17 @@ def test_feature2d_kaze(selenium):
             flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
         )
 
+        np.compare_(ref_kaze, kaze, cv.IMREAD_COLOR)
+
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
+    ref_kaze = (REFERENCE_IMAGES_PATH / "baboon_kaze.png").read_bytes()
 
-    run(selenium, original_img)
-
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "baboon_kaze.png",
-        "kaze",
-        grayscale=False,
-    )
+    run(selenium, original_img, ref_kaze)
 
 
 def test_calib3d_chessboard(selenium):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img):
-        import base64
-
+    def run(selenium, img, ref_chessboard):
         import cv2 as cv
         import numpy as np
 
@@ -574,12 +545,9 @@ def test_calib3d_chessboard(selenium):
         cv.drawChessboardCorners(gray, (9, 6), corners, ret)
         chessboard_corners = gray
 
+        np.compare_(ref_chessboard, chessboard_corners, cv.IMREAD_GRAYSCALE)
+
     original_img = (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
+    ref_chessboard = (REFERENCE_IMAGES_PATH / "chessboard_corners.png").read_bytes()
 
-    run(selenium, original_img)
-
-    assert compare_with_reference_image(
-        selenium,
-        REFERENCE_IMAGES_PATH / "chessboard_corners.png",
-        "chessboard_corners",
-    )
+    run(selenium, original_img, ref_chessboard)
