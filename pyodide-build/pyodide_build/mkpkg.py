@@ -344,12 +344,6 @@ complex things.""".strip()
 
 
 def main(args: argparse.Namespace) -> None:
-    import warnings
-
-    warnings.warn(
-        "'pyodide-build mkpkg' command is deprecated, use 'pyodide package' instead.",
-    )
-
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if PYODIDE_ROOT is None:
         raise ValueError("PYODIDE_ROOT is not set")
