@@ -64,6 +64,12 @@ substitutions:
   receive `this` as the first argument if set to `True`
   {pr}`3103`, {pr}`3145`
 
+- {{ Enhancement }} `create_proxy` now takes an optional `roundtrip` parameter.
+  If this is set to `True`, then when the proxy is converted back to Python, it
+  is converted back to the same double proxy. This allows the proxy to be
+  destroyed from Python even if no reference is retained.
+  {pr}`3163`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
   {pr}`3137`
@@ -93,7 +99,7 @@ substitutions:
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
   coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with

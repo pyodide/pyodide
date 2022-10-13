@@ -22,7 +22,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v2.38.2"
+    rev: "v3.0.0"
     hooks:
       - id: pyupgrade
         name: pyupgrade
@@ -37,7 +37,7 @@ repos:
         stages: [manual]
 
   - repo: https://github.com/psf/black
-    rev: "22.8.0"
+    rev: "22.10.0"
     hooks:
       - id: black
 
@@ -48,7 +48,7 @@ repos:
         additional_dependencies: [flake8-bugbear]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.981"
+    rev: "v0.982"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -77,7 +77,7 @@ repos:
         types_or: [c++, c, cuda]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.0"
+    rev: "v3.0.0-alpha.1"
     hooks:
       - id: prettier
 
