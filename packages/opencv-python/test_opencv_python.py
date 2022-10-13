@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import base64
 import pathlib
 
@@ -26,17 +28,6 @@ def compare_with_reference_image(selenium, reference_image, var="img", grayscale
 
     # Due to some randomness in the result, we allow a small difference
     return match_ratio > 0.95
-
-
-def test_import(selenium):
-    selenium.set_script_timeout(60)
-    selenium.load_package("opencv-python")
-    selenium.run(
-        """
-        import cv2
-        cv2.__version__
-        """
-    )
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
@@ -124,22 +115,22 @@ def test_image_processing(selenium):
 
 
 def test_edge_detection(selenium):
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
+
         import cv2 as cv
         import numpy as np
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
         sobel = cv.Sobel(gray, cv.CV_8U, 1, 0, 3)
         laplacian = cv.Laplacian(gray, cv.CV_8U, ksize=3)
         canny = cv.Canny(src, 100, 255)
-        None
-        """
-    )
+
+    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium, REFERENCE_IMAGES_PATH / "baboon_sobel.png", "sobel"
@@ -153,19 +144,19 @@ def test_edge_detection(selenium):
 
 
 def test_photo_decolor(selenium):
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
+
         import cv2 as cv
         import numpy as np
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         grayscale, color_boost = cv.decolor(src)
-        None
-        """
-    )
+
+    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium, REFERENCE_IMAGES_PATH / "baboon_decolor_grayscale.png", "grayscale"
@@ -179,21 +170,16 @@ def test_photo_decolor(selenium):
 
 
 def test_stitch(selenium):
-    original_img_left = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "mountain1.png").read_bytes()
-    )
-    original_img_right = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "mountain2.png").read_bytes()
-    )
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img1, img2):
         import base64
+
         import cv2 as cv
         import numpy as np
-        left = np.frombuffer(base64.b64decode({original_img_left!r}), np.uint8)
+
+        left = np.frombuffer(base64.b64decode(img1), np.uint8)
         left = cv.imdecode(left, cv.IMREAD_COLOR)
-        right = np.frombuffer(base64.b64decode({original_img_right!r}), np.uint8)
+        right = np.frombuffer(base64.b64decode(img2), np.uint8)
         right = cv.imdecode(right, cv.IMREAD_COLOR)
         stitcher = cv.Stitcher.create(cv.Stitcher_PANORAMA)
         status, panorama = stitcher.stitch([left, right])
@@ -202,22 +188,26 @@ def test_stitch(selenium):
         assert status == cv.Stitcher_OK
         assert panorama.shape[0] >= max(left.shape[0], right.shape[0])
         assert panorama.shape[1] >= max(left.shape[1], right.shape[1])
-        """
+
+    original_img_left = base64.b64encode(
+        (REFERENCE_IMAGES_PATH / "mountain1.png").read_bytes()
     )
+    original_img_right = base64.b64encode(
+        (REFERENCE_IMAGES_PATH / "mountain2.png").read_bytes()
+    )
+
+    run(selenium, original_img_left, original_img_right)
 
 
 def test_video_optical_flow(selenium):
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
-    )
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
+
         import cv2 as cv
         import numpy as np
 
-        src = base64.b64decode({original_img!r})
+        src = base64.b64decode(img)
 
         video_path = "video.mp4"
         with open(video_path, "wb") as f:
@@ -227,34 +217,37 @@ def test_video_optical_flow(selenium):
         assert cap.isOpened()
 
         # params for ShiTomasi corner detection
-        feature_params = dict( maxCorners = 100,
-                            qualityLevel = 0.3,
-                            minDistance = 7,
-                            blockSize = 7 )
+        feature_params = dict(
+            maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7
+        )
         # Parameters for lucas kanade optical flow
-        lk_params = dict( winSize  = (15, 15),
-                        maxLevel = 2,
-                        criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+        lk_params = dict(
+            winSize=(15, 15),
+            maxLevel=2,
+            criteria=(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03),
+        )
 
         # Take first frame and find corners in it
         ret, old_frame = cap.read()
         assert ret
 
         old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
-        p0 = cv.goodFeaturesToTrack(old_gray, mask = None, **feature_params)
+        p0 = cv.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
         # Create a mask image for drawing purposes
         mask = np.zeros_like(old_frame)
-        while(1):
+        while 1:
             ret, frame = cap.read()
             if not ret:
                 break
             frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
             # calculate optical flow
-            p1, st, err = cv.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
+            p1, st, err = cv.calcOpticalFlowPyrLK(
+                old_gray, frame_gray, p0, None, **lk_params
+            )
             # Select good points
             if p1 is not None:
-                good_new = p1[st==1]
-                good_old = p0[st==1]
+                good_new = p1[st == 1]
+                good_old = p0[st == 1]
             # draw the tracks
             for i, (new, old) in enumerate(zip(good_new, good_old)):
                 a, b = new.ravel()
@@ -267,9 +260,12 @@ def test_video_optical_flow(selenium):
             p0 = good_new.reshape(-1, 1, 2)
 
         optical_flow = img
-        None
-        """
+
+    original_img = base64.b64encode(
+        (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
     )
+
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium,
@@ -280,47 +276,60 @@ def test_video_optical_flow(selenium):
 
 
 def test_flann_sift(selenium):
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img1, img2):
+        import base64
+
+        import cv2 as cv
+        import numpy as np
+
+        src1 = np.frombuffer(base64.b64decode(img1), np.uint8)
+        src1 = cv.imdecode(src1, cv.IMREAD_GRAYSCALE)
+        src2 = np.frombuffer(base64.b64decode(img2), np.uint8)
+        src2 = cv.imdecode(src2, cv.IMREAD_GRAYSCALE)
+
+        # -- Step 1: Detect the keypoints using SIFT Detector, compute the descriptors
+        detector = cv.SIFT_create()
+        keypoints1, descriptors1 = detector.detectAndCompute(src1, None)
+        keypoints2, descriptors2 = detector.detectAndCompute(src2, None)
+
+        # -- Step 2: Matching descriptor vectors with a FLANN based matcher
+        matcher = cv.DescriptorMatcher_create(cv.DescriptorMatcher_FLANNBASED)
+        knn_matches = matcher.knnMatch(descriptors1, descriptors2, 2)
+
+        # -- Filter matches using the Lowe's ratio test
+        ratio_thresh = 0.3
+        good_matches = []
+        for m, n in knn_matches:
+            if m.distance < ratio_thresh * n.distance:
+                good_matches.append(m)
+
+        # -- Draw matches
+        matches = np.empty(
+            (max(src1.shape[0], src2.shape[0]), src1.shape[1] + src2.shape[1], 3),
+            dtype=np.uint8,
+        )
+        cv.drawMatches(
+            src1,
+            keypoints1,
+            src2,
+            keypoints2,
+            good_matches,
+            matches,
+            matchColor=[255, 0, 0],
+            flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+        )
+
+        sift_result = cv.cvtColor(matches, cv.COLOR_BGR2GRAY)
+
     original_img_src1 = base64.b64encode(
         (REFERENCE_IMAGES_PATH / "box.png").read_bytes()
     )
     original_img_src2 = base64.b64encode(
         (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
     )
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
-        import base64
-        import cv2 as cv
-        import numpy as np
-        src1 = np.frombuffer(base64.b64decode({original_img_src1!r}), np.uint8)
-        src1 = cv.imdecode(src1, cv.IMREAD_GRAYSCALE)
-        src2 = np.frombuffer(base64.b64decode({original_img_src2!r}), np.uint8)
-        src2 = cv.imdecode(src2, cv.IMREAD_GRAYSCALE)
 
-        #-- Step 1: Detect the keypoints using SIFT Detector, compute the descriptors
-        detector = cv.SIFT_create()
-        keypoints1, descriptors1 = detector.detectAndCompute(src1, None)
-        keypoints2, descriptors2 = detector.detectAndCompute(src2, None)
-
-        #-- Step 2: Matching descriptor vectors with a FLANN based matcher
-        matcher = cv.DescriptorMatcher_create(cv.DescriptorMatcher_FLANNBASED)
-        knn_matches = matcher.knnMatch(descriptors1, descriptors2, 2)
-
-        #-- Filter matches using the Lowe's ratio test
-        ratio_thresh = 0.3
-        good_matches = []
-        for m,n in knn_matches:
-            if m.distance < ratio_thresh * n.distance:
-                good_matches.append(m)
-
-        #-- Draw matches
-        matches = np.empty((max(src1.shape[0], src2.shape[0]), src1.shape[1]+src2.shape[1], 3), dtype=np.uint8)
-        cv.drawMatches(src1, keypoints1, src2, keypoints2, good_matches, matches, matchColor=[255, 0, 0], flags=cv.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-
-        sift_result = cv.cvtColor(matches, cv.COLOR_BGR2GRAY)
-        None
-        """
-    )
+    run(selenium, original_img_src1, original_img_src2)
 
     assert compare_with_reference_image(
         selenium,
@@ -336,23 +345,19 @@ def test_dnn_mnist(selenium):
     Training script: https://github.com/ryanking13/torch-opencv-mnist
     """
 
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "mnist_2.png").read_bytes()
-    )
-    tf_model = base64.b64encode((REFERENCE_IMAGES_PATH / "mnist.onnx").read_bytes())
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img, model):
         import base64
+
         import cv2 as cv
         import numpy as np
 
-        model_weights = base64.b64decode({tf_model!r})
-        model_weights_path = './mnist.onnx'
-        with open(model_weights_path, 'wb') as f:
+        model_weights = base64.b64decode(model)
+        model_weights_path = "./mnist.onnx"
+        with open(model_weights_path, "wb") as f:
             f.write(model_weights)
 
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_GRAYSCALE)
 
         net = cv.dnn.readNet(model_weights_path)
@@ -362,62 +367,97 @@ def test_dnn_mnist(selenium):
         prob = net.forward()
         assert "output_0" in net.getLayerNames()
         assert np.argmax(prob) == 2
-        """
+
+    original_img = base64.b64encode(
+        (REFERENCE_IMAGES_PATH / "mnist_2.png").read_bytes()
     )
+
+    tf_model = base64.b64encode((REFERENCE_IMAGES_PATH / "mnist.onnx").read_bytes())
+
+    run(selenium, original_img, tf_model)
 
 
 def test_ml_pca(selenium):
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "pca.png").read_bytes())
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
+        from math import atan2, cos, pi, sin, sqrt
+
         import cv2 as cv
         import numpy as np
-        from math import atan2, cos, sin, sqrt, pi
 
         def drawAxis(img, p_, q_, colour, scale):
             p = list(p_)
             q = list(q_)
 
-            angle = atan2(p[1] - q[1], p[0] - q[0]) # angle in radians
-            hypotenuse = sqrt((p[1] - q[1]) * (p[1] - q[1]) + (p[0] - q[0]) * (p[0] - q[0]))
+            angle = atan2(p[1] - q[1], p[0] - q[0])  # angle in radians
+            hypotenuse = sqrt(
+                (p[1] - q[1]) * (p[1] - q[1]) + (p[0] - q[0]) * (p[0] - q[0])
+            )
             # Here we lengthen the arrow by a factor of scale
             q[0] = p[0] - scale * hypotenuse * cos(angle)
             q[1] = p[1] - scale * hypotenuse * sin(angle)
-            cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 1, cv.LINE_AA)
+            cv.line(
+                img,
+                (int(p[0]), int(p[1])),
+                (int(q[0]), int(q[1])),
+                colour,
+                1,
+                cv.LINE_AA,
+            )
             # create the arrow hooks
             p[0] = q[0] + 9 * cos(angle + pi / 4)
             p[1] = q[1] + 9 * sin(angle + pi / 4)
-            cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 1, cv.LINE_AA)
+            cv.line(
+                img,
+                (int(p[0]), int(p[1])),
+                (int(q[0]), int(q[1])),
+                colour,
+                1,
+                cv.LINE_AA,
+            )
             p[0] = q[0] + 9 * cos(angle - pi / 4)
             p[1] = q[1] + 9 * sin(angle - pi / 4)
-            cv.line(img, (int(p[0]), int(p[1])), (int(q[0]), int(q[1])), colour, 1, cv.LINE_AA)
+            cv.line(
+                img,
+                (int(p[0]), int(p[1])),
+                (int(q[0]), int(q[1])),
+                colour,
+                1,
+                cv.LINE_AA,
+            )
 
         def getOrientation(pts, img):
 
             sz = len(pts)
             data_pts = np.empty((sz, 2), dtype=np.float64)
             for i in range(data_pts.shape[0]):
-                data_pts[i,0] = pts[i,0,0]
-                data_pts[i,1] = pts[i,0,1]
+                data_pts[i, 0] = pts[i, 0, 0]
+                data_pts[i, 1] = pts[i, 0, 1]
             # Perform PCA analysis
-            mean = np.empty((0))
+            mean = np.empty(0)
             mean, eigenvectors, eigenvalues = cv.PCACompute2(data_pts, mean)
             # Store the center of the object
-            cntr = (int(mean[0,0]), int(mean[0,1]))
-
+            cntr = (int(mean[0, 0]), int(mean[0, 1]))
 
             cv.circle(img, cntr, 3, (255, 0, 255), 2)
-            p1 = (cntr[0] + 0.02 * eigenvectors[0,0] * eigenvalues[0,0], cntr[1] + 0.02 * eigenvectors[0,1] * eigenvalues[0,0])
-            p2 = (cntr[0] - 0.02 * eigenvectors[1,0] * eigenvalues[1,0], cntr[1] - 0.02 * eigenvectors[1,1] * eigenvalues[1,0])
+            p1 = (
+                cntr[0] + 0.02 * eigenvectors[0, 0] * eigenvalues[0, 0],
+                cntr[1] + 0.02 * eigenvectors[0, 1] * eigenvalues[0, 0],
+            )
+            p2 = (
+                cntr[0] - 0.02 * eigenvectors[1, 0] * eigenvalues[1, 0],
+                cntr[1] - 0.02 * eigenvectors[1, 1] * eigenvalues[1, 0],
+            )
             drawAxis(img, cntr, p1, (0, 255, 0), 1)
             drawAxis(img, cntr, p2, (255, 255, 0), 5)
-            angle = atan2(eigenvectors[0,1], eigenvectors[0,0]) # orientation in radians
+            angle = atan2(
+                eigenvectors[0, 1], eigenvectors[0, 0]
+            )  # orientation in radians
 
             return angle
 
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
 
@@ -436,9 +476,10 @@ def test_ml_pca(selenium):
             getOrientation(c, src)
 
         pca_result = src
-        None
-        """
-    )
+
+    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "pca.png").read_bytes())
+
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium,
@@ -449,18 +490,15 @@ def test_ml_pca(selenium):
 
 
 def test_objdetect_face(selenium):
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
-    )
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
-        import cv2 as cv
-        import numpy as np
         from pathlib import Path
 
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+        import cv2 as cv
+        import numpy as np
+
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
         gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
         gray = cv.equalizeHist(gray)
@@ -473,19 +511,25 @@ def test_objdetect_face(selenium):
 
         faces = face_cascade.detectMultiScale(gray)
         face_detected = src.copy()
-        for (x,y,w,h) in faces:
-            center = (x + w//2, y + h//2)
-            face_detected = cv.ellipse(face_detected, center, (w//2, h//2), 0, 0, 360, (255, 0, 255), 4)
-            faceROI = gray[y:y+h,x:x+w]
+        for (x, y, w, h) in faces:
+            center = (x + w // 2, y + h // 2)
+            face_detected = cv.ellipse(
+                face_detected, center, (w // 2, h // 2), 0, 0, 360, (255, 0, 255), 4
+            )
+            faceROI = gray[y : y + h, x : x + w]
             eyes = eyes_cascade.detectMultiScale(faceROI)
-            for (x2,y2,w2,h2) in eyes:
-                eye_center = (x + x2 + w2//2, y + y2 + h2//2)
-                radius = int(round((w2 + h2)*0.25))
-                face_detected = cv.circle(face_detected, eye_center, radius, (255, 0, 0 ), 4)
+            for (x2, y2, w2, h2) in eyes:
+                eye_center = (x + x2 + w2 // 2, y + y2 + h2 // 2)
+                radius = int(round((w2 + h2) * 0.25))
+                face_detected = cv.circle(
+                    face_detected, eye_center, radius, (255, 0, 0), 4
+                )
 
-        None
-        """
+    original_img = base64.b64encode(
+        (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
     )
+
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium,
@@ -496,23 +540,30 @@ def test_objdetect_face(selenium):
 
 
 def test_feature2d_kaze(selenium):
-    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
+
         import cv2 as cv
         import numpy as np
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
 
         detector = cv.KAZE_create()
         keypoints = detector.detect(src)
 
-        kaze = cv.drawKeypoints(src, keypoints, None, color=(0, 0, 255), flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        None
-        """
-    )
+        kaze = cv.drawKeypoints(
+            src,
+            keypoints,
+            None,
+            color=(0, 0, 255),
+            flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
+        )
+
+    original_img = base64.b64encode((REFERENCE_IMAGES_PATH / "baboon.png").read_bytes())
+
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium,
@@ -523,16 +574,14 @@ def test_feature2d_kaze(selenium):
 
 
 def test_calib3d_chessboard(selenium):
-    original_img = base64.b64encode(
-        (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
-    )
-    selenium.load_package("opencv-python")
-    selenium.run(
-        f"""
+    @run_in_pyodide(packages=["opencv-python"])
+    def run(selenium, img):
         import base64
+
         import cv2 as cv
         import numpy as np
-        src = np.frombuffer(base64.b64decode({original_img!r}), np.uint8)
+
+        src = np.frombuffer(base64.b64decode(img), np.uint8)
         src = cv.imdecode(src, cv.IMREAD_COLOR)
 
         criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -541,9 +590,12 @@ def test_calib3d_chessboard(selenium):
         cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
         cv.drawChessboardCorners(gray, (9, 6), corners, ret)
         chessboard_corners = gray
-        None
-        """
+
+    original_img = base64.b64encode(
+        (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
     )
+
+    run(selenium, original_img)
 
     assert compare_with_reference_image(
         selenium,
