@@ -1,0 +1,26 @@
+From cc353c8a68246c79e84a075bb246eff1ce4c1acd Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 18 Sep 2022 17:47:16 -0700
+Subject: [PATCH] Use patched instant
+
+---
+ src/_bcrypt/Cargo.toml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/_bcrypt/Cargo.toml b/src/_bcrypt/Cargo.toml
+index 6c75126..bc89ade 100644
+--- a/src/_bcrypt/Cargo.toml
++++ b/src/_bcrypt/Cargo.toml
+@@ -5,6 +5,9 @@ authors = ["The bcrypt developers <cryptography-dev@python.org>"]
+ edition = "2018"
+ publish = false
+ 
++[patch.crates-io]
++instant = { path =  "../../instant" }
++
+ [dependencies]
+ pyo3 = { version = "0.15.2" }
+ bcrypt = "0.13"
+-- 
+2.25.1
+

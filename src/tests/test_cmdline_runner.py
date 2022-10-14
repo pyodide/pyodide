@@ -233,7 +233,7 @@ def clean_pkg_install_stdout(stdout: str) -> str:
     stdout = re.sub(r"^  .*?\n", "", stdout, flags=re.MULTILINE)
     stdout = re.sub(r"^\[notice\].*?\n", "", stdout, flags=re.MULTILINE)
     # Remove version numbers
-    stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", stdout)
+    stdout = re.sub(r"(?<=[<>=_-])[\d+](\.?_?[\d+])*", "*", stdout)
     stdout = re.sub(r" /[a-zA-Z0-9/]*/dist", " .../dist", stdout)
 
     return stdout.strip()
@@ -254,7 +254,7 @@ Successfully installed regex-2.0
         )
         == """\
 Looking in links: .../dist
-Processing ./dist/regex-*-cp310-cp310-emscripten_3_1_20_wasm32.whl
+Processing ./dist/regex-*-cp310-cp310-emscripten_*_wasm32.whl
 Installing collected packages: regex
 Successfully installed regex-*\
 """
@@ -356,7 +356,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cp310-cp310-emscripten_3_1_20_wasm32.whl
+            Processing ./dist/regex-*-cp310-cp310-emscripten_*_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
             """

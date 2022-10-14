@@ -9,6 +9,7 @@ export interface Module {
   printErr: (a: string) => void;
   ENV: { [key: string]: string };
   FS: any;
+  PATH: any;
 }
 
 /**

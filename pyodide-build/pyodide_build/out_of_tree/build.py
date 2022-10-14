@@ -1,4 +1,3 @@
-import argparse
 import os
 
 from .. import common, pypabuild, pywasmcross
@@ -23,26 +22,3 @@ def run(exports, args):
 
     with build_env_ctx as env:
         pypabuild.build(env, " ".join(args))
-
-
-def main(parser_args: argparse.Namespace) -> None:
-    common.check_emscripten_version()
-    run(parser_args.exports, parser_args.backend_args)
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = "Use pypa/build to build a Python package."
-    parser.add_argument(
-        "--exports",
-        choices=["pyinit", "requested", "whole_archive"],
-        default="requested",
-        help="Which symbols should be exported when linking .so files?",
-    )
-    parser.add_argument(
-        "backend_args",
-        metavar="args",
-        type=str,
-        nargs=argparse.REMAINDER,
-        help="Arguments to pass on to the backend",
-    )
-    return parser
