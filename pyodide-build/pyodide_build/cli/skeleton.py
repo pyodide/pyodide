@@ -42,9 +42,9 @@ def new_recipe_pypi(
     root: str = typer.Option(
         None, help="The root directory of the Pyodide.", envvar="PYODIDE_ROOT"
     ),
-    packages_dir: str = typer.Option(
+    recipe_dir: str = typer.Option(
         None,
-        help="The directory containing the packages."
+        help="The directory containing the recipe of packages."
         "If not specified, the default is `packages` in the root directory.",
     ),
 ) -> None:
@@ -52,17 +52,15 @@ def new_recipe_pypi(
     Create a new package.
     """
     pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
-    packages_dir_ = (
-        pyodide_root / "packages" if not packages_dir else Path(packages_dir)
-    )
+    recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
 
     if update or update_patched:
         mkpkg.update_package(
-            packages_dir_,
+            recipe_dir_,
             name,
             version,
             source_fmt=source_format,  # type: ignore[arg-type]
             update_patched=update_patched,
         )
     else:
-        mkpkg.make_package(packages_dir_, name, version, source_fmt=source_format)  # type: ignore[arg-type]
+        mkpkg.make_package(recipe_dir_, name, version, source_fmt=source_format)  # type: ignore[arg-type]

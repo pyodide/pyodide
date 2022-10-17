@@ -1,4 +1,3 @@
-import pytest
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build.cli import skeleton
@@ -6,12 +5,7 @@ from pyodide_build.cli import skeleton
 runner = CliRunner()
 
 
-@pytest.fixture
-def packages_temp_path(tmp_path):
-    yield tmp_path
-
-
-def test_package(packages_temp_path):
+def test_skeleton_pypi(tmp_path):
     test_pkg = "pytest-pyodide"
     old_version = "0.21.0"
     new_version = "0.22.0"
@@ -19,10 +13,10 @@ def test_package(packages_temp_path):
     result = runner.invoke(
         skeleton.app,
         [
-            "new",
+            "pypi",
             test_pkg,
-            "--packages-dir",
-            str(packages_temp_path),
+            "--recipe-dir",
+            str(tmp_path),
             "--version",
             old_version,
         ],
@@ -33,10 +27,10 @@ def test_package(packages_temp_path):
     result = runner.invoke(
         skeleton.app,
         [
-            "update",
+            "pypi",
             test_pkg,
-            "--packages-dir",
-            str(packages_temp_path),
+            "--recipe-dir",
+            str(tmp_path),
             "--version",
             new_version,
         ],
@@ -45,7 +39,7 @@ def test_package(packages_temp_path):
     assert f"Updated {test_pkg} from {old_version} to {new_version}" in result.stdout
 
     result = runner.invoke(
-        skeleton.app, ["new", test_pkg, "--packages-dir", str(packages_temp_path)]
+        skeleton.app, ["pypi", test_pkg, "--recipe-dir", str(tmp_path)]
     )
     assert result.exit_code != 0
     assert "already exists" in str(result.exception)
