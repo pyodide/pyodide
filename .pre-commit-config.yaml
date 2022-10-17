@@ -22,7 +22,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v2.37.2"
+    rev: "v3.0.0"
     hooks:
       - id: pyupgrade
         name: pyupgrade
@@ -30,29 +30,29 @@ repos:
         exclude: docs
 
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v2.0.4"
+    rev: "v2.1.1"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml]
         stages: [manual]
 
   - repo: https://github.com/psf/black
-    rev: "22.6.0"
+    rev: "22.10.0"
     hooks:
       - id: black
 
   - repo: https://github.com/pycqa/flake8
-    rev: "4.0.1"
+    rev: "5.0.4"
     hooks:
       - id: flake8
         additional_dependencies: [flake8-bugbear]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.971"
+    rev: "v0.982"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
-        exclude: (setup.py|^src/tests|conftest.py)
+        exclude: (setup.py|src/tests|conftest.py|packages/.*/test)
         args: []
         additional_dependencies: &mypy-deps
           - packaging
@@ -62,6 +62,7 @@ repos:
           - numpy
           - build
           - pytest
+          - pydantic
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
@@ -76,7 +77,7 @@ repos:
         types_or: [c++, c, cuda]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v2.7.1"
+    rev: "v3.0.0-alpha.1"
     hooks:
       - id: prettier
 
@@ -98,10 +99,12 @@ repos:
     rev: "v0.8.0.4"
     hooks:
       - id: shellcheck
+        exclude: ^tools/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.1.0"
+    rev: "v2.2.1"
     hooks:
       - id: codespell
-        args: ["-L", "te,slowy,aray,ba,nd,classs,crate,feld,lits"]
+        args:
+          ["-L", "te,slowy,aray,ba,nd,classs,crate,feld,lits,inflight,falsy,"]
         exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$

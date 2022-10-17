@@ -885,7 +885,7 @@ def test_mixins_errors_2(selenium):
                     yield e
 
             from pyodide.ffi import JsException
-            msg = "^TypeError:.* is not a function$"
+            msg = "^TypeError:.* is not a function.*"
             with raises(JsException, match=msg):
                 next(c)
             with raises(JsException, match=msg):
@@ -1276,3 +1276,20 @@ def test_jsarray_reverse(selenium):
 
     assert a.to_py() == l
     assert b.to_bytes() == bytes(l)
+
+
+@run_in_pyodide
+def test_jsproxy_descr_get(selenium):
+    from pyodide.code import run_js
+
+    class T:
+        a: int
+        b: int
+        f = run_js("function f(x) {return this[x]; }; f")
+
+    t = T()
+    t.a = 7
+    t.b = 66
+    assert t.f("a") == 7
+    assert t.f("b") == 66
+    assert t.f("c") is None

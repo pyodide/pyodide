@@ -354,7 +354,9 @@
 - test_imaplib:
     xfail: socket
 - test_imghdr
-- test_imp
+- test_imp:
+    xfail:
+      - test_unencodeable # fails perioically
 - test_importlib.builtin.test_finder
 - test_importlib.builtin.test_loader
 - test_importlib.extension.test_case_sensitivity
@@ -536,6 +538,7 @@
 - test_platform:
     skip:
       - test_architecture_via_symlink # fork
+      - test_libc_ver # Can't open sys.executable
 - test_plistlib
 - test_poll:
     xfail: subprocess
@@ -779,7 +782,8 @@
 - test_unpack
 - test_unpack_ex
 - test_unparse
-- test_urllib
+- test_urllib:
+    xfail-safari: crashes the runtime
 - test_urllib2:
     skip:
       - test_http_body_pipe # fork

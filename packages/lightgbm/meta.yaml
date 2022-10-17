@@ -1,0 +1,22 @@
+package:
+  name: lightgbm
+  version: 3.3.2
+source:
+  url: https://files.pythonhosted.org/packages/8f/51/d272fa065be3be615d279be915705fa3824b86155e36c974cfb8d3ceec1e/lightgbm-3.3.2.tar.gz
+  sha256: 5d25d16e77c844c297ece2044df57651139bc3c8ad8c4108916374267ac68b64
+build:
+  backend-flags: "--build-option=--nomp"
+  exports: "whole_archive"
+requirements:
+  run:
+    - numpy
+    - scipy
+    - scikit-learn
+test:
+  imports:
+    - lightgbm
+about:
+  home: https://github.com/microsoft/LightGBM
+  PyPI: https://pypi.org/project/lightgbm
+  summary: LightGBM Python Package
+  license: The MIT License (Microsoft)

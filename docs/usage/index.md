@@ -8,7 +8,7 @@ To use Pyodide in a web page you need to load `pyodide.js` and initialize
 Pyodide with {any}`loadPyodide <globalThis.loadPyodide>`.
 
 ```html-pyodide
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
       <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
@@ -76,6 +76,10 @@ By default, WebAssembly runs in the main browser thread, and it can make UI
 non-responsive for long-running computations.
 
 To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
+
+It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_worker>`.
+
+If you're not sure whether you need web workers or service workers, here's an [overview and comparison of the two](https://web.dev/workers-overview/).
 
 ## Node.js
 
@@ -167,4 +171,5 @@ Python says that 1+1= 2
    webworker.md
    loading-custom-python-code.md
    file-system.md
+   service-worker.md
 ```

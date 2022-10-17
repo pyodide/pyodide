@@ -14,19 +14,267 @@ substitutions:
 
 ## Unreleased
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.15
-  {pr}`2958`
+- `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
+  {pr}`3150`.
 
-- New packages: the standard library lzma module {pr}`2939`,
-  pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`
+- {{ Enhancement }} Added a system for making Pyodide virtual environments. This
+  is for testing out of tree builds. For more information, see
+  [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
+  {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`, {pr}`3108`, {pr}`3109`
+
+- {{ Enhancement }} Users can do a static import of `pyodide/pyodide.asm.js` to
+  avoid issues with dynamic imports. This allows the use of Pyodide with
+  module-type service workers.
+  {pr}`3070`
+
+- {{ Enhancement }} Emscripten was updated to Version 3.1.21
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
+
+- {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
+  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
+  into the Pyodide file system.
+  {pr}`2987`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+  {pr}`2999`
+
+- {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
+  used by Pyodide's event loop.
+  {pr}`2997`
+
+- {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
+  be passed as command line arguments to the Python interpreter at start up.
+  {pr}`3021`
+
+- {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
+
+- {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
+  first argument using the {any}`captureThis` method. The {any}`create_proxy`
+  method also has a `capture_this` argument which causes the `PyProxy` to
+  receive `this` as the first argument if set to `True`
+  {pr}`3103`, {pr}`3145`
+
+- {{ Enhancement }} `create_proxy` now takes an optional `roundtrip` parameter.
+  If this is set to `True`, then when the proxy is converted back to Python, it
+  is converted back to the same double proxy. This allows the proxy to be
+  destroyed from Python even if no reference is retained.
+  {pr}`3163`
+
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing packages that are included in Pyodide fails.
+  {pr}`3137`
+
+- {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
+  method, so it's possible to use a JavaScript function as a Python method. When
+  the method is called, `this` will be a `PyProxy` pointing to the Python object
+  the method is called on.
+  {pr}`3130`
+
+- {{ Breaking }} The messageCallback and errorCallback argument to
+  {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>`
+  is now passed as named arguments.
+  The old usage still works with a deprecation warning.
+  {pr}`3149`
+
+- {{ Enhancement }} {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` now accepts
+  a new option `checkIntegrity`. If set to False, integrity check for Python Packages
+  will be disabled.
+
+- {{ Fix }} Shared libraries with version suffix are now handled correctly.
+  {pr}`3154`
+
+### Build System / Package Loading
+
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`
+
+- {{ Breaking }} Unvendored the sqlite3 module from the standard library.
+  Before `sqlite3` was included by default. Now it needs to be loaded with
+  {any}`pyodide.loadPackage` or {any}`micropip.install`.
+  {pr}`2946`
+
+- {{ Breaking }} The Pyodide Python package is installed into `/lib/python3.10`
+  rather than `/lib/python3.10/site-packages`.
+  {pr}`3022`
+
+- {{ Update }} Upgraded SciPy to version 1.9.1.
+  {pr}`3043`
+
+- {{ Breaking }} The matplotlib HTML5 backends are now available as part of the
+  [`matplotlib-pyodide`](https://github.com/pyodide/matplotlib-pyodide)
+  package. If you use the default backend from Pyodide, no changes are
+  necessary. However, if you previously specified the backend with
+  `matplotlib.use`, the URL is now different. See [package
+  readme](https://github.com/pyodide/matplotlib-pyodide) for more details.
+  {pr}`3061`
+
+- {{ Breaking }} The micropip package was moved to a separate repository
+  [pyodide/micropip](https://github.com/pyodide/micropip). In addion to
+  installing the version shipped with a given Pyodide release, you can also
+  install a different micropip version from [PyPi](https://pypi.org/project/micropip/) with,
+
+  ```
+  await pyodide.loadPackage('packaging')
+  await pyodide.loadPackage('<URL of the micropip wheel on PyPI>')
+  ```
+
+  from Javascript. From Python you can import the Javascript Pyodide package,
+
+  ```
+  import pyodide_js
+  ```
+
+  and call the same functions as above.
+  {pr}`3122`
+
+- {{ Enhancement }} The parsing and validation of `meta.yaml` according to the
+  specification is now done more rigourously with Pydantic
+  {pr}`3079`
+
+- {{ Breaking }} `source/md5` checksum field is not longer supported in
+  `meta.yaml` files, use `source/sha256` instead
+  {pr}`3079`
+
+- {{ Breaking }} `pyodide_build.io.parse_package_config` function is removed in favor of
+  `pyodide_build.MetaConfig.from_yaml`
+  {pr}`3079`
+
+- Pyodide JavaScript package can now built with
+  debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
+  {pr}`3129`
+
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
+
+### Build System
+
+- {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
+  host dependencies that are required for building packages.
+  {pr}`2132`
+
+- {{ Enhancement }} Added `package/top-level` key to the `meta.yaml` spec to
+  calculate top-level import names for the package. Previously `test/imports`
+  key was used for this purpose.
+  {pr}`3006`
+
+- {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
+  {pr}`3153`
+
+## Version 0.21.3
+
+_September 15, 2022_
+
+- {{ Fix }} When loading `sqlite3`, `loadPackage` no longer also loads `nltk` and `regex`.
+  {issue}`3001`
+
+- {{ Fix }} Packages are now loaded in a topologically sorted order regarding
+  their dependencies.
+  {pr}`3020`
+
+- {{ Breaking }} Loading the `soupsieve` package will not automatically load
+  `beautifulsoup4` together.
+  {pr}`3020`
+
+- {{ Fix }} Fix the incorrect package name `ruamel` to `ruamel.yaml`.
+  {pr}`3036`
+
+- {{ Fix }} `loadPyodide` will now raise error when the version of
+  JavaScript and Python Pyodide package does not match.
+  {pr}`3074`
+
+- {{ Enhancement }} Pyodide now works with a content security policy that
+  doesn't include `unsafe-eval`. It is still necessary to include
+  `wasm-unsafe-eval` (and probably always will be). Since current Safari
+  versions have no support for `wasm-unsafe-eval`, it is necessary to include
+  `unsafe-eval` in order to work in Safari. This will likely be fixed in the
+  next Safari release: https://bugs.webkit.org/show_bug.cgi?id=235408
+  {pr}`3075`
+
+- {{ Fix }} It works again to use `loadPyodide` with a relative URL as
+  `indexURL` (this was a regression in v0.21.2).
+  {pr}`3077`
+
+- {{ Fix }} Add `url` to list of pollyfilled packages for webpack compatibility.
+  {pr}`3080`
+
+- {{ Fix }} Fixed warnings like
+  `Critical dependency: the request of a dependency is an expression.`
+  when using Pyodide with webpack.
+  {pr}`3080`
+
+- {{ Enhancement }} Add binary files to exports in JavaScript package
+  {pr}`3085`.
+
+- {{ Fix }} Source maps are included in the distribution again (reverting
+  {pr}`3015` included in 0.21.2) and if there is a variable in top level scope
+  called `__dirname` we use that for the `indexURL`.
+  {pr}`3088`
+
+- {{ Fix }} `PyProxy.apply` now correctly handles the case when something
+  unexpected is passed as the second argument.
+  {pr}`3101`
+
+## Version 0.21.2
+
+_August 29, 2022_
+
+- {{ Fix }} The standard library packages `ssl` and `lzma` can now be installed
+  with `pyodide.loadPackage("ssl")` or `micropip.install("ssl")` (previously
+  they had a leading underscore and it was only possible to load them with
+  `pyodide.loadPackage`).
+  {issue}`3003`
+
+- {{ Fix }} If a wheel path is passed to {any}`pyodide.loadPackage`, it will now
+  be resolved relative to `document.location` (in browser) or relative to the
+  current working directory (in Node) rather than relative to `indexURL`.
+  {pr}`3013`, {issue}`3011`
+
+- {{ Fix }} Fixed a bug in Emscripten that caused Pyodide to fail in Jest.
+  {pr}`3014`
+
+- {{ Fix }} It now works to pass a relative url to `indexURL`. Also, the
+  calculated index URL now works even if `node` is run with
+  `--enable-source-maps`.
+  {pr}`3015`
+
+## Version 0.21.1
+
+_August 22, 2022_
+
+- New packages: the standard library lzma module {pr}`2939`
+
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing unvendored or removed stdlib modules fails.
   {pr}`2973`
+
+- {{ Breaking }} The default value of `fullStdLib` in {any}`loadPyodide` has been
+  changed to `false`. This means Pyodide now will not load some stdlib modules like
+  distutils, ssl, and sqlite3 by default.
+  See [Pyodide Python compatibility](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+  for detail. If `fullStdLib` is set to `true`, it will load all unvendored stdlib modules.
+  However, setting `fullStdLib` to true will increase the initial Pyodide load time.
+  So it is preferable to explicitly load the required module.
+  {pr}`2998`
+
+- {{ Enhancement }} `pyodide build` now checks that the correct version of the
+  Emscripten compiler is used.
+  {pr}`2975`, {pr}`2990`
+
+- {{ Fix }} Pyodide works in Safari v14 again. It was broken in v0.21.0
+  {pr}`2994`
 
 ## Version 0.21.0
 
@@ -267,6 +515,8 @@ Prins, Rob Gries, Roman Yurchak, Ryan May, Ryan Russell, stonebig, Szymswiat,
 Tobias Megies, Vic Kumar, Victor, Wei Ji, Will Lachance
 
 ## Version 0.20.0
+
+_April 9th, 2022_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.20-release/)
 

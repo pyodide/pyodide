@@ -1,12 +1,12 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ;
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib_pyodide.wasm_backend') ; from matplotlib import pyplot as plt ;
 # run: wasm_custom_font()
 
 # pythran export wasm_custom_font()
 import matplotlib
 import numpy as np
 
-matplotlib.use("module://matplotlib.backends.wasm_backend")
+matplotlib.use("module://matplotlib_pyodide.wasm_backend")
 from matplotlib import pyplot as plt  # noqa: E402
 
 

@@ -1,12 +1,17 @@
 package:
   name: attrs
   version: 21.4.0
+  top-level:
+    - attr
+    - attrs
 source:
   sha256: 2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4
   url: https://files.pythonhosted.org/packages/be/be/7abce643bfdf8ca01c48afa2ddf8308c2308b0c3b239a44e57d020afa0ef/attrs-21.4.0-py2.py3-none-any.whl
 requirements:
   run:
     - six
-test:
-  imports:
-    - attr
+about:
+  home: https://www.attrs.org/
+  PyPI: https://pypi.org/project/attrs
+  summary: Classes Without Boilerplate
+  license: MIT

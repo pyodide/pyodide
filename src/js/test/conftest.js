@@ -46,7 +46,7 @@ before(async () => {
       });
       return globalThis.pyodide;
     },
-    BROWSER ? undefined : __ROOT
+    BROWSER ? undefined : __ROOT,
   );
 });
 

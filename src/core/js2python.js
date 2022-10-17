@@ -63,7 +63,7 @@ JS_FILE(js2python_init, () => {
       ptr,
       length * 4 /* length in bytes */,
       true /* little endian */,
-      true /* signed? */
+      true /* signed? */,
     );
     stackRestore(stackTop);
     return result;
@@ -79,8 +79,8 @@ JS_FILE(js2python_init, () => {
    * we throw a PropagateError to propagate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
-  function js2python_convertImmutable(value) {
-    let result = js2python_convertImmutableInner(value);
+  function js2python_convertImmutable(value, id) {
+    let result = js2python_convertImmutableInner(value, id);
     if (result === 0) {
       throw new PropagateError();
     }
@@ -96,7 +96,7 @@ JS_FILE(js2python_init, () => {
    * If we return 0 it means we tried to convert but an error occurred, if we
    * return undefined, no conversion was attempted.
    */
-  function js2python_convertImmutableInner(value) {
+  function js2python_convertImmutableInner(value, id) {
     let type = typeof value;
     if (type === "string") {
       return js2python_string(value);
@@ -115,7 +115,14 @@ JS_FILE(js2python_init, () => {
     } else if (value === false) {
       return __js2python_false();
     } else if (API.isPyProxy(value)) {
-      return __js2python_pyproxy(Module.PyProxy_getPtr(value));
+      if (value.$$props.roundtrip) {
+        if (id === undefined) {
+          id = Hiwire.new_value(value);
+        }
+        return _JsProxy_create(id);
+      } else {
+        return __js2python_pyproxy(Module.PyProxy_getPtr(value));
+      }
     }
     return undefined;
   }
@@ -168,7 +175,7 @@ JS_FILE(js2python_init, () => {
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof key_js;
           throw new Error(
-            `Cannot use key of type ${key_type} as a key to a Python dict`
+            `Cannot use key of type ${key_type} as a key to a Python dict`,
           );
         }
         value_id = Hiwire.new_value(value_js);
@@ -208,7 +215,7 @@ JS_FILE(js2python_init, () => {
           let key_type =
             (key_js.constructor && key_js.constructor.name) || typeof key_js;
           throw new Error(
-            `Cannot use key of type ${key_type} as a key to a Python set`
+            `Cannot use key of type ${key_type} as a key to a Python set`,
           );
         }
         let errcode = _PySet_Add(set, key_py);
@@ -230,13 +237,13 @@ JS_FILE(js2python_init, () => {
     if (obj.has(1) && obj.has(true)) {
       throw new Error(
         `Cannot faithfully convert ${ty} into Python since it ` +
-          "contains both 1 and true as keys."
+          "contains both 1 and true as keys.",
       );
     }
     if (obj.has(0) && obj.has(false)) {
       throw new Error(
         `Cannot faithfully convert ${ty} into Python since it ` +
-          "contains both 0 and false as keys."
+          "contains both 0 and false as keys.",
       );
     }
   }
@@ -276,7 +283,7 @@ JS_FILE(js2python_init, () => {
         id,
         value.byteLength,
         format_utf8,
-        itemsize
+        itemsize,
       );
     }
     return undefined;
@@ -288,7 +295,7 @@ JS_FILE(js2python_init, () => {
   function js2python_convert_with_context(id, context) {
     let value = Hiwire.get_value(id);
     let result;
-    result = js2python_convertImmutable(value);
+    result = js2python_convertImmutable(value, id);
     if (result !== undefined) {
       return result;
     }
@@ -311,7 +318,7 @@ JS_FILE(js2python_init, () => {
       let result_js = context.defaultConverter(
         value,
         context.converter,
-        context.cacheConversion
+        context.cacheConversion,
       );
       result = js2python_convertImmutable(result_js);
       if (API.isPyProxy(result_js)) {
@@ -342,7 +349,7 @@ JS_FILE(js2python_init, () => {
         let id = Module.hiwire.new_value(x);
         try {
           return Module.pyproxy_new(
-            js2python_convert_with_context(id, context)
+            js2python_convert_with_context(id, context),
           );
         } finally {
           Module.hiwire.decref(id);

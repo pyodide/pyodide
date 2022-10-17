@@ -888,9 +888,6 @@ def test_pyproxy_call(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
 
-    assert_call("f.bind({})()", [2, 3])
-    assert_call("f.bind({}).$$ === f.$$", True)
-
     selenium.run_js("f.destroy()")
 
 
@@ -933,5 +930,102 @@ def test_coroutine_scheduling(selenium):
         await sleep(200);
         assert(() => pyodide.globals.get('x') === 1);
         f.destroy();
+        """
+    )
+
+
+def test_pyproxy_apply(selenium):
+    # Try to match behavior of real .apply
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+        `);
+        let fpy = pyodide.globals.get("f");
+        let fjs = function(...args){ return args; };
+        let examples = [
+            undefined,
+            null,
+            {},
+            {0:1, 1:7, 2: -3},
+            { *[Symbol.iterator](){yield 3; yield 5; yield 7;} },
+            {0:1, 1:7, 2: -3, length: 2},
+            [1,7,9,5],
+            function(a,b,c){},
+        ];
+        for(let input of examples){
+            assert(() => JSON.stringify(fpy.apply(undefined, input)) === JSON.stringify(fjs.apply(undefined, input)));
+        }
+
+        for(let error_input of [1, "abc", 1n, Symbol.iterator, true]) {
+            assertThrows(() => fjs.apply(undefined, error_input), "TypeError", "");
+            assertThrows(() => fpy.apply(undefined, error_input), "TypeError", "");
+        }
+
+        fpy.destroy();
+        """
+    )
+
+
+def test_pyproxy_this1(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            def f(self, x):
+                return getattr(self, x)
+            f
+        `);
+
+        let x = {};
+        x.f = f.captureThis();
+        x.a = 7;
+        assert(() => x.f("a") === 7 );
+        f.destroy();
+        """
+    )
+
+
+def test_pyproxy_this2(selenium):
+    selenium.run_js(
+        """
+        let g = pyodide.runPython(`
+            x = 0
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+            f
+        `);
+
+        let f = g.captureThis();
+        let fjs = function(...args){return [this, ...args];};
+
+        let f1 = f.bind(1);
+        let fjs1 = fjs.bind(1);
+        assert(() => JSON.stringify(f1(2, 3, 4)) === JSON.stringify(fjs1(2, 3, 4)));
+
+        let f2 = f1.bind(2);
+        let fjs2 = fjs1.bind(2);
+        assert(() => JSON.stringify(f2(2, 3, 4)) === JSON.stringify(fjs2(2, 3, 4)));
+        let f3 = f.bind(2);
+        let fjs3 = fjs.bind(2);
+        assert(() => JSON.stringify(f3(2, 3, 4)) === JSON.stringify(fjs3(2, 3, 4)));
+
+        let gjs = function(...args){return [...args];};
+
+        let g1 = g.bind(1, 2, 3, 4);
+        let gjs1 = gjs.bind(1, 2, 3, 4);
+
+        let g2 = g1.bind(5, 6, 7, 8);
+        let gjs2 = gjs1.bind(5, 6, 7, 8);
+
+        let g3 = g2.captureThis();
+
+        assert(() => JSON.stringify(g1(-1, -2, -3, -4)) === JSON.stringify(gjs1(-1, -2, -3, -4)));
+        assert(() => JSON.stringify(g2(-1, -2, -3, -4)) === JSON.stringify(gjs2(-1, -2, -3, -4)));
+        assert(() => JSON.stringify(g3(-1, -2, -3, -4)) === JSON.stringify([1, 2, 3, 4, 6, 7, 8, -1, -2, -3, -4]));
+        g.destroy();
         """
     )

@@ -9,7 +9,7 @@ from sphinx import addnodes
 base_dir = pathlib.Path(__file__).resolve().parents[3]
 sys.path.append(str(base_dir / "pyodide-build"))
 
-from pyodide_build.io import parse_package_config
+from pyodide_build.io import MetaConfig
 
 PYODIDE_TESTONLY = "pyodide.test"
 PYODIDE_STDLIB = "pyodide.stdlib"
@@ -51,12 +51,12 @@ def get_packages_summary_directive(app):
         def parse_package_info(
             self, config: pathlib.Path
         ) -> tuple[str, str, bool, str]:
-            yaml_data = parse_package_config(config)
+            yaml_data = MetaConfig.from_yaml(config)
 
-            name = yaml_data["package"]["name"]
-            version = yaml_data["package"]["version"]
-            tag = yaml_data["package"].get("_tag", "")
-            is_library = yaml_data.get("build", {}).get("library", False)
+            name = yaml_data.package.name
+            version = yaml_data.package.version
+            tag = yaml_data.package.tag
+            is_library = yaml_data.build.library
 
             return name, version, is_library, tag
 

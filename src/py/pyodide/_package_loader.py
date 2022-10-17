@@ -2,21 +2,37 @@ import base64
 import binascii
 import re
 import shutil
+import sys
 import sysconfig
 import tarfile
 from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
+from importlib.metadata import Distribution
+from importlib.metadata import distributions as importlib_distributions
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
 from typing import IO, Any, Literal
 from zipfile import ZipFile
 
+try:
+    from pyodide_js import loadedPackages
+except ImportError:
+    loadedPackages = None
+
 from ._core import IN_BROWSER, JsProxy, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
-STD_LIB = Path(sysconfig.get_path("stdlib"))
-TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
+if sys.base_prefix == sys.prefix:
+    # not in a virtualenv
+    STD_LIB = Path(sysconfig.get_path("stdlib"))
+    TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
+else:
+    # in a virtualenv
+    # Better not put stuff into /usr/lib or /lib/python3.10! For now let's stick
+    # everyone into SITE_PACKAGES in this case
+    TARGETS = {"site": SITE_PACKAGES, "lib": SITE_PACKAGES, "dynlib": SITE_PACKAGES}
+
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
@@ -29,6 +45,7 @@ EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
 PLATFORM_TAG_REGEX = re.compile(
     r"\.(cpython|pypy|jython)-[0-9]{2,}[a-z]*(-[a-z0-9_-]*)?"
 )
+SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
 
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
@@ -200,15 +217,19 @@ def unpack_buffer(
             return None
 
 
-def should_load_dynlib(path: str) -> bool:
-    suffixes = Path(path).suffixes
-    if not suffixes:
+def should_load_dynlib(path: str | Path) -> bool:
+    path = Path(path)
+
+    if not SHAREDLIB_REGEX.search(path.name):
         return False
-    if suffixes[-1] != ".so":
+
+    suffixes = path.suffixes
+
+    try:
+        tag = suffixes[suffixes.index(".so") - 1]
+    except ValueError:  # This should not happen, but just in case
         return False
-    if len(suffixes) == 1:
-        return True
-    tag = suffixes[-2]
+
     if tag in EXTENSION_TAGS:
         return True
     # Okay probably it's not compatible now. But it might be an unrelated .so
@@ -297,6 +318,40 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
         for path in dynlib_paths_iter
         if should_load_dynlib(path)
     ]
+
+
+def get_dist_source(dist: Distribution) -> str:
+    """Get a description of the source of a package.
+
+    This is used in loadPackage to explain where the package came from. Purely
+    for informative purposes.
+    """
+    source = dist.read_text("PYODIDE_SOURCE")
+    if source == "pyodide":
+        return "default channel"
+    if source:
+        return source
+    direct_url = dist.read_text("direct_url.json")
+    if direct_url:
+        import json
+
+        return json.loads(direct_url)["url"]
+    installer = dist.read_text("INSTALLER")
+    if installer:
+        installer = installer.strip()
+        return f"{installer} (index unknown)"
+    return "Unknown"
+
+
+def init_loaded_packages() -> None:
+    """Initialize pyodide.loadedPackages with the packages that are already
+    present.
+
+    This ensures that `pyodide.loadPackage` knows that they are around and
+    doesn't install over them.
+    """
+    for dist in importlib_distributions():
+        setattr(loadedPackages, dist.name, get_dist_source(dist))
 
 
 def sub_resource_hash(sha_256: str) -> str:

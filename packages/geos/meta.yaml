@@ -9,16 +9,14 @@ source:
 build:
   sharedlibrary: true
   script: |
-    echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)" > SupportSharedLib.cmake
-
     LDFLAGS="${SIDE_MODULE_LDFLAGS}" emcmake cmake \
       -DDISABLE_GEOS_INLINE=ON \
       -DBUILD_TESTING=OFF \
       -DBUILD_BENCHMARKS=OFF \
       -DBUILD_DOCUMENTATION=OFF \
+      -DBUILD_GEOSOP=OFF \
       -DCMAKE_C_FLAGS="-fPIC" \
       -DCMAKE_CXX_FLAGS="-fPIC" \
-      -DCMAKE_PROJECT_INCLUDE=SupportSharedLib.cmake \
       -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
       ./
 

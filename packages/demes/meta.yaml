@@ -1,16 +1,15 @@
 package:
   name: demes
   version: 0.2.2
+  top-level:
+    - demes
 source:
   url: https://files.pythonhosted.org/packages/2f/e4/86796d77ea453aa96f1ce758b461cdf738177f441a18c832cc9f29848903/demes-0.2.2-py3-none-any.whl
   sha256: 54f0110e9f1b5167347fb4793f0b1d297a58dfe3857f5e5287762aa50dea6036
 requirements:
   run:
     - attrs
-    - ruamel
-test:
-  imports:
-    - demes
+    - ruamel.yaml
 about:
   home: https://github.com/popsim-consortium/demes-python
   PyPI: https://pypi.org/project/demes
