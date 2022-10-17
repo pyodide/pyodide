@@ -33,6 +33,7 @@ def test_skeleton_pypi(tmp_path):
             str(tmp_path),
             "--version",
             new_version,
+            "--update",
         ],
     )
     assert result.exit_code == 0
