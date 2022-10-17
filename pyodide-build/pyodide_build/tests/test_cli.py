@@ -1,7 +1,7 @@
 import pytest
 from typer.testing import CliRunner  # type: ignore[import]
 
-from pyodide_build.cli import new_package
+from pyodide_build.cli import skeleton
 
 runner = CliRunner()
 
@@ -17,7 +17,7 @@ def test_package(packages_temp_path):
     new_version = "0.22.0"
 
     result = runner.invoke(
-        new_package.app,
+        skeleton.app,
         [
             "new",
             test_pkg,
@@ -31,7 +31,7 @@ def test_package(packages_temp_path):
     assert "pytest-pyodide/meta.yaml" in result.stdout
 
     result = runner.invoke(
-        new_package.app,
+        skeleton.app,
         [
             "update",
             test_pkg,
@@ -45,7 +45,7 @@ def test_package(packages_temp_path):
     assert f"Updated {test_pkg} from {old_version} to {new_version}" in result.stdout
 
     result = runner.invoke(
-        new_package.app, ["new", test_pkg, "--packages-dir", str(packages_temp_path)]
+        skeleton.app, ["new", test_pkg, "--packages-dir", str(packages_temp_path)]
     )
     assert result.exit_code != 0
     assert "already exists" in str(result.exception)
