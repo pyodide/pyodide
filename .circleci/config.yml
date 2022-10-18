@@ -383,6 +383,11 @@ jobs:
             git checkout 164054a9c6fbd2176f386b6552ed8d079c6bcc04
             ./build.sh
 
+      - run:
+          name: test npm deploy (dry run)
+          command: |
+            DRY_RUN=1 ./tools/deploy_to_npm.sh
+
   test-cmdline-runner:
     <<: *defaults
     steps:

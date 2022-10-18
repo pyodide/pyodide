@@ -909,11 +909,14 @@ success:
   return 0;
 }
 
-EM_JS_REF(JsRef, pyproxy_new_ex, (PyObject * ptrobj, bool capture_this), {
-  return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
-    thisInfo : { captureThis : !!capture_this, isBound : false, boundArgs : [] }
-  }));
-});
+EM_JS_REF(JsRef,
+          pyproxy_new_ex,
+          (PyObject * ptrobj, bool capture_this, bool roundtrip),
+          {
+            return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
+              props : { captureThis : !!capture_this, roundtrip : !!roundtrip }
+            }));
+          });
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
@@ -1054,16 +1057,17 @@ create_proxy(PyObject* self,
              Py_ssize_t nargs,
              PyObject* kwnames)
 {
-  static const char* const _keywords[] = { "", "capture_this", 0 };
-  bool capture_this;
+  static const char* const _keywords[] = { "", "capture_this", "roundtrip", 0 };
+  bool capture_this = false;
+  bool roundtrip = true;
   PyObject* obj;
-  static struct _PyArg_Parser _parser = { "O|$p:create_proxy", _keywords, 0 };
+  static struct _PyArg_Parser _parser = { "O|$pp:create_proxy", _keywords, 0 };
   if (!_PyArg_ParseStackAndKeywords(
-        args, nargs, kwnames, &_parser, &obj, &capture_this)) {
+        args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
 
-  JsRef ref = pyproxy_new_ex(obj, capture_this);
+  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;

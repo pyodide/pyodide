@@ -191,12 +191,15 @@ function recursiveDependencies(
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
  * wheel or the path to the wheel relative to indexURL.
+ * @param checkIntegrity Whether to check the integrity of the downloaded
+ * package.
  * @returns The binary data for the package
  * @private
  */
 async function downloadPackage(
   name: string,
   channel: string,
+  checkIntegrity: boolean = true,
 ): Promise<Uint8Array> {
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
@@ -210,6 +213,10 @@ async function downloadPackage(
     );
   } else {
     uri = channel;
+    file_sub_resource_hash = undefined;
+  }
+
+  if (!checkIntegrity) {
     file_sub_resource_hash = undefined;
   }
   try {
@@ -274,6 +281,8 @@ async function installPackage(
  * @param toLoad The map of package names to PackageLoadMetadata
  * @param loaded The set of loaded package names, this will be updated by this function.
  * @param failed The map of <failed package name, error message>, this will be updated by this function.
+ * @param checkIntegrity Whether to check the integrity of the downloaded
+ * package.
  * @private
  */
 async function downloadAndInstall(
@@ -281,6 +290,7 @@ async function downloadAndInstall(
   toLoad: Map<string, PackageLoadMetadata>,
   loaded: Set<string>,
   failed: Map<string, Error>,
+  checkIntegrity: boolean = true,
 ) {
   if (loadedPackages[name] !== undefined) {
     return;
@@ -289,7 +299,7 @@ async function downloadAndInstall(
   const pkg = toLoad.get(name)!;
 
   try {
-    const buffer = await downloadPackage(pkg.name, pkg.channel);
+    const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
     const installPromisDependencies = pkg.depends.map((dependency) => {
       return toLoad.has(dependency)
         ? toLoad.get(dependency)!.done
@@ -422,6 +432,7 @@ API.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 
+let loadPackagePositionalCallbackDeprecationWarned = false;
 /**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
@@ -433,19 +444,41 @@ const acquirePackageLock = createLock();
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to JavaScript
  * and the ``PyProxy`` will be destroyed.
- * @param messageCallback A callback, called with progress messages
+ * @param options
+ * @param options.messageCallback A callback, called with progress messages
  *    (optional)
- * @param errorCallback A callback, called with error/warning messages
+ * @param options.errorCallback A callback, called with error/warning messages
  *    (optional)
+ * @param options.checkIntegrity If true, check the integrity of the downloaded
+ *    packages (default: true)
  * @async
  */
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
-  messageCallback?: (msg: string) => void,
-  errorCallback?: (msg: string) => void,
+  options: {
+    messageCallback?: (message: string) => void;
+    errorCallback?: (message: string) => void;
+    checkIntegrity?: boolean;
+  } = {
+    checkIntegrity: true,
+  },
+  errorCallbackDeprecated?: (message: string) => void,
 ) {
-  messageCallback = messageCallback || console.log;
-  errorCallback = errorCallback || console.error;
+  if (typeof options === "function") {
+    if (!loadPackagePositionalCallbackDeprecationWarned) {
+      console.warn(
+        "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+      );
+      options = {
+        messageCallback: options,
+        errorCallback: errorCallbackDeprecated,
+      };
+      loadPackagePositionalCallbackDeprecationWarned = true;
+    }
+  }
+
+  const messageCallback = options.messageCallback || console.log;
+  const errorCallback = options.errorCallback || console.error;
   if (isPyProxy(names)) {
     names = names.toJs();
   }
@@ -503,6 +536,7 @@ export async function loadPackage(
         toLoad,
         loaded,
         failed,
+        options.checkIntegrity,
       );
     }
 
