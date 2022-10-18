@@ -9,6 +9,9 @@ test:
     - fiona
     - fiona.fio
 requirements:
+  host:
+    - gdal
+    - geos
   run:
     - gdal
     - geos
