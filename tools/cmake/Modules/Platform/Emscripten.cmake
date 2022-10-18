@@ -42,6 +42,21 @@ if (NOT "$ENV{WASM_LIBRARY_DIR}" STREQUAL "")
   endif()
 endif()
 
+# Note: Emscripten installs libraries into subdirectories such as:
+# - Non PIC: <SYSROOT>/lib/<arch>/<lib>
+# - PIC: <SYSROOT>/lib/<arch>/pic/<lib>
+# - LTO: <SYSROOT>/lib/<arch>/lto/<lib>
+# - PIC+LTO: <SYSROOT>/lib/<arch>/pic/lto/<lib>
+# We always wants to use a library built with "-fPIC", but
+# CMake's find_library() will search Non-PIC dir only by default.
+# This is a hack which overrides find_library() to tell CMake to look at PIC dirs first.
+if ($ENV{CFLAGS} MATCHES "MEMORY64")
+  set(CMAKE_LIBRARY_ARCHITECTURE "wasm64-emscripten/pic")
+else()
+  set(CMAKE_LIBRARY_ARCHITECTURE "wasm32-emscripten/pic")
+endif()
+
+
 # Disable the usage of response file so objects are exposed to the commandline.
 # Our export calculation logic in pywasmcross needs to read object files.
 # TODO: support export calculation from the response file
