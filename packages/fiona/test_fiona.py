@@ -1,11 +1,9 @@
-import base64
 import pathlib
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-DEMO_PATH = pathlib.Path(__file__).parent / "test_data"
-DATA_TEST = base64.b64encode((DEMO_PATH / "fiona-tests-1.8.21.zip").read_bytes())
+TEST_DATA_PATH = pathlib.Path(__file__).parent / "test_data"
 
 
 @pytest.mark.driver_timeout(60)
@@ -14,39 +12,64 @@ def test_supported_drivers(selenium):
     import fiona
 
     assert fiona.driver_count() > 0
-    # print(fiona.show_versions())
 
 
 @pytest.mark.driver_timeout(60)
 def test_runtest(selenium):
-    selenium.load_package(["fiona", "pytest"])
-    selenium.run(
-        f"""
-        import base64
+    @run_in_pyodide(packages=["fiona", "pytest"])
+    def _run(selenium, data):
         import zipfile
-        with open("fiona-tests.zip", "wb") as f:
-            f.write(base64.b64decode({DATA_TEST!r}))
 
-        with zipfile.ZipFile("fiona-tests.zip", "r") as f:
-            f.extractall("fiona-tests")
+        with open("tests.zip", "wb") as f:
+            f.write(data)
+
+        with zipfile.ZipFile("tests.zip", "r") as zf:
+            zf.extractall("tests")
+
+        import sys
+
+        sys.path.append("tests")
 
         import pytest
-        import fiona
-        import os
-        os.environ["PROJ_LIB"] = fiona.env.PROJDataFinder().search()
 
-        def runtest(filter):
-            pytest.main(
+        def runtest(test_filter, ignore_filters):
+
+            ignore_filter = []
+            for ignore in ignore_filters:
+                ignore_filter.append("--ignore-glob")
+                ignore_filter.append(ignore)
+
+            ret = pytest.main(
                 [
                     "--pyargs",
-                    "fiona-tests",
+                    "tests",
                     "--continue-on-collection-errors",
-                    "-vv",
+                    # "-v",
+                    *ignore_filter,
                     "-k",
-                    filter,
+                    test_filter,
                 ]
             )
+            assert ret == 0
 
-        runtest("not ordering")
-        """
-    )
+        runtest(
+            (
+                "not ordering "  # hangs
+                "and not env "  # No module named "boto3"
+                "and not slice "  # GML file format not supported
+                "and not GML "  # GML file format not supported
+                "and not TestNonCountingLayer "  # GPX file format not supported
+                "and not test_schema_default_fields_wrong_type "  # GPX file format not supported
+                "and not http "
+                "and not FlatGeobuf"  # assertion error
+            ),
+            [
+                "tests/test_fio*",  # no CLI tests
+                "tests/test_data_paths.py",  # no CLI tests
+                "tests/test_datetime.py",  # no CLI tests
+                "tests/test_vfs.py",  # No module named "boto3"
+            ],
+        )
+
+    TEST_DATA = (TEST_DATA_PATH / "fiona-tests-1.8.21.zip").read_bytes()
+    _run(selenium, TEST_DATA)
