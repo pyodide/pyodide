@@ -13,7 +13,7 @@ requirements:
     - pyproj
     - packaging
     - pandas
-    - matplotlib # matplotlib is not a hard dependency, but it is a common use case
+    # - matplotlib # matplotlib is not a hard dependency
 about:
   home: http://geopandas.org
   PyPI: https://pypi.org/project/geopandas
