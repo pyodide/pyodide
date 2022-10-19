@@ -45,13 +45,6 @@ jobs:
           name: ${{ inputs.artifacts-prefix-build }}-dist
           path: ./dist/
 
-      - name: Download pytest cache
-        if: ${{ inputs.cache-dir != '' }}
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ inputs.cache-dir }}-pytest-cache
-          path: ./.pytest_cache/
-
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
@@ -99,11 +92,3 @@ jobs:
         with:
           paths: "test-results/*.xml"
         if: always()
-
-      - name: Upload pytest cache
-        if: ${{ inputs.cache-dir != '' }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ inputs.cache-dir }}-pytest-cache
-          path: ./.test_cache/
-          retention-days: 1

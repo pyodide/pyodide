@@ -43,21 +43,12 @@ jobs:
       artifacts-prefix: core
       retention-days: 30
 
-  build-no-numpy-dependents:
+  build-packages:
     needs: [build-core]
     uses: ./.github/workflows/build.yml
     with:
-      packages: "*,no-numpy-dependents"
-      artifacts-prefix-prev: core
-      artifacts-prefix: no-numpy-dependents
-      retention-days: 30
-
-  build-packages:
-    needs: [build-no-numpy-dependents]
-    uses: ./.github/workflows/build.yml
-    with:
       packages: "*"
-      artifacts-prefix-prev: no-numpy-dependents
+      artifacts-prefix-prev: core
       artifacts-prefix: packages
       retention-days: 30
 
@@ -89,31 +80,16 @@ jobs:
       test-params: src/tests/test_webworker.py --skip-passed
       artifacts-prefix-build: core
 
-  test-no-numpy-dependents:
+  test-packages:
     strategy:
       matrix:
         runner: [playwright]
         runtime: [chrome-no-host, firefox-no-host]
       fail-fast: false
-    needs: [build-no-numpy-dependents]
+    needs: [build-packages]
     uses: ./.github/workflows/test.yml
     with:
       runner: ${{ matrix.runner }}
       runtime: ${{ matrix.runtime }}
       test-params: packages/*/test*.py --skip-passed
-      cache-dir: .pytest_cache_${{ matrix.runner }}_${{ matrix.runtime }}
-      artifacts-prefix-build: no-numpy-dependents
-
-  test-numpy-dependents:
-    strategy:
-      matrix:
-        runner: [playwright]
-        runtime: [chrome-no-host, firefox-no-host]
-      fail-fast: false
-    needs: [build-packages, test-no-numpy-dependents]
-    uses: ./.github/workflows/test.yml
-    with:
-      runner: ${{ matrix.runner }}
-      runtime: ${{ matrix.runtime }}
-      test-params: packages/*/test*.py --skip-passed
-      artifacts-prefix-build: numpy-dependents
+      artifacts-prefix-build: packages
