@@ -64,8 +64,8 @@ jobs:
           python -m pip install pathspec
           python ./tools/calculate_build_cache_key.py > build_hash.txt
           # We can't directly use packages as a cache key because it contains asterisks
-          echo "PKG_KEY=$(echo ${{ inputs.packages }} | base64)" >> $GITHUB_ENV
-
+          PKG_KEY=$(echo '${{ inputs.packages }}' | base64)
+          echo "PKG_KEY=$PKG_KEY" >> $GITHUB_ENV
       - name: Cache ccache output
         uses: actions/cache@v2
         with:
