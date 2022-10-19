@@ -482,6 +482,8 @@ class PyodideConsole(Console):
 def shorten(
     text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
+    if limit < 2:
+        raise ValueError("limit must be greater than or equal to 4.")
     if split is None:
         split = limit // 2
     if split > len(text) / 2:
@@ -501,6 +503,7 @@ def repr_shorten(
     characters and the last ``split`` characters separated by '...'.
     Default value for ``split`` is `limit // 2`.
     If ``split`` is longer than the length of ``len(value) // 2``, ``split`` will be `len(value) / 2`.
+    limit must be greater than or equal to 4. If it is less than 4, an error occurs.
 
     Examples
     --------
@@ -527,4 +530,7 @@ def repr_shorten(
     >>> repr_shorten(123456789, limit=15, split=4, separator=sep)
     '123456789'
     """
-    return shorten(repr(value), limit=limit, split=split, separator=separator)
+    if limit < 4:
+        raise ValueError("limit must be greater than or equal to 4.")
+    text = repr(value)
+    return shorten(text, limit=limit, split=split, separator=separator)
