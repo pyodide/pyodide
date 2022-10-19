@@ -486,7 +486,7 @@ def shorten(
         split = limit // 2
     if split > len(text) / 2:
         split = int(len(text) / 2)
-    if len(text) - 2 > limit:
+    if len(text) > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
 
@@ -507,26 +507,24 @@ def repr_shorten(
     >>> from pyodide.console import repr_shorten
     >>> sep = "_"
     >>> for i in range(6):
-    ...     repr_shorten("1234", limit=i, separator=sep)
-    "_'1234'"
-    "_'1234'"
+    ...     repr_shorten("abcd", limit=i, separator=sep)
+    "_'abcd'"
+    "_'abcd'"
     "'_'"
     "'_'"
-    "'1_4'"
-    "'1234'"
+    "'a_d'"
+    "'a_d'"
     >>> for i in range(6):
-    ...     repr_shorten("1234", limit=i, split=i, separator=sep)
-    "_'1234'"
-    "'_'"
-    "'1_4'"
-    "'12_34'"
-    "'12_34'"
-    "'1234'"
-    >>> len("0123456789")
-    10
-    >>> repr_shorten("0123456789", limit=1, split=4, separator=sep)
-    "'012_789'"
-    >>> repr_shorten("0123456789", limit=15, split=4, separator=sep)
-    "'0123456789'"
+    ...     repr_shorten(1234, limit=i, split=i, separator=sep)
+    '_1234'
+    '1_4'
+    '12_34'
+    '12_34'
+    '1234'
+    '1234'
+    >>> repr_shorten(123456789, limit=1, split=4, separator=sep)
+    '1234_6789'
+    >>> repr_shorten(123456789, limit=15, split=4, separator=sep)
+    '123456789'
     """
     return shorten(repr(value), limit=limit, split=split, separator=separator)
