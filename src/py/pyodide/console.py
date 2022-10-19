@@ -509,23 +509,11 @@ def repr_shorten(
     --------
     >>> from pyodide.console import repr_shorten
     >>> sep = "_"
-    >>> for i in range(6):
-    ...     repr_shorten("abcd", limit=i, separator=sep)
-    "_'abcd'"
-    "_'abcd'"
-    "'_'"
-    "'_'"
-    "'a_d'"
-    "'a_d'"
-    >>> for i in range(6):
-    ...     repr_shorten(1234, limit=i, split=i, separator=sep)
-    '_1234'
-    '1_4'
-    '12_34'
-    '12_34'
-    '1234'
-    '1234'
-    >>> repr_shorten(123456789, limit=1, split=4, separator=sep)
+    >>> repr_shorten("abcdefg", limit=8, separator=sep)
+    "'abc_efg'"
+    >>> repr_shorten("abcdefg", limit=12, separator=sep)
+    "'abcdefg'"
+    >>> repr_shorten(123456789, limit=4, split=4, separator=sep)
     '1234_6789'
     >>> repr_shorten(123456789, limit=15, split=4, separator=sep)
     '123456789'
