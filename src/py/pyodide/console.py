@@ -478,6 +478,16 @@ class PyodideConsole(Console):
         await loadPackagesFromImports(source)
         return await super().runcode(source, code)
 
+def shorten(
+    text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
+) -> str:
+    if split is None:
+        split = limit // 2
+    if split > len(text) / 2:
+        split = int(len(text) / 2)
+    if len(text) - 2 > limit:
+        text = f"{text[:split]}{separator}{text[-split:]}"
+    return text
 
 def repr_shorten(
     value: Any, limit: int = 1000, split: int | None = None, separator: str = "..."
@@ -517,11 +527,4 @@ def repr_shorten(
     >>> repr_shorten("0123456789", limit=15, split=4, separator=sep)
     "'0123456789'"
     """
-    if split is None:
-        split = limit // 2
-    text = repr(value)
-    if split > len(text) / 2:
-        split = int(len(text) / 2)
-    if len(text) - 2 > limit:
-        text = f"{text[:split]}{separator}{text[-split:]}"
-    return text
+    return shorten(repr(value), limit=limit, split=split, separator=separator)
