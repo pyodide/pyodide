@@ -478,6 +478,7 @@ class PyodideConsole(Console):
         await loadPackagesFromImports(source)
         return await super().runcode(source, code)
 
+
 def shorten(
     text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
@@ -488,6 +489,7 @@ def shorten(
     if len(text) - 2 > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
+
 
 def repr_shorten(
     value: Any, limit: int = 1000, split: int | None = None, separator: str = "..."
