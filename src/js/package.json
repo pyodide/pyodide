@@ -41,7 +41,7 @@
     "rollup-plugin-ts": "^2.0.5",
     "terser": "^5.7.0",
     "ts-mocha": "^9.0.2",
-    "tsd": "^0.15.1",
+    "tsd": "^0.24.1",
     "typedoc": "^0.22.15",
     "typescript": "^4.6.4"
   },
@@ -61,7 +61,14 @@
     "./repodata.json": "./repodata.json"
   },
   "files": [
-    "pyodide*",
+    "pyodide.asm.js",
+    "pyodide.asm.wasm",
+    "pyodide.asm.data",
+    "pyodide_py.tar",
+    "pyodide.mjs",
+    "pyodide.js.map",
+    "pyodide.mjs.map",
+    "pyodide.d.ts",
     "repodata.json",
     "console.html"
   ],

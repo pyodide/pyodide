@@ -77,27 +77,32 @@ def blns():
         yield base64.b64decode(s).decode(errors="ignore")
 
 
-@pytest.mark.parametrize("s", blns())
-@run_in_pyodide
-def test_string_conversion_blns(selenium, s):
-    from pyodide.code import run_js
+@pytest.mark.driver_timeout(60)
+def test_string_conversion_blns(selenium):
+    @run_in_pyodide
+    def _string_conversion_blns_internal(selenium, s):
+        from pyodide.code import run_js
 
-    run_js("self.encoder = new TextEncoder()")
-    run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
+        run_js("self.encoder = new TextEncoder()")
+        run_js("self.decoder = new TextDecoder('utf8', {ignoreBOM: true})")
 
-    s_encoded = s.encode()
-    sjs = run_js(
-        """
-        (s_encoded) => {
-            let buf = s_encoded.getBuffer();
-            self.sjs = self.decoder.decode(buf.data);
-            buf.release();
-            return sjs
-        }
-        """
-    )(s_encoded)
-    assert sjs == s
-    assert run_js("""(spy) => spy === self.sjs""")(s)
+        s_encoded = s.encode()
+        sjs = run_js(
+            """
+            (s_encoded) => {
+                let buf = s_encoded.getBuffer();
+                self.sjs = self.decoder.decode(buf.data);
+                buf.release();
+                return sjs
+            }
+            """
+        )(s_encoded)
+        assert sjs == s
+        assert run_js("""(spy) => spy === self.sjs""")(s)
+
+    strings = blns()
+    for s in strings:
+        _string_conversion_blns_internal(selenium, s)
 
 
 @run_in_pyodide
