@@ -324,13 +324,13 @@ def test_pandas_weight(selenium):
 @pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["xgboost", "numpy", "scipy"])
 def test_scipy_sparse(selenium):
-    import xgboost as xgb
     import numpy as np
     import scipy
+    import xgboost as xgb
 
     n_rows = 100
     n_cols = 10
-    X = scipy.sparse.random(n_rows, n_cols, format='csr')
+    X = scipy.sparse.random(n_rows, n_cols, format="csr")
     y = np.random.randn(n_rows)
     dtrain = xgb.DMatrix(X, y)
     booster = xgb.train({}, dtrain, num_boost_round=1)
