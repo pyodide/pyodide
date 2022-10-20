@@ -67,7 +67,7 @@ jobs:
           PKG_KEY=$(echo '${{ inputs.packages }}' | base64)
           echo "PKG_KEY=$PKG_KEY" >> $GITHUB_ENV
       - name: Cache ccache output
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             /tmp/ccache
