@@ -17,6 +17,8 @@ requirements:
     - scipy
     - suitesparse
     - distutils
+  host:
+    - suitesparse
 
 build:
   script: |
