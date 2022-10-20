@@ -95,6 +95,9 @@ substitutions:
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
+- {{ Fix }} Fixed bug in `split` argument of `repr_shorten`. Added `shorten` function.
+  {pr}`3178`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,

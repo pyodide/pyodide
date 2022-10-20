@@ -482,12 +482,28 @@ class PyodideConsole(Console):
 def shorten(
     text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
+    """Shorten ``text`` it if necessary.
+
+    If it is longer than ``limit`` then return the firsts ``split``
+    characters and the last ``split`` characters separated by '...'.
+    Default value for ``split`` is `limit // 2`.
+    If ``split`` is longer than the length of ``len(value) // 2``, ``split`` will be `len(value) // 2`.
+    limit must be greater than or equal to 2. If it is less than 2, an error occurs.
+
+    Examples
+    --------
+    >>> from pyodide.console import shorten
+    >>> sep = "_"
+    >>> shorten("abcdefg", limit=5, separator=sep)
+    'ab_fg'
+    >>> shorten("abcdefg", limit=12, separator=sep)
+    'abcdefg'
+    """
     if limit < 2:
-        raise ValueError("limit must be greater than or equal to 4.")
+        raise ValueError("limit must be greater than or equal to 2.")
     if split is None:
         split = limit // 2
-    if split > len(text) / 2:
-        split = int(len(text) / 2)
+    split = min(split, len(text) // 2)
     if len(text) > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
@@ -502,7 +518,7 @@ def repr_shorten(
     If it is longer than ``limit`` then return the firsts ``split``
     characters and the last ``split`` characters separated by '...'.
     Default value for ``split`` is `limit // 2`.
-    If ``split`` is longer than the length of ``len(value) // 2``, ``split`` will be `len(value) / 2`.
+    If ``split`` is longer than the length of ``len(value) // 2``, ``split`` will be `len(value) // 2`.
     limit must be greater than or equal to 4. If it is less than 4, an error occurs.
 
     Examples
@@ -513,9 +529,13 @@ def repr_shorten(
     "'abc_efg'"
     >>> repr_shorten("abcdefg", limit=12, separator=sep)
     "'abcdefg'"
-    >>> repr_shorten(123456789, limit=4, split=4, separator=sep)
+    >>> for i in range(4, 10):
+    ...     repr_shorten(123456789, limit=i, separator=sep)
+    '12_89'
+    '12_89'
+    '123_789'
+    '123_789'
     '1234_6789'
-    >>> repr_shorten(123456789, limit=15, split=4, separator=sep)
     '123456789'
     """
     if limit < 4:
