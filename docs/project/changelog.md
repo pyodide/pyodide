@@ -95,6 +95,9 @@ substitutions:
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
+- {{ Fix }} Scipy CSR data is now handled correctly in XGBoost.
+  {pr}`3194`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
