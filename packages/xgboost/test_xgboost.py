@@ -319,3 +319,21 @@ def test_pandas_weight(selenium):
     assert data.num_col() == kCols
 
     np.testing.assert_array_equal(data.get_weight(), w)
+
+
+@pytest.mark.driver_timeout(60)
+@run_in_pyodide(packages=["xgboost", "numpy", "scipy"])
+def test_scipy_sparse(selenium):
+    import xgboost as xgb
+    import numpy as np
+    import scipy
+
+    n_rows = 100
+    n_cols = 10
+    X = scipy.sparse.random(n_rows, n_cols, format='csr')
+    y = np.random.randn(n_rows)
+    dtrain = xgb.DMatrix(X, y)
+    booster = xgb.train({}, dtrain, num_boost_round=1)
+    copied_predt = booster.predict(xgb.DMatrix(X))
+    predt = booster.inplace_predict(X)
+    np.testing.assert_allclose(copied_predt, predt)
