@@ -483,12 +483,12 @@ def shorten(
     text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
     """Shorten ``text`` if it is longer than ``limit``.
-	
+
     If ``len(text) <= limit`` then return ``text`` unchanged.
     If ``text`` is longer than ``limit`` then return the firsts ``split``
     characters and the last ``split`` characters separated by ``separator``.
     The default value for ``split`` is `limit // 2`.
-    Values of ``split`` larger than ``len(value) // 2`` will have the same effect as 
+    Values of ``split`` larger than ``len(value) // 2`` will have the same effect as
     when ``split`` is `len(value) // 2`.
     A value error is raised if ``limit`` is less than 2.
 
@@ -499,7 +499,7 @@ def shorten(
 
     limit : ``int``
         The integer to compare against the length of ``text``. Defaults to ``1000``.
-    
+
     split : ``int``, default = None
         The integer of the split string to return. Defaults to ``limit // 2``.
 
