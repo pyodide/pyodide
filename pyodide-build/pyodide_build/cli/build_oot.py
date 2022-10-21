@@ -20,7 +20,7 @@ def main(
     initialize_pyodide_root()
     common.check_emscripten_version()
     backend_flags = ctx.args
-    build.run(exports, package,backend_flags)
+    build.run(exports, package, backend_flags)
 
 
 main.typer_kwargs = {  # type: ignore[attr-defined]
