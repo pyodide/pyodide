@@ -1,12 +1,11 @@
 import os
-
-from .. import common, pypabuild, pywasmcross
-
-
-from unearth.finder import PackageFinder, TargetPython
-from tempfile import TemporaryDirectory
 import shutil
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from unearth.finder import PackageFinder, TargetPython
+
+from .. import common, pypabuild, pywasmcross
 
 
 def fetch_pypi_package(package_spec, destdir):
