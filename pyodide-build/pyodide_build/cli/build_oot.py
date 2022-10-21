@@ -10,13 +10,17 @@ def main(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
+    package: str = typer.Option(
+        "",
+        help="pypi package-spec to download and build",
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package"""
     initialize_pyodide_root()
     common.check_emscripten_version()
     backend_flags = ctx.args
-    build.run(exports, backend_flags)
+    build.run(exports, package,backend_flags)
 
 
 main.typer_kwargs = {  # type: ignore[attr-defined]
