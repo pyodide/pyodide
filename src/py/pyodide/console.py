@@ -482,13 +482,34 @@ class PyodideConsole(Console):
 def shorten(
     text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
-    """Shorten ``text`` it if necessary.
+    """Shorten ``text`` if it is longer than ``limit``.
+	
+    If ``len(text) <= limit`` then return ``text`` unchanged.
+    If ``text`` is longer than ``limit`` then return the firsts ``split``
+    characters and the last ``split`` characters separated by ``separator``.
+    The default value for ``split`` is `limit // 2`.
+    Values of ``split`` larger than ``len(value) // 2`` will have the same effect as 
+    when ``split`` is `len(value) // 2`.
+    A value error is raised if ``limit`` is less than 2.
 
-    If it is longer than ``limit`` then return the firsts ``split``
-    characters and the last ``split`` characters separated by '...'.
-    Default value for ``split`` is `limit // 2`.
-    If ``split`` is longer than the length of ``len(value) // 2``, ``split`` will be `len(value) // 2`.
-    limit must be greater than or equal to 2. If it is less than 2, an error occurs.
+    Parameters
+    ----------
+    text : ``str``
+        The string to shorten if it is longer than ``limit``.
+
+    limit : ``int``
+        The integer to compare against the length of ``text``. Defaults to ``1000``.
+    
+    split : ``int``, default = None
+        The integer of the split string to return. Defaults to ``limit // 2``.
+
+    separator : str, default = "..."
+        The string of the separator string. Defaults to ``"..."``.
+
+    Returns
+    -------
+    str
+        If ``text`` is longer than ``limit``, return the shortened string, otherwise return ``text``.
 
     Examples
     --------
@@ -498,6 +519,10 @@ def shorten(
     'ab_fg'
     >>> shorten("abcdefg", limit=12, separator=sep)
     'abcdefg'
+    >>> shorten("abcdefg", limit=6, separator=sep)
+    'abc_efg'
+    >>> shorten("abcdefg", limit=6, split=1, separator=sep)
+    'a_g'
     """
     if limit < 2:
         raise ValueError("limit must be greater than or equal to 2.")
@@ -515,11 +540,8 @@ def repr_shorten(
     """Compute the string representation of ``value`` and shorten it
     if necessary.
 
-    If it is longer than ``limit`` then return the firsts ``split``
-    characters and the last ``split`` characters separated by '...'.
-    Default value for ``split`` is `limit // 2`.
-    If ``split`` is longer than the length of ``len(value) // 2``, ``split`` will be `len(value) // 2`.
-    limit must be greater than or equal to 4. If it is less than 4, an error occurs.
+    This is equivalent to `shorten(repr(value), limit, split, separator)`,
+    but a value error is raised if ``limit`` is less than 4.
 
     Examples
     --------

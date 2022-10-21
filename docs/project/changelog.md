@@ -95,7 +95,7 @@ substitutions:
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
-- {{ Fix }} Fixed bug in `split` argument of `repr_shorten`. Added `shorten` function.
+- {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
 ### Build System / Package Loading
