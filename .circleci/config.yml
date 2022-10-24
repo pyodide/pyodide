@@ -322,6 +322,7 @@ jobs:
             conda create -n pyodide python=3.10 -y
             source activate pyodide
             python -m pip install -r requirements.txt
+            pip install -e ./pyodide-build
       - run:
           name: test safari
           command: |
