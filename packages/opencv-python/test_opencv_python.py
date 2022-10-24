@@ -10,12 +10,13 @@ from pytest_pyodide import run_in_pyodide
 REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "test_data"
 
 
-@pytest.fixture(autouse=True)
-def setup_compare_function(selenium):
+@pytest.fixture()
+def compare_func(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def prepare(selenium):
         import cv2 as cv
         import numpy as np
+        from pytest_pyodide.decorator import PyodideHandle
 
         def compare(ref, image, colormode):
             DIFF_THRESHOLD = 2
@@ -33,10 +34,13 @@ def setup_compare_function(selenium):
             match_ratio = float(pixels_match / pixels_total)
             assert match_ratio > MIN_MATCH_RATIO
 
-        # TODO: this is a hack to make the function available in the global scope
-        np.compare_ = compare
+        return PyodideHandle(compare)
 
-    prepare(selenium)
+    handle = prepare(selenium)
+    yield handle
+
+    # selenium.run_js(f"pyodide._module._Py_DecRef({handle.ptr})")
+    # handle.ptr = None
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
@@ -123,9 +127,9 @@ def test_image_processing(selenium):
     assert not (res > 200).any()
 
 
-def test_edge_detection(selenium):
+def test_edge_detection(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img, ref_sobel, ref_laplacian, ref_canny):
+    def run(selenium, comp, img, ref_sobel, ref_laplacian, ref_canny):
         import cv2 as cv
         import numpy as np
 
@@ -137,21 +141,21 @@ def test_edge_detection(selenium):
         laplacian = cv.Laplacian(gray, cv.CV_8U, ksize=3)
         canny = cv.Canny(src, 100, 255)
 
-        np.compare_(ref_sobel, sobel, cv.IMREAD_GRAYSCALE)
-        np.compare_(ref_laplacian, laplacian, cv.IMREAD_GRAYSCALE)
-        np.compare_(ref_canny, canny, cv.IMREAD_GRAYSCALE)
+        comp.obj(ref_sobel, sobel, cv.IMREAD_GRAYSCALE)
+        comp.obj(ref_laplacian, laplacian, cv.IMREAD_GRAYSCALE)
+        comp.obj(ref_canny, canny, cv.IMREAD_GRAYSCALE)
 
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_sobel = (REFERENCE_IMAGES_PATH / "baboon_sobel.png").read_bytes()
     ref_laplacian = (REFERENCE_IMAGES_PATH / "baboon_laplacian.png").read_bytes()
     ref_canny = (REFERENCE_IMAGES_PATH / "baboon_canny.png").read_bytes()
 
-    run(selenium, original_img, ref_sobel, ref_laplacian, ref_canny)
+    run(selenium, compare_func, original_img, ref_sobel, ref_laplacian, ref_canny)
 
 
-def test_photo_decolor(selenium):
+def test_photo_decolor(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img, ref_grayscale, ref_color_boost):
+    def run(selenium, comp, img, ref_grayscale, ref_color_boost):
         import cv2 as cv
         import numpy as np
 
@@ -160,8 +164,8 @@ def test_photo_decolor(selenium):
 
         grayscale, color_boost = cv.decolor(src)
 
-        np.compare_(ref_grayscale, grayscale, cv.IMREAD_GRAYSCALE)
-        np.compare_(ref_color_boost, color_boost, cv.IMREAD_COLOR)
+        comp.obj(ref_grayscale, grayscale, cv.IMREAD_GRAYSCALE)
+        comp.obj(ref_color_boost, color_boost, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_grayscale = (
@@ -171,7 +175,7 @@ def test_photo_decolor(selenium):
         REFERENCE_IMAGES_PATH / "baboon_decolor_color_boost.png"
     ).read_bytes()
 
-    run(selenium, original_img, ref_grayscale, ref_color_boost)
+    run(selenium, compare_func, original_img, ref_grayscale, ref_color_boost)
 
 
 def test_stitch(selenium):
@@ -198,9 +202,9 @@ def test_stitch(selenium):
     run(selenium, original_img_left, original_img_right)
 
 
-def test_video_optical_flow(selenium):
+def test_video_optical_flow(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, src, ref_optical_flow):
+    def run(selenium, comp, src, ref_optical_flow):
         import cv2 as cv
         import numpy as np
 
@@ -256,17 +260,17 @@ def test_video_optical_flow(selenium):
 
         optical_flow = img
 
-        np.compare_(ref_optical_flow, optical_flow, cv.IMREAD_COLOR)
+        comp.obj(ref_optical_flow, optical_flow, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
     ref_optical_flow = (REFERENCE_IMAGES_PATH / "traffic_optical_flow.png").read_bytes()
 
-    run(selenium, original_img, ref_optical_flow)
+    run(selenium, compare_func, original_img, ref_optical_flow)
 
 
-def test_flann_sift(selenium):
+def test_flann_sift(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img1, img2, ref_sift):
+    def run(selenium, comp, img1, img2, ref_sift):
         import cv2 as cv
         import numpy as np
 
@@ -309,13 +313,13 @@ def test_flann_sift(selenium):
 
         sift_result = cv.cvtColor(matches, cv.COLOR_BGR2GRAY)
 
-        np.compare_(ref_sift, sift_result, cv.IMREAD_GRAYSCALE)
+        comp.obj(ref_sift, sift_result, cv.IMREAD_GRAYSCALE)
 
     original_img_src1 = (REFERENCE_IMAGES_PATH / "box.png").read_bytes()
     original_img_src2 = (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
     ref_sift_result = (REFERENCE_IMAGES_PATH / "box_sift.png").read_bytes()
 
-    run(selenium, original_img_src1, original_img_src2, ref_sift_result)
+    run(selenium, compare_func, original_img_src1, original_img_src2, ref_sift_result)
 
 
 def test_dnn_mnist(selenium):
@@ -351,9 +355,9 @@ def test_dnn_mnist(selenium):
     run(selenium, original_img, tf_model)
 
 
-def test_ml_pca(selenium):
+def test_ml_pca(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img, ref_pca):
+    def run(selenium, comp, img, ref_pca):
         from math import atan2, cos, pi, sin, sqrt
 
         import cv2 as cv
@@ -450,17 +454,17 @@ def test_ml_pca(selenium):
 
         pca_result = src
 
-        np.compare_(ref_pca, pca_result, cv.IMREAD_COLOR)
+        comp.obj(ref_pca, pca_result, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "pca.png").read_bytes()
     ref_pca = (REFERENCE_IMAGES_PATH / "pca_result.png").read_bytes()
 
-    run(selenium, original_img, ref_pca)
+    run(selenium, compare_func, original_img, ref_pca)
 
 
-def test_objdetect_face(selenium):
+def test_objdetect_face(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img, ref_face):
+    def run(selenium, comp, img, ref_face):
         from pathlib import Path
 
         import cv2 as cv
@@ -493,17 +497,17 @@ def test_objdetect_face(selenium):
                     face_detected, eye_center, radius, (255, 0, 0), 4
                 )
 
-        np.compare_(ref_face, face_detected, cv.IMREAD_COLOR)
+        comp.obj(ref_face, face_detected, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
     ref_face = (REFERENCE_IMAGES_PATH / "monalisa_facedetect.png").read_bytes()
 
-    run(selenium, original_img, ref_face)
+    run(selenium, compare_func, original_img, ref_face)
 
 
-def test_feature2d_kaze(selenium):
+def test_feature2d_kaze(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img, ref_kaze):
+    def run(selenium, comp, img, ref_kaze):
         import cv2 as cv
         import numpy as np
 
@@ -521,17 +525,17 @@ def test_feature2d_kaze(selenium):
             flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
         )
 
-        np.compare_(ref_kaze, kaze, cv.IMREAD_COLOR)
+        comp.obj(ref_kaze, kaze, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_kaze = (REFERENCE_IMAGES_PATH / "baboon_kaze.png").read_bytes()
 
-    run(selenium, original_img, ref_kaze)
+    run(selenium, compare_func, original_img, ref_kaze)
 
 
-def test_calib3d_chessboard(selenium):
+def test_calib3d_chessboard(selenium, compare_func):
     @run_in_pyodide(packages=["opencv-python"])
-    def run(selenium, img, ref_chessboard):
+    def run(selenium, comp, img, ref_chessboard):
         import cv2 as cv
         import numpy as np
 
@@ -545,9 +549,9 @@ def test_calib3d_chessboard(selenium):
         cv.drawChessboardCorners(gray, (9, 6), corners, ret)
         chessboard_corners = gray
 
-        np.compare_(ref_chessboard, chessboard_corners, cv.IMREAD_GRAYSCALE)
+        comp.obj(ref_chessboard, chessboard_corners, cv.IMREAD_GRAYSCALE)
 
     original_img = (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
     ref_chessboard = (REFERENCE_IMAGES_PATH / "chessboard_corners.png").read_bytes()
 
-    run(selenium, original_img, ref_chessboard)
+    run(selenium, compare_func, original_img, ref_chessboard)
