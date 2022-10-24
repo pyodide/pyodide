@@ -29,6 +29,7 @@ jobs:
           command: |
             mkdir test-results
             pip install -r requirements.txt
+            pip install -e ./pyodide-build
             npm install -g node-fetch@2
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - store_test_results:
@@ -269,6 +270,7 @@ jobs:
             make npm-link
             mkdir test-results
             pip install -r requirements.txt
+            pip install -e ./pyodide-build
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
