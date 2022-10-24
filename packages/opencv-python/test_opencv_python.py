@@ -10,8 +10,7 @@ from pytest_pyodide import run_in_pyodide
 REFERENCE_IMAGES_PATH = pathlib.Path(__file__).parent / "test_data"
 
 
-@pytest.fixture()
-def compare_func(selenium):
+def compare_func_handle(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def prepare(selenium):
         import cv2 as cv
@@ -37,10 +36,7 @@ def compare_func(selenium):
         return PyodideHandle(compare)
 
     handle = prepare(selenium)
-    yield handle
-
-    # selenium.run_js(f"pyodide._module._Py_DecRef({handle.ptr})")
-    # handle.ptr = None
+    return handle
 
 
 @run_in_pyodide(packages=["opencv-python", "numpy"])
@@ -127,7 +123,7 @@ def test_image_processing(selenium):
     assert not (res > 200).any()
 
 
-def test_edge_detection(selenium, compare_func):
+def test_edge_detection(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img, ref_sobel, ref_laplacian, ref_canny):
         import cv2 as cv
@@ -150,10 +146,11 @@ def test_edge_detection(selenium, compare_func):
     ref_laplacian = (REFERENCE_IMAGES_PATH / "baboon_laplacian.png").read_bytes()
     ref_canny = (REFERENCE_IMAGES_PATH / "baboon_canny.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_sobel, ref_laplacian, ref_canny)
 
 
-def test_photo_decolor(selenium, compare_func):
+def test_photo_decolor(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img, ref_grayscale, ref_color_boost):
         import cv2 as cv
@@ -175,6 +172,7 @@ def test_photo_decolor(selenium, compare_func):
         REFERENCE_IMAGES_PATH / "baboon_decolor_color_boost.png"
     ).read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_grayscale, ref_color_boost)
 
 
@@ -202,7 +200,7 @@ def test_stitch(selenium):
     run(selenium, original_img_left, original_img_right)
 
 
-def test_video_optical_flow(selenium, compare_func):
+def test_video_optical_flow(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, src, ref_optical_flow):
         import cv2 as cv
@@ -265,10 +263,11 @@ def test_video_optical_flow(selenium, compare_func):
     original_img = (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
     ref_optical_flow = (REFERENCE_IMAGES_PATH / "traffic_optical_flow.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_optical_flow)
 
 
-def test_flann_sift(selenium, compare_func):
+def test_flann_sift(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img1, img2, ref_sift):
         import cv2 as cv
@@ -319,6 +318,7 @@ def test_flann_sift(selenium, compare_func):
     original_img_src2 = (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
     ref_sift_result = (REFERENCE_IMAGES_PATH / "box_sift.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img_src1, original_img_src2, ref_sift_result)
 
 
@@ -355,7 +355,7 @@ def test_dnn_mnist(selenium):
     run(selenium, original_img, tf_model)
 
 
-def test_ml_pca(selenium, compare_func):
+def test_ml_pca(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img, ref_pca):
         from math import atan2, cos, pi, sin, sqrt
@@ -459,10 +459,11 @@ def test_ml_pca(selenium, compare_func):
     original_img = (REFERENCE_IMAGES_PATH / "pca.png").read_bytes()
     ref_pca = (REFERENCE_IMAGES_PATH / "pca_result.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_pca)
 
 
-def test_objdetect_face(selenium, compare_func):
+def test_objdetect_face(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img, ref_face):
         from pathlib import Path
@@ -502,10 +503,11 @@ def test_objdetect_face(selenium, compare_func):
     original_img = (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
     ref_face = (REFERENCE_IMAGES_PATH / "monalisa_facedetect.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_face)
 
 
-def test_feature2d_kaze(selenium, compare_func):
+def test_feature2d_kaze(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img, ref_kaze):
         import cv2 as cv
@@ -530,10 +532,11 @@ def test_feature2d_kaze(selenium, compare_func):
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_kaze = (REFERENCE_IMAGES_PATH / "baboon_kaze.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_kaze)
 
 
-def test_calib3d_chessboard(selenium, compare_func):
+def test_calib3d_chessboard(selenium):
     @run_in_pyodide(packages=["opencv-python"])
     def run(selenium, comp, img, ref_chessboard):
         import cv2 as cv
@@ -554,4 +557,5 @@ def test_calib3d_chessboard(selenium, compare_func):
     original_img = (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
     ref_chessboard = (REFERENCE_IMAGES_PATH / "chessboard_corners.png").read_bytes()
 
+    compare_func = compare_func_handle(selenium)
     run(selenium, compare_func, original_img, ref_chessboard)
