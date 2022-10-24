@@ -101,6 +101,9 @@ substitutions:
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
+- Add Gitpod configuration to the repository.
+  {pr} `3201`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
