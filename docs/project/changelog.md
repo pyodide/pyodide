@@ -92,8 +92,14 @@ substitutions:
   a new option `checkIntegrity`. If set to False, integrity check for Python Packages
   will be disabled.
 
+- {{ Fix }} Fix undefined symbol error when loading shared library
+  {pr}`3193`
+
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
+
+- {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
+  {pr}`3178`
 
 ### Build System / Package Loading
 

@@ -76,6 +76,7 @@ export async function loadDynlib(lib: string, shared: boolean) {
       nodelete: true,
       global: loadGlobally,
       fs: libraryFS,
+      allowUndefined: true,
     });
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {
