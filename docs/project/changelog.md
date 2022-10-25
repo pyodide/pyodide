@@ -92,12 +92,21 @@ substitutions:
   a new option `checkIntegrity`. If set to False, integrity check for Python Packages
   will be disabled.
 
+- {{ Fix }} Fix undefined symbol error when loading shared library
+  {pr}`3193`
+
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
 - Added a new CLI command `pyodide sekeleton` which creates a package build recipe.
   `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
   {pr}`3175`
+
+- {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
+  {pr}`3178`
+
+- Add Gitpod configuration to the repository.
+  {pr} `3201`
 
 ### Build System / Package Loading
 
