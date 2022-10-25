@@ -28,7 +28,7 @@ jobs:
           name: Test docs
           command: |
             mkdir test-results
-            pip install pytest-pyodide
+            pip install -r requirements.txt
             pip install -e ./pyodide-build
             npm install -g node-fetch@2
             pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
@@ -269,9 +269,8 @@ jobs:
           command: |
             make npm-link
             mkdir test-results
-            pip install pytest-pyodide
             pip install -r requirements.txt
-            pip install -e pyodide-build
+            pip install -e ./pyodide-build
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
@@ -323,15 +322,13 @@ jobs:
             conda create -n pyodide python=3.10 -y
             source activate pyodide
             python -m pip install -r requirements.txt
-            python -m pip install pytest-pyodide
+            pip install -e ./pyodide-build
       - run:
           name: test safari
           command: |
             export PATH="$HOME/miniforge3/bin:$PATH"
             source activate pyodide
             mkdir test-results
-            pip install pytest-pyodide
-            pip install -e ./pyodide-build
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
@@ -356,7 +353,7 @@ jobs:
           name: stack-size
           command: |
             make npm-link
-            pip install pytest-pyodide
+            pip install -r requirements.txt
             npm install -g node-fetch@2
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
@@ -430,11 +427,11 @@ jobs:
           name: install requirements
           command: |
             pip3 install numpy matplotlib pandas
+            pip install -r requirements.txt
+            npm install -g node-fetch@2
       - run:
           name: benchmark
           command: |
-            pip install pytest-pyodide
-            npm install -g node-fetch@2
             python benchmark/benchmark.py all --output dist/benchmarks.json
 
       - store_artifacts:

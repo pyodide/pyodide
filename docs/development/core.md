@@ -73,7 +73,7 @@ They can only be used in a function with a `finally:` label which should handle 
 
 ### JavaScript to CPython calling convention adaptors
 
-If we call a JavaScript function from C and that JavaScript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the JavaScript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the ` FAIL_*`` macros. When compiled with  `DEBUG_F`, when a JavaScript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
+If we call a JavaScript function from C and that JavaScript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the JavaScript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the `FAIL_*`` macros. When compiled with `DEBUG_F`, when a JavaScript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
 
 ```javascript
 try {
