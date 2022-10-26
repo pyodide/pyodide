@@ -51,7 +51,7 @@ def patch_font_loading_and_dpi(selenium, handle, target_font=""):
 
         if not target_font or target_font == fontface.family:
             try:
-                handle.obj["font-loaded"][0] = True
+                handle["font-loaded"][0] = True
             except Exception as e:
                 raise ValueError("unable to resolve") from e
 
@@ -179,7 +179,7 @@ def test_rendering(selenium_standalone):
         plt.grid(True)
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (REFERENCE_IMAGES_PATH / f"canvas-{selenium.browser}.png").read_bytes()
     handle = compare_func_handle(selenium)
@@ -218,7 +218,7 @@ def test_draw_image(selenium_standalone):
         )
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png").read_bytes()
     handle = compare_func_handle(selenium)
@@ -294,7 +294,7 @@ def test_draw_image_affine_transform(selenium_standalone):
 
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
@@ -346,7 +346,7 @@ def test_draw_text_rotated(selenium_standalone):
 
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
@@ -478,7 +478,7 @@ def test_draw_math_text(selenium_standalone):
 
         doall()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
@@ -511,7 +511,7 @@ def test_custom_font_text(selenium_standalone):
         plt.grid(True)
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-custom-font-text-{selenium.browser}.png"
@@ -552,7 +552,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
         ax.set_rlim([0, 5])
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
@@ -590,7 +590,7 @@ def test_transparency(selenium_standalone):
 
         plt.show()
 
-        handle.obj["compare"](ref)
+        handle["compare"](ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"

@@ -137,9 +137,9 @@ def test_edge_detection(selenium):
         laplacian = cv.Laplacian(gray, cv.CV_8U, ksize=3)
         canny = cv.Canny(src, 100, 255)
 
-        comp.obj(ref_sobel, sobel, cv.IMREAD_GRAYSCALE)
-        comp.obj(ref_laplacian, laplacian, cv.IMREAD_GRAYSCALE)
-        comp.obj(ref_canny, canny, cv.IMREAD_GRAYSCALE)
+        comp(ref_sobel, sobel, cv.IMREAD_GRAYSCALE)
+        comp(ref_laplacian, laplacian, cv.IMREAD_GRAYSCALE)
+        comp(ref_canny, canny, cv.IMREAD_GRAYSCALE)
 
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_sobel = (REFERENCE_IMAGES_PATH / "baboon_sobel.png").read_bytes()
@@ -161,8 +161,8 @@ def test_photo_decolor(selenium):
 
         grayscale, color_boost = cv.decolor(src)
 
-        comp.obj(ref_grayscale, grayscale, cv.IMREAD_GRAYSCALE)
-        comp.obj(ref_color_boost, color_boost, cv.IMREAD_COLOR)
+        comp(ref_grayscale, grayscale, cv.IMREAD_GRAYSCALE)
+        comp(ref_color_boost, color_boost, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_grayscale = (
@@ -258,7 +258,7 @@ def test_video_optical_flow(selenium):
 
         optical_flow = img
 
-        comp.obj(ref_optical_flow, optical_flow, cv.IMREAD_COLOR)
+        comp(ref_optical_flow, optical_flow, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "traffic.mp4").read_bytes()
     ref_optical_flow = (REFERENCE_IMAGES_PATH / "traffic_optical_flow.png").read_bytes()
@@ -312,7 +312,7 @@ def test_flann_sift(selenium):
 
         sift_result = cv.cvtColor(matches, cv.COLOR_BGR2GRAY)
 
-        comp.obj(ref_sift, sift_result, cv.IMREAD_GRAYSCALE)
+        comp(ref_sift, sift_result, cv.IMREAD_GRAYSCALE)
 
     original_img_src1 = (REFERENCE_IMAGES_PATH / "box.png").read_bytes()
     original_img_src2 = (REFERENCE_IMAGES_PATH / "box_in_scene.png").read_bytes()
@@ -454,7 +454,7 @@ def test_ml_pca(selenium):
 
         pca_result = src
 
-        comp.obj(ref_pca, pca_result, cv.IMREAD_COLOR)
+        comp(ref_pca, pca_result, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "pca.png").read_bytes()
     ref_pca = (REFERENCE_IMAGES_PATH / "pca_result.png").read_bytes()
@@ -498,7 +498,7 @@ def test_objdetect_face(selenium):
                     face_detected, eye_center, radius, (255, 0, 0), 4
                 )
 
-        comp.obj(ref_face, face_detected, cv.IMREAD_COLOR)
+        comp(ref_face, face_detected, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "monalisa.png").read_bytes()
     ref_face = (REFERENCE_IMAGES_PATH / "monalisa_facedetect.png").read_bytes()
@@ -527,7 +527,7 @@ def test_feature2d_kaze(selenium):
             flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS,
         )
 
-        comp.obj(ref_kaze, kaze, cv.IMREAD_COLOR)
+        comp(ref_kaze, kaze, cv.IMREAD_COLOR)
 
     original_img = (REFERENCE_IMAGES_PATH / "baboon.png").read_bytes()
     ref_kaze = (REFERENCE_IMAGES_PATH / "baboon_kaze.png").read_bytes()
@@ -552,7 +552,7 @@ def test_calib3d_chessboard(selenium):
         cv.drawChessboardCorners(gray, (9, 6), corners, ret)
         chessboard_corners = gray
 
-        comp.obj(ref_chessboard, chessboard_corners, cv.IMREAD_GRAYSCALE)
+        comp(ref_chessboard, chessboard_corners, cv.IMREAD_GRAYSCALE)
 
     original_img = (REFERENCE_IMAGES_PATH / "chessboard.png").read_bytes()
     ref_chessboard = (REFERENCE_IMAGES_PATH / "chessboard_corners.png").read_bytes()
