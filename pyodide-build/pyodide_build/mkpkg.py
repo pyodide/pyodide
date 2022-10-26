@@ -334,6 +334,12 @@ complex things.""".strip()
         help="Package version string, "
         "e.g. v1.2.1 (defaults to latest stable release)",
     )
+    parser.add_argument(
+        "--recipe-dir",
+        type=str,
+        default="packages",
+        help="Directory to create the recipe in (defaults to PYODIDE_ROOT/packages)",
+    )
     return parser
 
 
@@ -342,13 +348,16 @@ def main(args: argparse.Namespace) -> None:
     if PYODIDE_ROOT is None:
         raise ValueError("PYODIDE_ROOT is not set")
 
-    PACKAGES_ROOT = Path(PYODIDE_ROOT) / "packages"
+    if os.path.isabs(args.recipe_dir):
+        recipe_dir = Path(args.recipe_dir)
+    else:
+        recipe_dir = (Path(PYODIDE_ROOT) / args.recipe_dir).resolve()
 
     try:
         package = args.package[0]
         if args.update:
             update_package(
-                PACKAGES_ROOT,
+                recipe_dir,
                 package,
                 args.version,
                 update_patched=True,
@@ -357,16 +366,14 @@ def main(args: argparse.Namespace) -> None:
             return
         if args.update_if_not_patched:
             update_package(
-                PACKAGES_ROOT,
+                recipe_dir,
                 package,
                 args.version,
                 update_patched=False,
                 source_fmt=args.source_format,
             )
             return
-        make_package(
-            PACKAGES_ROOT, package, args.version, source_fmt=args.source_format
-        )
+        make_package(recipe_dir, package, args.version, source_fmt=args.source_format)
     except MkpkgFailedException as e:
         # This produces two types of error messages:
         #

@@ -92,17 +92,31 @@ substitutions:
   a new option `checkIntegrity`. If set to False, integrity check for Python Packages
   will be disabled.
 
+- {{ Fix }} Fix undefined symbol error when loading shared library
+  {pr}`3193`
+
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
 - {{ Fix }} Scipy CSR data is now handled correctly in XGBoost.
   {pr}`3194`
 
+- Added a new CLI command `pyodide sekeleton` which creates a package build recipe.
+  `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
+  {pr}`3175`
+
+- {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
+  {pr}`3178`
+
+- Add Gitpod configuration to the repository.
+  {pr} `3201`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
   coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  the standard library \_hashlib module {pr}`3206`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with

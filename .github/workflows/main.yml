@@ -156,7 +156,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          cd pyodide-build && pip install -e ".[test]" && cd ..
+          pip install -e ./pyodide-build
           # FIXME: playwright 1.23.0 has unknown performance issue on firefox
           pip install "playwright<1.23.0" && python -m playwright install
 

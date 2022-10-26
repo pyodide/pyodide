@@ -1,0 +1,26 @@
+package:
+  name: _hashlib
+  version: 1.0.0 # Nonsense
+  _cpython_dynlib: true
+  top-level:
+    - _hashlib
+source:
+  path: empty
+build:
+  sharedlibrary: true
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD
+
+    emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o Modules/_hashlib.o \
+      $(pkg-config --cflags --dont-define-prefix libcrypto) -DOPENSSL_THREADS
+
+    emcc Modules/_hashlib.o -o $DISTDIR/_hashlib.so $SIDE_MODULE_LDFLAGS \
+      $(pkg-config --libs --dont-define-prefix libcrypto) -DOPENSSL_THREADS
+
+requirements:
+  run:
+    - openssl
+  host:
+    - openssl
