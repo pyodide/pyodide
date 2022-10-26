@@ -1,4 +1,4 @@
-From 893922cba7ff6c60d0d5e23287c9841a676d623d Mon Sep 17 00:00:00 2001
+From 4ec1b506b424dd9e81fd7127f5712522800a5596 Mon Sep 17 00:00:00 2001
 From: Yizhi Liu <liuyizhi@apache.org>
 Date: Mon, 17 Oct 2022 15:16:45 -0700
 Subject: [PATCH 3/3] Fix type mismatch for CSR conversion in c_api
@@ -7,63 +7,36 @@ TODO: Remove this patch when XGBoost version is updated.
 (Upstream PR: https://github.com/dmlc/xgboost/pull/8369)
 
 ---
- xgboost/include/xgboost/c_api.h | 4 ++--
- xgboost/src/c_api/c_api.cc      | 6 +++---
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ xgboost/core.py | 2 +-
+ xgboost/data.py | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/xgboost/include/xgboost/c_api.h b/xgboost/include/xgboost/c_api.h
-index 17cd5f4..b76878b 100644
---- a/xgboost/include/xgboost/c_api.h
-+++ b/xgboost/include/xgboost/c_api.h
-@@ -135,7 +135,7 @@ XGB_DLL int XGDMatrixCreateFromCSREx(const size_t* indptr,
-  */
- XGB_DLL int XGDMatrixCreateFromCSR(char const *indptr,
-                                    char const *indices, char const *data,
--                                   bst_ulong ncol,
-+                                   size_t ncol,
-                                    char const* json_config,
-                                    DMatrixHandle* out);
- 
-@@ -998,7 +998,7 @@ XGB_DLL int XGBoosterPredictFromDense(BoosterHandle handle,
-  */
- XGB_DLL int XGBoosterPredictFromCSR(BoosterHandle handle, char const *indptr,
-                                     char const *indices, char const *values,
--                                    bst_ulong ncol,
-+                                    size_t ncol,
-                                     char const *c_json_config, DMatrixHandle m,
-                                     bst_ulong const **out_shape,
-                                     bst_ulong *out_dim,
-diff --git a/xgboost/src/c_api/c_api.cc b/xgboost/src/c_api/c_api.cc
-index a11602a..73c10c6 100644
---- a/xgboost/src/c_api/c_api.cc
-+++ b/xgboost/src/c_api/c_api.cc
-@@ -344,7 +344,7 @@ XGB_DLL int XGDMatrixCreateFromCSREx(const size_t* indptr,
- 
- XGB_DLL int XGDMatrixCreateFromCSR(char const *indptr,
-                                    char const *indices, char const *data,
--                                   xgboost::bst_ulong ncol,
-+                                   size_t ncol,
-                                    char const* c_json_config,
-                                    DMatrixHandle* out) {
-   API_BEGIN();
-@@ -861,7 +861,7 @@ XGB_DLL int XGBoosterPredictFromDense(BoosterHandle handle,
- // A hidden API as cache id is not being supported yet.
- XGB_DLL int XGBoosterPredictFromCSR(BoosterHandle handle, char const *indptr,
-                                     char const *indices, char const *data,
--                                    xgboost::bst_ulong cols,
-+                                    size_t cols,
-                                     char const *c_json_config, DMatrixHandle m,
-                                     xgboost::bst_ulong const **out_shape,
-                                     xgboost::bst_ulong *out_dim,
-@@ -871,7 +871,7 @@ XGB_DLL int XGBoosterPredictFromCSR(BoosterHandle handle, char const *indptr,
-   std::shared_ptr<xgboost::data::CSRArrayAdapter> x{
-       new xgboost::data::CSRArrayAdapter{StringView{indptr},
-                                          StringView{indices}, StringView{data},
--                                         static_cast<size_t>(cols)}};
-+                                         cols}};
-   std::shared_ptr<DMatrix> p_m {nullptr};
-   if (m) {
-     p_m = *static_cast<std::shared_ptr<DMatrix> *>(m);
+diff --git a/xgboost/core.py b/xgboost/core.py
+index 36548d8..0246779 100644
+--- a/xgboost/core.py
++++ b/xgboost/core.py
+@@ -2119,7 +2119,7 @@ class Booster:
+                     _array_interface(csr.indptr),
+                     _array_interface(csr.indices),
+                     _array_interface(csr.data),
+-                    ctypes.c_size_t(csr.shape[1]),
++                    c_bst_ulong(csr.shape[1]),
+                     from_pystr_to_cstr(json.dumps(args)),
+                     p_handle,
+                     ctypes.byref(shape),
+diff --git a/xgboost/data.py b/xgboost/data.py
+index 119b354..b958436 100644
+--- a/xgboost/data.py
++++ b/xgboost/data.py
+@@ -88,7 +88,7 @@ def _from_scipy_csr(
+             _array_interface(data.indptr),
+             _array_interface(data.indices),
+             _array_interface(data.data),
+-            ctypes.c_size_t(data.shape[1]),
++            c_bst_ulong(data.shape[1]),
+             config,
+             ctypes.byref(handle),
+         )
 -- 
 2.35.1
 
