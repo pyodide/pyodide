@@ -10,6 +10,8 @@ import {
   initNodeModules,
   resolvePath,
 } from "./compat.js";
+import { createLock } from "./lock";
+import { loadDynlib } from "./dynload";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /**
