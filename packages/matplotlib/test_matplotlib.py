@@ -51,7 +51,7 @@ def patch_font_loading_and_dpi(selenium, handle, target_font=""):
 
         if not target_font or target_font == fontface.family:
             try:
-                handle["font-loaded"][0] = True
+                handle.font_loaded = True
             except Exception as e:
                 raise ValueError("unable to resolve") from e
 
@@ -63,31 +63,28 @@ def compare_func_handle(selenium):
     def prepare(selenium):
         from pytest_pyodide.decorator import PyodideHandle
 
-        _font_loaded = [False]
+        class Handle:
+            def __init__(self):
+                self.font_loaded = False
 
-        async def _compare(ref):
-            import asyncio
-            import io
+            async def compare(self, ref):
+                import asyncio
+                import io
 
-            import matplotlib.pyplot as plt
-            import numpy as np
-            from PIL import Image
+                import matplotlib.pyplot as plt
+                import numpy as np
+                from PIL import Image
 
-            nonlocal _font_loaded
-            while not _font_loaded[0]:  # wait until font is loading
-                await asyncio.sleep(0.2)
+                while not self.font_loaded:  # wait until font is loading
+                    await asyncio.sleep(0.2)
 
-            canvas_data = plt.gcf().canvas.get_pixel_data()
-            ref_data = np.asarray(Image.open(io.BytesIO(ref)))
+                canvas_data = plt.gcf().canvas.get_pixel_data()
+                ref_data = np.asarray(Image.open(io.BytesIO(ref)))
 
-            deviation = np.mean(np.abs(canvas_data - ref_data))
-            assert float(deviation) == 0.0
+                deviation = np.mean(np.abs(canvas_data - ref_data))
+                assert float(deviation) == 0.0
 
-        class Result:
-            compare = _compare
-            font_loaded = _font_loaded
-
-        return PyodideHandle(Result())
+        return PyodideHandle(Handle())
 
     handle = prepare(selenium)
     return handle
