@@ -232,7 +232,7 @@ def test_video_optical_flow(selenium):
         p0 = cv.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
         # Create a mask image for drawing purposes
         mask = np.zeros_like(old_frame)
-        while 1:
+        while True:
             ret, frame = cap.read()
             if not ret:
                 break

@@ -63,9 +63,9 @@ def compare_func_handle(selenium):
     def prepare(selenium):
         from pytest_pyodide.decorator import PyodideHandle
 
-        font_loaded = [False]
+        _font_loaded = [False]
 
-        async def compare(ref):
+        async def _compare(ref):
             import asyncio
             import io
 
@@ -73,8 +73,8 @@ def compare_func_handle(selenium):
             import numpy as np
             from PIL import Image
 
-            nonlocal font_loaded
-            while not font_loaded[0]:  # wait until font is loading
+            nonlocal _font_loaded
+            while not _font_loaded[0]:  # wait until font is loading
                 await asyncio.sleep(0.2)
 
             canvas_data = plt.gcf().canvas.get_pixel_data()
@@ -83,7 +83,11 @@ def compare_func_handle(selenium):
             deviation = np.mean(np.abs(canvas_data - ref_data))
             assert float(deviation) == 0.0
 
-        return PyodideHandle({"compare": compare, "font-loaded": font_loaded})
+        class Result:
+            compare = _compare
+            font_loaded = _font_loaded
+
+        return PyodideHandle(Result())
 
     handle = prepare(selenium)
     return handle
@@ -179,7 +183,7 @@ def test_rendering(selenium_standalone):
         plt.grid(True)
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (REFERENCE_IMAGES_PATH / f"canvas-{selenium.browser}.png").read_bytes()
     handle = compare_func_handle(selenium)
@@ -218,7 +222,7 @@ def test_draw_image(selenium_standalone):
         )
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png").read_bytes()
     handle = compare_func_handle(selenium)
@@ -294,7 +298,7 @@ def test_draw_image_affine_transform(selenium_standalone):
 
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
@@ -346,7 +350,7 @@ def test_draw_text_rotated(selenium_standalone):
 
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
@@ -478,7 +482,7 @@ def test_draw_math_text(selenium_standalone):
 
         doall()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
@@ -511,7 +515,7 @@ def test_custom_font_text(selenium_standalone):
         plt.grid(True)
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-custom-font-text-{selenium.browser}.png"
@@ -552,7 +556,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
         ax.set_rlim([0, 5])
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
@@ -590,7 +594,7 @@ def test_transparency(selenium_standalone):
 
         plt.show()
 
-        handle["compare"](ref)
+        handle.compare(ref)
 
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"
