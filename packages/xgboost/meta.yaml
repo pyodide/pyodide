@@ -9,6 +9,7 @@ source:
   patches:
     - patches/0001-Add-missing-template-type.patch
     - patches/0002-Add-library-loading-path.patch
+    - patches/0003-Fix-type-mismatch-for-CSR-conversion-in-c_api.patch
 build:
   cflags: |
     -DDMLC_USE_FOPEN64=0

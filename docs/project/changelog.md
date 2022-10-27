@@ -98,6 +98,9 @@ substitutions:
 - {{ Fix }} Shared libraries with version suffix are now handled correctly.
   {pr}`3154`
 
+- {{ Fix }} Scipy CSR data is now handled correctly in XGBoost.
+  {pr}`3194`
+
 - Added a new CLI command `pyodide sekeleton` which creates a package build recipe.
   `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
   {pr}`3175`
