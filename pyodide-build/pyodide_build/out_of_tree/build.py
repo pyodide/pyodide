@@ -3,7 +3,8 @@ import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from unearth.finder import PackageFinder, TargetPython
+from unearth.evaluator import TargetPython
+from unearth.finder import PackageFinder
 
 from .. import common, pypabuild, pywasmcross
 
