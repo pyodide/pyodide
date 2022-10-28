@@ -47,7 +47,7 @@ def run(exports, package, args):
     (curdir / "dist").mkdir(exist_ok=True)
     tmpdir = None
     temppath = None
-    if len(package) > 0:
+    if package and len(package) > 0:
         tmpdir = TemporaryDirectory()
         temppath = Path(tmpdir.name)
         # get package from pypi
