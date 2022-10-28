@@ -1,31 +1,30 @@
 import os
-
-from .. import common, pypabuild, pywasmcross
-
-
-from unearth.finder import PackageFinder, TargetPython
-from tempfile import TemporaryDirectory
 import shutil
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from unearth.finder import PackageFinder, TargetPython
+
+from .. import common, pypabuild, pywasmcross
 
 
 def fetch_pypi_package(package_spec, destdir):
     PYMAJOR = common.get_make_flag("PYMAJOR")
     PYMINOR = common.get_make_flag("PYMINOR")
     tp = TargetPython(
-        py_ver=(PYMAJOR, PYMINOR),
+        py_ver=(int(PYMAJOR), int(PYMINOR)),
         platforms=[common.platform()],
-        abis=f"cp{PYMAJOR}{PYMINOR}",
+        abis=[f"cp{PYMAJOR}{PYMINOR}"],
     )
     pf = PackageFinder(index_urls=["https://pypi.org/simple/"], target_python=tp)
     match = pf.find_best_match(package_spec)
-    if match.best == None:
+    if match.best is None:
         if len(match.candidates) != 0:
             error = f"""Can't find version matching {package_spec}
 versions found:
 """
             for c in match.candidates:
-                error += "  " + c.version + "\t"
+                error += "  " + str(c.version) + "\t"
             raise RuntimeError(error)
         else:
             raise RuntimeError(f"Can't find package: {package_spec}")
@@ -52,9 +51,10 @@ def run(exports, package, args):
         temppath = Path(tmpdir.name)
         # get package from pypi
         package_path = fetch_pypi_package(package, temppath)
-        if package_path.is_dir() == False:
+        if package_path.is_dir() is False:
             # a wheel has been downloaded - just copy to dist folder
             shutil.copy(str(package_path), str(curdir / "dist"))
+            print(f"Successfully fetched: {package_path.name}")
             return
         os.chdir(temppath)
     build_env_ctx = pywasmcross.get_build_env(
