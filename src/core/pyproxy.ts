@@ -430,6 +430,51 @@ Module.callPyObjectKwargs = function (
   return result;
 };
 
+Module.callPyObjectKwargsSuspending = async function (
+  ptrobj: number,
+  jsargs: any,
+  kwargs: any,
+) {
+  // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+  // which only is used when the keyword arguments come from the user.
+  // let [suspender, _] = Module.suspenders[0];
+  // let [suspender, isused] = Module.suspenders[Module.suspenders.length - 1];
+  // if(isused){
+  //   suspender = Module.newSuspender();
+  //   Module.suspenders.push([suspender, false]);
+  // }
+  let num_pos_args = jsargs.length;
+  let kwargs_names = Object.keys(kwargs);
+  let kwargs_values = Object.values(kwargs);
+  let num_kwargs = kwargs_names.length;
+  jsargs.push(...kwargs_values);
+
+  let idargs = Hiwire.new_value(jsargs);
+  let idkwnames = Hiwire.new_value(kwargs_names);
+  let idresult;
+  try {
+    // idresult = suspender.returnPromiseOnSuspend(Module.asm._pyproxy_apply).call(
+    const apply = Module.suspender.returnPromiseOnSuspend(
+      Module.asm._pyproxy_apply,
+    );
+    idresult = await apply(ptrobj, idargs, num_pos_args, idkwnames, num_kwargs);
+  } catch (e) {
+    API.fatal_error(e);
+  } finally {
+    Hiwire.decref(idargs);
+    Hiwire.decref(idkwnames);
+  }
+  if (idresult === 0) {
+    Module._pythonexc2js();
+  }
+  let result = Hiwire.pop_value(idresult);
+  // Automatically schedule coroutines
+  if (result && result.type === "coroutine" && result._ensure_future) {
+    result._ensure_future();
+  }
+  return result;
+};
+
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
 };
@@ -1288,6 +1333,22 @@ export class PyProxyCallableMethods {
       throw new TypeError("kwargs argument is not an object");
     }
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
+  }
+
+  callSyncifying(...jsargs: any) {
+    if (jsargs.length === 0) {
+      throw new TypeError(
+        "callKwargs requires at least one argument (the key word argument object)",
+      );
+    }
+    let kwargs = jsargs.pop();
+    if (
+      kwargs.constructor !== undefined &&
+      kwargs.constructor.name !== "Object"
+    ) {
+      throw new TypeError("kwargs argument is not an object");
+    }
+    return Module.callPyObjectKwargsSuspending(_getPtr(this), jsargs, kwargs);
   }
 
   /**
