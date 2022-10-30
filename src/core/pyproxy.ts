@@ -358,8 +358,29 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   }
 };
 
+declare function hiwire_call_bound(...args: any): any;
+
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in JavaScript functions.
+
+// function hiwire_suspending_call_bound_inner(idfunc: number, idthis: number, idargs: number): number {
+//   let func = Hiwire.get_value(idfunc);
+//   let this_;
+//   if (idthis === 0) {
+//     this_ = null;
+//   } else {
+//     this_ = Hiwire.get_value(idthis);
+//   }
+//   let args = Hiwire.get_value(idargs);
+//   return Hiwire.new_value(func.apply(this_, args));
+// }
+
+// declare var asmLibraryArg : any;
+
+// asmLibraryArg.hiwire_suspending_call_bound = new (WebAssembly as any).Function(
+//   { parameters: ["i32", "i32", "i32"], results: ["externref"] },
+//   hiwire_suspending_call_bound_inner
+// );
 
 Module.callPyObjectKwargs = function (
   ptrobj: number,
@@ -368,6 +389,12 @@ Module.callPyObjectKwargs = function (
 ) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
+  // let [suspender, _] = Module.suspenders[0];
+  // let [suspender, isused] = Module.suspenders[Module.suspenders.length - 1];
+  // if(isused){
+  //   suspender = Module.newSuspender();
+  //   Module.suspenders.push([suspender, false]);
+  // }
   let num_pos_args = jsargs.length;
   let kwargs_names = Object.keys(kwargs);
   let kwargs_values = Object.values(kwargs);
@@ -378,6 +405,7 @@ Module.callPyObjectKwargs = function (
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
   try {
+    // idresult = suspender.returnPromiseOnSuspend(Module.asm._pyproxy_apply).call(
     idresult = Module.__pyproxy_apply(
       ptrobj,
       idargs,
