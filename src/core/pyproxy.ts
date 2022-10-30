@@ -430,6 +430,19 @@ Module.callPyObjectKwargs = function (
   return result;
 };
 
+async function hiwire_suspending_call_bound(idfunc, idthis, idargs) {
+  let func = Hiwire.get_value(idfunc);
+  let this_;
+  if (idthis === 0) {
+    this_ = null;
+  } else {
+    this_ = Hiwire.get_value(idthis);
+  }
+  let args = Hiwire.get_value(idargs);
+  let result = await func.apply(this_, args);
+  return Hiwire.new_value(result);
+}
+
 Module.callPyObjectKwargsSuspending = async function (
   ptrobj: number,
   jsargs: any,
@@ -452,6 +465,8 @@ Module.callPyObjectKwargsSuspending = async function (
   let idargs = Hiwire.new_value(jsargs);
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
+  Module.asmLibraryArg.hiwire_suspending_call_bound =
+    hiwire_suspending_call_bound;
   try {
     // idresult = suspender.returnPromiseOnSuspend(Module.asm._pyproxy_apply).call(
     const apply = Module.suspender.returnPromiseOnSuspend(
