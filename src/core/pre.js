@@ -16,5 +16,4 @@ if (typeof WebAssembly.Suspender !== "undefined") {
     };
   };
 }
-// Module.suspenders = [[Module.newSuspender(), false]];
 Module.suspender = Module.newSuspender();

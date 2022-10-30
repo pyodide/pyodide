@@ -1,7 +1,6 @@
 async function main() {
     const loadPyodide = require("../dist/pyodide.js").loadPyodide;
     py = await loadPyodide();
-    // let s = new WebAssembly.Suspender();
     function sleep(ms) {
         return new Promise((res) => {
             setTimeout(() => {
