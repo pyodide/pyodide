@@ -70,6 +70,7 @@ def build_graph(
         help="The directory containing the recipe of packages. "
         "If not specified, the default is `packages` in the root directory.",
     ),
+    ctx: typer.Context = typer.Context,
 ) -> None:
     """Build packages and create repodata.json (in-tree build)"""
     pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
@@ -87,22 +88,21 @@ def build_graph(
         ",".join(packages),
     ]
 
-    if cflags:
-        args_list += ["--cflags", cflags]
-    if cxxflags:
-        args_list += ["--cxxflags", cxxflags]
-    if ldflags:
-        args_list += ["--ldflags", ldflags]
-    if target_install_dir:
-        args_list += ["--target-install-dir", target_install_dir]
-    if host_install_dir:
-        args_list += ["--host-install-dir", host_install_dir]
-    if log_dir:
-        args_list += ["--log-dir", log_dir]
-    if force_rebuild:
-        args_list += ["--force-rebuild"]
-    if n_jobs:
-        args_list += ["--n-jobs", str(n_jobs)]
+    passthrough_args = [
+        "cflags",
+        "cxxflags",
+        "ldflags",
+        "target_install_dir",
+        "host_install_dir",
+        "log_dir",
+        "force_rebuild",
+        "n_jobs",
+    ]
+
+    for key, value in ctx.params.items():
+        if key in passthrough_args and value is not None:
+            args_list.append(f"--{key.replace('_', '-')}")
+            args_list.append(str(value))
 
     args = parser.parse_args(args_list)
     args = buildall.set_default_args(args)
