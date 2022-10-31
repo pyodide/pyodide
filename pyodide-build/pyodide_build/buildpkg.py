@@ -736,9 +736,9 @@ def build_package(
     dist_dir = pkg_root / "dist"
     src_dir_name: str = f"{name}-{version}"
     srcpath = build_dir / src_dir_name
-    src_dist_dir = (
-        srcpath / "dist"
-    )  # build output (.whl, .so) will be go here, then copied to dist_dir
+    src_dist_dir = srcpath / "dist"
+    # Python produces output .whl or .so files in src_dist_dir.
+    # We copy them to dist_dir later
 
     url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
@@ -795,7 +795,7 @@ def build_package(
             # and create a zip archive of the .so files
             shutil.rmtree(dist_dir, ignore_errors=True)
             dist_dir.mkdir(parents=True)
-            shutil.make_archive(str(dist_dir / src_dir_name), "zip", srcpath / "dist")
+            shutil.make_archive(str(dist_dir / src_dir_name), "zip", src_dist_dir)
         else:  # wheel
             if not finished_wheel:
                 compile(
