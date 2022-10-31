@@ -168,7 +168,9 @@ def main():
     BENCHMARKS = {
         "pystone": get_pystone_benchmarks,
         "numpy": get_numpy_benchmarks,
-        "matplotlib": get_matplotlib_benchmarks,
+        # TODO: matplotlib benchmark occasionally fails after https://github.com/pyodide/pyodide/pull/3130
+        #       but it is not clear why.
+        # "matplotlib": get_matplotlib_benchmarks,
         "pandas": get_pandas_benchmarks,
     }
 

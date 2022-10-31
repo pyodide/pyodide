@@ -1304,7 +1304,7 @@ def test_unvendored_stdlib_import_hook(selenium_standalone):
 
     import pytest
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3"]
+    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
 
     for lib in unvendored_stdlibs:
