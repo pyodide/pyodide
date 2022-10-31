@@ -3,4 +3,3 @@ Module.UTF8ToString = UTF8ToString;
 Module.wasmTable = wasmTable;
 // Emscripten has a bug where it accidentally exposes an empty object as Module.ERRNO_CODES
 Module.ERRNO_CODES = ERRNO_CODES;
-Module.asmLibraryArg = asmLibraryArg;

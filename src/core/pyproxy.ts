@@ -402,6 +402,27 @@ Module.callPyObjectKwargs = function (
   return result;
 };
 
+function initWrappedApply() {
+  const bytes = [
+    0, 97, 115, 109, 1, 0, 0, 0, 1, 20, 2, 96, 5, 127, 127, 127, 127, 127, 1,
+    127, 96, 6, 111, 127, 127, 127, 127, 127, 1, 127, 2, 14, 2, 1, 101, 1, 115,
+    3, 111, 1, 1, 101, 1, 105, 0, 0, 3, 2, 1, 1, 7, 5, 1, 1, 111, 0, 1, 10, 20,
+    1, 18, 0, 32, 0, 36, 0, 32, 1, 32, 2, 32, 3, 32, 4, 32, 5, 16, 0, 11,
+  ];
+  var module = new WebAssembly.Module(new Uint8Array(bytes));
+  var instance = new WebAssembly.Instance(module, {
+    e: {
+      s: Module.suspenderGlobal,
+      i: Module.asm._pyproxy_apply,
+    },
+  });
+  Module.wrappedApply = new (WebAssembly as any).Function(
+    { parameters: ["i32", "i32", "i32", "i32", "i32"], results: ["externref"] },
+    instance.exports.o,
+    { promising: "first" },
+  );
+}
+
 Module.callPyObjectKwargsSuspending = async function (
   ptrobj: number,
   jsargs: any,
@@ -418,11 +439,18 @@ Module.callPyObjectKwargsSuspending = async function (
   let idargs = Hiwire.new_value(jsargs);
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
+
+  if (!Module.wrappedApply) {
+    initWrappedApply();
+  }
   try {
-    const apply = Module.suspender.returnPromiseOnSuspend(
-      Module.asm._pyproxy_apply,
+    idresult = await Module.wrappedApply(
+      ptrobj,
+      idargs,
+      num_pos_args,
+      idkwnames,
+      num_kwargs,
     );
-    idresult = await apply(ptrobj, idargs, num_pos_args, idkwnames, num_kwargs);
   } catch (e) {
     API.fatal_error(e);
   } finally {
