@@ -1252,7 +1252,7 @@ def test_pickle_jsexception(selenium):
 
 
 def test_raises_jsexception(selenium):
-    from pyodide.ffi import JsException
+    from pytest_pyodide.pyodide import JsException
 
     @run_in_pyodide
     def raise_jsexception(selenium):
@@ -1304,7 +1304,7 @@ def test_unvendored_stdlib_import_hook(selenium_standalone):
 
     import pytest
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3"]
+    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
 
     for lib in unvendored_stdlibs:
