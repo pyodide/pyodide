@@ -2,32 +2,39 @@ async function main() {
     const loadPyodide = require("../dist/pyodide.js").loadPyodide;
     py = await loadPyodide({});
     function sleep(ms) {
-        return new Promise((res) => {
-            setTimeout(() => {
-                console.log("sleep is resolved", ms);
-                res();
-            }, ms);
-        });
+        return new Promise((res) => setTimeout(res, ms));
     }
     globalThis.sleep = sleep;
-    await py.loadPackage("pytest");
-    py.runPython("import _pytest");
-    const SegfaultHandler = require("segfault-handler");
-    SegfaultHandler.registerHandler("crash1.log");
-    py.setInterruptBuffer([0]);
-    for (let i = 10; i < 100; i++) {
-        sleep(100 * i).then(() => console.log("jsi", i));
+
+    async function test1() {
+        for (let i = 1; i < 40; i++) {
+            sleep(25 * i).then(() => console.log("jsi", i));
+        }
+        f = py.runPython(`
+      def f():
+        for i in range(20_000):
+          if i % 1000 == 0:
+            print("pyi", i)
+      f
+      `);
+        py.setInterruptBuffer([0]);
+        await f.callSyncifying();
+        py.setInterruptBuffer(undefined);
     }
-    f = py.runPython(`
-    def f():
-      for i in range(100_000):
-        if i % 100 == 0:
-          print("pyi", i)
-      import pytest
-    f
-    `);
-    py._module.shouldSuspend = true;
-    await f.callSyncifying({});
+
+    async function test2() {
+        py.runPython(`
+        from _pyodide._importhook import ModulePreloader
+        import sys
+        sys.meta_path.append(ModulePreloader())
+      `);
+        await py.pyodide_py.code.eval_code.callSyncifying(`
+        import pytest
+        print(pytest.__version__)
+      `);
+    }
+    await test1();
+    await test2();
 
     //   def f():
     //     from pyodide_js import loadPackage

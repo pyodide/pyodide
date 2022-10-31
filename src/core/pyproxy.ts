@@ -1329,19 +1329,7 @@ export class PyProxyCallableMethods {
   }
 
   callSyncifying(...jsargs: any) {
-    if (jsargs.length === 0) {
-      throw new TypeError(
-        "callKwargs requires at least one argument (the key word argument object)",
-      );
-    }
-    let kwargs = jsargs.pop();
-    if (
-      kwargs.constructor !== undefined &&
-      kwargs.constructor.name !== "Object"
-    ) {
-      throw new TypeError("kwargs argument is not an object");
-    }
-    return Module.callPyObjectKwargsSuspending(_getPtr(this), jsargs, kwargs);
+    return Module.callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
   }
 
   /**

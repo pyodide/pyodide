@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
-from importlib.machinery import ModuleSpec
+from importlib.machinery import ModuleSpec, PathFinder
 from importlib.util import spec_from_loader
 from types import ModuleType
 from typing import Any
@@ -17,7 +17,6 @@ class ModulePreloader(MetaPathFinder):
         path: Sequence[bytes | str] | None,
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
-        print("pkgname", fullname)
         [parent, _, child] = fullname.partition(".")
         from pyodide_js import loadPackage
         from pyodide_js._api import _import_name_to_package_name  # type: ignore[import]
@@ -25,9 +24,8 @@ class ModulePreloader(MetaPathFinder):
         if parent not in _import_name_to_package_name:
             return None
         pkgname = _import_name_to_package_name[parent]
-        print("pkgname", pkgname)
         loadPackage.syncify(pkgname)
-        return None
+        return PathFinder.find_spec(pkgname)
 
 
 class JsFinder(MetaPathFinder):
