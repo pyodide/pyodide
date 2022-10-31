@@ -486,7 +486,7 @@ def generate_packagedata(
 ) -> dict[str, Any]:
     packages: dict[str, Any] = {}
     for name, pkg in pkg_map.items():
-        if not pkg.file_name:
+        if not pkg.file_name or pkg.library:
             continue
         if not Path(output_dir, pkg.file_name).exists():
             continue
