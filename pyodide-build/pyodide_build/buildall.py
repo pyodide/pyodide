@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import copy
 import dataclasses
 import hashlib
 import json
@@ -576,6 +577,7 @@ def build_packages(
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
+    output_dir.mkdir(exist_ok=True, parents=True)
     build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         if pkg.library:
@@ -685,10 +687,9 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args: argparse.Namespace) -> None:
-    packages_dir = Path(args.dir[0]).resolve()
-    outputdir = Path(args.output[0]).resolve()
-    outputdir.mkdir(exist_ok=True)
+def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
+    args = copy.deepcopy(args)
+
     if args.cflags is None:
         args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     if args.cxxflags is None:
@@ -699,6 +700,14 @@ def main(args: argparse.Namespace) -> None:
         args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
     if args.host_install_dir is None:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
+
+    return args
+
+
+def main(args: argparse.Namespace) -> None:
+    packages_dir = Path(args.dir[0]).resolve()
+    outputdir = Path(args.output[0]).resolve()
+    args = set_default_args(args)
     build_packages(packages_dir, outputdir, args)
 
 
