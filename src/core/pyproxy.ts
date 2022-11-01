@@ -392,6 +392,7 @@ Module.callPyObjectKwargs = function (
       idkwnames,
       num_kwargs,
     );
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
