@@ -190,6 +190,10 @@ substitutions:
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
 
+- {{ Fix }} Fixed a bug that shared libraries are not copied into distribution
+  directory when it is already built.
+  {pr}`3212`
+
 ## Version 0.21.3
 
 _September 15, 2022_
