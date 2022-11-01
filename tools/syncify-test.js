@@ -6,7 +6,25 @@ async function main() {
     }
     globalThis.sleep = sleep;
 
+    globalThis.s = sleep(1000);
+    // py.runPython(`
+    //   from js import s
+    //   s.syncify()
+    // `)
+
     async function test1() {
+        await py.pyodide_py.code.eval_code.callSyncifying(`
+        from js import s
+        print("a")
+        from pyodide_js._module import validSuspender
+        print("validSuspender.value:", validSuspender.value)
+        s.syncify()
+        print("b")
+      `);
+    }
+    await test1();
+
+    async function test2() {
         for (let i = 1; i < 40; i++) {
             sleep(25 * i).then(() => console.log("jsi", i));
         }
@@ -22,7 +40,7 @@ async function main() {
         py.setInterruptBuffer(undefined);
     }
 
-    async function test2() {
+    async function test3() {
         py.runPython(`
         from _pyodide._importhook import ModulePreloader
         import sys
@@ -33,8 +51,7 @@ async function main() {
         print(pytest.__version__)
       `);
     }
-    await test1();
-    await test2();
+    // await test2();
 
     //   def f():
     //     from pyodide_js import loadPackage

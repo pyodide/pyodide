@@ -410,32 +410,16 @@ Module.callPyObjectKwargs = function (
   return result;
 };
 
-function initWrappedApply() {
-  const bytes = [
-    0, 97, 115, 109, 1, 0, 0, 0, 1, 20, 2, 96, 5, 127, 127, 127, 127, 127, 1,
-    127, 96, 6, 111, 127, 127, 127, 127, 127, 1, 127, 2, 14, 2, 1, 101, 1, 115,
-    3, 111, 1, 1, 101, 1, 105, 0, 0, 3, 2, 1, 1, 7, 5, 1, 1, 111, 0, 1, 10, 20,
-    1, 18, 0, 32, 0, 36, 0, 32, 1, 32, 2, 32, 3, 32, 4, 32, 5, 16, 0, 11,
-  ];
-  var module = new WebAssembly.Module(new Uint8Array(bytes));
-  var instance = new WebAssembly.Instance(module, {
-    e: {
-      s: Module.suspenderGlobal,
-      i: Module.asm._pyproxy_apply,
-    },
-  });
-  Module.wrappedApply = new (WebAssembly as any).Function(
-    { parameters: ["i32", "i32", "i32", "i32", "i32"], results: ["externref"] },
-    instance.exports.o,
-    { promising: "first" },
-  );
-}
-
-Module.callPyObjectKwargsSuspending = async function (
+async function callPyObjectKwargsSuspending(
   ptrobj: number,
   jsargs: any,
   kwargs: any,
 ) {
+  if (!Module.suspendersAvailable) {
+    throw new Error(
+      "WebAssembly Promise integration not supported in this JavaScript runtime",
+    );
+  }
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
   let num_pos_args = jsargs.length;
@@ -449,7 +433,7 @@ Module.callPyObjectKwargsSuspending = async function (
   let idresult;
 
   if (!Module.wrappedApply) {
-    initWrappedApply();
+    Module.wrappedApply = Module.wrapApply(Module.asm._pyproxy_apply);
   }
   try {
     Py_ENTER();
@@ -477,7 +461,7 @@ Module.callPyObjectKwargsSuspending = async function (
     result._ensure_future();
   }
   return result;
-};
+}
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
@@ -1376,7 +1360,7 @@ export class PyProxyCallableMethods {
   }
 
   callSyncifying(...jsargs: any) {
-    return Module.callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
   }
 
   /**

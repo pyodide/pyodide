@@ -74,6 +74,7 @@ _Py_IDENTIFIER(fileno);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
+bool suspendersAvailable;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -1501,12 +1502,21 @@ static PyMethodDef JsProxy_finally_MethodDef = {
 };
 
 PyObject*
+JsProxy_syncify_not_supported(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  PyErr_SetString(
+    PyExc_RuntimeError,
+    "WebAssembly Promise integration not supported in this JavaScript runtime");
+  return NULL;
+}
+
+PyObject*
 JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
 {
   JsRef jsresult = NULL;
   PyObject* result = NULL;
 
-  hiwire_syncify(self->js);
+  jsresult = hiwire_syncify(self->js);
   if (jsresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_RuntimeError, "No suspender");
@@ -1522,7 +1532,9 @@ finally:
 
 static PyMethodDef JsProxy_syncify_MethodDef = {
   "syncify",
-  (PyCFunction)JsProxy_syncify,
+  // We select the appropriate choice between JsProxy_syncify and
+  // JsProxy_syncify_not_supported in JsProxy_init.
+  (PyCFunction)NULL,
   METH_NOARGS,
 };
 
@@ -2809,6 +2821,14 @@ int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
+
+  suspendersAvailable = EM_ASM_INT({ return Module.suspendersAvailable; });
+  if (suspendersAvailable) {
+    JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
+  } else {
+    JsProxy_syncify_MethodDef.ml_meth =
+      (PyCFunction)JsProxy_syncify_not_supported;
+  }
 
   PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;
