@@ -3,12 +3,10 @@
 export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PACKAGES=$(shell echo $(PYODIDE_PACKAGES) | tr ',' ' ')
-
 all: pyodide-build
 	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide build graph \
-	$(PACKAGES) \
+	"$(PYODIDE_PACKAGES)" \
 	--n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs
 

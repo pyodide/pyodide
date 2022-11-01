@@ -79,10 +79,15 @@ def build_graph(
 
     # Note: to make minimal changes to the existing pyodide-build entrypoint,
     #       keep arguments of buildall.
-    #       (TODO) refactor this when we remove pyodide-build entrypoint.
+    # TODO: refactor this when we remove pyodide-build entrypoint.
     args = argparse.Namespace(**ctx.params)
     args.dir = args.recipe_dir
-    args.only = ",".join(args.packages)
+
+    if len(args.packages) == 1 and "," in args.packages[0]:
+        # Handle packages passed with old comma separated syntax.
+        args.only = args.packages[0].replace(" ", "")
+    else:
+        args.only = ",".join(args.packages)
 
     args = buildall.set_default_args(args)
 
