@@ -11,6 +11,9 @@
 #include "pyproxy.h"
 #include "python2js.h"
 
+#define Py_ENTER()
+#define Py_EXIT()
+
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
