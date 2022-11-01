@@ -33,6 +33,9 @@ mergeInto(LibraryManager.library, {
   temp__postset: "_temp();",
   hiwire_syncify__deps: ["temp"],
   hiwire_syncify: function () {
+    if (typeof WebAssembly.Function === "undefined") {
+      return;
+    }
     const suspending_f = new WebAssembly.Function(
       { parameters: ["externref", "i32"], results: ["i32"] },
       async (x) => {
