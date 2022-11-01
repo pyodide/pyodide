@@ -24,7 +24,7 @@ class ModulePreloader(MetaPathFinder):
         if parent not in _import_name_to_package_name:
             return None
         pkgname = _import_name_to_package_name[parent]
-        loadPackage.syncify(pkgname)
+        loadPackage(pkgname).syncify()
         return PathFinder.find_spec(pkgname)
 
 
