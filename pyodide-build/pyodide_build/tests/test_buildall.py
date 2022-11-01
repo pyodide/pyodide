@@ -52,7 +52,9 @@ def test_generate_dependency_graph_disabled(monkeypatch):
 
 
 def test_generate_repodata(tmp_path):
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
+    pkg_map = buildall.generate_dependency_graph(
+        PACKAGES_DIR, {"pkg_1", "pkg_2", "libtest"}
+    )
     hashes = {}
     for pkg in pkg_map.values():
         pkg.file_name = pkg.file_name or pkg.name + ".whl"

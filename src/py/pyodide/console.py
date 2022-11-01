@@ -479,19 +479,88 @@ class PyodideConsole(Console):
         return await super().runcode(source, code)
 
 
+def shorten(
+    text: str, limit: int = 1000, split: int | None = None, separator: str = "..."
+) -> str:
+    """Shorten ``text`` if it is longer than ``limit``.
+
+    If ``len(text) <= limit`` then return ``text`` unchanged.
+    If ``text`` is longer than ``limit`` then return the firsts ``split``
+    characters and the last ``split`` characters separated by ``separator``.
+    The default value for ``split`` is `limit // 2`.
+    Values of ``split`` larger than ``len(value) // 2`` will have the same effect as
+    when ``split`` is `len(value) // 2`.
+    A value error is raised if ``limit`` is less than 2.
+
+    Parameters
+    ----------
+    text : ``str``
+        The string to shorten if it is longer than ``limit``.
+
+    limit : ``int``
+        The integer to compare against the length of ``text``. Defaults to ``1000``.
+
+    split : ``int``, default = None
+        The integer of the split string to return. Defaults to ``limit // 2``.
+
+    separator : str, default = "..."
+        The string of the separator string. Defaults to ``"..."``.
+
+    Returns
+    -------
+    str
+        If ``text`` is longer than ``limit``, return the shortened string, otherwise return ``text``.
+
+    Examples
+    --------
+    >>> from pyodide.console import shorten
+    >>> sep = "_"
+    >>> shorten("abcdefg", limit=5, separator=sep)
+    'ab_fg'
+    >>> shorten("abcdefg", limit=12, separator=sep)
+    'abcdefg'
+    >>> shorten("abcdefg", limit=6, separator=sep)
+    'abc_efg'
+    >>> shorten("abcdefg", limit=6, split=1, separator=sep)
+    'a_g'
+    """
+    if limit < 2:
+        raise ValueError("limit must be greater than or equal to 2.")
+    if split is None:
+        split = limit // 2
+    split = min(split, len(text) // 2)
+    if len(text) > limit:
+        text = f"{text[:split]}{separator}{text[-split:]}"
+    return text
+
+
 def repr_shorten(
     value: Any, limit: int = 1000, split: int | None = None, separator: str = "..."
 ) -> str:
     """Compute the string representation of ``value`` and shorten it
     if necessary.
 
-    If it is longer than ``limit`` then return the firsts ``split``
-    characters and the last ``split`` characters separated by '...'.
-    Default value for ``split`` is `limit // 2`.
+    This is equivalent to `shorten(repr(value), limit, split, separator)`,
+    but a value error is raised if ``limit`` is less than 4.
+
+    Examples
+    --------
+    >>> from pyodide.console import repr_shorten
+    >>> sep = "_"
+    >>> repr_shorten("abcdefg", limit=8, separator=sep)
+    "'abc_efg'"
+    >>> repr_shorten("abcdefg", limit=12, separator=sep)
+    "'abcdefg'"
+    >>> for i in range(4, 10):
+    ...     repr_shorten(123456789, limit=i, separator=sep)
+    '12_89'
+    '12_89'
+    '123_789'
+    '123_789'
+    '1234_6789'
+    '123456789'
     """
-    if split is None:
-        split = limit // 2
+    if limit < 4:
+        raise ValueError("limit must be greater than or equal to 4.")
     text = repr(value)
-    if len(text) > limit:
-        text = f"{text[:split]}{separator}{text[-split:]}"
-    return text
+    return shorten(text, limit=limit, split=split, separator=separator)
