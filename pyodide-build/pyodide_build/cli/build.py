@@ -77,34 +77,13 @@ def build_graph(
     recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
     output_dir = pyodide_root / "dist" if not output else Path(output)
 
-    # Note: to make minimal changes to the existing code, we use
-    #       original parser object from buildall.
+    # Note: to make minimal changes to the existing pyodide-build entrypoint,
+    #       keep arguments of buildall.
     #       (TODO) refactor this when we remove pyodide-build entrypoint.
-    parser = buildall.make_parser(argparse.ArgumentParser())
-    args_list = [
-        str(recipe_dir_),
-        str(output_dir),
-        "--only",
-        ",".join(packages),
-    ]
+    args = argparse.Namespace(**ctx.params)
+    args.dir = args.recipe_dir
+    args.only = ",".join(args.packages)
 
-    passthrough_args = [
-        "cflags",
-        "cxxflags",
-        "ldflags",
-        "target_install_dir",
-        "host_install_dir",
-        "log_dir",
-        "force_rebuild",
-        "n_jobs",
-    ]
-
-    for key, value in ctx.params.items():
-        if key in passthrough_args and value is not None:
-            args_list.append(f"--{key.replace('_', '-')}")
-            args_list.append(str(value))
-
-    args = parser.parse_args(args_list)
     args = buildall.set_default_args(args)
 
     buildall.build_packages(recipe_dir_, output_dir, args)
@@ -116,18 +95,9 @@ def build_wheel(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
-    ctx: typer.Context = typer.Context,
+    flags: list[str] = typer.Option(None, help="Build flags passed to pypa/build"),
 ) -> None:
     """Use pypa/build to build a Python package (out-of-tree build)"""
     initialize_pyodide_root()
     common.check_emscripten_version()
-    backend_flags = ctx.args
-    build.run(exports, backend_flags)
-
-
-build_wheel.typer_kwargs = {
-    "context_settings": {
-        "ignore_unknown_options": True,
-        "allow_extra_args": True,
-    },
-}
+    build.run(exports, flags)
