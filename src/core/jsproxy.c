@@ -1503,14 +1503,21 @@ static PyMethodDef JsProxy_finally_MethodDef = {
 PyObject*
 JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
 {
-  JsRef jsresult = hiwire_syncify(self->js);
+  JsRef jsresult = NULL;
+  PyObject* result = NULL;
+
+  hiwire_syncify(self->js);
   if (jsresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_RuntimeError, "No suspender");
     }
-    return NULL;
+    FAIL();
   }
-  return js2python(jsresult);
+  result = js2python(jsresult);
+
+finally:
+  hiwire_CLEAR(jsresult);
+  return result;
 }
 
 static PyMethodDef JsProxy_syncify_MethodDef = {
