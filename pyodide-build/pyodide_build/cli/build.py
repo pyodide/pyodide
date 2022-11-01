@@ -12,13 +12,15 @@ app = typer.Typer()
 
 @app.callback(invoke_without_command=True)  # type: ignore[misc]
 def main(
-    exports: str = typer.Option(
-        "requested",
-        help="Which symbols should be exported when linking .so files?",
-    ),
+    exports: str = typer.Option("requested", hidden=True),
+    flags: list[str] = typer.Option(None, hidden=True),
     ctx: typer.Context = typer.Context,
 ) -> None:
-    """Build packages for Pyodide"""
+    """
+    Build packages for Pyodide
+
+    If no subcommand is specified, `wheel` command is used.
+    """
 
     # When `pyodide build` is called without any subcommand,
     # it will call out-of-tree build command.
@@ -26,13 +28,13 @@ def main(
     if ctx.invoked_subcommand is not None:
         return
 
-    build_wheel(exports, ctx)
+    build_wheel(exports, flags)
 
 
-@app.command("graph")  # type: ignore[misc]
-def build_graph(
+@app.command("recipe")  # type: ignore[misc]
+def build_recipe(
     packages: list[str] = typer.Argument(
-        ..., help="Packages to build, or * for all packages"
+        ..., help="Packages to build, or * for all packages in recipe directory"
     ),
     output: str = typer.Option(
         None,
@@ -72,7 +74,7 @@ def build_graph(
     ),
     ctx: typer.Context = typer.Context,
 ) -> None:
-    """Build packages and create repodata.json (in-tree build)"""
+    """Build packages using yaml recipes and create repodata.json"""
     pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
     recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
     output_dir = pyodide_root / "dist" if not output else Path(output)
@@ -103,7 +105,7 @@ def build_wheel(
     ),
     flags: list[str] = typer.Option(None, help="Build flags passed to pypa/build"),
 ) -> None:
-    """Use pypa/build to build a Python package (out-of-tree build)"""
+    """Use pypa/build to build a Python package"""
     initialize_pyodide_root()
     common.check_emscripten_version()
     build.run(exports, flags)
