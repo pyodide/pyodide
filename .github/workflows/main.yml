@@ -196,3 +196,24 @@ jobs:
         with:
           paths: "test-results/*.xml"
         if: always()
+
+  test-syncify:
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: :99
+
+    needs: [build-core]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: core-build
+          path: ./dist/
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 19
+      - name: Run
+        shell: bash -l {0}
+        run: |
+          node --experimental-wasm-stack-switching --experimental-wasm-type-reflection tools/syncify-test.js
