@@ -71,7 +71,7 @@ class BasePackage:
     def build(self, outputdir: Path, args: Any) -> None:
         raise NotImplementedError()
 
-    def wheel_path(self) -> Path:
+    def dist_artifact_path(self) -> Path:
         raise NotImplementedError()
 
     def tests_path(self) -> Path | None:
@@ -103,14 +103,19 @@ class Package(BasePackage):
         self.unbuilt_host_dependencies = set(self.host_dependencies)
         self.host_dependents = set()
 
-    def wheel_path(self) -> Path:
+    def dist_artifact_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        wheels = list(find_matching_wheels(dist_dir.glob("*.whl")))
-        if len(wheels) != 1:
+        if self.shared_library:
+            candidates = list(dist_dir.glob("*.zip"))
+        else:
+            candidates = list(find_matching_wheels(dist_dir.glob("*.whl")))
+
+        if len(candidates) != 1:
             raise RuntimeError(
-                f"Unexpected number of wheels {len(wheels)} when building {self.name}"
+                f"Unexpected number of wheels/archives {len(candidates)} when building {self.name}"
             )
-        return wheels[0]
+
+        return candidates[0]
 
     def tests_path(self) -> Path | None:
         tests = list((self.pkgdir / "dist").glob("*-tests.tar"))
@@ -165,14 +170,6 @@ class Package(BasePackage):
 
             print("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
-
-        if self.library:
-            return
-        if self.shared_library:
-            file_path = Path(self.pkgdir / f"{self.name}-{self.version}.zip")
-            shutil.copy(file_path, outputdir)
-            file_path.unlink()
-            return
 
 
 def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
@@ -489,7 +486,7 @@ def generate_packagedata(
 ) -> dict[str, Any]:
     packages: dict[str, Any] = {}
     for name, pkg in pkg_map.items():
-        if not pkg.file_name:
+        if not pkg.file_name or pkg.library:
             continue
         if not Path(output_dir, pkg.file_name).exists():
             continue
@@ -559,10 +556,10 @@ def copy_packages_to_dist_dir(
     packages: Iterable[BasePackage], output_dir: Path
 ) -> None:
     for pkg in packages:
-        try:
-            shutil.copy(pkg.wheel_path(), output_dir)
-        except RuntimeError:
-            pass
+        if pkg.library:
+            continue
+
+        shutil.copy(pkg.dist_artifact_path(), output_dir)
 
         test_path = pkg.tests_path()
         if test_path:
@@ -578,15 +575,12 @@ def build_packages(
 
     build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
+        assert isinstance(pkg, Package)
+
         if pkg.library:
             continue
-        if pkg.needs_rebuild():
-            continue
-        if pkg.shared_library:
-            pkg.file_name = f"{pkg.name}-{pkg.version}.zip"
-            continue
-        assert isinstance(pkg, Package)
-        pkg.file_name = pkg.wheel_path().name
+
+        pkg.file_name = pkg.dist_artifact_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
     copy_packages_to_dist_dir(pkg_map.values(), output_dir)
