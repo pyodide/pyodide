@@ -78,13 +78,14 @@ def build_graph(
     output_dir = pyodide_root / "dist" if not output else Path(output)
 
     # Note: to make minimal changes to the existing pyodide-build entrypoint,
-    #       keep arguments of buildall.
+    #       keep arguments of buildall unghanged.
     # TODO: refactor this when we remove pyodide-build entrypoint.
     args = argparse.Namespace(**ctx.params)
     args.dir = args.recipe_dir
 
     if len(args.packages) == 1 and "," in args.packages[0]:
         # Handle packages passed with old comma separated syntax.
+        # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
         args.only = args.packages[0].replace(" ", "")
     else:
         args.only = ",".join(args.packages)
