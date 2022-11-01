@@ -452,6 +452,8 @@ Module.callPyObjectKwargsSuspending = async function (
     initWrappedApply();
   }
   try {
+    Py_ENTER();
+    Module.validSuspender.value = true;
     idresult = await Module.wrappedApply(
       ptrobj,
       idargs,
@@ -459,6 +461,7 @@ Module.callPyObjectKwargsSuspending = async function (
       idkwnames,
       num_kwargs,
     );
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
@@ -887,14 +890,16 @@ export class PyProxyContainsMethods {
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
-    Py_ENTER();
+    let $$s = Module.validSuspender.value;
+    Module.validSuspender.value = false;
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
-      Py_EXIT();
+      Module.validSuspender.value = $$s;
       yield Hiwire.pop_value(item);
-      Py_ENTER();
+      $$s = Module.validSuspender.value;
+      Module.validSuspender.value = false;
     }
-    Py_EXIT();
+    Module.validSuspender.value = $$s;
   } catch (e) {
     API.fatal_error(e);
   } finally {

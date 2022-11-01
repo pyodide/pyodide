@@ -11,8 +11,11 @@
 #include "pyproxy.h"
 #include "python2js.h"
 
-#define Py_ENTER()
-#define Py_EXIT()
+#define Py_ENTER()                                                             \
+  const $$s = Module.validSuspender.value;                                     \
+  Module.validSuspender.value = false
+
+#define Py_EXIT() Module.validSuspender.value = $$s
 
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);

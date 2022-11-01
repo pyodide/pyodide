@@ -115,6 +115,15 @@ class PyodideFuture(Future[Any]):
         self.add_done_callback(wrapper)
         return result
 
+    def syncify(self):
+        from .ffi import create_proxy
+
+        p = create_proxy(self)
+        try:
+            return p.syncify()
+        finally:
+            p.destroy()
+
 
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.

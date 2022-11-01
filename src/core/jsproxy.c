@@ -1500,6 +1500,25 @@ static PyMethodDef JsProxy_finally_MethodDef = {
   METH_O,
 };
 
+PyObject*
+JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  JsRef jsresult = hiwire_syncify(self->js);
+  if (jsresult == NULL) {
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_RuntimeError, "No suspender");
+    }
+    return NULL;
+  }
+  return js2python(jsresult);
+}
+
+static PyMethodDef JsProxy_syncify_MethodDef = {
+  "syncify",
+  (PyCFunction)JsProxy_syncify,
+  METH_NOARGS,
+};
+
 // clang-format off
 static PyNumberMethods JsProxy_NumberMethods = {
   .nb_bool = JsProxy_Bool
@@ -1847,62 +1866,6 @@ finally:
   }
   return pyresult;
 }
-
-/**
- * __call__ overload for methods. Controlled by IS_CALLABLE.
- */
-static PyObject*
-JsMethod_Call_Syncify(PyObject* self,
-                      PyObject* const* args,
-                      size_t nargs,
-                      PyObject* kwnames)
-{
-  bool success = false;
-  JsRef proxies = NULL;
-  JsRef idargs = NULL;
-  JsRef idresult = NULL;
-  PyObject* pyresult = NULL;
-
-  // Recursion error?
-  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
-  proxies = JsArray_New();
-  idargs = JsMethod_ConvertArgs(args, nargs, kwnames, proxies);
-  FAIL_IF_NULL(idargs);
-  idresult = hiwire_suspending_call_bound(
-    JsProxy_REF(self), JsMethod_THIS(self), idargs);
-  FAIL_IF_NULL(idresult);
-  pyresult = js2python(idresult);
-  FAIL_IF_NULL(pyresult);
-
-  success = true;
-finally:
-  Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
-  if (!success) {
-    // If we succeeded and the result was a promise then we destroy the
-    // arguments in async_done_callback instead of here. Otherwise, destroy the
-    // arguments and return value now.
-    if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
-      JsArray_Push_unchecked(proxies, idresult);
-    }
-    destroy_proxies(proxies,
-                    "This borrowed proxy was automatically destroyed at the "
-                    "end of a function call. Try using "
-                    "create_proxy or create_once_callable.");
-  }
-  hiwire_CLEAR(proxies);
-  hiwire_CLEAR(idargs);
-  hiwire_CLEAR(idresult);
-  if (!success) {
-    Py_CLEAR(pyresult);
-  }
-  return pyresult;
-}
-
-static PyMethodDef JsMethod_Call_Syncify_MethodDef = {
-  "syncify",
-  (PyCFunction)JsMethod_Call_Syncify,
-  METH_FASTCALL | METH_KEYWORDS,
-};
 
 /**
  * jsproxy.new implementation. Controlled by IS_CALLABLE.
@@ -2538,6 +2501,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsProxy_then_MethodDef;
     methods[cur_method++] = JsProxy_catch_MethodDef;
     methods[cur_method++] = JsProxy_finally_MethodDef;
+    methods[cur_method++] = JsProxy_syncify_MethodDef;
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
@@ -2548,7 +2512,6 @@ JsProxy_create_subtype(int flags)
     // We could test separately for whether a function is constructable,
     // but it generates a lot of false positives.
     methods[cur_method++] = JsMethod_Construct_MethodDef;
-    methods[cur_method++] = JsMethod_Call_Syncify_MethodDef;
   }
   if (flags & IS_ARRAY) {
     // If the object is an array (or a HTMLCollection or NodeList), then we want

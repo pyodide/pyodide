@@ -221,7 +221,7 @@ JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
 JsRef
-hiwire_suspending_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
+hiwire_syncify(JsRef idpromise);
 
 bool
 hiwire_HasMethod(JsRef obj, JsRef name);

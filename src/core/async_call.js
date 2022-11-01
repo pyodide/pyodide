@@ -8,68 +8,55 @@ mergeInto(LibraryManager.library, {
     }
     const _orig_Py_CheckEmscriptenSignals_Helper =
       _Py_CheckEmscriptenSignals_Helper;
-    const wrapper = async function () {
-      await sleep(0);
-      return _orig_Py_CheckEmscriptenSignals_Helper();
-    };
-    const suspending__Py_CheckEmscriptenSignals_Helper =
-      new WebAssembly.Function(
-        { parameters: ["externref"], results: ["i32"] },
-        wrapper,
-        { suspending: "first" },
-      );
+    const suspending = new WebAssembly.Function(
+      { parameters: ["externref"], results: [] },
+      () => sleep(0),
+      { suspending: "first" },
+    );
     const bytes = [
-      0, 97, 115, 109, 1, 0, 0, 0, 1, 10, 2, 96, 1, 111, 1, 127, 96, 0, 1, 127,
-      2, 14, 2, 1, 101, 1, 115, 3, 111, 1, 1, 101, 1, 105, 0, 0, 3, 2, 1, 1, 7,
-      5, 1, 1, 111, 0, 1, 10, 16, 1, 14, 1, 1, 111, 35, 0, 34, 0, 16, 0, 32, 0,
-      36, 0, 11,
+      0, 97, 115, 109, 1, 0, 0, 0, 1, 9, 2, 96, 0, 1, 127, 96, 1, 111, 0, 2, 27,
+      4, 1, 101, 1, 115, 3, 111, 1, 1, 101, 1, 99, 3, 127, 1, 1, 101, 1, 105, 0,
+      0, 1, 101, 1, 114, 0, 1, 3, 2, 1, 0, 7, 5, 1, 1, 111, 0, 2, 10, 23, 1, 21,
+      1, 1, 111, 35, 1, 4, 64, 35, 0, 34, 0, 16, 1, 32, 0, 36, 0, 11, 16, 0, 11,
     ];
     const module = new WebAssembly.Module(new Uint8Array(bytes));
     const instance = new WebAssembly.Instance(module, {
       e: {
         s: Module.suspenderGlobal,
-        i: suspending__Py_CheckEmscriptenSignals_Helper,
+        r: suspending,
+        i: _orig_Py_CheckEmscriptenSignals_Helper,
+        c: Module.validSuspender,
       },
     });
     _Py_CheckEmscriptenSignals_Helper = instance.exports.o;
   },
   temp__postset: "_temp();",
-  hiwire_suspending_call_bound: function () {
-    if (typeof WebAssembly.Function === "undefined") {
-      return;
-    }
-    async function f(idfunc, idthis, idargs) {
-      let func = Hiwire.get_value(idfunc);
-      let this_;
-      if (idthis === 0) {
-        this_ = null;
-      } else {
-        this_ = Hiwire.get_value(idthis);
-      }
-      let args = Hiwire.get_value(idargs);
-      let result = await func.apply(this_, args);
-      return Hiwire.new_value(result);
-    }
+  hiwire_syncify__deps: ["temp"],
+  hiwire_syncify: function () {
     const suspending_f = new WebAssembly.Function(
-      { parameters: ["externref", "i32", "i32", "i32"], results: ["i32"] },
-      f,
+      { parameters: ["externref", "i32"], results: ["i32"] },
+      async (x) => {
+        return Hiwire.new_value(await Hiwire.get_value(x));
+      },
       { suspending: "first" },
     );
+
     const bytes = [
-      0, 97, 115, 109, 1, 0, 0, 0, 1, 16, 2, 96, 4, 111, 127, 127, 127, 1, 127,
-      96, 3, 127, 127, 127, 1, 127, 2, 14, 2, 1, 101, 1, 115, 3, 111, 1, 1, 101,
-      1, 105, 0, 0, 3, 2, 1, 1, 7, 5, 1, 1, 111, 0, 1, 10, 22, 1, 20, 1, 1, 111,
-      35, 0, 34, 3, 32, 0, 32, 1, 32, 2, 16, 0, 32, 3, 36, 0, 11,
+      0, 97, 115, 109, 1, 0, 0, 0, 1, 12, 2, 96, 2, 111, 127, 1, 127, 96, 1,
+      127, 1, 127, 2, 21, 3, 1, 101, 1, 115, 3, 111, 1, 1, 101, 1, 99, 3, 127,
+      1, 1, 101, 1, 105, 0, 0, 3, 2, 1, 1, 7, 5, 1, 1, 111, 0, 1, 10, 27, 1, 25,
+      1, 1, 111, 35, 1, 69, 4, 64, 65, 0, 15, 11, 35, 0, 34, 1, 32, 0, 16, 0,
+      32, 1, 36, 0, 11,
     ];
     const module = new WebAssembly.Module(new Uint8Array(bytes));
     const instance = new WebAssembly.Instance(module, {
       e: {
         s: Module.suspenderGlobal,
         i: suspending_f,
+        c: Module.validSuspender,
       },
     });
-    _hiwire_suspending_call_bound = instance.exports.o;
+    _hiwire_syncify = instance.exports.o;
   },
-  hiwire_suspending_call_bound__postset: "_hiwire_suspending_call_bound();",
-  hiwire_suspending_call_bound__deps: ["temp"],
+  hiwire_syncify__postset: "_hiwire_syncify();",
 });
