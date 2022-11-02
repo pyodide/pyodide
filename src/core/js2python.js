@@ -79,8 +79,8 @@ JS_FILE(js2python_init, () => {
    * we throw a PropagateError to propagate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
-  function js2python_convertImmutable(value) {
-    let result = js2python_convertImmutableInner(value);
+  function js2python_convertImmutable(value, id) {
+    let result = js2python_convertImmutableInner(value, id);
     if (result === 0) {
       throw new PropagateError();
     }
@@ -96,7 +96,7 @@ JS_FILE(js2python_init, () => {
    * If we return 0 it means we tried to convert but an error occurred, if we
    * return undefined, no conversion was attempted.
    */
-  function js2python_convertImmutableInner(value) {
+  function js2python_convertImmutableInner(value, id) {
     let type = typeof value;
     if (type === "string") {
       return js2python_string(value);
@@ -115,7 +115,14 @@ JS_FILE(js2python_init, () => {
     } else if (value === false) {
       return __js2python_false();
     } else if (API.isPyProxy(value)) {
-      return __js2python_pyproxy(Module.PyProxy_getPtr(value));
+      if (value.$$props.roundtrip) {
+        if (id === undefined) {
+          id = Hiwire.new_value(value);
+        }
+        return _JsProxy_create(id);
+      } else {
+        return __js2python_pyproxy(Module.PyProxy_getPtr(value));
+      }
     }
     return undefined;
   }
@@ -288,7 +295,7 @@ JS_FILE(js2python_init, () => {
   function js2python_convert_with_context(id, context) {
     let value = Hiwire.get_value(id);
     let result;
-    result = js2python_convertImmutable(value);
+    result = js2python_convertImmutable(value, id);
     if (result !== undefined) {
       return result;
     }

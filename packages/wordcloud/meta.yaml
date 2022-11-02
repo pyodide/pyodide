@@ -1,0 +1,16 @@
+package:
+  name: wordcloud
+  version: 1.8.2.2
+  top-level:
+    - wordcloud
+requirements:
+  run:
+    - matplotlib
+source:
+  url: https://files.pythonhosted.org/packages/71/8b/0feea1341a29c645ca9dbc7f453b1101ee0725059977c7fce23e1bd75b83/wordcloud-1.8.2.2.tar.gz
+  sha256: 523db887e47e840eb5c2e60428243bb1d7439fdc60f89626b17bafa1be64459c
+about:
+  home: https://github.com/amueller/word_cloud
+  PyPI: https://pypi.org/project/wordcloud
+  summary: A little word cloud generator
+  license: MIT

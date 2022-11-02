@@ -138,7 +138,7 @@ def register_js_finder() -> None:
     sys.meta_path.append(jsfinder)
 
 
-UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3"]
+UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "_hashlib"]
 UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
 
 

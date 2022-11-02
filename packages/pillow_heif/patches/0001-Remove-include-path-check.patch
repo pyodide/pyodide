@@ -1,0 +1,24 @@
+From 3fa7120184e2a133c787a230e2f2cdde8652fca3 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Thu, 25 Aug 2022 07:50:50 +0000
+Subject: [PATCH] Remove include path check
+
+---
+ libheif/build.py | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/libheif/build.py b/libheif/build.py
+index 9c6fe51..72c63b9 100644
+--- a/libheif/build.py
++++ b/libheif/build.py
+@@ -45,8 +45,6 @@ elif sys.platform.lower() == "win32":
+     if include_path_prefix is None:
+         include_path_prefix = "C:\\msys64\\mingw64"
+         warn(f"MSYS2_PREFIX environment variable is not set. Assuming `MSYS2_PREFIX={include_path_prefix}`")
+-else:
+-    include_path_prefix = linux_build_libs.build_libs()
+
+ # Need to include "lib" directory to find "heif" library.
+ include_path_prefix_lib = path.join(include_path_prefix, "lib")
+-- 
+2.37.0

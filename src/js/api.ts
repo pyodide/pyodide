@@ -71,6 +71,7 @@ export function runPython(
 }
 API.runPython = runPython;
 
+let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
  * any known packages that the code chunk imports. Uses the Python API
@@ -86,17 +87,39 @@ API.runPython = runPython;
  * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param code The code to inspect.
- * @param messageCallback The ``messageCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
- * @param errorCallback The ``errorCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
+ * @param options Options passed to :any:`pyodide.loadPackage`.
+ * @param options.messageCallback A callback, called with progress messages
+ *    (optional)
+ * @param options.errorCallback A callback, called with error/warning messages
+ *    (optional)
+ * @param options.checkIntegrity If true, check the integrity of the downloaded
+ *    packages (default: true)
  * @async
  */
 export async function loadPackagesFromImports(
   code: string,
-  messageCallback?: (msg: string) => void,
-  errorCallback?: (err: string) => void,
+  options: {
+    messageCallback?: (message: string) => void;
+    errorCallback?: (message: string) => void;
+    checkIntegrity?: boolean;
+  } = {
+    checkIntegrity: true,
+  },
+  errorCallbackDeprecated?: (message: string) => void,
 ) {
+  if (typeof options === "function") {
+    if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
+      console.warn(
+        "Passing a messageCallback or errorCallback as the second or third argument to loadPackagesFromImports is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+      );
+      options = {
+        messageCallback: options,
+        errorCallback: errorCallbackDeprecated,
+      };
+      loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
+    }
+  }
+
   let pyimports = API.pyodide_code.find_imports(code);
   let imports;
   try {
@@ -116,7 +139,7 @@ export async function loadPackagesFromImports(
     }
   }
   if (packages.size) {
-    await loadPackage(Array.from(packages), messageCallback, errorCallback);
+    await loadPackage(Array.from(packages), options);
   }
 }
 
