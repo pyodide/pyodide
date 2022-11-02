@@ -50,7 +50,7 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
-def test_build_graph(tmp_path, monkeypatch):
+def test_build_recipe(tmp_path, monkeypatch):
     output_dir = tmp_path / "dist"
     recipe_dir = Path(__file__).parent / "_test_packages"
 
@@ -69,7 +69,7 @@ def test_build_graph(tmp_path, monkeypatch):
     result = runner.invoke(
         build.app,
         [
-            "graph",
+            "recipe",
             *pkgs.keys(),
             "--recipe-dir",
             recipe_dir,
@@ -78,7 +78,7 @@ def test_build_graph(tmp_path, monkeypatch):
         ],
     )
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.stdout
 
     for pkg in pkgs_to_build:
         assert f"built {pkg} in" in result.stdout
