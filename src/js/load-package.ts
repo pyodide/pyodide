@@ -11,7 +11,7 @@ import {
   resolvePath,
 } from "./compat.js";
 import { createLock } from "./lock";
-import { loadDynlib, calculateNeededLibs, shouldLoadGlobally } from "./dynload";
+import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /**
@@ -82,6 +82,15 @@ type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
+};
+
+// Package data inside repodata.json
+export type PackageData = {
+  file_name: string;
+  shared_library: boolean;
+  depends: string[];
+  imports: string[];
+  install_dir?: string;
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -242,45 +251,6 @@ async function downloadPackage(
 }
 
 /**
- * Decide whether a library should be loaded globally or locally.
- * @param lib The path to the library to load
- * @private
- */
-function shouldLoadGlobally(lib: string, neededLibs: Set<string>): boolean {
-  // We need to load libraries globally if they are required by other libraries
-  // This is a heuristic to determine if the library is a shared library.
-  // Normally a system library would start with "lib",
-  // and will not contain extension suffixes like "cpython-3.10-wasm32-emscripten.so"
-  // const libname = Module.PATH.basename(lib);
-  // return libname.startsWith("lib") && !libname.includes(API.extension_suffix);
-
-  const basename = Module.PATH.basename(lib);
-  return neededLibs.has(basename);
-}
-
-/**
- * Calculate which libraries are dependencies of other libraries.
- * @param libs The list of path to libraries
- * @private
- */
-function calculateNeededLibs(libs: string[]): Set<string> {
-  // Note: For scipy which contains 111 shared libraries,
-  //       This function took around ~150ms.
-  // TODO: We are reading a library twice here and inside loadDynamicLibrary().
-  //      Finding a way to read a file only once would avoid the extra
-  //      overhead.
-  const neededLibs = new Set<string>();
-  for (const lib of libs) {
-    const binary = Module.FS.readFile(lib);
-    Module.getDylinkMetadata(binary).neededDynlibs.forEach((lib: string) => {
-      neededLibs.add(lib);
-    });
-  }
-
-  return neededLibs;
-}
-
-/**
  * Install the package into the file system.
  * @param name The name of the package
  * @param buffer The binary data returned by downloadPackage
@@ -291,7 +261,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg = API.repodata_packages[name];
+  let pkg: PackageData = API.repodata_packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",
@@ -302,7 +272,7 @@ async function installPackage(
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
-  const dynlibNames: string[] = API.package_loader.unpack_buffer.callKwargs({
+  const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
@@ -311,30 +281,13 @@ async function installPackage(
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
 
-  const auditWheelLibDir = `${API.sitepackages}/${
-    pkg.file_name.split("-")[0]
-  }.libs`;
-
-  const neededLibs = calculateNeededLibs(dynlibNames);
-  const dynlibs = dynlibNames.map((lib) => ({
-    name: lib,
-    global: !!pkg.shared_library || shouldLoadGlobally(lib, neededLibs),
-  }));
-
-  // Sort libraries so that global libraries can be loaded first.
-  // TODO(ryanking13): It is not clear why global libraries should be loaded first.
-  //    But without this, we get a fatal error when loading the libraries.
-  dynlibs.sort((lib: { global: boolean }) => (lib.global ? -1 : 1));
-
   if (DEBUG) {
     console.debug(
       `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
     );
   }
 
-  for (const { name, global } of dynlibs) {
-    await loadDynlib(name, global, [auditWheelLibDir]);
-  }
+  await loadDynlibsFromPackage(pkg, dynlibs);
 }
 
 /**
@@ -383,123 +336,6 @@ async function downloadAndInstall(
     pkg.done.resolve();
   }
 }
-
-/**
- * @returns A new asynchronous lock
- * @private
- */
-function createLock() {
-  // This is a promise that is resolved when the lock is open, not resolved when lock is held.
-  let _lock = Promise.resolve();
-
-  /**
-   * Acquire the async lock
-   * @returns A zero argument function that releases the lock.
-   * @private
-   */
-  async function acquireLock() {
-    const old_lock = _lock;
-    let releaseLock: () => void;
-    _lock = new Promise((resolve) => (releaseLock = resolve));
-    await old_lock;
-    // @ts-ignore
-    return releaseLock;
-  }
-  return acquireLock;
-}
-
-// Emscripten has a lock in the corresponding code in library_browser.js. I
-// don't know why we need it, but quite possibly bad stuff will happen without
-// it.
-const acquireDynlibLock = createLock();
-
-/**
- * Load a dynamic library. This is an async operation and Python imports are
- * synchronous so we have to do it ahead of time. When we add more support for
- * synchronous I/O, we could consider doing this later as a part of a Python
- * import hook.
- *
- * @param lib The file system path to the library.
- * @param loadGlobally Should this library loaded globally?
- * @param libDirs Directories to search for shared libs
- * @private
- */
-async function loadDynlib(lib: string, loadGlobally: boolean, libDirs: any[]) {
-  const releaseDynlibLock = await acquireDynlibLock();
-
-  libDirs = libDirs || [];
-  libDirs = libDirs.concat(["/usr/lib", API.sitepackages]);
-
-  if (DEBUG) {
-    console.debug(
-      `Loading a dynamic library ${lib} (global: ${loadGlobally}), searching libraries from: ${libDirs}`,
-    );
-  }
-
-  // This is a fake FS-like object to make emscripten
-  // load shared libraries from the file system.
-  const libraryFS = {
-    _ldLibraryPaths: libDirs,
-    _resolvePath: (path: string) => {
-      if (DEBUG) {
-        if (path !== lib) {
-          console.debug(
-            `Searching a library from ${path}, required by ${lib}.`,
-          );
-        }
-      }
-
-      for (const dir of libraryFS._ldLibraryPaths) {
-        const fullPath = Module.PATH.join2(dir, path);
-        if (Module.FS.findObject(fullPath) !== null) {
-          return fullPath;
-        }
-      }
-      return path;
-    },
-    findObject: (path: string, dontResolveLastLink: boolean) => {
-      let obj = Module.FS.findObject(
-        libraryFS._resolvePath(path),
-        dontResolveLastLink,
-      );
-
-      if (DEBUG) {
-        if (obj === null) {
-          console.debug(`Failed to find a library: ${path}`);
-        } else {
-          console.debug(
-            `Library ${path} found at ${libraryFS._resolvePath(path)}`,
-          );
-        }
-      }
-
-      return obj;
-    },
-    readFile: (path: string) =>
-      Module.FS.readFile(libraryFS._resolvePath(path)),
-  };
-
-  try {
-    await Module.loadDynamicLibrary(lib, {
-      loadAsync: true,
-      nodelete: true,
-      global: loadGlobally,
-      fs: libraryFS,
-      allowUndefined: true,
-    });
-  } catch (e: any) {
-    if (e && e.message && e.message.includes("need to see wasm magic number")) {
-      console.warn(
-        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`,
-      );
-      return;
-    }
-    throw e;
-  } finally {
-    releaseDynlibLock();
-  }
-}
-API.loadDynlib = loadDynlib;
 
 const acquirePackageLock = createLock();
 
