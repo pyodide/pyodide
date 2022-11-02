@@ -8,7 +8,8 @@ RUN apt-get update \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo sqlite3 jq \
+        gnupg2 libdbus-glib-1-2 sudo sqlite3 \
+        ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
 ADD docs/requirements-doc.txt requirements.txt /
@@ -95,6 +96,14 @@ RUN npm install -g \
   prettier \
   rollup \
   rollup-plugin-terser
+
+RUN cd / \
+    && git clone --recursive https://github.com/WebAssembly/wabt \
+    && cd wabt \
+    && git submodule update --init \
+    && make install-gcc-release-no-tests \
+    && cd ~  \
+    && rm -rf /wabt
 
 CMD ["/bin/sh"]
 WORKDIR /src
