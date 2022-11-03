@@ -63,10 +63,11 @@ export function shouldLoadGlobally(
 /**
  * Given a list of libraries, return a list of libraries to load globally.
  * @param libs The list of path to libraries
+ * @param readFileFunc A function to read the file, if not provided, use Module.FS.readFile
  * @returns A list of libraries needed to be loaded globally
  * @private
  */
-export function calculateGlobalLibs(
+function calculateGlobalLibs(
   libs: string[],
   readFileFunc: ReadFileType,
 ): Set<string> {
@@ -75,15 +76,17 @@ export function calculateGlobalLibs(
     readFile = readFileFunc;
   }
 
-  const neededLibs = new Set<string>();
-  for (const lib of libs) {
-    const binary = readFile(lib);
-    Module.getDylinkMetadata(binary).neededDynlibs.forEach((lib: string) => {
-      neededLibs.add(lib);
-    });
-  }
+  const globalLibs = new Set<string>();
 
-  return neededLibs;
+  libs.forEach((lib: string) => {
+    const binary = readFile(lib);
+    const needed = Module.getDylinkMetadata(binary).neededDynlibs;
+    needed.forEach((lib: string) => {
+      globalLibs.add(lib);
+    });
+  });
+
+  return globalLibs;
 }
 
 /**
@@ -106,7 +109,7 @@ export function createDynlibFS(
 
   const resolvePath = (path: string) => {
     if (DEBUG) {
-      if (path !== lib) {
+      if (Module.PATH.basename(path) !== Module.PATH.basename(lib)) {
         console.debug(`Searching a library from ${path}, required by ${lib}.`);
       }
     }
@@ -132,9 +135,7 @@ export function createDynlibFS(
       let obj = Module.FS.findObject(resolvePath(path), dontResolveLastLink);
       if (DEBUG) {
         if (obj === null) {
-          console.debug(`Failed to find a library: ${path}`);
-        } else {
-          console.debug(`Library ${path} found at ${resolvePath(path)}`);
+          console.debug(`Failed to find a library: ${resolvePath(path)}`);
         }
       }
       return obj;
@@ -166,31 +167,30 @@ export async function loadDynlib(
   const releaseDynlibLock = await acquireDynlibLock();
 
   if (DEBUG) {
-    console.debug(`Loading a dynamic library ${lib}`);
+    console.debug(`Loading a dynamic library ${lib} (global: ${global})`);
   }
-
-  const libDir = Module.PATH.dirname(lib);
-  const libName = Module.PATH.basename(lib);
 
   let libSearchDirs = searchDirs || [];
-  if (Module.PATH.isAbs(lib)) {
-    libSearchDirs.unshift(libDir);
-  }
 
   const libraryFS = createDynlibFS(lib, libSearchDirs, readFileFunc);
 
   try {
-    // Note: Emscripten uses the value passed to Module.loadDynamicLibrary as the
-    // key to store the loaded library in Module.LDSO.loadedLibsByName.
-    // So in order to prevent from loading the same library twice,
-    // we only pass the library name to Module.loadDynamicLibrary
-    await Module.loadDynamicLibrary(libName, {
+    await Module.loadDynamicLibrary(lib, {
       loadAsync: true,
       nodelete: true,
       global: global,
       fs: libraryFS,
       allowUndefined: true,
     });
+
+    if (Module.PATH.isAbs(lib)) {
+      const libName: string = Module.PATH.basename(lib);
+      const dso: any = Module.LDSO.loadedLibsByName[libName];
+      if (!dso) {
+        Module.LDSO.loadedLibsByName[libName] =
+          Module.LDSO.loadedLibsByName[lib];
+      }
+    }
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {
       console.warn(
@@ -208,13 +208,13 @@ export async function loadDynlib(
  * Load dynamic libraries inside a package.
  *
  * This function handles some painful details of loading dynamic libraries:
- * - We need to load libraries in the correct order.
+ * - We need to load libraries in the correct order considering dependencies.
  * - We need to load libraries globally if they are required by other libraries.
- * - We need to tell where to search for libraries.
- * - Emscripten dylink metadata only contains the library name, not the path. So we need to handle the carefully
- *   to avoid loading the same library twice.
+ * - We need to tell Emscripten where to search for libraries.
+ * - The dynlib metadata inside a wasm module only contains the library name, not the path.
+ *   So we need to handle them carefully to avoid loading the same library twice.
  *
- * @param pkg The package data
+ * @param pkg The package metadata
  * @param dynlibPaths The list of dynamic libraries inside a package
  * @private
  */
@@ -235,8 +235,9 @@ export async function loadDynlibsFromPackage(
     dynlibPaths,
     readFileMemoized,
   );
+
   const dynlibs = dynlibPaths.map((path) => {
-    const global = Module.PATH.basename(path) in globalLibs;
+    const global = globalLibs.has(Module.PATH.basename(path));
     return {
       path: path,
       global: global,
@@ -249,7 +250,7 @@ export async function loadDynlibsFromPackage(
   dynlibs.sort((lib: { global: boolean }) => (lib.global ? -1 : 1));
 
   for (const { path, global } of dynlibs) {
-    await loadDynlib(path, global, [auditWheelLibDir]);
+    await loadDynlib(path, global, [auditWheelLibDir], readFileMemoized);
   }
 }
 
