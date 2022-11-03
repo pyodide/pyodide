@@ -6,6 +6,66 @@ declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
 
+type ReadFileType = (path: string) => Uint8Array;
+
+// File System-like type which can be passed to
+// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+type LoadDynlibFS = {
+  readFile: ReadFileType;
+  findObject: (path: string, dontResolveLastLink: boolean) => any;
+};
+
+/**
+ * Creates a filesystem-like object to be passed to Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+ * which helps searching for libraries
+ *
+ * @param lib The path to the library to load
+ * @param searchDirs The list of directories to search for the library
+ * @returns A filesystem-like object
+ */
+export function createDynlibFS(
+  lib: string,
+  searchDirs?: string[],
+): LoadDynlibFS {
+  let libSearchDirs: string[] = searchDirs || [];
+
+  libSearchDirs.concat(["/usr/lib", API.sitepackages]);
+
+  const resolvePath = (path: string) => {
+    if (DEBUG) {
+      if (Module.PATH.basename(path) !== Module.PATH.basename(lib)) {
+        console.debug(`Searching a library from ${path}, required by ${lib}.`);
+      }
+    }
+
+    for (const dir of libSearchDirs) {
+      const fullPath = Module.PATH.join2(dir, path);
+      if (Module.FS.findObject(fullPath) !== null) {
+        return fullPath;
+      }
+    }
+    return path;
+  };
+
+  let readFile: ReadFileType = (path: string) =>
+    Module.FS.readFile(resolvePath(path));
+
+  const fs: LoadDynlibFS = {
+    findObject: (path: string, dontResolveLastLink: boolean) => {
+      let obj = Module.FS.findObject(resolvePath(path), dontResolveLastLink);
+      if (DEBUG) {
+        if (obj === null) {
+          console.debug(`Failed to find a library: ${resolvePath(path)}`);
+        }
+      }
+      return obj;
+    },
+    readFile: readFile,
+  };
+
+  return fs;
+}
+
 // Emscripten has a lock in the corresponding code in library_browser.js. I
 // don't know why we need it, but quite possibly bad stuff will happen without
 // it.
@@ -18,63 +78,23 @@ const acquireDynlibLock = createLock();
  * import hook.
  *
  * @param lib The file system path to the library.
- * @param shared Is this a shared library or not?
+ * @param global Whether to make the symbols available globally.
  * @private
  */
-export async function loadDynlib(lib: string, shared: boolean) {
+export async function loadDynlib(lib: string, global: boolean) {
   const releaseDynlibLock = await acquireDynlibLock();
-  const loadGlobally = shared;
 
   if (DEBUG) {
     console.debug(`Loading a dynamic library ${lib}`);
   }
 
-  // This is a fake FS-like object to make emscripten
-  // load shared libraries from the file system.
-  const libraryFS = {
-    _ldLibraryPaths: ["/usr/lib", API.sitepackages],
-    _resolvePath: (path: string) => {
-      if (DEBUG) {
-        console.debug(`Searching a library from ${path}, required by ${lib}.`);
-      }
-
-      if (Module.PATH.isAbs(path)) {
-        if (Module.FS.findObject(path) !== null) {
-          return path;
-        }
-
-        // If the path is absolute but doesn't exist, we try to find it from
-        // the library paths.
-        path = path.substring(path.lastIndexOf("/") + 1);
-      }
-
-      for (const dir of libraryFS._ldLibraryPaths) {
-        const fullPath = Module.PATH.join2(dir, path);
-        if (Module.FS.findObject(fullPath) !== null) {
-          return fullPath;
-        }
-      }
-      return path;
-    },
-    findObject: (path: string, dontResolveLastLink: boolean) => {
-      let obj = Module.FS.findObject(
-        libraryFS._resolvePath(path),
-        dontResolveLastLink,
-      );
-      if (DEBUG) {
-        console.log(`Library ${path} found at ${obj}`);
-      }
-      return obj;
-    },
-    readFile: (path: string) =>
-      Module.FS.readFile(libraryFS._resolvePath(path)),
-  };
+  const libraryFS = createDynlibFS(lib);
 
   try {
     await Module.loadDynamicLibrary(lib, {
       loadAsync: true,
       nodelete: true,
-      global: loadGlobally,
+      global: global,
       fs: libraryFS,
       allowUndefined: true,
     });
