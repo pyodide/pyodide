@@ -733,8 +733,12 @@ def build_package(
     name = pkg.package.name
     version = pkg.package.version
     build_dir = pkg_root / "build"
+    dist_dir = pkg_root / "dist"
     src_dir_name: str = f"{name}-{version}"
     srcpath = build_dir / src_dir_name
+    src_dist_dir = srcpath / "dist"
+    # Python produces output .whl or .so files in src_dist_dir.
+    # We copy them to dist_dir later
 
     url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
@@ -784,27 +788,29 @@ def build_package(
         run_script(build_dir, srcpath, build_metadata, bash_runner)
 
         if library:
-            create_packaged_token(build_dir)
-            return
+            # Nothing needs to be done for a static library
+            pass
+        elif sharedlibrary:
+            # If shared library, we copy .so files to dist_dir
+            # and create a zip archive of the .so files
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            dist_dir.mkdir(parents=True)
+            shutil.make_archive(str(dist_dir / src_dir_name), "zip", src_dist_dir)
+        else:  # wheel
+            if not finished_wheel:
+                compile(
+                    name,
+                    srcpath,
+                    build_metadata,
+                    bash_runner,
+                    target_install_dir=target_install_dir,
+                )
 
-        if not sharedlibrary and not finished_wheel:
-            compile(
-                name,
-                srcpath,
-                build_metadata,
-                bash_runner,
-                target_install_dir=target_install_dir,
-            )
-        if not sharedlibrary:
             package_wheel(
                 name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
             )
-
-        shutil.rmtree(pkg_root / "dist", ignore_errors=True)
-        shutil.copytree(srcpath / "dist", pkg_root / "dist")
-
-        if sharedlibrary:
-            shutil.make_archive(f"{name}-{version}", "zip", pkg_root / "dist")
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            shutil.copytree(src_dist_dir, dist_dir)
 
         create_packaged_token(build_dir)
 
