@@ -20,6 +20,28 @@ jobs:
           python-version: 3.10.2
       - uses: pre-commit/action@v2.0.3
 
+  test-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.10.2
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt -r docs/requirements-doc.txt
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          mkdir -p test-results
+          pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+      - name: Test Summary
+        uses: test-summary/action@v1
+        with:
+          paths: "test-results/*.xml"
+        if: always()
+
   test-python:
     runs-on: ubuntu-latest
     steps:
