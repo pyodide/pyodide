@@ -3,9 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.driver_timeout(300)
-@run_in_pyodide(
-    packages=["geopandas", "geopandas-tests", "pytest", "pandas-tests", "matplotlib"]
-)
+@run_in_pyodide(packages=["geopandas", "geopandas-tests", "pytest"])
 def test_runtest(selenium):
     from pathlib import Path
 
@@ -30,6 +28,8 @@ def test_runtest(selenium):
                 *ignore_filter,
                 "-k",
                 test_filter,
+                # "--durations",
+                # "20",
             ]
         )
         assert ret == 0
@@ -51,5 +51,9 @@ def test_runtest(selenium):
                 test_path / "test_testing.py"
             ),  # CppException osgeo::proj::io::ParsingException: unrecognized format / unknown name
             str(test_path / "test_array.py"),  # libc.so required
+            # These tests passes, but disabled because they takes too long to run in CI.
+            str(test_path / "test_plotting.py"),
+            str(test_path / "test_datasets.py"),
+            str(test_path / "test_extension_array.py"),
         ],
     )
