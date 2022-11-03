@@ -55,5 +55,9 @@ def test_runtest(selenium):
             str(test_path / "test_plotting.py"),
             str(test_path / "test_datasets.py"),
             str(test_path / "test_extension_array.py"),
+            str(test_path / "test_crs.py"),
+            str(test_path / "test_testing.py"),
+            str(test_path / "test_merge.py"),
+            str(test_path / "test_explore.py"),
         ],
     )
