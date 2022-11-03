@@ -17,6 +17,7 @@
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
+declare function sleep(ms: number): Promise<undefined>;
 
 // pyodide-skip
 
@@ -435,6 +436,10 @@ async function callPyObjectKwargsSuspending(
   if (!Module.wrappedApply) {
     Module.wrappedApply = Module.wrapApply(Module.asm._pyproxy_apply);
   }
+  // Let the event loop go around once in case this gets syncified. This ensures
+  // that the outer syncify call sees the original suspender and not the
+  // new one we are about to create.
+  await sleep(0);
   try {
     Py_ENTER();
     Module.validSuspender.value = true;

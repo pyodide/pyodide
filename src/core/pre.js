@@ -5,10 +5,11 @@ API.tests = Tests;
 API.version = "0.22.0.dev0";
 Module.hiwire = Hiwire;
 
+function sleep(ms) {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
 function patchCheckEmscriptenSignalHelpers() {
-  function sleep(ms) {
-    return new Promise((res) => setTimeout(res, ms));
-  }
   const _orig_Py_CheckEmscriptenSignals_Helper =
     _Py_CheckEmscriptenSignals_Helper;
   const suspending = new WebAssembly.Function(
