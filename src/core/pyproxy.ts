@@ -443,6 +443,7 @@ async function callPyObjectKwargsSuspending(
   try {
     Py_ENTER();
     Module.validSuspender.value = true;
+    Module.basePointer = Module.___stack_pointer.value;
     idresult = await Module.wrappedApply(
       ptrobj,
       idargs,
@@ -1328,14 +1329,14 @@ export class PyProxyCallableMethods {
   }
   /**
    * Calls the function with a given this value and arguments provided
-   * individually. Like the `JavaScript call
-   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
+   * individually. Like the `JavaScript call function
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
    *
    * Present only if the proxied Python object is callable.
    *
-   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy` has
-   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as the first
-   * argument to the Python function.
+   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy`
+   * has :any:`captureThis` set. If :any:`captureThis` is set, it will be passed
+   * as the first argument to the Python function.
    * @param jsargs The arguments
    * @returns The result from the function call.
    */

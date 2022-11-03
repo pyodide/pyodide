@@ -45,11 +45,13 @@ function patchHiwireSyncify() {
   );
 
   const bytes = [
-    0, 97, 115, 109, 1, 0, 0, 0, 1, 12, 2, 96, 2, 111, 127, 1, 127, 96, 1, 127,
-    1, 127, 2, 21, 3, 1, 101, 1, 115, 3, 111, 1, 1, 101, 1, 99, 3, 127, 1, 1,
-    101, 1, 105, 0, 0, 3, 2, 1, 1, 7, 5, 1, 1, 111, 0, 1, 10, 27, 1, 25, 1, 1,
-    111, 35, 1, 69, 4, 64, 65, 0, 15, 11, 35, 0, 34, 1, 32, 0, 16, 0, 32, 1, 36,
-    0, 11,
+    0, 97, 115, 109, 1, 0, 0, 0, 1, 20, 4, 96, 2, 111, 127, 1, 127, 96, 0, 1,
+    111, 96, 1, 111, 0, 96, 1, 127, 1, 127, 2, 54, 5, 1, 101, 1, 115, 3, 111, 1,
+    1, 101, 1, 99, 3, 127, 1, 1, 101, 1, 105, 0, 0, 1, 101, 10, 115, 97, 118,
+    101, 95, 115, 116, 97, 116, 101, 0, 1, 1, 101, 13, 114, 101, 115, 116, 111,
+    114, 101, 95, 115, 116, 97, 116, 101, 0, 2, 3, 2, 1, 3, 7, 5, 1, 1, 111, 0,
+    3, 10, 35, 1, 33, 1, 2, 111, 35, 1, 69, 4, 64, 65, 0, 15, 11, 16, 1, 33, 2,
+    35, 0, 34, 1, 32, 0, 16, 0, 32, 1, 36, 0, 32, 2, 16, 2, 11,
   ];
   const module = new WebAssembly.Module(new Uint8Array(bytes));
   const instance = new WebAssembly.Instance(module, {
@@ -57,6 +59,25 @@ function patchHiwireSyncify() {
       s: Module.suspenderGlobal,
       i: suspending_f,
       c: Module.validSuspender,
+      save_state: function () {
+        return {
+          stackBase: Module.basePointer,
+          stackCurrent: Module.___stack_pointer.value,
+          stackContents: Module.HEAP8.slice(
+            Module.___stack_pointer.value,
+            Module.basePointer,
+          ),
+          pyTState: Module._captureState(),
+        };
+      },
+      restore_state: function (state) {
+        Module.basePointer = state.stackBase;
+        Module.___stack_pointer.value = state.stackCurrent;
+        Module.HEAP8.subarray(state.stackCurrent, state.stackBase).set(
+          state.stackContents,
+        );
+        Module._restoreState(state.pyTState);
+      },
     },
   });
   _hiwire_syncify = instance.exports.o;
@@ -108,7 +129,7 @@ Module.initSuspenders = function () {
     { value: "i32", mutable: true },
     0,
   );
-  patchCheckEmscriptenSignalHelpers();
+  // patchCheckEmscriptenSignalHelpers();
   patchHiwireSyncify();
   Module.suspendersAvailable = true;
 };
