@@ -162,15 +162,7 @@ function patchHiwireSyncify() {
     { suspending: "first" },
   );
 
-  const bytes = [
-    0, 97, 115, 109, 1, 0, 0, 0, 1, 20, 4, 96, 2, 111, 127, 1, 127, 96, 0, 1,
-    111, 96, 1, 111, 0, 96, 1, 127, 1, 127, 2, 42, 5, 1, 101, 1, 115, 3, 111, 1,
-    1, 101, 1, 99, 3, 127, 1, 1, 101, 1, 105, 0, 0, 1, 101, 4, 115, 97, 118,
-    101, 0, 1, 1, 101, 7, 114, 101, 115, 116, 111, 114, 101, 0, 2, 3, 2, 1, 3,
-    7, 5, 1, 1, 111, 0, 3, 10, 29, 1, 27, 1, 1, 111, 35, 1, 69, 4, 64, 65, 0,
-    15, 11, 16, 1, 33, 1, 35, 0, 32, 0, 16, 0, 32, 1, 16, 2, 11,
-  ];
-  const module = new WebAssembly.Module(new Uint8Array(bytes));
+  const module = new WebAssembly.Module(new Uint8Array(wrap_syncifying_wasm));
 
   const instance = new WebAssembly.Instance(module, {
     e: {
@@ -185,13 +177,7 @@ function patchHiwireSyncify() {
 }
 
 Module.wrapApply = function (apply) {
-  const bytes = [
-    0, 97, 115, 109, 1, 0, 0, 0, 1, 20, 2, 96, 5, 127, 127, 127, 127, 127, 1,
-    127, 96, 6, 111, 127, 127, 127, 127, 127, 1, 127, 2, 14, 2, 1, 101, 1, 115,
-    3, 111, 1, 1, 101, 1, 105, 0, 0, 3, 2, 1, 1, 7, 5, 1, 1, 111, 0, 1, 10, 20,
-    1, 18, 0, 32, 0, 36, 0, 32, 1, 32, 2, 32, 3, 32, 4, 32, 5, 16, 0, 11,
-  ];
-  var module = new WebAssembly.Module(new Uint8Array(bytes));
+  var module = new WebAssembly.Module(new Uint8Array(wrap_apply_wasm));
   var instance = new WebAssembly.Instance(module, {
     e: {
       s: Module.suspenderGlobal,
