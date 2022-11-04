@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20220629-py310-chrome102-firefox100
+    - image: pyodide/pyodide-env:20221102-chrome107-firefox106
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -19,22 +19,6 @@ orbs:
   macos: circleci/macos@2.2.0
 
 jobs:
-  test-docs:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - checkout
-      - run:
-          name: Test docs
-          command: |
-            mkdir test-results
-            pip install -r requirements.txt
-            pip install -e ./pyodide-build
-            npm install -g node-fetch@2
-            pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
-      - store_test_results:
-          path: test-results
-
   build-core:
     <<: *defaults
     steps:
@@ -540,11 +524,6 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - test-docs:
-          filters:
-            tags:
-              only: /.*/
-
       - build-core:
           filters:
             tags:
