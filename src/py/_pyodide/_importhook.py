@@ -1,31 +1,10 @@
 import sys
 from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
-from importlib.machinery import ModuleSpec, PathFinder
+from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
 from types import ModuleType
 from typing import Any
-
-
-class ModulePreloader(MetaPathFinder):
-    def __init__(self) -> None:
-        self.jsproxies: dict[str, Any] = {}
-
-    def find_spec(
-        self,
-        fullname: str,
-        path: Sequence[bytes | str] | None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        [parent, _, child] = fullname.partition(".")
-        from pyodide_js import loadPackage
-        from pyodide_js._api import _import_name_to_package_name  # type: ignore[import]
-
-        if parent not in _import_name_to_package_name:
-            return None
-        pkgname = _import_name_to_package_name[parent]
-        loadPackage(pkgname).syncify()
-        return PathFinder.find_spec(pkgname)
 
 
 class JsFinder(MetaPathFinder):
@@ -239,6 +218,18 @@ class RepodataPackagesFinder(MetaPathFinder):
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
         [parent, _, _] = fullname.partition(".")
+
+        if not parent or parent in sys.modules or parent not in self.repodata_packages:
+            return None
+
+        if parent in self.repodata_packages:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is included in the Pyodide distribution, "
+                f"but it is not installed. "
+                f'You can install it by calling: await micropip.install("{parent}") in Python or '
+                f'await pyodide.loadPackage("{parent}") in JavaScript. '
+                "See https://pyodide.org/en/stable/usage/loading-packages.html for more details."
+            )
 
         return None
 
