@@ -47,8 +47,8 @@ declare var PYGEN_RETURN: number;
 declare var PYGEN_ERROR: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
-declare function Py_ENTER();
-declare function Py_EXIT();
+declare function Py_ENTER(): void;
+declare function Py_EXIT(): void;
 // end-pyodide-skip
 
 /**
