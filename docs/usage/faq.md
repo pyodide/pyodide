@@ -411,11 +411,11 @@ from mymodule import hello
 hello()
 ```
 
-## Why the changes I made in IndexDB doesn't persist?
+## Why changes made to IndexedDB don't persist?
 
-Unlike other filesystems, indexDB (pyodide.FS.filesystem.IDBFS) is an asynchronous filesystem.
-This is because browsers offer only asynchronous interfaces for indexDB.
-So in order to make changes persist, you have to call
+Unlike other filesystems, IndexedDB (pyodide.FS.filesystem.IDBFS) is an asynchronous filesystem.
+This is because browsers offer only asynchronous interfaces for IndexedDB.
+So in order to persist changes, you have to call
 [`pyodide.FS.syncfs()`](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.syncfs).
 See [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data)
 for more details.
