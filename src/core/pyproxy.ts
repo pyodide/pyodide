@@ -886,16 +886,16 @@ export class PyProxyContainsMethods {
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
-    let $$s = Module.validSuspender.value;
-    Module.validSuspender.value = false;
-    let item;
-    while ((item = Module.__pyproxy_iter_next(iterptr))) {
-      Module.validSuspender.value = $$s;
+    Py_ENTER();
+    while (true) {
+      Py_ENTER();
+      const item = Module.__pyproxy_iter_next(iterptr);
+      if (item === 0) {
+        break;
+      }
+      Py_EXIT();
       yield Hiwire.pop_value(item);
-      $$s = Module.validSuspender.value;
-      Module.validSuspender.value = false;
     }
-    Module.validSuspender.value = $$s;
   } catch (e) {
     API.fatal_error(e);
   } finally {
