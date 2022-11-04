@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   build-core:
-    uses: ./.github/workflows/modules/build.yml
+    uses: ./.github/workflows/reusable_conda_build.yml
     with:
       packages: core
       artifacts-prefix-prev: ""
@@ -21,7 +21,7 @@ jobs:
 
   build-packages:
     needs: [build-core]
-    uses: ./.github/workflows/modules/build.yml
+    uses: ./.github/workflows/reusable_conda_build.yml
     with:
       packages: "*"
       artifacts-prefix-prev: core
@@ -35,7 +35,7 @@ jobs:
         runtime: [chrome-no-host, firefox-no-host]
       fail-fast: false
     needs: [build-core]
-    uses: ./.github/workflows/modules/test.yml
+    uses: ./.github/workflows/reusable_conda_test.yml
     with:
       runner: ${{ matrix.runner }}
       runtime: ${{ matrix.runtime }}
@@ -49,7 +49,7 @@ jobs:
         runtime: [chrome-no-host, firefox-no-host]
       fail-fast: false
     needs: [build-core]
-    uses: ./.github/workflows/modules/test.yml
+    uses: ./.github/workflows/reusable_conda_test.yml
     with:
       runner: ${{ matrix.runner }}
       runtime: ${{ matrix.runtime }}
@@ -63,7 +63,7 @@ jobs:
         runtime: [chrome-no-host, firefox-no-host]
       fail-fast: false
     needs: [build-packages]
-    uses: ./.github/workflows/modules/test.yml
+    uses: ./.github/workflows/reusable_conda_test.yml
     with:
       runner: ${{ matrix.runner }}
       runtime: ${{ matrix.runtime }}
