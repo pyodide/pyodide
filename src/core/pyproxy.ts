@@ -826,7 +826,7 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
       Py_ENTER();
       const item = Module.__pyproxy_iter_next(iterptr);
       if (item === 0) {
-        return;
+        break;
       }
       Py_EXIT();
       yield Hiwire.pop_value(item);
