@@ -821,7 +821,6 @@ export class PyProxyContainsMethods {
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
-    Py_ENTER();
     while (true) {
       Py_ENTER();
       const item = Module.__pyproxy_iter_next(iterptr);
