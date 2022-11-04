@@ -442,8 +442,14 @@ async function callPyObjectKwargsSuspending(
   await sleep(0);
   try {
     Py_ENTER();
+    // validSuspender is a flag so that we can ask for permission before trying
+    // to suspend. We can't ask for forgiveness because our normal technique for
+    // this is to insert a JavaScript frame where we can catch the error
+    // generated. We cannot suspend through JavaScript frames (this limitation
+    // is part of the intentional design  of Wasm Promise Integration).
     Module.validSuspender.value = true;
-    Module.basePointer = Module.___stack_pointer.value;
+    // Record the current stack position. See StackState in continuations.js
+    Module.stackStop = Module.___stack_pointer.value;
     idresult = await Module.wrappedApply(
       ptrobj,
       idargs,
