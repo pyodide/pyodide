@@ -46,8 +46,8 @@ declare var PYGEN_RETURN: number;
 declare var PYGEN_ERROR: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
-declare function Py_ENTER();
-declare function Py_EXIT();
+declare function Py_ENTER(): void;
+declare function Py_EXIT(): void;
 // end-pyodide-skip
 
 /**
@@ -822,13 +822,15 @@ export class PyProxyContainsMethods {
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
     Py_ENTER();
-    let item;
-    while ((item = Module.__pyproxy_iter_next(iterptr))) {
+    while (true) {
+      Py_ENTER();
+      const item = Module.__pyproxy_iter_next(iterptr);
+      if (item === 0) {
+        return;
+      }
       Py_EXIT();
       yield Hiwire.pop_value(item);
-      Py_ENTER();
     }
-    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
