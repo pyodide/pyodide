@@ -23,13 +23,10 @@ type LoadDynlibFS = {
  * @param searchDirs The list of directories to search for the library
  * @returns A filesystem-like object
  */
-export function createDynlibFS(
-  lib: string,
-  searchDirs?: string[],
-): LoadDynlibFS {
-  let libSearchDirs: string[] = searchDirs || [];
-
-  libSearchDirs.concat(["/usr/lib", API.sitepackages]);
+function createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
+  searchDirs = searchDirs || [];
+  const defaultSearchDirs = ["/usr/lib", API.sitepackages];
+  const libSearchDirs = searchDirs.concat(defaultSearchDirs);
 
   const resolvePath = (path: string) => {
     if (DEBUG) {
