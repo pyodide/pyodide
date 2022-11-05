@@ -37,8 +37,6 @@ dist/pyodide.asm.js: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
-	src/core/wrap_syncifying.wasm.gen.js \
-	src/core/wrap_apply.wasm.gen.js \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
