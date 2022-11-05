@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         runner: [playwright]
-        runtime: [chrome-no-host, firefox-no-host]
+        runtime: [chrome-no-host]
       fail-fast: false
     needs: [build-core]
     uses: ./.github/workflows/reusable_conda_test.yml
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         runner: [playwright]
-        runtime: [chrome-no-host, firefox-no-host]
+        runtime: [chrome-no-host]
       fail-fast: false
     needs: [build-core]
     uses: ./.github/workflows/reusable_conda_test.yml
@@ -60,7 +60,7 @@ jobs:
     strategy:
       matrix:
         runner: [playwright]
-        runtime: [chrome-no-host, firefox-no-host]
+        runtime: [chrome-no-host]
       fail-fast: false
     needs: [build-packages]
     uses: ./.github/workflows/reusable_conda_test.yml
