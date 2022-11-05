@@ -37,6 +37,8 @@ dist/pyodide.asm.js: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
+	src/core/wrap_syncifying.wasm.gen.js \
+	src/core/wrap_apply.wasm.gen.js \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -88,6 +90,9 @@ dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.t
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
+
+%.wasm.gen.js: %.wat
+	node tools/assemble_wat.js $@
 
 src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
