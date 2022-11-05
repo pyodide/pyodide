@@ -93,8 +93,7 @@ src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
 
 %.wasm.gen.js: %.wat
-	cd src/core \
-	&& node ../../tools/convert_wat.js $@
+	node tools/convert_wat.js $@
 
 src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
