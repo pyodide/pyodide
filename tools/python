@@ -22,27 +22,7 @@ EOF
 # bash
 set -e
 
-which node > /dev/null  || { \
-    >&2 echo "No node executable found on the path" && exit 1; \
-}
-
-ARGS=$(node -e "$(cat <<"EOF"
-const major_version = Number(process.version.split(".")[0].slice(1));
-if(major_version < 14) {
-    console.error("Need node version >= 14. Got node version", process.version);
-    process.exit(1);
-}
-if(major_version === 14){
-    process.stdout.write("--experimental-wasm-bigint");
-} else {
-    // If $ARGS is empty, `let args = process.argv.slice(2)` removes the wrong
-    // number of arguments. `ARGS=--` is not empty but does nothing.
-    process.stdout.write("--");
-}
-EOF
-)")
-
-exec node "$ARGS" "$0" "$@"
+exec /home/hood/.nvm/versions/node/v19.0.0/bin/node --experimental-wasm-stack-switching --experimental-wasm-type-reflection "$0" "$@"
 */
 
 
@@ -187,6 +167,8 @@ async function main() {
 
     py.runPython(
         `
+        import sys
+        sys.meta_path.pop()
         import asyncio
         # Keep the event loop alive until all tasks are finished, or SystemExit or
         # KeyboardInterupt is raised.
@@ -217,7 +199,8 @@ async function main() {
 
     let errcode;
     try {
-        errcode = py._module._run_main();
+        py._module.validSuspender.value = 1;
+        errcode = await py._module.wrapRunMain(py._module.asm.run_main)();
     } catch (e) {
         // If there is some sort of error, add the Python tracebook in addition
         // to the JavaScript traceback

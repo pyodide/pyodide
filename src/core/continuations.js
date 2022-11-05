@@ -221,6 +221,21 @@ Module.wrapApply = function (apply) {
   );
 };
 
+Module.wrapRunMain = function (apply) {
+  var module = new WebAssembly.Module(new Uint8Array(wrap_run_main_wasm));
+  var instance = new WebAssembly.Instance(module, {
+    e: {
+      s: Module.suspenderGlobal,
+      i: apply,
+    },
+  });
+  return new WebAssembly.Function(
+    { parameters: [], results: ["externref"] },
+    instance.exports.o,
+    { promising: "first" },
+  );
+};
+
 function patchCheckEmscriptenSignalHelpers() {
   const _orig_Py_CheckEmscriptenSignals_Helper =
     _Py_CheckEmscriptenSignals_Helper;
@@ -275,4 +290,12 @@ Module.initSuspenders = function () {
   // patchCheckEmscriptenSignalHelpers();
   patchHiwireSyncify();
   Module.suspendersAvailable = true;
+};
+
+Module.continuletRun = function (func) {
+  return [func.callSyncifying()];
+};
+
+Module.continuletPromiseRace = function (p1, p2) {
+  return [Promise.race([p1, p2])];
 };

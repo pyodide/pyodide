@@ -474,6 +474,7 @@ async function callPyObjectKwargsSuspending(
   }
   return result;
 }
+Module.callPyObjectKwargsSuspending = callPyObjectKwargsSuspending;
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
@@ -1372,6 +1373,22 @@ export class PyProxyCallableMethods {
 
   callSyncifying(...jsargs: any) {
     return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
+  }
+
+  callSyncifyingKwargs(...jsargs: any) {
+    if (jsargs.length === 0) {
+      throw new TypeError(
+        "callKwargs requires at least one argument (the key word argument object)",
+      );
+    }
+    const kwargs = jsargs.pop();
+    if (
+      kwargs.constructor !== undefined &&
+      kwargs.constructor.name !== "Object"
+    ) {
+      throw new TypeError("kwargs argument is not an object");
+    }
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, kwargs);
   }
 
   /**

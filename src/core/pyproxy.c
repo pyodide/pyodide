@@ -961,10 +961,52 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
   return Hiwire.new_value(wrapper);
 });
 
+/**
+ * Create a JsRef which can be called once, wrapping a Python callable. The
+ * JsRef owns a reference to the Python callable until it is called, then
+ * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
+ * also exposed in the pyodide Python module.
+ */
+EM_JS_REF(JsRef, create_once_callable_syncifiable, (PyObject * obj), {
+  _Py_IncRef(obj);
+  let alreadyCalled = false;
+  async function wrapper(... args)
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy can only be called once");
+    }
+    try {
+      return await Module.callPyObjectKwargsSuspending(obj, args, {});
+    } finally {
+      wrapper.destroy();
+    }
+  }
+  wrapper.destroy = function()
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy has already been destroyed");
+    }
+    alreadyCalled = true;
+    Module.finalizationRegistry.unregister(wrapper);
+    _Py_DecRef(obj);
+  };
+  Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
+  return Hiwire.new_value(wrapper);
+});
+
 static PyObject*
 create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
   JsRef ref = create_once_callable(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+static PyObject*
+create_once_callable_syncifiable_py(PyObject* _mod, PyObject* obj)
+{
+  JsRef ref = create_once_callable_syncifiable(obj);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1083,6 +1125,11 @@ static PyMethodDef methods[] = {
   {
     "create_once_callable",
     create_once_callable_py,
+    METH_O,
+  },
+  {
+    "create_once_callable_syncifiable",
+    create_once_callable_syncifiable_py,
     METH_O,
   },
   {

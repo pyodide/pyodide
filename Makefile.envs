@@ -136,6 +136,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--pre-js src/core/pre.js \
 	--pre-js src/core/wrap_syncifying.wasm.gen.js \
 	--pre-js src/core/wrap_apply.wasm.gen.js \
+	--pre-js src/core/wrap_run_main.wasm.gen.js \
 	--pre-js src/core/continuations.js \
 	--pre-js src/js/_pyodide.out.js \
 	--post-js src/core/post.js \
