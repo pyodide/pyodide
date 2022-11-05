@@ -1,4 +1,5 @@
-from pyodide_js._module import (  # type: ignore[import]
+from pyodide.ffi import create_proxy
+from pyodide_js._module import (  # type:ignore[import]
     continuletPromiseRace,
     continuletRun,
 )
@@ -15,9 +16,9 @@ class Continulet:
     def _start(self):
         def func():
             try:
-                return [0, self._func(self, *self._args, **self._kwargs)]
+                return self._func(self, *self._args, **self._kwargs)
             except BaseException as e:
-                return [1, e]
+                return e
 
         self._csp = continuletRun(func)[0]
 
@@ -32,20 +33,31 @@ class Continulet:
 
         p = Promise.new(store_res)
         cont = self._continuation
-        print("xx", cont, ".", resolve, ".", self._csp, "+++")
-
         self._continuation = resolve
 
         if cont:
-            cont([0, value])
-        elif value is not None:
-            raise TypeError("can't send non-None value to a just-started continulet")
+            cont(create_proxy([0, value]))
         else:
-            self._start()
+            if value is not None:
+                raise TypeError(
+                    "can't send non-None value to a just-started continulet"
+                )
 
-        [status, result] = continuletPromiseRace(self._csp, p)[0].syncify()
+            def func():
+                try:
+                    return [0, self._func(self, *self._args, **self._kwargs)]
+                except BaseException as e:
+                    return [1, e]
+
+            self._csp = continuletRun(func)[0]
+
+        r = continuletPromiseRace(self._csp, p)[0].syncify()
+        if hasattr(r, "unwrap"):
+            s = r
+            r = r.unwrap()
+            s.destroy()
+        [status, result] = r
         if status == 0:
             return result
         else:
-            print("raising", result)
             raise result
