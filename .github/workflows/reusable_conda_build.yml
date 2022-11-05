@@ -3,7 +3,7 @@ name: build
 env:
   EMSDK_NUM_CORES: 2
   EMCC_CORES: 2
-  CCACHE_DIR: /tmp/ccache
+  CCACHE_DIR: .ccache
 
 on:
   workflow_call:
@@ -69,8 +69,7 @@ jobs:
       - name: Cache ccache output
         uses: actions/cache@v3
         with:
-          path: |
-            /tmp/ccache
+          path: .ccache
           key: -v20221017-${{ hashFiles('build_hash.txt') }}-${{ env.PKG_KEY }}
 
       - name: Download build artifact from the previous build step
@@ -96,6 +95,8 @@ jobs:
         if: ${{ inputs.artifacts-prefix-prev == '' }}
         shell: bash -l {0}
         run: |
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
           which ccache
 
           ccache -z
@@ -108,7 +109,6 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
-
           which ccache
 
           ccache -z
@@ -120,6 +120,8 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+          which ccache
+
           ccache -z
           PYODIDE_PACKAGES="${{ inputs.packages }}" make
           ccache -s
