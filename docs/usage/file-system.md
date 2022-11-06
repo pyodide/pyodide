@@ -58,6 +58,8 @@ pyodide.runPython("import os; print(os.listdir('/mnt'))");
 // ==> The list of files in the Node working directory
 ```
 
+(nativefs-api)=
+
 # (Experimental) Using native file system in the browser
 
 You can access native file system from the browser using the

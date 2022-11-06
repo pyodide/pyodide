@@ -17,6 +17,9 @@
       console.error = function (message) {
         window.logs.push(message);
       };
+      console.debug = function (message) {
+        window.logs.push(message);
+      };
     </script>
     <script src="./pyodide.js"></script>
   </head>
