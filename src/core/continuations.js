@@ -292,24 +292,6 @@ Module.initSuspenders = function () {
   Module.suspendersAvailable = true;
 };
 
-// function setRoundTrip(p) {
-//   const props = Object.assign({}, p.$$props, {
-//     roundtrip: true,
-//   });
-//   return pyproxy_new(_getPtr(p), {
-//     $$: p.$$,
-//     flags: p.$$flags,
-//     props,
-//   });
-// }
-
-function setRoundtrip(value) {
-  if (API.isPyProxy(value)) {
-    value.$$props.roundtrip = true;
-  }
-  return value;
-}
-
 function setErrorMessage(exctype, msg) {
   let ptr = Module.stringToNewUTF8(msg);
   exctype = Module.HEAP32[exctype / 4];
@@ -393,9 +375,14 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
     if (self._continuation !== undefined) {
       to._continuation = self._continuation;
     } else {
-      const origself = self;
+      const origself = self.copy();
       to._continuation = function ([iserr, value]) {
-        console.log(iserr, value);
+        if (iserr) {
+          origself._continuation([iserr, value]);
+          origself._finished = true;
+          origself.destroy();
+          return;
+        }
         if (value !== undefined) {
           origself._continuation([
             1,
@@ -404,9 +391,12 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
               "can't send non-None value to a just-started continulet",
             ],
           ]);
+          origself._finished = true;
+          origself.destroy();
           return;
         }
         startContinuation(origself);
+        origself.destroy();
       };
     }
   }
@@ -417,8 +407,14 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
   if (cont) {
     cont([iserr, value]);
   } else {
+    if (iserr) {
+      return getResult(iserr, value);
+    }
     if (value !== undefined) {
-      setErrorMessage(Module._PyExc_TypeError, "continulet already finished");
+      setErrorMessage(
+        Module._PyExc_TypeError,
+        "can't send non-None value to a just-started continulet",
+      );
       return 0;
     }
     startContinuation(self);
