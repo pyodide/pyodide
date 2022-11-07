@@ -74,6 +74,9 @@ class _SourceSpec(BaseModel):
 
 
 _BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+_BuildSpecTypes = Literal[
+    "package", "static_library", "shared_library", "cpython_module"
+]
 
 
 class _BuildSpec(BaseModel):
@@ -82,8 +85,7 @@ class _BuildSpec(BaseModel):
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
-    library: bool = False
-    sharedlibrary: bool = False
+    package_type: _BuildSpecTypes = Field("package", alias="type")
     cross_script: str | None = Field(None, alias="cross-script")
     script: str | None = None
     post: str | None = None
@@ -96,25 +98,21 @@ class _BuildSpec(BaseModel):
 
     @pydantic.root_validator
     def _check_config(cls, values: dict[str, Any]) -> dict[str, Any]:
-        library = values["library"]
-        sharedlibrary = values["sharedlibrary"]
-        if not library and not sharedlibrary:
+        static_library = values["package_type"] == "static_library"
+        shared_library = values["package_type"] == "shared_library"
+        cpython_module = values["package_type"] == "cpython_module"
+
+        if not (static_library or shared_library or cpython_module):
             return values
 
-        if library and sharedlibrary:
-            raise ValueError(
-                "build/library and build/sharedlibrary cannot both be true."
-            )
-
         allowed_keys = {
-            "library",
-            "sharedlibrary",
+            "package_type",
             "script",
-            "cross-script",
             "exports",
             "unvendor_tests",
         }
-        typ = "library" if library else "sharedlibrary"
+
+        typ = values["package_type"]
         for key, val in values.items():
             if val and key not in allowed_keys:
                 raise ValueError(
@@ -215,6 +213,7 @@ class MetaConfig(BaseModel):
                 "cross_build_files",
                 "exports",
                 "unvendor_tests",
+                "package_type",
             }
             for key, val in values["build"].dict().items():
                 if val and key not in allowed_keys:

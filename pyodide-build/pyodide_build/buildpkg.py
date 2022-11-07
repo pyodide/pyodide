@@ -281,9 +281,7 @@ def download_and_extract(
     shutil.move(buildpath / extract_dir_name, srcpath)
 
 
-def prepare_source(
-    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: _SourceSpec
-) -> None:
+def prepare_source(buildpath: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
     """
     Figure out from the "source" key in the package metadata where to get the source
     from, then get the source into srcpath (or somewhere else, if it goes somewhere
@@ -291,10 +289,6 @@ def prepare_source(
 
     Parameters
     ----------
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
     buildpath
         The path to the build directory. Generally will be
         $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
@@ -317,6 +311,7 @@ def prepare_source(
     if src_metadata.url is not None:
         download_and_extract(buildpath, srcpath, src_metadata)
         return
+
     if src_metadata.path is None:
         raise ValueError(
             "Incorrect source provided. Either a url or a path must be provided."
@@ -440,8 +435,8 @@ def compile(
         The path to the target Python installation
 
     """
-    # This function runs setup.py. library and sharedlibrary don't have setup.py
-    if build_metadata.sharedlibrary:
+    # This function runs pypa/build. libraries don't need to do this.
+    if build_metadata.package_type != "package":
         return
 
     build_env_ctx = pywasmcross.get_build_env(
@@ -486,7 +481,6 @@ def replace_so_abi_tags(wheel_dir: Path) -> None:
 
 def package_wheel(
     pkg_name: str,
-    pkg_root: Path,
     srcpath: Path,
     build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
@@ -502,10 +496,6 @@ def package_wheel(
     pkg_name
         The name of the package
 
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
     srcpath
         The path to the source. We extract the source into the build directory,
         so it will be something like
@@ -518,7 +508,7 @@ def package_wheel(
         The runner we will use to execute our bash commands. Preserves
         environment variables from one invocation to the next.
     """
-    if build_metadata.sharedlibrary:
+    if build_metadata.package_type != "package":
         return
 
     distdir = srcpath / "dist"
@@ -742,14 +732,14 @@ def build_package(
 
     url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
-    library = build_metadata.library
-    sharedlibrary = build_metadata.sharedlibrary
+    library = build_metadata.package_type == "static_library"
+    sharedlibrary = build_metadata.package_type == "shared_library"
+    cpython_module = build_metadata.package_type == "cpython_module"
     post = build_metadata.post
 
     # These are validated in io.check_package_config
     # If any of these assertions fail, the code path through here might get a
     # bit weird
-    assert not (library and sharedlibrary)
     if finished_wheel:
         assert not build_metadata.script
         assert not library
@@ -781,8 +771,8 @@ def build_package(
         bash_runner.env["PKGDIR"] = str(pkg_root)
         bash_runner.env["PKG_VERSION"] = version
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
-        if not continue_:
-            prepare_source(pkg_root, build_dir, srcpath, source_metadata)
+        if not continue_ and not cpython_module:
+            prepare_source(build_dir, srcpath, source_metadata)
             patch(pkg_root, srcpath, source_metadata)
 
         run_script(build_dir, srcpath, build_metadata, bash_runner)
@@ -806,9 +796,7 @@ def build_package(
                     target_install_dir=target_install_dir,
                 )
 
-            package_wheel(
-                name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
-            )
+            package_wheel(name, srcpath, build_metadata, bash_runner, host_install_dir)
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
 
