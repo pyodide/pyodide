@@ -371,6 +371,13 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
   if (to === undefined) {
     cont = self._continuation;
   } else {
+    if (to._finished) {
+      setErrorMessage(
+        Module._PyExc_RuntimeError,
+        "continulet already finished",
+      );
+      return 0;
+    }
     cont = to._continuation;
     if (self._continuation !== undefined) {
       to._continuation = self._continuation;
