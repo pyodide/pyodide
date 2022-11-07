@@ -13,6 +13,8 @@ requirements:
   run:
     - geos
     - numpy
+  host:
+    - geos
 test:
   imports:
     - shapely
