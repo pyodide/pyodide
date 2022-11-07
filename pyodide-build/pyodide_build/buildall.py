@@ -40,7 +40,6 @@ class BasePackage:
     name: str
     version: str
     disabled: bool
-    cpython_dynlib: bool
     meta: MetaConfig
     package_type: _BuildSpecTypes
     run_dependencies: list[str]
@@ -90,7 +89,6 @@ class Package(BasePackage):
         self.name = self.meta.package.name
         self.version = self.meta.package.version
         self.disabled = self.meta.package.disabled
-        self.cpython_dynlib = self.meta.package.cpython_dynlib
         self.package_type = self.meta.build.package_type
 
         assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"

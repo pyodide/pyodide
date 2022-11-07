@@ -11,7 +11,6 @@ class _PackageSpec(BaseModel):
     top_level: list[str] = Field([], alias="top-level")
     tag: str = Field("", alias="_tag")
     disabled: bool = Field(False, alias="_disabled")
-    cpython_dynlib: bool = Field(False, alias="_cpython_dynlib")
 
     class Config:
         extra = pydantic.Extra.forbid
