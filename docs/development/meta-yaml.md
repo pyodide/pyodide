@@ -125,23 +125,32 @@ are:
 
 Extra flags to pass to the build backend (e.g., `setuptools`, `flit`, etc).
 
-### `build/library`
+### `build/type`
 
-Should be set to true for library packages. Library packages are packages that
+Type of the package. Possible values are:
+
+- package (default): A normal Python package, built to a wheel file.
+- staic_library: A static library.
+- shared_library: A shared library.
+- cpython_module: A CPython stdlib extension module.
+  This is used for unvendoring CPython modules, and should not be used
+  for other purposes.
+
+If you are building ordinary Python package, you don't need to set this key.
+But if you are building a static or shared library,
+you need to set this to `static_library` or `shared_library` respectively.
+
+Static library packages are packages that
 are needed for other packages but are not Python packages themselves. For
 library packages, the script specified in the `build/script` section is run to
 compile the library. See the [zlib
 meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml)
 for an example of a library package specification.
 
-### `build/sharedlibrary`
-
-Should be set to true for shared library packages. Shared library packages are
-packages that are needed for other packages, but are loaded dynamically when
-Pyodide is run. For shared library packages, the script specified in the
-`build/script` section is run to compile the library. The script should build
+Shared library packages are similar to static library packages, but they are
+loaded dynamically when Pyodide is run. The `build/script` section should build
 the shared library and copy it into a subfolder of the source folder called
-`install`. Files or folders in this install folder will be packaged to make the
+`dist`. Files or folders in this folder will be packaged to make the
 Pyodide package. See the [CLAPACK
 meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml)
 for an example of a shared library specification.
