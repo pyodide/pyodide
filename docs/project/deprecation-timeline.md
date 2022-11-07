@@ -10,6 +10,11 @@ state, this list is subject to change and some features can be removed without
 deprecation warnings. More details about each item can often be found in the
 {ref}`changelog`.
 
+## 0.24.0
+
+- The `messageCallback` and `errorCallback` argument to `loadPackage` and `loadPackagesFromImports` will be passed as a
+  named argument only.
+
 ## 0.23.0
 
 Names that used to be in the root `pyodide` module and were moved to submodules

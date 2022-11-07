@@ -11,6 +11,9 @@
 #include "pyproxy.h"
 #include "python2js.h"
 
+#define Py_ENTER()
+#define Py_EXIT()
+
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
@@ -909,6 +912,15 @@ success:
   return 0;
 }
 
+EM_JS_REF(JsRef,
+          pyproxy_new_ex,
+          (PyObject * ptrobj, bool capture_this, bool roundtrip),
+          {
+            return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
+              props : { captureThis : !!capture_this, roundtrip : !!roundtrip }
+            }));
+          });
+
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
@@ -1043,9 +1055,22 @@ EM_JS_REF(JsRef, create_promise_handles, (
 // clang-format on
 
 static PyObject*
-create_proxy(PyObject* _mod, PyObject* obj)
+create_proxy(PyObject* self,
+             PyObject* const* args,
+             Py_ssize_t nargs,
+             PyObject* kwnames)
 {
-  JsRef ref = pyproxy_new(obj);
+  static const char* const _keywords[] = { "", "capture_this", "roundtrip", 0 };
+  bool capture_this = false;
+  bool roundtrip = true;
+  PyObject* obj;
+  static struct _PyArg_Parser _parser = { "O|$pp:create_proxy", _keywords, 0 };
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
+    return NULL;
+  }
+
+  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1059,8 +1084,8 @@ static PyMethodDef methods[] = {
   },
   {
     "create_proxy",
-    create_proxy,
-    METH_O,
+    (PyCFunction)create_proxy,
+    METH_FASTCALL | METH_KEYWORDS,
   },
   { NULL } /* Sentinel */
 };

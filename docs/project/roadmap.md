@@ -22,7 +22,7 @@ See issue {issue}`646`.
 Across [benchmarks](https://github.com/pyodide/pyodide/tree/main/benchmark)
 Pyodide is currently around 3x to 5x slower than native Python.
 
-At the same type, C code compiled to WebAssembly typically runs between near
+At the same time, C code compiled to WebAssembly typically runs between near
 native speed and 2x to 2.5x times slower (Jangda et al. 2019
 [PDF](https://www.usenix.org/system/files/atc19-jangda.pdf)). It is therefore
 very likely that the performance of Python code in Pyodide can be improved with

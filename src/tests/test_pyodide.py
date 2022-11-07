@@ -599,51 +599,86 @@ def test_create_once_callable(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_proxy(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    [testAddListener, testCallListener, testRemoveListener] = run_js(
         """
-        self.testAddListener = function(f){
+        function testAddListener(f){
             self.listener = f;
         }
-        self.testCallListener = function(f){
+        function testCallListener(f){
             return self.listener();
         }
-        self.testRemoveListener = function(f){
+        function testRemoveListener(f){
             return self.listener === f;
         }
-        pyodide.runPython(`
-            from pyodide.ffi import create_proxy
-            from js import testAddListener, testCallListener, testRemoveListener;
-            class Test:
-                def __call__(self):
-                    return 7
-
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
-
-            f = Test()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_proxy(f)
-            assert sys.getrefcount(f) == 3
-            assert proxy() == 7
-            testAddListener(proxy)
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testRemoveListener(proxy)
-            assert sys.getrefcount(f) == 3
-            proxy.destroy()
-            assert sys.getrefcount(f) == 2
-            destroyed = False
-            del f
-            assert destroyed == True
-        `);
+        [testAddListener, testCallListener, testRemoveListener]
         """
     )
+
+    destroyed = False
+
+    class Test:
+        def __call__(self):
+            return 7
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Test()
+    import sys
+
+    assert sys.getrefcount(f) == 2
+    proxy = create_proxy(f)
+    assert sys.getrefcount(f) == 3
+    assert proxy() == 7
+    testAddListener(proxy)
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 3
+    proxy.destroy()
+    assert sys.getrefcount(f) == 2
+    destroyed = False
+    del f
+    assert destroyed
+
+
+@run_in_pyodide
+def test_create_proxy_capture_this(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    o = run_js("({})")
+
+    def f(self):
+        assert self == o
+
+    o.f = create_proxy(f, capture_this=True)
+    run_js("(o) => { o.f(); o.f.destroy(); }")(o)
+
+
+@run_in_pyodide
+def test_create_proxy_roundtrip(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy, create_proxy
+
+    f = {}  # type: ignore[var-annotated]
+    o = run_js("({})")
+    o.f = create_proxy(f, roundtrip=True)
+    assert isinstance(o.f, JsProxy)
+    assert o.f.unwrap() is f
+    o.f.destroy()
+    o.f = create_proxy(f, roundtrip=False)
+    assert o.f is f
+    run_js("(o) => { o.f.destroy(); }")(o)
 
 
 def test_return_destroyed_value(selenium):
@@ -1217,7 +1252,7 @@ def test_pickle_jsexception(selenium):
 
 
 def test_raises_jsexception(selenium):
-    from pyodide.ffi import JsException
+    from pytest_pyodide.pyodide import JsException
 
     @run_in_pyodide
     def raise_jsexception(selenium):
@@ -1227,6 +1262,18 @@ def test_raises_jsexception(selenium):
 
     with pytest.raises(JsException, match="Error: hi"):
         raise_jsexception(selenium)
+
+
+def test_deprecations(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.run_js(
+        """
+        pyodide.loadPackage("micropip", (x) => x);
+        pyodide.loadPackagesFromImports("import micropip", (x) => x);
+        """
+    )
+    dep_msg = "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }"
+    assert selenium.logs.count(dep_msg) == 1
 
 
 @run_in_pyodide(packages=["pytest"])
@@ -1252,12 +1299,12 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_unvendored_stdlib(selenium_standalone):
+def test_unvendored_stdlib_import_hook(selenium_standalone):
     import importlib
 
     import pytest
 
-    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3"]
+    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
 
     for lib in unvendored_stdlibs:
@@ -1292,6 +1339,38 @@ def test_unvendored_stdlib(selenium_standalone):
     for lib in removed_stdlibs:
         with pytest.raises(
             ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            finder.find_spec(lib, None)
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_repodata_import_hook(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    from _pyodide._importhook import RepodataPackagesFinder
+
+    repodata_packages = ["micropip", "packaging", "regex"]
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("pytest.there_is_no_such_module")
+
+    finder = RepodataPackagesFinder({"micropip": "", "packaging": "", "regex": ""})
+
+    assert finder.find_spec("os", None) is None
+    assert finder.find_spec("os.path", None) is None
+    assert finder.find_spec("os.no_such_module", None) is None
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
         ):
             finder.find_spec(lib, None)
 
