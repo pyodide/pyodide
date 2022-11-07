@@ -27,8 +27,8 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.21
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.23
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
