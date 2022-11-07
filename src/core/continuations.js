@@ -334,6 +334,33 @@ function getResult(iserr, value) {
   return value;
 }
 
+function startContinuation(self) {
+  const pyproxies = [];
+  const args = self._args.toJs({ depth: 1, pyproxies });
+  const kwargs = self._kwargs.toJs({
+    dict_converter: Object.fromEntries,
+    depth: 1,
+    pyproxies,
+  });
+  self = self.copy();
+  self._csp = self._func
+    .captureThis()
+    .callSyncifyingKwargs(self, ...args, kwargs)
+    .then(
+      (v) => [0, v],
+      (e) => [1, e],
+    )
+    .then((value) => {
+      if (!self._continuation) {
+        console.warn("Returned", value, "but no continuation...");
+        return;
+      }
+      self._continuation(value);
+      self._finished = true;
+      self.destroy("destroyed self!!");
+    });
+}
+
 Module.continuletSwitchMain = async function (self, iserr, value, to) {
   if (self.__eq__(to)) {
     return getResult(iserr, value);
@@ -374,37 +401,7 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
       setErrorMessage(Module._PyExc_TypeError, "continulet already finished");
       return 0;
     }
-
-    const pyproxies = [];
-    let args = [];
-    let kwargs = {};
-    if ("_args" in self) {
-      args = self._args.toJs({ depth: 1, pyproxies });
-    }
-    if ("_kwargs" in self) {
-      kwargs = self._kwargs.toJs({
-        dict_converter: Object.fromEntries,
-        depth: 1,
-        pyproxies,
-      });
-    }
-    self = self.copy();
-    self._csp = self._func
-      .captureThis()
-      .callSyncifyingKwargs(self, ...args, kwargs)
-      .then(
-        (v) => [0, v],
-        (e) => [1, e],
-      )
-      .then((value) => {
-        if (!self._continuation) {
-          console.warn("Returned", value, "but no continuation...");
-          return;
-        }
-        self._continuation(value);
-        self._finished = true;
-        self.destroy("destroyed self!!");
-      });
+    startContinuation(self);
   }
   return getResult(...(await p));
 };
