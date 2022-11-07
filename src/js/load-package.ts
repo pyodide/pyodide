@@ -10,6 +10,8 @@ import {
   initNodeModules,
   resolvePath,
 } from "./compat.js";
+import { createLock } from "./lock";
+import { loadDynlib } from "./dynload";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /**
@@ -191,12 +193,15 @@ function recursiveDependencies(
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
  * wheel or the path to the wheel relative to indexURL.
+ * @param checkIntegrity Whether to check the integrity of the downloaded
+ * package.
  * @returns The binary data for the package
  * @private
  */
 async function downloadPackage(
   name: string,
   channel: string,
+  checkIntegrity: boolean = true,
 ): Promise<Uint8Array> {
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
@@ -210,6 +215,10 @@ async function downloadPackage(
     );
   } else {
     uri = channel;
+    file_sub_resource_hash = undefined;
+  }
+
+  if (!checkIntegrity) {
     file_sub_resource_hash = undefined;
   }
   try {
@@ -274,6 +283,8 @@ async function installPackage(
  * @param toLoad The map of package names to PackageLoadMetadata
  * @param loaded The set of loaded package names, this will be updated by this function.
  * @param failed The map of <failed package name, error message>, this will be updated by this function.
+ * @param checkIntegrity Whether to check the integrity of the downloaded
+ * package.
  * @private
  */
 async function downloadAndInstall(
@@ -281,6 +292,7 @@ async function downloadAndInstall(
   toLoad: Map<string, PackageLoadMetadata>,
   loaded: Set<string>,
   failed: Map<string, Error>,
+  checkIntegrity: boolean = true,
 ) {
   if (loadedPackages[name] !== undefined) {
     return;
@@ -289,7 +301,7 @@ async function downloadAndInstall(
   const pkg = toLoad.get(name)!;
 
   try {
-    const buffer = await downloadPackage(pkg.name, pkg.channel);
+    const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
     const installPromisDependencies = pkg.depends.map((dependency) => {
       return toLoad.has(dependency)
         ? toLoad.get(dependency)!.done
@@ -311,117 +323,9 @@ async function downloadAndInstall(
   }
 }
 
-/**
- * @returns A new asynchronous lock
- * @private
- */
-function createLock() {
-  // This is a promise that is resolved when the lock is open, not resolved when lock is held.
-  let _lock = Promise.resolve();
-
-  /**
-   * Acquire the async lock
-   * @returns A zero argument function that releases the lock.
-   * @private
-   */
-  async function acquireLock() {
-    const old_lock = _lock;
-    let releaseLock: () => void;
-    _lock = new Promise((resolve) => (releaseLock = resolve));
-    await old_lock;
-    // @ts-ignore
-    return releaseLock;
-  }
-  return acquireLock;
-}
-
-// Emscripten has a lock in the corresponding code in library_browser.js. I
-// don't know why we need it, but quite possibly bad stuff will happen without
-// it.
-const acquireDynlibLock = createLock();
-
-/**
- * Load a dynamic library. This is an async operation and Python imports are
- * synchronous so we have to do it ahead of time. When we add more support for
- * synchronous I/O, we could consider doing this later as a part of a Python
- * import hook.
- *
- * @param lib The file system path to the library.
- * @param shared Is this a shared library or not?
- * @private
- */
-async function loadDynlib(lib: string, shared: boolean) {
-  const releaseDynlibLock = await acquireDynlibLock();
-  const loadGlobally = shared;
-
-  if (DEBUG) {
-    console.debug(`Loading a dynamic library ${lib}`);
-  }
-
-  // This is a fake FS-like object to make emscripten
-  // load shared libraries from the file system.
-  const libraryFS = {
-    _ldLibraryPaths: ["/usr/lib", API.sitepackages],
-    _resolvePath: (path: string) => {
-      if (DEBUG) {
-        console.debug(`Searching a library from ${path}, required by ${lib}.`);
-      }
-
-      if (Module.PATH.isAbs(path)) {
-        if (Module.FS.findObject(path) !== null) {
-          return path;
-        }
-
-        // If the path is absolute but doesn't exist, we try to find it from
-        // the library paths.
-        path = path.substring(path.lastIndexOf("/") + 1);
-      }
-
-      for (const dir of libraryFS._ldLibraryPaths) {
-        const fullPath = Module.PATH.join2(dir, path);
-        if (Module.FS.findObject(fullPath) !== null) {
-          return fullPath;
-        }
-      }
-      return path;
-    },
-    findObject: (path: string, dontResolveLastLink: boolean) => {
-      let obj = Module.FS.findObject(
-        libraryFS._resolvePath(path),
-        dontResolveLastLink,
-      );
-      if (DEBUG) {
-        console.log(`Library ${path} found at ${obj}`);
-      }
-      return obj;
-    },
-    readFile: (path: string) =>
-      Module.FS.readFile(libraryFS._resolvePath(path)),
-  };
-
-  try {
-    await Module.loadDynamicLibrary(lib, {
-      loadAsync: true,
-      nodelete: true,
-      global: loadGlobally,
-      fs: libraryFS,
-    });
-  } catch (e: any) {
-    if (e && e.message && e.message.includes("need to see wasm magic number")) {
-      console.warn(
-        `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`,
-      );
-      return;
-    }
-    throw e;
-  } finally {
-    releaseDynlibLock();
-  }
-}
-API.loadDynlib = loadDynlib;
-
 const acquirePackageLock = createLock();
 
+let loadPackagePositionalCallbackDeprecationWarned = false;
 /**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
@@ -433,19 +337,41 @@ const acquirePackageLock = createLock();
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to JavaScript
  * and the ``PyProxy`` will be destroyed.
- * @param messageCallback A callback, called with progress messages
+ * @param options
+ * @param options.messageCallback A callback, called with progress messages
  *    (optional)
- * @param errorCallback A callback, called with error/warning messages
+ * @param options.errorCallback A callback, called with error/warning messages
  *    (optional)
+ * @param options.checkIntegrity If true, check the integrity of the downloaded
+ *    packages (default: true)
  * @async
  */
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
-  messageCallback?: (msg: string) => void,
-  errorCallback?: (msg: string) => void,
+  options: {
+    messageCallback?: (message: string) => void;
+    errorCallback?: (message: string) => void;
+    checkIntegrity?: boolean;
+  } = {
+    checkIntegrity: true,
+  },
+  errorCallbackDeprecated?: (message: string) => void,
 ) {
-  messageCallback = messageCallback || console.log;
-  errorCallback = errorCallback || console.error;
+  if (typeof options === "function") {
+    if (!loadPackagePositionalCallbackDeprecationWarned) {
+      console.warn(
+        "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+      );
+      options = {
+        messageCallback: options,
+        errorCallback: errorCallbackDeprecated,
+      };
+      loadPackagePositionalCallbackDeprecationWarned = true;
+    }
+  }
+
+  const messageCallback = options.messageCallback || console.log;
+  const errorCallback = options.errorCallback || console.error;
   if (isPyProxy(names)) {
     names = names.toJs();
   }
@@ -503,6 +429,7 @@ export async function loadPackage(
         toLoad,
         loaded,
         failed,
+        options.checkIntegrity,
       );
     }
 

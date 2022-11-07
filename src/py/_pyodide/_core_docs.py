@@ -235,7 +235,7 @@ class JsProxy:
         ArrayBuffer view.
 
         Example
-        ------------
+        -------
         >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> x = Uint8Array.new(range(10))
@@ -259,7 +259,7 @@ class JsProxy:
         ArrayBuffer view.
 
         Example
-        ------------
+        -------
         >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> # the JsProxy need to be pre-allocated
@@ -289,7 +289,7 @@ class JsProxy:
         ArrayBuffer view.
 
         Example
-        ------------
+        -------
         >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> x = Uint8Array.new(range(10))
@@ -362,6 +362,13 @@ class JsProxy:
         Present only if the wrapped Javascript object is an array.
         """
 
+    def unwrap(self) -> Any:
+        """Unwrap a double proxy created with :any:`create_proxy` into the
+        wrapped Python object.
+
+        Only present on double proxies.
+        """
+
 
 # from pyproxy.c
 
@@ -376,11 +383,38 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
     return obj  # type: ignore[return-value]
 
 
-def create_proxy(obj: Any, /) -> JsProxy:
+def create_proxy(
+    obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
+) -> JsProxy:
     """Create a ``JsProxy`` of a ``PyProxy``.
 
     This allows explicit control over the lifetime of the ``PyProxy`` from
     Python: call the ``destroy`` API when done.
+
+    Parameters
+    ----------
+    obj: any
+        The object to wrap.
+
+    capture_this : bool, default=False
+        If the object is callable, should `this` be passed as the first argument
+        when calling it from JavaScript.
+
+    roundtrip: bool, default=True
+        When the proxy is converted back from JavaScript to Python, if this is
+        ``True`` it is converted into a double proxy. If ``False``, it is
+        unwrapped into a Python object. In the case that ``roundtrip`` is
+        ``True`` it is possible to unwrap a double proxy with the :any:`unwrap`
+        method. This is useful to allow easier control of lifetimes from Python:
+
+        .. code-block:: python
+
+            from js import o
+            d = {}
+            o.d = create_proxy(d, roundtrip=True)
+            o.d.destroy() # Destroys the proxy created with create_proxy
+
+        With ``roundtrip=False`` this would be an error.
     """
     return obj
 

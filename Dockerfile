@@ -9,6 +9,7 @@ RUN apt-get update \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
+        ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
 ADD docs/requirements-doc.txt requirements.txt /
@@ -64,24 +65,26 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
 #============================================
 
 RUN if [ $CHROME_VERSION = "latest" ]; \
-  then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"); \
-  else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}"); \
+  then CHROMEDRIVER_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"); \
+  else CHROMEDRIVER_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}"); \
   fi \
+  && CHROME_VERSION_MAJOR=$(echo $CHROMEDRIVER_VERSION_FULL | cut -d '.' -f 1) \
+  && CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://versionhistory.googleapis.com/v1/chrome/platforms/linux/channels/stable/versions" | jq -r '.versions[] | .version' | grep "^${CHROME_VERSION_MAJOR}" | head -n 1) \
   && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
   && apt-get update \
   && apt install -qqy /tmp/google-chrome.deb \
   && rm -f /tmp/google-chrome.deb \
   && rm -rf /var/lib/apt/lists/* \
-  && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROME_VERSION_FULL/chromedriver_linux64.zip \
+  && wget --no-verbose -O /tmp/chromedriver_linux64.zip https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION_FULL/chromedriver_linux64.zip \
   && rm -rf /opt/selenium/chromedriver \
   && unzip /tmp/chromedriver_linux64.zip -d /opt/selenium \
   && rm /tmp/chromedriver_linux64.zip \
-  && mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CHROME_VERSION_FULL \
-  && chmod 755 /opt/selenium/chromedriver-$CHROME_VERSION_FULL \
-  && ln -fs /opt/selenium/chromedriver-$CHROME_VERSION_FULL /usr/local/bin/chromedriver \
+  && mv /opt/selenium/chromedriver /opt/selenium/chromedriver-$CHROMEDRIVER_VERSION_FULL \
+  && chmod 755 /opt/selenium/chromedriver-$CHROMEDRIVER_VERSION_FULL \
+  && ln -fs /opt/selenium/chromedriver-$CHROMEDRIVER_VERSION_FULL /usr/local/bin/chromedriver \
   && echo "Using Chrome version: $(google-chrome --version)" \
-  && echo "Using Chromedriver version: "$CHROME_VERSION_FULL
+  && echo "Using Chromedriver version: "$CHROMEDRIVER_VERSION_FULL
 
 COPY --from=node-image /usr/local/bin/node /usr/local/bin/
 COPY --from=node-image /usr/local/lib/node_modules /usr/local/lib/node_modules
@@ -93,6 +96,14 @@ RUN npm install -g \
   prettier \
   rollup \
   rollup-plugin-terser
+
+RUN cd / \
+    && git clone --recursive https://github.com/WebAssembly/wabt \
+    && cd wabt \
+    && git submodule update --init \
+    && make install-gcc-release-no-tests \
+    && cd ~  \
+    && rm -rf /wabt
 
 CMD ["/bin/sh"]
 WORKDIR /src

@@ -1,12 +1,10 @@
 # xgboost tests are copied from: https://github.com/dmlc/xgboost/tree/master/tests/python
-import base64
 import pathlib
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
 DEMO_PATH = pathlib.Path(__file__).parent / "test_data"
-DATA_TRAIN = base64.b64encode((DEMO_PATH / "dermatology.data").read_bytes())
 
 
 @pytest.mark.driver_timeout(60)
@@ -22,23 +20,25 @@ def test_compat(selenium):
 
 @pytest.mark.driver_timeout(60)
 def test_basic_classification(selenium):
-    selenium.load_package("xgboost")
-    selenium.run(
-        f"""
-        import base64
+    @run_in_pyodide(packages=["xgboost"])
+    def run(selenium, data_train):
+
         with open("dermatology.data", "wb") as f:
-            f.write(base64.b64decode({DATA_TRAIN!r}))
+            f.write(data_train)
 
         import numpy as np
         import xgboost as xgb
 
         # label need to be 0 to num_class -1
-        data = np.loadtxt('./dermatology.data', delimiter=',',
-                converters={{33: lambda x:int(x == '?'), 34: lambda x:int(x) - 1}})
+        data = np.loadtxt(
+            "./dermatology.data",
+            delimiter=",",
+            converters={33: lambda x: int(x == "?"), 34: lambda x: int(x) - 1},
+        )
         sz = data.shape
 
-        train = data[:int(sz[0] * 0.7), :]
-        test = data[int(sz[0] * 0.7):, :]
+        train = data[: int(sz[0] * 0.7), :]
+        test = data[int(sz[0] * 0.7) :, :]
 
         train_X = train[:, :33]
         train_Y = train[:, 34]
@@ -49,16 +49,16 @@ def test_basic_classification(selenium):
         xg_train = xgb.DMatrix(train_X, label=train_Y)
         xg_test = xgb.DMatrix(test_X, label=test_Y)
         # setup parameters for xgboost
-        param = {{}}
+        param = {}
         # use softmax multi-class classification
-        param['objective'] = 'multi:softmax'
+        param["objective"] = "multi:softmax"
         # scale weight of positive examples
-        param['eta'] = 0.1
-        param['max_depth'] = 6
-        param['nthread'] = 4
-        param['num_class'] = 6
+        param["eta"] = 0.1  # type: ignore[assignment]
+        param["max_depth"] = 6  # type: ignore[assignment]
+        param["nthread"] = 4  # type: ignore[assignment]
+        param["num_class"] = 6  # type: ignore[assignment]
 
-        watchlist = [(xg_train, 'train'), (xg_test, 'test')]
+        watchlist = [(xg_train, "train"), (xg_test, "test")]
         num_round = 5
         bst = xgb.train(param, xg_train, num_round, watchlist)
         # get prediction
@@ -67,7 +67,7 @@ def test_basic_classification(selenium):
         assert error_rate < 0.1
 
         # do the same thing again, but output probabilities
-        param['objective'] = 'multi:softprob'
+        param["objective"] = "multi:softprob"
         bst = xgb.train(param, xg_train, num_round, watchlist)
         # Note: this convention has been changed since xgboost-unity
         # get prediction, this is in 1D array, need reshape to (ndata, nclass)
@@ -75,8 +75,9 @@ def test_basic_classification(selenium):
         pred_label = np.argmax(pred_prob, axis=1)
         error_rate = np.sum(pred_label != test_Y) / test_Y.shape[0]
         assert error_rate < 0.1
-        """
-    )
+
+    DATA_TRAIN = (DEMO_PATH / "dermatology.data").read_bytes()
+    run(selenium, DATA_TRAIN)
 
 
 @pytest.mark.driver_timeout(60)
@@ -319,3 +320,21 @@ def test_pandas_weight(selenium):
     assert data.num_col() == kCols
 
     np.testing.assert_array_equal(data.get_weight(), w)
+
+
+@pytest.mark.driver_timeout(60)
+@run_in_pyodide(packages=["xgboost", "numpy", "scipy"])
+def test_scipy_sparse(selenium):
+    import numpy as np
+    import scipy
+    import xgboost as xgb
+
+    n_rows = 100
+    n_cols = 10
+    X = scipy.sparse.random(n_rows, n_cols, format="csr")
+    y = np.random.randn(n_rows)
+    dtrain = xgb.DMatrix(X, y)
+    booster = xgb.train({}, dtrain, num_boost_round=1)
+    copied_predt = booster.predict(xgb.DMatrix(X))
+    predt = booster.inplace_predict(X)
+    np.testing.assert_allclose(copied_predt, predt)

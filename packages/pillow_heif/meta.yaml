@@ -1,0 +1,28 @@
+package:
+  name: pillow_heif
+  version: 0.6.1
+source:
+  url: https://files.pythonhosted.org/packages/bc/45/4845ebee3badd547ba4be9713f380fe66a96ad118bf0b8f697d6373a311d/pillow_heif-0.6.1.tar.gz
+  sha256: 9147e9f07c7cfce934d084cb03b53d06bb6c3789c3402fb83bc93bcf8c106dad
+  patches:
+    - patches/0001-Remove-include-path-check.patch
+requirements:
+  run:
+    - cffi
+    - Pillow
+    - libheif
+  host:
+    - cffi
+    - libheif
+build:
+  script: |
+    sed -i "s@include_dirs = \[@include_dirs = ['\\${WASM_LIBRARY_DIR}/include', @" libheif/build.py
+    sed -i "s@library_dirs = \[@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib', @" libheif/build.py
+test:
+  imports:
+    - pillow_heif
+about:
+  home: https://github.com/bigcat88/pillow_heif
+  PyPI: https://pypi.org/project/pillow_heif
+  summary: Python 3.6+ interface to libheif library
+  license: LGPLv2.1

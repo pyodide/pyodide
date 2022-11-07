@@ -14,6 +14,9 @@ substitutions:
 
 ## Unreleased
 
+- `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
+  {pr}`3150`.
+
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see
   [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
@@ -26,6 +29,11 @@ substitutions:
 
 - {{ Enhancement }} Emscripten was updated to Version 3.1.21
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
+
+- {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
+  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
+  into the Pyodide file system.
+  {pr}`2987`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
@@ -51,8 +59,20 @@ substitutions:
 - {{ Enhancement }} The full test suite is now run in Safari {pr}`2578` {pr}`3095`.
 
 - {{ Enhancement }} It is possible to make a `PyProxy` that takes `this` as the
-  first argument using the {any}`captureThis` method.
-  {pr}`3103`
+  first argument using the {any}`captureThis` method. The {any}`create_proxy`
+  method also has a `capture_this` argument which causes the `PyProxy` to
+  receive `this` as the first argument if set to `True`
+  {pr}`3103`, {pr}`3145`
+
+- {{ Enhancement }} `create_proxy` now takes an optional `roundtrip` parameter.
+  If this is set to `True`, then when the proxy is converted back to Python, it
+  is converted back to the same double proxy. This allows the proxy to be
+  destroyed from Python even if no reference is retained.
+  {pr}`3163`
+
+- {{ Enhancement }} Pyodide now shows more helpful error messages when
+  importing packages that are included in Pyodide fails.
+  {pr}`3137`
 
 - {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
   method, so it's possible to use a JavaScript function as a Python method. When
@@ -60,10 +80,44 @@ substitutions:
   the method is called on.
   {pr}`3130`
 
+- {{ Breaking }} The messageCallback and errorCallback argument to
+  {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>`
+  is now passed as named arguments.
+  The old usage still works with a deprecation warning.
+  {pr}`3149`
+
+- {{ Enhancement }} {any}`loadPackage <pyodide.loadPackage>` and
+  {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` now accepts
+  a new option `checkIntegrity`. If set to False, integrity check for Python Packages
+  will be disabled.
+
+- {{ Fix }} Fix undefined symbol error when loading shared library
+  {pr}`3193`
+
+- {{ Fix }} Shared libraries with version suffix are now handled correctly.
+  {pr}`3154`
+
+- {{ Fix }} Scipy CSR data is now handled correctly in XGBoost.
+  {pr}`3194`
+
+- Added a new CLI command `pyodide sekeleton` which creates a package build recipe.
+  `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
+  {pr}`3175`
+
+- {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
+  {pr}`3178`
+
+- Add Gitpod configuration to the repository.
+  {pr} `3201`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  gdal, fiona, geopandas {pr}`3213`,
+  the standard library \_hashlib module {pr}`3206`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
@@ -133,6 +187,13 @@ substitutions:
   calculate top-level import names for the package. Previously `test/imports`
   key was used for this purpose.
   {pr}`3006`
+
+- {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
+  {pr}`3153`
+
+- {{ Fix }} Fixed a bug that shared libraries are not copied into distribution
+  directory when it is already built.
+  {pr}`3212`
 
 ## Version 0.21.3
 

@@ -1,0 +1,17 @@
+github:
+  prebuilds:
+    master: true
+    pullRequests: true
+    pullRequestsFromForks: true
+    addCheck: false
+    addComment: false
+    addBadge: false
+    addLabel: false
+tasks:
+  - name: Setup the environment
+    command: |
+      PYTHON_VERSION=3.10.2
+      pyenv install $PYTHON_VERSION
+      pyenv global $PYTHON_VERSION
+      python -m pip install -r requirements.txt
+      ./run_docker
