@@ -327,7 +327,7 @@ function startContinuation(self) {
     pyproxies,
   });
   self = self.copy();
-  self._csp = self._func
+  self._func
     .captureThis()
     .callSyncifyingKwargs(self, ...args, kwargs)
     .then(
