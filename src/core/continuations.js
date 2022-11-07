@@ -388,7 +388,14 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
     cont = self._continuation;
   } else {
     cont = to._continuation;
-    to._continuation = self._continuation;
+    if (self._continuation !== undefined) {
+      to._continuation = self._continuation;
+    } else {
+      const origself = self;
+      to._continuation = function ([iserr, value]) {
+        startContinuation(origself);
+      };
+    }
   }
   const p = new Promise((res) => (self._continuation = res));
   if (to !== undefined) {
