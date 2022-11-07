@@ -29,7 +29,7 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
-	src/core/threadstate.o \
+	src/core/continuations.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
