@@ -101,7 +101,7 @@ class Package(BasePackage):
 
     def dist_artifact_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        if self.package_type == "shared_library":
+        if self.package_type in ("shared_library", "cpython_module"):
             candidates = list(dist_dir.glob("*.zip"))
         else:
             candidates = list(find_matching_wheels(dist_dir.glob("*.whl")))

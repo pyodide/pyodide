@@ -281,7 +281,9 @@ def download_and_extract(
     shutil.move(buildpath / extract_dir_name, srcpath)
 
 
-def prepare_source(buildpath: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
+def prepare_source(
+    buildpath: Path, srcpath: Path, src_metadata: _SourceSpec, clear_only: bool = False
+) -> None:
     """
     Figure out from the "source" key in the package metadata where to get the source
     from, then get the source into srcpath (or somewhere else, if it goes somewhere
@@ -300,6 +302,10 @@ def prepare_source(buildpath: Path, srcpath: Path, src_metadata: _SourceSpec) ->
     src_metadata
         The source section from meta.yaml.
 
+    clear_only
+        Clear the source directory only, do not download or extract the source.
+        Set this to True if the source collected from external source.
+
     Returns
     -------
         The location where the source ended up. TODO: None, actually?
@@ -307,6 +313,10 @@ def prepare_source(buildpath: Path, srcpath: Path, src_metadata: _SourceSpec) ->
     if buildpath.resolve().is_dir():
         shutil.rmtree(buildpath)
     os.makedirs(buildpath)
+
+    if clear_only:
+        srcpath.mkdir(parents=True, exist_ok=True)
+        return
 
     if src_metadata.url is not None:
         download_and_extract(buildpath, srcpath, src_metadata)
@@ -732,21 +742,17 @@ def build_package(
 
     url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
-    library = build_metadata.package_type == "static_library"
-    sharedlibrary = build_metadata.package_type == "shared_library"
-    cpython_module = build_metadata.package_type == "cpython_module"
     post = build_metadata.post
+    package_type = build_metadata.package_type
 
     # These are validated in io.check_package_config
     # If any of these assertions fail, the code path through here might get a
     # bit weird
     if finished_wheel:
         assert not build_metadata.script
-        assert not library
-        assert not sharedlibrary
+        assert package_type == "package"
     if post:
-        assert not library
-        assert not sharedlibrary
+        assert package_type == "package"
 
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
@@ -771,16 +777,17 @@ def build_package(
         bash_runner.env["PKGDIR"] = str(pkg_root)
         bash_runner.env["PKG_VERSION"] = version
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
-        if not continue_ and not cpython_module:
-            prepare_source(build_dir, srcpath, source_metadata)
+        if not continue_:
+            clear_only = package_type == "cpython_module"
+            prepare_source(build_dir, srcpath, source_metadata, clear_only=clear_only)
             patch(pkg_root, srcpath, source_metadata)
 
         run_script(build_dir, srcpath, build_metadata, bash_runner)
 
-        if library:
+        if package_type == "static_library":
             # Nothing needs to be done for a static library
             pass
-        elif sharedlibrary:
+        elif package_type in ("shared_library", "cpython_module"):
             # If shared library, we copy .so files to dist_dir
             # and create a zip archive of the .so files
             shutil.rmtree(dist_dir, ignore_errors=True)

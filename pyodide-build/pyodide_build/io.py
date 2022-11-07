@@ -39,8 +39,11 @@ class _SourceSpec(BaseModel):
     def _check_in_tree_url(cls, values: dict[str, Any]) -> dict[str, Any]:
         in_tree = values["path"] is not None
         from_url = values["url"] is not None
-        if not (in_tree or from_url):
-            raise ValueError("Source section should have a 'url' or 'path' key")
+
+        # cpython_modules is a special case, it is not in the tree
+        # TODO: just copy the file into the tree?
+        # if not (in_tree or from_url):
+        #     raise ValueError("Source section should have a 'url' or 'path' key")
 
         if in_tree and from_url:
             raise ValueError(
@@ -147,7 +150,7 @@ class _AboutSpec(BaseModel):
 
 class MetaConfig(BaseModel):
     package: _PackageSpec
-    source: _SourceSpec
+    source: _SourceSpec = _SourceSpec()
     build: _BuildSpec = _BuildSpec()
     requirements: _RequirementsSpec = _RequirementsSpec()
     test: _TestSpec = _TestSpec()
