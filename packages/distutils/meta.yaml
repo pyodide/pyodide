@@ -8,7 +8,7 @@ source:
   path: empty
 build:
   # Actually, this is not a shared library, but we want to load this dynamically anyway.
-  sharedlibrary: true
+  type: shared_library
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist

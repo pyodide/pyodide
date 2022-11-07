@@ -10,7 +10,7 @@ source:
     - patches/0001-Hardcode-magic.mgc-location.patch
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     mkdir -p dist
     autoreconf --install

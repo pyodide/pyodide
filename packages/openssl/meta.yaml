@@ -6,7 +6,7 @@ source:
   url: https://www.openssl.org/source/openssl-1.1.1n.tar.gz
   sha256: 40dceb51a4f6a5275bde0e6bf20ef4b91bfc32ed57c0552e2e8e15463372b17a
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     emconfigure ./Configure \
       gcc \

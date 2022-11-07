@@ -7,7 +7,7 @@ package:
 source:
   path: empty
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist

@@ -10,7 +10,7 @@ source:
 
 # TODO: also include test directories included in other stdlib modules
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist
