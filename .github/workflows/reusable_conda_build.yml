@@ -98,6 +98,7 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           which ccache
+          ccache -p | grep cache_dir
 
           ccache -z
           make -C emsdk
@@ -110,6 +111,7 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           which ccache
+          ccache -p | grep cache_dir
 
           ccache -z
           make -C cpython
@@ -121,6 +123,7 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           which ccache
+          ccache -p | grep cache_dir
 
           ccache -z
           PYODIDE_PACKAGES="${{ inputs.packages }}" make
