@@ -54,7 +54,6 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         pythoninclude,
         sysconfig_dir,
         Path("Makefile.envs"),
-        wasm_lib_dir / "CLAPACK",
         wasm_lib_dir / "cmake",
         Path("tools/pyo3_config.ini"),
         Path("tools/python"),
@@ -68,7 +67,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
     # Some ad-hoc stuff here to moderate size. We'd like to include all of
     # wasm_lib_dir but there's 180mb of it. Better to leave out all the video
     # codecs and stuff.
-    for pkg in ["ssl", "libcrypto", "zlib", "xml", "mpfr"]:
+    for pkg in ["ssl", "libcrypto", "zlib", "xml", "mpfr", "lapack", "blas", "f2c"]:
         to_copy.extend(
             x.relative_to(pyodide_root)
             for x in (pyodide_root / wasm_lib_dir / "include").glob(f"**/*{pkg}*")
