@@ -319,7 +319,9 @@ function setErrorMessage(exctype, msg) {
 
 function getResult(iserr, value) {
   if (iserr) {
-    if (value.__error_address) {
+    if (Array.isArray(value)) {
+      setErrorMessage(...value);
+    } else if (value.__error_address) {
       let restored_error = Module._restore_sys_last_exception(
         value.__error_address,
       );
@@ -393,6 +395,17 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
     } else {
       const origself = self;
       to._continuation = function ([iserr, value]) {
+        console.log(iserr, value);
+        if (value !== undefined) {
+          origself._continuation([
+            1,
+            [
+              Module._PyExc_TypeError,
+              "can't send non-None value to a just-started continulet",
+            ],
+          ]);
+          return;
+        }
         startContinuation(origself);
       };
     }
