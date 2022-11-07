@@ -3,7 +3,7 @@ name: build
 env:
   EMSDK_NUM_CORES: 2
   EMCC_CORES: 2
-  CCACHE_DIR: .ccache
+  CCACHE_DIR: /tmp/.ccache
 
 on:
   workflow_call:
@@ -69,8 +69,8 @@ jobs:
       - name: Cache ccache output
         uses: actions/cache@v3
         with:
-          path: .ccache
-          key: -v20221017-${{ hashFiles('build_hash.txt') }}-${{ env.PKG_KEY }}
+          path: /tmp/.ccache
+          key: -v20221107-${{ hashFiles('build_hash.txt') }}-${{ env.PKG_KEY }}
 
       - name: Download build artifact from the previous build step
         if: ${{ inputs.artifacts-prefix-prev != '' }}
