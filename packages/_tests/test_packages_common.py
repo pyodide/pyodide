@@ -49,7 +49,7 @@ def test_parse_package(name: str) -> None:
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.driver_timeout(60)
+@pytest.mark.driver_timeout(120)
 @pytest.mark.parametrize("name", registered_packages())
 @pytest.mark.benchmark(
     max_time=3,
