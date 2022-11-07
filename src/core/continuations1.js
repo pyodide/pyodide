@@ -357,20 +357,20 @@ Module.continuletSwitchMain = async function (self, iserr, value, to) {
     return 0;
   }
   let cont;
-  if (to === undefined) {
+  if (typeof to === "undefined") {
     cont = self._continuation;
   } else {
     cont = to._continuation;
     to._continuation = self._continuation;
   }
   const p = new Promise((res) => (self._continuation = res));
-  if (to !== undefined) {
+  if (typeof to !== "undefined") {
     self = to;
   }
   if (cont) {
     cont([iserr, value]);
   } else {
-    if (value !== undefined) {
+    if (typeof value !== "undefined") {
       setErrorMessage(Module._PyExc_TypeError, "continulet already finished");
       return 0;
     }
