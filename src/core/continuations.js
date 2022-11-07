@@ -292,10 +292,125 @@ Module.initSuspenders = function () {
   Module.suspendersAvailable = true;
 };
 
-Module.continuletRun = function (func) {
-  return [func.callSyncifying()];
-};
+// function setRoundTrip(p) {
+//   const props = Object.assign({}, p.$$props, {
+//     roundtrip: true,
+//   });
+//   return pyproxy_new(_getPtr(p), {
+//     $$: p.$$,
+//     flags: p.$$flags,
+//     props,
+//   });
+// }
 
-Module.continuletPromiseRace = function (p1, p2) {
-  return [Promise.race([p1, p2])];
+function setRoundtrip(value) {
+  if (API.isPyProxy(value)) {
+    value.$$props.roundtrip = true;
+  }
+  return value;
+}
+
+function setErrorMessage(exctype, msg) {
+  let ptr = Module.stringToNewUTF8(msg);
+  exctype = Module.HEAP32[exctype / 4];
+  Module._PyErr_SetString(exctype, ptr);
+  Module._free(ptr);
+}
+
+function getResult(iserr, value) {
+  if (iserr) {
+    if (value.__error_address) {
+      let restored_error = Module._restore_sys_last_exception(
+        value.__error_address,
+      );
+      if (!restored_error) {
+        console.warn("Uh oh!", value);
+      }
+    } else {
+      Module._setErrObject(value.$$.ptr);
+    }
+    return undefined;
+  }
+  return value;
+}
+
+function startContinulet(self) {
+  const pyproxies = [];
+  let args = [];
+  let kwargs = {};
+  if ("_args" in self) {
+    args = self._args.toJs({ depth: 1, pyproxies });
+  }
+  if ("_kwargs" in self) {
+    kwargs = self._kwargs.toJs({
+      dict_converter: Object.fromEntries,
+      depth: 1,
+      pyproxies,
+    });
+  }
+  self = self.copy();
+  self._csp = self._func
+    .captureThis()
+    .callSyncifyingKwargs(self, ...args, kwargs)
+    .then(
+      (v) => [0, v],
+      (e) => [1, e],
+    )
+    .then((value) => {
+      if (!self._continuation) {
+        console.warn("Returned", value, "but no continuation...");
+        return;
+      }
+      self._continuation(value);
+      self._finished = true;
+      self.destroy("destroyed self!!");
+    });
+}
+
+Module.continuletSwitchMain = async function (self, iserr, value, to) {
+  if (self.__eq__(to)) {
+    return getResult(iserr, value);
+  }
+  if (to && !("_func" in to)) {
+    to = undefined;
+  }
+
+  if (!("_func" in self)) {
+    // this executes at most twice
+    if (to) {
+      self = to;
+      to = undefined;
+    } else {
+      return getResult(iserr, value);
+    }
+  }
+
+  if (self._finished) {
+    setErrorMessage(Module._PyExc_RuntimeError, "continulet already finished");
+    return 0;
+  }
+  let cont = self._continuation;
+  const p = new Promise((res) => (self._continuation = res));
+  if (to !== undefined) {
+    cont = to._continuation;
+    if (self._continuation) {
+      to._continuation = self._continuation;
+    } else {
+      let origself = self;
+      to._continuation = function ([iserr, value]) {
+        startContinulet(origself);
+      };
+    }
+    self = to;
+  }
+  if (cont) {
+    cont([iserr, value]);
+  } else {
+    if (value !== undefined) {
+      setErrorMessage(Module._PyExc_TypeError, "continulet already finished");
+      return 0;
+    }
+    startContinulet(self);
+  }
+  return getResult(...(await p));
 };
