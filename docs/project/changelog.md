@@ -24,8 +24,8 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.21
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.23
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`
 
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
