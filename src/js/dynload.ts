@@ -87,15 +87,15 @@ export async function loadDynlib(lib: string, global: boolean) {
     console.debug(`Loading a dynamic library ${lib}`);
   }
 
-  const libraryFS = createDynlibFS(lib);
+  const fs = createDynlibFS(lib);
 
   try {
     await Module.loadDynamicLibrary(lib, {
       loadAsync: true,
       nodelete: true,
-      global: global,
-      fs: libraryFS,
       allowUndefined: true,
+      global,
+      fs,
     });
   } catch (e: any) {
     if (e && e.message && e.message.includes("need to see wasm magic number")) {

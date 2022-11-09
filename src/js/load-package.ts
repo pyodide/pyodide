@@ -90,7 +90,7 @@ export type PackageData = {
   shared_library: boolean;
   depends: string[];
   imports: string[];
-  install_dir?: string;
+  install_dir: string;
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -268,7 +268,7 @@ async function installPackage(
       shared_library: false,
       depends: [],
       imports: [] as string[],
-      target: "site",
+      install_dir: "site",
     };
   }
   const filename = pkg.file_name;
