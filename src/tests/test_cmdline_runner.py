@@ -221,6 +221,7 @@ def install_pkg(venv, pkgname):
             venv / "bin/pip",
             "install",
             pkgname,
+            "--disable-pip-version-check",
         ],
         capture_output=True,
         encoding="utf8",

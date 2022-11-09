@@ -1,0 +1,40 @@
+package:
+  name: fiona
+  version: 1.8.21
+source:
+  url: https://files.pythonhosted.org/packages/67/5c/4e028e84a1f0cb3f8a994217cf2366360ca984dfc1433f6171de527d0dca/Fiona-1.8.21.tar.gz
+  sha256: 3a0edca2a7a070db405d71187214a43d2333a57b4097544a3fcc282066a58bfc
+test:
+  imports:
+    - fiona
+    - fiona.fio
+requirements:
+  host:
+    - gdal
+    - geos
+  run:
+    - gdal
+    - geos
+    - attrs
+    - certifi
+    - setuptools
+    - six
+    - click
+    - cligj
+    # - click-plugins  # only for fiona CLI?
+
+build:
+  script: |
+    export PACKAGE_DATA=1
+    export GDAL_CONFIG=${WASM_LIBRARY_DIR}/bin/gdal-config
+    export GDAL_DATA=${WASM_LIBRARY_DIR}/share/gdal
+    export PROJ_LIB=${WASM_LIBRARY_DIR}/share/proj
+    echo ${GDAL_CONFIG}
+    echo ${GDAL_DATA}
+    echo ${PROJ_LIB}
+
+about:
+  home: http://github.com/Toblerity/Fiona
+  PyPI: https://pypi.org/project/fiona
+  summary: Fiona reads and writes spatial data files
+  license: BSD

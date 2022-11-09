@@ -84,6 +84,15 @@ type PackageLoadMetadata = {
   installPromise?: Promise<void>;
 };
 
+// Package data inside repodata.json
+export type PackageData = {
+  file_name: string;
+  shared_library: boolean;
+  depends: string[];
+  imports: string[];
+  install_dir: string;
+};
+
 interface ResolvablePromise extends Promise<void> {
   resolve: (value?: any) => void;
   reject: (err?: Error) => void;
@@ -118,7 +127,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info = API.repodata_packages[name];
+  const pkg_info: PackageData = API.repodata_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -252,18 +261,19 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg = API.repodata_packages[name];
+  let pkg: PackageData = API.repodata_packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",
       shared_library: false,
       depends: [],
       imports: [] as string[],
+      install_dir: "site",
     };
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
-  const dynlibs = API.package_loader.unpack_buffer.callKwargs({
+  const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
     target: pkg.install_dir,
@@ -271,6 +281,13 @@ async function installPackage(
     installer: "pyodide.loadPackage",
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
   });
+
+  if (DEBUG) {
+    console.debug(
+      `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
+    );
+  }
+
   for (const dynlib of dynlibs) {
     await loadDynlib(dynlib, pkg.shared_library);
   }
