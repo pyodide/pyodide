@@ -25,7 +25,9 @@ type LoadDynlibFS = {
  */
 function createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
   searchDirs = searchDirs || [];
-  const defaultSearchDirs = ["/usr/lib", API.sitepackages];
+
+  const libBasename = lib.substring(0, lib.lastIndexOf("/"));
+  const defaultSearchDirs = ["/usr/lib", API.sitepackages, libBasename];
   const libSearchDirs = searchDirs.concat(defaultSearchDirs);
 
   const resolvePath = (path: string) => {

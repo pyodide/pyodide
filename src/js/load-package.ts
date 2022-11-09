@@ -268,6 +268,7 @@ async function installPackage(
       shared_library: false,
       depends: [],
       imports: [] as string[],
+      target: "site",
     };
   }
   const filename = pkg.file_name;
