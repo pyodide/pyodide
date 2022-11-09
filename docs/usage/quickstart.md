@@ -142,13 +142,9 @@ you can access the global variable `x` from JavaScript in your browser's
 developer console with `pyodide.globals.get("x")`. The same goes for functions
 and imports. See {ref}`type-translations` for more details.
 
-You can try it yourself in the browser console. Go to
-
-```text
-{{PYODIDE_CDN_URL}}console.html
-```
-
-and type the following into the browser console:
+You can try it yourself in the browser console. Go to the [Pyodide REPL
+URL](https://pyodide.org/en/latest/console.html) and type the following into
+the browser console:
 
 ```pyodide
 await pyodide.loadPackage("numpy");
