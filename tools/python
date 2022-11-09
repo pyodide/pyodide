@@ -190,6 +190,7 @@ async function main() {
         from pyodide._package_loader import SITE_PACKAGES, should_load_dynlib
         from pyodide.ffi import to_js
         import re
+        dynlibs_to_load = to_js([
             str(path) for path in SITE_PACKAGES.glob("**/*.so*")
             if should_load_dynlib(path)
         ])
