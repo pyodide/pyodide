@@ -494,7 +494,7 @@ def generate_packagedata(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
-            pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
+            pkg_entry["install_dir"] = "stdlib" if pkg.cpython_dynlib else "dynlib"
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
         pkg_entry["imports"] = (
