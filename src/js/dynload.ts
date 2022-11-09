@@ -29,10 +29,11 @@ export async function loadDynlib(lib: string, shared: boolean) {
     console.debug(`Loading a dynamic library ${lib}`);
   }
 
+  const libDir = lib.substring(0, lib.lastIndexOf("/"));
   // This is a fake FS-like object to make emscripten
   // load shared libraries from the file system.
   const libraryFS = {
-    _ldLibraryPaths: ["/usr/lib", API.sitepackages],
+    _ldLibraryPaths: ["/usr/lib", API.sitepackages, libDir],
     _resolvePath: (path: string) => {
       if (DEBUG) {
         console.debug(`Searching a library from ${path}, required by ${lib}.`);
