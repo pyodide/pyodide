@@ -189,6 +189,10 @@ substitutions:
   key was used for this purpose.
   {pr}`3006`
 
+- {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
+  which vendors shared libraries into the wheel after building.
+  {pr}`3234`
+
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
 

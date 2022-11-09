@@ -9,7 +9,8 @@ import pytest
 from pyodide_build import buildpkg
 from pyodide_build.io import MetaConfig, _BuildSpec, _SourceSpec
 
-PACKAGES_DIR = Path(__file__).parent / "_test_packages"
+RECIPE_DIR = Path(__file__).parent / "_test_recipes"
+WHEEL_DIR = Path(__file__).parent / "_test_wheels"
 
 
 def test_subprocess_with_shared_env():
@@ -44,8 +45,8 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "packaging/meta.yaml"))
-    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "micropip/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(RECIPE_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(RECIPE_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
         pkg.source.patches = []
@@ -192,3 +193,23 @@ def test_needs_rebuild(tmpdir):
     # newer .packaged file, no rebuild
     packaged.touch()
     assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
+
+
+def test_copy_sharedlib(tmp_path):
+    wheel_file_name = "sharedlib_test_py-1.0-cp310-cp310-emscripten_3_1_21_wasm32.whl"
+    wheel = WHEEL_DIR / "wheel" / wheel_file_name
+    libdir = WHEEL_DIR / "lib"
+
+    wheel_copy = tmp_path / wheel_file_name
+    shutil.copy(wheel, wheel_copy)
+
+    buildpkg.unpack_wheel(wheel_copy)
+    name, ver, _ = wheel.name.split("-", 2)
+    wheel_dir_name = f"{name}-{ver}"
+    wheel_dir = tmp_path / wheel_dir_name
+
+    dep_map = buildpkg.copy_sharedlibs(wheel_copy, wheel_dir, libdir)
+
+    deps = ("sharedlib-test.so", "sharedlib-test-dep.so", "sharedlib-test-dep2.so")
+    for dep in deps:
+        assert dep in dep_map
