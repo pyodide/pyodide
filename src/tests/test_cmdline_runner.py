@@ -441,6 +441,6 @@ def test_sys_exit(selenium, venv):
         capture_output=True,
         encoding="utf-8",
     )
-    assert result.returncode == 0
+    assert result.returncode == 12
     assert result.stdout == ""
     assert result.stderr == ""
