@@ -7,7 +7,18 @@ const path = process.argv[2].split("/");
 const filename = path.pop().split(".")[0];
 process.chdir(path.join("/"));
 
-execFileSync("wat2wasm", [filename + ".wat", "--enable-all"]);
+try {
+    execFileSync("wat2wasms", [filename + ".wat", "--enable-all"]);
+} catch (e) {
+    if (e.code === "ENOENT") {
+        process.stderr.write(
+            "assemble_wat.js: wat2wasm is not on path. Please install the WebAssembly Binary Toolkit.\n",
+        );
+        process.stderr.write("Quitting.\n");
+        process.exit(1);
+    }
+    throw e;
+}
 
 const f = fs.readFileSync(filename + ".wasm");
 fs.unlinkSync(filename + ".wasm");
