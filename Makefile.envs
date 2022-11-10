@@ -1,7 +1,5 @@
 export PYVERSION ?= 3.10.2
-# Note: when updating EMSCRIPTEN_VERSION make sure to update
-# the version number in the "uname" patch.
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.21
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.24
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -98,7 +96,8 @@ export LDFLAGS_BASE=\
 	-s WASM_BIGINT \
 	$(EXTRA_LDFLAGS)
 
-export CXXFLAGS_BASE=
+export CXXFLAGS_BASE=\
+	-std=c++14
 
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \

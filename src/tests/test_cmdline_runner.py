@@ -221,6 +221,7 @@ def install_pkg(venv, pkgname):
             venv / "bin/pip",
             "install",
             pkgname,
+            "--disable-pip-version-check",
         ],
         capture_output=True,
         encoding="utf8",
@@ -424,3 +425,22 @@ def test_pypa_index(tmp_path):
         stdout.strip().rsplit("\n", 1)[-1]
         == "Successfully installed attrs-* micropip-* numpy-* sharedlib-test-py-*"
     )
+
+
+def test_sys_exit(selenium, venv):
+    result = subprocess.run(
+        [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert result.stderr == ""
+    result = subprocess.run(
+        [venv / "bin/python", "-c", "import sys; sys.exit(12)"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 12
+    assert result.stdout == ""
+    assert result.stderr == ""

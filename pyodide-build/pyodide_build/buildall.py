@@ -133,16 +133,11 @@ class Package(BasePackage):
                 "pyodide_build",
                 "buildpkg",
                 str(self.pkgdir / "meta.yaml"),
-                "--cflags",
-                args.cflags,
-                "--cxxflags",
-                args.cxxflags,
-                "--ldflags",
-                args.ldflags,
-                "--target-install-dir",
-                args.target_install_dir,
-                "--host-install-dir",
-                args.host_install_dir,
+                f"--cflags={args.cflags}",
+                f"--cxxflags={args.cxxflags}",
+                f"--ldflags={args.ldflags}",
+                f"--target-install-dir={args.target_install_dir}",
+                f"--host-install-dir={args.host_install_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
                 # been updated and should be rebuilt even though its own
@@ -499,7 +494,7 @@ def generate_packagedata(
         }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
-            pkg_entry["install_dir"] = "lib" if pkg.cpython_dynlib else "dynlib"
+            pkg_entry["install_dir"] = "stdlib" if pkg.cpython_dynlib else "dynlib"
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
         pkg_entry["imports"] = (
