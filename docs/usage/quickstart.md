@@ -4,7 +4,7 @@
 
 ## Try it online
 
-Try Pyodide in a [REPL](./console.html) directly in your browser (no installation needed).
+Try Pyodide in a [REPL](../console.html) directly in your browser (no installation needed).
 
 ## Setup
 
@@ -143,7 +143,7 @@ developer console with `pyodide.globals.get("x")`. The same goes for functions
 and imports. See {ref}`type-translations` for more details.
 
 You can try it yourself in the browser console. Go to the [Pyodide REPL
-URL](./console.html) and type the following into
+URL](../console.html) and type the following into
 the browser console:
 
 ```pyodide
