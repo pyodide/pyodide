@@ -60,26 +60,26 @@ const fs = require("fs");
  * be true. (IMO this is an Emscripten issue, maybe someday we can fix it.)
  */
 function make_tty_ops(outstream) {
+    const BUFSIZE = 256;
+    const buf = Buffer.alloc(BUFSIZE);
+    let index = 0;
+    let numbytes = 0;
     return {
         // get_char has 3 particular return values:
         // a.) the next character represented as an integer
         // b.) undefined to signal that no data is currently available
         // c.) null to signal an EOF
         get_char(tty) {
-            const BUFSIZE = 256;
-            if(!tty.buf) {
-                tty.buf = Buffer.alloc(BUFSIZE);
-            }
-            if (tty.index >= tty.bytesRead) {
+            if (index >= numbytes) {
                 // read synchronously at most BUFSIZE bytes from file descriptor 0 (stdin)
-                var bytesRead = fs.readSync(0, tty.buf, 0, BUFSIZE, -1);
+                const bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
                 if (bytesRead === 0) {
                     return null;
                 }
-                tty.index = 0;
-                tty.bytesRead = bytesRead;
+                index = 0;
+                numbytes = bytesRead;
             }
-            return tty.buf[tty.index++];
+            return buf[tty.index++];
         },
         put_char(tty, val) {
             outstream.write(Buffer.from([val]));
