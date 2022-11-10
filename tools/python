@@ -66,19 +66,20 @@ function make_tty_ops(outstream) {
         // b.) undefined to signal that no data is currently available
         // c.) null to signal an EOF
         get_char(tty) {
-            if (!tty.input.length) {
-                var result = null;
-                var BUFSIZE = 256;
-                var buf = Buffer.alloc(BUFSIZE);
+            const BUFSIZE = 256;
+            if(!tty.buf) {
+                tty.buf = Buffer.alloc(BUFSIZE);
+            }
+            if (tty.index >= tty.bytesRead) {
                 // read synchronously at most BUFSIZE bytes from file descriptor 0 (stdin)
-                var bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
+                var bytesRead = fs.readSync(0, tty.buf, 0, BUFSIZE, -1);
                 if (bytesRead === 0) {
                     return null;
                 }
-                result = buf.slice(0, bytesRead);
-                tty.input = Array.from(result);
+                tty.index = 0;
+                tty.bytesRead = bytesRead;
             }
-            return tty.input.shift();
+            return tty.buf[tty.index++];
         },
         put_char(tty, val) {
             outstream.write(Buffer.from([val]));
