@@ -59,6 +59,7 @@ repos:
           - types-docutils
           - types-pyyaml
           - types-setuptools
+          - types-requests
           - numpy
           - build
           - pytest
