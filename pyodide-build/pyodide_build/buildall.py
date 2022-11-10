@@ -494,7 +494,7 @@ def generate_packagedata(
             # We handle cpython modules as shared libraries
             pkg_entry["shared_library"] = True
             pkg_entry["install_dir"] = (
-                "lib" if pkg_type == "cpython_module" else "dynlib"
+                "stdlib" if pkg_type == "cpython_module" else "dynlib"
             )
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]

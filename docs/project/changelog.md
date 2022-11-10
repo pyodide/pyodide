@@ -21,7 +21,7 @@ substitutions:
   is for testing out of tree builds. For more information, see [the
   documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
   {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`,
-  {pr}`3108`, {pr}`3109`
+  {pr}`3098`, {pr}`3108`, {pr}`3109`
 
 - {{ Enhancement }} Users can do a static import of `pyodide/pyodide.asm.js` to
   avoid issues with dynamic imports. This allows the use of Pyodide with
@@ -188,6 +188,10 @@ substitutions:
   calculate top-level import names for the package. Previously `test/imports`
   key was used for this purpose.
   {pr}`3006`
+
+- {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
+  which vendors shared libraries into the wheel after building.
+  {pr}`3234`
 
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
