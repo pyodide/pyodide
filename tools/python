@@ -241,8 +241,12 @@ async function main() {
     try {
         errcode = py._module._run_main();
     } catch (e) {
-        // If there is some sort of error, add the Python tracebook in addition
-        // to the JavaScript traceback
+        // If someone called exit, just exit with the right return code.
+        if(e.constructor.name === "ExitStatus"){
+            process.exit(e.status);
+        }
+        // Otherwise if there is some sort of error, include the Python
+        // tracebook in addition to the JavaScript traceback
         py._module._dump_traceback();
         throw e;
     }
