@@ -15,12 +15,14 @@ __pycache__
 .mypy_cache/
 .pytest_cache/
 .vscode
+.venv*
 
 build
 ccache
 cpython/downloads
 cpython/installs
 cpython/build.log
+dist/
 docs/_build/
 emsdk/emsdk
 geckodriver.log
@@ -29,7 +31,6 @@ packages/.artifacts
 packages/.libs
 packages/*/build.log*
 packages/build-logs
-dist/
-
-xbuildenv/
+pytest-pyodide
 tools/symlinks
+xbuildenv/
