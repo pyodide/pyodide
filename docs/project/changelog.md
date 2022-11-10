@@ -107,11 +107,12 @@ substitutions:
   {pr}`3175`
 
 - Added a new CLI command `pyodide package-build` which builds packages from various sources.
-  `pyodide package-build recipe` builds a pyodide recipe (packages) folder.
-  n.b. `pyodide-build buildall` will be replaced by `pyodide package-build recipe`.
-  `pyodide package-build pypi` builds or downloads a package from pypi.
-  `pyodide package-build url` builds or downloads a package from a url to wheel or sdist.
-  `pyodide package-build source` builds source from current folder (as does `pyodide build` )
+  | command | result |
+  |-------------|-------|
+  | `pyodide package-build recipe` | build packages from recipe folder (replaces `pyodide-build buildall`) |
+  | `pyodide package-build pypi` | build or fetch a single package from pypi |
+  | `pyodide package-build source` | build the current source folder (same as pyodide build) |
+  | `pyodide package-build url` | build or fetch a package from a url either tgz, tar.gz zip or wheel |
   {pr}`3196`
 
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
