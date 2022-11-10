@@ -4,7 +4,10 @@
 
 ## Try it online
 
-Try Pyodide in a [REPL](../console.html) directly in your browser (no installation needed).
+<!-- Use rst to avoid myst_parser trying to resolve ../.console.html and not creating a link  -->
+```{eval-rst}
+Try Pyodide in a `REPL <../console.html>`_ directly in your browser (no installation needed).
+```
 
 ## Setup
 
@@ -142,9 +145,11 @@ you can access the global variable `x` from JavaScript in your browser's
 developer console with `pyodide.globals.get("x")`. The same goes for functions
 and imports. See {ref}`type-translations` for more details.
 
-You can try it yourself in the browser console. Go to the [Pyodide REPL
-URL](../console.html) and type the following into
-the browser console:
+<!-- Use rst to avoid myst_parser trying to resolve ../console.html and not creating a link  -->
+```{eval-rst}
+You can try it yourself in the browser console. Go to the `Pyodide REPL URL
+<../console.html>`_ and type the following into the browser console::
+```
 
 ```pyodide
 await pyodide.loadPackage("numpy");
