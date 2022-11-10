@@ -160,7 +160,7 @@ source.typer_kwargs = {
 
 
 @app.command()  # type: ignore[misc]
-def pyodide_meta(
+def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
     ),

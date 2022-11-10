@@ -5,7 +5,7 @@ include ../Makefile.envs
 
 all: pyodide-build
 	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
-	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide package_build meta \
+	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide package_build recipe \
 	"$(PYODIDE_PACKAGES)" \
 	--n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs

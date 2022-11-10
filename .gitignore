@@ -30,6 +30,6 @@ packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
-
+pyodide-build/**/build.log
 xbuildenv/
 tools/symlinks

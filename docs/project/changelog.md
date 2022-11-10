@@ -106,6 +106,14 @@ substitutions:
   `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
   {pr}`3175`
 
+- Added a new CLI command `pyodide package-build` which builds packages from various sources.
+  `pyodide package-build recipe` builds a pyodide recipe (packages) folder.
+  n.b. `pyodide-build buildall` will be replaced by `pyodide package-build recipe`.
+  `pyodide package-build pypi` builds or downloads a package from pypi.
+  `pyodide package-build url` builds or downloads a package from a url to wheel or sdist.
+  `pyodide package-build source` builds source from current folder (as does `pyodide build` )
+  {pr}`3196`
+
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
