@@ -88,6 +88,7 @@ class _BuildSpec(BaseModel):
     script: str | None = None
     post: str | None = None
     unvendor_tests: bool = Field(True, alias="unvendor-tests")
+    vendor_sharedlib: bool = Field(False, alias="vendor-sharedlib")
     cross_build_env: bool = Field(False, alias="cross-build-env")
     cross_build_files: list[str] = Field([], alias="cross-build-files")
 

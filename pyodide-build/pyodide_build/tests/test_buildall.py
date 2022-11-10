@@ -9,12 +9,12 @@ import pytest
 
 from pyodide_build import buildall, io
 
-PACKAGES_DIR = Path(__file__).parent / "_test_packages"
+RECIPE_DIR = Path(__file__).parent / "_test_recipes"
 
 
 def test_generate_dependency_graph():
     # beautifulsoup4 has a circular dependency on soupsieve
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"beautifulsoup4"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"beautifulsoup4"})
     assert pkg_map["beautifulsoup4"].run_dependencies == ["soupsieve"]
     assert pkg_map["beautifulsoup4"].host_dependencies == []
     assert pkg_map["beautifulsoup4"].host_dependents == set()
@@ -33,7 +33,7 @@ def test_generate_dependency_graph():
     ],
 )
 def test_generate_dependency_graph2(in_set, out_set):
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, in_set)
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, in_set)
     assert set(pkg_map.keys()) == out_set
 
 
@@ -47,13 +47,13 @@ def test_generate_dependency_graph_disabled(monkeypatch):
             return d
 
     monkeypatch.setattr(buildall, "MetaConfig", MockMetaConfig)
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"scipy"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"scipy"})
     assert set(pkg_map.keys()) == set()
 
 
 def test_generate_repodata(tmp_path):
     pkg_map = buildall.generate_dependency_graph(
-        PACKAGES_DIR, {"pkg_1", "pkg_2", "libtest"}
+        RECIPE_DIR, {"pkg_1", "pkg_2", "libtest"}
     )
     hashes = {}
     for pkg in pkg_map.values():
@@ -99,7 +99,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1", "pkg_2"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
     buildall.build_from_graph(
         pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
@@ -132,7 +132,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, packages={"*"})
 
     buildall.build_from_graph(
         pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
@@ -149,7 +149,7 @@ def test_build_error(n_jobs, monkeypatch):
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"pkg_1"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1"})
 
     with pytest.raises(ValueError, match="Failed build"):
         buildall.build_from_graph(

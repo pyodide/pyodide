@@ -147,8 +147,8 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
 
-  API.site = import_module("site");
-  API.sitepackages = API.site.getsitepackages().toJs()[0];
+  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
+  API.dsodir = API.package_loader.DSO_DIR.__str__();
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;

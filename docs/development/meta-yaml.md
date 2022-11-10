@@ -187,6 +187,14 @@ Whether to unvendor tests found in the installation folder to a separate package
 `<package-name>-tests`. If this option is true and no tests are found, the test
 package will not be created. Default: true.
 
+### `build/vendor-sharedlib`
+
+If set to true, shared libraries that are required by the package
+will be vendored into the package after the build. This is similar to
+what [`auditwheel repair`](https://github.com/pypa/auditwheel) does,
+but it is done in a way that is compatible with Pyodide and Emscripten
+dynamic linking. Default: false.
+
 ## `requirements`
 
 ### `requirements/run`

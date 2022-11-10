@@ -1,0 +1,102 @@
+package:
+  name: gdal
+  version: 3.5.1
+
+source:
+  url: https://github.com/OSGeo/gdal/releases/download/v3.5.2/gdal-3.5.2.tar.gz
+  sha256: fbd696e1b2a858fbd2eb3718db16b14ed9ba82521d3578770d480c74fe1146d2
+requirements:
+  host:
+    - libtiff
+    - libproj
+    - libiconv
+    - geos
+  run:
+    - geos
+
+build:
+  sharedlibrary: true
+  script: |
+    export EMSCRIPTEN_SYSROOT=$(em-config CACHE)/sysroot
+    export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include
+    export EMSCRIPTEN_BIN=$EMSCRIPTEN_SYSROOT/bin
+    export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
+
+    mkdir -p dist
+    export DISTDIR=$(pwd)/dist
+
+    embuilder build zlib --pic
+    embuilder build libjpeg --pic
+    embuilder build libpng --pic
+    embuilder build sqlite3 --pic
+
+    mkdir -p build
+    cd build && emcmake cmake .. \
+      -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=True \
+      -DBUILD_APPS=OFF \
+      -DCMAKE_C_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations -Wno-single-bit-bitfield-constant-conversion" \
+      -DCMAKE_CXX_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations -Wno-single-bit-bitfield-constant-conversion" \
+      -DCMAKE_SHARED_LINKER_FLAGS="-sSIDE_MODULE=1 -sWASM_BIGINT" \
+      -DGDAL_USE_EXTERNAL_LIBS=OFF \
+      -DGDAL_USE_INTERNAL_LIBS=OFF \
+      \
+      -DPROJ_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.a \
+      \
+      -DGDAL_USE_ICONV=ON \
+      -DIconv_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DIconv_LIBRARY=$WASM_LIBRARY_DIR/lib/libiconv.a \
+      \
+      -DGDAL_USE_TIFF=ON \
+      -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
+      \
+      -DGDAL_USE_GEOS=ON \
+      -DGEOS_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DGEOS_LIBRARY=$WASM_LIBRARY_DIR/lib/libgeos.so \
+      \
+      -DGDAL_USE_ZLIB=ON \
+      -DZLIB_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DZLIB_LIBRARY=$EMSCRIPTEN_LIB/libz.a \
+      \
+      -DGDAL_USE_PNG=ON \
+      -DPNG_PNG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng.a \
+      \
+      -DGDAL_USE_JPEG=ON \
+      -DJPEG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DJPEG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libjpeg.a \
+      \
+      -DGDAL_USE_SQLITE3=ON \
+      -DSQLite3_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DSQLite3_LIBRARY=$EMSCRIPTEN_LIB/libsqlite3.a \
+      \
+      -DGDAL_USE_GEOTIFF_INTERNAL=ON \
+      -DGDAL_USE_QHULL_INTERNAL=ON \
+      -DGDAL_USE_LERC_INTERNAL=ON \
+      -DGDAL_USE_JSONC_INTERNAL=ON \
+      -DGDAL_USE_PCRE2=OFF \
+      -DBUILD_TESTING=OFF
+
+
+    # Note:
+    # CMake tries to link the same libraries multiple times at the final link time.
+    # This is probably because the same libraries are used in multiple submodules.
+    # This behavior is okay when those libraries are "shared" libraries,
+    # but we often build static libraries and linking static libraries
+    # multiple times results in a duplicated symbol error.
+    # I wasn't able to find a way to prevent CMake from emitting duplicated libraries.
+    # This is a hack which removes all duplicated appearances of static libs at the final link time.
+
+    export LINKLIBS=$(pwd)/CMakeFiles/GDAL.dir/link.txt
+    cat ${LINKLIBS} | grep -o '\S*' | grep "\.a$" | sort | uniq | tr "\n" " " > linked_static_libs.txt
+    cat ${LINKLIBS} | grep -o '\S*' | grep -v "\.a$" | tr "\n" " " > link_cmd.txt
+    cat link_cmd.txt > ${LINKLIBS}
+    cat linked_static_libs.txt >> ${LINKLIBS}
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+
+    cp ${WASM_LIBRARY_DIR}/lib/libgdal.so ${DISTDIR}

@@ -18,17 +18,18 @@ substitutions:
   {pr}`3150`.
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
-  is for testing out of tree builds. For more information, see
-  [the documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
-  {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3044`, {pr}`3096`, {pr}`3108`, {pr}`3109`
+  is for testing out of tree builds. For more information, see [the
+  documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
+  {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3096`, {pr}`3098`,
+  {pr}`3108`, {pr}`3109`, {pr}`3241`
 
 - {{ Enhancement }} Users can do a static import of `pyodide/pyodide.asm.js` to
   avoid issues with dynamic imports. This allows the use of Pyodide with
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.21
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.24
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -116,6 +117,7 @@ substitutions:
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
   coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
   pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  gdal, fiona, geopandas {pr}`3213`,
   the standard library \_hashlib module {pr}`3206`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
@@ -186,6 +188,10 @@ substitutions:
   calculate top-level import names for the package. Previously `test/imports`
   key was used for this purpose.
   {pr}`3006`
+
+- {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
+  which vendors shared libraries into the wheel after building.
+  {pr}`3234`
 
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
