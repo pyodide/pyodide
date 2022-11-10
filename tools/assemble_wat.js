@@ -12,7 +12,8 @@ try {
 } catch (e) {
     if (e.code === "ENOENT") {
         process.stderr.write(
-            "assemble_wat.js: wat2wasm is not on path. Please install the WebAssembly Binary Toolkit.\n",
+            "assemble_wat.js: wat2wasm is not on path. " +
+                "Please install the WebAssembly Binary Toolkit.\n",
         );
         process.stderr.write("Quitting.\n");
         process.exit(1);
