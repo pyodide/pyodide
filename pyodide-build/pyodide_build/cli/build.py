@@ -15,6 +15,8 @@ from .. import buildall, common
 from ..out_of_tree import build
 from ..out_of_tree.utils import initialize_pyodide_root
 
+app = typer.Typer()
+
 
 def _fetch_pypi_package(package_spec, destdir):
     PYMAJOR = common.get_make_flag("PYMAJOR")
