@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -13,8 +14,6 @@ from unearth.finder import PackageFinder
 from .. import buildall, common
 from ..out_of_tree import build
 from ..out_of_tree.utils import initialize_pyodide_root
-
-app = typer.Typer()
 
 
 def _fetch_pypi_package(package_spec, destdir):
@@ -43,7 +42,6 @@ versions found:
         )
 
 
-@app.command()  # type: ignore[misc]
 def pypi(
     package: str,
     exports: str = typer.Option(
@@ -69,6 +67,7 @@ def pypi(
             shutil.copy(str(package_path), str(curdir / "dist"))
             print(f"Successfully fetched: {package_path.name}")
         else:
+            print(f"Fetched source for {package} from pypi")
             # sdist - needs building
             os.chdir(tmpdir)
             build.run(exports, backend_flags)
@@ -77,17 +76,8 @@ def pypi(
                 shutil.copy(str(src), str(curdir / "dist"))
 
 
-pypi.typer_kwargs = {
-    "context_settings": {
-        "ignore_unknown_options": True,
-        "allow_extra_args": True,
-    },
-}
-
-
-@app.command()  # type: ignore[misc]
 def url(
-    package: str,
+    package_url: str,
     exports: str = typer.Option(
         "requested",
         help="Which symbols should be exported when linking .so files?",
@@ -101,10 +91,12 @@ def url(
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
 
-    with requests.get(url, stream=True) as response:
+    with requests.get(package_url, stream=True) as response:
         parsed_url = urlparse(response.url)
         filename = os.path.basename(parsed_url.path)
-        _, ext = os.path.splitext(filename)
+        name_base, ext = os.path.splitext(filename)
+        if ext == ".gz" and name_base.rfind(".") != -1:
+            ext = name_base[name_base.rfind(".") :] + ext
         if ext.lower() == ".whl":
             # just copy wheel into dist and return
             out_path = f"dist/{filename}"
@@ -120,7 +112,14 @@ def url(
             with tempfile.TemporaryDirectory() as tmpdir:
                 temppath = Path(tmpdir)
                 shutil.unpack_archive(tf.name, tmpdir)
-                os.chdir(tmpdir)
+                folder_list = list(temppath.iterdir())
+                if len(folder_list) == 1 and folder_list[0].is_dir():
+                    # unzipped into subfolder
+                    os.chdir(folder_list[0])
+                else:
+                    # unzipped here
+                    os.chdir(tmpdir)
+                print(os.listdir(tmpdir))
                 build.run(exports, backend_flags)
                 for src in (temppath / "dist").iterdir():
                     print(f"Built {str(src.name)}")
@@ -128,16 +127,8 @@ def url(
             os.unlink(tf.name)
 
 
-url.typer_kwargs = {
-    "context_settings": {
-        "ignore_unknown_options": True,
-        "allow_extra_args": True,
-    },
-}
-
-
-@app.command()  # type: ignore[misc]
 def source(
+    source_location: "Optional[str]" = typer.Argument(None),
     exports: str = typer.Option(
         "requested",
         help="Which symbols should be exported when linking .so files?",
@@ -147,19 +138,10 @@ def source(
     """Use pypa/build to build a Python package from source"""
     initialize_pyodide_root()
     common.check_emscripten_version()
-    backend_flags = ctx.args
+    backend_flags = [source_location] + ctx.args
     build.run(exports, backend_flags)
 
 
-source.typer_kwargs = {
-    "context_settings": {
-        "ignore_unknown_options": True,
-        "allow_extra_args": True,
-    },
-}
-
-
-@app.command()  # type: ignore[misc]
 def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
@@ -225,16 +207,30 @@ def recipe(
     buildall.build_packages(recipe_dir_, output_dir, args)
 
 
-# simple 'pyodide build' command - does the same as build_package source
+# simple 'pyodide build' command
 def main(
+    source_location: "Optional[str]" = typer.Argument(
+        "",
+        help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
+    ),
     exports: str = typer.Option(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,
 ) -> None:
-    """Use pypa/build to build a Python package from source"""
-    source(exports, ctx)
+    """Use pypa/build to build a Python package from source, pypi or url."""
+    if source_location is None or len(source_location) == 0:
+        # build the current folder
+        source(".", exports, ctx)
+    elif source_location.find("://") != -1:
+        url(source_location, exports, ctx)
+    elif Path(source_location).exists():
+        # a folder, build it
+        source(source_location, exports, ctx)
+    else:
+        # try fetch from pypi
+        pypi(source_location, exports, ctx)
 
 
 main.typer_kwargs = {  # type: ignore[attr-defined]
