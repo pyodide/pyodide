@@ -62,18 +62,18 @@ def pypi(
 
         # get package from pypi
         package_path = _fetch_pypi_package(package, temppath)
-        if package_path.is_dir() is False:
+        if not package_path.is_dir():
             # a pure-python wheel has been downloaded - just copy to dist folder
             shutil.copy(str(package_path), str(curdir / "dist"))
             print(f"Successfully fetched: {package_path.name}")
-        else:
-            print(f"Fetched source for {package} from pypi")
-            # sdist - needs building
-            os.chdir(tmpdir)
-            build.run(exports, backend_flags)
-            for src in (temppath / "dist").iterdir():
-                print(f"Built {str(src.name)}")
-                shutil.copy(str(src), str(curdir / "dist"))
+            return
+
+        # sdist - needs building
+        os.chdir(tmpdir)
+        build.run(exports, backend_flags)
+        for src in (temppath / "dist").iterdir():
+            print(f"Built {str(src.name)}")
+            shutil.copy(str(src), str(curdir / "dist"))
 
 
 def url(
