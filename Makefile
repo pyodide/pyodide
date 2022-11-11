@@ -113,7 +113,8 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	echo "// Do not edit it directly!" >> $@
 	cat src/core/pyproxy.ts | \
 		sed '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
-		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - \
+		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
+		sed 's/^#pragma clang.*//g' \
 		>> $@
 
 dist/test.html: src/templates/test.html

@@ -76,10 +76,9 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
-	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true emconfigure \
+		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
@@ -92,6 +91,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
+			  --with-build-python=$$(which python) \
 	)
 
 
@@ -100,7 +100,6 @@ $(BUILD)/Modules/Setup.local : Setup.local
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
-	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
 		cd $(BUILD); \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
