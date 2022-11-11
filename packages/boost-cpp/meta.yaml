@@ -4,6 +4,8 @@ package:
 source:
   url: https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz
   sha256: 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847
+  patches:
+    - patches/0001-config-libcpp15.patch
 
 build:
   library: true
