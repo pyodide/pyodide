@@ -267,6 +267,7 @@ export async function loadPyodide(
     _node_mounts?: string[];
   } = {},
 ): Promise<PyodideInterface> {
+  const t0_init = new Date();
   await initNodeModules();
   let indexURL = options.indexURL || calculateIndexURL();
   indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
@@ -371,6 +372,10 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
-  pyodide.runPython("print('Python initialization complete')");
+  const init_time = (new Date().getTime() - t0_init.getTime()).toFixed(0);
+
+  pyodide.runPython(
+    `print('Python initialization complete in ${init_time} ms')`,
+  );
   return pyodide;
 }
