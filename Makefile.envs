@@ -124,6 +124,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lworkerfs.js \
 	-lwebsocket.js \
 	-leventloop.js \
+	-lmpdec \
 	\
 	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \

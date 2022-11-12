@@ -15,7 +15,12 @@ FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
 LIBFFI_TAG=2022-06-23
 
-all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
+MPDEC_URL=https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz
+MPDEC_TARBALL=$(ROOT)/downloads/mpdec.tgz
+MPDEC_BUILD=$(ROOT)/build/mpdecimal-2.5.1
+MPDEC_INSTALL=$(INSTALL)/lib/libmpdec.a
+
+all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(MPDEC_INSTALL)
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
@@ -59,6 +64,15 @@ $(BUILD)/.patched: $(TARBALL)
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
 
+$(MPDEC_TARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(MPDEC_URL)
+
+$(MPDEC_INSTALL) : $(MPDEC_TARBALL)
+	tar -C $(dir $(MPDEC_BUILD)) -xf $(MPDEC_TARBALL)
+	cd $(MPDEC_BUILD) && emconfigure ./configure --disable-shared CFLAGS=-fPIC
+	cd $(MPDEC_BUILD) && emmake make lib
+	cp $(MPDEC_BUILD)/libmpdec/libmpdec.a $@
 
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)

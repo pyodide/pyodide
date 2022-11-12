@@ -19,6 +19,5 @@ _xxsubinterpreters _xxsubinterpretersmodule.c
 
 *disabled*
 pwd
-_decimal
 pyexpat
 _sqlite3
