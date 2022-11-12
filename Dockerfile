@@ -15,7 +15,10 @@ RUN apt-get update \
 ADD docs/requirements-doc.txt requirements.txt /
 
 RUN pip3 --no-cache-dir install -r /requirements.txt \
-  && pip3 --no-cache-dir install -r /requirements-doc.txt
+  && pip3 --no-cache-dir install -r /requirements-doc.txt \
+  && sed -i -e "182a\ \ \ \ new_node.end_lineno = 2" -e "393d" \
+    /usr/local/lib/python3.11/site-packages/pytest_pyodide/decorator.py
+
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
