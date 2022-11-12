@@ -54,6 +54,7 @@
 #define IS_ARRAY      (1<<10)
 #define IS_NODE_LIST  (1<<11)
 #define IS_TYPEDARRAY (1<<12)
+#define IS_DOUBLE_PROXY (1 << 13)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -2387,6 +2388,24 @@ finally:
   return success ? 0 : -1;
 }
 
+EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsRef id), {
+  return Module.PyProxy_getPtr(Hiwire.get_value(id));
+});
+
+PyObject*
+JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
+{
+  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_JSREF(obj));
+  Py_XINCREF(result);
+  return result;
+}
+
+static PyMethodDef JsDoubleProxy_unwrap_MethodDef = {
+  "unwrap",
+  (PyCFunction)JsDoubleProxy_unwrap,
+  METH_NOARGS,
+};
+
 /**
  * This dynamically creates a subtype of JsProxy using PyType_FromSpecWithBases.
  * It is called from JsProxy_get_subtype(flags) when a type with the given flags
@@ -2519,6 +2538,9 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsBuffer_write_to_file_MethodDef;
     methods[cur_method++] = JsBuffer_read_from_file_MethodDef;
     methods[cur_method++] = JsBuffer_into_file_MethodDef;
+  }
+  if (flags & IS_DOUBLE_PROXY) {
+    methods[cur_method++] = JsDoubleProxy_unwrap_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
@@ -2685,6 +2707,9 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   }
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
+  }
+  if (pyproxy_Check(object)) {
+    type_flags |= IS_DOUBLE_PROXY;
   }
   type_flags |= JsProxy_array_detect(object);
 

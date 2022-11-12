@@ -1,0 +1,24 @@
+package:
+  name: pyheif
+  version: 0.7.0
+source:
+  url: https://files.pythonhosted.org/packages/ca/ea/a2ccacfc07a6a0900ba5eaf8afd4db970b3f772b0da5f53ccefce1a7b3a5/pyheif-0.7.0.tar.gz
+  sha256: f5b6e810d79c3a181d6d09dfc522ebcc300f3fc875c0de518d61cfeb00705353
+requirements:
+  run:
+    - cffi
+    - libheif
+  host:
+    - cffi
+    - libheif
+build:
+  script: |
+    sed -i "s@include_dirs = \[@include_dirs = ['\\${WASM_LIBRARY_DIR}/include', @" libheif/libheif_build.py
+    sed -i "s@library_dirs = \[@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib', @" libheif/libheif_build.py
+test:
+  imports:
+    - pyheif
+about:
+  home: https://github.com/carsales/pyheif
+  PyPI: https://pypi.org/project/pyheif
+  summary: Python 3.6+ interface to libheif library

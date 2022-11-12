@@ -1,0 +1,18 @@
+package:
+  name: munch
+  version: 2.5.0
+source:
+  url: https://files.pythonhosted.org/packages/cc/ab/85d8da5c9a45e072301beb37ad7f833cd344e04c817d97e0cc75681d248f/munch-2.5.0-py2.py3-none-any.whl
+  sha256: 6f44af89a2ce4ed04ff8de41f70b226b984db10a91dcc7b9ac2efc1c77022fdd
+requirements:
+  run:
+    - setuptools
+    - six
+test:
+  imports:
+    - munch
+about:
+  home: https://github.com/Infinidat/munch
+  PyPI: https://pypi.org/project/munch
+  summary: A dot-accessible dictionary (a la JavaScript objects)
+  license: MIT

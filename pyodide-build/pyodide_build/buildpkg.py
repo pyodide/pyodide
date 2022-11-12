@@ -15,6 +15,7 @@ import subprocess
 import sys
 import sysconfig
 import textwrap
+import urllib
 from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from datetime import datetime
@@ -234,7 +235,20 @@ def download_and_extract(
     """
     # We only call this function when the URL is defined
     url = cast(str, src_metadata.url)
-    response = request.urlopen(url)
+    max_retry = 3
+    for retry_cnt in range(max_retry):
+        try:
+            response = request.urlopen(url)
+        except urllib.error.URLError as e:
+            if retry_cnt == max_retry - 1:
+                raise RuntimeError(
+                    f"Failed to download {url} after {max_retry} trials"
+                ) from e
+
+            continue
+
+        break
+
     _, parameters = cgi.parse_header(response.headers.get("Content-Disposition", ""))
     if "filename" in parameters:
         tarballname = parameters["filename"]
@@ -470,6 +484,34 @@ def replace_so_abi_tags(wheel_dir: Path) -> None:
         file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
 
 
+def copy_sharedlibs(
+    wheel_file: Path, wheel_dir: Path, lib_dir: Path
+) -> dict[str, Path]:
+    from auditwheel_emscripten import copylib, resolve_sharedlib  # type: ignore[import]
+    from auditwheel_emscripten.wheel_utils import WHEEL_INFO_RE  # type: ignore[import]
+
+    match = WHEEL_INFO_RE.match(wheel_file.name)
+    if match is None:
+        raise RuntimeError(f"Failed to parse wheel file name: {wheel_file.name}")
+
+    dep_map: dict[str, Path] = resolve_sharedlib(
+        wheel_dir,
+        lib_dir,
+    )
+    lib_sdir: str = match.group("name") + ".libs"
+
+    if dep_map:
+        dep_map_new = copylib(wheel_dir, dep_map, lib_sdir)
+        print("Copied shared libraries:")
+        for lib, path in dep_map_new.items():
+            original_path = dep_map[lib]
+            print(f"  {original_path} -> {path}")
+
+        return dep_map_new
+
+    return {}
+
+
 def package_wheel(
     pkg_name: str,
     pkg_root: Path,
@@ -523,6 +565,11 @@ def package_wheel(
     # update so abi tags after build is complete but before running post script
     # to maximize sanity.
     replace_so_abi_tags(wheel_dir)
+
+    vendor_sharedlib = build_metadata.vendor_sharedlib
+    if vendor_sharedlib:
+        lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
+        copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
     post = build_metadata.post
     if post:
@@ -719,8 +766,12 @@ def build_package(
     name = pkg.package.name
     version = pkg.package.version
     build_dir = pkg_root / "build"
+    dist_dir = pkg_root / "dist"
     src_dir_name: str = f"{name}-{version}"
     srcpath = build_dir / src_dir_name
+    src_dist_dir = srcpath / "dist"
+    # Python produces output .whl or .so files in src_dist_dir.
+    # We copy them to dist_dir later
 
     url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
@@ -770,27 +821,29 @@ def build_package(
         run_script(build_dir, srcpath, build_metadata, bash_runner)
 
         if library:
-            create_packaged_token(build_dir)
-            return
+            # Nothing needs to be done for a static library
+            pass
+        elif sharedlibrary:
+            # If shared library, we copy .so files to dist_dir
+            # and create a zip archive of the .so files
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            dist_dir.mkdir(parents=True)
+            shutil.make_archive(str(dist_dir / src_dir_name), "zip", src_dist_dir)
+        else:  # wheel
+            if not finished_wheel:
+                compile(
+                    name,
+                    srcpath,
+                    build_metadata,
+                    bash_runner,
+                    target_install_dir=target_install_dir,
+                )
 
-        if not sharedlibrary and not finished_wheel:
-            compile(
-                name,
-                srcpath,
-                build_metadata,
-                bash_runner,
-                target_install_dir=target_install_dir,
-            )
-        if not sharedlibrary:
             package_wheel(
                 name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
             )
-
-        shutil.rmtree(pkg_root / "dist", ignore_errors=True)
-        shutil.copytree(srcpath / "dist", pkg_root / "dist")
-
-        if sharedlibrary:
-            shutil.make_archive(f"{name}-{version}", "zip", pkg_root / "dist")
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            shutil.copytree(src_dist_dir, dist_dir)
 
         create_packaged_token(build_dir)
 

@@ -13,9 +13,13 @@ requirements:
 build:
   library: true
   script: |
-    mkdir -p build;
+    mkdir -p build
+
+    embuilder build zlib --pic
+    embuilder build sqlite3 --pic
+
     cd build \
-        && LDFLAGS="-s NODERAWFS=1 -sUSE_ZLIB=1 -sUSE_SQLITE3 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
+        && LDFLAGS="-s NODERAWFS=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
         -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
         -DCMAKE_BUILD_TYPE=Release \
         -DENABLE_CURL=OFF \

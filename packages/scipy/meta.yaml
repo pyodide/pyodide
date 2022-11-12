@@ -37,7 +37,7 @@ source:
 
 build:
   cflags: |
-    -I$(WASM_LIBRARY_DIR)/CLAPACK/INCLUDE
+    -I$(WASM_LIBRARY_DIR)/include
     -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
@@ -52,8 +52,8 @@ build:
   script: |
     set -x
     export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
-    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE $WASM_LIBRARY_DIR/CLAPACK/LIB/clapack_all.so"
-    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/CLAPACK/INCLUDE"
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/clapack_all.so"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
 
     pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing

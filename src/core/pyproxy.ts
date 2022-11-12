@@ -46,6 +46,8 @@ declare var PYGEN_RETURN: number;
 declare var PYGEN_ERROR: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
+declare function Py_ENTER(): void;
+declare function Py_EXIT(): void;
 // end-pyodide-skip
 
 /**
@@ -69,7 +71,9 @@ if (globalThis.FinalizationRegistry) {
         pyproxy_decref_cache(cache);
       }
       try {
+        Py_ENTER();
         Module._Py_DecRef(ptr);
+        Py_EXIT();
       } catch (e) {
         // I'm not really sure what happens if an error occurs inside of a
         // finalizer...
@@ -114,7 +118,7 @@ Module.disable_pyproxy_allocation_tracing = function () {
 Module.disable_pyproxy_allocation_tracing();
 
 type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
-type PyProxyThisInfo = {
+type PyProxyProps = {
   /**
    * captureThis tracks whether this should be passed as the first argument to
    * the Python function or not. We keep it false by default. To make a PyProxy
@@ -134,6 +138,7 @@ type PyProxyThisInfo = {
    * application. These are stored here.
    */
   boundArgs: any[];
+  roundtrip: boolean;
 };
 
 /**
@@ -154,13 +159,14 @@ function pyproxy_new(
   {
     flags: flags_arg,
     cache,
-    thisInfo,
+    props,
     $$,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     $$?: any;
-    thisInfo?: any;
+    roundtrip?: boolean;
+    props?: any;
   } = {},
 ): PyProxy {
   const flags =
@@ -186,9 +192,6 @@ function pyproxy_new(
     delete target.name;
     // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
-    if (!thisInfo) {
-      thisInfo = { isBound: false, captureThis: false, boundArgs: [] };
-    }
   } else {
     target = Object.create(cls.prototype);
   }
@@ -209,9 +212,14 @@ function pyproxy_new(
   }
 
   Object.defineProperty(target, "$$", { value: $$ });
-  if (flags & IS_CALLABLE) {
-    Object.defineProperty(target, "$$thisInfo", { value: thisInfo });
+  if (!props) {
+    props = {};
   }
+  props = Object.assign(
+    { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
+    props,
+  );
+  Object.defineProperty(target, "$$props", { value: props });
 
   let proxy = new Proxy(target, PyProxyHandlers);
   if (!isAlias) {
@@ -231,7 +239,7 @@ function _getPtr(jsobj: any) {
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
   const { captureThis, boundArgs, boundThis, isBound } =
-    proxyobj.$$thisInfo as PyProxyThisInfo;
+    proxyobj.$$props as PyProxyProps;
   if (captureThis) {
     if (isBound) {
       return [boundThis].concat(boundArgs, jsargs);
@@ -347,8 +355,10 @@ Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
   proxy.$$.destroyed_msg = destroyed_msg;
   pyproxy_decref_cache(proxy.$$.cache);
   try {
+    Py_ENTER();
     Module._Py_DecRef(ptrobj);
     trace_pyproxy_dealloc(proxy);
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
@@ -374,6 +384,7 @@ Module.callPyObjectKwargs = function (
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
   try {
+    Py_ENTER();
     idresult = Module.__pyproxy_apply(
       ptrobj,
       idargs,
@@ -381,6 +392,7 @@ Module.callPyObjectKwargs = function (
       idkwnames,
       num_kwargs,
     );
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
@@ -410,7 +422,7 @@ export class PyProxyClass {
     cache: PyProxyCache;
     destroyed_msg?: string;
   };
-  $$thisInfo: PyProxyThisInfo;
+  $$props: PyProxyProps;
   $$flags: number;
 
   /** @private */
@@ -444,7 +456,9 @@ export class PyProxyClass {
     let ptrobj = _getPtr(this);
     let jsref_repr;
     try {
+      Py_ENTER();
       jsref_repr = Module.__pyproxy_repr(ptrobj);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
@@ -478,7 +492,7 @@ export class PyProxyClass {
     return pyproxy_new(ptrobj, {
       flags: this.$$flags,
       cache: this.$$.cache,
-      thisInfo: this.$$thisInfo,
+      props: this.$$props,
     });
   }
   /**
@@ -548,6 +562,7 @@ export class PyProxyClass {
       default_converter_id = Hiwire.new_value(default_converter);
     }
     try {
+      Py_ENTER();
       idresult = Module._python2js_custom(
         ptrobj,
         depth,
@@ -555,6 +570,7 @@ export class PyProxyClass {
         dict_converter_id,
         default_converter_id,
       );
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -647,7 +663,9 @@ export class PyProxyLengthMethods {
     let ptrobj = _getPtr(this);
     let length;
     try {
+      Py_ENTER();
       length = Module._PyObject_Size(ptrobj);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
@@ -676,7 +694,9 @@ export class PyProxyGetItemMethods {
     let idkey = Hiwire.new_value(key);
     let idresult;
     try {
+      Py_ENTER();
       idresult = Module.__pyproxy_getitem(ptrobj, idkey);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -711,7 +731,9 @@ export class PyProxySetItemMethods {
     let idval = Hiwire.new_value(value);
     let errcode;
     try {
+      Py_ENTER();
       errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -734,7 +756,9 @@ export class PyProxySetItemMethods {
     let idkey = Hiwire.new_value(key);
     let errcode;
     try {
+      Py_ENTER();
       errcode = Module.__pyproxy_delitem(ptrobj, idkey);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -764,7 +788,9 @@ export class PyProxyContainsMethods {
     let idkey = Hiwire.new_value(key);
     let result;
     try {
+      Py_ENTER();
       result = Module.__pyproxy_contains(ptrobj, idkey);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -795,8 +821,13 @@ export class PyProxyContainsMethods {
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
-    let item;
-    while ((item = Module.__pyproxy_iter_next(iterptr))) {
+    while (true) {
+      Py_ENTER();
+      const item = Module.__pyproxy_iter_next(iterptr);
+      if (item === 0) {
+        break;
+      }
+      Py_EXIT();
       yield Hiwire.pop_value(item);
     }
   } catch (e) {
@@ -832,7 +863,9 @@ export class PyProxyIterableMethods {
     let token = {};
     let iterptr;
     try {
+      Py_ENTER();
       iterptr = Module._PyObject_GetIter(ptrobj);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
@@ -882,7 +915,9 @@ export class PyProxyIteratorMethods {
     let stackTop = Module.stackSave();
     let res_ptr = Module.stackAlloc(4);
     try {
+      Py_ENTER();
       status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -912,7 +947,9 @@ function python_hasattr(jsobj: PyProxyClass, jskey: any) {
   let idkey = Hiwire.new_value(jskey);
   let result;
   try {
+    Py_ENTER();
     result = Module.__pyproxy_hasattr(ptrobj, idkey);
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
@@ -933,7 +970,9 @@ function python_getattr(jsobj: PyProxyClass, jskey: any) {
   let idresult;
   let cacheId = jsobj.$$.cache.cacheId;
   try {
+    Py_ENTER();
     idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
@@ -953,7 +992,9 @@ function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
   let idval = Hiwire.new_value(jsval);
   let errcode;
   try {
+    Py_ENTER();
     errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
@@ -970,7 +1011,9 @@ function python_delattr(jsobj: PyProxyClass, jskey: any) {
   let idkey = Hiwire.new_value(jskey);
   let errcode;
   try {
+    Py_ENTER();
     errcode = Module.__pyproxy_delattr(ptrobj, idkey);
+    Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   } finally {
@@ -1059,7 +1102,9 @@ let PyProxyHandlers = {
     let ptrobj = _getPtr(jsobj);
     let idresult;
     try {
+      Py_ENTER();
       idresult = Module.__pyproxy_ownKeys(ptrobj);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
@@ -1104,11 +1149,13 @@ export class PyProxyAwaitableMethods {
     let reject_handle_id = Hiwire.new_value(rejectHandle);
     let errcode;
     try {
+      Py_ENTER();
       errcode = Module.__pyproxy_ensure_future(
         ptrobj,
         resolve_handle_id,
         reject_handle_id,
       );
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     } finally {
@@ -1280,25 +1327,23 @@ export class PyProxyCallableMethods {
   bind(thisArg: any, ...jsargs: any) {
     const self = this as unknown as PyProxy;
     const {
-      captureThis,
       boundArgs: boundArgsOld,
       boundThis: boundThisOld,
       isBound,
-    } = self.$$thisInfo;
+    } = self.$$props;
     let boundThis = thisArg;
     if (isBound) {
       boundThis = boundThisOld;
     }
     let boundArgs = boundArgsOld.concat(jsargs);
-    const thisInfo: PyProxyThisInfo = {
-      captureThis,
+    const props: PyProxyProps = Object.assign({}, self.$$props, {
       boundArgs,
       isBound: true,
       boundThis,
-    };
+    });
     const $$ = self.$$;
     let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
+    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, props });
   }
 
   /**
@@ -1332,11 +1377,14 @@ export class PyProxyCallableMethods {
    */
   captureThis(): PyProxy {
     const self = this as unknown as PyProxy;
-    const thisInfo: PyProxyThisInfo = Object.assign({}, self.$$thisInfo);
-    const $$ = self.$$;
-    thisInfo.captureThis = true;
-    let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, thisInfo });
+    const props: PyProxyProps = Object.assign({}, self.$$props, {
+      captureThis: true,
+    });
+    return pyproxy_new(_getPtr(this), {
+      $$: self.$$,
+      flags: self.$$flags,
+      props,
+    });
   }
 }
 // @ts-ignore
@@ -1411,7 +1459,9 @@ export class PyProxyBufferMethods {
     let this_ptr = _getPtr(this);
     let errcode;
     try {
+      Py_ENTER();
       errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
@@ -1504,8 +1554,10 @@ export class PyProxyBufferMethods {
     } finally {
       if (!success) {
         try {
+          Py_ENTER();
           Module._PyBuffer_Release(view_ptr);
           Module._PyMem_Free(view_ptr);
+          Py_EXIT();
         } catch (e) {
           API.fatal_error(e);
         }
@@ -1692,8 +1744,10 @@ export class PyBuffer {
     }
     // Module.bufferFinalizationRegistry.unregister(this);
     try {
+      Py_ENTER();
       Module._PyBuffer_Release(this._view_ptr);
       Module._PyMem_Free(this._view_ptr);
+      Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
