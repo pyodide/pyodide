@@ -1,16 +1,12 @@
 package:
   name: test
   version: 1.0.0 # Nonsense
-  _cpython_dynlib: true
   top-level:
     - test
 
-source:
-  path: empty
-
 # TODO: also include test directories included in other stdlib modules
 build:
-  sharedlibrary: true
+  type: cpython_module
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist

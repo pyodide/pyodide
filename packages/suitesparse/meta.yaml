@@ -15,7 +15,7 @@ requirements:
     - CLAPACK
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     # Fix return type to avoid linker error
     grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'

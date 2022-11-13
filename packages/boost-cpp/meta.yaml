@@ -6,7 +6,7 @@ source:
   sha256: 273f1be93238a068aba4f9735a4a2b003019af067b9c183ed227780b8f36062c
 
 build:
-  library: true
+  type: static_library
   script: |
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
     ./bootstrap.sh --prefix=${INSTALL_DIR}
