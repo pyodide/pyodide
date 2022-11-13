@@ -17,7 +17,7 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.22.0a2"
+pyodide_version = "0.22.0.dev0"
 
 if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
