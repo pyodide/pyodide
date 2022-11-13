@@ -1,6 +1,7 @@
 package:
   name: freesasa
   version: 2.1.0
+  _disabled: true
   top-level:
     - freesasa
 source:
