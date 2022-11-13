@@ -1,0 +1,28 @@
+From ca9f87c11b8cbc837caed009ab31495c2b844d77 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 13 Nov 2022 09:35:59 -0800
+Subject: [PATCH] `descr_set_trampoline_call` return type should be `int` not
+ `PyObject*`
+
+Upstream PR: https://github.com/python/cpython/pull/99444
+
+---
+ Objects/descrobject.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Objects/descrobject.c b/Objects/descrobject.c
+index 550bfb36df..cc204931c3 100644
+--- a/Objects/descrobject.c
++++ b/Objects/descrobject.c
+@@ -17,7 +17,7 @@ class property "propertyobject *" "&PyProperty_Type"
+ // see pycore_object.h
+ #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+ #include <emscripten.h>
+-EM_JS(PyObject*, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
++EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
+     return wasmTable.get(set)(obj, value, closure);
+ });
+ 
+-- 
+2.25.1
+
