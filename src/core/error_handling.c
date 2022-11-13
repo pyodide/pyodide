@@ -90,9 +90,9 @@ fetch_and_normalize_exception(PyObject** type,
 static void
 store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
 {
-  PySys_SetObject("type", type);
-  PySys_SetObject("value", value);
-  PySys_SetObject("traceback", traceback);
+  PySys_SetObject("last_type", type);
+  PySys_SetObject("last_value", value);
+  PySys_SetObject("last_traceback", traceback);
 }
 
 /**
