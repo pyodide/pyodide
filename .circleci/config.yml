@@ -262,6 +262,7 @@ jobs:
               export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
             fi
             echo "pytest cache dir: $CACHE_DIR"
+            sed -i -e "393a\ \ \ \ \ \ \ \ ast.fix_missing_locations(self._mod)" /usr/local/lib/python3.11/site-packages/pytest_pyodide/decorator.py
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
