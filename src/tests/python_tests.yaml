@@ -839,7 +839,9 @@
 - test_wsgiref
 - test_xdrlib
 - test_xml_dom_minicompat
-- test_xml_etree
+- test_xml_etree:
+    skip:
+      - test_xinclude_failures # RangeError in chrome
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking
@@ -849,7 +851,8 @@
 - test_yield_from
 - test_zipapp
 - test_zipfile:
-    xfail-chrome: times out
+    skip:
+      - test_many_opens # [Errno 54] Not a directory: '/proc/self/fd'
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support
