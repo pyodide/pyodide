@@ -298,12 +298,12 @@ jobs:
           command: |
             curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
             bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
-            ~/miniforge3/bin/conda create -n pyodide python=3.10 -y
+            ~/miniforge3/bin/conda create -n pyodide python=3.11 -y
       - run:
           name: install dependencies
           command: |
             export PATH="$HOME/miniforge3/bin:$PATH"
-            conda create -n pyodide python=3.10 -y
+            conda create -n pyodide python=3.11 -y
             source activate pyodide
             python -m pip install -r requirements.txt
             pip install -e ./pyodide-build
@@ -387,7 +387,7 @@ jobs:
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
 
-            python3.10 -m venv .venv-host
+            python -m venv .venv-host
             source .venv-host/bin/activate
             pip install $PYODIDE_ROOT/pyodide-build
             pyodide venv .venv-pyodide
