@@ -227,7 +227,7 @@ def main(
         source(".", exports, ctx)
     elif source_location.find("://") != -1:
         url(source_location, exports, ctx)
-    elif Path(source_location).exists():
+    elif Path(source_location).is_dir():
         # a folder, build it
         source(source_location, exports, ctx)
     else:
