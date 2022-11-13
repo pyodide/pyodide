@@ -432,7 +432,10 @@ def test_check_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import test;
-                test();
+                try:
+                    test();
+                finally:
+                    del test
             `);
         } catch(e){
             err = e;
