@@ -89,6 +89,7 @@ API.fatal_error = function (e: any) {
   // Mark e so we know not to handle it later in EM_JS wrappers
   e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
+  API.fatal_error_occurred = true;
   console.error(
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
   );
