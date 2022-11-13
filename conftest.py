@@ -202,24 +202,6 @@ def pytest_runtest_call(item):
     yield from extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies)
 
 
-def clear_last_exception(browser):
-    """JsProxies stored in sys.last_value etc can interfere with refcounting.
-
-    Clear them out.
-    """
-    browser.run_js(
-        """
-        if(pyodide._api.fatal_error_occurred) {
-            return;
-        }
-        try {
-            pyodide.runPython('raise Exception("hi")');
-        } catch(e){ }
-        pyodide.runPython("import sys; del sys.last_type, sys.last_value, sys.last_traceback");
-        """
-    )
-
-
 def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     """Extra conditions for test to pass:
     1. No explicit request for test to fail
@@ -243,7 +225,6 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         # get_result (we don't want to override the error message by raising a
         # different error here.)
         a.get_result()
-    clear_last_exception(browser)
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
     if trace_pyproxies and trace_hiwire_refs:
