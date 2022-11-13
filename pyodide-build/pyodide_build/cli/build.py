@@ -222,7 +222,7 @@ def main(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
-    if source_location is None or len(source_location) == 0:
+    if not source_location:
         # build the current folder
         source(".", exports, ctx)
     elif source_location.find("://") != -1:
