@@ -1,6 +1,7 @@
 package:
   name: numcodecs
   version: 0.9.1
+  _disabled: true
   top-level:
     - numcodecs
 source:
