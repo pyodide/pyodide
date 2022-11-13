@@ -26,6 +26,7 @@ from typing import Any, TextIO, cast
 from urllib import request
 
 from . import common, pywasmcross
+from ._py_compile import _py_compile_wheel
 from .common import exit_with_stdio, find_matching_wheels
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 
@@ -843,6 +844,8 @@ def build_package(
                 name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
             )
             shutil.rmtree(dist_dir, ignore_errors=True)
+            wheel_path, *rest = find_matching_wheels(src_dist_dir.glob("*.whl"))
+            _py_compile_wheel(src_dist_dir / wheel_path, keep=False, verbose=True)
             shutil.copytree(src_dist_dir, dist_dir)
 
         create_packaged_token(build_dir)
