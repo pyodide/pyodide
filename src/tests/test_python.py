@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 def test_init(selenium_standalone):
@@ -155,3 +156,25 @@ def test_unknown_attribute(selenium):
             js.asdf
         """
     )
+
+
+@run_in_pyodide
+def test_zipimport_traceback(selenium):
+    import json.decoder
+    import pathlib
+    import sys
+    import traceback
+
+    try:
+        pathlib.Path("not/exists").write_text("hello")
+    except BaseException:
+        _, _, exc_traceback = sys.exc_info()
+        tb = traceback.extract_tb(exc_traceback)
+        assert tb[-1].filename == "pathlib.py"
+
+    try:
+        json.decoder.JSONDecoder().decode(1)  # type: ignore[arg-type]
+    except BaseException:
+        _, _, exc_traceback = sys.exc_info()
+        tb = traceback.extract_tb(exc_traceback)
+        assert tb[-1].filename == "json/decoder.py"
