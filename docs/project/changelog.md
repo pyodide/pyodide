@@ -114,12 +114,6 @@ substitutions:
 
 ### Build System / Package Loading
 
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
-  gdal, fiona, geopandas {pr}`3213`,
-  the standard library \_hashlib module {pr}`3206`
-
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
   {any}`pyodide.loadPackage` or {any}`micropip.install`.
@@ -175,9 +169,6 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
-- {{ Update }} Upgraded pandas to version 1.5.0.
-  {pr}`3134`
-
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -199,6 +190,16 @@ substitutions:
 - {{ Fix }} Fixed a bug that shared libraries are not copied into distribution
   directory when it is already built.
   {pr}`3212`
+
+### Packages
+
+- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  gdal, fiona, geopandas {pr}`3213`, pyinstrument {pr}`3258`,
+  the standard library \_hashlib module {pr}`3206`
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
 
 ## Version 0.21.3
 
