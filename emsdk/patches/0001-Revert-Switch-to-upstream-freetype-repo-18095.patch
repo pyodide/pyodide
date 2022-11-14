@@ -1,4 +1,4 @@
-From e07e95a0ccfccbfcbd8eaf3caf35634c1cb6fcde Mon Sep 17 00:00:00 2001
+From 11eb87229addb5e504c287f7d9749b630014f272 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 12 Nov 2022 22:51:39 -0800
 Subject: [PATCH] Revert "Switch to upstream freetype repo (#18095)"
@@ -9,7 +9,7 @@ This reverts commit ba3c10bd4d4f39c59a21a8a36f3751ae11cf4107.
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/tools/ports/freetype.py b/tools/ports/freetype.py
-index 0d7566060..05d9a85bc 100644
+index 0d7566060..2f9d26602 100644
 --- a/tools/ports/freetype.py
 +++ b/tools/ports/freetype.py
 @@ -5,8 +5,8 @@
@@ -28,7 +28,7 @@ index 0d7566060..05d9a85bc 100644
  
  def get(ports, settings, shared):
 -  ports.fetch_project('freetype', f'https://github.com/freetype/freetype/archive/{TAG}.zip', sha512hash=HASH)
-+  ports.fetch_project('freetype', 'https://github.com/emscripten-ports/FreeType/archive/' + TAG + '.zip', 'FreeType-' + TAG, sha512hash=HASH)
++  ports.fetch_project('freetype', 'https://github.com/emscripten-ports/FreeType/archive/' + TAG + '.zip', sha512hash=HASH)
  
    def create(final):
 -    source_path = os.path.join(ports.get_dir(), 'freetype', 'freetype-' + TAG)
