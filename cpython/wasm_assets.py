@@ -52,7 +52,7 @@ UNVENDORED_FILES = (
 NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
 
 
-class PyZipFileCustomName(zipfile.PyZipFile):
+class PyZipFileStrippedTraceback(zipfile.PyZipFile):
     def __init__(
         self,
         file,
@@ -110,7 +110,7 @@ def create_stdlib_zip(
     *,
     optimize: int = 0,
 ) -> None:
-    with PyZipFileCustomName(
+    with PyZipFileStrippedTraceback(
         args.wasm_stdlib_zip,
         mode="w",
         compression=args.compression,
