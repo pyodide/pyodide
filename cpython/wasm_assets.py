@@ -10,9 +10,12 @@ contains:
 """
 
 import argparse
+import os
 import pathlib
 import shutil
+import tempfile
 import zipfile
+from pathlib import Path
 
 # This files are removed from the stdlib by default
 REMOVED_FILES = (
@@ -49,13 +52,70 @@ UNVENDORED_FILES = (
 NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
 
 
+class PyZipFileCustomName(zipfile.PyZipFile):
+    def __init__(
+        self,
+        file,
+        mode="r",
+        compression=zipfile.ZIP_STORED,
+        allowZip64=True,
+        optimize=-1,
+        basedir=None,
+    ):
+        super().__init__(file, mode, compression, allowZip64, optimize)
+        self.pyc_dir = Path(tempfile.mkdtemp())
+        self.base_dir = basedir
+
+    def __del__(self):
+        super().__del__()
+        shutil.rmtree(self.pyc_dir)
+
+    def _get_codename(self, pathname, basename):
+        """Return (filename, archivename) for the path.
+        Given a module name path, return the correct file path and
+        archive name, compiling if necessary.  For example, given
+        /python/lib/string, return (/python/lib/string.pyc, string).
+        """
+
+        def _compile(file, optimize=-1):
+            import py_compile
+
+            if self.debug:
+                print("Compiling", file)
+
+            rel_path = Path(file).relative_to(self.base_dir)
+            compile_path_full = self.pyc_dir / rel_path.with_suffix(".pyc")
+            py_compile.compile(
+                file,
+                cfile=str(compile_path_full),
+                dfile=str(rel_path),
+                doraise=True,
+                optimize=optimize,
+            )
+
+            return compile_path_full
+
+        file_py = pathname + ".py"
+        file_pyc = _compile(file_py, optimize=self._optimize)
+
+        archivename = os.path.split(file_pyc)[1]
+        if basename:
+            archivename = f"{basename}/{archivename}"
+
+        return (file_pyc, archivename)
+
+
 def create_stdlib_zip(
     args: argparse.Namespace,
     *,
     optimize: int = 0,
 ) -> None:
-    with zipfile.PyZipFile(
-        args.wasm_stdlib_zip, mode="w", compression=args.compression, optimize=optimize
+    with PyZipFileCustomName(
+        args.wasm_stdlib_zip,
+        mode="w",
+        compression=args.compression,
+        optimize=optimize,
+        basedir=args.srcdir_lib,
     ) as pzf:
         if args.compresslevel is not None:
             pzf.compresslevel = args.compresslevel
