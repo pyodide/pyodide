@@ -14,7 +14,6 @@
 #include "python2js_buffer.h"
 int extra_trace = 0;
 
-
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
     EM_ASM(API.fatal_loading_error(args));                                     \
