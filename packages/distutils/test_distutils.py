@@ -27,7 +27,13 @@ def test_distutils(selenium):
 
     sys.modules["_osx_support"] = unittest.mock.Mock()
     try:
-        libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
+        libregrtest.main(
+            [name],
+            ignore_tests=ignore_tests,
+            verbose=True,
+            verbose2=True,
+            verbose3=True,
+        )
     except SystemExit as e:
         if e.code != 0:
             raise RuntimeError(f"Failed with code: {e.code}") from None

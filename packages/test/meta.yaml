@@ -42,5 +42,5 @@ build:
 
     cd ${CPYTHONBUILD}/Lib && \
       tar --exclude=__pycache__ -cf - \
-      test unittest/test sqlite3/test ctypes/test \
+      test \
       | tar -C $DISTDIR -xf -

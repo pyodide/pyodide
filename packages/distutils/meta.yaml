@@ -12,6 +12,6 @@ build:
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist
-    cd $CPYTHONLIB
+    cd $CPYTHONBUILD/Lib
 
     tar --exclude=__pycache__ -cf - distutils | tar -C $DISTDIR -xf -
