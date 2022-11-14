@@ -15,31 +15,40 @@ def _specialize_convert_tags(tags: set[Tag] | frozenset[Tag], wheel_name: str) -
 
     Having more than one output tag is not supported.
 
+    Examples
+    --------
+    >>> from packaging.tags import parse_tag
+    >>> tags = parse_tag("py2.py3-none-any")
+    >>> str(_specialize_convert_tags(set(tags), ""))
+    'cp310-none-any'
+    >>> tags = parse_tag("cp310-cp310-emscripten_3_1_24_wasm32")
+    >>> str(_specialize_convert_tags(set(tags), ""))
+    'cp310-cp310-emscripten_3_1_24_wasm32'
+    >>> tags = parse_tag("py310.py311-any-none")
+    >>> str(_specialize_convert_tags(set(tags), ""))
+    'cp310-any-none'
+    >>> tags = parse_tag("py36-abi3-none")
+    >>> str(_specialize_convert_tags(set(tags), ""))
+    'cp310-abi3-none'
     """
-    # See related discussion in
-    # https://discuss.python.org/t/wasm-unvendoring-some-of-stdlib-modules/18076/13
-    if len(tags) == 1:
-        tag = list(tags)[0]
-    elif len(tags) == 0:
+    if len(tags) == 0:
         raise ValueError("Failed to parse tags from the wheel file name: {wheel_name}!")
-    elif len(tags) == 2 and {str(el) for el in tags} == {
-        "py3-none-any",
-        "py2-none-any",
-    }:
-        tag = Tag(interpreter="py3", abi="none", platform="any")
-    else:
-        raise NotImplementedError(
-            "Processing more than one tag is not implemented, "
-            f"got {[str(tag) for tag in tags]} in {wheel_name}"
+
+    output_tags = set()
+    interpreter = "cp" + "".join(str(el) for el in sys.version_info[:2])
+    for tag in list(tags):
+        output_tags.add(
+            Tag(interpreter=interpreter, abi=tag.abi, platform=tag.platform)
         )
 
-    interpreter = "cp" + "".join(str(el) for el in sys.version_info[:2])
-    valid_interpreter = [f"py{sys.version_info[0]}", interpreter]
-    if tag.interpreter not in valid_interpreter:
-        raise ValueError(
-            f"Unsupported interpreter {tag.interpreter}, must be one of {valid_interpreter}"
+    if len(output_tags) > 1:
+        # See https://github.com/pypa/packaging/issues/616
+        raise NotImplementedError(
+            "Found more than one output tag after py-compilation: "
+            f"{[str(tag) for tag in output_tags]} in {wheel_name}"
         )
-    return Tag(interpreter=interpreter, abi=tag.abi, platform=tag.platform)
+
+    return list(output_tags)[0]
 
 
 def _py_compile_wheel_name(wheel_name: str) -> str:
