@@ -7,7 +7,7 @@ source:
   sha256: 51e9297aadb7d9eb99129fe0050f53a11fcce38a0848fb2b0389e385ad93695e
 
 build:
-  library: true
+  type: static_library
   script: |
     mkdir build && cd build && emcmake cmake \
       -DCMAKE_C_FLAGS="-fPIC" \

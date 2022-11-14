@@ -41,7 +41,7 @@ def test_parse_package(name: str) -> None:
     # check that we can parse the meta.yaml
     meta = MetaConfig.from_yaml(PKG_DIR / name / "meta.yaml")
 
-    sharedlibrary = meta.build.sharedlibrary
+    sharedlibrary = meta.build.package_type == "shared_library"
     if name == "sharedlib-test":
         assert sharedlibrary is True
     elif name == "sharedlib-test-py":

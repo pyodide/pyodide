@@ -1,13 +1,10 @@
 package:
   name: ssl
   version: 1.0.0 # Nonsense
-  _cpython_dynlib: true
   top-level:
     - ssl
-source:
-  path: empty
 build:
-  sharedlibrary: true
+  type: cpython_module
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist
