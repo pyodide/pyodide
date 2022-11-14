@@ -4,8 +4,8 @@ package:
   top-level:
     - sklearn
 source:
-  url: https://files.pythonhosted.org/packages/41/11/e931951f048908ceaf2423db48ca6ad10e0b818c2960a3bc2dacb4fa4c1d/scikit-learn-1.1.1.tar.gz
-  sha256: 3e77b71e8e644f86c8b5be7f1c285ef597de4c384961389ee3e9ca36c445b256
+  url: https://files.pythonhosted.org/packages/38/bc/319f789ce0988d9bf1379d6e40498dc119b30bec133bf76cd82ca549b69a/scikit-learn-1.1.3.tar.gz
+  sha256: bef51978a51ec19977700fe7b86aecea49c825884f3811756b74a3b152bb4e35
 
 build:
   cflags: -Wno-implicit-function-declaration

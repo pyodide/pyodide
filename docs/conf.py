@@ -172,6 +172,11 @@ if IN_SPHINX:
     collections.Mapping = Mapping  # type: ignore[attr-defined]
     collections.Callable = Callable  # type: ignore[attr-defined]
 
+    import inspect
+
+    if not hasattr(inspect, "getargspec"):
+        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
     base_dir = Path(__file__).resolve().parent.parent
     path_dirs = [
         str(base_dir),

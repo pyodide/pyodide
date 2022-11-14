@@ -840,8 +840,7 @@
 - test_xdrlib
 - test_xml_dom_minicompat
 - test_xml_etree:
-    skip:
-      - test_xinclude_failures # RangeError in chrome
+    xfail-chrome: "RangeError: Maximum call stack size exceeded"
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking

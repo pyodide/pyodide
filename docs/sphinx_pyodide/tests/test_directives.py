@@ -12,6 +12,13 @@ from docutils.utils import new_document
 # Shim sphinx-js Python 3.10 compatibility
 collections.Mapping = Mapping  # type: ignore[attr-defined]
 types.Union = Union  # type: ignore[attr-defined]
+
+import inspect
+
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
+
 from sphinx_js.suffix_tree import SuffixTree
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
