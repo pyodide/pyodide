@@ -110,6 +110,7 @@ def test_wheel_paths():
         f"py2.py3-none-{PLATFORM}",
         "py3-none-any",
         "py2.py3-none-any",
+        f"{current_version}-none-any",
     ]
 
 

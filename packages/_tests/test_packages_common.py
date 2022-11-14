@@ -82,7 +82,7 @@ def test_import(
     baseline_pyc = selenium_standalone.run(
         """
         len(list(glob.glob(
-            site.getsitepackages()[0] + '/**/*.pyc',
+            site.getsitepackages()[0] + '/**/*.py',
             recursive=True)
         ))
         """
@@ -104,7 +104,7 @@ def test_import(
         selenium_standalone.run(
             """
             len(list(glob.glob(
-                site.getsitepackages()[0] + '/**/*.pyc',
+                site.getsitepackages()[0] + '/**/*.py',
                 recursive=True)
             ))
             """
