@@ -47,12 +47,28 @@ UNVENDORED_FILES = (
 
 # TODO: These modules have test directory which we unvendors it separately.
 #       So we should not pack them into the zip file in order to make e.g. import ctypes.test work.
-#       Note that all those tests are moved to the subdirectory of test in Python 3.11,
-#       so we don't need this after Python 3.11 update.
+#       Note that all these tests are moved to the subdirectory of `test` module in upstream CPython 3.12.0a1.
+#       So we don't need this after we upgrade to 3.12.0
 NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
 
 
-class PyZipFileStrippedTraceback(zipfile.PyZipFile):
+class PyZipFileShortTraceback(zipfile.PyZipFile):
+    """
+    This class is for creating .pyc files with shortened traceback.
+
+    With PyZipFile:
+
+    Traceback (most recent call last):
+        File "/src/cpython/installs/python-3.10.2/lib/python3.10/pathlib.py", line 1152, in write_text
+        File "/src/cpython/installs/python-3.10.2/lib/python3.10/pathlib.py", line 1117, in open
+
+    With this class:
+
+    Traceback (most recent call last):
+        File "pathlib.py", line 1152, in write_text
+        File "pathlib.py", line 1117, in open
+    """
+
     def __init__(
         self,
         file,
@@ -110,7 +126,7 @@ def create_stdlib_zip(
     *,
     optimize: int = 0,
 ) -> None:
-    with PyZipFileStrippedTraceback(
+    with PyZipFileShortTraceback(
         args.wasm_stdlib_zip,
         mode="w",
         compression=args.compression,
