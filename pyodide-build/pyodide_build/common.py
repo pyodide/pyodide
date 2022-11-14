@@ -11,7 +11,7 @@ from collections.abc import Generator, Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import NoReturn
 
-import tomllib  # type:ignore[import]
+import tomllib
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
