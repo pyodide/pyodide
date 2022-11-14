@@ -20,3 +20,6 @@ _xxsubinterpreters _xxsubinterpretersmodule.c
 *disabled*
 pwd
 _sqlite3
+_ssl
+_lzma
+_hashlib
