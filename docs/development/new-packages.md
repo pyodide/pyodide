@@ -338,7 +338,7 @@ requirements:
     - <requirement>
 
 build:
-  library: true
+  type: static_library
   script: |
     emconfigure ./configure
     emmake make -j ${PYODIDE_JOBS:-3}

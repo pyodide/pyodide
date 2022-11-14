@@ -11,7 +11,7 @@ requirements:
     - libxml
 
 build:
-  library: true
+  type: static_library
 
   script: |
     emconfigure ./configure \

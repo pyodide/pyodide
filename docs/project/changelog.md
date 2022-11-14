@@ -193,6 +193,14 @@ substitutions:
   which vendors shared libraries into the wheel after building.
   {pr}`3234`
 
+- {{ Enhancement }} Added `build/type` key to the `meta.yaml` spec
+  which specifies the type of the package.
+  {pr}`3238`
+
+- {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
+  are removed. Use `build/type` instead.
+  {pr}`3238`
+
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
 

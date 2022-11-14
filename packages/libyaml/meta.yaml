@@ -7,7 +7,7 @@ source:
   sha256: 56070c9d4bf244a8dcc68e04613e5bbce5c8411ed97cdccc1f4b5fb46aebe5a8
 
 build:
-  library: true
+  type: static_library
   script: |
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
 
