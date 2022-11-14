@@ -16,7 +16,7 @@ def _specialize_convert_tags(tags: set[Tag] | frozenset[Tag], wheel_name: str) -
     Having more than one output tag is not supported.
 
     """
-    # For the logic see related discussion in
+    # See related discussion in
     # https://discuss.python.org/t/wasm-unvendoring-some-of-stdlib-modules/18076/13
     if len(tags) == 1:
         tag = list(tags)[0]
@@ -68,6 +68,7 @@ def _py_compile_wheel_name(wheel_name: str) -> str:
     name, version, build, tags = parse_wheel_filename(wheel_name)
     if build:
         # TODO: not sure what to do here, but we never have such files in Pyodide
+        # Opened https://github.com/pypa/packaging/issues/616 about it.
         raise NotImplementedError("build tag {build} not implemented")
     output_name = f"{name.replace('-', '_')}-{version}-"
     output_name += str(_specialize_convert_tags(tags, wheel_name=wheel_name))
@@ -136,7 +137,7 @@ def _py_compile_wheel(
 
                 tmp_path_pyc = temp_dir / (tmp_path_py.name + "c")
                 py_compile.compile(
-                    str(tmp_path_py), cfile=str(tmp_path_pyc), doraise=True
+                    str(tmp_path_py), cfile=str(tmp_path_pyc), dfile=name, doraise=True
                 )
 
                 fh_zip_out.writestr(name + "c", tmp_path_pyc.read_bytes())
