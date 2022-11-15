@@ -56,7 +56,7 @@ import subprocess
 from collections import namedtuple
 from collections.abc import Iterable, Iterator, MutableMapping
 from contextlib import contextmanager
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from typing import Any, Literal, NoReturn
 
 from pyodide_build import common
@@ -138,6 +138,7 @@ def get_build_env(
     args["exports"] = exports
 
     with TemporaryDirectory() as symlink_dir_str:
+        symlink_dir_str = mkdtemp()
         symlink_dir = Path(symlink_dir_str)
         env = dict(env)
         make_command_wrapper_symlinks(symlink_dir, env)
@@ -719,6 +720,7 @@ def handle_command(
 
         new_args = _new_args
 
+    print("\n", " ".join(new_args), "\n")
     returncode = subprocess.run(new_args).returncode
 
     sys.exit(returncode)
