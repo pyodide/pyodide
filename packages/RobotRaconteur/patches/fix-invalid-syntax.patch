@@ -1,0 +1,10 @@
+--- a/RobotRaconteurPython/NamedClient.py     2022-11-16 00:06:52.071108648 +0100
++++ b/RobotRaconteurPython/NamedClient.py 2022-11-16 00:07:02.567180894 +0100
+@@ -16,6 +16,7 @@
+ RRN=RR.RobotRaconteurNode.s
+ 
+ def StartClientAsNodeName(name):
++    ...
+     #TODO: Add transport
+     #tcp_transport=RR.TcpTransport()
+

@@ -6,6 +6,9 @@ source:
   url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-post1-Source.tar.gz
   sha256: 224427d0922dcb34d17221c1f3b8b5e94ebddc109f24f8e9a3f7f5d090386dc6
 
+  patches:
+    - patches/fix-invalid-syntax.patch
+
 requirements:
   run:
     - numpy
