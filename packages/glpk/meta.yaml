@@ -7,7 +7,7 @@ source:
   url: https://ftp.gnu.org/gnu/glpk/glpk-5.0.tar.gz
 
 build:
-  library: true
+  type: static_library
   script: |
     CFLAGS="-fPIC" emconfigure ./configure \
       --prefix=${WASM_LIBRARY_DIR} \

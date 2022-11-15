@@ -5,7 +5,7 @@ package:
 source:
   path: src
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     em++ -c throw.cpp -o throw.o ${SIDE_MODULE_CFLAGS} -fexceptions
     em++ -c catch.cpp -o catch.o ${SIDE_MODULE_CFLAGS} -fexceptions

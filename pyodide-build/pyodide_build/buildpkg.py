@@ -282,7 +282,7 @@ def download_and_extract(
 
 
 def prepare_source(
-    pkg_root: Path, buildpath: Path, srcpath: Path, src_metadata: _SourceSpec
+    buildpath: Path, srcpath: Path, src_metadata: _SourceSpec, clear_only: bool = False
 ) -> None:
     """
     Figure out from the "source" key in the package metadata where to get the source
@@ -291,10 +291,6 @@ def prepare_source(
 
     Parameters
     ----------
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
     buildpath
         The path to the build directory. Generally will be
         $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
@@ -306,6 +302,10 @@ def prepare_source(
     src_metadata
         The source section from meta.yaml.
 
+    clear_only
+        Clear the source directory only, do not download or extract the source.
+        Set this to True if the source collected from external source.
+
     Returns
     -------
         The location where the source ended up. TODO: None, actually?
@@ -314,9 +314,14 @@ def prepare_source(
         shutil.rmtree(buildpath)
     os.makedirs(buildpath)
 
+    if clear_only:
+        srcpath.mkdir(parents=True, exist_ok=True)
+        return
+
     if src_metadata.url is not None:
         download_and_extract(buildpath, srcpath, src_metadata)
         return
+
     if src_metadata.path is None:
         raise ValueError(
             "Incorrect source provided. Either a url or a path must be provided."
@@ -440,8 +445,8 @@ def compile(
         The path to the target Python installation
 
     """
-    # This function runs setup.py. library and sharedlibrary don't have setup.py
-    if build_metadata.sharedlibrary:
+    # This function runs pypa/build. libraries don't need to do this.
+    if build_metadata.package_type != "package":
         return
 
     build_env_ctx = pywasmcross.get_build_env(
@@ -514,7 +519,6 @@ def copy_sharedlibs(
 
 def package_wheel(
     pkg_name: str,
-    pkg_root: Path,
     srcpath: Path,
     build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
@@ -530,10 +534,6 @@ def package_wheel(
     pkg_name
         The name of the package
 
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
     srcpath
         The path to the source. We extract the source into the build directory,
         so it will be something like
@@ -546,7 +546,7 @@ def package_wheel(
         The runner we will use to execute our bash commands. Preserves
         environment variables from one invocation to the next.
     """
-    if build_metadata.sharedlibrary:
+    if build_metadata.package_type != "package":
         return
 
     distdir = srcpath / "dist"
@@ -775,21 +775,17 @@ def build_package(
 
     url = source_metadata.url
     finished_wheel = url and url.endswith(".whl")
-    library = build_metadata.library
-    sharedlibrary = build_metadata.sharedlibrary
     post = build_metadata.post
+    package_type = build_metadata.package_type
 
     # These are validated in io.check_package_config
     # If any of these assertions fail, the code path through here might get a
     # bit weird
-    assert not (library and sharedlibrary)
     if finished_wheel:
         assert not build_metadata.script
-        assert not library
-        assert not sharedlibrary
+        assert package_type == "package"
     if post:
-        assert not library
-        assert not sharedlibrary
+        assert package_type == "package"
 
     if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
         return
@@ -815,15 +811,16 @@ def build_package(
         bash_runner.env["PKG_VERSION"] = version
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         if not continue_:
-            prepare_source(pkg_root, build_dir, srcpath, source_metadata)
+            clear_only = package_type == "cpython_module"
+            prepare_source(build_dir, srcpath, source_metadata, clear_only=clear_only)
             patch(pkg_root, srcpath, source_metadata)
 
         run_script(build_dir, srcpath, build_metadata, bash_runner)
 
-        if library:
+        if package_type == "static_library":
             # Nothing needs to be done for a static library
             pass
-        elif sharedlibrary:
+        elif package_type in ("shared_library", "cpython_module"):
             # If shared library, we copy .so files to dist_dir
             # and create a zip archive of the .so files
             shutil.rmtree(dist_dir, ignore_errors=True)
@@ -839,9 +836,7 @@ def build_package(
                     target_install_dir=target_install_dir,
                 )
 
-            package_wheel(
-                name, pkg_root, srcpath, build_metadata, bash_runner, host_install_dir
-            )
+            package_wheel(name, srcpath, build_metadata, bash_runner, host_install_dir)
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
 
