@@ -1,6 +1,7 @@
 package:
   name: bcrypt
   version: 4.0.0
+  _disabled: true
   top-level:
     - bcrypt
 source:
