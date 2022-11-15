@@ -399,6 +399,7 @@ jobs:
             which pip
             echo "\n\ncat $(which pip)"
             cat $(which pip)
+            python3.11-host -c 'import subprocess; subprocess.run(["ls"])'
             pip install dist/*.whl
             cd ../attrs
             pip install .[tests]
