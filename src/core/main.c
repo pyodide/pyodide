@@ -12,7 +12,6 @@
 #include "pyproxy.h"
 #include "python2js.h"
 #include "python2js_buffer.h"
-int extra_trace = 0;
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
