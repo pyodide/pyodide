@@ -11,7 +11,7 @@ requirements:
     - libde265
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     # Build options are adapted from https://github.com/strukturag/libheif/blob/v1.12.0/build-emscripten.sh
     # heif_emscripten.h is for building js APIs, but we don't want them.

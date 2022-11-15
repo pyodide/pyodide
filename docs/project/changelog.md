@@ -28,8 +28,8 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.24
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.25
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`, {pr}`3239`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -192,6 +192,14 @@ substitutions:
 - {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
   which vendors shared libraries into the wheel after building.
   {pr}`3234`
+
+- {{ Enhancement }} Added `build/type` key to the `meta.yaml` spec
+  which specifies the type of the package.
+  {pr}`3238`
+
+- {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
+  are removed. Use `build/type` instead.
+  {pr}`3238`
 
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
