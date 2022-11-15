@@ -15,15 +15,17 @@ FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
 LIBFFI_TAG=2022-06-23
 
+MAKEFILE_PATCHED=Makefile.patched
+
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	( \
 		cd $(BUILD); \
-		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
+		sed -i -e 's/libinstall:.*/libinstall:/' $(MAKEFILE_PATCHED); \
 		touch $(BUILD)/$(LIB) ; \
-		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
+		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} -f $(MAKEFILE_PATCHED) && \
 		cp $(LIB) $(INSTALL)/lib/ \
 	)
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
@@ -38,8 +40,6 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
-	cp $(BUILD)/Modules/expat/libexpat.a $(INSTALL)/lib/
-	cp $(BUILD)/Modules/_decimal/libmpdec/libmpdec.a $(INSTALL)/lib/
 
 
 clean:
@@ -103,6 +103,7 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.lo
 	cp Setup.local $(BUILD)/Modules/
 	( \
 		cd $(BUILD); \
-		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
+		sed '/MODOBJS=/s/$$/ $$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) /' Makefile > $(MAKEFILE_PATCHED); \
+		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} -f $(MAKEFILE_PATCHED) \
 	)
 	touch $(BUILD)/$(LIB)
