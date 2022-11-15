@@ -12,7 +12,7 @@ from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 
 def test_command_compiler():
     c = _Compile()
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="incomplete input"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -81,6 +81,7 @@ def test_completion():
         [
             "print.__ge__(",
             "print.__getattribute__(",
+            "print.__getstate__()",
             "print.__gt__(",
         ],
         8,
