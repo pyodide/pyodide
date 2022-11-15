@@ -393,7 +393,7 @@ def test_pypa_index(tmp_path):
     path = Path(tmp_path)
     version = "0.21.0"  # just need some version that already exists
     download_xbuildenv(version, path)
-    
+
     # We don't need host dependencies for this test so zero them out
     (path / "xbuildenv/requirements.txt").write_text("")
 
