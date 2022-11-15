@@ -386,6 +386,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
     )
 
+
 def test_pypa_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
