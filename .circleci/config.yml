@@ -395,6 +395,10 @@ jobs:
 
             cd zope.interface
             pyodide build
+            echo "\n\n\nwhich pip"
+            which pip
+            echo "\n\ncat $(which pip)"
+            cat $(which pip)
             pip install dist/*.whl
             cd ../attrs
             pip install .[tests]
