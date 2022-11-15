@@ -1,18 +1,16 @@
 package:
   name: astropy
-  version: "5.1"
+  version: 5.1.1
   top-level:
     - astropy
 source:
-  url: https://files.pythonhosted.org/packages/67/3d/bf8dd07f37dd9d1b14bc92985734a3eb7fb15a136dba1ebcc3e3a76d9327/astropy-5.1.tar.gz
-  sha256: 1db1b2c7eddfc773ca66fa33bd07b25d5b9c3b5eee2b934e0ca277fa5b1b7b7e
-  patches:
-    - patches/0001-Fix-types-of-_sigma_clip_fast.patch
+  url: https://files.pythonhosted.org/packages/ce/02/213096b189211a750d21d48d18d945efa6c8a334134a6f01b8f2d2fd4b2d/astropy-5.1.1.tar.gz
+  sha256: ba4bd696af7090fd399b464c704bf27b5633121e461785edc70432606a94bd81
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false
-  exports: "requested" # Astropy uses dlsym so we need to export more than just PyInit_astropy
+  exports: requested # Astropy uses dlsym so we need to export more than just PyInit_astropy
 requirements:
   host:
     - packaging
