@@ -397,8 +397,10 @@ jobs:
             pyodide build
             echo "\n\n\nwhich pip"
             which pip
-            echo "\n\ncat $(which pip)"
             cat $(which pip)
+            sed -i '4i import sysconfig; print("platform:", sysconfig.get_platform())' $(which pip)
+            sed -i '5i import sys; print("sys.executable", sys.executable)' $(which pip)
+            echo "\n\ncat $(which pip)"
             python3.11-host -c 'import subprocess; subprocess.run(["ls"])'
             pip install dist/*.whl
             cd ../attrs
