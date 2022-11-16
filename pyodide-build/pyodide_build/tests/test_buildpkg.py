@@ -57,7 +57,7 @@ def test_prepare_source(monkeypatch):
         buildpath = pkg_root / "build"
         src_metadata = pkg.source
         srcpath = buildpath / source_dir_name
-        buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
+        buildpkg.prepare_source(buildpath, srcpath, src_metadata)
 
         assert srcpath.is_dir()
 
@@ -67,7 +67,8 @@ def test_run_script(is_library, tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
-    build_metadata = _BuildSpec(script=script, library=is_library)
+    package_type = "static_library" if is_library else "package"
+    build_metadata = _BuildSpec(script=script, type=package_type)
     with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
         buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
         assert (src_dir / "out.txt").exists()
@@ -77,7 +78,7 @@ def test_run_script_environment(tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
-    build_metadata = _BuildSpec(script=script, library=False)
+    build_metadata = _BuildSpec(script=script, type="package")
     with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
         shared_env.env.pop("A", None)
         buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)

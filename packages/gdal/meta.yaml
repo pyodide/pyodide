@@ -15,7 +15,7 @@ requirements:
     - geos
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     export EMSCRIPTEN_SYSROOT=$(em-config CACHE)/sysroot
     export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include

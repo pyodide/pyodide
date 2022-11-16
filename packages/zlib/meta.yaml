@@ -7,7 +7,7 @@ source:
   url: https://zlib.net/zlib-1.2.13.tar.gz
 
 build:
-  library: true
+  type: static_library
   script: |
     CFLAGS="-fPIC" emconfigure ./configure --prefix=${WASM_LIBRARY_DIR}
     emmake make install -j ${PYODIDE_JOBS:-3}

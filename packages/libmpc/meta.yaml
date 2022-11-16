@@ -11,7 +11,7 @@ requirements:
     - libmpfr
 
 build:
-  library: true
+  type: static_library
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \

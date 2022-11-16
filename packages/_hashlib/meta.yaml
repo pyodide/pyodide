@@ -1,13 +1,10 @@
 package:
   name: _hashlib
   version: 1.0.0 # Nonsense
-  _cpython_dynlib: true
   top-level:
     - _hashlib
-source:
-  path: empty
 build:
-  sharedlibrary: true
+  type: cpython_module
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist

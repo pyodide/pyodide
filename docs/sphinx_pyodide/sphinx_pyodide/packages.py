@@ -27,10 +27,10 @@ def get_packages_summary_directive(app):
 
             packages = {}
             for package in packages_list:
-                name, version, is_library, tag = self.parse_package_info(package)
+                name, version, is_package, tag = self.parse_package_info(package)
 
                 # skip libraries (e.g. libxml, libyaml, ...) and test only packages
-                if is_library or tag == PYODIDE_TESTONLY:
+                if not is_package or tag == PYODIDE_TESTONLY:
                     continue
 
                 if tag == PYODIDE_STDLIB:
@@ -56,9 +56,9 @@ def get_packages_summary_directive(app):
             name = yaml_data.package.name
             version = yaml_data.package.version
             tag = yaml_data.package.tag
-            is_library = yaml_data.build.library
+            is_package = yaml_data.build.package_type == "package"
 
-            return name, version, is_library, tag
+            return name, version, is_package, tag
 
         def get_package_metadata_list(
             self, directory: pathlib.Path

@@ -5,5 +5,5 @@ source:
   sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
   url: https://dummy-url-that-not-exists.com/libtest.tar.gz
 build:
-  library: true
+  type: static_library
   script: "pass"
