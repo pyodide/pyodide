@@ -144,6 +144,7 @@ def source(
     build.run(exports, backend_flags)
 
 
+@app.command()  # type: ignore[misc]
 def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
@@ -210,6 +211,7 @@ def recipe(
 
 
 # simple 'pyodide build' command
+@app.command()  # type: ignore[misc]
 def main(
     source_location: "Optional[str]" = typer.Argument(
         "",
@@ -235,7 +237,7 @@ def main(
         pypi(source_location, exports, ctx)
 
 
-main.typer_kwargs = {  # type: ignore[attr-defined]
+main.typer_kwargs = {
     "context_settings": {
         "ignore_unknown_options": True,
         "allow_extra_args": True,
