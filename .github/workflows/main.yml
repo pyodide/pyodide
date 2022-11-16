@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 concurrency:
   group: main-${{ github.head_ref }}
@@ -157,7 +156,7 @@ jobs:
       fail-fast: false
       matrix:
         runner: [playwright]
-        browser: [firefox, chrome]
+        browser: [chrome]
 
     steps:
       - uses: actions/checkout@v2
@@ -179,8 +178,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -e ./pyodide-build
-          # FIXME: playwright 1.23.0 has unknown performance issue on firefox
-          pip install "playwright<1.23.0" && python -m playwright install
+          python -m playwright install
 
       - name: run core tests
         env:
