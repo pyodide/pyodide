@@ -15,18 +15,14 @@ FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
 LIBFFI_TAG=2022-06-23
 
-MPDEC_URL=https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-2.5.1.tar.gz
-MPDEC_TARBALL=$(ROOT)/downloads/mpdec.tgz
-MPDEC_BUILD=$(ROOT)/build/mpdecimal-2.5.1
-MPDEC_INSTALL=$(INSTALL)/lib/libmpdec.a
-
-all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(MPDEC_INSTALL)
+all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
+		sed -i '/MODOBJS=/s/$$/ $$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) /' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
 		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ \
@@ -43,7 +39,6 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
-	cp $(BUILD)/Modules/expat/libexpat.a $(INSTALL)/lib/
 
 
 clean:
@@ -64,16 +59,6 @@ $(BUILD)/.patched: $(TARBALL)
 	[ -d $(BUILD) ] || (mkdir -p $(dir $(BUILD)); tar -C $(dir $(BUILD)) -xf $(TARBALL))
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
-
-$(MPDEC_TARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(MPDEC_URL)
-
-$(MPDEC_INSTALL) : $(MPDEC_TARBALL)
-	tar -C $(dir $(MPDEC_BUILD)) -xf $(MPDEC_TARBALL)
-	cd $(MPDEC_BUILD) && emconfigure ./configure --disable-shared CFLAGS=-fPIC
-	cd $(MPDEC_BUILD) && emmake make lib
-	cp $(MPDEC_BUILD)/libmpdec/libmpdec.a $@
 
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
@@ -110,7 +95,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 	)
 
 
-$(BUILD)/Modules/Setup.local : Setup.local
+$(BUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
