@@ -7,5 +7,5 @@ source:
   url: http://www.netlib.org/clapack/clapack.tgz
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: "pass"

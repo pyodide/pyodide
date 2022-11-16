@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.9.1
+  version: 1.9.3
   top-level:
     - scipy
 
@@ -15,8 +15,8 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/db/af/16906139f52bc6866c43401869ce247662739ad71afa11c6f18505eb0546/scipy-1.9.1.tar.gz
-  sha256: 26d28c468900e6d5fdb37d2812ab46db0ccd22c63baa095057871faa3a498bc9
+  url: https://files.pythonhosted.org/packages/0a/2e/44795c6398e24e45fa0bb61c3e98de1cfea567b1b51efd3751e2f7ff9720/scipy-1.9.3.tar.gz
+  sha256: fbc5c05c85c1a02be77b1ff591087c83bc44579c6d2bd9fb798bb64ea5e1a027
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
@@ -29,11 +29,9 @@ source:
     - patches/0008-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
     - patches/0009-sasum-returns-double-not-float.patch
     - patches/0010-skip-fortran-fails-to-link.patch
-    - patches/0011-Add-extra-END-to-prini.f.patch
-    - patches/0012-Change-qh_eachvoronoi_all-FILE-type.patch
-    - patches/0013-Remove-meson-requirements.patch
-    - patches/0014-Fix-fitpack.patch
-    - patches/0015-Cast-linear_sum_assignment-to-PyCFunction.patch
+    - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
+    - patches/0012-Remove-meson-requirements.patch
+    - patches/0013-Fix-fitpack.patch
 
 build:
   cflags: |

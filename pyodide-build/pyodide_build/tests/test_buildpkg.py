@@ -9,7 +9,8 @@ import pytest
 from pyodide_build import buildpkg
 from pyodide_build.io import MetaConfig, _BuildSpec, _SourceSpec
 
-PACKAGES_DIR = Path(__file__).parent / "_test_packages"
+RECIPE_DIR = Path(__file__).parent / "_test_recipes"
+WHEEL_DIR = Path(__file__).parent / "_test_wheels"
 
 
 def test_subprocess_with_shared_env():
@@ -44,8 +45,8 @@ def test_prepare_source(monkeypatch):
 
     test_pkgs = []
 
-    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "packaging/meta.yaml"))
-    test_pkgs.append(MetaConfig.from_yaml(PACKAGES_DIR / "micropip/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(RECIPE_DIR / "packaging/meta.yaml"))
+    test_pkgs.append(MetaConfig.from_yaml(RECIPE_DIR / "micropip/meta.yaml"))
 
     for pkg in test_pkgs:
         pkg.source.patches = []
@@ -56,7 +57,7 @@ def test_prepare_source(monkeypatch):
         buildpath = pkg_root / "build"
         src_metadata = pkg.source
         srcpath = buildpath / source_dir_name
-        buildpkg.prepare_source(pkg_root, buildpath, srcpath, src_metadata)
+        buildpkg.prepare_source(buildpath, srcpath, src_metadata)
 
         assert srcpath.is_dir()
 
@@ -66,7 +67,8 @@ def test_run_script(is_library, tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
-    build_metadata = _BuildSpec(script=script, library=is_library)
+    package_type = "static_library" if is_library else "package"
+    build_metadata = _BuildSpec(script=script, type=package_type)
     with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
         buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
         assert (src_dir / "out.txt").exists()
@@ -76,7 +78,7 @@ def test_run_script_environment(tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "export A=2"
-    build_metadata = _BuildSpec(script=script, library=False)
+    build_metadata = _BuildSpec(script=script, type="package")
     with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
         shared_env.env.pop("A", None)
         buildpkg.run_script(build_dir, src_dir, build_metadata, shared_env)
@@ -192,3 +194,23 @@ def test_needs_rebuild(tmpdir):
     # newer .packaged file, no rebuild
     packaged.touch()
     assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
+
+
+def test_copy_sharedlib(tmp_path):
+    wheel_file_name = "sharedlib_test_py-1.0-cp310-cp310-emscripten_3_1_21_wasm32.whl"
+    wheel = WHEEL_DIR / "wheel" / wheel_file_name
+    libdir = WHEEL_DIR / "lib"
+
+    wheel_copy = tmp_path / wheel_file_name
+    shutil.copy(wheel, wheel_copy)
+
+    buildpkg.unpack_wheel(wheel_copy)
+    name, ver, _ = wheel.name.split("-", 2)
+    wheel_dir_name = f"{name}-{ver}"
+    wheel_dir = tmp_path / wheel_dir_name
+
+    dep_map = buildpkg.copy_sharedlibs(wheel_copy, wheel_dir, libdir)
+
+    deps = ("sharedlib-test.so", "sharedlib-test-dep.so", "sharedlib-test-dep2.so")
+    for dep in deps:
+        assert dep in dep_map

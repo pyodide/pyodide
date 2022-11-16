@@ -40,25 +40,26 @@ const fs = require("fs");
  * be true. (IMO this is an Emscripten issue, maybe someday we can fix it.)
  */
 function make_tty_ops(outstream) {
+    const BUFSIZE = 256;
+    const buf = Buffer.alloc(BUFSIZE);
+    let index = 0;
+    let numbytes = 0;
     return {
         // get_char has 3 particular return values:
         // a.) the next character represented as an integer
         // b.) undefined to signal that no data is currently available
         // c.) null to signal an EOF
         get_char(tty) {
-            if (!tty.input.length) {
-                var result = null;
-                var BUFSIZE = 256;
-                var buf = Buffer.alloc(BUFSIZE);
+            if (index >= numbytes) {
                 // read synchronously at most BUFSIZE bytes from file descriptor 0 (stdin)
-                var bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
+                const bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
                 if (bytesRead === 0) {
                     return null;
                 }
-                result = buf.slice(0, bytesRead);
-                tty.input = Array.from(result);
+                index = 0;
+                numbytes = bytesRead;
             }
-            return tty.input.shift();
+            return buf[index++];
         },
         put_char(tty, val) {
             outstream.write(Buffer.from([val]));
@@ -169,6 +170,28 @@ async function main() {
         `
         import sys
         sys.meta_path.pop()
+        from pyodide._package_loader import SITE_PACKAGES, should_load_dynlib
+        from pyodide.ffi import to_js
+        import re
+        dynlibs_to_load = to_js([
+            str(path) for path in SITE_PACKAGES.glob("**/*.so*")
+            if should_load_dynlib(path)
+        ])
+        `,
+        { globals: sideGlobals }
+    );
+    const dynlibs = sideGlobals.get("dynlibs_to_load");
+    for (const dynlib of dynlibs) {
+        try {
+            await py._module.API.loadDynlib(dynlib);
+        } catch(e){
+            console.error("Failed to load lib ", dynlib);
+            console.error(e);
+        }
+    }
+
+    py.runPython(
+        `
         import asyncio
         # Keep the event loop alive until all tasks are finished, or SystemExit or
         # KeyboardInterupt is raised.
@@ -202,8 +225,12 @@ async function main() {
         py._module.validSuspender.value = 1;
         errcode = await py._module.wrapRunMain(py._module.asm.run_main)();
     } catch (e) {
-        // If there is some sort of error, add the Python tracebook in addition
-        // to the JavaScript traceback
+        // If someone called exit, just exit with the right return code.
+        if(e.constructor.name === "ExitStatus"){
+            process.exit(e.status);
+        }
+        // Otherwise if there is some sort of error, include the Python
+        // tracebook in addition to the JavaScript traceback
         py._module._dump_traceback();
         throw e;
     }

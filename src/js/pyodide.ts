@@ -147,8 +147,8 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
 
-  API.site = import_module("site");
-  API.sitepackages = API.site.getsitepackages().toJs()[0];
+  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
+  API.dsodir = API.package_loader.DSO_DIR.__str__();
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
@@ -215,12 +215,6 @@ export type ConfigType = {
 
 /**
  * Load the main Pyodide wasm module and initialize it.
- *
- * Only one copy of Pyodide can be loaded in a given JavaScript global scope
- * because Pyodide uses global variables to load packages. If an attempt is made
- * to load a second copy of Pyodide, :any:`loadPyodide` will throw an error.
- * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
- * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis

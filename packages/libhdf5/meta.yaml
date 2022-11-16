@@ -13,7 +13,7 @@ requirements:
     - zlib
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     mkdir -p dist
     export DISTDIR=$(pwd)/dist

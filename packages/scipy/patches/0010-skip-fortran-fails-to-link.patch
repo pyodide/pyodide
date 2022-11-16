@@ -1,7 +1,7 @@
-From 8295f8caf89d4b2c5f351ccab64775bf114cea58 Mon Sep 17 00:00:00 2001
+From a9ade2b407968c0beea9a023189426f1d6e793ff Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 15:08:18 -0800
-Subject: [PATCH 10/15] skip fortran fails to link
+Subject: [PATCH 10/13] skip fortran fails to link
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
