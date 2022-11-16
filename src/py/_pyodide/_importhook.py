@@ -144,16 +144,20 @@ UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "_hashlib"]
 UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
 
 from importlib import _bootstrap
+
 orig_get_module_not_found_error = None
 REPODATA_PACKAGES = None
 
-SEE_PACKAGE_LOADING = "\nSee https://pyodide.org/en/stable/usage/loading-packages.html for more details."
+SEE_PACKAGE_LOADING = (
+    "\nSee https://pyodide.org/en/stable/usage/loading-packages.html for more details."
+)
 
 YOU_CAN_INSTALL_IT_BY = """
 You can install it by calling:
   await micropip.install("{name}") in Python, or
   await pyodide.loadPackage("{name}") in JavaScript\
 """
+
 
 def get_module_not_found_error(name):
     if name not in REPODATA_PACKAGES and name not in STDLIBS:
@@ -210,7 +214,6 @@ class RepodataPackagesFinder(MetaPathFinder):
 
         if not parent or parent in sys.modules or parent not in self.repodata_packages:
             return None
-
 
         return None
 

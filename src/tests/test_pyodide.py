@@ -1323,7 +1323,6 @@ def test_module_not_found_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
-
     for lib in repodata_packages:
         with pytest.raises(
             ModuleNotFoundError, match="included in the Pyodide distribution"
@@ -1332,7 +1331,6 @@ def test_module_not_found_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
-
 
 
 def test_args(selenium_standalone_noload):
