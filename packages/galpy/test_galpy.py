@@ -3,10 +3,12 @@ from functools import reduce
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+NODE_XFAIL_REASON="galpy loads matplotlib and there are no supported matplotlib backends on node"
+
 # Need to skip_refcount_check because we use matplotlib
 DECORATORS = [
     pytest.mark.xfail_browsers(
-        node="galpy loads matplotlib and there are no supported matplotlib backends on node"
+        node=NODE_XFAIL_REASON
     ),
     pytest.mark.skip_refcount_check,
 ]
@@ -16,7 +18,8 @@ def galpy_test_decorator(f):
     return reduce(lambda x, g: g(x), DECORATORS, f)
 
 
-@galpy_test_decorator
+@pytest.mark.xfail_browsers(node=NODE_XFAIL_REASON, firefox="times out")
+@pytest.mark.skip_refcount_check
 @run_in_pyodide(
     packages=[
         "galpy",

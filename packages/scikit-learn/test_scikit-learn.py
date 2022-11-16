@@ -3,7 +3,7 @@ from pytest_pyodide.fixture import selenium_context_manager
 
 
 @pytest.mark.driver_timeout(40)
-@pytest.mark.xfail_browsers(chrome="Times out in chrome")
+@pytest.mark.xfail_browsers(chrome="Times out in chrome", firefox="Times out in firefox")
 def test_scikit_learn(selenium_module_scope):
     with selenium_context_manager(selenium_module_scope) as selenium:
         selenium.load_package("scikit-learn")
