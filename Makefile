@@ -29,6 +29,7 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
+	src/core/continuations.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -37,6 +38,9 @@ dist/pyodide.asm.js: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
+	src/core/wrap_run_main.wasm.gen.js \
+	src/core/wrap_syncifying.wasm.gen.js \
+	src/core/wrap_apply.wasm.gen.js \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."

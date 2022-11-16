@@ -17,6 +17,7 @@
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
+declare function sleep(ms: number): Promise<undefined>;
 
 // pyodide-skip
 
@@ -409,6 +410,71 @@ Module.callPyObjectKwargs = function (
   }
   return result;
 };
+
+async function callPyObjectKwargsSuspending(
+  ptrobj: number,
+  jsargs: any,
+  kwargs: any,
+) {
+  if (!Module.suspendersAvailable) {
+    throw new Error(
+      "WebAssembly Promise integration not supported in this JavaScript runtime",
+    );
+  }
+  // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+  // which only is used when the keyword arguments come from the user.
+  let num_pos_args = jsargs.length;
+  let kwargs_names = Object.keys(kwargs);
+  let kwargs_values = Object.values(kwargs);
+  let num_kwargs = kwargs_names.length;
+  jsargs.push(...kwargs_values);
+
+  let idargs = Hiwire.new_value(jsargs);
+  let idkwnames = Hiwire.new_value(kwargs_names);
+  let idresult;
+
+  if (!Module.wrappedApply) {
+    Module.wrappedApply = Module.wrapApply(Module.asm._pyproxy_apply);
+  }
+  // Let the event loop go around once in case this gets syncified. This ensures
+  // that the outer syncify call sees the original suspender and not the
+  // new one we are about to create.
+  await sleep(0);
+  try {
+    Py_ENTER();
+    // validSuspender is a flag so that we can ask for permission before trying
+    // to suspend. We can't ask for forgiveness because our normal technique for
+    // this is to insert a JavaScript frame where we can catch the error
+    // generated. We cannot suspend through JavaScript frames (this limitation
+    // is part of the intentional design  of Wasm Promise Integration).
+    Module.validSuspender.value = true;
+    // Record the current stack position. See StackState in continuations.js
+    Module.stackStop = Module.___stack_pointer.value;
+    idresult = await Module.wrappedApply(
+      ptrobj,
+      idargs,
+      num_pos_args,
+      idkwnames,
+      num_kwargs,
+    );
+    Py_EXIT();
+  } catch (e) {
+    API.fatal_error(e);
+  } finally {
+    Hiwire.decref(idargs);
+    Hiwire.decref(idkwnames);
+  }
+  if (idresult === 0) {
+    Module._pythonexc2js();
+  }
+  let result = Hiwire.pop_value(idresult);
+  // Automatically schedule coroutines
+  if (result && result.type === "coroutine" && result._ensure_future) {
+    result._ensure_future();
+  }
+  return result;
+}
+Module.callPyObjectKwargsSuspending = callPyObjectKwargsSuspending;
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
@@ -1269,14 +1335,14 @@ export class PyProxyCallableMethods {
   }
   /**
    * Calls the function with a given this value and arguments provided
-   * individually. Like the `JavaScript call
-   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
+   * individually. Like the `JavaScript call function
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
    *
    * Present only if the proxied Python object is callable.
    *
-   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy` has
-   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as the first
-   * argument to the Python function.
+   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy`
+   * has :any:`captureThis` set. If :any:`captureThis` is set, it will be passed
+   * as the first argument to the Python function.
    * @param jsargs The arguments
    * @returns The result from the function call.
    */
@@ -1303,6 +1369,26 @@ export class PyProxyCallableMethods {
       throw new TypeError("kwargs argument is not an object");
     }
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
+  }
+
+  callSyncifying(...jsargs: any) {
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
+  }
+
+  callSyncifyingKwargs(...jsargs: any) {
+    if (jsargs.length === 0) {
+      throw new TypeError(
+        "callKwargs requires at least one argument (the key word argument object)",
+      );
+    }
+    const kwargs = jsargs.pop();
+    if (
+      kwargs.constructor !== undefined &&
+      kwargs.constructor.name !== "Object"
+    ) {
+      throw new TypeError("kwargs argument is not an object");
+    }
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, kwargs);
   }
 
   /**

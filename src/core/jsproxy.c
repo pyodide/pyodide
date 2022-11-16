@@ -74,6 +74,7 @@ _Py_IDENTIFIER(fileno);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
+bool suspendersAvailable;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -1500,6 +1501,43 @@ static PyMethodDef JsProxy_finally_MethodDef = {
   METH_O,
 };
 
+PyObject*
+JsProxy_syncify_not_supported(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  PyErr_SetString(
+    PyExc_RuntimeError,
+    "WebAssembly Promise integration not supported in this JavaScript runtime");
+  return NULL;
+}
+
+PyObject*
+JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  JsRef jsresult = NULL;
+  PyObject* result = NULL;
+
+  jsresult = hiwire_syncify(self->js);
+  if (jsresult == NULL) {
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_RuntimeError, "No suspender");
+    }
+    FAIL();
+  }
+  result = js2python(jsresult);
+
+finally:
+  hiwire_CLEAR(jsresult);
+  return result;
+}
+
+static PyMethodDef JsProxy_syncify_MethodDef = {
+  "syncify",
+  // We select the appropriate choice between JsProxy_syncify and
+  // JsProxy_syncify_not_supported in JsProxy_init.
+  (PyCFunction)NULL,
+  METH_NOARGS,
+};
+
 // clang-format off
 static PyNumberMethods JsProxy_NumberMethods = {
   .nb_bool = JsProxy_Bool
@@ -1800,7 +1838,7 @@ JsMethod_Vectorcall(PyObject* self,
   PyObject* pyresult = NULL;
 
   // Recursion error?
-  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Vectorcall"));
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
   proxies = JsArray_New();
   idargs =
     JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames, proxies);
@@ -2482,6 +2520,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsProxy_then_MethodDef;
     methods[cur_method++] = JsProxy_catch_MethodDef;
     methods[cur_method++] = JsProxy_finally_MethodDef;
+    methods[cur_method++] = JsProxy_syncify_MethodDef;
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
@@ -2782,6 +2821,14 @@ int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
+
+  suspendersAvailable = EM_ASM_INT({ return Module.suspendersAvailable; });
+  if (suspendersAvailable) {
+    JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
+  } else {
+    JsProxy_syncify_MethodDef.ml_meth =
+      (PyCFunction)JsProxy_syncify_not_supported;
+  }
 
   PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;

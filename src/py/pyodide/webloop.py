@@ -8,7 +8,7 @@ from asyncio import Future
 from collections.abc import Callable
 from typing import Any
 
-from ._core import IN_BROWSER, create_once_callable
+from ._core import IN_BROWSER, create_once_callable_syncifiable
 
 if IN_BROWSER:
     from js import setTimeout
@@ -114,6 +114,15 @@ class PyodideFuture(Future[Any]):
 
         self.add_done_callback(wrapper)
         return result
+
+    def syncify(self):
+        from .ffi import create_proxy
+
+        p = create_proxy(self)
+        try:
+            return p.syncify()
+        finally:
+            p.destroy()
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -276,7 +285,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 else:
                     raise
 
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        setTimeout(create_once_callable_syncifiable(run_handle), delay * 1000)
         return h
 
     def _decrement_in_progress(self, *args):

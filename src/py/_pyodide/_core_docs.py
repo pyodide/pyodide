@@ -383,6 +383,16 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
     return obj  # type: ignore[return-value]
 
 
+def create_once_callable_syncifiable(obj: Callable[..., Any], /) -> JsProxy:
+    """Wrap a Python callable in a JavaScript function that can be called once.
+
+    After being called the proxy will decrement the reference count
+    of the Callable. The JavaScript function also has a ``destroy`` API that
+    can be used to release the proxy without calling it.
+    """
+    return obj  # type: ignore[return-value]
+
+
 def create_proxy(
     obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
 ) -> JsProxy:
