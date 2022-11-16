@@ -9,6 +9,11 @@ from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build import common
 from pyodide_build.cli import build, skeleton
 
+only_node = pytest.mark.xfail_browsers(
+    chrome="node only", firefox="node only", safari="node only"
+)
+
+
 runner = CliRunner()
 
 
@@ -53,6 +58,12 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
+def test_build_recipe_with_pyodide(tmp_path, monkeypatch, request, runtime):
+    if runtime != "node":
+        pytest.xfail("node only")
+    test_build_recipe(tmp_path, monkeypatch, request)
+
+
 def test_build_recipe(tmp_path, monkeypatch, request):
     if "dev" in pyodide_build_version:
         if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
@@ -93,6 +104,12 @@ def test_build_recipe(tmp_path, monkeypatch, request):
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == len(pkgs_to_build)
+
+
+def test_fetch_or_build_pypi_with_pyodide(tmp_path, runtime):
+    if runtime != "node":
+        pytest.xfail("node only")
+    test_fetch_or_build_pypi(tmp_path)
 
 
 def test_fetch_or_build_pypi(tmp_path):
