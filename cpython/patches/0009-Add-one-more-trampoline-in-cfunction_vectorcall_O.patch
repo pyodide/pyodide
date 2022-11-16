@@ -1,7 +1,7 @@
 From 9d0c813518fbdaa9963e46362608dd6d3e391799 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 2 May 2022 17:31:07 -0700
-Subject: [PATCH 09/13] Add one more trampoline in cfunction_vectorcall_O
+Subject: [PATCH 09/14] Add one more trampoline in cfunction_vectorcall_O
 
 Christian already added this upstream in 3.11a7 so we can remove
 this when we update to 3.11

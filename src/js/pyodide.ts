@@ -361,8 +361,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   await API.packageIndexReady;
 
   let importhook = API._pyodide._importhook;
-  importhook.register_unvendored_stdlib_finder();
-  importhook.register_repodata_packages_finder(API.repodata_packages);
+  importhook.register_module_not_found_hook(API.repodata_packages);
 
   if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
