@@ -7,7 +7,7 @@ source:
   url: https://files.pythonhosted.org/packages/ce/02/213096b189211a750d21d48d18d945efa6c8a334134a6f01b8f2d2fd4b2d/astropy-5.1.1.tar.gz
   sha256: ba4bd696af7090fd399b464c704bf27b5633121e461785edc70432606a94bd81
   patches:
-    - 0001-Fix-types-of-_sigma_clip_fast.patch
+    - patches/0001-Fix-types-of-_sigma_clip_fast.patch
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored

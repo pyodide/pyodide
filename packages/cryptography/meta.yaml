@@ -1,6 +1,7 @@
 package:
   name: cryptography
   version: 38.0.1
+  _disabled: true
   top-level:
     - cryptography
 source:

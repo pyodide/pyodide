@@ -850,6 +850,7 @@
 - test_yield_from
 - test_zipapp
 - test_zipfile:
+    xfail-chrome: times out
     skip:
       - test_many_opens # [Errno 54] Not a directory: '/proc/self/fd'
 - test_zipfile64
