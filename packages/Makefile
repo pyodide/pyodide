@@ -3,15 +3,11 @@
 export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-ifeq ($(strip $(PYODIDE_PACKAGES)),)
-else
-	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
-endif
-
 all: pyodide-build
 	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
-	PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build buildall . $(PYODIDE_ROOT)/dist \
-	$(ONLY_PACKAGES) --n-jobs $${PYODIDE_JOBS:-4} \
+	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide build-recipes \
+	"$(PYODIDE_PACKAGES)" \
+	--n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs
 
 pyodide-build: ../pyodide-build/pyodide_build/**

@@ -1,0 +1,8 @@
+package:
+  name: pkg_test_graph1
+  version: "1.0.0"
+requirements:
+  run:
+    - pkg_test_graph2
+source:
+  path: src
