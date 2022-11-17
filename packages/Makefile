@@ -7,6 +7,8 @@ all: pyodide-build
 	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide build-recipes \
 	"$(PYODIDE_PACKAGES)" \
+	--install \
+	--install-dir=../dist \
 	--n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs
 

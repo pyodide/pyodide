@@ -10,9 +10,14 @@ def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
     ),
-    output: str = typer.Option(
+    install: bool = typer.Option(
+        False,
+        help="If true, install the built packages into the install_dir. "
+        "If false, build packages without installing.",
+    ),
+    install_dir: str = typer.Option(
         None,
-        help="Path to output built packages and repodata.json. "
+        help="Path to install built packages and repodata.json. "
         "If not specified, the default is `PYODIDE_ROOT/dist`.",
     ),
     cflags: str = typer.Option(
@@ -41,12 +46,6 @@ def recipe(
     root: str = typer.Option(
         None, help="The root directory of the Pyodide.", envvar="PYODIDE_ROOT"
     ),
-    install: str = typer.Option(
-        None,
-        help="Install the built packages into the given directory and "
-        "create a repodata.json file. "
-        "If not specified, build packages without installing.",
-    ),
     recipe_dir: str = typer.Option(
         None,
         help="The directory containing the recipe of packages. "
@@ -57,7 +56,7 @@ def recipe(
     """Build packages using yaml recipes and create repodata.json"""
     pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
     recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
-    output_dir = pyodide_root / "dist" if not output else Path(output)
+    install_dir_ = pyodide_root / "dist" if not install_dir else Path(install_dir)
 
     # Note: to make minimal changes to the existing pyodide-build entrypoint,
     #       keep arguments of buildall unghanged.
@@ -77,4 +76,4 @@ def recipe(
     pkg_map = buildall.build_packages(recipe_dir_, args)
 
     if install:
-        buildall.install_packages(pkg_map, output_dir)
+        buildall.install_packages(pkg_map, install_dir_)
