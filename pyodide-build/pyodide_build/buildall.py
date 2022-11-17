@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import copy
 import dataclasses
 import hashlib
 import json
@@ -24,7 +25,7 @@ from typing import Any
 from . import common
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels
-from .io import MetaConfig
+from .io import MetaConfig, _BuildSpecTypes
 
 
 class BuildError(Exception):
@@ -40,10 +41,8 @@ class BasePackage:
     name: str
     version: str
     disabled: bool
-    cpython_dynlib: bool
     meta: MetaConfig
-    library: bool
-    shared_library: bool
+    package_type: _BuildSpecTypes
     run_dependencies: list[str]
     host_dependencies: list[str]
     dependencies: set[str]  # run + host dependencies
@@ -91,9 +90,7 @@ class Package(BasePackage):
         self.name = self.meta.package.name
         self.version = self.meta.package.version
         self.disabled = self.meta.package.disabled
-        self.cpython_dynlib = self.meta.package.cpython_dynlib
-        self.library = self.meta.build.library
-        self.shared_library = self.meta.build.sharedlibrary
+        self.package_type = self.meta.build.package_type
 
         assert self.name == pkgdir.name, f"{self.name} != {pkgdir.name}"
 
@@ -105,7 +102,7 @@ class Package(BasePackage):
 
     def dist_artifact_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        if self.shared_library:
+        if self.package_type in ("shared_library", "cpython_module"):
             candidates = list(dist_dir.glob("*.zip"))
         else:
             candidates = list(find_matching_wheels(dist_dir.glob("*.whl")))
@@ -171,7 +168,7 @@ def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
     for pkg_name, pkg in pkg_map.items():
         for runtime_dep_name in pkg.run_dependencies:
             runtime_dep = pkg_map[runtime_dep_name]
-            if runtime_dep.library:
+            if runtime_dep.package_type == "static_library":
                 raise ValueError(
                     f"{pkg_name} has an invalid dependency: {runtime_dep_name}. Static libraries must be a host dependency."
                 )
@@ -481,7 +478,7 @@ def generate_packagedata(
 ) -> dict[str, Any]:
     packages: dict[str, Any] = {}
     for name, pkg in pkg_map.items():
-        if not pkg.file_name or pkg.library:
+        if not pkg.file_name or pkg.package_type == "static_library":
             continue
         if not Path(output_dir, pkg.file_name).exists():
             continue
@@ -492,9 +489,14 @@ def generate_packagedata(
             "install_dir": pkg.install_dir,
             "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
         }
-        if pkg.shared_library:
+
+        pkg_type = pkg.package_type
+        if pkg_type in ("shared_library", "cpython_module"):
+            # We handle cpython modules as shared libraries
             pkg_entry["shared_library"] = True
-            pkg_entry["install_dir"] = "stdlib" if pkg.cpython_dynlib else "dynlib"
+            pkg_entry["install_dir"] = (
+                "stdlib" if pkg_type == "cpython_module" else "dynlib"
+            )
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
         pkg_entry["imports"] = (
@@ -551,7 +553,7 @@ def copy_packages_to_dist_dir(
     packages: Iterable[BasePackage], output_dir: Path
 ) -> None:
     for pkg in packages:
-        if pkg.library:
+        if pkg.package_type == "static_library":
             continue
 
         shutil.copy(pkg.dist_artifact_path(), output_dir)
@@ -568,11 +570,12 @@ def build_packages(
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
+    output_dir.mkdir(exist_ok=True, parents=True)
     build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
-        if pkg.library:
+        if pkg.package_type == "static_library":
             continue
 
         pkg.file_name = pkg.dist_artifact_path().name
@@ -674,10 +677,9 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args: argparse.Namespace) -> None:
-    packages_dir = Path(args.dir[0]).resolve()
-    outputdir = Path(args.output[0]).resolve()
-    outputdir.mkdir(exist_ok=True)
+def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
+    args = copy.deepcopy(args)
+
     if args.cflags is None:
         args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     if args.cxxflags is None:
@@ -688,6 +690,14 @@ def main(args: argparse.Namespace) -> None:
         args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
     if args.host_install_dir is None:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
+
+    return args
+
+
+def main(args: argparse.Namespace) -> None:
+    packages_dir = Path(args.dir[0]).resolve()
+    outputdir = Path(args.output[0]).resolve()
+    args = set_default_args(args)
     build_packages(packages_dir, outputdir, args)
 
 

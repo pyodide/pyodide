@@ -28,8 +28,8 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.24
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.25
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`, {pr}`3239`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -105,6 +105,18 @@ substitutions:
 - Added a new CLI command `pyodide sekeleton` which creates a package build recipe.
   `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
   {pr}`3175`
+
+- Added a new CLI command `pyodide build-recipes` which build packages from recipe folder.
+  It replaces `pyodide-build buildall`.
+  {pr}`3196`
+
+- Added subcommands for `pyodide build` which builds packages from various sources.
+  | command | result |
+  |-------------|-------|
+  | `pyodide build pypi` | build or fetch a single package from pypi |
+  | `pyodide build source` | build the current source folder (same as pyodide build) |
+  | `pyodide build url` | build or fetch a package from a url either tgz, tar.gz zip or wheel |
+  {pr}`3196`
 
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
@@ -184,6 +196,14 @@ substitutions:
   which vendors shared libraries into the wheel after building.
   {pr}`3234`
 
+- {{ Enhancement }} Added `build/type` key to the `meta.yaml` spec
+  which specifies the type of the package.
+  {pr}`3238`
+
+- {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
+  are removed. Use `build/type` instead.
+  {pr}`3238`
+
 - {{ Fix }} Fixed a bug that `backend-flags` propagated to dependencies.
   {pr}`3153`
 
@@ -193,11 +213,12 @@ substitutions:
 
 ### Packages
 
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
+- New packages: pycryptodome {pr}`2965`,
   coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
   pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
-  gdal, fiona, geopandas {pr}`3213`, pyinstrument {pr}`3258`,
-  the standard library \_hashlib module {pr}`3206`
+  gdal, fiona, geopandas {pr}`3213`,
+  the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
+
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
 

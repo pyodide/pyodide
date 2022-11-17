@@ -1,7 +1,7 @@
-From db6139078fcbf3cbb9cf28762c84246b03bc9f6b Mon Sep 17 00:00:00 2001
+From 46026c40dc86c78c938da66e6671ed0d792d71c9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 26 Dec 2021 07:34:40 -0800
-Subject: [PATCH 08/15] Rename _page_trend_test.py to prevent test unvendoring
+Subject: [PATCH 08/13] Rename _page_trend_test.py to prevent test unvendoring
 
 unvendor_tests will unvendor any file that ends in _test.py.
 Prevent that by changing the name of this file.
@@ -30,10 +30,10 @@ similarity index 100%
 rename from scipy/stats/_page_trend_test.py
 rename to scipy/stats/_page_trend_test_.py
 diff --git a/scipy/stats/meson.build b/scipy/stats/meson.build
-index 9539a26cb..e5d702158 100644
+index dfac9e073..3c5cc673f 100644
 --- a/scipy/stats/meson.build
 +++ b/scipy/stats/meson.build
-@@ -204,7 +204,7 @@ py3.install_sources([
+@@ -192,7 +192,7 @@ py3.install_sources([
      '_mstats_basic.py',
      '_mstats_extras.py',
      '_multivariate.py',
