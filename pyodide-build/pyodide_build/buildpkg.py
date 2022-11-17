@@ -566,11 +566,6 @@ def package_wheel(
     # to maximize sanity.
     replace_so_abi_tags(wheel_dir)
 
-    vendor_sharedlib = build_metadata.vendor_sharedlib
-    if vendor_sharedlib:
-        lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
-        copy_sharedlibs(wheel, wheel_dir, lib_dir)
-
     post = build_metadata.post
     if post:
         print("Running post script in ", str(Path.cwd().absolute()))
@@ -579,6 +574,11 @@ def package_wheel(
         if result.returncode != 0:
             print("ERROR: post failed")
             exit_with_stdio(result)
+
+    vendor_sharedlib = build_metadata.vendor_sharedlib
+    if vendor_sharedlib:
+        lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
+        copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
     python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
     host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
