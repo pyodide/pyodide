@@ -105,7 +105,7 @@ substitutions:
 - Added a new CLI command `pyodide sekeleton` which creates a package build recipe.
   `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
   {pr}`3175`
-  
+
 - Added a new CLI command `pyodide build-recipes` which build packages from recipe folder.
   It replaces `pyodide-build buildall`.
   {pr}`3196`
