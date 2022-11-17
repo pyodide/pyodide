@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
-from textwrap import dedent
 from types import ModuleType
 from typing import Any
 
@@ -143,10 +142,10 @@ STDLIBS = sys.stdlib_module_names | {"test"}
 UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "_hashlib"]
 UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
 
-from importlib import _bootstrap
+from importlib import _bootstrap  # type: ignore[attr-defined]
 
-orig_get_module_not_found_error = None
-REPODATA_PACKAGES = None
+orig_get_module_not_found_error: Any = None
+REPODATA_PACKAGES: list[str] = []
 
 SEE_PACKAGE_LOADING = (
     "\nSee https://pyodide.org/en/stable/usage/loading-packages.html for more details."
@@ -178,7 +177,7 @@ def get_module_not_found_error(name):
     return ModuleNotFoundError(msg.format(name=name))
 
 
-def register_module_not_found_hook(packages) -> None:
+def register_module_not_found_hook(packages: Any) -> None:
     """
     A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
 
