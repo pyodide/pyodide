@@ -31,11 +31,11 @@ function createDynlibFS(
   searchDirs?: string[],
   readFileFunc?: ReadFileType,
 ): LoadDynlibFS {
-  searchDirs = searchDirs || [];
-
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
   const defaultSearchDirs = [API.dsodir, API.sitepackages, dirname];
-  const libSearchDirs = searchDirs.concat(defaultSearchDirs);
+
+  let _searchDirs = searchDirs || [];
+  _searchDirs = _searchDirs.concat(defaultSearchDirs);
 
   const resolvePath = (path: string) => {
     if (DEBUG) {
@@ -44,7 +44,7 @@ function createDynlibFS(
       }
     }
 
-    for (const dir of libSearchDirs) {
+    for (const dir of _searchDirs) {
       const fullPath = Module.PATH.join2(dir, path);
       if (Module.FS.findObject(fullPath) !== null) {
         return fullPath;
@@ -53,10 +53,9 @@ function createDynlibFS(
     return path;
   };
 
-  let readFile: ReadFileType;
-  if (readFileFunc === undefined) {
-    readFile = (path: string) => Module.FS.readFile(resolvePath(path));
-  } else {
+  let readFile: ReadFileType = (path: string) =>
+    Module.FS.readFile(resolvePath(path));
+  if (readFileFunc !== undefined) {
     readFile = (path: string) => readFileFunc(resolvePath(path));
   }
 
@@ -177,7 +176,7 @@ export async function loadDynlibsFromPackage(
     const global = globalLibs.has(Module.PATH.basename(path));
     return {
       path: path,
-      global: global,
+      global: global || !!pkg.shared_library,
     };
   });
 

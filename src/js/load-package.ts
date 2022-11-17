@@ -288,7 +288,7 @@ async function installPackage(
     );
   }
 
-  loadDynlibsFromPackage(pkg, dynlibs);
+  await loadDynlibsFromPackage(pkg, dynlibs);
 }
 
 /**
