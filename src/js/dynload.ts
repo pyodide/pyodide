@@ -34,7 +34,7 @@ function createDynlibFS(
   searchDirs = searchDirs || [];
 
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
-  const defaultSearchDirs = ["/usr/lib", API.sitepackages, dirname];
+  const defaultSearchDirs = [API.dsodir, API.sitepackages, dirname];
   const libSearchDirs = searchDirs.concat(defaultSearchDirs);
 
   const resolvePath = (path: string) => {
