@@ -4,13 +4,13 @@ import type { Module } from "./module";
 declare var API: any;
 declare var Module: Module;
 
-const FS = Module.FS;
-const TTY = Module.TTY;
+declare var FS: typeof Module.FS;
+declare var TTY: any;
 
 let INITIALIZED = false;
 
-const ttyout_dev = FS.makedev(5, 0);
-const ttyerr_dev = FS.makedev(6, 0);
+let ttyout_dev;
+let ttyerr_dev;
 
 type GetCharType = (tty: any) => null | number;
 type InFuncType = () =>
@@ -181,7 +181,8 @@ API.setStandardStreams = function (
   } else {
     setDefaultStderr();
   }
-
+  ttyout_dev = FS.makedev(5, 0);
+  ttyerr_dev = FS.makedev(6, 0);
   TTY.register(ttyout_dev, ttyout_ops);
   TTY.register(ttyerr_dev, ttyerr_ops);
   INITIALIZED = true;
