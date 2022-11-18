@@ -156,7 +156,9 @@ API.setStandardStreams = function (
   stdout?: (a: string) => void,
   stderr?: (a: string) => void,
 ) {
+  let stdin_isatty = false;
   if (!stdin && IN_NODE) {
+    stdin_isatty = true;
     const BUFSIZE = 256;
     const buf = Buffer.alloc(BUFSIZE);
     stdin = function () {
@@ -167,7 +169,7 @@ API.setStandardStreams = function (
       }
     };
   }
-  setStdin(stdin);
+  setStdin(stdin, stdin_isatty);
   if (stdout) {
     setStdout(stdout);
   } else {
@@ -190,11 +192,12 @@ export function setStdin(
   stdin: InFuncType | undefined,
   isatty: boolean = false,
 ) {
-  isattys.stdin = isatty;
   let get_char;
   if (stdin) {
+    isattys.stdin = isatty;
     get_char = make_get_char(stdin);
   } else {
+    isattys.stdin = false;
     get_char = () => {
       console.warn("get_char EIO");
       throw 0;
@@ -212,11 +215,8 @@ export function setDefaultStdout() {
   }
 }
 
-export function setStdout(
-  stdout: (a: string) => void,
-  isatty: boolean = false,
-) {
-  isattys.stdout = isatty;
+export function setStdout(stdout: (a: string) => void) {
+  isattys.stdout = false;
   Object.assign(ttyout_ops, make_batched_put_char(stdout));
   refreshStreams();
 }
@@ -238,11 +238,8 @@ export function setDefaultStderr() {
   }
 }
 
-export function setStderr(
-  stderr: (a: string) => void,
-  isatty: boolean = false,
-) {
-  isattys.stderr = isatty;
+export function setStderr(stderr: (a: string) => void) {
+  isattys.stderr = false;
   Object.assign(ttyerr_ops, make_batched_put_char(stderr));
   refreshStreams();
 }

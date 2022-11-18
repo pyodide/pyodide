@@ -5,7 +5,7 @@ type FSStream = any;
 
 export interface FS {
   unlink: (path: string) => void;
-  mkdirTree: (path: string) => void;
+  mkdirTree: (path: string, mode?: number) => void;
   chdir: (path: string) => void;
   symlink: (target: string, src: string) => FSNode;
   createDevice: (
@@ -18,6 +18,16 @@ export interface FS {
   open: (path: string, flags: string | number, mode?: number) => FSStream;
   makedev: (major: number, minor: number) => number;
   mkdev: (path: string, dev: number) => FSNode;
+  filesystems: any;
+  stat: (path: string, dontFollow?: boolean) => any;
+  readdir: (node: FSNode) => string[];
+  isDir: (mode: number) => boolean;
+  lookupPath: (path: string) => FSNode;
+  isFile: (mode: number) => boolean;
+  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
+  chmod: (path: string, mode: number) => void;
+  utime: (path: string, atime: number, mtime: number) => void;
+  rmdir: (path: string) => void;
 }
 
 export interface Module {
