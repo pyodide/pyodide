@@ -7,12 +7,13 @@ declare var Module: Module;
 declare var FS: typeof Module.FS;
 declare var TTY: any;
 
-let INITIALIZED = false;
+// The type of the function we need to produce to read from stdin
+// (Either directly from a device when isatty is false or as part of a tty when
+// isatty is true)
+type GetCharType = () => null | number;
 
-let ttyout_dev;
-let ttyerr_dev;
-
-type GetCharType = (tty: any) => null | number;
+// The type of the function we expect the user to give us. make_get_char takes
+// one of these and turns it into a GetCharType function for us.
 type InFuncType = () =>
   | null
   | undefined
@@ -20,42 +21,281 @@ type InFuncType = () =>
   | ArrayBuffer
   | ArrayBufferView;
 
+// To define the output behavior of a tty we need to define put_char and fsync.
+// fsync flushes the stream.
+//
+// If isatty is false, we ignore fsync and use put_char.bind to fill in a dummy
+// value for the tty argument. We don't ever use the tty argument.
 type PutCharType = {
-  put_char: (tty: any, val: number) => void;
-  fsync: (tty: any) => void;
+  put_char: (tty: void, val: number) => void;
+  fsync: (tty: void) => void;
 };
 
+// A tty needs both a GetChar function and a PutChar pair.
 type TtyOps = {
   get_char: GetCharType;
 } & PutCharType;
 
-const ttyout_ops: TtyOps = {
-  get_char: () => {
-    throw 0;
-  },
-  put_char: () => {
-    throw 0;
-  },
-  fsync: () => {
-    throw 0;
-  },
+/**
+ * We call refreshStreams at the end of every update method, but refreshStreams
+ * won't work until initializeStreams is called. So when INITIALIZED is false,
+ * refreshStreams is a no-op.
+ * @private
+ */
+let INITIALIZED = false;
+
+// These can't be used until they are initialized by initializeStreams.
+const ttyout_ops = {} as TtyOps;
+const ttyerr_ops = {} as TtyOps;
+const isattys = {} as {
+  stdin: boolean;
+  stdout: boolean;
+  stderr: boolean;
 };
-const ttyerr_ops: TtyOps = {
-  get_char: () => {
-    throw 0;
-  },
-  put_char: () => {
-    throw 0;
-  },
-  fsync: () => {
-    throw 0;
-  },
+
+function refreshStreams() {
+  if (!INITIALIZED) {
+    return;
+  }
+  FS.unlink("/dev/stdin");
+  FS.unlink("/dev/stdout");
+  FS.unlink("/dev/stderr");
+  if (isattys.stdin) {
+    FS.symlink("/dev/tty", "/dev/stdin");
+  } else {
+    FS.createDevice("/dev", "stdin", ttyout_ops.get_char);
+  }
+  if (isattys.stdout) {
+    FS.symlink("/dev/tty", "/dev/stdout");
+  } else {
+    FS.createDevice(
+      "/dev",
+      "stdout",
+      null,
+      ttyout_ops.put_char.bind(undefined, undefined),
+    );
+  }
+  if (isattys.stderr) {
+    FS.symlink("/dev/tty", "/dev/stderr");
+  } else {
+    FS.createDevice(
+      "/dev",
+      "stderr",
+      null,
+      ttyerr_ops.put_char.bind(undefined, undefined),
+    );
+  }
+
+  // Refresh std streams so they use our new versions
+  FS.closeStream(0 /* stdin */);
+  FS.closeStream(1 /* stdout */);
+  FS.closeStream(2 /* stderr */);
+  FS.open("/dev/stdin", 0 /* write only */);
+  FS.open("/dev/stdout", 1 /* read only */);
+  FS.open("/dev/stderr", 1 /* read only */);
+}
+
+/**
+ * This is called at the end of loadPyodide to set up the streams. If
+ * loadPyodide has been given stdin, stdout, stderr arguments they are provided
+ * here. Otherwise, we set the default behaviors. This also fills in the global
+ * state in this file.
+ * @param stdin
+ * @param stdout
+ * @param stderr
+ * @private
+ */
+API.initializeStreams = function (
+  stdin?: InFuncType,
+  stdout?: (a: string) => void,
+  stderr?: (a: string) => void,
+) {
+  let stdin_isatty = false;
+  if (stdin) {
+    setStdin(stdin, stdin_isatty);
+  } else {
+    setDefaultStdin();
+  }
+  if (stdout) {
+    setStdout(stdout);
+  } else {
+    setDefaultStdout();
+  }
+
+  if (stderr) {
+    setStderr(stderr);
+  } else {
+    setDefaultStderr();
+  }
+  const ttyout_dev = FS.makedev(5, 0);
+  const ttyerr_dev = FS.makedev(6, 0);
+  TTY.register(ttyout_dev, ttyout_ops);
+  TTY.register(ttyerr_dev, ttyerr_ops);
+  INITIALIZED = true;
+  refreshStreams();
 };
-const isattys = {
-  stdin: false,
-  stdout: false,
-  stderr: false,
-};
+
+/**
+ * Sets the default stdin. If in node, stdin will read from `process.stdin`
+ * and isatty(stdin) will be set to tty.isatty(process.stdin.fd).
+ * If in a browser, this calls setStdinError.
+ */
+export function setDefaultStdin() {
+  if (IN_NODE) {
+    const BUFSIZE = 256;
+    const buf = Buffer.alloc(BUFSIZE);
+    const fs = require("fs");
+    const tty = require("tty");
+    const stdin = function () {
+      let bytesRead;
+      try {
+        bytesRead = fs.readSync(process.stdin.fd, buf, 0, BUFSIZE, -1);
+      } catch (e) {
+        // Platform differences: on Windows, reading EOF throws an exception,
+        // but on other OSes, reading EOF returns 0. Uniformize behavior by
+        // catching the EOF exception and returning 0.
+        if ((e as Error).toString().includes("EOF")) {
+          bytesRead = 0;
+        } else {
+          throw e;
+        }
+      }
+      if (bytesRead === 0) {
+        return null;
+      }
+      return buf.subarray(0, bytesRead);
+    };
+    setStdin(stdin, tty.isatty(process.stdin.fd));
+  } else {
+    setStdinError();
+  }
+}
+
+/**
+ * Sets isatty(stdin) to false and makes reading from stdin always set an EIO
+ * error.
+ */
+export function setStdinError() {
+  isattys.stdin = false;
+  const get_char = () => {
+    throw 0;
+  };
+  ttyout_ops.get_char = get_char;
+  ttyerr_ops.get_char = get_char;
+  refreshStreams();
+}
+
+/**
+ * Sets a stdin function. This function will be called whenever stdin is read.
+ * Also sets isatty(stdin) to the value of the isatty argument (default false).
+ *
+ * The stdin function is called with zero arguments. It should return one of:
+ * - `null` or `undefined`: these are interpreted as EOF
+ * - a string
+ * - an ArrayBuffer or an ArrayBufferView with BYTES_PER_ELEMENT === 1
+ *
+ * If a string is returned, a new line is appended if one is not present and the
+ * resulting string is turned into a Uint8Array using TextEncoder.
+ *
+ * Returning a buffer is more efficient and allows returning partial lines of
+ * text.
+ *
+ */
+export function setStdin(stdin: InFuncType, isatty: boolean = false) {
+  isattys.stdin = isatty;
+  const get_char = make_get_char(stdin);
+  ttyout_ops.get_char = get_char;
+  ttyerr_ops.get_char = get_char;
+  refreshStreams();
+}
+
+/**
+ * If in node, sets stdout to write directly to process.stdout and sets isatty(stdout)
+ * to tty.isatty(process.stdout.fd).
+ * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
+ */
+export function setDefaultStdout() {
+  if (IN_NODE) {
+    const tty = require("tty");
+    const rawstdout = (x: number) => process.stdout.write(Buffer.from([x]));
+    const isatty = tty.isatty(process.stdout.fd);
+    setRawStdout(rawstdout, isatty);
+  } else {
+    setStdout((x) => console.log(x));
+  }
+}
+
+/**
+ * Sets writes to stdout to call `stdout(line)` whenever a complete line is
+ * written or stdout is flushed. In the former case, the received line will end
+ * with a newline, in the latter case it will not.
+ *
+ * isatty(stdout) is set to false (this API buffers stdout so it is impossible
+ * to make a tty with it).
+ */
+export function setStdout(stdout: (a: string) => void) {
+  isattys.stdout = false;
+  Object.assign(ttyout_ops, make_batched_put_char(stdout));
+  refreshStreams();
+}
+
+/**
+ * Sets stdout to call `stdout(character_code)` whenever a character is written
+ * to stdout.
+ * Also sets isatty(stdout) to the value of the isatty argument (default false).
+ */
+export function setRawStdout(
+  rawstdout: (a: number) => void,
+  isatty: boolean = false,
+) {
+  isattys.stdout = isatty;
+  Object.assign(ttyout_ops, make_unbatched_put_char(rawstdout));
+  refreshStreams();
+}
+
+/**
+ * If in node, sets stderr to write directly to process.stderr and sets isatty(stderr)
+ * to tty.isatty(process.stderr.fd).
+ * If in a browser, sets stderr to write to console.warn and sets isatty(stderr) to false.
+ */
+export function setDefaultStderr() {
+  if (IN_NODE) {
+    const tty = require("tty");
+    const rawstderr = (x: number) => process.stderr.write(Buffer.from([x]));
+    const isatty = tty.isatty(process.stderr.fd);
+    setRawStderr(rawstderr, isatty);
+  } else {
+    setStderr((x) => console.warn(x));
+  }
+}
+
+/**
+ * Sets writes to stderr to call `stderr(line)` whenever a complete line is
+ * written or stderr is flushed. In the former case, the received line will end
+ * with a newline, in the latter case it will not.
+ *
+ * isatty(stderr) is set to false (this API buffers stderr so it is impossible
+ * to make a tty with it).
+ */
+export function setStderr(stderr: (a: string) => void) {
+  isattys.stderr = false;
+  Object.assign(ttyerr_ops, make_batched_put_char(stderr));
+  refreshStreams();
+}
+
+/**
+ * Sets stderr to call `stderr(character_code)` whenever a character is written
+ * to stderr.
+ * Also sets isatty(stderr) to the value of the isatty argument (default false).
+ */
+export function setRawStderr(
+  rawstderr: (a: number) => void,
+  isatty: boolean = false,
+) {
+  isattys.stderr = isatty;
+  Object.assign(ttyerr_ops, make_unbatched_put_char(rawstderr));
+  refreshStreams();
+}
 
 const textencoder = new TextEncoder();
 const textdecoder = new TextDecoder();
@@ -67,7 +307,7 @@ function make_get_char(infunc: InFuncType): GetCharType {
   // a.) the next character represented as an integer
   // b.) undefined to signal that no data is currently available
   // c.) null to signal an EOF
-  return function get_char(tty: any) {
+  return function get_char() {
     try {
       if (index >= buf.length) {
         let input = infunc();
@@ -142,146 +382,4 @@ function make_batched_put_char(out: (a: string) => void): PutCharType {
       }
     },
   };
-}
-
-/**
- *
- * @param stdin
- * @param stdout
- * @param stderr
- * @private
- */
-API.setStandardStreams = function (
-  stdin?: InFuncType,
-  stdout?: (a: string) => void,
-  stderr?: (a: string) => void,
-) {
-  let stdin_isatty = false;
-  if (!stdin && IN_NODE) {
-    stdin_isatty = true;
-    const BUFSIZE = 256;
-    const buf = Buffer.alloc(BUFSIZE);
-    stdin = function () {
-      const fs = require("fs");
-      const bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
-      if (bytesRead === 0) {
-        return null;
-      }
-    };
-  }
-  setStdin(stdin, stdin_isatty);
-  if (stdout) {
-    setStdout(stdout);
-  } else {
-    setDefaultStdout();
-  }
-
-  if (stderr) {
-    setStderr(stderr);
-  } else {
-    setDefaultStderr();
-  }
-  ttyout_dev = FS.makedev(5, 0);
-  ttyerr_dev = FS.makedev(6, 0);
-  TTY.register(ttyout_dev, ttyout_ops);
-  TTY.register(ttyerr_dev, ttyerr_ops);
-  INITIALIZED = true;
-  refreshStreams();
-};
-
-export function setStdin(
-  stdin: InFuncType | undefined,
-  isatty: boolean = false,
-) {
-  let get_char;
-  if (stdin) {
-    isattys.stdin = isatty;
-    get_char = make_get_char(stdin);
-  } else {
-    isattys.stdin = false;
-    get_char = () => {
-      console.warn("get_char EIO");
-      throw 0;
-    };
-  }
-  ttyout_ops.get_char = get_char;
-  ttyerr_ops.get_char = get_char;
-}
-
-export function setDefaultStdout() {
-  if (IN_NODE) {
-    setRawStdout((x) => process.stdout.write(Buffer.from([x])));
-  } else {
-    setStdout((x) => console.log(x));
-  }
-}
-
-export function setStdout(stdout: (a: string) => void) {
-  isattys.stdout = false;
-  Object.assign(ttyout_ops, make_batched_put_char(stdout));
-  refreshStreams();
-}
-
-export function setRawStdout(
-  rawstdout: (a: number) => void,
-  isatty: boolean = true,
-) {
-  isattys.stdout = isatty;
-  Object.assign(ttyout_ops, make_unbatched_put_char(rawstdout));
-  refreshStreams();
-}
-
-export function setDefaultStderr() {
-  if (IN_NODE) {
-    setRawStderr((x) => process.stderr.write(Buffer.from([x])));
-  } else {
-    setStderr((x) => console.log(x));
-  }
-}
-
-export function setStderr(stderr: (a: string) => void) {
-  isattys.stderr = false;
-  Object.assign(ttyerr_ops, make_batched_put_char(stderr));
-  refreshStreams();
-}
-
-export function setRawStderr(
-  rawstderr: (a: number) => void,
-  isatty: boolean = true,
-) {
-  isattys.stderr = isatty;
-  Object.assign(ttyerr_ops, make_unbatched_put_char(rawstderr));
-  refreshStreams();
-}
-
-function refreshStreams() {
-  if (!INITIALIZED) {
-    return;
-  }
-  FS.unlink("/dev/stdin");
-  FS.unlink("/dev/stdout");
-  FS.unlink("/dev/stderr");
-  if (isattys.stdin) {
-    FS.symlink("/dev/tty", "/dev/stdin");
-  } else {
-    FS.createDevice("/dev", "stdin", ttyout_ops.get_char.bind(0, 0));
-  }
-  if (isattys.stdout) {
-    FS.symlink("/dev/tty", "/dev/stdout");
-  } else {
-    FS.createDevice("/dev", "stdout", null, ttyout_ops.put_char.bind(0, 0));
-  }
-  if (isattys.stderr) {
-    FS.symlink("/dev/tty", "/dev/stderr");
-  } else {
-    FS.createDevice("/dev", "stderr", null, ttyerr_ops.put_char.bind(0, 0));
-  }
-
-  // Refresh std streams so they use our new versions
-  FS.closeStream(0 /* stdin */);
-  FS.closeStream(1 /* stdout */);
-  FS.closeStream(2 /* stderr */);
-  FS.open("/dev/stdin", 0 /* write only */);
-  FS.open("/dev/stdout", 1 /* read only */);
-  FS.open("/dev/stderr", 1 /* read only */);
 }

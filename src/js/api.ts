@@ -11,6 +11,8 @@ import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 import {
+  setDefaultStdin,
+  setStdinError,
   setStdin,
   setDefaultStdout,
   setStdout,
@@ -515,7 +517,9 @@ export type PyodideInterface = {
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
+  setDefaultStdin: typeof setDefaultStdin;
   setStdin: typeof setStdin;
+  setStdinError: typeof setStdinError;
   setDefaultStdout: typeof setDefaultStdout;
   setStdout: typeof setStdout;
   setRawStdout: typeof setRawStdout;
@@ -588,7 +592,9 @@ API.makePublicAPI = function (): PyodideInterface {
     PyBuffer,
     _module: Module,
     _api: API,
+    setDefaultStdin,
     setStdin,
+    setStdinError,
     setDefaultStdout,
     setStdout,
     setRawStdout,

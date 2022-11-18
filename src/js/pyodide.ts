@@ -372,6 +372,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
   pyodide.runPython("print('Python initialization complete')");
-  API.setStandardStreams(config.stdin, config.stdout, config.stderr);
+  API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;
 }
