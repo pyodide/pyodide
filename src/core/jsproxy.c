@@ -63,6 +63,7 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(_js_type_flags);
 Js_IDENTIFIER(then);
 Js_IDENTIFIER(finally);
 Js_IDENTIFIER(has);
@@ -2548,6 +2549,7 @@ JsProxy_create_subtype(int flags)
   bool success = false;
   PyMethodDef* methods_heap = NULL;
   PyObject* bases = NULL;
+  PyObject* flags_obj = NULL;
   PyObject* result = NULL;
 
   // PyType_FromSpecWithBases copies "members" automatically into the end of the
@@ -2592,10 +2594,15 @@ JsProxy_create_subtype(int flags)
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }
+  flags_obj = PyLong_FromLong(flags);
+  FAIL_IF_NULL(flags_obj);
+  FAIL_IF_MINUS_ONE(
+    _PyObject_SetAttrId(result, &PyId__js_type_flags, flags_obj));
 
   success = true;
 finally:
   Py_CLEAR(bases);
+  Py_CLEAR(flags_obj);
   if (!success && methods_heap != NULL) {
     PyMem_Free(methods_heap);
   }
