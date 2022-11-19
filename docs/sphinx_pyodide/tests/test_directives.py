@@ -201,3 +201,113 @@ def test_summary():
         "loadPackagesFromImports",
         "(code, messageCallback, errorCallback)",
     )
+
+
+def test_type_name():
+    tn = inner_analyzer._type_name
+    assert tn({"name": "void", "type": "intrinsic"}) == "void"
+    assert tn({"value": None, "type": "literal"}) == "null"
+    assert (
+        tn(
+            {
+                "name": "Promise",
+                "type": "reference",
+                "typeArguments": [{"name": "string", "type": "intrinsic"}],
+            }
+        )
+        == "Promise<string>"
+    )
+
+    assert (
+        tn(
+            {
+                "asserts": False,
+                "name": "jsobj",
+                "targetType": {"name": "PyProxy", "type": "reference"},
+                "type": "predicate",
+            }
+        )
+        == "boolean (typeguard for PyProxy)"
+    )
+
+    assert (
+        tn(
+            {
+                "declaration": {
+                    "kindString": "Method",
+                    "name": "messageCallback",
+                    "signatures": [
+                        {
+                            "kindString": "Call signature",
+                            "name": "messageCallback",
+                            "parameters": [
+                                {
+                                    "flags": {},
+                                    "kindString": "Parameter",
+                                    "name": "message",
+                                    "type": {"name": "string", "type": "intrinsic"},
+                                }
+                            ],
+                            "type": {"name": "void", "type": "intrinsic"},
+                        }
+                    ],
+                },
+                "type": "reflection",
+            }
+        )
+        == "(message: string) => void"
+    )
+
+    assert (
+        tn(
+            {
+                "name": "Iterable",
+                "type": "reference",
+                "typeArguments": [
+                    {
+                        "elements": [
+                            {
+                                "element": {"name": "string", "type": "intrinsic"},
+                                "isOptional": False,
+                                "name": "key",
+                                "type": "named-tuple-member",
+                            },
+                            {
+                                "element": {"name": "any", "type": "intrinsic"},
+                                "isOptional": False,
+                                "name": "value",
+                                "type": "named-tuple-member",
+                            },
+                        ],
+                        "type": "tuple",
+                    }
+                ],
+            }
+        )
+        == "Iterable<[key: string, value: any]>"
+    )
+
+    assert (
+        tn(
+            {
+                "declaration": {
+                    "flags": {},
+                    "indexSignature": {
+                        "flags": {},
+                        "kindString": "Index signature",
+                        "parameters": [
+                            {
+                                "flags": {},
+                                "name": "key",
+                                "type": {"name": "string", "type": "intrinsic"},
+                            }
+                        ],
+                        "type": {"name": "string", "type": "intrinsic"},
+                    },
+                    "kindString": "Type literal",
+                },
+                "type": "reflection",
+            }
+        )
+        == "{[key: string]: string}"
+    )
