@@ -1166,6 +1166,77 @@ def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
     )
 
 
+def test_custom_stdin_stdout2(selenium):
+    result = selenium.run_js(
+        """
+        function stdin(){
+            return "hello there!\\nThis is a several\\nline\\nstring";
+        }
+        pyodide.setStdin(stdin);
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "h"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin(stdin, false);
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "e"
+        `);
+        pyodide.setDefaultStdout();
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin(stdin, true);
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert sys.stdin.isatty()
+        `);
+
+        let stdout_codes = [];
+        function rawstdout(code) {
+            stdout_codes.push(code);
+        }
+        pyodide.setRawStdout(rawstdout);
+        pyodide.runPython(`
+            print("hello")
+            assert sys.stdin.read(1) == "o"
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setRawStdout(rawstdout, false);
+        pyodide.runPython(`
+            print("2hello again")
+            assert sys.stdin.read(1) == " "
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setRawStdout(rawstdout, true);
+        pyodide.runPython(`
+            print("3hello")
+            assert sys.stdin.read(1) == "t"
+            assert sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.runPython(`
+            print("partial line", end="")
+        `);
+        let result1 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.runPython(`
+            sys.stdout.flush()
+        `);
+        let result2 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.setDefaultStdin();
+        pyodide.setDefaultStdout();
+        pyodide.setDefaultStderr();
+        return [result1, result2];
+        """
+    )
+    assert result[0] == "hello\n2hello again\n3hello\n"
+    assert result[1] == "hello\n2hello again\n3hello\npartial line"
+
+
 def test_home_directory(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     home = "/home/custom_home"
