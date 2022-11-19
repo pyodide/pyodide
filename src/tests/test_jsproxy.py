@@ -1301,7 +1301,11 @@ def test_jsproxy_as_object_map(selenium):
 
     from pyodide.code import run_js
 
-    o = run_js("({a : 2, b: 3, c: 77, 1 : 9})").as_object_map()
+    o1 = run_js("({a : 2, b: 3, c: 77, 1 : 9})")
+    with pytest.raises(TypeError, match="object is not subscriptable"):
+        o1["a"]
+    o = o1.as_object_map()
+    del o1
     assert len(o) == 4
     assert set(o) == {"a", "b", "c", "1"}
     assert "a" in o
