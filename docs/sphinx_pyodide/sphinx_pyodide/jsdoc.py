@@ -136,6 +136,22 @@ def object_literal_type_name(self, decl):
     return "{" + ", ".join(children) + "}"
 
 
+def function_type_name(self, decl):
+    decl_sig = None
+    if "signatures" in decl:
+        decl_sig = decl["signatures"][0]
+    elif decl["kindString"] == "Call signature":
+        decl_sig = decl
+    assert decl_sig
+    params = [
+        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        for ty in decl_sig.get("parameters", [])
+    ]
+    params_str = ", ".join(params)
+    ret_str = self._type_name(decl_sig["type"])
+    return f"({params_str}) => {ret_str}"
+
+
 def reflection_type_name(self, type):
     """Fill in the type names for type_of_type == "reflection"
 
@@ -154,21 +170,9 @@ def reflection_type_name(self, type):
         (a : string, b : number) => string
     """
     decl = type["declaration"]
-    if decl["kindString"] == "Type literal":
+    if decl["kindString"] == "Type literal" and "signatures" not in decl:
         return object_literal_type_name(self, decl)
-    decl_sig = None
-    if "signatures" in decl:
-        decl_sig = decl["signatures"][0]
-    elif decl["kindString"] == "Call signature":
-        decl_sig = decl
-    assert decl_sig
-    params = [
-        f'{ty["name"]}: {self._type_name(ty["type"])}'
-        for ty in decl_sig.get("parameters", [])
-    ]
-    params_str = ", ".join(params)
-    ret_str = self._type_name(decl_sig["type"])
-    return f"({params_str}) => {ret_str}"
+    return function_type_name(self, decl)
 
 
 def _type_name(self, type):
@@ -189,6 +193,8 @@ def _type_name(self, type):
         name = type["name"]
         type = self._type_name(type["element"])
         return f"{name}: {type}"
+    if type_of_type == "literal" and type["value"] is None:
+        return "null"
     raise NotImplementedError(
         f"Cannot render type name for type_of_type={type_of_type}"
     )
