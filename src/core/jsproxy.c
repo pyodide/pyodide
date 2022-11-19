@@ -1510,17 +1510,7 @@ create_proxy_of_type(int type_flags, JsRef object, JsRef this);
 static PyObject*
 JsProxy_as_object_map(PyObject* self, PyObject* Py_UNUSED(ignored))
 {
-  PyObject* type_flags_obj =
-    _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__js_type_flags);
-  if (type_flags_obj == NULL) {
-    return NULL;
-  }
-  int type_flags = PyLong_AsLong(type_flags_obj);
-  Py_CLEAR(type_flags_obj);
-  if (type_flags == -1) {
-    return NULL;
-  }
-  type_flags |= IS_OBJECT_MAP;
+  int type_flags = IS_OBJECT_MAP;
   return create_proxy_of_type(
     type_flags, JsProxy_REF(self), JsMethod_THIS(self));
 }
