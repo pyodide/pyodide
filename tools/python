@@ -105,7 +105,6 @@ async function main() {
     py.setDefaultStdout();
     py.setDefaultStderr();
     const FS = py.FS;
-    setupStreams(FS, py._module.TTY);
     let sideGlobals = py.runPython("{}");
     globalThis.handleExit = function handleExit(code) {
         if (code === undefined) {
