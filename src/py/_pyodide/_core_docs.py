@@ -67,6 +67,13 @@ class JsProxy:
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
 
+    def as_object_map(self) -> "JsProxy":
+        """Makes returns a new JsProxy that treats the object as a map.
+
+        The methods ``__getitem__``, ``__setitem__``, ``__contains__``,
+        ``__len__``, etc will perform lookups via ``object[key]`` or similar.
+        """
+
     def new(self, *args: Any, **kwargs: Any) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
 
