@@ -1293,3 +1293,28 @@ def test_jsproxy_descr_get(selenium):
     assert t.f("a") == 7
     assert t.f("b") == 66
     assert t.f("c") is None
+
+
+@run_in_pyodide
+def test_jsproxy_as_object_method(selenium):
+    from pyodide.code import run_js
+
+    o = run_js("({a : 2, b: 3, c: 77, 1 : 9})").as_object_method()
+    assert len(o) == 4
+    assert set(o) == {"a", "b", "c", "1"}
+    assert "a" in o
+    assert "b" in o
+    assert "1" in o
+    assert 1 not in o
+    assert o["a"] == 2
+    assert o["1"] == 9
+    del o["a"]
+    assert "a" not in o
+    assert not hasattr(o, "a")
+    assert hasattr(o, "b")
+    assert len(o) == 3
+    assert set(o) == {"b", "c", "1"}
+    o["d"] = 36
+    assert len(o) == 4
+    assert o["d"] == 36
+    assert "constructor" not in o
