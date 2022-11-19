@@ -311,3 +311,36 @@ def test_type_name():
         )
         == "{[key: string]: string}"
     )
+
+    assert (
+        tn(
+            {
+                "declaration": {
+                    "children": [
+                        {
+                            "flags": {},
+                            "kindString": "Property",
+                            "name": "cache",
+                            "type": {"name": "PyProxyCache", "type": "reference"},
+                        },
+                        {
+                            "flags": {"isOptional": True},
+                            "kindString": "Property",
+                            "name": "destroyed_msg",
+                            "type": {"name": "string", "type": "intrinsic"},
+                        },
+                        {
+                            "flags": {},
+                            "kindString": "Property",
+                            "name": "ptr",
+                            "type": {"name": "number", "type": "intrinsic"},
+                        },
+                    ],
+                    "flags": {},
+                    "kindString": "Type literal",
+                },
+                "type": "reflection",
+            }
+        )
+        == "{cache: PyProxyCache, destroyed_msg?: string, ptr: number}"
+    )

@@ -128,10 +128,13 @@ def object_literal_type_name(self, decl):
         valuetype = self._type_name(index_sig["type"])
         children.append(f"[{keyname}: {keytype}]: {valuetype}")
     if "children" in decl:
-        children.extend(
-            child["name"] + ": " + self._type_name(child["type"])
-            for child in decl["children"]
-        )
+        for child in decl["children"]:
+            maybe_optional = ""
+            if child["flags"].get("isOptional"):
+                maybe_optional = "?"
+            children.append(
+                child["name"] + maybe_optional + ": " + self._type_name(child["type"])
+            )
 
     return "{" + ", ".join(children) + "}"
 
