@@ -1330,6 +1330,7 @@ def test_jsproxy_as_object_map(selenium):
     assert set(o) == {"b", "c", "d", "1"}
     assert o["d"] == 36
     assert "constructor" not in o
+    assert o.to_py() == {"b": 3, "c": 77, "d": 36, "1": 9}
 
     with pytest.raises(KeyError):
         del o[1]
