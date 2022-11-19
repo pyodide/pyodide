@@ -1610,10 +1610,10 @@ JsObjMap_ass_subscript_js,
 {
   let obj = Hiwire.get_value(idobj);
   let key = Hiwire.get_value(idkey);
-  if (!Object.prototype.hasOwnProperty.call(obj, key)) {
-    return -1;
-  }
   if(idvalue === 0) {
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+      return -1;
+    }
     delete obj[key];
   } else {
     obj[key] = Hiwire.get_value(idvalue);
@@ -1626,7 +1626,13 @@ static int
 JsObjMap_ass_subscript(PyObject* self, PyObject* pykey, PyObject* pyvalue)
 {
   if (!PyUnicode_Check(pykey)) {
-    PyErr_SetObject(PyExc_KeyError, pykey);
+    if (pyvalue) {
+      PyErr_SetString(
+        PyExc_TypeError,
+        "Can only assign keys of type string to JavaScript object map");
+    } else {
+      PyErr_SetObject(PyExc_KeyError, pykey);
+    }
     return -1;
   }
 

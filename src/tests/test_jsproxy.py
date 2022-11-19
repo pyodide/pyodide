@@ -1296,10 +1296,12 @@ def test_jsproxy_descr_get(selenium):
 
 
 @run_in_pyodide
-def test_jsproxy_as_object_method(selenium):
+def test_jsproxy_as_object_map(selenium):
+    import pytest
+
     from pyodide.code import run_js
 
-    o = run_js("({a : 2, b: 3, c: 77, 1 : 9})").as_object_method()
+    o = run_js("({a : 2, b: 3, c: 77, 1 : 9})").as_object_map()
     assert len(o) == 4
     assert set(o) == {"a", "b", "c", "1"}
     assert "a" in o
@@ -1316,5 +1318,14 @@ def test_jsproxy_as_object_method(selenium):
     assert set(o) == {"b", "c", "1"}
     o["d"] = 36
     assert len(o) == 4
+    with pytest.raises(
+        TypeError, match="Can only assign keys of type string to JavaScript object map"
+    ):
+        o[1] = 2
+    assert len(o) == 4
+    assert set(o) == {"b", "c", "d", "1"}
     assert o["d"] == 36
     assert "constructor" not in o
+
+    with pytest.raises(KeyError):
+        del o[1]
