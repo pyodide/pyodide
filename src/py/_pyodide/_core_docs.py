@@ -384,7 +384,7 @@ class JsArray(JsProxy):
         """
 
 
-class JsMap:
+class JsMap(JsProxy):
     def keys(self) -> KeysView[Any]:
         """Return a KeysView for the map.
 
