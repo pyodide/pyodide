@@ -1,5 +1,13 @@
 import sys
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    ValuesView,
+)
 from io import IOBase
 from typing import Any
 
@@ -156,6 +164,15 @@ class JsProxy:
         """
         pass
 
+    def unwrap(self) -> Any:
+        """Unwrap a double proxy created with :any:`create_proxy` into the
+        wrapped Python object.
+
+        Only present on double proxies.
+        """
+
+
+class JsPromise(JsProxy):
     def then(
         self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
     ) -> "Promise":
@@ -186,6 +203,8 @@ class JsProxy:
         this is needed because ``finally`` is a reserved keyword in Python.
         """
 
+
+class JsBuffer(JsProxy):
     # There are no types for buffers:
     # https://github.com/python/typing/issues/593
     # https://bugs.python.org/issue27501
@@ -318,6 +337,8 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+
+class JsArray(JsProxy):
     def extend(self, other: Iterable[Any]) -> None:
         """Extend array by appending elements from the iterable.
 
@@ -362,11 +383,96 @@ class JsProxy:
         Present only if the wrapped Javascript object is an array.
         """
 
-    def unwrap(self) -> Any:
-        """Unwrap a double proxy created with :any:`create_proxy` into the
-        wrapped Python object.
 
-        Only present on double proxies.
+class JsMap:
+    def keys(self) -> KeysView[Any]:
+        """Return a KeysView for the map.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def items(self) -> ItemsView[Any, Any]:
+        """Return a ItemsView for the map.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def values(self) -> ValuesView[Any]:
+        """Return a ValuesView for the map.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        """If key in self, returns self[key]. Otherwise returns default.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def pop(self, key: Any, default: Any = None) -> Any:
+        """If key in self, return self[key] and remove key from self. Otherwise
+        returns default.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        """If key in self, return self[key]. Otherwise
+        sets self[key] = default and returns default.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def popitem(self) -> tuple[Any, Any]:
+        """Remove some arbitrary key, value pair from the map and returns the
+        (key, value) tuple.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def clear(self) -> None:
+        """Empty out the map entirely.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def update(
+        self, other: Mapping[Any, Any] | None = None, **kwargs: dict[str, Any]
+    ) -> None:
+        """Updates self from other and kwargs.
+
+        If ``other`` is present and is a Mapping or has a ``keys`` method, does
+
+        .. code-block:: python
+
+            for k in other:
+                self[k] = other[k]
+
+        If ``other`` is present and lacks a ``keys`` method, does
+
+        .. code-block:: python
+
+            for (k, v) in other:
+                self[k] = v
+
+        In all cases this is followed by:
+
+        .. code-block:: python
+
+            for (k, v) in kwargs.items():
+                self[k] = v
+
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
 
 
