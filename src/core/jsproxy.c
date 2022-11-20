@@ -63,6 +63,12 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(KeysView);
+_Py_IDENTIFIER(ItemsView);
+_Py_IDENTIFIER(ValuesView);
+_Py_IDENTIFIER(popitem);
+_Py_IDENTIFIER(clear);
+_Py_IDENTIFIER(update);
 Js_IDENTIFIER(then);
 Js_IDENTIFIER(finally);
 Js_IDENTIFIER(has);
@@ -72,6 +78,8 @@ Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
 _Py_IDENTIFIER(fileno);
 
+static PyObject* collections_abc;
+static PyObject* MutableMapping;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
 
@@ -1166,7 +1174,250 @@ finally:
   return result;
 }
 
-#define GET_JSREF(x) (((JsProxy*)x)->js)
+EM_JS_REF(JsRef, JsMap_GetIter_js, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  let result;
+  // clang-format off
+  if(typeof jsobj.keys === 'function') {
+    // clang-format on
+    result = jsobj.keys();
+  } else {
+    result = jsobj[Symbol.iterator]();
+  }
+  return Hiwire.new_value(result);
+})
+
+/**
+ * iter overload for maps. Present if IS_ITERABLE but not IS_ITERATOR (if the
+ * IS_ITERATOR flag is present we use PyObject_SelfIter).
+ * Prefers to iterate using map.keys() over map[Symbol.iterator]().
+ */
+static PyObject*
+JsMap_GetIter(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  JsRef iditer = JsMap_GetIter_js(self->js);
+  if (iditer == NULL) {
+    return NULL;
+  }
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
+}
+
+static PyObject*
+JsMap_keys(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(collections_abc, &PyId_KeysView, self);
+}
+
+static PyMethodDef JsMap_keys_MethodDef = {
+  "keys",
+  (PyCFunction)JsMap_keys,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsMap_values(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(collections_abc, &PyId_ValuesView, self);
+}
+
+static PyMethodDef JsMap_values_MethodDef = {
+  "values",
+  (PyCFunction)JsMap_values,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsMap_items(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(collections_abc, &PyId_ItemsView, self);
+}
+
+static PyMethodDef JsMap_items_MethodDef = {
+  "items",
+  (PyCFunction)JsMap_items,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsMap_get(PyObject* self,
+          PyObject* const* args,
+          Py_ssize_t nargs,
+          PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "key", "default", 0 };
+  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  PyObject* key;
+  PyObject* default_ = Py_None;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &key, &default_)) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_GetItem(self, key);
+  if (result != NULL) {
+    return result;
+  }
+  PyErr_Clear();
+  Py_INCREF(default_);
+  return default_;
+}
+
+static PyMethodDef JsMap_get_MethodDef = {
+  "get",
+  (PyCFunction)JsMap_get,
+  METH_FASTCALL | METH_KEYWORDS,
+};
+
+static PyObject*
+JsMap_pop(PyObject* self,
+          PyObject* const* args,
+          Py_ssize_t nargs,
+          PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "key", "default", 0 };
+  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  PyObject* key;
+  PyObject* default_ = NULL;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &key, &default_)) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_GetItem(self, key);
+  if (result == NULL) {
+    if (default_ == NULL) {
+      return NULL;
+    } else {
+      PyErr_Clear();
+      Py_INCREF(default_);
+      return default_;
+    }
+  }
+  if (PyObject_DelItem(self, key) == -1) {
+    Py_CLEAR(result);
+    return NULL;
+  }
+  return result;
+}
+
+static PyMethodDef JsMap_pop_MethodDef = {
+  "pop",
+  (PyCFunction)JsMap_pop,
+  METH_FASTCALL | METH_KEYWORDS,
+};
+
+static PyObject*
+JsMap_popitem(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(MutableMapping, &PyId_popitem, self);
+}
+
+static PyMethodDef JsMap_popitem_MethodDef = {
+  "popitem",
+  (PyCFunction)JsMap_popitem,
+  METH_NOARGS,
+};
+
+EM_JS_NUM(int, JsMap_clear_js, (JsRef idmap), {
+  const map = Hiwire.get_value(idmap);
+  // clang-format off
+  if(idmap && typeof idmap.clear === "function") {
+    // clang-format on
+    idmap.clear();
+    return 1;
+  }
+  return 0;
+})
+
+static PyObject*
+JsMap_clear(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  // If the map has a JavaScript "clear" function, use that.
+  int status = JsMap_clear_js(JsProxy_REF(self));
+  if (status == -1) {
+    return NULL;
+  }
+  if (status) {
+    Py_RETURN_NONE;
+  }
+  // Otherwise iterate the map and delete the entries one at a time.
+  return _PyObject_CallMethodIdOneArg(MutableMapping, &PyId_clear, self);
+}
+
+static PyMethodDef JsMap_clear_MethodDef = {
+  "clear",
+  (PyCFunction)JsMap_clear,
+  METH_NOARGS,
+};
+
+PyObject*
+JsMap_update(JsProxy* self, PyObject* args, PyObject* kwds)
+{
+  PyObject* arg = NULL;
+  if (!PyArg_ParseTuple(args, "|O:update", &arg)) {
+    return NULL;
+  }
+  if (arg != NULL) {
+    PyObject* status = _PyObject_CallMethodIdObjArgs(
+      MutableMapping, &PyId_update, self, arg, NULL);
+    if (status == NULL) {
+      return NULL;
+    }
+    Py_CLEAR(status);
+  }
+  if (kwds != NULL) {
+    PyObject* status = _PyObject_CallMethodIdObjArgs(
+      MutableMapping, &PyId_update, self, arg, NULL);
+    if (status == NULL) {
+      return NULL;
+    }
+    Py_CLEAR(status);
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsMap_update_MethodDef = {
+  "update",
+  (PyCFunction)JsMap_update,
+  METH_VARARGS | METH_KEYWORDS,
+};
+
+static PyObject*
+JsMap_setdefault(PyObject* self,
+                 PyObject* const* args,
+                 Py_ssize_t nargs,
+                 PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "key", "default", 0 };
+  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  PyObject* key;
+  PyObject* default_ = Py_None;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &key, &default_)) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_GetItem(self, key);
+  if (result != NULL) {
+    return result;
+  }
+  PyErr_Clear();
+  if (PyObject_SetItem(self, key, default_) == -1) {
+    return NULL;
+  }
+  Py_INCREF(default_);
+  return default_;
+}
+
+static PyMethodDef JsMap_setdefault_MethodDef = {
+  "setdefault",
+  (PyCFunction)JsMap_setdefault,
+  METH_FASTCALL | METH_KEYWORDS,
+};
 
 /**
  * Overload of `dir(proxy)`. Walks the prototype chain of the object and adds
@@ -1197,12 +1448,12 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(result_set);
 
   // Now get attributes of js object
-  iddir = JsObject_Dir(GET_JSREF(self));
+  iddir = JsObject_Dir(JsProxy_REF(self));
   pydir = js2python(iddir);
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
-  if (JsArray_Check(GET_JSREF(self))) {
+  if (JsArray_Check(JsProxy_REF(self))) {
     // See comment about Array.keys in GetAttr
     keys_str = PyUnicode_FromString("keys");
     FAIL_IF_NULL(keys_str);
@@ -1255,7 +1506,7 @@ JsProxy_toPy(PyObject* self,
     default_converter_js = python2js(default_converter);
   }
   PyObject* result =
-    js2python_convert(GET_JSREF(self), depth, default_converter_js);
+    js2python_convert(JsProxy_REF(self), depth, default_converter_js);
   if (pyproxy_Check(default_converter_js)) {
     destroy_proxy(default_converter_js, NULL);
   }
@@ -1306,7 +1557,7 @@ wrap_promise(JsRef promise, JsRef done_callback)
   loop = PyObject_CallNoArgs(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
 
-  result = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
   FAIL_IF_NULL(result);
 
   set_result = _PyObject_GetAttrId(result, &PyId_set_result);
@@ -1358,7 +1609,7 @@ JsProxy_Await(JsProxy* self)
 
   fut = wrap_promise(self->js, NULL);
   FAIL_IF_NULL(fut);
-  result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+  result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
 finally:
   Py_CLEAR(fut);
@@ -2435,10 +2686,33 @@ JsProxy_create_subtype(int flags)
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
 
+  bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
+  bool mutable_mapping = mapping && (flags & HAS_SET);
+
+  if (mapping) {
+    methods[cur_method++] = JsMap_keys_MethodDef;
+    methods[cur_method++] = JsMap_values_MethodDef;
+    methods[cur_method++] = JsMap_items_MethodDef;
+    methods[cur_method++] = JsMap_get_MethodDef;
+  }
+  if (mutable_mapping) {
+    methods[cur_method++] = JsMap_pop_MethodDef;
+    methods[cur_method++] = JsMap_popitem_MethodDef;
+    methods[cur_method++] = JsMap_clear_MethodDef;
+    methods[cur_method++] = JsMap_update_MethodDef;
+    methods[cur_method++] = JsMap_setdefault_MethodDef;
+  }
+
   if (flags & IS_ITERABLE) {
-    // This uses `obj[Symbol.iterator]()`
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
+    if (mapping) {
+      // Prefer `obj.keys()` over `obj[Symbol.iterator]()`
+      slots[cur_slot++] =
+        (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsMap_GetIter };
+    } else {
+      // Uses `obj[Symbol.iterator]()`
+      slots[cur_slot++] =
+        (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
+    }
   }
   if (flags & IS_ITERATOR) {
     // JsProxy_GetIter would work just as well as PyObject_SelfIter but
@@ -2786,6 +3060,11 @@ JsProxy_init(PyObject* core_module)
   PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
+
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(MutableMapping);
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
