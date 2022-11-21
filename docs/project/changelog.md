@@ -203,7 +203,7 @@ substitutions:
 
 - {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
   which vendors shared libraries into the wheel after building.
-  {pr}`3234`
+  {pr}`3234` {pr}`3264`
 
 - {{ Enhancement }} Added `build/type` key to the `meta.yaml` spec
   which specifies the type of the package.
