@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Callable, Iterable, Iterator
-from io import IOBase
-from typing import Any
+from functools import reduce
+from typing import IO, Any
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -23,14 +23,58 @@ class JsException(Exception):
     @property
     def js_error(self) -> "JsProxy":
         """The original JavaScript error"""
-        return JsProxy()
+        return JsProxy(_instantiate_token)
 
 
 class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
 
 
-class JsProxy:
+# We need this to look up the flags
+_core_dict: dict[str, Any] = {}
+
+
+class _JsProxyMetaClass(type):
+    def __instancecheck__(cls, instance):
+        """Override for isinstance(instance, cls)."""
+        return cls.__subclasscheck__(type(instance))
+
+    def __subclasscheck__(cls, subclass):
+        if type.__subclasscheck__(cls, subclass):
+            return True
+        if not hasattr(subclass, "_js_type_flags"):
+            return False
+        # For the "synthetic" subtypes defined in this file, we define
+        # _js_type_flags as a string. To convert it to the correct value, we
+        # exec it in the _core_dict context.
+        cls_flags = cls._js_type_flags  # type:ignore[attr-defined]
+        if isinstance(cls_flags, int):
+            cls_flags = [cls_flags]
+        else:
+            # There are multiple ways for
+            cls_flags = [_core_dict[f] for f in cls_flags]
+
+        subclass_flags = subclass._js_type_flags
+        if not isinstance(subclass_flags, int):
+            subclass_flags = reduce(
+                lambda x, y: x | y, (_core_dict[f] for f in subclass_flags)
+            )
+
+        return any(cls_flag & subclass_flags == cls_flag for cls_flag in cls_flags)
+
+
+# We want to raise an error if someone tries to instantiate JsProxy directly
+# since it doesn't mean anything. But we have a few reasons to do so internally.
+# So we raise an error unless this private token is passed as an argument.
+_instantiate_token = object()
+
+
+class JsProxy(metaclass=_JsProxyMetaClass):
+    def __new__(cls, arg=None, *args, **kwargs):
+        if arg is _instantiate_token:
+            return super().__new__(cls)
+        raise TypeError(f"{cls.__name__} cannot be instantiated.")
+
     """A proxy to make a JavaScript object behave like a Python object
 
     For more information see the :ref:`type-translations` documentation. In
@@ -38,6 +82,7 @@ class JsProxy:
     :ref:`the list of __dunder__ methods <type-translations-jsproxy>`
     that are (conditionally) implemented on :any:`JsProxy`.
     """
+    _js_type_flags: Any = 0
 
     @property
     def js_id(self) -> int:
@@ -156,6 +201,17 @@ class JsProxy:
         """
         pass
 
+    def unwrap(self) -> Any:
+        """Unwrap a double proxy created with :any:`create_proxy` into the
+        wrapped Python object.
+
+        Only present on double proxies.
+        """
+
+
+class JsPromise(JsProxy):
+    _js_type_flags = ["IS_AWAITABLE"]
+
     def then(
         self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
     ) -> "Promise":
@@ -186,6 +242,9 @@ class JsProxy:
         this is needed because ``finally`` is a reserved keyword in Python.
         """
 
+
+class JsBuffer(JsProxy):
+    _js_type_flags = ["IS_BUFFER"]
     # There are no types for buffers:
     # https://github.com/python/typing/issues/593
     # https://bugs.python.org/issue27501
@@ -225,7 +284,7 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
-    def to_file(self, file: IOBase, /) -> None:
+    def to_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Writes a buffer to a file.
 
         Will write the entire contents of the buffer to the current position of
@@ -249,7 +308,7 @@ class JsProxy:
         data once.
         """
 
-    def from_file(self, file: IOBase, /) -> None:
+    def from_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Reads from a file into a buffer.
 
         Will try to read a chunk of data the same size as the buffer from
@@ -275,7 +334,7 @@ class JsProxy:
         data once.
         """
 
-    def _into_file(self, file: IOBase, /) -> None:
+    def _into_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Will write the entire contents of a buffer into a file using
         ``canOwn : true`` without any copy. After this, the buffer cannot be
         used again.
@@ -317,6 +376,19 @@ class JsProxy:
         Present only if the wrapped Javascript object is an ArrayBuffer or
         an ArrayBuffer view.
         """
+
+
+class JsArray(JsProxy):
+    _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
+
+    def __getitem__(self, idx: int) -> Any:
+        return None
+
+    def __setitem__(self, idx: int, value: Any) -> None:
+        pass
+
+    def __len__(self) -> int:
+        return 0
 
     def extend(self, other: Iterable[Any]) -> None:
         """Extend array by appending elements from the iterable.
@@ -360,13 +432,6 @@ class JsProxy:
         """Reverse the array in place.
 
         Present only if the wrapped Javascript object is an array.
-        """
-
-    def unwrap(self) -> Any:
-        """Unwrap a double proxy created with :any:`create_proxy` into the
-        wrapped Python object.
-
-        Only present on double proxies.
         """
 
 
