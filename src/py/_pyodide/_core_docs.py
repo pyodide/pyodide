@@ -201,6 +201,13 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         pass
 
+
+class JsDoubleProxy(metaclass=_JsProxyMetaClass):
+    _js_type_flags = ["IS_DOUBLE_PROXY"]
+
+    def destroy(self) -> None:
+        pass
+
     def unwrap(self) -> Any:
         """Unwrap a double proxy created with :any:`create_proxy` into the
         wrapped Python object.
@@ -381,11 +388,14 @@ class JsBuffer(JsProxy):
 class JsArray(JsProxy):
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
-    def __getitem__(self, idx: int) -> Any:
+    def __getitem__(self, idx: int | slice) -> Any:
         return None
 
-    def __setitem__(self, idx: int, value: Any) -> None:
+    def __setitem__(self, idx: int | slice, value: Any) -> None:
         pass
+
+    def __delitem__(self, idx: int | slice) -> None:
+        return None
 
     def __len__(self) -> int:
         return 0
@@ -450,7 +460,7 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
 
 def create_proxy(
     obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
-) -> JsProxy:
+) -> JsDoubleProxy:
     """Create a ``JsProxy`` of a ``PyProxy``.
 
     This allows explicit control over the lifetime of the ``PyProxy`` from
