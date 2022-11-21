@@ -182,6 +182,10 @@ if IN_SPHINX:
     ]
     sys.path = path_dirs + sys.path
 
+    from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
+
+    JavaScriptDomain.roles["func"] = JSXRefRole()
+
     import micropip  # noqa: F401
     import pyodide
 
