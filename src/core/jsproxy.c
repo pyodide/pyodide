@@ -2796,6 +2796,7 @@ JsProxy_init_docstrings()
   PyObject* JsPromise = NULL;
   PyObject* JsBuffer = NULL;
   PyObject* JsArray = NULL;
+  PyObject* JsDoubleProxy = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
@@ -2814,6 +2815,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsPromise);
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
+  GetProxyDocClass(JsDoubleProxy);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core_docs.set_method_docstring uses
@@ -2825,7 +2827,8 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsProxy, JsProxy_object_values_MethodDef);
   SET_DOCSTRING(JsProxy, JsProxy_toPy_MethodDef);
   SET_DOCSTRING(JsProxy, JsMethod_Construct_MethodDef);
-  SET_DOCSTRING(JsProxy, JsDoubleProxy_unwrap_MethodDef);
+
+  SET_DOCSTRING(JsDoubleProxy, JsDoubleProxy_unwrap_MethodDef);
   // SET_DOCSTRING(JsProxy, JsProxy_Dir_MethodDef);
 
   SET_DOCSTRING(JsPromise, JsProxy_then_MethodDef);
@@ -2856,6 +2859,7 @@ finally:
   Py_CLEAR(JsPromise);
   Py_CLEAR(JsBuffer);
   Py_CLEAR(JsArray);
+  Py_CLEAR(JsDoubleProxy);
   return success ? 0 : -1;
 }
 
