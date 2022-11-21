@@ -76,6 +76,7 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
         [
             "cython",
             "pythran",
+            "setuptools<65.6.0",  # https://github.com/pypa/setuptools/issues/3693
         ]
     )
 
