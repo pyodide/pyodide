@@ -264,8 +264,6 @@ finally:
   return success ? 0 : -1;
 }
 
-#define JsProxy_JSREF(x) (((JsProxy*)x)->js)
-
 static PyObject*
 JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
 {
@@ -1307,7 +1305,7 @@ wrap_promise(JsRef promise, JsRef done_callback)
   loop = PyObject_CallNoArgs(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
 
-  result = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
   FAIL_IF_NULL(result);
 
   set_result = _PyObject_GetAttrId(result, &PyId_set_result);
@@ -1359,7 +1357,7 @@ JsProxy_Await(JsProxy* self)
 
   fut = wrap_promise(self->js, NULL);
   FAIL_IF_NULL(fut);
-  result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+  result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
 finally:
   Py_CLEAR(fut);
@@ -2396,7 +2394,7 @@ EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsRef id), {
 PyObject*
 JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 {
-  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_JSREF(obj));
+  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_REF(obj));
   Py_XINCREF(result);
   return result;
 }
@@ -2834,6 +2832,21 @@ JsProxy_init(PyObject* core_module)
 #undef SET_DOCSTRING
 
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
+
+  PyModule_AddIntMacro(core_module, IS_ITERABLE);
+  PyModule_AddIntMacro(core_module, IS_ITERATOR);
+  PyModule_AddIntMacro(core_module, HAS_LENGTH);
+  PyModule_AddIntMacro(core_module, HAS_GET);
+  PyModule_AddIntMacro(core_module, HAS_SET);
+  PyModule_AddIntMacro(core_module, HAS_HAS);
+  PyModule_AddIntMacro(core_module, HAS_INCLUDES);
+  PyModule_AddIntMacro(core_module, IS_AWAITABLE);
+  PyModule_AddIntMacro(core_module, IS_BUFFER);
+  PyModule_AddIntMacro(core_module, IS_CALLABLE);
+  PyModule_AddIntMacro(core_module, IS_ARRAY);
+  PyModule_AddIntMacro(core_module, IS_NODE_LIST);
+  PyModule_AddIntMacro(core_module, IS_TYPEDARRAY);
+  PyModule_AddIntMacro(core_module, IS_DOUBLE_PROXY);
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
