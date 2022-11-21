@@ -192,6 +192,9 @@ if IN_SPHINX:
     import pyodide.ffi.wrappers
     import pyodide.http
     import pyodide.webloop
+    from pyodide.ffi import JsProxy
+
+    JsProxy.__new__ = object.__new__  # type: ignore[assignment]
 
     # The full version, including alpha/beta/rc tags.
     release = version = pyodide.__version__

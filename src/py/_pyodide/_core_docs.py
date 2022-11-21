@@ -70,11 +70,6 @@ _instantiate_token = object()
 
 
 class JsProxy(metaclass=_JsProxyMetaClass):
-    def __new__(cls, arg=None, *args, **kwargs):
-        if arg is _instantiate_token:
-            return super().__new__(cls)
-        raise TypeError(f"{cls.__name__} cannot be instantiated.")
-
     """A proxy to make a JavaScript object behave like a Python object
 
     For more information see the :ref:`type-translations` documentation. In
@@ -82,7 +77,13 @@ class JsProxy(metaclass=_JsProxyMetaClass):
     :ref:`the list of __dunder__ methods <type-translations-jsproxy>`
     that are (conditionally) implemented on :any:`JsProxy`.
     """
+
     _js_type_flags: Any = 0
+
+    def __new__(cls, arg=None, *args, **kwargs):
+        if arg is _instantiate_token:
+            return super().__new__(cls)
+        raise TypeError(f"{cls.__name__} cannot be instantiated.")
 
     @property
     def js_id(self) -> int:
@@ -203,6 +204,8 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
 
 class JsDoubleProxy(JsProxy):
+    """A double proxy created with :any:`create_proxy`."""
+
     _js_type_flags = ["IS_DOUBLE_PROXY"]
 
     def destroy(self) -> None:
@@ -211,12 +214,15 @@ class JsDoubleProxy(JsProxy):
     def unwrap(self) -> Any:
         """Unwrap a double proxy created with :any:`create_proxy` into the
         wrapped Python object.
-
-        Only present on double proxies.
         """
 
 
 class JsPromise(JsProxy):
+    """A JsProxy of a promise (or some other awaitable JavaScript object).
+
+    A JavaScript object is considered to be a Promise if it has a "then" method.
+    """
+
     _js_type_flags = ["IS_AWAITABLE"]
 
     def then(
@@ -225,7 +231,6 @@ class JsPromise(JsProxy):
         """The ``Promise.then`` API, wrapped to manage the lifetimes of the
         handlers.
 
-        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handlers
         when the promise resolves.
         """
@@ -234,7 +239,6 @@ class JsPromise(JsProxy):
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
-        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handler
         when the promise resolves.
         """
@@ -243,7 +247,6 @@ class JsPromise(JsProxy):
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
-        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handler
         when the promise resolves. Note the trailing underscore in the name;
         this is needed because ``finally`` is a reserved keyword in Python.
@@ -251,6 +254,8 @@ class JsPromise(JsProxy):
 
 
 class JsBuffer(JsProxy):
+    """A JsProxy of an array buffer or array buffer view"""
+
     _js_type_flags = ["IS_BUFFER"]
     # There are no types for buffers:
     # https://github.com/python/typing/issues/593
@@ -260,35 +265,23 @@ class JsBuffer(JsProxy):
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
     def assign(self, rhs: Any, /) -> None:
-        """Assign from a Python buffer into the JavaScript buffer.
-
-        Present only if the wrapped JavaScript object is an ArrayBuffer or
-        an ArrayBuffer view.
-        """
+        """Assign from a Python buffer into the JavaScript buffer."""
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
     def assign_to(self, to: Any, /) -> None:
-        """Assign to a Python buffer from the JavaScript buffer.
-
-        Present only if the wrapped JavaScript object is an ArrayBuffer or
-        an ArrayBuffer view.
-        """
+        """Assign to a Python buffer from the JavaScript buffer."""
 
     def to_memoryview(self) -> memoryview:
         """Convert a buffer to a memoryview.
 
         Copies the data once. This currently has the same effect as :any:`to_py`.
-        Present only if the wrapped Javascript object is an ArrayBuffer or
-        an ArrayBuffer view.
         """
 
     def to_bytes(self) -> bytes:
         """Convert a buffer to a bytes object.
 
         Copies the data once.
-        Present only if the wrapped Javascript object is an ArrayBuffer or
-        an ArrayBuffer view.
         """
 
     def to_file(self, file: IO[bytes] | IO[str], /) -> None:
@@ -296,9 +289,6 @@ class JsBuffer(JsProxy):
 
         Will write the entire contents of the buffer to the current position of
         the file.
-
-        Present only if the wrapped Javascript object is an ArrayBuffer or an
-        ArrayBuffer view.
 
         Example
         -------
@@ -320,9 +310,6 @@ class JsBuffer(JsProxy):
 
         Will try to read a chunk of data the same size as the buffer from
         the current position of the file.
-
-        Present only if the wrapped Javascript object is an ArrayBuffer or an
-        ArrayBuffer view.
 
         Example
         -------
@@ -351,8 +338,6 @@ class JsBuffer(JsProxy):
         Only ``MEMFS`` cares about the ``canOwn`` flag, other file systems will
         just ignore it.
 
-        Present only if the wrapped Javascript object is an ArrayBuffer or an
-        ArrayBuffer view.
 
         Example
         -------
@@ -380,12 +365,12 @@ class JsBuffer(JsProxy):
         `https://encoding.spec.whatwg.org/#names-and-labels`. The default
         encoding is utf8.
 
-        Present only if the wrapped Javascript object is an ArrayBuffer or
-        an ArrayBuffer view.
         """
 
 
 class JsArray(JsProxy):
+    """A JsProxy of an array, node list, or typed array"""
+
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
     def __getitem__(self, idx: int | slice) -> Any:
@@ -401,48 +386,31 @@ class JsArray(JsProxy):
         return 0
 
     def extend(self, other: Iterable[Any]) -> None:
-        """Extend array by appending elements from the iterable.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Extend array by appending elements from the iterable."""
 
     def __reversed__(self) -> Iterator[Any]:
-        """Return a reverse iterator over the Array.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Return a reverse iterator over the Array."""
 
     def pop(self, /, index: int = -1) -> Any:
         """Remove and return item at index (default last).
 
         Raises IndexError if list is empty or index is out of range.
-        Present only if the wrapped Javascript object is an array.
         """
 
     def append(self, /, object: Any) -> None:
-        """Append object to the end of the list.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Append object to the end of the list."""
 
     def index(self, /, value: Any, start: int = 0, stop: int = sys.maxsize) -> int:
         """Return first index of value.
 
-        Present only if the wrapped Javascript object is an array.
         Raises ValueError if the value is not present.
         """
 
     def count(self, /, x: Any) -> int:
-        """Return the number of times x appears in the list.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Return the number of times x appears in the list."""
 
     def reverse(self) -> None:
-        """Reverse the array in place.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Reverse the array in place."""
 
 
 # from pyproxy.c
