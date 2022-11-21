@@ -202,7 +202,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         pass
 
 
-class JsDoubleProxy(metaclass=_JsProxyMetaClass):
+class JsDoubleProxy(JsProxy):
     _js_type_flags = ["IS_DOUBLE_PROXY"]
 
     def destroy(self) -> None:
