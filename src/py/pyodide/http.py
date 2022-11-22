@@ -43,6 +43,8 @@ def open_url(url: str) -> StringIO:
 
 
 class JsFetchResponse(JsProxy):
+    """Tell mypy the shape of a fetch response."""
+
     bodyUsed: bool = False
     ok: bool = True
     redirected: bool = False
