@@ -358,7 +358,7 @@ function make_get_char(infunc: InFuncType): GetCharType {
 
 function make_unbatched_put_char(out: (a: number) => void): PutCharType {
   return {
-    put_char(tty: any, val: any) {
+    put_char(tty: any, val: number) {
       out(val);
     },
     fsync() {},
