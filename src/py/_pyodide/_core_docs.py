@@ -67,6 +67,17 @@ class JsProxy:
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
 
+    def as_object_map(self) -> "JsProxy":
+        """Returns a new JsProxy that treats the object as a map.
+
+        The methods ``__getitem__``, ``__setitem__``, ``__contains__``,
+        ``__len__``, etc will perform lookups via ``object[key]`` or similar.
+
+        Note that ``len(x.as_object_map())`` evaluates in O(n) time (it iterates
+        over the object and counts how many ownKeys it has). If you need to
+        compute the length in O(1) time, use a real ``Map`` instead.
+        """
+
     def new(self, *args: Any, **kwargs: Any) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
 

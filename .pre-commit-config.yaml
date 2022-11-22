@@ -59,10 +59,12 @@ repos:
           - types-docutils
           - types-pyyaml
           - types-setuptools
+          - types-requests
           - numpy
           - build
           - pytest
           - pydantic
+          - unearth
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
