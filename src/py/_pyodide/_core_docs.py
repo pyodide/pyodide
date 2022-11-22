@@ -37,9 +37,15 @@ _core_dict: dict[str, Any] = {}
 class _JsProxyMetaClass(type):
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
+        # TODO: add support for user-generated subclasses with custom instance
+        # checks
+        # e.g., could check for a fetch response with x.constructor.name == "Response"
+        # or Object.prototype.toString.call(x) == "[object Response]".
         return cls.__subclasscheck__(type(instance))
 
     def __subclasscheck__(cls, subclass):
+        # TODO: This works for now but maybe there is a better or cleaner way to
+        # do this.
         if type.__subclasscheck__(cls, subclass):
             return True
         if not hasattr(subclass, "_js_type_flags"):
@@ -51,7 +57,6 @@ class _JsProxyMetaClass(type):
         if isinstance(cls_flags, int):
             cls_flags = [cls_flags]
         else:
-            # There are multiple ways for
             cls_flags = [_core_dict[f] for f in cls_flags]
 
         subclass_flags = subclass._js_type_flags
