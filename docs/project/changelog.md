@@ -82,10 +82,17 @@ substitutions:
   the method is called on.
   {pr}`3130`
 
-- {{Enhancement}} A `JsProxy` now has an `as_object_map` method. This will treat
+- {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
   the object as a mapping over its `ownKeys` so for instance:
   `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
   {pr}`3273`
+
+- {{ Enhancement }} Split up the `JsProxy` documentation class into several
+  classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
+  `issubclass` and `isinstance` on the various synthetic and real `JsProxy`
+  classes so that they behave the way one might naively expect them to (or
+  at least closer to that than it was before).
+  {pr}`3277`
 
 - {{ Breaking }} The messageCallback and errorCallback argument to
   {any}`loadPackage <pyodide.loadPackage>` and
