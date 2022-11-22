@@ -63,6 +63,7 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(_js_type_flags);
 Js_IDENTIFIER(then);
 Js_IDENTIFIER(finally);
 Js_IDENTIFIER(has);
@@ -262,8 +263,6 @@ finally:
   hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
 }
-
-#define JsProxy_JSREF(x) (((JsProxy*)x)->js)
 
 static PyObject*
 JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
@@ -1306,7 +1305,7 @@ wrap_promise(JsRef promise, JsRef done_callback)
   loop = PyObject_CallNoArgs(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
 
-  result = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
   FAIL_IF_NULL(result);
 
   set_result = _PyObject_GetAttrId(result, &PyId_set_result);
@@ -1358,7 +1357,7 @@ JsProxy_Await(JsProxy* self)
 
   fut = wrap_promise(self->js, NULL);
   FAIL_IF_NULL(fut);
-  result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+  result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
 finally:
   Py_CLEAR(fut);
@@ -2395,7 +2394,7 @@ EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsRef id), {
 PyObject*
 JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 {
-  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_JSREF(obj));
+  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_REF(obj));
   Py_XINCREF(result);
   return result;
 }
@@ -2548,6 +2547,7 @@ JsProxy_create_subtype(int flags)
   bool success = false;
   PyMethodDef* methods_heap = NULL;
   PyObject* bases = NULL;
+  PyObject* flags_obj = NULL;
   PyObject* result = NULL;
 
   // PyType_FromSpecWithBases copies "members" automatically into the end of the
@@ -2592,10 +2592,15 @@ JsProxy_create_subtype(int flags)
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }
+  flags_obj = PyLong_FromLong(flags);
+  FAIL_IF_NULL(flags_obj);
+  FAIL_IF_MINUS_ONE(
+    _PyObject_SetAttrId(result, &PyId__js_type_flags, flags_obj));
 
   success = true;
 finally:
   Py_CLEAR(bases);
+  Py_CLEAR(flags_obj);
   if (!success && methods_heap != NULL) {
     PyMem_Free(methods_heap);
   }
@@ -2827,6 +2832,21 @@ JsProxy_init(PyObject* core_module)
 #undef SET_DOCSTRING
 
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
+
+  PyModule_AddIntMacro(core_module, IS_ITERABLE);
+  PyModule_AddIntMacro(core_module, IS_ITERATOR);
+  PyModule_AddIntMacro(core_module, HAS_LENGTH);
+  PyModule_AddIntMacro(core_module, HAS_GET);
+  PyModule_AddIntMacro(core_module, HAS_SET);
+  PyModule_AddIntMacro(core_module, HAS_HAS);
+  PyModule_AddIntMacro(core_module, HAS_INCLUDES);
+  PyModule_AddIntMacro(core_module, IS_AWAITABLE);
+  PyModule_AddIntMacro(core_module, IS_BUFFER);
+  PyModule_AddIntMacro(core_module, IS_CALLABLE);
+  PyModule_AddIntMacro(core_module, IS_ARRAY);
+  PyModule_AddIntMacro(core_module, IS_NODE_LIST);
+  PyModule_AddIntMacro(core_module, IS_TYPEDARRAY);
+  PyModule_AddIntMacro(core_module, IS_DOUBLE_PROXY);
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
