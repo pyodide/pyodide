@@ -272,6 +272,15 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
   }
 
+  Module.iterObject = function * (object)
+  {
+    for (let k in object) {
+      if (Object.prototype.hasOwnProperty.call(object, k)) {
+        yield k;
+      }
+    }
+  };
+
   if (globalThis.BigInt) {
     Module.BigInt = BigInt;
   } else {

@@ -1337,3 +1337,43 @@ def test_mappings(selenium):
     assert len(m) == 4
     m.clear()
     assert dict(m) == {}
+
+
+def test_jsproxy_as_object_map(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    o1 = run_js("({a : 2, b: 3, c: 77, 1 : 9})")
+    with pytest.raises(TypeError, match="object is not subscriptable"):
+        o1["a"]
+    o = o1.as_object_map()
+    del o1
+    assert len(o) == 4
+    assert set(o) == {"a", "b", "c", "1"}
+    assert "a" in o
+    assert "b" in o
+    assert "1" in o
+    assert 1 not in o
+    assert o["a"] == 2
+    assert o["1"] == 9
+    del o["a"]
+    assert "a" not in o
+    assert not hasattr(o, "a")
+    assert hasattr(o, "b")
+    assert len(o) == 3
+    assert set(o) == {"b", "c", "1"}
+    o["d"] = 36
+    assert len(o) == 4
+    with pytest.raises(
+        TypeError, match="Can only assign keys of type string to JavaScript object map"
+    ):
+        o[1] = 2
+    assert len(o) == 4
+    assert set(o) == {"b", "c", "d", "1"}
+    assert o["d"] == 36
+    assert "constructor" not in o
+    assert o.to_py() == {"b": 3, "c": 77, "d": 36, "1": 9}
+
+    with pytest.raises(KeyError):
+        del o[1]
