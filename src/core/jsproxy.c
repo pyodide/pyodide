@@ -3065,7 +3065,6 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* asyncio_module = NULL;
-  PyObject* zero = NULL;
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
@@ -3108,6 +3107,5 @@ JsProxy_init(PyObject* core_module)
   success = true;
 finally:
   Py_CLEAR(asyncio_module);
-  Py_CLEAR(zero);
   return success ? 0 : -1;
 }
