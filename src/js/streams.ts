@@ -112,7 +112,7 @@ API.initializeStreams = function (
 ) {
   let stdin_isatty = false;
   if (stdin) {
-    setStdin(stdin, stdin_isatty);
+    setStdin(stdin, { isatty: stdin_isatty });
   } else {
     setDefaultStdin();
   }
@@ -127,6 +127,9 @@ API.initializeStreams = function (
   } else {
     setDefaultStderr();
   }
+  // 5.0 and 6.0 are the device numbers that Emscripten uses (see library_fs.js).
+  // These haven't changed in ~10 years. If we used different ones nothing would
+  // break.
   const ttyout_dev = FS.makedev(5, 0);
   const ttyerr_dev = FS.makedev(6, 0);
   TTY.register(ttyout_dev, ttyout_ops);
@@ -165,7 +168,8 @@ export function setDefaultStdin() {
       }
       return buf.subarray(0, bytesRead);
     };
-    setStdin(stdin, tty.isatty(process.stdin.fd));
+    const isatty: boolean = tty.isatty(process.stdin.fd);
+    setStdin(stdin, { isatty });
   } else {
     setStdinError();
   }
@@ -201,8 +205,11 @@ export function setStdinError() {
  * text.
  *
  */
-export function setStdin(stdin: InFuncType, isatty: boolean = false) {
-  isattys.stdin = isatty;
+export function setStdin(
+  stdin: InFuncType,
+  { isatty }: { isatty?: boolean } = {},
+) {
+  isattys.stdin = !!isatty;
   const get_char = make_get_char(stdin);
   ttyout_ops.get_char = get_char;
   ttyerr_ops.get_char = get_char;
@@ -218,8 +225,8 @@ export function setDefaultStdout() {
   if (IN_NODE) {
     const tty = require("tty");
     const rawstdout = (x: number) => process.stdout.write(Buffer.from([x]));
-    const isatty = tty.isatty(process.stdout.fd);
-    setRawStdout(rawstdout, isatty);
+    const isatty: boolean = tty.isatty(process.stdout.fd);
+    setRawStdout(rawstdout, { isatty });
   } else {
     setStdout((x) => console.log(x));
   }
@@ -246,9 +253,9 @@ export function setStdout(stdout: (a: string) => void) {
  */
 export function setRawStdout(
   rawstdout: (a: number) => void,
-  isatty: boolean = false,
+  { isatty }: { isatty?: boolean } = {},
 ) {
-  isattys.stdout = isatty;
+  isattys.stdout = !!isatty;
   Object.assign(ttyout_ops, make_unbatched_put_char(rawstdout));
   refreshStreams();
 }
@@ -262,8 +269,8 @@ export function setDefaultStderr() {
   if (IN_NODE) {
     const tty = require("tty");
     const rawstderr = (x: number) => process.stderr.write(Buffer.from([x]));
-    const isatty = tty.isatty(process.stderr.fd);
-    setRawStderr(rawstderr, isatty);
+    const isatty: boolean = tty.isatty(process.stderr.fd);
+    setRawStderr(rawstderr, { isatty });
   } else {
     setStderr((x) => console.warn(x));
   }
@@ -290,9 +297,9 @@ export function setStderr(stderr: (a: string) => void) {
  */
 export function setRawStderr(
   rawstderr: (a: number) => void,
-  isatty: boolean = false,
+  { isatty }: { isatty?: boolean } = {},
 ) {
-  isattys.stderr = isatty;
+  isattys.stderr = !!isatty;
   Object.assign(ttyerr_ops, make_unbatched_put_char(rawstderr));
   refreshStreams();
 }

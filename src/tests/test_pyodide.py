@@ -1178,7 +1178,7 @@ def test_custom_stdin_stdout2(selenium):
             assert sys.stdin.read(1) == "h"
             assert not sys.stdin.isatty()
         `);
-        pyodide.setStdin(stdin, false);
+        pyodide.setStdin(stdin, {isatty: false});
         pyodide.runPython(`
             import sys
             assert sys.stdin.read(1) == "e"
@@ -1188,7 +1188,7 @@ def test_custom_stdin_stdout2(selenium):
             assert sys.stdin.read(1) == "l"
             assert not sys.stdin.isatty()
         `);
-        pyodide.setStdin(stdin, true);
+        pyodide.setStdin(stdin, {isatty: true});
         pyodide.runPython(`
             assert sys.stdin.read(1) == "l"
             assert sys.stdin.isatty()
@@ -1205,14 +1205,14 @@ def test_custom_stdin_stdout2(selenium):
             assert not sys.stdout.isatty()
             assert sys.stdin.isatty()
         `);
-        pyodide.setRawStdout(rawstdout, false);
+        pyodide.setRawStdout(rawstdout, {isatty: false});
         pyodide.runPython(`
             print("2hello again")
             assert sys.stdin.read(1) == " "
             assert not sys.stdout.isatty()
             assert sys.stdin.isatty()
         `);
-        pyodide.setRawStdout(rawstdout, true);
+        pyodide.setRawStdout(rawstdout, {isatty: true});
         pyodide.runPython(`
             print("3hello")
             assert sys.stdin.read(1) == "t"
