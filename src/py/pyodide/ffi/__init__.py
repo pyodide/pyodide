@@ -15,11 +15,6 @@ from .._core import (
     to_js,
 )
 
-
-class Blah:
-    """A cothunkingt"""
-
-
 __all__ = [
     "IN_BROWSER",
     "ConversionError",
