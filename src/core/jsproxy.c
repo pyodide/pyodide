@@ -882,7 +882,7 @@ JsArray_index_helper,
 })
 // clang-format on
 
-PyObject*
+static PyObject*
 JsArray_index(PyObject* o, PyObject* args)
 {
   JsProxy* self = (JsProxy*)o;
@@ -967,7 +967,7 @@ JsArray_count_helper,
 })
 // clang-format on
 
-PyObject*
+static PyObject*
 JsArray_count(PyObject* o, PyObject* value)
 {
   JsProxy* self = (JsProxy*)o;
@@ -1018,7 +1018,7 @@ EM_JS_NUM(errcode, JsArray_reverse_helper, (JsRef arrayid), {
   Hiwire.get_value(arrayid).reverse();
 })
 
-PyObject*
+static PyObject*
 JsArray_reverse(PyObject* o, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)o;
@@ -1373,7 +1373,7 @@ finally:
  * the references to the onfulfilled and onrejected callbacks, which is quite
  * hard to do otherwise.
  */
-PyObject*
+static PyObject*
 JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
 {
   PyObject* onfulfilled = NULL;
@@ -1425,7 +1425,7 @@ static PyMethodDef JsProxy_then_MethodDef = {
 /**
  * Overload for `catch` for JsProxies with a `then` method.
  */
-PyObject*
+static PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
   JsRef promise_id = NULL;
@@ -1466,7 +1466,7 @@ static PyMethodDef JsProxy_catch_MethodDef = {
  * `catch` handle freeing the handler automatically but require something extra
  * to use `finally`.
  */
-PyObject*
+static PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
   JsRef proxy = NULL;
@@ -2305,6 +2305,7 @@ static PyMethodDef JsBuffer_assign_MethodDef = {
  * format - the appropriate format for jsbuffer, from get_buffer_datatype
  * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
  */
+// Used in js2python, intentionally not static
 PyObject*
 JsBuffer_CopyIntoMemoryView(JsRef jsbuffer,
                             Py_ssize_t byteLength,
@@ -2335,7 +2336,7 @@ finally:
  * Used by to_bytes. Make a new bytes object and copy the data from the
  * ArrayBuffer into it.
  */
-PyObject*
+static PyObject*
 JsBuffer_CopyIntoBytes(JsRef jsbuffer, Py_ssize_t byteLength)
 {
   bool success = false;
@@ -2388,7 +2389,7 @@ JsBuffer_DecodeString_js,
 /**
  * Decode the ArrayBuffer into a PyUnicode object.
  */
-PyObject*
+static PyObject*
 JsBuffer_ToString(JsRef jsbuffer, char* encoding)
 {
   JsRef jsresult = NULL;
@@ -2559,7 +2560,7 @@ EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsRef id), {
   return Module.PyProxy_getPtr(Hiwire.get_value(id));
 });
 
-PyObject*
+static PyObject*
 JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 {
   PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_REF(obj));
