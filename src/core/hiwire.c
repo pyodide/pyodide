@@ -686,16 +686,6 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  let { done, value } = jsobj.next();
-  // clang-format on
-  let result_id = Hiwire.new_value(value);
-  DEREF_U32(result_ptr, 0) = result_id;
-  return done;
-});
-
 EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   return Hiwire.new_value(jsobj[Symbol.iterator]());

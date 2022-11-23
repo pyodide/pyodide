@@ -401,16 +401,6 @@ bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
 
 /**
- * Calls the `next` function on an iterator.
- *
- * Returns -1 if an error occurs. Otherwise, `next` should return an object with
- * `value` and `done` fields. We store `value` into the argument `result` and
- * return `done`.
- */
-int
-hiwire_next(JsRef idobj, JsRef* result);
-
-/**
  * Returns the iterator associated with the given object, if any.
  */
 JsRef

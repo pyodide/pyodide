@@ -1365,3 +1365,44 @@ def test_jsproxy_as_object_map(selenium):
 
     with pytest.raises(KeyError):
         del o[1]
+
+
+@run_in_pyodide
+async def test_async_iter(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (async function *(){
+            yield 2;
+            yield 3;
+            return 7;
+        })
+        """
+    )
+    b = f()
+    assert await anext(b) == 2
+    assert await anext(b) == 3
+    with pytest.raises(StopAsyncIteration):
+        await anext(b)
+
+    with pytest.raises(
+        TypeError, match="Result of next() was a promise, use anext() instead."
+    ):
+        next(f())
+
+    g = run_js(
+        """
+        (function *(){
+            yield 2;
+            yield 3;
+            return 7;
+        })
+        """
+    )
+    with pytest.raises(
+        TypeError, match="Result of anext() was not a promise, use next() instead."
+    ):
+        anext(g())

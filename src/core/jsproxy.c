@@ -34,6 +34,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include "python2js.h"
@@ -56,6 +57,7 @@
 #define IS_TYPEDARRAY (1<<12)
 #define IS_DOUBLE_PROXY (1 << 13)
 #define IS_OBJECT_MAP (1 << 14)
+#define IS_ASYNC_ITERABLE (1 << 15)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -331,6 +333,148 @@ JsProxy_GetIter(PyObject* o)
   return result;
 }
 
+void
+JsProxy_anext_js_stopiter(PyObject* set_exception, JsRef jsvalue)
+{
+  PyObject* pyvalue = NULL;
+  PyObject* e = NULL;
+  PyObject* result = NULL;
+
+  pyvalue = js2python(jsvalue);
+  if (pyvalue == NULL) {
+    // Uhhh... not sure what to do here... hopefully this won't happen
+    PyErr_SetString(PyExc_RuntimeError, "Unable to get result");
+    PyObject *tp, *tb;
+    PyErr_Fetch(&tp, &e, &tb);
+    Py_CLEAR(tp);
+    Py_CLEAR(tb);
+  } else {
+    e = PyObject_CallOneArg(PyExc_StopAsyncIteration, pyvalue);
+  }
+  if (e != NULL) {
+    PyObject_CallOneArg(set_exception, e);
+  } else {
+    // We can't really handle an error here.
+    // Panic?
+  }
+  Py_CLEAR(pyvalue);
+  Py_CLEAR(e);
+  Py_CLEAR(result);
+}
+
+EM_JS_NUM(
+  int,
+  JsProxy_anext_js,
+  (JsRef idobj, char** msg, PyObject* set_result, PyObject* set_exception),
+  {
+    let jsobj = Hiwire.get_value(idobj);
+    // clang-format off
+  let p = jsobj.next();
+  let msg_ptr;
+  if(typeof p !== "object") {
+    msg_ptr = stringToNewUTF8(`Result of next() should be object not ${typeof p}`)
+  } else if(typeof p.then !== "function") {
+    if (typeof p.done === "boolean") {
+      msg_ptr = stringToNewUTF8(`Result of anext() was not a promise, use next() instead.`)
+    } else {
+      msg_ptr = stringToNewUTF8(`Result of anext() was not a promise.`)
+    }
+  }
+  if (msg_ptr) {
+    DEREF_U32(msg, 0) = msg_ptr;
+    return -1;
+  }
+  _Py_IncRef(set_result);
+  _Py_IncRef(set_exception);
+  p.then(({done, value}) => {
+    if(!done) {
+      Module.callPyObject(set_result, [value]);
+      return;
+    }
+    let id = Hiwire.new_value(value);
+    _JsProxy_anext_js_stopiter(set_exception, id);
+    Hiwire.decref(id);
+  }, (err) => {
+    Module.callPyObject(set_result, [err]);
+  }).finally(() => {
+    _Py_DecRef(set_result);
+    _Py_DecRef(set_exception);
+  });
+    // clang-format on
+    return 0;
+  });
+
+static PyObject*
+JsProxy_anext(PyObject* self)
+{
+  bool success = false;
+  JsRef promise = NULL;
+  PyObject* loop = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+  PyObject* result = NULL;
+
+  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
+  FAIL_IF_NULL(result);
+
+  set_result = _PyObject_GetAttrId(result, &PyId_set_result);
+  FAIL_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
+  FAIL_IF_NULL(set_exception);
+
+  char* msg = NULL;
+  int status =
+    JsProxy_anext_js(JsProxy_REF(self), &msg, set_result, set_exception);
+  if (status == -1) {
+    if (msg) {
+      PyErr_SetString(PyExc_TypeError, msg);
+      free(msg);
+    }
+    FAIL();
+  }
+
+  success = true;
+finally:
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  Py_CLEAR(promise);
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  return result;
+}
+
+EM_JS_NUM(int,
+          JsProxy_IterNext_js,
+          (JsRef idobj, JsRef* result_ptr, char** msg),
+          {
+            let jsobj = Hiwire.get_value(idobj);
+            // clang-format off
+  let res = jsobj.next();
+  let msg_ptr;
+  if(typeof res !== "object") {
+    msg_ptr = stringToNewUTF8(`Result of next() should have type "object" not ${typeof res}`)
+  } else if(typeof res.done === "undefined") {
+    if (typeof res.then === "function") {
+      msg_ptr = stringToNewUTF8(`Result of next() was a promise, use anext() instead.`)
+    } else {
+      msg_ptr = stringToNewUTF8(`Result of next() has no 'done' field.`)
+    }
+  }
+  if (msg_ptr) {
+    DEREF_U32(msg, 0) = msg_ptr;
+    return -2;
+  }
+            // clang-format on
+            let result_id = Hiwire.new_value(res.value);
+            DEREF_U32(result_ptr, 0) = result_id;
+            return res.done;
+          });
+
 /**
  * next overload. Controlled by IS_ITERATOR.
  * TODO: Implement Py_am_send method for generator support
@@ -342,11 +486,18 @@ JsProxy_IterNext(PyObject* o)
   JsRef idresult = NULL;
   PyObject* result = NULL;
 
-  int done = hiwire_next(self->js, &idresult);
+  char* msg;
+  int done = JsProxy_IterNext_js(self->js, &idresult, &msg);
   // done:
   //   1 ==> finished
   //   0 ==> not finished
   //  -1 ==> unexpected Js error occurred (logic error in hiwire_next?)
+  //  -2 ==> msg contains a TypeError message
+  if (done == -2) {
+    PyErr_SetString(PyExc_TypeError, msg);
+    free(msg);
+    FAIL();
+  }
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
@@ -2626,6 +2777,10 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsProxy_anext };
   }
   if (flags & HAS_LENGTH) {
     // If the function has a `size` or `length` member, use this for
@@ -2837,6 +2992,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
   SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
+  SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
   SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function')
   SET_FLAG_IF(HAS_LENGTH,
     (typeof obj.size === "number") ||
@@ -3064,6 +3220,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_NODE_LIST);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
+  AddFlag(IS_ASYNC_ITERABLE);
 
 #undef AddFlag
 
