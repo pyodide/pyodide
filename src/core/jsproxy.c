@@ -2819,11 +2819,8 @@ finally:
 }
 
 #define SET_FLAG_IF(flag, cond)                                                \
-  try {                                                                        \
-    if (cond) {                                                                \
-      type_flags |= flag                                                       \
-    }                                                                          \
-  } catch (e) {                                                                \
+  if (cond) {                                                                  \
+    type_flags |= flag                                                         \
   }
 
 EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
@@ -2907,6 +2904,11 @@ JsProxy_create_with_this(JsRef object, JsRef this)
     return JsProxy_new_error(object);
   } else {
     type_flags = compute_typeflags(object);
+    if (type_flags == -1) {
+      PyErr_SetString(internal_error,
+                      "Internal error occurred in compute_typeflags");
+      return NULL;
+    }
   }
   return create_proxy_of_type(type_flags, object, this);
 }
