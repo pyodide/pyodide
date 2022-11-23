@@ -710,7 +710,14 @@ EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
 EM_JS_BOOL(bool, hiwire_is_iterable, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
-  return typeof jsobj[Symbol.iterator] === 'function';
+  if (typeof jsobj[Symbol.iterator] === 'function') {
+    return true;
+  }
+  if (typeof jsobj.keys === 'function' && typeof jsobj.has === 'function' && typeof jsobj.get === 'function'){
+    // We can iterate maps using the `.keys()` function
+    return true;
+  }
+  return false;
   // clang-format on
 });
 
