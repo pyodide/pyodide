@@ -682,18 +682,16 @@ def test_create_proxy_roundtrip(selenium):
 
 
 @run_in_pyodide
-def test_return_destroyed_value(selenium):
+def test_pass_destroyed_value(selenium):
     import pytest
 
     from pyodide.code import run_js
     from pyodide.ffi import JsException, create_proxy
 
-    f = run_js("(function(x){ return x })")
+    f = run_js("(function(x){ })")
     p = create_proxy([])
     p.destroy()
-    with pytest.raises(
-        JsException, match='The object was of type "list" and had repr "[]"'
-    ):
+    with pytest.raises(JsException, match='The object was of type "list" and had repr'):
         f(p)
 
 
