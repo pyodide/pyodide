@@ -40,7 +40,56 @@ To determine if a package has C extensions, check if its `setup.py` contains
 any compilation commands.
 ```
 
-## Building a Python package
+## Building Python wheels (out of tree)
+
+```{warning}
+This feature is still experimental in Pyodide 0.21.0.
+```
+
+It is now possible to build Python wheels for WASM/Emscripten separately from the Pyodide package tree using the following steps,
+
+1. Install pyodide-build,
+   ```
+   pip install pyodide-build
+   ```
+2. Build the WASM/Emscripten package wheel by running,
+   ```
+   pyodide build
+   ```
+   in the package folder (where the `setup.py` or `pyproject.toml` file is
+   located). This command would produce a binary wheel in the `dist/` folder,
+   similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/)
+   command.
+3. Make the resulting file accessible as part of your web applications, and
+   install it with `micropip.install` by URL.
+
+Below is a more complete example for building a Python wheel out of tree with Github Actions CI,
+
+```
+runs-on: ubuntu-latest
+  steps:
+  - uses: actions/checkout@v3
+  - uses: actions/setup-python@v4
+     with:
+       python-version: 3.10.2
+  - uses: mymindstorm/setup-emsdk@v11
+     with:
+       version: 3.1.14
+  - run: pip install pyodide-build==0.21.0
+  - run: pyodide build
+```
+
+#### Notes
+
+- the resulting package wheels have a file name of the form
+  `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a
+  given Python and Emscripten versions. In the Pyodide distribution, Python and
+  Emscripten are updated simultaneously.
+- PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
+
+## Building a Python package (in tree)
+
+This section documents how to add a new package to the Pyodide distribution.
 
 ### 1. Creating the `meta.yaml` file
 
@@ -289,7 +338,7 @@ requirements:
     - <requirement>
 
 build:
-  library: true
+  type: static_library
   script: |
     emconfigure ./configure
     emmake make -j ${PYODIDE_JOBS:-3}
@@ -337,3 +386,29 @@ Currently it is necessary to run `source $CARGO_HOME/env` in the build script [a
 but other than that there may be no other issues if you are lucky.
 
 As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224), by default certain wasm-related `RUSTFLAGS` are set during `build.script` and can be removed with `export RUSTFLAGS=""`.
+
+#### Setting up Rust in the docker container
+
+This part is for developers who use the docker image and wish to compile Python packages containing Rust code.
+If you clone the Pyodide repo from Github the docker container will not have `rust` installed. For this you'd need to install `rust` using the preferred method described [here](https://www.rust-lang.org/tools/install).
+
+```
+apt update
+apt install curl
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+After install, you'll need to switch to the nighly build, as a certain flag `-Z` -which is used to compile `cryptography`- is only available in the nighly builds.
+
+```
+"$HOME/.cargo/env"
+rustup default nightly
+```
+
+Finally, you'd need to add the `wasm32-unknown-emscripten` target.
+
+```
+rustup target add wasm32-unknown-emscripten
+```
+
+After these steps you'll be able to compile `cryptography` and other PyO3 based projects.

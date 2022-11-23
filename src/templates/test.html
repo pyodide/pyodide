@@ -1,5 +1,5 @@
 <!-- Bootstrap HTML for running the unit tests. -->
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <title>pyodide</title>
@@ -15,6 +15,9 @@
         window.logs.push(message);
       };
       console.error = function (message) {
+        window.logs.push(message);
+      };
+      console.debug = function (message) {
         window.logs.push(message);
       };
     </script>

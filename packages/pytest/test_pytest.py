@@ -1,5 +1,5 @@
 def test_pytest(selenium):
-    # TODO: don't use numpy in this test as it's not necessairly installed.
+    # TODO: don't use numpy in this test as it's not necessarily installed.
     selenium.load_package(["pytest", "numpy", "nose"])
 
     selenium.run(

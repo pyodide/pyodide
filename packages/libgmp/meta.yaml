@@ -7,11 +7,14 @@ source:
   sha256: fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2
 
 build:
-  library: true
+  type: static_library
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
+        --disable-dependency-tracking \
         --host none \
+        --disable-shared \
+        --enable-static \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

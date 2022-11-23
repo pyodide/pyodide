@@ -6,6 +6,8 @@ from importlib.util import spec_from_loader
 from types import ModuleType
 from typing import Any
 
+from ._core_docs import JsProxy
+
 
 class JsFinder(MetaPathFinder):
     def __init__(self) -> None:
@@ -17,7 +19,6 @@ class JsFinder(MetaPathFinder):
         path: Sequence[bytes | str] | None,
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
-        assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
@@ -108,7 +109,6 @@ class JsLoader(Loader):
         return True
 
 
-JsProxy: type | None = None
 jsfinder: JsFinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
@@ -126,8 +126,119 @@ def register_js_finder() -> None:
 
     This needs to be a function to allow the late import from ``_pyodide_core``.
     """
-    import _pyodide_core
+    for importer in sys.meta_path:
+        if isinstance(importer, JsFinder):
+            raise RuntimeError("JsFinder already registered")
 
-    global JsProxy
-    JsProxy = _pyodide_core.JsProxy
     sys.meta_path.append(jsfinder)
+
+
+UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "_hashlib"]
+UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
+
+
+class UnvendoredStdlibFinder(MetaPathFinder):
+    """
+    A MetaPathFinder that handles unvendored and removed stdlib modules.
+
+    This class simply raises an error if a stdlib module is unvendored or removed.
+    This needs to be added to the end of sys.meta_path, so if a unvendored stdlib
+    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
+    """
+
+    def __init__(self) -> None:
+        # `test`` is not a stdlib module, but we unvendors in anyway.
+        self.stdlibs = sys.stdlib_module_names | {"test"}
+        self.unvendored_stdlibs = set(UNVENDORED_STDLIBS_AND_TEST)
+        assert not (
+            self.unvendored_stdlibs - self.stdlibs
+        ), "unvendored stdlibs not in stdlibs"
+
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        [parent, _, _] = fullname.partition(".")
+
+        if not parent or parent in sys.modules or parent not in self.stdlibs:
+            return None
+
+        if parent in self.unvendored_stdlibs:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is unvendored from the Python standard library in the Pyodide distribution, "
+                f'you can install it by calling: await micropip.install("{parent}"). '
+                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
+            )
+        else:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is removed from the Python standard library in the Pyodide distribution "
+                "due to browser limitations. "
+                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
+            )
+
+
+def register_unvendored_stdlib_finder() -> None:
+    """
+    A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
+
+    Note that this finder must be placed in the end of meta_paths
+    in order to prevent any unexpected side effects.
+    """
+
+    for importer in sys.meta_path:
+        if isinstance(importer, UnvendoredStdlibFinder):
+            raise RuntimeError("UnvendoredStdlibFinder already registered")
+
+    sys.meta_path.append(UnvendoredStdlibFinder())
+
+
+class RepodataPackagesFinder(MetaPathFinder):
+    """
+    A MetaPathFinder that handles packages in repodata.json.
+
+    This class simply raises an error if a package is in repodata.json but not loaded yet.
+    This needs to be added to the end of sys.meta_path, so if a package
+    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
+    """
+
+    def __init__(self, packages: dict[str, Any]) -> None:
+        self.repodata_packages = packages
+
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[bytes | str] | None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
+        [parent, _, _] = fullname.partition(".")
+
+        if not parent or parent in sys.modules or parent not in self.repodata_packages:
+            return None
+
+        if parent in self.repodata_packages:
+            raise ModuleNotFoundError(
+                f"The module '{parent}' is included in the Pyodide distribution, "
+                f"but it is not installed. "
+                f'You can install it by calling: await micropip.install("{parent}") in Python or '
+                f'await pyodide.loadPackage("{parent}") in JavaScript. '
+                "See https://pyodide.org/en/stable/usage/loading-packages.html for more details."
+            )
+
+        return None
+
+
+def register_repodata_packages_finder(packages: Any) -> None:
+    """
+    A function that adds RepodataPackagesFinder to the end of sys.meta_path.
+
+    Note that this finder must be placed in the end of meta_paths
+    in order to prevent any unexpected side effects.
+    """
+
+    for importer in sys.meta_path:
+        if isinstance(importer, RepodataPackagesFinder):
+            raise RuntimeError("RepodataPackagesFinder already registered")
+
+    sys.meta_path.append(RepodataPackagesFinder(packages.to_py()))

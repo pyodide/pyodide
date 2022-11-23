@@ -11,31 +11,29 @@ source:
 requirements:
   run:
     - CLAPACK
+  host:
+    - CLAPACK
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
-    # Skips compiler check as we are cross compiling
-    sed -i '1s;^;set(CMAKE_C_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-    sed -i '1s;^;set(CMAKE_CXX_COMPILER_FORCED TRUE)\n;' metis-5.1.0/CMakeLists.txt
-
     # Fix return type to avoid linker error
     grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'
     grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'
 
     emmake make -j ${PYODIDE_JOBS:-3} install \
-      LDFLAGS="-sSIDE_MODULE=1 -L${WASM_LIBRARY_DIR}/lib " \
-      BLAS="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
-      LAPACK="$PYODIDE_ROOT/packages/CLAPACK/dist/clapack_all.so" \
+      LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
+      BLAS="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
+      LAPACK="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}
     mkdir -p dist
 
-    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig* \
-       ${WASM_LIBRARY_DIR}/lib/libamd* \
-       ${WASM_LIBRARY_DIR}/lib/libcamd* \
-       ${WASM_LIBRARY_DIR}/lib/libccolamd* \
-       ${WASM_LIBRARY_DIR}/lib/libcolamd* \
-       ${WASM_LIBRARY_DIR}/lib/libmetis* \
-       ${WASM_LIBRARY_DIR}/lib/libcholmod* \
-       ${WASM_LIBRARY_DIR}/lib/libspqr* \
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
+       ${WASM_LIBRARY_DIR}/lib/libamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libcamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libccolamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libcolamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libmetis.so \
+       ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
+       ${WASM_LIBRARY_DIR}/lib/libspqr.so \
        dist/

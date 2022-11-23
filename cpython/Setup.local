@@ -41,14 +41,6 @@ _sha3 _sha3/sha3module.c
 _md5 md5module.c
 _blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 
-# If we put this directly in the next line, makesetup incorrectly views the
-# line as a definition line, instead of specifying a module. We bypass this
-# problem by defining an extra variable that contains the =, and this line is
-# correctly viewed as a definition line. We need extra quotes to make gcc think
-# we want to define MODULE_NAME to be the string "sqlite" instead of the
-# abstract symbol sqlite.
-SQLITEMODULENAME=MODULE_NAME=\'"sqlite"\'
-_sqlite3 _sqlite/cache.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -D$(SQLITEMODULENAME) -lsqlite3
 _crypt _cryptmodule.c
 _bz2 _bz2module.c -lbz2
 

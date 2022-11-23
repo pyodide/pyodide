@@ -1,6 +1,8 @@
 package:
   name: python_solvespace
   version: 3.0.7
+  top-level:
+    - python_solvespace
 source:
   url: https://files.pythonhosted.org/packages/db/86/d46947cb016631f8881a27864117288707d4af86f4d144263dc3e693c21c/python_solvespace-3.0.7.tar.gz
   sha256: 169e8caa54a24951b7d412a61b8007dae73f66c236d219924175a65510efedb4
@@ -8,9 +10,6 @@ build:
   script: |
     wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz && tar -zxvf eigen-3.4.0.tar.gz
     cp -rn eigen-3.4.0/Eigen python_solvespace/include
-test:
-  imports:
-    - python_solvespace
 about:
   home: https://github.com/KmolYuan/solvespace/tree/python
   PyPI: https://pypi.org/project/python_solvespace

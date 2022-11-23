@@ -11,11 +11,13 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+panels_add_bootstrap_css = False
+
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.21.0a3"
+pyodide_version = "0.22.0.dev0"
 
 if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
@@ -146,6 +148,21 @@ if IN_READTHEDOCS:
         encoding="utf-8",
     )
     print(res)
+    # insert the Plausible analytics script to console.html
+    console_path = Path("_build/html/console.html")
+    console_html = console_path.read_text().splitlines(keepends=True)
+    for idx, line in enumerate(list(console_html)):
+        if 'pyodide.js">' in line:
+            # insert the analytics script after the `pyodide.js` script
+            console_html.insert(
+                idx,
+                '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
+            )
+            break
+    else:
+        raise ValueError("Could not find pyodide.js in the <head> section")
+    console_path.write_text("".join(console_html))
+
 
 if IN_SPHINX:
     # Compatibility shims. sphinx-js and sphinxcontrib-napoleon have not been updated for Python 3.10
@@ -164,6 +181,10 @@ if IN_SPHINX:
         str(base_dir / "packages/micropip/src"),
     ]
     sys.path = path_dirs + sys.path
+
+    from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
+
+    JavaScriptDomain.roles["func"] = JSXRefRole()
 
     import micropip  # noqa: F401
     import pyodide

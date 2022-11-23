@@ -1,6 +1,9 @@
 package:
   name: pytest
   version: 7.1.2
+  top-level:
+    - _pytest
+    - pytest
 source:
   url: https://files.pythonhosted.org/packages/fb/d0/bae533985f2338c5d02184b4a7083b819f6b3fc101da792e0d96e6e5299d/pytest-7.1.2-py3-none-any.whl
   sha256: 13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c
@@ -14,6 +17,8 @@ requirements:
     - setuptools
     - six
     - iniconfig
-test:
-  imports:
-    - pytest
+about:
+  home: https://docs.pytest.org/en/latest/
+  PyPI: https://pypi.org/project/pytest
+  summary: "pytest: simple powerful testing with Python"
+  license: MIT

@@ -1,9 +1,13 @@
 package:
   name: galpy
   version: 1.8.0
+  top-level:
+    - galpy
 source:
   url: https://files.pythonhosted.org/packages/73/75/632c028d3cdd948a4ea1edbfbfa568edfd146e03db0ea56d2bacd0aac231/galpy-1.8.0.tar.gz
   sha256: a69f4a98a9a094ee5eda8acb2f5c7b3a786388d089423a214ab3b290fceddb53
+  patches:
+    - patches/0001-Fix-function-pointer-disagreement.patch
 build:
   script:
     export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix gsl)
@@ -19,9 +23,12 @@ requirements:
     - scipy
     - matplotlib
     - astropy
-    - libgsl
     - future
     - setuptools
+  host:
+    - libgsl
+    - numpy
+    - scipy
 test:
   imports:
     - galpy

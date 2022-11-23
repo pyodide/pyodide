@@ -1,12 +1,16 @@
 package:
   name: beautifulsoup4
   version: 4.11.1
+  top-level:
+    - bs4
 requirements:
   run:
     - soupsieve
 source:
   sha256: 58d5c3d29f5a36ffeb94f02f0d786cd53014cf9b3b3951d42e0080d8a9498d30
   url: https://files.pythonhosted.org/packages/9c/d8/909c4089dbe4ade9f9705f143c9f13f065049a9d5e7d34c828aefdd0a97c/beautifulsoup4-4.11.1-py3-none-any.whl
-test:
-  imports:
-    - bs4
+about:
+  home: https://www.crummy.com/software/BeautifulSoup/bs4/
+  PyPI: https://pypi.org/project/beautifulsoup4
+  summary: Screen-scraping library
+  license: MIT

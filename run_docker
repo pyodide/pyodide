@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="20220629-py310-chrome102-firefox100"
-PYODIDE_PREBUILT_IMAGE_TAG="0.20.0"
+PYODIDE_IMAGE_TAG="20221102-chrome107-firefox106"
+PYODIDE_PREBUILT_IMAGE_TAG="0.21.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
@@ -137,6 +137,7 @@ CONTAINER=$(\
         --groups sudo  \
         $USER_NAME \
       ; \
+      echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile; \
       echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
       echo '$HEALTHCHECK_MESSAGE'; \
       tail -f /dev/null \
@@ -154,7 +155,7 @@ docker exec \
   "$DOCKER_INTERACTIVE" --tty \
   "${USER_FLAG[@]}" \
   "$CONTAINER" \
-  /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
+  /bin/bash -lc "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
 docker kill "$CONTAINER" > /dev/null
 exit $EXIT_STATUS

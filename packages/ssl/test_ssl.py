@@ -17,6 +17,7 @@ def test_ssl(selenium):
         "test_verify_flags",
         "test_subclass",
         "test_lib_reason",
+        "test_unwrap",
     ]
 
     try:
@@ -29,4 +30,4 @@ def test_ssl(selenium):
             )
     except SystemExit as e:
         if e.code != 0:
-            raise RuntimeError(f"Failed with code: {e.code}")
+            raise RuntimeError(f"Failed with code: {e.code}") from None

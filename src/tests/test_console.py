@@ -298,8 +298,12 @@ async def test_console_imports(selenium):
     assert await get_result("pytz.utc.zone") == "UTC"
 
 
-def test_console_html(console_html_fixture):
-    selenium = console_html_fixture
+@pytest.mark.xfail_browsers(node="Not available in node")
+def test_console_html(selenium):
+    selenium.goto(
+        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+    )
+    selenium.javascript_setup()
     selenium.run_js(
         """
         await window.console_ready;
@@ -411,7 +415,7 @@ def test_console_html(console_html_fixture):
         ).strip()
     )
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
-    result = re.sub(r"/lib/python3.\d+/site-packages", "...", result)
+    result = re.sub(r"/lib/python3.\d+", "/lib/pythonxxx", result)
 
     answer = dedent(
         """
@@ -422,7 +426,7 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \".../pyodide/console.py\", line xxx, in repr_shorten
+              File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
               File \"<console>\", line 3, in __repr__
             TypeError: hi]

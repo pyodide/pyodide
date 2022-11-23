@@ -36,6 +36,15 @@ alphanumeric characters, `-`, and `_`.
 
 The version of the package.
 
+### `package/top-level`
+
+The list of top-level import name for the package.
+This key is used in {any}`pyodide.loadPackagesFromImports`.
+For example, the top-level import name for the `scikit-learn` is `sklearn`.
+Some packages may have multiple top-level import names.
+For instance, `setuptools` exposes `setuptools` and `pkg_resources`
+as a top-level import names.
+
 ## `source`
 
 ### `source/url`
@@ -58,11 +67,6 @@ as package source. This is useful for local testing or building packages which
 are not available online in the required format.
 
 If a path is specified, any provided checksums are ignored.
-
-### `source/md5`
-
-The MD5 checksum of the tarball. It is recommended to use SHA256 instead of MD5.
-At most one checksum entry should be provided per package.
 
 ### `source/sha256`
 
@@ -121,24 +125,37 @@ are:
 
 Extra flags to pass to the build backend (e.g., `setuptools`, `flit`, etc).
 
-### `build/library`
+### `build/type`
 
-Should be set to true for library packages. Library packages are packages that
-are needed for other packages but are not Python packages themselves. For
-library packages, the script specified in the `build/script` section is run to
-compile the library. See the [zlib
+Type of the package. Possible values are:
+
+- package (default): A normal Python package, built to a wheel file.
+- static_library: A static library.
+- shared_library: A shared library.
+- cpython_module: A CPython stdlib extension module.
+  This is used for unvendoring CPython modules, and should not be used
+  for other purposes.
+
+If you are building ordinary Python package, you don't need to set this key.
+But if you are building a static or shared library,
+you need to set this to `static_library` or `shared_library` respectively.
+
+Static and shared libraries are not Python packages themselves,
+but are needed for other python packages. For libraries,
+the script specified in the `build/script` section is run to
+compile the library.
+
+The difference between `static_library` and `shared_library` is that
+`static_library` is statically linked into the other packages,
+so it is required only in the build time, while `shared_library` is
+dynamically linked, so it is required in the runtime. When building
+a shared library, you should copy the built libraries into the subfolder
+of the source folder called `dist`. Files or folders in this folder will
+be packaged to make the Pyodide package.
+
+See the [zlib
 meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml)
-for an example of a library package specification.
-
-### `build/sharedlibrary`
-
-Should be set to true for shared library packages. Shared library packages are
-packages that are needed for other packages, but are loaded dynamically when
-Pyodide is run. For shared library packages, the script specified in the
-`build/script` section is run to compile the library. The script should build
-the shared library and copy it into a subfolder of the source folder called
-`install`. Files or folders in this install folder will be packaged to make the
-Pyodide package. See the [CLAPACK
+for an example of a static library specification, and the [CLAPACK
 meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml)
 for an example of a shared library specification.
 
@@ -149,6 +166,14 @@ true). For a Python package this section is optional. If it is specified for a
 Python package, the script section will be run before the build system runs
 `setup.py`. This script is run by `bash` in the directory where the tarball was
 extracted.
+
+There are special environment variables defined:
+
+- `$PKGDIR`: The directory in which the `meta.yaml` file resides.
+- `$PKG_VESRION`: The version of the package
+- `$PKG_BUILD_DIR`: The directory where the tarball was extracted.
+
+(These keys are not in the Conda spec).
 
 ### `build/cross-script`
 
@@ -161,14 +186,13 @@ is the source directory.
 
 ### `build/post`
 
-Shell commands to run after building the library. These are run with `bash`, and
-there are two special environment variables defined:
-
-- `$SITEPACKAGES`: The `site-packages` directory into which the package has been
-  installed.
-- `$PKGDIR`: The directory in which the `meta.yaml` file resides.
-
-(This key is not in the Conda spec).
+Shell commands to run after building the library. This script is run by `bash`
+in the directory where `meta.yaml` file resides. The `${PKG_BUILD_DIR}/dist`
+will contain the built wheel unpacked with `python -m wheel unpack`
+so it's possible to manually add, delete, change, move files etc.
+See the [setuptools meta.yaml](https://github.com/pyodide/pyodide/
+blob/main/packages/setuptools/meta.yaml)
+for an example of the usage of this key.
 
 ### `build/unvendor-tests`
 
@@ -176,13 +200,28 @@ Whether to unvendor tests found in the installation folder to a separate package
 `<package-name>-tests`. If this option is true and no tests are found, the test
 package will not be created. Default: true.
 
+### `build/vendor-sharedlib`
+
+If set to true, shared libraries that are required by the package
+will be vendored into the package after the build. This is similar to
+what [`auditwheel repair`](https://github.com/pypa/auditwheel) does,
+but it is done in a way that is compatible with Pyodide and Emscripten
+dynamic linking. Default: false.
+
 ## `requirements`
 
 ### `requirements/run`
 
-A list of required packages.
+A list of required packages at runtime.
 
 (Unlike conda, this only supports package names, not versions).
+
+### `requirements/host`
+
+A list of Pyodide packages that are required when building a package. It represents packages that need to be specific to the target platform.
+
+For instance, when building `libxml`, `zlib` needs to be built for WASM first, and so it's a host dependency. This is unrelated to the fact that
+the build system might already have `zlib` present.
 
 ## `test`
 

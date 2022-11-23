@@ -1,6 +1,8 @@
 package:
   name: zarr
   version: 2.11.3
+  top-level:
+    - zarr
 source:
   sha256: 6ee84547aec60fd06fc9356e9194302ebbdb2fd912fd365a0a652ad5c69636f5
   url: https://files.pythonhosted.org/packages/ca/84/d51f7f537ccad7f1700c14fa8d949a8ef4cd7f9503bfd750abbe44fa7668/zarr-2.11.3.tar.gz
@@ -11,6 +13,8 @@ requirements:
     - numpy
     - asciitree
     - numcodecs
-test:
-  imports:
-    - zarr
+about:
+  home: https://github.com/zarr-developers/zarr-python
+  PyPI: https://pypi.org/project/zarr
+  summary: An implementation of chunked, compressed, N-dimensional arrays for Python.
+  license: MIT

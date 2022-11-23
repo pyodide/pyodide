@@ -1,9 +1,13 @@
 package:
   name: Pygments
   version: 2.12.0
+  top-level:
+    - pygments
 source:
   sha256: dc9c10fb40944260f6ed4c688ece0cd2048414940f1cea51b8b226318411c519
   url: https://files.pythonhosted.org/packages/5c/8e/1d9017950034297fffa336c72e693a5b51bbf85141b24a763882cf1977b5/Pygments-2.12.0-py3-none-any.whl
-test:
-  imports:
-    - pygments
+about:
+  home: https://pygments.org/
+  PyPI: https://pypi.org/project/Pygments
+  summary: Pygments is a syntax highlighting package written in Python.
+  license: BSD License

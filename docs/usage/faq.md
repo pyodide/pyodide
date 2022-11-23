@@ -51,7 +51,8 @@ For security reasons JavaScript in the browser is not allowed to load local data
 You will run into Network Errors, due to the [Same Origin Policy](https://en.wikipedia.org/wiki/Same-origin_policy).
 There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
-but not in Firefox or Safari.
+but not in Firefox or Safari. See {ref}`nativefs-api` for experimental local file system
+support.
 
 For development purposes, you can serve your files with a
 [web server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
@@ -314,7 +315,7 @@ functools.reduce = reduce(...)
 You are now leaving help and returning to the Python interpreter.
 ```
 
-## Micropip can't find a pure Python wheel
+## Why can't Micropip find a "pure Python wheel" for a package?
 
 When installing a Python package from PyPI, micropip will produce an error if
 it cannot find a pure Python wheel. To determine if a package has a pure
@@ -379,3 +380,42 @@ Then `myRunPython("2+7")` returns `[None, 9]` and
 If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
 monkey patch {any}`pyodide.code.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
+
+## Why can't I import a file I just wrote to the file system?
+
+For example:
+
+```py
+from pathlib import Path
+Path("mymodule.py").write_text("""\
+def hello():
+  print("hello world!")
+"""
+)
+from mymodule import hello # may raise "ModuleNotFoundError: No module named 'mymodule'"
+hello()
+```
+
+If you see this error, call `importlib.invalidate_caches()` before importing the module:
+
+```py
+import importlib
+from pathlib import Path
+Path("mymodule.py").write_text("""\
+def hello():
+  print("hello world!")
+"""
+)
+importlib.invalidate_caches() # Make sure Python notices the new .py file
+from mymodule import hello
+hello()
+```
+
+## Why changes made to IndexedDB don't persist?
+
+Unlike other filesystems, IndexedDB (pyodide.FS.filesystem.IDBFS) is an asynchronous filesystem.
+This is because browsers offer only asynchronous interfaces for IndexedDB.
+So in order to persist changes, you have to call
+[`pyodide.FS.syncfs()`](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.syncfs).
+See [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data)
+for more details.

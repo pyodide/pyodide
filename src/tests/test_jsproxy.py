@@ -888,7 +888,7 @@ def test_mixins_errors_2(selenium):
                     yield e
 
             from pyodide.ffi import JsException
-            msg = "^TypeError:.* is not a function$"
+            msg = "^TypeError:.* is not a function.*"
             with raises(JsException, match=msg):
                 next(c)
             with raises(JsException, match=msg):
@@ -1183,7 +1183,7 @@ def test_memory_leaks(selenium):
 
 @run_in_pyodide
 def test_js_id(selenium):
-    from js import eval as run_js
+    from pyodide.code import run_js
 
     [x, y, z] = run_js("let a = {}; let b = {}; [a, a, b]")
     assert x.js_id == y.js_id
@@ -1265,10 +1265,10 @@ def test_negative_length(selenium, n):
 @run_in_pyodide
 def test_array_slices(selenium, l, slice):
     expected = l[slice]
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     result = jsl[slice]
     assert result.to_py() == expected
 
@@ -1285,10 +1285,10 @@ def test_array_slices(selenium, l, slice):
 @example(l=list(range(10)), slice=slice(12, -1, -2))
 @run_in_pyodide
 def test_array_slice_del(selenium, l, slice):
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     del l[slice]
     del jsl[slice]
     assert jsl.to_py() == l
@@ -1321,11 +1321,11 @@ def list_slice_and_value(draw):
 @example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
 @run_in_pyodide
 def test_array_slice_assign_1(selenium, lsv):
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     [l, s, v] = lsv
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     l[s] = v
     jsl[s] = v
     assert jsl.to_py() == l
@@ -1335,14 +1335,14 @@ def test_array_slice_assign_1(selenium, lsv):
 def test_array_slice_assign_2(selenium):
     import pytest
 
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     l = list(range(10))
     with pytest.raises(ValueError) as exc_info_1a:
         l[0:4:2] = [1, 2, 3, 4]
 
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     with pytest.raises(ValueError) as exc_info_1b:
         jsl[0:4:2] = [1, 2, 3, 4]
 
@@ -1460,3 +1460,181 @@ def test_jsproxy_match(selenium):
             pass
     assert x == 2
     assert y == 4
+
+
+def test_jsarray_index(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    a = run_js("[5, 7, 9, -1, 3, 5]")
+    assert a.index(5) == 0
+    assert a.index(5, 1) == 5
+    with pytest.raises(ValueError, match="5 is not in list"):
+        assert a.index(5, 1, -1) == 5
+
+    a.append([1, 2, 3])
+    assert a.index([1, 2, 3]) == 6
+    run_js("(a) => a.pop().destroy()")(a)
+
+
+@run_in_pyodide
+def test_jsarray_count(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    assert a.count(1) == 0
+    assert a.count(-1) == 1
+    assert a.count(5) == 2
+
+    b = run_js(f"new Int8Array({repr(l)})")
+    assert b.count(1) == 0
+    assert b.count(-1) == 1
+    assert b.count(5) == 2
+
+    a.append([])
+    a.append([1])
+    a.append([])
+    assert a.count([]) == 2
+    assert a.count([1]) == 1
+    assert a.count([2]) == 0
+    run_js(
+        """(a) => {
+            a.pop().destroy();
+            a.pop().destroy();
+            a.pop().destroy();
+        }
+        """
+    )(a)
+
+
+@run_in_pyodide
+def test_jsarray_reversed(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+    it1 = reversed(l)
+    it2 = reversed(a)
+    it3 = reversed(b)
+
+    for _ in range(len(l)):
+        v = next(it1)
+        assert next(it2) == v
+        assert next(it3) == v
+
+    import pytest
+
+    with pytest.raises(StopIteration):
+        next(it1)
+    with pytest.raises(StopIteration):
+        next(it2)
+    with pytest.raises(StopIteration):
+        next(it3)
+
+
+@run_in_pyodide
+def test_jsarray_reverse(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, 0, 3, 1]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+
+    l.reverse()
+    a.reverse()
+    b.reverse()
+
+    assert a.to_py() == l
+    assert b.to_bytes() == bytes(l)
+
+
+@run_in_pyodide
+def test_jsproxy_descr_get(selenium):
+    from pyodide.code import run_js
+
+    class T:
+        a: int
+        b: int
+        f = run_js("function f(x) {return this[x]; }; f")
+
+    t = T()
+    t.a = 7
+    t.b = 66
+    assert t.f("a") == 7
+    assert t.f("b") == 66
+    assert t.f("c") is None
+
+
+@run_in_pyodide
+def test_jsproxy_subtypes(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsArray, JsBuffer, JsPromise, JsProxy
+
+    with pytest.raises(TypeError, match="JsProxy"):
+        JsProxy()
+
+    with pytest.raises(TypeError, match="JsArray"):
+        JsArray()
+
+    nullobj = run_js("Object.create(null)")
+    a = run_js("[Promise.resolve()]")
+    assert isinstance(a, JsProxy)
+    assert isinstance(a, JsArray)
+    assert not isinstance(a, JsPromise)
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), JsProxy)
+    assert issubclass(type(a), JsArray)
+    assert not issubclass(JsArray, type(a))
+    assert isinstance(a[0], JsPromise)
+    assert issubclass(JsPromise, type(a[0]))
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), type(nullobj))
+    assert issubclass(type(a[0]), type(nullobj))
+    assert issubclass(JsProxy, type(nullobj))
+    assert issubclass(type(nullobj), JsProxy)
+
+
+@run_in_pyodide
+def test_jsproxy_as_object_map(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    o1 = run_js("({a : 2, b: 3, c: 77, 1 : 9})")
+    with pytest.raises(TypeError, match="object is not subscriptable"):
+        o1["a"]
+    o = o1.as_object_map()
+    del o1
+    assert len(o) == 4
+    assert set(o) == {"a", "b", "c", "1"}
+    assert "a" in o
+    assert "b" in o
+    assert "1" in o
+    assert 1 not in o
+    assert o["a"] == 2
+    assert o["1"] == 9
+    del o["a"]
+    assert "a" not in o
+    assert not hasattr(o, "a")
+    assert hasattr(o, "b")
+    assert len(o) == 3
+    assert set(o) == {"b", "c", "1"}
+    o["d"] = 36
+    assert len(o) == 4
+    with pytest.raises(
+        TypeError, match="Can only assign keys of type string to JavaScript object map"
+    ):
+        o[1] = 2
+    assert len(o) == 4
+    assert set(o) == {"b", "c", "d", "1"}
+    assert o["d"] == 36
+    assert "constructor" not in o
+    assert o.to_py() == {"b": 3, "c": 77, "d": 36, "1": 9}
+
+    with pytest.raises(KeyError):
+        del o[1]

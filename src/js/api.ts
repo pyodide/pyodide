@@ -7,6 +7,7 @@ import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
+import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 
@@ -28,16 +29,6 @@ export let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.
  * scope, use ``pyodide.globals.get("foo")``
  */
 export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
-
-/**
- *
- * The Pyodide version.
- *
- * It can be either the exact release version (e.g. ``0.1.0``), or
- * the latest release version followed by the number of commits since, and
- * the git hash of the current commit (e.g. ``0.1.0-1-bd84646``).
- */
-export let version: string = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * Just like `runPython` except uses a different globals dict and gets
@@ -71,7 +62,7 @@ API.runPythonInternal = function (code: string): any {
  */
 export function runPython(
   code: string,
-  options: { globals?: PyProxy } = {}
+  options: { globals?: PyProxy } = {},
 ): any {
   if (!options.globals) {
     options.globals = API.globals;
@@ -80,6 +71,7 @@ export function runPython(
 }
 API.runPython = runPython;
 
+let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
  * any known packages that the code chunk imports. Uses the Python API
@@ -95,17 +87,39 @@ API.runPython = runPython;
  * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param code The code to inspect.
- * @param messageCallback The ``messageCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
- * @param errorCallback The ``errorCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
+ * @param options Options passed to :any:`pyodide.loadPackage`.
+ * @param options.messageCallback A callback, called with progress messages
+ *    (optional)
+ * @param options.errorCallback A callback, called with error/warning messages
+ *    (optional)
+ * @param options.checkIntegrity If true, check the integrity of the downloaded
+ *    packages (default: true)
  * @async
  */
 export async function loadPackagesFromImports(
   code: string,
-  messageCallback?: (msg: string) => void,
-  errorCallback?: (err: string) => void
+  options: {
+    messageCallback?: (message: string) => void;
+    errorCallback?: (message: string) => void;
+    checkIntegrity?: boolean;
+  } = {
+    checkIntegrity: true,
+  },
+  errorCallbackDeprecated?: (message: string) => void,
 ) {
+  if (typeof options === "function") {
+    if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
+      console.warn(
+        "Passing a messageCallback or errorCallback as the second or third argument to loadPackagesFromImports is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+      );
+      options = {
+        messageCallback: options,
+        errorCallback: errorCallbackDeprecated,
+      };
+      loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
+    }
+  }
+
   let pyimports = API.pyodide_code.find_imports(code);
   let imports;
   try {
@@ -125,7 +139,7 @@ export async function loadPackagesFromImports(
     }
   }
   if (packages.size) {
-    await loadPackage(Array.from(packages), messageCallback, errorCallback);
+    await loadPackage(Array.from(packages), options);
   }
 }
 
@@ -172,7 +186,7 @@ export async function loadPackagesFromImports(
  */
 export async function runPythonAsync(
   code: string,
-  options: { globals?: PyProxy } = {}
+  options: { globals?: PyProxy } = {},
 ): Promise<any> {
   if (!options.globals) {
     options.globals = API.globals;
@@ -249,9 +263,9 @@ export function toPy(
     defaultConverter?: (
       value: any,
       converter: (value: any) => any,
-      cacheConversion: (input: any, output: any) => any
+      cacheConversion: (input: any, output: any) => any,
     ) => any;
-  } = { depth: -1 }
+  } = { depth: -1 },
 ): any {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
@@ -350,14 +364,14 @@ export function unpackArchive(
   format: string,
   options: {
     extractDir?: string;
-  } = {}
+  } = {},
 ) {
   if (
     !ArrayBuffer.isView(buffer) &&
     Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"
   ) {
     throw new TypeError(
-      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`
+      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`,
     );
   }
   API.typedArrayAsUint8Array(buffer);
@@ -369,6 +383,54 @@ export function unpackArchive(
     extract_dir,
     installer: "pyodide.unpackArchive",
   });
+}
+
+type NativeFS = {
+  syncfs: Function;
+};
+
+/**
+ * Mounts FileSystemDirectoryHandle in to the target directory.
+ *
+ * @param path The absolute path of the target mount directory.
+ * If the directory does not exist, it will be created.
+ * @param fileSystemHandle FileSystemDirectoryHandle returned by
+ * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ */
+export async function mountNativeFS(
+  path: string,
+  fileSystemHandle: {
+    isSameEntry: Function;
+    queryPermission: Function;
+    requestPermission: Function;
+  },
+  // TODO: support sync file system
+  // sync: boolean = false
+): Promise<NativeFS> {
+  if (fileSystemHandle.constructor.name !== "FileSystemDirectoryHandle") {
+    throw new TypeError(
+      `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`,
+    );
+  }
+
+  if (Module.FS.findObject(path) == null) {
+    Module.FS.mkdirTree(path);
+  }
+
+  Module.FS.mount(
+    Module.FS.filesystems.NATIVEFS_ASYNC,
+    { fileSystemHandle: fileSystemHandle },
+    path,
+  );
+
+  // sync native ==> browser
+  await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+
+  return {
+    // sync browser ==> native
+    syncfs: async () =>
+      new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+  };
 }
 
 /**
@@ -440,6 +502,7 @@ export type PyodideInterface = {
   toPy: typeof toPy;
   pyimport: typeof pyimport;
   unpackArchive: typeof unpackArchive;
+  mountNativeFS: typeof mountNativeFS;
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
@@ -503,6 +566,7 @@ API.makePublicAPI = function (): PyodideInterface {
     toPy,
     pyimport,
     unpackArchive,
+    mountNativeFS,
     registerComlink,
     PythonError,
     PyBuffer,
