@@ -688,7 +688,7 @@ def test_pass_destroyed_value(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import JsException, create_proxy
 
-    f = run_js("(function(x){ })")
+    f = run_js("(function(x){ return x; })")
     p = create_proxy([])
     p.destroy()
     with pytest.raises(JsException, match='The object was of type "list" and had repr'):
