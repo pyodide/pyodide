@@ -1405,6 +1405,20 @@ def test_args(selenium_standalone_noload):
     )
 
 
+def test_args_OO(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            args: ['-OO']
+        });
+        pyodide.runPython(`import sys; sys.__doc__`)
+        """
+    )
+
+    assert not doc
+
+
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
