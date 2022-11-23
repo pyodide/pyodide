@@ -1462,6 +1462,7 @@ def test_jsproxy_match(selenium):
     assert y == 4
 
 
+@run_in_pyodide
 def test_jsarray_index(selenium):
     import pytest
 
