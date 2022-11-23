@@ -2826,6 +2826,9 @@ finally:
 EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   let type_flags = 0;
+  if (API.isPyProxy(obj)&& obj.$$.ptr == = 0) {
+    return 0;
+  }
 
   const constructorName = obj.constructor ? obj.constructor.name : "";
   let typeTag = Object.prototype.toString.call(obj);
@@ -3044,7 +3047,8 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
-#define AddFlag(flag) FAIL_IF_MINUS_ONE(PyModule_AddIntMacro(core_module, flag))
+#define AddFlag(flag)                                                          \
+  FAIL_IF_MINUS_ONE(PyModule_AddIntConstant(core_module, #flag, flag))
 
   AddFlag(IS_ITERABLE);
   AddFlag(IS_ITERATOR);
