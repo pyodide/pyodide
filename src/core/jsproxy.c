@@ -2826,14 +2826,14 @@ finally:
 EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   let type_flags = 0;
-  if (API.isPyProxy(obj)&& obj.$$.ptr == = 0) {
+  // clang-format off
+  if (API.isPyProxy(obj) && obj.$$.ptr === 0) {
     return 0;
   }
 
   const constructorName = obj.constructor ? obj.constructor.name : "";
   let typeTag = Object.prototype.toString.call(obj);
 
-  // clang-format off
   SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
   SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
