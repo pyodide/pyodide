@@ -401,12 +401,6 @@ bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
 
 /**
- * Returns the iterator associated with the given object, if any.
- */
-JsRef
-hiwire_get_iterator(JsRef idobj);
-
-/**
  * Returns the reversed iterator associated with an array.
  */
 JsRef

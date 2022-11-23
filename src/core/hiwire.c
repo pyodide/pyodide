@@ -686,11 +686,6 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(jsobj[Symbol.iterator]());
-})
-
 EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
   if (!Module._reversedIterator) {
     Module._reversedIterator = class ReversedIterator

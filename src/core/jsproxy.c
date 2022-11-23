@@ -315,16 +315,41 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   }
 }
 
+EM_JS(JsRef, JsProxy_GetIter_js, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  return Hiwire.new_value(jsobj[Symbol.iterator]());
+});
+
 /**
  * iter overload. Present if IS_ITERABLE but not IS_ITERATOR (if the IS_ITERATOR
  * flag is present we use PyObject_SelfIter). Does `obj[Symbol.iterator]()`.
  */
 static PyObject*
-JsProxy_GetIter(PyObject* o)
+JsProxy_GetIter(PyObject* self)
 {
-  JsProxy* self = (JsProxy*)o;
+  JsRef iditer = JsProxy_GetIter_js(JsProxy_REF(self));
+  if (iditer == NULL) {
+    return NULL;
+  }
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
+}
 
-  JsRef iditer = hiwire_get_iterator(self->js);
+EM_JS(JsRef, JsProxy_GetAsyncIter_js, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  return Hiwire.new_value(jsobj[Symbol.asyncIterator]());
+});
+
+/**
+ * iter overload. Present if IS_ASYNC_ITERABLE but not IS_ITERATOR (if the
+ * IS_ITERATOR flag is present we use PyObject_SelfIter). Does
+ * `obj[Symbol.asyncIterator]()`.
+ */
+static PyObject*
+JsProxy_GetAsyncIter(PyObject* self)
+{
+  JsRef iditer = JsProxy_GetAsyncIter_js(JsProxy_REF(self));
   if (iditer == NULL) {
     return NULL;
   }
@@ -2769,6 +2794,11 @@ JsProxy_create_subtype(int flags)
     // This uses `obj[Symbol.iterator]()`
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
+  }
+  if (flags & IS_ASYNC_ITERABLE) {
+    // This uses `obj[Symbol.asyncIterator]()`
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_am_aiter,
+                                       .pfunc = (void*)JsProxy_GetAsyncIter };
   }
   if (flags & IS_ITERATOR) {
     // JsProxy_GetIter would work just as well as PyObject_SelfIter but

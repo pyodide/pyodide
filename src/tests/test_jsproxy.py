@@ -1389,7 +1389,7 @@ async def test_async_iter(selenium):
         await anext(b)
 
     with pytest.raises(
-        TypeError, match="Result of next() was a promise, use anext() instead."
+        TypeError, match="Result of next.. was a promise, use anext.. instead."
     ):
         next(f())
 
@@ -1403,6 +1403,34 @@ async def test_async_iter(selenium):
         """
     )
     with pytest.raises(
-        TypeError, match="Result of anext() was not a promise, use next() instead."
+        TypeError, match="Result of anext.. was not a promise, use next.. instead."
     ):
         anext(g())
+
+
+@run_in_pyodide
+async def test_async_iter2(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    iterable = run_js(
+        """
+        ({
+        [Symbol.asyncIterator]() {
+            return (async function *f(){yield 1; yield 2; yield 3;})();
+        }
+        })
+        """
+    )
+
+    with pytest.raises(TypeError, match="object is not iterable"):
+        iter(iterable)
+
+    it = aiter(iterable)
+
+    assert await anext(it) == 1
+    assert await anext(it) == 2
+    assert await anext(it) == 3
+    with pytest.raises(StopAsyncIteration):
+        await anext(it)
