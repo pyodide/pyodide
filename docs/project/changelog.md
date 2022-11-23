@@ -233,6 +233,10 @@ substitutions:
   directory when it is already built.
   {pr}`3212`
 
+### Packages
+
+- {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
+
 ## Version 0.21.3
 
 _September 15, 2022_
