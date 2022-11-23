@@ -74,6 +74,7 @@ Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
 _Py_IDENTIFIER(fileno);
 
+static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
 
@@ -1167,8 +1168,6 @@ finally:
   return result;
 }
 
-#define GET_JSREF(x) (((JsProxy*)x)->js)
-
 /**
  * Overload of `dir(proxy)`. Walks the prototype chain of the object and adds
  * the ownPropertyNames of each prototype.
@@ -1198,12 +1197,12 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(result_set);
 
   // Now get attributes of js object
-  iddir = JsObject_Dir(GET_JSREF(self));
+  iddir = JsObject_Dir(JsProxy_REF(self));
   pydir = js2python(iddir);
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
-  if (JsArray_Check(GET_JSREF(self))) {
+  if (JsArray_Check(JsProxy_REF(self))) {
     // See comment about Array.keys in GetAttr
     keys_str = PyUnicode_FromString("keys");
     FAIL_IF_NULL(keys_str);
@@ -1256,7 +1255,7 @@ JsProxy_toPy(PyObject* self,
     default_converter_js = python2js(default_converter);
   }
   PyObject* result =
-    js2python_convert(GET_JSREF(self), depth, default_converter_js);
+    js2python_convert(JsProxy_REF(self), depth, default_converter_js);
   if (pyproxy_Check(default_converter_js)) {
     destroy_proxy(default_converter_js, NULL);
   }
@@ -2773,6 +2772,7 @@ skip_container_slots:
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
+  Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
     // member __vectorcall_offset__, we might consider switching to using that
@@ -2983,54 +2983,91 @@ static PyMethodDef methods[] = {
 };
 
 int
-JsProxy_init(PyObject* core_module)
+JsProxy_init_docstrings()
 {
   bool success = false;
 
   PyObject* _pyodide_core_docs = NULL;
-  PyObject* jsproxy_mock = NULL;
-  PyObject* asyncio_module = NULL;
+  PyObject* _it = NULL;
+  PyObject* JsProxy = NULL;
+  PyObject* JsPromise = NULL;
+  PyObject* JsBuffer = NULL;
+  PyObject* JsArray = NULL;
+  PyObject* JsDoubleProxy = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
-  _Py_IDENTIFIER(JsProxy);
-  jsproxy_mock =
-    _PyObject_CallMethodIdNoArgs(_pyodide_core_docs, &PyId_JsProxy);
-  FAIL_IF_NULL(jsproxy_mock);
+  JsProxy_metaclass =
+    PyObject_GetAttrString(_pyodide_core_docs, "_JsProxyMetaClass");
+  FAIL_IF_NULL(JsProxy_metaclass);
+  _it = PyObject_GetAttrString(_pyodide_core_docs, "_instantiate_token");
+  FAIL_IF_NULL(_it);
+
+#define GetProxyDocClass(A)                                                    \
+  _Py_IDENTIFIER(A);                                                           \
+  A = _PyObject_CallMethodIdOneArg(_pyodide_core_docs, &PyId_##A, _it);        \
+  FAIL_IF_NULL(A);
+
+  GetProxyDocClass(JsProxy);
+  GetProxyDocClass(JsPromise);
+  GetProxyDocClass(JsBuffer);
+  GetProxyDocClass(JsArray);
+  GetProxyDocClass(JsDoubleProxy);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core_docs.set_method_docstring uses
   // _pyodide.docstring.get_cmeth_docstring to generate the appropriate C-style
   // docstring from the Python-style docstring.
-#define SET_DOCSTRING(x)                                                       \
-  FAIL_IF_MINUS_ONE(set_method_docstring(&x, jsproxy_mock))
-  SET_DOCSTRING(JsProxy_object_entries_MethodDef);
-  SET_DOCSTRING(JsProxy_object_keys_MethodDef);
-  SET_DOCSTRING(JsProxy_object_values_MethodDef);
-  // SET_DOCSTRING(JsProxy_Dir_MethodDef);
-  SET_DOCSTRING(JsProxy_toPy_MethodDef);
-  SET_DOCSTRING(JsProxy_then_MethodDef);
-  SET_DOCSTRING(JsProxy_catch_MethodDef);
-  SET_DOCSTRING(JsProxy_finally_MethodDef);
-  SET_DOCSTRING(JsProxy_as_object_map_MethodDef);
-  SET_DOCSTRING(JsArray_extend_MethodDef);
-  SET_DOCSTRING(JsArray_reverse_MethodDef);
-  SET_DOCSTRING(JsArray_reversed_MethodDef);
-  SET_DOCSTRING(JsArray_pop_MethodDef);
-  SET_DOCSTRING(JsArray_append_MethodDef);
-  SET_DOCSTRING(JsArray_index_MethodDef);
-  SET_DOCSTRING(JsArray_count_MethodDef);
-  SET_DOCSTRING(JsMethod_Construct_MethodDef);
-  SET_DOCSTRING(JsBuffer_assign_MethodDef);
-  SET_DOCSTRING(JsBuffer_assign_to_MethodDef);
-  SET_DOCSTRING(JsBuffer_tomemoryview_MethodDef);
-  SET_DOCSTRING(JsBuffer_tobytes_MethodDef);
-  SET_DOCSTRING(JsBuffer_tostring_MethodDef);
-  SET_DOCSTRING(JsBuffer_write_to_file_MethodDef);
-  SET_DOCSTRING(JsBuffer_read_from_file_MethodDef);
-  SET_DOCSTRING(JsBuffer_into_file_MethodDef);
+#define SET_DOCSTRING(mock, x) FAIL_IF_MINUS_ONE(set_method_docstring(&x, mock))
+  SET_DOCSTRING(JsProxy, JsProxy_object_entries_MethodDef);
+  SET_DOCSTRING(JsProxy, JsProxy_object_keys_MethodDef);
+  SET_DOCSTRING(JsProxy, JsProxy_object_values_MethodDef);
+  SET_DOCSTRING(JsProxy, JsProxy_toPy_MethodDef);
+  SET_DOCSTRING(JsProxy, JsMethod_Construct_MethodDef);
+
+  SET_DOCSTRING(JsDoubleProxy, JsDoubleProxy_unwrap_MethodDef);
+  // SET_DOCSTRING(JsProxy, JsProxy_Dir_MethodDef);
+
+  SET_DOCSTRING(JsPromise, JsProxy_then_MethodDef);
+  SET_DOCSTRING(JsPromise, JsProxy_catch_MethodDef);
+  SET_DOCSTRING(JsPromise, JsProxy_finally_MethodDef);
+
+  SET_DOCSTRING(JsArray, JsArray_extend_MethodDef);
+  SET_DOCSTRING(JsArray, JsArray_reverse_MethodDef);
+  SET_DOCSTRING(JsArray, JsArray_reversed_MethodDef);
+  SET_DOCSTRING(JsArray, JsArray_pop_MethodDef);
+  SET_DOCSTRING(JsArray, JsArray_append_MethodDef);
+  SET_DOCSTRING(JsArray, JsArray_index_MethodDef);
+  SET_DOCSTRING(JsArray, JsArray_count_MethodDef);
+
+  SET_DOCSTRING(JsBuffer, JsBuffer_assign_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_assign_to_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_tomemoryview_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_tobytes_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_tostring_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_write_to_file_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_read_from_file_MethodDef);
+  SET_DOCSTRING(JsBuffer, JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
 
+  success = true;
+finally:
+  Py_CLEAR(JsProxy);
+  Py_CLEAR(JsPromise);
+  Py_CLEAR(JsBuffer);
+  Py_CLEAR(JsArray);
+  Py_CLEAR(JsDoubleProxy);
+  return success ? 0 : -1;
+}
+
+int
+JsProxy_init(PyObject* core_module)
+{
+  bool success = false;
+
+  PyObject* asyncio_module = NULL;
+
+  FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   PyModule_AddIntMacro(core_module, IS_ITERABLE);
@@ -3064,14 +3101,12 @@ JsProxy_init(PyObject* core_module)
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
+  FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
   FAIL_IF_MINUS_ONE(PyType_Ready(&BufferType));
-  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core_docs);
-  Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;
 }
