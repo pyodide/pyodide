@@ -682,7 +682,7 @@ def test_create_proxy_roundtrip(selenium):
 
 
 @run_in_pyodide
-def test_pass_destroyed_value(selenium):
+def test_return_destroyed_value(selenium):
     import pytest
 
     from pyodide.code import run_js
