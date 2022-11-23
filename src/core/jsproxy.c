@@ -501,19 +501,15 @@ JsProxy_IterNext_js,
 });
 // clang-format on
 
-/**
- * next overload. Controlled by IS_ITERATOR.
- * TODO: Implement Py_am_send method for generator support
- */
-static PyObject*
-JsProxy_IterNext(PyObject* o)
+PySendResult
+JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
-  JsProxy* self = (JsProxy*)o;
   JsRef idresult = NULL;
-  PyObject* result = NULL;
+  PySendResult ret;
+  bool success = false;
 
   char* msg;
-  int done = JsProxy_IterNext_js(self->js, &idresult, &msg);
+  int done = JsProxy_IterNext_js(JsProxy_REF(self), &idresult, &msg);
   // done:
   //   1 ==> finished
   //   0 ==> not finished
@@ -527,16 +523,30 @@ JsProxy_IterNext(PyObject* o)
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
-  result = js2python(idresult);
+  *result = js2python(idresult);
   FAIL_IF_NULL(result);
-  if (done) {
-    // For the return value of a generator, raise StopIteration with result.
-    PyErr_SetObject(PyExc_StopIteration, result);
+  ret = done ? PYGEN_RETURN : PYGEN_NEXT;
+
+  success = true;
+finally:
+  if (!success) {
+    ret = PYGEN_ERROR;
+    Py_CLEAR(*result);
+  }
+  hiwire_CLEAR(idresult);
+  return ret;
+}
+
+PyObject*
+JsProxy_IterNext(PyObject* self)
+{
+  PyObject* result;
+  if (JsProxy_am_send(self, NULL, &result) == PYGEN_RETURN) {
+    if (result != Py_None) {
+      _PyGen_SetStopIterationValue(result);
+    }
     Py_CLEAR(result);
   }
-
-finally:
-  hiwire_CLEAR(idresult);
   return result;
 }
 
@@ -2808,6 +2818,8 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
