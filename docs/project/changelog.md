@@ -121,6 +121,8 @@ substitutions:
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
+- {{ Fix }} Pyodide now loads correctly with `-OO` option.
+
 - Add Gitpod configuration to the repository.
   {pr} `3201`
 
