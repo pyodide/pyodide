@@ -3044,20 +3044,24 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
-  PyModule_AddIntMacro(core_module, IS_ITERABLE);
-  PyModule_AddIntMacro(core_module, IS_ITERATOR);
-  PyModule_AddIntMacro(core_module, HAS_LENGTH);
-  PyModule_AddIntMacro(core_module, HAS_GET);
-  PyModule_AddIntMacro(core_module, HAS_SET);
-  PyModule_AddIntMacro(core_module, HAS_HAS);
-  PyModule_AddIntMacro(core_module, HAS_INCLUDES);
-  PyModule_AddIntMacro(core_module, IS_AWAITABLE);
-  PyModule_AddIntMacro(core_module, IS_BUFFER);
-  PyModule_AddIntMacro(core_module, IS_CALLABLE);
-  PyModule_AddIntMacro(core_module, IS_ARRAY);
-  PyModule_AddIntMacro(core_module, IS_NODE_LIST);
-  PyModule_AddIntMacro(core_module, IS_TYPEDARRAY);
-  PyModule_AddIntMacro(core_module, IS_DOUBLE_PROXY);
+#define AddFlag(flag) FAIL_IF_MINUS_ONE(PyModule_AddIntMacro(core_module, flag))
+
+  AddFlag(IS_ITERABLE);
+  AddFlag(IS_ITERATOR);
+  AddFlag(HAS_LENGTH);
+  AddFlag(HAS_GET);
+  AddFlag(HAS_SET);
+  AddFlag(HAS_HAS);
+  AddFlag(HAS_INCLUDES);
+  AddFlag(IS_AWAITABLE);
+  AddFlag(IS_BUFFER);
+  AddFlag(IS_CALLABLE);
+  AddFlag(IS_ARRAY);
+  AddFlag(IS_NODE_LIST);
+  AddFlag(IS_TYPEDARRAY);
+  AddFlag(IS_DOUBLE_PROXY);
+
+#undef AddFlag
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
