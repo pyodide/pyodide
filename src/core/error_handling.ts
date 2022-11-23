@@ -277,12 +277,14 @@ export class PythonError extends Error {
    * @private
    */
   __error_address: number;
+  type: string;
 
-  constructor(message: string, error_address: number) {
+  constructor(type: string, message: string, error_address: number) {
     const oldLimit = Error.stackTraceLimit;
     Error.stackTraceLimit = Infinity;
     super(message);
     Error.stackTraceLimit = oldLimit;
+    this.type = type;
     this.__error_address = error_address;
   }
 }
