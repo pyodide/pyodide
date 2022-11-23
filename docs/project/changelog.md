@@ -28,8 +28,9 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.25
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`, {pr}`3239`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.26
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
+  {pr}`3239`, {pr}`3280`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -86,10 +87,17 @@ substitutions:
   the method is called on.
   {pr}`3130`
 
-- {{Enhancement}} A `JsProxy` now has an `as_object_map` method. This will treat
+- {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
   the object as a mapping over its `ownKeys` so for instance:
   `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
   {pr}`3273`
+
+- {{ Enhancement }} Split up the `JsProxy` documentation class into several
+  classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
+  `issubclass` and `isinstance` on the various synthetic and real `JsProxy`
+  classes so that they behave the way one might naively expect them to (or
+  at least closer to that than it was before).
+  {pr}`3277`
 
 - {{ Breaking }} The messageCallback and errorCallback argument to
   {any}`loadPackage <pyodide.loadPackage>` and

@@ -1339,6 +1339,38 @@ def test_mappings(selenium):
     assert dict(m) == {}
 
 
+@run_in_pyodide
+def test_jsproxy_subtypes(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsArray, JsBuffer, JsPromise, JsProxy
+
+    with pytest.raises(TypeError, match="JsProxy"):
+        JsProxy()
+
+    with pytest.raises(TypeError, match="JsArray"):
+        JsArray()
+
+    nullobj = run_js("Object.create(null)")
+    a = run_js("[Promise.resolve()]")
+    assert isinstance(a, JsProxy)
+    assert isinstance(a, JsArray)
+    assert not isinstance(a, JsPromise)
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), JsProxy)
+    assert issubclass(type(a), JsArray)
+    assert not issubclass(JsArray, type(a))
+    assert isinstance(a[0], JsPromise)
+    assert issubclass(JsPromise, type(a[0]))
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), type(nullobj))
+    assert issubclass(type(a[0]), type(nullobj))
+    assert issubclass(JsProxy, type(nullobj))
+    assert issubclass(type(nullobj), JsProxy)
+
+
+@run_in_pyodide
 def test_jsproxy_as_object_map(selenium):
     import pytest
 

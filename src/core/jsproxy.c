@@ -82,6 +82,7 @@ _Py_IDENTIFIER(fileno);
 
 static PyObject* collections_abc;
 static PyObject* MutableMapping;
+static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
 
@@ -890,7 +891,7 @@ JsArray_index_helper,
 })
 // clang-format on
 
-PyObject*
+static PyObject*
 JsArray_index(PyObject* o, PyObject* args)
 {
   JsProxy* self = (JsProxy*)o;
@@ -975,7 +976,7 @@ JsArray_count_helper,
 })
 // clang-format on
 
-PyObject*
+static PyObject*
 JsArray_count(PyObject* o, PyObject* value)
 {
   JsProxy* self = (JsProxy*)o;
@@ -1026,7 +1027,7 @@ EM_JS_NUM(errcode, JsArray_reverse_helper, (JsRef arrayid), {
   Hiwire.get_value(arrayid).reverse();
 })
 
-PyObject*
+static PyObject*
 JsArray_reverse(PyObject* o, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)o;
@@ -1624,7 +1625,7 @@ finally:
  * the references to the onfulfilled and onrejected callbacks, which is quite
  * hard to do otherwise.
  */
-PyObject*
+static PyObject*
 JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
 {
   PyObject* onfulfilled = NULL;
@@ -1676,7 +1677,7 @@ static PyMethodDef JsProxy_then_MethodDef = {
 /**
  * Overload for `catch` for JsProxies with a `then` method.
  */
-PyObject*
+static PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
   JsRef promise_id = NULL;
@@ -1717,7 +1718,7 @@ static PyMethodDef JsProxy_catch_MethodDef = {
  * `catch` handle freeing the handler automatically but require something extra
  * to use `finally`.
  */
-PyObject*
+static PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
   JsRef proxy = NULL;
@@ -2556,6 +2557,7 @@ static PyMethodDef JsBuffer_assign_MethodDef = {
  * format - the appropriate format for jsbuffer, from get_buffer_datatype
  * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
  */
+// Used in js2python, intentionally not static
 PyObject*
 JsBuffer_CopyIntoMemoryView(JsRef jsbuffer,
                             Py_ssize_t byteLength,
@@ -2586,7 +2588,7 @@ finally:
  * Used by to_bytes. Make a new bytes object and copy the data from the
  * ArrayBuffer into it.
  */
-PyObject*
+static PyObject*
 JsBuffer_CopyIntoBytes(JsRef jsbuffer, Py_ssize_t byteLength)
 {
   bool success = false;
@@ -2639,7 +2641,7 @@ JsBuffer_DecodeString_js,
 /**
  * Decode the ArrayBuffer into a PyUnicode object.
  */
-PyObject*
+static PyObject*
 JsBuffer_ToString(JsRef jsbuffer, char* encoding)
 {
   JsRef jsresult = NULL;
@@ -2810,7 +2812,7 @@ EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsRef id), {
   return Module.PyProxy_getPtr(Hiwire.get_value(id));
 });
 
-PyObject*
+static PyObject*
 JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 {
   PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_REF(obj));
@@ -3046,6 +3048,7 @@ skip_container_slots:
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
+  Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
     // member __vectorcall_offset__, we might consider switching to using that
@@ -3261,18 +3264,25 @@ JsProxy_init_docstrings()
   bool success = false;
 
   PyObject* _pyodide_core_docs = NULL;
+  PyObject* _it = NULL;
   PyObject* JsProxy = NULL;
   PyObject* JsPromise = NULL;
   PyObject* JsBuffer = NULL;
   PyObject* JsArray = NULL;
   PyObject* JsMap = NULL;
+  PyObject* JsDoubleProxy = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
+  JsProxy_metaclass =
+    PyObject_GetAttrString(_pyodide_core_docs, "_JsProxyMetaClass");
+  FAIL_IF_NULL(JsProxy_metaclass);
+  _it = PyObject_GetAttrString(_pyodide_core_docs, "_instantiate_token");
+  FAIL_IF_NULL(_it);
 
 #define GetProxyDocClass(A)                                                    \
   _Py_IDENTIFIER(A);                                                           \
-  A = _PyObject_CallMethodIdNoArgs(_pyodide_core_docs, &PyId_##A);             \
+  A = _PyObject_CallMethodIdOneArg(_pyodide_core_docs, &PyId_##A, _it);        \
   FAIL_IF_NULL(A);
 
   GetProxyDocClass(JsProxy);
@@ -3280,6 +3290,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
   GetProxyDocClass(JsMap);
+  GetProxyDocClass(JsDoubleProxy);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core_docs.set_method_docstring uses
@@ -3291,7 +3302,8 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsProxy, JsProxy_object_values_MethodDef);
   SET_DOCSTRING(JsProxy, JsProxy_toPy_MethodDef);
   SET_DOCSTRING(JsProxy, JsMethod_Construct_MethodDef);
-  SET_DOCSTRING(JsProxy, JsDoubleProxy_unwrap_MethodDef);
+
+  SET_DOCSTRING(JsDoubleProxy, JsDoubleProxy_unwrap_MethodDef);
   // SET_DOCSTRING(JsProxy, JsProxy_Dir_MethodDef);
 
   SET_DOCSTRING(JsPromise, JsProxy_then_MethodDef);
@@ -3333,6 +3345,7 @@ finally:
   Py_CLEAR(JsBuffer);
   Py_CLEAR(JsArray);
   Py_CLEAR(JsMap);
+  Py_CLEAR(JsDoubleProxy);
   return success ? 0 : -1;
 }
 
@@ -3383,8 +3396,8 @@ JsProxy_init(PyObject* core_module)
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
+  FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
   FAIL_IF_MINUS_ONE(PyType_Ready(&BufferType));
-  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;

@@ -668,12 +668,12 @@ def test_create_proxy_capture_this(selenium):
 @run_in_pyodide
 def test_create_proxy_roundtrip(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import JsProxy, create_proxy
+    from pyodide.ffi import JsDoubleProxy, create_proxy
 
     f = {}  # type: ignore[var-annotated]
     o = run_js("({})")
     o.f = create_proxy(f, roundtrip=True)
-    assert isinstance(o.f, JsProxy)
+    assert isinstance(o.f, JsDoubleProxy)
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
@@ -703,10 +703,11 @@ def test_return_destroyed_value(selenium):
 
 
 def test_docstrings_a():
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
-    from pyodide.ffi import JsProxy
+    from pyodide.ffi import JsPromise
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
     assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
         jsproxy.then.__doc__
@@ -714,10 +715,11 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring
-    from pyodide.ffi import JsProxy, create_once_callable
+    from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
