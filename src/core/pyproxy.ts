@@ -40,6 +40,8 @@ declare var IS_ITERABLE: number;
 declare var IS_ITERATOR: number;
 declare var IS_AWAITABLE: number;
 declare var IS_BUFFER: number;
+declare var IS_ASYNC_ITERABLE: number;
+declare var IS_ASYNC_ITERATOR: number;
 
 declare var PYGEN_NEXT: number;
 declare var PYGEN_RETURN: number;
@@ -270,6 +272,8 @@ Module.getPyProxyClass = function (flags: number) {
     [HAS_CONTAINS, PyProxyContainsMethods],
     [IS_ITERABLE, PyProxyIterableMethods],
     [IS_ITERATOR, PyProxyIteratorMethods],
+    [IS_ASYNC_ITERABLE, PyProxyAsyncIterableMethods],
+    [IS_ASYNC_ITERATOR, PyProxyAsyncIteratorMethods],
     [IS_AWAITABLE, PyProxyAwaitableMethods],
     [IS_BUFFER, PyProxyBufferMethods],
     [IS_CALLABLE, PyProxyCallableMethods],
@@ -879,6 +883,91 @@ export class PyProxyIterableMethods {
   }
 }
 
+/**
+ * A helper for [Symbol.iterator].
+ *
+ * Because "it is possible for a generator to be garbage collected without
+ * ever running its finally block", we take extra care to try to ensure that
+ * we don't leak the iterator. We register it with the finalizationRegistry,
+ * but if the finally block is executed, we decref the pointer and unregister.
+ *
+ * In order to do this, we create the generator with this inner method,
+ * register the finalizer, and then return it.
+ *
+ * Quote from:
+ * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
+ *
+ * @private
+ */
+async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
+  try {
+    while (true) {
+      let item, p;
+      try {
+        Py_ENTER();
+        item = Module.__pyproxy_aiter_next(iterptr);
+        Py_EXIT();
+        if (item === 0) {
+          break;
+        }
+        p = Hiwire.pop_value(item);
+      } catch (e) {
+        API.fatal_error(e);
+      }
+      try {
+        yield await p;
+      } catch (e) {
+        if (
+          e &&
+          typeof e === "object" &&
+          (e as any).type === "StopAsyncIteration"
+        ) {
+          return;
+        }
+        throw e;
+      }
+    }
+  } finally {
+    Module.finalizationRegistry.unregister(token);
+    Module._Py_DecRef(iterptr);
+  }
+  if (Module._PyErr_Occurred()) {
+    Module._pythonexc2js();
+  }
+}
+
+export class PyProxyAsyncIterableMethods {
+  /**
+   * This translates to the Python code ``aiter(obj)``. Return an iterator
+   * associated to the proxy. See the documentation for `Symbol.iterator
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
+   *
+   * Present only if the proxied Python object is iterable (i.e., has an
+   * ``__iter__`` method).
+   *
+   * This will be used implicitly by ``for(let x of proxy){}``.
+   */
+  [Symbol.asyncIterator](): AsyncIterator<any, any, any> {
+    let ptrobj = _getPtr(this);
+    let token = {};
+    let iterptr;
+    try {
+      Py_ENTER();
+      iterptr = Module._PyObject_GetAIter(ptrobj);
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    }
+    if (iterptr === 0) {
+      Module._pythonexc2js();
+    }
+
+    let result = aiter_helper(iterptr, token);
+    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
+    return result;
+  }
+}
+
 export type PyProxyIterator = PyProxy & PyProxyIteratorMethods;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
@@ -934,6 +1023,14 @@ export class PyProxyIteratorMethods {
     }
     let value = Hiwire.pop_value(idresult);
     done = status === PYGEN_RETURN;
+    return { done, value };
+  }
+}
+
+export class PyProxyAsyncIteratorMethods {
+  next(arg: any = undefined): IteratorResult<any, any> {
+    let done = true;
+    let value = 0;
     return { done, value };
   }
 }
