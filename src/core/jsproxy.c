@@ -68,7 +68,6 @@ _Py_IDENTIFIER(_js_type_flags);
 Js_IDENTIFIER(then);
 Js_IDENTIFIER(finally);
 Js_IDENTIFIER(has);
-Js_IDENTIFIER(get);
 Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
@@ -215,7 +214,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  if (!hiwire_is_pyproxy(idresult) && hiwire_is_function(idresult)) {
+  if (!pyproxy_Check(idresult) && hiwire_is_function(idresult)) {
     pyresult = JsProxy_create_with_this(idresult, JsProxy_REF(self));
   } else {
     pyresult = js2python(idresult);
@@ -1996,7 +1995,7 @@ finally:
     // If we succeeded and the result was a promise then we destroy the
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
-    if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
+    if (idresult != NULL && pyproxy_Check(idresult)) {
       JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies,
@@ -2819,77 +2818,49 @@ finally:
   return (PyTypeObject*)type;
 }
 
-EM_JS_NUM(int, JsProxy_array_detect, (JsRef idobj), {
-  try {
-    let obj = Hiwire.get_value(idobj);
-    if (Array.isArray(obj)) {
-      return IS_ARRAY;
-    }
-    let typeTag = Object.prototype.toString.call(obj);
-    // We want to treat some standard array-like objects as Array.
-    // clang-format off
-    if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
-      // clang-format on
-      return IS_NODE_LIST;
-    }
-    // What if it's a TypedArray?
-    // clang-format off
-    if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
-      // clang-format on
-      return IS_TYPEDARRAY;
-    }
-    return 0;
-  } catch (e) {
-    return 0;
+#define SET_FLAG_IF(flag, cond)                                                \
+  try {                                                                        \
+    if (cond) {                                                                \
+      type_flags |= flag                                                       \
+    }                                                                          \
+  } catch (e) {                                                                \
   }
+
+EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
+  let obj = Hiwire.get_value(idobj);
+  let type_flags = 0;
+
+  const constructorName = obj.constructor ? obj.constructor.name : "";
+  let typeTag = Object.prototype.toString.call(obj);
+
+  // clang-format off
+  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
+  SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
+  SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
+  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function')
+  SET_FLAG_IF(HAS_LENGTH,
+    (typeof obj.size === "number") ||
+    (typeof obj.length === "number" && typeof obj !== "function"));
+  SET_FLAG_IF(HAS_GET, typeof obj.get === "function");
+  SET_FLAG_IF(HAS_SET, typeof obj.set === "function");
+  SET_FLAG_IF(HAS_HAS, typeof obj.has === "function");
+  SET_FLAG_IF(HAS_INCLUDES, typeof obj.includes === "function");
+  SET_FLAG_IF(IS_BUFFER,
+              ArrayBuffer.isView(obj) || (constructorName === "ArrayBuffer"));
+  SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
+  SET_FLAG_IF(IS_ARRAY, Array.isArray(obj));
+  SET_FLAG_IF(IS_NODE_LIST,
+              typeTag === "[object HTMLCollection]" ||
+              typeTag === "[object NodeList]");
+  SET_FLAG_IF(IS_TYPEDARRAY,
+              ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
+  // clang-format on
+  return type_flags;
 });
+#undef SET_FLAG_IF
 
 ////////////////////////////////////////////////////////////
 // Public functions
-
-static int
-compute_typeflags(JsRef object)
-{
-  int type_flags = 0;
-  if (hiwire_is_function(object)) {
-    type_flags |= IS_CALLABLE;
-  }
-  if (hiwire_is_promise(object)) {
-    type_flags |= IS_AWAITABLE;
-  }
-  if (hiwire_is_iterable(object)) {
-    type_flags |= IS_ITERABLE;
-  }
-  if (hiwire_is_iterator(object)) {
-    type_flags |= IS_ITERATOR;
-  }
-  if (hiwire_has_length(object)) {
-    type_flags |= HAS_LENGTH;
-  }
-  if (hiwire_HasMethodId(object, &JsId_get)) {
-    type_flags |= HAS_GET;
-  }
-  if (hiwire_HasMethodId(object, &JsId_set)) {
-    type_flags |= HAS_SET;
-  }
-  if (hiwire_HasMethodId(object, &JsId_has)) {
-    type_flags |= HAS_HAS;
-  }
-  if (hiwire_HasMethodId(object, &JsId_includes)) {
-    type_flags |= HAS_INCLUDES;
-  }
-  if (hiwire_is_typedarray(object)) {
-    type_flags |= IS_BUFFER;
-  }
-  if (hiwire_is_promise(object)) {
-    type_flags |= IS_AWAITABLE;
-  }
-  if (pyproxy_Check(object)) {
-    type_flags |= IS_DOUBLE_PROXY;
-  }
-  type_flags |= JsProxy_array_detect(object);
-  return type_flags;
-}
 
 static PyObject*
 create_proxy_of_type(int type_flags, JsRef object, JsRef this)
@@ -3013,6 +2984,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
   GetProxyDocClass(JsDoubleProxy);
+#undef GetProxyDocClass
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core_docs.set_method_docstring uses
