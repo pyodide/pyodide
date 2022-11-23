@@ -473,12 +473,13 @@ finally:
   return result;
 }
 
-EM_JS_NUM(int,
-          JsProxy_IterNext_js,
-          (JsRef idobj, JsRef* result_ptr, char** msg),
-          {
-            let jsobj = Hiwire.get_value(idobj);
-            // clang-format off
+// clang-format off
+EM_JS_NUM(
+int,
+JsProxy_IterNext_js,
+(JsRef idobj, JsRef* result_ptr, char** msg),
+{
+  let jsobj = Hiwire.get_value(idobj);
   let res = jsobj.next();
   let msg_ptr;
   if(typeof res !== "object") {
@@ -494,11 +495,11 @@ EM_JS_NUM(int,
     DEREF_U32(msg, 0) = msg_ptr;
     return -2;
   }
-            // clang-format on
-            let result_id = Hiwire.new_value(res.value);
-            DEREF_U32(result_ptr, 0) = result_id;
-            return res.done;
-          });
+  let result_id = Hiwire.new_value(res.value);
+  DEREF_U32(result_ptr, 0) = result_id;
+  return res.done;
+});
+// clang-format on
 
 /**
  * next overload. Controlled by IS_ITERATOR.
