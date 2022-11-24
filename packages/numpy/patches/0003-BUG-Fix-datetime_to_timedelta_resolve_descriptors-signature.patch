@@ -21,3 +21,5 @@ index 99096be5640..70b54f26a1f 100644
  {
      loop_descrs[0] = NPY_DT_CALL_ensure_canonical(given_descrs[0]);
      if (loop_descrs[0] == NULL) {
+--
+2.25.1

@@ -10,6 +10,7 @@ source:
   patches:
     - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
     - patches/0002-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0003-BUG-Fix-datetime_to_timedelta_resolve_descriptors-signature.patch
 
 build:
   backend-flags: --disable-optimization
