@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections import defaultdict
 from collections.abc import Iterable
 from functools import total_ordering
 from graphlib import TopologicalSorter
@@ -45,6 +46,7 @@ class BasePackage:
     package_type: _BuildSpecTypes
     run_dependencies: list[str]
     host_dependencies: list[str]
+    executables_required: list[str]
     dependencies: set[str]  # run + host dependencies
     unbuilt_host_dependencies: set[str]
     host_dependents: set[str]
@@ -96,6 +98,7 @@ class Package(BasePackage):
 
         self.run_dependencies = self.meta.requirements.run
         self.host_dependencies = self.meta.requirements.host
+        self.executables_required = self.meta.requirements.executable
         self.dependencies = set(self.run_dependencies + self.host_dependencies)
         self.unbuilt_host_dependencies = set(self.host_dependencies)
         self.host_dependents = set()
@@ -271,6 +274,23 @@ def generate_dependency_graph(
         requested.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
+
+    # Check executables required to build packages
+    for name in requested:
+        pkg = pkg_map[name]
+        missing_executables = defaultdict(list)
+        for executable in pkg.executables_required:
+            if shutil.which(executable) is None:
+                missing_executables[executable].append(name)
+
+    if missing_executables:
+        error_msg = (
+            "Following executables are required but not exists in the host system:\n"
+        )
+        for executable, pkgs in missing_executables.items():
+            error_msg += f"- {executable} (required by {', '.join(pkgs)})\n"
+
+        raise RuntimeError(error_msg)
 
     return {name: pkg_map[name] for name in requested}
 
