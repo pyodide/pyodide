@@ -315,7 +315,7 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   }
 }
 
-EM_JS(JsRef, JsProxy_GetIter_js, (JsRef idobj), {
+EM_JS_REF(JsRef, JsProxy_GetIter_js, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   return Hiwire.new_value(jsobj[Symbol.iterator]());
 });
@@ -336,7 +336,7 @@ JsProxy_GetIter(PyObject* self)
   return result;
 }
 
-EM_JS(JsRef, JsProxy_GetAsyncIter_js, (JsRef idobj), {
+EM_JS_REF(JsRef, JsProxy_GetAsyncIter_js, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   return Hiwire.new_value(jsobj[Symbol.asyncIterator]());
 });
