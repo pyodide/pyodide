@@ -1296,6 +1296,50 @@ def test_jsproxy_descr_get(selenium):
 
 
 @run_in_pyodide
+def test_mappings(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    m = run_js("new Map([[1,2], [3,4]])")
+    # Iterate using keys() function
+    assert set(m) == {1, 3}
+    assert 1 in m.keys()
+    assert m.keys() | {2} == {1, 2, 3}
+    assert 2 in m.values()
+    assert set(m.values()) == {2, 4}
+    assert (1, 2) in m.items()
+    assert set(m.items()) == {(1, 2), (3, 4)}
+
+    assert m.get(1, 7) == 2
+    assert m.get(2, 7) == 7
+
+    assert m.pop(1) == 2
+    assert m.pop(1, 7) == 7
+    m[1] = 2
+    assert m.pop(1, 7) == 2
+    assert m.pop(1, 7) == 7
+    assert 1 not in m
+    with pytest.raises(KeyError):
+        m.pop(1)
+
+    assert m.setdefault(1, 8) == 8
+    assert m.setdefault(3, 8) == 4
+    assert m.setdefault(3) == 4
+    assert m.setdefault(4) is None
+    assert 1 in m
+    assert m[1] == 8
+
+    m.update({6: 7, 8: 9})
+    assert dict(m) == {1: 8, 3: 4, 4: None, 6: 7, 8: 9}
+
+    assert m.popitem() in set({1: 8, 3: 4, 4: None, 6: 7, 8: 9}.items())
+    assert len(m) == 4
+    m.clear()
+    assert dict(m) == {}
+
+
+@run_in_pyodide
 def test_jsproxy_subtypes(selenium):
     import pytest
 

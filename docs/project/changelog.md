@@ -41,6 +41,11 @@ substitutions:
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Enhancement }} Implemented methods `keys`, `items`, `values`, `get`, `pop`,
+  `setdefault`, `popitem`, `update`, and `clear` for `JsProxy` of map-like
+  objects.
+  {pr}`3275`
+
 - {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
