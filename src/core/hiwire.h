@@ -309,12 +309,6 @@ bool
 hiwire_get_bool(JsRef idobj);
 
 /**
- * Check whether the object is a PyProxy.
- */
-bool
-hiwire_is_pyproxy(JsRef idobj);
-
-/**
  * Check if the object is a function.
  */
 bool
@@ -407,12 +401,6 @@ bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
 
 /**
- * Check if `typeof obj.next === "function"`
- */
-bool
-hiwire_is_iterator(JsRef idobj);
-
-/**
  * Calls the `next` function on an iterator.
  *
  * Returns -1 if an error occurs. Otherwise, `next` should return an object with
@@ -421,12 +409,6 @@ hiwire_is_iterator(JsRef idobj);
  */
 int
 hiwire_next(JsRef idobj, JsRef* result);
-
-/**
- * Check if `typeof obj[Symbol.iterator] === "function"`
- */
-bool
-hiwire_is_iterable(JsRef idobj);
 
 /**
  * Returns the iterator associated with the given object, if any.
@@ -439,12 +421,6 @@ hiwire_get_iterator(JsRef idobj);
  */
 JsRef
 hiwire_reversed_iterator(JsRef idobj);
-
-/**
- * Returns 1 if the value is a typedarray.
- */
-bool
-hiwire_is_typedarray(JsRef idobj);
 
 /**
  * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into

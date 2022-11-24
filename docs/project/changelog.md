@@ -139,6 +139,8 @@ substitutions:
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
+- {{ Fix }} Pyodide now loads correctly with `-OO` option.
+
 - Add Gitpod configuration to the repository.
   {pr} `3201`
 
@@ -237,6 +239,10 @@ substitutions:
 - {{ Fix }} Fixed a bug that shared libraries are not copied into distribution
   directory when it is already built.
   {pr}`3212`
+
+### Packages
+
+- {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
 
 ## Version 0.21.3
 

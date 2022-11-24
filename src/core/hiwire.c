@@ -625,10 +625,6 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_BOOL(bool, hiwire_is_pyproxy, (JsRef idobj), {
-  return API.isPyProxy(Hiwire.get_value(idobj));
-});
-
 EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Hiwire.get_value(idobj) === 'function';
@@ -690,13 +686,6 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_BOOL(bool, hiwire_is_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return typeof jsobj.next === 'function';
-  // clang-format on
-});
-
 EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   let jsobj = Hiwire.get_value(idobj);
   // clang-format off
@@ -705,20 +694,6 @@ EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   let result_id = Hiwire.new_value(value);
   DEREF_U32(result_ptr, 0) = result_id;
   return done;
-});
-
-EM_JS_BOOL(bool, hiwire_is_iterable, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  if (typeof jsobj[Symbol.iterator] === 'function') {
-    return true;
-  }
-  if (typeof jsobj.keys === 'function' && typeof jsobj.has === 'function' && typeof jsobj.get === 'function'){
-    // We can iterate maps using the `.keys()` function
-    return true;
-  }
-  return false;
-  // clang-format on
 });
 
 EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
@@ -755,13 +730,6 @@ EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
 
   return Hiwire.new_value(new Module._reversedIterator(array));
 })
-
-EM_JS_BOOL(bool, hiwire_is_typedarray, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");
-  // clang-format on
-});
 
 EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
