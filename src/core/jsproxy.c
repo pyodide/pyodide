@@ -507,6 +507,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   JsRef idresult = NULL;
   PySendResult ret;
   bool success = false;
+  *result = NULL;
 
   char* msg;
   int done = JsProxy_IterNext_js(JsProxy_REF(self), &idresult, &msg);
