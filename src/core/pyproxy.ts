@@ -17,6 +17,7 @@
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
+declare var HEAPU32: Uint32Array;
 
 // pyodide-skip
 
@@ -925,6 +926,8 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
           return;
         }
         throw e;
+      } finally {
+        p.destroy();
       }
     }
   } finally {
@@ -1012,10 +1015,6 @@ export class PyProxyIteratorMethods {
     } finally {
       Hiwire.decref(idarg);
     }
-    let HEAPU32 = Module.HEAPU32;
-    // HEAPU32 is used in the DEREF_U32 C preprocessor macro. Typescript doesn't know this.
-    // So we "use" HEAPU32 once to trick Typescript, so we can enable strictUnusedLocalVariables.
-    HEAPU32;
     let idresult = DEREF_U32(res_ptr, 0);
     Module.stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
@@ -1028,10 +1027,39 @@ export class PyProxyIteratorMethods {
 }
 
 export class PyProxyAsyncIteratorMethods {
-  next(arg: any = undefined): IteratorResult<any, any> {
-    let done = true;
-    let value = 0;
-    return { done, value };
+  async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
+    let idarg = Hiwire.new_value(arg);
+    let idresult;
+    try {
+      Py_ENTER();
+      console.log({ arg });
+      idresult = Module.__pyproxyGen_asend(_getPtr(this), idarg);
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    } finally {
+      Hiwire.decref(idarg);
+    }
+    if (idresult === 0) {
+      Module._pythonexc2js();
+    }
+    const p = Hiwire.pop_value(idresult);
+    let value;
+    try {
+      value = await p;
+    } catch (e) {
+      if (
+        e &&
+        typeof e === "object" &&
+        (e as any).type === "StopAsyncIteration"
+      ) {
+        return { done: true, value };
+      }
+      throw e;
+    } finally {
+      p.destroy();
+    }
+    return { done: false, value };
   }
 }
 
@@ -1548,7 +1576,6 @@ export class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let HEAPU32 = Module.HEAPU32;
     let orig_stack_ptr = Module.stackSave();
     let buffer_struct_ptr = Module.stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0),

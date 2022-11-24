@@ -387,22 +387,26 @@ JsProxy_anext_js_stopiter(PyObject* set_exception, JsRef jsvalue)
   Py_CLEAR(result);
 }
 
+// clang-format off
 EM_JS_NUM(
-  int,
-  JsProxy_anext_js,
-  (JsRef idobj, char** msg, PyObject* set_result, PyObject* set_exception),
-  {
-    let jsobj = Hiwire.get_value(idobj);
-    // clang-format off
-  let p = jsobj.next();
+int,
+JsProxy_anext_js,
+(JsRef idobj, JsRef argid, char** msg, PyObject* set_result, PyObject* set_exception),
+{
+  let jsobj = Hiwire.get_value(idobj);
+  let jsarg;
+  if (argid !== 0) {
+    jsarg = Hiwire.get_value(argid);
+  }
+  let p = jsobj.next(jsarg);
   let msg_ptr;
   if(typeof p !== "object") {
     msg_ptr = stringToNewUTF8(`Result of next() should be object not ${typeof p}`)
   } else if(typeof p.then !== "function") {
     if (typeof p.done === "boolean") {
-      msg_ptr = stringToNewUTF8(`Result of anext() was not a promise, use next() instead.`)
+      msg_ptr = stringToNewUTF8(`Result of next() was not a promise, use next() instead.`)
     } else {
-      msg_ptr = stringToNewUTF8(`Result of anext() was not a promise.`)
+      msg_ptr = stringToNewUTF8(`Result of next() was not a promise.`)
     }
   }
   if (msg_ptr) {
@@ -425,18 +429,19 @@ EM_JS_NUM(
     _Py_DecRef(set_result);
     _Py_DecRef(set_exception);
   });
-    // clang-format on
-    return 0;
-  });
+  return 0;
+});
+// clang-format on
 
 static PyObject*
-JsProxy_anext(PyObject* self)
+JsProxy_asend_inner(PyObject* self, PyObject* arg)
 {
   bool success = false;
   JsRef promise = NULL;
   PyObject* loop = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
+  JsRef jsarg = NULL;
   PyObject* result = NULL;
 
   loop = PyObject_CallNoArgs(asyncio_get_event_loop);
@@ -450,9 +455,13 @@ JsProxy_anext(PyObject* self)
   set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
   FAIL_IF_NULL(set_exception);
 
+  if (arg != NULL) {
+    jsarg = python2js(arg);
+  }
+
   char* msg = NULL;
   int status =
-    JsProxy_anext_js(JsProxy_REF(self), &msg, set_result, set_exception);
+    JsProxy_anext_js(JsProxy_REF(self), jsarg, &msg, set_result, set_exception);
   if (status == -1) {
     if (msg) {
       PyErr_SetString(PyExc_TypeError, msg);
@@ -470,23 +479,53 @@ finally:
   Py_CLEAR(loop);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
+  hiwire_CLEAR(jsarg);
   return result;
+}
+
+static PyObject*
+JsProxy_asend(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  PyObject* arg = NULL;
+  if (!_PyArg_CheckPositional("asend", nargs, 0, 1)) {
+    return NULL;
+  }
+  if (nargs > 0) {
+    arg = args[0];
+  }
+  return JsProxy_asend_inner(self, arg);
+}
+
+static PyMethodDef JsProxy_asend_MethodDef = {
+  "asend",
+  (PyCFunction)JsProxy_asend,
+  METH_FASTCALL,
+};
+
+static PyObject*
+JsProxy_anext(PyObject* self)
+{
+  return JsProxy_asend_inner(self, NULL);
 }
 
 // clang-format off
 EM_JS_NUM(
 int,
 JsProxy_IterNext_js,
-(JsRef idobj, JsRef* result_ptr, char** msg),
+(JsRef idobj, JsRef argid, JsRef* result_ptr, char** msg),
 {
   let jsobj = Hiwire.get_value(idobj);
-  let res = jsobj.next();
+  let arg;
+  if(argid) {
+    arg = Hiwire.get_value(argid);
+  }
+  let res = jsobj.next(arg);
   let msg_ptr;
   if(typeof res !== "object") {
     msg_ptr = stringToNewUTF8(`Result of next() should have type "object" not ${typeof res}`)
   } else if(typeof res.done === "undefined") {
     if (typeof res.then === "function") {
-      msg_ptr = stringToNewUTF8(`Result of next() was a promise, use anext() instead.`)
+      msg_ptr = stringToNewUTF8(`Result was a promise, use anext() / asend() instead.`)
     } else {
       msg_ptr = stringToNewUTF8(`Result of next() has no 'done' field.`)
     }
@@ -508,9 +547,12 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   PySendResult ret;
   bool success = false;
   *result = NULL;
-
+  JsRef jsarg = NULL;
+  if (arg) {
+    jsarg = python2js(arg);
+  }
   char* msg;
-  int done = JsProxy_IterNext_js(JsProxy_REF(self), &idresult, &msg);
+  int done = JsProxy_IterNext_js(JsProxy_REF(self), jsarg, &idresult, &msg);
   // done:
   //   1 ==> finished
   //   0 ==> not finished
@@ -534,6 +576,7 @@ finally:
     ret = PYGEN_ERROR;
     Py_CLEAR(*result);
   }
+  hiwire_CLEAR(jsarg);
   hiwire_CLEAR(idresult);
   return ret;
 }
@@ -550,6 +593,35 @@ JsProxy_IterNext(PyObject* self)
   }
   return result;
 }
+
+PyObject*
+JsProxy_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  PyObject* arg = NULL;
+  if (!_PyArg_CheckPositional("send", nargs, 0, 1)) {
+    return NULL;
+  }
+  if (nargs > 0) {
+    arg = args[0];
+  }
+
+  PyObject* result;
+  if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
+    if (result == Py_None) {
+      PyErr_SetNone(PyExc_StopIteration);
+    } else {
+      _PyGen_SetStopIterationValue(result);
+    }
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+static PyMethodDef JsProxy_send_MethodDef = {
+  "send",
+  (PyCFunction)JsProxy_send,
+  METH_FASTCALL,
+};
 
 /**
  * This is exposed as a METH_NOARGS method on the JsProxy. It returns
@@ -2825,6 +2897,8 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsProxy_anext };
+    methods[cur_method++] = JsProxy_send_MethodDef;
+    methods[cur_method++] = JsProxy_asend_MethodDef;
   }
   if (flags & HAS_LENGTH) {
     // If the function has a `size` or `length` member, use this for

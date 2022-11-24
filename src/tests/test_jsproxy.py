@@ -1434,3 +1434,51 @@ async def test_async_iter2(selenium):
     assert await anext(it) == 3
     with pytest.raises(StopAsyncIteration):
         await anext(it)
+
+
+@run_in_pyodide
+async def test_asend(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    it = run_js(
+        """
+        (async function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        })();
+        """
+    )
+
+    assert await it.asend() == 2
+    assert await it.asend(2) == 4
+    assert await it.asend(3) == 5
+    with pytest.raises(StopAsyncIteration):
+        await it.asend(4)
+
+
+@run_in_pyodide
+def test_send(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    it = run_js(
+        """
+        (function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        })();
+        """
+    )
+
+    assert it.send() == 2
+    assert it.send(2) == 4
+    assert it.send(3) == 5
+    with pytest.raises(StopIteration):
+        it.send(4)
