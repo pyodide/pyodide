@@ -681,25 +681,18 @@ def test_create_proxy_roundtrip(selenium):
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
+@run_in_pyodide
 def test_return_destroyed_value(selenium):
-    selenium.run_js(
-        r"""
-        self.f = function(x){ return x };
-        pyodide.runPython(`
-            from pyodide.ffi import create_proxy, JsException
-            from js import f
-            p = create_proxy([])
-            p.destroy()
-            try:
-                f(p)
-            except JsException as e:
-                assert str(e) == (
-                    "Error: Object has already been destroyed\\n"
-                    'The object was of type "list" and had repr "[]"'
-                )
-        `);
-        """
-    )
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_proxy
+
+    f = run_js("(function(x){ return x; })")
+    p = create_proxy([])
+    p.destroy()
+    with pytest.raises(JsException, match='The object was of type "list" and had repr'):
+        f(p)
 
 
 def test_docstrings_a():
@@ -1405,6 +1398,20 @@ def test_args(selenium_standalone_noload):
         )
         == repr([x * x + 1 for x in range(10)])
     )
+
+
+def test_args_OO(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            args: ['-OO']
+        });
+        pyodide.runPython(`import sys; sys.__doc__`)
+        """
+    )
+
+    assert not doc
 
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
