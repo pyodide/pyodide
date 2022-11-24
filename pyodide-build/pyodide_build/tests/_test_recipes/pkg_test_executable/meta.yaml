@@ -1,0 +1,9 @@
+package:
+  name: pkg_test_executable
+  version: "1.0.0"
+requirements:
+  executable:
+    - should_not_exist_
+    - should_not_exist2_
+source:
+  path: src
