@@ -1389,7 +1389,7 @@ async def test_async_iter(selenium):
         await anext(b)
 
     with pytest.raises(
-        TypeError, match="Result of next.. was a promise, use anext.. instead."
+        TypeError, match="Result of next was a promise, use anext.* instead."
     ):
         next(f())
 
