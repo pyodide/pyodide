@@ -274,6 +274,9 @@ JsRef
 hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
 
 JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name);
+
+JsRef
 hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
