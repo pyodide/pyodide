@@ -453,10 +453,17 @@ EM_JS_REF(JsRef, hiwire_CallMethod, (JsRef idobj, JsRef name, JsRef idargs), {
   return Hiwire.new_value(jsobj[jsname](... jsargs));
 });
 
+EM_JS_REF(JsRef, hiwire_CallMethod_NoArgs, (JsRef idobj, JsRef name), {
+  let jsobj = Hiwire.get_value(idobj);
+  let jsname = Hiwire.get_value(name);
+  return Hiwire.new_value(jsobj[jsname]());
+});
+
 // clang-format off
-EM_JS_REF(JsRef,
-          hiwire_CallMethod_OneArg,
-          (JsRef idobj, JsRef name, JsRef idarg),
+EM_JS_REF(
+JsRef,
+hiwire_CallMethod_OneArg,
+(JsRef idobj, JsRef name, JsRef idarg),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jsname = Hiwire.get_value(name);
@@ -495,6 +502,16 @@ hiwire_CallMethodId_va(JsRef idobj, Js_Identifier* name, ...)
   JsRef idresult = hiwire_CallMethodId(idobj, name, idargs);
   hiwire_decref(idargs);
   return idresult;
+}
+
+JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name)
+{
+  JsRef name_ref = JsString_FromId(name);
+  if (name_ref == NULL) {
+    return NULL;
+  }
+  return hiwire_CallMethod_NoArgs(obj, name_ref);
 }
 
 JsRef

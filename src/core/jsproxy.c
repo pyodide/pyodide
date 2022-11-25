@@ -73,6 +73,9 @@ Js_IDENTIFIER(has);
 Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
+Js_IDENTIFIER(next);
+Js_IDENTIFIER(return );
+Js_IDENTIFIER(throw);
 _Py_IDENTIFIER(fileno);
 
 static PyObject* JsProxy_metaclass;
@@ -511,23 +514,18 @@ JsProxy_anext(PyObject* self)
 // clang-format off
 EM_JS_NUM(
 int,
-JsProxy_IterNext_js,
-(JsRef idobj, JsRef argid, JsRef* result_ptr, char** msg),
+handle_next_result_js,
+(JsRef resid, JsRef* result_ptr, char** msg),
 {
-  let jsobj = Hiwire.get_value(idobj);
-  let arg;
-  if(argid) {
-    arg = Hiwire.get_value(argid);
-  }
-  let res = jsobj.next(arg);
   let msg_ptr;
+  const res = Hiwire.get_value(resid);
   if(typeof res !== "object") {
-    msg_ptr = stringToNewUTF8(`Result of next() should have type "object" not ${typeof res}`)
+    msg_ptr = stringToNewUTF8(`Result should have type "object" not ${typeof res}`)
   } else if(typeof res.done === "undefined") {
     if (typeof res.then === "function") {
-      msg_ptr = stringToNewUTF8(`Result was a promise, use anext() / asend() instead.`)
+      msg_ptr = stringToNewUTF8(`Result was a promise, use anext() / asend() / athrow() instead.`)
     } else {
-      msg_ptr = stringToNewUTF8(`Result of next() has no 'done' field.`)
+      msg_ptr = stringToNewUTF8(`Result has no 'done' field.`)
     }
   }
   if (msg_ptr) {
@@ -538,21 +536,15 @@ JsProxy_IterNext_js,
   DEREF_U32(result_ptr, 0) = result_id;
   return res.done;
 });
-// clang-format on
 
 PySendResult
-JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
-{
-  JsRef idresult = NULL;
-  PySendResult ret;
-  bool success = false;
-  *result = NULL;
-  JsRef jsarg = NULL;
-  if (arg) {
-    jsarg = python2js(arg);
-  }
+handle_next_result(JsRef next_res, PyObject** result){
+  PySendResult res = PYGEN_ERROR;
   char* msg;
-  int done = JsProxy_IterNext_js(JsProxy_REF(self), jsarg, &idresult, &msg);
+  JsRef idresult = NULL;
+  *result = NULL;
+
+  int done = handle_next_result_js(next_res, &idresult, &msg);
   // done:
   //   1 ==> finished
   //   0 ==> not finished
@@ -568,16 +560,33 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   // so pyvalue will be set to Py_None.
   *result = js2python(idresult);
   FAIL_IF_NULL(result);
-  ret = done ? PYGEN_RETURN : PYGEN_NEXT;
 
-  success = true;
+  res = done ? PYGEN_RETURN : PYGEN_NEXT;
 finally:
-  if (!success) {
-    ret = PYGEN_ERROR;
-    Py_CLEAR(*result);
-  }
-  hiwire_CLEAR(jsarg);
   hiwire_CLEAR(idresult);
+  return res;
+}
+
+// clang-format on
+
+PySendResult
+JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
+{
+  JsRef jsarg = Js_undefined;
+  JsRef next_res = NULL;
+  *result = NULL;
+  PySendResult ret = PYGEN_ERROR;
+
+  if (arg) {
+    jsarg = python2js(arg);
+    FAIL_IF_NULL(jsarg);
+  }
+  next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
+  FAIL_IF_NULL(next_res);
+  ret = handle_next_result(next_res, result);
+finally:
+  hiwire_CLEAR(jsarg);
+  hiwire_CLEAR(next_res);
   return ret;
 }
 
@@ -621,6 +630,140 @@ static PyMethodDef JsProxy_send_MethodDef = {
   "send",
   (PyCFunction)JsProxy_send,
   METH_FASTCALL,
+};
+
+static PyObject* Exc_JsException;
+
+static PyObject*
+JsProxy_throw_inner(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
+{
+  if (tb == Py_None) {
+    tb = NULL;
+  } else if (tb != NULL && !PyTraceBack_Check(tb)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "throw() third argument must be a traceback object");
+    return NULL;
+  }
+
+  Py_INCREF(typ);
+  Py_XINCREF(val);
+  Py_XINCREF(tb);
+
+  if (PyExceptionClass_Check(typ)) {
+    PyErr_NormalizeException(&typ, &val, &tb);
+    if (tb != NULL) {
+      PyException_SetTraceback(val, tb);
+    }
+  } else if (PyExceptionInstance_Check(typ)) {
+    /* Raising an instance.  The value should be a dummy. */
+    if (val && val != Py_None) {
+      PyErr_SetString(PyExc_TypeError,
+                      "instance exception may not have a separate value");
+      goto failed_throw;
+    } else {
+      /* Normalize to raise <class>, <instance> */
+      Py_XDECREF(val);
+      val = typ;
+      typ = PyExceptionInstance_Class(typ);
+      Py_INCREF(typ);
+
+      if (tb == NULL)
+        /* Returns NULL if there's no traceback */
+        tb = PyException_GetTraceback(val);
+    }
+  } else {
+    /* Not something you can raise.  throw() fails. */
+    PyErr_Format(PyExc_TypeError,
+                 "exceptions must be classes or instances "
+                 "deriving from BaseException, not %s",
+                 Py_TYPE(typ)->tp_name);
+    goto failed_throw;
+  }
+
+  PyErr_Restore(typ, val, tb);
+  JsRef throw_res = NULL;
+  PyObject* result = NULL;
+  if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+    PyErr_Clear();
+    throw_res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
+  } else {
+    JsRef exc;
+    if (PyErr_ExceptionMatches(Exc_JsException)) {
+      PyErr_Fetch(&typ, &val, &tb);
+      exc = JsException_AsJs(val); // cannot fail.
+      Py_CLEAR(typ);
+      Py_CLEAR(val);
+      Py_CLEAR(tb);
+    } else {
+      exc = wrap_exception(); // cannot fail.
+    }
+    throw_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_throw, exc);
+    hiwire_CLEAR(exc);
+  }
+  FAIL_IF_NULL(throw_res);
+  PySendResult ret = handle_next_result(throw_res, &result);
+  if (ret == PYGEN_RETURN) {
+    if (result == Py_None) {
+      PyErr_SetNone(PyExc_StopIteration);
+    } else {
+      _PyGen_SetStopIterationValue(result);
+    }
+    Py_CLEAR(result);
+  }
+finally:
+  hiwire_CLEAR(throw_res);
+  return result;
+
+failed_throw:
+  /* Didn't use our arguments, so restore their original refcounts */
+  Py_DECREF(typ);
+  Py_XDECREF(val);
+  Py_XDECREF(tb);
+  return NULL;
+}
+
+static PyObject*
+JsProxy_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  PyObject* typ;
+  PyObject* val = NULL;
+  PyObject* tb = NULL;
+
+  if (!_PyArg_ParseStack(args, nargs, "O|OO:throw", &typ, &val, &tb)) {
+    return NULL;
+  }
+
+  return JsProxy_throw_inner(self, typ, val, tb);
+}
+
+static PyMethodDef JsProxy_throw_MethodDef = {
+  "throw",
+  (PyCFunction)JsProxy_throw,
+  METH_FASTCALL,
+};
+
+static PyObject*
+JsProxy_close(PyObject* self, PyObject* ignored)
+{
+  PyObject* result = JsProxy_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
+  if (result != NULL) {
+    // We could also just return it, but this matches Python.
+    PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
+    Py_DECREF(result);
+    return NULL;
+  }
+  if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+      PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+    PyErr_Clear(); /* ignore these errors */
+    Py_RETURN_NONE;
+  }
+  return NULL;
+}
+
+static PyMethodDef JsProxy_close_MethodDef = {
+  "close",
+  (PyCFunction)JsProxy_close,
+  METH_NOARGS,
 };
 
 /**
@@ -2898,6 +3041,8 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsProxy_anext };
     methods[cur_method++] = JsProxy_send_MethodDef;
+    methods[cur_method++] = JsProxy_throw_MethodDef;
+    methods[cur_method++] = JsProxy_close_MethodDef;
     methods[cur_method++] = JsProxy_asend_MethodDef;
   }
   if (flags & HAS_LENGTH) {
