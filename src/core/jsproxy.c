@@ -401,12 +401,12 @@ JsProxy_anext_js,
   let p = jsobj.next(jsarg);
   let msg_ptr;
   if(typeof p !== "object") {
-    msg_ptr = stringToNewUTF8(`Result of next() should be object not ${typeof p}`)
+    msg_ptr = stringToNewUTF8(`Result of anext() should be object not ${typeof p}`)
   } else if(typeof p.then !== "function") {
     if (typeof p.done === "boolean") {
-      msg_ptr = stringToNewUTF8(`Result of next() was not a promise, use next() instead.`)
+      msg_ptr = stringToNewUTF8(`Result of anext() was not a promise, use next() instead.`)
     } else {
-      msg_ptr = stringToNewUTF8(`Result of next() was not a promise.`)
+      msg_ptr = stringToNewUTF8(`Result of anext() was not a promise.`)
     }
   }
   if (msg_ptr) {
