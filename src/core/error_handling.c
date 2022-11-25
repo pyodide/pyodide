@@ -56,13 +56,16 @@ set_error(PyObject* err)
  * msg - the Python traceback + error message
  * err - The error object
  */
-EM_JS_REF(JsRef,
-          new_error,
-          (const char* type, const char* msg, PyObject* err),
-          {
-            return Hiwire.new_value(
-              new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
-          });
+// clang-format off
+EM_JS_REF(
+JsRef,
+new_error,
+(const char* type, const char* msg, PyObject* err),
+{
+  return Hiwire.new_value(
+    new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
+});
+// clang-format on
 
 /**
  * Fetch the exception, normalize it, and ensure that traceback is not NULL.

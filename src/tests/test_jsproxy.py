@@ -1388,9 +1388,7 @@ async def test_async_iter(selenium):
     with pytest.raises(StopAsyncIteration):
         await anext(b)
 
-    with pytest.raises(
-        TypeError, match="Result of next was a promise, use anext.* instead."
-    ):
+    with pytest.raises(TypeError, match="Result was a promise, use anext.* instead."):
         next(f())
 
     g = run_js(
