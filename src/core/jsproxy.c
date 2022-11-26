@@ -90,10 +90,11 @@ static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
-static PyObject* Collections_MutableSequence;
-static PyObject* Collections_Sequence;
-static PyObject* Collections_MutableMapping;
-static PyObject* Collections_Mapping;
+static PyObject* MutableSequence;
+static PyObject* Sequence;
+static PyObject* MutableMapping;
+static PyObject* Mapping;
+static PyObject* Generator;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -3316,11 +3317,13 @@ skip_container_slots:
   PyObject* abc = NULL;
   int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
-    abc = Collections_MutableSequence;
+    abc = MutableSequence;
   } else if (flags & IS_NODE_LIST) {
-    abc = Collections_Sequence;
+    abc = Sequence;
   } else if ((flags & mapping_flags) == mapping_flags) {
-    abc = (flags & HAS_SET) ? Collections_MutableMapping : Collections_Mapping;
+    abc = (flags & HAS_SET) ? MutableMapping : Mapping;
+  } else if (flags & IS_GENERATOR) {
+    abc = Generator;
   }
   if (abc) {
     PyObject* register_result =
@@ -3626,29 +3629,18 @@ JsProxy_init(PyObject* core_module)
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
-  Collections_MutableSequence =
-    PyObject_GetAttrString(collections_abc, "MutableSequence");
-  FAIL_IF_NULL(Collections_MutableSequence);
-  Collections_Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
-  FAIL_IF_NULL(Collections_Sequence);
-  Collections_MutableMapping =
-    PyObject_GetAttrString(collections_abc, "MutableMapping");
-  FAIL_IF_NULL(Collections_MutableMapping);
-  Collections_Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
-  FAIL_IF_NULL(Collections_Mapping);
-
-  collections_abc = PyImport_ImportModule("collections.abc");
-  FAIL_IF_NULL(collections_abc);
+  MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(MutableSequence);
+  Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Sequence);
   MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
   FAIL_IF_NULL(MutableMapping);
-
-  collections_abc = PyImport_ImportModule("collections.abc");
-  FAIL_IF_NULL(collections_abc);
-  MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
-  FAIL_IF_NULL(MutableMapping);
+  Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
+  FAIL_IF_NULL(Mapping);
+  Generator = PyObject_GetAttrString(collections_abc, "Generator");
+  FAIL_IF_NULL(Generator);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
-
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
 #define AddFlag(flag)                                                          \
