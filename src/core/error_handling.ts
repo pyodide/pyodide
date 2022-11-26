@@ -260,7 +260,7 @@ Module.handle_js_error = function (e: any) {
  *
  * See :ref:`type-translations-errors` for more information.
  *
- * .. admonition:: Avoid Stack Frames
+ * .. admonition:: Avoid leaking stack Frames
  *    :class: warning
  *
  *    If you make a :any:`PyProxy` of ``sys.last_value``, you should be
@@ -268,6 +268,8 @@ Module.handle_js_error = function (e: any) {
  *    done. You may leak a large amount of memory including the local
  *    variables of all the stack frames in the traceback if you don't. The
  *    easiest way is to only handle the exception in Python.
+ *
+ * @hideconstructor
  */
 export class PythonError extends Error {
   /**  The address of the error we are wrapping. We may later compare this
@@ -277,12 +279,16 @@ export class PythonError extends Error {
    * @private
    */
   __error_address: number;
-
-  constructor(message: string, error_address: number) {
+  /**
+   * The Python type, e.g, ``RuntimeError`` or ``KeyError``.
+   */
+  type: string;
+  constructor(type: string, message: string, error_address: number) {
     const oldLimit = Error.stackTraceLimit;
     Error.stackTraceLimit = Infinity;
     super(message);
     Error.stackTraceLimit = oldLimit;
+    this.type = type;
     this.__error_address = error_address;
   }
 }

@@ -24,6 +24,19 @@ from sphinx_js.typedoc import Analyzer as TsAnalyzer
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_type_name = TsAnalyzer._type_name
 
+_orig_constructor_and_members = TsAnalyzer._constructor_and_members
+
+
+def _constructor_and_members(self, cls):
+    result = _orig_constructor_and_members(self, cls)
+    for tag in cls.get("comment", {}).get("tags", []):
+        if tag["tag"] == "hideconstructor":
+            return (None, result[1])
+    return result
+
+
+TsAnalyzer._constructor_and_members = _constructor_and_members
+
 
 def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     """We want to document a destructured argument as if it were several

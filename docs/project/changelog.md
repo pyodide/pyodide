@@ -142,7 +142,14 @@ substitutions:
 - {{ Fix }} Pyodide now loads correctly with `-OO` option.
 
 - Add Gitpod configuration to the repository.
-  {pr} `3201`
+  {pr}`3201`
+
+- {{ Enhancement }} Added a type field to `PythonError`
+  {pr}`3289`
+
+- {{ Enhancement }} It is now possible to use aynchronous Python generators from
+  JavaScript.
+  {pr}`3290`
 
 ### Build System / Package Loading
 
