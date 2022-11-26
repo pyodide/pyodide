@@ -1027,6 +1027,7 @@ export class PyProxyIteratorMethods {
 }
 
 export class PyProxyAsyncIteratorMethods {
+  /** @private */
   async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
     let idarg = Hiwire.new_value(arg);
     let idresult;
