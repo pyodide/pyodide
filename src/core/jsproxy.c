@@ -83,12 +83,17 @@ Js_IDENTIFIER(next);
 Js_IDENTIFIER(return );
 Js_IDENTIFIER(throw);
 _Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(register);
 
 static PyObject* collections_abc;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
+static PyObject* Collections_MutableSequence;
+static PyObject* Collections_Sequence;
+static PyObject* Collections_MutableMapping;
+static PyObject* Collections_Mapping;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -684,6 +689,19 @@ JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
   return hiwire_get_length(self->js);
+}
+
+static PyObject*
+JsProxy_item_array(PyObject* o, Py_ssize_t i)
+{
+  PyObject* pyresult = NULL;
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = JsArray_Get(self->js, i);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
 }
 
 /**
@@ -3157,6 +3175,7 @@ JsProxy_create_subtype(int flags)
   if (flags & HAS_GET) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsProxy_subscript };
+    tp_flags |= Py_TPFLAGS_MAPPING;
   }
   if (flags & HAS_SET) {
     // It's assumed that if HAS_SET then also HAS_DELETE.
@@ -3185,7 +3204,7 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_finally_MethodDef;
   }
   if (flags & IS_CALLABLE) {
-    tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+    tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_tp_descr_get,
@@ -3220,6 +3239,8 @@ skip_container_slots:
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsTypedArray_ass_subscript };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsProxy_item_array };
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
@@ -3292,6 +3313,23 @@ skip_container_slots:
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
+  PyObject* abc = NULL;
+  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
+  if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
+    abc = Collections_MutableSequence;
+  } else if (flags & IS_NODE_LIST) {
+    abc = Collections_Sequence;
+  } else if ((flags & mapping_flags) == mapping_flags) {
+    abc = (flags & HAS_SET) ? Collections_MutableMapping : Collections_Mapping;
+  }
+  if (abc) {
+    PyObject* register_result =
+      _PyObject_CallMethodIdOneArg(abc, &PyId_register, result);
+    abc = NULL; // abc is borrowed, don't decref
+    FAIL_IF_NULL(register_result);
+    Py_CLEAR(register_result);
+  }
+
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
@@ -3585,6 +3623,24 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* asyncio_module = NULL;
+
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  Collections_MutableSequence =
+    PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(Collections_MutableSequence);
+  Collections_Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Collections_Sequence);
+  Collections_MutableMapping =
+    PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(Collections_MutableMapping);
+  Collections_Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
+  FAIL_IF_NULL(Collections_Mapping);
+
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(MutableMapping);
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
