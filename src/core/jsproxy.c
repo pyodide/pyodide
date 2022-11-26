@@ -446,16 +446,8 @@ JsProxy_IterNext(PyObject* self)
 }
 
 PyObject*
-JsGenerator_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsGenerator_send(PyObject* self, PyObject* arg)
 {
-  PyObject* arg = NULL;
-  if (!_PyArg_CheckPositional("send", nargs, 0, 1)) {
-    return NULL;
-  }
-  if (nargs > 0) {
-    arg = args[0];
-  }
-
   PyObject* result;
   if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
     if (result == Py_None) {
@@ -471,7 +463,7 @@ JsGenerator_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 static PyMethodDef JsGenerator_send_MethodDef = {
   "send",
   (PyCFunction)JsGenerator_send,
-  METH_FASTCALL,
+  METH_O,
 };
 
 static PyObject* Exc_JsException;

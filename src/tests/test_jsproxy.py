@@ -1686,23 +1686,27 @@ def test_jsproxy_as_object_map(selenium):
 
 
 @run_in_pyodide
-def test_send(selenium):
+def test_gen_send(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
 
-    it = run_js(
+    f = run_js(
         """
         (function*(){
             let n = 0;
             for(let i = 0; i < 3; i++){
                 n = yield n + 2;
             }
-        })();
+        });
         """
     )
 
-    assert it.send() == 2
+    it = f()
+    assert isinstance(it, JsGenerator)
+
+    assert it.send(None) == 2
     assert it.send(2) == 4
     assert it.send(3) == 5
     with pytest.raises(StopIteration):
@@ -1710,10 +1714,11 @@ def test_send(selenium):
 
 
 @run_in_pyodide
-def test_throw(selenium):
+def test_gen_throw(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
 
     f = run_js(
         """
@@ -1729,6 +1734,7 @@ def test_throw(selenium):
     )
 
     g = f()
+    assert isinstance(g, JsGenerator)
     assert next(g) == 1
     assert g.throw(TypeError("hi")) == 2
     with pytest.raises(TypeError, match="hi"):
@@ -1755,8 +1761,9 @@ def test_throw(selenium):
 
 
 @run_in_pyodide
-def test_close(selenium):
+def test_gen_close(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
 
     f = run_js(
         """
@@ -1778,8 +1785,9 @@ def test_close(selenium):
     l: list[str] = []
     p = create_proxy(l)
     g = f(p)
+    assert isinstance(g, JsGenerator)
     assert next(g) == 1
     assert next(g) == 2
-    assert g.close() is None
+    assert g.close() is None  # type:ignore[func-returns-value]
     p.destroy()
     assert l == ["finally"]

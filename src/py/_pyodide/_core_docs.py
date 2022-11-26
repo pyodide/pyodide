@@ -1,6 +1,7 @@
 import sys
 from collections.abc import (
     Callable,
+    Generator,
     ItemsView,
     Iterable,
     Iterator,
@@ -534,16 +535,19 @@ class JsMap(JsProxy):
 
 
 class JsGenerator(JsProxy):
+    _js_type_flags = ["IS_GENERATOR"]
+
     def send(self, value: Any) -> Any:
         """
         Resumes the execution and "sends" a value into the generator function.
 
-        The value argument becomes the result of the current yield expression.
-        The send() method returns the next value yielded by the generator, or
-        raises StopIteration if the generator exits without yielding another
-        value. When send() is called to start the generator, it must be called
-        with None as the argument, because there is no yield expression that
-        could receive the value.
+        The ``value`` argument becomes the result of the current yield
+        expression. The ``send()`` method returns the next value yielded by the
+        generator, or raises ``StopIteration`` if the generator exits without
+        yielding another value. When ``send()`` is called to start the
+        generator, the argument will be ignored. Unlike in Python, we cannot
+        detect that the generator hasn't started yet, and no error will be
+        thrown if the argument is not ``None``
         """
 
     def throw(
@@ -583,6 +587,15 @@ class JsGenerator(JsProxy):
         caller. close() does nothing if the generator has already exited due to
         an exception or normal exit.
         """
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+
+Generator.register(JsGenerator)
 
 
 # from pyproxy.c
