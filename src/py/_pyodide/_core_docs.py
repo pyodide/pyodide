@@ -9,6 +9,7 @@ from collections.abc import (
     ValuesView,
 )
 from functools import reduce
+from types import TracebackType
 from typing import IO, Any
 
 # All docstrings for public `core` APIs should be extracted from here. We use
@@ -529,6 +530,58 @@ class JsMap(JsProxy):
 
         Present if the wrapped JavaScript object is a MutableMapping (i.e., has
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+
+class JsGenerator(JsProxy):
+    def send(self, value: Any) -> Any:
+        """
+        Resumes the execution and "sends" a value into the generator function.
+
+        The value argument becomes the result of the current yield expression.
+        The send() method returns the next value yielded by the generator, or
+        raises StopIteration if the generator exits without yielding another
+        value. When send() is called to start the generator, it must be called
+        with None as the argument, because there is no yield expression that
+        could receive the value.
+        """
+
+    def throw(
+        self,
+        type: Exception | type,
+        value: Exception | None = None,
+        traceback: TracebackType | None = None,
+    ) -> Any:
+        """
+        Raises an exception at the point where the generator was paused, and
+        returns the next value yielded by the generator function.
+
+        If the generator exits without yielding another value, a StopIteration
+        exception is raised. If the generator function does not catch the
+        passed-in exception, or raises a different exception, then that
+        exception propagates to the caller.
+
+        In typical use, this is called with a single exception instance similar to the
+        way the raise keyword is used.
+
+        For backwards compatibility, however, the second signature is supported,
+        following a convention from older versions of Python. The type argument should
+        be an exception class, and value should be an exception instance. If the value
+        is not provided, the type constructor is called to get an instance. If traceback
+        is provided, it is set on the exception, otherwise any existing __traceback__
+        attribute stored in value may be cleared.
+        """
+
+    def close(self) -> None:
+        """Raises a GeneratorExit at the point where the generator function was
+        paused.
+
+        If the generator function then exits gracefully, is already closed, or
+        raises GeneratorExit (by not catching the exception), close returns to
+        its caller. If the generator yields a value, a RuntimeError is raised.
+        If the generator raises any other exception, it is propagated to the
+        caller. close() does nothing if the generator has already exited due to
+        an exception or normal exit.
         """
 
 

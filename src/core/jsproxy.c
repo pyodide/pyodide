@@ -57,6 +57,7 @@
 #define IS_TYPEDARRAY (1<<12)
 #define IS_DOUBLE_PROXY (1 << 13)
 #define IS_OBJECT_MAP (1 << 14)
+#define IS_GENERATOR (1 << 15)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -439,7 +440,7 @@ JsProxy_IterNext(PyObject* self)
 }
 
 PyObject*
-JsProxy_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsGenerator_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
   PyObject* arg = NULL;
   if (!_PyArg_CheckPositional("send", nargs, 0, 1)) {
@@ -461,16 +462,19 @@ JsProxy_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
   return result;
 }
 
-static PyMethodDef JsProxy_send_MethodDef = {
+static PyMethodDef JsGenerator_send_MethodDef = {
   "send",
-  (PyCFunction)JsProxy_send,
+  (PyCFunction)JsGenerator_send,
   METH_FASTCALL,
 };
 
 static PyObject* Exc_JsException;
 
 static PyObject*
-JsProxy_throw_inner(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
+JsGenerator_throw_inner(PyObject* self,
+                        PyObject* typ,
+                        PyObject* val,
+                        PyObject* tb)
 {
   if (tb == Py_None) {
     tb = NULL;
@@ -558,7 +562,7 @@ failed_throw:
 }
 
 static PyObject*
-JsProxy_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsGenerator_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
   PyObject* typ;
   PyObject* val = NULL;
@@ -568,19 +572,20 @@ JsProxy_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
     return NULL;
   }
 
-  return JsProxy_throw_inner(self, typ, val, tb);
+  return JsGenerator_throw_inner(self, typ, val, tb);
 }
 
-static PyMethodDef JsProxy_throw_MethodDef = {
+static PyMethodDef JsGenerator_throw_MethodDef = {
   "throw",
-  (PyCFunction)JsProxy_throw,
+  (PyCFunction)JsGenerator_throw,
   METH_FASTCALL,
 };
 
 static PyObject*
-JsProxy_close(PyObject* self, PyObject* ignored)
+JsGenerator_close(PyObject* self, PyObject* ignored)
 {
-  PyObject* result = JsProxy_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
+  PyObject* result =
+    JsGenerator_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
   if (result != NULL) {
     // We could also just return it, but this matches Python.
     PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
@@ -595,9 +600,9 @@ JsProxy_close(PyObject* self, PyObject* ignored)
   return NULL;
 }
 
-static PyMethodDef JsProxy_close_MethodDef = {
+static PyMethodDef JsGenerator_close_MethodDef = {
   "close",
-  (PyCFunction)JsProxy_close,
+  (PyCFunction)JsGenerator_close,
   METH_NOARGS,
 };
 
@@ -3136,10 +3141,13 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
-    methods[cur_method++] = JsProxy_send_MethodDef;
-    methods[cur_method++] = JsProxy_throw_MethodDef;
-    methods[cur_method++] = JsProxy_close_MethodDef;
   }
+  if (flags & IS_GENERATOR) {
+    methods[cur_method++] = JsGenerator_send_MethodDef;
+    methods[cur_method++] = JsGenerator_throw_MethodDef;
+    methods[cur_method++] = JsGenerator_close_MethodDef;
+  }
+
   if (flags & HAS_LENGTH) {
     // If the function has a `size` or `length` member, use this for
     // `len(proxy)` Prefer `size` to `length`.
@@ -3367,6 +3375,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
               ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
+  SET_FLAG_IF(IS_GENERATOR, hiwire_is_generator);
   // clang-format on
   return type_flags;
 });
@@ -3484,6 +3493,7 @@ JsProxy_init_docstrings()
   PyObject* JsArray = NULL;
   PyObject* JsMap = NULL;
   PyObject* JsDoubleProxy = NULL;
+  PyObject* JsGenerator = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
@@ -3504,6 +3514,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsArray);
   GetProxyDocClass(JsMap);
   GetProxyDocClass(JsDoubleProxy);
+  GetProxyDocClass(JsGenerator);
 #undef GetProxyDocClass
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
@@ -3550,6 +3561,10 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsBuffer, JsBuffer_write_to_file_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_read_from_file_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_into_file_MethodDef);
+
+  SET_DOCSTRING(JsGenerator, JsGenerator_send_MethodDef);
+  SET_DOCSTRING(JsGenerator, JsGenerator_throw_MethodDef);
+  SET_DOCSTRING(JsGenerator, JsGenerator_close_MethodDef);
 #undef SET_DOCSTRING
 
   success = true;
@@ -3560,6 +3575,7 @@ finally:
   Py_CLEAR(JsArray);
   Py_CLEAR(JsMap);
   Py_CLEAR(JsDoubleProxy);
+  Py_CLEAR(JsGenerator);
   return success ? 0 : -1;
 }
 
@@ -3596,6 +3612,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_NODE_LIST);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
+  AddFlag(IS_GENERATOR);
 
 #undef AddFlag
 
