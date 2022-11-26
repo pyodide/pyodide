@@ -1461,6 +1461,20 @@ def test_jsproxy_match(selenium):
     assert x == 2
     assert y == 4
 
+    c = run_js("({a: 2, b: 5})").as_object_map()
+    match c:
+        case {"a": x, "b": y}:
+            pass
+    assert x == 2
+    assert y == 5
+    default = False
+    match c:
+        case {"a": x, "b": y, "d": _}:
+            pass
+        case _:
+            default = True
+    assert default
+
 
 @run_in_pyodide
 def test_jsarray_index(selenium):
