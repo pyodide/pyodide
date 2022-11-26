@@ -58,6 +58,7 @@
 #define IS_DOUBLE_PROXY (1 << 13)
 #define IS_OBJECT_MAP (1 << 14)
 #define IS_ASYNC_ITERABLE (1 << 15)
+#define IS_GENERATOR (1 << 16)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -83,12 +84,18 @@ Js_IDENTIFIER(next);
 Js_IDENTIFIER(return );
 Js_IDENTIFIER(throw);
 _Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(register);
 
 static PyObject* collections_abc;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
+static PyObject* MutableSequence;
+static PyObject* Sequence;
+static PyObject* MutableMapping;
+static PyObject* Mapping;
+static PyObject* Generator;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -612,16 +619,8 @@ JsProxy_IterNext(PyObject* self)
 }
 
 PyObject*
-JsProxy_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsGenerator_send(PyObject* self, PyObject* arg)
 {
-  PyObject* arg = NULL;
-  if (!_PyArg_CheckPositional("send", nargs, 0, 1)) {
-    return NULL;
-  }
-  if (nargs > 0) {
-    arg = args[0];
-  }
-
   PyObject* result;
   if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
     if (result == Py_None) {
@@ -634,16 +633,19 @@ JsProxy_send(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
   return result;
 }
 
-static PyMethodDef JsProxy_send_MethodDef = {
+static PyMethodDef JsGenerator_send_MethodDef = {
   "send",
-  (PyCFunction)JsProxy_send,
-  METH_FASTCALL,
+  (PyCFunction)JsGenerator_send,
+  METH_O,
 };
 
 static PyObject* Exc_JsException;
 
 static PyObject*
-JsProxy_throw_inner(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
+JsGenerator_throw_inner(PyObject* self,
+                        PyObject* typ,
+                        PyObject* val,
+                        PyObject* tb)
 {
   if (tb == Py_None) {
     tb = NULL;
@@ -731,7 +733,7 @@ failed_throw:
 }
 
 static PyObject*
-JsProxy_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsGenerator_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
   PyObject* typ;
   PyObject* val = NULL;
@@ -741,19 +743,20 @@ JsProxy_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
     return NULL;
   }
 
-  return JsProxy_throw_inner(self, typ, val, tb);
+  return JsGenerator_throw_inner(self, typ, val, tb);
 }
 
-static PyMethodDef JsProxy_throw_MethodDef = {
+static PyMethodDef JsGenerator_throw_MethodDef = {
   "throw",
-  (PyCFunction)JsProxy_throw,
+  (PyCFunction)JsGenerator_throw,
   METH_FASTCALL,
 };
 
 static PyObject*
-JsProxy_close(PyObject* self, PyObject* ignored)
+JsGenerator_close(PyObject* self, PyObject* ignored)
 {
-  PyObject* result = JsProxy_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
+  PyObject* result =
+    JsGenerator_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
   if (result != NULL) {
     // We could also just return it, but this matches Python.
     PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
@@ -768,9 +771,9 @@ JsProxy_close(PyObject* self, PyObject* ignored)
   return NULL;
 }
 
-static PyMethodDef JsProxy_close_MethodDef = {
+static PyMethodDef JsGenerator_close_MethodDef = {
   "close",
-  (PyCFunction)JsProxy_close,
+  (PyCFunction)JsGenerator_close,
   METH_NOARGS,
 };
 
@@ -852,6 +855,19 @@ JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
   return hiwire_get_length(self->js);
+}
+
+static PyObject*
+JsProxy_item_array(PyObject* o, Py_ssize_t i)
+{
+  PyObject* pyresult = NULL;
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = JsArray_Get(self->js, i);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
 }
 
 /**
@@ -3304,8 +3320,10 @@ JsProxy_create_subtype(int flags)
                                        .pfunc = (void*)JsProxy_GetAsyncIter };
   }
   if (flags & IS_ITERATOR) {
-    // JsProxy_GetIter would work just as well as PyObject_SelfIter but
-    // PyObject_SelfIter avoids an unnecessary allocation.
+    // We're not sure whether it is an async iterator or a sync iterator. So add
+    // both methods and raise at runtime if someone uses the wrong one.
+    // JsProxy_GetIter would work just as well as PyObject_SelfIter
+    // but PyObject_SelfIter avoids an unnecessary allocation.
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
@@ -3316,11 +3334,14 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsProxy_anext };
-    methods[cur_method++] = JsProxy_send_MethodDef;
-    methods[cur_method++] = JsProxy_throw_MethodDef;
-    methods[cur_method++] = JsProxy_close_MethodDef;
+    methods[cur_method++] = JsGenerator_send_MethodDef;
     methods[cur_method++] = JsProxy_asend_MethodDef;
   }
+  if (flags & IS_GENERATOR) {
+    methods[cur_method++] = JsGenerator_throw_MethodDef;
+    methods[cur_method++] = JsGenerator_close_MethodDef;
+  }
+
   if (flags & HAS_LENGTH) {
     // If the function has a `size` or `length` member, use this for
     // `len(proxy)` Prefer `size` to `length`.
@@ -3330,6 +3351,7 @@ JsProxy_create_subtype(int flags)
   if (flags & HAS_GET) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsProxy_subscript };
+    tp_flags |= Py_TPFLAGS_MAPPING;
   }
   if (flags & HAS_SET) {
     // It's assumed that if HAS_SET then also HAS_DELETE.
@@ -3358,7 +3380,7 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_finally_MethodDef;
   }
   if (flags & IS_CALLABLE) {
-    tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+    tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_tp_descr_get,
@@ -3393,6 +3415,8 @@ skip_container_slots:
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsTypedArray_ass_subscript };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsProxy_item_array };
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
@@ -3465,6 +3489,25 @@ skip_container_slots:
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
+  PyObject* abc = NULL;
+  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
+  if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
+    abc = MutableSequence;
+  } else if (flags & IS_NODE_LIST) {
+    abc = Sequence;
+  } else if ((flags & mapping_flags) == mapping_flags) {
+    abc = (flags & HAS_SET) ? MutableMapping : Mapping;
+  } else if (flags & IS_GENERATOR) {
+    abc = Generator;
+  }
+  if (abc) {
+    PyObject* register_result =
+      _PyObject_CallMethodIdOneArg(abc, &PyId_register, result);
+    abc = NULL; // abc is borrowed, don't decref
+    FAIL_IF_NULL(register_result);
+    Py_CLEAR(register_result);
+  }
+
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
@@ -3549,6 +3592,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
               ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
+  SET_FLAG_IF(IS_GENERATOR, hiwire_is_generator);
   // clang-format on
   return type_flags;
 });
@@ -3666,6 +3710,7 @@ JsProxy_init_docstrings()
   PyObject* JsArray = NULL;
   PyObject* JsMap = NULL;
   PyObject* JsDoubleProxy = NULL;
+  PyObject* JsGenerator = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
@@ -3686,6 +3731,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsArray);
   GetProxyDocClass(JsMap);
   GetProxyDocClass(JsDoubleProxy);
+  GetProxyDocClass(JsGenerator);
 #undef GetProxyDocClass
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
@@ -3732,6 +3778,10 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsBuffer, JsBuffer_write_to_file_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_read_from_file_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_into_file_MethodDef);
+
+  SET_DOCSTRING(JsGenerator, JsGenerator_send_MethodDef);
+  SET_DOCSTRING(JsGenerator, JsGenerator_throw_MethodDef);
+  SET_DOCSTRING(JsGenerator, JsGenerator_close_MethodDef);
 #undef SET_DOCSTRING
 
   success = true;
@@ -3742,6 +3792,7 @@ finally:
   Py_CLEAR(JsArray);
   Py_CLEAR(JsMap);
   Py_CLEAR(JsDoubleProxy);
+  Py_CLEAR(JsGenerator);
   return success ? 0 : -1;
 }
 
@@ -3754,11 +3805,18 @@ JsProxy_init(PyObject* core_module)
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
+  MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(MutableSequence);
+  Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Sequence);
   MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
   FAIL_IF_NULL(MutableMapping);
+  Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
+  FAIL_IF_NULL(Mapping);
+  Generator = PyObject_GetAttrString(collections_abc, "Generator");
+  FAIL_IF_NULL(Generator);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
-
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
 #define AddFlag(flag)                                                          \
@@ -3779,6 +3837,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
   AddFlag(IS_ASYNC_ITERABLE);
+  AddFlag(IS_GENERATOR);
 
 #undef AddFlag
 

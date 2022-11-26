@@ -1,6 +1,9 @@
 # See also test_typeconversions, and test_python.
 import pytest
+from hypothesis import example, given
+from hypothesis import strategies as st
 from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.hypothesis import std_hypothesis_settings
 
 
 def test_jsproxy_dir(selenium):
@@ -1189,6 +1192,277 @@ def test_js_id(selenium):
 
 
 @run_in_pyodide
+def test_object_with_null_constructor(selenium):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    o = run_js("Object.create(null)")
+    with TestCase().assertRaises(TypeError):
+        repr(o)
+
+
+@pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
+@run_in_pyodide
+def test_very_large_length(selenium, n):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises(
+        OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
+    )
+
+    o = run_js(f"({{length : {n}}})")
+    with raises:
+        len(o)
+
+    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
+    # as an array
+    # 2. Return a very large length
+    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
+    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    with raises:
+        a[-1]
+
+
+@pytest.mark.parametrize(
+    "n", [-1, -2, -3, -100, -1 << 31, -1 << 32, -1 << 33, -1 << 63, -1 << 64, -1 << 65]
+)
+@run_in_pyodide
+def test_negative_length(selenium, n):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises(
+        ValueError, msg=f"length {n} of object is negative"
+    )
+
+    o = run_js(f"({{length : {n}}})")
+    with raises:
+        len(o)
+
+    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
+    # as an array
+    # 2. Return a negative length
+    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
+    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    with raises:
+        a[-1]
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slices(selenium, l, slice):
+    expected = l[slice]
+    from pyodide.ffi import JsArray, to_js
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    result = jsl[slice]
+    assert result.to_py() == expected
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slice_del(selenium, l, slice):
+    from pyodide.ffi import JsArray, to_js
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    del l[slice]
+    del jsl[slice]
+    assert jsl.to_py() == l
+
+
+@st.composite
+def list_slice_and_value(draw):
+    l = draw(st.lists(st.integers()))
+    step_one = draw(st.booleans())
+    if step_one:
+        start = draw(st.integers(0, max(len(l) - 1, 0)) | st.none())
+        stop = draw(st.integers(start, len(l)) | st.none())
+        if draw(st.booleans()) and start is not None:
+            start -= len(l)
+        if draw(st.booleans()) and stop is not None:
+            stop -= len(l)
+        s = slice(start, stop)
+        vals = draw(st.lists(st.integers()))
+    else:
+        s = draw(st.slices(50))
+        vals_len = len(l[s])
+        vals = draw(st.lists(st.integers(), min_size=vals_len, max_size=vals_len))
+    return (l, s, vals)
+
+
+@std_hypothesis_settings
+@given(lsv=list_slice_and_value())
+@example(lsv=(list(range(5)), slice(5, 2), []))
+@example(lsv=(list(range(5)), slice(2, 5, -1), []))
+@example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
+@run_in_pyodide
+def test_array_slice_assign_1(selenium, lsv):
+    from pyodide.ffi import JsArray, to_js
+
+    [l, s, v] = lsv
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    l[s] = v
+    jsl[s] = v
+    assert jsl.to_py() == l
+
+
+@run_in_pyodide
+def test_array_slice_assign_2(selenium):
+    import pytest
+
+    from pyodide.ffi import JsArray, to_js
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_1a:
+        l[0:4:2] = [1, 2, 3, 4]
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    with pytest.raises(ValueError) as exc_info_1b:
+        jsl[0:4:2] = [1, 2, 3, 4]
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_2a:
+        l[0:4:2] = []
+
+    with pytest.raises(ValueError) as exc_info_2b:
+        jsl[0:4:2] = []
+
+    with pytest.raises(TypeError) as exc_info_3a:
+        l[:] = 1  # type: ignore[call-overload]
+
+    with pytest.raises(TypeError) as exc_info_3b:
+        jsl[:] = 1
+
+    assert exc_info_1a.value.args == exc_info_1b.value.args
+    assert exc_info_2a.value.args == exc_info_2b.value.args
+    assert exc_info_3a.value.args == exc_info_3b.value.args
+
+
+@std_hypothesis_settings
+@given(l1=st.lists(st.integers()), l2=st.lists(st.integers()))
+@example(l1=[], l2=[])
+@example(l1=[], l2=[1])
+@run_in_pyodide
+def test_array_extend(selenium_module_scope, l1, l2):
+    from pyodide.ffi import to_js
+
+    l1js1 = to_js(l1)
+    l1js1.extend(l2)
+
+    l1js2 = to_js(l1)
+    l1js2 += l2
+
+    l1.extend(l2)
+
+    assert l1 == l1js1.to_py()
+    assert l1 == l1js2.to_py()
+
+
+@run_in_pyodide
+def test_typed_array(selenium):
+    from pyodide.code import run_js
+
+    a = run_js("self.a = new Uint8Array([1,2,3,4]); a")
+    assert a[0] == 1
+    assert a[-1] == 4
+    a[-2] = 7
+    assert run_js("self.a[2]") == 7
+
+    import pytest
+
+    with pytest.raises(ValueError, match="cannot delete array elements"):
+        del a[0]
+
+    msg = "Slice subscripting isn't implemented for typed arrays"
+    with pytest.raises(NotImplementedError, match=msg):
+        a[:]
+
+    msg = "Slice assignment isn't implemented for typed arrays"
+    with pytest.raises(NotImplementedError, match=msg):
+        a[:] = [-1, -2, -3, -4]
+
+    assert not hasattr(a, "extend")
+    with pytest.raises(TypeError):
+        a += [1, 2, 3]
+
+
+@pytest.mark.xfail_browsers(node="No document in node")
+@run_in_pyodide
+def test_html_array(selenium):
+    from pyodide.code import run_js
+
+    x = run_js("document.querySelectorAll('*')")
+    assert run_js("(a, b) => a === b[0]")(x[0], x)
+    assert run_js("(a, b) => a === Array.from(b).pop()")(x[-1], x)
+
+    import pytest
+
+    with pytest.raises(TypeError, match="does ?n[o']t support item assignment"):
+        x[0] = 0
+
+    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
+        del x[0]
+
+
+@run_in_pyodide
+def test_jsproxy_match(selenium):
+    from pyodide.code import run_js
+
+    x: int
+    y: int
+    z: int
+    l: list[int]
+
+    a = run_js("[1, 2, 3]")
+    match a:
+        case [x, y, 3]:
+            pass
+    assert x == 1
+    assert y == 2
+
+    b = run_js("new Uint8Array([7, 3, 9, 10])")
+    match b:
+        case [x, y, *l]:
+            pass
+    assert x == 7
+    assert y == 3
+    assert l == [9, 10]
+
+    c = run_js("new Map([[1,2], [3,4]])")
+    match c:
+        case {1: x, 3: y}:
+            pass
+    assert x == 2
+    assert y == 4
+
+
+@run_in_pyodide
 def test_jsarray_index(selenium):
     import pytest
 
@@ -1412,7 +1686,7 @@ def test_jsproxy_as_object_map(selenium):
 
 
 @run_in_pyodide
-async def test_async_iter(selenium):
+async def test_agen_aiter(selenium):
     import pytest
 
     from pyodide.code import run_js
@@ -1451,7 +1725,7 @@ async def test_async_iter(selenium):
 
 
 @run_in_pyodide
-async def test_async_iter2(selenium):
+async def test_agen_aiter2(selenium):
     import pytest
 
     from pyodide.code import run_js
@@ -1479,7 +1753,7 @@ async def test_async_iter2(selenium):
 
 
 @run_in_pyodide
-async def test_asend(selenium):
+async def test_agen_asend(selenium):
     import pytest
 
     from pyodide.code import run_js
@@ -1503,23 +1777,27 @@ async def test_asend(selenium):
 
 
 @run_in_pyodide
-def test_send(selenium):
+def test_gen_send(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
 
-    it = run_js(
+    f = run_js(
         """
         (function*(){
             let n = 0;
             for(let i = 0; i < 3; i++){
                 n = yield n + 2;
             }
-        })();
+        });
         """
     )
 
-    assert it.send() == 2
+    it = f()
+    assert isinstance(it, JsGenerator)
+
+    assert it.send(None) == 2
     assert it.send(2) == 4
     assert it.send(3) == 5
     with pytest.raises(StopIteration):
@@ -1527,10 +1805,11 @@ def test_send(selenium):
 
 
 @run_in_pyodide
-def test_throw(selenium):
+def test_gen_throw(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
 
     f = run_js(
         """
@@ -1546,6 +1825,7 @@ def test_throw(selenium):
     )
 
     g = f()
+    assert isinstance(g, JsGenerator)
     assert next(g) == 1
     assert g.throw(TypeError("hi")) == 2
     with pytest.raises(TypeError, match="hi"):
@@ -1572,8 +1852,9 @@ def test_throw(selenium):
 
 
 @run_in_pyodide
-def test_close(selenium):
+def test_gen_close(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
 
     f = run_js(
         """
@@ -1595,8 +1876,9 @@ def test_close(selenium):
     l: list[str] = []
     p = create_proxy(l)
     g = f(p)
+    assert isinstance(g, JsGenerator)
     assert next(g) == 1
     assert next(g) == 2
-    assert g.close() is None
+    assert g.close() is None  # type:ignore[func-returns-value]
     p.destroy()
     assert l == ["finally"]
