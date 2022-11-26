@@ -147,6 +147,10 @@ substitutions:
 - {{ Enhancement }} Added a type field to `PythonError`
   {pr}`3289`
 
+- {{ Enhancement }} It is now possible to use aynchronous Python generators from
+  JavaScript.
+  {pr}`3290`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodome {pr}`2965`,
