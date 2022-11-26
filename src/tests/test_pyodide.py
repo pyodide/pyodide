@@ -1554,3 +1554,17 @@ def test_static_import(
             `);
             """
         )
+
+
+def test_python_error(selenium):
+    [msg, ty] = selenium.run_js(
+        """
+        try {
+            pyodide.runPython("raise TypeError('oops')");
+        } catch(e) {
+            return [e.message, e.type];
+        }
+        """
+    )
+    assert msg.endswith("TypeError: oops\n")
+    assert ty == "TypeError"
