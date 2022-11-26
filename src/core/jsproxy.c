@@ -3370,7 +3370,6 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* asyncio_module = NULL;
-  PyObject* collections_abc = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -3442,6 +3441,5 @@ JsProxy_init(PyObject* core_module)
   success = true;
 finally:
   Py_CLEAR(asyncio_module);
-  Py_CLEAR(collections_abc);
   return success ? 0 : -1;
 }
