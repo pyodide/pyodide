@@ -1409,3 +1409,103 @@ def test_jsproxy_as_object_map(selenium):
 
     with pytest.raises(KeyError):
         del o[1]
+
+
+@run_in_pyodide
+def test_send(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    it = run_js(
+        """
+        (function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        })();
+        """
+    )
+
+    assert it.send() == 2
+    assert it.send(2) == 4
+    assert it.send(3) == 5
+    with pytest.raises(StopIteration):
+        it.send(4)
+
+
+@run_in_pyodide
+def test_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (function *() {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+                console.log("finally");
+            }
+        })
+        """
+    )
+
+    g = f()
+    assert next(g) == 1
+    assert g.throw(TypeError("hi")) == 2
+    with pytest.raises(TypeError, match="hi"):
+        next(g)
+
+    g = f()
+    assert next(g) == 1
+    assert g.throw(TypeError, "hi") == 2
+    with pytest.raises(TypeError, match="hi"):
+        next(g)
+
+    f = run_js(
+        """
+        (function *() {
+            yield 1;
+            yield 2;
+            yield 3;
+        })
+        """
+    )
+    g = f()
+    assert next(g) == 1
+    g.close()
+
+
+@run_in_pyodide
+def test_close(selenium):
+    from pyodide.code import run_js
+
+    f = run_js(
+        """
+        (function *(x) {
+            try {
+                yield 1;
+                yield 2;
+                x.push("this never happens");
+                yield 3;
+            } finally {
+                x.append("finally");
+            }
+        })
+        """
+    )
+
+    from pyodide.ffi import create_proxy
+
+    l: list[str] = []
+    p = create_proxy(l)
+    g = f(p)
+    assert next(g) == 1
+    assert next(g) == 2
+    assert g.close() is None
+    p.destroy()
+    assert l == ["finally"]
