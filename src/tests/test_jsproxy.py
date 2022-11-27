@@ -1639,7 +1639,8 @@ def test_jsproxy_subtypes(selenium):
     assert not isinstance(a, JsBuffer)
     assert issubclass(type(a), type(nullobj))
     assert issubclass(type(a[0]), type(nullobj))
-    assert issubclass(JsProxy, type(nullobj))
+    # assert issubclass(JsProxy, type(nullobj))
+    assert issubclass(type(nullobj), JsProxy)
 
 
 @run_in_pyodide
