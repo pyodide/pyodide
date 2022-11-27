@@ -3592,7 +3592,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
               ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
-  SET_FLAG_IF(IS_GENERATOR, hiwire_is_generator(obj));
+  SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   // clang-format on
   return type_flags;
 });
