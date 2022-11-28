@@ -6,6 +6,8 @@ from importlib.util import spec_from_loader
 from types import ModuleType
 from typing import Any
 
+from ._core_docs import JsProxy
+
 
 class JsFinder(MetaPathFinder):
     def __init__(self) -> None:
@@ -17,7 +19,6 @@ class JsFinder(MetaPathFinder):
         path: Sequence[bytes | str] | None,
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
-        assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
@@ -108,7 +109,6 @@ class JsLoader(Loader):
         return True
 
 
-JsProxy: type | None = None
 jsfinder: JsFinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
@@ -126,11 +126,6 @@ def register_js_finder() -> None:
 
     This needs to be a function to allow the late import from ``_pyodide_core``.
     """
-    import _pyodide_core
-
-    global JsProxy
-    JsProxy = _pyodide_core.JsProxy
-
     for importer in sys.meta_path:
         if isinstance(importer, JsFinder):
             raise RuntimeError("JsFinder already registered")

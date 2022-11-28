@@ -4,13 +4,13 @@ package:
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/f6/d8/ab692a75f584d13c6542c3994f75def5bce52ded9399f52e230fe402819d/numpy-1.22.4.zip
-  sha256: 425b390e4619f58d8526b3dcf656dde069133ae5c240229821f01b5f44ea07af
+  url: https://files.pythonhosted.org/packages/42/38/775b43da55fa7473015eddc9a819571517d9a271a9f8134f68fb9be2f212/numpy-1.23.5.tar.gz
+  sha256: 1b1766d6f397c18153d40015ddfc79ddb715cabadc04d2d228d4e5a8bc4ded1a
 
   patches:
     - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
-    - patches/0002-ENH-cross-compilation-use-sysconfig-to-determine-if-.patch
-    - patches/0003-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0002-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0003-BUG-Fix-datetime_to_timedelta_resolve_descriptors-signature.patch
 
 build:
   backend-flags: --disable-optimization

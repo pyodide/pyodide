@@ -668,12 +668,12 @@ def test_create_proxy_capture_this(selenium):
 @run_in_pyodide
 def test_create_proxy_roundtrip(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import JsProxy, create_proxy
+    from pyodide.ffi import JsDoubleProxy, create_proxy
 
     f = {}  # type: ignore[var-annotated]
     o = run_js("({})")
     o.f = create_proxy(f, roundtrip=True)
-    assert isinstance(o.f, JsProxy)
+    assert isinstance(o.f, JsDoubleProxy)
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
@@ -681,32 +681,26 @@ def test_create_proxy_roundtrip(selenium):
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
+@run_in_pyodide
 def test_return_destroyed_value(selenium):
-    selenium.run_js(
-        r"""
-        self.f = function(x){ return x };
-        pyodide.runPython(`
-            from pyodide.ffi import create_proxy, JsException
-            from js import f
-            p = create_proxy([])
-            p.destroy()
-            try:
-                f(p)
-            except JsException as e:
-                assert str(e) == (
-                    "Error: Object has already been destroyed\\n"
-                    'The object was of type "list" and had repr "[]"'
-                )
-        `);
-        """
-    )
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_proxy
+
+    f = run_js("(function(x){ return x; })")
+    p = create_proxy([])
+    p.destroy()
+    with pytest.raises(JsException, match='The object was of type "list" and had repr'):
+        f(p)
 
 
 def test_docstrings_a():
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
-    from pyodide.ffi import JsProxy
+    from pyodide.ffi import JsPromise
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
     assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
         jsproxy.then.__doc__
@@ -714,10 +708,11 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring
-    from pyodide.ffi import JsProxy, create_once_callable
+    from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
@@ -1405,6 +1400,20 @@ def test_args(selenium_standalone_noload):
     )
 
 
+def test_args_OO(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            args: ['-OO']
+        });
+        pyodide.runPython(`import sys; sys.__doc__`)
+        """
+    )
+
+    assert not doc
+
+
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
@@ -1545,3 +1554,17 @@ def test_static_import(
             `);
             """
         )
+
+
+def test_python_error(selenium):
+    [msg, ty] = selenium.run_js(
+        """
+        try {
+            pyodide.runPython("raise TypeError('oops')");
+        } catch(e) {
+            return [e.message, e.type];
+        }
+        """
+    )
+    assert msg.endswith("TypeError: oops\n")
+    assert ty == "TypeError"

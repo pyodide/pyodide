@@ -14,6 +14,7 @@ _Py_IDENTIFIER(format_exception);
 _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
+_Py_IDENTIFIER(__qualname__);
 
 void
 _Py_DumpTraceback(int fd, PyThreadState* tstate);
@@ -55,9 +56,16 @@ set_error(PyObject* err)
  * msg - the Python traceback + error message
  * err - The error object
  */
-EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
-  return Hiwire.new_value(new API.PythonError(UTF8ToString(msg), err));
+// clang-format off
+EM_JS_REF(
+JsRef,
+new_error,
+(const char* type, const char* msg, PyObject* err),
+{
+  return Hiwire.new_value(
+    new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
 });
+// clang-format on
 
 /**
  * Fetch the exception, normalize it, and ensure that traceback is not NULL.
@@ -187,16 +195,21 @@ wrap_exception()
   PyObject* type = NULL;
   PyObject* value = NULL;
   PyObject* traceback = NULL;
+  PyObject* typestr = NULL;
   PyObject* pystr = NULL;
   JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 
+  typestr = _PyObject_GetAttrId(type, &PyId___qualname__);
+  FAIL_IF_NULL(typestr);
+  const char* typestr_utf8 = PyUnicode_AsUTF8(typestr);
+  FAIL_IF_NULL(typestr_utf8);
   pystr = format_exception_traceback(type, value, traceback);
   FAIL_IF_NULL(pystr);
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
-  jserror = new_error(pystr_utf8, value);
+  jserror = new_error(typestr_utf8, pystr_utf8, value);
   FAIL_IF_NULL(jserror);
 
   success = true;
@@ -210,7 +223,8 @@ finally:
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
-    jserror = new_error("Error occurred while formatting traceback", 0);
+    jserror = new_error(
+      "PyodideInternalError", "Error occurred while formatting traceback", 0);
   }
   Py_CLEAR(type);
   Py_CLEAR(value);

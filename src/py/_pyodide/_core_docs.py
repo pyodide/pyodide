@@ -1,7 +1,15 @@
 import sys
-from collections.abc import Callable, Iterable, Iterator
-from io import IOBase
-from typing import Any
+from collections.abc import (
+    Callable,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    ValuesView,
+)
+from functools import reduce
+from typing import IO, Any
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -23,14 +31,58 @@ class JsException(Exception):
     @property
     def js_error(self) -> "JsProxy":
         """The original JavaScript error"""
-        return JsProxy()
+        return JsProxy(_instantiate_token)
 
 
 class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
 
 
-class JsProxy:
+# We need this to look up the flags
+_core_dict: dict[str, Any] = {}
+
+
+class _JsProxyMetaClass(type):
+    def __instancecheck__(cls, instance):
+        """Override for isinstance(instance, cls)."""
+        # TODO: add support for user-generated subclasses with custom instance
+        # checks
+        # e.g., could check for a fetch response with x.constructor.name == "Response"
+        # or Object.prototype.toString.call(x) == "[object Response]".
+        return cls.__subclasscheck__(type(instance))
+
+    def __subclasscheck__(cls, subclass):
+        # TODO: This works for now but maybe there is a better or cleaner way to
+        # do this.
+        if type.__subclasscheck__(cls, subclass):
+            return True
+        if not hasattr(subclass, "_js_type_flags"):
+            return False
+        # For the "synthetic" subtypes defined in this file, we define
+        # _js_type_flags as a string. To convert it to the correct value, we
+        # exec it in the _core_dict context.
+        cls_flags = cls._js_type_flags  # type:ignore[attr-defined]
+        if isinstance(cls_flags, int):
+            cls_flags = [cls_flags]
+        else:
+            cls_flags = [_core_dict[f] for f in cls_flags]
+
+        subclass_flags = subclass._js_type_flags
+        if not isinstance(subclass_flags, int):
+            subclass_flags = reduce(
+                lambda x, y: x | y, (_core_dict[f] for f in subclass_flags)
+            )
+
+        return any(cls_flag & subclass_flags == cls_flag for cls_flag in cls_flags)
+
+
+# We want to raise an error if someone tries to instantiate JsProxy directly
+# since it doesn't mean anything. But we have a few reasons to do so internally.
+# So we raise an error unless this private token is passed as an argument.
+_instantiate_token = object()
+
+
+class JsProxy(metaclass=_JsProxyMetaClass):
     """A proxy to make a JavaScript object behave like a Python object
 
     For more information see the :ref:`type-translations` documentation. In
@@ -38,6 +90,13 @@ class JsProxy:
     :ref:`the list of __dunder__ methods <type-translations-jsproxy>`
     that are (conditionally) implemented on :any:`JsProxy`.
     """
+
+    _js_type_flags: Any = 0
+
+    def __new__(cls, arg=None, *args, **kwargs):
+        if arg is _instantiate_token:
+            return super().__new__(cls)
+        raise TypeError(f"{cls.__name__} cannot be instantiated.")
 
     @property
     def js_id(self) -> int:
@@ -66,6 +125,17 @@ class JsProxy:
 
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
+
+    def as_object_map(self) -> "JsProxy":
+        """Returns a new JsProxy that treats the object as a map.
+
+        The methods ``__getitem__``, ``__setitem__``, ``__contains__``,
+        ``__len__``, etc will perform lookups via ``object[key]`` or similar.
+
+        Note that ``len(x.as_object_map())`` evaluates in O(n) time (it iterates
+        over the object and counts how many ownKeys it has). If you need to
+        compute the length in O(1) time, use a real ``Map`` instead.
+        """
 
     def new(self, *args: Any, **kwargs: Any) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
@@ -156,13 +226,35 @@ class JsProxy:
         """
         pass
 
+
+class JsDoubleProxy(JsProxy):
+    """A double proxy created with :any:`create_proxy`."""
+
+    _js_type_flags = ["IS_DOUBLE_PROXY"]
+
+    def destroy(self) -> None:
+        pass
+
+    def unwrap(self) -> Any:
+        """Unwrap a double proxy created with :any:`create_proxy` into the
+        wrapped Python object.
+        """
+
+
+class JsPromise(JsProxy):
+    """A JsProxy of a promise (or some other awaitable JavaScript object).
+
+    A JavaScript object is considered to be a Promise if it has a "then" method.
+    """
+
+    _js_type_flags = ["IS_AWAITABLE"]
+
     def then(
         self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
     ) -> "Promise":
         """The ``Promise.then`` API, wrapped to manage the lifetimes of the
         handlers.
 
-        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handlers
         when the promise resolves.
         """
@@ -171,7 +263,6 @@ class JsProxy:
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
-        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handler
         when the promise resolves.
         """
@@ -180,12 +271,16 @@ class JsProxy:
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
-        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handler
         when the promise resolves. Note the trailing underscore in the name;
         this is needed because ``finally`` is a reserved keyword in Python.
         """
 
+
+class JsBuffer(JsProxy):
+    """A JsProxy of an array buffer or array buffer view"""
+
+    _js_type_flags = ["IS_BUFFER"]
     # There are no types for buffers:
     # https://github.com/python/typing/issues/593
     # https://bugs.python.org/issue27501
@@ -194,45 +289,30 @@ class JsProxy:
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
     def assign(self, rhs: Any, /) -> None:
-        """Assign from a Python buffer into the JavaScript buffer.
-
-        Present only if the wrapped JavaScript object is an ArrayBuffer or
-        an ArrayBuffer view.
-        """
+        """Assign from a Python buffer into the JavaScript buffer."""
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
     def assign_to(self, to: Any, /) -> None:
-        """Assign to a Python buffer from the JavaScript buffer.
-
-        Present only if the wrapped JavaScript object is an ArrayBuffer or
-        an ArrayBuffer view.
-        """
+        """Assign to a Python buffer from the JavaScript buffer."""
 
     def to_memoryview(self) -> memoryview:
         """Convert a buffer to a memoryview.
 
         Copies the data once. This currently has the same effect as :any:`to_py`.
-        Present only if the wrapped Javascript object is an ArrayBuffer or
-        an ArrayBuffer view.
         """
 
     def to_bytes(self) -> bytes:
         """Convert a buffer to a bytes object.
 
         Copies the data once.
-        Present only if the wrapped Javascript object is an ArrayBuffer or
-        an ArrayBuffer view.
         """
 
-    def to_file(self, file: IOBase, /) -> None:
+    def to_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Writes a buffer to a file.
 
         Will write the entire contents of the buffer to the current position of
         the file.
-
-        Present only if the wrapped Javascript object is an ArrayBuffer or an
-        ArrayBuffer view.
 
         Example
         -------
@@ -249,14 +329,11 @@ class JsProxy:
         data once.
         """
 
-    def from_file(self, file: IOBase, /) -> None:
+    def from_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Reads from a file into a buffer.
 
         Will try to read a chunk of data the same size as the buffer from
         the current position of the file.
-
-        Present only if the wrapped Javascript object is an ArrayBuffer or an
-        ArrayBuffer view.
 
         Example
         -------
@@ -275,7 +352,7 @@ class JsProxy:
         data once.
         """
 
-    def _into_file(self, file: IOBase, /) -> None:
+    def _into_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Will write the entire contents of a buffer into a file using
         ``canOwn : true`` without any copy. After this, the buffer cannot be
         used again.
@@ -285,8 +362,6 @@ class JsProxy:
         Only ``MEMFS`` cares about the ``canOwn`` flag, other file systems will
         just ignore it.
 
-        Present only if the wrapped Javascript object is an ArrayBuffer or an
-        ArrayBuffer view.
 
         Example
         -------
@@ -314,47 +389,49 @@ class JsProxy:
         `https://encoding.spec.whatwg.org/#names-and-labels`. The default
         encoding is utf8.
 
-        Present only if the wrapped Javascript object is an ArrayBuffer or
-        an ArrayBuffer view.
         """
+
+
+class JsArray(JsProxy):
+    """A JsProxy of an array, node list, or typed array"""
+
+    _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
+
+    def __getitem__(self, idx: int | slice) -> Any:
+        return None
+
+    def __setitem__(self, idx: int | slice, value: Any) -> None:
+        pass
+
+    def __delitem__(self, idx: int | slice) -> None:
+        return None
+
+    def __len__(self) -> int:
+        return 0
 
     def extend(self, other: Iterable[Any]) -> None:
-        """Extend array by appending elements from the iterable.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Extend array by appending elements from the iterable."""
 
     def __reversed__(self) -> Iterator[Any]:
-        """Return a reverse iterator over the Array.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Return a reverse iterator over the Array."""
 
     def pop(self, /, index: int = -1) -> Any:
         """Remove and return item at index (default last).
 
         Raises IndexError if list is empty or index is out of range.
-        Present only if the wrapped Javascript object is an array.
         """
 
     def append(self, /, object: Any) -> None:
-        """Append object to the end of the list.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Append object to the end of the list."""
 
     def index(self, /, value: Any, start: int = 0, stop: int = sys.maxsize) -> int:
         """Return first index of value.
 
-        Present only if the wrapped Javascript object is an array.
         Raises ValueError if the value is not present.
         """
 
     def count(self, /, x: Any) -> int:
-        """Return the number of times x appears in the list.
-
-        Present only if the wrapped Javascript object is an array.
-        """
+        """Return the number of times x appears in the list."""
 
     def reverse(self) -> None:
         """Reverse the array in place.
@@ -362,11 +439,96 @@ class JsProxy:
         Present only if the wrapped Javascript object is an array.
         """
 
-    def unwrap(self) -> Any:
-        """Unwrap a double proxy created with :any:`create_proxy` into the
-        wrapped Python object.
 
-        Only present on double proxies.
+class JsMap(JsProxy):
+    def keys(self) -> KeysView[Any]:
+        """Return a KeysView for the map.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def items(self) -> ItemsView[Any, Any]:
+        """Return a ItemsView for the map.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def values(self) -> ValuesView[Any]:
+        """Return a ValuesView for the map.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        """If key in self, returns self[key]. Otherwise returns default.
+
+        Present if the wrapped JavaScript object is a Mapping (i.e., has
+        ``get``, ``has``, ``size``, and ``keys`` methods).
+        """
+
+    def pop(self, key: Any, default: Any = None) -> Any:
+        """If key in self, return self[key] and remove key from self. Otherwise
+        returns default.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        """If key in self, return self[key]. Otherwise
+        sets self[key] = default and returns default.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def popitem(self) -> tuple[Any, Any]:
+        """Remove some arbitrary key, value pair from the map and returns the
+        (key, value) tuple.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def clear(self) -> None:
+        """Empty out the map entirely.
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+    def update(
+        self, other: Mapping[Any, Any] | None = None, **kwargs: dict[str, Any]
+    ) -> None:
+        """Updates self from other and kwargs.
+
+        If ``other`` is present and is a Mapping or has a ``keys`` method, does
+
+        .. code-block:: python
+
+            for k in other:
+                self[k] = other[k]
+
+        If ``other`` is present and lacks a ``keys`` method, does
+
+        .. code-block:: python
+
+            for (k, v) in other:
+                self[k] = v
+
+        In all cases this is followed by:
+
+        .. code-block:: python
+
+            for (k, v) in kwargs.items():
+                self[k] = v
+
+
+        Present if the wrapped JavaScript object is a MutableMapping (i.e., has
+        ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
 
 
@@ -385,7 +547,7 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
 
 def create_proxy(
     obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
-) -> JsProxy:
+) -> JsDoubleProxy:
     """Create a ``JsProxy`` of a ``PyProxy``.
 
     This allows explicit control over the lifetime of the ``PyProxy`` from
