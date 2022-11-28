@@ -132,7 +132,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
 
-    def as_object_map(self) -> "JsProxy":
+    def as_object_map(self) -> "JsMap":
         """Returns a new JsProxy that treats the object as a map.
 
         The methods ``__getitem__``, ``__setitem__``, ``__contains__``,
