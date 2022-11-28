@@ -32,6 +32,7 @@ from _pyodide._core_docs import (
     JsBuffer,
     JsDoubleProxy,
     JsGenerator,
+    JsIterator,
     JsPromise,
     JsProxy,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "JsDoubleProxy",
     "JsArray",
     "JsGenerator",
+    "JsIterator",
     "JsException",
     "create_proxy",
     "create_once_callable",

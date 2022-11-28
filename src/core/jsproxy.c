@@ -95,7 +95,6 @@ static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
-static PyObject* Generator;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -354,6 +353,262 @@ JsProxy_GetIter(PyObject* self)
   return result;
 }
 
+// clang-format off
+EM_JS_NUM(
+int,
+handle_next_result_js,
+(JsRef resid, JsRef* result_ptr, char** msg),
+{
+  let errmsg;
+  const res = Hiwire.get_value(resid);
+  if(typeof res !== "object") {
+    errmsg = `Result should have type "object" not "${typeof res}"`;
+  } else if(typeof res.done === "undefined") {
+    if (typeof res.then === "function") {
+      errmsg = `Result was a promise, use anext() / asend() / athrow() instead.`;
+    } else {
+      errmsg = `Result has no "done" field.`;
+    }
+  }
+  if (errmsg) {
+    DEREF_U32(msg, 0) = stringToNewUTF8(errmsg);
+    return -1;
+  }
+  let result_id = Hiwire.new_value(res.value);
+  DEREF_U32(result_ptr, 0) = result_id;
+  return res.done;
+});
+
+PySendResult
+handle_next_result(JsRef next_res, PyObject** result){
+  PySendResult res = PYGEN_ERROR;
+  char* msg = NULL;
+  JsRef idresult = NULL;
+  *result = NULL;
+
+  int done = handle_next_result_js(next_res, &idresult, &msg);
+  // done:
+  //   1 ==> finished
+  //   0 ==> not finished
+  //  -1 ==> error (if msg is set, we set the error flag to a TypeError with
+  //         msg otherwise the error flag must already be set)
+  if (msg) {
+    PyErr_SetString(PyExc_TypeError, msg);
+    free(msg);
+    FAIL();
+  }
+  FAIL_IF_MINUS_ONE(done);
+  // If there was no "value", "idresult" will be jsundefined
+  // so pyvalue will be set to Py_None.
+  *result = js2python(idresult);
+  FAIL_IF_NULL(result);
+
+  res = done ? PYGEN_RETURN : PYGEN_NEXT;
+finally:
+  hiwire_CLEAR(idresult);
+  return res;
+}
+
+// clang-format on
+
+PySendResult
+JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
+{
+  JsRef jsarg = Js_undefined;
+  JsRef next_res = NULL;
+  *result = NULL;
+  PySendResult ret = PYGEN_ERROR;
+
+  if (arg) {
+    jsarg = python2js(arg);
+    FAIL_IF_NULL(jsarg);
+  }
+  next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
+  FAIL_IF_NULL(next_res);
+  ret = handle_next_result(next_res, result);
+finally:
+  hiwire_CLEAR(jsarg);
+  hiwire_CLEAR(next_res);
+  return ret;
+}
+
+PyObject*
+JsProxy_IterNext(PyObject* self)
+{
+  PyObject* result;
+  if (JsProxy_am_send(self, NULL, &result) == PYGEN_RETURN) {
+    // The Python docs for tp_iternext say "When the iterator is exhausted, it
+    // must return NULL; a StopIteration exception may or may not be set."
+    // So if the result is None, we can just leave error flag unset.
+    if (result != Py_None) {
+      _PyGen_SetStopIterationValue(result);
+    }
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+PyObject*
+JsGenerator_send(PyObject* self, PyObject* arg)
+{
+  PyObject* result;
+  if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
+    if (result == Py_None) {
+      PyErr_SetNone(PyExc_StopIteration);
+    } else {
+      _PyGen_SetStopIterationValue(result);
+    }
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+static PyMethodDef JsGenerator_send_MethodDef = {
+  "send",
+  (PyCFunction)JsGenerator_send,
+  METH_O,
+};
+
+static PyObject* Exc_JsException;
+
+static PyObject*
+JsGenerator_throw_inner(PyObject* self,
+                        PyObject* typ,
+                        PyObject* val,
+                        PyObject* tb)
+{
+  if (tb == Py_None) {
+    tb = NULL;
+  } else if (tb != NULL && !PyTraceBack_Check(tb)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "throw() third argument must be a traceback object");
+    return NULL;
+  }
+
+  Py_INCREF(typ);
+  Py_XINCREF(val);
+  Py_XINCREF(tb);
+
+  if (PyExceptionClass_Check(typ)) {
+    PyErr_NormalizeException(&typ, &val, &tb);
+    if (tb != NULL) {
+      PyException_SetTraceback(val, tb);
+    }
+  } else if (PyExceptionInstance_Check(typ)) {
+    /* Raising an instance.  The value should be a dummy. */
+    if (val && val != Py_None) {
+      PyErr_SetString(PyExc_TypeError,
+                      "instance exception may not have a separate value");
+      goto failed_throw;
+    } else {
+      /* Normalize to raise <class>, <instance> */
+      Py_XDECREF(val);
+      val = typ;
+      typ = PyExceptionInstance_Class(typ);
+      Py_INCREF(typ);
+
+      if (tb == NULL)
+        /* Returns NULL if there's no traceback */
+        tb = PyException_GetTraceback(val);
+    }
+  } else {
+    /* Not something you can raise.  throw() fails. */
+    PyErr_Format(PyExc_TypeError,
+                 "exceptions must be classes or instances "
+                 "deriving from BaseException, not %s",
+                 Py_TYPE(typ)->tp_name);
+    goto failed_throw;
+  }
+
+  PyErr_Restore(typ, val, tb);
+  JsRef throw_res = NULL;
+  PyObject* result = NULL;
+  if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+    PyErr_Clear();
+    throw_res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
+  } else {
+    JsRef exc;
+    if (PyErr_ExceptionMatches(Exc_JsException)) {
+      PyErr_Fetch(&typ, &val, &tb);
+      exc = JsException_AsJs(val); // cannot fail.
+      Py_CLEAR(typ);
+      Py_CLEAR(val);
+      Py_CLEAR(tb);
+    } else {
+      exc = wrap_exception(); // cannot fail.
+    }
+    throw_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_throw, exc);
+    hiwire_CLEAR(exc);
+  }
+  FAIL_IF_NULL(throw_res);
+  PySendResult ret = handle_next_result(throw_res, &result);
+  if (ret == PYGEN_RETURN) {
+    if (result == Py_None) {
+      PyErr_SetNone(PyExc_StopIteration);
+    } else {
+      _PyGen_SetStopIterationValue(result);
+    }
+    Py_CLEAR(result);
+  }
+finally:
+  hiwire_CLEAR(throw_res);
+  return result;
+
+failed_throw:
+  /* Didn't use our arguments, so restore their original refcounts */
+  Py_DECREF(typ);
+  Py_XDECREF(val);
+  Py_XDECREF(tb);
+  return NULL;
+}
+
+static PyObject*
+JsGenerator_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  PyObject* typ;
+  PyObject* val = NULL;
+  PyObject* tb = NULL;
+
+  if (!_PyArg_ParseStack(args, nargs, "O|OO:throw", &typ, &val, &tb)) {
+    return NULL;
+  }
+
+  return JsGenerator_throw_inner(self, typ, val, tb);
+}
+
+static PyMethodDef JsGenerator_throw_MethodDef = {
+  "throw",
+  (PyCFunction)JsGenerator_throw,
+  METH_FASTCALL,
+};
+
+static PyObject*
+JsGenerator_close(PyObject* self, PyObject* ignored)
+{
+  PyObject* result =
+    JsGenerator_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
+  if (result != NULL) {
+    // We could also just return it, but this matches Python. Generators that do
+    // shenanigans stuff in "finally" blocks are hard to work with so we might
+    // as well yell at people for using them.
+    PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
+    Py_DECREF(result);
+    return NULL;
+  }
+  if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
+      PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+    PyErr_Clear(); /* ignore these errors */
+    Py_RETURN_NONE;
+  }
+  return NULL;
+}
+
+static PyMethodDef JsGenerator_close_MethodDef = {
+  "close",
+  (PyCFunction)JsGenerator_close,
+  METH_NOARGS,
+};
+
 EM_JS_REF(JsRef, JsProxy_GetAsyncIter_js, (JsRef idobj), {
   let jsobj = Hiwire.get_value(idobj);
   return Hiwire.new_value(jsobj[Symbol.asyncIterator]());
@@ -525,257 +780,6 @@ JsProxy_anext(PyObject* self)
 {
   return JsProxy_asend_inner(self, NULL);
 }
-
-// clang-format off
-EM_JS_NUM(
-int,
-handle_next_result_js,
-(JsRef resid, JsRef* result_ptr, char** msg),
-{
-  let msg_ptr;
-  const res = Hiwire.get_value(resid);
-  if(typeof res !== "object") {
-    msg_ptr = stringToNewUTF8(`Result should have type "object" not ${typeof res}`)
-  } else if(typeof res.done === "undefined") {
-    if (typeof res.then === "function") {
-      msg_ptr = stringToNewUTF8(`Result was a promise, use anext() / asend() / athrow() instead.`)
-    } else {
-      msg_ptr = stringToNewUTF8(`Result has no 'done' field.`)
-    }
-  }
-  if (msg_ptr) {
-    DEREF_U32(msg, 0) = msg_ptr;
-    return -2;
-  }
-  let result_id = Hiwire.new_value(res.value);
-  DEREF_U32(result_ptr, 0) = result_id;
-  return res.done;
-});
-
-PySendResult
-handle_next_result(JsRef next_res, PyObject** result){
-  PySendResult res = PYGEN_ERROR;
-  char* msg;
-  JsRef idresult = NULL;
-  *result = NULL;
-
-  int done = handle_next_result_js(next_res, &idresult, &msg);
-  // done:
-  //   1 ==> finished
-  //   0 ==> not finished
-  //  -1 ==> unexpected Js error occurred (logic error in hiwire_next?)
-  //  -2 ==> msg contains a TypeError message
-  if (done == -2) {
-    PyErr_SetString(PyExc_TypeError, msg);
-    free(msg);
-    FAIL();
-  }
-  FAIL_IF_MINUS_ONE(done);
-  // If there was no "value", "idresult" will be jsundefined
-  // so pyvalue will be set to Py_None.
-  *result = js2python(idresult);
-  FAIL_IF_NULL(result);
-
-  res = done ? PYGEN_RETURN : PYGEN_NEXT;
-finally:
-  hiwire_CLEAR(idresult);
-  return res;
-}
-
-// clang-format on
-
-PySendResult
-JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
-{
-  JsRef jsarg = Js_undefined;
-  JsRef next_res = NULL;
-  *result = NULL;
-  PySendResult ret = PYGEN_ERROR;
-
-  if (arg) {
-    jsarg = python2js(arg);
-    FAIL_IF_NULL(jsarg);
-  }
-  next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
-  FAIL_IF_NULL(next_res);
-  ret = handle_next_result(next_res, result);
-finally:
-  hiwire_CLEAR(jsarg);
-  hiwire_CLEAR(next_res);
-  return ret;
-}
-
-PyObject*
-JsProxy_IterNext(PyObject* self)
-{
-  PyObject* result;
-  if (JsProxy_am_send(self, NULL, &result) == PYGEN_RETURN) {
-    if (result != Py_None) {
-      _PyGen_SetStopIterationValue(result);
-    }
-    Py_CLEAR(result);
-  }
-  return result;
-}
-
-PyObject*
-JsGenerator_send(PyObject* self, PyObject* arg)
-{
-  PyObject* result;
-  if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
-    if (result == Py_None) {
-      PyErr_SetNone(PyExc_StopIteration);
-    } else {
-      _PyGen_SetStopIterationValue(result);
-    }
-    Py_CLEAR(result);
-  }
-  return result;
-}
-
-static PyMethodDef JsGenerator_send_MethodDef = {
-  "send",
-  (PyCFunction)JsGenerator_send,
-  METH_O,
-};
-
-static PyObject* Exc_JsException;
-
-static PyObject*
-JsGenerator_throw_inner(PyObject* self,
-                        PyObject* typ,
-                        PyObject* val,
-                        PyObject* tb)
-{
-  if (tb == Py_None) {
-    tb = NULL;
-  } else if (tb != NULL && !PyTraceBack_Check(tb)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "throw() third argument must be a traceback object");
-    return NULL;
-  }
-
-  Py_INCREF(typ);
-  Py_XINCREF(val);
-  Py_XINCREF(tb);
-
-  if (PyExceptionClass_Check(typ)) {
-    PyErr_NormalizeException(&typ, &val, &tb);
-    if (tb != NULL) {
-      PyException_SetTraceback(val, tb);
-    }
-  } else if (PyExceptionInstance_Check(typ)) {
-    /* Raising an instance.  The value should be a dummy. */
-    if (val && val != Py_None) {
-      PyErr_SetString(PyExc_TypeError,
-                      "instance exception may not have a separate value");
-      goto failed_throw;
-    } else {
-      /* Normalize to raise <class>, <instance> */
-      Py_XDECREF(val);
-      val = typ;
-      typ = PyExceptionInstance_Class(typ);
-      Py_INCREF(typ);
-
-      if (tb == NULL)
-        /* Returns NULL if there's no traceback */
-        tb = PyException_GetTraceback(val);
-    }
-  } else {
-    /* Not something you can raise.  throw() fails. */
-    PyErr_Format(PyExc_TypeError,
-                 "exceptions must be classes or instances "
-                 "deriving from BaseException, not %s",
-                 Py_TYPE(typ)->tp_name);
-    goto failed_throw;
-  }
-
-  PyErr_Restore(typ, val, tb);
-  JsRef throw_res = NULL;
-  PyObject* result = NULL;
-  if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-    PyErr_Clear();
-    throw_res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
-  } else {
-    JsRef exc;
-    if (PyErr_ExceptionMatches(Exc_JsException)) {
-      PyErr_Fetch(&typ, &val, &tb);
-      exc = JsException_AsJs(val); // cannot fail.
-      Py_CLEAR(typ);
-      Py_CLEAR(val);
-      Py_CLEAR(tb);
-    } else {
-      exc = wrap_exception(); // cannot fail.
-    }
-    throw_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_throw, exc);
-    hiwire_CLEAR(exc);
-  }
-  FAIL_IF_NULL(throw_res);
-  PySendResult ret = handle_next_result(throw_res, &result);
-  if (ret == PYGEN_RETURN) {
-    if (result == Py_None) {
-      PyErr_SetNone(PyExc_StopIteration);
-    } else {
-      _PyGen_SetStopIterationValue(result);
-    }
-    Py_CLEAR(result);
-  }
-finally:
-  hiwire_CLEAR(throw_res);
-  return result;
-
-failed_throw:
-  /* Didn't use our arguments, so restore their original refcounts */
-  Py_DECREF(typ);
-  Py_XDECREF(val);
-  Py_XDECREF(tb);
-  return NULL;
-}
-
-static PyObject*
-JsGenerator_throw(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
-{
-  PyObject* typ;
-  PyObject* val = NULL;
-  PyObject* tb = NULL;
-
-  if (!_PyArg_ParseStack(args, nargs, "O|OO:throw", &typ, &val, &tb)) {
-    return NULL;
-  }
-
-  return JsGenerator_throw_inner(self, typ, val, tb);
-}
-
-static PyMethodDef JsGenerator_throw_MethodDef = {
-  "throw",
-  (PyCFunction)JsGenerator_throw,
-  METH_FASTCALL,
-};
-
-static PyObject*
-JsGenerator_close(PyObject* self, PyObject* ignored)
-{
-  PyObject* result =
-    JsGenerator_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
-  if (result != NULL) {
-    // We could also just return it, but this matches Python.
-    PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
-    Py_DECREF(result);
-    return NULL;
-  }
-  if (PyErr_ExceptionMatches(PyExc_StopIteration) ||
-      PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-    PyErr_Clear(); /* ignore these errors */
-    Py_RETURN_NONE;
-  }
-  return NULL;
-}
-
-static PyMethodDef JsGenerator_close_MethodDef = {
-  "close",
-  (PyCFunction)JsGenerator_close,
-  METH_NOARGS,
-};
 
 /**
  * This is exposed as a METH_NOARGS method on the JsProxy. It returns
@@ -3272,21 +3276,9 @@ JsProxy_create_subtype(int flags)
 
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
-  if (flags & IS_OBJECT_MAP) {
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsObjMap_GetIter };
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_mp_length, .pfunc = (void*)JsObjMap_length };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
-                                       .pfunc = (void*)JsObjMap_subscript };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
-                                       .pfunc = (void*)JsObjMap_ass_subscript };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_contains,
-                                       .pfunc = (void*)JsObjMap_contains };
-    goto skip_container_slots;
-  }
 
   bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
+  mapping = mapping || (flags & IS_OBJECT_MAP);
   bool mutable_mapping = mapping && (flags & HAS_SET);
 
   if (mapping) {
@@ -3301,6 +3293,20 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsMap_clear_MethodDef;
     methods[cur_method++] = JsMap_update_MethodDef;
     methods[cur_method++] = JsMap_setdefault_MethodDef;
+  }
+
+  if (flags & IS_OBJECT_MAP) {
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsObjMap_GetIter };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_mp_length, .pfunc = (void*)JsObjMap_length };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsObjMap_subscript };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
+                                       .pfunc = (void*)JsObjMap_ass_subscript };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_contains,
+                                       .pfunc = (void*)JsObjMap_contains };
+    goto skip_container_slots;
   }
 
   if (flags & IS_ITERABLE) {
@@ -3334,10 +3340,15 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsProxy_anext };
+    // Send works okay on any js object that has a "next" method
     methods[cur_method++] = JsGenerator_send_MethodDef;
     methods[cur_method++] = JsProxy_asend_MethodDef;
   }
   if (flags & IS_GENERATOR) {
+    // throw and close need "throw" and "return" methods to work. We currently
+    // don't trust that an object with "next", "throw", and "return" is a
+    // generator though -- we require that it actually have it's toStringTag set
+    // to Generator.
     methods[cur_method++] = JsGenerator_throw_MethodDef;
     methods[cur_method++] = JsGenerator_close_MethodDef;
   }
@@ -3497,8 +3508,8 @@ skip_container_slots:
     abc = Sequence;
   } else if ((flags & mapping_flags) == mapping_flags) {
     abc = (flags & HAS_SET) ? MutableMapping : Mapping;
-  } else if (flags & IS_GENERATOR) {
-    abc = Generator;
+  } else if (flags & IS_OBJECT_MAP) {
+    abc = MutableMapping;
   }
   if (abc) {
     PyObject* register_result =
@@ -3813,8 +3824,6 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_NULL(MutableMapping);
   Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
   FAIL_IF_NULL(Mapping);
-  Generator = PyObject_GetAttrString(collections_abc, "Generator");
-  FAIL_IF_NULL(Generator);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
