@@ -1676,8 +1676,10 @@ def test_object_map_mapping_methods(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsMap
 
     m = run_js("({1:2, 3:4})").as_object_map()
+    assert isinstance(m, JsMap)
     # Iterate using keys() function
     assert set(m) == {"1", "3"}
     assert "1" in m.keys()
