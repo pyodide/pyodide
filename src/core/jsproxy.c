@@ -3103,21 +3103,9 @@ JsProxy_create_subtype(int flags)
 
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
-  if (flags & IS_OBJECT_MAP) {
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsObjMap_GetIter };
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_mp_length, .pfunc = (void*)JsObjMap_length };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
-                                       .pfunc = (void*)JsObjMap_subscript };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
-                                       .pfunc = (void*)JsObjMap_ass_subscript };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_contains,
-                                       .pfunc = (void*)JsObjMap_contains };
-    goto skip_container_slots;
-  }
 
   bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
+  mapping = mapping || (flags & IS_OBJECT_MAP);
   bool mutable_mapping = mapping && (flags & HAS_SET);
 
   if (mapping) {
@@ -3132,6 +3120,20 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsMap_clear_MethodDef;
     methods[cur_method++] = JsMap_update_MethodDef;
     methods[cur_method++] = JsMap_setdefault_MethodDef;
+  }
+
+  if (flags & IS_OBJECT_MAP) {
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsObjMap_GetIter };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_mp_length, .pfunc = (void*)JsObjMap_length };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
+                                       .pfunc = (void*)JsObjMap_subscript };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
+                                       .pfunc = (void*)JsObjMap_ass_subscript };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_contains,
+                                       .pfunc = (void*)JsObjMap_contains };
+    goto skip_container_slots;
   }
 
   if (flags & IS_ITERABLE) {
@@ -3321,6 +3323,8 @@ skip_container_slots:
     abc = Sequence;
   } else if ((flags & mapping_flags) == mapping_flags) {
     abc = (flags & HAS_SET) ? MutableMapping : Mapping;
+  } else if (flags & IS_OBJECT_MAP) {
+    abc = MutableMapping;
   }
   if (abc) {
     PyObject* register_result =
