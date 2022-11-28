@@ -6,6 +6,7 @@ from collections.abc import (
     Iterator,
     KeysView,
     Mapping,
+    MutableMapping,
     ValuesView,
 )
 from functools import reduce
@@ -56,8 +57,13 @@ class _JsProxyMetaClass(type):
         # do this.
         if type.__subclasscheck__(cls, subclass):
             return True
-        if not hasattr(subclass, "_js_type_flags"):
+        if not hasattr(subclass, "_js_type_flags") or hasattr(
+            subclass, "_subclass_check"
+        ):
             return False
+
+        if hasattr(cls, "_subclass_check"):
+            return cls._subclass_check(subclass)  # type:ignore[attr-defined]
         # For the "synthetic" subtypes defined in this file, we define
         # _js_type_flags as a string. To convert it to the correct value, we
         # exec it in the _core_dict context.
@@ -441,6 +447,38 @@ class JsArray(JsProxy):
 
 
 class JsMap(JsProxy):
+    @classmethod
+    def _subclass_check(cls, subcls):
+        f = subcls._js_type_flags
+        if f & _core_dict["IS_OBJECT_MAP"]:
+            return True
+        mapflags = reduce(
+            lambda a, b: a | b,
+            (
+                _core_dict[x]
+                for x in ["HAS_GET", "HAS_SET", "HAS_LENGTH", "IS_ITERABLE"]
+            ),
+        )
+        return f & mapflags == mapflags
+
+    def __getitem__(self, idx: Any) -> Any:
+        return None
+
+    def __setitem__(self, idx: Any, value: Any) -> None:
+        pass
+
+    def __delitem__(self, idx: Any) -> None:
+        return None
+
+    def __len__(self) -> int:
+        return 0
+
+    def __iter__(self) -> Any:
+        pass
+
+    def __contains__(self, idx: Any) -> bool:
+        pass
+
     def keys(self) -> KeysView[Any]:
         """Return a KeysView for the map.
 
@@ -531,6 +569,8 @@ class JsMap(JsProxy):
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
 
+
+MutableMapping.register(JsMap)
 
 # from pyproxy.c
 

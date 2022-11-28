@@ -27,7 +27,14 @@ else:
         to_js,
     )
 
-from _pyodide._core_docs import JsArray, JsBuffer, JsDoubleProxy, JsPromise, JsProxy
+from _pyodide._core_docs import (
+    JsArray,
+    JsBuffer,
+    JsDoubleProxy,
+    JsMap,
+    JsPromise,
+    JsProxy,
+)
 
 __all__ = [
     "JsProxy",
@@ -42,4 +49,5 @@ __all__ = [
     "JsPromise",
     "JsBuffer",
     "JsArray",
+    "JsMap",
 ]

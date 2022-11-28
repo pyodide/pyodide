@@ -2872,9 +2872,12 @@ JsProxy_create_subtype(int flags)
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
 
-  bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
-  mapping = mapping || (flags & IS_OBJECT_MAP);
+  bool obj_map = (flags & IS_OBJECT_MAP);
+  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
+  bool mapping = (flags & mapping_flags) == mapping_flags;
   bool mutable_mapping = mapping && (flags & HAS_SET);
+  mapping = mapping || obj_map;
+  mutable_mapping = mutable_mapping || obj_map;
 
   if (mapping) {
     methods[cur_method++] = JsMap_keys_MethodDef;
@@ -3071,13 +3074,14 @@ skip_container_slots:
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
   PyObject* abc = NULL;
-  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
     abc = Collections_MutableSequence;
   } else if (flags & IS_NODE_LIST) {
     abc = Collections_Sequence;
-  } else if ((flags & mapping_flags) == mapping_flags) {
-    abc = (flags & HAS_SET) ? Collections_MutableMapping : Collections_Mapping;
+  } else if (mutable_mapping) {
+    abc = Collections_MutableMapping;
+  } else if (mapping) {
+    abc = Collections_Mapping;
   } else if (flags & IS_OBJECT_MAP) {
     abc = Collections_MutableMapping;
   }
@@ -3419,6 +3423,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_NODE_LIST);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
+  AddFlag(IS_OBJECT_MAP);
 
 #undef AddFlag
 
