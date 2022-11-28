@@ -707,7 +707,7 @@ JsProxy_anext_js,
 // clang-format on
 
 static PyObject*
-JsProxy_asend_inner(PyObject* self, PyObject* arg)
+JsProxy_asend(PyObject* self, PyObject* arg)
 {
   bool success = false;
   JsRef promise = NULL;
@@ -756,29 +756,16 @@ finally:
   return result;
 }
 
-static PyObject*
-JsProxy_asend(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
-{
-  PyObject* arg = NULL;
-  if (!_PyArg_CheckPositional("asend", nargs, 0, 1)) {
-    return NULL;
-  }
-  if (nargs > 0) {
-    arg = args[0];
-  }
-  return JsProxy_asend_inner(self, arg);
-}
-
 static PyMethodDef JsProxy_asend_MethodDef = {
   "asend",
   (PyCFunction)JsProxy_asend,
-  METH_FASTCALL,
+  METH_O,
 };
 
 static PyObject*
 JsProxy_anext(PyObject* self)
 {
-  return JsProxy_asend_inner(self, NULL);
+  return JsProxy_asend(self, NULL);
 }
 
 /**

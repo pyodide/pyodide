@@ -537,6 +537,64 @@ class JsIterator(JsProxy):
     _js_type_flags = ["IS_ITERATOR"]
 
     def send(self, value: Any) -> Any:
+        """Send a value into the iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        We can't tell whether a JavaScript iterator is a synchronous iterator,
+        an asynchronous iterator, or just some object with a "next" method, so
+        we include both ``send`` and ``asend``. If the object is not a
+        synchronous iterator, then ``send`` will raise a TypeError (but only
+        after calling ``jsobj.next()``!).
+        """
+
+    def asend(self, value: Any) -> Any:
+        """Send a value into the asynchronous iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        We can't tell whether a JavaScript iterator is a synchronous iterator,
+        an asynchronous iterator, or just some object with a "next" method, so
+        we include both ``send`` and ``asend``. If the object is not a
+        synchronous iterator, then ``send`` will raise a TypeError (but only
+        after calling ``jsobj.next()``!).
+        """
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __aiter__(self):
+        pass
+
+    def __anext__(self):
+        pass
+
+
+class JsIterable(JsProxy):
+    _js_type_flags = ["IS_ITERABLE"]
+
+    def __iter__(self):
+        pass
+
+
+class JsAsyncIterable(JsProxy):
+    _js_type_flags = ["IS_ASYNC_ITERABLE"]
+
+    def __aiter__(self):
+        pass
+
+
+class JsGenerator(JsProxy):
+    _js_type_flags = ["IS_GENERATOR"]
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def send(self, value: Any) -> Any:
         """
         Resumes the execution and "sends" a value into the generator function.
 
@@ -546,12 +604,8 @@ class JsIterator(JsProxy):
         yielding another value. When ``send()`` is called to start the
         generator, the argument will be ignored. Unlike in Python, we cannot
         detect that the generator hasn't started yet, and no error will be
-        thrown if the argument is not ``None``
+        thrown if the argument of a not-started generator is not ``None``.
         """
-
-
-class JsGenerator(JsIterator):
-    _js_type_flags = ["IS_GENERATOR"]
 
     def throw(
         self,
@@ -590,12 +644,6 @@ class JsGenerator(JsIterator):
         caller. close() does nothing if the generator has already exited due to
         an exception or normal exit.
         """
-
-    def __next__(self):
-        pass
-
-    def __iter__(self):
-        pass
 
 
 # from pyproxy.c

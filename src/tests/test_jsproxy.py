@@ -1867,10 +1867,12 @@ def test_gen_close(selenium):
         g.close()
 
 
+@run_in_pyodide
 async def test_agen_aiter(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsIterator
 
     f = run_js(
         """
@@ -1882,6 +1884,7 @@ async def test_agen_aiter(selenium):
         """
     )
     b = f()
+    assert isinstance(b, JsIterator)
     assert await anext(b) == 2
     assert await anext(b) == 3
     with pytest.raises(StopAsyncIteration):
@@ -1910,6 +1913,7 @@ async def test_agen_aiter2(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncIterable, JsIterable, JsIterator
 
     iterable = run_js(
         """
@@ -1920,11 +1924,14 @@ async def test_agen_aiter2(selenium):
         })
         """
     )
+    assert not isinstance(iterable, JsIterable)
+    assert isinstance(iterable, JsAsyncIterable)
 
     with pytest.raises(TypeError, match="object is not iterable"):
-        iter(iterable)
+        iter(iterable)  # type:ignore[call-overload]
 
     it = aiter(iterable)
+    assert isinstance(it, JsIterator)
 
     assert await anext(it) == 1
     assert await anext(it) == 2
@@ -1938,6 +1945,7 @@ async def test_agen_asend(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsIterator
 
     it = run_js(
         """
@@ -1950,7 +1958,9 @@ async def test_agen_asend(selenium):
         """
     )
 
-    assert await it.asend() == 2
+    assert isinstance(it, JsIterator)
+
+    assert await it.asend(None) == 2
     assert await it.asend(2) == 4
     assert await it.asend(3) == 5
     with pytest.raises(StopAsyncIteration):
