@@ -1,7 +1,6 @@
 import sys
 from collections.abc import (
     Callable,
-    Generator,
     ItemsView,
     Iterable,
     Iterator,
@@ -593,9 +592,6 @@ class JsGenerator(JsProxy):
 
     def __iter__(self):
         pass
-
-
-Generator.register(JsGenerator)
 
 
 # from pyproxy.c
