@@ -1791,3 +1791,20 @@ def test_gen_close(selenium):
     assert g.close() is None  # type:ignore[func-returns-value]
     p.destroy()
     assert l == ["finally"]
+
+    f = run_js(
+        """
+        (function *(x) {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+            }
+        })
+        """
+    )
+
+    g = f()
+    next(g)
+    with pytest.raises(RuntimeError, match="JavaScript generator ignored return"):
+        g.close()

@@ -94,7 +94,6 @@ static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
-static PyObject* Generator;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -359,20 +358,20 @@ int,
 handle_next_result_js,
 (JsRef resid, JsRef* result_ptr, char** msg),
 {
-  let msg_ptr;
+  let errmsg;
   const res = Hiwire.get_value(resid);
   if(typeof res !== "object") {
-    msg_ptr = stringToNewUTF8(`Result should have type "object" not ${typeof res}`)
+    errmsg = `Result should have type "object" not ${typeof res}`;
   } else if(typeof res.done === "undefined") {
     if (typeof res.then === "function") {
-      msg_ptr = stringToNewUTF8(`Result was a promise, use anext() / asend() / athrow() instead.`)
+      errmsg = `Result was a promise, use anext() / asend() / athrow() instead.`;
     } else {
-      msg_ptr = stringToNewUTF8(`Result has no 'done' field.`)
+      errmsg = `Result has no 'done' field.`;
     }
   }
   if (msg_ptr) {
-    DEREF_U32(msg, 0) = msg_ptr;
-    return -2;
+    DEREF_U32(msg, 0) = stringToNewUTF8(errmsg);
+    return -1;
   }
   let result_id = Hiwire.new_value(res.value);
   DEREF_U32(result_ptr, 0) = result_id;
@@ -382,7 +381,7 @@ handle_next_result_js,
 PySendResult
 handle_next_result(JsRef next_res, PyObject** result){
   PySendResult res = PYGEN_ERROR;
-  char* msg;
+  char* msg = NULL;
   JsRef idresult = NULL;
   *result = NULL;
 
@@ -390,9 +389,9 @@ handle_next_result(JsRef next_res, PyObject** result){
   // done:
   //   1 ==> finished
   //   0 ==> not finished
-  //  -1 ==> unexpected Js error occurred (logic error in hiwire_next?)
-  //  -2 ==> msg contains a TypeError message
-  if (done == -2) {
+  //  -1 ==> error (if msg is set, we set the error flag to a TypeError with
+  //         msg otherwise the error flag must already be set)
+  if (msg) {
     PyErr_SetString(PyExc_TypeError, msg);
     free(msg);
     FAIL();
@@ -437,6 +436,9 @@ JsProxy_IterNext(PyObject* self)
 {
   PyObject* result;
   if (JsProxy_am_send(self, NULL, &result) == PYGEN_RETURN) {
+    // The Python docs for tp_iternext say "When the iterator is exhausted, it
+    // must return NULL; a StopIteration exception may or may not be set."
+    // So if the result is None, we can just leave error flag unset.
     if (result != Py_None) {
       _PyGen_SetStopIterationValue(result);
     }
@@ -585,7 +587,9 @@ JsGenerator_close(PyObject* self, PyObject* ignored)
   PyObject* result =
     JsGenerator_throw_inner(self, PyExc_GeneratorExit, NULL, NULL);
   if (result != NULL) {
-    // We could also just return it, but this matches Python.
+    // We could also just return it, but this matches Python. Generators that do
+    // shenanigans stuff in "finally" blocks are hard to work with so we might
+    // as well yell at people for using them.
     PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
     Py_DECREF(result);
     return NULL;
@@ -3150,11 +3154,14 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
+    // Send works okay on any js object that has a "next" method
+    methods[cur_method++] = JsGenerator_send_MethodDef;
   }
   if (flags & IS_GENERATOR) {
-    methods[cur_method++] = JsGenerator_send_MethodDef;
+    // throw and close need "throw" and "return" methods to work. We currently
+    // don't trust that an object with "next", "throw", and "return" is a
+    // generator though -- we require that it actually have it's toStringTag set
+    // to Generator.
     methods[cur_method++] = JsGenerator_throw_MethodDef;
     methods[cur_method++] = JsGenerator_close_MethodDef;
   }
@@ -3314,8 +3321,6 @@ skip_container_slots:
     abc = Sequence;
   } else if ((flags & mapping_flags) == mapping_flags) {
     abc = (flags & HAS_SET) ? MutableMapping : Mapping;
-  } else if (flags & IS_GENERATOR) {
-    abc = Generator;
   }
   if (abc) {
     PyObject* register_result =
@@ -3629,8 +3634,6 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_NULL(MutableMapping);
   Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
   FAIL_IF_NULL(Mapping);
-  Generator = PyObject_GetAttrString(collections_abc, "Generator");
-  FAIL_IF_NULL(Generator);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
