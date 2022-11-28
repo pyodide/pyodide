@@ -1714,6 +1714,47 @@ def test_gen_send(selenium):
 
 
 @run_in_pyodide
+def test_gen_send_type_errors(selenium):
+    from re import escape
+
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator, JsIterator
+
+    g = run_js(
+        """
+        ({next(){ return 2; }});
+        """
+    )
+    assert isinstance(g, JsIterator)
+    assert not isinstance(g, JsGenerator)
+    with pytest.raises(
+        TypeError, match='Result should have type "object" not "number"'
+    ):
+        g.send(None)
+
+    g = run_js(
+        """
+        ({next(){ return Promise.resolve(2); }});
+        """
+    )
+    with pytest.raises(
+        TypeError,
+        match=escape("Result was a promise, use anext() / asend() / athrow() instead."),
+    ):
+        g.send(None)
+
+    g = run_js(
+        """
+        ({next(){ return {}; }});
+        """
+    )
+    with pytest.raises(TypeError, match='Result has no "done" field.'):
+        g.send(None)
+
+
+@run_in_pyodide
 def test_gen_throw(selenium):
     import pytest
 
@@ -1762,6 +1803,8 @@ def test_gen_throw(selenium):
 
 @run_in_pyodide
 def test_gen_close(selenium):
+    import pytest
+
     from pyodide.code import run_js
     from pyodide.ffi import JsGenerator
 

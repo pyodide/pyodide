@@ -533,8 +533,8 @@ class JsMap(JsProxy):
         """
 
 
-class JsGenerator(JsProxy):
-    _js_type_flags = ["IS_GENERATOR"]
+class JsIterator(JsProxy):
+    _js_type_flags = ["IS_ITERATOR"]
 
     def send(self, value: Any) -> Any:
         """
@@ -548,6 +548,10 @@ class JsGenerator(JsProxy):
         detect that the generator hasn't started yet, and no error will be
         thrown if the argument is not ``None``
         """
+
+
+class JsGenerator(JsIterator):
+    _js_type_flags = ["IS_GENERATOR"]
 
     def throw(
         self,

@@ -361,15 +361,15 @@ handle_next_result_js,
   let errmsg;
   const res = Hiwire.get_value(resid);
   if(typeof res !== "object") {
-    errmsg = `Result should have type "object" not ${typeof res}`;
+    errmsg = `Result should have type "object" not "${typeof res}"`;
   } else if(typeof res.done === "undefined") {
     if (typeof res.then === "function") {
       errmsg = `Result was a promise, use anext() / asend() / athrow() instead.`;
     } else {
-      errmsg = `Result has no 'done' field.`;
+      errmsg = `Result has no "done" field.`;
     }
   }
-  if (msg_ptr) {
+  if (errmsg) {
     DEREF_U32(msg, 0) = stringToNewUTF8(errmsg);
     return -1;
   }
