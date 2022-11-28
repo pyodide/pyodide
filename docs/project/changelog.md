@@ -41,6 +41,11 @@ substitutions:
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
 
+- {{ Enhancement }} Implemented methods `keys`, `items`, `values`, `get`, `pop`,
+  `setdefault`, `popitem`, `update`, and `clear` for `JsProxy` of map-like
+  objects.
+  {pr}`3275`
+
 - {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
   rather than `pyodide-build-{version}.tar.gz`
   {pr}`2996`
@@ -85,7 +90,7 @@ substitutions:
 - {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
   the object as a mapping over its `ownKeys` so for instance:
   `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
-  {pr}`3273`
+  {pr}`3273`, {pr}`3295`
 
 - {{ Enhancement }} Split up the `JsProxy` documentation class into several
   classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
@@ -137,7 +142,14 @@ substitutions:
 - {{ Fix }} Pyodide now loads correctly with `-OO` option.
 
 - Add Gitpod configuration to the repository.
-  {pr} `3201`
+  {pr}`3201`
+
+- {{ Enhancement }} Added a type field to `PythonError`
+  {pr}`3289`
+
+- {{ Enhancement }} It is now possible to use aynchronous Python generators from
+  JavaScript.
+  {pr}`3290`
 
 ### Build System / Package Loading
 
@@ -234,6 +246,10 @@ substitutions:
 - {{ Fix }} Fixed a bug that shared libraries are not copied into distribution
   directory when it is already built.
   {pr}`3212`
+
+### Packages
+
+- {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
 
 ## Version 0.21.3
 

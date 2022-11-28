@@ -64,6 +64,12 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(KeysView);
+_Py_IDENTIFIER(ItemsView);
+_Py_IDENTIFIER(ValuesView);
+_Py_IDENTIFIER(popitem);
+_Py_IDENTIFIER(clear);
+_Py_IDENTIFIER(update);
 _Py_IDENTIFIER(_js_type_flags);
 Js_IDENTIFIER(then);
 Js_IDENTIFIER(finally);
@@ -72,10 +78,17 @@ Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
 _Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(register);
 
+static PyObject* collections_abc;
+static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
+static PyObject* Collections_MutableSequence;
+static PyObject* Collections_Sequence;
+static PyObject* Collections_MutableMapping;
+static PyObject* Collections_Mapping;
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -441,6 +454,19 @@ JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
   return hiwire_get_length(self->js);
+}
+
+static PyObject*
+JsProxy_item_array(PyObject* o, Py_ssize_t i)
+{
+  PyObject* pyresult = NULL;
+  JsProxy* self = (JsProxy*)o;
+  JsRef jsresult = JsArray_Get(self->js, i);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
 }
 
 /**
@@ -1166,6 +1192,251 @@ finally:
   hiwire_CLEAR(jsresult);
   return result;
 }
+
+EM_JS_REF(JsRef, JsMap_GetIter_js, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  let result;
+  // clang-format off
+  if(typeof jsobj.keys === 'function') {
+    // clang-format on
+    result = jsobj.keys();
+  } else {
+    result = jsobj[Symbol.iterator]();
+  }
+  return Hiwire.new_value(result);
+})
+
+/**
+ * iter overload for maps. Present if IS_ITERABLE but not IS_ITERATOR (if the
+ * IS_ITERATOR flag is present we use PyObject_SelfIter).
+ * Prefers to iterate using map.keys() over map[Symbol.iterator]().
+ */
+static PyObject*
+JsMap_GetIter(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  JsRef iditer = JsMap_GetIter_js(self->js);
+  if (iditer == NULL) {
+    return NULL;
+  }
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
+}
+
+static PyObject*
+JsMap_keys(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(collections_abc, &PyId_KeysView, self);
+}
+
+static PyMethodDef JsMap_keys_MethodDef = {
+  "keys",
+  (PyCFunction)JsMap_keys,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsMap_values(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(collections_abc, &PyId_ValuesView, self);
+}
+
+static PyMethodDef JsMap_values_MethodDef = {
+  "values",
+  (PyCFunction)JsMap_values,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsMap_items(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(collections_abc, &PyId_ItemsView, self);
+}
+
+static PyMethodDef JsMap_items_MethodDef = {
+  "items",
+  (PyCFunction)JsMap_items,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsMap_get(PyObject* self,
+          PyObject* const* args,
+          Py_ssize_t nargs,
+          PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "key", "default", 0 };
+  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  PyObject* key;
+  PyObject* default_ = Py_None;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &key, &default_)) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_GetItem(self, key);
+  if (result != NULL) {
+    return result;
+  }
+  PyErr_Clear();
+  Py_INCREF(default_);
+  return default_;
+}
+
+static PyMethodDef JsMap_get_MethodDef = {
+  "get",
+  (PyCFunction)JsMap_get,
+  METH_FASTCALL | METH_KEYWORDS,
+};
+
+static PyObject*
+JsMap_pop(PyObject* self,
+          PyObject* const* args,
+          Py_ssize_t nargs,
+          PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "key", "default", 0 };
+  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  PyObject* key;
+  PyObject* default_ = NULL;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &key, &default_)) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_GetItem(self, key);
+  if (result == NULL) {
+    if (default_ == NULL) {
+      return NULL;
+    } else {
+      PyErr_Clear();
+      Py_INCREF(default_);
+      return default_;
+    }
+  }
+  if (PyObject_DelItem(self, key) == -1) {
+    Py_CLEAR(result);
+    return NULL;
+  }
+  return result;
+}
+
+static PyMethodDef JsMap_pop_MethodDef = {
+  "pop",
+  (PyCFunction)JsMap_pop,
+  METH_FASTCALL | METH_KEYWORDS,
+};
+
+static PyObject*
+JsMap_popitem(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  return _PyObject_CallMethodIdOneArg(MutableMapping, &PyId_popitem, self);
+}
+
+static PyMethodDef JsMap_popitem_MethodDef = {
+  "popitem",
+  (PyCFunction)JsMap_popitem,
+  METH_NOARGS,
+};
+
+EM_JS_NUM(int, JsMap_clear_js, (JsRef idmap), {
+  const map = Hiwire.get_value(idmap);
+  // clang-format off
+  if(idmap && typeof idmap.clear === "function") {
+    // clang-format on
+    idmap.clear();
+    return 1;
+  }
+  return 0;
+})
+
+static PyObject*
+JsMap_clear(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  // If the map has a JavaScript "clear" function, use that.
+  int status = JsMap_clear_js(JsProxy_REF(self));
+  if (status == -1) {
+    return NULL;
+  }
+  if (status) {
+    Py_RETURN_NONE;
+  }
+  // Otherwise iterate the map and delete the entries one at a time.
+  return _PyObject_CallMethodIdOneArg(MutableMapping, &PyId_clear, self);
+}
+
+static PyMethodDef JsMap_clear_MethodDef = {
+  "clear",
+  (PyCFunction)JsMap_clear,
+  METH_NOARGS,
+};
+
+PyObject*
+JsMap_update(JsProxy* self, PyObject* args, PyObject* kwds)
+{
+  PyObject* arg = NULL;
+  if (!PyArg_ParseTuple(args, "|O:update", &arg)) {
+    return NULL;
+  }
+  if (arg != NULL) {
+    PyObject* status = _PyObject_CallMethodIdObjArgs(
+      MutableMapping, &PyId_update, self, arg, NULL);
+    if (status == NULL) {
+      return NULL;
+    }
+    Py_CLEAR(status);
+  }
+  if (kwds != NULL) {
+    PyObject* status = _PyObject_CallMethodIdObjArgs(
+      MutableMapping, &PyId_update, self, arg, NULL);
+    if (status == NULL) {
+      return NULL;
+    }
+    Py_CLEAR(status);
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsMap_update_MethodDef = {
+  "update",
+  (PyCFunction)JsMap_update,
+  METH_VARARGS | METH_KEYWORDS,
+};
+
+static PyObject*
+JsMap_setdefault(PyObject* self,
+                 PyObject* const* args,
+                 Py_ssize_t nargs,
+                 PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "key", "default", 0 };
+  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  PyObject* key;
+  PyObject* default_ = Py_None;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &key, &default_)) {
+    return NULL;
+  }
+
+  PyObject* result = PyObject_GetItem(self, key);
+  if (result != NULL) {
+    return result;
+  }
+  PyErr_Clear();
+  if (PyObject_SetItem(self, key, default_) == -1) {
+    return NULL;
+  }
+  Py_INCREF(default_);
+  return default_;
+}
+
+static PyMethodDef JsMap_setdefault_MethodDef = {
+  "setdefault",
+  (PyCFunction)JsMap_setdefault,
+  METH_FASTCALL | METH_KEYWORDS,
+};
 
 /**
  * Overload of `dir(proxy)`. Walks the prototype chain of the object and adds
@@ -2600,6 +2871,25 @@ JsProxy_create_subtype(int flags)
 
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
+
+  bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
+  mapping = mapping || (flags & IS_OBJECT_MAP);
+  bool mutable_mapping = mapping && (flags & HAS_SET);
+
+  if (mapping) {
+    methods[cur_method++] = JsMap_keys_MethodDef;
+    methods[cur_method++] = JsMap_values_MethodDef;
+    methods[cur_method++] = JsMap_items_MethodDef;
+    methods[cur_method++] = JsMap_get_MethodDef;
+  }
+  if (mutable_mapping) {
+    methods[cur_method++] = JsMap_pop_MethodDef;
+    methods[cur_method++] = JsMap_popitem_MethodDef;
+    methods[cur_method++] = JsMap_clear_MethodDef;
+    methods[cur_method++] = JsMap_update_MethodDef;
+    methods[cur_method++] = JsMap_setdefault_MethodDef;
+  }
+
   if (flags & IS_OBJECT_MAP) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsObjMap_GetIter };
@@ -2615,9 +2905,15 @@ JsProxy_create_subtype(int flags)
   }
 
   if (flags & IS_ITERABLE) {
-    // This uses `obj[Symbol.iterator]()`
-    slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
+    if (mapping) {
+      // Prefer `obj.keys()` over `obj[Symbol.iterator]()`
+      slots[cur_slot++] =
+        (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsMap_GetIter };
+    } else {
+      // Uses `obj[Symbol.iterator]()`
+      slots[cur_slot++] =
+        (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
+    }
   }
   if (flags & IS_ITERATOR) {
     // JsProxy_GetIter would work just as well as PyObject_SelfIter but
@@ -2636,6 +2932,7 @@ JsProxy_create_subtype(int flags)
   if (flags & HAS_GET) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsProxy_subscript };
+    tp_flags |= Py_TPFLAGS_MAPPING;
   }
   if (flags & HAS_SET) {
     // It's assumed that if HAS_SET then also HAS_DELETE.
@@ -2664,7 +2961,7 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_finally_MethodDef;
   }
   if (flags & IS_CALLABLE) {
-    tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
+    tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_tp_descr_get,
@@ -2699,6 +2996,8 @@ skip_container_slots:
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsTypedArray_ass_subscript };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsProxy_item_array };
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
@@ -2771,6 +3070,25 @@ skip_container_slots:
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
+  PyObject* abc = NULL;
+  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
+  if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
+    abc = Collections_MutableSequence;
+  } else if (flags & IS_NODE_LIST) {
+    abc = Collections_Sequence;
+  } else if ((flags & mapping_flags) == mapping_flags) {
+    abc = (flags & HAS_SET) ? Collections_MutableMapping : Collections_Mapping;
+  } else if (flags & IS_OBJECT_MAP) {
+    abc = Collections_MutableMapping;
+  }
+  if (abc) {
+    PyObject* register_result =
+      _PyObject_CallMethodIdOneArg(abc, &PyId_register, result);
+    abc = NULL; // abc is borrowed, don't decref
+    FAIL_IF_NULL(register_result);
+    Py_CLEAR(register_result);
+  }
+
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
@@ -2969,6 +3287,7 @@ JsProxy_init_docstrings()
   PyObject* JsPromise = NULL;
   PyObject* JsBuffer = NULL;
   PyObject* JsArray = NULL;
+  PyObject* JsMap = NULL;
   PyObject* JsDoubleProxy = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
@@ -2988,6 +3307,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsPromise);
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
+  GetProxyDocClass(JsMap);
   GetProxyDocClass(JsDoubleProxy);
 #undef GetProxyDocClass
 
@@ -3017,6 +3337,16 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsArray, JsArray_index_MethodDef);
   SET_DOCSTRING(JsArray, JsArray_count_MethodDef);
 
+  SET_DOCSTRING(JsMap, JsMap_keys_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_values_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_items_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_get_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_pop_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_popitem_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_clear_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_update_MethodDef);
+  SET_DOCSTRING(JsMap, JsMap_setdefault_MethodDef);
+
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_to_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_tomemoryview_MethodDef);
@@ -3033,6 +3363,7 @@ finally:
   Py_CLEAR(JsPromise);
   Py_CLEAR(JsBuffer);
   Py_CLEAR(JsArray);
+  Py_CLEAR(JsMap);
   Py_CLEAR(JsDoubleProxy);
   return success ? 0 : -1;
 }
@@ -3044,7 +3375,31 @@ JsProxy_init(PyObject* core_module)
 
   PyObject* asyncio_module = NULL;
 
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  Collections_MutableSequence =
+    PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(Collections_MutableSequence);
+  Collections_Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Collections_Sequence);
+  Collections_MutableMapping =
+    PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(Collections_MutableMapping);
+  Collections_Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
+  FAIL_IF_NULL(Collections_Mapping);
+
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(MutableMapping);
+
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  MutableMapping = PyObject_GetAttrString(collections_abc, "MutableMapping");
+  FAIL_IF_NULL(MutableMapping);
+
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
+
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
 #define AddFlag(flag)                                                          \

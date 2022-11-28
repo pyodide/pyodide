@@ -73,7 +73,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	npx rollup -c src/js/rollup.config.js
+	npx rollup -c src/js/rollup.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@
