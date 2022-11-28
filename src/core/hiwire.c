@@ -453,10 +453,17 @@ EM_JS_REF(JsRef, hiwire_CallMethod, (JsRef idobj, JsRef name, JsRef idargs), {
   return Hiwire.new_value(jsobj[jsname](... jsargs));
 });
 
+EM_JS_REF(JsRef, hiwire_CallMethod_NoArgs, (JsRef idobj, JsRef name), {
+  let jsobj = Hiwire.get_value(idobj);
+  let jsname = Hiwire.get_value(name);
+  return Hiwire.new_value(jsobj[jsname]());
+});
+
 // clang-format off
-EM_JS_REF(JsRef,
-          hiwire_CallMethod_OneArg,
-          (JsRef idobj, JsRef name, JsRef idarg),
+EM_JS_REF(
+JsRef,
+hiwire_CallMethod_OneArg,
+(JsRef idobj, JsRef name, JsRef idarg),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jsname = Hiwire.get_value(name);
@@ -495,6 +502,16 @@ hiwire_CallMethodId_va(JsRef idobj, Js_Identifier* name, ...)
   JsRef idresult = hiwire_CallMethodId(idobj, name, idargs);
   hiwire_decref(idargs);
   return idresult;
+}
+
+JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name)
+{
+  JsRef name_ref = JsString_FromId(name);
+  if (name_ref == NULL) {
+    return NULL;
+  }
+  return hiwire_CallMethod_NoArgs(obj, name_ref);
 }
 
 JsRef
@@ -631,6 +648,12 @@ EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
+  // clang-format off
+  return Object.prototype.toString.call(Hiwire.get_value(idobj)) === "[object Generator]";
+  // clang-format on
+});
+
 EM_JS_BOOL(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
   let value = Hiwire.get_value(idobj);
   return !!(API.Comlink && value[API.Comlink.createEndpoint]);
@@ -685,21 +708,6 @@ MAKE_OPERATOR(not_equal, !==);
 // clang-format on
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
-
-EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  let { done, value } = jsobj.next();
-  // clang-format on
-  let result_id = Hiwire.new_value(value);
-  DEREF_U32(result_ptr, 0) = result_id;
-  return done;
-});
-
-EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(jsobj[Symbol.iterator]());
-})
 
 EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
   if (!Module._reversedIterator) {
