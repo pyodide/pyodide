@@ -80,7 +80,7 @@ Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
 Js_IDENTIFIER(next);
-Js_IDENTIFIER(return );
+Js_IDENTIFIER(return);
 Js_IDENTIFIER(throw);
 _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(register);
