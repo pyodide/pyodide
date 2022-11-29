@@ -32,6 +32,7 @@ from _pyodide._core_docs import (
     JsBuffer,
     JsDoubleProxy,
     JsMap,
+    JsMutableMap,
     JsPromise,
     JsProxy,
 )
@@ -50,4 +51,5 @@ __all__ = [
     "JsBuffer",
     "JsArray",
     "JsMap",
+    "JsMutableMap",
 ]

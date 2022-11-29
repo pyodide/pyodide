@@ -1632,14 +1632,14 @@ def test_jsproxy_as_object_map(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsMap
+    from pyodide.ffi import JsMutableMap
 
     o1 = run_js("({a : 2, b: 3, c: 77, 1 : 9})")
     with pytest.raises(TypeError, match="object is not subscriptable"):
         o1["a"]
     o = o1.as_object_map()
-    assert not isinstance(o1, JsMap)
-    assert isinstance(o, JsMap)
+    assert not isinstance(o1, JsMutableMap)
+    assert isinstance(o, JsMutableMap)
     del o1
     assert len(o) == 4
     assert set(o) == {"a", "b", "c", "1"}
@@ -1676,10 +1676,11 @@ def test_object_map_mapping_methods(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsMap
+    from pyodide.ffi import JsMap, JsMutableMap
 
     m = run_js("({1:2, 3:4})").as_object_map()
     assert isinstance(m, JsMap)
+    assert isinstance(m, JsMutableMap)
     # Iterate using keys() function
     assert set(m) == {"1", "3"}
     assert "1" in m.keys()
