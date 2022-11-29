@@ -1,5 +1,6 @@
 import sys
 from collections.abc import (
+    AsyncIterator,
     Callable,
     ItemsView,
     Iterable,
@@ -636,7 +637,7 @@ class JsGenerator(JsIterable):
     def throw(
         self,
         type: Exception | type,
-        value: Exception | None = None,
+        value: Exception | str | Any = None,
         traceback: TracebackType | None = None,
     ) -> Any:
         """
@@ -684,11 +685,11 @@ class JsAsyncGenerator(JsIterable):
 
     _js_type_flags = ["IS_ASYNC_GENERATOR"]
 
-    def __next__(self):
+    def __anext__(self):
         pass
 
-    def __iter__(self):
-        pass
+    def __aiter__(self) -> AsyncIterator[Any]:
+        raise NotImplementedError
 
     def asend(self, value: Any) -> Awaitable[Any]:
         """Resumes the execution and "sends" a value into the async generator
@@ -710,7 +711,7 @@ class JsAsyncGenerator(JsIterable):
     def athrow(
         self,
         type: Exception | type,
-        value: Exception | None = None,
+        value: Exception | str | None = None,
         traceback: TracebackType | None = None,
     ) -> Awaitable[Any]:
         """Resumes the execution and raises an exception at the point where the

@@ -1970,8 +1970,10 @@ async def test_agen_asend(selenium):
 # pytest.mark.xfail("async error gets converted into double wrapped error")
 @run_in_pyodide
 async def test_agen_athrow(selenium):
+    import pytest
+
     from pyodide.code import run_js
-    from pyodide.ffi import JsException
+    from pyodide.ffi import JsAsyncGenerator, JsException
 
     f = run_js(
         """
@@ -1987,6 +1989,7 @@ async def test_agen_athrow(selenium):
     )
 
     g = f()
+    assert isinstance(g, JsAsyncGenerator)
     assert await anext(g) == 1
     assert await g.athrow(TypeError("hi")) == 2
     # TODO: figure out how to make this raise a TypeError!
@@ -1994,6 +1997,7 @@ async def test_agen_athrow(selenium):
         await anext(g)
 
     g = f()
+    assert isinstance(g, JsAsyncGenerator)
     assert await anext(g) == 1
     assert await g.athrow(TypeError, "hi") == 2
     with pytest.raises(JsException, match="hi"):
@@ -2009,6 +2013,7 @@ async def test_agen_athrow(selenium):
         """
     )
     g = f()
+    assert isinstance(g, JsAsyncGenerator)
     assert await anext(g) == 1
     await g.aclose()
 
@@ -2016,6 +2021,7 @@ async def test_agen_athrow(selenium):
 @run_in_pyodide
 async def test_agen_aclose(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator
 
     f = run_js(
         """
@@ -2037,9 +2043,10 @@ async def test_agen_aclose(selenium):
     l: list[str] = []
     p = create_proxy(l)
     g = f(p)
+    assert isinstance(g, JsAsyncGenerator)
     assert await anext(g) == 1
     assert await anext(g) == 2
-    assert await g.aclose() is None
-    assert await g.aclose() is None
+    assert await g.aclose() is None  # type:ignore[func-returns-value]
+    assert await g.aclose() is None  # type:ignore[func-returns-value]
     p.destroy()
     assert l == ["finally"]
