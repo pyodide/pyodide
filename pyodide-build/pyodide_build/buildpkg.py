@@ -159,7 +159,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     if "PKG_CONFIG_PATH" in os.environ:
         env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
 
-    tools_dir = Path(__file__) / "tools"
+    tools_dir = Path(__file__).parent / "tools"
 
     env["CMAKE_TOOLCHAIN_FILE"] = str(
         tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
