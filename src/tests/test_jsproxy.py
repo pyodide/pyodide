@@ -1865,3 +1865,103 @@ def test_gen_close(selenium):
     next(g)
     with pytest.raises(RuntimeError, match="JavaScript generator ignored return"):
         g.close()
+
+
+@run_in_pyodide
+async def test_agen_aiter(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsIterator
+
+    f = run_js(
+        """
+        (async function *(){
+            yield 2;
+            yield 3;
+            return 7;
+        })
+        """
+    )
+    b = f()
+    assert isinstance(b, JsIterator)
+    assert await anext(b) == 2
+    assert await anext(b) == 3
+    with pytest.raises(StopAsyncIteration):
+        await anext(b)
+
+    with pytest.raises(TypeError, match="Result was a promise, use anext.* instead."):
+        next(f())
+
+    g = run_js(
+        """
+        (function *(){
+            yield 2;
+            yield 3;
+            return 7;
+        })
+        """
+    )
+    with pytest.raises(
+        TypeError, match="Result of anext.. was not a promise, use next.. instead."
+    ):
+        anext(g())
+
+
+@run_in_pyodide
+async def test_agen_aiter2(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncIterable, JsIterable, JsIterator
+
+    iterable = run_js(
+        """
+        ({
+        [Symbol.asyncIterator]() {
+            return (async function *f(){yield 1; yield 2; yield 3;})();
+        }
+        })
+        """
+    )
+    assert not isinstance(iterable, JsIterable)
+    assert isinstance(iterable, JsAsyncIterable)
+
+    with pytest.raises(TypeError, match="object is not iterable"):
+        iter(iterable)  # type:ignore[call-overload]
+
+    it = aiter(iterable)
+    assert isinstance(it, JsIterator)
+
+    assert await anext(it) == 1
+    assert await anext(it) == 2
+    assert await anext(it) == 3
+    with pytest.raises(StopAsyncIteration):
+        await anext(it)
+
+
+@run_in_pyodide
+async def test_agen_asend(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsIterator
+
+    it = run_js(
+        """
+        (async function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        })();
+        """
+    )
+
+    assert isinstance(it, JsIterator)
+
+    assert await it.asend(None) == 2
+    assert await it.asend(2) == 4
+    assert await it.asend(3) == 5
+    with pytest.raises(StopAsyncIteration):
+        await it.asend(4)
