@@ -130,7 +130,7 @@ substitutions:
 
 - Added subcommands for `pyodide build` which builds packages from various sources.
   | command | result |
-  |-------------|-------|
+  |------------------------|-----------------------------------------|
   | `pyodide build pypi` | build or fetch a single package from pypi |
   | `pyodide build source` | build the current source folder (same as pyodide build) |
   | `pyodide build url` | build or fetch a package from a url either tgz, tar.gz zip or wheel |
@@ -150,6 +150,14 @@ substitutions:
 - {{ Enhancement }} It is now possible to use aynchronous Python generators from
   JavaScript.
   {pr}`3290`
+
+- {{ Enhancement }} Added `JsGenerator` and `JsIterator` types to `pyodide.ffi`.
+  Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
+  {pr}`3294`
+
+- {{ Enhancement }} It is now possible to use aynchronous JavaScript generators from
+  Python.
+  {pr}`3285`
 
 ### Build System / Package Loading
 
@@ -1244,7 +1252,8 @@ See the {ref}`0-17-0-release-notes` for more information.
   the Python event loop using `asyncio.ensure_future`.
   {pr}`1170`
 - {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js
-  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of proxy)`. Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
+  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
+  Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
   translated to `next(it)`. Made a `PyProxy` of a Python generator into a
   JavaScript generator: `proxy.next(val)` is translated to `gen.send(val)`.
   {pr}`1180`

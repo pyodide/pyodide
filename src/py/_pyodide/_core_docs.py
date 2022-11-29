@@ -586,7 +586,92 @@ class JsMutableMap(JsMap):
 
 
 class JsIterator(JsProxy):
+    """A JsProxy of a JavaScript iterator.
+
+    An object is a JsIterator if it has a `next` method. We can't tell if it's
+    synchronously iterable or asynchronously iterable, so we implement both and
+    if you try to use the wrong one it will fail at runtime.
+    """
+
     _js_type_flags = ["IS_ITERATOR"]
+
+    def send(self, value: Any) -> Any:
+        """Send a value into the iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        We can't tell whether a JavaScript iterator is a synchronous iterator,
+        an asynchronous iterator, or just some object with a "next" method, so
+        we include both ``send`` and ``asend``. If the object is not a
+        synchronous iterator, then ``send`` will raise a TypeError (but only
+        after calling ``jsobj.next()``!).
+        """
+
+    def asend(self, value: Any) -> Any:
+        """Send a value into the asynchronous iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        We can't tell whether a JavaScript iterator is a synchronous iterator,
+        an asynchronous iterator, or just some object with a "next" method, so
+        we include both ``send`` and ``asend``. If the object is not a
+        asynchronous iterator, then ``asend`` will raise a TypeError (but only
+        after calling ``jsobj.next()``!).
+        """
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __aiter__(self):
+        pass
+
+    def __anext__(self):
+        pass
+
+
+class JsIterable(JsProxy):
+    """A JavaScript iterable object
+
+    A JavaScript object is iterable if it has a ``Symbol.iterator`` method.
+    """
+
+    _js_type_flags = ["IS_ITERABLE"]
+
+    def __iter__(self):
+        pass
+
+
+class JsAsyncIterable(JsProxy):
+    """A JavaScript async iterable object
+
+    A JavaScript object is async iterable if it has a ``Symbol.asyncIterator`` method.
+    """
+
+    _js_type_flags = ["IS_ASYNC_ITERABLE"]
+
+    def __aiter__(self):
+        pass
+
+
+class JsGenerator(JsProxy):
+    """A JavaScript generator
+
+    A JavaScript object is treated as a generator if it's ``Symbol.typeTag`` is
+    ``Generator``. Most likely this will be because it is a true generator
+    produced by the JavaScript runtime, but it may be a custom object trying
+    hard to pretend to be a generator. It should have ``next``, ``return``, and
+    ``throw`` methods.
+
+    """
+
+    _js_type_flags = ["IS_GENERATOR"]
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
 
     def send(self, value: Any) -> Any:
         """
@@ -598,12 +683,8 @@ class JsIterator(JsProxy):
         yielding another value. When ``send()`` is called to start the
         generator, the argument will be ignored. Unlike in Python, we cannot
         detect that the generator hasn't started yet, and no error will be
-        thrown if the argument is not ``None``
+        thrown if the argument of a not-started generator is not ``None``.
         """
-
-
-class JsGenerator(JsIterator):
-    _js_type_flags = ["IS_GENERATOR"]
 
     def throw(
         self,
@@ -642,12 +723,6 @@ class JsGenerator(JsIterator):
         caller. close() does nothing if the generator has already exited due to
         an exception or normal exit.
         """
-
-    def __next__(self):
-        pass
-
-    def __iter__(self):
-        pass
 
 
 # from pyproxy.c
