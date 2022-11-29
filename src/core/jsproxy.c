@@ -3792,7 +3792,7 @@ finally:
   Py_CLEAR(JsPromise);
   Py_CLEAR(JsBuffer);
   Py_CLEAR(JsArray);
-  Py_CLEAR(JsMap);
+  Py_CLEAR(JsMutableMap);
   Py_CLEAR(JsDoubleProxy);
   Py_CLEAR(JsGenerator);
   return success ? 0 : -1;
