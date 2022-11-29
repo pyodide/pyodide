@@ -16,6 +16,8 @@ __all__ = [
     "JsGenerator",
     "JsFetchResponse",
     "JsIterator",
+    "JsIterable",
+    "JsAsyncIterable",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
