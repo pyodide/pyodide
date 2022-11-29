@@ -3,7 +3,6 @@ package:
   version: "1.0.0"
 requirements:
   executable:
-    - should_not_exist_
-    - should_not_exist2_
+    - echo
 source:
   path: src

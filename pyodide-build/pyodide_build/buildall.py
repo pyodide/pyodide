@@ -276,9 +276,9 @@ def generate_dependency_graph(
             pkg_map[dep].host_dependents.add(pkg.name)
 
     # Check executables required to build packages
+    missing_executables = defaultdict(list)
     for name in requested:
         pkg = pkg_map[name]
-        missing_executables = defaultdict(list)
         for exe in find_missing_executables(pkg.executables_required):
             missing_executables[exe].append(name)
 
