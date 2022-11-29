@@ -15,7 +15,7 @@ function ensureCaughtObjectIsError(e: any): Error {
     typeof e.message !== "string"
   ) {
     // We caught something really weird. Be brave!
-    const typeTag = getTypeTag(e);
+    const typeTag = API.getTypeTag(e);
     let msg = `A value of type ${typeof e} with tag ${typeTag} was thrown as an error!`;
     try {
       msg += `\nString interpolation of the thrown value gives """${e}""".`;
