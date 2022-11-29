@@ -7,22 +7,14 @@ from pyodide.webloop import PyodideFuture
 
 def eval(code: str) -> Any: ...
 
-class XMLHttpRequest:
-    @staticmethod
-    def new() -> "XMLHttpRequest": ...
-    def open(self, method: str, url: str, sync: bool) -> None: ...
-    def send(self, body: JsProxy | None = None) -> None: ...
-
-    response: str
-
 # in browser the cancellation token is an int, in node it's a special opaque
 # object.
-CancellationToken = int | JsProxy
+_CancellationToken = int | JsProxy
 
-def setTimeout(cb: Callable[[], Any], timeout: int | float) -> CancellationToken: ...
-def clearTimeout(id: CancellationToken) -> None: ...
-def setInterval(cb: Callable[[], Any], interval: int | float) -> CancellationToken: ...
-def clearInterval(id: CancellationToken) -> None: ...
+def setTimeout(cb: Callable[[], Any], timeout: int | float) -> _CancellationToken: ...
+def clearTimeout(id: _CancellationToken) -> None: ...
+def setInterval(cb: Callable[[], Any], interval: int | float) -> _CancellationToken: ...
+def clearInterval(id: _CancellationToken) -> None: ...
 def fetch(
     url: str, options: JsProxy | None = None
 ) -> PyodideFuture[JsFetchResponse]: ...
@@ -36,6 +28,14 @@ class _JsMeta(_JsProxyMetaClass, JsProxy):
 
 class _Js(metaclass=_JsMeta):
     pass
+
+class XMLHttpRequest(_Js):
+    response: str
+
+    @staticmethod
+    def new() -> "XMLHttpRequest": ...
+    def open(self, method: str, url: str, sync: bool) -> None: ...
+    def send(self, body: JsProxy | None = None) -> None: ...
 
 class Object(_Js):
     @staticmethod
@@ -66,7 +66,7 @@ class Uint8Array(_TypedArray):
 class Float64Array(_TypedArray):
     BYTES_PER_ELEMENT = 8
 
-class JSON:
+class JSON(_Js):
     @staticmethod
     def stringify(a: JsProxy) -> str: ...
     @staticmethod
@@ -77,7 +77,7 @@ class JsElement(JsProxy):
     children: list[JsElement]
     def appendChild(self, child: JsElement) -> None: ...
 
-class document:
+class document(_Js):
     body: JsElement
     children: list[JsElement]
     @staticmethod
