@@ -457,7 +457,7 @@ class JsMap(JsProxy):
     (idiomatically it should be called ``.size``) and it must be iterable.
     """
 
-    _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE"]
+    _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
     def __getitem__(self, idx: Any) -> Any:
         return None
