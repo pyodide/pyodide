@@ -1750,6 +1750,7 @@ def test_jsproxy_subtypes(selenium):
     assert issubclass(type(nullobj), JsProxy)
 
 
+@run_in_pyodide
 def test_gen_send(selenium):
     import pytest
 
