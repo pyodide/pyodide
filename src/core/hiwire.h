@@ -274,6 +274,9 @@ JsRef
 hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
 
 JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name);
+
+JsRef
 hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
@@ -313,6 +316,9 @@ hiwire_get_bool(JsRef idobj);
  */
 bool
 hiwire_is_function(JsRef idobj);
+
+bool
+hiwire_is_generator(JsRef idobj);
 
 /**
  * Check if the object is a comlink proxy.
@@ -399,22 +405,6 @@ hiwire_greater_than(JsRef ida, JsRef idb);
  */
 bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
-
-/**
- * Calls the `next` function on an iterator.
- *
- * Returns -1 if an error occurs. Otherwise, `next` should return an object with
- * `value` and `done` fields. We store `value` into the argument `result` and
- * return `done`.
- */
-int
-hiwire_next(JsRef idobj, JsRef* result);
-
-/**
- * Returns the iterator associated with the given object, if any.
- */
-JsRef
-hiwire_get_iterator(JsRef idobj);
 
 /**
  * Returns the reversed iterator associated with an array.

@@ -1748,3 +1748,170 @@ def test_jsproxy_subtypes(selenium):
     assert issubclass(type(a[0]), type(nullobj))
     assert issubclass(JsProxy, type(nullobj))
     assert issubclass(type(nullobj), JsProxy)
+
+
+def test_gen_send(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        });
+        """
+    )
+
+    it = f()
+    assert isinstance(it, JsGenerator)
+
+    assert it.send(None) == 2
+    assert it.send(2) == 4
+    assert it.send(3) == 5
+    with pytest.raises(StopIteration):
+        it.send(4)
+
+
+@run_in_pyodide
+def test_gen_send_type_errors(selenium):
+    from re import escape
+
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator, JsIterator
+
+    g = run_js(
+        """
+        ({next(){ return 2; }});
+        """
+    )
+    assert isinstance(g, JsIterator)
+    assert not isinstance(g, JsGenerator)
+    with pytest.raises(
+        TypeError, match='Result should have type "object" not "number"'
+    ):
+        g.send(None)
+
+    g = run_js(
+        """
+        ({next(){ return Promise.resolve(2); }});
+        """
+    )
+    with pytest.raises(
+        TypeError,
+        match=escape("Result was a promise, use anext() / asend() / athrow() instead."),
+    ):
+        g.send(None)
+
+    g = run_js(
+        """
+        ({next(){ return {}; }});
+        """
+    )
+    with pytest.raises(TypeError, match='Result has no "done" field.'):
+        g.send(None)
+
+
+@run_in_pyodide
+def test_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function *() {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+                console.log("finally");
+            }
+        })
+        """
+    )
+
+    g = f()
+    assert isinstance(g, JsGenerator)
+    assert next(g) == 1
+    assert g.throw(TypeError("hi")) == 2
+    with pytest.raises(TypeError, match="hi"):
+        next(g)
+
+    g = f()
+    assert next(g) == 1
+    assert g.throw(TypeError, "hi") == 2
+    with pytest.raises(TypeError, match="hi"):
+        next(g)
+
+    f = run_js(
+        """
+        (function *() {
+            yield 1;
+            yield 2;
+            yield 3;
+        })
+        """
+    )
+    g = f()
+    assert next(g) == 1
+    g.close()
+
+
+@run_in_pyodide
+def test_gen_close(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function *(x) {
+            try {
+                yield 1;
+                yield 2;
+                x.push("this never happens");
+                yield 3;
+            } finally {
+                x.append("finally");
+            }
+        })
+        """
+    )
+
+    from pyodide.ffi import create_proxy
+
+    l: list[str] = []
+    p = create_proxy(l)
+    g = f(p)
+    assert isinstance(g, JsGenerator)
+    assert next(g) == 1
+    assert next(g) == 2
+    assert g.close() is None  # type:ignore[func-returns-value]
+    p.destroy()
+    assert l == ["finally"]
+
+    f = run_js(
+        """
+        (function *(x) {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+            }
+        })
+        """
+    )
+
+    g = f()
+    next(g)
+    with pytest.raises(RuntimeError, match="JavaScript generator ignored return"):
+        g.close()
