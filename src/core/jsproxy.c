@@ -3567,7 +3567,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   }
 
   const constructorName = obj.constructor ? obj.constructor.name : "";
-  let typeTag = Object.prototype.toString.call(obj);
+  let typeTag = getTypeTag(obj);
 
   SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
