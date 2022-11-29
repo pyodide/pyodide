@@ -22,14 +22,19 @@ def fetch(
 self: Any = ...
 window: Any = ...
 
-# Shenanigans to convince skeptical type system to behave correctly
+# Shenanigans to convince skeptical type system to behave correctly:
+#
+# These classes we are declaring are actually JavaScript objects, so the class
+# objects themselves need to be instances of JsProxy. So their type needs to
+# subclass JsProxy. We do this with a custom metaclass.
+
 class _JsMeta(_JsProxyMetaClass, JsProxy):
     pass
 
-class _Js(metaclass=_JsMeta):
+class _JsObject(metaclass=_JsMeta):
     pass
 
-class XMLHttpRequest(_Js):
+class XMLHttpRequest(_JsObject):
     response: str
 
     @staticmethod
@@ -37,22 +42,22 @@ class XMLHttpRequest(_Js):
     def open(self, method: str, url: str, sync: bool) -> None: ...
     def send(self, body: JsProxy | None = None) -> None: ...
 
-class Object(_Js):
+class Object(_JsObject):
     @staticmethod
     def fromEntries(it: Iterable[tuple[str, Any]]) -> JsProxy: ...
 
-class Array(_Js):
+class Array(_JsObject):
     @staticmethod
     def new() -> JsArray: ...
 
-class ImageData(_Js):
+class ImageData(_JsObject):
     @staticmethod
     def new(width: int, height: int, settings: JsProxy | None = None) -> ImageData: ...
 
     width: int
     height: int
 
-class _TypedArray(_Js):
+class _TypedArray(_JsObject):
     @staticmethod
     def new(
         a: int | Iterable[int | float] | JsProxy | None,
@@ -66,7 +71,7 @@ class Uint8Array(_TypedArray):
 class Float64Array(_TypedArray):
     BYTES_PER_ELEMENT = 8
 
-class JSON(_Js):
+class JSON(_JsObject):
     @staticmethod
     def stringify(a: JsProxy) -> str: ...
     @staticmethod
@@ -77,7 +82,7 @@ class JsElement(JsProxy):
     children: list[JsElement]
     def appendChild(self, child: JsElement) -> None: ...
 
-class document(_Js):
+class document(_JsObject):
     body: JsElement
     children: list[JsElement]
     @staticmethod
