@@ -9,6 +9,7 @@ from collections.abc import (
     ValuesView,
 )
 from functools import reduce
+from types import TracebackType
 from typing import IO, Any
 
 # All docstrings for public `core` APIs should be extracted from here. We use
@@ -529,6 +530,146 @@ class JsMap(JsProxy):
 
         Present if the wrapped JavaScript object is a MutableMapping (i.e., has
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
+        """
+
+
+class JsIterator(JsProxy):
+    """A JsProxy of a JavaScript iterator.
+
+    An object is a JsIterator if it has a `next` method. We can't tell if it's
+    synchronously iterable or asynchronously iterable, so we implement both and
+    if you try to use the wrong one it will fail at runtime.
+    """
+
+    _js_type_flags = ["IS_ITERATOR"]
+
+    def send(self, value: Any) -> Any:
+        """Send a value into the iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        We can't tell whether a JavaScript iterator is a synchronous iterator,
+        an asynchronous iterator, or just some object with a "next" method, so
+        we include both ``send`` and ``asend``. If the object is not a
+        synchronous iterator, then ``send`` will raise a TypeError (but only
+        after calling ``jsobj.next()``!).
+        """
+
+    def asend(self, value: Any) -> Any:
+        """Send a value into the asynchronous iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        We can't tell whether a JavaScript iterator is a synchronous iterator,
+        an asynchronous iterator, or just some object with a "next" method, so
+        we include both ``send`` and ``asend``. If the object is not a
+        asynchronous iterator, then ``asend`` will raise a TypeError (but only
+        after calling ``jsobj.next()``!).
+        """
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def __aiter__(self):
+        pass
+
+    def __anext__(self):
+        pass
+
+
+class JsIterable(JsProxy):
+    """A JavaScript iterable object
+
+    A JavaScript object is iterable if it has a ``Symbol.iterator`` method.
+    """
+
+    _js_type_flags = ["IS_ITERABLE"]
+
+    def __iter__(self):
+        pass
+
+
+class JsAsyncIterable(JsProxy):
+    """A JavaScript async iterable object
+
+    A JavaScript object is async iterable if it has a ``Symbol.asyncIterator`` method.
+    """
+
+    _js_type_flags = ["IS_ASYNC_ITERABLE"]
+
+    def __aiter__(self):
+        pass
+
+
+class JsGenerator(JsProxy):
+    """A JavaScript generator
+
+    A JavaScript object is treated as a generator if it's ``Symbol.typeTag`` is
+    ``Generator``. Most likely this will be because it is a true generator
+    produced by the JavaScript runtime, but it may be a custom object trying
+    hard to pretend to be a generator. It should have ``next``, ``return``, and
+    ``throw`` methods.
+
+    """
+
+    _js_type_flags = ["IS_GENERATOR"]
+
+    def __next__(self):
+        pass
+
+    def __iter__(self):
+        pass
+
+    def send(self, value: Any) -> Any:
+        """
+        Resumes the execution and "sends" a value into the generator function.
+
+        The ``value`` argument becomes the result of the current yield
+        expression. The ``send()`` method returns the next value yielded by the
+        generator, or raises ``StopIteration`` if the generator exits without
+        yielding another value. When ``send()`` is called to start the
+        generator, the argument will be ignored. Unlike in Python, we cannot
+        detect that the generator hasn't started yet, and no error will be
+        thrown if the argument of a not-started generator is not ``None``.
+        """
+
+    def throw(
+        self,
+        type: Exception | type,
+        value: Exception | None = None,
+        traceback: TracebackType | None = None,
+    ) -> Any:
+        """
+        Raises an exception at the point where the generator was paused, and
+        returns the next value yielded by the generator function.
+
+        If the generator exits without yielding another value, a StopIteration
+        exception is raised. If the generator function does not catch the
+        passed-in exception, or raises a different exception, then that
+        exception propagates to the caller.
+
+        In typical use, this is called with a single exception instance similar to the
+        way the raise keyword is used.
+
+        For backwards compatibility, however, the second signature is supported,
+        following a convention from older versions of Python. The type argument should
+        be an exception class, and value should be an exception instance. If the value
+        is not provided, the type constructor is called to get an instance. If traceback
+        is provided, it is set on the exception, otherwise any existing __traceback__
+        attribute stored in value may be cleared.
+        """
+
+    def close(self) -> None:
+        """Raises a GeneratorExit at the point where the generator function was
+        paused.
+
+        If the generator function then exits gracefully, is already closed, or
+        raises GeneratorExit (by not catching the exception), close returns to
+        its caller. If the generator yields a value, a RuntimeError is raised.
+        If the generator raises any other exception, it is propagated to the
+        caller. close() does nothing if the generator has already exited due to
+        an exception or normal exit.
         """
 
 
