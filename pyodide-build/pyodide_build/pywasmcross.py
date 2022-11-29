@@ -62,11 +62,6 @@ from typing import Any, Literal, NoReturn
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-
-def symlink_dir() -> Path:
-    return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
-
-
 ReplayArgs = namedtuple(
     "ReplayArgs",
     [
