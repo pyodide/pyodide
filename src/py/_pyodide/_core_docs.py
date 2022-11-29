@@ -49,7 +49,7 @@ def _binor_reduce(l: Iterable[int]) -> int:
 
 
 def _process_flag_expression(e: str) -> int:
-    return _binor_reduce(_core_dict[x.strip()] for x in e.split())
+    return _binor_reduce(_core_dict[x.strip()] for x in e.split("|"))
 
 
 class _JsProxyMetaClass(type):
