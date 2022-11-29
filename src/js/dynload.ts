@@ -167,23 +167,38 @@ export async function loadDynlibsFromPackage(
   // This prevents from reading large libraries multiple times.
   const readFileMemoized: ReadFileType = memoize(Module.FS.readFile);
 
-  const globalLibs: Set<string> = calculateGlobalLibs(
-    dynlibPaths,
-    readFileMemoized,
-  );
+  const forceGlobal: boolean = !!pkg.shared_library;
 
-  const dynlibs = dynlibPaths.map((path) => {
-    const global = globalLibs.has(Module.PATH.basename(path));
-    return {
-      path: path,
-      global: global || !!pkg.shared_library,
-    };
-  });
+  type Dynlib = { path: string; global: boolean };
+  let dynlibs: Dynlib[];
+
+  if (forceGlobal) {
+    dynlibs = dynlibPaths.map((path) => {
+      return {
+        path: path,
+        global: true,
+      };
+    });
+  } else {
+    const globalLibs: Set<string> = calculateGlobalLibs(
+      dynlibPaths,
+      readFileMemoized,
+    );
+
+    dynlibs = dynlibPaths.map((path) => {
+      const global = globalLibs.has(Module.PATH.basename(path));
+      return {
+        path: path,
+        global: global || !!pkg.shared_library,
+      };
+    });
+  }
 
   // Sort libraries so that global libraries can be loaded first.
   // TODO(ryanking13): It is not clear why global libraries should be loaded first.
   //    But without this, we get a fatal error when loading the libraries.
-  dynlibs.sort((lib: { global: boolean }) => (lib.global ? -1 : 1));
+  type T = { global: boolean };
+  dynlibs.sort((lib1: T, lib2: T) => Number(lib2.global) - Number(lib1.global));
 
   for (const { path, global } of dynlibs) {
     await loadDynlib(path, global, [auditWheelLibDir], readFileMemoized);
