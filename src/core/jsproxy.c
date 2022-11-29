@@ -716,7 +716,6 @@ _agen_handle_result_js_c(PyObject* set_result,
     goto return_error;
   }
 
-  PyObject *tp, *tb;
 return_error:
   if (e == NULL) {
     // Grab e from error flag
@@ -745,7 +744,7 @@ finally:
 EM_JS_NUM(
 int,
 _agen_handle_result_js,
-(JsRef promiseid, char** msg, PyObject* set_result, PyObject* set_exception),
+(JsRef promiseid, char** msg, PyObject* set_result, PyObject* set_exception, bool closing),
 {
   let p = Hiwire.get_value(promiseid);
   // First check that p is a proper promise, if not return the error message for
@@ -760,8 +759,8 @@ _agen_handle_result_js,
       errmsg = `Result of anext() was not a promise.`;
     }
   }
-  if (msg_ptr) {
-    DEREF_U32(msg, 0) = stringToNewUTF8(msg_ptr);
+  if (errmsg) {
+    DEREF_U32(msg, 0) = stringToNewUTF8(errmsg);
     return -1;
   }
   // We need to hold onto set_result and set_exception until the promise resolves.
@@ -903,7 +902,7 @@ JsGenerator_aclose(PyObject* self, PyObject* ignored)
 
   throw_res = process_throw_args(self, PyExc_GeneratorExit, NULL, NULL);
   FAIL_IF_NULL(throw_res);
-  result = JsProxy_agen_handle_result(throw_res, true);
+  result = _agen_handle_result(throw_res, true);
 
 finally:
   hiwire_CLEAR(throw_res);
@@ -3474,10 +3473,10 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
-      (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsProxy_anext };
+      (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsGenerator_anext };
     // Send works okay on any js object that has a "next" method
     methods[cur_method++] = JsGenerator_send_MethodDef;
-    methods[cur_method++] = JsProxy_asend_MethodDef;
+    methods[cur_method++] = JsGenerator_asend_MethodDef;
   }
   if (flags & IS_GENERATOR) {
     // throw and close need "throw" and "return" methods to work. We currently
