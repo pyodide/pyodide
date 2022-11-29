@@ -3710,7 +3710,7 @@ JsProxy_init_docstrings()
   PyObject* JsPromise = NULL;
   PyObject* JsBuffer = NULL;
   PyObject* JsArray = NULL;
-  PyObject* JsMap = NULL;
+  PyObject* JsMutableMap = NULL;
   PyObject* JsDoubleProxy = NULL;
   PyObject* JsGenerator = NULL;
 
@@ -3731,7 +3731,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsPromise);
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
-  GetProxyDocClass(JsMap);
+  GetProxyDocClass(JsMutableMap);
   GetProxyDocClass(JsDoubleProxy);
   GetProxyDocClass(JsGenerator);
 #undef GetProxyDocClass
@@ -3762,15 +3762,15 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsArray, JsArray_index_MethodDef);
   SET_DOCSTRING(JsArray, JsArray_count_MethodDef);
 
-  SET_DOCSTRING(JsMap, JsMap_keys_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_values_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_items_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_get_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_pop_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_popitem_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_clear_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_update_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_setdefault_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_keys_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_values_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_items_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_get_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_pop_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_popitem_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_clear_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_update_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_setdefault_MethodDef);
 
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_to_MethodDef);
