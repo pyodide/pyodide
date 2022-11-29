@@ -227,8 +227,9 @@ the build system might already have `zlib` present.
 
 A list of executables that are required when building a package.
 
-Note that this key exists just to tell users which executables are required to build a certain package,
-and it doesn't install the executable, unlike conda.
+Note that unlike conda, specifying executables in this key
+doesn't actually install any of them. This key exists to
+halt build earlier if required executables are not available.
 
 ## `test`
 
