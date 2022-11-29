@@ -554,7 +554,7 @@ class JsIterator(JsProxy):
         We can't tell whether a JavaScript iterator is a synchronous iterator,
         an asynchronous iterator, or just some object with a "next" method, so
         we include both ``send`` and ``asend``. If the object is not a
-        synchronous iterator, then ``send`` will raise a TypeError (but only
+        asynchronous iterator, then ``asend`` will raise a TypeError (but only
         after calling ``jsobj.next()``!).
         """
 
