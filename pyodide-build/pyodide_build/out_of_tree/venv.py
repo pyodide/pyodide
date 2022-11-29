@@ -218,7 +218,7 @@ def install_stdlib(venv_bin: Path) -> None:
 def create_pyodide_venv(dest: Path) -> None:
     """Create a Pyodide virtualenv and store it into dest"""
     print("Creating Pyodide virtualenv at", str(dest))
-    from virtualenv import session_via_cli  # type: ignore[import]
+    from virtualenv import session_via_cli
 
     if dest.exists():
         eprint(f"ERROR: dest directory '{dest}' already exists")

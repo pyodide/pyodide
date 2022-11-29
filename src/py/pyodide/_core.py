@@ -35,6 +35,7 @@ from _pyodide._core_docs import (
     JsIterator,
     JsPromise,
     JsProxy,
+    JsTypedArray,
 )
 
 __all__ = [
@@ -51,5 +52,6 @@ __all__ = [
     "destroy_proxies",
     "JsPromise",
     "JsBuffer",
+    "JsTypedArray",
     "JsArray",
 ]

@@ -1,8 +1,8 @@
 import json
 from io import StringIO
-from typing import IO, Any
+from typing import IO, TYPE_CHECKING, Any
 
-from ._core import JsProxy, to_js
+from ._core import to_js
 
 try:
     from js import XMLHttpRequest
@@ -38,29 +38,14 @@ def open_url(url: str) -> StringIO:
 
     req = XMLHttpRequest.new()
     req.open("GET", url, False)
-    req.send(None)
+    req.send()
     return StringIO(req.response)
 
 
-class JsFetchResponse(JsProxy):
-    """Tell mypy the shape of a fetch response."""
-
-    bodyUsed: bool = False
-    ok: bool = True
-    redirected: bool = False
-    status: int = 200
-    statusText: str = ""
-    type: str = ""
-    url: str = ""
-
-    def clone(self) -> "JsFetchResponse":
-        return self
-
-    async def arrayBuffer(self) -> JsBuffer:
-        return None  # type:ignore[return-value]
-
-    async def text(self) -> str:
-        return ""
+if TYPE_CHECKING:
+    from js import JsFetchResponse
+else:
+    JsFetchResponse = Any
 
 
 class FetchResponse:

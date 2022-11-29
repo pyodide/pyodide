@@ -95,7 +95,7 @@ def test_jsproxy_document(selenium):
     assert not document.body.children
     document.body.appendChild(el)
     assert document.body.children
-    assert document.body.children.length == 1
+    assert len(document.body.children) == 1
     assert document.body.children[0] == el
     assert repr(document) == "[object HTMLDocument]"
     assert len(dir(el)) >= 200
@@ -1436,7 +1436,6 @@ def test_jsproxy_match(selenium):
 
     x: int
     y: int
-    z: int
     l: list[int]
 
     a = run_js("[1, 2, 3]")

@@ -5,25 +5,28 @@ import sys
 import time
 import traceback
 from asyncio import Future
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Awaitable, Callable
+from typing import Any, TypeVar
 
 from ._core import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
 
+T = TypeVar("T")
+S = TypeVar("S")
 
-class PyodideFuture(Future[Any]):
+
+class PyodideFuture(Future[T]):
     """A future with extra then, catch, and finally_ methods based on the
     Javascript promise API.
     """
 
     def then(
         self,
-        onfulfilled: Callable[[Any], Any] | None,
-        onrejected: Callable[[Exception], Any] | None = None,
-    ) -> "PyodideFuture":
+        onfulfilled: Callable[[T], S | Awaitable[S]] | None,
+        onrejected: Callable[[BaseException], S | Awaitable[S]] | None = None,
+    ) -> "PyodideFuture[S]":
         """When the Future is done, either execute onfulfilled with the result
         or execute onrejected with the exception.
 
@@ -49,10 +52,10 @@ class PyodideFuture(Future[Any]):
         A new future to be resolved when the original future is done and the
         appropriate callback is also done.
         """
-        result = PyodideFuture()
+        result: PyodideFuture[S] = PyodideFuture()
 
-        onfulfilled_: Callable[[Any], Any]
-        onrejected_: Callable[[Any], Any]
+        onfulfilled_: Callable[[T], S | Awaitable[S]]
+        onrejected_: Callable[[BaseException], S | Awaitable[S]]
         if onfulfilled:
             onfulfilled_ = onfulfilled
         else:
@@ -67,35 +70,35 @@ class PyodideFuture(Future[Any]):
             def onrejected_(x):
                 raise x
 
-        async def callback(fut: Future[Any]) -> Any:
-            if fut.exception():
-                val = fut.exception()
-                fun = onrejected_
-            else:
-                fun = onfulfilled_
-                val = fut.result()
+        async def callback(fut: Future[T]) -> None:
+            e = fut.exception()
             try:
-                r = fun(val)
+                if e:
+                    r = onrejected_(e)
+                else:
+                    r = onfulfilled_(fut.result())
                 while inspect.isawaitable(r):
                     r = await r
             except Exception as result_exception:
                 result.set_exception(result_exception)
                 return
-            result.set_result(r)
+            result.set_result(r)  # type:ignore[arg-type]
 
-        def wrapper(fut: Future[Any]) -> None:
+        def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))
 
         self.add_done_callback(wrapper)
         return result
 
-    def catch(self, onrejected: Callable[[Exception], Any] | None) -> "PyodideFuture":
+    def catch(
+        self, onrejected: Callable[[BaseException], S | Awaitable[S]] | None
+    ) -> "PyodideFuture[S]":
         return self.then(None, onrejected)
 
-    def finally_(self, onfinally: Callable[[], Any]) -> "PyodideFuture":
-        result = PyodideFuture()
+    def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
+        result: PyodideFuture[T] = PyodideFuture()
 
-        async def callback(fut: Future[Any]) -> None:
+        async def callback(fut: Future[T]) -> None:
             exc = fut.exception()
             try:
                 r = onfinally()
@@ -109,7 +112,7 @@ class PyodideFuture(Future[Any]):
             else:
                 result.set_result(fut.result())
 
-        def wrapper(fut: Future[Any]) -> None:
+        def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))
 
         self.add_done_callback(wrapper)
@@ -319,7 +322,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def create_future(self) -> asyncio.Future[Any]:
         self._in_progress += 1
-        fut = PyodideFuture(loop=self)
+        fut: PyodideFuture[Any] = PyodideFuture(loop=self)
         fut.add_done_callback(self._decrement_in_progress)
         """Create a Future object attached to the loop."""
         return fut

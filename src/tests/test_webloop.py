@@ -238,6 +238,8 @@ async def test_pyodide_future():
 
     from pyodide.webloop import PyodideFuture
 
+    fut: PyodideFuture[int]
+
     fut = PyodideFuture()
     increment = lambda x: x + 1
     tostring = lambda x: repr(x)
@@ -338,13 +340,26 @@ async def test_pyodide_future():
 
 @run_in_pyodide
 async def test_pyodide_future2(selenium):
-    from js import fetch
+    from typing import TYPE_CHECKING
 
-    name = (
-        await fetch("https://pypi.org/pypi/pytest/json")
-        .then(lambda x: x.json())
-        .then(lambda x: x.info.name)
-    )
+    from js import fetch
+    from pyodide.ffi import JsProxy
+    from pyodide.webloop import PyodideFuture
+
+    if TYPE_CHECKING:
+        from js import JsFetchResponse
+
+    async def get_json(x: JsFetchResponse) -> JsProxy:
+        return await x.json()
+
+    def get_name(x: JsProxy) -> str:
+        return x.info.name  # type:ignore[attr-defined]
+
+    url = "https://pypi.org/pypi/pytest/json"
+    # mypy isn't smart enough to typecheck this without assistance
+    b: PyodideFuture[JsProxy]
+    b = fetch(url).then(get_json)
+    name = await b.then(get_name)
     assert name == "pytest"
 
 
