@@ -1,8 +1,8 @@
 import json
 from io import StringIO
-from typing import IO, TYPE_CHECKING, Any
+from typing import IO, Any
 
-from ._core import to_js
+from ._core import JsFetchResponse, to_js
 
 try:
     from js import XMLHttpRequest
@@ -40,12 +40,6 @@ def open_url(url: str) -> StringIO:
     req.open("GET", url, False)
     req.send()
     return StringIO(req.response)
-
-
-if TYPE_CHECKING:
-    from js import JsFetchResponse
-else:
-    JsFetchResponse = Any
 
 
 class FetchResponse:

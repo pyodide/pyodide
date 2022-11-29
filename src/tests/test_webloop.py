@@ -340,14 +340,9 @@ async def test_pyodide_future():
 
 @run_in_pyodide
 async def test_pyodide_future2(selenium):
-    from typing import TYPE_CHECKING
-
     from js import fetch
-    from pyodide.ffi import JsProxy
+    from pyodide.ffi import JsFetchResponse, JsProxy
     from pyodide.webloop import PyodideFuture
-
-    if TYPE_CHECKING:
-        from js import JsFetchResponse
 
     async def get_json(x: JsFetchResponse) -> JsProxy:
         return await x.json()

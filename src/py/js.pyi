@@ -2,7 +2,7 @@ from asyncio import Future
 from typing import Any, Callable, Iterable
 
 from _pyodide._core_docs import _JsProxyMetaClass
-from pyodide.ffi import JsArray, JsBuffer, JsProxy, JsTypedArray
+from pyodide.ffi import JsArray, JsBuffer, JsFetchResponse, JsProxy, JsTypedArray
 from pyodide.webloop import PyodideFuture
 
 def eval(code: str) -> Any: ...
@@ -23,21 +23,6 @@ def setTimeout(cb: Callable[[], Any], timeout: int | float) -> CancellationToken
 def clearTimeout(id: CancellationToken) -> None: ...
 def setInterval(cb: Callable[[], Any], interval: int | float) -> CancellationToken: ...
 def clearInterval(id: CancellationToken) -> None: ...
-
-class JsFetchResponse(JsProxy):
-    bodyUsed: bool
-    ok: bool
-    redirected: bool
-    status: int
-    statusText: str
-    type: str
-    url: str
-
-    def clone(self) -> "JsFetchResponse": ...
-    async def arrayBuffer(self) -> JsBuffer: ...
-    async def text(self) -> str: ...
-    async def json(self) -> JsProxy: ...
-
 def fetch(
     url: str, options: JsProxy | None = None
 ) -> PyodideFuture[JsFetchResponse]: ...

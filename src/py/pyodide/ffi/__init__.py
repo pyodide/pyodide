@@ -1,22 +1,7 @@
+# flake8: noqa
 from _pyodide._importhook import register_js_module, unregister_js_module
 
-from .._core import (
-    IN_BROWSER,
-    ConversionError,
-    JsArray,
-    JsBuffer,
-    JsDoubleProxy,
-    JsException,
-    JsGenerator,
-    JsIterator,
-    JsPromise,
-    JsProxy,
-    JsTypedArray,
-    create_once_callable,
-    create_proxy,
-    destroy_proxies,
-    to_js,
-)
+from .._core import *
 
 __all__ = [
     "IN_BROWSER",
@@ -29,6 +14,7 @@ __all__ = [
     "JsTypedArray",
     "JsDoubleProxy",
     "JsGenerator",
+    "JsFetchResponse",
     "JsIterator",
     "create_once_callable",
     "create_proxy",

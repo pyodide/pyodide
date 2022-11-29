@@ -637,6 +637,28 @@ class JsGenerator(JsIterator):
         raise NotImplementedError
 
 
+class JsFetchResponse(JsProxy):
+    bodyUsed: bool
+    ok: bool
+    redirected: bool
+    status: int
+    statusText: str
+    type: str
+    url: str
+
+    def clone(self) -> "JsFetchResponse":
+        ...
+
+    async def arrayBuffer(self) -> JsBuffer:
+        ...
+
+    async def text(self) -> str:
+        ...
+
+    async def json(self) -> JsProxy:
+        ...
+
+
 # from pyproxy.c
 
 
