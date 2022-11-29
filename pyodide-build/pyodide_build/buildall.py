@@ -25,7 +25,7 @@ from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels
+from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
 
 
@@ -279,9 +279,8 @@ def generate_dependency_graph(
     for name in requested:
         pkg = pkg_map[name]
         missing_executables = defaultdict(list)
-        for executable in pkg.executables_required:
-            if shutil.which(executable) is None:
-                missing_executables[executable].append(name)
+        for exe in find_missing_executables(pkg.executables_required):
+            missing_executables[exe].append(name)
 
     if missing_executables:
         error_msg = "Following executables are missing in the host system:\n"
