@@ -3264,9 +3264,12 @@ JsProxy_create_subtype(int flags)
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
 
-  bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
-  mapping = mapping || (flags & IS_OBJECT_MAP);
+  bool obj_map = (flags & IS_OBJECT_MAP);
+  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
+  bool mapping = (flags & mapping_flags) == mapping_flags;
   bool mutable_mapping = mapping && (flags & HAS_SET);
+  mapping = mapping || obj_map;
+  mutable_mapping = mutable_mapping || obj_map;
 
   if (mapping) {
     methods[cur_method++] = JsMap_keys_MethodDef;
@@ -3488,13 +3491,14 @@ skip_container_slots:
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
   PyObject* abc = NULL;
-  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
     abc = MutableSequence;
   } else if (flags & IS_NODE_LIST) {
     abc = Sequence;
-  } else if ((flags & mapping_flags) == mapping_flags) {
-    abc = (flags & HAS_SET) ? MutableMapping : Mapping;
+  } else if (mutable_mapping) {
+    abc = MutableMapping;
+  } else if (mapping) {
+    abc = Mapping;
   } else if (flags & IS_OBJECT_MAP) {
     abc = MutableMapping;
   }
@@ -3706,7 +3710,7 @@ JsProxy_init_docstrings()
   PyObject* JsPromise = NULL;
   PyObject* JsBuffer = NULL;
   PyObject* JsArray = NULL;
-  PyObject* JsMap = NULL;
+  PyObject* JsMutableMap = NULL;
   PyObject* JsDoubleProxy = NULL;
   PyObject* JsGenerator = NULL;
 
@@ -3727,7 +3731,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsPromise);
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
-  GetProxyDocClass(JsMap);
+  GetProxyDocClass(JsMutableMap);
   GetProxyDocClass(JsDoubleProxy);
   GetProxyDocClass(JsGenerator);
 #undef GetProxyDocClass
@@ -3758,15 +3762,15 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsArray, JsArray_index_MethodDef);
   SET_DOCSTRING(JsArray, JsArray_count_MethodDef);
 
-  SET_DOCSTRING(JsMap, JsMap_keys_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_values_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_items_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_get_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_pop_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_popitem_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_clear_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_update_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_setdefault_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_keys_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_values_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_items_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_get_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_pop_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_popitem_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_clear_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_update_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_setdefault_MethodDef);
 
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_to_MethodDef);
@@ -3788,7 +3792,7 @@ finally:
   Py_CLEAR(JsPromise);
   Py_CLEAR(JsBuffer);
   Py_CLEAR(JsArray);
-  Py_CLEAR(JsMap);
+  Py_CLEAR(JsMutableMap);
   Py_CLEAR(JsDoubleProxy);
   Py_CLEAR(JsGenerator);
   return success ? 0 : -1;
@@ -3832,6 +3836,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_NODE_LIST);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
+  AddFlag(IS_OBJECT_MAP);
   AddFlag(IS_ASYNC_ITERABLE);
   AddFlag(IS_GENERATOR);
 

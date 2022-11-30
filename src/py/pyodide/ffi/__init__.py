@@ -11,6 +11,8 @@ from .._core import (
     JsGenerator,
     JsIterable,
     JsIterator,
+    JsMap,
+    JsMutableMap,
     JsPromise,
     JsProxy,
     create_once_callable,
@@ -27,6 +29,7 @@ __all__ = [
     "JsPromise",
     "JsBuffer",
     "JsArray",
+    "JsMap",
     "JsDoubleProxy",
     "JsGenerator",
     "JsIterator",
@@ -38,4 +41,5 @@ __all__ = [
     "to_js",
     "register_js_module",
     "unregister_js_module",
+    "JsMutableMap",
 ]

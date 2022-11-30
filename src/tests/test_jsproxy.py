@@ -1628,46 +1628,18 @@ def test_mappings(selenium):
 
 
 @run_in_pyodide
-def test_jsproxy_subtypes(selenium):
-    import pytest
-
-    from pyodide.code import run_js
-    from pyodide.ffi import JsArray, JsBuffer, JsPromise, JsProxy
-
-    with pytest.raises(TypeError, match="JsProxy"):
-        JsProxy()
-
-    with pytest.raises(TypeError, match="JsArray"):
-        JsArray()
-
-    nullobj = run_js("Object.create(null)")
-    a = run_js("[Promise.resolve()]")
-    assert isinstance(a, JsProxy)
-    assert isinstance(a, JsArray)
-    assert not isinstance(a, JsPromise)
-    assert not isinstance(a, JsBuffer)
-    assert issubclass(type(a), JsProxy)
-    assert issubclass(type(a), JsArray)
-    assert not issubclass(JsArray, type(a))
-    assert isinstance(a[0], JsPromise)
-    assert issubclass(JsPromise, type(a[0]))
-    assert not isinstance(a, JsBuffer)
-    assert issubclass(type(a), type(nullobj))
-    assert issubclass(type(a[0]), type(nullobj))
-    assert issubclass(JsProxy, type(nullobj))
-    assert issubclass(type(nullobj), JsProxy)
-
-
-@run_in_pyodide
 def test_jsproxy_as_object_map(selenium):
     import pytest
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsMutableMap
 
     o1 = run_js("({a : 2, b: 3, c: 77, 1 : 9})")
     with pytest.raises(TypeError, match="object is not subscriptable"):
         o1["a"]
     o = o1.as_object_map()
+    assert not isinstance(o1, JsMutableMap)
+    assert isinstance(o, JsMutableMap)
     del o1
     assert len(o) == 4
     assert set(o) == {"a", "b", "c", "1"}
@@ -1697,6 +1669,85 @@ def test_jsproxy_as_object_map(selenium):
 
     with pytest.raises(KeyError):
         del o[1]
+
+
+@run_in_pyodide
+def test_object_map_mapping_methods(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsMap, JsMutableMap
+
+    m = run_js("({1:2, 3:4})").as_object_map()
+    assert isinstance(m, JsMap)
+    assert isinstance(m, JsMutableMap)
+    # Iterate using keys() function
+    assert set(m) == {"1", "3"}
+    assert "1" in m.keys()
+    assert 1 not in m.keys()
+    assert m.keys() | {"2"} == {"1", "2", "3"}
+    assert 2 in m.values()
+    assert set(m.values()) == {2, 4}
+    assert ("1", 2) in m.items()
+    assert set(m.items()) == {("1", 2), ("3", 4)}
+
+    assert m.get("1", 7) == 2
+    assert m.get("2", 7) == 7
+
+    assert m.pop("1") == 2
+    assert m.pop("1", 7) == 7
+    m["1"] = 2
+    assert m.pop("1", 7) == 2
+    assert m.pop("1", 7) == 7
+    assert "1" not in m
+    with pytest.raises(KeyError):
+        m.pop("1")
+
+    assert m.setdefault("1", 8) == 8
+    assert m.setdefault("3", 8) == 4
+    assert m.setdefault("3") == 4
+    assert m.setdefault("4") is None
+    assert "1" in m
+    assert m["1"] == 8
+
+    m.update({"6": 7, "8": 9})
+    assert dict(m) == {"1": 8, "3": 4, "4": None, "6": 7, "8": 9}
+
+    assert m.popitem() in set({"1": 8, "3": 4, "4": None, "6": 7, "8": 9}.items())
+    assert len(m) == 4
+    m.clear()
+    assert dict(m) == {}
+
+
+@run_in_pyodide
+def test_jsproxy_subtypes(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsArray, JsBuffer, JsPromise, JsProxy
+
+    with pytest.raises(TypeError, match="JsProxy"):
+        JsProxy()
+
+    with pytest.raises(TypeError, match="JsArray"):
+        JsArray()
+
+    nullobj = run_js("Object.create(null)")
+    a = run_js("[Promise.resolve()]")
+    assert isinstance(a, JsProxy)
+    assert isinstance(a, JsArray)
+    assert not isinstance(a, JsPromise)
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), JsProxy)
+    assert issubclass(type(a), JsArray)
+    assert not issubclass(JsArray, type(a))
+    assert isinstance(a[0], JsPromise)
+    assert issubclass(JsPromise, type(a[0]))
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), type(nullobj))
+    assert issubclass(type(a[0]), type(nullobj))
+    assert issubclass(JsProxy, type(nullobj))
+    assert issubclass(type(nullobj), JsProxy)
 
 
 @run_in_pyodide

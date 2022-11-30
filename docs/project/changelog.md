@@ -90,7 +90,7 @@ substitutions:
 - {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
   the object as a mapping over its `ownKeys` so for instance:
   `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
-  {pr}`3273`, {pr}`3295`
+  {pr}`3273`, {pr}`3295`, {pr}`3297`
 
 - {{ Enhancement }} Split up the `JsProxy` documentation class into several
   classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
