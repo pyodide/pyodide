@@ -26,7 +26,7 @@ from typing import Any, TextIO, cast
 from urllib import request
 
 from . import common, pywasmcross
-from .common import exit_with_stdio, find_matching_wheels
+from .common import exit_with_stdio, find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 
 
@@ -926,6 +926,15 @@ def main(args: argparse.Namespace) -> None:
     pkg.build.cflags += f" {args.cflags}"
     pkg.build.cxxflags += f" {args.cxxflags}"
     pkg.build.ldflags += f" {args.ldflags}"
+
+    missing_executables = find_missing_executables(pkg.requirements.executable)
+    if missing_executables:
+        missing_string = ", ".join(missing_executables)
+        error_msg = (
+            "The following executables are required but missing in the host system: "
+            + missing_string
+        )
+        raise RuntimeError(error_msg)
 
     name = pkg.package.name
     t0 = datetime.now()

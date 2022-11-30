@@ -244,6 +244,10 @@ substitutions:
   which specifies the type of the package.
   {pr}`3238`
 
+- {{ Enhancement }} Added `requirements/executable` key to the `meta.yaml` spec
+  which specifies the list of executables required for building a package.
+  {pr}`3300`
+
 - {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
   are removed. Use `build/type` instead.
   {pr}`3238`
