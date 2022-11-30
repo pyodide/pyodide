@@ -674,7 +674,7 @@ class JsGenerator(JsIterable):
 
 
 class JsAsyncGenerator(JsIterable):
-    """A JavaScript generator
+    """A JavaScript async generator
 
     A JavaScript object is treated as an async generator if it's
     ``Symbol.typeTag`` is ``AsyncGenerator``. Most likely this will be because
