@@ -159,6 +159,10 @@ substitutions:
   Python.
   {pr}`3285`
 
+- {{ Enhancement }} Added a mypy typeshed for some common functionality for the
+  `js` module.
+  {pr}`3298`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodome {pr}`2965`,
