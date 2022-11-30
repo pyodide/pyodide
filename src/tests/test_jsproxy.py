@@ -2016,3 +2016,88 @@ async def test_agen_asend(selenium):
     assert await it.asend(3) == 5
     with pytest.raises(StopAsyncIteration):
         await it.asend(4)
+
+
+# pytest.mark.xfail("async error gets converted into double wrapped error")
+@run_in_pyodide
+async def test_agen_athrow(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator, JsException
+
+    f = run_js(
+        """
+        (async function *() {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+                console.log("finally");
+            }
+        })
+        """
+    )
+
+    g = f()
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    assert await g.athrow(TypeError("hi")) == 2
+    # TODO: figure out how to make this raise a TypeError!
+    with pytest.raises(JsException, match="hi"):
+        await anext(g)
+
+    g = f()
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    assert await g.athrow(TypeError, "hi") == 2
+    with pytest.raises(JsException, match="hi"):
+        await anext(g)
+
+    f = run_js(
+        """
+        (async function *() {
+            yield 1;
+            yield 2;
+            yield 3;
+        })
+        """
+    )
+    g = f()
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    await g.aclose()
+
+
+@run_in_pyodide
+async def test_agen_aclose(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator
+
+    f = run_js(
+        """
+        (async function *(x) {
+            try {
+                yield 1;
+                yield 2;
+                x.push("this never happens");
+                yield 3;
+            } finally {
+                x.append("finally");
+            }
+        })
+        """
+    )
+
+    from pyodide.ffi import create_proxy
+
+    l: list[str] = []
+    p = create_proxy(l)
+    g = f(p)
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    assert await anext(g) == 2
+    assert await g.aclose() is None  # type:ignore[func-returns-value]
+    assert await g.aclose() is None  # type:ignore[func-returns-value]
+    p.destroy()
+    assert l == ["finally"]

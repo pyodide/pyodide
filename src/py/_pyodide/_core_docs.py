@@ -1,5 +1,6 @@
 import sys
 from collections.abc import (
+    AsyncIterator,
     Callable,
     ItemsView,
     Iterable,
@@ -11,7 +12,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any
+from typing import IO, Any, Awaitable
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -654,7 +655,7 @@ class JsAsyncIterable(JsProxy):
         pass
 
 
-class JsGenerator(JsProxy):
+class JsGenerator(JsIterable):
     """A JavaScript generator
 
     A JavaScript object is treated as a generator if it's ``Symbol.typeTag`` is
@@ -662,7 +663,6 @@ class JsGenerator(JsProxy):
     produced by the JavaScript runtime, but it may be a custom object trying
     hard to pretend to be a generator. It should have ``next``, ``return``, and
     ``throw`` methods.
-
     """
 
     _js_type_flags = ["IS_GENERATOR"]
@@ -689,7 +689,7 @@ class JsGenerator(JsProxy):
     def throw(
         self,
         type: Exception | type,
-        value: Exception | None = None,
+        value: Exception | str | Any = None,
         traceback: TracebackType | None = None,
     ) -> Any:
         """
@@ -713,6 +713,72 @@ class JsGenerator(JsProxy):
         """
 
     def close(self) -> None:
+        """Raises a GeneratorExit at the point where the generator function was
+        paused.
+
+        If the generator function then exits gracefully, is already closed, or
+        raises GeneratorExit (by not catching the exception), close returns to
+        its caller. If the generator yields a value, a RuntimeError is raised.
+        If the generator raises any other exception, it is propagated to the
+        caller. close() does nothing if the generator has already exited due to
+        an exception or normal exit.
+        """
+
+
+class JsAsyncGenerator(JsIterable):
+    """A JavaScript async generator
+
+    A JavaScript object is treated as an async generator if it's
+    ``Symbol.typeTag`` is ``AsyncGenerator``. Most likely this will be because
+    it is a true async generator produced by the JavaScript runtime, but it may
+    be a custom object trying hard to pretend to be an async generator. It
+    should have ``next``, ``return``, and ``throw`` methods.
+    """
+
+    _js_type_flags = ["IS_ASYNC_GENERATOR"]
+
+    def __anext__(self):
+        pass
+
+    def __aiter__(self) -> AsyncIterator[Any]:
+        raise NotImplementedError
+
+    def asend(self, value: Any) -> Awaitable[Any]:
+        """Resumes the execution and "sends" a value into the async generator
+        function.
+
+        The ``value`` argument becomes the result of the current yield
+        expression. The awaitable returned by the asend() method will return the
+        next value yielded by the generator or raises ``StopAsyncIteration`` if
+        the asynchronous generator returns. If the generator returned a value,
+        this value is discarded (because in Python async generators cannot
+        return a value).
+
+        When ``asend()`` is called to start the generator, the argument will be
+        ignored. Unlike in Python, we cannot detect that the generator hasn't
+        started yet, and no error will be thrown if the argument of a
+        not-started generator is not ``None``.
+        """
+
+    def athrow(
+        self,
+        type: Exception | type,
+        value: Exception | str | None = None,
+        traceback: TracebackType | None = None,
+    ) -> Awaitable[Any]:
+        """Resumes the execution and raises an exception at the point where the
+        generator was paused.
+
+        The awaitable returned by the asend() method will return the next value
+        yielded by the generator or raises ``StopAsyncIteration`` if the
+        asynchronous generator returns. If the generator returned a value, this
+        value is discarded (because in Python async generators cannot return a
+        value). If the generator function does not catch the passed-in
+        exception, or raises a different exception, then that exception
+        propagates to the caller.
+        """
+
+    def aclose(self) -> Awaitable[None]:
         """Raises a GeneratorExit at the point where the generator function was
         paused.
 

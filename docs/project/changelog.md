@@ -155,9 +155,10 @@ substitutions:
   Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
   {pr}`3294`
 
-- {{ Enhancement }} It is now possible to use aynchronous JavaScript generators from
-  Python.
-  {pr}`3285`
+- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+  iterators and generators from Python. This includes support for `aiter` for async interables,
+  `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
+  {pr}`3285`, {pr}`3299`
 
 ### Build System / Package Loading
 
