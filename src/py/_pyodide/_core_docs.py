@@ -134,7 +134,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
     def object_values(self) -> "JsProxy":
         "The JavaScript API ``Object.values(object)``"
 
-    def as_object_map(self) -> "JsMap":
+    def as_object_map(self) -> "JsMutableMap":
         """Returns a new JsProxy that treats the object as a map.
 
         The methods ``__getitem__``, ``__setitem__``, ``__contains__``,
@@ -462,12 +462,6 @@ class JsMap(JsProxy):
     def __getitem__(self, idx: Any) -> Any:
         return None
 
-    def __setitem__(self, idx: Any, value: Any) -> None:
-        pass
-
-    def __delitem__(self, idx: Any) -> None:
-        return None
-
     def __len__(self) -> int:
         return 0
 
@@ -583,6 +577,12 @@ class JsMutableMap(JsMap):
         Present if the wrapped JavaScript object is a MutableMapping (i.e., has
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
+
+    def __setitem__(self, idx: Any, value: Any) -> None:
+        pass
+
+    def __delitem__(self, idx: Any) -> None:
+        return None
 
 
 class JsIterator(JsProxy):
