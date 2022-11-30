@@ -223,6 +223,14 @@ A list of Pyodide packages that are required when building a package. It represe
 For instance, when building `libxml`, `zlib` needs to be built for WASM first, and so it's a host dependency. This is unrelated to the fact that
 the build system might already have `zlib` present.
 
+### `requirements/executable`
+
+A list of executables that are required when building a package.
+
+Note that unlike conda, specifying executables in this key
+doesn't actually install any of them. This key exists to
+halt build earlier if required executables are not available.
+
 ## `test`
 
 ### `test/imports`

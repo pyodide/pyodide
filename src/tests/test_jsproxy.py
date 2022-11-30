@@ -1,6 +1,9 @@
 # See also test_typeconversions, and test_python.
 import pytest
+from hypothesis import example, given
+from hypothesis import strategies as st
 from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.hypothesis import std_hypothesis_settings
 
 
 def test_jsproxy_dir(selenium):
@@ -1189,6 +1192,291 @@ def test_js_id(selenium):
 
 
 @run_in_pyodide
+def test_object_with_null_constructor(selenium):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    o = run_js("Object.create(null)")
+    with TestCase().assertRaises(TypeError):
+        repr(o)
+
+
+@pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
+@run_in_pyodide
+def test_very_large_length(selenium, n):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises(
+        OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
+    )
+
+    o = run_js(f"({{length : {n}}})")
+    with raises:
+        len(o)
+
+    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
+    # as an array
+    # 2. Return a very large length
+    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
+    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    with raises:
+        a[-1]
+
+
+@pytest.mark.parametrize(
+    "n", [-1, -2, -3, -100, -1 << 31, -1 << 32, -1 << 33, -1 << 63, -1 << 64, -1 << 65]
+)
+@run_in_pyodide
+def test_negative_length(selenium, n):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises(
+        ValueError, msg=f"length {n} of object is negative"
+    )
+
+    o = run_js(f"({{length : {n}}})")
+    with raises:
+        len(o)
+
+    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
+    # as an array
+    # 2. Return a negative length
+    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
+    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
+    with raises:
+        a[-1]
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slices(selenium, l, slice):
+    expected = l[slice]
+    from pyodide.ffi import JsArray, to_js
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    result = jsl[slice]
+    assert result.to_py() == expected
+
+
+@std_hypothesis_settings
+@given(l=st.lists(st.integers()), slice=st.slices(50))
+@example(l=[0, 1], slice=slice(None, None, -1))
+@example(l=list(range(4)), slice=slice(None, None, -2))
+@example(l=list(range(10)), slice=slice(-1, 12))
+@example(l=list(range(10)), slice=slice(12, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(-1, 12, 2))
+@example(l=list(range(10)), slice=slice(12, -1, -1))
+@example(l=list(range(10)), slice=slice(12, -1, -2))
+@run_in_pyodide
+def test_array_slice_del(selenium, l, slice):
+    from pyodide.ffi import JsArray, to_js
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    del l[slice]
+    del jsl[slice]
+    assert jsl.to_py() == l
+
+
+@st.composite
+def list_slice_and_value(draw):
+    l = draw(st.lists(st.integers()))
+    step_one = draw(st.booleans())
+    if step_one:
+        start = draw(st.integers(0, max(len(l) - 1, 0)) | st.none())
+        stop = draw(st.integers(start, len(l)) | st.none())
+        if draw(st.booleans()) and start is not None:
+            start -= len(l)
+        if draw(st.booleans()) and stop is not None:
+            stop -= len(l)
+        s = slice(start, stop)
+        vals = draw(st.lists(st.integers()))
+    else:
+        s = draw(st.slices(50))
+        vals_len = len(l[s])
+        vals = draw(st.lists(st.integers(), min_size=vals_len, max_size=vals_len))
+    return (l, s, vals)
+
+
+@std_hypothesis_settings
+@given(lsv=list_slice_and_value())
+@example(lsv=(list(range(5)), slice(5, 2), []))
+@example(lsv=(list(range(5)), slice(2, 5, -1), []))
+@example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
+@run_in_pyodide
+def test_array_slice_assign_1(selenium, lsv):
+    from pyodide.ffi import JsArray, to_js
+
+    [l, s, v] = lsv
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    l[s] = v
+    jsl[s] = v
+    assert jsl.to_py() == l
+
+
+@run_in_pyodide
+def test_array_slice_assign_2(selenium):
+    import pytest
+
+    from pyodide.ffi import JsArray, to_js
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_1a:
+        l[0:4:2] = [1, 2, 3, 4]
+
+    jsl = to_js(l)
+    assert isinstance(jsl, JsArray)
+    with pytest.raises(ValueError) as exc_info_1b:
+        jsl[0:4:2] = [1, 2, 3, 4]
+
+    l = list(range(10))
+    with pytest.raises(ValueError) as exc_info_2a:
+        l[0:4:2] = []
+
+    with pytest.raises(ValueError) as exc_info_2b:
+        jsl[0:4:2] = []
+
+    with pytest.raises(TypeError) as exc_info_3a:
+        l[:] = 1  # type: ignore[call-overload]
+
+    with pytest.raises(TypeError) as exc_info_3b:
+        jsl[:] = 1
+
+    assert exc_info_1a.value.args == exc_info_1b.value.args
+    assert exc_info_2a.value.args == exc_info_2b.value.args
+    assert exc_info_3a.value.args == exc_info_3b.value.args
+
+
+@std_hypothesis_settings
+@given(l1=st.lists(st.integers()), l2=st.lists(st.integers()))
+@example(l1=[], l2=[])
+@example(l1=[], l2=[1])
+@run_in_pyodide
+def test_array_extend(selenium_module_scope, l1, l2):
+    from pyodide.ffi import to_js
+
+    l1js1 = to_js(l1)
+    l1js1.extend(l2)
+
+    l1js2 = to_js(l1)
+    l1js2 += l2
+
+    l1.extend(l2)
+
+    assert l1 == l1js1.to_py()
+    assert l1 == l1js2.to_py()
+
+
+@run_in_pyodide
+def test_typed_array(selenium):
+    from pyodide.code import run_js
+
+    a = run_js("self.a = new Uint8Array([1,2,3,4]); a")
+    assert a[0] == 1
+    assert a[-1] == 4
+    a[-2] = 7
+    assert run_js("self.a[2]") == 7
+
+    import pytest
+
+    with pytest.raises(ValueError, match="cannot delete array elements"):
+        del a[0]
+
+    msg = "Slice subscripting isn't implemented for typed arrays"
+    with pytest.raises(NotImplementedError, match=msg):
+        a[:]
+
+    msg = "Slice assignment isn't implemented for typed arrays"
+    with pytest.raises(NotImplementedError, match=msg):
+        a[:] = [-1, -2, -3, -4]
+
+    assert not hasattr(a, "extend")
+    with pytest.raises(TypeError):
+        a += [1, 2, 3]
+
+
+@pytest.mark.xfail_browsers(node="No document in node")
+@run_in_pyodide
+def test_html_array(selenium):
+    from pyodide.code import run_js
+
+    x = run_js("document.querySelectorAll('*')")
+    assert run_js("(a, b) => a === b[0]")(x[0], x)
+    assert run_js("(a, b) => a === Array.from(b).pop()")(x[-1], x)
+
+    import pytest
+
+    with pytest.raises(TypeError, match="does ?n[o']t support item assignment"):
+        x[0] = 0
+
+    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
+        del x[0]
+
+
+@run_in_pyodide
+def test_jsproxy_match(selenium):
+    from pyodide.code import run_js
+
+    x: int
+    y: int
+    z: int
+    l: list[int]
+
+    a = run_js("[1, 2, 3]")
+    match a:
+        case [x, y, 3]:
+            pass
+    assert x == 1
+    assert y == 2
+
+    b = run_js("new Uint8Array([7, 3, 9, 10])")
+    match b:
+        case [x, y, *l]:
+            pass
+    assert x == 7
+    assert y == 3
+    assert l == [9, 10]
+
+    c = run_js("new Map([[1,2], [3,4]])")
+    match c:
+        case {1: x, 3: y}:
+            pass
+    assert x == 2
+    assert y == 4
+
+    c = run_js("({a: 2, b: 5})").as_object_map()
+    match c:
+        case {"a": x, "b": y}:
+            pass
+    assert x == 2
+    assert y == 5
+    default = False
+    match c:
+        case {"a": x, "b": y, "d": _}:
+            pass
+        case _:
+            default = True
+    assert default
+
+
+@run_in_pyodide
 def test_jsarray_index(selenium):
     import pytest
 
@@ -1293,3 +1581,523 @@ def test_jsproxy_descr_get(selenium):
     assert t.f("a") == 7
     assert t.f("b") == 66
     assert t.f("c") is None
+
+
+@run_in_pyodide
+def test_mappings(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    m = run_js("new Map([[1,2], [3,4]])")
+    # Iterate using keys() function
+    assert set(m) == {1, 3}
+    assert 1 in m.keys()
+    assert m.keys() | {2} == {1, 2, 3}
+    assert 2 in m.values()
+    assert set(m.values()) == {2, 4}
+    assert (1, 2) in m.items()
+    assert set(m.items()) == {(1, 2), (3, 4)}
+
+    assert m.get(1, 7) == 2
+    assert m.get(2, 7) == 7
+
+    assert m.pop(1) == 2
+    assert m.pop(1, 7) == 7
+    m[1] = 2
+    assert m.pop(1, 7) == 2
+    assert m.pop(1, 7) == 7
+    assert 1 not in m
+    with pytest.raises(KeyError):
+        m.pop(1)
+
+    assert m.setdefault(1, 8) == 8
+    assert m.setdefault(3, 8) == 4
+    assert m.setdefault(3) == 4
+    assert m.setdefault(4) is None
+    assert 1 in m
+    assert m[1] == 8
+
+    m.update({6: 7, 8: 9})
+    assert dict(m) == {1: 8, 3: 4, 4: None, 6: 7, 8: 9}
+
+    assert m.popitem() in set({1: 8, 3: 4, 4: None, 6: 7, 8: 9}.items())
+    assert len(m) == 4
+    m.clear()
+    assert dict(m) == {}
+
+
+@run_in_pyodide
+def test_jsproxy_as_object_map(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsMutableMap
+
+    o1 = run_js("({a : 2, b: 3, c: 77, 1 : 9})")
+    with pytest.raises(TypeError, match="object is not subscriptable"):
+        o1["a"]
+    o = o1.as_object_map()
+    assert not isinstance(o1, JsMutableMap)
+    assert isinstance(o, JsMutableMap)
+    del o1
+    assert len(o) == 4
+    assert set(o) == {"a", "b", "c", "1"}
+    assert "a" in o
+    assert "b" in o
+    assert "1" in o
+    assert 1 not in o
+    assert o["a"] == 2
+    assert o["1"] == 9
+    del o["a"]
+    assert "a" not in o
+    assert not hasattr(o, "a")
+    assert hasattr(o, "b")
+    assert len(o) == 3
+    assert set(o) == {"b", "c", "1"}
+    o["d"] = 36
+    assert len(o) == 4
+    with pytest.raises(
+        TypeError, match="Can only assign keys of type string to JavaScript object map"
+    ):
+        o[1] = 2
+    assert len(o) == 4
+    assert set(o) == {"b", "c", "d", "1"}
+    assert o["d"] == 36
+    assert "constructor" not in o
+    assert o.to_py() == {"b": 3, "c": 77, "d": 36, "1": 9}
+
+    with pytest.raises(KeyError):
+        del o[1]
+
+
+@run_in_pyodide
+def test_object_map_mapping_methods(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsMap, JsMutableMap
+
+    m = run_js("({1:2, 3:4})").as_object_map()
+    assert isinstance(m, JsMap)
+    assert isinstance(m, JsMutableMap)
+    # Iterate using keys() function
+    assert set(m) == {"1", "3"}
+    assert "1" in m.keys()
+    assert 1 not in m.keys()
+    assert m.keys() | {"2"} == {"1", "2", "3"}
+    assert 2 in m.values()
+    assert set(m.values()) == {2, 4}
+    assert ("1", 2) in m.items()
+    assert set(m.items()) == {("1", 2), ("3", 4)}
+
+    assert m.get("1", 7) == 2
+    assert m.get("2", 7) == 7
+
+    assert m.pop("1") == 2
+    assert m.pop("1", 7) == 7
+    m["1"] = 2
+    assert m.pop("1", 7) == 2
+    assert m.pop("1", 7) == 7
+    assert "1" not in m
+    with pytest.raises(KeyError):
+        m.pop("1")
+
+    assert m.setdefault("1", 8) == 8
+    assert m.setdefault("3", 8) == 4
+    assert m.setdefault("3") == 4
+    assert m.setdefault("4") is None
+    assert "1" in m
+    assert m["1"] == 8
+
+    m.update({"6": 7, "8": 9})
+    assert dict(m) == {"1": 8, "3": 4, "4": None, "6": 7, "8": 9}
+
+    assert m.popitem() in set({"1": 8, "3": 4, "4": None, "6": 7, "8": 9}.items())
+    assert len(m) == 4
+    m.clear()
+    assert dict(m) == {}
+
+
+@run_in_pyodide
+def test_jsproxy_subtypes(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsArray, JsBuffer, JsPromise, JsProxy
+
+    with pytest.raises(TypeError, match="JsProxy"):
+        JsProxy()
+
+    with pytest.raises(TypeError, match="JsArray"):
+        JsArray()
+
+    nullobj = run_js("Object.create(null)")
+    a = run_js("[Promise.resolve()]")
+    assert isinstance(a, JsProxy)
+    assert isinstance(a, JsArray)
+    assert not isinstance(a, JsPromise)
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), JsProxy)
+    assert issubclass(type(a), JsArray)
+    assert not issubclass(JsArray, type(a))
+    assert isinstance(a[0], JsPromise)
+    assert issubclass(JsPromise, type(a[0]))
+    assert not isinstance(a, JsBuffer)
+    assert issubclass(type(a), type(nullobj))
+    assert issubclass(type(a[0]), type(nullobj))
+    assert issubclass(JsProxy, type(nullobj))
+    assert issubclass(type(nullobj), JsProxy)
+
+
+@run_in_pyodide
+def test_gen_send(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        });
+        """
+    )
+
+    it = f()
+    assert isinstance(it, JsGenerator)
+
+    assert it.send(None) == 2
+    assert it.send(2) == 4
+    assert it.send(3) == 5
+    with pytest.raises(StopIteration):
+        it.send(4)
+
+
+@run_in_pyodide
+def test_gen_send_type_errors(selenium):
+    from re import escape
+
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator, JsIterator
+
+    g = run_js(
+        """
+        ({next(){ return 2; }});
+        """
+    )
+    assert isinstance(g, JsIterator)
+    assert not isinstance(g, JsGenerator)
+    with pytest.raises(
+        TypeError, match='Result should have type "object" not "number"'
+    ):
+        g.send(None)
+
+    g = run_js(
+        """
+        ({next(){ return Promise.resolve(2); }});
+        """
+    )
+    with pytest.raises(
+        TypeError,
+        match=escape("Result was a promise, use anext() / asend() / athrow() instead."),
+    ):
+        g.send(None)
+
+    g = run_js(
+        """
+        ({next(){ return {}; }});
+        """
+    )
+    with pytest.raises(TypeError, match='Result has no "done" field.'):
+        g.send(None)
+
+
+@run_in_pyodide
+def test_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function *() {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+                console.log("finally");
+            }
+        })
+        """
+    )
+
+    g = f()
+    assert isinstance(g, JsGenerator)
+    assert next(g) == 1
+    assert g.throw(TypeError("hi")) == 2
+    with pytest.raises(TypeError, match="hi"):
+        next(g)
+
+    g = f()
+    assert next(g) == 1
+    assert g.throw(TypeError, "hi") == 2
+    with pytest.raises(TypeError, match="hi"):
+        next(g)
+
+    f = run_js(
+        """
+        (function *() {
+            yield 1;
+            yield 2;
+            yield 3;
+        })
+        """
+    )
+    g = f()
+    assert next(g) == 1
+    g.close()
+
+
+@run_in_pyodide
+def test_gen_close(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function *(x) {
+            try {
+                yield 1;
+                yield 2;
+                x.push("this never happens");
+                yield 3;
+            } finally {
+                x.append("finally");
+            }
+        })
+        """
+    )
+
+    from pyodide.ffi import create_proxy
+
+    l: list[str] = []
+    p = create_proxy(l)
+    g = f(p)
+    assert isinstance(g, JsGenerator)
+    assert next(g) == 1
+    assert next(g) == 2
+    assert g.close() is None  # type:ignore[func-returns-value]
+    p.destroy()
+    assert l == ["finally"]
+
+    f = run_js(
+        """
+        (function *(x) {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+            }
+        })
+        """
+    )
+
+    g = f()
+    next(g)
+    with pytest.raises(RuntimeError, match="JavaScript generator ignored return"):
+        g.close()
+
+
+@run_in_pyodide
+async def test_agen_aiter(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsIterator
+
+    f = run_js(
+        """
+        (async function *(){
+            yield 2;
+            yield 3;
+            return 7;
+        })
+        """
+    )
+    b = f()
+    assert isinstance(b, JsIterator)
+    assert await anext(b) == 2
+    assert await anext(b) == 3
+    with pytest.raises(StopAsyncIteration):
+        await anext(b)
+
+    with pytest.raises(TypeError, match="Result was a promise, use anext.* instead."):
+        next(f())
+
+    g = run_js(
+        """
+        (function *(){
+            yield 2;
+            yield 3;
+            return 7;
+        })
+        """
+    )
+    with pytest.raises(
+        TypeError, match="Result of anext.. was not a promise, use next.. instead."
+    ):
+        anext(g())
+
+
+@run_in_pyodide
+async def test_agen_aiter2(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncIterable, JsIterable, JsIterator
+
+    iterable = run_js(
+        """
+        ({
+        [Symbol.asyncIterator]() {
+            return (async function *f(){yield 1; yield 2; yield 3;})();
+        }
+        })
+        """
+    )
+    assert not isinstance(iterable, JsIterable)
+    assert isinstance(iterable, JsAsyncIterable)
+
+    with pytest.raises(TypeError, match="object is not iterable"):
+        iter(iterable)  # type:ignore[call-overload]
+
+    it = aiter(iterable)
+    assert isinstance(it, JsIterator)
+
+    assert await anext(it) == 1
+    assert await anext(it) == 2
+    assert await anext(it) == 3
+    with pytest.raises(StopAsyncIteration):
+        await anext(it)
+
+
+@run_in_pyodide
+async def test_agen_asend(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsIterator
+
+    it = run_js(
+        """
+        (async function*(){
+            let n = 0;
+            for(let i = 0; i < 3; i++){
+                n = yield n + 2;
+            }
+        })();
+        """
+    )
+
+    assert isinstance(it, JsIterator)
+
+    assert await it.asend(None) == 2
+    assert await it.asend(2) == 4
+    assert await it.asend(3) == 5
+    with pytest.raises(StopAsyncIteration):
+        await it.asend(4)
+
+
+# pytest.mark.xfail("async error gets converted into double wrapped error")
+@run_in_pyodide
+async def test_agen_athrow(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator, JsException
+
+    f = run_js(
+        """
+        (async function *() {
+            try {
+                yield 1;
+            } finally {
+                yield 2;
+                console.log("finally");
+            }
+        })
+        """
+    )
+
+    g = f()
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    assert await g.athrow(TypeError("hi")) == 2
+    # TODO: figure out how to make this raise a TypeError!
+    with pytest.raises(JsException, match="hi"):
+        await anext(g)
+
+    g = f()
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    assert await g.athrow(TypeError, "hi") == 2
+    with pytest.raises(JsException, match="hi"):
+        await anext(g)
+
+    f = run_js(
+        """
+        (async function *() {
+            yield 1;
+            yield 2;
+            yield 3;
+        })
+        """
+    )
+    g = f()
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    await g.aclose()
+
+
+@run_in_pyodide
+async def test_agen_aclose(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator
+
+    f = run_js(
+        """
+        (async function *(x) {
+            try {
+                yield 1;
+                yield 2;
+                x.push("this never happens");
+                yield 3;
+            } finally {
+                x.append("finally");
+            }
+        })
+        """
+    )
+
+    from pyodide.ffi import create_proxy
+
+    l: list[str] = []
+    p = create_proxy(l)
+    g = f(p)
+    assert isinstance(g, JsAsyncGenerator)
+    assert await anext(g) == 1
+    assert await anext(g) == 2
+    assert await g.aclose() is None  # type:ignore[func-returns-value]
+    assert await g.aclose() is None  # type:ignore[func-returns-value]
+    p.destroy()
+    assert l == ["finally"]

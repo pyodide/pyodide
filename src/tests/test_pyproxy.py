@@ -2,6 +2,7 @@
 import time
 
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 def test_pyproxy_class(selenium):
@@ -1029,3 +1030,89 @@ def test_pyproxy_this2(selenium):
         g.destroy();
         """
     )
+
+
+@run_in_pyodide
+async def test_async_iter(selenium):
+    from pyodide.code import run_js
+
+    class Gen:
+        async def __aiter__(self):
+            yield 1
+            yield 2
+
+    g = Gen()
+
+    p = run_js(
+        """
+        async (g) => {
+            let r = [];
+            for await (let a of g) {
+                r.push(a);
+            }
+            return r;
+        }
+    """
+    )(g)
+
+    assert (await p).to_py() == [1, 2]
+
+
+@run_in_pyodide
+def test_gen(selenium):
+    from pyodide.code import run_js
+
+    def g():
+        n = 0
+        for _ in range(3):
+            n = yield n + 2
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.next(3));
+            r.push(g.next(4));
+            r.push(g.next(5));
+            return r;
+        }
+    """
+    )(g())
+
+    assert p.to_py() == [
+        {"done": False, "value": 2},
+        {"done": False, "value": 5},
+        {"done": False, "value": 6},
+        {"done": True, "value": None},
+    ]
+
+
+@run_in_pyodide
+async def test_async_gen(selenium):
+    from pyodide.code import run_js
+
+    async def g():
+        n = 0
+        for _ in range(3):
+            n = yield n + 2
+
+    p = run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.next(3));
+            r.push(await g.next(4));
+            r.push(await g.next(5));
+            return r;
+        }
+    """
+    )(g())
+
+    assert (await p).to_py() == [
+        {"done": False, "value": 2},
+        {"done": False, "value": 5},
+        {"done": False, "value": 6},
+        {"done": True, "value": None},
+    ]

@@ -155,3 +155,18 @@ def test_build_error(n_jobs, monkeypatch):
         buildall.build_from_graph(
             pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
         )
+
+
+def test_requirements_executable(monkeypatch):
+    import shutil
+
+    with monkeypatch.context() as m:
+        m.setattr(shutil, "which", lambda exe: None)
+
+        with pytest.raises(RuntimeError, match="missing in the host system"):
+            buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})
+
+    with monkeypatch.context() as m:
+        m.setattr(shutil, "which", lambda exe: "/bin")
+
+        buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})

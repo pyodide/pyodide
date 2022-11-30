@@ -786,7 +786,7 @@ to_js(PyObject* self,
   js_result = python2js_custom(
     obj, depth, proxies, js_dict_converter, js_default_converter);
   FAIL_IF_NULL(js_result);
-  if (hiwire_is_pyproxy(js_result)) {
+  if (pyproxy_Check(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);
   } else {
