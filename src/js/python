@@ -46,7 +46,7 @@ exec node "$ARGS" "$0" "$@"
 */
 
 
-const { loadPyodide } = require("../dist/pyodide");
+const { loadPyodide } = require("./pyodide");
 const fs = require("fs");
 
 /**

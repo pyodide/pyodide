@@ -57,6 +57,7 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         wasm_lib_dir / "cmake",
         Path("dist/repodata.json"),
         Path("dist/pyodide_py.tar"),
+        Path("dist/python"),
     ]
     to_copy.extend(
         x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")

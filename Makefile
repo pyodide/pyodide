@@ -13,6 +13,7 @@ all: check \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
 	dist/package.json \
+	dist/python \
 	dist/console.html \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
@@ -76,6 +77,9 @@ dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js
 	npx rollup -c src/js/rollup.config.mjs
 
 dist/package.json : src/js/package.json
+	cp $< $@
+
+dist/python: src/js/python
 	cp $< $@
 
 .PHONY: npm-link

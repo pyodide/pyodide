@@ -47,6 +47,10 @@ def check_host_python_version(session: Any) -> None:
     sys.exit(1)
 
 
+def pyodide_dist_dir() -> Path:
+    return get_pyodide_root() / "dist"
+
+
 def create_pip_conf(venv_root: Path) -> None:
     """Create pip.conf file in venv root
 
@@ -60,7 +64,7 @@ def create_pip_conf(venv_root: Path) -> None:
     else:
         # In the Pyodide development environment, the Pyodide dist directory
         # should contain the needed wheels. find-links
-        repo = f'find-links={get_pyodide_root()/"dist"}'
+        repo = f"find-links={pyodide_dist_dir()}"
 
     # Prevent attempts to install binary wheels from source.
     # Maybe some day we can convince pip to invoke `pyodide build` as the build
@@ -226,8 +230,7 @@ def create_pyodide_venv(dest: Path) -> None:
 
     check_emscripten_version()
 
-    pyodide_root = get_pyodide_root()
-    interp_path = pyodide_root / "tools/python"
+    interp_path = pyodide_dist_dir() / "python"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
     check_host_python_version(session)
 
