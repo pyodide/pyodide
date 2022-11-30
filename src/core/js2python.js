@@ -259,7 +259,7 @@ JS_FILE(js2python_init, () => {
    * returned `undefined`.
    */
   function js2python_convertOther(id, value, context) {
-    let toStringTag = Object.prototype.toString.call(value);
+    let typeTag = getTypeTag(value);
     if (
       Array.isArray(value) ||
       value === "[object HTMLCollection]" ||
@@ -267,21 +267,21 @@ JS_FILE(js2python_init, () => {
     ) {
       return js2python_convertList(value, context);
     }
-    if (toStringTag === "[object Map]" || value instanceof Map) {
+    if (typeTag === "[object Map]" || value instanceof Map) {
       checkBoolIntCollision(value, "Map");
       return js2python_convertMap(value, value.entries(), context);
     }
-    if (toStringTag === "[object Set]" || value instanceof Set) {
+    if (typeTag === "[object Set]" || value instanceof Set) {
       checkBoolIntCollision(value, "Set");
       return js2python_convertSet(value, context);
     }
     if (
-      toStringTag === "[object Object]" &&
+      typeTag === "[object Object]" &&
       (value.constructor === undefined || value.constructor.name === "Object")
     ) {
       return js2python_convertMap(value, Object.entries(value), context);
     }
-    if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
+    if (typeTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
       return _JsBuffer_CopyIntoMemoryView(
         id,
