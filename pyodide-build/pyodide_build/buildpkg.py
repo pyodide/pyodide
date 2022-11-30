@@ -929,7 +929,11 @@ def main(args: argparse.Namespace) -> None:
 
     missing_executables = find_missing_executables(pkg.requirements.executable)
     if missing_executables:
-        error_msg = f"Following executables are required but missing in the host system: {', '.join(missing_executables)}"
+        missing_string = ", ".join(missing_executables)
+        error_msg = (
+            f"The following executables are required but missing in the host system: "
+            + missing_string
+        )
         raise RuntimeError(error_msg)
 
     name = pkg.package.name

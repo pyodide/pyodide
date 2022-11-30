@@ -283,7 +283,7 @@ def generate_dependency_graph(
             missing_executables[exe].append(name)
 
     if missing_executables:
-        error_msg = "Following executables are missing in the host system:\n"
+        error_msg = "The following executables are missing in the host system:\n"
         for executable, pkgs in missing_executables.items():
             error_msg += f"- {executable} (required by: {', '.join(pkgs)})\n"
 
