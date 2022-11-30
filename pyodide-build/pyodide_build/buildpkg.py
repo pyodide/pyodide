@@ -931,7 +931,7 @@ def main(args: argparse.Namespace) -> None:
     if missing_executables:
         missing_string = ", ".join(missing_executables)
         error_msg = (
-            f"The following executables are required but missing in the host system: "
+            "The following executables are required but missing in the host system: "
             + missing_string
         )
         raise RuntimeError(error_msg)
