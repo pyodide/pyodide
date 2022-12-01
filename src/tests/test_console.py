@@ -25,7 +25,7 @@ def test_command_compiler():
     c2 = _CommandCompiler()
     assert c2("def test():\n   1", "<input>", "single") is None
     assert isinstance(c2("def test():\n   1\n", "<input>", "single"), CodeRunner)
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c2("1<>2", "<input>", "single")
     assert isinstance(
         c2("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
