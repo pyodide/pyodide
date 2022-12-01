@@ -1,0 +1,13 @@
+package:
+  name: pyinstrument
+  version: 4.4.0
+  top-level:
+    - pyinstrument
+source:
+  url: https://files.pythonhosted.org/packages/9a/f8/1feae9239316e073dcdc53e6d1ffbd3d02bb2e0d3a755bc61439a6264221/pyinstrument-4.4.0.tar.gz
+  sha256: be34a2e8118c14a616a64538e02430d9099d5d67d8a370f2888e4ac71e52bbb7
+about:
+  home: https://github.com/joerick/pyinstrument
+  PyPI: https://pypi.org/project/pyinstrument
+  summary: Call stack profiler for Python. Shows you why your code is slow!
+  license: "BSD-3-Clause"
