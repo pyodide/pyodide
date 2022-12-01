@@ -12,7 +12,7 @@ from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 
 def test_command_compiler():
     c = _Compile()
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -127,11 +127,13 @@ def test_interactive_console():
         import re
 
         err = fut.formatted_error or ""
-        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err)
-        assert (
-            err
-            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: <errormsg>\n'
-        )
+        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
+        assert [e.strip() for e in err.split("\n")] == [
+            'File "<console>", line 1',
+            "1+",
+            "^",
+            "SyntaxError: <errormsg>",
+        ]
 
         fut = shell.push("raise Exception('hi')")
         try:
