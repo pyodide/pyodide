@@ -4,7 +4,8 @@ from pathlib import Path
 from .. import common, pypabuild, pywasmcross
 
 
-def run(exports, args):
+def run(exports, args, outdir="./dist"):
+    outdir = Path(outdir)
     cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
     cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
@@ -12,8 +13,6 @@ def run(exports, args):
     ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
     ldflags += f" {os.environ.get('LDFLAGS', '')}"
 
-    curdir = Path.cwd()
-    (curdir / "dist").mkdir(exist_ok=True)
     build_env_ctx = pywasmcross.get_build_env(
         env=os.environ.copy(),
         pkgname="",
@@ -25,4 +24,5 @@ def run(exports, args):
     )
 
     with build_env_ctx as env:
-        pypabuild.build(env, " ".join(args))
+        built_wheel = pypabuild.build(env, " ".join(args), outdir=outdir)
+    return built_wheel

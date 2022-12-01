@@ -8,40 +8,13 @@ from urllib.parse import urlparse
 
 import requests
 import typer  # type: ignore[import]
-from unearth.evaluator import TargetPython
-from unearth.finder import PackageFinder
 
 from .. import buildall, common
 from ..out_of_tree import build
+from ..out_of_tree.pypi import build_dependencies_for_wheel, fetch_pypi_package
 from ..out_of_tree.utils import initialize_pyodide_root
 
 app = typer.Typer()
-
-
-def _fetch_pypi_package(package_spec, destdir):
-    PYMAJOR = common.get_make_flag("PYMAJOR")
-    PYMINOR = common.get_make_flag("PYMINOR")
-    tp = TargetPython(
-        py_ver=(int(PYMAJOR), int(PYMINOR)),
-        platforms=[common.platform()],
-        abis=[f"cp{PYMAJOR}{PYMINOR}"],
-    )
-    pf = PackageFinder(index_urls=["https://pypi.org/simple/"], target_python=tp)
-    match = pf.find_best_match(package_spec)
-    if match.best is None:
-        if len(match.candidates) != 0:
-            error = f"""Can't find version matching {package_spec}
-versions found:
-"""
-            for c in match.candidates:
-                error += "  " + str(c.version) + "\t"
-            raise RuntimeError(error)
-        else:
-            raise RuntimeError(f"Can't find package: {package_spec}")
-    with tempfile.TemporaryDirectory() as download_dir:
-        return pf.download_and_unpack(
-            link=match.best.link, location=destdir, download_dir=download_dir
-        )
 
 
 def pypi(
@@ -51,7 +24,7 @@ def pypi(
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,
-) -> None:
+) -> str:
     """Fetch a wheel from pypi, or build from source if none available."""
     initialize_pyodide_root()
     common.check_emscripten_version()
@@ -63,19 +36,19 @@ def pypi(
         temppath = Path(tmpdir)
 
         # get package from pypi
-        package_path = _fetch_pypi_package(package, temppath)
+        package_path = fetch_pypi_package(package, temppath)
         if not package_path.is_dir():
             # a pure-python wheel has been downloaded - just copy to dist folder
             shutil.copy(str(package_path), str(curdir / "dist"))
             print(f"Successfully fetched: {package_path.name}")
-            return
+            return str(package_path)
 
         # sdist - needs building
         os.chdir(tmpdir)
-        build.run(exports, backend_flags)
-        for src in (temppath / "dist").iterdir():
-            print(f"Built {str(src.name)}")
-            shutil.copy(str(src), str(curdir / "dist"))
+        built_wheel = Path(build.run(exports, backend_flags))
+        wheel_name = str(curdir / "dist" / built_wheel)
+        shutil.copyfile(str(built_wheel), str(wheel_name))
+        return wheel_name
 
 
 def url(
@@ -85,14 +58,13 @@ def url(
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,
-) -> None:
+) -> str:
     """Fetch a wheel or build sdist from url."""
     initialize_pyodide_root()
     common.check_emscripten_version()
     backend_flags = ctx.args
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
-
     with requests.get(package_url, stream=True) as response:
         parsed_url = urlparse(response.url)
         filename = os.path.basename(parsed_url.path)
@@ -105,7 +77,7 @@ def url(
             with open(out_path, "b") as f:
                 for chunk in response.iter_content(chunk_size=1048576):
                     f.write(chunk)
-            return
+            return out_path
         else:
             tf = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
             for chunk in response.iter_content(chunk_size=1048576):
@@ -121,27 +93,32 @@ def url(
                 else:
                     # unzipped here
                     os.chdir(tmpdir)
-                print(os.listdir(tmpdir))
-                build.run(exports, backend_flags)
-                for src in (temppath / "dist").iterdir():
-                    print(f"Built {str(src.name)}")
-                    shutil.copy(str(src), str(curdir / "dist"))
+                built_wheel = Path(build.run(exports, backend_flags))
+                wheel_name = str(curdir / "dist" / built_wheel)
+                shutil.copyfile(str(built_wheel), str(wheel_name))
             os.unlink(tf.name)
+            return wheel_name
 
 
 def source(
-    source_location: "Optional[str]" = typer.Argument(None),
+    source_location: str,
     exports: str = typer.Option(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,
-) -> None:
+) -> str:
     """Use pypa/build to build a Python package from source"""
     initialize_pyodide_root()
+    orig_dir = Path.cwd()
+    if source_location != ".":
+        # build in this folder
+        os.chdir(source_location)
     common.check_emscripten_version()
-    backend_flags = [source_location] + ctx.args
-    build.run(exports, backend_flags)
+    backend_flags = ctx.args
+    built_wheel = Path(build.run(exports, backend_flags, outdir=orig_dir / "dist"))
+    os.chdir(orig_dir)
+    return str(built_wheel)
 
 
 @app.command()  # type: ignore[misc]
@@ -221,20 +198,32 @@ def main(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
+    build_dependencies: bool = typer.Option(
+        False, help="Fetch non-pyodide dependencies from pypi and build them too."
+    ),
+    skip_dependency: list[str] = typer.Option(
+        [],
+        help="Skip building or resolving a single dependency. Use multiple times to skip multiple dependencies.",
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
     if not source_location:
         # build the current folder
-        source(".", exports, ctx)
+        wheel = source(".", exports, ctx)
     elif source_location.find("://") != -1:
-        url(source_location, exports, ctx)
+        wheel = url(source_location, exports, ctx)
     elif Path(source_location).is_dir():
         # a folder, build it
-        source(source_location, exports, ctx)
+        wheel = source(source_location, exports, ctx)
     else:
         # try fetch from pypi
-        pypi(source_location, exports, ctx)
+        wheel = pypi(source_location, exports, ctx)
+    # now build deps for wheel
+    if build_dependencies:
+        build_dependencies_for_wheel(
+            Path(wheel), [], skip_dependency, exports, ctx.args
+        )
 
 
 main.typer_kwargs = {
