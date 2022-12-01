@@ -123,9 +123,14 @@ def test_interactive_console():
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
         assert fut.exception() is not None
+
+        import re
+
+        err = fut.formatted_error or ""
+        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err)
         assert (
-            fut.formatted_error
-            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
+            err
+            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: <errormsg>\n'
         )
 
         fut = shell.push("raise Exception('hi')")
