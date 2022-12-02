@@ -1,0 +1,31 @@
+From 50aeeda991f464e22ede556eb1647efea258adc4 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 1 Dec 2022 17:30:05 -0800
+Subject: [PATCH] Actually fill in tv_nsec fields of stat struct
+
+---
+ src/library_syscall.js | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/library_syscall.js b/src/library_syscall.js
+index 8f261ec92..400985062 100644
+--- a/src/library_syscall.js
++++ b/src/library_syscall.js
+@@ -62,11 +62,11 @@ var SyscallsLibrary = {
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_blksize, '4096', 'i32') }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_blocks, 'stat.blocks', 'i32') }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_sec, 'Math.floor(stat.atime.getTime() / 1000)', 'i64') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_nsec, '0', SIZE_TYPE) }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_nsec, '(stat.atime.getTime() % 1000) * 1000', SIZE_TYPE) }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_sec, 'Math.floor(stat.mtime.getTime() / 1000)', 'i64') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_nsec, '0', SIZE_TYPE) }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_nsec, '(stat.atime.getTime() % 1000) * 1000', SIZE_TYPE) }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_sec, 'Math.floor(stat.ctime.getTime() / 1000)', 'i64') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_nsec, '0', SIZE_TYPE) }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_nsec, '(stat.atime.getTime() % 1000) * 1000', SIZE_TYPE) }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_ino, 'stat.ino', 'i64') }}};
+       return 0;
+     },
+-- 
+2.25.1
+
