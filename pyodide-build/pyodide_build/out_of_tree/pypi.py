@@ -11,7 +11,7 @@ from io import BytesIO
 from operator import attrgetter
 from pathlib import Path
 from platform import python_version
-from typing import Any, BinaryIO, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, cast
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
@@ -141,7 +141,13 @@ class Candidate:
         return self._dependencies
 
 
-class ExtrasProvider(AbstractProvider[Requirement, Candidate, str]):
+if TYPE_CHECKING:
+    APBase = AbstractProvider[Requirement, Candidate, str]
+else:
+    APBase = AbstractProvider
+
+
+class ExtrasProvider(APBase):
     """A provider that handles extras."""
 
     def get_extras_for(self, requirement_or_candidate):
@@ -311,14 +317,15 @@ def build_dependencies_for_wheel(
     metadata = None
     PyPIProvider.BUILD_SKIP = []
     for skip in skip_dependency:
-        if skip.endswith(".json"):
-            # a pyodide json file
-            # or a jupyterlite json file
-            # skip all packages in it
-            PyPIProvider.BUILD_SKIP.extend(_get_json_package_list(Path(skip)))
-        else:
-            split_deps = skip.split(",")
-            PyPIProvider.BUILD_SKIP.extend(split_deps)
+        split_deps = skip.split(",")
+        for dep in split_deps:
+            if dep.endswith(".json"):
+                # a pyodide json file
+                # or a jupyterlite json file
+                # skip all packages in it
+                PyPIProvider.BUILD_SKIP.extend(_get_json_package_list(Path(dep)))
+            else:
+                PyPIProvider.BUILD_SKIP.append(dep)
 
     PyPIProvider.BUILD_EXPORTS = exports
     PyPIProvider.BUILD_FLAGS = build_flags
@@ -342,7 +349,9 @@ def build_dependencies_for_wheel(
     for d in deps:
         # TODO: handle skip list
         r = Requirement(d)
-        if not r.marker or r.marker.evaluate(target_env) or r.name in skip_dependency:
+        if (r.name not in PyPIProvider.BUILD_SKIP) and (
+            (not r.marker) or r.marker.evaluate(target_env)
+        ):
             requirements.append(r)
 
     # Create the (reusable) resolver.
