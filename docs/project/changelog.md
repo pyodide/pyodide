@@ -160,6 +160,10 @@ substitutions:
   `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
   {pr}`3285`, {pr}`3299`
 
+- {{ Enhancement }} Added a mypy typeshed for some common functionality for the
+  `js` module.
+  {pr}`3298`
+
 ### Build System / Package Loading
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
