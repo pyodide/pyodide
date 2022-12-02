@@ -8,9 +8,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	git clone --depth 1 https://github.com/emscripten-core/emsdk.git
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
 	cd emsdk/upstream/emscripten/ && cat ../../../patches/*.patch | patch -p1 --verbose
-	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) \
-		--override-repository ccache-git-emscripten-64bit@https://github.com/ryanking13/ccache/tree/emscripten \
-		ccache-git-emscripten-64bit
+	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) ccache-git-emscripten-64bit
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
 	touch emsdk/.complete
 
