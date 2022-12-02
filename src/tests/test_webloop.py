@@ -342,7 +342,6 @@ async def test_pyodide_future():
 async def test_pyodide_future2(selenium):
     from js import fetch
     from pyodide.ffi import JsFetchResponse, JsProxy
-    from pyodide.webloop import PyodideFuture
 
     async def get_json(x: JsFetchResponse) -> JsProxy:
         return await x.json()
@@ -351,8 +350,6 @@ async def test_pyodide_future2(selenium):
         return x.info.name  # type:ignore[attr-defined]
 
     url = "https://pypi.org/pypi/pytest/json"
-    # mypy isn't smart enough to typecheck this without assistance
-    b: PyodideFuture[JsProxy]
     b = fetch(url).then(get_json)
     name = await b.then(get_name)
     assert name == "pytest"

@@ -6,7 +6,7 @@ import time
 import traceback
 from asyncio import Future
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, overload
 
 from ._core import IN_BROWSER, create_once_callable
 
@@ -21,6 +21,38 @@ class PyodideFuture(Future[T]):
     """A future with extra then, catch, and finally_ methods based on the
     Javascript promise API.
     """
+
+    @overload
+    def then(
+        self,
+        onfulfilled: None,
+        onrejected: Callable[[BaseException], Awaitable[S]],
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: None,
+        onrejected: Callable[[BaseException], S],
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], Awaitable[S]],
+        onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], S],
+        onrejected: Callable[[BaseException], S] | None = None,
+    ) -> "PyodideFuture[S]":
+        ...
 
     def then(
         self,
@@ -90,9 +122,19 @@ class PyodideFuture(Future[T]):
         self.add_done_callback(wrapper)
         return result
 
+    @overload
     def catch(
-        self, onrejected: Callable[[BaseException], S | Awaitable[S]] | None
+        self, onrejected: Callable[[BaseException], Awaitable[S]]
     ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def catch(self, onrejected: Callable[[BaseException], S]) -> "PyodideFuture[S]":
+        ...
+
+    def catch(
+        self, onrejected: Callable[[BaseException], object]
+    ) -> "PyodideFuture[Any]":
         return self.then(None, onrejected)
 
     def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
