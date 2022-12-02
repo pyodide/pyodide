@@ -90,7 +90,7 @@ substitutions:
 - {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
   the object as a mapping over its `ownKeys` so for instance:
   `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
-  {pr}`3273`, {pr}`3295`
+  {pr}`3273`, {pr}`3295`, {pr}`3297`
 
 - {{ Enhancement }} Split up the `JsProxy` documentation class into several
   classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
@@ -155,21 +155,16 @@ substitutions:
   Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
   {pr}`3294`
 
-- {{ Enhancement }} It is now possible to use aynchronous JavaScript generators from
-  Python.
-  {pr}`3285`
+- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+  iterators and generators from Python. This includes support for `aiter` for async interables,
+  `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
+  {pr}`3285`, {pr}`3299`
 
 - {{ Enhancement }} Added a mypy typeshed for some common functionality for the
   `js` module.
   {pr}`3298`
 
 ### Build System / Package Loading
-
-- New packages: pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
-  gdal, fiona, geopandas {pr}`3213`,
-  the standard library \_hashlib module {pr}`3206`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
@@ -226,9 +221,6 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
-- {{ Update }} Upgraded pandas to version 1.5.0.
-  {pr}`3134`
-
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -242,11 +234,15 @@ substitutions:
 
 - {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
   which vendors shared libraries into the wheel after building.
-  {pr}`3234`
+  {pr}`3234` {pr}`3264`
 
 - {{ Enhancement }} Added `build/type` key to the `meta.yaml` spec
   which specifies the type of the package.
   {pr}`3238`
+
+- {{ Enhancement }} Added `requirements/executable` key to the `meta.yaml` spec
+  which specifies the list of executables required for building a package.
+  {pr}`3300`
 
 - {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
   are removed. Use `build/type` instead.
@@ -260,6 +256,15 @@ substitutions:
   {pr}`3212`
 
 ### Packages
+
+- New packages: pycryptodome {pr}`2965`,
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  gdal, fiona, geopandas {pr}`3213`,
+  the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
+
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
 
 - {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
 

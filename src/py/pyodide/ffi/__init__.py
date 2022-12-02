@@ -12,7 +12,9 @@ __all__ = [
     "JsBuffer",
     "JsArray",
     "JsTypedArray",
+    "JsMap",
     "JsDoubleProxy",
+    "JsAsyncGenerator",
     "JsGenerator",
     "JsFetchResponse",
     "JsIterator",
@@ -24,4 +26,5 @@ __all__ = [
     "to_js",
     "register_js_module",
     "unregister_js_module",
+    "JsMutableMap",
 ]

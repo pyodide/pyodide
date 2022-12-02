@@ -17,6 +17,8 @@ requirements:
     - numpy
   run:
     - numpy
+  executable:
+    - swig
 
 build:
   cxxflags: -std=c++11

@@ -9,6 +9,8 @@ source:
 requirements:
   host:
     - libtiff
+  executable:
+    - sqlite3
 
 build:
   type: static_library
