@@ -624,7 +624,7 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   }
   // We want to return false on container types with size 0.
   if (val.size === 0) {
-    if(/HTML[A-Za-z]*Element/.test(Object.prototype.toString.call(val))){
+    if(/HTML[A-Za-z]*Element/.test(getTypeTag(val))){
       // HTMLSelectElement and HTMLInputElement can have size 0 but we still
       // want to return true.
       return true;
@@ -650,7 +650,7 @@ EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
 
 EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
   // clang-format off
-  return Object.prototype.toString.call(Hiwire.get_value(idobj)) === "[object Generator]";
+  return getTypeTag(Hiwire.get_value(idobj)) === "[object Generator]";
   // clang-format on
 });
 
@@ -806,7 +806,7 @@ EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
   if (Array.isArray(obj)) {
     return true;
   }
-  let typeTag = Object.prototype.toString.call(obj);
+  let typeTag = getTypeTag(obj);
   // We want to treat some standard array-like objects as Array.
   // clang-format off
   if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){

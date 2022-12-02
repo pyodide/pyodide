@@ -57,7 +57,10 @@
 #define IS_TYPEDARRAY (1<<12)
 #define IS_DOUBLE_PROXY (1 << 13)
 #define IS_OBJECT_MAP (1 << 14)
-#define IS_GENERATOR (1 << 15)
+#define IS_ASYNC_ITERABLE (1 << 15)
+#define IS_GENERATOR (1 << 16)
+#define IS_ASYNC_GENERATOR (1 << 17)
+
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -470,11 +473,21 @@ static PyMethodDef JsGenerator_send_MethodDef = {
 
 static PyObject* Exc_JsException;
 
-static PyObject*
-JsGenerator_throw_inner(PyObject* self,
-                        PyObject* typ,
-                        PyObject* val,
-                        PyObject* tb)
+/**
+ * Shared logic between throw and async throw.
+ *
+ * Possibly "typ" is an exception instance and val and tb are null. Otherwise,
+ * it's an old style call "typ" should be an exception type, "val" an instance,
+ * and tb an optional traceback. Figure out which is the case and get an
+ * exception object.
+ *
+ * Then if the exception object is PyExc_GeneratorExit, call jsobj.return().
+ * Otherwise, convert it to js and call jsobj.throw(jsexc). Return the result of
+ * whichever of these two calls we make (or set the error flag and return NULL
+ * if something goes wrong).
+ */
+JsRef
+process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
 {
   if (tb == Py_None) {
     tb = NULL;
@@ -520,11 +533,10 @@ JsGenerator_throw_inner(PyObject* self,
   }
 
   PyErr_Restore(typ, val, tb);
-  JsRef throw_res = NULL;
-  PyObject* result = NULL;
+  JsRef res = NULL;
   if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
     PyErr_Clear();
-    throw_res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
+    res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
   } else {
     JsRef exc;
     if (PyErr_ExceptionMatches(Exc_JsException)) {
@@ -536,10 +548,30 @@ JsGenerator_throw_inner(PyObject* self,
     } else {
       exc = wrap_exception(); // cannot fail.
     }
-    throw_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_throw, exc);
+    res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_throw, exc);
     hiwire_CLEAR(exc);
   }
+  return res;
+
+failed_throw:
+  /* Didn't use our arguments, so restore their original refcounts */
+  Py_DECREF(typ);
+  Py_XDECREF(val);
+  Py_XDECREF(tb);
+  return NULL;
+}
+
+static PyObject*
+JsGenerator_throw_inner(PyObject* self,
+                        PyObject* typ,
+                        PyObject* val,
+                        PyObject* tb)
+{
+  JsRef throw_res = NULL;
+  PyObject* result = NULL;
+  throw_res = process_throw_args(self, typ, val, tb);
   FAIL_IF_NULL(throw_res);
+  console_error_obj(throw_res);
   PySendResult ret = handle_next_result(throw_res, &result);
   if (ret == PYGEN_RETURN) {
     if (result == Py_None) {
@@ -552,13 +584,6 @@ JsGenerator_throw_inner(PyObject* self,
 finally:
   hiwire_CLEAR(throw_res);
   return result;
-
-failed_throw:
-  /* Didn't use our arguments, so restore their original refcounts */
-  Py_DECREF(typ);
-  Py_XDECREF(val);
-  Py_XDECREF(tb);
-  return NULL;
 }
 
 static PyObject*
@@ -605,6 +630,288 @@ JsGenerator_close(PyObject* self, PyObject* ignored)
 static PyMethodDef JsGenerator_close_MethodDef = {
   "close",
   (PyCFunction)JsGenerator_close,
+  METH_NOARGS,
+};
+
+EM_JS_REF(JsRef, JsProxy_GetAsyncIter_js, (JsRef idobj), {
+  let jsobj = Hiwire.get_value(idobj);
+  return Hiwire.new_value(jsobj[Symbol.asyncIterator]());
+});
+
+/**
+ * iter overload. Present if IS_ASYNC_ITERABLE but not IS_ITERATOR (if the
+ * IS_ITERATOR flag is present we use PyObject_SelfIter). Does
+ * `obj[Symbol.asyncIterator]()`.
+ */
+static PyObject*
+JsProxy_GetAsyncIter(PyObject* self)
+{
+  JsRef iditer = JsProxy_GetAsyncIter_js(JsProxy_REF(self));
+  if (iditer == NULL) {
+    return NULL;
+  }
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
+}
+
+/**
+ * The innermost layer of the result handling. This is called when the promise
+ * resolves. status tells us whether we are:
+ *  1. returning
+ *  0. yielding
+ * -1. raising
+ *
+ *
+ * jsvalue is either the result that we are returning/yielding or the error we
+ * are raising. closing tells us whether ``close`` was called, if so we raise
+ * an error if there is a yield in a finally block.
+ */
+void
+_agen_handle_result_js_c(PyObject* set_result,
+                         PyObject* set_exception,
+                         int status,
+                         JsRef jsvalue,
+                         bool closing)
+{
+  PyObject* pyvalue = NULL;
+  PyObject* e = NULL;
+
+  if (closing && status == 0) {
+    // If closing, status should not be yielding.
+    PyErr_SetString(PyExc_RuntimeError, "JavaScript generator ignored return");
+    goto return_error;
+  }
+
+  pyvalue = js2python(jsvalue);
+  if (pyvalue == NULL) {
+    // hopefully this won't happen...
+    PyErr_SetString(PyExc_RuntimeError, "Unable to get result");
+    goto return_error;
+  }
+
+  // TODO: generator lifetime handling
+  // if (status == 1 && pyproxy_Check(jsvalue)) {
+  //   destroy_proxy(jsvalue,
+  //                 "This borrowed proxy was automatically destroyed at the end
+  //                 " "of an async generator");
+  // }
+
+  if (status == 0) {
+    PyObject_CallOneArg(set_result, pyvalue);
+    // Not sure what to do if there is an error here...
+    goto finally;
+  }
+
+  if (status == 1) {
+    // Returning
+    e = PyObject_CallOneArg(PyExc_StopAsyncIteration, pyvalue);
+    // Not sure what to do if there is an error here...
+    goto return_error;
+  }
+
+  if (status == -1) {
+    Py_INCREF(pyvalue);
+    e = pyvalue;
+    goto return_error;
+  }
+
+return_error:
+  if (e == NULL) {
+    // Grab e from error flag
+    PyObject *tp, *tb;
+    PyErr_Fetch(&tp, &e, &tb);
+    Py_CLEAR(tp);
+    Py_CLEAR(tb);
+  }
+  if (closing && (PyErr_GivenExceptionMatches(e, PyExc_StopAsyncIteration) ||
+                  PyErr_GivenExceptionMatches(e, PyExc_GeneratorExit))) {
+    PyObject_CallOneArg(set_result, Py_None);
+    goto finally;
+  }
+
+  PyObject_CallOneArg(set_exception, e);
+  // Don't know what to do if there was an error...
+  PyErr_Clear();
+  goto finally;
+
+finally:
+  Py_CLEAR(pyvalue);
+  Py_CLEAR(e);
+}
+
+// clang-format off
+EM_JS_NUM(
+int,
+_agen_handle_result_js,
+(JsRef promiseid, char** msg, PyObject* set_result, PyObject* set_exception, bool closing),
+{
+  let p = Hiwire.get_value(promiseid);
+  // First check that p is a proper promise, if not return the error message for
+  // the type error.
+  let errmsg;
+  if(typeof p !== "object") {
+    errmsg = `Result of anext() should be object not ${typeof p}`;
+  } else if(typeof p.then !== "function") {
+    if (typeof p.done === "boolean") {
+      errmsg = `Result of anext() was not a promise, use next() instead.`;
+    } else {
+      errmsg = `Result of anext() was not a promise.`;
+    }
+  }
+  if (errmsg) {
+    DEREF_U32(msg, 0) = stringToNewUTF8(errmsg);
+    return -1;
+  }
+  // We need to hold onto set_result and set_exception until the promise resolves.
+  _Py_IncRef(set_result);
+  _Py_IncRef(set_exception);
+  // Call back into C to create the response.
+  p.then(({done, value}) => {
+    let id = Hiwire.new_value(value);
+    __agen_handle_result_js_c(set_result, set_exception, done, id, closing);
+    Hiwire.decref(id);
+  }, (err) => {
+    let id = Hiwire.new_value(err);
+    __agen_handle_result_js_c(set_result, set_exception, -1, id, closing);
+    Hiwire.decref(id);
+  }).finally(() => {
+    _Py_DecRef(set_result);
+    _Py_DecRef(set_exception);
+  });
+  return 0;
+});
+// clang-format on
+
+/**
+ * Common logic between asend, athrow and aclose. Handle the resulting promise
+ * returned from next, throw, or return.
+ *
+ * Create a future and attach the promise to the future using the helper
+ * anext_js.
+ */
+PyObject*
+_agen_handle_result(JsRef promise, bool closing)
+{
+  bool success = false;
+  PyObject* loop = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+  PyObject* result = NULL;
+
+  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
+  FAIL_IF_NULL(result);
+
+  set_result = _PyObject_GetAttrId(result, &PyId_set_result);
+  FAIL_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
+  FAIL_IF_NULL(set_exception);
+
+  char* msg = NULL;
+  int status =
+    _agen_handle_result_js(promise, &msg, set_result, set_exception, closing);
+  if (status == -1) {
+    if (msg) {
+      PyErr_SetString(PyExc_TypeError, msg);
+      free(msg);
+    }
+    FAIL();
+  }
+
+  success = true;
+finally:
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  return result;
+}
+
+static PyObject*
+JsGenerator_asend(PyObject* self, PyObject* arg)
+{
+  JsRef jsarg = Js_undefined;
+  JsRef next_res = NULL;
+  PyObject* result = NULL;
+  if (arg != NULL) {
+    jsarg = python2js(arg);
+    FAIL_IF_NULL(jsarg);
+  }
+
+  next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
+  FAIL_IF_NULL(next_res);
+  result = _agen_handle_result(next_res, false);
+
+finally:
+  hiwire_CLEAR(jsarg);
+  hiwire_CLEAR(next_res);
+  return result;
+}
+
+static PyMethodDef JsGenerator_asend_MethodDef = {
+  "asend",
+  (PyCFunction)JsGenerator_asend,
+  METH_O,
+};
+
+static PyObject*
+JsGenerator_anext(PyObject* self)
+{
+  return JsGenerator_asend(self, NULL);
+}
+
+static PyObject*
+JsGenerator_athrow(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  PyObject* typ;
+  PyObject* val = NULL;
+  PyObject* tb = NULL;
+
+  if (!_PyArg_ParseStack(args, nargs, "O|OO:athrow", &typ, &val, &tb)) {
+    return NULL;
+  }
+
+  JsRef throw_res = NULL;
+  PyObject* result = NULL;
+
+  throw_res = process_throw_args(self, typ, val, tb);
+  FAIL_IF_NULL(throw_res);
+  result = _agen_handle_result(throw_res, false);
+
+finally:
+  hiwire_CLEAR(throw_res);
+  return result;
+}
+
+static PyMethodDef JsGenerator_athrow_MethodDef = {
+  "athrow",
+  (PyCFunction)JsGenerator_athrow,
+  METH_FASTCALL,
+};
+
+static PyObject*
+JsGenerator_aclose(PyObject* self, PyObject* ignored)
+{
+  JsRef throw_res = NULL;
+  PyObject* result = NULL;
+
+  throw_res = process_throw_args(self, PyExc_GeneratorExit, NULL, NULL);
+  FAIL_IF_NULL(throw_res);
+  result = _agen_handle_result(throw_res, true);
+
+finally:
+  hiwire_CLEAR(throw_res);
+  return result;
+}
+
+static PyMethodDef JsGenerator_aclose_MethodDef = {
+  "aclose",
+  (PyCFunction)JsGenerator_aclose,
   METH_NOARGS,
 };
 
@@ -3104,9 +3411,12 @@ JsProxy_create_subtype(int flags)
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
 
-  bool mapping = (flags & HAS_LENGTH) && (flags & HAS_GET) && (flags & HAS_HAS);
-  mapping = mapping || (flags & IS_OBJECT_MAP);
+  bool obj_map = (flags & IS_OBJECT_MAP);
+  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
+  bool mapping = (flags & mapping_flags) == mapping_flags;
   bool mutable_mapping = mapping && (flags & HAS_SET);
+  mapping = mapping || obj_map;
+  mutable_mapping = mutable_mapping || obj_map;
 
   if (mapping) {
     methods[cur_method++] = JsMap_keys_MethodDef;
@@ -3147,17 +3457,29 @@ JsProxy_create_subtype(int flags)
         (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
     }
   }
+  if (flags & IS_ASYNC_ITERABLE) {
+    // This uses `obj[Symbol.asyncIterator]()`
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_am_aiter,
+                                       .pfunc = (void*)JsProxy_GetAsyncIter };
+  }
   if (flags & IS_ITERATOR) {
-    // JsProxy_GetIter would work just as well as PyObject_SelfIter but
-    // PyObject_SelfIter avoids an unnecessary allocation.
+    // We're not sure whether it is an async iterator or a sync iterator. So add
+    // both methods and raise at runtime if someone uses the wrong one.
+    // JsProxy_GetIter would work just as well as PyObject_SelfIter
+    // but PyObject_SelfIter avoids an unnecessary allocation.
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsGenerator_anext };
     // Send works okay on any js object that has a "next" method
     methods[cur_method++] = JsGenerator_send_MethodDef;
+    methods[cur_method++] = JsGenerator_asend_MethodDef;
   }
   if (flags & IS_GENERATOR) {
     // throw and close need "throw" and "return" methods to work. We currently
@@ -3166,6 +3488,15 @@ JsProxy_create_subtype(int flags)
     // to Generator.
     methods[cur_method++] = JsGenerator_throw_MethodDef;
     methods[cur_method++] = JsGenerator_close_MethodDef;
+  }
+
+  if (flags & IS_ASYNC_GENERATOR) {
+    // throw and close need "throw" and "return" methods to work. We currently
+    // don't trust that an object with "next", "throw", and "return" is a
+    // generator though -- we require that it actually have it's toStringTag set
+    // to Generator.
+    methods[cur_method++] = JsGenerator_athrow_MethodDef;
+    methods[cur_method++] = JsGenerator_aclose_MethodDef;
   }
 
   if (flags & HAS_LENGTH) {
@@ -3316,13 +3647,14 @@ skip_container_slots:
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
   PyObject* abc = NULL;
-  int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
     abc = MutableSequence;
   } else if (flags & IS_NODE_LIST) {
     abc = Sequence;
-  } else if ((flags & mapping_flags) == mapping_flags) {
-    abc = (flags & HAS_SET) ? MutableMapping : Mapping;
+  } else if (mutable_mapping) {
+    abc = MutableMapping;
+  } else if (mapping) {
+    abc = Mapping;
   } else if (flags & IS_OBJECT_MAP) {
     abc = MutableMapping;
   }
@@ -3395,11 +3727,12 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   }
 
   const constructorName = obj.constructor ? obj.constructor.name : "";
-  let typeTag = Object.prototype.toString.call(obj);
+  let typeTag = getTypeTag(obj);
 
   SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
   SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
+  SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
   SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function')
   SET_FLAG_IF(HAS_LENGTH,
     (typeof obj.size === "number") ||
@@ -3418,6 +3751,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(IS_TYPEDARRAY,
               ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
+  SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
   // clang-format on
   return type_flags;
 });
@@ -3533,7 +3867,7 @@ JsProxy_init_docstrings()
   PyObject* JsPromise = NULL;
   PyObject* JsBuffer = NULL;
   PyObject* JsArray = NULL;
-  PyObject* JsMap = NULL;
+  PyObject* JsMutableMap = NULL;
   PyObject* JsDoubleProxy = NULL;
   PyObject* JsGenerator = NULL;
 
@@ -3554,7 +3888,7 @@ JsProxy_init_docstrings()
   GetProxyDocClass(JsPromise);
   GetProxyDocClass(JsBuffer);
   GetProxyDocClass(JsArray);
-  GetProxyDocClass(JsMap);
+  GetProxyDocClass(JsMutableMap);
   GetProxyDocClass(JsDoubleProxy);
   GetProxyDocClass(JsGenerator);
 #undef GetProxyDocClass
@@ -3585,15 +3919,15 @@ JsProxy_init_docstrings()
   SET_DOCSTRING(JsArray, JsArray_index_MethodDef);
   SET_DOCSTRING(JsArray, JsArray_count_MethodDef);
 
-  SET_DOCSTRING(JsMap, JsMap_keys_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_values_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_items_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_get_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_pop_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_popitem_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_clear_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_update_MethodDef);
-  SET_DOCSTRING(JsMap, JsMap_setdefault_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_keys_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_values_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_items_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_get_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_pop_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_popitem_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_clear_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_update_MethodDef);
+  SET_DOCSTRING(JsMutableMap, JsMap_setdefault_MethodDef);
 
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_MethodDef);
   SET_DOCSTRING(JsBuffer, JsBuffer_assign_to_MethodDef);
@@ -3615,7 +3949,7 @@ finally:
   Py_CLEAR(JsPromise);
   Py_CLEAR(JsBuffer);
   Py_CLEAR(JsArray);
-  Py_CLEAR(JsMap);
+  Py_CLEAR(JsMutableMap);
   Py_CLEAR(JsDoubleProxy);
   Py_CLEAR(JsGenerator);
   return success ? 0 : -1;
@@ -3659,7 +3993,10 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_NODE_LIST);
   AddFlag(IS_TYPEDARRAY);
   AddFlag(IS_DOUBLE_PROXY);
+  AddFlag(IS_OBJECT_MAP);
+  AddFlag(IS_ASYNC_ITERABLE);
   AddFlag(IS_GENERATOR);
+  AddFlag(IS_ASYNC_GENERATOR);
 
 #undef AddFlag
 

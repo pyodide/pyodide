@@ -29,12 +29,19 @@ else:
 
 from _pyodide._core_docs import (
     JsArray,
+    JsAsyncGenerator,
+    JsAsyncIterable,
     JsBuffer,
     JsDoubleProxy,
+    JsFetchResponse,
     JsGenerator,
+    JsIterable,
     JsIterator,
+    JsMap,
+    JsMutableMap,
     JsPromise,
     JsProxy,
+    JsTypedArray,
 )
 
 __all__ = [
@@ -42,6 +49,9 @@ __all__ = [
     "JsDoubleProxy",
     "JsArray",
     "JsGenerator",
+    "JsAsyncGenerator",
+    "JsIterable",
+    "JsAsyncIterable",
     "JsIterator",
     "JsException",
     "create_proxy",
@@ -51,5 +61,9 @@ __all__ = [
     "destroy_proxies",
     "JsPromise",
     "JsBuffer",
+    "JsTypedArray",
     "JsArray",
+    "JsFetchResponse",
+    "JsMap",
+    "JsMutableMap",
 ]
