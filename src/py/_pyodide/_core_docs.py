@@ -497,10 +497,10 @@ class JsMap(JsProxy):
         return 0
 
     def __iter__(self) -> Any:
-        pass
+        raise NotImplementedError
 
     def __contains__(self, idx: Any) -> bool:
-        pass
+        raise NotImplementedError
 
     def keys(self) -> KeysView[Any]:
         """Return a KeysView for the map.
@@ -820,6 +820,7 @@ class JsAsyncGenerator(JsIterable):
         started yet, and no error will be thrown if the argument of a
         not-started generator is not ``None``.
         """
+        raise NotImplementedError
 
     def athrow(
         self,
@@ -838,6 +839,7 @@ class JsAsyncGenerator(JsIterable):
         exception, or raises a different exception, then that exception
         propagates to the caller.
         """
+        raise NotImplementedError
 
     def aclose(self) -> Awaitable[None]:
         """Raises a GeneratorExit at the point where the generator function was
@@ -850,6 +852,7 @@ class JsAsyncGenerator(JsIterable):
         caller. close() does nothing if the generator has already exited due to
         an exception or normal exit.
         """
+        raise NotImplementedError
 
 
 # from pyproxy.c

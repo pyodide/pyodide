@@ -32,7 +32,8 @@ module = [
   "matplotlib.*",
   "PIL.*",
   "virtualenv",
-  "termcolor"
+  "termcolor",
+  "test",
 ]
 ignore_missing_imports = true
 
