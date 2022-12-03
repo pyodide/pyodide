@@ -1232,7 +1232,7 @@ def test_run_js(selenium):
     assert run_js("(x)=> x+1")(7) == 8
     assert run_js("[1,2,3]")[2] == 3
     run_js("globalThis.x = 77")
-    from js import x
+    from js import x  # type: ignore[attr-defined]
 
     assert x == 77
 

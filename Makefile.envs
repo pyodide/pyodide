@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.10.2
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.26
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.27
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -114,6 +114,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_ALL=1 \
 	-s POLYFILL \
 	-s MIN_SAFARI_VERSION=140000 \
+	-s STACK_SIZE=5MB \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \

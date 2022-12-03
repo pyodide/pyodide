@@ -33,6 +33,7 @@ from _pyodide._core_docs import (
     JsAsyncIterable,
     JsBuffer,
     JsDoubleProxy,
+    JsFetchResponse,
     JsGenerator,
     JsIterable,
     JsIterator,
@@ -40,6 +41,7 @@ from _pyodide._core_docs import (
     JsMutableMap,
     JsPromise,
     JsProxy,
+    JsTypedArray,
 )
 
 __all__ = [
@@ -59,7 +61,9 @@ __all__ = [
     "destroy_proxies",
     "JsPromise",
     "JsBuffer",
+    "JsTypedArray",
     "JsArray",
+    "JsFetchResponse",
     "JsMap",
     "JsMutableMap",
 ]

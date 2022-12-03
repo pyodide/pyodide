@@ -28,9 +28,9 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.26
+- {{ Enhancement }} Emscripten was updated to Version 3.1.27
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
-  {pr}`3239`, {pr}`3280`
+  {pr}`3239`, {pr}`3280`, {pr}`3314`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -159,6 +159,10 @@ substitutions:
   iterators and generators from Python. This includes support for `aiter` for async interables,
   `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
   {pr}`3285`, {pr}`3299`
+
+- {{ Enhancement }} Added a mypy typeshed for some common functionality for the
+  `js` module.
+  {pr}`3298`
 
 ### Build System / Package Loading
 
