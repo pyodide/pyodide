@@ -98,6 +98,11 @@ static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
 
+static char* PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL =
+  "This borrowed proxy was automatically destroyed at the "
+  "end of a function call. Try using "
+  "create_proxy or create_once_callable.";
+
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
@@ -404,7 +409,7 @@ handle_next_result(JsRef next_res, PyObject** result){
   // so pyvalue will be set to Py_None.
   *result = js2python(idresult);
   FAIL_IF_NULL(*result);
-  if(hiwire_is_pyproxy(*result)) {
+  if(pyproxy_Check(idresult)) {
     destroy_proxy(idresult,
                   "This borrowed proxy was automatically destroyed at the end"
                   " of a generator");
@@ -421,19 +426,26 @@ finally:
 PySendResult
 JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
+  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   *result = NULL;
   PySendResult ret = PYGEN_ERROR;
 
   if (arg) {
-    jsarg = python2js(arg);
+    proxies = JsArray_New();
+    FAIL_IF_NULL(proxies);
+    jsarg = python2js_track_proxies(arg, proxies);
     FAIL_IF_NULL(jsarg);
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
   FAIL_IF_NULL(next_res);
   ret = handle_next_result(next_res, result);
 finally:
+  if (proxies) {
+    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  }
+  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return ret;
@@ -839,19 +851,25 @@ finally:
 static PyObject*
 JsGenerator_asend(PyObject* self, PyObject* arg)
 {
+  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   PyObject* result = NULL;
   if (arg != NULL) {
-    jsarg = python2js(arg);
+    proxies = JsArray_New();
+    FAIL_IF_NULL(proxies);
+    jsarg = python2js_track_proxies(arg, proxies);
     FAIL_IF_NULL(jsarg);
   }
-
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
   FAIL_IF_NULL(next_res);
   result = _agen_handle_result(next_res, false);
 
 finally:
+  if (proxies) {
+    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  }
+  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return result;
@@ -2776,7 +2794,7 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
     return function (val) {
       if(API.isPyProxy(val)) {
         val = val.copy();
-        proxies.push(val);
+        proxies.add(val);
       }
       let res;
       try {
@@ -2793,14 +2811,14 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
       return res;
     };
   }
-  return {
+  return Hiwire.new_value({
     get [Symbol.toStringTag]() {
       return "Generator";
     },
     next: wrap("next"),
     throw: wrap("throw"),
     return: wrap("return"),
-  };
+  });
 });
 
 EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
@@ -2814,14 +2832,14 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
     proxies.forEach((px) => Module.pyproxy_destroy(px, msg));
   }
   function wrap(funcname) {
-    return function (val) {
+    return async function (val) {
       if(API.isPyProxy(val)) {
         val = val.copy();
-        proxies.push(val);
+        proxies.add(val);
       }
       let res;
       try {
-        res = gen[funcname](val);
+        res = await gen[funcname](val);
       } catch (e) {
         cleanup();
         throw e;
@@ -2834,14 +2852,14 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
       return res;
     };
   }
-  return {
+  return Hiwire.new_value({
     get [Symbol.toStringTag]() {
       return "AsyncGenerator";
     },
     next: wrap("next"),
     throw: wrap("throw"),
     return: wrap("return"),
-  };
+  });
 });
 // clang-format on
 
@@ -2891,7 +2909,8 @@ JsMethod_Vectorcall(PyObject* self,
     FAIL_IF_NULL(temp);
     hiwire_decref(idresult);
     idresult = temp;
-  } else if (is_promise) {
+  }
+  if (is_promise) {
     // Since we will destroy the result of the Promise when it resolves we deny
     // the user access to the Promise (which would destroyed proxy exceptions).
     // Instead we return a Future. When the promise is ready, we resolve the
@@ -2915,10 +2934,7 @@ finally:
     if (idresult != NULL && pyproxy_Check(idresult)) {
       JsArray_Push_unchecked(proxies, idresult);
     }
-    destroy_proxies(proxies,
-                    "This borrowed proxy was automatically destroyed at the "
-                    "end of a function call. Try using "
-                    "create_proxy or create_once_callable.");
+    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);

@@ -2100,3 +2100,59 @@ async def test_agen_aclose(selenium):
     assert await g.aclose() is None  # type:ignore[func-returns-value]
     p.destroy()
     assert l == ["finally"]
+
+
+@run_in_pyodide
+def test_gen_lifetimes(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    f = run_js(
+        """
+        (function *(x) {
+            let l = [x];
+            l.push(yield);
+            l.push(yield);
+            l.push(yield);
+            return pyodide.toPy(l.map((x) => x.toString()));
+        })
+        """
+    )
+    g = f({1})
+    assert isinstance(g, JsGenerator)
+    g.send(None)
+    g.send({2})
+    g.send({3})
+    with pytest.raises(StopIteration) as exc_info:
+        g.send({4})
+    assert exc_info.value.value == ["{1}", "{2}", "{3}", "{4}"]
+
+
+@run_in_pyodide
+async def test_agen_lifetimes(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator
+
+    f = run_js(
+        """
+        (async function *(x) {
+            let l = [x];
+            l.push(yield);
+            l.push(yield);
+            l.push(yield);
+            return pyodide.toPy(l.map((x) => x.toString()));
+        })
+        """
+    )
+    g = f({1})
+    assert isinstance(g, JsAsyncGenerator)
+    await g.asend(None)
+    await g.asend({2})
+    await g.asend({3})
+    with pytest.raises(StopAsyncIteration) as exc_info:
+        await g.asend({4})
+    assert exc_info.value.args[0] == ["{1}", "{2}", "{3}", "{4}"]
