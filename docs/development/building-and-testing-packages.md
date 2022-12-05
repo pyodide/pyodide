@@ -78,7 +78,7 @@ work with binary packages.
 pyodide build
 # Install it
 pip install dist/the_wheel-cp310-cp310-emscripten_3_1_20_wasm32.whl[tests]
-````
+```
 
 To test, you can generally run the same script as you would usually do. For many
 packages this will be:
