@@ -65,8 +65,9 @@ Python and is sensitive to the current virtual environment will probably break.
 You can install whatever dependencies you need with pip. For a pure Python
 package, the following will work:
 
-````sh
+```sh
 pip install -e .
+```
 
 For a binary package, you will need to build a wheel with `pyodide build` and
 then point `pip` directly to the built wheel. For now, editable installs won't
