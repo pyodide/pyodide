@@ -14,16 +14,6 @@ requirements:
     - scipy
     - six
     - smart_open
-test:
-  imports:
-    - gensim
-    - gensim.corpora
-    - gensim.models
-    - gensim.parsing
-    - gensim.scripts
-    - gensim.similarities
-    - gensim.test
-    - gensim.topic_coherence
 about:
   home: http://radimrehurek.com/gensim
   PyPI: https://pypi.org/project/gensim
