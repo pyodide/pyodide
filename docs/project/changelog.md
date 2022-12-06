@@ -268,6 +268,8 @@ substitutions:
 
 - {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
 
+- {{ Update }} Upgraded packages: scikit-learn (1.1.3), {pr}`3324`
+
 ## Version 0.21.3
 
 _September 15, 2022_
