@@ -77,6 +77,18 @@ ifdef PYODIDE_ASSERTIONS
 	EXTRA_CFLAGS+=" -DDEBUG_F"
 endif
 
+ifdef PYODIDE_ZIP_STDLIB
+	export STDLIB_PRELOAD=\
+		--preload-file $(CPYTHONZIP)/lib@/lib/
+else
+	export STDLIB_PRELOAD=\
+		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+		--exclude-file "*__pycache__*" \
+		--exclude-file "*/test/*" \
+		--exclude-file "*/tests/*" \
+		--exclude-file "*/distutils/*"
+endif
+
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
@@ -128,8 +140,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-leventloop.js \
 	\
 	--use-preload-plugins \
-	--preload-file $(CPYTHONZIP)/lib@/lib/ \
-	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
+	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/ \
+	$(STDLIB_PRELOAD) \
 	--pre-js src/core/pre.js \
 	--pre-js src/js/_pyodide.out.js \
 	--post-js src/core/post.js
