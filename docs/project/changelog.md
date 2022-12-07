@@ -139,12 +139,6 @@ substitutions:
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
-- {{ Breaking }} Python standard libraries are now distributed in a zipfile
-  (`/lib/python310.zip`) to improve the initial load time and to reduce the size of the
-  Pyodide distribution. This change is adapted from upstream CPython
-  ([python/cpython#29984](https://github.com/python/cpython/pull/29984)).
-  {pr}`3166`
-
 - {{ Fix }} Pyodide now loads correctly with `-OO` option.
 
 - Add Gitpod configuration to the repository.
