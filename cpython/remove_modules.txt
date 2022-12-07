@@ -1,0 +1,15 @@
+_osx_support.py
+curses
+dbm
+ensurepip
+idlelib
+lib2to3
+tkinter
+turtle.py
+turtledemo
+venv
+distutils/command/wininst-*.exe
+webbrowser.py
+sqlite3
+ssl.py
+lzma.py

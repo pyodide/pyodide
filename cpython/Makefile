@@ -23,7 +23,7 @@ zip-stdlib: $(INSTALL)/lib/$(LIB)
 	rm -rf $(CPYTHONZIP)
 	./wasm_assets.py --out $(CPYTHONZIP)
 
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
@@ -40,6 +40,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
+	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
 
