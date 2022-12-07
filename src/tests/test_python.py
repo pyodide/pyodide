@@ -158,6 +158,7 @@ def test_unknown_attribute(selenium):
     )
 
 
+@pytest.mark.skip(reason="Disabled by default")
 @run_in_pyodide
 def test_zipimport_traceback(selenium):
     import json.decoder
