@@ -1,7 +1,7 @@
 From 46026c40dc86c78c938da66e6671ed0d792d71c9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 26 Dec 2021 07:34:40 -0800
-Subject: [PATCH 08/14] Rename _page_trend_test.py to prevent test unvendoring
+Subject: [PATCH 08/13] Rename _page_trend_test.py to prevent test unvendoring
 
 unvendor_tests will unvendor any file that ends in _test.py.
 Prevent that by changing the name of this file.

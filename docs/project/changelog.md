@@ -28,8 +28,9 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.24
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`
+- {{ Enhancement }} Emscripten was updated to Version 3.1.27
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
+  {pr}`3239`, {pr}`3280`, {pr}`3314`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -39,6 +40,11 @@ substitutions:
 - {{ Enhancement }} Implemented `reverse`, `__reversed__`, `count`, `index`,
   `append`, and `pop` for `JsProxy` of Javascript arrays.
   {pr}`2970`
+
+- {{ Enhancement }} Implemented methods `keys`, `items`, `values`, `get`, `pop`,
+  `setdefault`, `popitem`, `update`, and `clear` for `JsProxy` of map-like
+  objects.
+  {pr}`3275`
 
 - {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
   rather than `pyodide-build-{version}.tar.gz`
@@ -81,6 +87,18 @@ substitutions:
   the method is called on.
   {pr}`3130`
 
+- {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
+  the object as a mapping over its `ownKeys` so for instance:
+  `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
+  {pr}`3273`, {pr}`3295`, {pr}`3297`
+
+- {{ Enhancement }} Split up the `JsProxy` documentation class into several
+  classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
+  `issubclass` and `isinstance` on the various synthetic and real `JsProxy`
+  classes so that they behave the way one might naively expect them to (or
+  at least closer to that than it was before).
+  {pr}`3277`
+
 - {{ Breaking }} The messageCallback and errorCallback argument to
   {any}`loadPackage <pyodide.loadPackage>` and
   {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>`
@@ -106,25 +124,53 @@ substitutions:
   `pyodide-build mkpkg` will be replaced by `pyodide sekeleton pypi`.
   {pr}`3175`
 
+- Added a new CLI command `pyodide build-recipes` which build packages from recipe folder.
+  It replaces `pyodide-build buildall`.
+  {pr}`3196`
+
+- Added subcommands for `pyodide build` which builds packages from various sources.
+  | command | result |
+  |------------------------|-----------------------------------------|
+  | `pyodide build pypi` | build or fetch a single package from pypi |
+  | `pyodide build source` | build the current source folder (same as pyodide build) |
+  | `pyodide build url` | build or fetch a package from a url either tgz, tar.gz zip or wheel |
+  {pr}`3196`
+
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
-- {{ Breaking }} Python standard libraries are now precompiled and distributed in a zipfile
+- {{ Breaking }} Python standard libraries are now distributed in a zipfile
   (`/lib/python310.zip`) to improve the initial load time and to reduce the size of the
   Pyodide distribution. This change is adapted from upstream CPython
   ([python/cpython#29984](https://github.com/python/cpython/pull/29984)).
   {pr}`3166`
 
+- {{ Fix }} Pyodide now loads correctly with `-OO` option.
+
 - Add Gitpod configuration to the repository.
-  {pr} `3201`
+  {pr}`3201`
+
+- {{ Enhancement }} Added a type field to `PythonError`
+  {pr}`3289`
+
+- {{ Enhancement }} It is now possible to use aynchronous Python generators from
+  JavaScript.
+  {pr}`3290`
+
+- {{ Enhancement }} Added `JsGenerator` and `JsIterator` types to `pyodide.ffi`.
+  Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
+  {pr}`3294`
+
+- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+  iterators and generators from Python. This includes support for `aiter` for async interables,
+  `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
+  {pr}`3285`, {pr}`3299`
+
+- {{ Enhancement }} Added a mypy typeshed for some common functionality for the
+  `js` module.
+  {pr}`3298`
 
 ### Build System / Package Loading
-
-- New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
-  gdal, fiona, geopandas {pr}`3213`,
-  the standard library \_hashlib module {pr}`3206`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
@@ -181,9 +227,6 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
-- {{ Update }} Upgraded pandas to version 1.5.0.
-  {pr}`3134`
-
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -197,11 +240,15 @@ substitutions:
 
 - {{ Enhancement }} Added `build/vendor-sharedlib` key to the `meta.yaml` spec
   which vendors shared libraries into the wheel after building.
-  {pr}`3234`
+  {pr}`3234` {pr}`3264`
 
 - {{ Enhancement }} Added `build/type` key to the `meta.yaml` spec
   which specifies the type of the package.
   {pr}`3238`
+
+- {{ Enhancement }} Added `requirements/executable` key to the `meta.yaml` spec
+  which specifies the list of executables required for building a package.
+  {pr}`3300`
 
 - {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
   are removed. Use `build/type` instead.
@@ -213,6 +260,22 @@ substitutions:
 - {{ Fix }} Fixed a bug that shared libraries are not copied into distribution
   directory when it is already built.
   {pr}`3212`
+
+### Packages
+
+- New packages: pycryptodome {pr}`2965`,
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  gdal, fiona, geopandas {pr}`3213`,
+  the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
+  gensim {pr}`3326`, smart_open {pr}`3326`,
+
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
+
+- {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
+
+- {{ Update }} Upgraded packages: scikit-learn (1.1.3), {pr}`3324`
 
 ## Version 0.21.3
 
@@ -1207,7 +1270,8 @@ See the {ref}`0-17-0-release-notes` for more information.
   the Python event loop using `asyncio.ensure_future`.
   {pr}`1170`
 - {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js
-  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of proxy)`. Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
+  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
+  Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
   translated to `next(it)`. Made a `PyProxy` of a Python generator into a
   JavaScript generator: `proxy.next(val)` is translated to `gen.send(val)`.
   {pr}`1180`

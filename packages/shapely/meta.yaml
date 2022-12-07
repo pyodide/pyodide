@@ -6,13 +6,17 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/93/3c/cda77e57a08c49569de5bd90376c547bcb981420100adcb0f3770ed681b1/Shapely-1.8.2.tar.gz
   sha256: 572af9d5006fd5e3213e37ee548912b0341fb26724d6dc8a4e3950c10197ebb6
+  patches:
+    - patches/0001-Search-libs-from-auditwheel-repaired-directory.patch
 build:
+  vendor-sharedlib: true
   script: |
     export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
 requirements:
   run:
-    - geos
     - numpy
+  host:
+    - geos
 test:
   imports:
     - shapely

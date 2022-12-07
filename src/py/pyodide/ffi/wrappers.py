@@ -23,7 +23,7 @@ def add_event_listener(
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
-    elt.addEventListener(event, proxy)
+    elt.addEventListener(event, proxy)  # type:ignore[attr-defined]
 
 
 def remove_event_listener(
@@ -33,8 +33,8 @@ def remove_event_listener(
     of a JsProxy corresponding to the listener param.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
-    elt.removeEventListener(event, proxy)
-    proxy.destroy()
+    elt.removeEventListener(event, proxy)  # type:ignore[attr-defined]
+    proxy.destroy()  # type:ignore[attr-defined]
 
 
 TIMEOUTS: dict[int, Destroyable] = {}

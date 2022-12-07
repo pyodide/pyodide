@@ -24,6 +24,19 @@ from sphinx_js.typedoc import Analyzer as TsAnalyzer
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_type_name = TsAnalyzer._type_name
 
+_orig_constructor_and_members = TsAnalyzer._constructor_and_members
+
+
+def _constructor_and_members(self, cls):
+    result = _orig_constructor_and_members(self, cls)
+    for tag in cls.get("comment", {}).get("tags", []):
+        if tag["tag"] == "hideconstructor":
+            return (None, result[1])
+    return result
+
+
+TsAnalyzer._constructor_and_members = _constructor_and_members
+
 
 def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
     """We want to document a destructured argument as if it were several
@@ -128,12 +141,31 @@ def object_literal_type_name(self, decl):
         valuetype = self._type_name(index_sig["type"])
         children.append(f"[{keyname}: {keytype}]: {valuetype}")
     if "children" in decl:
-        children.extend(
-            child["name"] + ": " + self._type_name(child["type"])
-            for child in decl["children"]
-        )
+        for child in decl["children"]:
+            maybe_optional = ""
+            if child["flags"].get("isOptional"):
+                maybe_optional = "?"
+            children.append(
+                child["name"] + maybe_optional + ": " + self._type_name(child["type"])
+            )
 
     return "{" + ", ".join(children) + "}"
+
+
+def function_type_name(self, decl):
+    decl_sig = None
+    if "signatures" in decl:
+        decl_sig = decl["signatures"][0]
+    elif decl["kindString"] == "Call signature":
+        decl_sig = decl
+    assert decl_sig
+    params = [
+        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        for ty in decl_sig.get("parameters", [])
+    ]
+    params_str = ", ".join(params)
+    ret_str = self._type_name(decl_sig["type"])
+    return f"({params_str}) => {ret_str}"
 
 
 def reflection_type_name(self, type):
@@ -154,21 +186,9 @@ def reflection_type_name(self, type):
         (a : string, b : number) => string
     """
     decl = type["declaration"]
-    if decl["kindString"] == "Type literal":
+    if decl["kindString"] == "Type literal" and "signatures" not in decl:
         return object_literal_type_name(self, decl)
-    decl_sig = None
-    if "signatures" in decl:
-        decl_sig = decl["signatures"][0]
-    elif decl["kindString"] == "Call signature":
-        decl_sig = decl
-    assert decl_sig
-    params = [
-        f'{ty["name"]}: {self._type_name(ty["type"])}'
-        for ty in decl_sig.get("parameters", [])
-    ]
-    params_str = ", ".join(params)
-    ret_str = self._type_name(decl_sig["type"])
-    return f"({params_str}) => {ret_str}"
+    return function_type_name(self, decl)
 
 
 def _type_name(self, type):
@@ -189,6 +209,8 @@ def _type_name(self, type):
         name = type["name"]
         type = self._type_name(type["element"])
         return f"{name}: {type}"
+    if type_of_type == "literal" and type["value"] is None:
+        return "null"
     raise NotImplementedError(
         f"Cannot render type name for type_of_type={type_of_type}"
     )

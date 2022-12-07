@@ -368,7 +368,7 @@ export function unpackArchive(
 ) {
   if (
     !ArrayBuffer.isView(buffer) &&
-    Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"
+    API.getTypeTag(buffer) !== "[object ArrayBuffer]"
   ) {
     throw new TypeError(
       `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`,
