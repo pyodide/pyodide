@@ -233,7 +233,7 @@ finally:
 JsRef
 _pyproxy_type(PyObject* ptrobj)
 {
-  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
+  return hiwire_string_utf8(ptrobj->ob_type->tp_name);
 }
 
 int
