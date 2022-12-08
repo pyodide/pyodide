@@ -161,16 +161,6 @@ JsRef
 hiwire_string_utf8(const char* ptr);
 
 /**
- * Create a new JavaScript string, given a pointer to a null-terminated buffer
- * containing ascii (well, technically latin-1). The string data itself is
- * copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ascii(const char* ptr);
-
-/**
  * Create a new JavaScript boolean value.
  * Return value is true if boolean != 0, false if boolean == 0.
  *

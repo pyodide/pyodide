@@ -358,10 +358,6 @@ EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
   return Hiwire.new_value(UTF8ToString(ptr));
 });
 
-EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
-  return Hiwire.new_value(AsciiToString(ptr));
-});
-
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Hiwire.pop_value(iderr);
 });
