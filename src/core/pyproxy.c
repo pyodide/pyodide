@@ -17,6 +17,7 @@
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
+_Py_IDENTIFIER(asend);
 
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a JavaScript error is thrown.
@@ -73,6 +74,8 @@ static PyObject* asyncio;
 #define IS_AWAITABLE (1 << 6)
 #define IS_BUFFER    (1 << 7)
 #define IS_CALLABLE  (1 << 8)
+#define IS_ASYNC_ITERABLE (1 << 9)
+#define IS_ASYNC_ITERATOR (1 << 10)
 // clang-format on
 
 // Taken from genobject.c
@@ -148,6 +151,13 @@ pyproxy_getflags(PyObject* pyobj)
   if (PyIter_Check(pyobj)) {
     result &= ~IS_ITERABLE;
     result |= IS_ITERATOR;
+  }
+  if (async_proto->am_aiter) {
+    result |= IS_ASYNC_ITERABLE;
+  }
+  if (async_proto->am_anext) {
+    result &= ~IS_ASYNC_ITERABLE;
+    result |= IS_ASYNC_ITERATOR;
   }
   // There's no CPython API that corresponds directly to the "await" keyword.
   // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
@@ -616,6 +626,64 @@ finally:
     status = PYGEN_ERROR;
   }
   return status;
+}
+
+JsRef
+_pyproxyGen_asend(PyObject* receiver, JsRef jsval)
+{
+  PyObject* v = NULL;
+  PyObject* asend = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+
+  v = js2python(jsval);
+  FAIL_IF_NULL(v);
+  asend = _PyObject_GetAttrId(receiver, &PyId_asend);
+  if (asend) {
+    pyresult = PyObject_CallOneArg(asend, v);
+  } else {
+    PyErr_Clear();
+    PyTypeObject* t = Py_TYPE(receiver);
+    if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+      PyErr_Format(PyExc_TypeError,
+                   "'%.200s' object is not an async iterator",
+                   t->tp_name);
+      return NULL;
+    }
+    pyresult = (*t->tp_as_async->am_anext)(receiver);
+  }
+  FAIL_IF_NULL(pyresult);
+
+  jsresult = python2js(pyresult);
+  FAIL_IF_NULL(jsresult);
+
+finally:
+  Py_CLEAR(v);
+  Py_CLEAR(asend);
+  Py_CLEAR(pyresult);
+  return jsresult;
+}
+
+JsRef
+_pyproxy_aiter_next(PyObject* aiterator)
+{
+  PyTypeObject* t;
+  PyObject* awaitable;
+
+  t = Py_TYPE(aiterator);
+  if (t->tp_as_async == NULL || t->tp_as_async->am_anext == NULL) {
+    PyErr_Format(
+      PyExc_TypeError, "'%.200s' object is not an async iterator", t->tp_name);
+    return NULL;
+  }
+
+  awaitable = (*t->tp_as_async->am_anext)(aiterator);
+  if (awaitable == NULL) {
+    return NULL;
+  }
+  JsRef result = python2js(awaitable);
+  Py_CLEAR(awaitable);
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

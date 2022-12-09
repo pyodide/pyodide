@@ -3,7 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["test", "_hashlib"], pytest_assert_rewrites=False)
 def test_hashlib(selenium):
-    from test import libregrtest
+    from test import libregrtest  # type:ignore[attr-defined]
 
     name = "test_hashlib"
     ignore_tests = [

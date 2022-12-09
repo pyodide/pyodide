@@ -127,6 +127,7 @@ class _BuildSpec(BaseModel):
 class _RequirementsSpec(BaseModel):
     run: list[str] = []
     host: list[str] = []
+    executable: list[str] = []
 
     class Config:
         extra = pydantic.Extra.forbid

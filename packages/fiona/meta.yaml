@@ -13,8 +13,6 @@ requirements:
     - gdal
     - geos
   run:
-    - gdal
-    - geos
     - attrs
     - certifi
     - setuptools
@@ -24,6 +22,7 @@ requirements:
     # - click-plugins  # only for fiona CLI?
 
 build:
+  vendor-sharedlib: true
   script: |
     export PACKAGE_DATA=1
     export GDAL_CONFIG=${WASM_LIBRARY_DIR}/bin/gdal-config

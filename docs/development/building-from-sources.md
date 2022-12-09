@@ -73,17 +73,11 @@ environment](https://packaging.python.org/guides/installing-using-pip-and-virtua
 
 ```{tabbed} Linux
 
-Additional build prerequisites are:
+To build on Linux, you need:
 
 - A working native compiler toolchain, enough to build
-  [CPython](https://devguide.python.org/setup/#linux).
-- CMake
-- FreeType 2 development libraries to compile Matplotlib.
-- gfortran (GNU Fortran 95 compiler)
-- [f2c](http://www.netlib.org/f2c/)
-- [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
-- (optional) SWIG to compile NLopt
-- (optional) sqlite3 to compile libproj
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux).
+- CMake (required to install Emscripten)
 
 ```
 
@@ -91,24 +85,18 @@ Additional build prerequisites are:
 
 To build on MacOS, you need:
 
+- A working native compiler toolchain, enough to build
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#macos-and-os-x).
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (
   `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
   should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`).
+- coreutils for and other essential Unix utilities (`brew install coreutils`).
 - cmake (`brew install cmake`)
-- pkg-config (`brew install pkg-config`)
-- openssl (`brew install openssl`)
 - autoconf, automaker & libtool (`brew install autoconf automaker libtool`)
-- gfortran (`brew cask install gfortran`)
-- f2c: Install wget (`brew install wget`), and then run the buildf2c script from
-  the root directory (`sudo ./tools/buildf2c`)
 - It is also recommended installing the GNU patch (`brew install gpatch`), and
   GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
-- (optional) SWIG to compile NLopt (`brew install swig`)
-- (optional) sqlite3 to compile libproj (`brew install sqlite3`)
-
 ```
 
 ```{note}

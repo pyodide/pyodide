@@ -612,7 +612,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-build/pyodide_build/tests
           requires:
             - build-core
           filters:

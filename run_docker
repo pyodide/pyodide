@@ -137,6 +137,7 @@ CONTAINER=$(\
         --groups sudo  \
         $USER_NAME \
       ; \
+      echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile; \
       echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
       echo '$HEALTHCHECK_MESSAGE'; \
       tail -f /dev/null \
@@ -154,7 +155,7 @@ docker exec \
   "$DOCKER_INTERACTIVE" --tty \
   "${USER_FLAG[@]}" \
   "$CONTAINER" \
-  /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
+  /bin/bash -lc "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
 docker kill "$CONTAINER" > /dev/null
 exit $EXIT_STATUS

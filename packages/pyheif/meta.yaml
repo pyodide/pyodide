@@ -7,11 +7,11 @@ source:
 requirements:
   run:
     - cffi
-    - libheif
   host:
     - cffi
     - libheif
 build:
+  vendor-sharedlib: true
   script: |
     sed -i "s@include_dirs = \[@include_dirs = ['\\${WASM_LIBRARY_DIR}/include', @" libheif/libheif_build.py
     sed -i "s@library_dirs = \[@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib', @" libheif/libheif_build.py
