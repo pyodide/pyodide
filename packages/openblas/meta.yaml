@@ -5,26 +5,16 @@ package:
 source:
   sha256: f36ba3d7a60e7c8bcc54cd9aaa9b1223dd42eaf02c811791c37e8ca707c241ca
   url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.21/OpenBLAS-0.3.21.tar.gz
-  extract_dir: OpenBLAS-0.3.21
   patches:
     - patches/0001-Add-Wno-implicit-function-declaration-flag.patch
 
 build:
   type: shared_library
   script: |
-    # The archive's contents have default permission 0750. If we use docker
-    # to build, then we will not own the contents in the host, which means
-    # we cannot navigate into the folder. Setting it to 0750 makes it
-    # easier to debug.
-    # chmod -R o+rx .
-
-    # In CLAPACK's Makefiles, some commands are mistakenly (?) hardcoded
-    # instead of using the right variables
-    # sed -i 's/^	-ranlib /^	$(RANLIB)/' **/Makefile
-    # sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
-    # sed -i 's/^	ld /^	$(LD)/' **/Makefile
-
-    make CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0
+    pwd
+    which emcc
+    which gcc
+    make -d CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0
     # mkdir -p dist
     # emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o dist/clapack_all.so
     # mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
