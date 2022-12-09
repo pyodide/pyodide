@@ -92,7 +92,7 @@ importlib.invalidate_caches()
 del importlib
 `;
   let [errcode, captured_stderr] = Module.API.rawRun(code);
-  if(errcode){
+  if (errcode) {
     Module.API.fatal_loading_error(
       "Failed to unpack standard library.\n",
       captured_stderr,
@@ -347,7 +347,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
   API.rawRun("import _pyodide_core");
-
 
   const pyodide = finalizeBootstrap(API, config);
 

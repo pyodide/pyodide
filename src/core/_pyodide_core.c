@@ -1,14 +1,14 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include <stdbool.h>
 #include "hiwire.h"
 #include "python2js.h"
 #include <emscripten.h>
+#include <stdbool.h>
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
     PyErr_Format(PyExc_ImportError, args);                                     \
-    FAIL();                                                                     \
+    FAIL();                                                                    \
   } while (0)
 
 #define FAIL_IF_STATUS_EXCEPTION(status)                                       \
@@ -82,7 +82,7 @@ PyInit__pyodide_core(void)
   success = true;
 finally:
   Py_CLEAR(_pyodide);
-  if(!success) {
+  if (!success) {
     Py_CLEAR(core_module);
   }
   return core_module;

@@ -1,15 +1,13 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <assert.h>
-#include <stdbool.h>
 #include <emscripten.h>
-
+#include <stdbool.h>
 
 #define FAIL_IF_STATUS_EXCEPTION(status)                                       \
   if (PyStatus_Exception(status)) {                                            \
     goto finally;                                                              \
   }
-
 
 // Initialize python. exit() and print message to stderr on failure.
 static void
@@ -68,7 +66,6 @@ main(int argc, char** argv)
   emscripten_exit_with_live_runtime();
   return 0;
 }
-
 
 void
 pymain_run_python(int* exitcode);
