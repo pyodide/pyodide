@@ -43,24 +43,27 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	rm tmp.dat
 	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
 
-dist/pyodide.asm.js: \
+dist/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
 	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
-	src/core/main.o  \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/core/pyodide_pre.o \
+	src/core/pyodide_pre.o
+	emar -o dist/libpyodide.a $(filter %.o,$^) 
+
+
+dist/pyodide.asm.js: \
+	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
-	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
-		$(MAIN_MODULE_LDFLAGS)
+	$(CXX) -o dist/libpyodide.a main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
