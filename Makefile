@@ -26,6 +26,23 @@ all: check \
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
+src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
+	rm -f tmp.dat
+	echo '()<::>{' >> tmp.dat
+	cat src/js/_pyodide.out.js >> tmp.dat
+	echo '}' >> tmp.dat
+	cat src/core/pre.js >> tmp.dat
+	echo "pyodide_js_init();" >> tmp.dat
+	
+	rm -f src/core/pyodide_pre.gen.c
+	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' > src/core/pyodide_pre.gen.c
+	echo 'char __em_js__pyodide_js_init[] = {'  > src/core/pyodide_pre.gen.c
+	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
+	echo ', 0};' >> src/core/pyodide_pre.gen.c
+
+	rm tmp.dat
+	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
+
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
@@ -37,7 +54,7 @@ dist/pyodide.asm.js: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/js/_pyodide.out.js \
+	src/core/pyodide_pre.o \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
