@@ -1,6 +1,5 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include <assert.h>
 #include <emscripten.h>
 #include <stdbool.h>
 
