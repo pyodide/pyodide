@@ -252,7 +252,7 @@ export function setStdout({
   batched?: (a: string) => void;
   raw?: (a: number) => void;
   isatty?: boolean;
-}) {
+} = {}) {
   if (raw) {
     isattys.stdout = !!isatty;
     Object.assign(ttyout_ops, make_unbatched_put_char(raw));
@@ -300,7 +300,7 @@ export function setStderr({
   batched?: (a: string) => void;
   raw?: (a: number) => void;
   isatty?: boolean;
-}) {
+} = {}) {
   if (raw) {
     isattys.stderr = !!isatty;
     Object.assign(ttyerr_ops, make_unbatched_put_char(raw));
