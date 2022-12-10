@@ -21,7 +21,7 @@ source:
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-loadDynamicLibrary-flapack.patch
-    - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
+    # - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
     - patches/0004-int-to-string.patch
     - patches/0005-fix-fotran-files-minpack.patch
     - patches/0006-gemm_-no-const.patch
