@@ -128,15 +128,6 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build openblas
-        shell: bash -l {0}
-        run: |
-          # This is necessary to use the ccache from emsdk
-          source pyodide_env.sh
-          ccache -z
-          PYODIDE_PACKAGES="openblas" make
-          ccache -s
-
       - name: build Pyodide core + numpy
         shell: bash -l {0}
         run: |
