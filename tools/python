@@ -102,8 +102,8 @@ async function main() {
         // arguments that is invalid in some way, we will exit here.
         process.exit(e.status);
     }
-    py.setDefaultStdout();
-    py.setDefaultStderr();
+    py.setStdout();
+    py.setStderr();
     let sideGlobals = py.runPython("{}");
     function handleExit(code) {
         if (code === undefined) {
