@@ -262,11 +262,14 @@ substitutions:
   pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
   gdal, fiona, geopandas {pr}`3213`,
   the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
+  gensim {pr}`3326`, smart_open {pr}`3326`,
 
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
 
 - {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
+
+- {{ Update }} Upgraded packages: scikit-learn (1.1.3), {pr}`3324`
 
 ## Version 0.21.3
 
