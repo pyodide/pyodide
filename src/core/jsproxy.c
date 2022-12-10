@@ -3485,6 +3485,7 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
+    methods[cur_method++] = JsGenerator_send_MethodDef;
   }
 
   // Async iterator methods
@@ -3494,7 +3495,6 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsGenerator_anext };
     // Send works okay on any js object that has a "next" method
-    methods[cur_method++] = JsGenerator_send_MethodDef;
     methods[cur_method++] = JsGenerator_asend_MethodDef;
   }
   if (flags & IS_GENERATOR) {
