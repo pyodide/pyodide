@@ -70,8 +70,8 @@ build:
     #   zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
     # >>  ../../scipy/linalg/lapack_extras.f
     # cd ../..
-    sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
-    sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
+    # sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
+    # sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
