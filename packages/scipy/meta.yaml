@@ -54,6 +54,9 @@ build:
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
 
     pip install -t $HOSTSITEPACKAGES pythran
+    # TODO do I need the additional functions from LAPACK? It seems like
+    # obj-wasmdump libopenblas.so show some of these functions but not 100%
+    # sure
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     # wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
@@ -66,10 +69,10 @@ build:
     #   sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
     #   zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
     # >>  ../../scipy/linalg/lapack_extras.f
-    # cd ../..
-    # sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
-    # sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
-    # sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
+    cd ../..
+    sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
+    sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
+    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
