@@ -19,6 +19,6 @@ build:
     mkdir -p dist
     cp libopenblas.so dist/
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
-    # TODO do I need include as in CLAPACK?
-    # cp -r INCLUDE/* ${WASM_LIBRARY_DIR}/include
+    # TODO not sure which .h are needed, copying all of them for now
+    cp *.h ${WASM_LIBRARY_DIR}/include
     cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib
