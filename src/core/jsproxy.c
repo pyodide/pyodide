@@ -60,6 +60,7 @@
 #define IS_ASYNC_ITERABLE (1 << 15)
 #define IS_GENERATOR (1 << 16)
 #define IS_ASYNC_GENERATOR (1 << 17)
+#define IS_ASYNC_ITERATOR   (1<<18)
 
 // clang-format on
 
@@ -3446,7 +3447,8 @@ JsProxy_create_subtype(int flags)
     goto skip_container_slots;
   }
 
-  if (flags & IS_ITERABLE) {
+  if ((flags & IS_ITERABLE) && !(flags & IS_ITERATOR)) {
+    // If it is an iterator we should use SelfIter instead.
     if (mapping) {
       // Prefer `obj.keys()` over `obj[Symbol.iterator]()`
       slots[cur_slot++] =
@@ -3457,11 +3459,21 @@ JsProxy_create_subtype(int flags)
         (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
     }
   }
-  if (flags & IS_ASYNC_ITERABLE) {
+  if ((flags & IS_ASYNC_ITERABLE) && !(flags & IS_ASYNC_ITERATOR)) {
     // This uses `obj[Symbol.asyncIterator]()`
+    // If it is an iterator we should use SelfIter instead.
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_am_aiter,
                                        .pfunc = (void*)JsProxy_GetAsyncIter };
   }
+
+  // If it's an iterator, we aren't sure whether it is an async iterator or a
+  // sync iterator -- they both define a next method, you have to see whether
+  // the result is  a promise or not to learn whether we are async. But most
+  // iterators also define `Symbol.iterator` to return themself, and most async
+  // iterators define `Symbol.asyncIterator` to return themself. So if one of
+  // these is defined but not the other, we use this to decide what type we are.
+
+  // Iterator methods
   if (flags & IS_ITERATOR) {
     // We're not sure whether it is an async iterator or a sync iterator. So add
     // both methods and raise at runtime if someone uses the wrong one.
@@ -3473,6 +3485,10 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
+  }
+
+  // Async iterator methods
+  if (flags & IS_ASYNC_ITERATOR) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
@@ -3733,7 +3749,8 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
   SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
   SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
-  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function')
+  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] === 'function' || typeof obj[Symbol.asyncIterator] !== 'function') );
+  SET_FLAG_IF(IS_ASYNC_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] !== 'function' || typeof obj[Symbol.asyncIterator] === 'function') );
   SET_FLAG_IF(HAS_LENGTH,
     (typeof obj.size === "number") ||
     (typeof obj.length === "number" && typeof obj !== "function"));
