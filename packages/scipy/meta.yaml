@@ -50,26 +50,26 @@ build:
   script: |
     set -x
     export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
-    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/clapack_all.so"
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
 
     pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
-    wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
-    tar xzf v3.10.0.tar.gz
-    cd lapack-3.10.0/SRC
+    # wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
+    # tar xzf v3.10.0.tar.gz
+    # cd lapack-3.10.0/SRC
 
-    cat \
-      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f cuncsd.f \
-      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f dorcsd.f \
-      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
-      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
-    >>  ../../scipy/linalg/lapack_extras.f
-    cd ../..
-    sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
-    sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
-    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
+    # cat \
+    #   cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f cuncsd.f \
+    #   dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f dorcsd.f \
+    #   sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
+    #   zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
+    # >>  ../../scipy/linalg/lapack_extras.f
+    # cd ../..
+    # sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
+    # sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
+    # sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
@@ -110,10 +110,10 @@ build:
 requirements:
   host:
     - numpy
-    - CLAPACK
+    - openblas
   run:
     - numpy
-    - CLAPACK
+    - openblas
   executable:
     - gfortran
     - f2c
