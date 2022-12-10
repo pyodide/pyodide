@@ -41,8 +41,7 @@ class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
 
 
-# We need this to look up the flags
-_core_dict: dict[str, Any] = {}
+_js_flags: dict[str, int] = {}
 
 
 def _binor_reduce(l: Iterable[int]) -> int:
@@ -50,7 +49,7 @@ def _binor_reduce(l: Iterable[int]) -> int:
 
 
 def _process_flag_expression(e: str) -> int:
-    return _binor_reduce(_core_dict[x.strip()] for x in e.split("|"))
+    return _binor_reduce(_js_flags[x.strip()] for x in e.split("|"))
 
 
 class _JsProxyMetaClass(type):
@@ -70,8 +69,8 @@ class _JsProxyMetaClass(type):
         if not hasattr(subclass, "_js_type_flags"):
             return False
         # For the "synthetic" subtypes defined in this file, we define
-        # _js_type_flags as a string. To convert it to the correct value, we
-        # exec it in the _core_dict context.
+        # _js_type_flags as a string. We look these up in the _js_flags dict to
+        # convert to a number.
         cls_flags = cls._js_type_flags  # type:ignore[attr-defined]
         if isinstance(cls_flags, int):
             cls_flags = [cls_flags]
@@ -80,7 +79,7 @@ class _JsProxyMetaClass(type):
 
         subclass_flags = subclass._js_type_flags
         if not isinstance(subclass_flags, int):
-            subclass_flags = _binor_reduce(_core_dict[f] for f in subclass_flags)
+            subclass_flags = _binor_reduce(_js_flags[f] for f in subclass_flags)
 
         return any(cls_flag & subclass_flags == cls_flag for cls_flag in cls_flags)
 
