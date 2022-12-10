@@ -11,14 +11,11 @@ source:
 build:
   type: shared_library
   script: |
-    pwd
+    # seems like .zip does not maintain executable flags, need to reset these
     chmod u+x c_check
     chmod u+x f_check
-    which emcc
-    which gcc
-    echo before make
+    chmod u+x exports/gensymbol
     make CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0
-    echo after make
     # mkdir -p dist
     # emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o dist/clapack_all.so
     # mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
