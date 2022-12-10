@@ -43,6 +43,8 @@ declare var IS_AWAITABLE: number;
 declare var IS_BUFFER: number;
 declare var IS_ASYNC_ITERABLE: number;
 declare var IS_ASYNC_ITERATOR: number;
+declare var IS_GENERATOR: number;
+declare var IS_ASYNC_GENERATOR: number;
 
 declare var PYGEN_NEXT: number;
 declare var PYGEN_RETURN: number;
@@ -174,6 +176,9 @@ function pyproxy_new(
 ): PyProxy {
   const flags =
     flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
+  if (flags === -1) {
+    Module._pythonexc2js();
+  }
   const cls = Module.getPyProxyClass(flags);
   let target;
   if (flags & IS_CALLABLE) {
@@ -272,6 +277,7 @@ Module.getPyProxyClass = function (flags: number) {
     [HAS_SET, PyProxySetItemMethods],
     [HAS_CONTAINS, PyProxyContainsMethods],
     [IS_ITERABLE, PyProxyIterableMethods],
+    [IS_GENERATOR, PyProxyGeneratorMethods],
     [IS_ITERATOR, PyProxyIteratorMethods],
     [IS_ASYNC_ITERABLE, PyProxyAsyncIterableMethods],
     [IS_ASYNC_ITERATOR, PyProxyAsyncIteratorMethods],
@@ -1061,6 +1067,74 @@ export class PyProxyAsyncIteratorMethods {
       p.destroy();
     }
     return { done: false, value };
+  }
+}
+
+export class PyProxyGeneratorMethods {
+  throw(exc: any) {
+    let idarg = Hiwire.new_value(exc);
+    let status;
+    let done;
+    let stackTop = Module.stackSave();
+    let res_ptr = Module.stackAlloc(4);
+    try {
+      Py_ENTER();
+      status = Module.__pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    } finally {
+      Hiwire.decref(idarg);
+    }
+    let idresult = DEREF_U32(res_ptr, 0);
+    Module.stackRestore(stackTop);
+    if (status === PYGEN_ERROR) {
+      Module._pythonexc2js();
+    }
+    let value = Hiwire.pop_value(idresult);
+    done = status === PYGEN_RETURN;
+    return { done, value };
+  }
+
+  /**
+   * This translates to the Python code ``gen.throw(StopIteration, value)``. Returns the next value of
+   * the generator. See the documentation for `Generator.prototype.return
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
+   * The return value will be sent to the Python generator.
+   *
+   * Present only if the proxied Python object is a generator.
+   *
+   * @param any The value to return from the generator.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * generator yields ``some_value``, ``return`` returns ``{done : false, value :
+   * some_value}``. When the generator raises a ``StopIteration(result_value)``
+   * exception, ``return`` returns ``{done : true, value : result_value}``.
+   */
+  return(v: any): IteratorResult<any, any> {
+    // Note: arg is optional, if arg is not supplied, it will be undefined
+    // which gets converted to "Py_None". This is as intended.
+    let idarg = Hiwire.new_value(v);
+    let status;
+    let done;
+    let stackTop = Module.stackSave();
+    let res_ptr = Module.stackAlloc(4);
+    try {
+      Py_ENTER();
+      status = Module.__pyproxyGen_return(_getPtr(this), idarg, res_ptr);
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    } finally {
+      Hiwire.decref(idarg);
+    }
+    let idresult = DEREF_U32(res_ptr, 0);
+    Module.stackRestore(stackTop);
+    if (status === PYGEN_ERROR) {
+      Module._pythonexc2js();
+    }
+    let value = Hiwire.pop_value(idresult);
+    done = status === PYGEN_RETURN;
+    return { done, value };
   }
 }
 

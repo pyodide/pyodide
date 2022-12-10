@@ -372,7 +372,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         elif fmt == "f" or fmt == "d":
             from math import isclose, isnan
 
-            for a, b in zip(result, list(mv.cast(fmt))):
+            for a, b in zip(result, list(mv.cast(fmt)), strict=False):
                 if a and b and not (isnan(a) or isnan(b)):
                     assert isclose(a, b)
         else:
@@ -1086,6 +1086,138 @@ def test_gen(selenium):
         {"done": False, "value": 6},
         {"done": True, "value": None},
     ]
+
+
+@run_in_pyodide
+def test_gen_return(selenium):
+    from pyodide.code import run_js
+
+    def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            return r;
+        }
+    """
+    )(g1())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 5}]
+
+    def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3  # noqa: B901
+            return 5  # noqa: B012, B901
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            r.push(g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": 5},
+    ]
+
+    def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return 3  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 3}]
+
+
+@run_in_pyodide
+def test_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        (g) => {
+            g.next();
+            g.throw(new TypeError('hi'));
+        }
+    """
+    )
+    with pytest.raises(JsException, match="hi"):
+        p(g1())
+
+    def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3
+            return 5  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.throw(new TypeError('hi')));
+            r.push(g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": 5},
+    ]
+
+    def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return 3  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.throw(new TypeError('hi')));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 3}]
 
 
 @run_in_pyodide
