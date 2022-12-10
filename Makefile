@@ -35,8 +35,8 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	echo "pyodide_js_init();" >> tmp.dat
 
 	rm -f src/core/pyodide_pre.gen.c
-	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' > src/core/pyodide_pre.gen.c
-	echo 'char __em_js__pyodide_js_init[] = {'  > src/core/pyodide_pre.gen.c
+	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' >> src/core/pyodide_pre.gen.c
+	echo 'char __em_js__pyodide_js_init[] = {'  >> src/core/pyodide_pre.gen.c
 	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
 	echo ', 0};' >> src/core/pyodide_pre.gen.c
 
