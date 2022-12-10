@@ -112,13 +112,13 @@ API.initializeStreams = function (
 ) {
   setStdin({ stdin });
   if (stdout) {
-    setStdout({ batched: stdout});
+    setStdout({ batched: stdout });
   } else {
     setDefaultStdout();
   }
 
   if (stderr) {
-    setStderr({batched: stderr});
+    setStderr({ batched: stderr });
   } else {
     setDefaultStderr();
   }
@@ -200,14 +200,16 @@ function setStdinError() {
  * text.
  *
  */
-export function setStdin(
-  { stdin, isatty, error }: {stdin?: InFuncType, error?: boolean, isatty?: boolean } = {},
-) {
-  if(error) {
+export function setStdin({
+  stdin,
+  isatty,
+  error,
+}: { stdin?: InFuncType; error?: boolean; isatty?: boolean } = {}) {
+  if (error) {
     setStdinError();
     return;
   }
-  if(stdin) {
+  if (stdin) {
     isattys.stdin = !!isatty;
     const get_char = make_get_char(stdin);
     ttyout_ops.get_char = get_char;
@@ -228,9 +230,9 @@ export function setDefaultStdout() {
     const tty = require("tty");
     const raw = (x: number) => process.stdout.write(Buffer.from([x]));
     const isatty: boolean = tty.isatty(process.stdout.fd);
-    setStdout({raw, isatty });
+    setStdout({ raw, isatty });
   } else {
-    setStdout({batched: (x) => console.log(x)});
+    setStdout({ batched: (x) => console.log(x) });
   }
 }
 
@@ -242,14 +244,22 @@ export function setDefaultStdout() {
  * isatty(stdout) is set to false (this API buffers stdout so it is impossible
  * to make a tty with it).
  */
-export function setStdout({batched, raw, isatty } : { batched? : (a: string) => void, raw? : (a: number) => void, isatty?: boolean}) {
-  if(raw) {
+export function setStdout({
+  batched,
+  raw,
+  isatty,
+}: {
+  batched?: (a: string) => void;
+  raw?: (a: number) => void;
+  isatty?: boolean;
+}) {
+  if (raw) {
     isattys.stdout = !!isatty;
     Object.assign(ttyout_ops, make_unbatched_put_char(raw));
     refreshStreams();
     return;
   }
-  if(batched) {
+  if (batched) {
     isattys.stdout = false;
     Object.assign(ttyout_ops, make_batched_put_char(batched));
     refreshStreams();
@@ -268,9 +278,9 @@ function setDefaultStderr() {
     const tty = require("tty");
     const raw = (x: number) => process.stderr.write(Buffer.from([x]));
     const isatty: boolean = tty.isatty(process.stderr.fd);
-    setStderr({raw, isatty });
+    setStderr({ raw, isatty });
   } else {
-    setStderr({batched: (x) => console.warn(x)});
+    setStderr({ batched: (x) => console.warn(x) });
   }
 }
 
@@ -282,14 +292,22 @@ function setDefaultStderr() {
  * isatty(stderr) is set to false (this API buffers stderr so it is impossible
  * to make a tty with it).
  */
-export function setStderr({batched, raw, isatty } : { batched? : (a: string) => void, raw? : (a: number) => void, isatty?: boolean}) {
-  if(raw) {
+export function setStderr({
+  batched,
+  raw,
+  isatty,
+}: {
+  batched?: (a: string) => void;
+  raw?: (a: number) => void;
+  isatty?: boolean;
+}) {
+  if (raw) {
     isattys.stderr = !!isatty;
     Object.assign(ttyerr_ops, make_unbatched_put_char(raw));
     refreshStreams();
     return;
   }
-  if(batched) {
+  if (batched) {
     isattys.stderr = false;
     Object.assign(ttyerr_ops, make_batched_put_char(batched));
     refreshStreams();
@@ -297,7 +315,6 @@ export function setStderr({batched, raw, isatty } : { batched? : (a: string) => 
   }
   setDefaultStderr();
 }
-
 
 const textencoder = new TextEncoder();
 const textdecoder = new TextDecoder();
