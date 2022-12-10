@@ -71,6 +71,6 @@ export default [
     input: "api",
     output: "src/js/_pyodide.out.js",
     format: "iife",
-    minify: true,
+    minify: false,
   },
 ].map(config);
