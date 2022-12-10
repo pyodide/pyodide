@@ -10,11 +10,7 @@ import { loadBinaryFile } from "./compat";
 import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
-import {
-  setStdin,
-  setStdout,
-  setStderr,
-} from "./streams";
+import { setStdin, setStdout, setStderr } from "./streams";
 
 API.loadBinaryFile = loadBinaryFile;
 
