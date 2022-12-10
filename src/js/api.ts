@@ -517,15 +517,9 @@ export type PyodideInterface = {
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
-  setDefaultStdin: typeof setDefaultStdin;
   setStdin: typeof setStdin;
-  setStdinError: typeof setStdinError;
-  setDefaultStdout: typeof setDefaultStdout;
   setStdout: typeof setStdout;
-  setRawStdout: typeof setRawStdout;
-  setDefaultStderr: typeof setDefaultStderr;
   setStderr: typeof setStderr;
-  setRawStderr: typeof setRawStderr;
 };
 
 /**

@@ -1153,9 +1153,9 @@ def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
             assert not sys.stdout.isatty()
             assert not sys.stderr.isatty()
         `);
-        pyodide.setDefaultStdin();
-        pyodide.setDefaultStdout();
-        pyodide.setDefaultStderr();
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
         pyodide.runPython(`
             import sys
             assert sys.stdin.isatty() is {IN_NODE}
@@ -1172,23 +1172,23 @@ def test_custom_stdin_stdout2(selenium):
         function stdin(){
             return "hello there!\\nThis is a several\\nline\\nstring";
         }
-        pyodide.setStdin(stdin);
+        pyodide.setStdin({stdin});
         pyodide.runPython(`
             import sys
             assert sys.stdin.read(1) == "h"
             assert not sys.stdin.isatty()
         `);
-        pyodide.setStdin(stdin, {isatty: false});
+        pyodide.setStdin({stdin, isatty: false});
         pyodide.runPython(`
             import sys
             assert sys.stdin.read(1) == "e"
         `);
-        pyodide.setDefaultStdout();
+        pyodide.setStdout();
         pyodide.runPython(`
             assert sys.stdin.read(1) == "l"
             assert not sys.stdin.isatty()
         `);
-        pyodide.setStdin(stdin, {isatty: true});
+        pyodide.setStdin({stdin, isatty: true});
         pyodide.runPython(`
             assert sys.stdin.read(1) == "l"
             assert sys.stdin.isatty()
@@ -1198,21 +1198,21 @@ def test_custom_stdin_stdout2(selenium):
         function rawstdout(code) {
             stdout_codes.push(code);
         }
-        pyodide.setRawStdout(rawstdout);
+        pyodide.setStdout({raw: rawstdout});
         pyodide.runPython(`
             print("hello")
             assert sys.stdin.read(1) == "o"
             assert not sys.stdout.isatty()
             assert sys.stdin.isatty()
         `);
-        pyodide.setRawStdout(rawstdout, {isatty: false});
+        pyodide.setStdout({raw: rawstdout, isatty: false});
         pyodide.runPython(`
             print("2hello again")
             assert sys.stdin.read(1) == " "
             assert not sys.stdout.isatty()
             assert sys.stdin.isatty()
         `);
-        pyodide.setRawStdout(rawstdout, {isatty: true});
+        pyodide.setStdout({raw: rawstdout, isatty: true});
         pyodide.runPython(`
             print("3hello")
             assert sys.stdin.read(1) == "t"
@@ -1227,9 +1227,9 @@ def test_custom_stdin_stdout2(selenium):
             sys.stdout.flush()
         `);
         let result2 = new TextDecoder().decode(new Uint8Array(stdout_codes));
-        pyodide.setDefaultStdin();
-        pyodide.setDefaultStdout();
-        pyodide.setDefaultStderr();
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
         return [result1, result2];
         """
     )

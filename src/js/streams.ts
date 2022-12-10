@@ -110,20 +110,15 @@ API.initializeStreams = function (
   stdout?: (a: string) => void,
   stderr?: (a: string) => void,
 ) {
-  let stdin_isatty = false;
-  if (stdin) {
-    setStdin(stdin, { isatty: stdin_isatty });
-  } else {
-    setDefaultStdin();
-  }
+  setStdin({ stdin });
   if (stdout) {
-    setStdout(stdout);
+    setStdout({ batched: stdout});
   } else {
     setDefaultStdout();
   }
 
   if (stderr) {
-    setStderr(stderr);
+    setStderr({batched: stderr});
   } else {
     setDefaultStderr();
   }
@@ -143,7 +138,7 @@ API.initializeStreams = function (
  * and isatty(stdin) will be set to tty.isatty(process.stdin.fd).
  * If in a browser, this calls setStdinError.
  */
-export function setDefaultStdin() {
+function setDefaultStdin() {
   if (IN_NODE) {
     const BUFSIZE = 256;
     const buf = Buffer.alloc(BUFSIZE);
@@ -179,7 +174,7 @@ export function setDefaultStdin() {
  * Sets isatty(stdin) to false and makes reading from stdin always set an EIO
  * error.
  */
-export function setStdinError() {
+function setStdinError() {
   isattys.stdin = false;
   const get_char = () => {
     throw 0;
@@ -206,14 +201,21 @@ export function setStdinError() {
  *
  */
 export function setStdin(
-  stdin: InFuncType,
-  { isatty }: { isatty?: boolean } = {},
+  { stdin, isatty, error }: {stdin?: InFuncType, error?: boolean, isatty?: boolean } = {},
 ) {
-  isattys.stdin = !!isatty;
-  const get_char = make_get_char(stdin);
-  ttyout_ops.get_char = get_char;
-  ttyerr_ops.get_char = get_char;
-  refreshStreams();
+  if(error) {
+    setStdinError();
+    return;
+  }
+  if(stdin) {
+    isattys.stdin = !!isatty;
+    const get_char = make_get_char(stdin);
+    ttyout_ops.get_char = get_char;
+    ttyerr_ops.get_char = get_char;
+    refreshStreams();
+    return;
+  }
+  setDefaultStdin();
 }
 
 /**
@@ -224,11 +226,11 @@ export function setStdin(
 export function setDefaultStdout() {
   if (IN_NODE) {
     const tty = require("tty");
-    const rawstdout = (x: number) => process.stdout.write(Buffer.from([x]));
+    const raw = (x: number) => process.stdout.write(Buffer.from([x]));
     const isatty: boolean = tty.isatty(process.stdout.fd);
-    setRawStdout(rawstdout, { isatty });
+    setStdout({raw, isatty });
   } else {
-    setStdout((x) => console.log(x));
+    setStdout({batched: (x) => console.log(x)});
   }
 }
 
@@ -240,24 +242,20 @@ export function setDefaultStdout() {
  * isatty(stdout) is set to false (this API buffers stdout so it is impossible
  * to make a tty with it).
  */
-export function setStdout(stdout: (a: string) => void) {
-  isattys.stdout = false;
-  Object.assign(ttyout_ops, make_batched_put_char(stdout));
-  refreshStreams();
-}
-
-/**
- * Sets stdout to call `stdout(character_code)` whenever a character is written
- * to stdout.
- * Also sets isatty(stdout) to the value of the isatty argument (default false).
- */
-export function setRawStdout(
-  rawstdout: (a: number) => void,
-  { isatty }: { isatty?: boolean } = {},
-) {
-  isattys.stdout = !!isatty;
-  Object.assign(ttyout_ops, make_unbatched_put_char(rawstdout));
-  refreshStreams();
+export function setStdout({batched, raw, isatty } : { batched? : (a: string) => void, raw? : (a: number) => void, isatty?: boolean}) {
+  if(raw) {
+    isattys.stdout = !!isatty;
+    Object.assign(ttyout_ops, make_unbatched_put_char(raw));
+    refreshStreams();
+    return;
+  }
+  if(batched) {
+    isattys.stdout = false;
+    Object.assign(ttyout_ops, make_batched_put_char(batched));
+    refreshStreams();
+    return;
+  }
+  setDefaultStdout();
 }
 
 /**
@@ -265,14 +263,14 @@ export function setRawStdout(
  * to tty.isatty(process.stderr.fd).
  * If in a browser, sets stderr to write to console.warn and sets isatty(stderr) to false.
  */
-export function setDefaultStderr() {
+function setDefaultStderr() {
   if (IN_NODE) {
     const tty = require("tty");
-    const rawstderr = (x: number) => process.stderr.write(Buffer.from([x]));
+    const raw = (x: number) => process.stderr.write(Buffer.from([x]));
     const isatty: boolean = tty.isatty(process.stderr.fd);
-    setRawStderr(rawstderr, { isatty });
+    setRawStderr({raw, isatty });
   } else {
-    setStderr((x) => console.warn(x));
+    setStderr({batched: (x) => console.warn(x)});
   }
 }
 
@@ -284,25 +282,22 @@ export function setDefaultStderr() {
  * isatty(stderr) is set to false (this API buffers stderr so it is impossible
  * to make a tty with it).
  */
-export function setStderr(stderr: (a: string) => void) {
-  isattys.stderr = false;
-  Object.assign(ttyerr_ops, make_batched_put_char(stderr));
-  refreshStreams();
+export function setStderr({batched, raw, isatty } : { batched? : (a: string) => void, raw? : (a: number) => void, isatty?: boolean}) {
+  if(raw) {
+    isattys.stderr = !!isatty;
+    Object.assign(ttyerr_ops, make_unbatched_put_char(raw));
+    refreshStreams();
+    return;
+  }
+  if(batched) {
+    isattys.stderr = false;
+    Object.assign(ttyerr_ops, make_batched_put_char(batched));
+    refreshStreams();
+    return;
+  }
+  setDefaultStderr();
 }
 
-/**
- * Sets stderr to call `stderr(character_code)` whenever a character is written
- * to stderr.
- * Also sets isatty(stderr) to the value of the isatty argument (default false).
- */
-export function setRawStderr(
-  rawstderr: (a: number) => void,
-  { isatty }: { isatty?: boolean } = {},
-) {
-  isattys.stderr = !!isatty;
-  Object.assign(ttyerr_ops, make_unbatched_put_char(rawstderr));
-  refreshStreams();
-}
 
 const textencoder = new TextEncoder();
 const textdecoder = new TextDecoder();
