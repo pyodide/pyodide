@@ -115,7 +115,7 @@ substitutions:
   {any}`setStdout <pyodide.setStdout>`, {any}`setStderr <pyodide.setStderr>` for
   changing the stream handlers after loading Pyodide. Also added more careful
   control over whether `isatty` returns true or false on stdin, stdout, and
-  stderr. 
+  stderr.
   {pr}`3268`
 
 - {{ Fix }} Fix undefined symbol error when loading shared library

@@ -164,7 +164,7 @@ function setDefaultStdin() {
       return buf.subarray(0, bytesRead);
     };
     const isatty: boolean = tty.isatty(process.stdin.fd);
-    setStdin(stdin, { isatty });
+    setStdin({ stdin, isatty });
   } else {
     setStdinError();
   }
@@ -268,7 +268,7 @@ function setDefaultStderr() {
     const tty = require("tty");
     const raw = (x: number) => process.stderr.write(Buffer.from([x]));
     const isatty: boolean = tty.isatty(process.stderr.fd);
-    setRawStderr({raw, isatty });
+    setStderr({raw, isatty });
   } else {
     setStderr({batched: (x) => console.warn(x)});
   }

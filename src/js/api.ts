@@ -11,15 +11,9 @@ import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 import {
-  setDefaultStdin,
-  setStdinError,
   setStdin,
-  setDefaultStdout,
   setStdout,
-  setRawStdout,
-  setDefaultStderr,
   setStderr,
-  setRawStderr,
 } from "./streams";
 
 API.loadBinaryFile = loadBinaryFile;
@@ -586,15 +580,9 @@ API.makePublicAPI = function (): PyodideInterface {
     PyBuffer,
     _module: Module,
     _api: API,
-    setDefaultStdin,
     setStdin,
-    setStdinError,
-    setDefaultStdout,
     setStdout,
-    setRawStdout,
-    setDefaultStderr,
     setStderr,
-    setRawStderr,
   };
 
   API.public_api = namespace;
