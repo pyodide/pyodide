@@ -33,7 +33,7 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	echo '}' >> tmp.dat
 	cat src/core/pre.js >> tmp.dat
 	echo "pyodide_js_init();" >> tmp.dat
-	
+
 	rm -f src/core/pyodide_pre.gen.c
 	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' > src/core/pyodide_pre.gen.c
 	echo 'char __em_js__pyodide_js_init[] = {'  > src/core/pyodide_pre.gen.c
@@ -54,7 +54,7 @@ dist/libpyodide.a: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o
-	emar -o dist/libpyodide.a $(filter %.o,$^) 
+	emar -o dist/libpyodide.a $(filter %.o,$^)
 
 
 dist/pyodide.asm.js: \
