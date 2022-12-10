@@ -1,0 +1,21 @@
+package:
+  name: gensim
+  version: 4.2.0
+  top-level:
+    - gensim
+source:
+  url: https://files.pythonhosted.org/packages/24/97/2197f018ee9f8ce2f071b2d9c6711c76159aead710f8d24a2bf006082a28/gensim-4.2.0.tar.gz
+  sha256: 995ebd2970a31d47c100aaac10212f47e2bf12e2b06536d38883c951ff34eef1
+  patches:
+    - patches/builtins.patch
+requirements:
+  run:
+    - numpy
+    - scipy
+    - six
+    - smart_open
+about:
+  home: http://radimrehurek.com/gensim
+  PyPI: https://pypi.org/project/gensim
+  summary: Python framework for fast Vector Space Modelling
+  license: LGPL-2.1-only
