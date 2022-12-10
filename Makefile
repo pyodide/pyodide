@@ -54,7 +54,7 @@ dist/libpyodide.a: \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o
-	emar -o dist/libpyodide.a $(filter %.o,$^)
+	emar rcs dist/libpyodide.a $(filter %.o,$^)
 
 
 dist/pyodide.asm.js: \
