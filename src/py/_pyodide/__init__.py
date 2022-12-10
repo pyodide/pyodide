@@ -1,7 +1,5 @@
 # _pyodide is imported at the very beginning of the initialization process so it
-# cannot import from js, pyodide_js, or _pyodide_core. The one class here that
-# does use such functions is JsFinder which requires access to
-# _pyodide_core.JsProxy.
+# cannot import from js, pyodide_js, or _pyodide_core.
 #
 # register_js_finder is called from pyodide.js after _pyodide_core is completely
 # initialized.

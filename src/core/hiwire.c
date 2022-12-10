@@ -453,10 +453,17 @@ EM_JS_REF(JsRef, hiwire_CallMethod, (JsRef idobj, JsRef name, JsRef idargs), {
   return Hiwire.new_value(jsobj[jsname](... jsargs));
 });
 
+EM_JS_REF(JsRef, hiwire_CallMethod_NoArgs, (JsRef idobj, JsRef name), {
+  let jsobj = Hiwire.get_value(idobj);
+  let jsname = Hiwire.get_value(name);
+  return Hiwire.new_value(jsobj[jsname]());
+});
+
 // clang-format off
-EM_JS_REF(JsRef,
-          hiwire_CallMethod_OneArg,
-          (JsRef idobj, JsRef name, JsRef idarg),
+EM_JS_REF(
+JsRef,
+hiwire_CallMethod_OneArg,
+(JsRef idobj, JsRef name, JsRef idarg),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jsname = Hiwire.get_value(name);
@@ -495,6 +502,16 @@ hiwire_CallMethodId_va(JsRef idobj, Js_Identifier* name, ...)
   JsRef idresult = hiwire_CallMethodId(idobj, name, idargs);
   hiwire_decref(idargs);
   return idresult;
+}
+
+JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name)
+{
+  JsRef name_ref = JsString_FromId(name);
+  if (name_ref == NULL) {
+    return NULL;
+  }
+  return hiwire_CallMethod_NoArgs(obj, name_ref);
 }
 
 JsRef
@@ -607,7 +624,7 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   }
   // We want to return false on container types with size 0.
   if (val.size === 0) {
-    if(/HTML[A-Za-z]*Element/.test(Object.prototype.toString.call(val))){
+    if(/HTML[A-Za-z]*Element/.test(getTypeTag(val))){
       // HTMLSelectElement and HTMLInputElement can have size 0 but we still
       // want to return true.
       return true;
@@ -625,13 +642,15 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_BOOL(bool, hiwire_is_pyproxy, (JsRef idobj), {
-  return API.isPyProxy(Hiwire.get_value(idobj));
-});
-
 EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Hiwire.get_value(idobj) === 'function';
+  // clang-format on
+});
+
+EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
+  // clang-format off
+  return getTypeTag(Hiwire.get_value(idobj)) === "[object Generator]";
   // clang-format on
 });
 
@@ -690,35 +709,6 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_BOOL(bool, hiwire_is_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return typeof jsobj.next === 'function';
-  // clang-format on
-});
-
-EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  let { done, value } = jsobj.next();
-  // clang-format on
-  let result_id = Hiwire.new_value(value);
-  DEREF_U32(result_ptr, 0) = result_id;
-  return done;
-});
-
-EM_JS_BOOL(bool, hiwire_is_iterable, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return typeof jsobj[Symbol.iterator] === 'function';
-  // clang-format on
-});
-
-EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(jsobj[Symbol.iterator]());
-})
-
 EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
   if (!Module._reversedIterator) {
     Module._reversedIterator = class ReversedIterator
@@ -748,13 +738,6 @@ EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
 
   return Hiwire.new_value(new Module._reversedIterator(array));
 })
-
-EM_JS_BOOL(bool, hiwire_is_typedarray, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");
-  // clang-format on
-});
 
 EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
@@ -823,7 +806,7 @@ EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
   if (Array.isArray(obj)) {
     return true;
   }
-  let typeTag = Object.prototype.toString.call(obj);
+  let typeTag = getTypeTag(obj);
   // We want to treat some standard array-like objects as Array.
   // clang-format off
   if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){

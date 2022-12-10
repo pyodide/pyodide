@@ -11,7 +11,7 @@ import {
   resolvePath,
 } from "./compat.js";
 import { createLock } from "./lock";
-import { loadDynlib } from "./dynload";
+import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy, isPyProxy } from "./pyproxy.gen";
 
 /**
@@ -288,9 +288,7 @@ async function installPackage(
     );
   }
 
-  for (const dynlib of dynlibs) {
-    await loadDynlib(dynlib, pkg.shared_library);
-  }
+  await loadDynlibsFromPackage(pkg, dynlibs);
 }
 
 /**
