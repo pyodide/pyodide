@@ -16,9 +16,9 @@ build:
     chmod u+x f_check
     chmod u+x exports/gensymbol
     make CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0
-    # mkdir -p dist
-    # emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o dist/clapack_all.so
-    # mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
-    # TODO what to do here
+    mkdir -p dist
+    cp libopenblas.so dist/
+    mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
+    # TODO do I need include as in CLAPACK?
     # cp -r INCLUDE/* ${WASM_LIBRARY_DIR}/include
-    # cp dist/clapack_all.so ${WASM_LIBRARY_DIR}/lib
+    cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib
