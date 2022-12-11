@@ -1,4 +1,4 @@
-From 321c69e607de23e0f9e2ce12e0e849280d8338a9 Mon Sep 17 00:00:00 2001
+From d028821e3529d4a830008aae375285d15f45ce49 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 28 Feb 2022 00:44:13 -0500
 Subject: [PATCH 01/13] Patch in call trampolines to handle fpcast troubles
@@ -72,7 +72,7 @@ index 960c37e196..98861e8b87 100644
      }
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 97669bef36..34096aa7e1 100644
+index 97669bef36..07411fba30 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
 @@ -172,6 +172,11 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
@@ -81,7 +81,7 @@ index 97669bef36..34096aa7e1 100644
  
 +#include <emscripten.h>
 +EM_JS(PyObject*, getter_call_trampoline, (getter get, PyObject *obj, void *closure), {
-+    return wasmTable.get(get)(obj, closure);
++    return wasmTableMirror[get](obj, closure);
 +});
 +
  static PyObject *
@@ -170,7 +170,7 @@ index 97669bef36..34096aa7e1 100644
      return result;
  }
 diff --git a/Objects/methodobject.c b/Objects/methodobject.c
-index 2df63cfdf6..978d62cd67 100644
+index 2df63cfdf6..1a520bba47 100644
 --- a/Objects/methodobject.c
 +++ b/Objects/methodobject.c
 @@ -464,6 +464,12 @@ cfunction_vectorcall_FASTCALL_KEYWORDS_METHOD(
@@ -180,7 +180,7 @@ index 2df63cfdf6..978d62cd67 100644
 +#include <emscripten.h>
 +
 +EM_JS(PyObject*, method_call_trampoline, (PyCFunction func, PyObject *self, PyObject *arg1, PyObject *arg2), {
-+    return wasmTable.get(func)(self, arg1, arg2);
++    return wasmTableMirror[func](self, arg1, arg2);
 +});
 +
  static PyObject *

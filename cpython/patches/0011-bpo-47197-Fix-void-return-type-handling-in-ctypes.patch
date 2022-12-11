@@ -1,4 +1,4 @@
-From 74dfc730d7a146b9d20ba7b3309aacf179016215 Mon Sep 17 00:00:00 2001
+From b671923b742b6d2281db5e510a3278b67d0110be Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 1 Apr 2022 18:55:11 -0700
 Subject: [PATCH 11/13] bpo-47197: Fix void return type handling in ctypes

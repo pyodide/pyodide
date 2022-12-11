@@ -1,4 +1,4 @@
-From 504d76a1ce3b05dbc406d6e5998d9fa68a0ee6aa Mon Sep 17 00:00:00 2001
+From f531af9e107da6498f3b988d7cc8dee4af808c52 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 1 Mar 2022 17:06:53 -0800
 Subject: [PATCH 08/13] Fix _PyImport_LoadDynamicModuleWithSpec fpcast
@@ -8,7 +8,7 @@ Subject: [PATCH 08/13] Fix _PyImport_LoadDynamicModuleWithSpec fpcast
  1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/Python/importdl.c b/Python/importdl.c
-index 6d2554741f..0caafd0e13 100644
+index 6d2554741f..bc2adc8ca4 100644
 --- a/Python/importdl.c
 +++ b/Python/importdl.c
 @@ -89,6 +89,15 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
@@ -21,7 +21,7 @@ index 6d2554741f..0caafd0e13 100644
 +typedef PyObject *(*PyInitFunctionType)(void);
 +
 +EM_JS(PyObject*, em_call_init_function, (PyInitFunctionType f), {
-+    return Module.wasmTable.get(f)();
++    return wasmTableMirror[f]();
 +});
 +
  PyObject *
