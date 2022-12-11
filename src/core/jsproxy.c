@@ -4014,6 +4014,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_ASYNC_ITERABLE);
   AddFlag(IS_GENERATOR);
   AddFlag(IS_ASYNC_GENERATOR);
+  AddFlag(IS_ASYNC_ITERATOR);
 
 #undef AddFlag
 

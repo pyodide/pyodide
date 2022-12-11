@@ -654,6 +654,8 @@ class JsAsyncIterator(JsProxy):
     Symbol.asyncIterator or has no Symbol.iterator.
     """
 
+    _js_type_flags = ["IS_ASYNC_ITERATOR"]
+
     def asend(self, value: Any) -> Any:
         """Send a value into the asynchronous iterator. This is a wrapper around
         ``jsobj.next(value)``.

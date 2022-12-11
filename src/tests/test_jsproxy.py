@@ -1754,7 +1754,7 @@ def test_gen_send(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsGenerator
+    from pyodide.ffi import JsAsyncGenerator, JsAsyncIterator, JsGenerator, JsIterator
 
     f = run_js(
         """
@@ -1769,6 +1769,9 @@ def test_gen_send(selenium):
 
     it = f()
     assert isinstance(it, JsGenerator)
+    assert not isinstance(it, JsAsyncGenerator)
+    assert isinstance(it, JsIterator)
+    assert not isinstance(it, JsAsyncIterator)
 
     assert it.send(None) == 2
     assert it.send(2) == 4
@@ -1792,7 +1795,7 @@ def test_gen_send_type_errors(selenium):
         """
     )
     assert isinstance(g, JsIterator)
-    assert not isinstance(g, JsAsyncIterator)
+    assert isinstance(g, JsAsyncIterator)
     assert not isinstance(g, JsGenerator)
     with pytest.raises(
         TypeError, match='Result should have type "object" not "number"'
@@ -1923,7 +1926,7 @@ async def test_agen_aiter(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsAsyncIterator
+    from pyodide.ffi import JsAsyncGenerator, JsAsyncIterator, JsGenerator, JsIterator
 
     f = run_js(
         """
@@ -1936,13 +1939,13 @@ async def test_agen_aiter(selenium):
     )
     b = f()
     assert isinstance(b, JsAsyncIterator)
+    assert not isinstance(b, JsIterator)
+    assert isinstance(b, JsAsyncGenerator)
+    assert not isinstance(b, JsGenerator)
     assert await anext(b) == 2
     assert await anext(b) == 3
     with pytest.raises(StopAsyncIteration):
         await anext(b)
-
-    with pytest.raises(TypeError, match="Result was a promise, use anext.* instead."):
-        next(f())
 
     g = run_js(
         """
@@ -1950,13 +1953,14 @@ async def test_agen_aiter(selenium):
             yield 2;
             yield 3;
             return 7;
-        })
+        })()
         """
     )
-    with pytest.raises(
-        TypeError, match="Result of anext.. was not a promise, use next.. instead."
-    ):
-        anext(g())
+
+    assert not isinstance(g, JsAsyncIterator)
+    assert isinstance(g, JsIterator)
+    assert not isinstance(g, JsAsyncGenerator)
+    assert isinstance(g, JsGenerator)
 
 
 @run_in_pyodide
