@@ -22,6 +22,7 @@ _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(asend);
 _Py_IDENTIFIER(throw);
+_Py_IDENTIFIER(athrow);
 
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a JavaScript error is thrown.
@@ -735,6 +736,59 @@ _pyproxyGen_asend(PyObject* receiver, JsRef jsval)
     }
     pyresult = (*t->tp_as_async->am_anext)(receiver);
   }
+  FAIL_IF_NULL(pyresult);
+
+  jsresult = python2js(pyresult);
+  FAIL_IF_NULL(jsresult);
+
+finally:
+  Py_CLEAR(v);
+  Py_CLEAR(asend);
+  Py_CLEAR(pyresult);
+  return jsresult;
+}
+
+JsRef
+_pyproxyGen_areturn(PyObject* receiver)
+{
+  PyObject* v = NULL;
+  PyObject* asend = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+
+  pyresult =
+    _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, PyExc_GeneratorExit);
+  FAIL_IF_NULL(pyresult);
+
+  jsresult = python2js(pyresult);
+  FAIL_IF_NULL(jsresult);
+
+finally:
+  Py_CLEAR(v);
+  Py_CLEAR(asend);
+  Py_CLEAR(pyresult);
+  return jsresult;
+}
+
+JsRef
+_pyproxyGen_athrow(PyObject* receiver, JsRef jsval)
+{
+  PyObject* v = NULL;
+  PyObject* asend = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+
+  v = js2python(jsval);
+  FAIL_IF_NULL(v);
+  if (!PyExceptionInstance_Check(v)) {
+    /* Not something you can raise.  throw() fails. */
+    PyErr_Format(PyExc_TypeError,
+                 "exceptions must be classes or instances "
+                 "deriving from BaseException, not %s",
+                 Py_TYPE(v)->tp_name);
+    FAIL();
+  }
+  pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, v);
   FAIL_IF_NULL(pyresult);
 
   jsresult = python2js(pyresult);

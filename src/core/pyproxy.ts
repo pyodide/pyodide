@@ -277,10 +277,11 @@ Module.getPyProxyClass = function (flags: number) {
     [HAS_SET, PyProxySetItemMethods],
     [HAS_CONTAINS, PyProxyContainsMethods],
     [IS_ITERABLE, PyProxyIterableMethods],
-    [IS_GENERATOR, PyProxyGeneratorMethods],
     [IS_ITERATOR, PyProxyIteratorMethods],
+    [IS_GENERATOR, PyProxyGeneratorMethods],
     [IS_ASYNC_ITERABLE, PyProxyAsyncIterableMethods],
     [IS_ASYNC_ITERATOR, PyProxyAsyncIteratorMethods],
+    [IS_ASYNC_GENERATOR, PyProxyAsyncGeneratorMethods],
     [IS_AWAITABLE, PyProxyAwaitableMethods],
     [IS_BUFFER, PyProxyBufferMethods],
     [IS_CALLABLE, PyProxyCallableMethods],
@@ -1032,46 +1033,8 @@ export class PyProxyIteratorMethods {
   }
 }
 
-export class PyProxyAsyncIteratorMethods {
-  /** @private */
-  async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
-    let idarg = Hiwire.new_value(arg);
-    let idresult;
-    try {
-      Py_ENTER();
-      console.log({ arg });
-      idresult = Module.__pyproxyGen_asend(_getPtr(this), idarg);
-      Py_EXIT();
-    } catch (e) {
-      API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
-    }
-    if (idresult === 0) {
-      Module._pythonexc2js();
-    }
-    const p = Hiwire.pop_value(idresult);
-    let value;
-    try {
-      value = await p;
-    } catch (e) {
-      if (
-        e &&
-        typeof e === "object" &&
-        (e as any).type === "StopAsyncIteration"
-      ) {
-        return { done: true, value };
-      }
-      throw e;
-    } finally {
-      p.destroy();
-    }
-    return { done: false, value };
-  }
-}
-
 export class PyProxyGeneratorMethods {
-  throw(exc: any) {
+  throw(exc: any): IteratorResult<any, any> {
     let idarg = Hiwire.new_value(exc);
     let status;
     let done;
@@ -1135,6 +1098,124 @@ export class PyProxyGeneratorMethods {
     let value = Hiwire.pop_value(idresult);
     done = status === PYGEN_RETURN;
     return { done, value };
+  }
+}
+
+export class PyProxyAsyncIteratorMethods {
+  /** @private */
+  async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
+    let idarg = Hiwire.new_value(arg);
+    let idresult;
+    try {
+      Py_ENTER();
+      idresult = Module.__pyproxyGen_asend(_getPtr(this), idarg);
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    } finally {
+      Hiwire.decref(idarg);
+    }
+    if (idresult === 0) {
+      Module._pythonexc2js();
+    }
+    const p = Hiwire.pop_value(idresult);
+    let value;
+    try {
+      value = await p;
+    } catch (e) {
+      if (
+        e &&
+        typeof e === "object" &&
+        (e as any).type === "StopAsyncIteration"
+      ) {
+        return { done: true, value };
+      }
+      throw e;
+    } finally {
+      p.destroy();
+    }
+    return { done: false, value };
+  }
+}
+
+export class PyProxyAsyncGeneratorMethods {
+  async throw(exc: any): Promise<IteratorResult<any, any>> {
+    let idarg = Hiwire.new_value(exc);
+    let idresult;
+    try {
+      Py_ENTER();
+      idresult = Module.__pyproxyGen_athrow(_getPtr(this), idarg);
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    } finally {
+      Hiwire.decref(idarg);
+    }
+    if (idresult === 0) {
+      Module._pythonexc2js();
+    }
+    const p = Hiwire.pop_value(idresult);
+    let value;
+    try {
+      value = await p;
+    } catch (e) {
+      if (e && typeof e === "object") {
+        if ((e as any).type === "StopAsyncIteration") {
+          return { done: true, value };
+        } else if ((e as any).type === "GeneratorExit") {
+          return { done: true, value };
+        }
+      }
+      throw e;
+    } finally {
+      p.destroy();
+    }
+    return { done: false, value };
+  }
+
+  /**
+   * This translates to the Python code ``gen.throw(StopIteration, value)``. Returns the next value of
+   * the generator. See the documentation for `Generator.prototype.return
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
+   * The return value will be sent to the Python generator.
+   *
+   * Present only if the proxied Python object is a generator.
+   *
+   * @param any The value to return from the generator.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * generator yields ``some_value``, ``return`` returns ``{done : false, value :
+   * some_value}``. When the generator raises a ``StopIteration(result_value)``
+   * exception, ``return`` returns ``{done : true, value : result_value}``.
+   */
+  async return(v: any): Promise<IteratorResult<any, any>> {
+    let idresult;
+    try {
+      Py_ENTER();
+      idresult = Module.__pyproxyGen_areturn(_getPtr(this));
+      Py_EXIT();
+    } catch (e) {
+      API.fatal_error(e);
+    }
+    if (idresult === 0) {
+      Module._pythonexc2js();
+    }
+    const p = Hiwire.pop_value(idresult);
+    let value;
+    try {
+      value = await p;
+    } catch (e) {
+      if (e && typeof e === "object") {
+        if ((e as any).type === "StopAsyncIteration") {
+          return { done: true, value };
+        } else if ((e as any).type === "GeneratorExit") {
+          return { done: true, value: v };
+        }
+      }
+      throw e;
+    } finally {
+      p.destroy();
+    }
+    return { done: false, value };
   }
 }
 
