@@ -3955,12 +3955,29 @@ finally:
   return success ? 0 : -1;
 }
 
+static int
+add_flag(PyObject* dict, char* name, int value)
+{
+  PyObject* value_py = NULL;
+  bool success = false;
+
+  value_py = PyLong_FromLong(value);
+  FAIL_IF_NULL(value_py);
+  FAIL_IF_MINUS_ONE(PyDict_SetItemString(dict, name, value_py));
+
+  success = true;
+finally:
+  Py_CLEAR(value_py);
+  return success ? 0 : -1;
+}
+
 int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
   PyObject* asyncio_module = NULL;
+  PyObject* flag_dict = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -3976,8 +3993,10 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
-#define AddFlag(flag)                                                          \
-  FAIL_IF_MINUS_ONE(PyModule_AddIntConstant(core_module, #flag, flag))
+  flag_dict = PyDict_New();
+  FAIL_IF_NULL(flag_dict);
+
+#define AddFlag(flag) FAIL_IF_MINUS_ONE(add_flag(flag_dict, #flag, flag))
 
   AddFlag(IS_ITERABLE);
   AddFlag(IS_ITERATOR);
@@ -3999,6 +4018,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_ASYNC_GENERATOR);
 
 #undef AddFlag
+  FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_module, "js_flags", flag_dict));
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);

@@ -80,7 +80,8 @@ function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
     true,
   );
   Module.FS.close(stream);
-  const code_ptr = Module.stringToNewUTF8(`
+
+  const code = `
 from sys import version_info
 pyversion = f"python{version_info.major}.{version_info.minor}"
 import shutil
@@ -89,17 +90,14 @@ del shutil
 import importlib
 importlib.invalidate_caches()
 del importlib
-    `);
-  Module.API.capture_stderr();
-  let errcode = Module._PyRun_SimpleString(code_ptr);
-  const captured_stderr = Module.API.restore_stderr().trim();
+`;
+  let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
     Module.API.fatal_loading_error(
       "Failed to unpack standard library.\n",
       captured_stderr,
     );
   }
-  Module._free(code_ptr);
   Module.FS.unlink(fileName);
 }
 
@@ -348,7 +346,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
-  Module._pyodide_init();
+  API.rawRun("import _pyodide_core");
 
   const pyodide = finalizeBootstrap(API, config);
 
