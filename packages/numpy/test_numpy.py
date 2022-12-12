@@ -240,10 +240,7 @@ def test_get_buffer(selenium):
 @pytest.mark.parametrize(
     "arg",
     [
-        pytest.param(
-            "np.arange(6).reshape((2, -1))",
-            marks=pytest.mark.xfail(reason="Fails with an IndexError for .pyc sources"),
-        ),
+        "np.arange(6).reshape((2, -1))",
         "np.arange(12).reshape((3, -1))[::2, ::2]",
         "np.arange(12).reshape((3, -1))[::-1, ::-1]",
         "np.arange(12).reshape((3, -1))[::, ::-1]",

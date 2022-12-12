@@ -221,6 +221,10 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
+- Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
+  to .pyc files
+  {pr}`3253`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
