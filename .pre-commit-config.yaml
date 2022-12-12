@@ -113,3 +113,6 @@ repos:
             "te,slowy,aray,ba,nd,classs,crate,feld,lits,inflight,falsy,asend",
           ]
         exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$
+
+ci:
+  autoupdate_schedule: "quarterly"
