@@ -15,6 +15,11 @@ build:
     chmod u+x c_check
     chmod u+x f_check
     chmod u+x exports/gensymbol
+    # Replace void returns by int returns
+    sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
+    sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
+    sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
+
     make CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0
     mkdir -p dist
     cp libopenblas.so dist/

@@ -16,7 +16,7 @@ index 5f787a9c..6890046a 100644
  # The default -O2 is enough.
  # Flags for POWER8 are defined in Makefile.power. Don't modify COMMON_OPT
 -# COMMON_OPT = -O2
-+COMMON_OPT = -O2 -Wno-implicit-function-declaration
++COMMON_OPT = -O2 -Wno-implicit-function-declaration -Wno-return-type
  
  # gfortran option for LAPACK to improve thread-safety
  # It is enabled by default in Makefile.system for gfortran
