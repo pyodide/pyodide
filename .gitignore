@@ -31,6 +31,9 @@ packages/.artifacts
 packages/.libs
 packages/*/build.log*
 packages/build-logs
+dist/
+pyodide-build/**/build.log
+xbuildenv/
 pytest-pyodide
 tools/symlinks
 xbuildenv/

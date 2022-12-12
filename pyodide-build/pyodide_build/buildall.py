@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+import copy
 import dataclasses
 import hashlib
 import json
@@ -12,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections import defaultdict
 from collections.abc import Iterable
 from functools import total_ordering
 from graphlib import TopologicalSorter
@@ -23,7 +25,7 @@ from typing import Any
 
 from . import common
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels
+from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
 
 
@@ -44,6 +46,7 @@ class BasePackage:
     package_type: _BuildSpecTypes
     run_dependencies: list[str]
     host_dependencies: list[str]
+    executables_required: list[str]
     dependencies: set[str]  # run + host dependencies
     unbuilt_host_dependencies: set[str]
     host_dependents: set[str]
@@ -95,6 +98,7 @@ class Package(BasePackage):
 
         self.run_dependencies = self.meta.requirements.run
         self.host_dependencies = self.meta.requirements.host
+        self.executables_required = self.meta.requirements.executable
         self.dependencies = set(self.run_dependencies + self.host_dependencies)
         self.unbuilt_host_dependencies = set(self.host_dependencies)
         self.host_dependents = set()
@@ -270,6 +274,20 @@ def generate_dependency_graph(
         requested.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
+
+    # Check executables required to build packages
+    missing_executables = defaultdict(list)
+    for name in requested:
+        pkg = pkg_map[name]
+        for exe in find_missing_executables(pkg.executables_required):
+            missing_executables[exe].append(name)
+
+    if missing_executables:
+        error_msg = "The following executables are missing in the host system:\n"
+        for executable, pkgs in missing_executables.items():
+            error_msg += f"- {executable} (required by: {', '.join(pkgs)})\n"
+
+        raise RuntimeError(error_msg)
 
     return {name: pkg_map[name] for name in requested}
 
@@ -569,6 +587,7 @@ def build_packages(
 
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
+    output_dir.mkdir(exist_ok=True, parents=True)
     build_from_graph(pkg_map, output_dir, args)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
@@ -675,10 +694,9 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def main(args: argparse.Namespace) -> None:
-    packages_dir = Path(args.dir[0]).resolve()
-    outputdir = Path(args.output[0]).resolve()
-    outputdir.mkdir(exist_ok=True)
+def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
+    args = copy.deepcopy(args)
+
     if args.cflags is None:
         args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     if args.cxxflags is None:
@@ -689,6 +707,14 @@ def main(args: argparse.Namespace) -> None:
         args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
     if args.host_install_dir is None:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
+
+    return args
+
+
+def main(args: argparse.Namespace) -> None:
+    packages_dir = Path(args.dir[0]).resolve()
+    outputdir = Path(args.output[0]).resolve()
+    args = set_default_args(args)
     build_packages(packages_dir, outputdir, args)
 
 
