@@ -10,9 +10,9 @@ source:
   sha256: b03fd10a1709d0101c054883b550f7c4c5e974f751e2680318759af005964990
 
   patches:
-    - 0001-disable-macosx-backend.patch
-    - 0002-fix-threading.patch
-    - 0003-hardcoded-font-cache.patch
+    - patches/0001-disable-macosx-backend.patch
+    - patches/0002-fix-threading.patch
+    - patches/0003-hardcoded-font-cache.patch
 
   extras:
     - - src/setup.cfg
