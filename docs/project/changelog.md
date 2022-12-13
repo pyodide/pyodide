@@ -112,6 +112,10 @@ substitutions:
 - Add Gitpod configuration to the repository.
   {pr} `3201`
 
+- Removed "Python initialization complete" message printed when loading is
+  finished.
+  {pr}`3247`
+
 ### Build System / Package Loading
 
 - New packages: pycryptodomex {pr}`2966`, pycryptodome {pr}`2965`,
