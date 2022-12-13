@@ -143,8 +143,10 @@ UNVENDORED_STDLIBS_MAP = {
 }
 UNVENDORED_STDLIBS = set(UNVENDORED_STDLIBS_MAP.keys())
 UNVENDORED_STDLIBS_MODULES = {
-    name for names in UNVENDORED_STDLIBS_MAP.values() for name in names
-} | {"test"}
+    importname: pkgname
+    for pkgname, importnames in UNVENDORED_STDLIBS_MAP.items()
+    for importname in importnames
+} | {"test": "test"}
 UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS | {"test"}
 
 
@@ -171,6 +173,7 @@ def get_module_not_found_error(name):
     if name in UNVENDORED_STDLIBS_MODULES:
         msg = "The module '{name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
+        name = UNVENDORED_STDLIBS_MODULES[name]
     elif name in REPODATA_PACKAGES:
         msg = "The module '{name}' is included in the Pyodide distribution, but it is not installed."
         msg += YOU_CAN_INSTALL_IT_BY
