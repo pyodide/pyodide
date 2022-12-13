@@ -151,6 +151,11 @@ substitutions:
   JavaScript.
   {pr}`3290`
 
+- {{ Enhancement }} PyProxies of synchronous and asynchronous Python generators
+  now support `return` and `throw` APIs that behave like the ones on JavaScript
+  generators.
+  {pr}`3346`
+
 - {{ Enhancement }} Added `JsGenerator` and `JsIterator` types to `pyodide.ffi`.
   Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
   {pr}`3294`
