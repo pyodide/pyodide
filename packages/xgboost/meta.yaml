@@ -6,9 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/05/ab/835b3594f04550e58cc6f51bf130be3dcf0cc65457733365b446a624d61a/xgboost-1.7.2.tar.gz
   sha256: f1a749aedb9330afc48007cc78b8bbbbea35ce372f48a2735f9c71bbc7b8dcfb
-  patches:
-    - patches/0002-Add-library-loading-path.patch
-    - patches/0003-Fix-type-mismatch-for-CSR-conversion-in-c_api.patch
 build:
   cflags: |
     -DDMLC_USE_FOPEN64=0
