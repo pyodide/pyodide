@@ -30,7 +30,7 @@ Passing neither `raw` nor `batched` sets the default behavior. In Node the
 default behavior is to write directly to `process.stdout` and `process.stderr`
 (in this case `isatty` depends on whether `process.stdout` and `process.stderr`
 are ttys). In browser, the default behavior is achieved with
-`pyodide.setStdout({batched: console.log})` and `pyodide.setStderr({batched: console.log})`.
+`pyodide.setStdout({batched: console.log})` and `pyodide.setStderr({batched: console.warn})`.
 
 The arguments `stdin`, `stdout`, and `stderr` to `loadPyodide` provide a
 diminished amount of control compared to `setStdin`, `setStdout`, and
