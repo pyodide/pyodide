@@ -32,7 +32,7 @@ function createDynlibFS(
   readFileFunc?: ReadFileType,
 ): LoadDynlibFS {
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
-  const defaultSearchDirs = [API.dsodir, API.sitepackages, dirname];
+  const defaultSearchDirs = API.defaultLdLibraryPath + [dirname];
 
   let _searchDirs = searchDirs || [];
   _searchDirs = _searchDirs.concat(defaultSearchDirs);
