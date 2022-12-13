@@ -30,7 +30,7 @@ def needs_emscripten(x):
 
 
 pyodide_root = get_pyodide_root()
-script_path = pyodide_root / "tools/python"
+script_path = pyodide_root / "dist/python"
 
 
 @only_node
