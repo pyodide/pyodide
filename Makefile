@@ -30,6 +30,7 @@ dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
+	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/main.o  \
@@ -73,7 +74,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	npx rollup -c src/js/rollup.config.js
+	npx rollup -c src/js/rollup.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@

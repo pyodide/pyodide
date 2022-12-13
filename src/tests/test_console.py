@@ -12,7 +12,7 @@ from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 
 def test_command_compiler():
     c = _Compile()
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -25,7 +25,7 @@ def test_command_compiler():
     c2 = _CommandCompiler()
     assert c2("def test():\n   1", "<input>", "single") is None
     assert isinstance(c2("def test():\n   1\n", "<input>", "single"), CodeRunner)
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c2("1<>2", "<input>", "single")
     assert isinstance(
         c2("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
@@ -123,10 +123,17 @@ def test_interactive_console():
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
         assert fut.exception() is not None
-        assert (
-            fut.formatted_error
-            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
-        )
+
+        import re
+
+        err = fut.formatted_error or ""
+        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
+        assert [e.strip() for e in err.split("\n")] == [
+            'File "<console>", line 1',
+            "1+",
+            "^",
+            "SyntaxError: <errormsg>",
+        ]
 
         fut = shell.push("raise Exception('hi')")
         try:

@@ -1,7 +1,7 @@
 From 312ba1b0975c8dad8dac3f43560d6f8b1ccf59e3 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 11 Jun 2022 12:19:42 -0700
-Subject: [PATCH 3/3] ENH: Fix pointer size determination for cross build
+Subject: [PATCH 2/3] ENH: Fix pointer size determination for cross build
 
 Using `sys` to ask about the build Python is hostile to cross
 building because it is very hard to replace the sys module with one

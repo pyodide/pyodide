@@ -1,7 +1,7 @@
 From 18d17c29f28ff61f9707ee150721d9452fa2e654 Mon Sep 17 00:00:00 2001
 From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Mon, 28 Feb 2022 00:53:53 -0500
-Subject: [PATCH 03/13] fix Py_Sigset_Converter
+Subject: [PATCH 03/14] fix Py_Sigset_Converter
 
 ---
  Modules/posixmodule.c | 7 +++++++

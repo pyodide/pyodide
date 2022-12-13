@@ -1,0 +1,5 @@
+package:
+  name: pkg_test_graph3
+  version: "1.0.0"
+source:
+  path: src

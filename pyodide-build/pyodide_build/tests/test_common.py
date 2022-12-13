@@ -8,6 +8,7 @@ from pyodide_build.common import (
     CORE_SCIPY_PACKAGES,
     _parse_package_subset,
     find_matching_wheels,
+    find_missing_executables,
     get_make_environment_vars,
     get_make_flag,
     parse_top_level_import_name,
@@ -203,3 +204,16 @@ def test_parse_top_level_import_name(pkg, tmp_path):
 
     top_level = parse_top_level_import_name(tmp_path / pkg["name"])
     assert top_level == pkg["top_level"]
+
+
+def test_find_missing_executables(monkeypatch):
+    import shutil
+
+    pkgs = ["a", "b", "c"]
+    with monkeypatch.context() as m:
+        m.setattr(shutil, "which", lambda exe: None)
+        assert pkgs == find_missing_executables(pkgs)
+
+    with monkeypatch.context() as m:
+        m.setattr(shutil, "which", lambda exe: "/bin")
+        assert [] == find_missing_executables(pkgs)
