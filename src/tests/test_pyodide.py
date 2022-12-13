@@ -816,7 +816,6 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-                Python initialization complete
                 Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
                 The cause of the fatal error was:
                 Stack (most recent call first):
@@ -1134,7 +1133,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
         """
     )
     assert stdoutstrings[-2:] == [
-        "Python initialization complete",
         "something to stdout",
     ]
     stderrstrings = _strip_assertions_stderr(stderrstrings)
@@ -1385,13 +1383,14 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_unvendored_stdlib_import_hook(selenium_standalone):
+def test_module_not_found_hook(selenium_standalone):
     import importlib
 
     import pytest
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
+    repodata_packages = ["micropip", "packaging", "regex"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(
@@ -1408,37 +1407,6 @@ def test_unvendored_stdlib_import_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
-    from _pyodide._importhook import UnvendoredStdlibFinder
-
-    finder = UnvendoredStdlibFinder()
-
-    assert finder.find_spec("os", None) is None
-    assert finder.find_spec("os.path", None) is None
-    assert finder.find_spec("os.no_such_module", None) is None
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="unvendored from the Python standard library"
-        ):
-            finder.find_spec(lib, None)
-
-    for lib in removed_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="removed from the Python standard library"
-        ):
-            finder.find_spec(lib, None)
-
-
-@run_in_pyodide(packages=["pytest"])
-def test_repodata_import_hook(selenium_standalone):
-    import importlib
-
-    import pytest
-
-    from _pyodide._importhook import RepodataPackagesFinder
-
-    repodata_packages = ["micropip", "packaging", "regex"]
-
     for lib in repodata_packages:
         with pytest.raises(
             ModuleNotFoundError, match="included in the Pyodide distribution"
@@ -1447,18 +1415,6 @@ def test_repodata_import_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
-
-    finder = RepodataPackagesFinder({"micropip": "", "packaging": "", "regex": ""})
-
-    assert finder.find_spec("os", None) is None
-    assert finder.find_spec("os.path", None) is None
-    assert finder.find_spec("os.no_such_module", None) is None
-
-    for lib in repodata_packages:
-        with pytest.raises(
-            ModuleNotFoundError, match="included in the Pyodide distribution"
-        ):
-            finder.find_spec(lib, None)
 
 
 def test_args(selenium_standalone_noload):

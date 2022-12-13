@@ -32,6 +32,18 @@ export let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.
 export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
+ * Runs code after python vm has been initialized but prior to any bootstrapping.
+ */
+API.rawRun = function rawRun(code: string): [number, string] {
+  const code_ptr = Module.stringToNewUTF8(code);
+  Module.API.capture_stderr();
+  let errcode = Module._PyRun_SimpleString(code_ptr);
+  Module._free(code_ptr);
+  const captured_stderr = Module.API.restore_stderr().trim();
+  return [errcode, captured_stderr];
+};
+
+/**
  * Just like `runPython` except uses a different globals dict and gets
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
