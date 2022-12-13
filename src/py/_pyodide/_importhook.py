@@ -141,13 +141,13 @@ UNVENDORED_STDLIBS_MAP = {
     "sqlite3": ["sqlite3", "_sqlite3"],
     "hashlib": ["_hashlib"],
 }
-UNVENDORED_STDLIBS = set(UNVENDORED_STDLIBS_MAP.keys())
+UNVENDORED_STDLIBS = list(UNVENDORED_STDLIBS_MAP.keys())
+UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
 UNVENDORED_STDLIBS_MODULES = {
     importname: pkgname
     for pkgname, importnames in UNVENDORED_STDLIBS_MAP.items()
     for importname in importnames
 } | {"test": "test"}
-UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS | {"test"}
 
 
 from importlib import _bootstrap  # type: ignore[attr-defined]
