@@ -17,6 +17,14 @@ substitutions:
 - `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
   {pr}`3150`.
 
+- {{ Breaking }} We now don't publish pre-built Pyodide docker images
+  anymore. Note that `./run_docker --pre-built` was not working for a while
+  and it was actually equivalent to `./run_docker`. If you need to build a
+  single Python wheel out of tree, you can use the `pyodide build` command
+  instead. See [our blog post](https://blog.pyodide.org/posts/0.21-release/#building-binary-wheels-for-pyodide)
+  for more information.
+  {pr}`3342`.
+
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
   documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
