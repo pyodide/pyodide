@@ -143,12 +143,6 @@ async function main() {
             homedir: process.cwd(),
             // Strip out standard messages written to stdout and stderr while loading
             // After Pyodide is loaded we will replace stdstreams with setupStreams.
-            stdout(e) {
-                if (e.trim() === "Python initialization complete") {
-                    return;
-                }
-                console.log(e);
-            },
             stderr(e) {
                 if (
                     [
