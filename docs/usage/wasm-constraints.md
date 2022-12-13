@@ -29,8 +29,8 @@ Instead, it is better to load individual modules as needed using
 - hashlib: Hash algorithms that are depending on OpenSSL are not available by default.
   See Python [hashlib documentation](https://docs.python.org/3/library/hashlib.html)
   for list of algorithms that are dependent on OpenSSL. If you need those algorithms,
-  you need to load hashlib with `pyodide.loadPackage('hashlib')` or `micropip.install('hashlib')`
-  **before** importing `hashlib`.
+  you need to call `pyodide.loadPackage('hashlib')` or `micropip.install('hashlib')`
+  **before** importing hashlib.
 
 ### Removed modules
 
