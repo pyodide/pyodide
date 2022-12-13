@@ -821,7 +821,6 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-                Python initialization complete
                 Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
                 The cause of the fatal error was:
                 Stack (most recent call first):
@@ -1139,7 +1138,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         """
     )
     assert stdoutstrings[-2:] == [
-        "Python initialization complete",
         "something to stdout",
     ]
     stderrstrings = _strip_assertions_stderr(stderrstrings)
