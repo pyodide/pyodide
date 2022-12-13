@@ -11,8 +11,6 @@ requirements:
 source:
   url: https://files.pythonhosted.org/packages/45/dd/a5435a6902d6315241c48a5343e6e6675b007e05d3738ed97a7a47864e53/joblib-1.2.0.tar.gz
   sha256: e1cee4a79e4af22881164f218d4311f60074197fb707e082e803b61f6d137018
-  patches:
-    - patches/0001-No-multiprocessing-1256.patch
 about:
   home: https://joblib.readthedocs.io
   PyPI: https://pypi.org/project/joblib
