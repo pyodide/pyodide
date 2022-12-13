@@ -30,7 +30,6 @@ hello_python().then((result) => {
 $ node hello_python.js
 Loading distutils
 Loaded distutils
-Python initialization complete
 Python says that 1+1= 2
 ```
 
@@ -46,7 +45,6 @@ undefined
 > let pyodide = await loadPyodide();
 Loading distutils
 Loaded distutils
-Python initialization complete
 undefined
 > await pyodide.runPythonAsync("1+1");
 2
@@ -71,7 +69,6 @@ warning: no blob constructor, cannot create blobs with mimetypes
 warning: no BlobBuilder
 Loading distutils
 Loaded distutils
-Python initialization complete
 Python says that 1+1= 2
 ```
 

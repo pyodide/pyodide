@@ -30,6 +30,7 @@ dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
+	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/main.o  \
