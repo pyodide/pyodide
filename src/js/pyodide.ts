@@ -368,6 +368,5 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
-  pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }

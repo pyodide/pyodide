@@ -164,6 +164,10 @@ substitutions:
   `js` module.
   {pr}`3298`
 
+- Removed "Python initialization complete" message printed when loading is
+  finished.
+  {pr}`3247`
+
 ### Build System / Package Loading
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.

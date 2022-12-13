@@ -1,10 +1,6 @@
 import pytest
 
 
-def test_init(selenium_esm):
-    assert "Python initialization complete" in selenium_esm.logs.splitlines()
-
-
 def test_print(selenium_esm):
     selenium_esm.run("print('This should be logged')")
     assert "This should be logged" in selenium_esm.logs.splitlines()
