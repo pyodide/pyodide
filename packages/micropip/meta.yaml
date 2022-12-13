@@ -2,7 +2,6 @@ package:
   name: micropip
   # This version needs to be consistent with docs/requirements-doc.txt
   version: "0.2.0"
-  _tag: pyodide.stdlib
   top-level:
     - micropip
 
