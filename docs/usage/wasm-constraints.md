@@ -22,7 +22,7 @@ Instead, it is better to load individual modules as needed using
 - ssl
 - lzma
 - sqlite3
-- \_hashlib
+- \_hashlib (you need to load it via `micropip.install('hashlib')`)
 - test: it is an exception to the above, since it is not loaded even if `fullStdLib` is set to true.
 
 ### Removed modules
