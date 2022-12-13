@@ -54,11 +54,6 @@ do
         usage
         exit 0
       ;;
-      --pre-built)
-        echo "Prebuilt docker image is no longer supported, and it was not working even before."
-        echo "You can just use this script without '--pre-built' option."
-        exit 1
-      ;;
       -p|--port)
         if [ "$#" -lt 2 ]; then
           >&2 echo "port cannot be empty"
