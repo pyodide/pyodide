@@ -1,4 +1,6 @@
 import sys
+import textwrap
+import traceback
 import zipfile
 from collections.abc import Mapping
 from pathlib import Path
@@ -62,6 +64,47 @@ def test_py_compile_wheel(tmp_path):
                 val = fh_zip.read(key + "c")
                 # Looks like Python bytecode
                 assert key.encode("utf-8") + b"\xda\x08<module>" in val
+
+
+def test_py_compile_exceptions(tmp_path):
+    wheel_data = {
+        "a.py": "x = 1",
+        "b.py": textwrap.dedent(
+            """
+               def func1():
+                   raise ValueError()
+
+               def func2():
+                   func1()
+               """
+        ),
+    }
+    input_wheel_path = _create_tmp_wheel(
+        "packagea", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
+    )
+    output_wheel_path = _py_compile_wheel(input_wheel_path)
+    with zipfile.ZipFile(output_wheel_path) as fh_zip:
+        (tmp_path / "_py_compile_test_a.pyc").write_bytes(fh_zip.read("a.pyc"))
+        (tmp_path / "_py_compile_test_b.pyc").write_bytes(fh_zip.read("b.pyc"))
+
+    sys.path.append(str(tmp_path))
+    import _py_compile_test_a  # type: ignore[import]
+
+    assert _py_compile_test_a.x == 1
+
+    import _py_compile_test_b  # type: ignore[import]
+
+    try:
+        _py_compile_test_b.func2()
+    except ValueError:
+        tb = traceback.format_exc()
+        assert tb.splitlines()[-3:] == [
+            '  File "b.py", line 6, in func2',
+            '  File "b.py", line 3, in func1',
+            "ValueError",
+        ]
+    else:
+        raise AssertionError()
 
 
 def test_py_compile_not_wheel(tmp_path):
