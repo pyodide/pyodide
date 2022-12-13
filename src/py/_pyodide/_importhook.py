@@ -134,8 +134,19 @@ def register_js_finder() -> None:
 
 
 STDLIBS = sys.stdlib_module_names | {"test"}
-UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "_hashlib"]
-UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
+UNVENDORED_STDLIBS_MAP = {
+    "distutils": ["distutils"],
+    "ssl": ["ssl", "_ssl"],
+    "lzma": ["lzma", "_lzma"],
+    "sqlite3": ["sqlite3", "_sqlite3"],
+    "hashlib": ["_hashlib"],
+}
+UNVENDORED_STDLIBS = set(UNVENDORED_STDLIBS_MAP.keys())
+UNVENDORED_STDLIBS_MODULES = {
+    name for names in UNVENDORED_STDLIBS_MAP.values() for name in names
+} | {"test"}
+UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS | {"test"}
+
 
 from importlib import _bootstrap  # type: ignore[attr-defined]
 
@@ -157,7 +168,7 @@ def get_module_not_found_error(name):
     if name not in REPODATA_PACKAGES and name not in STDLIBS:
         return orig_get_module_not_found_error(name)
 
-    if name in UNVENDORED_STDLIBS_AND_TEST:
+    if name in UNVENDORED_STDLIBS_MODULES:
         msg = "The module '{name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
     elif name in REPODATA_PACKAGES:
