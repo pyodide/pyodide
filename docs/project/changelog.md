@@ -158,7 +158,7 @@ substitutions:
 - {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
   iterators and generators from Python. This includes support for `aiter` for async interables,
   `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
-  {pr}`3285`, {pr}`3299`
+  {pr}`3285`, {pr}`3299`, {pr}`3339`
 
 - {{ Enhancement }} Added a mypy typeshed for some common functionality for the
   `js` module.

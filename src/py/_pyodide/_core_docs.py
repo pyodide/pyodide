@@ -625,9 +625,8 @@ class JsMutableMap(JsMap):
 class JsIterator(JsProxy):
     """A JsProxy of a JavaScript iterator.
 
-    An object is a JsIterator if it has a `next` method. We can't tell if it's
-    synchronously iterable or asynchronously iterable, so we implement both and
-    if you try to use the wrong one it will fail at runtime.
+    An object is a JsIterator if it has a `next` method and either has a
+    Symbol.iterator or has no Symbol.asyncIterator.
     """
 
     _js_type_flags = ["IS_ITERATOR"]
@@ -636,22 +635,8 @@ class JsIterator(JsProxy):
         """Send a value into the iterator. This is a wrapper around
         ``jsobj.next(value)``.
 
-        We can't tell whether a JavaScript iterator is a synchronous iterator,
-        an asynchronous iterator, or just some object with a "next" method, so
-        we include both ``send`` and ``asend``. If the object is not a
-        synchronous iterator, then ``send`` will raise a TypeError (but only
-        after calling ``jsobj.next()``!).
-        """
-
-    def asend(self, value: Any) -> Any:
-        """Send a value into the asynchronous iterator. This is a wrapper around
-        ``jsobj.next(value)``.
-
-        We can't tell whether a JavaScript iterator is a synchronous iterator,
-        an asynchronous iterator, or just some object with a "next" method, so
-        we include both ``send`` and ``asend``. If the object is not a
-        asynchronous iterator, then ``asend`` will raise a TypeError (but only
-        after calling ``jsobj.next()``!).
+        If the object is not actually a synchronous iterator, then ``send`` will raise a
+        TypeError (but only after calling ``jsobj.next()``!).
         """
 
     def __next__(self):
@@ -659,6 +644,24 @@ class JsIterator(JsProxy):
 
     def __iter__(self):
         pass
+
+
+class JsAsyncIterator(JsProxy):
+    """A JsProxy of a JavaScript async iterator.
+
+    An object is a JsAsyncIterator if it has a `next` method and either has a
+    Symbol.asyncIterator or has no Symbol.iterator.
+    """
+
+    _js_type_flags = ["IS_ASYNC_ITERATOR"]
+
+    def asend(self, value: Any) -> Any:
+        """Send a value into the asynchronous iterator. This is a wrapper around
+        ``jsobj.next(value)``.
+
+        If the object is not actually an asynchronous iterator, then ``asend``
+        will raise a TypeError (but only after calling ``jsobj.next()``!).
+        """
 
     def __aiter__(self):
         pass

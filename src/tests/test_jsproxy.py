@@ -1754,7 +1754,7 @@ def test_gen_send(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsGenerator
+    from pyodide.ffi import JsAsyncGenerator, JsAsyncIterator, JsGenerator, JsIterator
 
     f = run_js(
         """
@@ -1769,6 +1769,9 @@ def test_gen_send(selenium):
 
     it = f()
     assert isinstance(it, JsGenerator)
+    assert not isinstance(it, JsAsyncGenerator)
+    assert isinstance(it, JsIterator)
+    assert not isinstance(it, JsAsyncIterator)
 
     assert it.send(None) == 2
     assert it.send(2) == 4
@@ -1784,7 +1787,7 @@ def test_gen_send_type_errors(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsGenerator, JsIterator
+    from pyodide.ffi import JsAsyncIterator, JsGenerator, JsIterator
 
     g = run_js(
         """
@@ -1792,6 +1795,7 @@ def test_gen_send_type_errors(selenium):
         """
     )
     assert isinstance(g, JsIterator)
+    assert isinstance(g, JsAsyncIterator)
     assert not isinstance(g, JsGenerator)
     with pytest.raises(
         TypeError, match='Result should have type "object" not "number"'
@@ -1922,7 +1926,7 @@ async def test_agen_aiter(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsIterator
+    from pyodide.ffi import JsAsyncGenerator, JsAsyncIterator, JsGenerator, JsIterator
 
     f = run_js(
         """
@@ -1934,14 +1938,14 @@ async def test_agen_aiter(selenium):
         """
     )
     b = f()
-    assert isinstance(b, JsIterator)
+    assert isinstance(b, JsAsyncIterator)
+    assert not isinstance(b, JsIterator)
+    assert isinstance(b, JsAsyncGenerator)
+    assert not isinstance(b, JsGenerator)
     assert await anext(b) == 2
     assert await anext(b) == 3
     with pytest.raises(StopAsyncIteration):
         await anext(b)
-
-    with pytest.raises(TypeError, match="Result was a promise, use anext.* instead."):
-        next(f())
 
     g = run_js(
         """
@@ -1949,13 +1953,14 @@ async def test_agen_aiter(selenium):
             yield 2;
             yield 3;
             return 7;
-        })
+        })()
         """
     )
-    with pytest.raises(
-        TypeError, match="Result of anext.. was not a promise, use next.. instead."
-    ):
-        anext(g())
+
+    assert not isinstance(g, JsAsyncIterator)
+    assert isinstance(g, JsIterator)
+    assert not isinstance(g, JsAsyncGenerator)
+    assert isinstance(g, JsGenerator)
 
 
 @run_in_pyodide
@@ -1963,7 +1968,7 @@ async def test_agen_aiter2(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsAsyncIterable, JsIterable, JsIterator
+    from pyodide.ffi import JsAsyncIterable, JsAsyncIterator, JsIterable, JsIterator
 
     iterable = run_js(
         """
@@ -1981,7 +1986,8 @@ async def test_agen_aiter2(selenium):
         iter(iterable)  # type:ignore[call-overload]
 
     it = aiter(iterable)
-    assert isinstance(it, JsIterator)
+    assert isinstance(it, JsAsyncIterator)
+    assert not isinstance(it, JsIterator)
 
     assert await anext(it) == 1
     assert await anext(it) == 2
@@ -1995,7 +2001,7 @@ async def test_agen_asend(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsIterator
+    from pyodide.ffi import JsAsyncIterator, JsIterator
 
     it = run_js(
         """
@@ -2008,7 +2014,8 @@ async def test_agen_asend(selenium):
         """
     )
 
-    assert isinstance(it, JsIterator)
+    assert isinstance(it, JsAsyncIterator)
+    assert not isinstance(it, JsIterator)
 
     assert await it.asend(None) == 2
     assert await it.asend(2) == 4
