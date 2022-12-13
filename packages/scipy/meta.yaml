@@ -114,6 +114,9 @@ requirements:
   run:
     - numpy
     - CLAPACK
+  executable:
+    - gfortran
+    - f2c
 
 test:
   imports:

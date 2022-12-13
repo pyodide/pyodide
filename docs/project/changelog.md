@@ -17,6 +17,14 @@ substitutions:
 - `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
   {pr}`3150`.
 
+- {{ Breaking }} We now don't publish pre-built Pyodide docker images
+  anymore. Note that `./run_docker --pre-built` was not working for a while
+  and it was actually equivalent to `./run_docker`. If you need to build a
+  single Python wheel out of tree, you can use the `pyodide build` command
+  instead. See [our blog post](https://blog.pyodide.org/posts/0.21-release/#building-binary-wheels-for-pyodide)
+  for more information.
+  {pr}`3342`.
+
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
   documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
@@ -28,9 +36,9 @@ substitutions:
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Emscripten was updated to Version 3.1.26
+- {{ Enhancement }} Emscripten was updated to Version 3.1.27
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
-  {pr}`3239`, {pr}`3280`
+  {pr}`3239`, {pr}`3280`, {pr}`3314`
 
 - {{ Enhancement }} Added a new API {any}`pyodide.mountNativeFS`
   which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
@@ -79,7 +87,7 @@ substitutions:
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
-  {pr}`3137`
+  {pr}`3137`, {pr}`3263`
 
 - {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
   method, so it's possible to use a JavaScript function as a Python method. When
@@ -90,7 +98,7 @@ substitutions:
 - {{ Enhancement }} A `JsProxy` now has an `as_object_map` method. This will treat
   the object as a mapping over its `ownKeys` so for instance:
   `run_js("({a:2, b:3})").as_object_map()["a"]` will return 2.
-  {pr}`3273`, {pr}`3295`
+  {pr}`3273`, {pr}`3295`, {pr}`3297`
 
 - {{ Enhancement }} Split up the `JsProxy` documentation class into several
   classes, e.g., {any}`JsBuffer`, {any}`JsPromise`, etc. Implemented
@@ -155,17 +163,20 @@ substitutions:
   Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
   {pr}`3294`
 
-- {{ Enhancement }} It is now possible to use aynchronous JavaScript generators from
-  Python.
-  {pr}`3285`
+- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+  iterators and generators from Python. This includes support for `aiter` for async interables,
+  `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
+  {pr}`3285`, {pr}`3299`, {pr}`3339`
+
+- {{ Enhancement }} Added a mypy typeshed for some common functionality for the
+  `js` module.
+  {pr}`3298`
+
+- Removed "Python initialization complete" message printed when loading is
+  finished.
+  {pr}`3247`
 
 ### Build System / Package Loading
-
-- New packages: pycryptodome {pr}`2965`,
-  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
-  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
-  gdal, fiona, geopandas {pr}`3213`,
-  the standard library \_hashlib module {pr}`3206`
 
 - {{ Breaking }} Unvendored the sqlite3 module from the standard library.
   Before `sqlite3` was included by default. Now it needs to be loaded with
@@ -222,9 +233,6 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
-- {{ Update }} Upgraded pandas to version 1.5.0.
-  {pr}`3134`
-
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -244,6 +252,10 @@ substitutions:
   which specifies the type of the package.
   {pr}`3238`
 
+- {{ Enhancement }} Added `requirements/executable` key to the `meta.yaml` spec
+  which specifies the list of executables required for building a package.
+  {pr}`3300`
+
 - {{ Breaking }} `build/library` and `build/sharedlibrary` key in the `meta.yaml` spec
   are removed. Use `build/type` instead.
   {pr}`3238`
@@ -257,7 +269,19 @@ substitutions:
 
 ### Packages
 
+- New packages: pycryptodome {pr}`2965`,
+  coverage-py {pr}`3053`, bcrypt {pr}`3125`, lightgbm {pr}`3138`,
+  pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
+  gdal, fiona, geopandas {pr}`3213`,
+  the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
+  gensim {pr}`3326`, smart_open {pr}`3326`,
+
+- {{ Update }} Upgraded pandas to version 1.5.0.
+  {pr}`3134`
+
 - {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
+
+- {{ Update }} Upgraded packages: scikit-learn (1.1.3), {pr}`3324`
 
 ## Version 0.21.3
 

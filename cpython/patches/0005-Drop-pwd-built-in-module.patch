@@ -1,7 +1,7 @@
 From 5fffd52bf03abbade147f77a06f58b5a6736c255 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Wed, 6 Oct 2021 22:16:32 +0900
-Subject: [PATCH 05/13] Drop pwd built-in module
+Subject: [PATCH 05/14] Drop pwd built-in module
 
 This patch drops pwd module support from Cpython.
 pwd module provides access to the Unix user account and password database,

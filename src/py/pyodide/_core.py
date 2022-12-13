@@ -16,7 +16,7 @@ if IN_BROWSER:
 
     import _pyodide._core_docs
 
-    _pyodide._core_docs._core_dict = _pyodide_core.__dict__
+    _pyodide._core_docs._js_flags = _pyodide_core.js_flags
 else:
     from _pyodide._core_docs import (
         ConversionError,
@@ -29,14 +29,20 @@ else:
 
 from _pyodide._core_docs import (
     JsArray,
+    JsAsyncGenerator,
     JsAsyncIterable,
+    JsAsyncIterator,
     JsBuffer,
     JsDoubleProxy,
+    JsFetchResponse,
     JsGenerator,
     JsIterable,
     JsIterator,
+    JsMap,
+    JsMutableMap,
     JsPromise,
     JsProxy,
+    JsTypedArray,
 )
 
 __all__ = [
@@ -44,6 +50,7 @@ __all__ = [
     "JsDoubleProxy",
     "JsArray",
     "JsGenerator",
+    "JsAsyncGenerator",
     "JsIterable",
     "JsAsyncIterable",
     "JsIterator",
@@ -55,5 +62,10 @@ __all__ = [
     "destroy_proxies",
     "JsPromise",
     "JsBuffer",
+    "JsTypedArray",
     "JsArray",
+    "JsFetchResponse",
+    "JsMap",
+    "JsMutableMap",
+    "JsAsyncIterator",
 ]

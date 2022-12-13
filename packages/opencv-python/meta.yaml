@@ -44,10 +44,6 @@ build:
   #   CMake args are adopted from OpenCV.js (https://github.com/opencv/opencv/blob/4.x/platforms/js/build_js.py)
   #   But we support more of modules than OpenCV.js.
   #
-  # Note on CMAKE_TOOLCHAIN_FILE:
-  #   We don't want to use toolchain file provided by Emscripten,
-  #   because our build script hijack gcc, c++, ... and replace it with emcc, em++, ..., instead of calling them directly.
-  #
   # List of OpenCV modules can be found at: https://docs.opencv.org/4.x/
   # Build configs can be found at: https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html
 

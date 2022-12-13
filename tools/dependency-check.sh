@@ -40,14 +40,8 @@ check_cmake() {
   check_binary_present "cmake"
 }
 
-check_fortran_dependencies() {
-  check_binary_present "gfortran"
-  check_binary_present "f2c"
-}
-
 check_python_version
 check_pkgconfig
 check_cmake
 #check_python_headers
-check_fortran_dependencies
 check_shasum
