@@ -6,9 +6,6 @@ package:
 source:
   sha256: f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e
   url: https://files.pythonhosted.org/packages/76/cb/6bbd2b10170ed991cf64e8c8b85e01f2fb38f95d1bc77617569e0b0b26ac/distlib-0.3.6-py2.py3-none-any.whl
-build:
-  post: |
-    find build/distlib-0.3.4/dist -name '*.exe' -delete
 about:
   home: https://github.com/pypa/distlib
   PyPI: https://pypi.org/project/distlib
