@@ -10,6 +10,11 @@ def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
     ),
+    recipe_dir: str = typer.Option(
+        None,
+        help="The directory containing the recipe of packages. "
+        "If not specified, the default is `./packages`",
+    ),
     install: bool = typer.Option(
         False,
         help="If true, install the built packages into the install_dir. "
@@ -43,11 +48,6 @@ def recipe(
         help="Force rebuild of all packages regardless of whether they appear to have been updated",
     ),
     n_jobs: int = typer.Option(4, help="Number of packages to build in parallel"),
-    recipe_dir: str = typer.Option(
-        None,
-        help="The directory containing the recipe of packages. "
-        "If not specified, the default is `./packages`",
-    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
