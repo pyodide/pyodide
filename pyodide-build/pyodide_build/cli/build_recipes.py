@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer  # type: ignore[import]
 
-from .. import buildall, common
+from .. import buildall
 
 
 def recipe(
@@ -18,7 +18,7 @@ def recipe(
     install_dir: str = typer.Option(
         None,
         help="Path to install built packages and repodata.json. "
-        "If not specified, the default is `PYODIDE_ROOT/dist`.",
+        "If not specified, the default is `./dist`.",
     ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
@@ -43,20 +43,17 @@ def recipe(
         help="Force rebuild of all packages regardless of whether they appear to have been updated",
     ),
     n_jobs: int = typer.Option(4, help="Number of packages to build in parallel"),
-    root: str = typer.Option(
-        None, help="The root directory of the Pyodide.", envvar="PYODIDE_ROOT"
-    ),
     recipe_dir: str = typer.Option(
         None,
         help="The directory containing the recipe of packages. "
-        "If not specified, the default is `packages` in the root directory.",
+        "If not specified, the default is `./packages`",
     ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
-    pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
-    recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
-    install_dir_ = pyodide_root / "dist" if not install_dir else Path(install_dir)
+    root = Path.cwd()
+    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir)
+    install_dir_ = root / "dist" if not install_dir else Path(install_dir)
 
     # Note: to make minimal changes to the existing pyodide-build entrypoint,
     #       keep arguments of buildall unghanged.
