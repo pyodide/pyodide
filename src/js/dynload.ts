@@ -119,7 +119,7 @@ export async function loadDynlib(
     // However, since emscripten dylink metadata only contains the name of the
     // library not the full path, we need to update it manually in order to
     // prevent loading same library twice.
-    if (global && Module.PATH.isAbs(lib)) {
+    if (Module.PATH.isAbs(lib)) {
       const libName: string = Module.PATH.basename(lib);
       const dso: any = Module.LDSO.loadedLibsByName[libName];
       if (!dso) {
