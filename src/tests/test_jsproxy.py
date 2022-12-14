@@ -2104,11 +2104,18 @@ async def test_agen_aclose(selenium):
 
 @run_in_pyodide
 def test_gen_lifetimes(selenium):
+    import sys
+
     import pytest
 
     from pyodide.code import run_js
     from pyodide.ffi import JsGenerator
 
+    # Check that:
+    # 1. The lifetime of the generator argument is extended
+    # 2. The lifetime of the objects we `send` to the generator are extended
+    # 3. The returned pyproxy is successfully received in JavaScript
+    # 4. The returned pyproxy is destroyed
     f = run_js(
         """
         (function *(x) {
@@ -2127,7 +2134,9 @@ def test_gen_lifetimes(selenium):
     g.send({3})
     with pytest.raises(StopIteration) as exc_info:
         g.send({4})
+
     assert exc_info.value.value == ["{1}", "{2}", "{3}", "{4}"]
+    assert sys.getrefcount(exc_info.value.value) == 2
 
 
 @run_in_pyodide
