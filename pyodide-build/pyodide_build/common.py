@@ -2,6 +2,7 @@ import contextlib
 import functools
 import os
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -372,3 +373,7 @@ def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
 def in_xbuildenv() -> bool:
     pyodide_root = get_pyodide_root()
     return pyodide_root.name == "pyodide-root"
+
+
+def find_missing_executables(executables: list[str]) -> list[str]:
+    return list(filter(lambda exe: shutil.which(exe) is None, executables))

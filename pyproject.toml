@@ -31,14 +31,11 @@ module = [
   "ruamel.yaml",
   "matplotlib.*",
   "PIL.*",
+  "virtualenv",
+  "termcolor",
+  "test",
 ]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [
-  "micropip.externals.*",
-]
-check_untyped_defs = false
 
 [tool.pycln]
 all = true
@@ -51,6 +48,7 @@ known_first_party = [
   "micropip",
   "pyodide_build",
   "_pyodide",
+  "js",
 ]
 known_third_party = [
   "build",

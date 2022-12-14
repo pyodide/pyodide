@@ -668,12 +668,12 @@ def test_create_proxy_capture_this(selenium):
 @run_in_pyodide
 def test_create_proxy_roundtrip(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import JsProxy, create_proxy
+    from pyodide.ffi import JsDoubleProxy, create_proxy
 
     f = {}  # type: ignore[var-annotated]
     o = run_js("({})")
     o.f = create_proxy(f, roundtrip=True)
-    assert isinstance(o.f, JsProxy)
+    assert isinstance(o.f, JsDoubleProxy)
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
@@ -681,32 +681,26 @@ def test_create_proxy_roundtrip(selenium):
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
+@run_in_pyodide
 def test_return_destroyed_value(selenium):
-    selenium.run_js(
-        r"""
-        self.f = function(x){ return x };
-        pyodide.runPython(`
-            from pyodide.ffi import create_proxy, JsException
-            from js import f
-            p = create_proxy([])
-            p.destroy()
-            try:
-                f(p)
-            except JsException as e:
-                assert str(e) == (
-                    "Error: Object has already been destroyed\\n"
-                    'The object was of type "list" and had repr "[]"'
-                )
-        `);
-        """
-    )
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_proxy
+
+    f = run_js("(function(x){ return x; })")
+    p = create_proxy([])
+    p.destroy()
+    with pytest.raises(JsException, match='The object was of type "list" and had repr'):
+        f(p)
 
 
 def test_docstrings_a():
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
-    from pyodide.ffi import JsProxy
+    from pyodide.ffi import JsPromise
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
     assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
         jsproxy.then.__doc__
@@ -714,10 +708,11 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring
-    from pyodide.ffi import JsProxy, create_once_callable
+    from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
@@ -821,7 +816,6 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-                Python initialization complete
                 Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
                 The cause of the fatal error was:
                 Stack (most recent call first):
@@ -1139,7 +1133,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         """
     )
     assert stdoutstrings[-2:] == [
-        "Python initialization complete",
         "something to stdout",
     ]
     stderrstrings = _strip_assertions_stderr(stderrstrings)
@@ -1237,7 +1230,7 @@ def test_run_js(selenium):
     assert run_js("(x)=> x+1")(7) == 8
     assert run_js("[1,2,3]")[2] == 3
     run_js("globalThis.x = 77")
-    from js import x
+    from js import x  # type: ignore[attr-defined]
 
     assert x == 77
 
@@ -1299,13 +1292,14 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_unvendored_stdlib_import_hook(selenium_standalone):
+def test_module_not_found_hook(selenium_standalone):
     import importlib
 
     import pytest
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
+    repodata_packages = ["micropip", "packaging", "regex"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(
@@ -1322,37 +1316,6 @@ def test_unvendored_stdlib_import_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
-    from _pyodide._importhook import UnvendoredStdlibFinder
-
-    finder = UnvendoredStdlibFinder()
-
-    assert finder.find_spec("os", None) is None
-    assert finder.find_spec("os.path", None) is None
-    assert finder.find_spec("os.no_such_module", None) is None
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="unvendored from the Python standard library"
-        ):
-            finder.find_spec(lib, None)
-
-    for lib in removed_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="removed from the Python standard library"
-        ):
-            finder.find_spec(lib, None)
-
-
-@run_in_pyodide(packages=["pytest"])
-def test_repodata_import_hook(selenium_standalone):
-    import importlib
-
-    import pytest
-
-    from _pyodide._importhook import RepodataPackagesFinder
-
-    repodata_packages = ["micropip", "packaging", "regex"]
-
     for lib in repodata_packages:
         with pytest.raises(
             ModuleNotFoundError, match="included in the Pyodide distribution"
@@ -1361,18 +1324,6 @@ def test_repodata_import_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
-
-    finder = RepodataPackagesFinder({"micropip": "", "packaging": "", "regex": ""})
-
-    assert finder.find_spec("os", None) is None
-    assert finder.find_spec("os.path", None) is None
-    assert finder.find_spec("os.no_such_module", None) is None
-
-    for lib in repodata_packages:
-        with pytest.raises(
-            ModuleNotFoundError, match="included in the Pyodide distribution"
-        ):
-            finder.find_spec(lib, None)
 
 
 def test_args(selenium_standalone_noload):
@@ -1403,6 +1354,20 @@ def test_args(selenium_standalone_noload):
         )
         == repr([x * x + 1 for x in range(10)])
     )
+
+
+def test_args_OO(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            args: ['-OO']
+        });
+        pyodide.runPython(`import sys; sys.__doc__`)
+        """
+    )
+
+    assert not doc
 
 
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
@@ -1545,3 +1510,17 @@ def test_static_import(
             `);
             """
         )
+
+
+def test_python_error(selenium):
+    [msg, ty] = selenium.run_js(
+        """
+        try {
+            pyodide.runPython("raise TypeError('oops')");
+        } catch(e) {
+            return [e.message, e.type];
+        }
+        """
+    )
+    assert msg.endswith("TypeError: oops\n")
+    assert ty == "TypeError"

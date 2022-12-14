@@ -20,7 +20,7 @@ try:
 except ImportError:
     loadedPackages = None
 
-from ._core import IN_BROWSER, JsProxy, to_js
+from ._core import IN_BROWSER, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -138,7 +138,7 @@ def get_format(format: str) -> str:
 
 
 def unpack_buffer(
-    buffer: JsProxy,
+    buffer: JsBuffer,
     *,
     filename: str = "",
     format: str | None = None,
@@ -147,7 +147,7 @@ def unpack_buffer(
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsProxy | None:
+) -> JsArray | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
