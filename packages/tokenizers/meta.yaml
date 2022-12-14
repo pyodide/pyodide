@@ -1,0 +1,20 @@
+package:
+  name: tokenizers
+  version: 0.13.2
+  top-level:
+    - tokenizers
+source:
+  url: https://files.pythonhosted.org/packages/4a/d9/af2821b5934ed871f716eb65fb3bd43e7bc70b99191ec08f20cfd642d0a1/tokenizers-0.13.2.tar.gz
+  sha256: f9525375582fd1912ac3caa2f727d36c86ff8c0c6de45ae1aaff90f87f33b907
+build:
+  script: |
+    source $CARGO_HOME/env
+    rm -f rust-toolchain  # rust-toolchain file overrides toolchain setting
+    # export RUSTFLAGS="-Zbuild-std"
+    rustup default nightly
+    export RUST_TOOLCHAIN=nightly
+about:
+  home: https://github.com/huggingface/tokenizers
+  PyPI: https://pypi.org/project/tokenizers
+  summary: Fast and Customizable Tokenizers
+  license: Apache License 2.0
