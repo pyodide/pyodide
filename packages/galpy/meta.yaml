@@ -8,9 +8,8 @@ source:
   sha256: 9e2b55e50aab4aa7f4313ab9c333ac4512a4338e8d111fce5f6c14456ea53a07
 build:
   script:
-    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix
-    gsl) export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix
-    gsl)
+    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix gsl)
+    export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix gsl)
   cflags: |
     $(LIBGSL_INCLUDE_PATH)
   ldflags: |
