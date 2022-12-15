@@ -3731,7 +3731,7 @@ finally:
 
 #define SET_FLAG_IF(flag, cond)                                                \
   if (cond) {                                                                  \
-    type_flags |= flag                                                         \
+    type_flags |= flag;                                                        \
   }
 
 EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {

@@ -14,10 +14,15 @@
 #define Py_ENTER()
 #define Py_EXIT()
 
+PyObject* Generator;
+PyObject* AsyncGenerator;
+
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(asend);
+_Py_IDENTIFIER(throw);
+_Py_IDENTIFIER(athrow);
 
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a JavaScript error is thrown.
@@ -76,6 +81,8 @@ static PyObject* asyncio;
 #define IS_CALLABLE  (1 << 8)
 #define IS_ASYNC_ITERABLE (1 << 9)
 #define IS_ASYNC_ITERATOR (1 << 10)
+#define IS_GENERATOR (1 << 11)
+#define IS_ASYNC_GENERATOR (1 << 12)
 // clang-format on
 
 // Taken from genobject.c
@@ -121,11 +128,14 @@ pyproxy_getflags(PyObject* pyobj)
   PyBufferProcs* buffer_proto =
     obj_type->tp_as_buffer ? obj_type->tp_as_buffer : &null_buffer_proto;
 
+  bool success = false;
   int result = 0;
-  // PyObject_Size
-  if (seq_proto->sq_length || map_proto->mp_length) {
-    result |= HAS_LENGTH;
+#define SET_FLAG_IF(flag, cond)                                                \
+  if (cond) {                                                                  \
+    result |= flag;                                                            \
   }
+  // PyObject_Size
+  SET_FLAG_IF(HAS_LENGTH, seq_proto->sq_length || map_proto->mp_length);
   // PyObject_GetItem
   if (map_proto->mp_subscript || seq_proto->sq_item) {
     result |= HAS_GET;
@@ -137,45 +147,45 @@ pyproxy_getflags(PyObject* pyobj)
     }
   }
   // PyObject_SetItem
-  if (map_proto->mp_ass_subscript || seq_proto->sq_ass_item) {
-    result |= HAS_SET;
-  }
+  SET_FLAG_IF(HAS_SET, map_proto->mp_ass_subscript || seq_proto->sq_ass_item);
   // PySequence_Contains
-  if (seq_proto->sq_contains) {
-    result |= HAS_CONTAINS;
-  }
+  SET_FLAG_IF(HAS_CONTAINS, seq_proto->sq_contains);
   // PyObject_GetIter
-  if (obj_type->tp_iter || PySequence_Check(pyobj)) {
-    result |= IS_ITERABLE;
-  }
+  SET_FLAG_IF(IS_ITERABLE, obj_type->tp_iter || PySequence_Check(pyobj));
+  SET_FLAG_IF(IS_ASYNC_ITERABLE, async_proto->am_aiter);
   if (PyIter_Check(pyobj)) {
     result &= ~IS_ITERABLE;
     result |= IS_ITERATOR;
-  }
-  if (async_proto->am_aiter) {
-    result |= IS_ASYNC_ITERABLE;
   }
   if (async_proto->am_anext) {
     result &= ~IS_ASYNC_ITERABLE;
     result |= IS_ASYNC_ITERATOR;
   }
+
+  int isgen = PyObject_IsInstance(pyobj, Generator);
+  FAIL_IF_MINUS_ONE(isgen);
+  int isasyncgen = PyObject_IsInstance(pyobj, AsyncGenerator);
+  FAIL_IF_MINUS_ONE(isasyncgen);
+  SET_FLAG_IF(IS_GENERATOR, isgen);
+  SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
+
   // There's no CPython API that corresponds directly to the "await" keyword.
   // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
   // YIELD_FROM. GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in
   // genobject.c. This tests whether _PyCoro_GetAwaitableIter is likely to
   // succeed.
-  if (async_proto->am_await || gen_is_coroutine(pyobj)) {
-    result |= IS_AWAITABLE;
-  }
-  if (buffer_proto->bf_getbuffer) {
-    result |= IS_BUFFER;
-  }
+  SET_FLAG_IF(IS_AWAITABLE, async_proto->am_await || gen_is_coroutine(pyobj));
+  SET_FLAG_IF(IS_BUFFER, buffer_proto->bf_getbuffer);
   // PyObject_Call (from call.c)
-  if (_PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
-      obj_type->tp_call) {
-    result |= IS_CALLABLE;
-  }
-  return result;
+  SET_FLAG_IF(IS_CALLABLE,
+              _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
+                obj_type->tp_call);
+
+#undef SET_FLAG_IF
+
+  success = true;
+finally:
+  return success ? result : -1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -628,6 +638,80 @@ finally:
   return status;
 }
 
+PySendResult
+_pyproxyGen_return(PyObject* receiver, JsRef jsval, JsRef* result)
+{
+  bool success = false;
+  PySendResult status = PYGEN_ERROR;
+  PyObject* pyresult;
+
+  // Throw GeneratorExit into generator
+  pyresult =
+    _PyObject_CallMethodIdOneArg(receiver, &PyId_throw, PyExc_GeneratorExit);
+  if (pyresult == NULL) {
+    if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
+      // If GeneratorExit comes back out, return original value.
+      PyErr_Clear();
+      status = PYGEN_RETURN;
+      hiwire_incref(jsval);
+      *result = jsval;
+      success = true;
+      goto finally;
+    }
+    //
+    FAIL_IF_MINUS_ONE(_PyGen_FetchStopIterationValue(&pyresult));
+    status = PYGEN_RETURN;
+  } else {
+    status = PYGEN_NEXT;
+  }
+  *result = python2js(pyresult);
+  FAIL_IF_NULL(*result);
+  success = true;
+finally:
+  if (!success) {
+    status = PYGEN_ERROR;
+  }
+  Py_CLEAR(pyresult);
+  return status;
+}
+
+PySendResult
+_pyproxyGen_throw(PyObject* receiver, JsRef jsval, JsRef* result)
+{
+  bool success = false;
+  PyObject* pyvalue = NULL;
+  PyObject* pyresult = NULL;
+  PySendResult status = PYGEN_ERROR;
+
+  pyvalue = js2python(jsval);
+  FAIL_IF_NULL(pyvalue);
+  if (!PyExceptionInstance_Check(pyvalue)) {
+    /* Not something you can raise.  throw() fails. */
+    PyErr_Format(PyExc_TypeError,
+                 "exceptions must be classes or instances "
+                 "deriving from BaseException, not %s",
+                 Py_TYPE(pyvalue)->tp_name);
+    FAIL();
+  }
+  pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_throw, pyvalue);
+  if (pyresult == NULL) {
+    FAIL_IF_MINUS_ONE(_PyGen_FetchStopIterationValue(&pyresult));
+    status = PYGEN_RETURN;
+  } else {
+    status = PYGEN_NEXT;
+  }
+  *result = python2js(pyresult);
+  FAIL_IF_NULL(*result);
+  success = true;
+finally:
+  if (!success) {
+    status = PYGEN_ERROR;
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pyvalue);
+  return status;
+}
+
 JsRef
 _pyproxyGen_asend(PyObject* receiver, JsRef jsval)
 {
@@ -652,6 +736,59 @@ _pyproxyGen_asend(PyObject* receiver, JsRef jsval)
     }
     pyresult = (*t->tp_as_async->am_anext)(receiver);
   }
+  FAIL_IF_NULL(pyresult);
+
+  jsresult = python2js(pyresult);
+  FAIL_IF_NULL(jsresult);
+
+finally:
+  Py_CLEAR(v);
+  Py_CLEAR(asend);
+  Py_CLEAR(pyresult);
+  return jsresult;
+}
+
+JsRef
+_pyproxyGen_areturn(PyObject* receiver)
+{
+  PyObject* v = NULL;
+  PyObject* asend = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+
+  pyresult =
+    _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, PyExc_GeneratorExit);
+  FAIL_IF_NULL(pyresult);
+
+  jsresult = python2js(pyresult);
+  FAIL_IF_NULL(jsresult);
+
+finally:
+  Py_CLEAR(v);
+  Py_CLEAR(asend);
+  Py_CLEAR(pyresult);
+  return jsresult;
+}
+
+JsRef
+_pyproxyGen_athrow(PyObject* receiver, JsRef jsval)
+{
+  PyObject* v = NULL;
+  PyObject* asend = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+
+  v = js2python(jsval);
+  FAIL_IF_NULL(v);
+  if (!PyExceptionInstance_Check(v)) {
+    /* Not something you can raise.  throw() fails. */
+    PyErr_Format(PyExc_TypeError,
+                 "exceptions must be classes or instances "
+                 "deriving from BaseException, not %s",
+                 Py_TYPE(v)->tp_name);
+    FAIL();
+  }
+  pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, v);
   FAIL_IF_NULL(pyresult);
 
   jsresult = python2js(pyresult);
@@ -1163,7 +1300,17 @@ pyproxy_init(PyObject* core)
 {
   bool success = false;
 
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
+  PyObject* collections_abc = NULL;
+  PyObject* docstring_source = NULL;
+
+  collections_abc = PyImport_ImportModule("collections.abc");
+  FAIL_IF_NULL(collections_abc);
+  Generator = PyObject_GetAttrString(collections_abc, "Generator");
+  FAIL_IF_NULL(Generator);
+  AsyncGenerator = PyObject_GetAttrString(collections_abc, "AsyncGenerator");
+  FAIL_IF_NULL(AsyncGenerator);
+
+  docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));
@@ -1174,5 +1321,6 @@ pyproxy_init(PyObject* core)
   success = true;
 finally:
   Py_CLEAR(docstring_source);
+  Py_CLEAR(collections_abc);
   return success ? 0 : -1;
 }
