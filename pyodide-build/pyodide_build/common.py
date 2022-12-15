@@ -149,7 +149,7 @@ ALWAYS_PACKAGES = {
     "ssl",
     "lzma",
     "sqlite3",
-    "_hashlib",
+    "hashlib",
 }
 
 CORE_PACKAGES = {
