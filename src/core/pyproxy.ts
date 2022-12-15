@@ -1034,6 +1034,20 @@ export class PyProxyIteratorMethods {
 }
 
 export class PyProxyGeneratorMethods {
+  /**
+   * Throws an exception into the Generator.
+   *
+   * See the documentation for `Generator.prototype.return
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>_`.
+   *
+   * @param exception Error The error to throw into the generator. Must be an
+   * instanceof ``Error``.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * generator yields ``some_value``, ``return`` returns ``{done : false, value
+   * : some_value}``. When the generator raises a
+   * ``StopIteration(result_value)`` exception, ``return`` returns ``{done :
+   * true, value : result_value}``.
+   */
   throw(exc: any): IteratorResult<any, any> {
     let idarg = Hiwire.new_value(exc);
     let status;
@@ -1060,18 +1074,22 @@ export class PyProxyGeneratorMethods {
   }
 
   /**
-   * This translates to the Python code ``gen.throw(StopIteration, value)``. Returns the next value of
-   * the generator. See the documentation for `Generator.prototype.return
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
-   * The return value will be sent to the Python generator.
+   * Throws a ``GeneratorExit`` into the generator and if the ``GeneratorExit``
+   * is not caught returns the argument value ``{done: true, value: v}``. If the
+   * generator catches the ``GeneratorExit`` and returns or yields another value
+   * the next value of the generator this is returned in the normal way. If it
+   * throws some error other than ``GeneratorExit`` or ``StopIteration``, that
+   * error is propagated. See the documentation for `Generator.prototype.return
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>`_.
    *
    * Present only if the proxied Python object is a generator.
    *
    * @param any The value to return from the generator.
    * @returns An Object with two properties: ``done`` and ``value``. When the
-   * generator yields ``some_value``, ``return`` returns ``{done : false, value :
-   * some_value}``. When the generator raises a ``StopIteration(result_value)``
-   * exception, ``return`` returns ``{done : true, value : result_value}``.
+   * generator yields ``some_value``, ``return`` returns ``{done : false, value
+   * : some_value}``. When the generator raises a
+   * ``StopIteration(result_value)`` exception, ``return`` returns ``{done :
+   * true, value : result_value}``.
    */
   return(v: any): IteratorResult<any, any> {
     // Note: arg is optional, if arg is not supplied, it will be undefined
@@ -1174,17 +1192,20 @@ export class PyProxyAsyncGeneratorMethods {
   }
 
   /**
-   * This translates to the Python code ``gen.throw(StopIteration, value)``. Returns the next value of
-   * the generator. See the documentation for `Generator.prototype.return
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
-   * The return value will be sent to the Python generator.
+   * Throws a ``GeneratorExit`` into the generator and if the ``GeneratorExit``
+   * is not caught returns the argument value ``{done: true, value: v}``. If the
+   * generator catches the ``GeneratorExit`` and returns or yields another value
+   * the next value of the generator this is returned in the normal way. If it
+   * throws some error other than ``GeneratorExit`` or ``StopIteration``, that
+   * error is propagated. See the documentation for `Generator.prototype.return
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/return>`_.
    *
-   * Present only if the proxied Python object is a generator.
+   * Present only if the proxied Python object is an async generator.
    *
    * @param any The value to return from the generator.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``return`` returns ``{done : false, value :
-   * some_value}``. When the generator raises a ``StopIteration(result_value)``
+   * some_value}``. When the generator raises a ``StopAsyncIteration(result_value)``
    * exception, ``return`` returns ``{done : true, value : result_value}``.
    */
   async return(v: any): Promise<IteratorResult<any, any>> {
