@@ -274,7 +274,7 @@ substitutions:
   pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
   gdal, fiona, geopandas {pr}`3213`,
   the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
-  gensim {pr}`3326`, smart_open {pr}`3326`,
+  gensim {pr}`3326`, smart_open {pr}`3326`, pyodide-http {pr}`3355`.
 
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
