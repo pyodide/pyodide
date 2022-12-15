@@ -1,11 +1,11 @@
 package:
   name: docutils
-  version: 0.18.1
+  version: "0.19"
   top-level:
     - docutils
 source:
-  sha256: 23010f129180089fbcd3bc08cfefccb3b890b0050e1ca00c867036e9d161b98c
-  url: https://files.pythonhosted.org/packages/8d/14/69b4bad34e3f250afe29a854da03acb6747711f3df06c359fa053fae4e76/docutils-0.18.1-py2.py3-none-any.whl
+  sha256: 5e1de4d849fee02c63b040a4a3fd567f4ab104defd8a5511fbbc24a8a017efbc
+  url: https://files.pythonhosted.org/packages/93/69/e391bd51bc08ed9141ecd899a0ddb61ab6465309f1eb470905c0c8868081/docutils-0.19-py3-none-any.whl
 about:
   home: https://docutils.sourceforge.io/
   PyPI: https://pypi.org/project/docutils

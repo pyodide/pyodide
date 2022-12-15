@@ -1,11 +1,11 @@
 package:
   name: coverage
-  version: 6.4.4
+  version: 6.5.0
   top-level:
     - coverage
 source:
-  url: https://files.pythonhosted.org/packages/79/f3/8c1af7233f874b5df281397e2b96bedf58dc440bd8c6fdbf93a4436c517a/coverage-6.4.4.tar.gz
-  sha256: e16c45b726acb780e1e6f88b286d3c10b3914ab03438f32117c4aa52d7f30d58
+  url: https://files.pythonhosted.org/packages/5c/66/38d1870cb7cf62da49add1d6803fdbcdef632b2808b5c80bcac35b7634d8/coverage-6.5.0.tar.gz
+  sha256: f642e90754ee3e06b0e7e51bce3379590e76b7f76b708e1a71ff043f87025c84
 requirements:
   run:
     - sqlite3

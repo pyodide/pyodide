@@ -1,7 +1,7 @@
 From e49b376a286659cbdd25f1f13272f236c61716a4 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 17 Jul 2022 14:40:39 +0100
-Subject: [PATCH 13/13] Public pymain_run_python
+Subject: [PATCH 13/14] Public pymain_run_python
 
 ---
  Modules/main.c | 2 +-

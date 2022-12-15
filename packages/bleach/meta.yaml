@@ -1,6 +1,6 @@
 package:
   name: bleach
-  version: 5.0.0
+  version: 5.0.1
   top-level:
     - bleach
 requirements:
@@ -9,8 +9,8 @@ requirements:
     - packaging
     - six
 source:
-  sha256: 08a1fe86d253b5c88c92cc3d810fd8048a16d15762e1e5b74d502256e5926aa1
-  url: https://files.pythonhosted.org/packages/35/8b/bad37525e7ef0669f013059affb3bbcd9311a24d63eda96723339ee0aab7/bleach-5.0.0-py3-none-any.whl
+  sha256: 085f7f33c15bd408dd9b17a4ad77c577db66d76203e5984b1bd59baeee948b2a
+  url: https://files.pythonhosted.org/packages/d4/87/508104336a2bc0c4cfdbdceedc0f44dc72da3abc0460c57e323ddd1b3257/bleach-5.0.1-py3-none-any.whl
 about:
   home: https://github.com/mozilla/bleach
   PyPI: https://pypi.org/project/bleach

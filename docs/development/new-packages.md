@@ -110,7 +110,7 @@ cd pyodide
 If you'd like to use a Docker container, you can now run this command:
 
 ```bash
-./run_docker --pre-built
+./run_docker
 ```
 
 This will mount the current working directory as `/src` within the container.

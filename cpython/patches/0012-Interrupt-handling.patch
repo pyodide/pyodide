@@ -1,7 +1,7 @@
 From 15d94cbb7ff9830650e5dba44a728896add2a07c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 30 Mar 2022 14:50:30 -0700
-Subject: [PATCH 12/13] Interrupt handling
+Subject: [PATCH 12/14] Interrupt handling
 
 ---
  Modules/signalmodule.c | 38 ++++++++++++++++++++++++++++++++++++++

@@ -69,7 +69,7 @@ class BasePackage:
     def needs_rebuild(self) -> bool:
         return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
 
-    def build(self, outputdir: Path, args: Any) -> None:
+    def build(self, args: Any) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -124,7 +124,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, outputdir: Path, args: Any) -> None:
+    def build(self, args: Any) -> None:
 
         p = subprocess.run(
             [
@@ -364,9 +364,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     return needs_build
 
 
-def build_from_graph(
-    pkg_map: dict[str, BasePackage], outputdir: Path, args: argparse.Namespace
-) -> None:
+def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
     packages at once.
@@ -436,7 +434,7 @@ def build_from_graph(
             t0 = perf_counter()
             success = True
             try:
-                pkg.build(outputdir, args)
+                pkg.build(args)
             except Exception as e:
                 built_queue.put(e)
                 success = False
@@ -581,14 +579,12 @@ def copy_packages_to_dist_dir(
 
 
 def build_packages(
-    packages_dir: Path, output_dir: Path, args: argparse.Namespace
-) -> None:
+    packages_dir: Path, args: argparse.Namespace
+) -> dict[str, BasePackage]:
     packages = common._parse_package_subset(args.only)
-
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
-    output_dir.mkdir(exist_ok=True, parents=True)
-    build_from_graph(pkg_map, output_dir, args)
+    build_from_graph(pkg_map, args)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
@@ -598,6 +594,24 @@ def build_packages(
         pkg.file_name = pkg.dist_artifact_path().name
         pkg.unvendored_tests = pkg.tests_path()
 
+    return pkg_map
+
+
+def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
+    """
+    Install packages into the output directory.
+    - copies build artifacts (wheel, zip, ...) to the output directory
+    - create repodata.json
+
+
+    pkg_map
+        package map created from build_packages
+
+    output_dir
+        output directory to install packages into
+    """
+
+    output_dir.mkdir(exist_ok=True, parents=True)
     copy_packages_to_dist_dir(pkg_map.values(), output_dir)
     package_data = generate_repodata(output_dir, pkg_map)
 
@@ -715,7 +729,8 @@ def main(args: argparse.Namespace) -> None:
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
     args = set_default_args(args)
-    build_packages(packages_dir, outputdir, args)
+    pkg_map = build_packages(packages_dir, args)
+    install_packages(pkg_map, outputdir)
 
 
 if __name__ == "__main__":

@@ -24,12 +24,7 @@ to create a Linux build environment.
 We provide a Debian-based Docker image
 ([`pyodide/pyodide-env`](https://hub.docker.com/r/pyodide/pyodide-env)) on
 Docker Hub with the dependencies already installed to make it easier to build
-Pyodide. On top of that we provide
-a pre-built image
-([`pyodide/pyodide`](https://hub.docker.com/r/pyodide/pyodide)) which can be
-used for fast custom and partial builds. Note that building from the non
-pre-built Docker image is _very_ slow on Mac, building on the host machine
-is preferred if at all possible.
+Pyodide.
 
 ```{note}
 These Docker images are also available from the Github packages at
@@ -38,7 +33,7 @@ These Docker images are also available from the Github packages at
 
 1. Install Docker
 
-2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
+2. From a git checkout of Pyodide, run `./run_docker`
 
 3. Run `make` to build.
 

@@ -1,11 +1,11 @@
 package:
   name: lazy-object-proxy
-  version: 1.7.1
+  version: 1.8.0
   top-level:
     - lazy_object_proxy
 source:
-  url: https://files.pythonhosted.org/packages/75/93/3fc1cc28f71dd10b87a53b9d809602d7730e84cc4705a062def286232a9c/lazy-object-proxy-1.7.1.tar.gz
-  sha256: d609c75b986def706743cdebe5e47553f4a5a1da9c5ff66d76013ef396b5a8a4
+  url: https://files.pythonhosted.org/packages/74/37/591f89e8a09ae4574391bdf8a5eecd34a3dbe545917333e625c9de9a66b0/lazy-object-proxy-1.8.0.tar.gz
+  sha256: c219a00245af0f6fa4e95901ed28044544f50152840c5b6a3e7b2568db34d156
 about:
   home: https://github.com/ionelmc/python-lazy-object-proxy
   PyPI: https://pypi.org/project/lazy-object-proxy

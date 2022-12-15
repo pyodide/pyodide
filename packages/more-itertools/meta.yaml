@@ -1,11 +1,11 @@
 package:
   name: more-itertools
-  version: 8.13.0
+  version: 9.0.0
   top-level:
     - more_itertools
 source:
-  sha256: c5122bffc5f104d37c1626b8615b511f3427aa5389b94d61e5ef8236bfbc3ddb
-  url: https://files.pythonhosted.org/packages/bd/3f/c4b3dbd315e248f84c388bd4a72b131a29f123ecacc37ffb2b3834546e42/more_itertools-8.13.0-py3-none-any.whl
+  sha256: 250e83d7e81d0c87ca6bd942e6aeab8cc9daa6096d12c5308f3f92fa5e5c1f41
+  url: https://files.pythonhosted.org/packages/5d/87/1ec3fcc09d2c04b977eabf8a1083222f82eaa2f46d5a4f85f403bf8e7b30/more_itertools-9.0.0-py3-none-any.whl
 about:
   PyPI: https://pypi.org/project/more-itertools
   summary: More routines for operating on iterables, beyond itertools
