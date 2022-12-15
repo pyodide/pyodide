@@ -111,6 +111,7 @@ requirements:
   host:
     - numpy
     - CLAPACK
+    - boost-cpp
   run:
     - numpy
     - CLAPACK
