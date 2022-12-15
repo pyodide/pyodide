@@ -19,7 +19,7 @@ requirements:
     - six
     - click
     - cligj
-    # - click-plugins  # only for fiona CLI?
+      # - click-plugins  # only for fiona CLI?
 
 build:
   vendor-sharedlib: true

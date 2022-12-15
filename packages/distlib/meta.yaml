@@ -1,14 +1,14 @@
 package:
   name: distlib
-  version: 0.3.4
+  version: 0.3.6
   top-level:
     - distlib
 source:
-  sha256: 6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b
-  url: https://files.pythonhosted.org/packages/ac/a3/8ee4f54d5f12e16eeeda6b7df3dfdbda24e6cc572c86ff959a4ce110391b/distlib-0.3.4-py2.py3-none-any.whl
+  sha256: f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e
+  url: https://files.pythonhosted.org/packages/76/cb/6bbd2b10170ed991cf64e8c8b85e01f2fb38f95d1bc77617569e0b0b26ac/distlib-0.3.6-py2.py3-none-any.whl
 build:
   post: |
-    find build/distlib-0.3.4/dist -name '*.exe' -delete
+    find build/distlib-$PKG_VERSION/dist -name '*.exe' -delete
 about:
   home: https://github.com/pypa/distlib
   PyPI: https://pypi.org/project/distlib

@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+import micropip
+
 panels_add_bootstrap_css = False
 
 # -- Project information -----------------------------------------------------
@@ -33,6 +35,7 @@ else:
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
     "sphinxcontrib.napoleon",
     "myst_parser",
     "sphinx_js",
@@ -43,6 +46,7 @@ extensions = [
     "versionwarning.extension",
     "sphinx_issues",
 ]
+
 
 myst_enable_extensions = ["substitution"]
 
@@ -63,6 +67,10 @@ versionwarning_body_selector = "#main-content > div"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
+
+intersphinx_mapping = {
+    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)
+}
 
 # Add modules to be mocked.
 mock_modules = ["ruamel.yaml", "tomli"]

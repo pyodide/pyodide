@@ -1,11 +1,11 @@
 package:
   name: cytoolz
-  version: 0.11.2
+  version: 0.12.0
   top-level:
     - cytoolz
 source:
-  sha256: ea23663153806edddce7e4153d1d407d62357c05120a4e8485bddf1bd5ab22b4
-  url: https://files.pythonhosted.org/packages/b7/a9/9437d8e6a8ba420cb52832a4895614c61bf574bfb3978d5b0806b8ab95be/cytoolz-0.11.2.tar.gz
+  sha256: c105b05f85e03fbcd60244375968e62e44fe798c15a3531c922d531018d22412
+  url: https://files.pythonhosted.org/packages/c1/75/e2e5cbe5309f14265d6c9ac543933a24b168416f87ae9275083be10759eb/cytoolz-0.12.0.tar.gz
 requirements:
   run:
     - nose

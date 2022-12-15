@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "_hashlib"], pytest_assert_rewrites=False)
+@run_in_pyodide(packages=["test", "hashlib"], pytest_assert_rewrites=False)
 def test_hashlib(selenium):
     from test import libregrtest  # type:ignore[attr-defined]
 
@@ -17,7 +17,7 @@ def test_hashlib(selenium):
             raise RuntimeError(f"Failed with code: {e.code}") from None
 
 
-@run_in_pyodide(packages=["_hashlib"])
+@run_in_pyodide(packages=["hashlib"])
 def test_hashlib_algorithms(selenium):
     import hashlib
     from hashlib import algorithms_available

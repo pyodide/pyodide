@@ -1,6 +1,6 @@
 package:
   name: sympy
-  version: 1.10.1
+  version: 1.11.1
   top-level:
     - isympy
     - sympy
@@ -9,8 +9,8 @@ requirements:
     - distutils
     - mpmath
 source:
-  sha256: df75d738930f6fe9ebe7034e59d56698f29e85f443f743e51e47df0caccc2130
-  url: https://files.pythonhosted.org/packages/d0/04/66be21ceb305c66a4b326b0ae44cc4f027a43bc08cac204b48fb45bb3653/sympy-1.10.1-py3-none-any.whl
+  sha256: 938f984ee2b1e8eae8a07b884c8b7a1146010040fccddc6539c54f401c8f6fcf
+  url: https://files.pythonhosted.org/packages/2d/49/a2d03101e2d28ad528968144831d506344418ef1cc04839acdbe185889c2/sympy-1.11.1-py3-none-any.whl
 about:
   home: https://sympy.org
   PyPI: https://pypi.org/project/sympy

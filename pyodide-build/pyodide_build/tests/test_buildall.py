@@ -94,7 +94,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args: Any) -> None:
+        def build(self, args: Any) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -102,7 +102,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
     buildall.build_from_graph(
-        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
+        pkg_map, argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
     )
 
     assert set(build_list) == {
@@ -124,7 +124,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
     class MockPackage(buildall.Package):
         n_builds = 0
 
-        def build(self, outputdir: Path, args: Any) -> None:
+        def build(self, args: Any) -> None:
             sleep(0.005)
             self.n_builds += 1
             # check that each build is only run once
@@ -135,7 +135,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, packages={"*"})
 
     buildall.build_from_graph(
-        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
+        pkg_map, argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
     )
 
 
@@ -144,7 +144,7 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args: Any) -> None:
+        def build(self, args: Any) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -153,7 +153,7 @@ def test_build_error(n_jobs, monkeypatch):
 
     with pytest.raises(ValueError, match="Failed build"):
         buildall.build_from_graph(
-            pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
+            pkg_map, argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
         )
 
 
