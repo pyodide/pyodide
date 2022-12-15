@@ -80,9 +80,6 @@ dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js
 dist/package.json : src/js/package.json
 	cp $< $@
 
-dist/python: src/js/python
-	cp $< $@
-
 .PHONY: npm-link
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
@@ -127,11 +124,13 @@ dist/test.html: src/templates/test.html
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@
 
+dist/python: src/templates/python
+	cp $< $@
+
 .PHONY: dist/console.html
 dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
 
 .PHONY: docs/_build/html/console.html
 docs/_build/html/console.html: src/templates/console.html

@@ -101,7 +101,7 @@ repos:
     rev: "v0.8.0.4"
     hooks:
       - id: shellcheck
-        exclude: ^src/js/python$
+        exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.2.2"

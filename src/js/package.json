@@ -70,8 +70,7 @@
     "pyodide.mjs.map",
     "pyodide.d.ts",
     "repodata.json",
-    "console.html",
-    "python"
+    "console.html"
   ],
   "browser": {
     "child_process": false,
