@@ -1037,8 +1037,8 @@ export class PyProxyGeneratorMethods {
   /**
    * Throws an exception into the Generator.
    *
-   * See the documentation for `Generator.prototype.return
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>_`.
+   * See the documentation for `Generator.prototype.throw
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw>_`.
    *
    * @param exception Error The error to throw into the generator. Must be an
    * instanceof ``Error``.
@@ -1157,6 +1157,20 @@ export class PyProxyAsyncIteratorMethods {
 }
 
 export class PyProxyAsyncGeneratorMethods {
+  /**
+   * Throws an exception into the Generator.
+   *
+   * See the documentation for `Generator.prototype.throw
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/throw>_`.
+   *
+   * @param exception Error The error to throw into the generator. Must be an
+   * instanceof ``Error``.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * generator yields ``some_value``, ``return`` returns ``{done : false, value
+   * : some_value}``. When the generator raises a
+   * ``StopIteration(result_value)`` exception, ``return`` returns ``{done :
+   * true, value : result_value}``.
+   */
   async throw(exc: any): Promise<IteratorResult<any, any>> {
     let idarg = Hiwire.new_value(exc);
     let idresult;
