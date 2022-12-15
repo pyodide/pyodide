@@ -134,7 +134,7 @@ substitutions:
 
 - Added a new CLI command `pyodide build-recipes` which build packages from recipe folder.
   It replaces `pyodide-build buildall`.
-  {pr}`3196`
+  {pr}`3196` {pr}`3279`
 
 - Added subcommands for `pyodide build` which builds packages from various sources.
   | command | result |
