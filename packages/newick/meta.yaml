@@ -1,11 +1,11 @@
 package:
   name: newick
-  version: 1.3.2
+  version: 1.4.0
   top-level:
     - newick
 source:
-  url: https://files.pythonhosted.org/packages/95/11/4db3f40c604b6cb1a574cbf06f66e217af03835385cca1605530d58cacc7/newick-1.3.2-py2.py3-none-any.whl
-  sha256: 6fced6f48b045225ccc4ee4cdbfe78c42b538274f1b866c6add349cf02752fdd
+  url: https://files.pythonhosted.org/packages/28/b5/8254e098b9f8d6dd2768451f26b38a0863a5410a319b16a7ace629c72f5e/newick-1.4.0-py2.py3-none-any.whl
+  sha256: 5a44d12b3cacab1a4450a1af483b1d9542e854bd326e461b30ad8f72415e15e4
 about:
   home: https://github.com/dlce-eva/python-newick
   PyPI: https://pypi.org/project/newick
