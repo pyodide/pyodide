@@ -1,18 +1,18 @@
 package:
   name: matplotlib
-  version: 3.6.2
+  version: 3.5.2
   top-level:
     - pylab
     - mpl_toolkits
     - matplotlib
 source:
-  url: https://files.pythonhosted.org/packages/91/1c/a48fd779287df3425c289cc2ff728980a5b355f15f4c3c40e1822770ba44/matplotlib-3.6.2.tar.gz
-  sha256: b03fd10a1709d0101c054883b550f7c4c5e974f751e2680318759af005964990
+  url: https://files.pythonhosted.org/packages/2f/be/7d6e073a3eb740ebeba43a69f5de2b141fea50b801e24e0ae024ac94d4ac/matplotlib-3.5.2.tar.gz
+  sha256: 48cf850ce14fa18067f2d9e0d646763681948487a8080ec0af2686468b4607a2
 
   patches:
-    - patches/0001-disable-macosx-backend.patch
-    - patches/0002-fix-threading.patch
-    - patches/0003-hardcoded-font-cache.patch
+    - patches/disable_macosx_backend.patch
+    - patches/hardcoded-font-cache.patch
+    - patches/fix-threading.patch
 
   extras:
     - - src/setup.cfg
