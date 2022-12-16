@@ -32,10 +32,9 @@ function createDynlibFS(
   readFileFunc?: ReadFileType,
 ): LoadDynlibFS {
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
-  const defaultSearchDirs = API.defaultLdLibraryPath + [dirname];
 
   let _searchDirs = searchDirs || [];
-  _searchDirs = _searchDirs.concat(defaultSearchDirs);
+  _searchDirs = _searchDirs.concat(API.defaultLdLibraryPath, [dirname]);
 
   const resolvePath = (path: string) => {
     if (DEBUG) {
@@ -119,7 +118,7 @@ export async function loadDynlib(
     // However, since emscripten dylink metadata only contains the name of the
     // library not the full path, we need to update it manually in order to
     // prevent loading same library twice.
-    if (Module.PATH.isAbs(lib)) {
+    if (global && Module.PATH.isAbs(lib)) {
       const libName: string = Module.PATH.basename(lib);
       const dso: any = Module.LDSO.loadedLibsByName[libName];
       if (!dso) {
