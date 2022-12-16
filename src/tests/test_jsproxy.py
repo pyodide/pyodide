@@ -2135,12 +2135,16 @@ def test_gen_lifetimes(selenium):
     with pytest.raises(StopIteration) as exc_info:
         g.send({4})
 
-    assert exc_info.value.value == ["{1}", "{2}", "{3}", "{4}"]
-    assert sys.getrefcount(exc_info.value.value) == 2
+    v = exc_info.value.value
+    del exc_info
+    assert v == ["{1}", "{2}", "{3}", "{4}"]
+    assert sys.getrefcount(v) == 2
 
 
 @run_in_pyodide
 async def test_agen_lifetimes(selenium):
+    import sys
+
     import pytest
 
     from pyodide.code import run_js
@@ -2164,4 +2168,7 @@ async def test_agen_lifetimes(selenium):
     await g.asend({3})
     with pytest.raises(StopAsyncIteration) as exc_info:
         await g.asend({4})
-    assert exc_info.value.args[0] == ["{1}", "{2}", "{3}", "{4}"]
+    v = exc_info.value.args[0]
+    del exc_info
+    assert v == ["{1}", "{2}", "{3}", "{4}"]
+    assert sys.getrefcount(v) == 2
