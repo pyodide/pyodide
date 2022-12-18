@@ -119,6 +119,13 @@ substitutions:
   a new option `checkIntegrity`. If set to False, integrity check for Python Packages
   will be disabled.
 
+- {{ Enhancement }} Added APIs {any}`setStdin <pyodide.setStdin>`,
+  {any}`setStdout <pyodide.setStdout>`, {any}`setStderr <pyodide.setStderr>` for
+  changing the stream handlers after loading Pyodide. Also added more careful
+  control over whether `isatty` returns true or false on stdin, stdout, and
+  stderr.
+  {pr}`3268`
+
 - {{ Fix }} Fix undefined symbol error when loading shared library
   {pr}`3193`
 

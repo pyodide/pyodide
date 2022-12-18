@@ -10,6 +10,7 @@ import { loadBinaryFile } from "./compat";
 import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+import { setStdin, setStdout, setStderr } from "./streams";
 
 API.loadBinaryFile = loadBinaryFile;
 
@@ -518,6 +519,9 @@ export type PyodideInterface = {
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
+  setStdin: typeof setStdin;
+  setStdout: typeof setStdout;
+  setStderr: typeof setStderr;
 };
 
 /**
@@ -584,6 +588,9 @@ API.makePublicAPI = function (): PyodideInterface {
     PyBuffer,
     _module: Module,
     _api: API,
+    setStdin,
+    setStdout,
+    setStderr,
   };
 
   API.public_api = namespace;
