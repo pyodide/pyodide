@@ -4,8 +4,8 @@ package:
   top-level:
     - gensim
 source:
-  url: https://github.com/RaRe-Technologies/gensim/archive/adf393cdfc9443fa96abec3996b2e134a757d24b.zip
-  sha256: c27e54eb0bf1153861e0da9be24513358b2e3a90ef60a67a82c87c4e41080bc9
+  url: https://github.com/RaRe-Technologies/gensim/archive/refs/tags/4.2.0.tar.gz
+  sha256: ba504e41482949f28866ad488921989ea67bc0d92ead5990659f9375b0255e98
 requirements:
   run:
     - numpy
