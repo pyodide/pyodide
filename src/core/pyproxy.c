@@ -60,6 +60,7 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
 });
 
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
+  let px = Module.hiwire.get_value(proxy_id);
   if (px.$$props.roundtrip) {
     // Don't destroy roundtrip proxies!
     return;
@@ -68,7 +69,7 @@ EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);
   }
-  Module.pyproxy_destroy(Module.hiwire.get_value(proxy_id), msg);
+  Module.pyproxy_destroy(px, msg);
 });
 
 static PyObject* asyncio;
