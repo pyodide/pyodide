@@ -1,11 +1,11 @@
 package:
   name: pytz
-  version: "2022.6"
+  version: "2022.7"
   top-level:
     - pytz
 source:
-  sha256: 222439474e9c98fced559f1709d89e6c9cbf8d79c794ff3eb9f8800064291427
-  url: https://files.pythonhosted.org/packages/85/ac/92f998fc52a70afd7f6b788142632afb27cd60c8c782d1452b7466603332/pytz-2022.6-py2.py3-none-any.whl
+  sha256: 93007def75ae22f7cd991c84e02d434876818661f8df9ad5df9e950ff4e52cfd
+  url: https://files.pythonhosted.org/packages/3d/19/4de17f0d5cf5a0d87aa67532d4c2fa75e6e7d8df13c27635ff40fa6f4b76/pytz-2022.7-py2.py3-none-any.whl
 about:
   home: http://pythonhosted.org/pytz
   PyPI: https://pypi.org/project/pytz
