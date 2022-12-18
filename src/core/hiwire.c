@@ -330,30 +330,6 @@ EM_JS_REF(JsRef, hiwire_double, (double val), {
   return Hiwire.new_value(val);
 });
 
-EM_JS_REF(JsRef, hiwire_string_ucs4, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
-EM_JS_REF(JsRef, hiwire_string_ucs2, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
-EM_JS_REF(JsRef, hiwire_string_ucs1, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
 EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
   return Hiwire.new_value(UTF8ToString(ptr));
 });

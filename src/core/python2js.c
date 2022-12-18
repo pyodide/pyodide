@@ -113,6 +113,30 @@ finally:
   return NULL;
 }
 
+EM_JS_REF(JsRef, _python2js_ucs1, (const char* ptr, int len), {
+  let jsstr = "";
+  for (let i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
+  }
+  return Hiwire.new_value(jsstr);
+});
+
+EM_JS_REF(JsRef, _python2js_ucs2, (const char* ptr, int len), {
+  let jsstr = "";
+  for (let i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
+  }
+  return Hiwire.new_value(jsstr);
+});
+
+EM_JS_REF(JsRef, _python2js_ucs4, (const char* ptr, int len), {
+  let jsstr = "";
+  for (let i = 0; i < len; ++i) {
+    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
+  }
+  return Hiwire.new_value(jsstr);
+});
+
 static JsRef
 _python2js_unicode(PyObject* x)
 {
@@ -121,11 +145,11 @@ _python2js_unicode(PyObject* x)
   int length = (int)PyUnicode_GET_LENGTH(x);
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
-      return hiwire_string_ucs1(data, length);
+      return _python2js_ucs1(data, length);
     case PyUnicode_2BYTE_KIND:
-      return hiwire_string_ucs2(data, length);
+      return _python2js_ucs2(data, length);
     case PyUnicode_4BYTE_KIND:
-      return hiwire_string_ucs4(data, length);
+      return _python2js_ucs4(data, length);
     default:
       PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
       return NULL;
