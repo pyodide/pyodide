@@ -118,6 +118,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   API.sys = import_module("sys");
   API.sys.path.insert(0, config.homedir);
+  API.os = import_module("os");
 
   // Set up globals
   let globals = API.runPythonInternal(
@@ -147,6 +148,12 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
   API.dsodir = API.package_loader.DSO_DIR.__str__();
+  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages];
+
+  API.os.environ.__setitem__(
+    "LD_LIBRARY_PATH",
+    API.defaultLdLibraryPath.join(":"),
+  );
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
