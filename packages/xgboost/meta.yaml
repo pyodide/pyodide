@@ -1,11 +1,11 @@
 package:
   name: xgboost
-  version: 1.7.2
+  version: 1.6.1
   top-level:
     - xgboost
 source:
-  url: https://files.pythonhosted.org/packages/05/ab/835b3594f04550e58cc6f51bf130be3dcf0cc65457733365b446a624d61a/xgboost-1.7.2.tar.gz
-  sha256: f1a749aedb9330afc48007cc78b8bbbbea35ce372f48a2735f9c71bbc7b8dcfb
+  url: https://files.pythonhosted.org/packages/0e/8c/19309bcaf9a88b0bab34b88935925153f3f3f646163acaae9aa148cf72bb/xgboost-1.6.1.tar.gz
+  sha256: 24072028656f3428e7b8aabf77340ece057f273e41f7f85d67ccaefb7454bb18
   patches:
     - patches/0001-Add-missing-template-type.patch
     - patches/0002-Add-library-loading-path.patch
@@ -18,7 +18,7 @@ build:
     -DUSE_OPENMP=0
   # xgboost uses dlsym so we need to export more than just PyInit_xgboost.
   # We can't currently use "explicit" because there are too many exports.
-  exports: whole_archive
+  exports: "whole_archive"
 requirements:
   run:
     - numpy
