@@ -1,11 +1,11 @@
 package:
   name: gensim
-  version: 4.2.0
+  version: 4.3.0
   top-level:
     - gensim
 source:
-  url: https://github.com/RaRe-Technologies/gensim/archive/refs/tags/4.2.0.tar.gz
-  sha256: ba504e41482949f28866ad488921989ea67bc0d92ead5990659f9375b0255e98
+  url: https://github.com/RaRe-Technologies/gensim/archive/refs/tags/4.3.0.tar.gz
+  sha256: 14f5f46425249ad415f40e6a87cf6b8e19a8649a1805e725947243495b600977
 requirements:
   run:
     - numpy
