@@ -13,6 +13,6 @@ sphinx-panels
 sphinx-click
 markupsafe<2.1.0
 pydantic
-https://github.com/rth/pyodide-cli/archive/refs/heads/define-typer_click_object.zip
+git+https://github.com/rth/pyodide-cli.git@define-typer_click_object
 # Version should be consistent with packages/micropip/meta.yaml
 micropip==0.2.0
