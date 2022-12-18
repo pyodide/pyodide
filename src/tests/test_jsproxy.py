@@ -2149,6 +2149,11 @@ async def test_agen_lifetimes(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import JsAsyncGenerator
 
+    # Check that:
+    # 1. The lifetime of the generator argument is extended
+    # 2. The lifetime of the objects we `asend` to the generator are extended
+    # 3. The returned pyproxy is successfully received in JavaScript
+    # 4. The returned pyproxy is destroyed
     f = run_js(
         """
         (async function *(x) {
