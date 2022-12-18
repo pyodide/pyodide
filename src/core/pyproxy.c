@@ -210,7 +210,7 @@ _pyproxy_repr(PyObject* pyobj)
 
   repr_py = PyObject_Repr(pyobj);
   FAIL_IF_NULL(repr_py);
-  repr_js = js2python(repr_py);
+  repr_js = python2js(repr_py);
 
 finally:
   Py_CLEAR(repr_py);
