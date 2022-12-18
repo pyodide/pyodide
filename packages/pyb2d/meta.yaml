@@ -1,7 +1,6 @@
 package:
   name: pyb2d
   version: 0.7.2
-  _disabled: true
   top-level:
     - b2d
 
