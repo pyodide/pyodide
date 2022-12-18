@@ -7,7 +7,7 @@ source:
   url: https://files.pythonhosted.org/packages/61/76/6e635cc4ba33e8c170ef5934dad5c269dc5cb9607e878efb2aba12f78361/shapely-2.0.0.tar.gz
   sha256: 11f1b1231a6c04213fb1226c6968d1b1b3b369ec42d1e9655066af87631860ea
   patches:
-    - patches/0001-Search-libs-from-auditwheel-repaired-directory.patch
+    - patches/0001-Consts-in-PyUFuncGenericFunction-signature.patch
 build:
   vendor-sharedlib: true
   script: |
