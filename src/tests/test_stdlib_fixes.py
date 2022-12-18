@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 def test_threading_import(selenium):
@@ -73,3 +74,22 @@ def test_multiprocessing(selenium):
             process.start()
             """
         )
+
+
+@run_in_pyodide
+def test_ctypes_util_find_library(selenium):
+    import os
+    from ctypes.util import find_library
+    from tempfile import TemporaryDirectory
+
+    with TemporaryDirectory() as tmpdir:
+        with open(os.path.join(tmpdir, "libfoo.so"), "wb") as f:
+            f.write(b"\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00")
+        with open(os.path.join(tmpdir, "libbar.so"), "wb") as f:
+            f.write(b"\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00")
+
+        os.environ["LD_LIBRARY_PATH"] = tmpdir
+
+        assert find_library("foo") == os.path.join(tmpdir, "libfoo.so")
+        assert find_library("bar") == os.path.join(tmpdir, "libbar.so")
+        assert find_library("baz") is None

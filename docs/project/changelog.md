@@ -238,6 +238,9 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
+- {{ Fix }} `ctypes.util.find_library` will now search WASM modules from LD_LIBRARY_PATH.
+  {pr}`3353`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
