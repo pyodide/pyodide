@@ -113,6 +113,28 @@ finally:
   return NULL;
 }
 
+// python2js string conversion
+//
+// FAQs:
+//
+// Q: Why do we use this approach rather than TextDecoder?
+//
+// A: TextDecoder does have an 'ascii' encoding and a 'ucs2' encoding which
+// sound promising. They work in many cases but not in all cases, particularly
+// when strings contain weird unprintable bytes. I suspect these conversion
+// functions are also considerably faster than TextDecoder because it takes
+// complicated extra code to cause the problematic edge case behavior of
+// TextDecoder.
+//
+//
+// Q: Is it okay to use str += more_str in a loop? Does this perform a lot of
+// copies?
+//
+// A: We haven't profiled this but I suspect that the JS VM understands this
+// code quite well and can git it into very performant code.
+// TODO: someone should compare += in a loop to building a list and using
+// list.join("") and see if one is faster than the other.
+
 EM_JS_REF(JsRef, _python2js_ucs1, (const char* ptr, int len), {
   let jsstr = "";
   for (let i = 0; i < len; ++i) {
@@ -151,8 +173,7 @@ _python2js_unicode(PyObject* x)
     case PyUnicode_4BYTE_KIND:
       return _python2js_ucs4(data, length);
     default:
-      PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
-      return NULL;
+      assert(false /* invalid Unicode kind */);
   }
 }
 
