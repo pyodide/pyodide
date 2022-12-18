@@ -4,6 +4,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include "python2js.h"
