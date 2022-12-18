@@ -2815,6 +2815,9 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
     get [Symbol.toStringTag]() {
       return "Generator";
     },
+    get [Symbol.iterator]() {
+      return this;
+    },
     next: wrap("next"),
     throw: wrap("throw"),
     return: wrap("return"),
@@ -2855,6 +2858,9 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
   return Hiwire.new_value({
     get [Symbol.toStringTag]() {
       return "AsyncGenerator";
+    },
+    get [Symbol.asyncIterator]() {
+      return this;
     },
     next: wrap("next"),
     throw: wrap("throw"),
