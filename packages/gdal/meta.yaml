@@ -1,10 +1,10 @@
 package:
   name: gdal
-  version: 3.5.1
+  version: 3.6.1
 
 source:
-  url: https://github.com/OSGeo/gdal/releases/download/v3.5.2/gdal-3.5.2.tar.gz
-  sha256: fbd696e1b2a858fbd2eb3718db16b14ed9ba82521d3578770d480c74fe1146d2
+  url: https://files.pythonhosted.org/packages/e2/db/bc547582de5d5df1e07c983688b6fe97b4fe6a52cf92095422b75c1ad17a/GDAL-3.6.1.tar.gz
+  sha256: 5fcc867a44893ce3bcbf77783304b56de5d57122fd372c274fce7a9c7038ceb5
 requirements:
   host:
     - libtiff

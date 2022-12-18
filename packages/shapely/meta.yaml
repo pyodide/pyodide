@@ -1,11 +1,11 @@
 package:
   name: shapely
-  version: 1.8.2
+  version: 2.0.0
   top-level:
     - shapely
 source:
-  url: https://files.pythonhosted.org/packages/93/3c/cda77e57a08c49569de5bd90376c547bcb981420100adcb0f3770ed681b1/Shapely-1.8.2.tar.gz
-  sha256: 572af9d5006fd5e3213e37ee548912b0341fb26724d6dc8a4e3950c10197ebb6
+  url: https://files.pythonhosted.org/packages/61/76/6e635cc4ba33e8c170ef5934dad5c269dc5cb9607e878efb2aba12f78361/shapely-2.0.0.tar.gz
+  sha256: 11f1b1231a6c04213fb1226c6968d1b1b3b369ec42d1e9655066af87631860ea
   patches:
     - patches/0001-Search-libs-from-auditwheel-repaired-directory.patch
 build:
