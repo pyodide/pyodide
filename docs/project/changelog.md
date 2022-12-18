@@ -160,6 +160,13 @@ substitutions:
   `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
   {pr}`3285`, {pr}`3299`
 
+- {{ Enhancement }} JavaScript generators and async generators that are created
+  from Python now are wrapped so that Python objects sent to them as arguments
+  or from `.send` / `.asend` are kept alive until the generator is exhausted or
+  `.close`d. This makes generators significantly more ergonomic to use, at the
+  cost of making memory leaks more likely if the generator is never finalized.
+  {pr}`3317`
+
 - {{ Enhancement }} Added a mypy typeshed for some common functionality for the
   `js` module.
   {pr}`3298`
