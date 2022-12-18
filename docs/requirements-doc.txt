@@ -14,7 +14,7 @@ sphinx-click
 markupsafe<2.1.0
 pydantic
 git+https://github.com/rth/pyodide-cli.git@define-typer_click_object
-# Packages that we want to dicument as part of the Pyodide CLI
+# Packages that we want to document as part of the Pyodide CLI
 ./pyodide-build/
 # Version should be consistent with packages/micropip/meta.yaml
 micropip==0.2.0
