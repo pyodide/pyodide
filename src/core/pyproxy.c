@@ -53,11 +53,17 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
-    Module.pyproxy_destroy(px, msg);
+    if (!px.$$props.roundtrip) {
+      Module.pyproxy_destroy(px, msg);
+    }
   }
 });
 
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
+  if (px.$$props.roundtrip) {
+    // Don't destroy roundtrip proxies!
+    return;
+  }
   let msg = undefined;
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);

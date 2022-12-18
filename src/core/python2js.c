@@ -806,6 +806,13 @@ finally:
   return py_result;
 }
 
+// As contrasts `destroy_proxies` defined in pyproxy.c and declared in
+// pyproxy.h:
+// 1. This handles JavaScript errors, for the other one JS errors are fatal.
+// 2. This calls `proxy.destroy`, so if it is some other object with a `destroy`
+//    method, that will get called (is this a good thing??)
+// 3. destroy_proxies won't destroy proxies with roundtrip set to true, this
+// will.
 EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
   for (let proxy of Hiwire.get_value(proxies_id)) {
     proxy.destroy();
