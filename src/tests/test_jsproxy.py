@@ -2144,8 +2144,7 @@ def test_gen_lifetimes(selenium):
 @run_in_pyodide
 async def test_agen_lifetimes(selenium):
     import sys
-
-    import pytest
+    from asyncio import sleep
 
     from pyodide.code import run_js
     from pyodide.ffi import JsAsyncGenerator
@@ -2166,9 +2165,11 @@ async def test_agen_lifetimes(selenium):
     await g.asend(None)
     await g.asend({2})
     await g.asend({3})
-    with pytest.raises(StopAsyncIteration) as exc_info:
-        await g.asend({4})
-    v = exc_info.value.args[0]
-    del exc_info
+    # This approach is a bit odd but it gets the refcount right. In various
+    # other ways, someone else holds on to a reference to the exception.
+    res = g.asend({4})
+    await sleep(0.01)
+    v = res.exception().args[0]  # type:ignore[attr-defined]
+    del res
     assert v == ["{1}", "{2}", "{3}", "{4}"]
     assert sys.getrefcount(v) == 2
