@@ -125,33 +125,6 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS4 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs4(const char* ptr, int len);
-
-/**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS2 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs2(const char* ptr, int len);
-
-/**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS1 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs1(const char* ptr, int len);
-
-/**
  * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing UTF8. The string data itself is copied.
  *
@@ -159,16 +132,6 @@ hiwire_string_ucs1(const char* ptr, int len);
  */
 JsRef
 hiwire_string_utf8(const char* ptr);
-
-/**
- * Create a new JavaScript string, given a pointer to a null-terminated buffer
- * containing ascii (well, technically latin-1). The string data itself is
- * copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ascii(const char* ptr);
 
 /**
  * Create a new JavaScript boolean value.
