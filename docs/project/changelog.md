@@ -17,6 +17,14 @@ substitutions:
 - `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
   {pr}`3150`.
 
+- {{ Breaking }} We now don't publish pre-built Pyodide docker images
+  anymore. Note that `./run_docker --pre-built` was not working for a while
+  and it was actually equivalent to `./run_docker`. If you need to build a
+  single Python wheel out of tree, you can use the `pyodide build` command
+  instead. See [our blog post](https://blog.pyodide.org/posts/0.21-release/#building-binary-wheels-for-pyodide)
+  for more information.
+  {pr}`3342`.
+
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
   documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
@@ -79,7 +87,7 @@ substitutions:
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when
   importing packages that are included in Pyodide fails.
-  {pr}`3137`
+  {pr}`3137`, {pr}`3263`
 
 - {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
   method, so it's possible to use a JavaScript function as a Python method. When
@@ -126,7 +134,7 @@ substitutions:
 
 - Added a new CLI command `pyodide build-recipes` which build packages from recipe folder.
   It replaces `pyodide-build buildall`.
-  {pr}`3196`
+  {pr}`3196` {pr}`3279`
 
 - Added subcommands for `pyodide build` which builds packages from various sources.
   | command | result |
@@ -151,6 +159,11 @@ substitutions:
   JavaScript.
   {pr}`3290`
 
+- {{ Enhancement }} PyProxies of synchronous and asynchronous Python generators
+  now support `return` and `throw` APIs that behave like the ones on JavaScript
+  generators.
+  {pr}`3346`
+
 - {{ Enhancement }} Added `JsGenerator` and `JsIterator` types to `pyodide.ffi`.
   Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
   {pr}`3294`
@@ -158,7 +171,7 @@ substitutions:
 - {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
   iterators and generators from Python. This includes support for `aiter` for async interables,
   `anext` and `asend` for async iterators, and `athrow` and `aclose` for async generators.
-  {pr}`3285`, {pr}`3299`
+  {pr}`3285`, {pr}`3299`, {pr}`3339`
 
 - {{ Enhancement }} JavaScript generators and async generators that are created
   from Python now are wrapped so that Python objects sent to them as arguments
@@ -170,6 +183,10 @@ substitutions:
 - {{ Enhancement }} Added a mypy typeshed for some common functionality for the
   `js` module.
   {pr}`3298`
+
+- Removed "Python initialization complete" message printed when loading is
+  finished.
+  {pr}`3247`
 
 ### Build System / Package Loading
 
@@ -228,6 +245,9 @@ substitutions:
   debug codes by setting `PYODIDE_DEBUG_JS` env variable when building.
   {pr}`3129`
 
+- {{ Fix }} `ctypes.util.find_library` will now search WASM modules from LD_LIBRARY_PATH.
+  {pr}`3353`
+
 ### Build System
 
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
@@ -269,11 +289,14 @@ substitutions:
   pyheif, pillow_heif, libheif, libde265 {pr}`3161`, wordcloud {pr}`3173`,
   gdal, fiona, geopandas {pr}`3213`,
   the standard library \_hashlib module {pr}`3206` , pyinstrument {pr}`3258`,
+  gensim {pr}`3326`, smart_open {pr}`3326`, pyodide-http {pr}`3355`.
 
 - {{ Update }} Upgraded pandas to version 1.5.0.
   {pr}`3134`
 
 - {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
+
+- {{ Update }} Upgraded packages: scikit-learn (1.1.3), {pr}`3324`
 
 ## Version 0.21.3
 

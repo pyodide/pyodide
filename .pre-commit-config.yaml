@@ -22,7 +22,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.2.2"
+    rev: "v3.3.1"
     hooks:
       - id: pyupgrade
         name: pyupgrade
@@ -37,7 +37,7 @@ repos:
         stages: [manual]
 
   - repo: https://github.com/psf/black
-    rev: "22.10.0"
+    rev: "22.12.0"
     hooks:
       - id: black
 
@@ -45,7 +45,7 @@ repos:
     rev: "6.0.0"
     hooks:
       - id: flake8
-        additional_dependencies: [flake8-bugbear]
+        additional_dependencies: [flake8-bugbear==22.10.27]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v0.991"
@@ -113,3 +113,6 @@ repos:
             "te,slowy,aray,ba,nd,classs,crate,feld,lits,inflight,falsy,asend",
           ]
         exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$
+
+ci:
+  autoupdate_schedule: "quarterly"

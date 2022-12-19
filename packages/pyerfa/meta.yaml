@@ -19,7 +19,8 @@ source:
 build:
   script: |
     # regenerate erfa/ufunc.c from our patched erfa/ufunc.c.templ.
-    python3.10 erfa_generator.py
+    python3 -m pip install jinja2
+    python3 erfa_generator.py
 requirements:
   host:
     - numpy

@@ -1,7 +1,7 @@
 From 9b255e03e2798b3ac235c8d191ed1de27aae1bdc Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Thu, 24 Jun 2021 14:55:10 -0700
-Subject: [PATCH 07/13] xfail core ctypes tests that don't work
+Subject: [PATCH 07/14] xfail core ctypes tests that don't work
 
 PyCode_SetExtra doesn't work and ctypes doesn't seem to work with variadic functions including PyUnicode_FromFormat/
 ---

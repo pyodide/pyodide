@@ -1,0 +1,19 @@
+package:
+  name: gensim
+  version: 4.3.0
+  top-level:
+    - gensim
+source:
+  url: https://github.com/RaRe-Technologies/gensim/archive/refs/tags/4.3.0.tar.gz
+  sha256: 14f5f46425249ad415f40e6a87cf6b8e19a8649a1805e725947243495b600977
+requirements:
+  run:
+    - numpy
+    - scipy
+    - six
+    - smart_open
+about:
+  home: http://radimrehurek.com/gensim
+  PyPI: https://pypi.org/project/gensim
+  summary: Python framework for fast Vector Space Modelling
+  license: LGPL-2.1-only

@@ -1,5 +1,5 @@
 package:
-  name: _hashlib
+  name: hashlib
   version: 1.0.0 # Nonsense
   top-level:
     - _hashlib
