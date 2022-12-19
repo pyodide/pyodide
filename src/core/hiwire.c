@@ -654,6 +654,12 @@ EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_BOOL(bool, hiwire_is_async_generator, (JsRef idobj), {
+  // clang-format off
+  return Object.prototype.toString.call(Hiwire.get_value(idobj)) === "[object AsyncGenerator]";
+  // clang-format on
+});
+
 EM_JS_BOOL(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
   let value = Hiwire.get_value(idobj);
   return !!(API.Comlink && value[API.Comlink.createEndpoint]);

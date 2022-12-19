@@ -320,6 +320,9 @@ hiwire_is_function(JsRef idobj);
 bool
 hiwire_is_generator(JsRef idobj);
 
+bool
+hiwire_is_async_generator(JsRef idobj);
+
 /**
  * Check if the object is a comlink proxy.
  */
