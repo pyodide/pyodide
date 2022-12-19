@@ -18,7 +18,7 @@ substitutions:
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
   {pr}`3239`, {pr}`3280`, {pr}`3314`
 
-### Project Management
+### Deployment and testing
 
 - {{ Breaking }} `pyodide-cdn2.iodide.io` is not available anymore. Please use
   `https://cdn.jsdelivr.net/pyodide` instead.
