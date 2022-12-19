@@ -2816,7 +2816,7 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
     get [Symbol.toStringTag]() {
       return "Generator";
     },
-    get [Symbol.iterator]() {
+    [Symbol.iterator]() {
       return this;
     },
     next: wrap("next"),
@@ -2860,7 +2860,7 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
     get [Symbol.toStringTag]() {
       return "AsyncGenerator";
     },
-    get [Symbol.asyncIterator]() {
+    [Symbol.asyncIterator]() {
       return this;
     },
     next: wrap("next"),
