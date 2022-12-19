@@ -2816,7 +2816,7 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
     get [Symbol.toStringTag]() {
       return "Generator";
     },
-    get [Symbol.iterator]() {
+    [Symbol.iterator]() {
       return this;
     },
     next: wrap("next"),
@@ -2860,7 +2860,7 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
     get [Symbol.toStringTag]() {
       return "AsyncGenerator";
     },
-    get [Symbol.asyncIterator]() {
+    [Symbol.asyncIterator]() {
       return this;
     },
     next: wrap("next"),
@@ -3880,7 +3880,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
   SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] === 'function' || typeof obj[Symbol.asyncIterator] !== 'function') );
   SET_FLAG_IF(IS_ASYNC_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] !== 'function' || typeof obj[Symbol.asyncIterator] === 'function') );
-  SET_FLAG_IF(HAS_LENGTH,
+  SET_FLAG_IF(HAS_LENGTH,1
     (typeof obj.size === "number") ||
     (typeof obj.length === "number" && typeof obj !== "function"));
   SET_FLAG_IF(HAS_GET, typeof obj.get === "function");
