@@ -14,7 +14,8 @@ substitutions:
 
 ## Unreleased
 
-- `pyodide-cdn2.iodide.io` is not available anymore. Please use `https://cdn.jsdelivr.net/pyodide` instead.
+- {{ Breaking }} `pyodide-cdn2.iodide.io` is not available anymore. Please use
+  `https://cdn.jsdelivr.net/pyodide` instead.
   {pr}`3150`.
 
 - {{ Breaking }} We now don't publish pre-built Pyodide docker images
@@ -24,6 +25,15 @@ substitutions:
   instead. See [our blog post](https://blog.pyodide.org/posts/0.21-release/#building-binary-wheels-for-pyodide)
   for more information.
   {pr}`3342`.
+
+- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
+  rather than `pyodide-build-{version}.tar.gz`
+  {pr}`2996`
+
+- {{ Enhancement }} Added a new release file called
+  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
+  files needed to start Pyodide and no additional packages.
+  {pr}`2999`
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
@@ -53,15 +63,6 @@ substitutions:
   `setdefault`, `popitem`, `update`, and `clear` for `JsProxy` of map-like
   objects.
   {pr}`3275`
-
-- {{ Enhancement }} The releases are now called `pyodide-{version}.tar.gz`
-  rather than `pyodide-build-{version}.tar.gz`
-  {pr}`2996`
-
-- {{ Enhancement }} Added a new release file called
-  `pyodide-core-{version}.tar.gz` intended for use in Node. It contains the
-  files needed to start Pyodide and no additional packages.
-  {pr}`2999`
 
 - {{ Enhancement }} Added `then`, `catch`, and `finally_` methods to the `Future`s
   used by Pyodide's event loop.
