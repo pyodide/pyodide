@@ -107,6 +107,31 @@ def test_build_recipe(tmp_path, monkeypatch, request):
     assert len(built_wheels) == len(pkgs_to_build)
 
 
+def test_config_all():
+
+    result = runner.invoke(
+        skeleton.app,
+        ["config"],
+    )
+
+    envs = result.stdout.splitlines()
+    keys = [env.split("=")[0] for env in envs]
+
+    assert "PYODIDE_ROOT" in keys
+    assert "PYODIDE_EMSCRIPTEN_VERSION" in keys
+
+
+def test_config_key():
+
+    result = runner.invoke(
+        skeleton.app,
+        ["config" "PYODIDE_EMSCRIPTEN_VERSION"],
+    )
+
+    value = result.stdout.strip()
+    assert value == common.get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+
+
 def test_fetch_or_build_pypi_with_pyodide(tmp_path, runtime):
     if runtime != "node":
         pytest.xfail("node only")
