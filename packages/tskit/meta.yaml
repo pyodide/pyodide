@@ -1,11 +1,11 @@
 package:
   name: tskit
-  version: 0.4.1
+  version: 0.5.3
   top-level:
     - tskit
 source:
-  url: https://files.pythonhosted.org/packages/fb/0d/00407181bf409da76dd9a63741d54d57cfa6afec42957ca6a6b93dbfb530/tskit-0.4.1.tar.gz
-  sha256: 28b07fb7f7b19dadd133ab49938c2a38e1558b1cb76122e57f4d1d1230c383ca
+  url: https://files.pythonhosted.org/packages/72/78/ff5bcd512f2a2f1ea253da96fb824cd20dc3f60513b03619f37487cc2eca/tskit-0.5.3.tar.gz
+  sha256: 1dc6f10bd805b757bcce4bb2dc81b7dcda5379af019928222663f3d8ace3e997
 requirements:
   run:
     - numpy

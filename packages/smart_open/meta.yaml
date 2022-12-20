@@ -1,11 +1,11 @@
 package:
   name: smart_open
-  version: 6.2.0
+  version: 6.3.0
   top-level:
     - smart_open
 source:
-  url: https://files.pythonhosted.org/packages/3e/07/36678c6ff0dfa6cf445d0e00bf4f013de3b86ec1a2e8bfd1e5df69b2d91d/smart_open-6.2.0-py3-none-any.whl
-  sha256: 088bf00f9327c71e549bc2f86567d3320df5d89667f009ce1c16568976068ef7
+  url: https://files.pythonhosted.org/packages/47/80/c2d1bdd36c6b64ae566d9a29724291510e4f3796ce99639d3c2999286284/smart_open-6.3.0-py3-none-any.whl
+  sha256: b4c9ae193ad6d3e7add50944b86afa0d150bd821ab8ec21edb26d9a06b66f6a8
 about:
   home: https://github.com/piskvorky/smart_open
   PyPI: https://pypi.org/project/smart_open

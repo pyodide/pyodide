@@ -1,11 +1,11 @@
 package:
   name: pandas
-  version: 1.5.0
+  version: 1.5.2
   top-level:
     - pandas
 source:
-  url: https://files.pythonhosted.org/packages/2a/24/f5042daa59b91e94e6ea41edbb28d2b7e3712d0cf54a76f9ffde394efbe7/pandas-1.5.0.tar.gz
-  sha256: 3ee61b881d2f64dd90c356eb4a4a4de75376586cd3c9341c6c0fcaae18d52977
+  url: https://files.pythonhosted.org/packages/4d/07/c4d69e1acb7723ca49d24fc60a89aa07a914dfb8e7a07fdbb9d8646630cd/pandas-1.5.2.tar.gz
+  sha256: 220b98d15cee0b2cd839a6358bd1f273d0356bf964c1a1aeb32d47db0215488b
 build:
   cflags:
     -Werror=implicit-function-declaration -Werror=mismatched-parameter-types
