@@ -81,7 +81,7 @@ pyodide build
 ```
 
 in the package folder . This command produces a wheel in the `dist/` folder,
-similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/)
+similarly to the [PyPA build](https://pypa-build.readthedocs.io/en/latest/)
 command.
 
 If you need to add custom compiler / linker flags to the compiler invocations,
@@ -122,7 +122,7 @@ against Pyodide, see
   `*-cp310-cp310-emscripten_3_1_27_wasm32.whl` and are compatible only for a
   given Python and Emscripten versions. In the Pyodide distribution, Python and
   Emscripten are updated simultaneously.
-- for now, PyPi does not support wasm32 wheels so you will not be able to upload
+- for now, PyPi does not support emscripten/wasm32 wheels so you will not be able to upload
   them there.
 
 ## Building a Python package (in tree)
