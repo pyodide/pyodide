@@ -26,7 +26,12 @@ from typing import Any, TextIO, cast
 from urllib import request
 
 from . import common, pywasmcross
-from .common import exit_with_stdio, find_matching_wheels, find_missing_executables
+from .common import (
+    BUILD_VARS,
+    exit_with_stdio,
+    find_matching_wheels,
+    find_missing_executables,
+)
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 
 
@@ -120,40 +125,7 @@ class BashRunnerWithSharedEnvironment:
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env = {
-        key: os.environ[key]
-        for key in [
-            # TODO: Stabilize and document more of these in meta-yaml.md
-            "PATH",
-            "PYTHONPATH",
-            "PYODIDE_ROOT",
-            "PYTHONINCLUDE",
-            "NUMPY_LIB",
-            "PYODIDE_PACKAGE_ABI",
-            "HOME",
-            "HOSTINSTALLDIR",
-            "TARGETINSTALLDIR",
-            "SYSCONFIG_NAME",
-            "HOSTSITEPACKAGES",
-            "PYMAJOR",
-            "PYMINOR",
-            "PYMICRO",
-            "CPYTHONBUILD",
-            "CPYTHONLIB",
-            "SIDE_MODULE_CFLAGS",
-            "SIDE_MODULE_LDFLAGS",
-            "STDLIB_MODULE_CFLAGS",
-            "UNISOLATED_PACKAGES",
-            "WASM_LIBRARY_DIR",
-            "WASM_PKG_CONFIG_PATH",
-            "CARGO_BUILD_TARGET",
-            "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
-            "CARGO_HOME",
-            "RUSTFLAGS",
-            "PYO3_CONFIG_FILE",
-            "PYODIDE_CMAKE_TOOLCHAIN_FILE",
-        ]
-    } | {"PYODIDE": "1"}
+    env = {key: os.environ[key] for key in BUILD_VARS} | {"PYODIDE": "1"}
     if "PYODIDE_JOBS" in os.environ:
         env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
 
