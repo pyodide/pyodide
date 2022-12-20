@@ -30,6 +30,7 @@ BUILD_VARS: set[str] = {
     "TARGETINSTALLDIR",
     "SYSCONFIG_NAME",
     "HOSTSITEPACKAGES",
+    "PYVERSION",
     "PYMAJOR",
     "PYMINOR",
     "PYMICRO",
