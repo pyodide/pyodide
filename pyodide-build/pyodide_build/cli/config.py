@@ -5,7 +5,9 @@ from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def main(
-    config_var: str = typer.Argument("ALL", help="config variables used in Pyodide"),
+    config_var: str = typer.Argument(
+        "ALL", help="config variables used in Pyodide", show_default=False
+    ),
 ) -> None:
     """
     Show config variables used in pyodide
