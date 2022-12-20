@@ -10,7 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import { createModule, setHomeDirectory } from "./module";
 import { initializeNativeFS } from "./nativefs";
 import version from "./version";
 
@@ -118,6 +118,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   API.sys = import_module("sys");
   API.sys.path.insert(0, config.homedir);
+  API.os = import_module("os");
 
   // Set up globals
   let globals = API.runPythonInternal(
@@ -147,6 +148,12 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
   API.dsodir = API.package_loader.DSO_DIR.__str__();
+  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages];
+
+  API.os.environ.__setitem__(
+    "LD_LIBRARY_PATH",
+    API.defaultLdLibraryPath.join(":"),
+  );
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
@@ -240,8 +247,8 @@ export async function loadPyodide(
      * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
      */
     homedir?: string;
-
-    /** Load the full Python standard library.
+    /**
+     * Load the full Python standard library.
      * Setting this to false excludes unvendored modules from the standard library.
      * Default: false
      */
@@ -288,6 +295,8 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.print = config.stdout;
+  Module.printErr = config.stderr;
   Module.preRun.push(() => {
     for (const mount of config._node_mounts) {
       Module.FS.mkdirTree(mount);
@@ -299,7 +308,6 @@ export async function loadPyodide(
   const API: any = { config };
   Module.API = API;
 
-  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
   setHomeDirectory(Module, config.homedir);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
@@ -336,13 +344,12 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 `,
     );
   }
-
-  initializeNativeFS(Module);
-
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
+
+  initializeNativeFS(Module);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
@@ -368,5 +375,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
+  API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;
 }

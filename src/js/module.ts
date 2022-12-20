@@ -1,4 +1,35 @@
 /** @private */
+
+type FSNode = any;
+type FSStream = any;
+
+export interface FS {
+  unlink: (path: string) => void;
+  mkdirTree: (path: string, mode?: number) => void;
+  chdir: (path: string) => void;
+  symlink: (target: string, src: string) => FSNode;
+  createDevice: (
+    parent: string,
+    name: string,
+    input?: (() => number | null) | null,
+    output?: ((code: number) => void) | null,
+  ) => FSNode;
+  closeStream: (fd: number) => void;
+  open: (path: string, flags: string | number, mode?: number) => FSStream;
+  makedev: (major: number, minor: number) => number;
+  mkdev: (path: string, dev: number) => FSNode;
+  filesystems: any;
+  stat: (path: string, dontFollow?: boolean) => any;
+  readdir: (node: FSNode) => string[];
+  isDir: (mode: number) => boolean;
+  lookupPath: (path: string) => FSNode;
+  isFile: (mode: number) => boolean;
+  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
+  chmod: (path: string, mode: number) => void;
+  utime: (path: string, atime: number, mtime: number) => void;
+  rmdir: (path: string) => void;
+}
+
 export interface Module {
   noImageDecoding: boolean;
   noAudioDecoding: boolean;
@@ -8,8 +39,9 @@ export interface Module {
   print: (a: string) => void;
   printErr: (a: string) => void;
   ENV: { [key: string]: string };
-  FS: any;
   PATH: any;
+  TTY: any;
+  FS: FS;
 }
 
 /**
@@ -28,81 +60,6 @@ export function createModule(): any {
     throw toThrow;
   };
   return Module;
-}
-
-/**
- *
- * @param stdin
- * @param stdout
- * @param stderr
- * @private
- */
-export function setStandardStreams(
-  Module: Module,
-  stdin?: () => string,
-  stdout?: (a: string) => void,
-  stderr?: (a: string) => void,
-) {
-  // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
-  if (stdout) {
-    Module.print = stdout;
-  }
-
-  if (stderr) {
-    Module.printErr = stderr;
-  }
-
-  // For stdin, we have to deal with the low level API ourselves
-  if (stdin) {
-    Module.preRun.push(function () {
-      Module.FS.init(createStdinWrapper(stdin), null, null);
-    });
-  }
-}
-
-function createStdinWrapper(stdin: () => string) {
-  // When called, it asks the user for one whole line of input (stdin)
-  // Then, it passes the individual bytes of the input to emscripten, one after another.
-  // And finally, it terminates it with null.
-  const encoder = new TextEncoder();
-  let input = new Uint8Array(0);
-  let inputIndex = -1; // -1 means that we just returned null
-  function stdinWrapper() {
-    try {
-      if (inputIndex === -1) {
-        let text = stdin();
-        if (text === undefined || text === null) {
-          return null;
-        }
-        if (typeof text !== "string") {
-          throw new TypeError(
-            `Expected stdin to return string, null, or undefined, got type ${typeof text}.`,
-          );
-        }
-        if (!text.endsWith("\n")) {
-          text += "\n";
-        }
-        input = encoder.encode(text);
-        inputIndex = 0;
-      }
-
-      if (inputIndex < input.length) {
-        let character = input[inputIndex];
-        inputIndex++;
-        return character;
-      } else {
-        inputIndex = -1;
-        return null;
-      }
-    } catch (e) {
-      // emscripten will catch this and set an IOError which is unhelpful for
-      // debugging.
-      console.error("Error thrown in stdin:");
-      console.error(e);
-      throw e;
-    }
-  }
-  return stdinWrapper;
 }
 
 /**

@@ -335,8 +335,8 @@ This can happen for two reasons,
    from the corresponding URL.
 2. or the package has binary extensions (e.g. C, Fortran or Rust), in which
    case it needs to be packaged in Pyodide. Please open [an
-   issue](https://github.com/pyodide/pyodide/issues) after checking than an
-   issue for this opackage doesn't exist already. Then follow
+   issue](https://github.com/pyodide/pyodide/issues) after checking that an
+   issue for this package doesn't exist already. Then follow
    {ref}`new-packages`.
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?

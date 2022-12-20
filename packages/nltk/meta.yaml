@@ -1,11 +1,11 @@
 package:
   name: nltk
-  version: "3.7"
+  version: "3.8"
   top-level:
     - nltk
 source:
-  sha256: ba3de02490308b248f9b94c8bc1ac0683e9aa2ec49ee78536d8667afb5e3eec8
-  url: https://files.pythonhosted.org/packages/43/0b/8298798bc5a9a007b7cae3f846a3d9a325953e0f9c238affa478b4d59324/nltk-3.7-py3-none-any.whl
+  sha256: 3306502f487aa9fb0566e23443fa287a85a8d8d0821e2ef1655b4e3f0ea4aeee
+  url: https://files.pythonhosted.org/packages/35/45/64f4abaa5b36b698aaeb556ae6dc533e57a6b9e72ac6fc7f0d7f9cb15bb4/nltk-3.8-py3-none-any.whl
 requirements:
   run:
     - regex
