@@ -3,11 +3,12 @@ import shutil
 from pathlib import Path
 
 import pytest
+import typer  # type: ignore[import]
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build import common
-from pyodide_build.cli import build, skeleton
+from pyodide_build.cli import build, config, skeleton
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -109,9 +110,11 @@ def test_build_recipe(tmp_path, monkeypatch, request):
 
 def test_config_all():
 
+    app = typer.Typer()
+    app.command()(config.main)
+
     result = runner.invoke(
-        skeleton.app,
-        ["config"],
+        app,
     )
 
     envs = result.stdout.splitlines()
@@ -123,9 +126,12 @@ def test_config_all():
 
 def test_config_key():
 
+    app = typer.Typer()
+    app.command()(config.main)
+
     result = runner.invoke(
-        skeleton.app,
-        ["config", "PYODIDE_EMSCRIPTEN_VERSION"],
+        app,
+        ["PYODIDE_EMSCRIPTEN_VERSION"],
     )
 
     value = result.stdout.strip()
