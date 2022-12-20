@@ -125,7 +125,7 @@ def test_config_key():
 
     result = runner.invoke(
         skeleton.app,
-        ["config" "PYODIDE_EMSCRIPTEN_VERSION"],
+        ["config", "PYODIDE_EMSCRIPTEN_VERSION"],
     )
 
     value = result.stdout.strip()
