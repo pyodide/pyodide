@@ -200,18 +200,16 @@ function setStdinError() {
  * text.
  *
  */
-export function setStdin({
-  stdin,
-  isatty,
-  error,
-}: { stdin?: InFuncType; error?: boolean; isatty?: boolean } = {}) {
-  if (error) {
+export function setStdin(
+  options: { stdin?: InFuncType; error?: boolean; isatty?: boolean } = {},
+) {
+  if (options.error) {
     setStdinError();
     return;
   }
-  if (stdin) {
-    isattys.stdin = !!isatty;
-    const get_char = make_get_char(stdin);
+  if (options.stdin) {
+    isattys.stdin = !!options.isatty;
+    const get_char = make_get_char(options.stdin);
     ttyout_ops.get_char = get_char;
     ttyerr_ops.get_char = get_char;
     refreshStreams();
@@ -244,24 +242,22 @@ export function setDefaultStdout() {
  * isatty(stdout) is set to false (this API buffers stdout so it is impossible
  * to make a tty with it).
  */
-export function setStdout({
-  batched,
-  raw,
-  isatty,
-}: {
-  batched?: (a: string) => void;
-  raw?: (a: number) => void;
-  isatty?: boolean;
-} = {}) {
-  if (raw) {
-    isattys.stdout = !!isatty;
-    Object.assign(ttyout_ops, make_unbatched_put_char(raw));
+export function setStdout(
+  options: {
+    batched?: (a: string) => void;
+    raw?: (a: number) => void;
+    isatty?: boolean;
+  } = {},
+) {
+  if (options.raw) {
+    isattys.stdout = !!options.isatty;
+    Object.assign(ttyout_ops, make_unbatched_put_char(options.raw));
     refreshStreams();
     return;
   }
-  if (batched) {
+  if (options.batched) {
     isattys.stdout = false;
-    Object.assign(ttyout_ops, make_batched_put_char(batched));
+    Object.assign(ttyout_ops, make_batched_put_char(options.batched));
     refreshStreams();
     return;
   }
@@ -292,24 +288,22 @@ function setDefaultStderr() {
  * isatty(stderr) is set to false (this API buffers stderr so it is impossible
  * to make a tty with it).
  */
-export function setStderr({
-  batched,
-  raw,
-  isatty,
-}: {
-  batched?: (a: string) => void;
-  raw?: (a: number) => void;
-  isatty?: boolean;
-} = {}) {
-  if (raw) {
-    isattys.stderr = !!isatty;
-    Object.assign(ttyerr_ops, make_unbatched_put_char(raw));
+export function setStderr(
+  options: {
+    batched?: (a: string) => void;
+    raw?: (a: number) => void;
+    isatty?: boolean;
+  } = {},
+) {
+  if (options.raw) {
+    isattys.stderr = !!options.isatty;
+    Object.assign(ttyerr_ops, make_unbatched_put_char(options.raw));
     refreshStreams();
     return;
   }
-  if (batched) {
+  if (options.batched) {
     isattys.stderr = false;
-    Object.assign(ttyerr_ops, make_batched_put_char(batched));
+    Object.assign(ttyerr_ops, make_batched_put_char(options.batched));
     refreshStreams();
     return;
   }
