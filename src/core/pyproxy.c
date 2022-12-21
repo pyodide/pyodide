@@ -53,9 +53,7 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
-    if (!px.$$props.roundtrip) {
-      Module.pyproxy_destroy(px, msg);
-    }
+    Module.pyproxy_destroy(px, msg, false);
   }
 });
 
@@ -69,7 +67,7 @@ EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);
   }
-  Module.pyproxy_destroy(px, msg);
+  Module.pyproxy_destroy(px, msg, false);
 });
 
 static PyObject* asyncio;

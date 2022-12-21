@@ -332,14 +332,21 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
     for (let proxy_id of cache_map.values()) {
       const cache_entry = Hiwire.pop_value(proxy_id);
       if (!cache.leaked) {
-        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg);
+        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg, true);
       }
     }
   }
 }
 
-Module.pyproxy_destroy = function (proxy: PyProxy, destroyed_msg: string) {
+Module.pyproxy_destroy = function (
+  proxy: PyProxy,
+  destroyed_msg: string,
+  destroy_roundtrip: boolean,
+) {
   if (proxy.$$.ptr === 0) {
+    return;
+  }
+  if (!destroy_roundtrip && proxy.$$props.roundtrip) {
     return;
   }
   let ptrobj = _getPtr(proxy);
@@ -492,8 +499,13 @@ export class PyProxyClass {
    * @param destroyed_msg The error message to print if use is attempted after
    *        destroying. Defaults to "Object has already been destroyed".
    */
-  destroy(destroyed_msg?: string) {
-    Module.pyproxy_destroy(this, destroyed_msg);
+  destroy(options: { msg?: string; destroyRoundtrip?: boolean } = {}) {
+    if (typeof options === "string") {
+      options = { msg: options };
+    }
+    options = Object.assign({ msg: "", destroyRoundtrip: true }, options);
+    const { msg, destroyRoundtrip } = options;
+    Module.pyproxy_destroy(this, msg, destroyRoundtrip);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.
