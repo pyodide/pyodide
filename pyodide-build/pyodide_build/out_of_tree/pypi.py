@@ -7,6 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from email.message import EmailMessage
 from email.parser import BytesParser
+from functools import cache
 from io import BytesIO
 from operator import attrgetter
 from pathlib import Path
@@ -48,15 +49,11 @@ def stream_redirected(to=os.devnull, stream=None):
             to = None
 
 
-# cache of built sdists by url source to wheel file path
-BUILD_CACHE: dict[str, dict[str, Any]] = {}
-
-
-def get_cached_built_wheel(url):
+@cache
+def get_built_wheel(url):
     parsed_url = urlparse(url)
     gz_name = Path(parsed_url.path).name
-    if url in BUILD_CACHE:
-        return BUILD_CACHE[url]["path"]
+
     cache_entry: dict[str, Any] = {}
     build_dir = tempfile.TemporaryDirectory()
     cache_entry["build_dir"] = build_dir
@@ -93,7 +90,6 @@ def get_cached_built_wheel(url):
     print(OKGREEN, "Success", ENDC)
 
     cache_entry["path"] = wheel_path
-    BUILD_CACHE[url] = cache_entry
     return wheel_path
 
 
@@ -204,7 +200,7 @@ def get_project_from_pypi(package_name, extras):
 def download_or_build_wheel(url: str, target_directory: Path) -> None:
     parsed_url = urlparse(url)
     if parsed_url.path.endswith("gz"):
-        wheel_file = get_cached_built_wheel(url)
+        wheel_file = get_built_wheel(url)
         shutil.copy(wheel_file, target_directory)
     elif parsed_url.path.endswith(".whl"):
         with open(target_directory / Path(parsed_url.path).name, "wb") as f:
@@ -214,7 +210,7 @@ def download_or_build_wheel(url: str, target_directory: Path) -> None:
 def get_metadata_for_wheel(url):
     parsed_url = urlparse(url)
     if parsed_url.path.endswith("gz"):
-        wheel_file = get_cached_built_wheel(url)
+        wheel_file = get_built_wheel(url)
         wheel_stream: BinaryIO = open(wheel_file, "rb")
     elif parsed_url.path.endswith(".whl"):
         data = requests.get(url).content
