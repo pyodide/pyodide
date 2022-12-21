@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
+from typing import Any
 
 from .. import common, pypabuild, pywasmcross
 
 
-def run(exports, args, outdir="./dist"):
-    outdir = Path(outdir)
+def run(exports: Any, args: list[str], outdir: Path | None = None) -> Path:
+    if outdir is None:
+        outdir = Path("./dist")
     cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
     cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
@@ -24,5 +26,5 @@ def run(exports, args, outdir="./dist"):
     )
 
     with build_env_ctx as env:
-        built_wheel = pypabuild.build(env, " ".join(args), outdir=outdir)
-    return built_wheel
+        built_wheel = pypabuild.build(env, " ".join(args), outdir=str(outdir))
+    return Path(built_wheel)

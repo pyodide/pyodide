@@ -120,7 +120,7 @@ def test_fetch_or_build_pypi(tmp_path):
             )
     output_dir = tmp_path / "dist"
     # one pure-python package (doesn't need building) and one sdist package (needs building)
-    pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
+    pkgs = ["pytest-pyodide"]  # , "pycryptodome==3.15.0"]
 
     os.chdir(tmp_path)
     for p in pkgs:

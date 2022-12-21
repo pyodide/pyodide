@@ -58,7 +58,7 @@ def get_cached_built_wheel(url):
     if url in BUILD_CACHE:
         return BUILD_CACHE[url]["path"]
     else:
-        cache_entry = {}
+        cache_entry: dict[str, Any] = {}
         build_dir = tempfile.TemporaryDirectory()
         cache_entry["build_dir"] = build_dir
         os.chdir(build_dir.name)
@@ -68,19 +68,21 @@ def get_cached_built_wheel(url):
             f.close()
             shutil.unpack_archive(f.name, build_dir.name)
             os.unlink(f.name)
-            files = list(os.listdir(build_dir.name))
-            if len(files) == 1:
-                os.chdir(os.path.join(build_dir.name, files[0]))
+            files = list(Path(build_dir.name).iterdir())
+            if len(files) == 1 and files[0].is_dir():
+                os.chdir(Path(build_dir.name, files[0]))
             else:
                 os.chdir(build_dir.name)
         print(f"Building wheel for {gz_name}: ", end="")
         with tempfile.TemporaryFile(mode="w+") as f:
             try:
-                with stream_redirected(to=f, stream=sys.stdout):
-                    with stream_redirected(to=f, stream=sys.stderr):
-                        wheel_path = build.run(
-                            PyPIProvider.BUILD_EXPORTS, PyPIProvider.BUILD_FLAGS
-                        )
+                with (
+                    stream_redirected(to=f, stream=sys.stdout),
+                    stream_redirected(to=f, stream=sys.stderr),
+                ):
+                    wheel_path = build.run(
+                        PyPIProvider.BUILD_EXPORTS, PyPIProvider.BUILD_FLAGS
+                    )
             except BaseException as e:
                 print(" Failed\n Error is:")
                 f.seek(0)
