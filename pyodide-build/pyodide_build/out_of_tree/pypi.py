@@ -133,6 +133,7 @@ class Candidate:
                 for e in extras:
                     if r.marker.evaluate({"extra": e}):
                         yield r
+                        break
 
     @property
     def dependencies(self):
