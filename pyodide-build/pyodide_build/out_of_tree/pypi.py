@@ -57,45 +57,44 @@ def get_cached_built_wheel(url):
     gz_name = Path(parsed_url.path).name
     if url in BUILD_CACHE:
         return BUILD_CACHE[url]["path"]
-    else:
-        cache_entry: dict[str, Any] = {}
-        build_dir = tempfile.TemporaryDirectory()
-        cache_entry["build_dir"] = build_dir
-        os.chdir(build_dir.name)
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
-            data = requests.get(url).content
-            f.write(data)
-            f.close()
-            shutil.unpack_archive(f.name, build_dir.name)
-            os.unlink(f.name)
-            files = list(Path(build_dir.name).iterdir())
-            if len(files) == 1 and files[0].is_dir():
-                os.chdir(Path(build_dir.name, files[0]))
-            else:
-                os.chdir(build_dir.name)
-        print(f"Building wheel for {gz_name}: ", end="")
-        with tempfile.TemporaryFile(mode="w+") as f:
-            try:
-                with (
-                    stream_redirected(to=f, stream=sys.stdout),
-                    stream_redirected(to=f, stream=sys.stderr),
-                ):
-                    wheel_path = build.run(
-                        PyPIProvider.BUILD_EXPORTS, PyPIProvider.BUILD_FLAGS
-                    )
-            except BaseException as e:
-                print(" Failed\n Error is:")
-                f.seek(0)
-                sys.stdout.write(f.read())
-                raise e
+    cache_entry: dict[str, Any] = {}
+    build_dir = tempfile.TemporaryDirectory()
+    cache_entry["build_dir"] = build_dir
+    os.chdir(build_dir.name)
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
+        data = requests.get(url).content
+        f.write(data)
+        f.close()
+        shutil.unpack_archive(f.name, build_dir.name)
+        os.unlink(f.name)
+        files = list(Path(build_dir.name).iterdir())
+        if len(files) == 1 and files[0].is_dir():
+            os.chdir(Path(build_dir.name, files[0]))
+        else:
+            os.chdir(build_dir.name)
+    print(f"Building wheel for {gz_name}: ", end="")
+    with tempfile.TemporaryFile(mode="w+") as f:
+        try:
+            with (
+                stream_redirected(to=f, stream=sys.stdout),
+                stream_redirected(to=f, stream=sys.stderr),
+            ):
+                wheel_path = build.run(
+                    PyPIProvider.BUILD_EXPORTS, PyPIProvider.BUILD_FLAGS
+                )
+        except BaseException as e:
+            print(" Failed\n Error is:")
+            f.seek(0)
+            sys.stdout.write(f.read())
+            raise e
 
-        OKGREEN = "\033[92m"
-        ENDC = "\033[0m"
-        print(OKGREEN, "Success", ENDC)
+    OKGREEN = "\033[92m"
+    ENDC = "\033[0m"
+    print(OKGREEN, "Success", ENDC)
 
-        cache_entry["path"] = wheel_path
-        BUILD_CACHE[url] = cache_entry
-        return wheel_path
+    cache_entry["path"] = wheel_path
+    BUILD_CACHE[url] = cache_entry
+    return wheel_path
 
 
 class Candidate:
