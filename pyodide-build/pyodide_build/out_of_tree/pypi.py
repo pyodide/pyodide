@@ -363,7 +363,7 @@ def build_dependencies_for_wheel(
         download_or_build_wheel(x.url, wheel.parent)
 
 
-def fetch_pypi_package(package_spec, destdir):
+def fetch_pypi_package(package_spec: str, destdir: Path) -> Path:
     pf = PackageFinder(
         index_urls=["https://pypi.org/simple/"], target_python=get_target_python()
     )
