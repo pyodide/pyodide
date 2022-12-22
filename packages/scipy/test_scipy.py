@@ -63,3 +63,15 @@ def test_scipy_pytest(selenium):
     runtest("odr", "explicit")
     runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
+
+
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["pytest", "scipy"])
+def test_scipy_svdp(selenium):
+    import numpy as np
+    from scipy.sparse.linalg._svdp import _svdp
+
+    np.random.seed(0)
+    n, k = 70, 10
+    A = np.random.random((n, n))
+    _svdp(A, k, kmax=5 * k)
