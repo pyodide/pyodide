@@ -435,6 +435,10 @@ Module.callPyObject = function (ptrobj: number, jsargs: any) {
 
 export type PyProxy = PyProxyClass & { [x: string]: any };
 
+const DESTROY_MSG_POSITIONAL_ARG_DEPRECATED =
+  "Using a positional argument for the message argument for 'destroy' is deprecated and will be removed in v0.23";
+let DESTROY_MSG_POSITIONAL_ARG_WARNED = false;
+
 export class PyProxyClass {
   $$: {
     ptr: number;
@@ -496,16 +500,22 @@ export class PyProxyClass {
    * collected, however there is no guarantee that the finalizer will be run in
    * a timely manner so it is better to ``destroy`` the proxy explicitly.
    *
-   * @param destroyed_msg The error message to print if use is attempted after
+   * @param options
+   * @param options.message The error message to print if use is attempted after
    *        destroying. Defaults to "Object has already been destroyed".
+   *
    */
-  destroy(options: { msg?: string; destroyRoundtrip?: boolean } = {}) {
+  destroy(options: { message?: string; destroyRoundtrip?: boolean } = {}) {
     if (typeof options === "string") {
-      options = { msg: options };
+      if (!DESTROY_MSG_POSITIONAL_ARG_WARNED) {
+        DESTROY_MSG_POSITIONAL_ARG_WARNED = true;
+        console.warn(DESTROY_MSG_POSITIONAL_ARG_DEPRECATED);
+      }
+      options = { message: options };
     }
-    options = Object.assign({ msg: "", destroyRoundtrip: true }, options);
-    const { msg, destroyRoundtrip } = options;
-    Module.pyproxy_destroy(this, msg, destroyRoundtrip);
+    options = Object.assign({ message: "", destroyRoundtrip: true }, options);
+    const { message: m, destroyRoundtrip: d } = options;
+    Module.pyproxy_destroy(this, m, d);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.
