@@ -40,7 +40,7 @@ build:
     -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
-    -DDEBUGCFUNCS
+  # -DDEBUGCFUNCS
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
