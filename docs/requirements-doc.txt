@@ -10,7 +10,10 @@ sphinx-issues==2.0.0
 sphinx-js==3.1
 sphinx-version-warning~=1.1.2
 sphinx-panels
+sphinx-click
 markupsafe<2.1.0
 pydantic
+# Packages that we want to document as part of the Pyodide CLI
+./pyodide-build/
 # Version should be consistent with packages/micropip/meta.yaml
 micropip==0.2.0
