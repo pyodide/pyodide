@@ -13,7 +13,6 @@ sphinx-panels
 sphinx-click
 markupsafe<2.1.0
 pydantic
-pyodide-cli~=0.2.1
 # Packages that we want to document as part of the Pyodide CLI
 ./pyodide-build/
 # Version should be consistent with packages/micropip/meta.yaml
