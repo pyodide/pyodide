@@ -251,6 +251,10 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         def fix_line(line: str) -> str:
             if f2c_output.name != "cgemm_ovwr.c":
                 line = line.replace("struct", "extern struct")
+            if f2c_output.name == "dgetu0.c":
+                line = line.replace("S_fp aprod", "R_fp aprod")
+            if f2c_output.name == "dlanbpro.c":
+                line = line.replace("E_fp", "R_fp")
             if "12300" in line:
                 return line.replace("static", "").replace("123001", "(*n)")
             return line

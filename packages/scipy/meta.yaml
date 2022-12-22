@@ -32,6 +32,7 @@ source:
     - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
     - patches/0012-Remove-meson-requirements.patch
     - patches/0013-Fix-fitpack.patch
+    - patches/fix-daprod.patch
 
 build:
   cflags: |
@@ -39,6 +40,7 @@ build:
     -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
+    -DDEBUGCFUNCS
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/

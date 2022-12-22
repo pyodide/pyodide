@@ -1,0 +1,38 @@
+index cd11ef694..8f204e6f1 100644
+--- a/scipy/sparse/linalg/_propack/dpropack.pyf
++++ b/scipy/sparse/linalg/_propack/dpropack.pyf
+@@ -3,11 +3,11 @@
+ python module __user__routines
+     interface
+         function daprod(transa,m,n,x,y,dparm,iparm)
+-           character*1 :: transa
++           integer :: transa
+            integer intent(in) :: m
+            integer intent(in) :: n
+-           double precision depend(m,n),check(len(x)>=(transa[0] == 'n' ? n : m)),dimension((transa[0] == 'n' ? n : m)) :: x
+-           double precision depend(m,n),check(len(y)>=(transa[0] == 'n' ? m : n)),dimension((transa[0] == 'n' ? m : n)) :: y
++           double precision depend(m,n),check(len(x)>=(transa == 'n' ? n : m)),dimension((transa == 'n' ? n : m)) :: x
++           double precision depend(m,n),check(len(y)>=(transa == 'n' ? m : n)),dimension((transa == 'n' ? m : n)) :: y
+            integer dimension(*) :: iparm
+            double precision dimension(*) :: dparm
+         end function daprod
+--- a/scipy/sparse/linalg/_propack/PROPACK/double/dlanbpro.F
++++ b/scipy/sparse/linalg/_propack/PROPACK/double/dlanbpro.F
+@@ -108,7 +108,6 @@ c     %-----------%
+       integer ioption(*), iwork(*), iparm(*)
+       double precision rnorm,B(ldb,*), doption(*), work(*), dparm(*)
+       double precision U(ldu,*),V(ldv,*)
+-      external APROD
+ 
+ c     %------------%
+ c     | Parameters |
+@@ -136,7 +135,8 @@ c     %--------------------%
+ c     | External Functions |
+ c     %--------------------%
+       double precision dlamch,pdnrm2,pddot,dlapy2
+-      external pdnrm2,pddot
++      real aprod
++      external pdnrm2,pddot,aprod
+       external dlamch,dlapy2
+ 
+ c-------------------- Here begins executable code ---------------------
