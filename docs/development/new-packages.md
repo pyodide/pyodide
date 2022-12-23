@@ -45,6 +45,12 @@ any compilation commands.
 It is now possible to build Python wheels for Pyodide for many packages
 separately from the Pyodide package tree.
 
+### Install pyodide-build
+
+```sh
+pip install pyodide-build
+```
+
 ### Set up Emscripten
 
 You need to download the Emscripten developer toolkit:
@@ -57,18 +63,13 @@ cd emsdk
 then you can install the appropriate version of Emscripten:
 
 ```sh
-./emsdk install 3.1.27
-./emsdk activate 3.1.27
+PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config emscripten_version)
+./emsdk install ${PYODIDE_EMSCRIPTEN_VERSION}
+./emsdk activate ${PYODIDE_EMSCRIPTEN_VERSION}
 source emsdk_env.sh
 ```
 
 If you restart your shell, you will need to run `source emsdk_env.sh` again.
-
-### Install pyodide-build
-
-```sh
-pip install pyodide-build
-```
 
 ### Build the WASM/Emscripten wheel
 
@@ -99,7 +100,7 @@ Here is a complete example of a Github Actions workflow for building a Python
 wheel out of tree:
 
 ```yaml
-runs-on: ubuntu-latest
+runs-on: ubuntu-20.04
   steps:
   - uses: actions/checkout@v3
   - uses: actions/setup-python@v4

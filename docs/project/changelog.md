@@ -285,6 +285,9 @@ substitutions:
   It replaces `pyodide-build buildall`.
   {pr}`3196` {pr}`3279`
 
+- Added a new CLI command `pyodide config` which shows config variables used in Pyodide.
+  {pr}`3376`
+
 - Added subcommands for `pyodide build` which builds packages from various sources.
   | command | result |
   |------------------------|-----------------------------------------|
