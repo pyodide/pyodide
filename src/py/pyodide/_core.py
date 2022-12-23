@@ -33,6 +33,7 @@ if IN_BROWSER:
 
     import _pyodide._core_docs
 
+    # This is intentionally opaque to static analysis tools (e.g., mypy)
     for t in [
         "ConversionError",
         "JsException",
