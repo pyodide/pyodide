@@ -1,0 +1,21 @@
+package:
+  name: pyxel
+  version: 1.9.7
+source:
+  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.7.tar.gz
+  sha256: c0ab1e1c40aec97466026beb968ce6930134e01a8bbe03246de15100e1fed0b5
+  extras:
+    - - extras/config
+      - ./crates/pyxel-core/.cargo/config
+build:
+  script: |
+    source $CARGO_HOME/env
+    export VERBOSE=1
+
+test:
+  imports:
+    - pyxel
+about:
+  home: https://github.com/kitao/pyxel
+  PyPI: https://pypi.org/project/pyxel/
+  summary: A retro game engine for Python
