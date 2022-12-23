@@ -635,7 +635,7 @@ def test_create_proxy(selenium):
     assert sys.getrefcount(f) == 2
     proxy = create_proxy(f)
     assert sys.getrefcount(f) == 3
-    assert proxy() == 7
+    assert proxy() == 7  # type:ignore[operator]
     testAddListener(proxy)
     assert sys.getrefcount(f) == 3
     assert testCallListener() == 7
@@ -677,7 +677,7 @@ def test_create_proxy_roundtrip(selenium):
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert o.f is f
+    assert o.f is f  # type: ignore[comparison-overlap]
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
