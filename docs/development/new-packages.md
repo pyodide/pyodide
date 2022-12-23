@@ -63,7 +63,7 @@ cd emsdk
 then you can install the appropriate version of Emscripten:
 
 ```sh
-PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config PYODIDE_EMSCRIPTEN_VERSION)
+PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config emscripten_version)
 ./emsdk install ${PYODIDE_EMSCRIPTEN_VERSION}
 ./emsdk activate ${PYODIDE_EMSCRIPTEN_VERSION}
 source emsdk_env.sh
