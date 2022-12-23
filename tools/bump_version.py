@@ -55,11 +55,6 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        ROOT / "run_docker",
-        build_version_pattern('PYODIDE_PREBUILT_IMAGE_TAG="{python_version}"'),
-        prerelease=False,
-    ),
-    Target(
         ROOT / "docs/project/about.md",
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
         prerelease=False,
@@ -146,7 +141,6 @@ def generate_updated_content(
         return None
 
     # Some files only required to be bumped on core version release.
-    # For example, we don't deploy prebuilt docker images for dev release.
     if not target.prerelease:
         if not is_core_version(new_version):
             print(f"[*] {file}: Skipped (not targeting a core version)")
@@ -212,8 +206,8 @@ def main():
     update_queue = []
 
     targets = itertools.chain(
-        zip(PYTHON_TARGETS, [new_version_py] * len(PYTHON_TARGETS)),
-        zip(JS_TARGETS, [new_version_js] * len(JS_TARGETS)),
+        zip(PYTHON_TARGETS, [new_version_py] * len(PYTHON_TARGETS), strict=True),
+        zip(JS_TARGETS, [new_version_js] * len(JS_TARGETS), strict=True),
     )
     for target, new_version in targets:
         current_version = parse_current_version(target)

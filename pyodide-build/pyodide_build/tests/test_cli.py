@@ -92,7 +92,8 @@ def test_build_recipe(tmp_path, monkeypatch, request):
             *pkgs.keys(),
             "--recipe-dir",
             recipe_dir,
-            "--output",
+            "--install",
+            "--install-dir",
             output_dir,
         ],
     )

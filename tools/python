@@ -50,74 +50,6 @@ const { loadPyodide } = require("../dist/pyodide");
 const fs = require("fs");
 
 /**
- * The default stderr/stdout do not handle newline or flush correctly, and stdin
- * is also strange. Make a tty that connects Emscripten stdstreams to node
- * stdstreams. We will make one tty for stdout and one for stderr, the
- * `outstream` argument controls which one we make.
- *
- * Note that setting Module.stdin / Module.stdout / Module.stderr does not work
- * because these cause `isatty(stdstream)` to return false. We want `isatty` to
- * be true. (IMO this is an Emscripten issue, maybe someday we can fix it.)
- */
-function make_tty_ops(outstream) {
-    const BUFSIZE = 256;
-    const buf = Buffer.alloc(BUFSIZE);
-    let index = 0;
-    let numbytes = 0;
-    return {
-        // get_char has 3 particular return values:
-        // a.) the next character represented as an integer
-        // b.) undefined to signal that no data is currently available
-        // c.) null to signal an EOF
-        get_char(tty) {
-            if (index >= numbytes) {
-                // read synchronously at most BUFSIZE bytes from file descriptor 0 (stdin)
-                const bytesRead = fs.readSync(0, buf, 0, BUFSIZE, -1);
-                if (bytesRead === 0) {
-                    return null;
-                }
-                index = 0;
-                numbytes = bytesRead;
-            }
-            return buf[index++];
-        },
-        put_char(tty, val) {
-            outstream.write(Buffer.from([val]));
-        },
-        flush(tty) {},
-        fsync() {},
-    };
-}
-
-/**
- * Fix standard streams by replacing them with ttys that work better via make_tty_ops.
- */
-function setupStreams(FS, TTY) {
-    // Create and register devices
-    let mytty = FS.makedev(FS.createDevice.major++, 0);
-    let myttyerr = FS.makedev(FS.createDevice.major++, 0);
-    TTY.register(mytty, make_tty_ops(process.stdout));
-    TTY.register(myttyerr, make_tty_ops(process.stderr));
-    // Attach devices to files
-    FS.mkdev("/dev/mytty", mytty);
-    FS.mkdev("/dev/myttyerr", myttyerr);
-    // Replace /dev/stdxx with our custom devices
-    FS.unlink("/dev/stdin");
-    FS.unlink("/dev/stdout");
-    FS.unlink("/dev/stderr");
-    FS.symlink("/dev/mytty", "/dev/stdin");
-    FS.symlink("/dev/mytty", "/dev/stdout");
-    FS.symlink("/dev/myttyerr", "/dev/stderr");
-    // Refresh std streams so they use our new versions
-    FS.closeStream(0 /* stdin */);
-    FS.closeStream(1 /* stdout */);
-    FS.closeStream(2 /* stderr */);
-    FS.open("/dev/stdin", 0 /* write only */);
-    FS.open("/dev/stdout", 1 /* read only */);
-    FS.open("/dev/stderr", 1 /* read only */);
-}
-
-/**
  * Determine which native top level directories to mount into the Emscripten
  * file system.
  *
@@ -142,14 +74,8 @@ async function main() {
             fullStdLib: false,
             _node_mounts,
             homedir: process.cwd(),
-            // Strip out standard messages written to stdout and stderr while loading
+            // Strip out messages written to stderr while loading
             // After Pyodide is loaded we will replace stdstreams with setupStreams.
-            stdout(e) {
-                if (e.trim() === "Python initialization complete") {
-                    return;
-                }
-                console.log(e);
-            },
             stderr(e) {
                 if (
                     [
@@ -160,7 +86,7 @@ async function main() {
                     return;
                 }
                 console.warn(e);
-            },
+            }
         });
     } catch (e) {
         if (e.constructor.name !== "ExitStatus") {
@@ -170,10 +96,10 @@ async function main() {
         // arguments that is invalid in some way, we will exit here.
         process.exit(e.status);
     }
-    const FS = py.FS;
-    setupStreams(FS, py._module.TTY);
+    py.setStdout();
+    py.setStderr();
     let sideGlobals = py.runPython("{}");
-    globalThis.handleExit = function handleExit(code) {
+    function handleExit(code) {
         if (code === undefined) {
             code = 0;
         }
@@ -185,6 +111,7 @@ async function main() {
         // scheduled will segfault.
         process.exit(code);
     };
+    sideGlobals.set("handleExit", handleExit);
 
     py.runPython(
         `
@@ -216,7 +143,6 @@ async function main() {
         loop = asyncio.get_event_loop()
         # Make sure we don't run _no_in_progress_handler before we finish _run_main.
         loop._in_progress += 1
-        from js import handleExit
         loop._no_in_progress_handler = handleExit
         loop._system_exit_handler = handleExit
         loop._keyboard_interrupt_handler = lambda: handleExit(130)

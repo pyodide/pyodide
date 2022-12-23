@@ -816,7 +816,6 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-                Python initialization complete
                 Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
                 The cause of the fatal error was:
                 Stack (most recent call first):
@@ -1062,7 +1061,7 @@ def test_restore_error(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_custom_stdin_stdout(selenium_standalone_noload):
+def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
     selenium = selenium_standalone_noload
     strings = [
         "hello world",
@@ -1114,11 +1113,11 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
     assert (
         selenium.run_js(
             f"""
-        return pyodide.runPython(`
-            [input() for x in range({len(outstrings)})]
-            # ... test more stuff
-        `).toJs();
-        """
+            return pyodide.runPython(`
+                [input() for x in range({len(outstrings)})]
+                # ... test more stuff
+            `).toJs();
+            """
         )
         == outstrings
     )
@@ -1134,11 +1133,101 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         """
     )
     assert stdoutstrings[-2:] == [
-        "Python initialization complete",
         "something to stdout",
     ]
     stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
+    IN_NODE = runtime == "node"
+    selenium.run_js(
+        f"""
+        pyodide.runPython(`
+            import sys
+            assert not sys.stdin.isatty()
+            assert not sys.stdout.isatty()
+            assert not sys.stderr.isatty()
+        `);
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.isatty() is {IN_NODE}
+            assert sys.stdout.isatty() is {IN_NODE}
+            assert sys.stderr.isatty() is {IN_NODE}
+        `);
+        """
+    )
+
+
+def test_custom_stdin_stdout2(selenium):
+    result = selenium.run_js(
+        """
+        function stdin(){
+            return "hello there!\\nThis is a several\\nline\\nstring";
+        }
+        pyodide.setStdin({stdin});
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "h"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin({stdin, isatty: false});
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "e"
+        `);
+        pyodide.setStdout();
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin({stdin, isatty: true});
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert sys.stdin.isatty()
+        `);
+
+        let stdout_codes = [];
+        function rawstdout(code) {
+            stdout_codes.push(code);
+        }
+        pyodide.setStdout({raw: rawstdout});
+        pyodide.runPython(`
+            print("hello")
+            assert sys.stdin.read(1) == "o"
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setStdout({raw: rawstdout, isatty: false});
+        pyodide.runPython(`
+            print("2hello again")
+            assert sys.stdin.read(1) == " "
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setStdout({raw: rawstdout, isatty: true});
+        pyodide.runPython(`
+            print("3hello")
+            assert sys.stdin.read(1) == "t"
+            assert sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.runPython(`
+            print("partial line", end="")
+        `);
+        let result1 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.runPython(`
+            sys.stdout.flush()
+        `);
+        let result2 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
+        return [result1, result2];
+        """
+    )
+    assert result[0] == "hello\n2hello again\n3hello\n"
+    assert result[1] == "hello\n2hello again\n3hello\npartial line"
 
 
 def test_home_directory(selenium_standalone_noload):
@@ -1232,7 +1321,7 @@ def test_run_js(selenium):
     assert run_js("(x)=> x+1")(7) == 8
     assert run_js("[1,2,3]")[2] == 3
     run_js("globalThis.x = 77")
-    from js import x
+    from js import x  # type: ignore[attr-defined]
 
     assert x == 77
 
@@ -1294,13 +1383,14 @@ def test_moved_deprecation_warnings(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_unvendored_stdlib_import_hook(selenium_standalone):
+def test_module_not_found_hook(selenium_standalone):
     import importlib
 
     import pytest
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
+    repodata_packages = ["micropip", "packaging", "regex"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(
@@ -1317,37 +1407,6 @@ def test_unvendored_stdlib_import_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
-    from _pyodide._importhook import UnvendoredStdlibFinder
-
-    finder = UnvendoredStdlibFinder()
-
-    assert finder.find_spec("os", None) is None
-    assert finder.find_spec("os.path", None) is None
-    assert finder.find_spec("os.no_such_module", None) is None
-
-    for lib in unvendored_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="unvendored from the Python standard library"
-        ):
-            finder.find_spec(lib, None)
-
-    for lib in removed_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="removed from the Python standard library"
-        ):
-            finder.find_spec(lib, None)
-
-
-@run_in_pyodide(packages=["pytest"])
-def test_repodata_import_hook(selenium_standalone):
-    import importlib
-
-    import pytest
-
-    from _pyodide._importhook import RepodataPackagesFinder
-
-    repodata_packages = ["micropip", "packaging", "regex"]
-
     for lib in repodata_packages:
         with pytest.raises(
             ModuleNotFoundError, match="included in the Pyodide distribution"
@@ -1356,18 +1415,6 @@ def test_repodata_import_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
-
-    finder = RepodataPackagesFinder({"micropip": "", "packaging": "", "regex": ""})
-
-    assert finder.find_spec("os", None) is None
-    assert finder.find_spec("os.path", None) is None
-    assert finder.find_spec("os.no_such_module", None) is None
-
-    for lib in repodata_packages:
-        with pytest.raises(
-            ModuleNotFoundError, match="included in the Pyodide distribution"
-        ):
-            finder.find_spec(lib, None)
 
 
 def test_args(selenium_standalone_noload):

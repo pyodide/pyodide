@@ -1,11 +1,11 @@
 package:
   name: regex
-  version: 2022.6.2
+  version: 2022.10.31
   top-level:
     - regex
 source:
-  sha256: f7b43acb2c46fb2cd506965b2d9cf4c5e64c9c612bac26c1187933c7296bf08c
-  url: https://files.pythonhosted.org/packages/1a/6b/9b6b8284e88105acbcb39e71bd3bfcaffcd36c2601152ae23b00e6e04d91/regex-2022.6.2.tar.gz
+  sha256: a3a98921da9a1bf8457aeee6a551948a83601689e5ecdd736894ea9bbec77e83
+  url: https://files.pythonhosted.org/packages/27/b5/92d404279fd5f4f0a17235211bb0f5ae7a0d9afb7f439086ec247441ed28/regex-2022.10.31.tar.gz
 about:
   home: https://github.com/mrabarnett/mrab-regex
   PyPI: https://pypi.org/project/regex
