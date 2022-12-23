@@ -66,7 +66,11 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
         child = dict(child)
         if "type" not in child:
             if "signatures" in child:
-                child["comment"] = child["signatures"][0]["comment"]
+                try:
+                    child["comment"] = child["signatures"][0]["comment"]
+                except KeyError:
+                    # TODO: handle no comment case
+                    pass
                 child["type"] = {
                     "type": "reflection",
                     "declaration": dict(child),

@@ -59,13 +59,6 @@ API.runPythonInternal = function (code: string): any {
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
  *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a positional
- *    argument rather than as a named argument. In v0.20 this will still work
- *    but it is deprecated. It will be removed in v0.21.
- *
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
@@ -182,13 +175,6 @@ export async function loadPackagesFromImports(
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
  *    import any python packages referenced via `import` statements in your
  *    code. This function will no longer do it for you.
- *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
@@ -354,12 +340,6 @@ export function pyimport(mod_name: string): PyProxy {
 
 /**
  * Unpack an archive into a target directory.
- *
- * .. admonition:: Positional globals argument :class: warning
- *
- *    In Pyodide v0.19, this function took the extract_dir parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work but it is deprecated. It will be removed in v0.21.
  *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
