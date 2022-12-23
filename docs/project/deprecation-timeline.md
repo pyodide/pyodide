@@ -12,13 +12,15 @@ deprecation warnings. More details about each item can often be found in the
 
 ## 0.24.0
 
-- The `messageCallback` and `errorCallback` argument to `loadPackage` and `loadPackagesFromImports` will be passed as a
-  named argument only.
+- The `messageCallback` and `errorCallback` argument to `loadPackage` and
+  `loadPackagesFromImports` will be passed as a named argument only.
 
 ## 0.23.0
 
-Names that used to be in the root `pyodide` module and were moved to submodules
-will no longer be available in the root module.
+- Names that used to be in the root `pyodide` module and were moved to submodules
+  will no longer be available in the root module.
+- The "message" argument to `PyProxy.destroy` method will no longer be accepted
+  as a positional argument.
 
 ## 0.21.0
 

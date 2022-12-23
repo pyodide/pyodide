@@ -2772,10 +2772,10 @@ EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
               "at the end of an asynchronous function call. Try " +
               "using create_proxy or create_once_callable.";
     for (let px of proxies) {
-      Module.pyproxy_destroy(px, msg);
+      Module.pyproxy_destroy(px, msg, false);
     }
     if (API.isPyProxy(result)) {
-      Module.pyproxy_destroy(result, msg);
+      Module.pyproxy_destroy(result, msg, false);
     }
   });
 });

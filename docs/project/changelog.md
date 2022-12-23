@@ -73,7 +73,7 @@ substitutions:
   If this is set to `True`, then when the proxy is converted back to Python, it
   is converted back to the same double proxy. This allows the proxy to be
   destroyed from Python even if no reference is retained.
-  {pr}`3163`
+  {pr}`3163`, {pr}`3369`
 
 - {{ Enhancement }} A `JsProxy` of a function now has a `__get__` descriptor
   method, so it's possible to use a JavaScript function as a Python method. When
