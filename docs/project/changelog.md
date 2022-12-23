@@ -308,15 +308,12 @@ substitutions:
 - {{ Fix }} Scipy CSR data is now handled correctly in XGBoost.
   {pr}`3194`
 
-- {{ Update }} Upgraded SciPy to version 1.9.1.
-  {pr}`3043`
+- {{ Update }} Upgraded packages: SciPy 1.9.1 {pr}`3043`, pandas 1.5.0 {pr}`3134`,
+  numpy 1.23.3 {pr}`3284`, scikit-learn 1.1.3 {pr}`3324` as well as most of the other packages
+  {pr}`3348` {pr}`3365`. See {ref}`packages-in-pyodide` for more details.
 
-- {{ Update }} Upgraded pandas to version 1.5.0.
-  {pr}`3134`
-
-- {{ Update }} Upgraded packages: numpy (1.23.5), {pr}`3284`
-
-- {{ Update }} Upgraded packages: scikit-learn (1.1.3), {pr}`3324`
+- {{ Fix }} Fix scipy handling of exceptions that are raised from C++ code.
+  {pr}`3384`.
 
 ## Version 0.21.3
 
