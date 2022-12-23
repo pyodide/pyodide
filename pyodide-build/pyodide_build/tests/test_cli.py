@@ -3,7 +3,6 @@ import shutil
 from pathlib import Path
 
 import pytest
-import typer  # type: ignore[import]
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import __version__ as pyodide_build_version
@@ -108,34 +107,34 @@ def test_build_recipe(tmp_path, monkeypatch, request):
     assert len(built_wheels) == len(pkgs_to_build)
 
 
-def test_config_all():
-
-    app = typer.Typer()
-    app.command()(config.main)
+def test_config_list():
 
     result = runner.invoke(
-        app,
+        config.app,
+        [
+            "list",
+        ],
     )
 
     envs = result.stdout.splitlines()
     keys = [env.split("=")[0] for env in envs]
 
-    assert "PYODIDE_ROOT" in keys
-    assert "PYODIDE_EMSCRIPTEN_VERSION" in keys
+    for cfg_name in config.PYODIDE_CONFIGS.keys():
+        assert cfg_name in keys
 
 
-def test_config_key():
-
-    app = typer.Typer()
-    app.command()(config.main)
+@pytest.mark.parametrize("cfg_name,env_var", config.PYODIDE_CONFIGS.items())
+def test_config_get(cfg_name, env_var):
 
     result = runner.invoke(
-        app,
-        ["PYODIDE_EMSCRIPTEN_VERSION"],
+        config.app,
+        [
+            "get",
+            cfg_name,
+        ],
     )
 
-    value = result.stdout.strip()
-    assert value == common.get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    assert result.stdout.strip() == common.get_make_flag(env_var)
 
 
 def test_fetch_or_build_pypi_with_pyodide(tmp_path, runtime):

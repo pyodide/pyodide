@@ -6,6 +6,13 @@ from ..out_of_tree.utils import initialize_pyodide_root
 app = typer.Typer(help="Manage config variables used in pyodide")
 
 
+# A dictionary of config variables {key: env_var_in_makefile}
+PYODIDE_CONFIGS = {
+    "emscripten_version": "PYODIDE_EMSCRIPTEN_VERSION",
+    "python_version": "PYVERSION",
+}
+
+
 @app.callback(no_args_is_help=True)  # type: ignore[misc]
 def callback() -> None:
     return
@@ -14,14 +21,9 @@ def callback() -> None:
 def _get_configs() -> dict[str, str]:
     initialize_pyodide_root()
 
-    possible_configs = {
-        "emscripten_version": "PYODIDE_EMSCRIPTEN_VERSION",
-        "python_version": "PYVERSION",
-    }
-
     configs: dict[str, str] = get_make_environment_vars()
 
-    configs_filtered = {k: configs[v] for k, v in possible_configs.items()}
+    configs_filtered = {k: configs[v] for k, v in PYODIDE_CONFIGS.items()}
     return configs_filtered
 
 
