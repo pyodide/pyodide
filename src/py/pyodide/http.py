@@ -6,9 +6,13 @@ from ._core import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 from ._package_loader import unpack_buffer
 
 if IN_BROWSER:
-    from js import Object, XMLHttpRequest
+    from js import Object
     from js import fetch as _jsfetch
 
+    try:
+        from js import XMLHttpRequest
+    except ImportError:
+        pass
 
 __all__ = [
     "open_url",
