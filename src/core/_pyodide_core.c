@@ -7,7 +7,7 @@
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
-    PyErr_Format(PyExc_ImportError, args);                                     \
+    printf(args);                                                              \
     FAIL();                                                                    \
   } while (0)
 

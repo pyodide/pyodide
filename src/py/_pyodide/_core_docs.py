@@ -917,7 +917,11 @@ class JsOnceCallable(JsCallable):
         pass
 
 
-class JsRawException(JsProxy):
+class JsException(JsProxy):
+    """A JavaScript Error"""
+
+    _js_type_flags = ["IS_ERROR"]
+
     @property
     def name(self) -> str:
         return ""
@@ -929,18 +933,6 @@ class JsRawException(JsProxy):
     @property
     def stack(self) -> str:
         return ""
-
-
-class JsException(Exception):
-    """
-    A wrapper around a JavaScript Error to allow it to be thrown in Python.
-    See :ref:`type-translations-errors`.
-    """
-
-    @property
-    def js_error(self) -> JsRawException:
-        """The original JavaScript error"""
-        return JsRawException(_instantiate_token)
 
 
 class ConversionError(Exception):
