@@ -48,7 +48,7 @@ if IN_BROWSER:
         "destroy_proxies",
         "to_js",
     ]:
-        globals()[t] = _pyodide_core[t]
+        globals()[t] = getattr(_pyodide_core, t)
 
     _pyodide._core_docs._js_flags = _pyodide_core.js_flags
 
