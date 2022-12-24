@@ -7,8 +7,11 @@ from ._package_loader import unpack_buffer
 
 if IN_BROWSER:
     from js import Object
-    from js import fetch as _jsfetch
 
+    try:
+        from js import fetch as _jsfetch
+    except ImportError:
+        pass
     try:
         from js import XMLHttpRequest
     except ImportError:
