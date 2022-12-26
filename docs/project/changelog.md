@@ -114,6 +114,9 @@ substitutions:
   `js` module.
   {pr}`3298`
 
+- {{ Enhancement }} mypy understands the types of more things now.
+  {pr}`3385`
+
 - {{ Fix }} Fixed bug in `split` argument of {any}`repr_shorten`. Added {any}`shorten` function.
   {pr}`3178`
 
