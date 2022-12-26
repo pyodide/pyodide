@@ -330,36 +330,8 @@ EM_JS_REF(JsRef, hiwire_double, (double val), {
   return Hiwire.new_value(val);
 });
 
-EM_JS_REF(JsRef, hiwire_string_ucs4, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
-EM_JS_REF(JsRef, hiwire_string_ucs2, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
-EM_JS_REF(JsRef, hiwire_string_ucs1, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
 EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
   return Hiwire.new_value(UTF8ToString(ptr));
-});
-
-EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
-  return Hiwire.new_value(AsciiToString(ptr));
 });
 
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
@@ -651,6 +623,12 @@ EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
 EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
   // clang-format off
   return getTypeTag(Hiwire.get_value(idobj)) === "[object Generator]";
+  // clang-format on
+});
+
+EM_JS_BOOL(bool, hiwire_is_async_generator, (JsRef idobj), {
+  // clang-format off
+  return Object.prototype.toString.call(Hiwire.get_value(idobj)) === "[object AsyncGenerator]";
   // clang-format on
 });
 

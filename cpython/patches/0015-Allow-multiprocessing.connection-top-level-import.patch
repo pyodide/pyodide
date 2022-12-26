@@ -1,0 +1,28 @@
+From becbcc43e3e09a9c065ea7856a2d3069061fd570 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 19 Dec 2022 09:09:14 -0800
+Subject: [PATCH 15/15] Allow multiprocessing.connection top level import
+
+---
+ Lib/multiprocessing/connection.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Lib/multiprocessing/connection.py b/Lib/multiprocessing/connection.py
+index 510e4b5aba..372f9ced37 100644
+--- a/Lib/multiprocessing/connection.py
++++ b/Lib/multiprocessing/connection.py
+@@ -18,7 +18,10 @@
+ import tempfile
+ import itertools
+ 
+-import _multiprocessing
++try:
++    import _multiprocessing
++except ModuleNotFoundError:
++    pass
+ 
+ from . import util
+ 
+-- 
+2.25.1
+
