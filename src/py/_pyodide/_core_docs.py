@@ -13,7 +13,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Awaitable, overload
+from typing import IO, Any, Awaitable, Generic, TypeVar, overload
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -24,6 +24,15 @@ from typing import IO, Any, Awaitable, overload
 _save_name = __name__
 __name__ = "pyodide"
 
+
+_T = TypeVar("_T")
+_S = TypeVar("_S")
+_KT = TypeVar("_KT")  # Key type.
+_VT = TypeVar("_VT")  # Value type.
+_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
+_V_co = TypeVar("_V_co", covariant=True)  # Any type covariant containers.
+_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
+_T_contra = TypeVar("_T_contra", contravariant=True)  # Ditto contravariant.
 
 _js_flags: dict[str, int] = {}
 
@@ -121,7 +130,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         "The JavaScript API ``Object.values(object)``"
         raise NotImplementedError
 
-    def as_object_map(self) -> "JsMutableMap":
+    def as_object_map(self) -> "JsMutableMap[str, Any]":
         """Returns a new JsProxy that treats the object as a map.
 
         The methods ``__getitem__``, ``__setitem__``, ``__contains__``,
@@ -395,15 +404,15 @@ class JsBuffer(JsProxy):
         raise NotImplementedError
 
 
-class JsArray(JsProxy):
+class JsArray(JsProxy, Generic[_T]):
     """A JsProxy of an array, node list, or typed array"""
 
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
-    def __getitem__(self, idx: int | slice) -> Any:
-        return None
+    def __getitem__(self, idx: int | slice) -> _T:
+        raise NotImplementedError
 
-    def __setitem__(self, idx: int | slice, value: Any) -> None:
+    def __setitem__(self, idx: int | slice, value: _T) -> None:
         pass
 
     def __delitem__(self, idx: int | slice) -> None:
@@ -412,34 +421,34 @@ class JsArray(JsProxy):
     def __len__(self) -> int:
         return 0
 
-    def extend(self, other: Iterable[Any]) -> None:
+    def extend(self, other: Iterable[_T]) -> None:
         """Extend array by appending elements from the iterable."""
 
-    def __reversed__(self) -> Iterator[Any]:
+    def __reversed__(self) -> Iterator[_T]:
         """Return a reverse iterator over the Array."""
         raise NotImplementedError
 
-    def pop(self, /, index: int = -1) -> Any:
+    def pop(self, /, index: int = -1) -> _T:
         """Remove and return item at index (default last).
 
         Raises IndexError if list is empty or index is out of range.
         """
         raise NotImplementedError
 
-    def push(self, /, object: Any) -> None:
+    def push(self, /, object: _T) -> None:
         pass
 
-    def append(self, /, object: Any) -> None:
+    def append(self, /, object: _T) -> None:
         """Append object to the end of the list."""
 
-    def index(self, /, value: Any, start: int = 0, stop: int = sys.maxsize) -> int:
+    def index(self, /, value: _T, start: int = 0, stop: int = sys.maxsize) -> int:
         """Return first index of value.
 
         Raises ValueError if the value is not present.
         """
         raise NotImplementedError
 
-    def count(self, /, x: Any) -> int:
+    def count(self, /, x: _T) -> int:
         """Return the number of times x appears in the list."""
         raise NotImplementedError
 
@@ -449,8 +458,20 @@ class JsArray(JsProxy):
         Present only if the wrapped Javascript object is an array.
         """
 
+    def to_py(
+        self,
+        *,
+        depth: int = -1,
+        default_converter: Callable[
+            ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any], None]],
+            Any,
+        ]
+        | None = None,
+    ) -> list[Any]:
+        raise NotImplementedError
 
-class JsTypedArray(JsBuffer, JsArray):
+
+class JsTypedArray(JsBuffer, JsArray[int]):
     _js_type_flags = ["IS_TYPEDARRAY"]
     BYTES_PER_ELEMENT: int
 
@@ -463,7 +484,7 @@ class JsTypedArray(JsBuffer, JsArray):
 
 
 @Mapping.register
-class JsMap(JsProxy):
+class JsMap(JsProxy, Generic[_KT, _VT_co]):
     """A JavaScript Map
 
     To be considered a map, a JavaScript object must have a ``.get`` method, it
@@ -473,19 +494,19 @@ class JsMap(JsProxy):
 
     _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
-    def __getitem__(self, idx: Any) -> Any:
-        return None
+    def __getitem__(self, idx: _KT) -> _VT_co:
+        raise NotImplementedError
 
     def __len__(self) -> int:
         return 0
 
-    def __iter__(self) -> Any:
+    def __iter__(self) -> _KT:
         raise NotImplementedError
 
-    def __contains__(self, idx: Any) -> bool:
+    def __contains__(self, idx: _KT) -> bool:
         raise NotImplementedError
 
-    def keys(self) -> KeysView[Any]:
+    def keys(self) -> KeysView[_KT]:
         """Return a KeysView for the map.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -493,7 +514,7 @@ class JsMap(JsProxy):
         """
         raise NotImplementedError
 
-    def items(self) -> ItemsView[Any, Any]:
+    def items(self) -> ItemsView[_KT, _VT_co]:
         """Return a ItemsView for the map.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -501,7 +522,7 @@ class JsMap(JsProxy):
         """
         raise NotImplementedError
 
-    def values(self) -> ValuesView[Any]:
+    def values(self) -> ValuesView[_VT_co]:
         """Return a ValuesView for the map.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -509,7 +530,15 @@ class JsMap(JsProxy):
         """
         raise NotImplementedError
 
-    def get(self, key: Any, default: Any = None) -> Any:
+    @overload
+    def get(self, key: _KT) -> _VT_co | None:
+        ...
+
+    @overload
+    def get(self, key: _KT, default: _VT_co | _T) -> _VT_co | _T:
+        ...
+
+    def get(self, key, default=None):
         """If key in self, returns self[key]. Otherwise returns default.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -519,7 +548,7 @@ class JsMap(JsProxy):
 
 
 @MutableMapping.register
-class JsMutableMap(JsMap):
+class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
     """A JavaScript mutable map
 
     To be considered a mutable map, a JavaScript object must have a ``.get``
@@ -534,7 +563,15 @@ class JsMutableMap(JsMap):
 
     _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
-    def pop(self, key: Any, default: Any = None) -> Any:
+    @overload
+    def pop(self, __key: _KT) -> _VT:
+        ...
+
+    @overload
+    def pop(self, __key: _KT, __default: _VT | _T = ...) -> _VT | _T:
+        ...
+
+    def pop(self, key, default=None):
         """If key in self, return self[key] and remove key from self. Otherwise
         returns default.
 
@@ -543,7 +580,7 @@ class JsMutableMap(JsMap):
         """
         raise NotImplementedError
 
-    def setdefault(self, key: Any, default: Any = None) -> Any:
+    def setdefault(self, key: _KT, default: _VT) -> _VT:
         """If key in self, return self[key]. Otherwise
         sets self[key] = default and returns default.
 
@@ -552,7 +589,7 @@ class JsMutableMap(JsMap):
         """
         raise NotImplementedError
 
-    def popitem(self) -> tuple[Any, Any]:
+    def popitem(self) -> tuple[_KT, _KT]:
         """Remove some arbitrary key, value pair from the map and returns the
         (key, value) tuple.
 
@@ -568,9 +605,19 @@ class JsMutableMap(JsMap):
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
 
-    def update(
-        self, other: Mapping[Any, Any] | None = None, **kwargs: dict[str, Any]
-    ) -> None:
+    @overload
+    def update(self, __m: Mapping[_KT, _VT], **kwargs: _VT) -> None:
+        ...
+
+    @overload
+    def update(self, __m: Iterable[tuple[_KT, _VT]], **kwargs: _VT) -> None:
+        ...
+
+    @overload
+    def update(self, **kwargs: _VT) -> None:
+        ...
+
+    def update(self, other, **kwargs):
         """Updates self from other and kwargs.
 
         If ``other`` is present and is a Mapping or has a ``keys`` method, does
@@ -599,14 +646,14 @@ class JsMutableMap(JsMap):
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
 
-    def __setitem__(self, idx: Any, value: Any) -> None:
+    def __setitem__(self, idx: _KT, value: _VT) -> None:
         pass
 
-    def __delitem__(self, idx: Any) -> None:
+    def __delitem__(self, idx: _KT) -> None:
         return None
 
 
-class JsIterator(JsProxy):
+class JsIterator(JsProxy, Generic[_T_co]):
     """A JsProxy of a JavaScript iterator.
 
     An object is a JsIterator if it has a `next` method and either has a
@@ -615,22 +662,14 @@ class JsIterator(JsProxy):
 
     _js_type_flags = ["IS_ITERATOR"]
 
-    def send(self, value: Any) -> Any:
-        """Send a value into the iterator. This is a wrapper around
-        ``jsobj.next(value)``.
+    def __next__(self) -> _T_co:
+        raise NotImplementedError
 
-        If the object is not actually a synchronous iterator, then ``send`` will raise a
-        TypeError (but only after calling ``jsobj.next()``!).
-        """
-
-    def __next__(self):
-        pass
-
-    def __iter__(self):
-        pass
+    def __iter__(self) -> Iterator[_T_co]:
+        raise NotImplementedError
 
 
-class JsAsyncIterator(JsProxy):
+class JsAsyncIterator(JsProxy, Generic[_T_co]):
     """A JsProxy of a JavaScript async iterator.
 
     An object is a JsAsyncIterator if it has a `next` method and either has a
@@ -639,22 +678,14 @@ class JsAsyncIterator(JsProxy):
 
     _js_type_flags = ["IS_ASYNC_ITERATOR"]
 
-    def asend(self, value: Any) -> Any:
-        """Send a value into the asynchronous iterator. This is a wrapper around
-        ``jsobj.next(value)``.
+    def __anext__(self) -> Awaitable[_T_co]:
+        raise NotImplementedError
 
-        If the object is not actually an asynchronous iterator, then ``asend``
-        will raise a TypeError (but only after calling ``jsobj.next()``!).
-        """
-
-    def __aiter__(self):
-        pass
-
-    def __anext__(self):
-        pass
+    def __aiter__(self) -> AsyncIterator[_T_co]:
+        raise NotImplementedError
 
 
-class JsIterable(JsProxy):
+class JsIterable(JsProxy, Generic[_T_co]):
     """A JavaScript iterable object
 
     A JavaScript object is iterable if it has a ``Symbol.iterator`` method.
@@ -662,11 +693,11 @@ class JsIterable(JsProxy):
 
     _js_type_flags = ["IS_ITERABLE"]
 
-    def __iter__(self):
-        pass
+    def __iter__(self) -> Iterator[_T_co]:
+        raise NotImplementedError
 
 
-class JsAsyncIterable(JsProxy):
+class JsAsyncIterable(JsProxy, Generic[_T_co]):
     """A JavaScript async iterable object
 
     A JavaScript object is async iterable if it has a ``Symbol.asyncIterator`` method.
@@ -674,11 +705,11 @@ class JsAsyncIterable(JsProxy):
 
     _js_type_flags = ["IS_ASYNC_ITERABLE"]
 
-    def __aiter__(self):
-        pass
+    def __aiter__(self) -> AsyncIterator[_T_co]:
+        raise NotImplementedError
 
 
-class JsGenerator(JsIterable):
+class JsGenerator(JsIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
     """A JavaScript generator
 
     A JavaScript object is treated as a generator if it's ``Symbol.typeTag`` is
@@ -690,7 +721,7 @@ class JsGenerator(JsIterable):
 
     _js_type_flags = ["IS_GENERATOR"]
 
-    def send(self, value: Any) -> Any:
+    def send(self, value: _T_contra) -> _T_co:
         """
         Resumes the execution and "sends" a value into the generator function.
 
@@ -704,12 +735,27 @@ class JsGenerator(JsIterable):
         """
         raise NotImplementedError
 
+    @overload
     def throw(
         self,
-        type: Exception | type,
-        value: Exception | str | Any = None,
-        traceback: TracebackType | None = None,
-    ) -> Any:
+        __typ: type[BaseException],
+        __val: BaseException | object = ...,
+        __tb: TracebackType | None = ...,
+    ) -> _T_co:
+        ...
+
+    @overload
+    def throw(
+        self, __typ: BaseException, __val: None = ..., __tb: TracebackType | None = ...
+    ) -> _T_co:
+        ...
+
+    def throw(
+        self,
+        type,
+        value,
+        traceback,
+    ):
         """
         Raises an exception at the point where the generator was paused, and
         returns the next value yielded by the generator function.
@@ -743,10 +789,10 @@ class JsGenerator(JsIterable):
         an exception or normal exit.
         """
 
-    def __next__(self) -> Any:
+    def __next__(self) -> _T_co:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self) -> "JsGenerator[_T_co, _T_contra, _V_co]":
         raise NotImplementedError
 
 
@@ -772,7 +818,7 @@ class JsFetchResponse(JsProxy):
         raise NotImplementedError
 
 
-class JsAsyncGenerator(JsIterable):
+class JsAsyncGenerator(JsAsyncIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
     """A JavaScript async generator
 
     A JavaScript object is treated as an async generator if it's
@@ -784,13 +830,13 @@ class JsAsyncGenerator(JsIterable):
 
     _js_type_flags = ["IS_ASYNC_GENERATOR"]
 
-    def __anext__(self):
-        pass
-
-    def __aiter__(self) -> AsyncIterator[Any]:
+    def __anext__(self) -> Awaitable[_T_co]:
         raise NotImplementedError
 
-    def asend(self, value: Any) -> Awaitable[Any]:
+    def __aiter__(self) -> "JsAsyncGenerator[_T_co, _T_contra, _V_co]":
+        raise NotImplementedError
+
+    def asend(self, __value: _T_contra) -> Awaitable[_T_co]:
         """Resumes the execution and "sends" a value into the async generator
         function.
 
@@ -808,12 +854,27 @@ class JsAsyncGenerator(JsIterable):
         """
         raise NotImplementedError
 
+    @overload
     def athrow(
         self,
-        type: Exception | type,
-        value: Exception | str | None = None,
-        traceback: TracebackType | None = None,
-    ) -> Awaitable[Any]:
+        __typ: type[BaseException],
+        __val: BaseException | object = ...,
+        __tb: TracebackType | None = ...,
+    ) -> Awaitable[_T_co]:
+        ...
+
+    @overload
+    def athrow(
+        self, __typ: BaseException, __val: None = ..., __tb: TracebackType | None = ...
+    ) -> Awaitable[_T_co]:
+        ...
+
+    def athrow(
+        self,
+        type,
+        value,
+        traceback,
+    ):
         """Resumes the execution and raises an exception at the point where the
         generator was paused.
 
@@ -962,12 +1023,12 @@ def to_js(
     depth: int = -1,
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
-    dict_converter: Callable[[Iterable[JsArray]], JsProxy] | None = None,
+    dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
     default_converter: Callable[
         [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
     ]
     | None = None,
-) -> JsArray:
+) -> JsArray[Any]:
     ...
 
 
@@ -984,7 +1045,7 @@ def to_js(
         [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
     ]
     | None = None,
-) -> JsMap:
+) -> JsMap[Any, Any]:
     ...
 
 
@@ -996,7 +1057,7 @@ def to_js(
     depth: int = -1,
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
-    dict_converter: Callable[[Iterable[JsArray]], JsProxy] | None = None,
+    dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
     default_converter: Callable[
         [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
     ]
@@ -1012,7 +1073,7 @@ def to_js(
     depth: int = -1,
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
-    dict_converter: Callable[[Iterable[JsArray]], JsProxy] | None = None,
+    dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
     default_converter: Callable[
         [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
     ]
@@ -1125,7 +1186,7 @@ def to_js(
     return obj
 
 
-def destroy_proxies(pyproxies: JsArray, /) -> None:
+def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the

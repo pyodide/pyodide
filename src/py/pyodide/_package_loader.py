@@ -147,7 +147,7 @@ def unpack_buffer(
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsArray | None:
+) -> JsArray[str] | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
