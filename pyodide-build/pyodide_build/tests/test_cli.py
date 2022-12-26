@@ -107,8 +107,6 @@ def test_build_recipe(tmp_path, monkeypatch, request):
     assert len(built_wheels) == len(pkgs_to_build)
 
 
-
-
 def test_config_list():
 
     result = runner.invoke(
@@ -137,5 +135,3 @@ def test_config_get(cfg_name, env_var):
     )
 
     assert result.stdout.strip() == common.get_make_flag(env_var)
-
-
