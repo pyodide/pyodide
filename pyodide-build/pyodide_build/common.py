@@ -53,6 +53,7 @@ BUILD_VARS: set[str] = {
     "PLATFORM_TRIPLET",
     "TOOLSDIR",
     "SYSCONFIGDATA_DIR",
+    "RUST_TOOLCHAIN",
 }
 
 

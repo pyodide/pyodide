@@ -157,7 +157,6 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/i
 export PYODIDE_CMAKE_TOOLCHAIN_FILE=$(PYODIDE_ROOT)/tools/cmake/Modules/Platform/Emscripten.cmake
 
 # For RUST
-export CARGO_HOME ?= $(HOME)/.cargo
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
