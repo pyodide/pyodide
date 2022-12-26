@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import shutil
@@ -28,12 +29,31 @@ from unearth.finder import PackageFinder
 from .. import common
 from . import build
 
+_PYPI_INDEX = ["https://pypi.org/simple/"]
+_PYPI_TRUSTED_HOSTS = ["pypi.org"]
+
+
+@contextmanager
+def work_in_dir(dir):
+    old_path = Path.cwd()
+    try:
+        os.chdir(dir)
+        yield
+    finally:
+        os.chdir(old_path)
+
 
 @contextmanager
 def stream_redirected(to=os.devnull, stream=None):
     if stream is None:
         stream = sys.stdout
-    stream_fd = stream.fileno()
+    try:
+        stream_fd = stream.fileno()
+    except io.UnsupportedOperation:
+        # in case we're already capturing to something that isn't really a file
+        # e.g. in pytest
+        yield
+        return
     if type(to) == str:
         to = open(to, "w")
     with os.fdopen(os.dup(stream_fd), "wb") as copied:
@@ -49,48 +69,54 @@ def stream_redirected(to=os.devnull, stream=None):
             to = None
 
 
-@cache
 def get_built_wheel(url):
+    return _get_built_wheel_internal(url)["path"]
+
+
+@cache
+def _get_built_wheel_internal(url):
     parsed_url = urlparse(url)
     gz_name = Path(parsed_url.path).name
 
     cache_entry: dict[str, Any] = {}
     build_dir = tempfile.TemporaryDirectory()
     cache_entry["build_dir"] = build_dir
-    os.chdir(build_dir.name)
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
-        data = requests.get(url).content
-        f.write(data)
-        f.close()
-        shutil.unpack_archive(f.name, build_dir.name)
-        os.unlink(f.name)
-        files = list(Path(build_dir.name).iterdir())
-        if len(files) == 1 and files[0].is_dir():
-            os.chdir(Path(build_dir.name, files[0]))
-        else:
-            os.chdir(build_dir.name)
-    print(f"Building wheel for {gz_name}: ", end="")
-    with tempfile.TemporaryFile(mode="w+") as f:
-        try:
-            with (
-                stream_redirected(to=f, stream=sys.stdout),
-                stream_redirected(to=f, stream=sys.stderr),
-            ):
-                wheel_path = build.run(
-                    PyPIProvider.BUILD_EXPORTS, PyPIProvider.BUILD_FLAGS
-                )
-        except BaseException as e:
-            print(" Failed\n Error is:")
-            f.seek(0)
-            sys.stdout.write(f.read())
-            raise e
+    with work_in_dir(build_dir.name):
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
+            data = requests.get(url).content
+            f.write(data)
+            f.close()
+            shutil.unpack_archive(f.name, build_dir.name)
+            os.unlink(f.name)
+            files = list(Path(build_dir.name).iterdir())
+            if len(files) == 1 and files[0].is_dir():
+                os.chdir(Path(build_dir.name, files[0]))
+            else:
+                os.chdir(build_dir.name)
+        print(f"Building wheel for {gz_name}: ", end="")
+        with tempfile.NamedTemporaryFile(mode="w+") as f:
+            try:
+                with (
+                    stream_redirected(to=f, stream=sys.stdout),
+                    stream_redirected(to=f, stream=sys.stderr),
+                ):
+                    wheel_path = build.run(
+                        PyPIProvider.BUILD_EXPORTS,
+                        PyPIProvider.BUILD_FLAGS,
+                        outdir=Path(build_dir.name) / "dist",
+                    )
+            except BaseException as e:
+                print(" Failed\n Error is:")
+                f.seek(0)
+                sys.stdout.write(f.read())
+                raise e
 
     OKGREEN = "\033[92m"
     ENDC = "\033[0m"
     print(OKGREEN, "Success", ENDC)
 
     cache_entry["path"] = wheel_path
-    return wheel_path
+    return cache_entry
 
 
 class Candidate:
@@ -144,34 +170,6 @@ if TYPE_CHECKING:
 else:
     APBase = AbstractProvider
 
-
-class ExtrasProvider(APBase):
-    """A provider that handles extras."""
-
-    def get_extras_for(self, requirement_or_candidate):
-        """Given a requirement or candidate, return its extras.
-        The extras should be a hashable value.
-        """
-        raise NotImplementedError
-
-    def get_base_requirement(self, candidate):
-        """Given a candidate, return a requirement that specifies that
-        project/version.
-        """
-        raise NotImplementedError
-
-    def identify(self, requirement_or_candidate):
-        base = super().identify(requirement_or_candidate)
-        return base
-
-    def get_dependencies(self, candidate):
-        deps = list(super().get_dependencies(candidate))
-        if candidate.extras:
-            req = self.get_base_requirement(candidate)
-            deps.append(req)
-        return deps
-
-
 PYTHON_VERSION = Version(python_version())
 
 
@@ -189,7 +187,9 @@ def get_target_python():
 def get_project_from_pypi(package_name, extras):
     """Return candidates created from the project name and extras."""
     pf = PackageFinder(
-        index_urls=["https://pypi.org/simple/"], target_python=get_target_python()
+        index_urls=_PYPI_INDEX,
+        trusted_hosts=_PYPI_TRUSTED_HOSTS,
+        target_python=get_target_python(),
     )
     matches = pf.find_all_packages(package_name)
     for i in matches:
@@ -227,7 +227,7 @@ def get_metadata_for_wheel(url):
     return EmailMessage()
 
 
-class PyPIProvider(ExtrasProvider):
+class PyPIProvider(APBase):
 
     BUILD_FLAGS: list[str] = []
     BUILD_SKIP: list[str] = []
@@ -283,6 +283,11 @@ class PyPIProvider(ExtrasProvider):
         for d in candidate.dependencies:
             if d.name not in PyPIProvider.BUILD_SKIP:
                 deps.append(d)
+        if candidate.extras:
+            # add the base package as a dependency too, so we can avoid conflicts between same package
+            # but with different extras
+            req = self.get_base_requirement(candidate)
+            deps.append(req)
         return deps
 
 
@@ -306,7 +311,7 @@ def build_dependencies_for_wheel(
     build_flags: list[str],
 ) -> None:
     """Extract dependencies from this wheel and build pypi dependencies
-    for each one in /dist/.
+    for each one in ./dist/
 
     n.b. because dependency resolution may need to backtrack, this
     is potentially quite slow in the case that one needs to build an
@@ -345,7 +350,6 @@ def build_dependencies_for_wheel(
     }
 
     for d in deps:
-        # TODO: handle skip list
         r = Requirement(d)
         if (r.name not in PyPIProvider.BUILD_SKIP) and (
             (not r.marker) or r.marker.evaluate(target_env)
@@ -365,7 +369,9 @@ def build_dependencies_for_wheel(
 
 def fetch_pypi_package(package_spec: str, destdir: Path) -> Path:
     pf = PackageFinder(
-        index_urls=["https://pypi.org/simple/"], target_python=get_target_python()
+        index_urls=_PYPI_INDEX,
+        trusted_hosts=_PYPI_TRUSTED_HOSTS,
+        target_python=get_target_python(),
     )
     match = pf.find_best_match(package_spec)
     if match.best is None:

@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -205,6 +206,12 @@ def main(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
+    extras: list[str] = []
+    if source_location is not None:
+        extras = re.findall(r"\[(\w+)\]", source_location)
+        if len(extras) != 0:
+            source_location = source_location[0 : source_location.find("[")]
+
     if not source_location:
         # build the current folder
         wheel = source(".", exports, ctx)
@@ -220,7 +227,15 @@ def main(
         raise RuntimeError(f"Couldn't determine source type for {source_location}")
     # now build deps for wheel
     if build_dependencies:
-        build_dependencies_for_wheel(wheel, [], skip_dependency, exports, ctx.args)
+        try:
+            build_dependencies_for_wheel(
+                wheel, extras, skip_dependency, exports, ctx.args
+            )
+        except BaseException as e:
+            import traceback
+
+            print("FAIL DEPENDENCIES:", traceback.format_exc())
+            raise e
 
 
 main.typer_kwargs = {
