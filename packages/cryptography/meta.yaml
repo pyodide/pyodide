@@ -1,23 +1,18 @@
 package:
   name: cryptography
-  version: 36.0.2
-  _disabled: true
-
+  version: 38.0.4
+  top-level:
+    - cryptography
 source:
-  url: https://files.pythonhosted.org/packages/10/a7/51953e73828deef2b58ba1604de9167843ee9cd4185d8aaffcb45dd1932d/cryptography-36.0.2.tar.gz
-  sha256: 70f8f4f7bb2ac9f340655cbac89d68c527af5bb4387522a8413e841e3e6628c9
+  url: https://files.pythonhosted.org/packages/e3/3f/41186b1f2fd86a542d399175f6b8e43f82cd4dfa51235a0b030a042b811a/cryptography-38.0.4.tar.gz
+  sha256: 175c1a818b87c9ac80bb7377f5520b7f31b3ef2a0004e2420319beadedb67290
   patches:
-    # TODO: remove this when chrono makes a release
-    - patches/0001-Use-patched-chrono.patch
-    - patches/0002-Add-instant-patch.patch
+    - patches/0001-Use-patched-instant.patch
 build:
   script: |
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
     export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
     source $CARGO_HOME/env
-
-    # TODO: remove this when chrono makes a release
-    git clone --depth 1 https://github.com/hoodmane/chrono.git --branch pyodide
     # TODO: remove this when instant makes a release
     git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
   cflags: |
@@ -25,10 +20,14 @@ build:
     $(OPENSSL_INCLUDE_PATH)
   ldflags: |
     $(OPENSSL_LIBRARY_PATH)
+    -Wl,--no-entry
 requirements:
   run:
     - openssl
     - six
+    - cffi
+  host:
+    - openssl
     - cffi
 test:
   imports:
@@ -37,3 +36,10 @@ test:
     - cryptography.hazmat
     - cryptography.utils
     - cryptography.x509
+about:
+  home: https://github.com/pyca/cryptography
+  PyPI: https://pypi.org/project/cryptography
+  summary:
+    cryptography is a package which provides cryptographic recipes and primitives
+    to Python developers.
+  license: BSD-3-Clause OR Apache-2.0

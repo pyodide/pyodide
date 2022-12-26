@@ -1,16 +1,18 @@
 package:
   name: yt
-  version: 4.0.2
-
+  version: 4.1.2
+  top-level:
+    - yt
 source:
-  url: https://files.pythonhosted.org/packages/b6/ba/c28c9af83797c0e7a9273004a9ac0a924e6c5920fd0aa944d305e8288b30/yt-4.0.2.tar.gz
-  sha256: 76b238eef0fbbbea810dda4821331a9b03f74e5e2dda9997e401c685deec1631
+  url: https://files.pythonhosted.org/packages/e2/57/5c519b90ce1c0d254f21b76f04c02522277a4aeabea0a9c92ff2620e8bac/yt-4.1.2.tar.gz
+  sha256: 0ae03288b067721baad14c016f253dc791cd444a1f2dd5d804cf91da622a0c76
 
   patches:
     - patches/skip-openmp.patch
-    - patches/tomli-3833.patch
 
 requirements:
+  host:
+    - numpy
   run:
     - numpy
     - matplotlib
@@ -29,6 +31,8 @@ build:
   # so it cannot be unvendored
   unvendor-tests: false
 
-test:
-  imports:
-    - yt
+about:
+  home: https://github.com/yt-project/yt
+  PyPI: https://pypi.org/project/yt
+  summary: An analysis and visualization toolkit for volumetric data
+  license: BSD 3-Clause

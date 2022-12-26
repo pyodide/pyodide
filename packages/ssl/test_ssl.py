@@ -1,4 +1,4 @@
-from pyodide_test_runner import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["test", "ssl"], pytest_assert_rewrites=False)
@@ -6,7 +6,7 @@ def test_ssl(selenium):
     import platform
     import unittest
     import unittest.mock
-    from test import libregrtest
+    from test import libregrtest  # type:ignore[attr-defined]
 
     platform.platform(aliased=True)
     name = "test_ssl"
@@ -17,6 +17,7 @@ def test_ssl(selenium):
         "test_verify_flags",
         "test_subclass",
         "test_lib_reason",
+        "test_unwrap",
     ]
 
     try:
@@ -29,4 +30,4 @@ def test_ssl(selenium):
             )
     except SystemExit as e:
         if e.code != 0:
-            raise RuntimeError(f"Failed with code: {e.code}")
+            raise RuntimeError(f"Failed with code: {e.code}") from None

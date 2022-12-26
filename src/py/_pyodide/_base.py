@@ -7,11 +7,12 @@ A library of helper utilities for connecting Python to the browser environment.
 import ast
 import builtins
 import tokenize
+from collections.abc import Generator
 from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
 from types import CodeType
-from typing import Any, Generator
+from typing import Any, Literal
 
 
 def should_quiet(source: str) -> bool:
@@ -86,7 +87,7 @@ class EvalCodeResultException(Exception):
     returned a generator or coroutine".
     """
 
-    def __init__(self, v):
+    def __init__(self, v: Any) -> None:
         super().__init__(v)
         self.value = v
 
@@ -158,6 +159,9 @@ def _parse_and_compile_gen(
     return compile(mod, filename, mode, flags=flags)
 
 
+ReturnMode = Literal["last_expr", "last_expr_or_assign", "none"]
+
+
 class CodeRunner:
     """This class allows fine control over the execution of a code block.
 
@@ -219,7 +223,7 @@ class CodeRunner:
         self,
         source: str,
         *,
-        return_mode: str = "last_expr",
+        return_mode: ReturnMode = "last_expr",
         mode: str = "exec",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
@@ -236,7 +240,7 @@ class CodeRunner:
         )
         self.ast = next(self._gen)
 
-    def compile(self):
+    def compile(self) -> "CodeRunner":
         """Compile the current value of ``self.ast`` and store the result in ``self.code``.
 
         Can only be used once. Returns ``self`` (chainable).
@@ -362,7 +366,7 @@ def eval_code(
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
     *,
-    return_mode: str = "last_expr",
+    return_mode: ReturnMode = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,
@@ -418,6 +422,31 @@ def eval_code(
         ``None``. If the last statement is an expression, return the result of the
         expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
+
+    Examples
+    --------
+    >>> from pyodide.code import eval_code
+    >>> source = "1 + 1"
+    >>> eval_code(source)
+    2
+    >>> source = "1 + 1;"
+    >>> eval_code(source, quiet_trailing_semicolon=True)
+    >>> eval_code(source, quiet_trailing_semicolon=False)
+    2
+    >>> my_globals = { "y": "100" }
+    >>> my_locals = { "y": "200" }
+    >>> source = "print(locals()['y'], globals()['y'])"
+    >>> eval_code(source, globals=my_globals, locals=my_locals)
+    200 100
+    >>> source = "test = 1 + 1"
+    >>> eval_code(source, return_mode="last_expr_or_assign")
+    2
+    >>> eval_code(source, return_mode="last_expr")
+    >>> eval_code(source, return_mode="none")
+    >>> source = "print(pyodide)" # Pretend this is open('example_of_filename.py', 'r').read()
+    >>> eval_code(source, filename="example_of_filename.py") # doctest: +SKIP
+    # Trackback will show where in the file the error happened
+    # ...File "example_of_filename.py", line 1, in <module>...NameError: name 'pyodide' is not defined
     """
     return (
         CodeRunner(
@@ -437,7 +466,7 @@ async def eval_code_async(
     globals: dict[str, Any] | None = None,
     locals: dict[str, Any] | None = None,
     *,
-    return_mode: str = "last_expr",
+    return_mode: ReturnMode = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,

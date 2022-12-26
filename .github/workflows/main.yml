@@ -17,8 +17,58 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v3
         with:
-          python-version: 3.10.2
+          python-version: "3.10"
       - uses: pre-commit/action@v2.0.3
+
+  test-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt -r docs/requirements-doc.txt
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          mkdir -p test-results
+          pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+      - name: Test Summary
+        uses: test-summary/action@v1
+        with:
+          paths: "test-results/*.xml"
+        if: always()
+
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          mkdir test-results
+          cd pyodide-build && python3 -m pip install -e ".[test]" && cd ..
+          python3 -m pip install pytest-cov hypothesis pytz
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          PYODIDE_ROOT=. pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --runtime=host \
+              --cov=pyodide_build --cov=pyodide \
+              src pyodide-build packages/micropip/ packages/_tests
+      - uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false
 
   build-core:
     runs-on: ubuntu-latest
@@ -128,7 +178,9 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install playwright && python -m playwright install
+          pip install -e ./pyodide-build
+          # FIXME: playwright 1.23.0 has unknown performance issue on firefox
+          pip install "playwright<1.23.0" && python -m playwright install
 
       - name: run core tests
         env:
@@ -138,7 +190,12 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ -v -k "${BROWSER}" --runner "${RUNNER}"
+          tools/pytest_wrapper.py src packages/micropip/ \
+            -v \
+            --runtime="${BROWSER}-no-host" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/core_test.xml
 
       - name: run package tests
         env:
@@ -148,4 +205,16 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${BROWSER}" --runner "${RUNNER}"
+          tools/pytest_wrapper.py packages/*/test* \
+            -v \
+            -k "numpy and not joblib" \
+            --runtime="${BROWSER}-no-host" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/packages_test.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v1
+        with:
+          paths: "test-results/*.xml"
+        if: always()

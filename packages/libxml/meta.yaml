@@ -7,12 +7,12 @@ source:
   url: http://xmlsoft.org/sources/libxml2-2.9.10.tar.gz
 
 requirements:
-  run:
+  host:
     - zlib
     - libiconv
 
 build:
-  library: true
+  type: static_library
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
@@ -21,6 +21,7 @@ build:
         --without-python \
         --with-iconv="${WASM_LIBRARY_DIR}/lib" \
         --with-zlib="${WASM_LIBRARY_DIR}/lib" \
+        --with-lzma="no" \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

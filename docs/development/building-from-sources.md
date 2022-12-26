@@ -9,13 +9,13 @@ version of the documentation at
 [pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
-Building on any operating system is easiest using the Pyodide Docker image. This approach works
-with any native operating system as long as Docker is installed. You can also build on your
-native Linux OS if the correct build prerequisites are installed. Building on MacOS is
-possible, but there are known issues as of version 0.18 that you will need to work around.
-It is not possible to build on Windows, but you can use
-[WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
-Linux build environment.
+Building Pyodide is easiest using the Pyodide Docker image. This approach works
+with any native operating system as long as Docker is installed. You can also
+build on your native Linux OS if the correct build prerequisites are installed.
+Building on MacOS is possible, but there are known issues as of version 0.18
+that you will need to work around. It is not possible to build on Windows, but
+you can use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+to create a Linux build environment.
 
 ## Build instructions
 
@@ -24,12 +24,7 @@ Linux build environment.
 We provide a Debian-based Docker image
 ([`pyodide/pyodide-env`](https://hub.docker.com/r/pyodide/pyodide-env)) on
 Docker Hub with the dependencies already installed to make it easier to build
-Pyodide. On top of that we provide
-a pre-built image
-([`pyodide/pyodide`](https://hub.docker.com/r/pyodide/pyodide)) which can be
-used for fast custom and partial builds. Note that building from the non
-pre-built Docker image is _very_ slow on Mac, building on the host machine
-is preferred if at all possible.
+Pyodide.
 
 ```{note}
 These Docker images are also available from the Github packages at
@@ -38,9 +33,9 @@ These Docker images are also available from the Github packages at
 
 1. Install Docker
 
-1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
+2. From a git checkout of Pyodide, run `./run_docker`
 
-1. Run `make` to build.
+3. Run `make` to build.
 
 ```{note}
 You can control the resources allocated to the build by setting the env
@@ -73,16 +68,11 @@ environment](https://packaging.python.org/guides/installing-using-pip-and-virtua
 
 ```{tabbed} Linux
 
-Additional build prerequisites are:
+To build on Linux, you need:
 
 - A working native compiler toolchain, enough to build
-  [CPython](https://devguide.python.org/setup/#linux).
-- CMake
-- FreeType 2 development libraries to compile Matplotlib.
-- gfortran (GNU Fortran 95 compiler)
-- [f2c](http://www.netlib.org/f2c/)
-- [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
-- (optional) SWIG to compile NLopt
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux).
+- CMake (required to install Emscripten)
 
 ```
 
@@ -90,22 +80,18 @@ Additional build prerequisites are:
 
 To build on MacOS, you need:
 
+- A working native compiler toolchain, enough to build
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#macos-and-os-x).
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (
   `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
   should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`).
+- coreutils for and other essential Unix utilities (`brew install coreutils`).
 - cmake (`brew install cmake`)
-- pkg-config (`brew install pkg-config`)
-- openssl (`brew install openssl`)
-- gfortran (`brew cask install gfortran`)
-- f2c: Install wget (`brew install wget`), and then run the buildf2c script from
-  the root directory (`sudo ./tools/buildf2c`)
+- autoconf, automaker & libtool (`brew install autoconf automaker libtool`)
 - It is also recommended installing the GNU patch (`brew install gpatch`), and
   GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
-- (optional) SWIG to compile NLopt (`brew install swig`)
-
 ```
 
 ```{note}

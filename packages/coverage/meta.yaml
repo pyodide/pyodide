@@ -1,0 +1,16 @@
+package:
+  name: coverage
+  version: 6.5.0
+  top-level:
+    - coverage
+source:
+  url: https://files.pythonhosted.org/packages/5c/66/38d1870cb7cf62da49add1d6803fdbcdef632b2808b5c80bcac35b7634d8/coverage-6.5.0.tar.gz
+  sha256: f642e90754ee3e06b0e7e51bce3379590e76b7f76b708e1a71ff043f87025c84
+requirements:
+  run:
+    - sqlite3
+about:
+  home: https://github.com/nedbat/coveragepy
+  PyPI: https://pypi.org/project/coverage
+  summary: Code coverage measurement for Python
+  license: Apache 2.0

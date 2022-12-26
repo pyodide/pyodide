@@ -1,19 +1,19 @@
 package:
   name: scikit-learn
-  version: 1.1.0
-
+  version: 1.2.0
+  top-level:
+    - sklearn
 source:
-  url: https://files.pythonhosted.org/packages/8b/99/b1ec652f2d60a13871a3053f312f9d78977be57e420f2a49d52ba503f1f4/scikit-learn-1.1.0.tar.gz
-  sha256: 80f9904f5b1356adfc32406725dd94c8cc9c8d265047d98390033a6c238cbb29
-
-  patches:
-    - patches/0001-Cythonize-_cython_blas.pyx-with-include-path-pointin.patch
-    - patches/0002-Disable-omp.patch
+  url: https://files.pythonhosted.org/packages/27/a0/95eae31ceabeb7710a694367816edfcc0ccb001c794c14b3b234c148ae50/scikit-learn-1.2.0.tar.gz
+  sha256: 680b65b3caee469541385d2ca5b03ff70408f6c618c583948312f0d2125df680
 
 build:
   cflags: -Wno-implicit-function-declaration
 
 requirements:
+  host:
+    - numpy
+    - scipy
   run:
     - scipy
     - joblib
@@ -58,3 +58,8 @@ test:
     - sklearn.svm
     - sklearn.tree
     - sklearn.utils
+about:
+  home: http://scikit-learn.org
+  PyPI: https://pypi.org/project/scikit-learn
+  summary: A set of python modules for machine learning and data mining
+  license: new BSD

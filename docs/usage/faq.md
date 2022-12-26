@@ -4,21 +4,38 @@
 
 ## How can I load external files in Pyodide?
 
-In order to use external files in Pyodide, you should download and save them
-to the virtual file system.
+If you are using Pyodide in the browser, you should download external files and
+save them to the virtual file system. The recommended way to do this is to zip
+the files and unpack them into the file system with
+{any}`pyodide.unpackArchive`:
 
-For that purpose, Pyodide provides {any}`pyodide.http.pyfetch`,
+```pyodide
+let zipResponse = await fetch("myfiles.zip");
+let zipBinary = await zipResponse.arrayBuffer();
+pyodide.unpackArchive(zipBinary, "zip");
+```
+
+You can also download the files from Python using {any}`pyodide.http.pyfetch`,
 which is a convenient wrapper of JavaScript `fetch`:
 
 ```pyodide
 await pyodide.runPythonAsync(`
   from pyodide.http import pyfetch
-  response = await pyfetch("https://some_url/...")
-  if response.status == 200:
-      with open("<output_file>", "wb") as f:
-          f.write(await response.bytes())
+  response = await pyfetch("https://some_url/myfiles.zip")
+  await response.unpack_archive()
 `)
 ```
+
+If you are working in Node.js, you can mount a native folder into the file
+system as follows:
+
+```pyodide
+FS.mkdir("/local_directory");
+FS.mount(NODEFS, { root: "some/local/filepath" }, "/local_directory");
+```
+
+Then you can access the mounted folder from Python via the `/local_directory`
+mount.
 
 ```{admonition} Why can't I just use urllib or requests?
 :class: warning
@@ -34,51 +51,11 @@ For security reasons JavaScript in the browser is not allowed to load local data
 You will run into Network Errors, due to the [Same Origin Policy](https://en.wikipedia.org/wiki/Same-origin_policy).
 There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
-but not in Firefox or Safari.
+but not in Firefox or Safari. See {ref}`nativefs-api` for experimental local file system
+support.
 
 For development purposes, you can serve your files with a
 [web server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
-
-## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
-
-You can directly call Python functions from JavaScript. For most purposes it
-makes sense to make your own Python function as an entrypoint and call that
-instead of redefining `runPython`. The definitions of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
-simple:
-
-```javascript
-function runPython(code) {
-  pyodide.pyodide_py.eval_code(code, pyodide.globals);
-}
-```
-
-```javascript
-async function runPythonAsync(code) {
-  return await pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
-}
-```
-
-To make your own version of {any}`runPython <pyodide.runPython>` you could do:
-
-```pyodide
-pyodide.runPython(`
-  import pyodide
-  def my_eval_code(code, ns):
-    extra_info = None
-    result = pyodide.eval_code(code, ns)
-    return ns["extra_info"], result]
-`)
-
-function myRunPython(code){
-  return pyodide.globals.get("my_eval_code")(code, pyodide.globals);
-}
-```
-
-Then `pyodide.myRunPython("2+7")` returns `[None, 9]` and
-`pyodide.myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
-If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
-monkey patch {any}`pyodide.find_imports` which takes `code` as an argument
-and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
 
@@ -253,7 +230,7 @@ this correctly in one of two ways:
 
 ```py
 import json
-from pyodide import to_js
+from pyodide.ffi import to_js
 from js import Object
 resp = await js.fetch('example.com/some_api',
   method= "POST",
@@ -267,7 +244,7 @@ or:
 
 ```py
 import json
-from pyodide import to_js
+from pyodide.ffi import to_js
 from js import Object
 resp = await js.fetch('example.com/some_api', to_js({
   "method": "POST",
@@ -338,7 +315,7 @@ functools.reduce = reduce(...)
 You are now leaving help and returning to the Python interpreter.
 ```
 
-## Micropip can't find a pure Python wheel
+## Why can't Micropip find a "pure Python wheel" for a package?
 
 When installing a Python package from PyPI, micropip will produce an error if
 it cannot find a pure Python wheel. To determine if a package has a pure
@@ -358,6 +335,87 @@ This can happen for two reasons,
    from the corresponding URL.
 2. or the package has binary extensions (e.g. C, Fortran or Rust), in which
    case it needs to be packaged in Pyodide. Please open [an
-   issue](https://github.com/pyodide/pyodide/issues) after checking than an
-   issue for this opackage doesn't exist already. Then follow
+   issue](https://github.com/pyodide/pyodide/issues) after checking that an
+   issue for this package doesn't exist already. Then follow
    {ref}`new-packages`.
+
+## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
+
+You can directly call Python functions from JavaScript. For most purposes it
+makes sense to make your own Python function as an entrypoint and call that
+instead of redefining `runPython`. The definitions of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
+simple:
+
+```javascript
+function runPython(code) {
+  pyodide.pyodide_py.code.eval_code(code, pyodide.globals);
+}
+```
+
+```javascript
+async function runPythonAsync(code) {
+  return await pyodide.pyodide_py.code.eval_code_async(code, pyodide.globals);
+}
+```
+
+To make your own version of {any}`runPython <pyodide.runPython>` you could do:
+
+```pyodide
+const my_eval_code = pyodide.runPython(`
+  from pyodide.code import eval_code
+  def my_eval_code(code, ns):
+    extra_info = None
+    result = eval_code(code, ns)
+    return ns["extra_info"], result
+  my_eval_code
+`)
+
+function myRunPython(code){
+  return my_eval_code(code, pyodide.globals);
+}
+```
+
+Then `myRunPython("2+7")` returns `[None, 9]` and
+`myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
+If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
+monkey patch {any}`pyodide.code.find_imports` which takes `code` as an argument
+and returns a list of packages imported.
+
+## Why can't I import a file I just wrote to the file system?
+
+For example:
+
+```py
+from pathlib import Path
+Path("mymodule.py").write_text("""\
+def hello():
+  print("hello world!")
+"""
+)
+from mymodule import hello # may raise "ModuleNotFoundError: No module named 'mymodule'"
+hello()
+```
+
+If you see this error, call `importlib.invalidate_caches()` before importing the module:
+
+```py
+import importlib
+from pathlib import Path
+Path("mymodule.py").write_text("""\
+def hello():
+  print("hello world!")
+"""
+)
+importlib.invalidate_caches() # Make sure Python notices the new .py file
+from mymodule import hello
+hello()
+```
+
+## Why changes made to IndexedDB don't persist?
+
+Unlike other filesystems, IndexedDB (pyodide.FS.filesystem.IDBFS) is an asynchronous filesystem.
+This is because browsers offer only asynchronous interfaces for IndexedDB.
+So in order to persist changes, you have to call
+[`pyodide.FS.syncfs()`](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.syncfs).
+See [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data)
+for more details.

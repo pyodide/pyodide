@@ -4,6 +4,7 @@ mypy_path = ["src/py", "pyodide-build"]
 show_error_codes = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+plugins = ["pydantic.mypy"]
 
 # Strict checks
 warn_unused_configs = true
@@ -30,14 +31,11 @@ module = [
   "ruamel.yaml",
   "matplotlib.*",
   "PIL.*",
+  "virtualenv",
+  "termcolor",
+  "test",
 ]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [
-  "micropip.externals.*",
-]
-check_untyped_defs = false
 
 [tool.pycln]
 all = true
@@ -50,6 +48,7 @@ known_first_party = [
   "micropip",
   "pyodide_build",
   "_pyodide",
+  "js",
 ]
 known_third_party = [
   "build",

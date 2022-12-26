@@ -1,0 +1,25 @@
+From 16c3b1d3881d809d564638421e656837ca4d5cb8 Mon Sep 17 00:00:00 2001
+From: William Lachance <wlachance@mozilla.com>
+Date: Mon, 12 Dec 2022 18:18:31 -0800
+Subject: [PATCH 1/3] disable macosx backend
+
+This comes from #541. We let it as is in case it helps building on Mac.
+---
+ setupext.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/setupext.py b/setupext.py
+index 0387223b94..5e78ace36e 100644
+--- a/setupext.py
++++ b/setupext.py
+@@ -774,6 +774,7 @@ class BackendMacOSX(OptionalPackage):
+     name = 'macosx'
+ 
+     def check(self):
++        raise Skipped("MacOSX backend disabled")
+         if sys.platform != 'darwin':
+             raise Skipped("Mac OS-X only")
+         return super().check()
+-- 
+2.25.1
+

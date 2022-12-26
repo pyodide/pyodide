@@ -1,9 +1,12 @@
 package:
   name: pytest
-  version: 7.1.1
+  version: 7.2.0
+  top-level:
+    - _pytest
+    - pytest
 source:
-  url: https://files.pythonhosted.org/packages/d2/ac/556e4410326ce77eeb1d1ec35a3e3ec847fb3e5cb30673729d2eeeffc970/pytest-7.1.1-py3-none-any.whl
-  sha256: 92f723789a8fdd7180b6b06483874feca4c48a5c76968e03bb3e7f806a1869ea
+  url: https://files.pythonhosted.org/packages/67/68/a5eb36c3a8540594b6035e6cdae40c1ef1b6a2bfacbecc3d1a544583c078/pytest-7.2.0-py3-none-any.whl
+  sha256: 892f933d339f068883b6fd5a459f03d85bfcb355e4981e146d2c7616c21fef71
 requirements:
   run:
     - atomicwrites
@@ -14,6 +17,9 @@ requirements:
     - setuptools
     - six
     - iniconfig
-test:
-  imports:
-    - pytest
+    - exceptiongroup
+about:
+  home: https://docs.pytest.org/en/latest/
+  PyPI: https://pypi.org/project/pytest
+  summary: "pytest: simple powerful testing with Python"
+  license: MIT

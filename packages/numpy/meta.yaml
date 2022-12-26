@@ -1,21 +1,19 @@
 package:
   name: numpy
-  version: 1.22.3
-
+  version: 1.23.5
+  top-level:
+    - numpy
 source:
-  url: https://files.pythonhosted.org/packages/64/4a/b008d1f8a7b9f5206ecf70a53f84e654707e7616a771d84c05151a4713e9/numpy-1.22.3.zip
-  sha256: dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18
+  url: https://files.pythonhosted.org/packages/42/38/775b43da55fa7473015eddc9a819571517d9a271a9f8134f68fb9be2f212/numpy-1.23.5.tar.gz
+  sha256: 1b1766d6f397c18153d40015ddfc79ddb715cabadc04d2d228d4e5a8bc4ded1a
 
   patches:
-    - patches/0001-make-int-return-values.patch
-    - patches/0002-MAINT-BLD-Fix-math-feature-detection-for-wasm.patch
-    - patches/0003-BUG-Fix-the-return-type-of-random_float_fill.patch
-    - patches/0004-disable-optimization.patch
-    - patches/0005-Fix-ieee754.patch
-    - patches/0006-not-build-lapack-lite-as-64-bit.patch
-    - patches/0007-disable-svml.patch
+    - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
+    - patches/0002-ENH-Fix-pointer-size-determination-for-cross-build.patch
+    - patches/0003-BUG-Fix-datetime_to_timedelta_resolve_descriptors-signature.patch
 
 build:
+  backend-flags: --disable-optimization
   cflags: |
     -Wno-return-type
   cross-build-env: true
@@ -24,6 +22,8 @@ build:
     - numpy/core/include/numpy/_numpyconfig.h
     - numpy/core/lib/libnpymath.a
     - numpy/random/lib/libnpyrandom.a
-test:
-  imports:
-    - numpy
+about:
+  home: https://www.numpy.org
+  PyPI: https://pypi.org/project/numpy
+  summary: NumPy is the fundamental package for array computing with Python.
+  license: BSD

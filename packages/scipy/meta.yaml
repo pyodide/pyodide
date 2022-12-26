@@ -1,6 +1,8 @@
 package:
   name: scipy
-  version: 1.8.0
+  version: 1.9.3
+  top-level:
+    - scipy
 
 # See extra explanation in info.md
 #
@@ -13,40 +15,46 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/b4/a2/4faa34bf0cdbefd5c706625f1234987795f368eb4e97bde9d6f46860843e/scipy-1.8.0.tar.gz
-  sha256: 31d4f2d6b724bc9a98e527b5849b8a7e589bf1ea630c33aa563eda912c9ff0bd
+  url: https://files.pythonhosted.org/packages/0a/2e/44795c6398e24e45fa0bb61c3e98de1cfea567b1b51efd3751e2f7ff9720/scipy-1.9.3.tar.gz
+  sha256: fbc5c05c85c1a02be77b1ff591087c83bc44579c6d2bd9fb798bb64ea5e1a027
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-loadDynamicLibrary-flapack.patch
     - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
     - patches/0004-int-to-string.patch
-    - patches/0005-disable-blas-detection.patch
-    - patches/0006-fix-fotran-files-minpack.patch
-    - patches/0007-gemm_-no-const.patch
-    - patches/0008-make-int-return-values.patch
-    - patches/0009-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0010-sasum-returns-double-not-float.patch
-    - patches/0011-skip-fortran-fails-to-link.patch
-    - patches/0012-Disable-lapack-detection.patch
-    - patches/0013-Add-extra-END-to-prini.f.patch
-    - patches/0014-BUG-Fix-signature-of-D_IIR_forback-1-2.patch
+    - patches/0005-fix-fotran-files-minpack.patch
+    - patches/0006-gemm_-no-const.patch
+    - patches/0007-make-int-return-values.patch
+    - patches/0008-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0009-sasum-returns-double-not-float.patch
+    - patches/0010-skip-fortran-fails-to-link.patch
+    - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
+    - patches/0012-Remove-meson-requirements.patch
+    - patches/0013-Fix-fitpack.patch
 
 build:
   cflags: |
-    -I$(WASM_LIBRARY_DIR)/CLAPACK/INCLUDE
+    -I$(WASM_LIBRARY_DIR)/include
     -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
+  cxxflags: -fexceptions
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
+    -fexceptions
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
+    set -x
+    export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/clapack_all.so"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
+
     pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
@@ -60,12 +68,13 @@ build:
       sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
       zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
     >>  ../../scipy/linalg/lapack_extras.f
-    sed -i 's/CHARACTER/INTEGER/g' ../../scipy/linalg/lapack_extras.f
-    sed -i 's/RECURSIVE//g' ../../scipy/linalg/lapack_extras.f
     cd ../..
+    sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
+    sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
+    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
-    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
+    find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
 
     sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
     sed -i 's/^void/int/g' scipy/odr/odrpack.h
@@ -101,9 +110,16 @@ build:
     - scipy/linalg/cython_blas.pxd
 
 requirements:
+  host:
+    - numpy
+    - CLAPACK
+    - boost-cpp
   run:
     - numpy
     - CLAPACK
+  executable:
+    - gfortran
+    - f2c
 
 test:
   imports:
@@ -144,3 +160,8 @@ test:
     - scipy.stats.distributions
     - scipy.stats.mstats
     - scipy.stats.qmc
+about:
+  home: https://www.scipy.org
+  PyPI: https://pypi.org/project/scipy
+  summary: "SciPy: Scientific Library for Python"
+  license: BSD

@@ -23,6 +23,12 @@
   debuggers, and automatic installation of
   any imported packages supported by Pyodide's `micropip`.
 
+## Workarounds for common WASM and browser limitations
+
+- [pyodide-http](https://github.com/koenvo/pyodide-http) Provides patches for
+  widely used http libraries to make them work in Pyodide environments like
+  JupyterLite.
+
 ## Dashboards and visualization
 
 - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution

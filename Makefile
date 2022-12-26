@@ -14,9 +14,7 @@ all: check \
 	dist/pyodide.d.ts \
 	dist/package.json \
 	dist/console.html \
-	dist/distutils.tar \
-	dist/test.tar \
-	dist/packages.json \
+	dist/repodata.json \
 	dist/pyodide_py.tar \
 	dist/test.html \
 	dist/module_test.html \
@@ -31,8 +29,8 @@ dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide
 dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
-	src/core/error_handling_cpp.o \
 	src/core/hiwire.o \
+	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/main.o  \
@@ -47,7 +45,7 @@ dist/pyodide.asm.js: \
 	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS)
 
-	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]]; then \
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
 	fi
 
@@ -76,7 +74,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	npx rollup -c src/js/rollup.config.js
+	npx rollup -c src/js/rollup.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -91,6 +89,9 @@ dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.t
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
+
+%.wasm.gen.js: %.wat
+	node tools/assemble_wat.js $@
 
 src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
@@ -147,12 +148,6 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
 
-
-update_base_url: \
-	dist/console.html
-
-
-
 .PHONY: lint
 lint:
 	pre-commit run -a --show-diff-on-failure
@@ -176,49 +171,8 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-src/core/error_handling_cpp.o: src/core/error_handling_cpp.cpp
-	$(CXX) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
-
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
-
-
-# Stdlib modules that we repackage as standalone packages
-
-TEST_EXTENSIONS= \
-		_testinternalcapi.so \
-		_testcapi.so \
-		_testbuffer.so \
-		_testimportmultiple.so \
-		_testmultiphase.so \
-		_ctypes_test.so
-TEST_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I .
-
-# TODO: also include test directories included in other stdlib modules
-dist/test.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
-							   -I Include/internal/ -DPy_BUILD_CORE_MODULE
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testcapimodule.c -o Modules/_testcapi.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testbuffer.c -o Modules/_testbuffer.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testimportmultiple.c -o Modules/_testimportmultiple.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_testmultiphase.c -o Modules/_testmultiphase.o
-	cd $(CPYTHONBUILD) && emcc $(TEST_MODULE_CFLAGS) -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
-
-	for testname in $(TEST_EXTENSIONS); do \
-		cd $(CPYTHONBUILD) && \
-		emcc Modules/$${testname%.*}.o -o $$testname $(SIDE_MODULE_LDFLAGS) && \
-		rm -f $(CPYTHONLIB)/$$testname && \
-		ln -s $(CPYTHONBUILD)/$$testname $(CPYTHONLIB)/$$testname ; \
-	done
-
-	cd $(CPYTHONLIB) && tar -h --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/test.tar \
-		test $(TEST_EXTENSIONS) unittest/test sqlite3/test ctypes/test
-
-	cd $(CPYTHONLIB) && rm $(TEST_EXTENSIONS)
-
-
-dist/distutils.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cf $(PYODIDE_ROOT)/dist/distutils.tar distutils
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete
@@ -227,7 +181,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/packages.json: FORCE
+dist/repodata.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
@@ -240,10 +194,9 @@ emsdk/emsdk/.complete:
 
 
 rust:
-	wget https://sh.rustup.rs -O /rustup.sh
-	sh /rustup.sh -y
-	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain stable
-
+	wget -q -O - https://sh.rustup.rs | sh -s -- -y
+	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
 
 FORCE:
 

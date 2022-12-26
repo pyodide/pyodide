@@ -1,10 +1,8 @@
 package:
   name: typing-extensions
-  version: 4.1.1
-source:
-  url: https://files.pythonhosted.org/packages/45/6b/44f7f8f1e110027cf88956b59f2fad776cca7e1704396d043f89effd3a0e/typing_extensions-4.1.1-py3-none-any.whl
-  sha256: 21c85e0fe4b9a155d0799430b0ad741cdce7e359660ccbd8b530613e8df88ce2
-
-test:
-  imports:
+  version: 4.4.0
+  top-level:
     - typing_extensions
+source:
+  url: https://files.pythonhosted.org/packages/0b/8e/f1a0a5a76cfef77e1eb6004cb49e5f8d72634da638420b9ea492ce8305e8/typing_extensions-4.4.0-py3-none-any.whl
+  sha256: 16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e

@@ -10,8 +10,8 @@
  * hiwire: A super-simple framework for converting values between C and
  * JavaScript.
  *
- * Arbitrary JavaScript objects are referenced from C using an opaque int value.
- * By convention, these ids are stored in variable names beginning with `id`.
+ * Arbitrary JavaScript objects are referenced from C using an opaque JsRef
+ * value.
  *
  * JavaScript objects passed to the C side must be manually reference-counted.
  * Use `hiwire_incref` if you plan to store the object on the C side. Use
@@ -19,16 +19,16 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
-// JsRef is a NewType of int.
-// I checked and
-//  alignof(JsRef) = alignof(int) = 4
-//  sizeof(JsRef) = sizeof(int) = 4
-// Just to be extra future proof, I added assertions about this to the beginning
-// of main.c So we are all good for using JsRef as a newtype for int. I also
-// added
-//  -Werror=int-conversion -Werror=incompatible-pointer-types
-// to the compile flags, so that no implicit casts will happen between JsRef
-// and any other type.
+// JsRef is a NewType of int. We need
+//
+// alignof(JsRef) = alignof(int) = 4 and
+// sizeof(JsRef) = sizeof(int) = 4
+//
+// To be future proof, we have _Static_asserts for this.
+// I also added
+// -Werror=int-conversion -Werror=incompatible-pointer-types
+// to the compile flags, to ensure that no implicit casts will happen between
+// JsRef and any other type.
 struct _JsRefStruct
 {};
 
@@ -78,6 +78,8 @@ typedef struct Js_Identifier
     x = NULL;                                                                  \
   } while (0)
 
+// ==================== hiwire API  ====================
+
 /**
  * Initialize the variables and functions required for hiwire.
  */
@@ -123,33 +125,6 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS4 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs4(const char* ptr, int len);
-
-/**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS2 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs2(const char* ptr, int len);
-
-/**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS1 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs1(const char* ptr, int len);
-
-/**
  * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing UTF8. The string data itself is copied.
  *
@@ -157,16 +132,6 @@ hiwire_string_ucs1(const char* ptr, int len);
  */
 JsRef
 hiwire_string_utf8(const char* ptr);
-
-/**
- * Create a new JavaScript string, given a pointer to a null-terminated buffer
- * containing ascii (well, technically latin-1). The string data itself is
- * copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ascii(const char* ptr);
 
 /**
  * Create a new JavaScript boolean value.
@@ -183,88 +148,12 @@ hiwire_from_bool(bool boolean);
 bool
 hiwire_to_bool(JsRef value);
 
-bool
-JsArray_Check(JsRef idobj);
-
-/**
- * Create a new JavaScript Array.
- *
- * Returns: New reference
- */
-JsRef
-JsArray_New();
-
-/**
- * Push a value to the end of a JavaScript array.
- */
-errcode WARN_UNUSED
-JsArray_Push(JsRef idobj, JsRef idval);
-
-/**
- * Same as JsArray_Push but panics on failure
- */
-int
-JsArray_Push_unchecked(JsRef idobj, JsRef idval);
-
-/**
- * Create a new JavaScript object.
- *
- * Returns: New reference
- */
-JsRef
-JsObject_New();
-
 /**
  * Throw a javascript Error object.
  * Steals a reference to the argument.
  */
 void _Py_NO_RETURN
 hiwire_throw_error(JsRef iderr);
-
-/**
- * Get an object member by string.
- *
- *
- * Returns: New reference
- */
-JsRef
-JsObject_GetString(JsRef idobj, const char* ptrname);
-
-/**
- * Set an object member by string.
- */
-errcode WARN_UNUSED
-JsObject_SetString(JsRef idobj, const char* ptrname, JsRef idval);
-
-/**
- * Delete an object member by string.
- */
-errcode WARN_UNUSED
-JsObject_DeleteString(JsRef idobj, const char* ptrname);
-
-/**
- * Get an object member by integer.
- *
- * Returns: New reference
- */
-JsRef
-JsArray_Get(JsRef idobj, int idx);
-
-/**
- * Set an object member by integer.
- */
-errcode WARN_UNUSED
-JsArray_Set(JsRef idobj, int idx, JsRef idval);
-
-errcode WARN_UNUSED
-JsArray_Delete(JsRef idobj, int idx);
-
-/**
- * Get the methods on an object, both on itself and what it inherits.
- *
- */
-JsRef
-JsObject_Dir(JsRef idobj);
 
 /**
  * Call a js function
@@ -348,6 +237,9 @@ JsRef
 hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
 
 JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name);
+
+JsRef
 hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
@@ -383,16 +275,16 @@ bool
 hiwire_get_bool(JsRef idobj);
 
 /**
- * Check whether the object is a PyProxy.
- */
-bool
-hiwire_is_pyproxy(JsRef idobj);
-
-/**
  * Check if the object is a function.
  */
 bool
 hiwire_is_function(JsRef idobj);
+
+bool
+hiwire_is_generator(JsRef idobj);
+
+bool
+hiwire_is_async_generator(JsRef idobj);
 
 /**
  * Check if the object is a comlink proxy.
@@ -481,56 +373,10 @@ bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
 
 /**
- * Check if `typeof obj.next === "function"`
- */
-bool
-hiwire_is_iterator(JsRef idobj);
-
-/**
- * Calls the `next` function on an iterator.
- *
- * Returns -1 if an error occurs. Otherwise, `next` should return an object with
- * `value` and `done` fields. We store `value` into the argument `result` and
- * return `done`.
- */
-int
-hiwire_next(JsRef idobj, JsRef* result);
-
-/**
- * Check if `typeof obj[Symbol.iterator] === "function"`
- */
-bool
-hiwire_is_iterable(JsRef idobj);
-
-/**
- * Returns the iterator associated with the given object, if any.
+ * Returns the reversed iterator associated with an array.
  */
 JsRef
-hiwire_get_iterator(JsRef idobj);
-
-/**
- * Returns `Object.entries(obj)`
- */
-JsRef
-JsObject_Entries(JsRef idobj);
-
-/**
- * Returns `Object.keys(obj)`
- */
-JsRef
-JsObject_Keys(JsRef idobj);
-
-/**
- * Returns `Object.values(obj)`
- */
-JsRef
-JsObject_Values(JsRef idobj);
-
-/**
- * Returns 1 if the value is a typedarray.
- */
-bool
-hiwire_is_typedarray(JsRef idobj);
+hiwire_reversed_iterator(JsRef idobj);
 
 /**
  * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
@@ -574,6 +420,132 @@ hiwire_get_buffer_info(JsRef idobj,
 JsRef
 hiwire_subarray(JsRef idarr, int start, int end);
 
+// ==================== JsArray API  ====================
+
+bool
+JsArray_Check(JsRef idobj);
+
+/**
+ * Create a new JavaScript Array.
+ *
+ * Returns: New reference
+ */
+JsRef
+JsArray_New();
+
+/**
+ * Push a value to the end of a JavaScript array.
+ */
+errcode WARN_UNUSED
+JsArray_Push(JsRef idobj, JsRef idval);
+
+/**
+ * Same as JsArray_Push but panics on failure
+ */
+int
+JsArray_Push_unchecked(JsRef idobj, JsRef idval);
+
+/**
+ * Get an object member by integer.
+ *
+ * Returns: New reference
+ */
+JsRef
+JsArray_Get(JsRef idobj, int idx);
+
+/**
+ * Set an object member by integer.
+ */
+errcode WARN_UNUSED
+JsArray_Set(JsRef idobj, int idx, JsRef idval);
+
+errcode WARN_UNUSED
+JsArray_Delete(JsRef idobj, int idx);
+
+JsRef
+JsArray_Splice(JsRef idobj, int idx);
+
+JsRef
+JsArray_slice(JsRef idobj, int slicelength, int start, int stop, int step);
+
+errcode
+JsArray_slice_assign(JsRef idobj,
+                     int slicelength,
+                     int start,
+                     int stop,
+                     int step,
+                     int values_length,
+                     PyObject** values);
+
+errcode
+JsArray_Clear(JsRef idobj);
+
+// ==================== JsObject API  ====================
+
+/**
+ * Create a new JavaScript object.
+ *
+ * Returns: New reference
+ */
+JsRef
+JsObject_New();
+
+/**
+ * Get an object member by string.
+ *
+ *
+ * Returns: New reference
+ */
+JsRef
+JsObject_GetString(JsRef idobj, const char* ptrname);
+
+/**
+ * Set an object member by string.
+ */
+errcode WARN_UNUSED
+JsObject_SetString(JsRef idobj, const char* ptrname, JsRef idval);
+
+/**
+ * Delete an object member by string.
+ */
+errcode WARN_UNUSED
+JsObject_DeleteString(JsRef idobj, const char* ptrname);
+
+/**
+ * Get the methods on an object, both on itself and what it inherits.
+ *
+ */
+JsRef
+JsObject_Dir(JsRef idobj);
+
+/**
+ * Returns `Object.entries(obj)`
+ */
+JsRef
+JsObject_Entries(JsRef idobj);
+
+/**
+ * Returns `Object.keys(obj)`
+ */
+JsRef
+JsObject_Keys(JsRef idobj);
+
+/**
+ * Returns `Object.values(obj)`
+ */
+JsRef
+JsObject_Values(JsRef idobj);
+
+// ==================== JsString API  ====================
+
+JsRef
+JsString_InternFromCString(const char* str);
+
+JsRef
+JsString_FromId(Js_Identifier* id);
+
+// ==================== JsMap API  ====================
+
 /**
  * Create a new Map.
  */
@@ -585,6 +557,8 @@ JsMap_New();
  */
 errcode WARN_UNUSED
 JsMap_Set(JsRef mapid, JsRef keyid, JsRef valueid);
+
+// ==================== JsSet API  ====================
 
 /**
  * Create a new Set.

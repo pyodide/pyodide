@@ -11,18 +11,26 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsRef
-pyproxy_new(PyObject* obj);
+pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip);
 
-int
-pyproxy_Check(JsRef x);
+JsRef
+pyproxy_new(PyObject* obj);
 
 /**
  * Check if x is a PyProxy.
  *
- * Will fatally fail if x is not NULL or a valid JsRef.
+ * Fatally fails if x is not NULL or a valid JsRef.
  */
 int
 pyproxy_Check(JsRef x);
+
+/**
+ * If x is a PyProxy, return a borrowed version of the wrapped PyObject. Returns
+ * NULL if x is NULL or a valid JsRef which is not a pyproxy. Fatally fails if x
+ * is not NULL or a valid JsRef.
+ */
+PyObject*
+pyproxy_AsPyObject(JsRef x);
 
 /**
  * Destroy a list of PyProxies.

@@ -8,7 +8,7 @@ import pathlib
 import re
 from ast import Str
 from collections import namedtuple
-from typing import Callable
+from collections.abc import Callable
 
 CORE_VERSION_REGEX = r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
 
@@ -45,8 +45,8 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        ROOT / "pyodide-build/setup.cfg",
-        build_version_pattern("version = {python_version}"),
+        ROOT / "pyodide-build/pyodide_build/__init__.py",
+        pattern=build_version_pattern('__version__ = "{python_version}"'),
         prerelease=True,
     ),
     Target(
@@ -55,14 +55,19 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        ROOT / "run_docker",
-        build_version_pattern('PYODIDE_PREBUILT_IMAGE_TAG="{python_version}"'),
-        prerelease=False,
-    ),
-    Target(
         ROOT / "docs/project/about.md",
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
         prerelease=False,
+    ),
+    Target(
+        ROOT / "src/js/version.ts",
+        build_version_pattern('version: string = "{python_version}"'),
+        prerelease=True,
+    ),
+    Target(
+        ROOT / "src/core/pre.js",
+        build_version_pattern('API.version = "{python_version}"'),
+        prerelease=True,
     ),
 ]
 
@@ -136,7 +141,6 @@ def generate_updated_content(
         return None
 
     # Some files only required to be bumped on core version release.
-    # For example, we don't deploy prebuilt docker images for dev release.
     if not target.prerelease:
         if not is_core_version(new_version):
             print(f"[*] {file}: Skipped (not targeting a core version)")
@@ -202,8 +206,8 @@ def main():
     update_queue = []
 
     targets = itertools.chain(
-        zip(PYTHON_TARGETS, [new_version_py] * len(PYTHON_TARGETS)),
-        zip(JS_TARGETS, [new_version_js] * len(JS_TARGETS)),
+        zip(PYTHON_TARGETS, [new_version_py] * len(PYTHON_TARGETS), strict=True),
+        zip(JS_TARGETS, [new_version_js] * len(JS_TARGETS), strict=True),
     )
     for target, new_version in targets:
         current_version = parse_current_version(target)
@@ -214,8 +218,8 @@ def main():
     if args.dry_run:
         return
 
-    for file, content in update_queue:
-        file.write_text(content)
+    for target, content in update_queue:
+        target.file.write_text(content)
 
 
 if __name__ == "__main__":

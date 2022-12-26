@@ -6,8 +6,13 @@ import "./module.ts";
 import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
+import { loadBinaryFile } from "./compat";
+import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+import { setStdin, setStdout, setStderr } from "./streams";
+
+API.loadBinaryFile = loadBinaryFile;
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -27,14 +32,16 @@ export let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.
 export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
- *
- * The Pyodide version.
- *
- * It can be either the exact release version (e.g. ``0.1.0``), or
- * the latest release version followed by the number of commits since, and
- * the git hash of the current commit (e.g. ``0.1.0-1-bd84646``).
+ * Runs code after python vm has been initialized but prior to any bootstrapping.
  */
-export let version: string = ""; // actually defined in loadPyodide (see pyodide.js)
+API.rawRun = function rawRun(code: string): [number, string] {
+  const code_ptr = Module.stringToNewUTF8(code);
+  Module.API.capture_stderr();
+  let errcode = Module._PyRun_SimpleString(code_ptr);
+  Module._free(code_ptr);
+  const captured_stderr = Module.API.restore_stderr().trim();
+  return [errcode, captured_stderr];
+};
 
 /**
  * Just like `runPython` except uses a different globals dict and gets
@@ -46,51 +53,35 @@ API.runPythonInternal = function (code: string): any {
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
 };
 
-let runPythonPositionalGlobalsDeprecationWarned = false;
 /**
- * Runs a string of Python code from JavaScript, using :any:`pyodide.eval_code`
+ * Runs a string of Python code from JavaScript, using :any:`pyodide.code.eval_code`
  * to evaluate the code. If the last statement in the Python code is an
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
- *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a positional
- *    argument rather than as a named argument. In v0.20 this will still work
- *    but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript. See the
- *          documentation for :any:`pyodide.eval_code` for more info.
+ *          documentation for :any:`pyodide.code.eval_code` for more info.
  */
 export function runPython(
   code: string,
-  options: { globals?: PyProxy } = {}
+  options: { globals?: PyProxy } = {},
 ): any {
-  if (API.isPyProxy(options)) {
-    options = { globals: options as PyProxy };
-    if (!runPythonPositionalGlobalsDeprecationWarned) {
-      console.warn(
-        "Passing a PyProxy as the second argument to runPython is deprecated and will be removed in v0.21. Use 'runPython(code, {globals : some_dict})' instead."
-      );
-      runPythonPositionalGlobalsDeprecationWarned = true;
-    }
-  }
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return API.pyodide_py.eval_code(code, options.globals);
+  return API.pyodide_code.eval_code(code, options.globals);
 }
 API.runPython = runPython;
 
+let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
  * any known packages that the code chunk imports. Uses the Python API
- * :func:`pyodide.find\_imports` to inspect the code.
+ * :func:`pyodide.code.find\_imports` to inspect the code.
  *
  * For example, given the following code as input
  *
@@ -102,18 +93,40 @@ API.runPython = runPython;
  * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param code The code to inspect.
- * @param messageCallback The ``messageCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
- * @param errorCallback The ``errorCallback`` argument of
- * :any:`pyodide.loadPackage` (optional).
+ * @param options Options passed to :any:`pyodide.loadPackage`.
+ * @param options.messageCallback A callback, called with progress messages
+ *    (optional)
+ * @param options.errorCallback A callback, called with error/warning messages
+ *    (optional)
+ * @param options.checkIntegrity If true, check the integrity of the downloaded
+ *    packages (default: true)
  * @async
  */
 export async function loadPackagesFromImports(
   code: string,
-  messageCallback?: (msg: string) => void,
-  errorCallback?: (err: string) => void
+  options: {
+    messageCallback?: (message: string) => void;
+    errorCallback?: (message: string) => void;
+    checkIntegrity?: boolean;
+  } = {
+    checkIntegrity: true,
+  },
+  errorCallbackDeprecated?: (message: string) => void,
 ) {
-  let pyimports = API.pyodide_py.find_imports(code);
+  if (typeof options === "function") {
+    if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
+      console.warn(
+        "Passing a messageCallback or errorCallback as the second or third argument to loadPackagesFromImports is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+      );
+      options = {
+        messageCallback: options,
+        errorCallback: errorCallbackDeprecated,
+      };
+      loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
+    }
+  }
+
+  let pyimports = API.pyodide_code.find_imports(code);
   let imports;
   try {
     imports = pyimports.toJs();
@@ -132,13 +145,13 @@ export async function loadPackagesFromImports(
     }
   }
   if (packages.size) {
-    await loadPackage(Array.from(packages), messageCallback, errorCallback);
+    await loadPackage(Array.from(packages), options);
   }
 }
 
 /**
  * Run a Python code string with top level await using
- * :any:`pyodide.eval_code_async` to evaluate the code. Returns a promise which
+ * :any:`pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
  * resolves when execution completes. If the last statement in the Python code
  * is an expression (and the code doesn't end with a semicolon), the returned
  * promise will resolve to the value of this expression.
@@ -149,7 +162,7 @@ export async function loadPackagesFromImports(
  *
  *    let result = await pyodide.runPythonAsync(`
  *        from js import fetch
- *        response = await fetch("./packages.json")
+ *        response = await fetch("./repodata.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to JavaScript
  *        len(packages.packages.object_keys())
@@ -163,13 +176,6 @@ export async function loadPackagesFromImports(
  *    import any python packages referenced via `import` statements in your
  *    code. This function will no longer do it for you.
  *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
- *
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
@@ -179,21 +185,12 @@ export async function loadPackagesFromImports(
  */
 export async function runPythonAsync(
   code: string,
-  options: { globals?: PyProxy } = {}
+  options: { globals?: PyProxy } = {},
 ): Promise<any> {
-  if (API.isPyProxy(options)) {
-    options = { globals: options as PyProxy };
-    if (!runPythonPositionalGlobalsDeprecationWarned) {
-      console.warn(
-        "Passing a PyProxy as the second argument to runPythonAsync is deprecated and will be removed in v0.21. Use 'runPythonAsync(code, {globals : some_dict})' instead."
-      );
-      runPythonPositionalGlobalsDeprecationWarned = true;
-    }
-  }
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return await API.pyodide_py.eval_code_async(code, options.globals);
+  return await API.pyodide_code.eval_code_async(code, options.globals);
 }
 API.runPythonAsync = runPythonAsync;
 
@@ -209,7 +206,7 @@ API.runPythonAsync = runPythonAsync;
  * @param module JavaScript object backing the module
  */
 export function registerJsModule(name: string, module: object) {
-  API.pyodide_py.register_js_module(name, module);
+  API.pyodide_ffi.register_js_module(name, module);
 }
 
 /**
@@ -232,7 +229,7 @@ export function registerComlink(Comlink: any) {
  * @param name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name: string) {
-  API.pyodide_py.unregister_js_module(name);
+  API.pyodide_ffi.unregister_js_module(name);
 }
 
 /**
@@ -265,9 +262,9 @@ export function toPy(
     defaultConverter?: (
       value: any,
       converter: (value: any) => any,
-      cacheConversion: (input: any, output: any) => any
+      cacheConversion: (input: any, output: any) => any,
     ) => any;
-  } = { depth: -1 }
+  } = { depth: -1 },
 ): any {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
@@ -341,15 +338,8 @@ export function pyimport(mod_name: string): PyProxy {
   return API.importlib.import_module(mod_name);
 }
 
-let unpackArchivePositionalExtractDirDeprecationWarned = false;
 /**
  * Unpack an archive into a target directory.
- *
- * .. admonition:: Positional globals argument :class: warning
- *
- *    In Pyodide v0.19, this function took the extract_dir parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work but it is deprecated. It will be removed in v0.21.
  *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
@@ -367,23 +357,14 @@ export function unpackArchive(
   format: string,
   options: {
     extractDir?: string;
-  } = {}
+  } = {},
 ) {
-  if (typeof options === "string") {
-    if (!unpackArchivePositionalExtractDirDeprecationWarned) {
-      console.warn(
-        "Passing a string as the third argument to unpackArchive is deprecated and will be removed in v0.21. Instead use { extract_dir : 'some_path' }"
-      );
-      unpackArchivePositionalExtractDirDeprecationWarned = true;
-    }
-    options = { extractDir: options };
-  }
   if (
     !ArrayBuffer.isView(buffer) &&
-    Object.prototype.toString.call(buffer) !== "[object ArrayBuffer]"
+    API.getTypeTag(buffer) !== "[object ArrayBuffer]"
   ) {
     throw new TypeError(
-      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`
+      `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`,
     );
   }
   API.typedArrayAsUint8Array(buffer);
@@ -395,6 +376,54 @@ export function unpackArchive(
     extract_dir,
     installer: "pyodide.unpackArchive",
   });
+}
+
+type NativeFS = {
+  syncfs: Function;
+};
+
+/**
+ * Mounts FileSystemDirectoryHandle in to the target directory.
+ *
+ * @param path The absolute path of the target mount directory.
+ * If the directory does not exist, it will be created.
+ * @param fileSystemHandle FileSystemDirectoryHandle returned by
+ * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ */
+export async function mountNativeFS(
+  path: string,
+  fileSystemHandle: {
+    isSameEntry: Function;
+    queryPermission: Function;
+    requestPermission: Function;
+  },
+  // TODO: support sync file system
+  // sync: boolean = false
+): Promise<NativeFS> {
+  if (fileSystemHandle.constructor.name !== "FileSystemDirectoryHandle") {
+    throw new TypeError(
+      `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`,
+    );
+  }
+
+  if (Module.FS.findObject(path) == null) {
+    Module.FS.mkdirTree(path);
+  }
+
+  Module.FS.mount(
+    Module.FS.filesystems.NATIVEFS_ASYNC,
+    { fileSystemHandle: fileSystemHandle },
+    path,
+  );
+
+  // sync native ==> browser
+  await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+
+  return {
+    // sync browser ==> native
+    syncfs: async () =>
+      new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+  };
 }
 
 /**
@@ -466,9 +495,13 @@ export type PyodideInterface = {
   toPy: typeof toPy;
   pyimport: typeof pyimport;
   unpackArchive: typeof unpackArchive;
+  mountNativeFS: typeof mountNativeFS;
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
+  setStdin: typeof setStdin;
+  setStdout: typeof setStdout;
+  setStderr: typeof setStderr;
 };
 
 /**
@@ -529,11 +562,15 @@ API.makePublicAPI = function (): PyodideInterface {
     toPy,
     pyimport,
     unpackArchive,
+    mountNativeFS,
     registerComlink,
     PythonError,
     PyBuffer,
     _module: Module,
     _api: API,
+    setStdin,
+    setStdout,
+    setStderr,
   };
 
   API.public_api = namespace;

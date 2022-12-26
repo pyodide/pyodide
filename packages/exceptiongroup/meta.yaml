@@ -1,0 +1,13 @@
+package:
+  name: exceptiongroup
+  version: 1.0.4
+  top-level:
+    - exceptiongroup
+source:
+  url: https://files.pythonhosted.org/packages/ce/2e/9a327cc0d2d674ee2d570ee30119755af772094edba86d721dda94404d1a/exceptiongroup-1.0.4-py3-none-any.whl
+  sha256: 542adf9dea4055530d6e1279602fa5cb11dab2395fa650b8674eaec35fc4a828
+about:
+  home: "https://github.com/agronholm/exceptiongroup"
+  PyPI: https://pypi.org/project/exceptiongroup
+  summary: Backport of PEP 654 (exception groups)
+  license: "MIT"

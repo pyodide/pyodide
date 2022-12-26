@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from pyodide import eval_code_async
+from pyodide.code import eval_code_async
 
 
 def test_await_jsproxy(selenium):
@@ -173,7 +173,7 @@ def test_await_fetch(selenium):
         """
     )
     time.sleep(0.1)
-    msg = "StopIteration: <!DOCTYPE html>"
+    msg = "StopIteration: <!doctype html>"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
@@ -292,7 +292,7 @@ def test_eval_code_await_fetch(selenium):
         """
     )
     time.sleep(0.1)
-    msg = "StopIteration: <!DOCTYPE html>"
+    msg = "StopIteration: <!doctype html>"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
@@ -352,7 +352,7 @@ def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
-            let c = pyodide.pyodide_py.eval_code_async("1+1");
+            let c = pyodide._api.pyodide_code.eval_code_async("1+1");
             let result = await c;
             c.destroy();
             return result;
@@ -365,7 +365,7 @@ def test_await_pyproxy_eval_async(selenium):
         selenium.run_js(
             """
             let finally_occurred = false;
-            let c = pyodide.pyodide_py.eval_code_async("1+1");
+            let c = pyodide._api.pyodide_code.eval_code_async("1+1");
             let result = await c.finally(() => { finally_occurred = true; });
             c.destroy();
             return [result, finally_occurred];
@@ -379,7 +379,7 @@ def test_await_pyproxy_eval_async(selenium):
             """
             let finally_occurred = false;
             let err_occurred = false;
-            let c = pyodide.pyodide_py.eval_code_async("raise ValueError('hi')");
+            let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
             try {
                 let result = await c.finally(() => { finally_occurred = true; });
             } catch(e){
@@ -394,7 +394,7 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let c = pyodide.pyodide_py.eval_code_async("raise ValueError('hi')");
+        let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
         try {
             return await c.catch(e => e.constructor.name === "PythonError");
         } finally {
@@ -405,9 +405,9 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let c = pyodide.pyodide_py.eval_code_async(`
+        let c = pyodide._api.pyodide_code.eval_code_async(`
             from js import fetch
-            await (await fetch('packages.json')).json()
+            await (await fetch('repodata.json')).json()
         `);
         let result = await c;
         c.destroy();
@@ -422,7 +422,7 @@ def test_await_pyproxy_async_def(selenium):
         let packages = await pyodide.runPythonAsync(`
             from js import fetch
             async def temp():
-                return await (await fetch('packages.json')).json()
+                return await (await fetch('repodata.json')).json()
             await temp()
         `);
         return (!!packages.packages) && (!!packages.info);

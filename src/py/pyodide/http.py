@@ -1,15 +1,15 @@
 import json
 from io import StringIO
-from typing import Any, BinaryIO, TextIO
+from typing import IO, Any
 
-from ._core import JsProxy, to_js
+from ._core import JsFetchResponse, to_js
 
 try:
     from js import XMLHttpRequest
 except ImportError:
     pass
 
-from ._core import IN_BROWSER, JsException
+from ._core import IN_BROWSER, JsBuffer, JsException
 from ._package_loader import unpack_buffer
 
 __all__ = [
@@ -38,7 +38,7 @@ def open_url(url: str) -> StringIO:
 
     req = XMLHttpRequest.new()
     req.open("GET", url, False)
-    req.send(None)
+    req.send()
     return StringIO(req.response)
 
 
@@ -57,7 +57,7 @@ class FetchResponse:
         A JsProxy of the fetch response
     """
 
-    def __init__(self, url: str, js_response: JsProxy):
+    def __init__(self, url: str, js_response: JsFetchResponse):
         self._url = url
         self.js_response = js_response
 
@@ -80,7 +80,7 @@ class FetchResponse:
         return self.js_response.redirected
 
     @property
-    def status(self) -> str:
+    def status(self) -> int:
         """Response status code"""
         return self.js_response.status
 
@@ -102,7 +102,7 @@ class FetchResponse:
         """
         return self.js_response.url
 
-    def _raise_if_failed(self):
+    def _raise_if_failed(self) -> None:
         if self.js_response.status >= 400:
             raise OSError(
                 f"Request for {self._url} failed with status {self.status}: {self.status_text}"
@@ -120,7 +120,7 @@ class FetchResponse:
             raise OSError("Response body is already used")
         return FetchResponse(self._url, self.js_response.clone())
 
-    async def buffer(self) -> JsProxy:
+    async def buffer(self) -> JsBuffer:
         """Return the response body as a Javascript ArrayBuffer"""
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
@@ -144,12 +144,7 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
-    async def bytes(self) -> bytes:
-        """Return the response body as a bytes object"""
-        self._raise_if_failed()
-        return (await self.buffer()).to_bytes()
-
-    async def _into_file(self, f: TextIO | BinaryIO) -> None:
+    async def _into_file(self, f: IO[bytes] | IO[str]) -> None:
         """Write the data into an empty file with no copy.
 
         Warning: should only be used when f is an empty file, otherwise it may
@@ -180,7 +175,14 @@ class FetchResponse:
         with open(path, "x") as f:
             await self._into_file(f)
 
-    async def unpack_archive(self, *, extract_dir=None, format=None):
+    async def bytes(self) -> bytes:
+        """Return the response body as a bytes object"""
+        self._raise_if_failed()
+        return (await self.buffer()).to_bytes()
+
+    async def unpack_archive(
+        self, *, extract_dir: str | None = None, format: str | None = None
+    ) -> None:
         """Treat the data as an archive and unpack it into target directory.
 
         Assumes that the file is an archive in a format that shutil has an

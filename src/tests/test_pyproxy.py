@@ -2,6 +2,7 @@
 import time
 
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 def test_pyproxy_class(selenium):
@@ -371,7 +372,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         elif fmt == "f" or fmt == "d":
             from math import isclose, isnan
 
-            for a, b in zip(result, list(mv.cast(fmt))):
+            for a, b in zip(result, list(mv.cast(fmt)), strict=False):
                 if a and b and not (isnan(a) or isnan(b)):
                     assert isclose(a, b)
         else:
@@ -932,3 +933,488 @@ def test_coroutine_scheduling(selenium):
         f.destroy();
         """
     )
+
+
+def test_pyproxy_apply(selenium):
+    # Try to match behavior of real .apply
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+        `);
+        let fpy = pyodide.globals.get("f");
+        let fjs = function(...args){ return args; };
+        let examples = [
+            undefined,
+            null,
+            {},
+            {0:1, 1:7, 2: -3},
+            { *[Symbol.iterator](){yield 3; yield 5; yield 7;} },
+            {0:1, 1:7, 2: -3, length: 2},
+            [1,7,9,5],
+            function(a,b,c){},
+        ];
+        for(let input of examples){
+            assert(() => JSON.stringify(fpy.apply(undefined, input)) === JSON.stringify(fjs.apply(undefined, input)));
+        }
+
+        for(let error_input of [1, "abc", 1n, Symbol.iterator, true]) {
+            assertThrows(() => fjs.apply(undefined, error_input), "TypeError", "");
+            assertThrows(() => fpy.apply(undefined, error_input), "TypeError", "");
+        }
+
+        fpy.destroy();
+        """
+    )
+
+
+def test_pyproxy_this1(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            def f(self, x):
+                return getattr(self, x)
+            f
+        `);
+
+        let x = {};
+        x.f = f.captureThis();
+        x.a = 7;
+        assert(() => x.f("a") === 7 );
+        f.destroy();
+        """
+    )
+
+
+def test_pyproxy_this2(selenium):
+    selenium.run_js(
+        """
+        let g = pyodide.runPython(`
+            x = 0
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+            f
+        `);
+
+        let f = g.captureThis();
+        let fjs = function(...args){return [this, ...args];};
+
+        let f1 = f.bind(1);
+        let fjs1 = fjs.bind(1);
+        assert(() => JSON.stringify(f1(2, 3, 4)) === JSON.stringify(fjs1(2, 3, 4)));
+
+        let f2 = f1.bind(2);
+        let fjs2 = fjs1.bind(2);
+        assert(() => JSON.stringify(f2(2, 3, 4)) === JSON.stringify(fjs2(2, 3, 4)));
+        let f3 = f.bind(2);
+        let fjs3 = fjs.bind(2);
+        assert(() => JSON.stringify(f3(2, 3, 4)) === JSON.stringify(fjs3(2, 3, 4)));
+
+        let gjs = function(...args){return [...args];};
+
+        let g1 = g.bind(1, 2, 3, 4);
+        let gjs1 = gjs.bind(1, 2, 3, 4);
+
+        let g2 = g1.bind(5, 6, 7, 8);
+        let gjs2 = gjs1.bind(5, 6, 7, 8);
+
+        let g3 = g2.captureThis();
+
+        assert(() => JSON.stringify(g1(-1, -2, -3, -4)) === JSON.stringify(gjs1(-1, -2, -3, -4)));
+        assert(() => JSON.stringify(g2(-1, -2, -3, -4)) === JSON.stringify(gjs2(-1, -2, -3, -4)));
+        assert(() => JSON.stringify(g3(-1, -2, -3, -4)) === JSON.stringify([1, 2, 3, 4, 6, 7, 8, -1, -2, -3, -4]));
+        g.destroy();
+        """
+    )
+
+
+@run_in_pyodide
+async def test_async_iter(selenium):
+    from pyodide.code import run_js
+
+    class Gen:
+        async def __aiter__(self):
+            yield 1
+            yield 2
+
+    g = Gen()
+
+    p = run_js(
+        """
+        async (g) => {
+            let r = [];
+            for await (let a of g) {
+                r.push(a);
+            }
+            return r;
+        }
+    """
+    )(g)
+
+    assert (await p).to_py() == [1, 2]
+
+
+@run_in_pyodide
+def test_gen(selenium):
+    from pyodide.code import run_js
+
+    def g():
+        n = 0
+        for _ in range(3):
+            n = yield n + 2
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.next(3));
+            r.push(g.next(4));
+            r.push(g.next(5));
+            return r;
+        }
+    """
+    )(g())
+
+    assert p.to_py() == [
+        {"done": False, "value": 2},
+        {"done": False, "value": 5},
+        {"done": False, "value": 6},
+        {"done": True, "value": None},
+    ]
+
+
+@run_in_pyodide
+def test_gen_return(selenium):
+    from pyodide.code import run_js
+
+    def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            return r;
+        }
+    """
+    )(g1())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 5}]
+
+    def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3  # noqa: B901
+            return 5  # noqa: B012, B901
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            r.push(g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": 5},
+    ]
+
+    def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return 3  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 3}]
+
+
+@run_in_pyodide
+def test_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        (g) => {
+            g.next();
+            g.throw(new TypeError('hi'));
+        }
+    """
+    )
+    with pytest.raises(JsException, match="hi"):
+        p(g1())
+
+    def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3
+            return 5  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.throw(new TypeError('hi')));
+            r.push(g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": 5},
+    ]
+
+    def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return 3  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.throw(new TypeError('hi')));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 3}]
+
+
+@run_in_pyodide
+async def test_async_gen(selenium):
+    from pyodide.code import run_js
+
+    async def g():
+        n = 0
+        for _ in range(3):
+            n = yield n + 2
+
+    p = run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.next(3));
+            r.push(await g.next(4));
+            r.push(await g.next(5));
+            return r;
+        }
+    """
+    )(g())
+
+    assert (await p).to_py() == [
+        {"done": False, "value": 2},
+        {"done": False, "value": 5},
+        {"done": False, "value": 6},
+        {"done": True, "value": None},
+    ]
+
+
+@run_in_pyodide
+async def test_async_gen_return(selenium):
+    from pyodide.code import run_js
+
+    async def g1():
+        yield 1
+        yield 2
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.return(5));
+            return r;
+        }
+    """
+    )(g1())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 5}]
+
+    async def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3  # noqa: B901
+            return  # noqa: B012, B901
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.return(5));
+            r.push(await g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": None},
+    ]
+
+    async def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return  # noqa: B901, B012
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.return(5));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": None}]
+
+
+@run_in_pyodide
+async def test_async_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    async def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        async (g) => {
+            await g.next();
+            await g.throw(new TypeError('hi'));
+        }
+    """
+    )
+    with pytest.raises(JsException, match="hi"):
+        await p(g1())
+
+    async def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3
+            return  # noqa: B901, B012
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.throw(new TypeError('hi')));
+            r.push(await g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": None},
+    ]
+
+    async def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return  # noqa: B901, B012
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.throw(new TypeError('hi')));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": None}]
+
+
+@run_in_pyodide
+def test_roundtrip_no_destroy(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    def isalive(p):
+        return getattr(p, "$$").ptr != 0
+
+    p = create_proxy({1: 2})
+    run_js("(x) => x")(p)
+    assert isalive(p)
+    run_js(
+        """
+    (p) => {
+        p.destroy({destroyRoundtrip : false});
+    }
+    """
+    )(p)
+    assert isalive(p)
+    run_js(
+        """
+    (p) => {
+        p.destroy({destroyRoundtrip : true});
+    }
+    """
+    )(p)
+    assert not isalive(p)
+    p = create_proxy({1: 2})
+    run_js(
+        """
+    (p) => {
+        p.destroy();
+    }
+    """
+    )(p)
+    assert not isalive(p)

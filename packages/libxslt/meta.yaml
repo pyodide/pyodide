@@ -7,11 +7,11 @@ source:
   url: http://xmlsoft.org/sources/libxslt-1.1.33.tar.gz
 
 requirements:
-  run:
+  host:
     - libxml
 
 build:
-  library: true
+  type: static_library
 
   script: |
     emconfigure ./configure \

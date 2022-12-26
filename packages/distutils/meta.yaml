@@ -1,0 +1,13 @@
+package:
+  name: distutils
+  version: 1.0.0 # Nonsense
+  top-level:
+    - distutils
+build:
+  type: cpython_module
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONLIB
+
+    tar --exclude=__pycache__ -cf - distutils | tar -C $DISTDIR -xf -

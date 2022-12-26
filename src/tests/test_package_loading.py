@@ -1,16 +1,20 @@
+import json
 import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide.fixture import selenium_common
+from pytest_pyodide.server import spawn_web_server
+from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH
+from conftest import DIST_PATH, ROOT_PATH
 
 
-def get_pyparsing_wheel_name():
+def get_pyparsing_wheel_name() -> str:
     return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
 
 
-def get_pytz_wheel_name():
+def get_pytz_wheel_name() -> str:
     return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
@@ -58,10 +62,33 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium.run("import pytz")
 
 
-def test_load_relative_url(selenium_standalone):
-    print(get_pytz_wheel_name())
-    selenium_standalone.load_package(f"./{get_pytz_wheel_name()}")
-    selenium_standalone.run("import pytz")
+def test_load_relative_url(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    url, port, _ = web_server_main
+    test_html = (ROOT_PATH / "src/templates/test.html").read_text()
+    test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
+    (tmp_path / "test.html").write_text(test_html)
+    pytz_wheel = get_pytz_wheel_name()
+    pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
+    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
+
+    with spawn_web_server(tmp_path) as web_server, selenium_common(
+        request,
+        runtime,
+        web_server,
+        load_pyodide=True,
+        browsers=playwright_browsers,
+        script_type="classic",
+    ) as selenium, set_webdriver_script_timeout(
+        selenium, script_timeout=parse_driver_timeout(request.node)
+    ):
+        if selenium.browser == "node":
+            selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
+        selenium.load_package(pytz1_wheel)
+        selenium.run(
+            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz1)"
+        )
 
 
 def test_list_loaded_urls(selenium_standalone):
@@ -158,17 +185,16 @@ def test_load_failure_retry(selenium_standalone):
 
 
 def test_load_package_unknown(selenium_standalone):
-    dist_dir = Path(__file__).parents[2] / "dist"
     pyparsing_wheel_name = get_pyparsing_wheel_name()
     shutil.copyfile(
-        dist_dir / pyparsing_wheel_name,
-        dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl",
+        DIST_PATH / pyparsing_wheel_name,
+        DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl",
     )
 
     try:
         selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
     finally:
-        (dist_dir / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
+        (DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
 
     assert selenium_standalone.run_js(
         "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
@@ -258,20 +284,19 @@ def test_test_unvendoring(selenium_standalone):
 
     assert selenium.run_js(
         """
-        return pyodide._api.packages['regex'].unvendored_tests;
+        return pyodide._api.repodata_packages['regex'].unvendored_tests;
         """
     )
 
 
 def test_install_archive(selenium):
-    dist_dir = Path(__file__).parents[2] / "dist"
     test_dir = Path(__file__).parent
     # TODO: first argument actually works as a path due to implementation,
     # maybe it can be proposed to typeshed?
     shutil.make_archive(
         str(test_dir / "test_pkg"), "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
-    build_test_pkg = dist_dir / "test_pkg.tar.gz"
+    build_test_pkg = DIST_PATH / "test_pkg.tar.gz"
     if not build_test_pkg.exists():
         build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
@@ -302,7 +327,7 @@ def test_install_archive(selenium):
                 """
             )
     finally:
-        (dist_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
+        (DIST_PATH / "test_pkg.tar.gz").unlink(missing_ok=True)
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
@@ -330,6 +355,7 @@ def test_should_load_dynlib():
     assert ext_suffix
     should_load = [
         "a.so",
+        "a.so.1.2.3",
         "a/b.so",
         "b/b.so",
         "a/b/c/d.so",
@@ -350,7 +376,7 @@ def test_should_load_dynlib():
         "q.cpython-38-x86_64-linux-gnu.so",
         "q" + ext_suffix.replace("cpython", "pypy"),
         "q.cpython-32mu.so",
-        "x.so.1",  # Any chance we'd want these at some point?
+        "x.so.a.b.c",
     ]
     for file in should_load:
         assert should_load_dynlib(file)
@@ -392,3 +418,120 @@ def test_get_dynlibs():
         x2.close()
         t.flush()
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
+
+
+class DummyDistribution:
+    def __init__(
+        self,
+        name: str,
+        source: str | None = None,
+        direct_url: dict[str, str] | None = None,
+        installer: str | None = None,
+    ):
+        self.name = name
+        direct_url_json = json.dumps(direct_url) if direct_url else None
+        self._files: dict[str, str | None] = {
+            "PYODIDE_SOURCE": source,
+            "direct_url.json": direct_url_json,
+            "INSTALLER": installer,
+        }
+
+    def read_text(self, key: str) -> str | None:
+        return self._files.get(key)
+
+    def __repr__(self):
+        return self.name
+
+
+result_dist_pairs = [
+    ("default channel", DummyDistribution("A", source="pyodide")),
+    (
+        "default channel",
+        DummyDistribution(
+            "B",
+            source="pyodide",
+            direct_url={"url": "http://some.pkg.src/a/b/c.whl"},
+            installer="pip",
+        ),
+    ),
+    (
+        "http://some.pkg.src/a/b/c.whl",
+        DummyDistribution("C", source="http://some.pkg.src/a/b/c.whl"),
+    ),
+    (
+        "http://some.pkg.src/a/b/c.whl",
+        DummyDistribution(
+            "D",
+            source="http://some.pkg.src/a/b/c.whl",
+            direct_url={"url": "http://a.b.c/x/y/z.whl"},
+            installer="pip",
+        ),
+    ),
+    (
+        "http://a.b.c/x/y/z.whl",
+        DummyDistribution(
+            "E", direct_url={"url": "http://a.b.c/x/y/z.whl"}, installer="pip"
+        ),
+    ),
+    ("pip (index unknown)", DummyDistribution("F", installer="pip")),
+    ("other (index unknown)", DummyDistribution("G", installer="other")),
+    ("Unknown", DummyDistribution("H")),
+]
+
+
+@pytest.mark.parametrize("result,dist", result_dist_pairs)
+def test_get_dist_source(result, dist):
+    from pyodide._package_loader import get_dist_source
+
+    assert result == get_dist_source(dist)
+
+
+def test_init_loaded_packages(monkeypatch):
+    from pyodide import _package_loader
+
+    class loadedPackagesCls:
+        pass
+
+    loadedPackages = loadedPackagesCls()
+    monkeypatch.setattr(_package_loader, "loadedPackages", loadedPackages)
+    dists = [dist for [_, dist] in result_dist_pairs]
+    monkeypatch.setattr(_package_loader, "importlib_distributions", lambda: dists)
+    _package_loader.init_loaded_packages()
+
+    for [result, dist] in result_dist_pairs:
+        assert hasattr(loadedPackages, dist.name)
+        assert getattr(loadedPackages, dist.name) == result
+
+
+@pytest.mark.xfail_browsers(node="Some fetch trouble")
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_lockfile(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    lock = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({fullStdLib: false});
+        await pyodide.loadPackage("micropip")
+        return pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install("hypothesis==6.47.3")
+            micropip.freeze()
+        `);
+        """
+    )
+    custom_lockfile = DIST_PATH / "custom_lockfile.json"
+    custom_lockfile.write_text(lock)
+
+    try:
+        assert (
+            selenium.run_js(
+                """
+                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json" });
+                await pyodide.loadPackage("hypothesis");
+                return pyodide.runPython("import hypothesis; hypothesis.__version__")
+                """
+            )
+            == "6.47.3"
+        )
+    finally:
+        custom_lockfile.unlink()

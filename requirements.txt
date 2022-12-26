@@ -5,14 +5,11 @@
   pre-commit
   # testing
   build==0.7.0
+  sphinx-click
   hypothesis
-  pexpect
   pytest
   pytest-asyncio
   pytest-cov
   pytest-httpserver
-  pytest-instafail
-  pytest-rerunfailures
-  pytest-xdist
-  selenium==4.1.0
-  tblib
+  pytest-benchmark
+  pytest-pyodide==0.23.1

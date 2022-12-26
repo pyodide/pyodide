@@ -18,7 +18,7 @@ source:
     - [make.inc, make.inc]
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     # The archive's contents have default permission 0750. If we use docker
     # to build, then we will not own the contents in the host, which means
@@ -33,7 +33,8 @@ build:
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} blaslib lapacklib
-    mkdir -p dist/lib
-    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o dist/lib/clapack_all.so
-    mkdir -p ${WASM_LIBRARY_DIR}/CLAPACK
-    cp -r INCLUDE ${WASM_LIBRARY_DIR}/CLAPACK/
+    mkdir -p dist
+    emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o dist/clapack_all.so
+    mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
+    cp -r INCLUDE/* ${WASM_LIBRARY_DIR}/include
+    cp dist/clapack_all.so ${WASM_LIBRARY_DIR}/lib

@@ -1,9 +1,13 @@
 package:
   name: cloudpickle
-  version: 2.0.0
-source:
-  sha256: 6b2df9741d06f43839a3275c4e6632f7df6487a1f181f5f46a052d3c917c3d11
-  url: https://files.pythonhosted.org/packages/07/3c/bf72ebd3e78eb1ef773f4f0650ecdc29c6454aeafe9c08f6da3f227dd2bc/cloudpickle-2.0.0-py3-none-any.whl
-test:
-  imports:
+  version: 2.2.0
+  top-level:
     - cloudpickle
+source:
+  sha256: 7428798d5926d8fcbfd092d18d01a2a03daf8237d8fcdc8095d256b8490796f0
+  url: https://files.pythonhosted.org/packages/cf/26/cd6c4177273ee35f7a31245893489c68bc340988f12ca315b392f1f18a93/cloudpickle-2.2.0-py3-none-any.whl
+about:
+  home: https://github.com/cloudpipe/cloudpickle
+  PyPI: https://pypi.org/project/cloudpickle
+  summary: Extended pickling support for Python objects
+  license: BSD 3-Clause License

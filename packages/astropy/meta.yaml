@@ -1,14 +1,20 @@
 package:
   name: astropy
-  version: 5.0.4
+  version: "5.2"
+  top-level:
+    - astropy
 source:
-  url: https://files.pythonhosted.org/packages/a3/d6/b36be0232fa0761f4f3484eb5907224feebf0b359fde2218b01e782649c6/astropy-5.0.4.tar.gz
-  sha256: 001184f1a9c3f526a363883ce28efb9cbf076df3d151ca3e131509a248f0dfb9
+  url: https://files.pythonhosted.org/packages/14/9a/6f1376020f08fbfc40d3e06590636909a7658f5ed6764d8b583c22c0278b/astropy-5.2.tar.gz
+  sha256: d335604025f6e16f7c9bf82d5ba28e5db4745a82e5823a9d17bdd9b9bd46b2a2
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false
+  exports: requested # Astropy uses dlsym so we need to export more than just PyInit_astropy
 requirements:
+  host:
+    - packaging
+    - numpy
   run:
     - distutils
     - packaging
@@ -37,3 +43,8 @@ test:
     - astropy.utils
     - astropy.visualization
     - astropy.wcs
+about:
+  home: http://astropy.org
+  PyPI: https://pypi.org/project/astropy
+  summary: Astronomy and astrophysics core library
+  license: BSD 3-Clause License

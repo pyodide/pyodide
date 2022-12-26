@@ -2,20 +2,43 @@ import base64
 import binascii
 import re
 import shutil
+import sys
 import sysconfig
 import tarfile
+from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
+from importlib.metadata import Distribution
+from importlib.metadata import distributions as importlib_distributions
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
-from typing import IO, Iterable, Literal
+from typing import IO, Any, Literal
 from zipfile import ZipFile
 
-from ._core import IN_BROWSER, JsProxy, to_js
+try:
+    from pyodide_js import loadedPackages
+except ImportError:
+    loadedPackages = None
+
+from ._core import IN_BROWSER, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
-STD_LIB = Path(sysconfig.get_path("stdlib"))
-TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB}
+if sys.base_prefix == sys.prefix:
+    # not in a virtualenv
+    STD_LIB = Path(sysconfig.get_path("stdlib"))
+    DSO_DIR = Path("/usr/lib")
+else:
+    # in a virtualenv
+    # Better not put stuff into /usr/lib or /lib/python3.10! Stick the stdlib
+    # into SITE_PACKAGES and dsos up two directories.
+    #
+    # e.g., SITE_PACKAGES = .venv/lib/python3.10/site_packages
+    # and   DSO_DIR       = .venv/lib/
+    STD_LIB = SITE_PACKAGES
+    DSO_DIR = SITE_PACKAGES.parents[1]
+TARGETS = {"site": SITE_PACKAGES, "stdlib": STD_LIB, "dynlib": DSO_DIR}
+
+
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
@@ -28,6 +51,7 @@ EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
 PLATFORM_TAG_REGEX = re.compile(
     r"\.(cpython|pypy|jython)-[0-9]{2,}[a-z]*(-[a-z0-9_-]*)?"
 )
+SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
 
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
@@ -89,7 +113,9 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     return info_dir
 
 
-def make_whlfile(*args, owner=None, group=None, **kwargs):
+def make_whlfile(
+    *args: Any, owner: int | None = None, group: int | None = None, **kwargs: Any
+) -> str:
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
@@ -112,16 +138,16 @@ def get_format(format: str) -> str:
 
 
 def unpack_buffer(
-    buffer: JsProxy,
+    buffer: JsBuffer,
     *,
     filename: str = "",
     format: str | None = None,
-    target: Literal["site", "lib"] | None = None,
+    target: Literal["site", "lib", "dynlib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsProxy | None:
+) -> JsArray | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
@@ -197,15 +223,19 @@ def unpack_buffer(
             return None
 
 
-def should_load_dynlib(path: str) -> bool:
-    suffixes = Path(path).suffixes
-    if not suffixes:
+def should_load_dynlib(path: str | Path) -> bool:
+    path = Path(path)
+
+    if not SHAREDLIB_REGEX.search(path.name):
         return False
-    if suffixes[-1] != ".so":
+
+    suffixes = path.suffixes
+
+    try:
+        tag = suffixes[suffixes.index(".so") - 1]
+    except ValueError:  # This should not happen, but just in case
         return False
-    if len(suffixes) == 1:
-        return True
-    tag = suffixes[-2]
+
     if tag in EXTENSION_TAGS:
         return True
     # Okay probably it's not compatible now. But it might be an unrelated .so
@@ -294,6 +324,40 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
         for path in dynlib_paths_iter
         if should_load_dynlib(path)
     ]
+
+
+def get_dist_source(dist: Distribution) -> str:
+    """Get a description of the source of a package.
+
+    This is used in loadPackage to explain where the package came from. Purely
+    for informative purposes.
+    """
+    source = dist.read_text("PYODIDE_SOURCE")
+    if source == "pyodide":
+        return "default channel"
+    if source:
+        return source
+    direct_url = dist.read_text("direct_url.json")
+    if direct_url:
+        import json
+
+        return json.loads(direct_url)["url"]
+    installer = dist.read_text("INSTALLER")
+    if installer:
+        installer = installer.strip()
+        return f"{installer} (index unknown)"
+    return "Unknown"
+
+
+def init_loaded_packages() -> None:
+    """Initialize pyodide.loadedPackages with the packages that are already
+    present.
+
+    This ensures that `pyodide.loadPackage` knows that they are around and
+    doesn't install over them.
+    """
+    for dist in importlib_distributions():
+        setattr(loadedPackages, dist.name, get_dist_source(dist))
 
 
 def sub_resource_hash(sha_256: str) -> str:

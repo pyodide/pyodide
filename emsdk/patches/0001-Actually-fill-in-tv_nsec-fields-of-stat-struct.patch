@@ -1,0 +1,38 @@
+From 04bd5e0a60e9f6497c238c43b09a50dd9f59b499 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 1 Dec 2022 17:30:05 -0800
+Subject: [PATCH] Actually fill in tv_nsec fields of stat struct
+
+---
+ src/library_syscall.js | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/src/library_syscall.js b/src/library_syscall.js
+index 8f261ec92..54130952a 100644
+--- a/src/library_syscall.js
++++ b/src/library_syscall.js
+@@ -61,12 +61,15 @@ var SyscallsLibrary = {
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_size, 'stat.size', 'i64') }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_blksize, '4096', 'i32') }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_blocks, 'stat.blocks', 'i32') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_sec, 'Math.floor(stat.atime.getTime() / 1000)', 'i64') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_nsec, '0', SIZE_TYPE) }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_sec, 'Math.floor(stat.mtime.getTime() / 1000)', 'i64') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_nsec, '0', SIZE_TYPE) }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_sec, 'Math.floor(stat.ctime.getTime() / 1000)', 'i64') }}};
+-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_nsec, '0', SIZE_TYPE) }}};
++      var atime = stat.atime.getTime();
++      var mtime = stat.mtime.getTime();
++      var ctime = stat.ctime.getTime();
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_sec, 'Math.floor(atime / 1000)', 'i64') }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_nsec, '(atime % 1000) * 1000', SIZE_TYPE) }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_sec, 'Math.floor(mtime / 1000)', 'i64') }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_nsec, '(mtime % 1000) * 1000', SIZE_TYPE) }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_sec, 'Math.floor(ctime / 1000)', 'i64') }}};
++      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_nsec, '(ctime % 1000) * 1000', SIZE_TYPE) }}};
+       {{{ makeSetValue('buf', C_STRUCTS.stat.st_ino, 'stat.ino', 'i64') }}};
+       return 0;
+     },
+-- 
+2.25.1
+

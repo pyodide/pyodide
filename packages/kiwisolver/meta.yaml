@@ -1,9 +1,8 @@
 package:
   name: kiwisolver
-  version: 1.4.2
-source:
-  sha256: 7f606d91b8a8816be476513a77fd30abe66227039bd6f8b406c348cb0247dcc9
-  url: https://files.pythonhosted.org/packages/2b/65/9eb6841880f6214f70e891a97ac945137bb6b2dd65ac35da219a752255fe/kiwisolver-1.4.2.tar.gz
-test:
-  imports:
+  version: 1.4.4
+  top-level:
     - kiwisolver
+source:
+  sha256: d41997519fcba4a1e46eb4a2fe31bc12f0ff957b2b81bac28db24744f333e955
+  url: https://files.pythonhosted.org/packages/5f/5c/272a7dd49a1914f35cd8d6d9f386defa8b047f6fbd06badd6b77b3ba24e7/kiwisolver-1.4.4.tar.gz
