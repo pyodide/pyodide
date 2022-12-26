@@ -12,14 +12,11 @@ RUN apt-get update \
         ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    . $HOME/.cargo/env && \
-    rustup target add wasm32-unknown-emscripten
+RUN wget -q -O - https://sh.rustup.rs | sh -s -- -y --profile minimal
 
-ADD docs/requirements-doc.txt requirements.txt /
+ADD requirements.txt /
 
-RUN pip3 --no-cache-dir install -r /requirements.txt \
-  && pip3 --no-cache-dir install -r /requirements-doc.txt
+RUN pip3 --no-cache-dir install -r /requirements.txt
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
