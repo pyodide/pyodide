@@ -122,8 +122,9 @@ def _make_fake_package(
             builder.build(distribution="sdist", output_directory=packageDir)
 
 
+# module scope fixture that makes a fake pypi
 @pytest.fixture(scope="module")
-def fake_pypi_url():
+def fake_pypi_server():
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         simple_root = root / "simple"
@@ -175,24 +176,21 @@ def fake_pypi_url():
         server = ret_values[0]
         addr = f"http://{server.server_address[0]}:{server.server_address[1]}/simple"
 
-        import pyodide_build.out_of_tree.pypi
-
-        pypi_old = pyodide_build.out_of_tree.pypi._PYPI_INDEX
-        pyodide_build.out_of_tree.pypi._PYPI_TRUSTED_HOSTS = [
-            f"{server.server_address[0]}:{server.server_address[1]}"
-        ]
-        pyodide_build.out_of_tree.pypi._PYPI_INDEX = [addr]
-
-        yield addr
+        yield (addr, f"{server.server_address[0]}:{server.server_address[1]}")
         # cleanup
-        pyodide_build.out_of_tree.pypi._PYPI_INDEX = pypi_old
         server.shutdown()
 
 
-def test_fetch_or_build_pypi_with_pyodide(tmp_path, runtime):
-    if runtime != "node":
-        pytest.xfail("node only")
-    test_fetch_or_build_pypi(tmp_path)
+# fixture to redirect a single test to use fake pypi in resolution
+@pytest.fixture
+def fake_pypi_url(fake_pypi_server):
+    import pyodide_build.out_of_tree.pypi
+
+    pypi_old = pyodide_build.out_of_tree.pypi._PYPI_INDEX
+    pyodide_build.out_of_tree.pypi._PYPI_TRUSTED_HOSTS = [fake_pypi_server[1]]
+    pyodide_build.out_of_tree.pypi._PYPI_INDEX = [fake_pypi_server[0]]
+    yield fake_pypi_server[0]
+    pyodide_build.out_of_tree.pypi._PYPI_INDEX = pypi_old
 
 
 def test_fetch_or_build_pypi(tmp_path):
@@ -209,7 +207,7 @@ def test_fetch_or_build_pypi(tmp_path):
     for p in pkgs:
         result = runner.invoke(
             build.app,
-            ["main", p],
+            [p],
         )
         assert result.exit_code == 0, result.stdout
 
@@ -231,7 +229,7 @@ def test_fetch_or_build_pypi_with_deps_and_extras(tmp_path):
     for p in pkgs:
         result = runner.invoke(
             build.app,
-            ["main", p, "--build-dependencies"],
+            [p, "--build-dependencies"],
         )
         assert result.exit_code == 0, result.stdout
 
@@ -239,7 +237,7 @@ def test_fetch_or_build_pypi_with_deps_and_extras(tmp_path):
     assert len(built_wheels) == 3
 
 
-def test_fake_pypi_succeed(fake_pypi_url, tmp_path):
+def test_fake_pypi_succeed(tmp_path, fake_pypi_url):
     if "dev" in pyodide_build_version:
         if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
             pytest.skip(
@@ -250,7 +248,7 @@ def test_fake_pypi_succeed(fake_pypi_url, tmp_path):
     with work_in_dir(tmp_path):
         result = runner.invoke(
             build.app,
-            ["main", "resolves-package", "--build-dependencies"],
+            ["resolves-package", "--build-dependencies"],
         )
 
         assert result.exit_code == 0, str(result.stdout) + str(result)
@@ -259,7 +257,7 @@ def test_fake_pypi_succeed(fake_pypi_url, tmp_path):
     assert len(built_wheels) == 5
 
 
-def test_fake_pypi_resolve_fail(fake_pypi_url, tmp_path):
+def test_fake_pypi_resolve_fail(tmp_path, fake_pypi_url):
     if "dev" in pyodide_build_version:
         if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
             pytest.skip(
@@ -271,7 +269,7 @@ def test_fake_pypi_resolve_fail(fake_pypi_url, tmp_path):
     with work_in_dir(tmp_path):
         result = runner.invoke(
             build.app,
-            ["main", "fails-package", "--build-dependencies"],
+            ["fails-package", "--build-dependencies"],
         )
 
     # this should fail
@@ -280,7 +278,7 @@ def test_fake_pypi_resolve_fail(fake_pypi_url, tmp_path):
     assert len(built_wheels) == 0
 
 
-def test_fake_pypi_extras_build(fake_pypi_url, tmp_path):
+def test_fake_pypi_extras_build(tmp_path, fake_pypi_url):
     if "dev" in pyodide_build_version:
         if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
             pytest.skip(
@@ -292,10 +290,32 @@ def test_fake_pypi_extras_build(fake_pypi_url, tmp_path):
     with work_in_dir(tmp_path):
         result = runner.invoke(
             build.app,
-            ["main", "pkg-b[docs]", "--build-dependencies"],
+            ["pkg-b[docs]", "--build-dependencies"],
         )
 
     # this should fail
     assert result.exit_code == 0, result.stdout
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 2
+
+
+@pytest.mark.parametrize(
+    "fn", [test_fetch_or_build_pypi, test_fetch_or_build_pypi_with_deps_and_extras]
+)
+def test_host_in_node_test(runtime, fn, tmp_path):
+    if runtime.startswith("node"):
+        fn(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "fn",
+    [
+        test_fake_pypi_succeed,
+        test_fake_pypi_resolve_fail,
+        test_fake_pypi_succeed,
+        test_fake_pypi_extras_build,
+    ],
+)
+def test_host_in_node_test_fake_pypi(runtime, fn, tmp_path, fake_pypi_url):
+    if runtime.startswith("node"):
+        fn(tmp_path, fake_pypi_url)

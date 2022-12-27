@@ -167,7 +167,8 @@ def main(
         except BaseException as e:
             import traceback
 
-            print("FAIL DEPENDENCIES:", traceback.format_exc())
+            print("Failed building dependencies for wheel:", traceback.format_exc())
+            wheel.unlink()
             raise e
 
 
