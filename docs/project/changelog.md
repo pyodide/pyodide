@@ -326,6 +326,14 @@ _January x, 2023_
 - {{ Fix }} Fix scipy handling of exceptions that are raised from C++ code.
   {pr}`3384`.
 
+### List of Contributors
+
+Aierie, dataxerik, David Lechner, Deepak Cherian, Filipe, Gyeongjae Choi, Hood
+Chatham, H.Yamada, Jacques Boscq, Jeremy Tuloup, Joe Marshall, John Wason,
+Loïc Estève, partev, Patrick Arminio, Péter Ferenc Gyarmati, Prete, Qijia
+Liu, Roman Yurchak, ryanking13, skelsec, Starz0r, Will Lachance, YeonWoo, Yizhi
+Liu
+
 ## Version 0.21.3
 
 _September 15, 2022_
