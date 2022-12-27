@@ -10,8 +10,6 @@ export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
 export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
 SHELL := /bin/bash
 
-export TOOLSDIR=$(PYODIDE_ROOT)/tools
-
 version_tuple := $(subst ., ,$(PYVERSION:v%=%))
 export PYMAJOR=$(word 1,$(version_tuple))
 export PYMINOR=$(word 2,$(version_tuple))
@@ -154,13 +152,10 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
 
-export PYODIDE_CMAKE_TOOLCHAIN_FILE=$(PYODIDE_ROOT)/tools/cmake/Modules/Platform/Emscripten.cmake
-
 # For RUST
 export CARGO_HOME ?= $(HOME)/.cargo
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
-export PYO3_CONFIG_FILE=$(PYODIDE_ROOT)/tools/pyo3_config.ini
 export RUST_TOOLCHAIN=nightly-2022-06-26
 
 
