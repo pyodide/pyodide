@@ -12,7 +12,11 @@ RUN apt-get update \
         ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
-RUN wget -q -O - https://sh.rustup.rs | sh -s -- -y --profile minimal
+# Generally it is a bad idea to install rustup and cargo in
+# system directories, but this docker image is only used for
+# building packages, so I hope it is ok...?
+RUN wget -q -O - https://sh.rustup.rs | \
+    RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
 ADD requirements.txt /
 
