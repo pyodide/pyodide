@@ -21,7 +21,7 @@ If there is no wheel on PyPI, but you believe there is nothing preventing it (it
 is a Python package without C extensions):
 
 - you can create the wheel yourself by running
-  ```py
+  ```sh
   python -m pip install build
   python -m build
   ```
@@ -42,31 +42,65 @@ any compilation commands.
 
 ## Building Python wheels (out of tree)
 
-```{warning}
-This feature is still experimental in Pyodide 0.21.0.
+It is now possible to build Python wheels for Pyodide for many packages
+separately from the Pyodide package tree.
+
+### Install pyodide-build
+
+```sh
+pip install pyodide-build
 ```
 
-It is now possible to build Python wheels for WASM/Emscripten separately from the Pyodide package tree using the following steps,
+### Set up Emscripten
 
-1. Install pyodide-build,
-   ```
-   pip install pyodide-build
-   ```
-2. Build the WASM/Emscripten package wheel by running,
-   ```
-   pyodide build
-   ```
-   in the package folder (where the `setup.py` or `pyproject.toml` file is
-   located). This command would produce a binary wheel in the `dist/` folder,
-   similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/)
-   command.
-3. Make the resulting file accessible as part of your web applications, and
-   install it with `micropip.install` by URL.
+You need to download the Emscripten developer toolkit:
 
-Below is a more complete example for building a Python wheel out of tree with Github Actions CI,
-
+```sh
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
 ```
-runs-on: ubuntu-latest
+
+then you can install the appropriate version of Emscripten:
+
+```sh
+PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config emscripten_version)
+./emsdk install ${PYODIDE_EMSCRIPTEN_VERSION}
+./emsdk activate ${PYODIDE_EMSCRIPTEN_VERSION}
+source emsdk_env.sh
+```
+
+If you restart your shell, you will need to run `source emsdk_env.sh` again.
+
+### Build the WASM/Emscripten wheel
+
+Change directory into the package folder where the `setup.py` or
+`pyproject.toml` file is located. You should be in a shell session where you ran
+`source emsdk_env.sh`. Then run
+
+```sh
+pyodide build
+```
+
+in the package folder . This command produces a wheel in the `dist/` folder,
+similarly to the [PyPA build](https://pypa-build.readthedocs.io/en/latest/)
+command.
+
+If you need to add custom compiler / linker flags to the compiler invocations,
+you can set the `CFLAGS` and `LDFLAGS` environment variables. For instance, to
+make a debug build, you can use: `CFLAGS=-g2 LDFLAGS=g2 pyodide build`.
+
+### Serve the wheel
+
+Serve the wheel via a file server e.g., `python3.10 -m http.server --directory dist`.
+Then you can install it with `pyodide.loadPackage` or `micropip.install` by URL.
+
+### Build Github actions example
+
+Here is a complete example of a Github Actions workflow for building a Python
+wheel out of tree:
+
+```yaml
+runs-on: ubuntu-20.04
   steps:
   - uses: actions/checkout@v3
   - uses: actions/setup-python@v4
@@ -79,73 +113,97 @@ runs-on: ubuntu-latest
   - run: pyodide build
 ```
 
+For an example "in the wild" of a github action to build and test a wheel
+against Pyodide, see
+[the numpy CI](https://github.com/numpy/numpy/blob/main/.github/workflows/emscripten.yml)
+
 #### Notes
 
 - the resulting package wheels have a file name of the form
-  `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a
+  `*-cp310-cp310-emscripten_3_1_27_wasm32.whl` and are compatible only for a
   given Python and Emscripten versions. In the Pyodide distribution, Python and
   Emscripten are updated simultaneously.
-- PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
+- for now, PyPi does not support emscripten/wasm32 wheels so you will not be able to upload
+  them there.
 
 ## Building a Python package (in tree)
 
 This section documents how to add a new package to the Pyodide distribution.
 
-### 1. Creating the `meta.yaml` file
+As a starting point, you may want to look at the `meta.yaml` files for some
+other Pyodide packages in the [`packages/`
+folder](https://github.com/pyodide/pyodide/tree/main/packages).
 
-To build a Python package, you need to create a `meta.yaml` file that defines a
-"recipe" which may include build commands and "patches" (source code edits),
-amongst other things.
+### Prerequisites
 
-If your package is on PyPI, the easiest place to start is with the
-{ref}`mkpkg tool <pyodide-mkpkg>`.
-
-First clone and build the Pyodide git repo like this:
+First clone the Pyodide git repository:
 
 ```bash
 git clone https://github.com/pyodide/pyodide
 cd pyodide
 ```
 
-If you'd like to use a Docker container, you can now run this command:
+If you have trouble with missing dependencies (or are not running linux) you can
+use the `pyodide-env` docker container with:
 
 ```bash
 ./run_docker
 ```
 
-This will mount the current working directory as `/src` within the container.
+This will mount the current working directory as `/src` within the container so
+if you build the package within the container the files created will persist in
+the directory after you exit the container.
 
-Now run `make` to build the relevant Pyodide tools:
+You should install `pyodide-build`:
 
 ```bash
-make
+pip install -e pyodide-build
 ```
 
-Now install `pyodide_build` with:
+If you want to build the package, you will need to build Python which you can do
+as follows:
 
 ```bash
-pip install ./pyodide-build
+make -C cpython
 ```
 
-And now you can run `mkpkg`:
+This also builds the appropriate version of Emscripten.
 
-```bash
-python -m pyodide_build mkpkg <package-name>
+### Creating the `meta.yaml` file
+
+To build a Python package in tree, you need to create a `meta.yaml` file that
+defines a "recipe" which may include build commands and "patches" (source code
+edits), amongst other things.
+
+If your package is on PyPI, the easiest place to start is with the
+`pyodide skeleton pypi` command. Run
+
+```
+pyodide skeleton pypi <package-name>
 ```
 
 This will generate a `meta.yaml` file under `packages/<package-name>/` (see
-{ref}`meta-yaml-spec`) that should work out of the box for many simple Python
-packages. This tool will populate the latest version, download link and sha256
-hash by querying PyPI. It doesn't currently handle package dependencies, so you
-will need to specify those yourself.
+{ref}`meta-yaml-spec`). The `pyodide` cli tool will populate the latest version,
+the download link and the sha256 hash by querying PyPI.
 
-You can also use the `meta.yaml` of other Pyodide packages in the [`packages/`
-folder](https://github.com/pyodide/pyodide/tree/main/packages) as a starting point.
+It doesn't currently handle package dependencies, so you will need to specify
+those yourself in the `requirements` section of the `meta.yaml` file.
+
+```yaml
+requirements:
+  host:
+    # Dependencies that are needed to build the package
+    - cffi
+  run:
+    # Dependencies that are needed to run the package
+    - cffi
+    - numpy
+```
 
 ```{note}
-To reliably determine build and runtime dependencies, including for non Python
-libraries, it is often useful to verify if the package was already built on
-[conda-forge](https://conda-forge.org/) and open the corresponding `meta.yaml`
+To determine build and runtime dependencies, including for non Python
+libraries, it is often useful to check if the package was already built on
+[conda-forge](https://conda-forge.org/) look at the corresponding `meta.yaml`
 file. This can be done either by checking if the URL
 `https://github.com/conda-forge/<package-name>-feedstock/blob/master/recipe/meta.yaml`
 exists, or by searching the [conda-forge GitHub
@@ -155,8 +213,29 @@ The Pyodide `meta.yaml` file format was inspired by the one in conda, however it
 not strictly compatible.
 ```
 
-The package may have special build requirements - e.g. specified in its Github
-README. If so, you can add extra build commands to the `meta.yaml` like this:
+### Building the package
+
+Once the `meta.yaml` file is ready, build the package with the following
+command
+
+```sh
+pyodide build-recipes <package-name> --install
+```
+
+and see if there are any errors.
+
+### Loading the package
+
+If the build succeeds you can try to load the package:
+
+1. Serve the dist directory with `python -m http.server --directory ./dist`
+2. Open `localhost:<port>/console.html` and try to import the package
+3. You can test the package in the repl
+
+### Fixing build issues
+
+If there are errors you might need to add a build script to set You can add
+extra build commands to the `meta.yaml` like this:
 
 ```yaml
 build:
@@ -165,29 +244,11 @@ build:
     export MY_ENV_VARIABLE=FOO
 ```
 
-### 2. Building the package and investigating issues
+You can also inject extra compile and link flags with the `cflags` and `ldflags`
+keys. You can modify the wheel after it is built with the `post:` key.
 
-Once the `meta.yaml` file is ready, build the package with the following
-command
-
-```sh
-python -m pyodide_build buildall --only 'package-name' packages dist
-```
-
-and see if there are any errors.
-
-If there are errors you might need to
-
-- patch the package by adding `.patch` files to `packages/<package-name>/patches`
-- add the patch files to the `source/patches` field in the `meta.yaml` file
-
-then restart the build.
-
-If the build succeeds you can try to load the package by
-
-1. Serve the dist directory with `python -m http.server`
-2. Open `localhost:<port>/console.html` and try to import the package
-3. You can test the package in the repl
+If you need to patch the package's source to fix build issues, see the section
+on Generating patches below.
 
 ### Writing tests for your package
 
@@ -238,6 +299,23 @@ If the package has a git repository, the easiest way to make a patch is usually:
 4. Use `git format-patch <version> -o <pyodide-root>/packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
+5. You also need to add the patches to the `meta.yaml` file:
+
+```yaml
+source:
+  url: https://files.pythonhosted.org/packages/somehash/some-pkg-1.2.3.tar.gz
+  sha256: somehash
+  patches:
+    - 0001-patch-some-thing.patch
+    - 0002-patch-some-other-thing.patch
+```
+
+The following command will write out the properly formatted file list to use in
+the `patches` key:
+
+```sh
+find patches/ -type f | sed 's/^/    - /g'
+```
 
 ### Migrating Patches
 

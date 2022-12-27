@@ -1,40 +1,59 @@
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Protocol, cast
 
-from .._core import IN_BROWSER, JsProxy, create_once_callable, create_proxy
+from .._core import (
+    IN_BROWSER,
+    JsDomElement,
+    JsProxy,
+    create_once_callable,
+    create_proxy,
+)
 
 if IN_BROWSER:
     from js import clearInterval, clearTimeout, setInterval, setTimeout
 
 
-class Destroyable:
+class Destroyable(Protocol):
     def destroy(self):
         pass
 
 
-EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], JsProxy] = {}
+# An object with a no-op destroy method so we can do
+#
+# TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
+#
+# and either it gets a real object and calls the real destroy method or it gets
+# the fake which does nothing. This is to handle the case where clear_timeout is
+# called after the timeout executes.
+class DUMMY_DESTROYABLE:
+    @staticmethod
+    def destroy():
+        pass
+
+
+EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], Destroyable] = {}
 
 
 def add_event_listener(
-    elt: JsProxy, event: str, listener: Callable[[Any], None]
+    elt: JsDomElement, event: str, listener: Callable[[Any], None]
 ) -> None:
     """Wrapper for JavaScript's addEventListener() which automatically manages the lifetime
     of a JsProxy corresponding to the listener param.
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
-    elt.addEventListener(event, proxy)  # type:ignore[attr-defined]
+    elt.addEventListener(event, cast(Callable[[Any], None], proxy))
 
 
 def remove_event_listener(
-    elt: JsProxy, event: str, listener: Callable[[Any], None]
+    elt: JsDomElement, event: str, listener: Callable[[Any], None]
 ) -> None:
     """Wrapper for JavaScript's removeEventListener() which automatically manages the lifetime
     of a JsProxy corresponding to the listener param.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
-    elt.removeEventListener(event, proxy)  # type:ignore[attr-defined]
-    proxy.destroy()  # type:ignore[attr-defined]
+    elt.removeEventListener(event, cast(Callable[[Any], None], proxy))
+    proxy.destroy()
 
 
 TIMEOUTS: dict[int, Destroyable] = {}
@@ -58,16 +77,6 @@ def set_timeout(callback: Callable[[], None], timeout: int) -> int | JsProxy:
     return timeout_retval
 
 
-# An object with a no-op destroy method so we can do
-#
-# TIMEOUTS.pop(id, DUMMY_DESTROYABLE).destroy()
-#
-# and either it gets a real object and calls the real destroy method or it gets
-# the fake which does nothing. This is to handle the case where clear_timeout is
-# called after the timeout executes.
-DUMMY_DESTROYABLE = Destroyable()
-
-
 def clear_timeout(timeout_retval: int | JsProxy) -> None:
     """Wrapper for JavaScript's clearTimeout() which automatically manages the lifetime
     of a JsProxy corresponding to the callback param.
@@ -85,7 +94,7 @@ def set_interval(callback: Callable[[], None], interval: int) -> int | JsProxy:
     of a JsProxy corresponding to the callback param.
     """
     proxy = create_proxy(callback)
-    interval_retval = setInterval(proxy, interval)
+    interval_retval = setInterval(cast(Callable[[], None], proxy), interval)
     id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id
     INTERVAL_CALLBACKS[id] = proxy
     return interval_retval

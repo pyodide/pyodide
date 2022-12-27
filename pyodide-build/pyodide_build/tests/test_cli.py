@@ -7,7 +7,7 @@ from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build import common
-from pyodide_build.cli import build, skeleton
+from pyodide_build.cli import build, config, skeleton
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -105,6 +105,36 @@ def test_build_recipe(tmp_path, monkeypatch, request):
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == len(pkgs_to_build)
+
+
+def test_config_list():
+
+    result = runner.invoke(
+        config.app,
+        [
+            "list",
+        ],
+    )
+
+    envs = result.stdout.splitlines()
+    keys = [env.split("=")[0] for env in envs]
+
+    for cfg_name in config.PYODIDE_CONFIGS.keys():
+        assert cfg_name in keys
+
+
+@pytest.mark.parametrize("cfg_name,env_var", config.PYODIDE_CONFIGS.items())
+def test_config_get(cfg_name, env_var):
+
+    result = runner.invoke(
+        config.app,
+        [
+            "get",
+            cfg_name,
+        ],
+    )
+
+    assert result.stdout.strip() == common.get_make_flag(env_var)
 
 
 def test_fetch_or_build_pypi_with_pyodide(tmp_path, runtime):

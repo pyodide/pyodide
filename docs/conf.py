@@ -39,6 +39,7 @@ extensions = [
     "sphinxcontrib.napoleon",
     "myst_parser",
     "sphinx_js",
+    "sphinx_click",
     "autodocsumm",
     "sphinx_panels",
     "sphinx_pyodide",

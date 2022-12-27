@@ -8,11 +8,12 @@ from collections.abc import (
     KeysView,
     Mapping,
     MutableMapping,
+    Sequence,
     ValuesView,
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Awaitable
+from typing import IO, Any, Awaitable, overload
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -22,23 +23,6 @@ from typing import IO, Any, Awaitable
 # to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
 _save_name = __name__
 __name__ = "pyodide"
-
-
-# From jsproxy.c
-class JsException(Exception):
-    """
-    A wrapper around a JavaScript Error to allow it to be thrown in Python.
-    See :ref:`type-translations-errors`.
-    """
-
-    @property
-    def js_error(self) -> "JsProxy":
-        """The original JavaScript error"""
-        return JsProxy(_instantiate_token)
-
-
-class ConversionError(Exception):
-    """An error thrown when conversion between JavaScript and Python fails."""
 
 
 _js_flags: dict[str, int] = {}
@@ -857,10 +841,71 @@ class JsAsyncGenerator(JsIterable):
         raise NotImplementedError
 
 
+class JsCallable(JsProxy):
+    _js_type_flags = ["IS_CALLABLE"]
+
+    def __call__(self):
+        pass
+
+
+class JsOnceCallable(JsCallable):
+    def destroy(self):
+        pass
+
+
+class JsRawException(JsProxy):
+    @property
+    def name(self) -> str:
+        return ""
+
+    @property
+    def message(self) -> str:
+        return ""
+
+    @property
+    def stack(self) -> str:
+        return ""
+
+
+class JsException(Exception):
+    """
+    A wrapper around a JavaScript Error to allow it to be thrown in Python.
+    See :ref:`type-translations-errors`.
+    """
+
+    @property
+    def js_error(self) -> JsRawException:
+        """The original JavaScript error"""
+        return JsRawException(_instantiate_token)
+
+
+class ConversionError(Exception):
+    """An error thrown when conversion between JavaScript and Python fails."""
+
+
+class JsDomElement(JsProxy):
+    @property
+    def tagName(self) -> str:
+        return ""
+
+    @property
+    def children(self) -> Sequence["JsDomElement"]:
+        return []
+
+    def appendChild(self, child: "JsDomElement") -> None:
+        pass
+
+    def addEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+        pass
+
+    def removeEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+        pass
+
+
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable[..., Any], /) -> JsProxy:
+def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
     """Wrap a Python callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
@@ -909,6 +954,41 @@ def create_proxy(
 # from python2js
 
 
+@overload
+def to_js(
+    obj: list[Any] | tuple[Any],
+    /,
+    *,
+    depth: int = -1,
+    pyproxies: JsProxy | None = None,
+    create_pyproxies: bool = True,
+    dict_converter: Callable[[Iterable[JsArray]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
+) -> JsArray:
+    ...
+
+
+@overload
+def to_js(
+    obj: dict[Any, Any],
+    /,
+    *,
+    depth: int = -1,
+    pyproxies: JsProxy | None,
+    create_pyproxies: bool,
+    dict_converter: None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
+) -> JsMap:
+    ...
+
+
+@overload
 def to_js(
     obj: Any,
     /,
@@ -916,12 +996,28 @@ def to_js(
     depth: int = -1,
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
-    dict_converter: Callable[[Iterable[JsProxy]], JsProxy] | None = None,
+    dict_converter: Callable[[Iterable[JsArray]], JsProxy] | None = None,
     default_converter: Callable[
         [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
     ]
     | None = None,
-) -> JsProxy:
+) -> Any:
+    ...
+
+
+def to_js(
+    obj: Any,
+    /,
+    *,
+    depth: int = -1,
+    pyproxies: JsProxy | None = None,
+    create_pyproxies: bool = True,
+    dict_converter: Callable[[Iterable[JsArray]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
+) -> Any:
     """Convert the object to JavaScript.
 
     This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
@@ -1029,7 +1125,7 @@ def to_js(
     return obj
 
 
-def destroy_proxies(pyproxies: JsProxy, /) -> None:
+def destroy_proxies(pyproxies: JsArray, /) -> None:
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
