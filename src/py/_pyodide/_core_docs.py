@@ -580,7 +580,7 @@ class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
         """
         raise NotImplementedError
 
-    def setdefault(self, key: _KT, default: _VT) -> _VT:
+    def setdefault(self, key: _KT, default: _VT | None = None) -> _VT:
         """If key in self, return self[key]. Otherwise
         sets self[key] = default and returns default.
 
