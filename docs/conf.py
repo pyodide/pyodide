@@ -70,7 +70,7 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)
+    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)  # type: ignore[attr-defined]
 }
 
 # Add modules to be mocked.
@@ -90,7 +90,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "README.md"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "README.md", "sphinx_pyodide"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
