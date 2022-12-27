@@ -47,11 +47,8 @@ BUILD_VARS: set[str] = {
     "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
     "CARGO_HOME",
     "RUSTFLAGS",
-    "PYO3_CONFIG_FILE",
-    "PYODIDE_CMAKE_TOOLCHAIN_FILE",
     "PYODIDE_EMSCRIPTEN_VERSION",
     "PLATFORM_TRIPLET",
-    "TOOLSDIR",
     "SYSCONFIGDATA_DIR",
 }
 
@@ -261,7 +258,6 @@ def get_make_flag(name: str) -> str:
         SIDE_MODULE_LDFLAGS
         SIDE_MODULE_CFLAGS
         SIDE_MODULE_CXXFLAGS
-        TOOLSDIR
     """
     return get_make_environment_vars()[name]
 
