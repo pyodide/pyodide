@@ -77,7 +77,7 @@ def test_build_recipe(selenium, tmp_path, monkeypatch, request):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command(build_recipes.recipe)
+    app.command()(build_recipes.recipe)
 
     result = runner.invoke(
         app,
@@ -140,7 +140,7 @@ def test_fetch_or_build_pypi(selenium, tmp_path):
     os.chdir(tmp_path)
 
     app = typer.Typer()
-    app.command(build.main)
+    app.command()(build.main)
 
     for p in pkgs:
         result = runner.invoke(
