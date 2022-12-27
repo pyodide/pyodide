@@ -10,6 +10,7 @@ import { loadBinaryFile } from "./compat";
 import version from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+import { setStdin, setStdout, setStderr } from "./streams";
 
 API.loadBinaryFile = loadBinaryFile;
 
@@ -31,6 +32,18 @@ export let pyodide_py: PyProxy; // actually defined in loadPyodide (see pyodide.
 export let globals: PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
 /**
+ * Runs code after python vm has been initialized but prior to any bootstrapping.
+ */
+API.rawRun = function rawRun(code: string): [number, string] {
+  const code_ptr = Module.stringToNewUTF8(code);
+  Module.API.capture_stderr();
+  let errcode = Module._PyRun_SimpleString(code_ptr);
+  Module._free(code_ptr);
+  const captured_stderr = Module.API.restore_stderr().trim();
+  return [errcode, captured_stderr];
+};
+
+/**
  * Just like `runPython` except uses a different globals dict and gets
  * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  * @private
@@ -45,13 +58,6 @@ API.runPythonInternal = function (code: string): any {
  * to evaluate the code. If the last statement in the Python code is an
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
- *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a positional
- *    argument rather than as a named argument. In v0.20 this will still work
- *    but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
@@ -169,13 +175,6 @@ export async function loadPackagesFromImports(
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
  *    import any python packages referenced via `import` statements in your
  *    code. This function will no longer do it for you.
- *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
@@ -342,12 +341,6 @@ export function pyimport(mod_name: string): PyProxy {
 /**
  * Unpack an archive into a target directory.
  *
- * .. admonition:: Positional globals argument :class: warning
- *
- *    In Pyodide v0.19, this function took the extract_dir parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work but it is deprecated. It will be removed in v0.21.
- *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
  * recognized by `shutil.unpack_archive`. By default the options are 'bztar',
@@ -506,6 +499,9 @@ export type PyodideInterface = {
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
+  setStdin: typeof setStdin;
+  setStdout: typeof setStdout;
+  setStderr: typeof setStderr;
 };
 
 /**
@@ -572,6 +568,9 @@ API.makePublicAPI = function (): PyodideInterface {
     PyBuffer,
     _module: Module,
     _api: API,
+    setStdin,
+    setStdout,
+    setStderr,
   };
 
   API.public_api = namespace;

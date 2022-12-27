@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Literal, NoReturn, TypedDict
 from urllib import request
 
+from packaging.version import Version
 from ruamel.yaml import YAML
 
 from .common import parse_top_level_import_name
@@ -264,8 +265,8 @@ def update_package(
         old_fmt = "sdist"
 
     pypi_metadata = _get_metadata(package, version)
-    pypi_ver = pypi_metadata["info"]["version"]
-    local_ver = yaml_content["package"]["version"]
+    pypi_ver = Version(pypi_metadata["info"]["version"])
+    local_ver = Version(yaml_content["package"]["version"])
     already_up_to_date = pypi_ver <= local_ver and (
         source_fmt is None or source_fmt == old_fmt
     )

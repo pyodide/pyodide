@@ -1,9 +1,9 @@
 package:
   name: pyheif
-  version: 0.7.0
+  version: 0.7.1
 source:
-  url: https://files.pythonhosted.org/packages/ca/ea/a2ccacfc07a6a0900ba5eaf8afd4db970b3f772b0da5f53ccefce1a7b3a5/pyheif-0.7.0.tar.gz
-  sha256: f5b6e810d79c3a181d6d09dfc522ebcc300f3fc875c0de518d61cfeb00705353
+  url: https://files.pythonhosted.org/packages/f3/2f/0492ad16c6936944bf9575a789e2dd6af4a27eb2475a04fb02cf84b2a5db/pyheif-0.7.1.tar.gz
+  sha256: 86a5c5174379d7146b5ed1a68892faf7268a135fb7f5039a011bfb7a6e903200
 requirements:
   run:
     - cffi
