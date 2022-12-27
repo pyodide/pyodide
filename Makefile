@@ -13,6 +13,7 @@ all: check \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
 	dist/package.json \
+	dist/python \
 	dist/console.html \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
@@ -123,11 +124,13 @@ dist/test.html: src/templates/test.html
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@
 
+dist/python: src/templates/python
+	cp $< $@
+
 .PHONY: dist/console.html
 dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
 
 .PHONY: docs/_build/html/console.html
 docs/_build/html/console.html: src/templates/console.html
