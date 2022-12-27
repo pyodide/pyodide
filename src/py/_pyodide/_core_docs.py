@@ -527,9 +527,9 @@ class JsMutableMap(JsMap):
     number (idiomatically it should be called ``.size``) and it must be
     iterable.
 
-    Instances of the JavaScript builtin ``Map`` class are ``JsMutableMap``s.
+    Instances of the JavaScript builtin ``Map`` class are ``JsMutableMap`` s.
     Also proxies returned by :any:`JsProxy.as_object_map` are instances of
-    `JsMap`.
+    ``JsMap`` .
     """
 
     _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
