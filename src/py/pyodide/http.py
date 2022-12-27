@@ -2,15 +2,20 @@ import json
 from io import StringIO
 from typing import IO, Any
 
-from ._core import JsFetchResponse, to_js
-
-try:
-    from js import XMLHttpRequest
-except ImportError:
-    pass
-
-from ._core import IN_BROWSER, JsBuffer, JsException
+from ._core import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 from ._package_loader import unpack_buffer
+
+if IN_BROWSER:
+    from js import Object
+
+    try:
+        from js import fetch as _jsfetch
+    except ImportError:
+        pass
+    try:
+        from js import XMLHttpRequest
+    except ImportError:
+        pass
 
 __all__ = [
     "open_url",
@@ -225,10 +230,6 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
         keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
-    if IN_BROWSER:
-        from js import Object
-        from js import fetch as _jsfetch
-
     try:
         return FetchResponse(
             url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
