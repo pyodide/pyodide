@@ -51,11 +51,11 @@ class XMLHttpRequest(_JsObject):
 
 class Object(_JsObject):
     @staticmethod
-    def fromEntries(it: Iterable[JsArray]) -> JsProxy: ...
+    def fromEntries(it: Iterable[JsArray[Any]]) -> JsProxy: ...
 
 class Array(_JsObject):
     @staticmethod
-    def new() -> JsArray: ...
+    def new() -> JsArray[Any]: ...
 
 class ImageData(_JsObject):
     @staticmethod
