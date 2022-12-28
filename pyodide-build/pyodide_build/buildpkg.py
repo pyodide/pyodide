@@ -133,7 +133,12 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     if "PKG_CONFIG_PATH" in os.environ:
         env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
 
-    env["CMAKE_TOOLCHAIN_FILE"] = env["PYODIDE_CMAKE_TOOLCHAIN_FILE"]
+    tools_dir = Path(__file__).parent / "tools"
+
+    env["CMAKE_TOOLCHAIN_FILE"] = str(
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+    )
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
