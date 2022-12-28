@@ -1,0 +1,12 @@
+[build-system]
+requires = ["maturin>=0.13.1,<0.14.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+config = [
+    "--release",
+    "-o",
+    "dist",
+    "--target",
+    "wasm32-unknown-emscripten"
+]
