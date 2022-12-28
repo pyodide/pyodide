@@ -468,7 +468,7 @@ pyodide.runPython(`
 ```
 
 After manipulating `numpy_array` you can assign the value back to
-`jsarray` using {any}`JsProxy.assign`:
+`jsarray` using {any}`JsBuffer.assign`:
 
 ```pyodide
 pyodide.runPython(`
@@ -478,7 +478,7 @@ pyodide.runPython(`
 console.log(jsarray); // [1, 2, 3, 4, 77, 6]
 ```
 
-The {any}`JsProxy.assign` and {any}`JsProxy.assign_to` methods can be used to
+The {any}`JsBuffer.assign` and {any}`JsBuffer.assign_to` methods can be used to
 assign a JavaScript buffer from / to a Python buffer which is appropriately
 sized and contiguous. The assignment methods will only work if the data types
 match, the total length of the buffers match, and the Python buffer is

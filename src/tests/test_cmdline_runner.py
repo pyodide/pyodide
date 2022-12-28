@@ -30,7 +30,7 @@ def needs_emscripten(x):
 
 
 pyodide_root = get_pyodide_root()
-script_path = pyodide_root / "tools/python"
+script_path = pyodide_root / "dist/python"
 
 
 @only_node
@@ -117,10 +117,10 @@ def test_invalid_cmdline_option(selenium):
     assert result.returncode != 0
     assert result.stdout == ""
     assert (
-        re.sub("/[/a-z]*/tools/python", "<...>/tools/python", result.stderr)
+        re.sub("/[/a-z]*/dist/python", "<...>/python", result.stderr)
         == """\
 Argument expected for the -c option
-usage: <...>/tools/python [option] ... [-c cmd | -m mod | file | -] [arg] ...
+usage: <...>/python [option] ... [-c cmd | -m mod | file | -] [arg] ...
 Try `python -h' for more information.
 """
     )
