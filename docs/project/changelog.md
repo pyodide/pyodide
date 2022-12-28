@@ -94,6 +94,9 @@ substitutions:
   at least closer to that than it was before).
   {pr}`3277`
 
+- {{ Enhancement }} Added type parameters to many of the `JsProxy` subtypes.
+  {pr}`3387`
+
 - {{ Enhancement }} Added `JsGenerator` and `JsIterator` types to `pyodide.ffi`.
   Added `send` method to `JsIterator`s and `throw`, and `close` methods to `JsGenerator`s.
   {pr}`3294`
