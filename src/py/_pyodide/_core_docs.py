@@ -21,18 +21,21 @@ from typing import IO, Any, Awaitable, Generic, TypeVar, overload
 
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
 # to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
+#
+# Use an empty name for the module of the type variables to prevent long
+# qualified names for the type variables from appearing in the docs.
 _save_name = __name__
-__name__ = "pyodide"
+__name__ = ""
 
+T = TypeVar("T")
+KT = TypeVar("KT")  # Key type.
+VT = TypeVar("VT")  # Value type.
+Tco = TypeVar("Tco", covariant=True)  # Any type covariant containers.
+Vco = TypeVar("Vco", covariant=True)  # Any type covariant containers.
+VTco = TypeVar("VTco", covariant=True)  # Value type covariant containers.
+Tcontra = TypeVar("Tcontra", contravariant=True)  # Ditto contravariant.
 
-_T = TypeVar("_T")
-_S = TypeVar("_S")
-_KT = TypeVar("_KT")  # Key type.
-_VT = TypeVar("_VT")  # Value type.
-_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
-_V_co = TypeVar("_V_co", covariant=True)  # Any type covariant containers.
-_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
-_T_contra = TypeVar("_T_contra", contravariant=True)  # Ditto contravariant.
+__name__ = "pyodide.ffi"
 
 _js_flags: dict[str, int] = {}
 
@@ -404,15 +407,15 @@ class JsBuffer(JsProxy):
         raise NotImplementedError
 
 
-class JsArray(JsProxy, Generic[_T]):
+class JsArray(JsProxy, Generic[T]):
     """A JsProxy of an array, node list, or typed array"""
 
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
-    def __getitem__(self, idx: int | slice) -> _T:
+    def __getitem__(self, idx: int | slice) -> T:
         raise NotImplementedError
 
-    def __setitem__(self, idx: int | slice, value: _T) -> None:
+    def __setitem__(self, idx: int | slice, value: T) -> None:
         pass
 
     def __delitem__(self, idx: int | slice) -> None:
@@ -421,34 +424,34 @@ class JsArray(JsProxy, Generic[_T]):
     def __len__(self) -> int:
         return 0
 
-    def extend(self, other: Iterable[_T]) -> None:
+    def extend(self, other: Iterable[T]) -> None:
         """Extend array by appending elements from the iterable."""
 
-    def __reversed__(self) -> Iterator[_T]:
+    def __reversed__(self) -> Iterator[T]:
         """Return a reverse iterator over the Array."""
         raise NotImplementedError
 
-    def pop(self, /, index: int = -1) -> _T:
+    def pop(self, /, index: int = -1) -> T:
         """Remove and return item at index (default last).
 
         Raises IndexError if list is empty or index is out of range.
         """
         raise NotImplementedError
 
-    def push(self, /, object: _T) -> None:
+    def push(self, /, object: T) -> None:
         pass
 
-    def append(self, /, object: _T) -> None:
+    def append(self, /, object: T) -> None:
         """Append object to the end of the list."""
 
-    def index(self, /, value: _T, start: int = 0, stop: int = sys.maxsize) -> int:
+    def index(self, /, value: T, start: int = 0, stop: int = sys.maxsize) -> int:
         """Return first index of value.
 
         Raises ValueError if the value is not present.
         """
         raise NotImplementedError
 
-    def count(self, /, x: _T) -> int:
+    def count(self, /, x: T) -> int:
         """Return the number of times x appears in the list."""
         raise NotImplementedError
 
@@ -484,7 +487,7 @@ class JsTypedArray(JsBuffer, JsArray[int]):
 
 
 @Mapping.register
-class JsMap(JsProxy, Generic[_KT, _VT_co]):
+class JsMap(JsProxy, Generic[KT, VTco]):
     """A JavaScript Map
 
     To be considered a map, a JavaScript object must have a ``.get`` method, it
@@ -494,19 +497,19 @@ class JsMap(JsProxy, Generic[_KT, _VT_co]):
 
     _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
-    def __getitem__(self, idx: _KT) -> _VT_co:
+    def __getitem__(self, idx: KT) -> VTco:
         raise NotImplementedError
 
     def __len__(self) -> int:
         return 0
 
-    def __iter__(self) -> _KT:
+    def __iter__(self) -> KT:
         raise NotImplementedError
 
-    def __contains__(self, idx: _KT) -> bool:
+    def __contains__(self, idx: KT) -> bool:
         raise NotImplementedError
 
-    def keys(self) -> KeysView[_KT]:
+    def keys(self) -> KeysView[KT]:
         """Return a KeysView for the map.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -514,7 +517,7 @@ class JsMap(JsProxy, Generic[_KT, _VT_co]):
         """
         raise NotImplementedError
 
-    def items(self) -> ItemsView[_KT, _VT_co]:
+    def items(self) -> ItemsView[KT, VTco]:
         """Return a ItemsView for the map.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -522,7 +525,7 @@ class JsMap(JsProxy, Generic[_KT, _VT_co]):
         """
         raise NotImplementedError
 
-    def values(self) -> ValuesView[_VT_co]:
+    def values(self) -> ValuesView[VTco]:
         """Return a ValuesView for the map.
 
         Present if the wrapped JavaScript object is a Mapping (i.e., has
@@ -531,11 +534,11 @@ class JsMap(JsProxy, Generic[_KT, _VT_co]):
         raise NotImplementedError
 
     @overload
-    def get(self, key: _KT) -> _VT_co | None:
+    def get(self, key: KT) -> VTco | None:
         ...
 
     @overload
-    def get(self, key: _KT, default: _VT_co | _T) -> _VT_co | _T:
+    def get(self, key: KT, default: VTco | T) -> VTco | T:
         ...
 
     def get(self, key, default=None):
@@ -548,7 +551,7 @@ class JsMap(JsProxy, Generic[_KT, _VT_co]):
 
 
 @MutableMapping.register
-class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
+class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     """A JavaScript mutable map
 
     To be considered a mutable map, a JavaScript object must have a ``.get``
@@ -564,11 +567,11 @@ class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
     _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
     @overload
-    def pop(self, __key: _KT) -> _VT:
+    def pop(self, __key: KT) -> VT:
         ...
 
     @overload
-    def pop(self, __key: _KT, __default: _VT | _T = ...) -> _VT | _T:
+    def pop(self, __key: KT, __default: VT | T = ...) -> VT | T:
         ...
 
     def pop(self, key, default=None):
@@ -580,7 +583,7 @@ class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
         """
         raise NotImplementedError
 
-    def setdefault(self, key: _KT, default: _VT | None = None) -> _VT:
+    def setdefault(self, key: KT, default: VT | None = None) -> VT:
         """If key in self, return self[key]. Otherwise
         sets self[key] = default and returns default.
 
@@ -589,7 +592,7 @@ class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
         """
         raise NotImplementedError
 
-    def popitem(self) -> tuple[_KT, _KT]:
+    def popitem(self) -> tuple[KT, KT]:
         """Remove some arbitrary key, value pair from the map and returns the
         (key, value) tuple.
 
@@ -606,15 +609,15 @@ class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
         """
 
     @overload
-    def update(self, __m: Mapping[_KT, _VT], **kwargs: _VT) -> None:
+    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
         ...
 
     @overload
-    def update(self, __m: Iterable[tuple[_KT, _VT]], **kwargs: _VT) -> None:
+    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
         ...
 
     @overload
-    def update(self, **kwargs: _VT) -> None:
+    def update(self, **kwargs: VT) -> None:
         ...
 
     def update(self, other, **kwargs):
@@ -646,14 +649,14 @@ class JsMutableMap(JsMap[_KT, _VT], Generic[_KT, _VT]):
         ``get``, ``has``, ``size``, ``keys``, ``set``, and ``delete`` methods).
         """
 
-    def __setitem__(self, idx: _KT, value: _VT) -> None:
+    def __setitem__(self, idx: KT, value: VT) -> None:
         pass
 
-    def __delitem__(self, idx: _KT) -> None:
+    def __delitem__(self, idx: KT) -> None:
         return None
 
 
-class JsIterator(JsProxy, Generic[_T_co]):
+class JsIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript iterator.
 
     An object is a JsIterator if it has a `next` method and either has a
@@ -662,14 +665,14 @@ class JsIterator(JsProxy, Generic[_T_co]):
 
     _js_type_flags = ["IS_ITERATOR"]
 
-    def __next__(self) -> _T_co:
+    def __next__(self) -> Tco:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[_T_co]:
+    def __iter__(self) -> Iterator[Tco]:
         raise NotImplementedError
 
 
-class JsAsyncIterator(JsProxy, Generic[_T_co]):
+class JsAsyncIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript async iterator.
 
     An object is a JsAsyncIterator if it has a `next` method and either has a
@@ -678,14 +681,14 @@ class JsAsyncIterator(JsProxy, Generic[_T_co]):
 
     _js_type_flags = ["IS_ASYNC_ITERATOR"]
 
-    def __anext__(self) -> Awaitable[_T_co]:
+    def __anext__(self) -> Awaitable[Tco]:
         raise NotImplementedError
 
-    def __aiter__(self) -> AsyncIterator[_T_co]:
+    def __aiter__(self) -> AsyncIterator[Tco]:
         raise NotImplementedError
 
 
-class JsIterable(JsProxy, Generic[_T_co]):
+class JsIterable(JsProxy, Generic[Tco]):
     """A JavaScript iterable object
 
     A JavaScript object is iterable if it has a ``Symbol.iterator`` method.
@@ -693,11 +696,11 @@ class JsIterable(JsProxy, Generic[_T_co]):
 
     _js_type_flags = ["IS_ITERABLE"]
 
-    def __iter__(self) -> Iterator[_T_co]:
+    def __iter__(self) -> Iterator[Tco]:
         raise NotImplementedError
 
 
-class JsAsyncIterable(JsProxy, Generic[_T_co]):
+class JsAsyncIterable(JsProxy, Generic[Tco]):
     """A JavaScript async iterable object
 
     A JavaScript object is async iterable if it has a ``Symbol.asyncIterator`` method.
@@ -705,11 +708,11 @@ class JsAsyncIterable(JsProxy, Generic[_T_co]):
 
     _js_type_flags = ["IS_ASYNC_ITERABLE"]
 
-    def __aiter__(self) -> AsyncIterator[_T_co]:
+    def __aiter__(self) -> AsyncIterator[Tco]:
         raise NotImplementedError
 
 
-class JsGenerator(JsIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
+class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
     """A JavaScript generator
 
     A JavaScript object is treated as a generator if it's ``Symbol.typeTag`` is
@@ -721,7 +724,7 @@ class JsGenerator(JsIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
 
     _js_type_flags = ["IS_GENERATOR"]
 
-    def send(self, value: _T_contra) -> _T_co:
+    def send(self, value: Tcontra) -> Tco:
         """
         Resumes the execution and "sends" a value into the generator function.
 
@@ -741,13 +744,13 @@ class JsGenerator(JsIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
         __typ: type[BaseException],
         __val: BaseException | object = ...,
         __tb: TracebackType | None = ...,
-    ) -> _T_co:
+    ) -> Tco:
         ...
 
     @overload
     def throw(
         self, __typ: BaseException, __val: None = ..., __tb: TracebackType | None = ...
-    ) -> _T_co:
+    ) -> Tco:
         ...
 
     def throw(
@@ -789,10 +792,10 @@ class JsGenerator(JsIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
         an exception or normal exit.
         """
 
-    def __next__(self) -> _T_co:
+    def __next__(self) -> Tco:
         raise NotImplementedError
 
-    def __iter__(self) -> "JsGenerator[_T_co, _T_contra, _V_co]":
+    def __iter__(self) -> "JsGenerator[Tco, Tcontra, Vco]":
         raise NotImplementedError
 
 
@@ -818,7 +821,7 @@ class JsFetchResponse(JsProxy):
         raise NotImplementedError
 
 
-class JsAsyncGenerator(JsAsyncIterable[_T_co], Generic[_T_co, _T_contra, _V_co]):
+class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
     """A JavaScript async generator
 
     A JavaScript object is treated as an async generator if it's
@@ -830,13 +833,13 @@ class JsAsyncGenerator(JsAsyncIterable[_T_co], Generic[_T_co, _T_contra, _V_co])
 
     _js_type_flags = ["IS_ASYNC_GENERATOR"]
 
-    def __anext__(self) -> Awaitable[_T_co]:
+    def __anext__(self) -> Awaitable[Tco]:
         raise NotImplementedError
 
-    def __aiter__(self) -> "JsAsyncGenerator[_T_co, _T_contra, _V_co]":
+    def __aiter__(self) -> "JsAsyncGenerator[Tco, Tcontra, Vco]":
         raise NotImplementedError
 
-    def asend(self, __value: _T_contra) -> Awaitable[_T_co]:
+    def asend(self, value: Tcontra) -> Awaitable[Tco]:
         """Resumes the execution and "sends" a value into the async generator
         function.
 
@@ -860,13 +863,13 @@ class JsAsyncGenerator(JsAsyncIterable[_T_co], Generic[_T_co, _T_contra, _V_co])
         __typ: type[BaseException],
         __val: BaseException | object = ...,
         __tb: TracebackType | None = ...,
-    ) -> Awaitable[_T_co]:
+    ) -> Awaitable[Tco]:
         ...
 
     @overload
     def athrow(
         self, __typ: BaseException, __val: None = ..., __tb: TracebackType | None = ...
-    ) -> Awaitable[_T_co]:
+    ) -> Awaitable[Tco]:
         ...
 
     def athrow(
