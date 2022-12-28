@@ -70,7 +70,7 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)  # type: ignore[attr-defined]
+    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)
 }
 
 # Add modules to be mocked.
