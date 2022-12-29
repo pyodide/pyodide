@@ -1,7 +1,6 @@
 import os
 import re
 import tempfile
-from contextlib import contextmanager
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from textwrap import dedent
@@ -14,17 +13,7 @@ from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build.cli import build
-
-
-@contextmanager
-def work_in_dir(dir):
-    old_path = Path.cwd()
-    try:
-        os.chdir(dir)
-        yield
-    finally:
-        os.chdir(old_path)
-
+from pyodide_build.common import chdir
 
 runner = CliRunner()
 
@@ -245,7 +234,7 @@ def test_fake_pypi_succeed(tmp_path, fake_pypi_url):
             )
     output_dir = tmp_path / "dist"
     # build package that resolves right
-    with work_in_dir(tmp_path):
+    with chdir(tmp_path):
         result = runner.invoke(
             build.app,
             ["resolves-package", "--build-dependencies"],
@@ -266,7 +255,7 @@ def test_fake_pypi_resolve_fail(tmp_path, fake_pypi_url):
     output_dir = tmp_path / "dist"
     # build package that resolves right
 
-    with work_in_dir(tmp_path):
+    with chdir(tmp_path):
         result = runner.invoke(
             build.app,
             ["fails-package", "--build-dependencies"],
@@ -287,7 +276,7 @@ def test_fake_pypi_extras_build(tmp_path, fake_pypi_url):
     output_dir = tmp_path / "dist"
     # build package that resolves right
 
-    with work_in_dir(tmp_path):
+    with chdir(tmp_path):
         result = runner.invoke(
             build.app,
             ["pkg-b[docs]", "--build-dependencies"],

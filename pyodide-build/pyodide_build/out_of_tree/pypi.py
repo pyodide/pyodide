@@ -27,6 +27,7 @@ from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
 from .. import common
+from ..common import chdir
 from . import build
 
 _PYPI_INDEX = ["https://pypi.org/simple/"]
@@ -34,17 +35,11 @@ _PYPI_TRUSTED_HOSTS = ["pypi.org"]
 
 
 @contextmanager
-def work_in_dir(dir):
-    old_path = Path.cwd()
-    try:
-        os.chdir(dir)
-        yield
-    finally:
-        os.chdir(old_path)
-
-
-@contextmanager
 def stream_redirected(to=os.devnull, stream=None):
+    """
+    Context manager to redirect stdout or stderr. It does it with filenos and things rather than
+    just changing sys.stdout, so that output of subprocesses is also redirected.
+    """
     if stream is None:
         stream = sys.stdout
     try:
@@ -81,7 +76,7 @@ def _get_built_wheel_internal(url):
     cache_entry: dict[str, Any] = {}
     build_dir = tempfile.TemporaryDirectory()
     cache_entry["build_dir"] = build_dir
-    with work_in_dir(build_dir.name):
+    with chdir(Path(build_dir.name)):
         with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
             data = requests.get(url).content
             f.write(data)

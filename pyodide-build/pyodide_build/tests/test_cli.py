@@ -7,7 +7,7 @@ from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build import common
-from pyodide_build.cli import build, config, skeleton
+from pyodide_build.cli import build_recipes, config, skeleton
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -86,9 +86,8 @@ def test_build_recipe(tmp_path, monkeypatch, request):
         shutil.rmtree(build_dir)
 
     result = runner.invoke(
-        build.app,
+        build_recipes.app,
         [
-            "recipe",
             *pkgs.keys(),
             "--recipe-dir",
             recipe_dir,
