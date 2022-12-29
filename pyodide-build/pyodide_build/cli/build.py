@@ -39,9 +39,10 @@ def pypi(
         package_path = fetch_pypi_package(package, temppath)
         if not package_path.is_dir():
             # a pure-python wheel has been downloaded - just copy to dist folder
-            shutil.copy(str(package_path), str(curdir / "dist"))
+            dest_file = curdir / "dist" / package_path.name
+            shutil.copyfile(str(package_path), curdir / "dist" / package_path.name)
             print(f"Successfully fetched: {package_path.name}")
-            return curdir / "dist" / package_path.name
+            return dest_file
 
         # sdist - needs building
         os.chdir(tmpdir)
