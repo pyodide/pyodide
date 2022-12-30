@@ -117,14 +117,16 @@ export async function loadPackagesFromImports(
   if (typeof options === "function") {
     if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
       console.warn(
-        "Passing a messageCallback or errorCallback as the second or third argument to loadPackagesFromImports is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackageFromImports " +
+          "is deprecated and will be removed in v0.24. Instead use:\n" +
+          "   { messageCallback : callbackFunc }",
       );
-      options = {
-        messageCallback: options,
-        errorCallback: errorCallbackDeprecated,
-      };
       loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
     }
+    options = {
+      messageCallback: options,
+      errorCallback: errorCallbackDeprecated,
+    };
   }
 
   let pyimports = API.pyodide_code.find_imports(code);
