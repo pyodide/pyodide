@@ -453,6 +453,9 @@ export class PyProxyClass {
     throw new TypeError("PyProxy is not a constructor");
   }
 
+  /**
+   * @private
+   */
   get [Symbol.toStringTag]() {
     return "PyProxy";
   }

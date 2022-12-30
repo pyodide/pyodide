@@ -494,14 +494,14 @@ def get_jsdoc_summary_directive(app):
             """
             sig = self.get_sig(obj)
             display_name = obj.name
-            prefix = "*async* " if obj.async_ else ""
+            prefix = "**async** " if obj.async_ else ""
             summary = self.extract_summary(obj.description)
             link_name = pkgname + "." + display_name
             return (prefix, display_name, sig, summary, link_name)
 
         def get_summary_table(self, pkgname, group):
-            """Get the data for a summary table. Return value is set up to be an
-            argument of format_table.
+            """Get the data for a summary tget_summary_tableable. Return value
+            is set up to be an argument of format_table.
             """
             return [self.get_summary_row(pkgname, obj) for obj in group]
 
@@ -547,15 +547,13 @@ def get_jsdoc_summary_directive(app):
                 body.append(row)
 
             for prefix, name, sig, summary, real_name in items:
-                qualifier = "any"  # <== Only thing changed from autosummary version
+                # The body of this loop is changed from copied code.
+                qualifier = "any"
+                sig = rst.escape(sig)
+                if sig:
+                    sig = f"**{sig}**"
                 if "nosignatures" not in self.options:
-                    col1 = "{}:{}:`{} <{}>`\\ {}".format(
-                        prefix,
-                        qualifier,
-                        name,
-                        real_name,
-                        rst.escape(sig),
-                    )
+                    col1 = f"{prefix}:{qualifier}:`{name} <{real_name}>`\\ {sig}"
                 else:
                     col1 = f"{prefix}:{qualifier}:`{name} <{real_name}>`"
                 col2 = summary
