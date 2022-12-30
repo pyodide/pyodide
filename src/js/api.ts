@@ -100,6 +100,7 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
+ * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackagesFromImports(
