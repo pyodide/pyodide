@@ -385,18 +385,15 @@ type NativeFS = {
 /**
  * Mounts FileSystemDirectoryHandle in to the target directory.
  *
- * @param path The absolute path of the target mount directory.
- * If the directory does not exist, it will be created.
- * @param fileSystemHandle FileSystemDirectoryHandle returned by
- * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ * @param path The absolute path in the Emscripten file system to mount the
+ * native directory. If the directory does not exist, it will be created. If it
+ * does exist, it must be empty.
+ * @param fileSystemHandle A handle returned by navigator.storage.getDirectory()
+ * or window.showDirectoryPicker().
  */
 export async function mountNativeFS(
   path: string,
-  fileSystemHandle: {
-    isSameEntry: Function;
-    queryPermission: Function;
-    requestPermission: Function;
-  },
+  fileSystemHandle: FileSystemDirectoryHandle,
   // TODO: support sync file system
   // sync: boolean = false
 ): Promise<NativeFS> {
