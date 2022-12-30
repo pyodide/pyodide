@@ -229,10 +229,15 @@ class JSFuncMaybeAsync(JSCallable):
         "async": directives.flag,
     }
 
-    def handle_signature(self, sig, signode):
+    def get_display_prefix(
+        self,
+    ):
         if "async" in self.options:
-            self.display_prefix = "async"
-        return super().handle_signature(sig, signode)
+            return [
+                addnodes.desc_sig_keyword("async", "async"),
+                addnodes.desc_sig_space(),
+            ]
+        return []
 
 
 JavaScriptDomain.directives["function"] = JSFuncMaybeAsync
