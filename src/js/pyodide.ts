@@ -12,7 +12,7 @@ import {
 
 import { createModule, setHomeDirectory } from "./module";
 import { initializeNativeFS } from "./nativefs";
-import version from "./version";
+import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
