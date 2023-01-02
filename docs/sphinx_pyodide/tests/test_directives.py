@@ -167,7 +167,7 @@ def test_summary():
     attributes = {t[1]: t for t in attributes}
     functions = {t[1]: t for t in functions}
     assert globals["loadPyodide"] == (
-        "*async* ",
+        "**async** ",
         "loadPyodide",
         "(config)",
         "Load the main Pyodide wasm module and initialize it.",
@@ -197,7 +197,7 @@ def test_summary():
     )
 
     assert functions["loadPackagesFromImports"][:-2] == (
-        "*async* ",
+        "**async** ",
         "loadPackagesFromImports",
         "(code, messageCallback, errorCallback)",
     )
