@@ -1348,6 +1348,7 @@ def test_raises_jsexception(selenium):
         raise_jsexception(selenium)
 
 
+@pytest.mark.xfail_browsers(node="Some problem with the logs in node")
 def test_deprecations(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
