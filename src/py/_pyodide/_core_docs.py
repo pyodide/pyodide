@@ -398,10 +398,10 @@ class JsBuffer(JsProxy):
 
         Copies the data twice.
 
-        The encoding argument will be passed to the Javascript
-        [``TextDecoder``](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder)
-        constructor. It should be one of the encodings listed in the table here:
-        `https://encoding.spec.whatwg.org/#names-and-labels`. The default
+        The encoding argument will be passed to the Javascript `TextDecoder
+        <(https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder)>`_
+        constructor. It should be one of the encodings listed in `the table here
+        <https://encoding.spec.whatwg.org/#names-and-labels>`_. The default
         encoding is utf8.
         """
         raise NotImplementedError
@@ -1094,23 +1094,23 @@ def to_js(
 
     Parameters
     ----------
-    obj : Any
+    obj :
         The Python object to convert
 
-    depth : int, default=-1
+    depth :
         The maximum depth to do the conversion. Negative numbers are treated
         as infinite. Set this to 1 to do a shallow conversion.
 
-    pyproxies: JsProxy, default = None
+    pyproxies:
         Should be a JavaScript ``Array``. If provided, any ``PyProxies`` generated
         will be stored here. You can later use :any:`destroy_proxies` if you want
         to destroy the proxies from Python (or from JavaScript you can just iterate
         over the ``Array`` and destroy the proxies).
 
-    create_pyproxies: bool, default=True
+    create_pyproxies:
         If you set this to False, :any:`to_js` will raise an error
 
-    dict_converter: Callable[[Iterable[JsProxy]], JsProxy], default = None
+    dict_converter:
         This converter if provided receives a (JavaScript) iterable of
         (JavaScript) pairs [key, value]. It is expected to return the
         desired result of the dict conversion. Some suggested values for
@@ -1119,7 +1119,8 @@ def to_js(
             js.Map.new -- similar to the default behavior
             js.Array.from -- convert to an array of entries
             js.Object.fromEntries -- convert to a JavaScript object
-    default_converter: Callable[[Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy], default=None
+
+    default_converter:
         If present will be invoked whenever Pyodide does not have some built in
         conversion for the object. If ``default_converter`` raises an error, the
         error will be allowed to propagate. Otherwise, the object returned will

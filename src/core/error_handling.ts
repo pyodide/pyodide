@@ -252,17 +252,16 @@ Module.handle_js_error = function (e: any) {
 /**
  * A JavaScript error caused by a Python exception.
  *
- * In order to reduce the risk of large memory leaks, the ``PythonError``
+ * In order to reduce the risk of large memory leaks, the :any:`PythonError`
  * contains no reference to the Python exception that caused it. You can find
- * the actual Python exception that caused this error as `sys.last_value
- * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+ * the actual Python exception that caused this error as :any:`sys.last_value`.
  *
  * See :ref:`type-translations-errors` for more information.
  *
  * .. admonition:: Avoid leaking stack Frames
  *    :class: warning
  *
- *    If you make a :any:`PyProxy` of ``sys.last_value``, you should be
+ *    If you make a :any:`PyProxy` of :any:`sys.last_value`, you should be
  *    especially careful to :any:`destroy() <PyProxy.destroy>` it when you are
  *    done. You may leak a large amount of memory including the local
  *    variables of all the stack frames in the traceback if you don't. The
@@ -271,7 +270,8 @@ Module.handle_js_error = function (e: any) {
  * @hideconstructor
  */
 export class PythonError extends Error {
-  /**  The address of the error we are wrapping. We may later compare this
+  /**
+   * The address of the error we are wrapping. We may later compare this
    * against sys.last_value.
    * WARNING: we don't own a reference to this pointer, dereferencing it
    * may be a use-after-free error!
@@ -279,7 +279,7 @@ export class PythonError extends Error {
    */
   __error_address: number;
   /**
-   * The Python type, e.g, ``RuntimeError`` or ``KeyError``.
+   * The Python type, e.g, :any:`RuntimeError` or :any:`KeyError`.
    */
   type: string;
   constructor(type: string, message: string, error_address: number) {
