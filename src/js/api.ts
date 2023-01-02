@@ -7,7 +7,7 @@ import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
-import version from "./version";
+import { version } from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
