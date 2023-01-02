@@ -7,7 +7,7 @@ import typer  # type: ignore[import]
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build, build_recipes, config, skeleton
+from pyodide_build.cli import build, build_recipes, config, create_zip, skeleton
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -151,3 +151,29 @@ def test_fetch_or_build_pypi(selenium, tmp_path):
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == len(pkgs)
+
+
+def test_create_zip(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zip.create_zip)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.py" in zf.namelist()
+        assert "module2.py" in zf.namelist()

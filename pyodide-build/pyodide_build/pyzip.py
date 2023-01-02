@@ -3,45 +3,44 @@ from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+# This files are removed from the stdlib by default
+REMOVED_FILES = (
+    # package management
+    "ensurepip/",
+    "venv/",
+    # build system
+    "lib2to3/",
+    # other platforms
+    "_osx_support.py",
+    # Not supported by browser
+    "curses/",
+    "dbm/",
+    "idlelib/",
+    "tkinter/",
+    "turtle.py",
+    "turtledemo",
+    "webbrowser.py",
+)
+
+# This files are unvendored from the stdlib by default
+UNVENDORED_FILES = (
+    "test/",
+    "distutils/",
+    "sqlite3",
+    "ssl.py",
+    "lzma.py",
+)
+
+# TODO: These modules have test directory which we unvendors it separately.
+#       So we should not pack them into the zip file in order to make e.g. import ctypes.test work.
+#       Note that all these tests are moved to the subdirectory of `test` module in upstream CPython 3.12.0a1.
+#       So we don't need this after we upgrade to 3.12.0
+NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
+
 
 def default_filterfunc(
     root: Path, verbose: bool = False
 ) -> Callable[[str, list[str]], set[str]]:
-
-    # This files are removed from the stdlib by default
-    REMOVED_FILES = (
-        # package management
-        "ensurepip/",
-        "venv/",
-        # build system
-        "lib2to3/",
-        # other platforms
-        "_osx_support.py",
-        # Not supported by browser
-        "curses/",
-        "dbm/",
-        "idlelib/",
-        "tkinter/",
-        "turtle.py",
-        "turtledemo",
-        "webbrowser.py",
-    )
-
-    # This files are unvendored from the stdlib by default
-    UNVENDORED_FILES = (
-        "test/",
-        "distutils/",
-        "sqlite3",
-        "ssl.py",
-        "lzma.py",
-    )
-
-    # TODO: These modules have test directory which we unvendors it separately.
-    #       So we should not pack them into the zip file in order to make e.g. import ctypes.test work.
-    #       Note that all these tests are moved to the subdirectory of `test` module in upstream CPython 3.12.0a1.
-    #       So we don't need this after we upgrade to 3.12.0
-    NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
-
     def filterfunc(path: Path | str, names: list[str]) -> set[str]:
         filtered_files = {
             (root / f).resolve()
