@@ -229,46 +229,58 @@ export async function loadPyodide(
   options: {
     /**
      * The URL from which Pyodide will load the main Pyodide runtime and
-     * packages. Defaults to the url that pyodide is loaded from with the file
-     * name (pyodide.js or pyodide.mjs) removed. It is recommended that you
-     * leave this undefined, providing an incorrect value can cause broken
-     * behavior.
+     * packages. It is recommended that you leave this unchanged, providing an
+     * incorrect value can cause broken behavior.
+     *
+     * Default: The url that Pyodide is loaded from with the file name
+     * (``pyodide.js`` or ``pyodide.mjs``) removed.
      */
     indexURL?: string;
 
     /**
      * The URL from which Pyodide will load the Pyodide "repodata.json" lock
-     * file. Defaults to ``${indexURL}/repodata.json``. You can produce custom
-     * lock files with :any:`micropip.freeze`
+     * file. You can produce custom lock files with :any:`micropip.freeze`.
+     * Default: ``${indexURL}/repodata.json``
      */
     lockFileURL?: string;
 
     /**
-     * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
+     * The home directory which Pyodide will use inside virtual file system.
+     * Default: ``"/home/pyodide"``
      */
     homedir?: string;
     /**
-     * Load the full Python standard library.
-     * Setting this to false excludes unvendored modules from the standard library.
-     * Default: false
+     * Load the full Python standard library. Setting this to false excludes
+     * unvendored modules from the standard library.
+     * Default: ``false``
      */
     fullStdLib?: boolean;
     /**
-     * Override the standard input callback. Should ask the user for one line of input.
+     * Override the standard input callback. Should ask the user for one line of
+     * input.
      */
     stdin?: () => string;
     /**
      * Override the standard output callback.
-     * Default: undefined
      */
     stdout?: (msg: string) => void;
     /**
      * Override the standard error output callback.
-     * Default: undefined
      */
     stderr?: (msg: string) => void;
+    /**
+     * The object that Pyodide will use for the ``js`` module.
+     * Default: ``globalThis``
+     */
     jsglobals?: object;
+    /**
+     * Command line arguments to pass to Python on startup.
+     * Default: ``[]``
+     */
     args?: string[];
+    /**
+     * @ignore
+     */
     _node_mounts?: string[];
   } = {},
 ): Promise<PyodideInterface> {
