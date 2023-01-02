@@ -1,4 +1,8 @@
+# flake8: noqa
+
 from pyodide_build.pyzip import create_zip, default_filterfunc
+
+from .fixture import temp_python_lib
 
 
 def test_defaultfilterfunc(temp_python_lib):

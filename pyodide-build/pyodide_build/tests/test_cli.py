@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import os
 import shutil
 from pathlib import Path
@@ -8,6 +10,8 @@ from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
 from pyodide_build.cli import build, build_recipes, config, create_zip, skeleton
+
+from .fixture import temp_python_lib
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
