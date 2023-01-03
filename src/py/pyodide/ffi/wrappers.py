@@ -14,6 +14,8 @@ if IN_BROWSER:
 
 
 class Destroyable(Protocol):
+    """:meta private:"""
+
     def destroy(self):
         pass
 
