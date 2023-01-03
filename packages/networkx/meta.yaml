@@ -1,6 +1,6 @@
 package:
   name: networkx
-  version: 2.8.4
+  version: 2.8.8
   top-level:
     - networkx
 requirements:
@@ -10,8 +10,8 @@ requirements:
     - matplotlib
     - numpy
 source:
-  sha256: 6933b9b3174a0bdf03c911bb4a1ee43a86ce3edeb813e37e1d4c553b3f4a2c4f
-  url: https://files.pythonhosted.org/packages/34/71/1d6f7aaefa2fb38ea8c13dc47f3e2a32c4dc78f6229086ed90947fc49d3c/networkx-2.8.4-py3-none-any.whl
+  sha256: e435dfa75b1d7195c7b8378c3859f0445cd88c6b0375c181ed66823a9ceb7524
+  url: https://files.pythonhosted.org/packages/42/31/d2f89f1ae42718f8c8a9e440ebe38d7d5fe1e0d9eb9178ce779e365b3ab0/networkx-2.8.8-py3-none-any.whl
 test:
   imports:
     - networkx

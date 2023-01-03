@@ -85,7 +85,8 @@ async function main() {
 
   expectType<any>(px.x);
   expectType<PyProxy>(px.copy());
-  expectType<void>(px.destroy("blah"));
+  expectType<void>(px.destroy({ message: "blah" }));
+  expectType<void>(px.destroy({ destroyRoundtrip: false }));
   expectType<void>(px.destroy());
   expectType<any>(px.toJs());
   expectType<any>(px.toJs({}));

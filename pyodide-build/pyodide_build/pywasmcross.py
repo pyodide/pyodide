@@ -62,11 +62,6 @@ from typing import Any, Literal, NoReturn
 from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
 
-
-def symlink_dir() -> Path:
-    return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
-
-
 ReplayArgs = namedtuple(
     "ReplayArgs",
     [
@@ -363,6 +358,7 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
         "-ffixed-form",
+        "-fallow-argument-mismatch",
         # On Mac, we need to omit some darwin-specific arguments
         "-bundle", "-undefined", "dynamic_lookup",
         # This flag is needed to build numpy with SIMD optimization which we currently disable

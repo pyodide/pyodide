@@ -326,7 +326,7 @@ JS_FILE(js2python_init, () => {
       );
       result = js2python_convertImmutable(result_js);
       if (API.isPyProxy(result_js)) {
-        result_js.destroy();
+        Module.pyproxy_destroy(result_js, "", false);
       }
       if (result !== undefined) {
         return result;

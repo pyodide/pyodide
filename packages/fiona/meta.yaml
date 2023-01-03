@@ -1,9 +1,9 @@
 package:
   name: fiona
-  version: 1.8.21
+  version: 1.8.22
 source:
-  url: https://files.pythonhosted.org/packages/67/5c/4e028e84a1f0cb3f8a994217cf2366360ca984dfc1433f6171de527d0dca/Fiona-1.8.21.tar.gz
-  sha256: 3a0edca2a7a070db405d71187214a43d2333a57b4097544a3fcc282066a58bfc
+  url: https://files.pythonhosted.org/packages/b9/d7/48025179fbbb2e1bab698131246878df36fa9aa5bee0ba1c062cd8f2ef44/Fiona-1.8.22.tar.gz
+  sha256: a82a99ce9b3e7825740157c45c9fb2259d4e92f0a886aaac25f0db40ffe1eea3
 test:
   imports:
     - fiona
@@ -19,7 +19,7 @@ requirements:
     - six
     - click
     - cligj
-    # - click-plugins  # only for fiona CLI?
+      # - click-plugins  # only for fiona CLI?
 
 build:
   vendor-sharedlib: true

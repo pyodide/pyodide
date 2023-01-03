@@ -7,9 +7,10 @@ import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
-import version from "./version";
+import { version } from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
+import { setStdin, setStdout, setStderr } from "./streams";
 
 API.loadBinaryFile = loadBinaryFile;
 
@@ -58,13 +59,6 @@ API.runPythonInternal = function (code: string): any {
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
  *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a positional
- *    argument rather than as a named argument. In v0.20 this will still work
- *    but it is deprecated. It will be removed in v0.21.
- *
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
@@ -106,6 +100,7 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
+ * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackagesFromImports(
@@ -122,14 +117,16 @@ export async function loadPackagesFromImports(
   if (typeof options === "function") {
     if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
       console.warn(
-        "Passing a messageCallback or errorCallback as the second or third argument to loadPackagesFromImports is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackageFromImports " +
+          "is deprecated and will be removed in v0.24. Instead use:\n" +
+          "   { messageCallback : callbackFunc }",
       );
-      options = {
-        messageCallback: options,
-        errorCallback: errorCallbackDeprecated,
-      };
       loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
     }
+    options = {
+      messageCallback: options,
+      errorCallback: errorCallbackDeprecated,
+    };
   }
 
   let pyimports = API.pyodide_code.find_imports(code);
@@ -181,13 +178,6 @@ export async function loadPackagesFromImports(
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
  *    import any python packages referenced via `import` statements in your
  *    code. This function will no longer do it for you.
- *
- * .. admonition:: Positional globals argument
- *    :class: warning
- *
- *    In Pyodide v0.19, this function took the globals parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work  but it is deprecated. It will be removed in v0.21.
  *
  * @param code Python code to evaluate
  * @param options
@@ -354,12 +344,6 @@ export function pyimport(mod_name: string): PyProxy {
 /**
  * Unpack an archive into a target directory.
  *
- * .. admonition:: Positional globals argument :class: warning
- *
- *    In Pyodide v0.19, this function took the extract_dir parameter as a
- *    positional argument rather than as a named argument. In v0.20 this will
- *    still work but it is deprecated. It will be removed in v0.21.
- *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
  * recognized by `shutil.unpack_archive`. By default the options are 'bztar',
@@ -404,18 +388,15 @@ type NativeFS = {
 /**
  * Mounts FileSystemDirectoryHandle in to the target directory.
  *
- * @param path The absolute path of the target mount directory.
- * If the directory does not exist, it will be created.
- * @param fileSystemHandle FileSystemDirectoryHandle returned by
- * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ * @param path The absolute path in the Emscripten file system to mount the
+ * native directory. If the directory does not exist, it will be created. If it
+ * does exist, it must be empty.
+ * @param fileSystemHandle A handle returned by navigator.storage.getDirectory()
+ * or window.showDirectoryPicker().
  */
 export async function mountNativeFS(
   path: string,
-  fileSystemHandle: {
-    isSameEntry: Function;
-    queryPermission: Function;
-    requestPermission: Function;
-  },
+  fileSystemHandle: FileSystemDirectoryHandle,
   // TODO: support sync file system
   // sync: boolean = false
 ): Promise<NativeFS> {
@@ -518,6 +499,9 @@ export type PyodideInterface = {
   registerComlink: typeof registerComlink;
   PythonError: typeof PythonError;
   PyBuffer: typeof PyBuffer;
+  setStdin: typeof setStdin;
+  setStdout: typeof setStdout;
+  setStderr: typeof setStderr;
 };
 
 /**
@@ -584,6 +568,9 @@ API.makePublicAPI = function (): PyodideInterface {
     PyBuffer,
     _module: Module,
     _api: API,
+    setStdin,
+    setStdout,
+    setStderr,
   };
 
   API.public_api = namespace;

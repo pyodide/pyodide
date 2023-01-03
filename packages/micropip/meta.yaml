@@ -1,14 +1,13 @@
 package:
   name: micropip
   # This version needs to be consistent with docs/requirements-doc.txt
-  version: "0.1.0"
-  _tag: pyodide.stdlib
+  version: "0.2.0"
   top-level:
     - micropip
 
 source:
-  sha256: 693a7fd7ce92fd95eaf9d88fe243f45951ad5c694cccf89493cbcc3666bbdeab
-  url: https://files.pythonhosted.org/packages/14/19/e5d36b2cc156c66858493dc118956f6fed2b1408e62be12e4ffed392b7cb/micropip-0.1.0-py3-none-any.whl
+  sha256: be2914a08e553e6d05cacde692db00412e6fc508d63ff70e2ae94050149c82d6
+  url: https://files.pythonhosted.org/packages/a1/7c/2f5a9b925a66261b39a9c4181c9cc4500ff5547d7b1efc76f5cba40a1d0e/micropip-0.2.0-py3-none-any.whl
 
 requirements:
   run:

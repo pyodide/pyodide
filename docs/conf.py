@@ -11,13 +11,15 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+import micropip
+
 panels_add_bootstrap_css = False
 
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.22.0.dev0"
+pyodide_version = "0.22.0"
 
 if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
@@ -33,9 +35,11 @@ else:
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
     "sphinxcontrib.napoleon",
     "myst_parser",
     "sphinx_js",
+    "sphinx_click",
     "autodocsumm",
     "sphinx_panels",
     "sphinx_pyodide",
@@ -43,6 +47,7 @@ extensions = [
     "versionwarning.extension",
     "sphinx_issues",
 ]
+
 
 myst_enable_extensions = ["substitution"]
 
@@ -64,6 +69,10 @@ versionwarning_body_selector = "#main-content > div"
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
+intersphinx_mapping = {
+    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)
+}
+
 # Add modules to be mocked.
 mock_modules = ["ruamel.yaml", "tomli"]
 
@@ -81,7 +90,14 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "README.md"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "README.md",
+    "sphinx_pyodide",
+    ".venv",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -196,6 +212,9 @@ if IN_SPHINX:
     import pyodide.ffi.wrappers
     import pyodide.http
     import pyodide.webloop
+    from pyodide.ffi import JsProxy
+
+    del JsProxy.__new__
 
     # The full version, including alpha/beta/rc tags.
     release = version = pyodide.__version__

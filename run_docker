@@ -2,7 +2,6 @@
 
 PYODIDE_IMAGE_REPO="pyodide"
 PYODIDE_IMAGE_TAG="20221102-chrome107-firefox106"
-PYODIDE_PREBUILT_IMAGE_TAG="0.21.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
@@ -30,8 +29,6 @@ shell in the container.
 
 Options:
   -h, --help                  Show this information and exit.
-  --pre-built                 Use the prebuilt Pyodide image.
-                              This is ignored if the env var PYODIDE_DOCKER_IMAGE is set.
   -p, --port <port>           System port to which to forward.
                               This is ignored if the env var PYODIDE_SYSTEM_PORT is set.
                               If set to 'none', docker instance will not bind to any port.
@@ -56,14 +53,6 @@ do
       -h|--help)
         usage
         exit 0
-      ;;
-      --pre-built)
-        if [[ -n ${PYODIDE_DOCKER_IMAGE} ]]; then
-          echo "WARNING: will use the env var PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE},
-          the flag --pre-built has no effect"
-        fi
-        DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide:${PYODIDE_PREBUILT_IMAGE_TAG}"
-        shift
       ;;
       -p|--port)
         if [ "$#" -lt 2 ]; then

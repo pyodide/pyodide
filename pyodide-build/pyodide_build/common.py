@@ -18,6 +18,40 @@ from packaging.utils import parse_wheel_filename
 
 from .io import MetaConfig
 
+BUILD_VARS: set[str] = {
+    "PATH",
+    "PYTHONPATH",
+    "PYODIDE_ROOT",
+    "PYTHONINCLUDE",
+    "NUMPY_LIB",
+    "PYODIDE_PACKAGE_ABI",
+    "HOME",
+    "HOSTINSTALLDIR",
+    "TARGETINSTALLDIR",
+    "SYSCONFIG_NAME",
+    "HOSTSITEPACKAGES",
+    "PYVERSION",
+    "PYMAJOR",
+    "PYMINOR",
+    "PYMICRO",
+    "CPYTHONBUILD",
+    "CPYTHONLIB",
+    "SIDE_MODULE_CFLAGS",
+    "SIDE_MODULE_CXXFLAGS",
+    "SIDE_MODULE_LDFLAGS",
+    "STDLIB_MODULE_CFLAGS",
+    "UNISOLATED_PACKAGES",
+    "WASM_LIBRARY_DIR",
+    "WASM_PKG_CONFIG_PATH",
+    "CARGO_BUILD_TARGET",
+    "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
+    "CARGO_HOME",
+    "RUSTFLAGS",
+    "PYODIDE_EMSCRIPTEN_VERSION",
+    "PLATFORM_TRIPLET",
+    "SYSCONFIGDATA_DIR",
+}
+
 
 def emscripten_version() -> str:
     return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
@@ -151,7 +185,7 @@ ALWAYS_PACKAGES = {
     "ssl",
     "lzma",
     "sqlite3",
-    "_hashlib",
+    "hashlib",
 }
 
 CORE_PACKAGES = {
@@ -226,7 +260,6 @@ def get_make_flag(name: str) -> str:
         SIDE_MODULE_LDFLAGS
         SIDE_MODULE_CFLAGS
         SIDE_MODULE_CXXFLAGS
-        TOOLSDIR
     """
     return get_make_environment_vars()[name]
 
@@ -258,6 +291,10 @@ def get_make_environment_vars() -> dict[str, str]:
         equalPos = line.find("=")
         if equalPos != -1:
             varname = line[0:equalPos]
+
+            if varname not in BUILD_VARS:
+                continue
+
             value = line[equalPos + 1 :]
             value = value.strip("'").strip()
             environment[varname] = value

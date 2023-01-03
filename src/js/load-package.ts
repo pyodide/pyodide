@@ -359,6 +359,7 @@ let loadPackagePositionalCallbackDeprecationWarned = false;
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
+ * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackage(
@@ -375,14 +376,16 @@ export async function loadPackage(
   if (typeof options === "function") {
     if (!loadPackagePositionalCallbackDeprecationWarned) {
       console.warn(
-        "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackage " +
+          "is deprecated and will be removed in v0.24. Instead use:\n" +
+          "   { messageCallback : callbackFunc }",
       );
-      options = {
-        messageCallback: options,
-        errorCallback: errorCallbackDeprecated,
-      };
       loadPackagePositionalCallbackDeprecationWarned = true;
     }
+    options = {
+      messageCallback: options,
+      errorCallback: errorCallbackDeprecated,
+    };
   }
 
   const messageCallback = options.messageCallback || console.log;

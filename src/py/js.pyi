@@ -2,7 +2,14 @@ from asyncio import Future
 from typing import Any, Callable, Iterable
 
 from _pyodide._core_docs import _JsProxyMetaClass
-from pyodide.ffi import JsArray, JsBuffer, JsFetchResponse, JsProxy, JsTypedArray
+from pyodide.ffi import (
+    JsArray,
+    JsBuffer,
+    JsDomElement,
+    JsFetchResponse,
+    JsProxy,
+    JsTypedArray,
+)
 from pyodide.webloop import PyodideFuture
 
 def eval(code: str) -> Any: ...
@@ -44,11 +51,11 @@ class XMLHttpRequest(_JsObject):
 
 class Object(_JsObject):
     @staticmethod
-    def fromEntries(it: Iterable[tuple[str, Any]]) -> JsProxy: ...
+    def fromEntries(it: Iterable[JsArray[Any]]) -> JsProxy: ...
 
 class Array(_JsObject):
     @staticmethod
-    def new() -> JsArray: ...
+    def new() -> JsArray[Any]: ...
 
 class ImageData(_JsObject):
     @staticmethod
@@ -77,15 +84,10 @@ class JSON(_JsObject):
     @staticmethod
     def parse(a: str) -> JsProxy: ...
 
-class JsElement(JsProxy):
-    tagName: str
-    children: list[JsElement]
-    def appendChild(self, child: JsElement) -> None: ...
-
 class document(_JsObject):
-    body: JsElement
-    children: list[JsElement]
+    body: JsDomElement
+    children: list[JsDomElement]
     @staticmethod
-    def createElement(tagName: str) -> JsElement: ...
+    def createElement(tagName: str) -> JsDomElement: ...
     @staticmethod
-    def appendChild(child: JsElement) -> None: ...
+    def appendChild(child: JsDomElement) -> None: ...
