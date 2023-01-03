@@ -15,9 +15,13 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.27
-  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
-  {pr}`3239`, {pr}`3280`, {pr}`3314`
+## Version 0.22.0
+
+_January 3, 2023_
+
+[See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
+
+## 0.22.0
 
 ### Deployment and testing
 
@@ -247,6 +251,10 @@ myst:
 
 ### Build System
 
+- {{ Enhancement }} Updated Emscripten to version 3.1.27
+  {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
+  {pr}`3239`, {pr}`3280`, {pr}`3314`
+
 - {{ Enhancement }} Added `requirements/host` key to the `meta.yaml` spec to allow
   host dependencies that are required for building packages.
   {pr}`2132`
@@ -322,6 +330,14 @@ myst:
 
 - {{ Fix }} Fix scipy handling of exceptions that are raised from C++ code.
   {pr}`3384`.
+
+### List of Contributors
+
+Aierie, dataxerik, David Lechner, Deepak Cherian, Filipe, Gyeongjae Choi, Hood
+Chatham, H.Yamada, Jacques Boscq, Jeremy Tuloup, Joe Marshall, John Wason,
+Loïc Estève, partev, Patrick Arminio, Péter Ferenc Gyarmati, Prete, Qijia
+Liu, Roman Yurchak, ryanking13, skelsec, Starz0r, Will Lachance, YeonWoo, Yizhi
+Liu
 
 ## Version 0.21.3
 
