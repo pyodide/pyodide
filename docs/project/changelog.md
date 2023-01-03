@@ -17,7 +17,7 @@ myst:
 
 ## Version 0.22.0
 
-_January x, 2023_
+_January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
 
