@@ -90,6 +90,10 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: dict[str, Any]) -> No
     params = node.get("parameters", [])
     new_params = []
     for param in params:
+        if "@ignore" in param.get("comment", {}).get("shortText", ""):
+            if not param.get("flags", {}).get("isOptional"):
+                print("sphinx-pyodide warning: Hiding mandatory argument!")
+            continue
         param_type = param["type"]
         if (
             param_type["type"] != "reflection"
