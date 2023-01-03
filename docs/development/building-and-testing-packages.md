@@ -15,7 +15,7 @@ Subsystem for Linux.
 If your package is a pure Python package (i.e., if the wheel ends in
 `py3-none-any.whl`) then follow the official PyPA documentation on building
 [wheels](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
-Otherwise, the procedure is simple.
+Otherwise, the procedure is as follows.
 
 ### Install pyodide-build
 
