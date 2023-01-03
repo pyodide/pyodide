@@ -12,7 +12,6 @@ import typer  # type: ignore[import]
 from build import ProjectBuilder
 from typer.testing import CliRunner  # type: ignore[import]
 
-from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build.cli import build
 from pyodide_build.common import chdir
 
@@ -183,12 +182,8 @@ def fake_pypi_url(fake_pypi_server):
     pyodide_build.out_of_tree.pypi._PYPI_INDEX = pypi_old
 
 
-def test_fetch_or_build_pypi(tmp_path):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first. Skipping test"
-            )
+def test_fetch_or_build_pypi(selenium, tmp_path):
+    # TODO: - make test run without pyodide
     output_dir = tmp_path / "dist"
     # one pure-python package (doesn't need building) and one sdist package (needs building)
     pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
@@ -208,12 +203,8 @@ def test_fetch_or_build_pypi(tmp_path):
     assert len(built_wheels) == len(pkgs)
 
 
-def test_fetch_or_build_pypi_with_deps_and_extras(tmp_path):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first. Skipping test"
-            )
+def test_fetch_or_build_pypi_with_deps_and_extras(selenium, tmp_path):
+    # TODO: - make test run without pyodide
     output_dir = tmp_path / "dist"
     # one pure-python package (doesn't need building) which depends on one sdist package (needs building)
     pkgs = ["eth-hash[pycryptodome]==0.5.1", "safe-pysha3 (>=1.0.0)"]
@@ -233,12 +224,8 @@ def test_fetch_or_build_pypi_with_deps_and_extras(tmp_path):
     assert len(built_wheels) == 3
 
 
-def test_fake_pypi_succeed(tmp_path, fake_pypi_url):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first. Skipping test"
-            )
+def test_fake_pypi_succeed(selenium, tmp_path, fake_pypi_url):
+    # TODO: - make test run without pyodide
     output_dir = tmp_path / "dist"
     # build package that resolves right
     app = typer.Typer()
@@ -256,12 +243,8 @@ def test_fake_pypi_succeed(tmp_path, fake_pypi_url):
     assert len(built_wheels) == 5
 
 
-def test_fake_pypi_resolve_fail(tmp_path, fake_pypi_url):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first. Skipping test"
-            )
+def test_fake_pypi_resolve_fail(selenium, tmp_path, fake_pypi_url):
+    # TODO: - make test run without pyodide
     output_dir = tmp_path / "dist"
     # build package that resolves right
 
@@ -280,12 +263,8 @@ def test_fake_pypi_resolve_fail(tmp_path, fake_pypi_url):
     assert len(built_wheels) == 0
 
 
-def test_fake_pypi_extras_build(tmp_path, fake_pypi_url):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first. Skipping test"
-            )
+def test_fake_pypi_extras_build(selenium, tmp_path, fake_pypi_url):
+    # TODO: - make test run without pyodide
     output_dir = tmp_path / "dist"
     # build package that resolves right
     app = typer.Typer()
@@ -301,25 +280,3 @@ def test_fake_pypi_extras_build(tmp_path, fake_pypi_url):
     assert result.exit_code == 0, result.stdout
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 2
-
-
-@pytest.mark.parametrize(
-    "fn", [test_fetch_or_build_pypi, test_fetch_or_build_pypi_with_deps_and_extras]
-)
-def test_host_in_node_test(runtime, fn, tmp_path):
-    if runtime.startswith("node"):
-        fn(tmp_path)
-
-
-@pytest.mark.parametrize(
-    "fn",
-    [
-        test_fake_pypi_succeed,
-        test_fake_pypi_resolve_fail,
-        test_fake_pypi_succeed,
-        test_fake_pypi_extras_build,
-    ],
-)
-def test_host_in_node_test_fake_pypi(runtime, fn, tmp_path, fake_pypi_url):
-    if runtime.startswith("node"):
-        fn(tmp_path, fake_pypi_url)
