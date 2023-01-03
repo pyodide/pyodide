@@ -21,8 +21,6 @@ _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
 
-## 0.22.0
-
 ### Deployment and testing
 
 - {{ Breaking }} `pyodide-cdn2.iodide.io` is not available anymore. Please use
