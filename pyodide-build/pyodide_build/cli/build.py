@@ -132,7 +132,7 @@ def main(
     ),
     skip_dependency: list[str] = typer.Option(
         [],
-        help="Skip building or resolving a single dependency. Use multiple times to skip multiple dependencies.",
+        help="Skip building or resolving a single dependency. Use multiple times or provide a comma separated list to skip multiple dependencies.",
     ),
     ctx: typer.Context = typer.Context,
 ) -> None:

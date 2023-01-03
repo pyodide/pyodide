@@ -19,6 +19,10 @@ myst:
   {pr}`2958`, {pr}`2950`, {pr}`3027`, {pr}`3107`, {pr}`3148`, {pr}`3236`,
   {pr}`3239`, {pr}`3280`, {pr}`3314`
 
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
+  built. Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
+
 ### Deployment and testing
 
 - {{ Breaking }} `pyodide-cdn2.iodide.io` is not available anymore. Please use
