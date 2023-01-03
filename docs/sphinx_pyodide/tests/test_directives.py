@@ -22,8 +22,8 @@ sys.path.append(str(test_directory.parent))
 # tsdoc_dump.json.gz is the source file for the test docs. It can be updated as follows:
 #
 # cp src/core/pyproxy.ts src/js/pyproxy.gen.ts
-# typedoc src/js/*.ts --tsconfig src/js/tsconfig.json --json docs/sphinx_pyodide/tests/
-# gzip docs/sphinx_pyodide/tests/
+# typedoc src/js/*.ts --tsconfig src/js/tsconfig.json --json docs/sphinx_pyodide/tests/tsdoc_dump.json
+# gzip docs/sphinx_pyodide/tests/tsdoc_dump.json
 # rm src/js/pyproxy.gen.ts
 with gzip.open(test_directory / "tsdoc_dump.json.gz") as fh:
     jsdoc_json = json.load(fh)
@@ -74,26 +74,35 @@ def test_pyodide_analyzer():
     function_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["function"]}
     attribute_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["attribute"]}
     assert function_names == {
-        "runPython",
-        "unregisterJsModule",
-        "loadPackage",
-        "runPythonAsync",
-        "loadPackagesFromImports",
-        "pyimport",
-        "registerJsModule",
-        "isPyProxy",
-        "toPy",
-        "setInterruptBuffer",
         "checkInterrupt",
-        "unpackArchive",
+        "isPyProxy",
+        "loadPackage",
+        "loadPackagesFromImports",
+        "mountNativeFS",
+        "pyimport",
         "registerComlink",
+        "registerJsModule",
+        "runPython",
+        "runPythonAsync",
+        "setDefaultStdout",
+        "setInterruptBuffer",
+        "setStderr",
+        "setStdin",
+        "setStdout",
+        "toPy",
+        "unpackArchive",
+        "unregisterJsModule",
     }
+
     assert attribute_names == {
+        "ERRNO_CODES",
         "FS",
-        "loadedPackages",
-        "globals",
+        "PATH",
         "version",
+        "globals",
+        "loadedPackages",
         "pyodide_py",
+        "version",
     }
 
 
@@ -134,8 +143,8 @@ def test_content():
 
     rp = results["runPython"]
     assert rp["directive"] == "function"
-    assert rp["sig"] == "code, globals=Module.globals)"
-    assert "Runs a string of Python code from JavaScript." in rp["body"]
+    assert rp["sig"] == "code, options)"
+    assert "Runs a string of Python code from JavaScript" in rp["body"]
 
 
 JsDocSummary = get_jsdoc_summary_directive(dummy_app)
@@ -167,9 +176,9 @@ def test_summary():
     attributes = {t[1]: t for t in attributes}
     functions = {t[1]: t for t in functions}
     assert globals["loadPyodide"] == (
-        "*async* ",
+        "**async** ",
         "loadPyodide",
-        "(config)",
+        "(options)",
         "Load the main Pyodide wasm module and initialize it.",
         "globalThis.loadPyodide",
     )
@@ -197,9 +206,9 @@ def test_summary():
     )
 
     assert functions["loadPackagesFromImports"][:-2] == (
-        "*async* ",
+        "**async** ",
         "loadPackagesFromImports",
-        "(code, messageCallback, errorCallback)",
+        "(code, options)",
     )
 
 

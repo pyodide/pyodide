@@ -1,11 +1,10 @@
-import os
 import shutil
 from pathlib import Path
 
 import pytest
+import typer  # type: ignore[import]
 from typer.testing import CliRunner  # type: ignore[import]
 
-from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build import common
 from pyodide_build.cli import build_recipes, config, skeleton
 
@@ -58,18 +57,9 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
-def test_build_recipe_with_pyodide(tmp_path, monkeypatch, request, runtime):
-    if runtime != "node":
-        pytest.xfail("node only")
-    test_build_recipe(tmp_path, monkeypatch, request)
+def test_build_recipe(selenium, tmp_path, monkeypatch, request):
+    # TODO: Run this test without building Pyodide
 
-
-def test_build_recipe(tmp_path, monkeypatch, request):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first"
-            )
     output_dir = tmp_path / "dist"
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
@@ -85,8 +75,11 @@ def test_build_recipe(tmp_path, monkeypatch, request):
     for build_dir in recipe_dir.rglob("build"):
         shutil.rmtree(build_dir)
 
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
     result = runner.invoke(
-        build_recipes.app,
+        app,
         [
             *pkgs.keys(),
             "--recipe-dir",

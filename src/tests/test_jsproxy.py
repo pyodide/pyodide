@@ -1800,7 +1800,7 @@ def test_gen_send_type_errors(selenium):
     with pytest.raises(
         TypeError, match='Result should have type "object" not "number"'
     ):
-        g.send(None)
+        g.send(None)  # type:ignore[attr-defined]
 
     g = run_js(
         """
@@ -2001,7 +2001,7 @@ async def test_agen_asend(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsAsyncIterator, JsIterator
+    from pyodide.ffi import JsAsyncGenerator, JsIterator
 
     it = run_js(
         """
@@ -2014,7 +2014,7 @@ async def test_agen_asend(selenium):
         """
     )
 
-    assert isinstance(it, JsAsyncIterator)
+    assert isinstance(it, JsAsyncGenerator)
     assert not isinstance(it, JsIterator)
 
     assert await it.asend(None) == 2

@@ -8,6 +8,7 @@ from threading import Event, Thread
 from typing import Any
 
 import pytest
+import typer  # type: ignore[import]
 from build import ProjectBuilder
 from typer.testing import CliRunner  # type: ignore[import]
 
@@ -192,10 +193,13 @@ def test_fetch_or_build_pypi(tmp_path):
     # one pure-python package (doesn't need building) and one sdist package (needs building)
     pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
 
+    app = typer.Typer()
+    app.command()(build.main)
+
     os.chdir(tmp_path)
     for p in pkgs:
         result = runner.invoke(
-            build.app,
+            app,
             [p],
         )
         assert result.exit_code == 0, result.stdout
@@ -214,10 +218,13 @@ def test_fetch_or_build_pypi_with_deps_and_extras(tmp_path):
     # one pure-python package (doesn't need building) which depends on one sdist package (needs building)
     pkgs = ["eth-hash[pycryptodome]==0.5.1", "safe-pysha3 (>=1.0.0)"]
 
+    app = typer.Typer()
+    app.command()(build.main)
+
     os.chdir(tmp_path)
     for p in pkgs:
         result = runner.invoke(
-            build.app,
+            app,
             [p, "--build-dependencies"],
         )
         assert result.exit_code == 0, result.stdout
@@ -234,9 +241,12 @@ def test_fake_pypi_succeed(tmp_path, fake_pypi_url):
             )
     output_dir = tmp_path / "dist"
     # build package that resolves right
+    app = typer.Typer()
+    app.command()(build.main)
+
     with chdir(tmp_path):
         result = runner.invoke(
-            build.app,
+            app,
             ["resolves-package", "--build-dependencies"],
         )
 
@@ -255,9 +265,12 @@ def test_fake_pypi_resolve_fail(tmp_path, fake_pypi_url):
     output_dir = tmp_path / "dist"
     # build package that resolves right
 
+    app = typer.Typer()
+    app.command()(build.main)
+
     with chdir(tmp_path):
         result = runner.invoke(
-            build.app,
+            app,
             ["fails-package", "--build-dependencies"],
         )
 
@@ -275,10 +288,12 @@ def test_fake_pypi_extras_build(tmp_path, fake_pypi_url):
             )
     output_dir = tmp_path / "dist"
     # build package that resolves right
+    app = typer.Typer()
+    app.command()(build.main)
 
     with chdir(tmp_path):
         result = runner.invoke(
-            build.app,
+            app,
             ["pkg-b[docs]", "--build-dependencies"],
         )
 

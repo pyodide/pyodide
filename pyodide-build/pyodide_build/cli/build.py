@@ -14,8 +14,6 @@ from ..out_of_tree import build
 from ..out_of_tree.pypi import build_dependencies_for_wheel, fetch_pypi_package
 from ..out_of_tree.utils import initialize_pyodide_root
 
-app = typer.Typer()
-
 
 def pypi(
     package: str,
@@ -120,7 +118,6 @@ def source(
 
 
 # simple 'pyodide build' command
-@app.command()  # type: ignore[misc]
 def main(
     source_location: "Optional[str]" = typer.Argument(
         "",
@@ -173,7 +170,7 @@ def main(
             raise e
 
 
-main.typer_kwargs = {
+main.typer_kwargs = {  # type: ignore[attr-defined]
     "context_settings": {
         "ignore_unknown_options": True,
         "allow_extra_args": True,

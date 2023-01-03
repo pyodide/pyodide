@@ -69,7 +69,7 @@ repos:
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|docs|conftest.py|src/tests)
+        files: ^(packages/|docs|/conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
