@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
+  to .pyc files
+  {pr}`3253`
+
 ## Version 0.22.0
 
 _January 3, 2023_
@@ -246,10 +250,6 @@ _January 3, 2023_
 
 - {{ Fix }} `ctypes.util.find_library` will now search WASM modules from LD_LIBRARY_PATH.
   {pr}`3353`
-
-- Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
-  to .pyc files
-  {pr}`3253`
 
 ### Build System
 
