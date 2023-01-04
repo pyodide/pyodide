@@ -3,7 +3,7 @@ From: Thimo <thimo.kraemer@joonis.de>
 Date: Sat, 20 Aug 2022 00:10:48 +0200
 Subject: [PATCH] Add a "cpNNN-none-any" tag (#541)
 
-Note: Can be removed with 22.0 packaging release
+Note: Can be removed with >=22.1 packaging release
 
 Closes #511
 
