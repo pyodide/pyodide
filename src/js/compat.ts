@@ -91,7 +91,7 @@ export async function initDenoModules() {
 
   let XHRModule = await import(
     // @ts-ignore
-    "https://deno.land/x/xmlhttprequest_deno@v0.0.2/mod.js"
+    /* webpackIgnore: true */ "https://deno.land/x/xmlhttprequest_deno@v0.0.2/mod.js"
   );
   (globalThis as any).XMLHttpRequest = XHRModule.default;
 }
