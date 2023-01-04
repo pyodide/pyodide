@@ -15,7 +15,7 @@ import { setStdin, setStdout, setStderr } from "./streams";
 API.loadBinaryFile = loadBinaryFile;
 
 /**
- * An alias to the Python `pyodide </usage/api/python-api.html>`_ package.
+ * An alias to the Python :ref:`pyodide <python-api>` package.
  *
  * You can use this to call functions defined in the Pyodide Python package
  * from JavaScript.
