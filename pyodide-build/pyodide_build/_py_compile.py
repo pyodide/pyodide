@@ -36,7 +36,7 @@ def _specialize_convert_tags(tags: set[Tag] | frozenset[Tag], wheel_name: str) -
 
     output_tags = set()
     interpreter = "cp" + "".join(str(el) for el in sys.version_info[:2])
-    for tag in list(tags):
+    for tag in tags:
         output_tags.add(
             Tag(interpreter=interpreter, abi=tag.abi, platform=tag.platform)
         )
@@ -78,7 +78,7 @@ def _py_compile_wheel_name(wheel_name: str) -> str:
     if build:
         # TODO: not sure what to do here, but we never have such files in Pyodide
         # Opened https://github.com/pypa/packaging/issues/616 about it.
-        raise NotImplementedError("build tag {build} not implemented")
+        raise NotImplementedError(f"build tag {build} not implemented")
     output_name = f"{name.replace('-', '_')}-{version}-"
     output_name += str(_specialize_convert_tags(tags, wheel_name=wheel_name))
     return output_name + ".whl"
