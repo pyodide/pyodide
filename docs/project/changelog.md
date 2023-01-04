@@ -15,6 +15,8 @@ myst:
 
 ## Unreleased
 
+- Improved Deno support {pr}`9999`
+
 ### Build System
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files

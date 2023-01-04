@@ -6,6 +6,7 @@ import {
   loadScript,
   loadBinaryFile,
   initNodeModules,
+  initDenoModules,
   pathSep,
   resolvePath,
 } from "./compat";
@@ -287,6 +288,7 @@ export async function loadPyodide(
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
+  await initDenoModules();
   let indexURL = options.indexURL || calculateIndexURL();
   indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
   if (!indexURL.endsWith("/")) {

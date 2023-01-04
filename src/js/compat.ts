@@ -8,10 +8,16 @@ export const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
+export const IN_DENO = "Deno" in window;
+// Workaround for eval use with rollup for Deno
+// https://rollupjs.org/guide/en/#avoiding-eval
+let eval2 = eval;
+
 let nodeUrlMod: any;
 let nodeFetch: any;
 let nodePath: any;
 let nodeVmMod: any;
+
 /** @private */
 export let nodeFsPromisesMod: any;
 
@@ -70,6 +76,24 @@ export async function initNodeModules() {
   (globalThis as any).require = function (mod: string): any {
     return node_modules[mod];
   };
+}
+
+/**
+ * If we're in Deno, we initialize the required modules.
+ * Otherwise, this does nothing.
+ * @private
+ */
+export async function initDenoModules() {
+  if (!IN_DENO) {
+    return;
+  }
+  // Workaround for https://github.com/emscripten-core/emscripten/issues/6241
+  // @ts-ignore
+  let XMLHttpRequest = (
+    await import("https://deno.land/x/xmlhttprequest_deno@v0.0.2/mod.js")
+  ).default;
+  // @ts-ignore
+  globalThis.XMLHttpRequest = XMLHttpRequest;
 }
 
 function node_resolvePath(path: string, base?: string): string {
@@ -196,6 +220,11 @@ if (globalThis.document) {
   };
 } else if (IN_NODE) {
   loadScript = nodeLoadScript;
+} else if (IN_DENO) {
+  loadScript = async (url) => {
+    let jsText = await fetch(url).then((r) => r.text());
+    eval2(jsText);
+  };
 } else {
   throw new Error("Cannot determine runtime environment");
 }
