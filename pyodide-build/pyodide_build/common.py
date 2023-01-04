@@ -9,6 +9,7 @@ import textwrap
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import NoReturn
 
@@ -416,3 +417,13 @@ def in_xbuildenv() -> bool:
 
 def find_missing_executables(executables: list[str]) -> list[str]:
     return list(filter(lambda exe: shutil.which(exe) is None, executables))
+
+
+@contextmanager
+def chdir(new_dir: Path) -> Generator[None, None, None]:
+    orig_dir = Path.cwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(orig_dir)
