@@ -15,6 +15,12 @@ myst:
 
 ## Unreleased
 
+### Build System
+
+- Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
+  to .pyc files
+  {pr}`3253`
+
 ## Version 0.22.0
 
 _January 3, 2023_
