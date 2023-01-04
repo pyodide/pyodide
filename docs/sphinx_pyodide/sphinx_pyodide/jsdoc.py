@@ -325,6 +325,12 @@ class PyodideAnalyzer:
             if key[-1].startswith("$"):
                 doclet.value.is_private = True
                 continue
+            if key[-1] == "constructor":
+                # For whatever reason, sphinx-js does not properly record
+                # whether constructors are private or not. For now, all
+                # constructors are private so leave them all off. TODO: handle
+                # this via a @private decorator in the documentation comment.
+                continue
             doclet.value.name = doclet.value.name.rpartition(".")[2]
             if filename == "module." or filename == "compat.":
                 continue
@@ -514,7 +520,7 @@ def get_jsdoc_summary_directive(app):
         #
         # We have to change the value of one string: qualifier = 'obj   ==>
         # qualifier = 'any'
-        # https://github.com/sphinx-doc/sphinx/blob/3.x/sphinx/ext/autosummary/__init__.py#L392
+        # https://github.com/sphinx-doc/sphinx/blob/6.0.x/sphinx/ext/autosummary/__init__.py#L375
         def format_table(self, items):
             """Generate a proper list of table nodes for autosummary:: directive.
 
@@ -564,5 +570,28 @@ def get_jsdoc_summary_directive(app):
                 append_row(col1, col2)
 
             return [table_spec, table]
+
+    from inspect import iscoroutinefunction
+
+    from sphinx.ext.autosummary import Autosummary, get_import_prefixes_from_env
+
+    # Monkey patch Autosummary to:
+    # 1. include "async" prefix in the summary table for async functions.
+    # 2. Render signature in bold (for better consistency with rest of docs)
+    Autosummary.get_table = JsDocSummary.format_table
+    orig_get_items = Autosummary.get_items
+
+    def get_items(self, names):
+        prefixes = get_import_prefixes_from_env(self.env)
+        items = orig_get_items(self, names)
+        new_items = []
+        for (name, item) in zip(names, items):
+            name = name.removeprefix("~")
+            _, obj, *_ = self.import_by_name(name, prefixes=prefixes)
+            prefix = "**async** " if iscoroutinefunction(obj) else ""
+            new_items.append((prefix, *item))
+        return new_items
+
+    Autosummary.get_items = get_items
 
     return JsDocSummary

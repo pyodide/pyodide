@@ -46,6 +46,7 @@ extensions = [
     "sphinx_argparse_cli",
     "versionwarning.extension",
     "sphinx_issues",
+    "sphinx_autodoc_typehints",
 ]
 
 
@@ -70,7 +71,8 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None)
+    "python": ("https://docs.python.org/3.10", None),
+    "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None),
 }
 
 # Add modules to be mocked.
@@ -257,6 +259,47 @@ def globalReplace(app, docname, source):
 
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
+
+# Add extra CSS classes to some documentation fields. We use this in pyodide.css
+# to fix the rendering of autodoc return value annotations.
+from sphinx.util.docfields import Field
+
+orig_make_field = Field.make_field
+
+
+def make_field(self, *args, **kwargs):
+    node = orig_make_field(self, *args, **kwargs)
+    node["classes"].append(self.name)
+    return node
+
+
+Field.make_field = make_field
+
+
+def typehints_formatter(annotation, config):
+    """Adjust the rendering of Literal types.
+
+    The literal values should be ``rendered as code``.
+    """
+    from sphinx_autodoc_typehints import (
+        get_annotation_args,
+        get_annotation_class_name,
+        get_annotation_module,
+    )
+
+    try:
+        module = get_annotation_module(annotation)
+        class_name = get_annotation_class_name(annotation, module)
+        args = get_annotation_args(annotation, module, class_name)
+    except ValueError:
+        return None
+    full_name = f"{module}.{class_name}"
+    if full_name == "typing.Literal":
+        formatted_args = "\\[{}]".format(
+            ", ".join("``{}``".format(repr(arg)) for arg in args)
+        )
+        return f":py:data:`~{full_name}`{formatted_args}"
+    return None
 
 
 def setup(app):

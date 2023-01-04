@@ -108,6 +108,7 @@ class _Compile(Compile):
             return_mode=return_mode,
             flags=self.flags,
         ).compile()
+        assert code_runner.code
         for feature in _features:
             if code_runner.code.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag
@@ -192,43 +193,43 @@ class Console:
 
     Parameters
     ----------
-    globals : ``dict``
+    globals :
         The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
 
-    stdin_callback : ``Callable[[int], str]``
+    stdin_callback :
         Function to call at each read from ``sys.stdin``. Defaults to ``None``.
 
-    stdout_callback : ``Callable[[str], None]``
+    stdout_callback :
         Function to call at each write to ``sys.stdout``. Defaults to ``None``.
 
-    stderr_callback : ``Callable[[str], None]``
+    stderr_callback :
         Function to call at each write to ``sys.stderr``. Defaults to ``None``.
 
-    persistent_stream_redirection : ``bool``
+    persistent_stream_redirection :
         Should redirection of standard streams be kept between calls to :any:`runcode <Console.runcode>`?
         Defaults to ``False``.
 
-    filename : ``str``
+    filename :
         The file name to report in error messages. Defaults to ``<console>``.
 
     Attributes
     ----------
-        globals : ``Dict[str, Any]``
+        globals :
             The namespace used as the global
 
-        stdin_callback : ``Callback[[], str]``
+        stdin_callback :
             Function to call at each read from ``sys.stdin``.
 
-        stdout_callback : ``Callback[[str], None]``
+        stdout_callback :
             Function to call at each write to ``sys.stdout``.
 
-        stderr_callback : ``Callback[[str], None]``
+        stderr_callback :
             Function to call at each write to ``sys.stderr``.
 
-        buffer : ``List[str]``
+        buffer :
             The list of strings that have been :any:`pushed <Console.push>` to the console.
 
-        completer_word_break_characters : ``str``
+        completer_word_break_characters :
             The set of characters considered by :any:`complete <Console.complete>` to be word breaks.
     """
 
@@ -494,16 +495,16 @@ def shorten(
 
     Parameters
     ----------
-    text : ``str``
+    text :
         The string to shorten if it is longer than ``limit``.
 
-    limit : ``int``
+    limit :
         The integer to compare against the length of ``text``. Defaults to ``1000``.
 
-    split : ``int``, default = None
+    split :
         The integer of the split string to return. Defaults to ``limit // 2``.
 
-    separator : str, default = "..."
+    separator :
         The string of the separator string. Defaults to ``"..."``.
 
     Returns

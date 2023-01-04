@@ -19,7 +19,10 @@ def should_quiet(source: str) -> bool:
     """
     Should we suppress output?
 
-    Returns ``True`` if the last nonwhitespace character of ``code`` is a semicolon.
+    Returns
+    -------
+
+    ``True`` if the last nonwhitespace character of ``code`` is a semicolon.
 
     Examples
     --------
@@ -173,51 +176,61 @@ class CodeRunner:
 
     Parameters
     ----------
-    source : ``str``
+    source :
 
         The Python source code to run.
 
-    return_mode : ``str``
+    return_mode :
 
         Specifies what should be returned, must be one of ``'last_expr'``,
         ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
         raised. ``'last_expr'`` by default.
 
         * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
+        * ``'last_expr_or_assign'`` -- return the last expression or the last
+          assignment.
         * ``'none'`` -- always return ``None``.
 
-    quiet_trailing_semicolon : ``bool``
+    quiet_trailing_semicolon :
 
-        Specifies whether a trailing semicolon should suppress the result or not.
-        When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
-        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by default.
+        Specifies whether a trailing semicolon should suppress the result or
+        not. When this is ``True`` executing ``"1+1;"`` returns ``None``, when
+        it is ``False``, executing ``"1+1;"`` return ``2``. ``True`` by default.
 
-    filename : ``str``
+    filename :
 
-        The file name to use in error messages and stack traces. ``'<exec>'`` by default.
+        The file name to use in error messages and stack traces. ``'<exec>'`` by
+        default.
 
-    mode : ``str``
+    mode :
 
-        The "mode" to compile in. One of ``"exec"``, ``"single"``, or ``"eval"``. Defaults
-        to ``"exec"``. For most purposes it's unnecessary to use this argument.
-        See the documentation for the built-in
-        `compile <https://docs.python.org/3/library/functions.html#compile>` function.
+        The "mode" to compile in. One of ``"exec"``, ``"single"``, or
+        ``"eval"``. Defaults to ``"exec"``. For most purposes it's unnecessary
+        to use this argument. See the documentation for the built-in
+        :external:py:func:`compile` function.
 
-    flags : ``int``
+    flags :
 
         The flags to compile with. See the documentation for the built-in
-        `compile <https://docs.python.org/3/library/functions.html#compile>` function.
+        :external:py:func:`compile` function.
+
 
     Attributes:
 
-        ast : The ast from parsing ``source``. If you wish to do an ast transform,
-              modify this variable before calling :any:`CodeRunner.compile`.
+        ast (ast.Module):
 
-        code : Once you call :any:`CodeRunner.compile` the compiled code will
-               be available in the code field. You can modify this variable
-               before calling :any:`CodeRunner.run` to do a code transform.
+            The ast from parsing ``source``. If you wish to do an ast transform,
+            modify this variable before calling :any:`CodeRunner.compile`.
+
+        code (CodeType):
+
+            Once you call :any:`CodeRunner.compile` the compiled code will
+            be available in the code field. You can modify this variable
+            before calling :any:`CodeRunner.run` to do a code transform.
     """
+
+    ast: ast.Module
+    code: CodeType | None
 
     def __init__(
         self,
@@ -262,7 +275,7 @@ class CodeRunner:
         self,
         globals: dict[str, Any] | None = None,
         locals: dict[str, Any] | None = None,
-    ) -> Any | None:
+    ) -> Any:
         """Executes ``self.code``.
 
         Can only be used after calling compile. The code may not use top level
@@ -271,24 +284,19 @@ class CodeRunner:
 
         Parameters
         ----------
-        globals : ``dict``
+        globals :
 
             The global scope in which to execute code. This is used as the ``globals``
-            parameter for ``exec``. If ``globals`` is absent, a new empty dictionary is used.
-            See `the exec documentation
-            <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+            parameter for :any:`exec`. If ``globals`` is absent, a new empty dictionary is used.
 
-        locals : ``dict``
+        locals :
 
             The local scope in which to execute code. This is used as the ``locals``
-            parameter for ``exec``. If ``locals`` is absent, the value of ``globals`` is
+            parameter for :any:`exec`. If ``locals`` is absent, the value of ``globals`` is
             used.
-            See `the exec documentation
-            <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
 
         Returns
         -------
-        Any
 
             If the last nonwhitespace character of ``source`` is a semicolon,
             return ``None``. If the last statement is an expression, return the
@@ -316,7 +324,7 @@ class CodeRunner:
         self,
         globals: dict[str, Any] | None = None,
         locals: dict[str, Any] | None = None,
-    ) -> None:
+    ) -> Any:
         """Runs ``self.code`` which may use top level await.
 
         Can only be used after calling :any:`CodeRunner.compile`. If
@@ -325,24 +333,20 @@ class CodeRunner:
 
         Parameters
         ----------
-        globals : ``dict``
+        globals :
 
             The global scope in which to execute code. This is used as the ``globals``
-            parameter for ``exec``. If ``globals`` is absent, a new empty dictionary is used.
-            See `the exec documentation
-            <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+            parameter for :any:`exec`. If ``globals`` is absent, a new empty dictionary is used.
 
-        locals : ``dict``
+        locals :
 
-            The local scope in which to execute code. This is used as the ``locals``
-            parameter for ``exec``. If ``locals`` is absent, the value of ``globals`` is
-            used.
-            See `the exec documentation
-            <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+            The local scope in which to execute code. This is used as the
+            ``locals`` parameter for :any:`exec`. If ``locals`` is absent, the
+            value of ``globals`` is used.
 
         Returns
         -------
-        Any
+
             If the last nonwhitespace character of ``source`` is a semicolon,
             return ``None``. If the last statement is an expression, return the
             result of the expression. Use the ``return_mode`` and
@@ -375,53 +379,57 @@ def eval_code(
 
     Parameters
     ----------
-    source : ``str``
+    source :
 
         The Python source code to run.
 
-    globals : ``dict``
+    globals :
 
-        The global scope in which to execute code. This is used as the ``globals``
-        parameter for ``exec``. If ``globals`` is absent, a new empty dictionary is used.
-        See `the exec documentation
-        <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+        The global scope in which to execute code. This is used as the
+        ``globals`` parameter for :any:`exec`. If ``globals`` is absent, a new
+        empty dictionary is used.
 
-    locals : ``dict``
+    locals :
 
         The local scope in which to execute code. This is used as the ``locals``
-        parameter for ``exec``. If ``locals`` is absent, the value of ``globals`` is
-        used.
-        See `the exec documentation
-        <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+        parameter for :any:`exec`. If ``locals`` is absent, the value of
+        ``globals`` is used.
 
-    return_mode : ``str``
+    return_mode :
 
         Specifies what should be returned, must be one of ``'last_expr'``,
         ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
         raised. ``'last_expr'`` by default.
 
         * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
+        * ``'last_expr_or_assign'`` -- return the last expression or the last
+          assignment.
         * ``'none'`` -- always return ``None``.
 
-    quiet_trailing_semicolon : ``bool``
+    quiet_trailing_semicolon :
 
-        Specifies whether a trailing semicolon should suppress the result or not.
-        When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
-        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by default.
+        Specifies whether a trailing semicolon should suppress the result or
+        not. When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
+        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by
+        default.
 
-    filename : ``str``
+    filename :
 
-        The file name to use in error messages and stack traces. ``'<exec>'`` by default.
+        The file name to use in error messages and stack traces. ``'<exec>'`` by
+        default.
+
+    flags :
+
+        The flags to compile with. See the documentation for the built-in
+        :external:py:func:`compile` function.
 
     Returns
     -------
-    Any
 
-        If the last nonwhitespace character of ``source`` is a semicolon, return
-        ``None``. If the last statement is an expression, return the result of the
-        expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
-        parameters to modify this default behavior.
+    If the last nonwhitespace character of ``source`` is a semicolon, return
+    ``None``. If the last statement is an expression, return the result of the
+    expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
+    parameters to modify this default behavior.
 
     Examples
     --------
@@ -473,57 +481,59 @@ async def eval_code_async(
 ) -> Any:
     """Runs a code string asynchronously.
 
-    Uses `PyCF_ALLOW_TOP_LEVEL_AWAIT
-    <https://docs.python.org/3/library/ast.html#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_
-    to compile the code.
+    Uses :any:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT` to compile the code.
 
     Parameters
     ----------
-    source : ``str``
+    source :
 
         The Python source code to run.
 
-    globals : ``dict``
+    globals :
 
-        The global scope in which to execute code. This is used as the ``globals``
-        parameter for ``exec``. If ``globals`` is absent, a new empty dictionary is used.
-        See `the exec documentation
-        <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+        The global scope in which to execute code. This is used as the
+        ``globals`` parameter for :any:`exec`. If ``globals`` is absent, a new
+        empty dictionary is used.
 
-    locals : ``dict``
+    locals :
 
         The local scope in which to execute code. This is used as the ``locals``
-        parameter for ``exec``. If ``locals`` is absent, the value of ``globals`` is
-        used.
-        See `the exec documentation
-        <https://docs.python.org/3/library/functions.html#exec>`_ for more info.
+        parameter for :any:`exec`. If ``locals`` is absent, the value of
+        ``globals`` is used.
 
-    return_mode : ``str``
+    return_mode :
 
         Specifies what should be returned, must be one of ``'last_expr'``,
         ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
         raised. ``'last_expr'`` by default.
 
         * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
+        * ``'last_expr_or_assign'`` -- return the last expression or the last
+          assignment.
         * ``'none'`` -- always return ``None``.
 
-    quiet_trailing_semicolon : ``bool``
+    quiet_trailing_semicolon :
 
-        Specifies whether a trailing semicolon should suppress the result or not.
-        When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
-        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by default.
+        Specifies whether a trailing semicolon should suppress the result or
+        not. When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
+        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by
+        default.
 
-    filename : ``str``
+    filename :
 
-        The file name to use in error messages and stack traces. ``'<exec>'`` by default.
+        The file name to use in error messages and stack traces. ``'<exec>'`` by
+        default.
+
+    flags :
+
+        The flags to compile with. See the documentation for the built-in
+        :external:py:func:`compile` function.
 
     Returns
     -------
-    Any
         If the last nonwhitespace character of ``source`` is a semicolon, return
-        ``None``. If the last statement is an expression, return the result of the
-        expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
+        ``None``. If the last statement is an expression, return the result of
+        the expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
         parameters to modify this default behavior.
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
@@ -546,12 +556,11 @@ def find_imports(source: str) -> list[str]:
 
     Parameters
     ----------
-    source : str
+    source :
        The Python source code to inspect for imports.
 
     Returns
     -------
-    ``List[str]``
         A list of module names that are imported in ``source``. If ``source`` is not
         syntactically correct Python code (after dedenting), returns an empty list.
 

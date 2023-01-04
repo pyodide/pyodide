@@ -1,3 +1,5 @@
+(python-api)=
+
 # Python API
 
 Backward compatibility of the API is not guaranteed at this point.
