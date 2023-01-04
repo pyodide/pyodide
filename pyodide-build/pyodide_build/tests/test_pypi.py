@@ -1,5 +1,7 @@
 import os
 import re
+import subprocess
+import sys
 import tempfile
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -9,7 +11,6 @@ from typing import Any
 
 import pytest
 import typer  # type: ignore[import]
-from build import ProjectBuilder
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build.cli import build
@@ -27,7 +28,7 @@ def _make_fake_package(
     packageDir.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         build_path = Path(td)
-        src_path = Path(td) / "src" / module_name
+        src_path = build_path / "src" / module_name
         src_path.mkdir(exist_ok=True, parents=True)
         with open(build_path / "pyproject.toml", "w") as cf:
             requirements = []
@@ -54,10 +55,6 @@ def _make_fake_package(
                 extras_requirements_text += "]\n"
             template = dedent(
                 """
-                [build-system]
-                build-backend = "setuptools.build_meta"
-                requires = ["setuptools >= 65.0","wheel","cython >= 0.29.0"]
-
                 [project]
                 name = "{name}"
                 version = "{version}"
@@ -75,6 +72,11 @@ def _make_fake_package(
                     "Programming Language :: Python :: 3.9",
                 ]
                 dependencies = {requirements}
+
+                [build-system]
+                build-backend = "setuptools.build_meta"
+                requires = ["setuptools >= 65.0","wheel","cython >= 0.29.0"]
+
                 [project.optional-dependencies]
                 {optional_deps_text}
                 """
@@ -91,9 +93,17 @@ def _make_fake_package(
         if wheel:
             with open(src_path / "__init__.py", "w") as f:
                 f.write(f'print("Hello from {name} module")\n')
-
-            builder = ProjectBuilder(srcdir=build_path)
-            builder.build(distribution="wheel", output_directory=packageDir)
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "build",
+                    "--wheel",
+                    build_path,
+                    "--outdir",
+                    packageDir,
+                ]
+            )
         else:
             # make cython sdist
             # i.e. create pyc + setup.cfg (needs cython) in folder and run python -m build
@@ -103,12 +113,21 @@ def _make_fake_package(
                 f.write(f'print("Hello from compiled module {name}")')
             with open(build_path / "setup.py", "w") as sf:
                 sf.write(
-                    f'from setuptools import setup\nfrom Cython.Build import cythonize\nsetup(ext_modules=cythonize("src/{module_name}/*.pyx"))'
+                    f'from setuptools import setup\nfrom Cython.Build import cythonize\nsetup(ext_modules=cythonize("src/{module_name}/*.pyx",language_level=3))'
                 )
             with open(build_path / "MANIFEST.in", "w") as mf:
-                mf.write("global-include *.pyx")
-            builder = ProjectBuilder(srcdir=build_path)
-            builder.build(distribution="sdist", output_directory=packageDir)
+                mf.write("global-include *.pyx\n")
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "build",
+                    "--sdist",
+                    build_path,
+                    "--outdir",
+                    packageDir,
+                ]
+            )
 
 
 # module scope fixture that makes a fake pypi
@@ -117,28 +136,29 @@ def fake_pypi_server():
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         simple_root = root / "simple"
-        simple_root.mkdir(exist_ok=True, parents=True)
-        # top package resolves_package that should resolve okay
-        _make_fake_package(
-            simple_root, "resolves-package", "1.0.0", ["pkg-a", "pkg-b[docs]"], True
-        )
-        _make_fake_package(simple_root, "pkg-a", "1.0.0", ["pkg-c"], True)
-        _make_fake_package(
-            simple_root, "pkg-b", "1.0.0", ['pkg-d==2.0.0;extra=="docs"'], False
-        )
-        _make_fake_package(simple_root, "pkg-c", "1.0.0", [], True)
-        _make_fake_package(simple_root, "pkg-c", "2.0.0", [], True)
-        _make_fake_package(simple_root, "pkg-d", "1.0.0", [], False)
-        _make_fake_package(simple_root, "pkg-d", "2.0.0", [], False)
+        if not simple_root.exists():
+            simple_root.mkdir(exist_ok=True, parents=True)
+            # top package resolves_package that should resolve okay
+            _make_fake_package(
+                simple_root, "resolves-package", "1.0.0", ["pkg-a", "pkg-b[docs]"], True
+            )
+            _make_fake_package(simple_root, "pkg-a", "1.0.0", ["pkg-c"], True)
+            _make_fake_package(
+                simple_root, "pkg-b", "1.0.0", ['pkg-d==2.0.0;extra=="docs"'], False
+            )
+            _make_fake_package(simple_root, "pkg-c", "1.0.0", [], True)
+            _make_fake_package(simple_root, "pkg-c", "2.0.0", [], True)
+            _make_fake_package(simple_root, "pkg-d", "1.0.0", [], False)
+            _make_fake_package(simple_root, "pkg-d", "2.0.0", [], False)
 
-        # top package doesn't resolve package that requires
-        _make_fake_package(
-            simple_root,
-            "fails_package",
-            "1.0.0",
-            ["pkg_a", "pkg_b[docs]", "pkg_d==1.0.0"],
-            True,
-        )
+            # top package doesn't resolve package that requires
+            _make_fake_package(
+                simple_root,
+                "fails_package",
+                "1.0.0",
+                ["pkg_a", "pkg_b[docs]", "pkg_d==1.0.0"],
+                True,
+            )
 
         # spawn webserver
         def server_thread(
@@ -146,10 +166,12 @@ def fake_pypi_server():
         ) -> None:
             class PathRequestHandler(SimpleHTTPRequestHandler):
                 def __init__(self, *args, **argv):
-                    argv["directory"] = root_path
+                    argv["directory"] = root_path.resolve()
                     super().__init__(*args, **argv)
 
-            server = ThreadingHTTPServer(("127.0.0.1", 0), PathRequestHandler)
+            server = ThreadingHTTPServer(
+                ("127.0.0.1", 0), RequestHandlerClass=PathRequestHandler
+            )
             ret_values.append(server)
             server_evt.set()
             server.serve_forever(poll_interval=0.05)
@@ -157,7 +179,12 @@ def fake_pypi_server():
         server_evt = Event()
         ret_values: list[ThreadingHTTPServer] = []
         running_thread = Thread(
-            target=server_thread, args=(root, server_evt, ret_values)
+            target=server_thread,
+            kwargs={
+                "root_path": root,
+                "server_evt": server_evt,
+                "ret_values": ret_values,
+            },
         )
         running_thread.start()
         server_evt.wait()
@@ -257,7 +284,7 @@ def test_fake_pypi_resolve_fail(selenium, tmp_path, fake_pypi_url):
             ["fails-package", "--build-dependencies"],
         )
 
-    # this should fail
+    # this should fail and should not build any wheels
     assert result.exit_code != 0, result.stdout
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 0
@@ -276,7 +303,7 @@ def test_fake_pypi_extras_build(selenium, tmp_path, fake_pypi_url):
             ["pkg-b[docs]", "--build-dependencies"],
         )
 
-    # this should fail
+    # this should work
     assert result.exit_code == 0, result.stdout
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 2
