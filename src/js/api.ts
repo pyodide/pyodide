@@ -7,7 +7,7 @@ import { loadPackage, loadedPackages } from "./load-package";
 import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
-import version from "./version";
+import { version } from "./version";
 export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
@@ -100,6 +100,7 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
+ * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackagesFromImports(
@@ -116,14 +117,16 @@ export async function loadPackagesFromImports(
   if (typeof options === "function") {
     if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
       console.warn(
-        "Passing a messageCallback or errorCallback as the second or third argument to loadPackagesFromImports is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }",
+        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackageFromImports " +
+          "is deprecated and will be removed in v0.24. Instead use:\n" +
+          "   { messageCallback : callbackFunc }",
       );
-      options = {
-        messageCallback: options,
-        errorCallback: errorCallbackDeprecated,
-      };
       loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
     }
+    options = {
+      messageCallback: options,
+      errorCallback: errorCallbackDeprecated,
+    };
   }
 
   let pyimports = API.pyodide_code.find_imports(code);
@@ -385,18 +388,15 @@ type NativeFS = {
 /**
  * Mounts FileSystemDirectoryHandle in to the target directory.
  *
- * @param path The absolute path of the target mount directory.
- * If the directory does not exist, it will be created.
- * @param fileSystemHandle FileSystemDirectoryHandle returned by
- * navigator.storage.getDirectory() or window.showDirectoryPicker().
+ * @param path The absolute path in the Emscripten file system to mount the
+ * native directory. If the directory does not exist, it will be created. If it
+ * does exist, it must be empty.
+ * @param fileSystemHandle A handle returned by navigator.storage.getDirectory()
+ * or window.showDirectoryPicker().
  */
 export async function mountNativeFS(
   path: string,
-  fileSystemHandle: {
-    isSameEntry: Function;
-    queryPermission: Function;
-    requestPermission: Function;
-  },
+  fileSystemHandle: FileSystemDirectoryHandle,
   // TODO: support sync file system
   // sync: boolean = false
 ): Promise<NativeFS> {

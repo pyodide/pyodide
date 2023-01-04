@@ -19,7 +19,7 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.22.0.dev0"
+pyodide_version = "0.22.0"
 
 if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
     CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
@@ -90,7 +90,14 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "README.md"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "README.md",
+    "sphinx_pyodide",
+    ".venv",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
@@ -205,6 +212,9 @@ if IN_SPHINX:
     import pyodide.ffi.wrappers
     import pyodide.http
     import pyodide.webloop
+    from pyodide.ffi import JsProxy
+
+    del JsProxy.__new__
 
     # The full version, including alpha/beta/rc tags.
     release = version = pyodide.__version__

@@ -1,6 +1,7 @@
 /**
  * @param fn A function to be memoized.
  * @returns
+ * @private
  */
 export const memoize = (fn: CallableFunction) => {
   let cache: any = {};

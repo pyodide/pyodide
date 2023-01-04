@@ -14,8 +14,6 @@ from .. import common
 from ..out_of_tree import build
 from ..out_of_tree.utils import initialize_pyodide_root
 
-app = typer.Typer()
-
 
 def _fetch_pypi_package(package_spec, destdir):
     PYMAJOR = common.get_make_flag("PYMAJOR")
@@ -144,7 +142,6 @@ def source(
 
 
 # simple 'pyodide build' command
-@app.command()  # type: ignore[misc]
 def main(
     source_location: "Optional[str]" = typer.Argument(
         "",
@@ -170,7 +167,7 @@ def main(
         pypi(source_location, exports, ctx)
 
 
-main.typer_kwargs = {
+main.typer_kwargs = {  # type: ignore[attr-defined]
     "context_settings": {
         "ignore_unknown_options": True,
         "allow_extra_args": True,
