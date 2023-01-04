@@ -15,7 +15,7 @@ import { setStdin, setStdout, setStderr } from "./streams";
 API.loadBinaryFile = loadBinaryFile;
 
 /**
- * An alias to the Python :py:mod:`pyodide` package.
+ * An alias to the Python :ref:`pyodide <python-api>` package.
  *
  * You can use this to call functions defined in the Pyodide Python package
  * from JavaScript.
@@ -176,7 +176,7 @@ export async function loadPackagesFromImports(
  *    :class: warning
  *
  *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
- *    import any python packages referenced via `import` statements in your
+ *    import any python packages referenced via ``import`` statements in your
  *    code. This function will no longer do it for you.
  *
  * @param code Python code to evaluate
@@ -202,8 +202,8 @@ API.runPythonAsync = runPythonAsync;
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
- * module from ``sys.modules``. This calls the {any}`pyodide_py` API
- * :func:`pyodide.register_js_module`.
+ * module from :any:`sys.modules`. This calls the :any:`pyodide_py` API
+ * :func:`~pyodide.ffi.register_js_module`.
  *
  * @param name Name of the JavaScript module to add
  * @param module JavaScript object backing the module
@@ -223,11 +223,11 @@ export function registerComlink(Comlink: any) {
 /**
  * Unregisters a JavaScript module with given name that has been previously
  * registered with :js:func:`pyodide.registerJsModule` or
- * :func:`pyodide.register_js_module`. If a JavaScript module with that name
- * does not already exist, will throw an error. Note that if the module has
- * already been imported, this won't have much effect unless you also delete
- * the imported module from ``sys.modules``. This calls the :any:`pyodide_py` API
- * :func:`pyodide.unregister_js_module`.
+ * :func:`~pyodide.ffi.register_js_module`. If a JavaScript module with that
+ * name does not already exist, will throw an error. Note that if the module has
+ * already been imported, this won't have much effect unless you also delete the
+ * imported module from ``sys.modules``. This calls the :any:`pyodide_py` API
+ * :func:`~pyodide.ffi.unregister_js_module`.
  *
  * @param name Name of the JavaScript module to remove
  */
@@ -236,7 +236,7 @@ export function unregisterJsModule(name: string) {
 }
 
 /**
- * Convert the JavaScript object to a Python object as best as possible.
+ * Convert a JavaScript object to a Python object as best as possible.
  *
  * This is similar to :any:`JsProxy.to_py` but for use from JavaScript. If the
  * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
@@ -244,7 +244,7 @@ export function unregisterJsModule(name: string) {
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
- * @param obj
+ * @param obj The object to convert.
  * @param options
  * @returns The object converted to Python.
  */
@@ -346,10 +346,12 @@ export function pyimport(mod_name: string): PyProxy {
  *
  * @param buffer The archive as an ArrayBuffer or TypedArray.
  * @param format The format of the archive. Should be one of the formats
- * recognized by `shutil.unpack_archive`. By default the options are 'bztar',
- * 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each
- * format, e.g., for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or
- * 'tgz' are considered to be synonyms.
+ * recognized by :any:`shutil.unpack_archive`. By default the options are
+ * ``'bztar'``, ``'gztar'``, ``'tar'``, ``'zip'``, and ``'wheel'``. Several
+ * synonyms are accepted for each format, e.g., for ``'gztar'`` any of
+ * ``'.gztar'``, ``'.tar.gz'``, ``'.tgz'``, ``'tar.gz'`` or ``'tgz'`` are
+ * considered to be
+ * synonyms.
  *
  * @param options
  * @param options.extractDir The directory to unpack the archive into. Defaults
@@ -441,16 +443,15 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * when Pyodide is used in a webworker. The buffer should be a
  * ``SharedArrayBuffer`` shared with the main browser thread (or another
  * worker). In that case, signal ``signum`` may be sent by writing ``signum``
- * into the interrupt buffer. If ``signum`` does not satisfy 0 < ``signum`` <
- * ``NSIG`` it will be silently ignored. NSIG is 65 (internally signals are
- * indicated by a bitflag).
+ * into the interrupt buffer. If ``signum`` does not satisfy 0 < ``signum`` < 65
+ * it will be silently ignored.
  *
- * You can disable interrupts by calling `setInterruptBuffer(undefined)`.
+ * You can disable interrupts by calling ``setInterruptBuffer(undefined)``.
  *
- * If you wish to trigger a ``KeyboardInterrupt``, write ``SIGINT`` (a 2), into
+ * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2), into
  * the interrupt buffer.
  *
- * By default ``SIGINT`` raises a ``KeyboardInterrupt`` and all other signals
+ * By default ``SIGINT`` raises a :any:`KeyboardInterrupt` and all other signals
  * are ignored. You can install custom signal handlers with the signal module.
  * Even signals that normally have special meaning and can't be overridden like
  * ``SIGKILL`` and ``SIGSEGV`` are ignored by default and can be used for any
@@ -462,11 +463,11 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
 }
 
 /**
- * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
- * via the interrupt buffer.
+ * Throws a :any:`KeyboardInterrupt` error if a :any:`KeyboardInterrupt` has
+ * been requested via the interrupt buffer.
  *
  * This can be used to enable keyboard interrupts during execution of JavaScript
- * code, just as ``PyErr_CheckSignals`` is used to enable keyboard interrupts
+ * code, just as :any:`PyErr_CheckSignals` is used to enable keyboard interrupts
  * during execution of C code.
  */
 export function checkInterrupt() {
@@ -531,9 +532,9 @@ export let FS: any;
 export let PATH: any;
 
 /**
- * An alias to the Emscripten ERRNO_CODES map of standard error codes.
+ * A map from posix error names to error codes.
  */
-export let ERRNO_CODES: any;
+export let ERRNO_CODES: { [code: string]: number };
 
 /**
  * @private

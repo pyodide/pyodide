@@ -185,24 +185,36 @@ function setStdinError() {
 }
 
 /**
- * Sets a stdin function. This function will be called whenever stdin is read.
- * Also sets isatty(stdin) to the value of the isatty argument (default false).
+ * Set a stdin handler.
  *
- * The stdin function is called with zero arguments. It should return one of:
- * - `null` or `undefined`: these are interpreted as EOF
+ * The stdin handler is called with zero arguments whenever stdin is read and
+ * the current input buffer is exhausted. It should return one of:
+ *
+ * - ``null`` or ``undefined``: these are interpreted as end of file.
  * - a string
- * - an ArrayBuffer or an ArrayBufferView with BYTES_PER_ELEMENT === 1
+ * - an ``ArrayBuffer`` or an ``ArrayBufferView`` with ``BYTES_PER_ELEMENT === 1``.
  *
  * If a string is returned, a new line is appended if one is not present and the
- * resulting string is turned into a Uint8Array using TextEncoder.
+ * resulting string is turned into a ``Uint8Array`` using ``TextEncoder``.
  *
  * Returning a buffer is more efficient and allows returning partial lines of
  * text.
  *
+ * @param options.stdin The stdin handler.
+ * @param options.error If this is set to ``true``, attempts to read from stdin
+ * will always set an IO error.
+ *
+ * @param options.isatty Should ``isatty(stdin)`` be ``true`` or ``false`` (default
+ * ``false``).
  */
 export function setStdin(
   options: { stdin?: InFuncType; error?: boolean; isatty?: boolean } = {},
 ) {
+  if (options.stdin && options.error) {
+    throw new TypeError(
+      "Both a stdin handler provided and the error argument was set",
+    );
+  }
   if (options.error) {
     setStdinError();
     return;
@@ -223,7 +235,7 @@ export function setStdin(
  * to tty.isatty(process.stdout.fd).
  * If in a browser, sets stdout to write to console.log and sets isatty(stdout) to false.
  */
-export function setDefaultStdout() {
+function setDefaultStdout() {
   if (IN_NODE) {
     const tty = require("tty");
     const raw = (x: number) => process.stdout.write(Buffer.from([x]));
@@ -235,12 +247,18 @@ export function setDefaultStdout() {
 }
 
 /**
- * Sets writes to stdout to call `stdout(line)` whenever a complete line is
- * written or stdout is flushed. In the former case, the received line will end
- * with a newline, in the latter case it will not.
+ * Sets the standard out handler. A batched handler or a raw handler can be
+ * provided (both not both). If neither is provided, we restore the default
+ * handler.
  *
- * isatty(stdout) is set to false (this API buffers stdout so it is impossible
- * to make a tty with it).
+ * @param options.batched A batched handler is called with a string whenever a
+ * newline character is written is written or stdout is flushed. In the former
+ * case, the received line will end with a newline, in the latter case it will
+ * not.
+ * @param options.raw A raw handler is called with the handler is called with a
+ * `number` for each byte of the output to stdout.
+ * @param options.isatty Should ``isatty(stdout)`` return ``true`` or ``false``.
+ * Can only be set to ``true`` if a raw handler is provided (default ``false``).
  */
 export function setStdout(
   options: {
@@ -249,6 +267,14 @@ export function setStdout(
     isatty?: boolean;
   } = {},
 ) {
+  if (options.raw && options.batched) {
+    throw new TypeError("Both a batched handler and a raw handler provided");
+  }
+  if (!options.raw && options.isatty) {
+    throw new TypeError(
+      "Cannot set isatty to true unless a raw handler is provided",
+    );
+  }
   if (options.raw) {
     isattys.stdout = !!options.isatty;
     Object.assign(ttyout_ops, make_unbatched_put_char(options.raw));
@@ -281,12 +307,19 @@ function setDefaultStderr() {
 }
 
 /**
- * Sets writes to stderr to call `stderr(line)` whenever a complete line is
- * written or stderr is flushed. In the former case, the received line will end
- * with a newline, in the latter case it will not.
+ * Sets the standard error handler. A batched handler or a raw handler can be
+ * provided (both not both). If neither is provided, we restore the default
+ * handler.
  *
- * isatty(stderr) is set to false (this API buffers stderr so it is impossible
- * to make a tty with it).
+ * @param options.batched A batched handler is called with a string whenever a
+ * newline character is written is written or stderr is flushed. In the former
+ * case, the received line will end with a newline, in the latter case it will
+ * not. isatty(stderr) is set to false (when using a batched handler, stderr is
+ * buffered so it is impossible to make a tty with it).
+ * @param options.raw A raw handler is called with the handler is called with a
+ * `number` for each byte of the output to stderr.
+ * @param options.isatty Should ``isatty(stderr)`` return ``true`` or ``false``.
+ * Can only be set to ``true`` if a raw handler is provided (default ``false``).
  */
 export function setStderr(
   options: {
@@ -295,6 +328,14 @@ export function setStderr(
     isatty?: boolean;
   } = {},
 ) {
+  if (options.raw && options.batched) {
+    throw new TypeError("Both a batched handler and a raw handler provided");
+  }
+  if (!options.raw && options.isatty) {
+    throw new TypeError(
+      "Cannot set isatty to true unless a raw handler is provided",
+    );
+  }
   if (options.raw) {
     isattys.stderr = !!options.isatty;
     Object.assign(ttyerr_ops, make_unbatched_put_char(options.raw));
