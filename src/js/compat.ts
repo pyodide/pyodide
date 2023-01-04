@@ -88,12 +88,12 @@ export async function initDenoModules() {
     return;
   }
   // Workaround for https://github.com/emscripten-core/emscripten/issues/6241
-  // @ts-ignore
-  let XMLHttpRequest = (
-    await import("https://deno.land/x/xmlhttprequest_deno@v0.0.2/mod.js")
-  ).default;
-  // @ts-ignore
-  globalThis.XMLHttpRequest = XMLHttpRequest;
+
+  let XHRModule = await import(
+    // @ts-ignore
+    "https://deno.land/x/xmlhttprequest_deno@v0.0.2/mod.js"
+  );
+  (globalThis as any).XMLHttpRequest = XHRModule.default;
 }
 
 function node_resolvePath(path: string, base?: string): string {

@@ -15,7 +15,7 @@ myst:
 
 ## Unreleased
 
-- Improved Deno support {pr}`9999`
+- Improved Deno support {pr}`3421`
 
 ### Build System
 
