@@ -21,8 +21,6 @@ _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
 
-## 0.22.0
-
 ### Deployment and testing
 
 - {{ Breaking }} `pyodide-cdn2.iodide.io` is not available anymore. Please use
@@ -293,7 +291,7 @@ _January 3, 2023_
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
-  documentation](https://pyodide.org/en/stable/development/out-of-tree.html).
+  documentation](building-and-testing-packages-out-of-tree).
   {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3096`, {pr}`3098`,
   {pr}`3108`, {pr}`3109`, {pr}`3241`
 
