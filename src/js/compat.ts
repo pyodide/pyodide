@@ -9,9 +9,7 @@ export const IN_NODE =
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
 export const IN_DENO = "Deno" in window;
-// Workaround for eval use with rollup for Deno
-// https://rollupjs.org/guide/en/#avoiding-eval
-let eval2 = eval;
+export const IN_BROWSER = !(IN_NODE || IN_DENO);
 
 let nodeUrlMod: any;
 let nodeFetch: any;
@@ -94,9 +92,51 @@ export async function initDenoModules() {
     /* webpackIgnore: true */ "https://deno.land/x/xmlhttprequest_deno@v0.0.2/mod.js"
   );
   (globalThis as any).XMLHttpRequest = XHRModule.default;
+
+  let denoStdlib = "https://deno.land/std@0.170.0/";
+
+  nodePath = await import(/* webpackIgnore: true */ denoStdlib + "path/mod.ts");
+  nodeFsPromisesMod = await import(
+    /* webpackIgnore: true */ denoStdlib + "node/fs/promises.ts"
+  );
+  nodeVmMod = await import(/* webpackIgnore: true */ denoStdlib + "node/vm.ts");
+  pathSep = nodePath.sep;
+  nodeUrlMod = (
+    await import(/* webpackIgnore: true */ denoStdlib + "node/url.ts")
+  ).default;
+
+  nodeFetch = fetch;
+
+  // Similarly to Node.js above we pre-load modules that are loaded via require
+  // in Emscripten
+  const fs = await import(denoStdlib + "fs/mod.ts");
+  const crypto = await import(denoStdlib + "crypto/mod.ts");
+  // This module was deprecated and removed in deno in 0.118.0
+  // @ts-ignore
+  const ws = await import("https://deno.land/std@0.117.0/ws/mod.ts");
+  const child_process = await import(denoStdlib + "node/child_process.ts");
+  const node_modules: { [mode: string]: any } = {
+    fs,
+    crypto,
+    ws,
+    child_process,
+  };
+  // Since we're in an ES6 module, this is only modifying the module namespace,
+  // it's still private to Pyodide.
+  (globalThis as any).require = function (mod: string): any {
+    return node_modules[mod];
+  };
 }
 
 function node_resolvePath(path: string, base?: string): string {
+  if (
+    IN_DENO &&
+    (path.startsWith("https://") || path.startsWith("http://")) &&
+    !base
+  ) {
+    // No need to resolve URL
+    return path;
+  }
   return nodePath.resolve(base || ".", path);
 }
 
@@ -109,10 +149,10 @@ function browser_resolvePath(path: string, base?: string): string {
 }
 
 export let resolvePath: (rest: string, base?: string) => string;
-if (IN_NODE) {
-  resolvePath = node_resolvePath;
-} else {
+if (IN_BROWSER) {
   resolvePath = browser_resolvePath;
+} else {
+  resolvePath = node_resolvePath;
 }
 
 /**
@@ -122,7 +162,7 @@ if (IN_NODE) {
  */
 export let pathSep: string;
 
-if (!IN_NODE) {
+if (IN_BROWSER) {
   pathSep = "/";
 }
 
@@ -186,10 +226,10 @@ export let loadBinaryFile: (
   path: string,
   file_sub_resource_hash?: string | undefined,
 ) => Promise<Uint8Array>;
-if (IN_NODE) {
-  loadBinaryFile = node_loadBinaryFile;
-} else {
+if (IN_BROWSER) {
   loadBinaryFile = browser_loadBinaryFile;
+} else {
+  loadBinaryFile = node_loadBinaryFile;
 }
 
 /**
@@ -218,13 +258,8 @@ if (globalThis.document) {
       }
     }
   };
-} else if (IN_NODE) {
+} else if (IN_NODE || IN_DENO) {
   loadScript = nodeLoadScript;
-} else if (IN_DENO) {
-  loadScript = async (url) => {
-    let jsText = await fetch(url).then((r) => r.text());
-    eval2(jsText);
-  };
 } else {
   throw new Error("Cannot determine runtime environment");
 }
@@ -235,6 +270,9 @@ if (globalThis.document) {
  * @private
  */
 async function nodeLoadScript(url: string) {
+  if (IN_BROWSER) {
+    throw new Error("nodeLoadScript should only be called in Node or Deno");
+  }
   if (url.startsWith("file://")) {
     // handle file:// with filesystem operations rather than with fetch.
     url = url.slice("file://".length);
