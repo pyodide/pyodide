@@ -52,7 +52,6 @@ def pypi(
     """Fetch a wheel from pypi, or build from source if none available."""
     initialize_pyodide_root()
     common.check_emscripten_version()
-    backend_flags = ctx.args
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
 
@@ -69,7 +68,7 @@ def pypi(
 
         # sdist - needs building
         os.chdir(tmpdir)
-        build.run(exports, backend_flags)
+        build.run(exports, ctx.args)
         for src in (temppath / "dist").iterdir():
             print(f"Built {str(src.name)}")
             shutil.copy(str(src), str(curdir / "dist"))
@@ -86,7 +85,6 @@ def url(
     """Fetch a wheel or build sdist from url."""
     initialize_pyodide_root()
     common.check_emscripten_version()
-    backend_flags = ctx.args
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
 
@@ -119,7 +117,7 @@ def url(
                     # unzipped here
                     os.chdir(tmpdir)
                 print(os.listdir(tmpdir))
-                build.run(exports, backend_flags)
+                build.run(exports, ctx.args)
                 for src in (temppath / "dist").iterdir():
                     print(f"Built {str(src.name)}")
                     shutil.copy(str(src), str(curdir / "dist"))
@@ -137,8 +135,8 @@ def source(
     """Use pypa/build to build a Python package from source"""
     initialize_pyodide_root()
     common.check_emscripten_version()
-    backend_flags = [source_location] + ctx.args
-    build.run(exports, backend_flags)
+    os.chdir(source_location)
+    build.run(exports, ctx.args)
 
 
 # simple 'pyodide build' command
