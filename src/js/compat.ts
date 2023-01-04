@@ -8,7 +8,7 @@ export const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
-export const IN_DENO = "Deno" in window;
+export const IN_DENO = typeof window !== "undefined" && "Deno" in window;
 // Workaround for eval use with rollup for Deno
 // https://rollupjs.org/guide/en/#avoiding-eval
 let eval2 = eval;
