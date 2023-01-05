@@ -44,7 +44,7 @@ def default_filterfunc(
     """
     The default filter function used by `create_zipfile`.
 
-    This function filters out several packages that are:
+    This function filters out several modules that are:
 
     - not supported in Pyodide due to browser limitations (e.g. `tkinter`)
     - unvendored from the standard library (e.g. `sqlite3`)
