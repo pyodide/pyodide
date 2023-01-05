@@ -21,6 +21,10 @@ myst:
   to .pyc files
   {pr}`3253`
 
+- Added `pyodide create-zipfile` CLI command that creates a zip file of a directory.
+  This command is hidden by default since it is not intended for use by end users.
+  {pr}`3411`
+
 ## Version 0.22.0
 
 _January 3, 2023_
