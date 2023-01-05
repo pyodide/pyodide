@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 import pytest
-import typer  # type: ignore[import]
+import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common

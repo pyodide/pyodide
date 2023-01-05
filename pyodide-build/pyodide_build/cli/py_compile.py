@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-import typer  # type: ignore[import]
+import typer
 
 from pyodide_build._py_compile import _py_compile_wheel
 
