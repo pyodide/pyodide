@@ -163,7 +163,7 @@ def test_create_zipfile(temp_python_lib, tmp_path):
     output = tmp_path / "python.zip"
 
     app = typer.Typer()
-    app.command()(create_zipfile.create_zipfile)
+    app.command()(create_zipfile.main)
 
     result = runner.invoke(
         app,

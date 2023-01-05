@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from pyodide_build.pyzip import create_zip, default_filterfunc
+from pyodide_build.pyzip import create_zipfile, default_filterfunc
 
 from .fixture import temp_python_lib
 
@@ -19,7 +19,7 @@ def test_create_zip(temp_python_lib, tmp_path):
 
     output = tmp_path / "python.zip"
 
-    create_zip(temp_python_lib, output, pycompile=False, filterfunc=None)
+    create_zipfile(temp_python_lib, output, pycompile=False, filterfunc=None)
 
     assert output.exists()
 
@@ -28,16 +28,16 @@ def test_create_zip(temp_python_lib, tmp_path):
         assert "module2.py" in zf.namelist()
 
 
-def test_import_from_zip(temp_python_lib, tmp_path):
+def test_import_from_zip(temp_python_lib, tmp_path, monkeypatch):
     output = tmp_path / "python.zip"
 
-    create_zip(temp_python_lib, output, pycompile=False, filterfunc=None)
+    create_zipfile(temp_python_lib, output, pycompile=False, filterfunc=None)
 
     assert output.exists()
 
     import sys
 
-    sys.path.insert(0, str(output))
+    monkeypatch.setattr(sys, "path", [str(output)])
 
     import hello_pyodide  # type: ignore[import]
 
