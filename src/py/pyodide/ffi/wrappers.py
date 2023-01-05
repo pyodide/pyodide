@@ -14,6 +14,8 @@ if IN_BROWSER:
 
 
 class Destroyable(Protocol):
+    """:meta private:"""
+
     def destroy(self):
         pass
 
@@ -107,3 +109,13 @@ def clear_interval(interval_retval: int | JsProxy) -> None:
     clearInterval(interval_retval)
     id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id
     INTERVAL_CALLBACKS.pop(id, DUMMY_DESTROYABLE).destroy()
+
+
+__all__ = [
+    "add_event_listener",
+    "remove_event_listener",
+    "set_timeout",
+    "clear_timeout",
+    "set_interval",
+    "clear_interval",
+]

@@ -238,9 +238,9 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide "repodata.json" lock
+     * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
      * file. You can produce custom lock files with :any:`micropip.freeze`.
-     * Default: ``${indexURL}/repodata.json``
+     * Default: ```${indexURL}/repodata.json```
      */
     lockFileURL?: string;
 
@@ -274,8 +274,10 @@ export async function loadPyodide(
      */
     jsglobals?: object;
     /**
-     * Command line arguments to pass to Python on startup.
-     * Default: ``[]``
+     * Command line arguments to pass to Python on startup. See `Python command
+     * line interface options
+     * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
+     * more details. Default: ``[]``
      */
     args?: string[];
     /**

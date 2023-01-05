@@ -11,6 +11,7 @@ sphinx-js==3.1
 sphinx-version-warning~=1.1.2
 sphinx-panels
 sphinx-click
+sphinx-autodoc-typehints
 markupsafe<2.1.0
 pydantic
 # Packages that we want to document as part of the Pyodide CLI

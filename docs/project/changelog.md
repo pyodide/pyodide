@@ -15,11 +15,21 @@ myst:
 
 ## Unreleased
 
+### Build System
+
+- Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
+  to .pyc files
+  {pr}`3253`
+
 ## Version 0.22.0
 
 _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
+
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
+  built. Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
 
 ### Deployment and testing
 

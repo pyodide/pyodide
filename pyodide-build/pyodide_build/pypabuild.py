@@ -136,18 +136,22 @@ def parse_backend_flags(backend_flags: str) -> ConfigSettingsType:
     return config_settings
 
 
-def build(build_env: Mapping[str, str], backend_flags: str) -> None:
+def build(
+    build_env: Mapping[str, str], backend_flags: str, outdir: str | None = None
+) -> str:
     srcdir = Path.cwd()
-    outdir = srcdir / "dist"
+    if outdir is None:
+        outdir = str(srcdir / "dist")
     builder = _ProjectBuilder(str(srcdir))
     distribution = "wheel"
     config_settings = parse_backend_flags(backend_flags)
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(
-                build_env, builder, str(outdir), distribution, config_settings
+                build_env, builder, outdir, distribution, config_settings
             )
             print("{bold}{green}Successfully built {}{reset}".format(built, **_STYLES))
+            return built
     except Exception as e:  # pragma: no cover
         tb = traceback.format_exc().strip("\n")
         print("\n{dim}{}{reset}\n".format(tb, **_STYLES))

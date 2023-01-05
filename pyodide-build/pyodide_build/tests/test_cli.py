@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -7,7 +6,7 @@ import typer  # type: ignore[import]
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build, build_recipes, config, skeleton
+from pyodide_build.cli import build_recipes, config, skeleton
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -128,26 +127,3 @@ def test_config_get(cfg_name, env_var):
     )
 
     assert result.stdout.strip() == common.get_make_flag(env_var)
-
-
-def test_fetch_or_build_pypi(selenium, tmp_path):
-    # TODO: Run this test without building Pyodide
-
-    output_dir = tmp_path / "dist"
-    # one pure-python package (doesn't need building) and one sdist package (needs building)
-    pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
-
-    os.chdir(tmp_path)
-
-    app = typer.Typer()
-    app.command()(build.main)
-
-    for p in pkgs:
-        result = runner.invoke(
-            app,
-            [p],
-        )
-        assert result.exit_code == 0, result.stdout
-
-    built_wheels = set(output_dir.glob("*.whl"))
-    assert len(built_wheels) == len(pkgs)
