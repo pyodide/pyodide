@@ -41,6 +41,15 @@ NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
 def default_filterfunc(
     root: Path, verbose: bool = False
 ) -> Callable[[str, list[str]], set[str]]:
+    """
+    The default filter function used by `create_zipfile`.
+
+    This function filters out several packages that are:
+
+    - not supported in Pyodide due to browser limitations (e.g. `tkinter`)
+    - unvendored from the standard library (e.g. `sqlite3`)
+    """
+
     def filterfunc(path: Path | str, names: list[str]) -> set[str]:
         filtered_files = {
             (root / f).resolve()
@@ -68,7 +77,7 @@ def default_filterfunc(
     return filterfunc
 
 
-def create_zip(
+def create_zipfile(
     libdir: Path | str,
     output: Path | str = "python",
     pycompile: bool = False,
@@ -78,7 +87,7 @@ def create_zip(
     Bundle Python standard libraries into a zip file.
 
     The basic idea of this function is similar to the standard library's
-    [PyZipFile](https://github.com/python/cpython/blob/59665d0280c2299ea87e9af45cedc90656cb6f55/Lib/zipfile/__init__.py#L2011).
+    {ref}`zipfile.PyZipFile` class.
 
     However, we need some additional functionality for Pyodide. For example:
 
@@ -89,18 +98,18 @@ def create_zip(
 
     Parameters
     ----------
-    libdir : Path or str
+    libdir
         Path to the directory containing the Python standard library.
 
-    output : Path or str, optional
+    output
         Path to the output zip file. Defaults to python.zip.
 
-    pycompile : bool, optional
+    pycompile
         Whether to compile the .py files into .pyc, by default False
 
-    filterfunc : Callable[[str, list[str]], set[str]], optional
+    filterfunc
         A function that filters the files to be included in the zip file.
-        This function will be passed to shutil.copytree's ignore argument.
+        This function will be passed to {ref}`shutil.copytree` 's ignore argument.
         By default, Pyodide's default filter function is used.
 
     Returns
