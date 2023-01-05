@@ -9,6 +9,7 @@ import textwrap
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import NoReturn
 
@@ -104,6 +105,8 @@ def pyodide_tags() -> Iterator[Tag]:
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
     yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
+    # Following line can be removed once packaging 22.0 is released and we update to it.
+    yield Tag(interpreter=f"cp{PYMAJOR}{PYMINOR}", abi="none", platform="any")
 
 
 def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
@@ -414,3 +417,13 @@ def in_xbuildenv() -> bool:
 
 def find_missing_executables(executables: list[str]) -> list[str]:
     return list(filter(lambda exe: shutil.which(exe) is None, executables))
+
+
+@contextmanager
+def chdir(new_dir: Path) -> Generator[None, None, None]:
+    orig_dir = Path.cwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(orig_dir)

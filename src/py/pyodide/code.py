@@ -13,8 +13,8 @@ def run_js(code: str, /) -> Any:
     """
     A wrapper for the JavaScript 'eval' function.
 
-    Runs 'code' as a Javascript code string and returns the result. Unlike
-    JavaScript's 'eval', if 'code' is not a string we raise a TypeError.
+    Runs ``code`` as a Javascript code string and returns the result. Unlike
+    JavaScript's ``eval``, if ``code`` is not a string we raise a :any:`TypeError`.
     """
     from js import eval as eval_
 

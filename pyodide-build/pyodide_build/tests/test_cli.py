@@ -9,7 +9,7 @@ import typer  # type: ignore[import]
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build, build_recipes, config, create_zip, skeleton
+from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
 
 from .fixture import temp_python_lib
 
@@ -157,13 +157,13 @@ def test_fetch_or_build_pypi(selenium, tmp_path):
     assert len(built_wheels) == len(pkgs)
 
 
-def test_create_zip(temp_python_lib, tmp_path):
+def test_create_zipfile(temp_python_lib, tmp_path):
     from zipfile import ZipFile
 
     output = tmp_path / "python.zip"
 
     app = typer.Typer()
-    app.command()(create_zip.create_zip)
+    app.command()(create_zipfile.create_zipfile)
 
     result = runner.invoke(
         app,

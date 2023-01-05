@@ -358,6 +358,7 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
         "-ffixed-form",
+        "-fallow-argument-mismatch",
         # On Mac, we need to omit some darwin-specific arguments
         "-bundle", "-undefined", "dynamic_lookup",
         # This flag is needed to build numpy with SIMD optimization which we currently disable

@@ -88,6 +88,7 @@ def test_code_runner():
     assert cr.compile().run({"x": 3}) == 13
 
     # Code transform
+    assert cr.code
     cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
     assert cr.run({"x": 4}) == 17
 
@@ -1348,16 +1349,23 @@ def test_raises_jsexception(selenium):
         raise_jsexception(selenium)
 
 
+@pytest.mark.xfail_browsers(node="Some problem with the logs in node")
 def test_deprecations(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
         """
-        pyodide.loadPackage("micropip", (x) => x);
-        pyodide.loadPackagesFromImports("import micropip", (x) => x);
+        p = [];
+        let cb = (x) => console.log('!!! ' + x);
+        await pyodide.loadPackage("micropip", cb);
+        pyodide.loadPackage("micropip", cb);
+        pyodide.loadPackagesFromImports("import micropip", cb);
+        pyodide.loadPackagesFromImports("import micropip", cb);
         """
     )
-    dep_msg = "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }"
-    assert selenium.logs.count(dep_msg) == 1
+    dep_msg = "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to {} is deprecated and will be removed in v0.24."
+    assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
+    assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
+    assert selenium.logs.count("!!! No new packages to load") == 3
 
 
 @run_in_pyodide(packages=["pytest"])

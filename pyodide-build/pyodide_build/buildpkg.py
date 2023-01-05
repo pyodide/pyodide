@@ -16,7 +16,7 @@ import sys
 import sysconfig
 import textwrap
 import urllib
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -28,21 +28,12 @@ from urllib import request
 from . import common, pywasmcross
 from .common import (
     BUILD_VARS,
+    chdir,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
-
-
-@contextmanager
-def chdir(new_dir: Path) -> Generator[None, None, None]:
-    orig_dir = Path.cwd()
-    try:
-        os.chdir(new_dir)
-        yield
-    finally:
-        os.chdir(orig_dir)
 
 
 def _make_whlfile(
