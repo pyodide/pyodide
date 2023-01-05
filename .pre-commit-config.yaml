@@ -83,6 +83,7 @@ repos:
     rev: "v3.0.0-alpha.4"
     hooks:
       - id: prettier
+        exclude: ^(packages/.*/.*\.json)$
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.9.0"
@@ -113,7 +114,6 @@ repos:
             "-L",
             "te,slowy,aray,ba,nd,classs,crate,feld,lits,inflight,falsy,asend",
           ]
-        exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$
-
+        exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|packages/.*/.*\.json)$
 ci:
   autoupdate_schedule: "quarterly"
