@@ -2,10 +2,10 @@ from pathlib import Path
 
 import typer
 
-from ..pyzip import create_zipfile as _create_zipfile
+from ..pyzip import create_zipfile
 
 
-def create_zipfile(
+def main(
     libdir: Path = typer.Argument(
         ..., help="Path to the directory containing the Python standard library."
     ),
@@ -19,5 +19,8 @@ def create_zipfile(
     """
     Bundle Python standard libraries into a zip file.
     """
-    _create_zipfile(libdir, output, pycompile=pycompile, filterfunc=None)
+    create_zipfile(libdir, output, pycompile=pycompile, filterfunc=None)
     typer.echo(f"Zip file created at {output}")
+
+
+main.typer_kwargs = {"hidden": True}  # type: ignore[attr-defined]
