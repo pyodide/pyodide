@@ -7,7 +7,7 @@ sphinx-argparse-cli~=1.6.0
 sphinx_book_theme
 sphinxcontrib-napoleon>=0.7
 sphinx-issues==2.0.0
-sphinx-js==3.1
+sphinx-js==3.1.2
 sphinx-version-warning~=1.1.2
 sphinx-panels
 sphinx-click
