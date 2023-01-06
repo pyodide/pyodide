@@ -158,14 +158,13 @@ def get_module_not_found_error(name):
     if name not in REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME and name not in STDLIBS:
         return orig_get_module_not_found_error(name)
 
+    package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(name, "")
     if name in UNVENDORED_STDLIBS_AND_TEST:
         msg = "The module '{name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
-        package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME[name]
     elif name in REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME:
         msg = "The module '{name}' is included in the Pyodide distribution, but it is not installed."
         msg += YOU_CAN_INSTALL_IT_BY
-        package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME[name]
     else:
         msg = (
             "The module '{name}' is removed from the Python standard library in the"
