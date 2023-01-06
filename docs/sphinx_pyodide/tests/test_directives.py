@@ -57,7 +57,6 @@ def test_flatten_suffix_tree():
     }
     t.add_many(d.items())
     r = flatten_suffix_tree(t._tree)
-    r = {k: v.value for (k, v) in r.items()}
     assert d == r
 
 
