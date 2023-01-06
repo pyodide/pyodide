@@ -124,6 +124,23 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
 
 TsAnalyzer._convert_node = _convert_node
 
+from os.path import relpath
+
+
+def _containing_deppath(self, node):
+    """Return the path pointing to the module containing the given node.
+    The path is absolute or relative to `root_for_relative_js_paths`.
+    Raises ValueError if one isn't found.
+
+    """
+    from pathlib import Path
+
+    deppath = list(Path(self._base_dir).glob("**/" + node["sources"][0]["fileName"]))[0]
+    return relpath(deppath, self._base_dir)
+
+
+TsAnalyzer._containing_deppath = _containing_deppath
+
 
 def object_literal_type_name(self, decl):
     """This renders the names of object literal types.
