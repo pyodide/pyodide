@@ -44,3 +44,7 @@ code {
 .returnvalue li > p > em {
   font-style: normal;
 }
+
+.js.attribute.type {
+  font-weight: bold;
+}
