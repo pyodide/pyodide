@@ -1432,6 +1432,9 @@ def test_module_not_found_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match='pyodide.loadPackage("hashlib")'):
         importlib.import_module("_hashlib")
 
+    with pytest.raises(ModuleNotFoundError, match='pyodide.loadPackage("pytest")'):
+        importlib.import_module("_pytest")
+
 
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload

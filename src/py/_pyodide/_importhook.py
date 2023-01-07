@@ -165,14 +165,15 @@ def get_module_not_found_error(import_name):
     if package_name in UNVENDORED_STDLIBS_AND_TEST:
         msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
-    elif package_name in REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME:
-        msg = "The module '{package_name}' is included in the Pyodide distribution, but it is not installed."
-        msg += YOU_CAN_INSTALL_IT_BY
-    else:
+    elif package_name in STDLIBS:
         msg = (
             "The module '{import_name}' is removed from the Python standard library in the"
             " Pyodide distribution due to browser limitations."
         )
+    else:
+        msg = "The module '{package_name}' is included in the Pyodide distribution, but it is not installed."
+        msg += YOU_CAN_INSTALL_IT_BY
+
     msg += SEE_PACKAGE_LOADING
     return ModuleNotFoundError(
         msg.format(import_name=import_name, package_name=package_name)
