@@ -165,7 +165,7 @@ def get_module_not_found_error(import_name):
     if package_name in UNVENDORED_STDLIBS_AND_TEST:
         msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
-    elif package_name in STDLIBS:
+    elif import_name in STDLIBS:
         msg = (
             "The module '{import_name}' is removed from the Python standard library in the"
             " Pyodide distribution due to browser limitations."
