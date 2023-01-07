@@ -3,6 +3,7 @@
   opacity: 0.7;
 }
 
+/* Don't make code smaller than other text it looks ugly */
 code {
   font-size: 100% !important;
 }
@@ -20,4 +21,30 @@ code {
 /* Remove "captions" in text table of contents, keep subsections in sidebar */
 .toctree-wrapper > .caption {
   display: none;
+}
+
+/* Display "async", "class" prefixes and parameters in upright style not italic */
+.sig-param,
+.property {
+  font-style: normal;
+}
+
+/* For some reason autodoc messes up the rendering of return value annotations:
+   it displays it as a bulleted list with the last bullet italicized.
+
+   We monkeypatch autodoc in conf.py to add some extra css classes so we can
+   locate the return value bullets.
+*/
+.returnvalue ul {
+  list-style-type: none;
+  margin-left: -15px; /* bullet takes up 15px */
+}
+
+/* Don't italicize last bullet. */
+.returnvalue li > p > em {
+  font-style: normal;
+}
+
+.js.attribute.type {
+  font-weight: bold;
 }

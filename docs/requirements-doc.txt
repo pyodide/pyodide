@@ -7,10 +7,11 @@ sphinx-argparse-cli~=1.6.0
 sphinx_book_theme
 sphinxcontrib-napoleon>=0.7
 sphinx-issues==2.0.0
-sphinx-js==3.1
+sphinx-js==3.2.1
 sphinx-version-warning~=1.1.2
 sphinx-panels
 sphinx-click
+sphinx-autodoc-typehints
 markupsafe<2.1.0
 pydantic
 # Packages that we want to document as part of the Pyodide CLI

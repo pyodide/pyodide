@@ -1,4 +1,4 @@
-(building-and-testing-packages)=
+(building-and-testing-packages-out-of-tree)=
 
 # Building and testing Python packages out of tree
 
@@ -6,22 +6,60 @@ This is some information about how to build and test Python packages against
 Pyodide out of tree (for instance in your package's CI or for use with private
 packages).
 
+Pyodide currently only supports Linux for out of tree builds, though there is a
+good change it will work in MacOS too. If you are using Windows, try Windows
+Subsystem for Linux.
+
 ## Building binary packages for Pyodide
 
 If your package is a pure Python package (i.e., if the wheel ends in
 `py3-none-any.whl`) then follow the official PyPA documentation on building
 [wheels](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
-Otherwise, the procedure is simple. In your package directory run the following
-command line commands:
+Otherwise, the procedure is as follows.
+
+### Install pyodide-build
 
 ```sh
 pip install pyodide-build
+```
+
+### Set up Emscripten
+
+You need to download the Emscripten developer toolkit:
+
+```sh
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+```
+
+then you can install the appropriate version of Emscripten:
+
+```sh
+PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version)
+./emsdk install ${PYODIDE_EMSCRIPTEN_VERSION}
+./emsdk activate ${PYODIDE_EMSCRIPTEN_VERSION}
+source emsdk_env.sh
+```
+
+If you restart your shell, you will need to run `source emsdk_env.sh` again.
+
+### Build the WASM/Emscripten wheel
+
+Change directory into the package folder where the `setup.py` or
+`pyproject.toml` file is located. You should be in a shell session where you ran
+`source emsdk_env.sh`. Then run
+
+```sh
 pyodide build
 ```
 
-Pyodide currently only supports Linux for out of tree builds, though there is a
-good change it will work in MacOS too. If you are using Windows, try Windows
-Subsystem for Linux.
+in the package folder . This command produces a wheel in the `dist/` folder,
+similarly to the [PyPA build](https://pypa-build.readthedocs.io/en/latest/)
+command.
+
+If you need to add custom compiler / linker flags to the compiler invocations,
+you can set the `CFLAGS`, `CXXFLAGS` and `LDFLAGS` environment variables. For instance, to
+make a debug build, you can use: `CFLAGS=-g2 LDFLAGS=g2 pyodide build`.
 
 `pyodide build` invokes a slightly modified version of the `pypa/build` build
 frontend so the behavior should be similar to what happens if you do:
@@ -32,14 +70,21 @@ python -m build
 ```
 
 If you run into problems, make sure that building a native wheel with
-`pypa/build` works.
+`pypa/build` works. If it does, then please open an issue about it.
 
-`pyodide build` respects the environment variables `CFLAGS`, `CXXFLAGS`, and
-`LDFLAGS`, so if you need to customize compiler arguments you can set these. Any
-additional arguments passed to `pyodide build` will be passed along to the build
-backend.
+### Serve the wheel
 
-If you run into problems, please open an issue about it.
+Serve the wheel via a file server e.g., `python3.10 -m http.server --directory dist`.
+Then you can install it with `pyodide.loadPackage` or `micropip.install` by URL.
+
+### Notes
+
+- the resulting package wheels have a file name of the form
+  `*-cp310-cp310-emscripten_3_1_27_wasm32.whl` and are compatible only for a
+  given Python and Emscripten versions. In the Pyodide distribution, Python and
+  Emscripten are updated simultaneously.
+- for now, PyPi does not support emscripten/wasm32 wheels so you will not be able to upload
+  them there.
 
 ## Testing packages against Pyodide
 
@@ -96,3 +141,28 @@ python runtests.py
 and you can pass options to it just like normal. Currently `subprocess` doesn't
 work, so if you have a test runner that uses `subprocess` then it cannot be
 used.
+
+## Build Github actions example
+
+Here is a complete example of a Github Actions workflow for building a Python
+wheel out of tree:
+
+```yaml
+runs-on: ubuntu-20.04
+  steps:
+  - uses: actions/checkout@v3
+  - uses: actions/setup-python@v4
+     with:
+       python-version: 3.10.2
+  - run: |
+    pip install pyodide-build>=0.22.0
+    echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
+  - uses: mymindstorm/setup-emsdk@v11
+     with:
+       version: ${{ env.EMSCRIPTEN_VERSION }}
+  - run: pyodide build
+```
+
+For an example "in the wild" of a github action to build and test a wheel
+against Pyodide, see
+[the numpy CI](https://github.com/numpy/numpy/blob/main/.github/workflows/emscripten.yml)

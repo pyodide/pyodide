@@ -448,11 +448,17 @@ export class PyProxyClass {
   $$props: PyProxyProps;
   $$flags: number;
 
-  /** @private */
+  /**
+   * @private
+   * @hideconstructor
+   */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
   }
 
+  /**
+   * @private
+   */
   get [Symbol.toStringTag]() {
     return "PyProxy";
   }
@@ -498,7 +504,7 @@ export class PyProxyClass {
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
    * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
    * collected, however there is no guarantee that the finalizer will be run in
-   * a timely manner so it is better to ``destroy`` the proxy explicitly.
+   * a timely manner so it is better to destroy the proxy explicitly.
    *
    * @param options
    * @param options.message The error message to print if use is attempted after
@@ -569,7 +575,7 @@ export class PyProxyClass {
     dict_converter?: (array: Iterable<[key: string, value: any]>) => any;
     /**
      * Optional argument to convert objects with no default conversion. See the
-     * documentation of :any:`pyodide.ffi.to_js`.
+     * documentation of :meth:`~pyodide.ffi.to_js`.
      */
     default_converter?: (
       obj: PyProxy,
@@ -691,7 +697,7 @@ export class PyProxyLengthMethods {
   /**
    * The length of the object.
    *
-   * Present only if the proxied Python object has a ``__len__`` method.
+   * Present only if the proxied Python object has a :meth:`~object.__len__` method.
    */
   get length(): number {
     let ptrobj = _getPtr(this);
@@ -718,7 +724,7 @@ export class PyProxyGetItemMethods {
   /**
    * This translates to the Python code ``obj[key]``.
    *
-   * Present only if the proxied Python object has a ``__getitem__`` method.
+   * Present only if the proxied Python object has a :meth:`~object.__getitem__` method.
    *
    * @param key The key to look up.
    * @returns The corresponding value.
@@ -754,7 +760,7 @@ export class PyProxySetItemMethods {
   /**
    * This translates to the Python code ``obj[key] = value``.
    *
-   * Present only if the proxied Python object has a ``__setitem__`` method.
+   * Present only if the proxied Python object has a :meth:`~object.__setitem__` method.
    *
    * @param key The key to set.
    * @param value The value to set it to.
@@ -781,7 +787,7 @@ export class PyProxySetItemMethods {
   /**
    * This translates to the Python code ``del obj[key]``.
    *
-   * Present only if the proxied Python object has a ``__delitem__`` method.
+   * Present only if the proxied Python object has a :meth:`~object.__delitem__` method.
    *
    * @param key The key to delete.
    */
@@ -812,7 +818,7 @@ export class PyProxyContainsMethods {
   /**
    * This translates to the Python code ``key in obj``.
    *
-   * Present only if the proxied Python object has a ``__contains__`` method.
+   * Present only if the proxied Python object has a :meth:`~object.__contains__` method.
    *
    * @param key The key to check for.
    * @returns Is ``key`` present?
@@ -887,8 +893,9 @@ export class PyProxyIterableMethods {
    * associated to the proxy. See the documentation for `Symbol.iterator
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
    *
-   * Present only if the proxied Python object is iterable (i.e., has an
-   * ``__iter__`` method).
+   * Present only if the proxied Python object is
+   * `iterable <https://docs.python.org/3/glossary.html#term-iterable>_
+   * (i.e., has an :meth:`~object.__iter__` method).
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    */
@@ -970,12 +977,12 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
 
 export class PyProxyAsyncIterableMethods {
   /**
-   * This translates to the Python code ``aiter(obj)``. Return an iterator
-   * associated to the proxy. See the documentation for `Symbol.iterator
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
+   * This translates to the Python code ``aiter(obj)``. Return an async iterator
+   * associated to the proxy. See the documentation for `Symbol.asyncIterator
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_.
    *
-   * Present only if the proxied Python object is iterable (i.e., has an
-   * ``__iter__`` method).
+   * Present only if the proxied Python object is async iterable (i.e., has an
+   * :meth:`~object.__aiter__` method).
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    */
@@ -1011,14 +1018,14 @@ export class PyProxyIteratorMethods {
   }
   /**
    * This translates to the Python code ``next(obj)``. Returns the next value of
-   * the generator. See the documentation for `Generator.prototype.next
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
+   * the generator. See the documentation for
+   * `Generator.prototype.next <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
    * The argument will be sent to the Python generator.
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    *
    * Present only if the proxied Python object is a generator or iterator (i.e.,
-   * has a ``send`` or ``__next__`` method).
+   * has a :meth:`~generator.send` or :meth:`~iterator.__next__` method).
    *
    * @param any The value to send to the generator. The value will be assigned
    * as a result of a yield expression.
@@ -1059,8 +1066,8 @@ export class PyProxyGeneratorMethods {
   /**
    * Throws an exception into the Generator.
    *
-   * See the documentation for `Generator.prototype.throw
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw>_`.
+   * See the documentation for
+   * `Generator.prototype.throw <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw>`_.
    *
    * @param exception Error The error to throw into the generator. Must be an
    * instanceof ``Error``.
@@ -1096,13 +1103,14 @@ export class PyProxyGeneratorMethods {
   }
 
   /**
-   * Throws a ``GeneratorExit`` into the generator and if the ``GeneratorExit``
-   * is not caught returns the argument value ``{done: true, value: v}``. If the
-   * generator catches the ``GeneratorExit`` and returns or yields another value
-   * the next value of the generator this is returned in the normal way. If it
-   * throws some error other than ``GeneratorExit`` or ``StopIteration``, that
-   * error is propagated. See the documentation for `Generator.prototype.return
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>`_.
+   * Throws a :any:`GeneratorExit` into the generator and if the
+   * :any:`GeneratorExit` is not caught returns the argument value ``{done:
+   * true, value: v}``. If the generator catches the :any:`GeneratorExit` and
+   * returns or yields another value the next value of the generator this is
+   * returned in the normal way. If it throws some error other than
+   * :any:`GeneratorExit` or :any:`StopIteration`, that error is propagated. See
+   * the documentation for
+   * `Generator.prototype.return <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>`_.
    *
    * Present only if the proxied Python object is a generator.
    *
@@ -1182,8 +1190,8 @@ export class PyProxyAsyncGeneratorMethods {
   /**
    * Throws an exception into the Generator.
    *
-   * See the documentation for `Generator.prototype.throw
-   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/throw>_`.
+   * See the documentation for
+   * `Generator.prototype.throw <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/throw>`_.
    *
    * @param exception Error The error to throw into the generator. Must be an
    * instanceof ``Error``.
@@ -1228,11 +1236,11 @@ export class PyProxyAsyncGeneratorMethods {
   }
 
   /**
-   * Throws a ``GeneratorExit`` into the generator and if the ``GeneratorExit``
+   * Throws a :any:`GeneratorExit` into the generator and if the :any:`GeneratorExit`
    * is not caught returns the argument value ``{done: true, value: v}``. If the
-   * generator catches the ``GeneratorExit`` and returns or yields another value
+   * generator catches the :any:`GeneratorExit` and returns or yields another value
    * the next value of the generator this is returned in the normal way. If it
-   * throws some error other than ``GeneratorExit`` or ``StopIteration``, that
+   * throws some error other than :any:`GeneratorExit` or :any:`StopAsyncIteration`, that
    * error is propagated. See the documentation for `Generator.prototype.return
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator/return>`_.
    *
@@ -1509,22 +1517,22 @@ export class PyProxyAwaitableMethods {
     return promise;
   }
   /**
-   * Runs ``asyncio.ensure_future(awaitable)``, executes
-   * ``onFulfilled(result)`` when the ``Future`` resolves successfully,
-   * executes ``onRejected(error)`` when the ``Future`` fails. Will be used
-   * implicitly by ``await obj``.
+   * Calls :func:`asyncio.ensure_future` on the awaitable, executes
+   * ``onFulfilled(result)`` when the ``Future`` resolves successfully, executes
+   * ``onRejected(error)`` when the ``Future`` fails. Will be used implicitly by
+   * ``await obj``.
    *
-   * See the documentation for
-   * `Promise.then
+   * See the documentation for `Promise.then
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then>`_
    *
    * Present only if the proxied Python object is `awaitable
-   * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
+   * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_
+   * (i.e., has an :meth:`~object.__await__` method).
    *
-   * @param onFulfilled A handler called with the result as an
-   * argument if the awaitable succeeds.
-   * @param onRejected A handler called with the error as an
-   * argument if the awaitable fails.
+   * @param onFulfilled A handler called with the result as an argument if the
+   * awaitable succeeds.
+   * @param onRejected A handler called with the error as an argument if the
+   * awaitable fails.
    * @returns The resulting Promise.
    */
   then(
@@ -1535,18 +1543,18 @@ export class PyProxyAwaitableMethods {
     return promise.then(onFulfilled, onRejected);
   }
   /**
-   * Runs ``asyncio.ensure_future(awaitable)`` and executes
+   * Calls :func:`asyncio.ensure_future` on the awaitable and executes
    * ``onRejected(error)`` if the future fails.
    *
-   * See the documentation for
-   * `Promise.catch
+   * See the documentation for `Promise.catch
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch>`_.
    *
    * Present only if the proxied Python object is `awaitable
    * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
+   * (i.e., has an :meth:`~object.__await__` method)
    *
-   * @param onRejected A handler called with the error as an
-   * argument if the awaitable fails.
+   * @param onRejected A handler called with the error as an argument if the
+   * awaitable fails.
    * @returns The resulting Promise.
    */
   catch(onRejected: (reason: any) => any) {
@@ -1554,22 +1562,21 @@ export class PyProxyAwaitableMethods {
     return promise.catch(onRejected);
   }
   /**
-   * Runs ``asyncio.ensure_future(awaitable)`` and executes
+   * Calls :func:`asyncio.ensure_future` on the awaitable and executes
    * ``onFinally(error)`` when the future resolves.
    *
-   * See the documentation for
-   * `Promise.finally
+   * See the documentation for `Promise.finally
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>`_.
    *
    * Present only if the proxied Python object is `awaitable
-   * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
+   * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_
+   * (i.e., has an :meth:`~object.__await__` method).
    *
    *
-   * @param onFinally A handler that is called with zero arguments
-   * when the awaitable resolves.
-   * @returns A Promise that resolves or rejects with the same
-   * result as the original Promise, but only after executing the
-   * ``onFinally`` handler.
+   * @param onFinally A handler that is called with zero arguments when the
+   * awaitable resolves.
+   * @returns A Promise that resolves or rejects with the same result as the
+   * original Promise, but only after executing the ``onFinally`` handler.
    */
   finally(onFinally: () => void) {
     let promise = this._ensure_future();
@@ -1583,16 +1590,16 @@ export type PyProxyCallable = PyProxy &
 
 export class PyProxyCallableMethods {
   /**
-   * The apply() method calls the specified function with a given this value,
-   * and arguments provided as an array (or an array-like object). Like the
-   * `JavaScript apply function
+   * The ``apply()`` method calls the specified function with a given this
+   * value, and arguments provided as an array (or an array-like object). Like
+   * the `JavaScript apply function
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply>`_.
    *
-   * Present only if the proxied Python object is callable.
+   * Present only if the proxied Python object is callable (i.e., has a :meth:`~object.__call__` method).
    *
-   * @param thisArg The `this` argument. Has no effect unless the `PyProxy` has
-   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as
-   * the first argument to the Python function.
+   * @param thisArg The ``this`` argument. Has no effect unless the
+   * :any:`PyProxy` has :any:`captureThis` set. If :any:`captureThis` is set, it
+   * will be passed as the first argument to the Python function.
    * @param jsargs The array of arguments
    * @returns The result from the function call.
    */
@@ -1607,14 +1614,15 @@ export class PyProxyCallableMethods {
   }
   /**
    * Calls the function with a given this value and arguments provided
-   * individually. Like the `JavaScript call
-   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
+   * individually. Like the `JavaScript call function
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call>`_.
    *
-   * Present only if the proxied Python object is callable.
+   * Present only if the proxied Python object is callable (i.e., has a
+   * :meth:`~object.__call__` method).
    *
-   * @param thisArg The ``this`` argument. Has no effect unless the `PyProxy` has
-   * :any:`captureThis` set. If :any:`captureThis` is set, it will be passed as the first
-   * argument to the Python function.
+   * @param thisArg The ``this`` argument. Has no effect unless the
+   * :any:`PyProxy` has :any:`captureThis` set. If :any:`captureThis` is set, it
+   * will be passed as the first argument to the Python function.
    * @param jsargs The arguments
    * @returns The result from the function call.
    */
@@ -1625,7 +1633,7 @@ export class PyProxyCallableMethods {
   /**
    * Call the function with key word arguments. The last argument must be an
    * object with the keyword arguments. Present only if the proxied Python
-   * object is callable.
+   * object is callable (i.e., has a :meth:`~object.__call__` method).
    */
   callKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
@@ -1647,14 +1655,17 @@ export class PyProxyCallableMethods {
    * The bind() method creates a new function that, when called, has its
    * ``this`` keyword set to the provided value, with a given sequence of
    * arguments preceding any provided when the new function is called. See the
-   * documentation for the `JavaScript bind
-   * function <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind>`_.
+   * documentation for the `JavaScript bind function
+   * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind>`_.
    *
    * If the `PyProxy` does not have :any:`captureThis` set, the ``this``
    * parameter will be discarded. If it does have :any:`captureThis` set,
    * ``thisArg`` will be set to the first argument of the Python function. The
    * returned proxy and the original proxy have the same lifetime so destroying
    * either destroys both.
+   *
+   * Present only if the proxied Python object is callable (i.e., has a
+   * :meth:`~object.__call__` method)
    *
    * @param thisArg The value to be passed as the ``this`` parameter to the
    * target function ``func`` when the bound function is called.
@@ -1693,9 +1704,6 @@ export class PyProxyCallableMethods {
    * and the original proxy have the same lifetime so destroying either destroys
    * both.
    *
-   * @returns The resulting ``PyProxy``. It has the same lifetime as the
-   * original ``PyProxy`` but passes ``this`` to the wrapped function.
-   *
    * For example:
    *
    * .. code-block:: js
@@ -1711,6 +1719,9 @@ export class PyProxyCallableMethods {
    *    // With captureThis, it works fine:
    *    obj.f = pyodide.globals.get("f").captureThis();
    *    obj.f(); // returns 7
+   *
+   * @returns The resulting ``PyProxy``. It has the same lifetime as the
+   * original ``PyProxy`` but passes ``this`` to the wrapped function.
    *
    */
   captureThis(): PyProxy {
@@ -1945,19 +1956,6 @@ export type PyProxyDict = PyProxyWithGet & PyProxyWithSet & PyProxyWithHas;
  *    }
  *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0, -1])]);
  *
- * .. admonition:: Contiguity
- *    :class: warning
- *
- *    If the buffer is not contiguous, the ``data`` TypedArray will contain
- *    data that is not part of the buffer. Modifying this data may lead to
- *    undefined behavior.
- *
- * .. admonition:: Readonly buffers
- *    :class: warning
- *
- *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
- *    Modifying a readonly buffer may lead to undefined behavior.
- *
  * .. admonition:: Converting between TypedArray types
  *    :class: warning
  *
@@ -1990,68 +1988,80 @@ export class PyBuffer {
   offset: number;
 
   /**
-   * If the data is readonly, you should not modify it. There is no way
-   * for us to enforce this, but it may cause very weird behavior.
+   * If the data is readonly, you should not modify it. There is no way for us
+   * to enforce this, but it may cause very weird behavior. See
+   * :any:`memoryview.readonly`.
    */
   readonly: boolean;
 
   /**
-   * The format string for the buffer. See `the Python documentation on
-   * format strings
-   * <https://docs.python.org/3/library/struct.html#format-strings>`_.
+   * The format string for the buffer. See `the Python documentation on format
+   * strings <https://docs.python.org/3/library/struct.html#format-strings>`_.
+   * See :any:`memoryview.format`.
    */
   format: string;
 
   /**
-   * How large is each entry (in bytes)?
+   * How large is each entry (in bytes)? See :any:`memoryview.itemsize`.
    */
   itemsize: number;
 
   /**
    * The number of dimensions of the buffer. If ``ndim`` is 0, the buffer
    * represents a single scalar or struct. Otherwise, it represents an
-   * array.
+   * array. See :any:`memoryview.ndim`.
    */
   ndim: number;
 
   /**
    * The total number of bytes the buffer takes up. This is equal to
-   * ``buff.data.byteLength``.
+   * ``buff.data.byteLength``. See :any:`memoryview.nbytes`.
    */
   nbytes: number;
 
   /**
    * The shape of the buffer, that is how long it is in each dimension.
    * The length will be equal to ``ndim``. For instance, a 2x3x4 array
-   * would have shape ``[2, 3, 4]``.
+   * would have shape ``[2, 3, 4]``. See :any:`memoryview.shape`.
    */
   shape: number[];
 
   /**
    * An array of of length ``ndim`` giving the number of elements to skip
    * to get to a new element in each dimension. See the example definition
-   * of a ``multiIndexToIndex`` function above.
+   * of a ``multiIndexToIndex`` function above. See :any:`memoryview.strides`.
    */
   strides: number[];
 
   /**
-   * The actual data. A typed array of an appropriate size backed by a
-   * segment of the WASM memory.
+   * The actual data. A typed array of an appropriate size backed by a segment
+   * of the WASM memory.
    *
-   * The ``type`` argument of :any:`PyProxy.getBuffer`
-   * determines which sort of ``TypedArray`` this is. By default
-   * :any:`PyProxy.getBuffer` will look at the format string to determine the most
-   * appropriate option.
+   * The ``type`` argument of :any:`PyProxy.getBuffer` determines which sort of
+   * ``TypedArray`` this is. By default :any:`PyProxy.getBuffer` will look at
+   * the format string to determine the most appropriate option.
+   *
+   * .. admonition:: Contiguity :class: warning
+   *
+   *    If the buffer is not contiguous, the ``data`` TypedArray will contain
+   *    data that is not part of the buffer. Modifying this data leads to
+   *    undefined behavior.
+   *
+   * .. admonition:: Readonly buffers :class: warning
+   *
+   *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
+   *    Modifying a readonly buffer leads to undefined behavior.
+   *
    */
   data: TypedArray;
 
   /**
-   * Is it C contiguous?
+   * Is it C contiguous? See :any:`memoryview.c_contiguous`.
    */
   c_contiguous: boolean;
 
   /**
-   * Is it Fortran contiguous?
+   * Is it Fortran contiguous? See :any:`memoryview.f_contiguous`.
    */
   f_contiguous: boolean;
 
