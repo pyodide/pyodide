@@ -154,24 +154,28 @@ You can install it by calling:
 """
 
 
-def get_module_not_found_error(name):
-    if name not in REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME and name not in STDLIBS:
-        return orig_get_module_not_found_error(name)
+def get_module_not_found_error(import_name):
 
-    package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(name, "")
-    if name in UNVENDORED_STDLIBS_AND_TEST:
-        msg = "The module '{name}' is unvendored from the Python standard library in the Pyodide distribution."
+    package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(import_name, "")
+
+    if not package_name and import_name not in STDLIBS:
+        return orig_get_module_not_found_error(import_name)
+
+    if package_name in UNVENDORED_STDLIBS_AND_TEST:
+        msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
-    elif name in REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME:
-        msg = "The module '{name}' is included in the Pyodide distribution, but it is not installed."
+    elif package_name in REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME:
+        msg = "The module '{package_name}' is included in the Pyodide distribution, but it is not installed."
         msg += YOU_CAN_INSTALL_IT_BY
     else:
         msg = (
-            "The module '{name}' is removed from the Python standard library in the"
+            "The module '{import_name}' is removed from the Python standard library in the"
             " Pyodide distribution due to browser limitations."
         )
     msg += SEE_PACKAGE_LOADING
-    return ModuleNotFoundError(msg.format(name=name, package_name=package_name))
+    return ModuleNotFoundError(
+        msg.format(import_name=import_name, package_name=package_name)
+    )
 
 
 def register_module_not_found_hook(packages: Any) -> None:
