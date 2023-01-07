@@ -134,8 +134,9 @@ def register_js_finder() -> None:
 
 
 STDLIBS = sys.stdlib_module_names | {"test"}
-UNVENDORED_STDLIBS = {"distutils", "ssl", "lzma", "sqlite3", "hashlib"}
-UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS | {"test"}
+# TODO: Move this list to js side
+UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "hashlib"]
+UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
 
 
 from importlib import _bootstrap  # type: ignore[attr-defined]
@@ -190,44 +191,3 @@ def register_module_not_found_hook(packages: Any) -> None:
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
     orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
     _bootstrap._get_module_not_found_error = get_module_not_found_error
-
-
-class RepodataPackagesFinder(MetaPathFinder):
-    """
-    A MetaPathFinder that handles packages in repodata.json.
-
-    This class simply raises an error if a package is in repodata.json but not loaded yet.
-    This needs to be added to the end of sys.meta_path, so if a package
-    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
-    """
-
-    def __init__(self, packages: dict[str, Any]) -> None:
-        self.repodata_packages = packages
-
-    def find_spec(
-        self,
-        fullname: str,
-        path: Sequence[bytes | str] | None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        [parent, _, _] = fullname.partition(".")
-
-        if not parent or parent in sys.modules or parent not in self.repodata_packages:
-            return None
-
-        return None
-
-
-def register_repodata_packages_finder(packages: Any) -> None:
-    """
-    A function that adds RepodataPackagesFinder to the end of sys.meta_path.
-
-    Note that this finder must be placed in the end of meta_paths
-    in order to prevent any unexpected side effects.
-    """
-
-    for importer in sys.meta_path:
-        if isinstance(importer, RepodataPackagesFinder):
-            raise RuntimeError("RepodataPackagesFinder already registered")
-
-    sys.meta_path.append(RepodataPackagesFinder(packages.to_py()))
