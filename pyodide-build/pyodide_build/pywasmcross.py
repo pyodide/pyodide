@@ -498,16 +498,16 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     then return all public symbols. If not, return only the public symbols that
     begin with `PyInit`.
     """
-    # Parse response files and extract list of arguments
-    objects = []
+    # Extract list of arguments, including those from response files
+    all_args = []
     for arg in line:
         if arg.endswith(".rsp"):
-            objects.extend(Path(arg).read_text().splitlines())
+            all_args.extend(Path(arg).read_text().splitlines())
         else:
-            objects.append(arg)
+            all_args.append(arg)
 
     # Filter objects to only include .a and .o files
-    objects = [obj for obj in objects if obj.endswith((".a", ".o"))]
+    objects = [arg for arg in all_args if arg.endswith((".a", ".o"))]
 
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
