@@ -502,8 +502,7 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     objects = []
     for arg in line:
         if arg.endswith(".rsp"):
-            with open(arg) as f:
-                objects.extend(f.read().splitlines())
+            objects.extend(Path(arg).read_text().splitlines())
         else:
             objects.append(arg)
 
