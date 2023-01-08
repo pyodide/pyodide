@@ -20,6 +20,8 @@ myst:
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
   to .pyc files
   {pr}`3253`
+- Added `.rsp` file handling in pywasmcross `calculate_exports`
+  {pr}`3438`
 
 ## Version 0.22.0
 
