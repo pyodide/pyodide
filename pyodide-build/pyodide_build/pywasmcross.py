@@ -502,14 +502,14 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     objects = []
     for arg in line:
         if arg.endswith(".rsp"):
-            with open(arg, "r") as f:
+            with open(arg) as f:
                 objects.extend(f.read().splitlines())
         else:
             objects.append(arg)
-    
+
     # Filter objects to only include .a and .o files
     objects = [obj for obj in objects if obj.endswith((".a", ".o"))]
-    
+
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
     # exporting the PyInit symbols, save effort by using nm.
