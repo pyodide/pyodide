@@ -498,15 +498,14 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     then return all public symbols. If not, return only the public symbols that
     begin with `PyInit`.
     """
-    # Extract list of arguments, including those from response files
+    # Get all arguments, including those from response files
     all_args = []
     for arg in line:
         if arg.endswith(".rsp"):
             all_args.extend(Path(arg).read_text().splitlines())
         else:
             all_args.append(arg)
-
-    # Filter objects to only include .a and .o files
+    
     objects = [arg for arg in all_args if arg.endswith((".a", ".o"))]
 
     exports = None
