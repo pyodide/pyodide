@@ -505,7 +505,7 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
             all_args.extend(Path(arg).read_text().splitlines())
         else:
             all_args.append(arg)
-    
+
     objects = [arg for arg in all_args if arg.endswith((".a", ".o"))]
 
     exports = None
