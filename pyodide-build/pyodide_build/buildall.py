@@ -23,7 +23,6 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from rich.console import Console
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
@@ -33,6 +32,8 @@ from . import common
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
+from .rich_console import console_stderr
+from .rich_console import console_stdout as console
 
 
 class BuildError(Exception):
@@ -164,12 +165,12 @@ class Package(BasePackage):
             )
 
         if p.returncode != 0:
-            print(f"Error building {self.name}. Printing build logs.")
+            console_stderr.error(f"Error building {self.name}. Printing build logs.")
 
             with open(self.pkgdir / "build.log") as f:
-                shutil.copyfileobj(f, sys.stdout)
+                shutil.copyfileobj(f, console_stderr.file)
 
-            print("ERROR: cancelling buildall")
+            console_stderr.error("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
 
 
@@ -184,7 +185,7 @@ class PackageStatus:
         self.table.add_row(f"{self.prefix} building {self.pkg_name}", self.status)
         self.finished = False
 
-    def finish(self, success: str, elapsed_time: float) -> None:
+    def finish(self, success: bool, elapsed_time: float) -> None:
         time = datetime.utcfromtimestamp(elapsed_time)
         if time.minute == 0:
             minutes = ""
@@ -192,7 +193,12 @@ class PackageStatus:
             minutes = f"{time.minute}m "
         timestr = f"{minutes}{time.second}s"
         self.table = Table.grid()
-        self.table.add_row(f"{self.prefix} {success} {self.pkg_name} in {timestr}")
+
+        status = "built" if success else "failed"
+        color = "green" if success else "red"
+        self.table.add_row(
+            f"[{color}]{self.prefix} {status} {self.pkg_name} in {timestr}[/{color}]"
+        )
         self.finished = True
 
     def __rich__(self):
@@ -211,7 +217,7 @@ class ReplProgressFormatter:
         self.task = self.progress.add_task("Building packages...", total=num_packages)
         self.packages: list[PackageStatus] = []
         self.reset_grid()
-        self.console = Console()
+        self.console = console
 
     def reset_grid(self):
         """Empty out the rendered grids."""
@@ -494,13 +500,16 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         pkg_map[pkg_name].unbuilt_host_dependencies.difference_update(already_built)
 
     if already_built:
-        print(
+        console.print(
             f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
         )
     if not needs_build:
-        print("All packages already built. Quitting.")
+        console.success("All packages already built. Quitting.")
         return
-    print(f"Building the following packages: {format_name_list(sorted(needs_build))}")
+
+    console.print(
+        f"Building the following packages: {format_name_list(sorted(needs_build))}"
+    )
 
     for pkg_name in needs_build:
         pkg = pkg_map[pkg_name]
@@ -536,8 +545,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
                 success = False
                 return
             finally:
-                status = "built" if success else "failed"
-                pkg_status.finish(status, perf_counter() - t0)
+                pkg_status.finish(success, perf_counter() - t0)
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
