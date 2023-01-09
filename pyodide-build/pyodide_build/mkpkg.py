@@ -207,7 +207,7 @@ def make_package(
     except FileNotFoundError:
         warnings.warn("'npx' executable missing, output has not been prettified.")
 
-    logger.info(f"Output written to {meta_path}")
+    logger.success(f"Output written to {meta_path}")
 
 
 def update_package(
@@ -245,7 +245,7 @@ def update_package(
         source_fmt is None or source_fmt == old_fmt
     )
     if already_up_to_date:
-        logger.info(
+        logger.success(
             f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}"
         )
         return
@@ -283,7 +283,7 @@ def update_package(
     yaml.dump(yaml_content, meta_path)
     run_prettier(meta_path)
 
-    logger.info(f"Updated {package} from {local_ver} to {pypi_ver}.")
+    logger.success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:

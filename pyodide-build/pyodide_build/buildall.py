@@ -193,11 +193,14 @@ class PackageStatus:
         timestr = f"{minutes}{time.second}s"
 
         status = "built" if success else "failed"
-        log = logger.success if success else logger.error
         done_message = f"{self.prefix} {status} {self.pkg_name} in {timestr}"
 
         self.finished = True
-        log(done_message)  # type: ignore[operator]
+
+        if success:
+            logger.success(done_message)
+        else:
+            logger.error(done_message)
 
     def __rich__(self):
         return self.table
@@ -471,7 +474,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
             f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
         )
     if not needs_build:
-        logger.info("All packages already built. Quitting.")
+        logger.success("All packages already built. Quitting.")
         return
 
     logger.info(

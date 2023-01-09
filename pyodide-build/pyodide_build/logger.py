@@ -14,7 +14,7 @@ COLOR_THEME = Theme(
         "info": "",
         "warning": "bold yellow",
         "error": "bold red",
-        "critical": "red",
+        "critical": "bold red",
     }
 )
 

@@ -932,7 +932,7 @@ def main(args: argparse.Namespace) -> None:
             f"{datestamp} {status} building package {name} in {total_seconds} seconds."
         )
         if success:
-            logger.info(msg)
+            logger.success(msg)
         else:
             logger.error(msg)
 
