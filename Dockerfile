@@ -18,9 +18,13 @@ RUN apt-get update \
 RUN wget -q -O - https://sh.rustup.rs | \
     RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
-ADD requirements.txt /
+ADD requirements.txt docs/requirements-doc.txt /
+ADD pyodide-build /pyodide-build
 
-RUN pip3 --no-cache-dir install -r /requirements.txt
+WORKDIR /
+RUN pip3 --no-cache-dir install -r requirements.txt \
+    && pip3 --no-cache-dir install -r requirements-doc.txt \
+    && rm -rf requirements.txt requirements-doc.txt pyodide-build
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
