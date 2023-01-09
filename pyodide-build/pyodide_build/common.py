@@ -18,6 +18,7 @@ from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
 from .io import MetaConfig
+from .rich_console import console_stderr
 
 BUILD_VARS: set[str] = {
     "PATH",
@@ -171,7 +172,9 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
                 top_level_imports.append(subdir.name)
 
     if not top_level_imports:
-        print(f"Warning: failed to parse top level import name from {whlfile}.")
+        console_stderr.warning(
+            f"[warning] failed to parse top level import name from {whlfile}."
+        )
         return None
 
     return top_level_imports
