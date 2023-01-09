@@ -193,10 +193,11 @@ class PackageStatus:
         timestr = f"{minutes}{time.second}s"
 
         status = "built" if success else "failed"
+        log = logger.success if success else logger.error
         done_message = f"{self.prefix} {status} {self.pkg_name} in {timestr}"
 
         self.finished = True
-        logger.info(done_message)
+        log(done_message)  # type: ignore[operator]
 
     def __rich__(self):
         return self.table

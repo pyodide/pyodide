@@ -2,9 +2,21 @@ import logging
 import os
 
 from rich.console import Console
+from rich.highlighter import NullHighlighter
 from rich.logging import RichHandler
+from rich.theme import Theme
 
 IN_CI = "CI" in os.environ
+
+COLOR_THEME = Theme(
+    {
+        "debug": "",
+        "info": "",
+        "warning": "bold yellow",
+        "error": "bold red",
+        "critical": "red",
+    }
+)
 
 
 # Note: it seems like rich's auto terminal detection mechanism doesn't work well for CircleCI.
@@ -26,23 +38,31 @@ class ErrorFilter(logging.Filter):
         return record.levelno in (logging.WARNING, logging.ERROR, logging.CRITICAL)
 
 
+class _Logger(logging.Logger):
+    def success(self, msg, *args, **kwargs):
+        self.info("[bold green]%s[/bold green]", msg, *args, **kwargs)
+
+
 class RichFormatter(logging.Formatter):
     def format(self, records: logging.LogRecord) -> str:
-        # TODO: color the output
+        levelname = records.levelname.lower()
+        records.msg = f"[{levelname}]{records.msg}[/{levelname}]"
+
         formatted = super().format(records)
         return formatted
 
 
-console_stdout = CIAwareConsole()
-console_stderr = CIAwareConsole(stderr=True)
+console_stdout = CIAwareConsole(theme=COLOR_THEME)
+console_stderr = CIAwareConsole(stderr=True, theme=COLOR_THEME)
 
 
-def _get_logger() -> logging.Logger:
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+def _get_logger(log_level: int) -> _Logger:
+    logger = _Logger(__name__)
+    logger.setLevel(log_level)
 
     rich_handler_stdout = RichHandler(
         console=console_stdout,
+        highlighter=NullHighlighter(),
         show_time=False,
         show_level=False,
         show_path=False,
@@ -51,6 +71,7 @@ def _get_logger() -> logging.Logger:
     rich_handler_stdout.setFormatter(RichFormatter("%(message)s"))
     rich_handler_stderr = RichHandler(
         console=console_stderr,
+        highlighter=NullHighlighter(),
         show_time=False,
         show_level=False,
         show_path=False,
@@ -68,7 +89,7 @@ def _get_logger() -> logging.Logger:
     return logger
 
 
-logger = _get_logger()
+logger = _get_logger(logging.DEBUG)
 
 if __name__ == "__main__":
     # For testing the colors
