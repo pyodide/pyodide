@@ -21,6 +21,12 @@ myst:
   to .pyc files
   {pr}`3253`
 
+### Package Loading
+
+- {{ Fix }} Fix incorrect error message when loading a package
+  include in Pyodide fails.
+  {pr}`3435`
+
 ## Version 0.22.0
 
 _January 3, 2023_
