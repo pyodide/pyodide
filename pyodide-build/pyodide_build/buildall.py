@@ -23,16 +23,16 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from rich.console import Console
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
+from rich.spinner import Spinner
 from rich.table import Table
 
 from . import common
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
-from .logger import logger, spinner
+from .logger import console_stdout, logger
 
 
 class BuildError(Exception):
@@ -179,7 +179,7 @@ class PackageStatus:
     ) -> None:
         self.pkg_name = name
         self.prefix = f"[{idx}/{total_packages}] " f"(thread {thread})"
-        self.status = spinner()
+        self.status = Spinner("dots", style="red", speed=0.2)
         self.table = Table.grid(padding=1)
         self.table.add_row(f"{self.prefix} building {self.pkg_name}", self.status)
         self.finished = False
@@ -191,14 +191,12 @@ class PackageStatus:
         else:
             minutes = f"{time.minute}m "
         timestr = f"{minutes}{time.second}s"
-        self.table = Table.grid()
 
         status = "built" if success else "failed"
-        color = "green" if success else "red"
-        self.table.add_row(
-            f"[{color}]{self.prefix} {status} {self.pkg_name} in {timestr}[/{color}]"
-        )
+        done_message = f"{self.prefix} {status} {self.pkg_name} in {timestr}"
+
         self.finished = True
+        logger.info(done_message)
 
     def __rich__(self):
         return self.table
@@ -216,11 +214,15 @@ class ReplProgressFormatter:
         self.task = self.progress.add_task("Building packages...", total=num_packages)
         self.packages: list[PackageStatus] = []
         self.reset_grid()
-        self.console = Console()
 
     def reset_grid(self):
         """Empty out the rendered grids."""
         self.top_grid = Table.grid()
+
+        for package in self.packages:
+            if not package.finished:
+                self.top_grid.add_row(package)
+
         self.main_grid = Table.grid()
         self.main_grid.add_row(self.top_grid)
         self.main_grid.add_row(self.progress)
@@ -228,51 +230,16 @@ class ReplProgressFormatter:
     def add_package(
         self, *, name: str, idx: int, thread: int, total_packages: int
     ) -> PackageStatus:
-        self.flush_rows()
         status = PackageStatus(
             name=name, idx=idx, thread=thread, total_packages=total_packages
         )
         self.packages.append(status)
-        self.top_grid.add_row(status)
+        self.reset_grid()
         return status
 
-    def flush_rows(self):
-        """Ensure that the 'live' part of the rendered grid fits on the screen"""
-        if not self.packages:
-            return
-        if len(self.packages) > self.console.size.height - 1:
-            # Out of space, move all active packages below inactive ones to make
-            # more room
-            finished = []
-            working = []
-            for pkg in self.packages:
-                if pkg.finished:
-                    finished.append(pkg)
-                else:
-                    working.append(pkg)
-            self.packages = finished + working
-        # Make a new table with all finished packages above the topmost working
-        # package
-        table = Table.grid()
-        it = iter(self.packages)
-        for pkg in it:
-            if not pkg.finished:
-                break
-            table.add_row(pkg)
-
-        # Update grid to only contain remaining packages (all packages below
-        # topmost working package)
-        self.packages = [pkg]
-        self.packages.extend(it)
+    def remove_package(self, pkg: PackageStatus) -> None:
+        self.packages.remove(pkg)
         self.reset_grid()
-        for pkg in self.packages:
-            self.top_grid.add_row(pkg)
-
-        # Print static copy of top segment of finished packages
-        if table.rows:
-            # sleep a bit before printing table to prevent jitter
-            sleep(0.05)
-            self.console.print(table)
 
     def update_progress_bar(self):
         """Step the progress bar by one (to show that a package finished)"""
@@ -524,6 +491,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         nonlocal queue_idx
         while True:
             pkg = build_queue.get()[1]
+
             with thread_lock:
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
@@ -545,6 +513,8 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
                 return
             finally:
                 pkg_status.finish(success, perf_counter() - t0)
+                progress_formatter.remove_package(pkg_status)
+
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -553,7 +523,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    with Live(progress_formatter, console=progress_formatter.console):
+    with Live(progress_formatter, console=console_stdout):
         while num_built < len(pkg_map):
             match built_queue.get():
                 case BuildError() as err:

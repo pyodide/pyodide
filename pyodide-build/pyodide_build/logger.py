@@ -1,8 +1,19 @@
 import logging
+import os
 
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.spinner import Spinner
+
+IN_CI = "CI" in os.environ
+
+
+# Note: it seems like rich's auto terminal detection mechanism doesn't work well for CircleCI.
+#       so we manually disable it when running in CI.
+class CIAwareConsole(Console):
+    @property
+    def is_terminal(self) -> bool:
+        """Check if the console is writing to a terminal."""
+        return not IN_CI and super().is_terminal
 
 
 class InfoFilter(logging.Filter):
@@ -12,7 +23,7 @@ class InfoFilter(logging.Filter):
 
 class ErrorFilter(logging.Filter):
     def filter(self, record):
-        return record.levelno in (logging.WARNING, logging.ERROR)
+        return record.levelno in (logging.WARNING, logging.ERROR, logging.CRITICAL)
 
 
 class RichFormatter(logging.Formatter):
@@ -22,12 +33,16 @@ class RichFormatter(logging.Formatter):
         return formatted
 
 
+console_stdout = CIAwareConsole()
+console_stderr = CIAwareConsole(stderr=True)
+
+
 def _get_logger() -> logging.Logger:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
     rich_handler_stdout = RichHandler(
-        console=Console(),
+        console=console_stdout,
         show_time=False,
         show_level=False,
         show_path=False,
@@ -35,7 +50,7 @@ def _get_logger() -> logging.Logger:
     )
     rich_handler_stdout.setFormatter(RichFormatter("%(message)s"))
     rich_handler_stderr = RichHandler(
-        console=Console(stderr=True),
+        console=console_stderr,
         show_time=False,
         show_level=False,
         show_path=False,
@@ -54,17 +69,6 @@ def _get_logger() -> logging.Logger:
 
 
 logger = _get_logger()
-
-
-def spinner() -> Spinner | None:
-    import os
-
-    # Spinner pollutes the output in CI
-    if "CI" in os.environ:
-        return None
-    else:
-        return Spinner("dots", style="red")
-
 
 if __name__ == "__main__":
     # For testing the colors
