@@ -25,7 +25,6 @@ from typing import Any
 
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
-from rich.spinner import Spinner
 from rich.table import Table
 
 from . import common
@@ -34,6 +33,7 @@ from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
 from .rich_console import console_stderr
 from .rich_console import console_stdout as console
+from .rich_console import spinner
 
 
 class BuildError(Exception):
@@ -180,7 +180,7 @@ class PackageStatus:
     ) -> None:
         self.pkg_name = name
         self.prefix = f"[{idx}/{total_packages}] " f"(thread {thread})"
-        self.status = Spinner("dots", style="red")
+        self.status = spinner()
         self.table = Table.grid(padding=1)
         self.table.add_row(f"{self.prefix} building {self.pkg_name}", self.status)
         self.finished = False

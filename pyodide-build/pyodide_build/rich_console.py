@@ -1,4 +1,5 @@
 from rich.console import Console
+from rich.spinner import Spinner
 from rich.theme import Theme
 
 color_theme = Theme(
@@ -30,6 +31,16 @@ class PyodideConsole(Console):
 
 console_stdout = PyodideConsole()
 console_stderr = PyodideConsole(stderr=True)
+
+
+def spinner() -> Spinner | None:
+    import os
+
+    # Spinner pollutes the output in CI
+    if "CI" in os.environ:
+        return None
+    else:
+        return Spinner("dots", style="red")
 
 
 if __name__ == "__main__":
