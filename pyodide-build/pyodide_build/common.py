@@ -173,7 +173,7 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
 
     if not top_level_imports:
         console_stderr.warning(
-            f"[warning] failed to parse top level import name from {whlfile}."
+            f"WARNING: failed to parse top level import name from {whlfile}."
         )
         return None
 
