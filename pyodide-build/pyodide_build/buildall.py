@@ -23,6 +23,7 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from rich.console import Console
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.table import Table
@@ -31,9 +32,7 @@ from . import common
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
-from .rich_console import console_stderr
-from .rich_console import console_stdout as console
-from .rich_console import spinner
+from .logger import logger, spinner
 
 
 class BuildError(Exception):
@@ -165,12 +164,12 @@ class Package(BasePackage):
             )
 
         if p.returncode != 0:
-            console_stderr.error(f"Error building {self.name}. Printing build logs.")
+            logger.error(f"Error building {self.name}. Printing build logs.")
 
             with open(self.pkgdir / "build.log") as f:
-                shutil.copyfileobj(f, console_stderr.file)
+                shutil.copyfileobj(f, sys.stderr)
 
-            console_stderr.error("ERROR: cancelling buildall")
+            logger.error("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
 
 
@@ -217,7 +216,7 @@ class ReplProgressFormatter:
         self.task = self.progress.add_task("Building packages...", total=num_packages)
         self.packages: list[PackageStatus] = []
         self.reset_grid()
-        self.console = console
+        self.console = Console()
 
     def reset_grid(self):
         """Empty out the rendered grids."""
@@ -500,14 +499,14 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         pkg_map[pkg_name].unbuilt_host_dependencies.difference_update(already_built)
 
     if already_built:
-        console.print(
+        logger.info(
             f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
         )
     if not needs_build:
-        console.success("All packages already built. Quitting.")
+        logger.info("All packages already built. Quitting.")
         return
 
-    console.print(
+    logger.info(
         f"Building the following packages: {format_name_list(sorted(needs_build))}"
     )
 

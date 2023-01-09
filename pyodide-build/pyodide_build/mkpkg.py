@@ -19,7 +19,7 @@ from packaging.version import Version
 from ruamel.yaml import YAML
 
 from .common import parse_top_level_import_name
-from .rich_console import console_stdout as console
+from .logger import logger
 
 
 class URLDict(TypedDict):
@@ -149,7 +149,7 @@ def make_package(
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
     """
-    console.info(f"Creating meta.yaml package for {package}")
+    logger.info(f"Creating meta.yaml package for {package}")
 
     yaml = YAML()
 
@@ -207,7 +207,7 @@ def make_package(
     except FileNotFoundError:
         warnings.warn("'npx' executable missing, output has not been prettified.")
 
-    console.success(f"Output written to {meta_path}")
+    logger.info(f"Output written to {meta_path}")
 
 
 def update_package(
@@ -222,7 +222,7 @@ def update_package(
 
     meta_path = root / package / "meta.yaml"
     if not meta_path.exists():
-        console.error(f"{meta_path} does not exist")
+        logger.error(f"{meta_path} does not exist")
 
     yaml_content = yaml.load(meta_path.read_bytes())
 
@@ -245,16 +245,16 @@ def update_package(
         source_fmt is None or source_fmt == old_fmt
     )
     if already_up_to_date:
-        console.info(
+        logger.info(
             f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}"
         )
         return
 
-    console.info(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
+    logger.info(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
 
     if yaml_content["source"].get("patches"):
         if update_patched:
-            console.warning(
+            logger.warning(
                 f"Pyodide applies patches to {package}. Update the "
                 "patches (if needed) to avoid build failing."
             )
@@ -283,7 +283,7 @@ def update_package(
     yaml.dump(yaml_content, meta_path)
     run_prettier(meta_path)
 
-    console.success(f"Updated {package} from {local_ver} to {pypi_ver}.")
+    logger.info(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -359,7 +359,7 @@ def main(args: argparse.Namespace) -> None:
         #
         # If there is no sdist it prints an error message like:
         # "No sdist URL found for package swiglpk (https://pypi.org/project/swiglpk/)"
-        console.error(e.args[0])
+        logger.error(e.args[0])
 
 
 if __name__ == "__main__":
