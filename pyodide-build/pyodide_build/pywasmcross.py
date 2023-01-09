@@ -320,6 +320,7 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
                 "--version-script=",
                 "-R/",  # wasm-ld does not accept -R (runtime libraries)
                 "-R.",  # wasm-ld does not accept -R (runtime libraries)
+                "--exclude-libs=",
             )
         ):
             continue

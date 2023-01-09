@@ -1,9 +1,9 @@
 import collections
 import gzip
 import json
-import pathlib
 import sys
 import types
+from pathlib import Path
 from typing import Mapping, Union
 
 from docutils.frontend import OptionParser
@@ -15,8 +15,9 @@ types.Union = Union  # type: ignore[attr-defined]
 from sphinx_js.suffix_tree import SuffixTree
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
-test_directory = pathlib.Path(__file__).resolve().parent
+test_directory = Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
+src_dir = test_directory.parents[2] / "src"
 
 
 # tsdoc_dump.json.gz is the source file for the test docs. It can be updated as follows:
@@ -36,7 +37,7 @@ from sphinx_pyodide.jsdoc import (
     get_jsdoc_summary_directive,
 )
 
-inner_analyzer = TsAnalyzer(jsdoc_json, "/home/hood/pyodide/src")
+inner_analyzer = TsAnalyzer(jsdoc_json, str(src_dir))
 settings = OptionParser().get_default_values()
 settings.update(settings_json, OptionParser())
 
@@ -57,7 +58,6 @@ def test_flatten_suffix_tree():
     }
     t.add_many(d.items())
     r = flatten_suffix_tree(t._tree)
-    r = {k: v.value for (k, v) in r.items()}
     assert d == r
 
 
