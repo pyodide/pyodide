@@ -8,6 +8,8 @@ from tempfile import TemporaryDirectory
 from packaging.tags import Tag
 from packaging.utils import parse_wheel_filename
 
+from .rich_console import console_stdout as console
+
 
 def _specialize_convert_tags(tags: set[Tag] | frozenset[Tag], wheel_name: str) -> Tag:
     """Convert a sequence of wheel tags to a single tag corresponding
@@ -120,7 +122,7 @@ def _py_compile_wheel(
     wheel_name_out = _py_compile_wheel_name(wheel_path.name)
     wheel_path_out = wheel_path.parent / wheel_name_out
     if verbose:
-        print(f" - Running py-compile on {wheel_path} -> ", end="", flush=True)
+        console.print(f" - Running py-compile on {wheel_path} -> ", end="")
 
     with zipfile.ZipFile(wheel_path) as fh_zip_in, TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
@@ -153,10 +155,9 @@ def _py_compile_wheel(
         if wheel_name_out == wheel_path.name:
             if keep:
                 if verbose:
-                    print(
+                    console.print(
                         " (adding .old prefix to avoid overwriting input file) ->",
                         end="",
-                        flush=True,
                     )
                 wheel_path.rename(wheel_path.with_suffix(".whl.old"))
         elif not keep:
@@ -165,5 +166,5 @@ def _py_compile_wheel(
 
         shutil.copyfile(wheel_path_tmp, wheel_path_out)
         if verbose:
-            print(f" {wheel_path_out.name}")
+            console.print(f" {wheel_path_out.name}")
     return wheel_path_out
