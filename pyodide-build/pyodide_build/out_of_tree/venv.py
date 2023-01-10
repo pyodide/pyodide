@@ -217,7 +217,7 @@ def install_stdlib(venv_bin: Path) -> None:
 
 def create_pyodide_venv(dest: Path) -> None:
     """Create a Pyodide virtualenv and store it into dest"""
-    logger.info("Creating Pyodide virtualenv at", str(dest))
+    logger.info(f"Creating Pyodide virtualenv at {dest}")
     from virtualenv import session_via_cli
 
     if dest.exists():

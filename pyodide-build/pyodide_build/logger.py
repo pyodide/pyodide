@@ -33,7 +33,7 @@ class CIAwareConsole(Console):
 
 class StdoutFilter(logging.Filter):
     def filter(self, record):
-        return record.levelno in (logging.DEBUG, logging.INFO)
+        return record.levelno in (LEVEL_STDOUT, logging.DEBUG, logging.INFO)
 
 
 class StderrFilter(logging.Filter):
