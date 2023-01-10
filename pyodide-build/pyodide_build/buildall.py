@@ -471,14 +471,16 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
 
     if already_built:
         logger.info(
-            f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
+            "The following packages are already built: "
+            f"[bold]{format_name_list(sorted(already_built))}[/bold]"
         )
     if not needs_build:
         logger.success("All packages already built. Quitting.")
         return
 
     logger.info(
-        f"Building the following packages: {format_name_list(sorted(needs_build))}"
+        "Building the following packages: "
+        f"[bold]{format_name_list(sorted(needs_build))}[/bold]"
     )
 
     for pkg_name in needs_build:
