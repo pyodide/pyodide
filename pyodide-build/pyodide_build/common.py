@@ -215,8 +215,8 @@ CORE_SCIPY_PACKAGES = {
 
 
 @functools.lru_cache(maxsize=1)
-def get_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
-    """Load all recipes from the recipe directory."""
+def load_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
+    """Load all package recipes from the recipe directory."""
 
     recipes_path = recipe_dir.glob("*/meta.yaml")
 
@@ -231,44 +231,61 @@ def get_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
     return recipes
 
 
-def _parse_package_subset(query: str | None) -> set[str]:
-    """Parse the list of packages specified with PYODIDE_PACKAGES env var.
+def parse_package_subset(recipe_dir: Path, query: str | None) -> dict[str, MetaConfig]:
+    """
+    Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
-    Also add the list of mandatory packages: ["pyparsing", "packaging",
-    "micropip"]
+    Parameters
+    ----------
+    recipe_dir
+        Path to the directory containing the recipes
 
-    Supports following meta-packages,
-     - 'core': corresponds to packages needed to run the core test suite
-       {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "fpcast-test"}. This is the default option
-       if query is None.
-     - 'min-scipy-stack': includes the "core" meta-package as well as some of the
-       core packages from the scientific python stack and their dependencies:
-       {"numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib", "pytest"}.
-       This option is non exhaustive and is mainly intended to make build faster
-       while testing a diverse set of scientific packages.
-     - '*': corresponds to all packages (returns None)
+    query
+        List of packages to build.
 
-    Note: None as input is equivalent to PYODIDE_PACKAGES being unset and leads
-    to only the core packages being built.
+        - It is possible to query a package with its tag, e.g. 'core' or 'min-scipy-stack'.
+        - '*' corresponds to all packages.
+        - 'no-numpy-dependents' corresponds to packages that are not dependent to numpy
+        (including numpy itself, this is for CI purposes)
+        - You can disable specific packages by prefixing them with a '!', e.g. '!numpy'
 
-    Returns:
+    Returns
+    -------
       a set of package names to build or None (build all packages).
     """
     if query is None:
-        query = "core"
+        query = ""
 
+    configs = load_recipes(recipe_dir)
     packages = {el.strip() for el in query.split(",")}
-    packages.update(ALWAYS_PACKAGES)
-    # handle meta-packages
-    if "core" in packages:
-        packages |= CORE_PACKAGES
-        packages.discard("core")
-    if "min-scipy-stack" in packages:
-        packages |= CORE_PACKAGES | CORE_SCIPY_PACKAGES
-        packages.discard("min-scipy-stack")
 
-    packages.discard("")
-    return packages
+    tags = []
+    disabled_packages: list[str] = []
+    filtered_packages: dict[str, MetaConfig] = {}
+    for package in packages:
+        if not package:  # empty string
+            continue
+
+        # disabled_packages
+        if package.startswith("!"):
+            package = package[1:]
+            disabled_packages.append(package)
+            continue
+
+        if package in configs:
+            filtered_packages[package] = configs[package].copy(deep=True)
+        else:
+            tags.append(package)
+
+    if "*" in tags:
+        filtered_packages = {
+            name: package.copy(deep=True) for name, package in configs.items()
+        }
+
+    if "no_numpy_dependents" in tags:
+        pass
+
+    return filtered_packages
 
 
 def get_make_flag(name: str) -> str:
@@ -394,7 +411,7 @@ def get_unisolated_packages() -> list[str]:
         unisolated_packages = unisolated_file.read_text().splitlines()
     else:
         unisolated_packages = []
-        recipes = get_recipes()
+        recipes = load_recipes()
         for name, config in recipes.items():
             if config.build.cross_build_env:
                 unisolated_packages.append(name)

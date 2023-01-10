@@ -581,8 +581,9 @@ def copy_packages_to_dist_dir(
 def build_packages(
     packages_dir: Path, args: argparse.Namespace
 ) -> dict[str, BasePackage]:
-    packages = common._parse_package_subset(args.only)
-    pkg_map = generate_dependency_graph(packages_dir, packages)
+    packages = common.parse_package_subset(packages_dir, args.only)
+    packages
+    pkg_map = generate_dependency_graph(packages_dir, set())
 
     build_from_graph(pkg_map, args)
     for pkg in pkg_map.values():
