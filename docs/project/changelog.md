@@ -21,6 +21,10 @@ myst:
   to .pyc files
   {pr}`3253`
 
+### Packages
+
+- New packages: tokenizers {pr}`3422`
+
 ## Version 0.22.0
 
 _January 3, 2023_
