@@ -18,6 +18,9 @@ COLOR_THEME = Theme(
     }
 )
 
+LEVEL_STDOUT = logging.INFO - 5
+LEVEL_STDERR = logging.INFO + 5
+
 
 # Note: it seems like rich's auto terminal detection mechanism doesn't work well for CircleCI.
 #       so we manually disable it when running in CI.
@@ -28,22 +31,35 @@ class CIAwareConsole(Console):
         return not IN_CI and super().is_terminal
 
 
-class InfoFilter(logging.Filter):
+class StdoutFilter(logging.Filter):
     def filter(self, record):
         return record.levelno in (logging.DEBUG, logging.INFO)
 
 
-class ErrorFilter(logging.Filter):
+class StderrFilter(logging.Filter):
     def filter(self, record):
-        return record.levelno in (logging.WARNING, logging.ERROR, logging.CRITICAL)
+        return record.levelno in (
+            LEVEL_STDERR,
+            logging.WARNING,
+            logging.ERROR,
+            logging.CRITICAL,
+        )
 
 
 class _Logger(logging.Logger):
     def success(self, msg, *args, **kwargs):
         self.info("[bold green]%s[/bold green]", msg, *args, **kwargs)
 
+    def stdout(self, msg, *args, **kwargs):
+        self.log(LEVEL_STDOUT, msg, *args, **kwargs)
+
+    def stderr(self, msg, *args, **kwargs):
+        self.log(LEVEL_STDERR, msg, *args, **kwargs)
+
 
 class RichFormatter(logging.Formatter):
+    """Colorize log messages based on log level."""
+
     def format(self, records: logging.LogRecord) -> str:
         levelname = records.levelname.lower()
         records.msg = f"[{levelname}]{records.msg}[/{levelname}]"
@@ -79,9 +95,8 @@ def _get_logger(log_level: int) -> _Logger:
     )
     rich_handler_stderr.setFormatter(RichFormatter("%(message)s"))
 
-    # Print only info and below to stdout, and above to stderr
-    rich_handler_stdout.addFilter(InfoFilter())
-    rich_handler_stderr.addFilter(ErrorFilter())
+    rich_handler_stdout.addFilter(StdoutFilter())
+    rich_handler_stderr.addFilter(StderrFilter())
 
     logger.addHandler(rich_handler_stdout)
     logger.addHandler(rich_handler_stderr)
@@ -95,5 +110,8 @@ if __name__ == "__main__":
     # For testing the colors
     logger.debug("debug")
     logger.info("info")
+    logger.stdout("stdout")
     logger.warning("warning")
     logger.error("error")
+    logger.success("success")
+    logger.stderr("stderr")

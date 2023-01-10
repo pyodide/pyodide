@@ -405,11 +405,11 @@ def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
 
 def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
-        print("  stdout:")
-        print(textwrap.indent(result.stdout, "    "))
+        logger.error("  stdout:")
+        logger.error(textwrap.indent(result.stdout, "    "))
     if result.stderr:
-        print("  stderr:")
-        print(textwrap.indent(result.stderr, "    "))
+        logger.error("  stderr:")
+        logger.error(textwrap.indent(result.stderr, "    "))
     raise SystemExit(result.returncode)
 
 
