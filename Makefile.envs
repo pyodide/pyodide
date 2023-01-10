@@ -153,7 +153,6 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
 
 # For RUST
-export CARGO_HOME ?= $(HOME)/.cargo
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export RUST_TOOLCHAIN=nightly-2022-06-26

@@ -197,6 +197,7 @@ emsdk/emsdk/.complete:
 
 
 rust:
+	echo -e '\033[0;31m[WARNING] The target `make rust` is only for development and we do not guarantee that it will work or be maintained.\033[0m'
 	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
