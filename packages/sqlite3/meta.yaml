@@ -1,6 +1,8 @@
 package:
   name: sqlite3
   version: 1.0.0 # Nonsense
+  tag:
+    - always
   top-level:
     - sqlite3
 build:

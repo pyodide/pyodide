@@ -1,6 +1,9 @@
 package:
   name: pytz
   version: "2022.7"
+  tag:
+    - core
+    - min-scipy-stack
   top-level:
     - pytz
 source:
