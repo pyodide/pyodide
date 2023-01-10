@@ -214,6 +214,23 @@ CORE_SCIPY_PACKAGES = {
 }
 
 
+@functools.lru_cache(maxsize=1)
+def get_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
+    """Load all recipes from the recipe directory."""
+
+    recipes_path = recipe_dir.glob("*/meta.yaml")
+
+    recipes: dict[str, MetaConfig] = {}
+    for recipe in recipes_path:
+        try:
+            config = MetaConfig.from_yaml(recipe)
+            recipes[config.package.name] = config
+        except Exception as e:
+            raise ValueError(f"Could not parse {recipe}.") from e
+
+    return recipes
+
+
 def _parse_package_subset(query: str | None) -> set[str]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
@@ -377,13 +394,10 @@ def get_unisolated_packages() -> list[str]:
         unisolated_packages = unisolated_file.read_text().splitlines()
     else:
         unisolated_packages = []
-        for pkg in (PYODIDE_ROOT / "packages").glob("*/meta.yaml"):
-            try:
-                config = MetaConfig.from_yaml(pkg)
-            except Exception as e:
-                raise ValueError(f"Could not parse {pkg}.") from e
+        recipes = get_recipes()
+        for name, config in recipes.items():
             if config.build.cross_build_env:
-                unisolated_packages.append(config.package.name)
+                unisolated_packages.append(name)
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 
