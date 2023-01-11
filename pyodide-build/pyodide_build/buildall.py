@@ -255,20 +255,17 @@ def generate_dependency_graph(
     ----------
     packages_dir
         A directory that contains packages
-    query
-        A list of packages to build
+    requested
+        A set of packages to build
+    disabled
+        A set of packages to not build
+    flags
+        Some extra flags that will enable / disable packages
 
     Returns
     -------
     A dictionary mapping package names to BasePackage objects
     """
-
-    # keep the list of packages that were originally requested.
-    # We need this information because some packages are reachable
-    # from the initial set but are only reachable via a disabled dependency.
-    # Example: scikit-learn needs joblib & scipy, scipy needs numpy but numpy disabled.
-    # We don't want to build joblib.
-    packages = requested.copy()
 
     pkg: BasePackage
     pkgname: str
@@ -279,6 +276,7 @@ def generate_dependency_graph(
     # disabled since it might happen because of a transitive dependency
     graph = {}
     all_recipes = recipe.load_all_recipes(packages_dir)
+    packages = requested.copy()
     while packages:
         pkgname = packages.pop()
 
@@ -309,20 +307,21 @@ def generate_dependency_graph(
     # dependencies).
     # Locate the subset of packages that are transitive dependencies of packages
     # that are requested and not disabled.
+    requested_with_deps = requested.copy()
     for pkgname in reversed(list(TopologicalSorter(graph).static_order())):
         pkg = pkg_map[pkgname]
         if pkg.disabled:
-            requested.discard(pkgname)
+            requested_with_deps.discard(pkgname)
             continue
 
-        if pkgname not in requested:
+        if pkgname not in requested_with_deps:
             continue
 
         requested.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
 
-    pkg_map = {name: pkg_map[name] for name in requested}
+    pkg_map = {name: pkg_map[name] for name in requested_with_deps}
 
     _validate_package_map(pkg_map)
 
