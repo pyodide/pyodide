@@ -17,7 +17,7 @@ import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
-from .io import MetaConfig
+from .recipe import load_all_recipes
 
 BUILD_VARS: set[str] = {
     "PATH",
@@ -214,80 +214,6 @@ CORE_SCIPY_PACKAGES = {
 }
 
 
-@functools.lru_cache(maxsize=1)
-def load_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
-    """Load all package recipes from the recipe directory."""
-
-    recipes_path = recipe_dir.glob("*/meta.yaml")
-
-    recipes: dict[str, MetaConfig] = {}
-    for recipe in recipes_path:
-        try:
-            config = MetaConfig.from_yaml(recipe)
-            recipes[config.package.name] = config
-        except Exception as e:
-            raise ValueError(f"Could not parse {recipe}.") from e
-
-    return recipes
-
-
-def parse_package_subset(recipe_dir: Path, query: str | None) -> dict[str, MetaConfig]:
-    """
-    Parse the list of packages specified with PYODIDE_PACKAGES env var.
-
-    Parameters
-    ----------
-    recipe_dir
-        Path to the directory containing the recipes
-
-    query
-        List of packages to build.
-
-        - It is possible to query a package with its tag, e.g. 'core' or 'min-scipy-stack'.
-        - '*' corresponds to all packages.
-        - 'no-numpy-dependents' corresponds to packages that are not dependent to numpy
-        (including numpy itself, this is for CI purposes)
-        - You can disable specific packages by prefixing them with a '!', e.g. '!numpy'
-
-    Returns
-    -------
-      a set of package names to build or None (build all packages).
-    """
-    if query is None:
-        query = ""
-
-    configs = load_recipes(recipe_dir)
-    packages = {el.strip() for el in query.split(",")}
-
-    tags = []
-    disabled_packages: list[str] = []
-    filtered_packages: dict[str, MetaConfig] = {}
-    for package in packages:
-        if not package:  # empty string
-            continue
-
-        # disabled_packages
-        if package.startswith("!"):
-            package = package[1:]
-            disabled_packages.append(package)
-            continue
-
-        if package in configs:
-            filtered_packages[package] = configs[package].copy(deep=True)
-        else:
-            tags.append(package)
-
-    if "*" in tags:
-        filtered_packages = {
-            name: package.copy(deep=True) for name, package in configs.items()
-        }
-
-    if "no_numpy_dependents" in tags:
-        pass
-
-    return filtered_packages
-
-
 def get_make_flag(name: str) -> str:
     """Get flags from makefile.envs.
 
@@ -411,7 +337,8 @@ def get_unisolated_packages() -> list[str]:
         unisolated_packages = unisolated_file.read_text().splitlines()
     else:
         unisolated_packages = []
-        recipes = load_recipes()
+        recipe_dir = PYODIDE_ROOT / "packages"
+        recipes = load_all_recipes(recipe_dir)
         for name, config in recipes.items():
             if config.build.cross_build_env:
                 unisolated_packages.append(name)

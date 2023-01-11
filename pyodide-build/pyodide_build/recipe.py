@@ -1,4 +1,5 @@
 import functools
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +25,7 @@ def load_all_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
 
 def load_recipes(
     recipe_dir: Path,
-    names_or_tags: list[str],
+    names_or_tags: Iterable[str],
     load_always: bool = True,
 ) -> tuple[dict[str, MetaConfig], dict[str, Any]]:
     """
