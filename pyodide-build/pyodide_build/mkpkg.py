@@ -223,6 +223,7 @@ def update_package(
     meta_path = root / package / "meta.yaml"
     if not meta_path.exists():
         logger.error(f"{meta_path} does not exist")
+        exit(1)
 
     yaml_content = yaml.load(meta_path.read_bytes())
 
@@ -360,6 +361,7 @@ def main(args: argparse.Namespace) -> None:
         # If there is no sdist it prints an error message like:
         # "No sdist URL found for package swiglpk (https://pypi.org/project/swiglpk/)"
         logger.error(e.args[0])
+        exit(1)
 
 
 if __name__ == "__main__":
