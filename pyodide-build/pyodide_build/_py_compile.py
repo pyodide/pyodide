@@ -120,7 +120,7 @@ def _py_compile_wheel(
     wheel_name_out = _py_compile_wheel_name(wheel_path.name)
     wheel_path_out = wheel_path.parent / wheel_name_out
     if verbose:
-        print(f" - Running py-compile on {wheel_path} -> ", end="")
+        print(f" - Running py-compile on {wheel_path} -> ", end="", flush=True)
 
     with zipfile.ZipFile(wheel_path) as fh_zip_in, TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
@@ -156,6 +156,7 @@ def _py_compile_wheel(
                     print(
                         " (adding .old prefix to avoid overwriting input file) ->",
                         end="",
+                        flush=True,
                     )
                 wheel_path.rename(wheel_path.with_suffix(".whl.old"))
         elif not keep:
