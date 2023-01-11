@@ -70,8 +70,6 @@ def test_build_recipe(selenium, tmp_path, monkeypatch, request):
 
     pkgs_to_build = pkgs.keys() | {p for v in pkgs.values() for p in v}
 
-    monkeypatch.setattr(common, "ALWAYS_PACKAGES", {})
-
     for build_dir in recipe_dir.rglob("build"):
         shutil.rmtree(build_dir)
 

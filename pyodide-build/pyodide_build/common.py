@@ -177,43 +177,6 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     return top_level_imports
 
 
-ALWAYS_PACKAGES = {
-    "pyparsing",
-    "packaging",
-    "micropip",
-    "distutils",
-    "test",
-    "ssl",
-    "lzma",
-    "sqlite3",
-    "hashlib",
-}
-
-CORE_PACKAGES = {
-    "micropip",
-    "pyparsing",
-    "pytz",
-    "packaging",
-    "Jinja2",
-    "regex",
-    "fpcast-test",
-    "sharedlib-test-py",
-    "cpp-exceptions-test",
-    "pytest",
-    "tblib",
-}
-
-CORE_SCIPY_PACKAGES = {
-    "numpy",
-    "scipy",
-    "pandas",
-    "matplotlib",
-    "scikit-learn",
-    "joblib",
-    "pytest",
-}
-
-
 def get_make_flag(name: str) -> str:
     """Get flags from makefile.envs.
 

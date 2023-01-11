@@ -238,7 +238,10 @@ def _parse_package_query(query: list[str] | str | None) -> tuple[set[str], set[s
 
 
 def generate_dependency_graph(
-    packages_dir: Path, requested: set[str], disabled: set[str], flags: dict[str, Any]
+    packages_dir: Path,
+    requested: set[str],
+    disabled: set[str] | None = None,
+    flags: dict[str, Any] | None = None,
 ) -> dict[str, BasePackage]:
     """This generates a dependency graph for given packages.
 
@@ -270,6 +273,11 @@ def generate_dependency_graph(
     pkg: BasePackage
     pkgname: str
     pkg_map: dict[str, BasePackage] = {}
+
+    if not disabled:
+        disabled = set()
+    if not flags:
+        flags = {}
 
     # Create dependency graph.
     # On first pass add all dependencies regardless of whether
@@ -317,7 +325,7 @@ def generate_dependency_graph(
         if pkgname not in requested_with_deps:
             continue
 
-        requested.update(pkg.dependencies)
+        requested_with_deps.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
 
