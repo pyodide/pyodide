@@ -207,13 +207,13 @@ def _parse_package_query(query: list[str] | str | None) -> tuple[set[str], set[s
 
     Examples
     --------
-    >>> _parse_query(None)
+    >>> _parse_package_query(None)
     (set(), set())
-    >>> _parse_query("a,b,c")
+    >>> _parse_package_query("a,b,c")
     ({'a', 'b', 'c'}, set())
-    >>> _parse_query("a,b,!c")
+    >>> _parse_package_query("a,b,!c")
     ({'a', 'b'}, {'c'})
-    >>> _parse_query(["a", "b", "!c"])
+    >>> _parse_package_query(["a", "b", "!c"])
     ({'a', 'b'}, {'c'})
     """
     if not query:
