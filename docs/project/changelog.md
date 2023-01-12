@@ -21,6 +21,10 @@ myst:
   to .pyc files
   {pr}`3253`
 
+- {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
+  packages.
+  {pr}`3444`
+
 ## Version 0.22.0
 
 _January 3, 2023_

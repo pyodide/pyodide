@@ -45,6 +45,16 @@ Some packages may have multiple top-level import names.
 For instance, `setuptools` exposes `setuptools` and `pkg_resources`
 as a top-level import names.
 
+### `package/tag`
+
+The list of tag of the package. This is a meta information used to group
+the package. Normally this is not needed, but it can be useful to group
+packages by functionality. For example, the `min-scipy-stack` tag is used
+to group packages that are part of the minimal scipy stack.
+
+A special tag `always` can be used to indicate that the package
+should always be built.
+
 ## `source`
 
 ### `source/url`
