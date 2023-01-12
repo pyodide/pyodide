@@ -592,7 +592,15 @@ def handle_command_generate_args(
             return line
 
         flags = get_cmake_compiler_flags()
-        line[:1] = ["emcmake", "cmake", *flags]
+        line[:1] = [
+            "emcmake",
+            "cmake",
+            *flags,
+            # Since we create a temporary directory and install compiler symlinks every time,
+            # CMakeCache.txt will contain invalid paths to the compiler when re-running,
+            # so we need to tell CMake to ignore the existing cache and build from scratch.
+            "--fresh",
+        ]
         return line
     elif cmd == "ranlib":
         line[0] = "emranlib"
