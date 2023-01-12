@@ -587,8 +587,8 @@ def handle_command_generate_args(
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     elif cmd == "cmake":
-        # If it is a build/install command, we don't do anything.
-        if "--build" in line or "--install" in line:
+        # If it is a build/install command, or running a script, we don't do anything.
+        if "--build" in line or "--install" in line or "-P" in line:
             return line
 
         flags = get_cmake_compiler_flags()
