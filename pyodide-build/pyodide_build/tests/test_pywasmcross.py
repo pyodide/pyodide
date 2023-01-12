@@ -265,6 +265,14 @@ def test_get_cmake_compiler_flags():
         assert emscripten_compiler not in cmake_flags
 
 
+def test_handle_command_cmake():
+    args = BuildArgs()
+    assert "--fresh" in handle_command_generate_args(["cmake", "./"], args, False)  # type: ignore[arg-type]
+
+    build_cmd = ["cmake", "--build", "." "--target", "target"]
+    assert handle_command_generate_args(build_cmd, args, False) == build_cmd  # type: ignore[arg-type]
+
+
 def test_get_library_output():
     assert get_library_output(["test.so"]) == "test.so"
     assert get_library_output(["test.so.1.2.3"]) == "test.so.1.2.3"
