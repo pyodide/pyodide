@@ -21,6 +21,10 @@ myst:
   to .pyc files
   {pr}`3253`
 
+- {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
+  when run multiple times.
+  {pr}`3445`
+
 ## Version 0.22.0
 
 _January 3, 2023_
