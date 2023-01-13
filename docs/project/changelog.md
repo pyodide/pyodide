@@ -25,6 +25,10 @@ myst:
 - {{ Fix }} `pyodide config` won't print extra messages anymore.
   {pr}`3483`
 
+- {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
+  when run multiple times.
+  {pr}`3445`
+
 ## Version 0.22.0
 
 _January 3, 2023_
