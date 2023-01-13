@@ -5,7 +5,6 @@ packaging   # required by micropip at import time
 sphinx>=4.4.0
 sphinx-argparse-cli~=1.6.0
 sphinx_book_theme
-sphinxcontrib-napoleon>=0.7
 sphinx-issues==2.0.0
 sphinx-js==3.2.1
 sphinx-version-warning~=1.1.2
