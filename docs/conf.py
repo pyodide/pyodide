@@ -134,6 +134,11 @@ epub_exclude_files = ["search.html"]
 
 
 def delete_attrs(cls):
+    """Prevent attributes of a class or module from being documented.
+
+    The top level documentation comment of the class or module will still be
+    rendered.
+    """
     for name in dir(cls):
         if not name.startswith("_"):
             try:
