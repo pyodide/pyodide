@@ -203,14 +203,6 @@ if IN_SPHINX:
 
     import micropip  # noqa: F401
     import pyodide
-
-    # We hacked it so that autodoc will look for submodules, but only if we import
-    # them here. TODO: look these up in the source directory?
-    import pyodide.code
-    import pyodide.console
-    import pyodide.ffi.wrappers
-    import pyodide.http
-    import pyodide.webloop
     from pyodide.ffi import JsProxy
 
     del JsProxy.__new__
@@ -239,6 +231,9 @@ if IN_SPHINX:
 
     # Prevent API docs for webloop methods: they are the same as for base event loop
     # and it clutters api docs too much
+    import pyodide.console
+    import pyodide.webloop
+
     delete_attrs(pyodide.webloop.WebLoop)
     delete_attrs(pyodide.webloop.WebLoopPolicy)
     delete_attrs(pyodide.console.PyodideConsole)

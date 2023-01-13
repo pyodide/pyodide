@@ -1,4 +1,3 @@
-from .autodoc_submodules import monkeypatch_module_documenter
 from .jsdoc import (
     PyodideAnalyzer,
     get_jsdoc_content_directive,
@@ -62,7 +61,6 @@ def patch_field():
 def setup(app):
     patch_templates()
     patch_field()
-    monkeypatch_module_documenter()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
