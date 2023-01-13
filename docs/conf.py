@@ -257,21 +257,6 @@ def globalReplace(app, docname, source):
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
-# Add extra CSS classes to some documentation fields. We use this in pyodide.css
-# to fix the rendering of autodoc return value annotations.
-from sphinx.util.docfields import Field
-
-orig_make_field = Field.make_field
-
-
-def make_field(self, *args, **kwargs):
-    node = orig_make_field(self, *args, **kwargs)
-    node["classes"].append(self.name)
-    return node
-
-
-Field.make_field = make_field
-
 
 def typehints_formatter(annotation, config):
     """Adjust the rendering of Literal types.
