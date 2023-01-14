@@ -108,7 +108,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         key on JavaScript object identity.
 
         If two `JsProxy` are made with the same backing JavaScript object, they
-        will have the same `js_id`. The reault is a "pseudorandom" 32 bit integer.
+        will have the same `js_id`.
         """
         return 0
 
