@@ -10,7 +10,7 @@ from threading import Event, Thread
 from typing import Any
 
 import pytest
-import typer  # type: ignore[import]
+import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build.cli import build
