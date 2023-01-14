@@ -1,4 +1,3 @@
-from .autodoc_submodules import monkeypatch_module_documenter
 from .jsdoc import (
     PyodideAnalyzer,
     get_jsdoc_content_directive,
@@ -42,9 +41,26 @@ def patch_templates():
     JsRenderer.rst = patched_rst_method
 
 
+def patch_field():
+    """
+    Add extra CSS classes to some documentation fields. We use this in
+    pyodide.css to fix the rendering of autodoc return value annotations.
+    """
+    from sphinx.util.docfields import Field
+
+    orig_make_field = Field.make_field
+
+    def make_field(self, *args, **kwargs):
+        node = orig_make_field(self, *args, **kwargs)
+        node["classes"].append(self.name)
+        return node
+
+    Field.make_field = make_field
+
+
 def setup(app):
     patch_templates()
-    monkeypatch_module_documenter()
+    patch_field()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
