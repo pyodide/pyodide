@@ -320,6 +320,7 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
                 "--version-script=",
                 "-R/",  # wasm-ld does not accept -R (runtime libraries)
                 "-R.",  # wasm-ld does not accept -R (runtime libraries)
+                "--exclude-libs=",
             )
         ):
             continue
@@ -586,12 +587,20 @@ def handle_command_generate_args(
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     elif cmd == "cmake":
-        # If it is a build/install command, we don't do anything.
-        if "--build" in line or "--install" in line:
+        # If it is a build/install command, or running a script, we don't do anything.
+        if "--build" in line or "--install" in line or "-P" in line:
             return line
 
         flags = get_cmake_compiler_flags()
-        line[:1] = ["emcmake", "cmake", *flags]
+        line[:1] = [
+            "emcmake",
+            "cmake",
+            *flags,
+            # Since we create a temporary directory and install compiler symlinks every time,
+            # CMakeCache.txt will contain invalid paths to the compiler when re-running,
+            # so we need to tell CMake to ignore the existing cache and build from scratch.
+            "--fresh",
+        ]
         return line
     elif cmd == "ranlib":
         line[0] = "emranlib"

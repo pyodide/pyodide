@@ -20,10 +20,15 @@ myst:
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
   to .pyc files
   {pr}`3253`
-
+ 
 - Added `pyodide create-zipfile` CLI command that creates a zip file of a directory.
   This command is hidden by default since it is not intended for use by end users.
   {pr}`3411`
+
+- {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
+  when run multiple times.
+  {pr}`3445`
+
 
 ## Version 0.22.0
 

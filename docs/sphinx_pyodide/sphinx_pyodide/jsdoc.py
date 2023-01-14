@@ -124,6 +124,24 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
 
 TsAnalyzer._convert_node = _convert_node
 
+from os.path import relpath
+
+
+def _containing_deppath(self, node):
+    """Return the path pointing to the module containing the given node.
+    The path is absolute or relative to `root_for_relative_js_paths`.
+    Raises ValueError if one isn't found.
+
+    """
+    from pathlib import Path
+
+    filename = node["sources"][0]["fileName"].replace(".gen", "")
+    deppath = list(Path(self._base_dir).glob("**/" + filename))[0]
+    return relpath(deppath, self._base_dir)
+
+
+TsAnalyzer._containing_deppath = _containing_deppath
+
 
 def object_literal_type_name(self, decl):
     """This renders the names of object literal types.
@@ -258,7 +276,7 @@ def flatten_suffix_tree(tree):
     result: dict[tuple[str, ...], Any] = {}
     path: list[str] = []
     iters: list[Any] = []
-    cur_iter = iter(tree.items())
+    cur_iter = iter(tree.get("subtree", {}).items())
     while True:
         try:
             [key, val] = next(cur_iter)
@@ -268,13 +286,13 @@ def flatten_suffix_tree(tree):
             cur_iter = iters.pop()
             path.pop()
             continue
-        if isinstance(val, dict):
+        if "subtree" in val:
             iters.append(cur_iter)
             path.append(key)
-            cur_iter = iter(val.items())
-        else:
+            cur_iter = iter(val["subtree"].items())
+        if "value" in val:
             path.append(key)
-            result[tuple(reversed(path))] = val
+            result[tuple(reversed(path))] = val["value"]
             path.pop()
 
 
@@ -315,7 +333,7 @@ class PyodideAnalyzer:
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
         for (key, doclet) in self.doclets.items():
-            if getattr(doclet.value, "is_private", False):
+            if getattr(doclet, "is_private", False):
                 continue
 
             # Remove the part of the key corresponding to the file
@@ -323,7 +341,7 @@ class PyodideAnalyzer:
             filename = key[0]
             toplevelname = key[1]
             if key[-1].startswith("$"):
-                doclet.value.is_private = True
+                doclet.is_private = True
                 continue
             if key[-1] == "constructor":
                 # For whatever reason, sphinx-js does not properly record
@@ -331,13 +349,13 @@ class PyodideAnalyzer:
                 # constructors are private so leave them all off. TODO: handle
                 # this via a @private decorator in the documentation comment.
                 continue
-            doclet.value.name = doclet.value.name.rpartition(".")[2]
+            doclet.name = doclet.name.rpartition(".")[2]
             if filename == "module." or filename == "compat.":
                 continue
             if filename == "pyodide.":
                 # Might be named globalThis.something or exports.something.
                 # Trim off the prefix.
-                items["globalThis"] += doclet
+                items["globalThis"].append(doclet)
                 continue
             pyproxy_class_endings = ("Methods", "Class")
             if toplevelname.endswith("#"):
@@ -346,7 +364,7 @@ class PyodideAnalyzer:
                     pyproxy_class_endings
                 ):
                     # Merge all of the PyProxy methods into one API
-                    items["PyProxy"] += doclet
+                    items["PyProxy"].append(doclet)
                 # If it's not part of a PyProxy class, the method will be
                 # documented as part of the class.
                 continue
@@ -358,7 +376,7 @@ class PyodideAnalyzer:
                 # Skip all PyProxy classes, they are documented as one merged
                 # API.
                 continue
-            items["pyodide"] += doclet
+            items["pyodide"].append(doclet)
 
         from operator import attrgetter
 
