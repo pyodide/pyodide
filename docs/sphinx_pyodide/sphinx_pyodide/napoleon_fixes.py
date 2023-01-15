@@ -84,7 +84,6 @@ def fix_bulleted_return_annotation(lines: list[str]) -> None:
     with the last bullet italicized. This removes the bullet and the
     italicization of the last line.
     """
-    orig_lines = lines[:]
     for idx, line in enumerate(lines):
         if line.startswith(":returns:"):
             cur = idx
@@ -106,8 +105,6 @@ def fix_bulleted_return_annotation(lines: list[str]) -> None:
         lines[idx] = LEADING_STAR_PAT.sub(r"\1", lines[idx])
     # Remove italicization of last line
     lines[idx] = " " + LEADING_STAR_PAT.sub(r"\1", lines[idx]).rstrip()[:-1]
-    print("orig_lines", orig_lines)
-    print("lines", lines)
 
 
 def fix_constructor_arg_and_attr_same_name(
