@@ -53,7 +53,7 @@ def patch_field():
 
     def make_field(self, *args, **kwargs):
         node = orig_make_field(self, *args, **kwargs)
-        node["classes"].append(self.name)
+        node["classes"].append(self.name + " ")
         return node
 
     Field.make_field = make_field
