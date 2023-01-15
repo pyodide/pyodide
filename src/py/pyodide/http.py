@@ -60,11 +60,6 @@ class FetchResponse:
     js_response
         A JsProxy of the fetch response
     """
-    @property
-    def test(self) -> "FetchResponse":
-        pass
-
-
     def __init__(self, url: str, js_response: JsFetchResponse):
         self._url = url
         self.js_response = js_response
