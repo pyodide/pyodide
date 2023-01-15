@@ -1,3 +1,6 @@
+import inspect
+from typing import Any
+
 from .jsdoc import (
     PyodideAnalyzer,
     get_jsdoc_content_directive,
@@ -5,8 +8,7 @@ from .jsdoc import (
 )
 from .lexers import HtmlPyodideLexer, PyodideLexer
 from .packages import get_packages_summary_directive
-from typing import Any
-import inspect
+
 
 def wrap_analyzer(app):
     app._sphinxjs_analyzer = PyodideAnalyzer(app._sphinxjs_analyzer)
@@ -58,12 +60,14 @@ def patch_field():
 
     Field.make_field = make_field
 
-from sphinx_autodoc_typehints import get_all_type_hints, format_annotation
+
+from sphinx_autodoc_typehints import format_annotation, get_all_type_hints
+
 
 def handle_screwed_up_return_info(app, what, name, obj, options, lines):
     """If there is a "Returns" block in the docstring but it has only one line
-    of info, napoleon will mess up and think it's the return type. 
-    
+    of info, napoleon will mess up and think it's the return type.
+
     Fix this by converting it from a ":rtype:" to a ":return:" and adding the
     correct :rtype: with sphinx_autodoc_typehints.format_annotation.
     """
@@ -90,6 +94,7 @@ def handle_screwed_up_return_info(app, what, name, obj, options, lines):
     lines[at] = line.replace(":rtype:", ":return:")
     lines.insert(idx, f":rtype: {formatted_annotation}")
 
+
 def ensure_argument_types(app, what, name, obj, options, lines):
     """If there is no Parameters section at all, this adds type
     annotations for all the arguments.
@@ -106,7 +111,7 @@ def ensure_argument_types(app, what, name, obj, options, lines):
         formatted_annotation = format_annotation(value, app.config)
         to_add.append(f":type {key}: {formatted_annotation}")
         to_add.append(f":param {key}:")
-    
+
     lines[at:at] = to_add
 
 
@@ -116,7 +121,9 @@ def fix_constructor_arg_and_attr_same_name(app, what, name, obj, options, lines)
 
     https://github.com/sphinx-doc/sphinx/pull/11131
     """
-    cons_type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj.__init__, name)
+    cons_type_hints = get_all_type_hints(
+        app.config.autodoc_mock_imports, obj.__init__, name
+    )
     attrs_type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
     for (key, value) in cons_type_hints.items():
         if key not in attrs_type_hints:
@@ -150,7 +157,7 @@ def process_docstring(
     if what in ["method", "function"]:
         handle_screwed_up_return_info(app, what, name, obj, options, lines)
         ensure_argument_types(app, what, name, obj, options, lines)
-    
+
     if what == "class":
         fix_constructor_arg_and_attr_same_name(app, what, name, obj, options, lines)
 

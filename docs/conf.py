@@ -259,6 +259,7 @@ global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
 from sphinx_autodoc_typehints import format_annotation
 
+
 def typehints_formatter(annotation, config):
     """Adjust the rendering of Literal types.
 

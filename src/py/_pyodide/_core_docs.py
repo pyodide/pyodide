@@ -166,12 +166,12 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         Parameters
         ----------
-        depth: 
+        depth:
             You can use this argument to limit the depth of the conversion. If a
             shallow conversion is desired, set `depth` to 1.
 
-        default_converter: 
-        
+        default_converter:
+
             If present, this will be invoked whenever Pyodide does not have some
             built in conversion for the object. If ``default_converter`` raises
             an error, the error will be allowed to propagate. Otherwise, the
@@ -1139,9 +1139,9 @@ def to_js(
     --------
 
     Here are some examples demonstrating the usage of the ``default_converter``
-    argument. 
-    
-    
+    argument.
+
+
     In addition to the normal conversions, convert ``Date`` to ``datetime``:
 
     .. code-block:: python

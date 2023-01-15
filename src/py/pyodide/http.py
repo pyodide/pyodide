@@ -60,6 +60,7 @@ class FetchResponse:
     js_response
         A JsProxy of the fetch response
     """
+
     def __init__(self, url: str, js_response: JsFetchResponse):
         self._url = url
         self.js_response = js_response
@@ -95,7 +96,7 @@ class FetchResponse:
     @property
     def type(self) -> str:
         """The type of the response.
-        
+
         See the MDN docs for `Response.type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>`_.
         """
         return self.js_response.type
