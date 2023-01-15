@@ -279,6 +279,7 @@ def typehints_formatter(annotation, config):
         return None
     if module == "_io":
         # Some io module things have __module__ == "_io"
+        # Fixed upstream: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/291
         module = "io"
     full_name = f"{module}.{class_name}"
     if full_name == "typing.Literal":
