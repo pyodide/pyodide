@@ -54,10 +54,10 @@ class JsFinder(MetaPathFinder):
 
         Parameters
         ----------
-        name : str
+        name :
             Name of js module
 
-        jsproxy : JsProxy
+        jsproxy :
             JavaScript object backing the module
         """
         assert JsProxy is not None
@@ -83,8 +83,8 @@ class JsFinder(MetaPathFinder):
 
         Parameters
         ----------
-        name : str
-            Name of js module
+        name :
+            Name of the module to unregister
         """
         try:
             del self.jsproxies[name]

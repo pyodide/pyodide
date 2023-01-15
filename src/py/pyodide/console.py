@@ -155,21 +155,28 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 class ConsoleFuture(Future[Any]):
     """A future with extra fields used as the return value for :any:`Console` apis.
+    """
 
-    Attributes
-    ----------
-    syntax_check : str
-        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"``. If the value is
-        ``"incomplete"`` then the future has already been resolved with result equal to
-        ``None``. If the value is ``"syntax-error"``, the ``Future`` has already been
-        rejected with a ``SyntaxError``. If the value is ``"complete"``, then the input
-        complete and syntactically correct.
+    syntax_check : ConsoleFutureStatus
+    """
+    The status of the future. The values mean the following:
+
+    :'incomplete': Input is incomplete. The future has already been resolved
+                 with result ``None``. 
+    
+    :'syntax-error': Input contained a syntax error. The future has been
+                   rejected with a ``SyntaxError``.
+
+    :'complete': The input complete and syntactically correct and asynchronous
+               execution has begun. When the execution is done, the Future will
+               be resolved with the result or rejected with an exception.
+    """
 
     formatted_error : str
-        If the ``Future`` is rejected, this will be filled with a formatted version of
-        the code. This is a convenience that simplifies code and helps to avoid large
-        memory leaks when using from JavaScript.
-
+    """
+    If the ``Future`` is rejected, this will be filled with a formatted version of
+    the code. This is a convenience that simplifies code and helps to avoid large
+    memory leaks when using from JavaScript.
     """
 
     def __init__(
@@ -194,44 +201,48 @@ class Console:
     Parameters
     ----------
     globals :
+
         The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
 
     stdin_callback :
+
         Function to call at each read from ``sys.stdin``. Defaults to ``None``.
 
     stdout_callback :
+
         Function to call at each write to ``sys.stdout``. Defaults to ``None``.
 
     stderr_callback :
+
         Function to call at each write to ``sys.stderr``. Defaults to ``None``.
 
     persistent_stream_redirection :
+
         Should redirection of standard streams be kept between calls to :any:`runcode <Console.runcode>`?
         Defaults to ``False``.
 
     filename :
+
         The file name to report in error messages. Defaults to ``<console>``.
-
-    Attributes
-    ----------
-        globals :
-            The namespace used as the global
-
-        stdin_callback :
-            Function to call at each read from ``sys.stdin``.
-
-        stdout_callback :
-            Function to call at each write to ``sys.stdout``.
-
-        stderr_callback :
-            Function to call at each write to ``sys.stderr``.
-
-        buffer :
-            The list of strings that have been :any:`pushed <Console.push>` to the console.
-
-        completer_word_break_characters :
-            The set of characters considered by :any:`complete <Console.complete>` to be word breaks.
     """
+
+    globals: dict[str, Any]
+    """The namespace used as the globals"""
+
+    stdin_callback : Callable[[int], str]
+    """The function to call at each read from :any:`sys.stdin`"""
+
+    stdout_callback: Callable[[str], None]
+    """Function to call at each write to :any:`sys.stdout`."""
+
+    stderr_callback: Callable[[str], None]
+    """Function to call at each write to :any:`sys.stderr`."""
+
+    buffer : list[str]
+    """The list of strings that have been :any:`pushed <Console.push>` to the console."""
+
+    completer_word_break_characters : str
+    """The set of characters considered by :any:`complete <Console.complete>` to be word breaks."""
 
     def __init__(
         self,
@@ -252,7 +263,7 @@ class Console:
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.filename = filename
-        self.buffer: list[str] = []
+        self.buffer = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator: Generator[
@@ -318,13 +329,7 @@ class Console:
             self._streams_redirected = False
 
     def runsource(self, source: str, filename: str = "<console>") -> ConsoleFuture:
-        """Compile and run source code in the interpreter.
-
-        Returns
-        -------
-            :any:`ConsoleFuture`
-
-        """
+        """Compile and run source code in the interpreter."""
         res: ConsoleFuture | None
 
         try:
@@ -434,14 +439,15 @@ class Console:
 
         Parameters
         ----------
-        source : str
+        source :
+
             The source string to complete at the end.
 
         Returns
         -------
-        completions : List[str]
+        completions : :any:`list`\[:any:`str`]
             A list of completion strings.
-        start : int
+        start : :any:`int`
             The index where completion starts.
 
         Examples

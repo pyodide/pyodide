@@ -32,13 +32,12 @@ def open_url(url: str) -> StringIO:
 
     Parameters
     ----------
-    url : str
+    url :
        URL to fetch
 
     Returns
     -------
-    io.StringIO
-        the contents of the URL.
+        The contents of the URL.
     """
 
     req = XMLHttpRequest.new()
@@ -61,6 +60,10 @@ class FetchResponse:
     js_response
         A JsProxy of the fetch response
     """
+    @property
+    def test(self) -> "FetchResponse":
+        pass
+
 
     def __init__(self, url: str, js_response: JsFetchResponse):
         self._url = url
@@ -96,14 +99,18 @@ class FetchResponse:
 
     @property
     def type(self) -> str:
-        """The `type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>`_ of the response."""
+        """The type of the response.
+        
+        See the MDN docs for `Response.type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>`_.
+        """
         return self.js_response.type
 
     @property
     def url(self) -> str:
-        """The `url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>`_ of the response.
+        """The url of the response.
 
-        It may be different than the url passed to fetch.
+        See the MDN docs for `Response.url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>`_.
+        The value may be different than the url passed to fetch.
         """
         return self.js_response.url
 
@@ -196,11 +203,11 @@ class FetchResponse:
 
         Parameters
         ----------
-        extract_dir : str
+        extract_dir :
             Directory to extract the archive into. If not
             provided, the current working directory is used.
 
-        format : str
+        format :
             The archive format: one of “zip”, “tar”, “gztar”, “bztar”.
             Or any other format registered with ``shutil.register_unpack_format()``. If not
             provided, ``unpack_archive()`` will use the archive file name extension
@@ -218,15 +225,15 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     This functions provides a similar API to the JavaScript `fetch function
     <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
     designed to be convenient to use from Python. The
-    :class:`pyodide.http.FetchResponse` has methods with the output types
+    :class:`~pyodide.http.FetchResponse` has methods with the output types
     already converted to Python objects.
 
     Parameters
     ----------
-    url : str
+    url :
         URL to fetch.
 
-    \*\*kwargs : Any
+    \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
