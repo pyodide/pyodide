@@ -1,5 +1,8 @@
 import inspect
+import re
 from typing import Any
+
+from sphinx_autodoc_typehints import format_annotation, get_all_type_hints
 
 from .jsdoc import (
     PyodideAnalyzer,
@@ -42,26 +45,6 @@ def patch_templates():
         return template.render(**self._template_vars(dotted_name, obj))
 
     JsRenderer.rst = patched_rst_method
-
-
-def patch_field():
-    """
-    Add extra CSS classes to some documentation fields. We use this in
-    pyodide.css to fix the rendering of autodoc return value annotations.
-    """
-    from sphinx.util.docfields import Field
-
-    orig_make_field = Field.make_field
-
-    def make_field(self, *args, **kwargs):
-        node = orig_make_field(self, *args, **kwargs)
-        node["classes"].append(self.name + " ")
-        return node
-
-    Field.make_field = make_field
-
-
-from sphinx_autodoc_typehints import format_annotation, get_all_type_hints
 
 
 def handle_screwed_up_return_info(app, what, name, obj, options, lines):
@@ -116,6 +99,38 @@ def ensure_argument_types(app, what, name, obj, options, lines):
     lines[at:at] = to_add
 
 
+LEADING_STAR_PAT = re.compile(r"(^\s*)\*")
+
+
+def handle_bulleted_return_annotation(app, what, name, obj, options, lines):
+    """
+    For some reason autodoc messes up the rendering of return value annotations:
+    if the annotation takes up multiple lines, it displays it as a bulleted list
+    with the last bullet italicized. This removes the bullet and the
+    italicization of the last line.
+    """
+    for idx, line in enumerate(lines):
+        if line.startswith(":returns:"):
+            cur = idx
+            break
+    else:
+        return
+    line = line.removeprefix(":returns:").strip()
+    if not line.startswith("*"):
+        return
+    if line.startswith("* **"):
+        return
+    # Remove bullet from first line
+    lines[cur] = lines[cur].replace(":returns: *", ":returns:")
+    for idx in range(cur + 1, len(lines)):
+        if lines[idx].strip() == "":
+            break
+        # Remove bullet from rest of lines
+        lines[idx] = LEADING_STAR_PAT.sub(r"\1", lines[idx])
+    # Remove italicization of last line
+    lines[idx - 1] = LEADING_STAR_PAT.sub(r"\1", lines[idx - 1]).rstrip()[:-1]
+
+
 def fix_constructor_arg_and_attr_same_name(app, what, name, obj, options, lines):
     """Napoleon has a bug that causes it to grab type annotations for
     constructor args from
@@ -157,6 +172,7 @@ def process_docstring(
         lines[:] = [line for line in lines if not line.startswith(":rtype:")]
 
     if what in ["method", "function"]:
+        handle_bulleted_return_annotation(app, what, name, obj, options, lines)
         handle_screwed_up_return_info(app, what, name, obj, options, lines)
         ensure_argument_types(app, what, name, obj, options, lines)
 
@@ -166,7 +182,6 @@ def process_docstring(
 
 def setup(app):
     patch_templates()
-    patch_field()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
