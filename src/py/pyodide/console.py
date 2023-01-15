@@ -171,7 +171,7 @@ class ConsoleFuture(Future[Any]):
                be resolved with the result or rejected with an exception.
     """
 
-    formatted_error: str
+    formatted_error: str | None
     """
     If the ``Future`` is rejected, this will be filled with a formatted version of
     the code. This is a convenience that simplifies code and helps to avoid large
@@ -183,8 +183,8 @@ class ConsoleFuture(Future[Any]):
         syntax_check: ConsoleFutureStatus,
     ):
         super().__init__()
-        self.syntax_check: ConsoleFutureStatus = syntax_check
-        self.formatted_error: str | None = None
+        self.syntax_check = syntax_check
+        self.formatted_error = None
 
 
 class Console:
@@ -228,13 +228,13 @@ class Console:
     globals: dict[str, Any]
     """The namespace used as the globals"""
 
-    stdin_callback: Callable[[int], str]
+    stdin_callback: Callable[[int], str] | None
     """The function to call at each read from :any:`sys.stdin`"""
 
-    stdout_callback: Callable[[str], None]
+    stdout_callback: Callable[[str], None] | None
     """Function to call at each write to :any:`sys.stdout`."""
 
-    stderr_callback: Callable[[str], None]
+    stderr_callback: Callable[[str], None] | None
     """Function to call at each write to :any:`sys.stderr`."""
 
     buffer: list[str]

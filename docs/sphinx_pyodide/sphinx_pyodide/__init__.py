@@ -103,6 +103,7 @@ def ensure_argument_types(app, what, name, obj, options, lines):
         if line.startswith(":param"):
             return
         if line.startswith(("..", ":return", ":rtype")):
+            at = at
             break
     type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
     to_add = [""]
@@ -130,6 +131,7 @@ def fix_constructor_arg_and_attr_same_name(app, what, name, obj, options, lines)
             continue
         for at, line in enumerate(lines):
             if line.startswith(f":type {key}:"):
+                at = at
                 break
         else:
             continue
