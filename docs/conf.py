@@ -278,9 +278,10 @@ def typehints_formatter(annotation, config):
     except ValueError:
         return None
     if module == "_io":
-        # Some io module things have __module__ == "_io"
+        # Most io module things have __module__ == "_io"
         # Fixed upstream: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/291
-        module = "io"
+        return f":py:class:`~io.{class_name}`"
+
     full_name = f"{module}.{class_name}"
     if full_name == "typing.Literal":
         # Fixed upstream: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/288
@@ -289,6 +290,7 @@ def typehints_formatter(annotation, config):
         )
         return f":py:data:`~{full_name}`{formatted_args}"
     if full_name == "builtins.code":
+        # Upstream PR: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/292
         return ":py:class:`~types.CodeType`"
     if full_name == "ast.Module":
         # ast.Module is not documented, so link to the whole ast module.
@@ -302,8 +304,6 @@ def typehints_formatter(annotation, config):
         # Not sure what causes this, it isn't a bug in sphinx-autodoc-typehints
         fmt = [format_annotation(arg, config) for arg in args]
         return f":py:class:`~{full_name}`\\[{', '.join(fmt)}]"
-    if module == "io":
-        return f":py:class:`~{full_name}`"
     return None
 
 
