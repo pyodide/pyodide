@@ -120,11 +120,11 @@ def unchanged_doc(func: T) -> T:
 
 @fixed_doc(
     """\
-Summary info
+    Summary info
 
-:rtype: :py:class:`int`
-:return: Some info about the return value
-"""
+    :rtype: :py:class:`int`
+    :return: Some info about the return value
+    """
 )
 def incorrect_rtype() -> int:
     """
@@ -155,15 +155,15 @@ def test_fix_screwed_up_return_info(func):
 
 @fixed_doc(
     """\
-Summary info
+    Summary info
 
 
-:type a: :py:class:`int`
-:param a:
-:type b: :py:class:`str`
-:param b:
-:return: Some info about the return value
-"""
+    :type a: :py:class:`int`
+    :param a:
+    :type b: :py:class:`str`
+    :param b:
+    :return: Some info about the return value
+    """
 )
 def no_param_docs(a: int, b: str) -> int:
     """
@@ -188,17 +188,17 @@ def some_param_docs(a: int, b: str) -> int:
 
 @fixed_doc(
     """\
-Summary info
+    Summary info
 
-:type a: :py:class:`int`
-:param a:
-:type b: :py:class:`str`
-:param b:
+    :type a: :py:class:`int`
+    :param a:
+    :type b: :py:class:`str`
+    :param b:
 
-.. rubric:: Example
+    .. rubric:: Example
 
-Here are some examples of this function.
-"""
+    Here are some examples of this function.
+    """
 )
 def no_params_example(a: int, b: str) -> int:
     """
@@ -213,11 +213,11 @@ def no_params_example(a: int, b: str) -> int:
 
 @fixed_doc(
     """\
-Summary only
+    Summary only
 
-:type a: :py:class:`str`
-:param a:
-"""
+    :type a: :py:class:`str`
+    :param a:
+    """
 )
 def only_summary(a: str) -> None:
     """Summary only"""
@@ -245,12 +245,12 @@ def test_ensure_argument_types_only_summary(newlines):
 
 
 @fixed_doc(
-    r"""\
-A Class
+    """\
+    A Class
 
-:param blah: Description of parameter blah
-:type blah: :py:class:`~typing.Optional`\[:py:class:`int`]
-"""
+    :param blah: Description of parameter blah
+    :type blah: :py:class:`~typing.Optional`\\[:py:class:`int`]
+    """
 )
 class Blah:
     """
