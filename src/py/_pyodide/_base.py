@@ -182,13 +182,14 @@ class CodeRunner:
 
     return_mode :
 
-        Specifies what should be returned. The options are:
+        Specifies what should be returned, must be one of ``'last_expr'``,
+        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
+        raised. ``'last_expr'`` by default.
 
-        :'last_expr': return the last expression
-        :'last_expr_or_assign': return the last expression or the last
-                                assignment.
-
-        :'none': always return ``None``.
+        * ``'last_expr'`` -- return the last expression
+        * ``'last_expr_or_assign'`` -- return the last expression or the last
+          assignment.
+        * ``'none'`` -- always return ``None``.
 
     quiet_trailing_semicolon :
 
@@ -212,20 +213,24 @@ class CodeRunner:
 
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
+
+
+    Attributes:
+
+        ast (ast.Module):
+
+            The ast from parsing ``source``. If you wish to do an ast transform,
+            modify this variable before calling :any:`CodeRunner.compile`.
+
+        code (CodeType):
+
+            Once you call :any:`CodeRunner.compile` the compiled code will
+            be available in the code field. You can modify this variable
+            before calling :any:`CodeRunner.run` to do a code transform.
     """
 
     ast: ast.Module
-    """
-    The ast from parsing ``source``. If you wish to do an ast transform,
-    modify this variable before calling :any:`CodeRunner.compile`.
-    """
-
     code: CodeType | None
-    """
-    Once you call :any:`CodeRunner.compile` the compiled code will
-    be available in the code field. You can modify this variable
-    before calling :any:`CodeRunner.run` to do a code transform.
-    """
 
     def __init__(
         self,
@@ -392,13 +397,14 @@ def eval_code(
 
     return_mode :
 
-        Specifies what should be returned. The options are:
+        Specifies what should be returned, must be one of ``'last_expr'``,
+        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
+        raised. ``'last_expr'`` by default.
 
-        :'last_expr': return the last expression
-        :'last_expr_or_assign': return the last expression or the last
-                                assignment.
-
-        :'none': always return ``None``.
+        * ``'last_expr'`` -- return the last expression
+        * ``'last_expr_or_assign'`` -- return the last expression or the last
+          assignment.
+        * ``'none'`` -- always return ``None``.
 
     quiet_trailing_semicolon :
 
@@ -497,13 +503,14 @@ async def eval_code_async(
 
     return_mode :
 
-        Specifies what should be returned. The options are:
+        Specifies what should be returned, must be one of ``'last_expr'``,
+        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
+        raised. ``'last_expr'`` by default.
 
-        :'last_expr': return the last expression
-        :'last_expr_or_assign': return the last expression or the last
-                                assignment.
-
-        :'none': always return ``None``.
+        * ``'last_expr'`` -- return the last expression
+        * ``'last_expr_or_assign'`` -- return the last expression or the last
+          assignment.
+        * ``'none'`` -- always return ``None``.
 
     quiet_trailing_semicolon :
 
