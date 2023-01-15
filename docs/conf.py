@@ -261,10 +261,7 @@ from sphinx_autodoc_typehints import format_annotation
 
 
 def typehints_formatter(annotation, config):
-    """Adjust the rendering of Literal types.
-
-    The literal values should be ``rendered as code``.
-    """
+    """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
         get_annotation_args,
         get_annotation_class_name,
