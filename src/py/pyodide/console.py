@@ -154,16 +154,15 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
-    """A future with extra fields used as the return value for :any:`Console` apis.
-    """
+    """A future with extra fields used as the return value for :any:`Console` apis."""
 
-    syntax_check : ConsoleFutureStatus
+    syntax_check: ConsoleFutureStatus
     """
     The status of the future. The values mean the following:
 
     :'incomplete': Input is incomplete. The future has already been resolved
-                 with result ``None``. 
-    
+                 with result ``None``.
+
     :'syntax-error': Input contained a syntax error. The future has been
                    rejected with a ``SyntaxError``.
 
@@ -172,7 +171,7 @@ class ConsoleFuture(Future[Any]):
                be resolved with the result or rejected with an exception.
     """
 
-    formatted_error : str
+    formatted_error: str
     """
     If the ``Future`` is rejected, this will be filled with a formatted version of
     the code. This is a convenience that simplifies code and helps to avoid large
@@ -229,7 +228,7 @@ class Console:
     globals: dict[str, Any]
     """The namespace used as the globals"""
 
-    stdin_callback : Callable[[int], str]
+    stdin_callback: Callable[[int], str]
     """The function to call at each read from :any:`sys.stdin`"""
 
     stdout_callback: Callable[[str], None]
@@ -238,10 +237,10 @@ class Console:
     stderr_callback: Callable[[str], None]
     """Function to call at each write to :any:`sys.stderr`."""
 
-    buffer : list[str]
+    buffer: list[str]
     """The list of strings that have been :any:`pushed <Console.push>` to the console."""
 
-    completer_word_break_characters : str
+    completer_word_break_characters: str
     """The set of characters considered by :any:`complete <Console.complete>` to be word breaks."""
 
     def __init__(
@@ -431,7 +430,7 @@ class Console:
         return result
 
     def complete(self, source: str) -> tuple[list[str], int]:
-        """Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
+        r"""Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
 
         Finds last "word" in the source string and completes it with rlcompleter. Word
         breaks are determined by the set of characters in
