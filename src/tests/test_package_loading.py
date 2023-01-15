@@ -3,10 +3,11 @@ import shutil
 from pathlib import Path
 
 import pytest
-from conftest import DIST_PATH, ROOT_PATH
 from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
 from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
+
+from conftest import DIST_PATH, ROOT_PATH
 
 
 def get_pyparsing_wheel_name() -> str:
