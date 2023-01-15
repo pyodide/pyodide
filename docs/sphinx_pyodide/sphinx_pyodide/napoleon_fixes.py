@@ -20,7 +20,7 @@ def fix_screwed_up_return_info(
     #  Find the rtype
     for at, line in enumerate(lines):
         if line.startswith(":rtype:"):
-            idx = at
+            at = at
             break
     else:
         return
@@ -37,7 +37,7 @@ def fix_screwed_up_return_info(
     # Convert current :rtype: into a :return: and add a new :rtype: with the
     # calculated contents.
     lines[at] = line.replace(":rtype:", ":return:")
-    lines.insert(idx, f":rtype: {formatted_annotation}")
+    lines.insert(at, f":rtype: {formatted_annotation}")
 
 
 def ensure_argument_types(
