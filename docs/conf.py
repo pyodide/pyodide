@@ -257,6 +257,7 @@ def globalReplace(app, docname, source):
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
+from sphinx_autodoc_typehints import format_annotation
 
 def typehints_formatter(annotation, config):
     """Adjust the rendering of Literal types.
@@ -275,12 +276,26 @@ def typehints_formatter(annotation, config):
         args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return None
+    if module == "_io":
+        module = "io"
     full_name = f"{module}.{class_name}"
     if full_name == "typing.Literal":
         formatted_args = "\\[{}]".format(
             ", ".join("``{}``".format(repr(arg)) for arg in args)
         )
         return f":py:data:`~{full_name}`{formatted_args}"
+    if full_name == "builtins.code":
+        return ":py:class:`~types.CodeType`"
+    if full_name == "ast.Module":
+        return "`ast.Module <https://docs.python.org/3.10/library/ast.html>`_"
+    if full_name == "collections.abc.Callable" and args and args[0] is not ...:
+        fmt = [format_annotation(arg, config) for arg in args]
+        return f":py:class:`~{full_name}`\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
+    if full_name == "collections.abc.Callable" and args:
+        fmt = [format_annotation(arg, config) for arg in args]
+        return f":py:class:`~{full_name}`\\[{', '.join(fmt)}]"
+    if module == "io":
+        return f":py:class:`~{full_name}`"
     return None
 
 
