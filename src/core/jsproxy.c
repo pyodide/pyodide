@@ -2660,6 +2660,9 @@ static PyTypeObject _Exc_JsException = {
   .tp_basicsize = sizeof(JsExceptionObject),
   .tp_dealloc = (destructor)JsException_dealloc,
   .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+  .tp_doc =
+    PyDoc_STR("An exception which wraps a Javascript error. The js_error field "
+              "contains a JsProxy for the wrapped error."),
   .tp_traverse = (traverseproc)JsException_traverse,
   .tp_clear = (inquiry)JsException_clear,
   .tp_members = JsException_members,
