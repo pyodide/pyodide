@@ -49,15 +49,15 @@ class JsFinder(MetaPathFinder):
         can then be imported from Python using the standard Python import
         system. If another module by the same name has already been imported,
         this won't have much effect unless you also delete the imported module
-        from ``sys.modules``. This is called by the JavaScript API
+        from :any:`sys.modules`. This is called by the JavaScript API
         :any:`pyodide.registerJsModule`.
 
         Parameters
         ----------
-        name : str
+        name :
             Name of js module
 
-        jsproxy : JsProxy
+        jsproxy :
             JavaScript object backing the module
         """
         assert JsProxy is not None
@@ -83,8 +83,8 @@ class JsFinder(MetaPathFinder):
 
         Parameters
         ----------
-        name : str
-            Name of js module
+        name :
+            Name of the module to unregister
         """
         try:
             del self.jsproxies[name]

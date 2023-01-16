@@ -17,6 +17,11 @@ myst:
 
 ### Build System
 
+- {{ Enhancement }} Improved logging in `pyodide-build` with rich.
+  {pr}`3442`
+
+### Pyodide CLI
+
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
   to .pyc files
   {pr}`3253`

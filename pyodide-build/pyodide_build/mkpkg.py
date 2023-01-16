@@ -6,20 +6,20 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import urllib.error
 import urllib.request
 import warnings
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Literal, NoReturn, TypedDict
+from typing import Any, Literal, TypedDict
 from urllib import request
 
 from packaging.version import Version
 from ruamel.yaml import YAML
 
 from .common import parse_top_level_import_name
+from .logger import logger
 
 
 class URLDict(TypedDict):
@@ -149,7 +149,7 @@ def make_package(
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
     """
-    print(f"Creating meta.yaml package for {package}")
+    logger.info(f"Creating meta.yaml package for {package}")
 
     yaml = YAML()
 
@@ -207,33 +207,7 @@ def make_package(
     except FileNotFoundError:
         warnings.warn("'npx' executable missing, output has not been prettified.")
 
-    success(f"Output written to {meta_path}")
-
-
-# TODO: use rich for coloring outputs
-class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-
-def abort(msg: str) -> NoReturn:
-    print(bcolors.FAIL + msg + bcolors.ENDC)
-    sys.exit(1)
-
-
-def warn(msg: str) -> None:
-    warnings.warn(bcolors.WARNING + msg + bcolors.ENDC)
-
-
-def success(msg: str) -> None:
-    print(bcolors.OKBLUE + msg + bcolors.ENDC)
+    logger.success(f"Output written to {meta_path}")
 
 
 def update_package(
@@ -248,7 +222,8 @@ def update_package(
 
     meta_path = root / package / "meta.yaml"
     if not meta_path.exists():
-        abort(f"{meta_path} does not exist")
+        logger.error(f"{meta_path} does not exist")
+        exit(1)
 
     yaml_content = yaml.load(meta_path.read_bytes())
 
@@ -271,14 +246,16 @@ def update_package(
         source_fmt is None or source_fmt == old_fmt
     )
     if already_up_to_date:
-        print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
+        logger.success(
+            f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}"
+        )
         return
 
-    print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
+    logger.info(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
 
     if yaml_content["source"].get("patches"):
         if update_patched:
-            warn(
+            logger.warning(
                 f"Pyodide applies patches to {package}. Update the "
                 "patches (if needed) to avoid build failing."
             )
@@ -307,7 +284,7 @@ def update_package(
     yaml.dump(yaml_content, meta_path)
     run_prettier(meta_path)
 
-    success(f"Updated {package} from {local_ver} to {pypi_ver}.")
+    logger.success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -383,7 +360,8 @@ def main(args: argparse.Namespace) -> None:
         #
         # If there is no sdist it prints an error message like:
         # "No sdist URL found for package swiglpk (https://pypi.org/project/swiglpk/)"
-        abort(e.args[0])
+        logger.error(e.args[0])
+        exit(1)
 
 
 if __name__ == "__main__":

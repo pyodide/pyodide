@@ -154,22 +154,28 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
-    """A future with extra fields used as the return value for :any:`Console` apis.
+    """A future with extra fields used as the return value for :any:`Console` apis."""
 
-    Attributes
-    ----------
-    syntax_check : str
-        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"``. If the value is
-        ``"incomplete"`` then the future has already been resolved with result equal to
-        ``None``. If the value is ``"syntax-error"``, the ``Future`` has already been
-        rejected with a ``SyntaxError``. If the value is ``"complete"``, then the input
-        complete and syntactically correct.
+    syntax_check: ConsoleFutureStatus
+    """
+    The status of the future. The values mean the following:
 
-    formatted_error : str
-        If the ``Future`` is rejected, this will be filled with a formatted version of
-        the code. This is a convenience that simplifies code and helps to avoid large
-        memory leaks when using from JavaScript.
+    :'incomplete': Input is incomplete. The future has already been resolved
+                 with result ``None``.
 
+    :'syntax-error': Input contained a syntax error. The future has been
+                   rejected with a ``SyntaxError``.
+
+    :'complete': The input complete and syntactically correct and asynchronous
+               execution has begun. When the execution is done, the Future will
+               be resolved with the result or rejected with an exception.
+    """
+
+    formatted_error: str | None
+    """
+    If the ``Future`` is rejected, this will be filled with a formatted version of
+    the code. This is a convenience that simplifies code and helps to avoid large
+    memory leaks when using from JavaScript.
     """
 
     def __init__(
@@ -177,61 +183,67 @@ class ConsoleFuture(Future[Any]):
         syntax_check: ConsoleFutureStatus,
     ):
         super().__init__()
-        self.syntax_check: ConsoleFutureStatus = syntax_check
-        self.formatted_error: str | None = None
+        self.syntax_check = syntax_check
+        self.formatted_error = None
 
 
 class Console:
     """Interactive Pyodide console
 
     An interactive console based on the Python standard library
-    `code.InteractiveConsole` that manages stream redirections and asynchronous
-    execution of the code.
+    :py:class:`~code.InteractiveConsole` that manages stream redirections and
+    asynchronous execution of the code.
 
-    The stream callbacks can be modified directly as long as
-    `persistent_stream_redirection` isn't in effect.
+    The stream callbacks can be modified directly by assigning to
+    :any:`Console.stdin_callback` (for example) as long as
+    ``persistent_stream_redirection`` is ``False``.
 
     Parameters
     ----------
     globals :
-        The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
+
+        The global namespace in which to evaluate the code. Defaults to a new
+        empty dictionary.
 
     stdin_callback :
-        Function to call at each read from ``sys.stdin``. Defaults to ``None``.
+
+        Function to call at each read from :any:`sys.stdin`. Defaults to :any:`None`.
 
     stdout_callback :
-        Function to call at each write to ``sys.stdout``. Defaults to ``None``.
+
+        Function to call at each write to :any:`sys.stdout`. Defaults to :any:`None`.
 
     stderr_callback :
-        Function to call at each write to ``sys.stderr``. Defaults to ``None``.
+
+        Function to call at each write to :any:`sys.stderr`. Defaults to :any:`None`.
 
     persistent_stream_redirection :
-        Should redirection of standard streams be kept between calls to :any:`runcode <Console.runcode>`?
-        Defaults to ``False``.
+
+        Should redirection of standard streams be kept between calls to
+        :py:meth:`~Console.runcode`? Defaults to :any:`False`.
 
     filename :
-        The file name to report in error messages. Defaults to ``<console>``.
 
-    Attributes
-    ----------
-        globals :
-            The namespace used as the global
-
-        stdin_callback :
-            Function to call at each read from ``sys.stdin``.
-
-        stdout_callback :
-            Function to call at each write to ``sys.stdout``.
-
-        stderr_callback :
-            Function to call at each write to ``sys.stderr``.
-
-        buffer :
-            The list of strings that have been :any:`pushed <Console.push>` to the console.
-
-        completer_word_break_characters :
-            The set of characters considered by :any:`complete <Console.complete>` to be word breaks.
+        The file name to report in error messages. Defaults to ``"<console>"``.
     """
+
+    globals: dict[str, Any]
+    """The namespace used as the globals"""
+
+    stdin_callback: Callable[[int], str] | None
+    """The function to call at each read from :any:`sys.stdin`"""
+
+    stdout_callback: Callable[[str], None] | None
+    """Function to call at each write to :any:`sys.stdout`."""
+
+    stderr_callback: Callable[[str], None] | None
+    """Function to call at each write to :any:`sys.stderr`."""
+
+    buffer: list[str]
+    """The list of strings that have been :any:`pushed <Console.push>` to the console."""
+
+    completer_word_break_characters: str
+    """The set of characters considered by :any:`complete <Console.complete>` to be word breaks."""
 
     def __init__(
         self,
@@ -252,7 +264,7 @@ class Console:
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.filename = filename
-        self.buffer: list[str] = []
+        self.buffer = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator: Generator[
@@ -269,7 +281,7 @@ class Console:
         self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
     def persistent_redirect_streams(self) -> None:
-        """Redirect stdin/stdout/stderr persistently"""
+        """Redirect :py:data:`~sys.stdin`/:py:data:`~sys.stdout`/:py:data:`~sys.stdout` persistently"""
         if self._stream_generator:
             return
         self._stream_generator = self._stdstreams_redirections_inner()
@@ -278,7 +290,7 @@ class Console:
         # streams will be reverted to normal when self._stream_generator is destroyed.
 
     def persistent_restore_streams(self) -> None:
-        """Restore stdin/stdout/stderr if they have been persistently redirected"""
+        """Restore :py:data:`~sys.stdin`/:py:data:`~sys.stdout`/:py:data:`~sys.stdout` if they have been persistently redirected"""
         # allowing _stream_generator to be garbage collected restores the streams
         self._stream_generator = None
 
@@ -318,13 +330,7 @@ class Console:
             self._streams_redirected = False
 
     def runsource(self, source: str, filename: str = "<console>") -> ConsoleFuture:
-        """Compile and run source code in the interpreter.
-
-        Returns
-        -------
-            :any:`ConsoleFuture`
-
-        """
+        """Compile and run source code in the interpreter."""
         res: ConsoleFuture | None
 
         try:
@@ -374,7 +380,7 @@ class Console:
         """Format the syntax error that just occurred.
 
         This doesn't include a stack trace because there isn't one. The actual
-        error object is stored into `sys.last_value`.
+        error object is stored into :py:data:`sys.last_value`.
         """
         sys.last_type = type(e)
         sys.last_value = e
@@ -395,7 +401,7 @@ class Console:
     def formattraceback(self, e: BaseException) -> str:
         """Format the exception that just occurred.
 
-        The actual error object is stored into `sys.last_value`.
+        The actual error object is stored into :py:data:`sys.last_value`.
         """
         sys.last_type = type(e)
         sys.last_value = e
@@ -410,12 +416,12 @@ class Console:
 
         The line should not have a trailing newline; it may have internal
         newlines.  The line is appended to a buffer and the interpreter's
-        runsource() method is called with the concatenated contents of the
+        :py:meth:`~Console.runsource` method is called with the concatenated contents of the
         buffer as source.  If this indicates that the command was executed or
         invalid, the buffer is reset; otherwise, the command is incomplete, and
         the buffer is left as it was after the line was appended.
 
-        The return value is the result of calling :any:`Console.runsource` on the current buffer
+        The return value is the result of calling :py:meth:`~Console.runsource` on the current buffer
         contents.
         """
         self.buffer.append(line)
@@ -426,22 +432,24 @@ class Console:
         return result
 
     def complete(self, source: str) -> tuple[list[str], int]:
-        """Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
+        r"""Use Python's :py:mod:`rlcompleter` to complete the source string
+        using the :py:attr:`Console.globals` namespace.
 
-        Finds last "word" in the source string and completes it with rlcompleter. Word
-        breaks are determined by the set of characters in
-        :any:`completer_word_break_characters <Console.completer_word_break_characters>`.
+        Finds the last "word" in the source string and completes it with
+        rlcompleter. Word breaks are determined by the set of characters in
+        :py:attr:`~Console.completer_word_break_characters`.
 
         Parameters
         ----------
-        source : str
+        source :
+
             The source string to complete at the end.
 
         Returns
         -------
-        completions : List[str]
+        completions : :any:`list`\[:any:`str`]
             A list of completion strings.
-        start : int
+        start : :any:`int`
             The index where completion starts.
 
         Examples
@@ -541,8 +549,8 @@ def repr_shorten(
     """Compute the string representation of ``value`` and shorten it
     if necessary.
 
-    This is equivalent to `shorten(repr(value), limit, split, separator)`,
-    but a value error is raised if ``limit`` is less than 4.
+    This is equivalent to ``shorten(repr(value), limit, split, separator)``, but
+    a value error is raised if ``limit`` is less than ``4``.
 
     Examples
     --------
