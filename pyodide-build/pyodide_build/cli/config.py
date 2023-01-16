@@ -1,4 +1,4 @@
-import typer  # type: ignore[import]
+import typer
 
 from ..common import get_make_environment_vars
 from ..out_of_tree.utils import initialize_pyodide_root
