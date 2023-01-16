@@ -34,6 +34,7 @@ from .common import (
     find_missing_executables,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
+from .logger import logger
 
 
 def _make_whlfile(
@@ -90,8 +91,8 @@ class BashRunnerWithSharedEnvironment:
             **opts,
         )
         if result.returncode != 0:
-            print("ERROR: bash command failed")
-            print(textwrap.indent(cmd, "    "))
+            logger.error("ERROR: bash command failed")
+            logger.error(textwrap.indent(cmd, "    "))
             exit_with_stdio(result)
 
         self.env = json.loads(self._reader.readline())
@@ -342,7 +343,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
                 encoding="utf-8",
             )
             if result.returncode != 0:
-                print(f"ERROR: Patch {pkg_root/patch} failed")
+                logger.error(f"ERROR: Patch {pkg_root/patch} failed")
                 exit_with_stdio(result)
 
     # Add any extra files
@@ -361,7 +362,7 @@ def unpack_wheel(path: Path) -> None:
             encoding="utf-8",
         )
         if result.returncode != 0:
-            print(f"ERROR: Unpacking wheel {path.name} failed")
+            logger.error(f"ERROR: Unpacking wheel {path.name} failed")
             exit_with_stdio(result)
 
 
@@ -373,7 +374,7 @@ def pack_wheel(path: Path) -> None:
             encoding="utf-8",
         )
         if result.returncode != 0:
-            print(f"ERROR: Packing wheel {path} failed")
+            logger.error(f"ERROR: Packing wheel {path} failed")
             exit_with_stdio(result)
 
 
@@ -475,10 +476,10 @@ def copy_sharedlibs(
 
     if dep_map:
         dep_map_new = copylib(wheel_dir, dep_map, lib_sdir)
-        print("Copied shared libraries:")
+        logger.info("Copied shared libraries:")
         for lib, path in dep_map_new.items():
             original_path = dep_map[lib]
-            print(f"  {original_path} -> {path}")
+            logger.info(f"  {original_path} -> {path}")
 
         return dep_map_new
 
@@ -523,7 +524,7 @@ def package_wheel(
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
-    print(f"Unpacking wheel to {str(wheel)}")
+    logger.info(f"Unpacking wheel to {str(wheel)}")
     unpack_wheel(wheel)
     wheel.unlink()
     name, ver, _ = wheel.name.split("-", 2)
@@ -536,11 +537,11 @@ def package_wheel(
 
     post = build_metadata.post
     if post:
-        print("Running post script in ", str(Path.cwd().absolute()))
+        logger.info(f"Running post script in {Path.cwd().absolute()}")
         bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
         result = bash_runner.run(post)
         if result.returncode != 0:
-            print("ERROR: post failed")
+            logger.error("ERROR: post failed")
             exit_with_stdio(result)
 
     vendor_sharedlib = build_metadata.vendor_sharedlib
@@ -661,7 +662,7 @@ def run_script(
     with chdir(srcpath):
         result = bash_runner.run(script)
         if result.returncode != 0:
-            print("ERROR: script failed")
+            logger.error("ERROR: script failed")
             exit_with_stdio(result)
 
 
@@ -906,7 +907,8 @@ def main(args: argparse.Namespace) -> None:
 
     name = pkg.package.name
     t0 = datetime.now()
-    print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
+    timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"[{timestamp}] Building package {name}...")
     success = True
     try:
         build_package(
@@ -926,9 +928,13 @@ def main(args: argparse.Namespace) -> None:
         datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
         total_seconds = f"{(t1 - t0).total_seconds():.1f}"
         status = "Succeeded" if success else "Failed"
-        print(
+        msg = (
             f"{datestamp} {status} building package {name} in {total_seconds} seconds."
         )
+        if success:
+            logger.success(msg)
+        else:
+            logger.error(msg)
 
 
 if __name__ == "__main__":

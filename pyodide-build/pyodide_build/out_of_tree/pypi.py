@@ -28,6 +28,7 @@ from unearth.finder import PackageFinder
 
 from .. import common
 from ..common import chdir
+from ..logger import logger
 from . import build
 
 _PYPI_INDEX = ["https://pypi.org/simple/"]
@@ -88,7 +89,7 @@ def _get_built_wheel_internal(url):
                 os.chdir(Path(build_dir.name, files[0]))
             else:
                 os.chdir(build_dir.name)
-        print(f"Building wheel for {gz_name}: ", end="")
+        logger.info(f"Building wheel for {gz_name}...")
         with tempfile.NamedTemporaryFile(mode="w+") as f:
             try:
                 with (
@@ -101,14 +102,12 @@ def _get_built_wheel_internal(url):
                         outdir=Path(build_dir.name) / "dist",
                     )
             except BaseException as e:
-                print(" Failed\n Error is:")
+                logger.error(" Failed\n Error is:")
                 f.seek(0)
-                sys.stdout.write(f.read())
+                logger.stderr(f.read())
                 raise e
 
-    OKGREEN = "\033[92m"
-    ENDC = "\033[0m"
-    print(OKGREEN, "Success", ENDC)
+    logger.success("Success")
 
     cache_entry["path"] = wheel_path
     return cache_entry
