@@ -12,17 +12,13 @@ from ..common import (
     get_pyodide_root,
     in_xbuildenv,
 )
-
-
-def eprint(*args, **kwargs):
-    """Print to stderr"""
-    print(*args, **kwargs, file=sys.stderr)
+from ..logger import logger
 
 
 def check_result(result: subprocess.CompletedProcess[str], msg: str) -> None:
     """Abort if the process returns a nonzero error code"""
     if result.returncode != 0:
-        eprint(msg)
+        logger.error(msg)
         exit_with_stdio(result)
 
 
@@ -41,7 +37,7 @@ def check_host_python_version(session: Any) -> None:
         return
     pyodide_version_fmt = ".".join(pyodide_version)
     sys_version_fmt = ".".join(sys_version)
-    eprint(
+    logger.stderr(
         f"Expected host Python version to be {pyodide_version_fmt} but got version {sys_version_fmt}"
     )
     sys.exit(1)
@@ -221,11 +217,11 @@ def install_stdlib(venv_bin: Path) -> None:
 
 def create_pyodide_venv(dest: Path) -> None:
     """Create a Pyodide virtualenv and store it into dest"""
-    print("Creating Pyodide virtualenv at", str(dest))
+    logger.info(f"Creating Pyodide virtualenv at {dest}")
     from virtualenv import session_via_cli
 
     if dest.exists():
-        eprint(f"ERROR: dest directory '{dest}' already exists")
+        logger.error(f"ERROR: dest directory '{dest}' already exists")
         sys.exit(1)
 
     check_emscripten_version()
@@ -239,14 +235,14 @@ def create_pyodide_venv(dest: Path) -> None:
         venv_root = Path(session.creator.dest).absolute()
         venv_bin = venv_root / "bin"
 
-        print("... Configuring virtualenv")
+        logger.info("... Configuring virtualenv")
         create_pip_conf(venv_root)
         create_pip_script(venv_bin)
         create_pyodide_script(venv_bin)
-        print("... Installing standard library")
+        logger.info("... Installing standard library")
         install_stdlib(venv_bin)
     except (Exception, KeyboardInterrupt, SystemExit):
         shutil.rmtree(session.creator.dest)
         raise
 
-    print("Successfully created Pyodide virtual environment!")
+    logger.success("Successfully created Pyodide virtual environment!")

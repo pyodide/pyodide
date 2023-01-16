@@ -34,6 +34,7 @@ module = [
   "virtualenv",
   "termcolor",
   "test",
+  "typer",
 ]
 ignore_missing_imports = true
 
