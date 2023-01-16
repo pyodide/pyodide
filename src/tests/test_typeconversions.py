@@ -1270,7 +1270,7 @@ def test_to_py3(selenium):
         new Temp();
         """
     )
-    assert repr(type(a.to_py())) == "<class 'pyodide.JsProxy'>"
+    assert repr(type(a.to_py())) == "<class 'pyodide.ffi.JsProxy'>"
 
 
 @pytest.mark.parametrize(

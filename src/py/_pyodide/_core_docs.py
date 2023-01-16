@@ -19,6 +19,12 @@ from typing import IO, Any, Awaitable, Generic, TypeVar, overload
 # the utilities in `docstring.py` and `docstring.c` to format them
 # appropriately.
 
+
+# Define this up here so that name appears as _pyodide.InternalError
+class InternalError(Exception):
+    pass
+
+
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
 # to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
 #
@@ -918,21 +924,39 @@ class JsOnceCallable(JsCallable):
 
 
 class JsException(JsProxy, Exception):
-    """A JavaScript Error"""
+    """A JavaScript Error.
 
-    _js_type_flags = ["IS_ERROR"]
+    These are pickleable unlike other JsProxies.
+    """
 
-    @property
-    def name(self) -> str:
-        return ""
+    # Note: Unlike many of these classes, this one is never actually seen by the
+    # user IN_BROWSER (it's replaced by a different JsException in
+    # pyodide._core). We use it to unpickle errors so we need it to be
+    # instantiable.
+    def __new__(cls, *args, **kwargs):
+        if args[0] == _instantiate_token:
+            return super().__new__(cls, *args, **kwargs)
+        return cls._new_exc(*args, **kwargs)
 
-    @property
-    def message(self) -> str:
-        return ""
+    @classmethod
+    def _new_exc(cls, name: str, message: str = "", stack: str = "") -> "JsException":
+        result = super().__new__(JsException, _instantiate_token)
+        result.name = name
+        result.message = message
+        result.stack = stack
+        return result
 
-    @property
-    def stack(self) -> str:
-        return ""
+    def __str__(self):
+        return f"{self.name}: {self.message}"
+
+    name: str
+    """The name of the error type"""
+
+    message: str
+    """The error message"""
+
+    stack: str
+    """The JavaScript stack trace"""
 
 
 class ConversionError(Exception):

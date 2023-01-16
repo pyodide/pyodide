@@ -175,6 +175,7 @@ CHECK_EXC_FIELD(suppress_context);
 #undef CHEC_EXC_FIELD
 
 #define JsProxy_REF(x) (((JsProxy*)x)->js)
+#define JsProxy_DICT(x) (((JsProxy*)x)->dict)
 
 #define JsMethod_THIS(x) (((JsProxy*)x)->tf.mf.this_)
 #define JsMethod_VECTORCALL(x) (((JsProxy*)x)->tf.mf.vectorcall)
@@ -584,42 +585,38 @@ static PyMethodDef JsGenerator_send_MethodDef = {
 static PyObject* JsException;
 
 static PyObject*
-JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
+JsException_reduce(PyObject* self, PyObject* Py_UNUSED(ignored))
 {
-  // We can't pickle the js_error because it is a JsProxy.
-  // The point of this function is to convert it to a string.
-  // Compare OSError_reduce in cpython/Objects/exceptions.c which is similar.
+  // Record name, message, and stack.
+  // See _core_docs.JsException._new_exc where the unpickling will happen.
   PyObject* res = NULL;
+  PyObject* args = NULL;
+  PyObject* name = NULL;
+  PyObject* message = NULL;
+  PyObject* stack = NULL;
 
-  PyObject* args;
+  name = PyObject_GetAttrString(self, "name");
+  FAIL_IF_NULL(name);
+  message = PyObject_GetAttrString(self, "message");
+  FAIL_IF_NULL(message);
+  stack = PyObject_GetAttrString(self, "stack");
+  FAIL_IF_NULL(stack);
 
-  PyObject* tmp;
-  tmp = PyTuple_GET_ITEM(self->args, 0);
+  args = PyTuple_Pack(3, name, message, stack);
+  FAIL_IF_NULL(args);
 
-  if (!JsProxy_Check(tmp)) {
-    // If for some reason js_error isn't a JsProxy, leave it alone.
-    args = self->args;
-    Py_INCREF(args);
+  PyObject* dict = JsProxy_DICT(self);
+  if (dict) {
+    res = PyTuple_Pack(3, Py_TYPE(self), args, dict);
   } else {
-    // Make a new tuple, for the first entry use the repr of js_error.
-    args = PyTuple_New(PyTuple_GET_SIZE(self->args));
-    tmp = PyObject_Repr(tmp);
-    PyTuple_SET_ITEM(args, 0, tmp);
-
-    // Copy over all other entries
-    for (int i = 1; i < PyTuple_GET_SIZE(self->args); i++) {
-      tmp = PyTuple_GET_ITEM(self->args, i);
-      Py_INCREF(tmp);
-      PyTuple_SET_ITEM(self->args, i, tmp);
-    }
+    res = PyTuple_Pack(2, Py_TYPE(self), args);
   }
 
-  // This is now just like BaseException_reduce
-  if (self->dict)
-    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
-  else
-    res = PyTuple_Pack(2, Py_TYPE(self), args);
-  Py_DECREF(args);
+finally:
+  Py_CLEAR(args);
+  Py_CLEAR(name);
+  Py_CLEAR(message);
+  Py_CLEAR(stack);
   return res;
 }
 
@@ -634,6 +631,41 @@ JsException_js_error_getter(PyObject* self, void* closure)
 {
   Py_INCREF(self);
   return self;
+}
+
+EM_JS_REF(JsRef,
+          JsException_new_helper,
+          (char* name_ptr, char* message_ptr, char* stack_ptr),
+          {
+            let name = UTF8ToString(name_ptr);
+            let message = UTF8ToString(message_ptr);
+            let stack = UTF8ToString(stack_ptr);
+            return Hiwire.new_value(API.deserializeError(name, message, stack));
+          });
+
+// We use this to unpickle JsException objects.
+static PyObject*
+JsException_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds)
+{
+  static char* kwlist[] = { "name", "message", "stack", 0 };
+  char* name;
+  char* message = "";
+  char* stack = "";
+  if (!PyArg_ParseTupleAndKeywords(
+        args, kwds, "s|ss:__new__", kwlist, &name, &message, &stack)) {
+    return NULL;
+  }
+  JsRef result = JsException_new_helper(name, message, stack);
+  if (result == NULL) {
+    return NULL;
+  }
+  return js2python(result);
+}
+
+static int
+JsException_init(PyBaseExceptionObject* self, PyObject* args, PyObject* kwds)
+{
+  return 0;
 }
 
 /**
@@ -3768,6 +3800,10 @@ skip_container_slots:
       (PyType_Slot){ .slot = Py_tp_traverse,
                      .pfunc =
                        (void*)((PyTypeObject*)PyExc_Exception)->tp_traverse };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_new, .pfunc = JsException_new };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_init, .pfunc = JsException_init };
   }
 
   methods[cur_method++] = (PyMethodDef){ 0 };
@@ -3818,7 +3854,7 @@ skip_container_slots:
   };
   // clang-format on
   if (flags & IS_ERROR) {
-    bases = Py_BuildValue("(OO)", &JsProxyType, PyExc_Exception);
+    bases = PyTuple_Pack(2, &JsProxyType, PyExc_Exception);
     FAIL_IF_NULL(bases);
     // The multiple inheritance we are doing is not recognized as legal by
     // Python:
@@ -3841,12 +3877,12 @@ skip_container_slots:
     // PyType_FromSpecWithBases that everything is okay. Once we have created
     // the type, we restore the mro.
     PyObject* save_mro = JsProxyType.tp_mro;
-    JsProxyType.tp_mro = Py_BuildValue("(O)", PyExc_BaseException);
+    JsProxyType.tp_mro = PyTuple_Pack(1, PyExc_BaseException);
     result = PyType_FromSpecWithBases(&spec, bases);
     Py_CLEAR(JsProxyType.tp_mro);
     JsProxyType.tp_mro = save_mro;
   } else {
-    bases = Py_BuildValue("(O)", &JsProxyType);
+    bases = PyTuple_Pack(1, &JsProxyType);
     FAIL_IF_NULL(bases);
     result = PyType_FromSpecWithBases(&spec, bases);
   }
@@ -3986,7 +4022,7 @@ create_proxy_of_type(int type_flags, JsRef object, JsRef this)
     PyObject* arg =
       create_proxy_of_type(type_flags & (~IS_ERROR), object, this);
     FAIL_IF_NULL(arg);
-    PyObject* args = Py_BuildValue("(O)", arg);
+    PyObject* args = PyTuple_Pack(1, arg);
     Py_CLEAR(arg);
     FAIL_IF_NULL(args);
     JsException_ARGS(result) = args;
