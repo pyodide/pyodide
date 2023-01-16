@@ -1,5 +1,7 @@
 import logging
 import os
+from collections.abc import Generator
+from contextlib import contextmanager
 
 from rich.console import Console
 from rich.highlighter import NullHighlighter
@@ -104,7 +106,36 @@ def _get_logger(log_level: int) -> _Logger:
     return logger
 
 
-logger = _get_logger(logging.DEBUG)
+logger = _get_logger(logging.INFO)
+
+
+@contextmanager
+def set_log_level(
+    _logger: logging.Logger, log_level: int | bool
+) -> Generator[None, None, None]:
+    """Set the log level.
+
+    Parameters
+    ----------
+    logger
+        The logger to set the log level for.
+
+    log_level
+        If True, set the log level to DEBUG (verbose mode).
+        If given an integer, set the log level to that value.
+    """
+
+    original_log_level = logger.level
+
+    if isinstance(log_level, bool):
+        log_level = logging.DEBUG if log_level else original_log_level
+
+    _logger.setLevel(log_level)
+
+    yield
+
+    _logger.setLevel(original_log_level)
+
 
 if __name__ == "__main__":
     # For testing the colors
