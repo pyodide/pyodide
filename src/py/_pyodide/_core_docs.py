@@ -920,6 +920,8 @@ class JsRawException(JsProxy):
 class JsException(Exception):
     """
     A wrapper around a JavaScript Error to allow it to be thrown in Python.
+
+    The js_error field contains a JsProxy for the wrapped error.
     See :ref:`type-translations-errors`.
     """
 
@@ -931,6 +933,10 @@ class JsException(Exception):
 
 class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
+
+
+class InternalError(Exception):
+    pass
 
 
 class JsDomElement(JsProxy):
