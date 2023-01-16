@@ -209,12 +209,15 @@ def _parse_package_query(query: list[str] | str | None) -> tuple[set[str], set[s
     --------
     >>> _parse_package_query(None)
     (set(), set())
-    >>> _parse_package_query("a,b,c")
-    ({'a', 'b', 'c'}, set())
-    >>> _parse_package_query("a,b,!c")
-    ({'a', 'b'}, {'c'})
-    >>> _parse_package_query(["a", "b", "!c"])
-    ({'a', 'b'}, {'c'})
+    >>> requested, disabled = _parse_package_query("a,b,c")
+    >>> requested == {'a', 'b', 'c'}, disabled == set()
+    (True, True)
+    >>> requested, disabled = _parse_package_query("a,b,!c")
+    >>> requested == {'a', 'b'}, disabled == {'c'}
+    (True, True)
+    >>> requested, disabled = _parse_package_query(["a", "b", "!c"])
+    >>> requested == {'a', 'b'}, disabled == {'c'}
+    (True, True)
     """
     if not query:
         query = []
