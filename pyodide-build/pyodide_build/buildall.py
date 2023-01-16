@@ -165,10 +165,7 @@ class Package(BasePackage):
 
         if p.returncode != 0:
             logger.error(f"Error building {self.name}. Printing build logs.")
-
-            with open(self.pkgdir / "build.log") as f:
-                shutil.copyfileobj(f, sys.stderr)
-
+            logger.error((self.pkgdir / "build.log").read_text(encoding="utf-8"))
             logger.error("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
 
@@ -224,8 +221,7 @@ class ReplProgressFormatter:
         self.top_grid = Table.grid()
 
         for package in self.packages:
-            if not package.finished:
-                self.top_grid.add_row(package)
+            self.top_grid.add_row(package)
 
         self.main_grid = Table.grid()
         self.main_grid.add_row(self.top_grid)

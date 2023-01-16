@@ -28,7 +28,7 @@ def download_xbuildenv(version: str, xbuildenv_path: Path) -> None:
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
 
-    logger.stderr("Downloading xbuild environment")
+    logger.info("Downloading xbuild environment")
     rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
@@ -39,7 +39,7 @@ def download_xbuildenv(version: str, xbuildenv_path: Path) -> None:
 
 
 def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
-    logger.stderr("Installing xbuild environment")
+    logger.info("Installing xbuild environment")
     xbuildenv_path = xbuildenv_path / "xbuildenv"
     pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
