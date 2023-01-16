@@ -991,7 +991,9 @@ def create_proxy(
 
         .. code-block:: python
 
-            from js import o d = {} o.d = create_proxy(d, roundtrip=True)
+            from js import o
+            d = {}
+            o.d = create_proxy(d, roundtrip=True)
             o.d.destroy() # Destroys the proxy created with create_proxy
 
         With ``roundtrip=False`` this would be an error.
@@ -1123,8 +1125,9 @@ def to_js(
 
     .. code-block:: python
 
-        from datetime import datetime from js import Date def
-        default_converter(value, _ignored1, _ignored2):
+        from datetime import datetime
+        from js import Date
+        def default_converter(value, _ignored1, _ignored2):
             if isinstance(value, datetime):
                 return Date.new(value.timestamp() * 1000)
             return value
@@ -1153,7 +1156,9 @@ def to_js(
 
     .. code-block:: python
 
-        from js import Array def default_converter(value, convert, cache):
+        from js import Array
+        
+        def default_converter(value, convert, cache):
             if not isinstance(value, Pair):
                 return value
             result = Array.new() cache(value, result);
