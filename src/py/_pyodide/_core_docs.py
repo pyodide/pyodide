@@ -1157,7 +1157,7 @@ def to_js(
     .. code-block:: python
 
         from js import Array
-        
+
         def default_converter(value, convert, cache):
             if not isinstance(value, Pair):
                 return value
