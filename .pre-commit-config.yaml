@@ -66,6 +66,7 @@ repos:
           - pydantic
           - unearth
           - resolvelib
+          - rich
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
