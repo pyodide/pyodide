@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import typer  # type: ignore[import]
+import typer
 
 from .. import common, mkpkg
 

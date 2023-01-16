@@ -379,33 +379,12 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 
 We currently build `cryptography` which is a Rust extension built with PyO3 and
 `setuptools-rust`. It should be reasonably easy to build other Rust extensions.
-Currently it is necessary to run `source $CARGO_HOME/env` in the build script [as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
+If you want to build a package with Rust extension, you will need Rust >= 1.41,
+and you need to set the rustup toolchain to `nightly`, and the target to
+`wasm32-unknown-emscripten` in the build script
+[as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
 but other than that there may be no other issues if you are lucky.
 
-As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224), by default certain wasm-related `RUSTFLAGS` are set during `build.script` and can be removed with `export RUSTFLAGS=""`.
-
-#### Setting up Rust in the docker container
-
-This part is for developers who use the docker image and wish to compile Python packages containing Rust code.
-If you clone the Pyodide repo from Github the docker container will not have `rust` installed. For this you'd need to install `rust` using the preferred method described [here](https://www.rust-lang.org/tools/install).
-
-```
-apt update
-apt install curl
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-After install, you'll need to switch to the nighly build, as a certain flag `-Z` -which is used to compile `cryptography`- is only available in the nighly builds.
-
-```
-"$HOME/.cargo/env"
-rustup default nightly
-```
-
-Finally, you'd need to add the `wasm32-unknown-emscripten` target.
-
-```
-rustup target add wasm32-unknown-emscripten
-```
-
-After these steps you'll be able to compile `cryptography` and other PyO3 based projects.
+As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224),
+by default certain wasm-related `RUSTFLAGS` are set during `build.script`
+and can be removed with `export RUSTFLAGS=""`.

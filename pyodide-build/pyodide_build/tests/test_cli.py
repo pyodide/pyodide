@@ -1,12 +1,17 @@
+# flake8: noqa
+
+import os
 import shutil
 from pathlib import Path
 
 import pytest
-import typer  # type: ignore[import]
+import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build_recipes, config, skeleton
+from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
+
+from .fixture import temp_python_lib
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -127,3 +132,52 @@ def test_config_get(cfg_name, env_var):
     )
 
     assert result.stdout.strip() == common.get_make_flag(env_var)
+
+
+def test_fetch_or_build_pypi(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    output_dir = tmp_path / "dist"
+    # one pure-python package (doesn't need building) and one sdist package (needs building)
+    pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
+
+    os.chdir(tmp_path)
+
+    app = typer.Typer()
+    app.command()(build.main)
+
+    for p in pkgs:
+        result = runner.invoke(
+            app,
+            [p],
+        )
+        assert result.exit_code == 0, result.stdout
+
+    built_wheels = set(output_dir.glob("*.whl"))
+    assert len(built_wheels) == len(pkgs)
+
+
+def test_create_zipfile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.py" in zf.namelist()
+        assert "module2.py" in zf.namelist()
