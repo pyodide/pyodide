@@ -314,6 +314,8 @@ Object.defineProperty(_PropagatePythonError.prototype, "name", {
 });
 Module._PropagatePythonError = _PropagatePythonError;
 
+// Stolen from:
+// https://github.com/sindresorhus/serialize-error/blob/main/error-constructors.js
 API.errorConstructors = new Map(
   [
     // Native ES errors https://262.ecma-international.org/12.0/#sec-well-known-intrinsic-objects
