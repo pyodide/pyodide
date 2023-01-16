@@ -17,6 +17,7 @@ import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
+from .logger import logger
 from .recipe import load_all_recipes
 
 BUILD_VARS: set[str] = {
@@ -171,7 +172,9 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
                 top_level_imports.append(subdir.name)
 
     if not top_level_imports:
-        print(f"Warning: failed to parse top level import name from {whlfile}.")
+        logger.warning(
+            f"WARNING: failed to parse top level import name from {whlfile}."
+        )
         return None
 
     return top_level_imports
@@ -323,11 +326,11 @@ def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
 
 def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
-        print("  stdout:")
-        print(textwrap.indent(result.stdout, "    "))
+        logger.error("  stdout:")
+        logger.error(textwrap.indent(result.stdout, "    "))
     if result.stderr:
-        print("  stderr:")
-        print(textwrap.indent(result.stderr, "    "))
+        logger.error("  stderr:")
+        logger.error(textwrap.indent(result.stderr, "    "))
     raise SystemExit(result.returncode)
 
 

@@ -9,6 +9,7 @@ from .common import (
     get_pyodide_root,
     get_unisolated_packages,
 )
+from .logger import logger
 from .recipe import load_all_recipes
 
 
@@ -103,7 +104,7 @@ def main(args: argparse.Namespace) -> None:
         encoding="utf8",
     )
     if res.returncode != 0:
-        print("Failed to install node-fetch:")
+        logger.error("Failed to install node-fetch:")
         exit_with_stdio(res)
 
     res = subprocess.run(
@@ -112,7 +113,7 @@ def main(args: argparse.Namespace) -> None:
         encoding="utf8",
     )
     if res.returncode != 0:
-        print("Failed to run pip freeze:")
+        logger.error("Failed to run pip freeze:")
         exit_with_stdio(res)
 
     (xbuildenv_path / "requirements.txt").write_text(res.stdout)
