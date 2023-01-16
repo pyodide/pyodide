@@ -19,12 +19,6 @@ from typing import IO, Any, Awaitable, Generic, TypeVar, overload
 # the utilities in `docstring.py` and `docstring.c` to format them
 # appropriately.
 
-
-# Define this up here so that name appears as _pyodide.InternalError
-class InternalError(Exception):
-    pass
-
-
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
 # to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
 #
@@ -961,6 +955,10 @@ class JsException(JsProxy, Exception):
 
 class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
+
+
+class InternalError(Exception):
+    pass
 
 
 class JsDomElement(JsProxy):
