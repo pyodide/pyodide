@@ -367,13 +367,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
-  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
-  if (err) {
-    Module.API.fatal_loading_error(
-      "Failed to import _pyodide_core\n",
-      captured_stderr,
-    );
-  }
+  API.rawRun("import _pyodide_core");
 
   const pyodide = finalizeBootstrap(API, config);
 
