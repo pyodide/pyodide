@@ -917,7 +917,7 @@ class JsOnceCallable(JsCallable):
         pass
 
 
-class JsException(JsProxy):
+class JsException(JsProxy, Exception):
     """A JavaScript Error"""
 
     _js_type_flags = ["IS_ERROR"]
