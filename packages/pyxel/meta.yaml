@@ -1,17 +1,21 @@
 package:
   name: pyxel
-  version: 1.9.7
+  version: 1.9.10
 source:
-  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.7.tar.gz
-  sha256: c0ab1e1c40aec97466026beb968ce6930134e01a8bbe03246de15100e1fed0b5
-  extras:
-    - - extras/config
-      - ./crates/pyxel-core/.cargo/config
+  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
+  sha256: e23a0c52daaa9c4967c402b3ad2c623f33c4a01e36c4b37b884d7b8c726521f4
 build:
   script: |
-    source $CARGO_HOME/env
     export VERBOSE=1
+    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
+    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
 
+    embuilder build sdl2 --pic
+    export RUSTFLAGS="-C link-arg=-s -C link-arg=USE_SDL=2 -C link-arg=-fPIC -C link-arg=-lsdl2"
+
+requirements:
+  executable:
+    - rustup
 test:
   imports:
     - pyxel
