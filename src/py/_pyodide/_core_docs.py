@@ -936,6 +936,8 @@ class ConversionError(Exception):
 
 
 class InternalError(Exception):
+    """Thrown when a recoverable assertion error occurs in internal Pyodide code"""
+
     pass
 
 
