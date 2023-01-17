@@ -11,7 +11,11 @@ import typer
 
 from .. import common
 from ..out_of_tree import build
-from ..out_of_tree.pypi import build_dependencies_for_wheel, fetch_pypi_package
+from ..out_of_tree.pypi import (
+    build_dependencies_for_wheel,
+    build_multiple_wheels_from_pypi,
+    fetch_pypi_package,
+)
 from ..out_of_tree.utils import initialize_pyodide_root
 
 
@@ -151,6 +155,23 @@ def main(
     elif Path(source_location).is_dir():
         # a folder, build it
         wheel = source(source_location, exports, ctx)
+    elif source_location.lower().endswith(".txt"):
+        # a requirements.txt - build it (and deps)
+        if not Path(source_location).exists():
+            raise RuntimeError(
+                f"Couldn't find requirements text file {source_location}"
+            )
+        with open(source_location) as f:
+            reqs = [x.strip() for x in f.readlines()]
+            build_multiple_wheels_from_pypi(
+                reqs,
+                Path("./dist").resolve(),
+                build_dependencies,
+                skip_dependency,
+                exports,
+                ctx.args,
+            )
+            return
     elif source_location.find("/") == -1:
         # try fetch or build from pypi
         wheel = pypi(source_location, exports, ctx)

@@ -227,6 +227,9 @@ class PyPIProvider(APBase):
     BUILD_SKIP: list[str] = []
     BUILD_EXPORTS: str = ""
 
+    def __init__(self, build_dependencies: bool):
+        self.build_dependencies = build_dependencies
+
     def identify(self, requirement_or_candidate):
         base = canonicalize_name(requirement_or_candidate.name)
         return base
@@ -274,9 +277,10 @@ class PyPIProvider(APBase):
 
     def get_dependencies(self, candidate):
         deps = []
-        for d in candidate.dependencies:
-            if d.name not in PyPIProvider.BUILD_SKIP:
-                deps.append(d)
+        if self.build_dependencies:
+            for d in candidate.dependencies:
+                if d.name not in PyPIProvider.BUILD_SKIP:
+                    deps.append(d)
         if candidate.extras:
             # add the base package as a dependency too, so we can avoid conflicts between same package
             # but with different extras
@@ -297,6 +301,77 @@ def _get_json_package_list(fname: Path) -> Generator[str, None, None]:
                 yield k
 
 
+def _parse_skip_list(skip_dependency: list[str]) -> None:
+    PyPIProvider.BUILD_SKIP = []
+    for skip in skip_dependency:
+        split_deps = skip.split(",")
+        for dep in split_deps:
+            if dep.endswith(".json"):
+                # a pyodide json file
+                # or a jupyterlite json file
+                # skip all packages in it
+                PyPIProvider.BUILD_SKIP.extend(_get_json_package_list(Path(dep)))
+            else:
+                PyPIProvider.BUILD_SKIP.append(dep)
+
+
+def _resolve_and_build(
+    deps: list[str],
+    target_folder: Path,
+    build_dependencies: bool,
+    extras: list[str],
+) -> None:
+    requirements = []
+
+    target_env = {
+        "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
+        "sys_platform": common.platform().split("_")[0],
+    }
+    if len(extras) > 0:
+        target_env["extra"] = ",".join(extras)
+
+    for d in deps:
+        r = Requirement(d)
+        if (r.name not in PyPIProvider.BUILD_SKIP) and (
+            (not r.marker) or r.marker.evaluate(target_env)
+        ):
+            requirements.append(r)
+
+    # Create the (reusable) resolver.
+    provider = PyPIProvider(build_dependencies=build_dependencies)
+    reporter = BaseReporter()
+    resolver: Resolver[Requirement, Candidate, str] = Resolver(provider, reporter)
+
+    # Kick off the resolution process, and get the final result.
+    result = resolver.resolve(requirements)
+    with open(target_folder / "package-versions.txt", "w") as version_file:
+        for x in result.mapping.values():
+            download_or_build_wheel(x.url, target_folder)
+            if len(x.extras) > 0:
+                extratxt = "[" + ",".join(x.extras) + "]"
+            else:
+                extratxt = ""
+            version_file.write(f"{x.name}{extratxt}=={x.version}\n")
+
+
+def build_multiple_wheels_from_pypi(
+    reqs: list[str],
+    target_folder: Path,
+    build_dependencies: bool,
+    skip_dependency: list[str],
+    exports: str,
+    build_flags: list[str],
+) -> None:
+    """
+    Given a list of package requirements, build or fetch them. If build_dependencies is true, then
+    package dependencies will be built or fetched also.
+    """
+    _parse_skip_list(skip_dependency)
+    PyPIProvider.BUILD_EXPORTS = exports
+    PyPIProvider.BUILD_FLAGS = build_flags
+    _resolve_and_build(reqs, target_folder, build_dependencies, extras=[])
+
+
 def build_dependencies_for_wheel(
     wheel: Path,
     extras: list[str],
@@ -312,17 +387,7 @@ def build_dependencies_for_wheel(
     sdist in order to discover dependencies of a candidate sub-dependency.
     """
     metadata = None
-    PyPIProvider.BUILD_SKIP = []
-    for skip in skip_dependency:
-        split_deps = skip.split(",")
-        for dep in split_deps:
-            if dep.endswith(".json"):
-                # a pyodide json file
-                # or a jupyterlite json file
-                # skip all packages in it
-                PyPIProvider.BUILD_SKIP.extend(_get_json_package_list(Path(dep)))
-            else:
-                PyPIProvider.BUILD_SKIP.append(dep)
+    _parse_skip_list(skip_dependency)
 
     PyPIProvider.BUILD_EXPORTS = exports
     PyPIProvider.BUILD_FLAGS = build_flags
@@ -335,32 +400,17 @@ def build_dependencies_for_wheel(
         raise RuntimeError(f"Can't find package metadata in {wheel}")
 
     deps: list[str] = metadata.get_all("Requires-Dist", [])
-    requirements = []
-
-    target_env = {
-        "extra": ",".join(extras),
-        "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
-        "sys_platform": common.platform().split("_")[0],
-    }
-
-    for d in deps:
-        r = Requirement(d)
-        if (r.name not in PyPIProvider.BUILD_SKIP) and (
-            (not r.marker) or r.marker.evaluate(target_env)
-        ):
-            requirements.append(r)
-
-    # Create the (reusable) resolver.
-    provider = PyPIProvider()
-    reporter = BaseReporter()
-    resolver: Resolver[Requirement, Candidate, str] = Resolver(provider, reporter)
-
-    # Kick off the resolution process, and get the final result.
-    result = resolver.resolve(requirements)
-    with open(wheel.parent / "package-versions.txt", "w") as version_file:
-        for x in result.mapping.values():
-            download_or_build_wheel(x.url, wheel.parent)
-            version_file.write(f"{x.name}=={x.version}\n")
+    metadata.get("version")
+    _resolve_and_build(deps, wheel.parent, build_dependencies=True, extras=extras)
+    # add the current wheel to the package-versions.txt
+    with open(wheel.parent / "package-versions.txt", "a") as version_txt:
+        name = metadata.get("Name")
+        version = metadata.get("Version")
+        if extras:
+            extratxt = "[" + ",".join(extras) + "]"
+        else:
+            extratxt = ""
+        version_txt.write(f"{name}{extratxt}=={version}\n")
 
 
 def fetch_pypi_package(package_spec: str, destdir: Path) -> Path:
