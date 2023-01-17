@@ -7,11 +7,11 @@ from textwrap import dedent
 from typing import Any
 
 import pytest
+from conftest import DIST_PATH, ROOT_PATH
 from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.fixture import selenium_standalone_noload_common
 from pytest_pyodide.server import spawn_web_server
 
-from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.common import get_pyodide_root
 
