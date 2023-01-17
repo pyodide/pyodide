@@ -66,7 +66,9 @@ You need Python 3.10.2 to run the build scripts. To make sure that the correct
 Python is used during the build it is recommended to use a [virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
 
-```{tabbed} Linux
+````{tab-set}
+
+```{tab-item} Linux
 
 To build on Linux, you need:
 
@@ -76,7 +78,7 @@ To build on Linux, you need:
 
 ```
 
-```{tabbed} MacOS
+```{tab-item} MacOS
 
 To build on MacOS, you need:
 
@@ -93,6 +95,7 @@ To build on MacOS, you need:
   GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
 ```
+````
 
 ```{note}
 If you encounter issues with the requirements, it is useful to check the exact
