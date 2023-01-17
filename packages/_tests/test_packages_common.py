@@ -4,9 +4,9 @@ import time
 from typing import Any
 
 import pytest
-from conftest import ROOT_PATH, package_is_built
 from pytest_pyodide.runner import _BrowserBaseRunner
 
+from conftest import ROOT_PATH, package_is_built
 from pyodide_build.io import MetaConfig
 
 PKG_DIR = ROOT_PATH / "packages"
