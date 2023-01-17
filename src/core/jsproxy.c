@@ -177,15 +177,15 @@ CHECK_EXC_FIELD(suppress_context);
 #define JsProxy_REF(x) (((JsProxy*)x)->js)
 #define JsProxy_DICT(x) (((JsProxy*)x)->dict)
 
-#define JsMethod_THIS(x) (((JsProxy*)x)->tf.mf.this_)
-#define JsMethod_VECTORCALL(x) (((JsProxy*)x)->tf.mf.vectorcall)
+#define JsMethod_THIS(x) (((JsProxy*)x)->this_)
+#define JsMethod_VECTORCALL(x) (((JsProxy*)x)->vectorcall)
 
 #define JsException_ARGS(x) (((JsProxy*)x)->tf.ef.args)
 
-#define JsBuffer_FORMAT(x) (((JsProxy*)x)->tf.bf.format)
-#define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->tf.bf.byteLength)
-#define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->tf.bf.itemsize)
-#define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->tf.bf.check_assignments)
+#define JsBuffer_FORMAT(x) (((JsProxy*)x)->format)
+#define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->byteLength)
+#define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->itemsize)
+#define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->check_assignments)
 
 int
 JsProxy_getflags(PyObject* self)
