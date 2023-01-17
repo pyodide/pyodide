@@ -65,18 +65,9 @@ def fix_pyodide_ffi_path():
     ModuleAnalyzer.for_module = for_module
 
 
-def fix_autodoc_typehints_for_overloaded_methods():
-    """See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296"""
-    from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
-
-    del FunctionDocumenter.format_signature
-    del MethodDocumenter.format_signature
-
-
 def setup(app):
     patch_templates()
     fix_pyodide_ffi_path()
-    fix_autodoc_typehints_for_overloaded_methods()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
