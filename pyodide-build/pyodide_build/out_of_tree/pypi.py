@@ -357,9 +357,10 @@ def build_dependencies_for_wheel(
 
     # Kick off the resolution process, and get the final result.
     result = resolver.resolve(requirements)
-    for x in result.mapping.values():
-        download_or_build_wheel(x.url, wheel.parent)
-
+    with open(wheel.parent / "package-versions.txt","w") as version_file:
+        for x in result.mapping.values():
+            download_or_build_wheel(x.url, wheel.parent)
+            version_file.write(f"{x.name}=={x.version}\n")
 
 def fetch_pypi_package(package_spec: str, destdir: Path) -> Path:
     pf = PackageFinder(
