@@ -1,11 +1,5 @@
-import collections
-import types
 from textwrap import dedent
-from typing import Any, Callable, Mapping, TypeVar, Union
-
-collections.Mapping = Mapping  # type: ignore[attr-defined]
-types.Union = Union  # type: ignore[attr-defined]
-
+from typing import Any, Callable, TypeVar
 from unittest.mock import create_autospec
 
 import pytest
@@ -249,7 +243,7 @@ def test_ensure_argument_types_only_summary(newlines):
     A Class
 
     :param blah: Description of parameter blah
-    :type blah: :py:class:`~typing.Optional`\\[:py:class:`int`]
+    :type blah: :py:data:`~typing.Optional`\\[:py:class:`int`]
     """
 )
 class Blah:
