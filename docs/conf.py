@@ -41,7 +41,6 @@ extensions = [
     "sphinx_js",
     "sphinx_click",
     "autodocsumm",
-    "sphinx_panels",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
     "versionwarning.extension",
