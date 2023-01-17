@@ -57,8 +57,6 @@ from collections import namedtuple
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
 
-from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
-
 ReplayArgs = namedtuple(
     "ReplayArgs",
     [
@@ -96,6 +94,9 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gcc', 'test.c']
     """
+
+    from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output
+
     new_args = ["gcc"]
     found_source = False
     for arg in args[1:]:
@@ -626,6 +627,8 @@ def handle_command(
     new_args = handle_command_generate_args(line, args, is_link_cmd)
 
     if args.pkgname == "scipy":
+        from pyodide_build._f2c_fixes import scipy_fixes
+
         scipy_fixes(new_args)
 
     returncode = subprocess.run(new_args).returncode
