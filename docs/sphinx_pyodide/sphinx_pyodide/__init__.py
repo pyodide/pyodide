@@ -1,3 +1,5 @@
+from sphinx.addnodes import desc_signature
+
 from .jsdoc import (
     PyodideAnalyzer,
     get_jsdoc_content_directive,
@@ -41,8 +43,98 @@ def patch_templates():
     JsRenderer.rst = patched_rst_method
 
 
+def patch_py_attribute_handle_signature():
+    """
+    Patch PyAttribute.handle_signature so that it renders rst instead of
+    escaping it.
+    """
+    from docutils import nodes
+    from docutils.parsers.rst import Parser as RstParser
+    from docutils.utils import new_document
+    from sphinx import addnodes
+    from sphinx.domains.python import PyAttribute
+
+    def handle_signature(
+        self: PyAttribute, sig: str, signode: desc_signature
+    ) -> tuple[str, str]:
+        """This changes the handling for types compared to upstream version.
+        Parse rst in the type name instead of escaping it.
+
+        The `if typ:` block is changed compared to upstream, rest is same.
+        """
+        fullname, prefix = super(PyAttribute, self).handle_signature(sig, signode)
+
+        typ = self.options.get("type")
+        if typ:
+            settings = self.state.document.settings
+            doc = new_document("", settings)
+            RstParser().parse(typ, doc)
+            # Remove top level paragraph node so that there is no line break.
+            annotations = doc.children[0].children
+            signode += addnodes.desc_annotation(
+                typ,
+                "",
+                addnodes.desc_sig_punctuation("", ":"),
+                addnodes.desc_sig_space(),
+                *annotations
+            )
+        value = self.options.get("value")
+        if value:
+            signode += addnodes.desc_annotation(
+                value,
+                "",
+                addnodes.desc_sig_space(),
+                addnodes.desc_sig_punctuation("", "="),
+                addnodes.desc_sig_space(),
+                nodes.Text(value),
+            )
+
+        return fullname, prefix
+
+    PyAttribute.handle_signature = handle_signature
+
+
+def remove_property_prefix():
+    """
+    I don't think it is important to distinguish in the docs between properties
+    and attributes. This removes the "property" prefix from properties.
+    """
+    from sphinx.domains.python import PyProperty
+
+    def get_signature_prefix(self: PyProperty, sig: str) -> list[str]:
+        return []
+
+    PyProperty.get_signature_prefix = get_signature_prefix
+
+
+def patch_attribute_documenter(app):
+    """Instead of using stringify-typehint in
+    `AttributeDocumenter.add_directive_header`, use `format_annotation`.
+    """
+    import sphinx.ext.autodoc
+    from sphinx.ext.autodoc import AttributeDocumenter
+    from sphinx_autodoc_typehints import format_annotation
+
+    def stringify_typehint(annotation, *args, **kwargs):
+        return format_annotation(annotation, app.config)
+
+    orig_add_directive_header = AttributeDocumenter.add_directive_header
+
+    def add_directive_header(*args, **kwargs):
+        orig_stringify_typehint = sphinx.ext.autodoc.stringify_typehint
+        sphinx.ext.autodoc.stringify_typehint = stringify_typehint
+        result = orig_add_directive_header(*args, **kwargs)
+        sphinx.ext.autodoc.stringify_typehint = orig_stringify_typehint
+        return result
+
+    AttributeDocumenter.add_directive_header = add_directive_header
+
+
 def setup(app):
     patch_templates()
+    patch_py_attribute_handle_signature()
+    patch_attribute_documenter(app)
+    remove_property_prefix()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
