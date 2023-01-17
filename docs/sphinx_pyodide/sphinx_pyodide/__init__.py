@@ -41,8 +41,28 @@ def patch_templates():
     JsRenderer.rst = patched_rst_method
 
 
+def patch_documenter():
+    from sphinx.ext.autodoc import ModuleAnalyzer
+
+    orig_for_module = ModuleAnalyzer.for_module.__func__
+
+    @classmethod  # type: ignore[misc]
+    def for_module(cls: type, modname: str) -> ModuleAnalyzer:
+        if modname == "pyodide.ffi":
+            modname = "_pyodide._core_docs"
+        return orig_for_module(cls, modname)
+
+    ModuleAnalyzer.for_module = for_module
+
+    from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
+
+    del FunctionDocumenter.format_signature
+    del MethodDocumenter.format_signature
+
+
 def setup(app):
     patch_templates()
+    patch_documenter()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
