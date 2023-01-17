@@ -16,3 +16,4 @@ pydantic
 # Version should be consistent with packages/micropip/meta.yaml
 micropip==0.2.0
 jinja2>=3.0
+ruamel.yaml
