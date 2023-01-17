@@ -41,7 +41,17 @@ def patch_templates():
     JsRenderer.rst = patched_rst_method
 
 
-def patch_documenter():
+def fix_pyodide_ffi_path():
+    """
+    The `pyodide.ffi` stuff is defined in `_pyodide._core_docs`. We don't want
+    `_pyodide._core_docs` to appear in the documentation because this isn't
+    where you should import things from so we override the `__name__` of
+    `_pyodide._core_docs` to be `pyodide.ffi`. But then Sphinx fails to locate
+    the source for the stuff defined in `_pyodide._core_docs`.
+
+    This patches `ModuleAnalyzer` to tell it to look for the source of things
+    from `pyodide.ffi` in `_pyodide._core_docs`.
+    """
     from sphinx.ext.autodoc import ModuleAnalyzer
 
     orig_for_module = ModuleAnalyzer.for_module.__func__
@@ -54,6 +64,9 @@ def patch_documenter():
 
     ModuleAnalyzer.for_module = for_module
 
+
+def fix_autodoc_typehints_for_overloaded_methods():
+    """See https://github.com/tox-dev/sphinx-autodoc-typehints/issues/296"""
     from sphinx.ext.autodoc import FunctionDocumenter, MethodDocumenter
 
     del FunctionDocumenter.format_signature
@@ -62,7 +75,8 @@ def patch_documenter():
 
 def setup(app):
     patch_templates()
-    patch_documenter()
+    fix_pyodide_ffi_path()
+    fix_autodoc_typehints_for_overloaded_methods()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
