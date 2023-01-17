@@ -75,7 +75,7 @@ intersphinx_mapping = {
 }
 
 # Add modules to be mocked.
-mock_modules = ["ruamel.yaml", "tomli"]
+mock_modules = ["tomli"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
