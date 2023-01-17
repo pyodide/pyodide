@@ -266,29 +266,7 @@ def typehints_formatter(annotation, config):
         args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return None
-    if module == "_io":
-        # Most io module things have __module__ == "_io"
-        # Fixed upstream: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/291
-        return f":py:class:`~io.{class_name}`"
-
     full_name = f"{module}.{class_name}"
-    if full_name == "typing.Literal":
-        # Fixed upstream: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/288
-        formatted_args = "\\[{}]".format(
-            ", ".join("``{}``".format(repr(arg)) for arg in args)
-        )
-        return f":py:data:`~{full_name}`{formatted_args}"
-    if full_name == "builtins.code":
-        # Upstream PR: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/292
-        return ":py:class:`~types.CodeType`"
-    if full_name == "ast.Module":
-        # ast.Module is not documented, so link to the whole ast module.
-        # https://github.com/python/cpython/issues/101050
-        return "`ast.Module <https://docs.python.org/3.10/library/ast.html>`_"
-    if full_name == "collections.abc.Callable" and args and args[0] is not ...:
-        # Fixed upstream: https://github.com/tox-dev/sphinx-autodoc-typehints/pull/289
-        fmt = [format_annotation(arg, config) for arg in args]
-        return f":py:class:`~{full_name}`\\[\\[{', '.join(fmt[:-1])}], {fmt[-1]}]"
     if full_name == "collections.abc.Callable" and args:
         # Not sure what causes this, it isn't a bug in sphinx-autodoc-typehints
         fmt = [format_annotation(arg, config) for arg in args]
