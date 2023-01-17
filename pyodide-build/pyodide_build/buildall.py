@@ -9,12 +9,12 @@ import copy
 import dataclasses
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
 from collections import defaultdict
 from collections.abc import Iterable
+from datetime import datetime
 from functools import total_ordering
 from graphlib import TopologicalSorter
 from pathlib import Path
@@ -23,10 +23,16 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from rich.live import Live
+from rich.progress import BarColumn, Progress, TimeElapsedColumn
+from rich.spinner import Spinner
+from rich.table import Table
+
 from . import common
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
+from .logger import console_stdout, logger
 
 
 class BuildError(Exception):
@@ -158,13 +164,89 @@ class Package(BasePackage):
             )
 
         if p.returncode != 0:
-            print(f"Error building {self.name}. Printing build logs.")
-
-            with open(self.pkgdir / "build.log") as f:
-                shutil.copyfileobj(f, sys.stdout)
-
-            print("ERROR: cancelling buildall")
+            logger.error(f"Error building {self.name}. Printing build logs.")
+            logger.error((self.pkgdir / "build.log").read_text(encoding="utf-8"))
+            logger.error("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
+
+
+class PackageStatus:
+    def __init__(
+        self, *, name: str, idx: int, thread: int, total_packages: int
+    ) -> None:
+        self.pkg_name = name
+        self.prefix = f"[{idx}/{total_packages}] " f"(thread {thread})"
+        self.status = Spinner("dots", style="red", speed=0.2)
+        self.table = Table.grid(padding=1)
+        self.table.add_row(f"{self.prefix} building {self.pkg_name}", self.status)
+        self.finished = False
+
+    def finish(self, success: bool, elapsed_time: float) -> None:
+        time = datetime.utcfromtimestamp(elapsed_time)
+        if time.minute == 0:
+            minutes = ""
+        else:
+            minutes = f"{time.minute}m "
+        timestr = f"{minutes}{time.second}s"
+
+        status = "built" if success else "failed"
+        done_message = f"{self.prefix} {status} {self.pkg_name} in {timestr}"
+
+        self.finished = True
+
+        if success:
+            logger.success(done_message)
+        else:
+            logger.error(done_message)
+
+    def __rich__(self):
+        return self.table
+
+
+class ReplProgressFormatter:
+    def __init__(self, num_packages: int) -> None:
+        self.progress = Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "{task.completed}/{task.total} [progress.percentage]{task.percentage:>3.0f}%",
+            "Time elapsed:",
+            TimeElapsedColumn(),
+        )
+        self.task = self.progress.add_task("Building packages...", total=num_packages)
+        self.packages: list[PackageStatus] = []
+        self.reset_grid()
+
+    def reset_grid(self):
+        """Empty out the rendered grids."""
+        self.top_grid = Table.grid()
+
+        for package in self.packages:
+            self.top_grid.add_row(package)
+
+        self.main_grid = Table.grid()
+        self.main_grid.add_row(self.top_grid)
+        self.main_grid.add_row(self.progress)
+
+    def add_package(
+        self, *, name: str, idx: int, thread: int, total_packages: int
+    ) -> PackageStatus:
+        status = PackageStatus(
+            name=name, idx=idx, thread=thread, total_packages=total_packages
+        )
+        self.packages.append(status)
+        self.reset_grid()
+        return status
+
+    def remove_package(self, pkg: PackageStatus) -> None:
+        self.packages.remove(pkg)
+        self.reset_grid()
+
+    def update_progress_bar(self):
+        """Step the progress bar by one (to show that a package finished)"""
+        self.progress.update(self.task, advance=1)
+
+    def __rich__(self):
+        return self.main_grid
 
 
 def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
@@ -299,23 +381,6 @@ def job_priority(pkg: BasePackage) -> int:
         return 1
 
 
-def print_with_progress_line(str: str, progress_line: str | None) -> None:
-    if not sys.stdout.isatty():
-        print(str)
-        return
-    twidth = os.get_terminal_size()[0]
-    print(" " * twidth, end="\r")
-    print(str)
-    if progress_line:
-        print(progress_line, end="\r")
-
-
-def get_progress_line(package_set: dict[str, None]) -> str | None:
-    if not package_set:
-        return None
-    return "In progress: " + ", ".join(package_set.keys())
-
-
 def format_name_list(l: list[str]) -> str:
     """
     >>> format_name_list(["regex"])
@@ -401,15 +466,19 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         pkg_map[pkg_name].unbuilt_host_dependencies.difference_update(already_built)
 
     if already_built:
-        print(
-            f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
+        logger.info(
+            "The following packages are already built: "
+            f"[bold]{format_name_list(sorted(already_built))}[/bold]"
         )
     if not needs_build:
-        print("All packages already built. Quitting.")
+        logger.success("All packages already built. Quitting.")
         return
-    print(f"Building the following packages: {format_name_list(sorted(needs_build))}")
 
-    t0 = perf_counter()
+    logger.info(
+        "Building the following packages: "
+        f"[bold]{format_name_list(sorted(needs_build))}[/bold]"
+    )
+
     for pkg_name in needs_build:
         pkg = pkg_map[pkg_name]
         if len(pkg.unbuilt_host_dependencies) == 0:
@@ -418,20 +487,25 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
     built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    # Using dict keys for insertion order preservation
-    package_set: dict[str, None] = {}
+    progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n: int) -> None:
         nonlocal queue_idx
         while True:
             pkg = build_queue.get()[1]
+
             with thread_lock:
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
-            package_set[pkg.name] = None
-            msg = f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) building {pkg.name}"
-            print_with_progress_line(msg, get_progress_line(package_set))
+
+            pkg_status = progress_formatter.add_package(
+                name=pkg.name,
+                idx=pkg._queue_idx,
+                thread=n,
+                total_packages=len(needs_build),
+            )
             t0 = perf_counter()
+
             success = True
             try:
                 pkg.build(args)
@@ -440,13 +514,9 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
                 success = False
                 return
             finally:
-                del package_set[pkg.name]
-                status = "built" if success else "failed"
-                msg = (
-                    f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) "
-                    f"{status} {pkg.name} in {perf_counter() - t0:.2f} s"
-                )
-                print_with_progress_line(msg, get_progress_line(package_set))
+                pkg_status.finish(success, perf_counter() - t0)
+                progress_formatter.remove_package(pkg_status)
+
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -455,29 +525,27 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    while num_built < len(pkg_map):
-        match built_queue.get():
-            case BuildError() as err:
-                raise SystemExit(err.returncode)
-            case Exception() as err:
-                raise err
-            case a_package:
-                # MyPy should understand that this is a BasePackage
-                assert not isinstance(a_package, Exception)
-                pkg = a_package
+    with Live(progress_formatter, console=console_stdout):
+        while num_built < len(pkg_map):
+            match built_queue.get():
+                case BuildError() as err:
+                    raise SystemExit(err.returncode)
+                case Exception() as err:
+                    raise err
+                case a_package:
+                    # MyPy should understand that this is a BasePackage
+                    assert not isinstance(a_package, Exception)
+                    pkg = a_package
 
-        num_built += 1
+            num_built += 1
 
-        for _dependent in pkg.host_dependents:
-            dependent = pkg_map[_dependent]
-            dependent.unbuilt_host_dependencies.remove(pkg.name)
-            if len(dependent.unbuilt_host_dependencies) == 0:
-                build_queue.put((job_priority(dependent), dependent))
+            progress_formatter.update_progress_bar()
 
-    print(
-        "\n===================================================\n"
-        f"built all packages in {perf_counter() - t0:.2f} s"
-    )
+            for _dependent in pkg.host_dependents:
+                dependent = pkg_map[_dependent]
+                dependent.unbuilt_host_dependencies.remove(pkg.name)
+                if len(dependent.unbuilt_host_dependencies) == 0:
+                    build_queue.put((job_priority(dependent), dependent))
 
 
 def _generate_package_hash(full_path: Path) -> str:

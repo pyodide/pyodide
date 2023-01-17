@@ -7,7 +7,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import requests
-import typer  # type: ignore[import]
+import typer
 
 from .. import common
 from ..out_of_tree import build
