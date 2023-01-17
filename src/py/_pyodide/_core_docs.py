@@ -107,14 +107,14 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """An id number which can be used as a dictionary/set key if you want to
         key on JavaScript object identity.
 
-        If two `JsProxy` are made with the same backing JavaScript object, they
-        will have the same `js_id`.
+        If two ``JsProxy`` are made with the same backing JavaScript object, they
+        will have the same ``js_id``.
         """
         return 0
 
     @property
     def typeof(self) -> str:
-        """Returns the JavaScript type of the JsProxy.
+        """Returns the JavaScript type of the ``JsProxy``.
 
         Corresponds to `typeof obj;` in JavaScript. You may also be interested
         in the `constuctor` attribute which returns the type as an object.
@@ -169,8 +169,8 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         Parameters
         ----------
         depth:
-            You can use this argument to limit the depth of the conversion. If a
-            shallow conversion is desired, set `depth` to 1.
+            Limit the depth of the conversion. If a shallow conversion is
+            desired, set ``depth`` to 1.
 
         default_converter:
 
@@ -291,7 +291,7 @@ class JsPromise(JsProxy):
         """
         raise NotImplementedError
 
-    def finally_(self, onfinally: Callable[[Any], Any], /) -> "JsPromise":
+    def finally_(self, onfinally: Callable[[], Any], /) -> "JsPromise":
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -444,9 +444,9 @@ class JsArray(JsProxy, Generic[T]):
         raise NotImplementedError
 
     def pop(self, /, index: int = -1) -> T:
-        """Remove and return item at index (default last).
+        """Remove and return the ``item`` at ``index`` (default last).
 
-        Raises IndexError if list is empty or index is out of range.
+        Raises :any:`IndexError` if list is empty or index is out of range.
         """
         raise NotImplementedError
 
@@ -457,9 +457,9 @@ class JsArray(JsProxy, Generic[T]):
         """Append object to the end of the list."""
 
     def index(self, /, value: T, start: int = 0, stop: int = sys.maxsize) -> int:
-        """Return first index of value.
+        """Return first ``index`` at which ``value`` appears in the ``Array``.
 
-        Raises ValueError if the value is not present.
+        Raises :any:`ValueError` if the value is not present.
         """
         raise NotImplementedError
 
@@ -541,8 +541,10 @@ class JsMap(JsProxy, Generic[KT, VTco]):
     def get(self, key: KT, default: VTco | T) -> VTco | T:
         ...
 
-    def get(self, key, default=None):
-        """If key in self, returns self[key]. Otherwise returns default."""
+    def get(  # type:ignore[misc]
+        self, key: KT, default: VTco = None  # type:ignore[assignment, misc]
+    ) -> VTco:
+        """If ``key in self``, returns ``self[key]``. Otherwise returns ``default``."""
         raise NotImplementedError
 
 
@@ -570,7 +572,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     def pop(self, __key: KT, __default: VT | T = ...) -> VT | T:
         ...
 
-    def pop(self, key, default=None):
+    def pop(self, key: KT, default: VT = None) -> VT:  # type:ignore[misc, assignment]
         """If key in self, return self[key] and remove key from self. Otherwise
         returns default.
         """
@@ -582,7 +584,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
         """
         raise NotImplementedError
 
-    def popitem(self) -> tuple[KT, KT]:
+    def popitem(self) -> tuple[KT, VT]:
         """Remove some arbitrary key, value pair from the map and returns the
         (key, value) tuple.
         """
@@ -591,20 +593,13 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     def clear(self) -> None:
         """Empty out the map entirely."""
 
-    @overload
-    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
-        ...
-
-    @overload
-    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
-        ...
-
-    @overload
-    def update(self, **kwargs: VT) -> None:
-        ...
-
-    def update(self, other, **kwargs):
+    def update(
+        self, other: Iterable[tuple[KT, VT]] | None = None, **kwargs: VT
+    ) -> None:
         """Updates self from other and kwargs.
+
+        .. only::
+
 
         If ``other`` is present and is a :any:`Mapping` or has a ``keys`` method, does
 
@@ -640,7 +635,10 @@ class JsIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript iterator.
 
     An object is a JsIterator if it has a `next` method and either has a
-    Symbol.iterator or has no Symbol.asyncIterator.
+    `Symbol.iterator
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_
+    or has no `Symbol.asyncIterator
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_.
     """
 
     _js_type_flags = ["IS_ITERATOR"]
@@ -656,7 +654,10 @@ class JsAsyncIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript async iterator.
 
     An object is a JsAsyncIterator if it has a `next` method and either has a
-    Symbol.asyncIterator or has no Symbol.iterator.
+    `Symbol.asyncIterator
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_
+    or has no `Symbol.iterator
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
     """
 
     _js_type_flags = ["IS_ASYNC_ITERATOR"]
@@ -671,7 +672,9 @@ class JsAsyncIterator(JsProxy, Generic[Tco]):
 class JsIterable(JsProxy, Generic[Tco]):
     """A JavaScript iterable object
 
-    A JavaScript object is iterable if it has a ``Symbol.iterator`` method.
+    A JavaScript object is iterable if it has a `Symbol.iterator
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_
+    method.
     """
 
     _js_type_flags = ["IS_ITERABLE"]
@@ -683,7 +686,9 @@ class JsIterable(JsProxy, Generic[Tco]):
 class JsAsyncIterable(JsProxy, Generic[Tco]):
     """A JavaScript async iterable object
 
-    A JavaScript object is async iterable if it has a ``Symbol.asyncIterator`` method.
+    A JavaScript object is async iterable if it has a `Symbol.asyncIterator
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_
+    method.
     """
 
     _js_type_flags = ["IS_ASYNC_ITERABLE"]
@@ -737,12 +742,12 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
     ) -> Tco:
         ...
 
-    def throw(
+    def throw(  # type:ignore[misc]
         self,
-        type,
-        value,
-        traceback,
-    ):
+        type: type[BaseException],
+        value: BaseException | object = ...,
+        traceback: TracebackType | None = None,
+    ) -> Tco:
         """
         Raises an exception at the point where the generator was paused, and
         returns the next value yielded by the generator function.
@@ -770,11 +775,11 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
         function was paused.
 
         If the generator function then exits gracefully, is already closed, or
-        raises :any:`GeneratorExit` (by not catching the exception), close
+        raises :any:`GeneratorExit` (by not catching the exception), ``close()``
         returns to its caller. If the generator yields a value, a
         :any:`RuntimeError` is raised. If the generator raises any other
-        exception, it is propagated to the caller. close() does nothing if the
-        generator has already exited due to an exception or normal exit.
+        exception, it is propagated to the caller. ``close()`` does nothing if
+        the generator has already exited due to an exception or normal exit.
         """
 
     def __next__(self) -> Tco:
@@ -785,6 +790,14 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
 
 
 class JsFetchResponse(JsProxy):
+    """A :any:`JsFetchResponse` object represents a response to a `fetch
+    <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ request.
+
+    See `the MDN docs
+    <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ for more
+    information.
+    """
+
     bodyUsed: bool
     ok: bool
     redirected: bool
@@ -830,11 +843,11 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
         function.
 
         The ``value`` argument becomes the result of the current yield
-        expression. The awaitable returned by the asend() method will return the
-        next value yielded by the generator or raises :any:`StopAsyncIteration`
-        if the asynchronous generator returns. If the generator returned a
-        value, this value is discarded (because in Python async generators
-        cannot return a value).
+        expression. The awaitable returned by the ``asend()`` method will return
+        the next value yielded by the generator or raises
+        :any:`StopAsyncIteration` if the asynchronous generator returns. If the
+        generator returned a value, this value is discarded (because in Python
+        async generators cannot return a value).
 
         When ``asend()`` is called to start the generator, the argument will be
         ignored. Unlike in Python, we cannot detect that the generator hasn't
@@ -858,16 +871,16 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
     ) -> Awaitable[Tco]:
         ...
 
-    def athrow(
+    def athrow(  # type:ignore[misc]
         self,
-        type,
-        value,
-        traceback,
-    ):
+        type: type[BaseException],
+        value: BaseException | object = ...,
+        traceback: TracebackType | None = None,
+    ) -> Awaitable[Tco]:
         """Resumes the execution and raises an exception at the point where the
         generator was paused.
 
-        The awaitable returned by the asend() method will return the next value
+        The awaitable returned by ``athrow()`` method will return the next value
         yielded by the generator or raises :any:`StopAsyncIteration` if the
         asynchronous generator returns. If the generator returned a value, this
         value is discarded (because in Python async generators cannot return a
@@ -878,15 +891,15 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
         raise NotImplementedError
 
     def aclose(self) -> Awaitable[None]:
-        """Raises a :any:`GeneratorExit` at the point where the generator function was
-        paused.
+        """Raises a :any:`GeneratorExit` at the point where the generator
+        function was paused.
 
         If the generator function then exits gracefully, is already closed, or
-        raises :any:`GeneratorExit` (by not catching the exception), close returns to
-        its caller. If the generator yields a value, a :any:`RuntimeError` is raised.
-        If the generator raises any other exception, it is propagated to the
-        caller. close() does nothing if the generator has already exited due to
-        an exception or normal exit.
+        raises :any:`GeneratorExit` (by not catching the exception),
+        ``aclose()`` returns to its caller. If the generator yields a value, a
+        :any:`RuntimeError` is raised. If the generator raises any other
+        exception, it is propagated to the caller. ``aclose()`` does nothing if
+        the generator has already exited due to an exception or normal exit.
         """
         raise NotImplementedError
 
@@ -964,7 +977,7 @@ class JsDomElement(JsProxy):
 
 
 def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
-    """Wrap a Python callable in a JavaScript function that can be called once.
+    """Wrap a Python Callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
     of the Callable. The JavaScript function also has a ``destroy`` API that
@@ -1102,7 +1115,8 @@ def to_js(
         can just iterate over the ``Array`` and destroy the proxies).
 
     create_pyproxies:
-        If you set this to False, :any:`to_js` will raise an error
+        If you set this to :any:`False`, :any:`to_js` will raise an error rather
+        than creating any pyproxies.
 
     dict_converter:
         This converter if provided receives a (JavaScript) iterable of
