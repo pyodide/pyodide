@@ -543,7 +543,7 @@ def test_python2js_track_proxies(selenium):
             }
         }
         check(result);
-        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ConversionError");
+        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ffi.ConversionError");
         x.destroy();
         """
     )

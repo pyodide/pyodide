@@ -943,6 +943,12 @@ class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
 
 
+class InternalError(Exception):
+    """Thrown when a recoverable assertion error occurs in internal Pyodide code"""
+
+    pass
+
+
 class JsDomElement(JsProxy):
     @property
     def tagName(self) -> str:
