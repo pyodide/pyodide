@@ -57,10 +57,18 @@ def test_get_build_env(tmp_path):
 
     with build_env_ctx as env:
         # TODO: also test values
+        assert "CC" in env
+        assert "CXX" in env
+        assert "AR" in env
         assert "PATH" in env
         assert "PYTHONPATH" in env
         assert "PYWASMCROSS_ARGS" in env
-        assert "exports" in env
-        assert "builddir" in env
         assert "_PYTHON_HOST_PLATFORM" in env
         assert "_PYTHON_SYSCONFIGDATA_NAME" in env
+
+        wasmcross_args = env["PYWASMCROSS_ARGS"]
+        assert "cflags" in wasmcross_args
+        assert "cxxflags" in wasmcross_args
+        assert "ldflags" in wasmcross_args
+        assert "exports" in wasmcross_args
+        assert "builddir" in wasmcross_args
