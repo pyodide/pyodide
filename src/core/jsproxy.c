@@ -3952,6 +3952,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   } else {
     type_flags = compute_typeflags(object);
     if (type_flags == -1) {
+      fail_test();
       PyErr_SetString(internal_error,
                       "Internal error occurred in compute_typeflags");
       return NULL;
