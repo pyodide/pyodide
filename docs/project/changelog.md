@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Updated Emscripten to version 3.1.30
+  {pr}`3471`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
