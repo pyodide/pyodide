@@ -573,20 +573,20 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
         ...
 
     def pop(self, key: KT, default: VT = None) -> VT:  # type:ignore[misc, assignment]
-        """If key in self, return self[key] and remove key from self. Otherwise
-        returns default.
+        """If ``key in self``, return ``self[key]`` and remove key from ``self``. Otherwise
+        returns ``default``.
         """
         raise NotImplementedError
 
     def setdefault(self, key: KT, default: VT | None = None) -> VT:
-        """If key in self, return self[key]. Otherwise
-        sets self[key] = default and returns default.
+        """If ``key in self``, return ``self[key]``. Otherwise
+        sets ``self[key] = default`` and returns ``default``.
         """
         raise NotImplementedError
 
     def popitem(self) -> tuple[KT, VT]:
-        """Remove some arbitrary key, value pair from the map and returns the
-        (key, value) tuple.
+        """Remove some arbitrary ``key, value`` pair from the map and returns the
+        ``(key, value)`` tuple.
         """
         raise NotImplementedError
 
@@ -596,7 +596,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     def update(
         self, other: Iterable[tuple[KT, VT]] | None = None, **kwargs: VT
     ) -> None:
-        """Updates self from other and kwargs.
+        """Updates ``self`` from ``other`` and ``kwargs``.
 
         .. only::
 
