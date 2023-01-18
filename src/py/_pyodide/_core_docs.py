@@ -15,6 +15,8 @@ from functools import reduce
 from types import TracebackType
 from typing import IO, Any, Awaitable, Generic, TypeVar, overload
 
+from .docs_argspec import docs_argspec
+
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
 # appropriately.
@@ -502,9 +504,9 @@ class JsTypedArray(JsBuffer, JsArray[int]):
 class JsMap(JsProxy, Generic[KT, VTco]):
     """A JavaScript Map
 
-    To be considered a map, a JavaScript object must have a ``.get`` method, it
-    must have a ``.size`` or a ``.length`` property which is a number
-    (idiomatically it should be called ``.size``) and it must be iterable.
+    To be considered a map, a JavaScript object must have a ``get`` method, it
+    must have a ``size`` or a ``length`` property which is a number
+    (idiomatically it should be called ``size``) and it must be iterable.
     """
 
     _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
@@ -522,29 +524,28 @@ class JsMap(JsProxy, Generic[KT, VTco]):
         raise NotImplementedError
 
     def keys(self) -> KeysView[KT]:
-        """Return a :any:`KeysView` for the map."""
+        """Return a :py:class:`~collections.abc.KeysView` for the map."""
         raise NotImplementedError
 
     def items(self) -> ItemsView[KT, VTco]:
-        """Return a :any:`ItemsView` for the map."""
+        """Return a :py:class:`~collections.abc.ItemsView` for the map."""
         raise NotImplementedError
 
     def values(self) -> ValuesView[VTco]:
-        """Return a :any:`ValuesView` for the map."""
+        """Return a :py:class:`~collections.abc.ValuesView` for the map."""
         raise NotImplementedError
 
     @overload
-    def get(self, key: KT) -> VTco | None:
+    def get(self, key: KT, /) -> VTco | None:
         ...
 
     @overload
-    def get(self, key: KT, default: VTco | T) -> VTco | T:
+    def get(self, key: KT, default: VTco | T, /) -> VTco | T:
         ...
 
-    def get(  # type:ignore[misc]
-        self, key: KT, default: VTco = None  # type:ignore[assignment, misc]
-    ) -> VTco:
-        """If ``key in self``, returns ``self[key]``. Otherwise returns ``default``."""
+    @docs_argspec("(self, key: KT, default: VTco | None, /) -> VTco")
+    def get(self, key: KT, default: Any = None, /) -> VTco:
+        r"""If ``key in self``, returns ``self[key]``. Otherwise returns ``default``."""
         raise NotImplementedError
 
 
@@ -552,10 +553,9 @@ class JsMap(JsProxy, Generic[KT, VTco]):
 class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     """A JavaScript mutable map
 
-    To be considered a mutable map, a JavaScript object must have a ``.get``
-    method, a ``.has`` method, a ``.size`` or a ``.length`` property which is a
-    number (idiomatically it should be called ``.size``) and it must be
-    iterable.
+    To be considered a mutable map, a JavaScript object must have a ``get``
+    method, a ``has`` method, a ``size`` or a ``length`` property which is a
+    number (idiomatically it should be called ``size``) and it must be iterable.
 
     Instances of the JavaScript builtin ``Map`` class are ``JsMutableMap`` s.
     Also proxies returned by :any:`JsProxy.as_object_map` are instances of
@@ -565,15 +565,16 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
     @overload
-    def pop(self, __key: KT) -> VT:
+    def pop(self, key: KT, /) -> VT:
         ...
 
     @overload
-    def pop(self, __key: KT, __default: VT | T = ...) -> VT | T:
+    def pop(self, key: KT, default: VT | T = ..., /) -> VT | T:
         ...
 
-    def pop(self, key: KT, default: VT = None) -> VT:  # type:ignore[misc, assignment]
-        """If ``key in self``, return ``self[key]`` and remove key from ``self``. Otherwise
+    @docs_argspec("(self, key: KT, default: VT | None = None, /) -> VT")
+    def pop(self, key: KT, default: Any = None, /) -> Any:
+        r"""If ``key in self``, return ``self[key]`` and remove key from ``self``. Otherwise
         returns ``default``.
         """
         raise NotImplementedError
@@ -593,15 +594,37 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     def clear(self) -> None:
         """Empty out the map entirely."""
 
-    def update(
-        self, other: Iterable[tuple[KT, VT]] | None = None, **kwargs: VT
-    ) -> None:
-        """Updates ``self`` from ``other`` and ``kwargs``.
+    @overload
+    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
+        ...
 
-        .. only::
+    @overload
+    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
+        ...
 
+    @overload
+    def update(self, **kwargs: VT) -> None:
+        ...
 
-        If ``other`` is present and is a :any:`Mapping` or has a ``keys`` method, does
+    @docs_argspec(
+        "(self, other : Mapping[KT, VT] | Iterable[tuple[KT, VT]] = None , /, **kwargs) -> None"
+    )
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        r"""Updates ``self`` from ``other`` and ``kwargs``.
+
+        Parameters
+        ----------
+            other:
+
+                Either a mapping or an iterable of pairs. This can be left out.
+
+            kwargs:  ``VT``
+
+                Extra key-values pairs to insert into the map. Only usable for
+                inserting extra strings.
+
+        If ``other`` is present and is a :any:`Mapping` or has a ``keys``
+        method, does
 
         .. code-block:: python
 
@@ -730,23 +753,27 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
     @overload
     def throw(
         self,
-        __typ: type[BaseException],
-        __val: BaseException | object = ...,
-        __tb: TracebackType | None = ...,
+        typ: type[BaseException],
+        val: BaseException | object = ...,
+        tb: TracebackType | None = ...,
+        /,
     ) -> Tco:
         ...
 
     @overload
     def throw(
-        self, __typ: BaseException, __val: None = ..., __tb: TracebackType | None = ...
+        self,
+        typ: BaseException,
+        val: None = ...,
+        tb: TracebackType | None = ...,
+        /,
     ) -> Tco:
         ...
 
-    def throw(  # type:ignore[misc]
+    @docs_argspec("(self, error: BaseException, /) -> Tco")
+    def throw(
         self,
-        type: type[BaseException],
-        value: BaseException | object = ...,
-        traceback: TracebackType | None = None,
+        *args: Any,
     ) -> Tco:
         """
         Raises an exception at the point where the generator was paused, and
@@ -760,7 +787,7 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
         In typical use, this is called with a single exception instance similar
         to the way the raise keyword is used.
 
-        For backwards compatibility, however, the second signature is supported,
+        For backwards compatibility, however, a second signature is supported,
         following a convention from older versions of Python. The type argument
         should be an exception class, and value should be an exception instance.
         If the value is not provided, the type constructor is called to get an
@@ -838,7 +865,7 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
     def __aiter__(self) -> "JsAsyncGenerator[Tco, Tcontra, Vco]":
         raise NotImplementedError
 
-    def asend(self, value: Tcontra) -> Awaitable[Tco]:
+    def asend(self, value: Tcontra, /) -> Awaitable[Tco]:
         """Resumes the execution and "sends" a value into the async generator
         function.
 
@@ -859,24 +886,25 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
     @overload
     def athrow(
         self,
-        __typ: type[BaseException],
-        __val: BaseException | object = ...,
-        __tb: TracebackType | None = ...,
+        typ: type[BaseException],
+        val: BaseException | object = ...,
+        tb: TracebackType | None = ...,
+        /,
     ) -> Awaitable[Tco]:
         ...
 
     @overload
     def athrow(
-        self, __typ: BaseException, __val: None = ..., __tb: TracebackType | None = ...
+        self,
+        typ: BaseException,
+        val: None = ...,
+        tb: TracebackType | None = ...,
+        /,
     ) -> Awaitable[Tco]:
         ...
 
-    def athrow(  # type:ignore[misc]
-        self,
-        type: type[BaseException],
-        value: BaseException | object = ...,
-        traceback: TracebackType | None = None,
-    ) -> Awaitable[Tco]:
+    @docs_argspec("(self, error: BaseException, /) -> Tco")
+    def athrow(self, value: Any, *args: Any) -> Awaitable[Tco]:
         """Resumes the execution and raises an exception at the point where the
         generator was paused.
 
