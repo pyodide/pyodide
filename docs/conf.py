@@ -46,6 +46,7 @@ extensions = [
     "versionwarning.extension",
     "sphinx_issues",
     "sphinx_autodoc_typehints",
+    "sphinx_design",  # Used for tabs in building-from-sources.md
 ]
 
 
