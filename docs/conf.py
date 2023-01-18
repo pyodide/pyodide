@@ -250,6 +250,8 @@ def globalReplace(app, docname, source):
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
+always_document_param_types = True
+
 
 def typehints_formatter(annotation, config):
     """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
