@@ -11,7 +11,7 @@ from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
@@ -303,6 +303,35 @@ def get_make_environment_vars() -> dict[str, str]:
             value = value.strip("'").strip()
             environment[varname] = value
     return environment
+
+
+def environment_substitute_args(
+    args: dict[str, str], env: dict[str, str] | None = None
+) -> dict[str, Any]:
+    """
+    Substitute $(VAR) in args with the value of the environment variable VAR.
+
+    Parameters
+    ----------
+    args
+        A dictionary of arguments
+
+    env
+        A dictionary of environment variables. If None, use os.environ.
+
+    Returns
+    -------
+    A dictionary of arguments with the substitutions applied.
+    """
+    if env is None:
+        env = dict(os.environ)
+    subbed_args = {}
+    for arg, value in args.items():
+        if isinstance(value, str):
+            for e_name, e_value in env.items():
+                value = value.replace(f"$({e_name})", e_value)
+        subbed_args[arg] = value
+    return subbed_args
 
 
 def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:

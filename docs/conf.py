@@ -46,6 +46,7 @@ extensions = [
     "versionwarning.extension",
     "sphinx_issues",
     "sphinx_autodoc_typehints",
+    "sphinx_design",  # Used for tabs in building-from-sources.md
 ]
 
 
@@ -298,7 +299,7 @@ global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
 def typehints_formatter(annotation, config):
     """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
-    from sphinx_autodoc_typehints import (  # get_annotation_args,
+    from sphinx_autodoc_typehints import (
         get_annotation_class_name,
         get_annotation_module,
     )
@@ -306,7 +307,6 @@ def typehints_formatter(annotation, config):
     try:
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
-        # args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return None
     full_name = f"{module}.{class_name}"
@@ -314,6 +314,8 @@ def typehints_formatter(annotation, config):
         # The way sphinx-autodoc-typehints renders TypeVar is too noisy for my
         # taste
         return f"``{annotation.__name__}``"
+    if full_name == "ast.Module":
+        return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
     return None
 
 
