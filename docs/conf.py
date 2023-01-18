@@ -184,6 +184,44 @@ if IN_READTHEDOCS:
     console_path.write_text("".join(console_html))
 
 
+def docs_argspec(argspec: str) -> Any:
+    """Decorator to override the argument spec of the function that is
+    rendered in the docs.
+
+    If the documentation finds a __wrapped__ attribute, it will use that to
+    render the argspec instead of the function itself. Assign an appropriate
+    fake function to __wrapped__ with the desired argspec.
+    """
+
+    def dec(func):
+        d = func.__globals__
+        TEMP_NAME = "_xxxffff___"
+        assert TEMP_NAME not in d
+        code = dedent(
+            f"""\
+            def {TEMP_NAME}{argspec}:
+                pass
+            """
+        )
+        # exec in func.__globals__ context so that type hints don't case NameErrors.
+        exec(code, d)
+        f = d.pop(TEMP_NAME)
+
+        # # Run update_wrapper but keep f's annotations and don't set
+        # # f.__wrapped__ (would cause an infinite loop!)
+        annotations = f.__annotations__
+        update_wrapper(f, func)
+        f.__annotations__ = annotations
+        del f.__wrapped__
+
+        # Set wrapper to be our fake function
+        func.__wrapped__ = f
+
+        return func
+
+    return dec
+
+
 if IN_SPHINX:
     base_dir = Path(__file__).resolve().parent.parent
     path_dirs = [
@@ -198,6 +236,14 @@ if IN_SPHINX:
     from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
 
     JavaScriptDomain.roles["func"] = JSXRefRole()
+
+    import builtins
+    from functools import update_wrapper
+    from textwrap import dedent
+
+    # override docs_argspec, _pyodide.docs_argspec will read this value back.
+    # Must do this before importing pyodide!
+    setattr(builtins, "--docs_argspec--", docs_argspec)
 
     import micropip  # noqa: F401
     import pyodide
@@ -256,8 +302,6 @@ always_document_param_types = True
 def typehints_formatter(annotation, config):
     """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
-        format_annotation,
-        get_annotation_args,
         get_annotation_class_name,
         get_annotation_module,
     )
@@ -265,17 +309,15 @@ def typehints_formatter(annotation, config):
     try:
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
-        args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return None
     full_name = f"{module}.{class_name}"
+    if full_name == "typing.TypeVar":
+        # The way sphinx-autodoc-typehints renders TypeVar is too noisy for my
+        # taste
+        return f"``{annotation.__name__}``"
     if full_name == "ast.Module":
         return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
-
-    if full_name == "collections.abc.Callable" and args:
-        # Not sure what causes this, it isn't a bug in sphinx-autodoc-typehints
-        fmt = [format_annotation(arg, config) for arg in args]
-        return f":py:class:`~{full_name}`\\[{', '.join(fmt)}]"
     return None
 
 
