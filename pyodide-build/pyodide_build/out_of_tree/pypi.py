@@ -44,6 +44,9 @@ def stream_redirected(to=os.devnull, stream=None):
     if stream is None:
         stream = sys.stdout
     try:
+        if not hasattr(stream, "fileno"):
+            yield
+            return
         stream_fd = stream.fileno()
     except io.UnsupportedOperation:
         # in case we're already capturing to something that isn't really a file
@@ -344,6 +347,7 @@ def _resolve_and_build(
 
     # Kick off the resolution process, and get the final result.
     result = resolver.resolve(requirements)
+    target_folder.mkdir(parents=True, exist_ok=True)
     with open(target_folder / "package-versions.txt", "w") as version_file:
         for x in result.mapping.values():
             download_or_build_wheel(x.url, target_folder)

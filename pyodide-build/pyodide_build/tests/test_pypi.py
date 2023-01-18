@@ -307,3 +307,49 @@ def test_fake_pypi_extras_build(selenium, tmp_path, fake_pypi_url):
     assert result.exit_code == 0, result.stdout
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 2
+
+
+def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
+    # TODO: - make test run without pyodide
+    output_dir = tmp_path / "dist"
+    # build package that resolves right
+    app = typer.Typer()
+    app.command()(build.main)
+
+    # override a dependency version and build
+    # pkg-a
+    with open(tmp_path / "requirements.txt", "w") as req_file:
+        req_file.write("pkg-c~=1.0.0\npkg-a\n")
+
+    with chdir(tmp_path):
+        result = runner.invoke(
+            app,
+            ["requirements.txt", "--build-dependencies"],
+        )
+    print(result.stdout)
+    # this should work
+    assert result.exit_code == 0, result.stdout
+    built_wheels = list(output_dir.glob("*.whl"))
+    assert len(built_wheels) == 2, result.stdout
+
+    # should have built version 1.0.0 of pkg-c
+    for x in built_wheels:
+        if x.name.startswith("pkg_c"):
+            assert x.name.find("1.0.0") != -1, x.name
+        x.unlink()
+
+    # rebuild from package-versions lockfile and
+    # check it outputs the same version number
+    with chdir(tmp_path):
+        result = runner.invoke(
+            app,
+            [str(tmp_path / "dist" / "package-versions.txt")],
+        )
+
+    # should still have built 1.0.0 of pkg-c
+    built_wheels = list(output_dir.glob("*.whl"))
+    for x in built_wheels:
+        if x.name.startswith("pkg_c"):
+            assert x.name.find("1.0.0") != -1, x.name
+
+    assert len(built_wheels) == 2

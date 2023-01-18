@@ -146,7 +146,6 @@ def main(
         extras = re.findall(r"\[(\w+)\]", source_location)
         if len(extras) != 0:
             source_location = source_location[0 : source_location.find("[")]
-
     if not source_location:
         # build the current folder
         wheel = source(".", exports, ctx)
@@ -156,21 +155,28 @@ def main(
         # a folder, build it
         wheel = source(source_location, exports, ctx)
     elif source_location.lower().endswith(".txt"):
-        # a requirements.txt - build it (and deps)
+        # a requirements.txt - build it (and optionally deps)
         if not Path(source_location).exists():
             raise RuntimeError(
                 f"Couldn't find requirements text file {source_location}"
             )
         with open(source_location) as f:
             reqs = [x.strip() for x in f.readlines()]
-            build_multiple_wheels_from_pypi(
-                reqs,
-                Path("./dist").resolve(),
-                build_dependencies,
-                skip_dependency,
-                exports,
-                ctx.args,
-            )
+            try:
+                build_multiple_wheels_from_pypi(
+                    reqs,
+                    Path("./dist").resolve(),
+                    build_dependencies,
+                    skip_dependency,
+                    exports,
+                    ctx.args,
+                )
+            except BaseException as e:
+                import traceback
+
+                print("Failed building multiple wheels:", traceback.format_exc())
+                raise e
+
             return
     elif source_location.find("/") == -1:
         # try fetch or build from pypi
