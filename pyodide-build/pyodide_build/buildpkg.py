@@ -25,7 +25,7 @@ from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
 
-from . import common, pywasmcross
+from . import common, pypabuild
 from .common import (
     BUILD_VARS,
     chdir,
@@ -418,7 +418,7 @@ def compile(
     if build_metadata.package_type != "package":
         return
 
-    build_env_ctx = pywasmcross.get_build_env(
+    build_env_ctx = pypabuild.get_build_env(
         env=bash_runner.env,
         pkgname=name,
         cflags=build_metadata.cflags,

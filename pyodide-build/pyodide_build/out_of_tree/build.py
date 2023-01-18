@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from .. import common, pypabuild, pywasmcross
+from .. import common, pypabuild
 
 
 def run(exports: Any, args: list[str], outdir: Path | None = None) -> Path:
@@ -15,7 +15,7 @@ def run(exports: Any, args: list[str], outdir: Path | None = None) -> Path:
     ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
     ldflags += f" {os.environ.get('LDFLAGS', '')}"
 
-    build_env_ctx = pywasmcross.get_build_env(
+    build_env_ctx = pypabuild.get_build_env(
         env=os.environ.copy(),
         pkgname="",
         cflags=cflags,
