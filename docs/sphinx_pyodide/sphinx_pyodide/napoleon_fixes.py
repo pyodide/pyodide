@@ -40,40 +40,6 @@ def fix_screwed_up_return_info(
     lines.insert(at, f":rtype: {formatted_annotation}")
 
 
-def ensure_argument_types(
-    app: Sphinx, what: str, name: str, obj: Any, lines: list[str]
-) -> None:
-    """If there is no Parameters section at all, this adds type
-    annotations for all the arguments.
-    """
-    for at, line in enumerate(lines):
-        if line.startswith(":param"):
-            return
-        if line.startswith(("..", ":return", ":rtype")):
-            at = at
-            if line.startswith(".."):
-                lines.insert(at, "")
-            break
-    else:
-        # Confusing. See test_ensure_argument_types_only_summary.
-        while lines[-3:] != ["", "", ""]:
-            lines.append("")
-            at += 1
-        at -= 1
-
-    type_hints = get_all_type_hints(app.config.autodoc_mock_imports, obj, name)
-    to_add = []
-    if lines[at].strip() != "":
-        to_add.append("")
-    type_hints.pop("return", None)
-    for (key, value) in type_hints.items():
-        formatted_annotation = format_annotation(value, app.config)
-        to_add.append(f":type {key}: {formatted_annotation}")
-        to_add.append(f":param {key}:")
-
-    lines[at:at] = to_add
-
-
 LEADING_STAR_PAT = re.compile(r"(^\s*) \*")
 
 
@@ -152,7 +118,7 @@ def process_docstring(
     if what in ["method", "function"]:
         fix_bulleted_return_annotation(lines)
         fix_screwed_up_return_info(app, what, name, obj, lines)
-        ensure_argument_types(app, what, name, obj, lines)
+        # ensure_argument_types(app, what, name, obj, lines)
 
     if what == "class":
         fix_constructor_arg_and_attr_same_name(app, what, name, obj, lines)

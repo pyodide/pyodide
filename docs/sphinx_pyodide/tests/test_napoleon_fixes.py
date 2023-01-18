@@ -1,12 +1,11 @@
 from textwrap import dedent
-from typing import Any, Callable, TypeVar
+from typing import Callable, TypeVar
 from unittest.mock import create_autospec
 
 import pytest
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx_pyodide.napoleon_fixes import (
-    ensure_argument_types,
     fix_bulleted_return_annotation,
     fix_constructor_arg_and_attr_same_name,
     fix_screwed_up_return_info,
@@ -145,97 +144,6 @@ def test_fix_screwed_up_return_info(func):
     lines = doc.splitlines()
     fix_screwed_up_return_info(app, "function", func.__name__, func, lines)
     assert "\n".join(lines).strip() == dedent(func.FIXED_DOC).strip()
-
-
-@fixed_doc(
-    """\
-    Summary info
-
-
-    :type a: :py:class:`int`
-    :param a:
-    :type b: :py:class:`str`
-    :param b:
-    :return: Some info about the return value
-    """
-)
-def no_param_docs(a: int, b: str) -> int:
-    """
-    Summary info
-
-    :return: Some info about the return value
-    """
-    return 6
-
-
-@unchanged_doc
-def some_param_docs(a: int, b: str) -> int:
-    """
-    Summary info
-
-    :type a: :py:class:`int`
-    :param a: Info about a
-    :return: Some info about the return value
-    """
-    return 6
-
-
-@fixed_doc(
-    """\
-    Summary info
-
-    :type a: :py:class:`int`
-    :param a:
-    :type b: :py:class:`str`
-    :param b:
-
-    .. rubric:: Example
-
-    Here are some examples of this function.
-    """
-)
-def no_params_example(a: int, b: str) -> int:
-    """
-    Summary info
-
-    .. rubric:: Example
-
-    Here are some examples of this function.
-    """
-    return 6
-
-
-@fixed_doc(
-    """\
-    Summary only
-
-    :type a: :py:class:`str`
-    :param a:
-    """
-)
-def only_summary(a: str) -> None:
-    """Summary only"""
-
-
-@pytest.mark.parametrize(
-    "func", [no_param_docs, no_params_example, some_param_docs, only_summary]
-)
-def test_ensure_argument_types(func):
-    doc = dedent(func.__doc__)
-    lines = doc.splitlines()
-    ensure_argument_types(app, "function", func.__name__, func, lines)
-    expected = dedent(func.FIXED_DOC).strip()
-    assert "\n".join(lines).strip() == expected
-
-
-@pytest.mark.parametrize("newlines", [0, 1, 2, 3, 4])
-def test_ensure_argument_types_only_summary(newlines):
-    func: Any = only_summary
-    doc = dedent(func.__doc__) + "\n" * newlines
-    lines = doc.splitlines()
-    ensure_argument_types(app, "function", func.__name__, func, lines)
-    expected = dedent(func.FIXED_DOC).strip()
-    assert "\n".join(lines).strip() == expected
 
 
 @fixed_doc(
