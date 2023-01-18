@@ -41,8 +41,22 @@ def patch_templates():
     JsRenderer.rst = patched_rst_method
 
 
+def remove_property_prefix():
+    """
+    I don't think it is important to distinguish in the docs between properties
+    and attributes. This removes the "property" prefix from properties.
+    """
+    from sphinx.domains.python import PyProperty
+
+    def get_signature_prefix(self: PyProperty, sig: str) -> list[str]:
+        return []
+
+    PyProperty.get_signature_prefix = get_signature_prefix
+
+
 def setup(app):
     patch_templates()
+    remove_property_prefix()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")

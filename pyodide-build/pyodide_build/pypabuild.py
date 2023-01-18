@@ -1,10 +1,13 @@
+import json
 import os
 import shutil
 import sys
 import traceback
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
 from build.__main__ import (
@@ -17,12 +20,15 @@ from build.__main__ import (
 from build.env import IsolatedEnv
 from packaging.requirements import Requirement
 
+from . import common, pywasmcross
 from .common import (
+    environment_substitute_args,
     get_hostsitepackages,
     get_pyversion,
     get_unisolated_packages,
     replace_env,
 )
+from .io import _BuildSpecExports
 
 AVOIDED_REQUIREMENTS = [
     # We don't want to install cmake Python package inside the isolated env as it will shadow
@@ -134,6 +140,95 @@ def parse_backend_flags(backend_flags: str) -> ConfigSettingsType:
         else:
             cur_value.append(value)
     return config_settings
+
+
+def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
+    """
+    Create symlinks that make pywasmcross look like a compiler.
+
+    Parameters
+    ----------
+    symlink_dir
+        The directory where the symlinks will be created.
+
+    Returns
+    -------
+    The dictionary of compiler environment variables that points to the symlinks.
+    """
+    env = {}
+    for symlink in pywasmcross.SYMLINKS:
+        symlink_path = symlink_dir / symlink
+        if os.path.lexists(symlink_path) and not symlink_path.exists():
+            # remove broken symlink so it can be re-created
+            symlink_path.unlink()
+        try:
+            pywasmcross_exe = shutil.which("_pywasmcross")
+            if pywasmcross_exe:
+                symlink_path.symlink_to(pywasmcross_exe)
+            else:
+                symlink_path.symlink_to(pywasmcross.__file__)
+        except FileExistsError:
+            pass
+        if symlink == "c++":
+            var = "CXX"
+        else:
+            var = symlink.upper()
+        env[var] = symlink
+
+    return env
+
+
+@contextmanager
+def get_build_env(
+    env: dict[str, str],
+    *,
+    pkgname: str,
+    cflags: str,
+    cxxflags: str,
+    ldflags: str,
+    target_install_dir: str,
+    exports: _BuildSpecExports | list[_BuildSpecExports],
+) -> Iterator[dict[str, str]]:
+    """
+    Returns a dict of environment variables that should be used when building
+    a package with pypa/build.
+    """
+
+    kwargs = dict(
+        pkgname=pkgname,
+        cflags=cflags,
+        cxxflags=cxxflags,
+        ldflags=ldflags,
+        target_install_dir=target_install_dir,
+    )
+
+    args = environment_substitute_args(kwargs, env)
+    args["builddir"] = str(Path(".").absolute())
+    args["exports"] = exports
+    env = env.copy()
+
+    with TemporaryDirectory() as symlink_dir_str:
+        symlink_dir = Path(symlink_dir_str)
+        env.update(make_command_wrapper_symlinks(symlink_dir))
+
+        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
+        args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
+        args["orig__name__"] = __name__
+        args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+        args["PATH"] = env["PATH"]
+
+        pywasmcross_env = json.dumps(args)
+        # Store into environment variable and to disk. In most cases we will
+        # load from the environment variable but if some other tool filters
+        # environment variables we will load from disk instead.
+        env["PYWASMCROSS_ARGS"] = pywasmcross_env
+        (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
+
+        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
+        env["_PYTHON_HOST_PLATFORM"] = common.platform()
+        env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
+        env["PYTHONPATH"] = str(sysconfig_dir)
+        yield env
 
 
 def build(
