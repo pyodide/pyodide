@@ -249,12 +249,11 @@ def globalReplace(app, docname, source):
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
-from sphinx_autodoc_typehints import format_annotation
-
 
 def typehints_formatter(annotation, config):
     """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
+        format_annotation,
         get_annotation_args,
         get_annotation_class_name,
         get_annotation_module,
@@ -267,6 +266,9 @@ def typehints_formatter(annotation, config):
     except ValueError:
         return None
     full_name = f"{module}.{class_name}"
+    if full_name == "ast.Module":
+        return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
+
     if full_name == "collections.abc.Callable" and args:
         # Not sure what causes this, it isn't a bug in sphinx-autodoc-typehints
         fmt = [format_annotation(arg, config) for arg in args]
