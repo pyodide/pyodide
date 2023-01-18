@@ -329,9 +329,8 @@ def _resolve_and_build(
     target_env = {
         "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
         "sys_platform": common.platform().split("_")[0],
+        "extra": ",".join(extras),
     }
-    if len(extras) > 0:
-        target_env["extra"] = ",".join(extras)
 
     for d in deps:
         r = Requirement(d)
