@@ -25,6 +25,6 @@ def docs_argspec(argspec: str) -> Callable[[T], T]:
 import builtins
 
 # Evil method to override docs_argspec when building docs
-globals()["docs_argspec"] = getattr(builtins, "docs_argspec", docs_argspec)
+globals()["docs_argspec"] = getattr(builtins, "--docs_argspec--", docs_argspec)
 
 __all__ = ["docs_argspec"]

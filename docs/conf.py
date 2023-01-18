@@ -243,7 +243,7 @@ if IN_SPHINX:
 
     # override docs_argspec, _pyodide.docs_argspec will read this value back.
     # Must do this before importing pyodide!
-    builtins.docs_argspec = docs_argspec  # type:ignore[attr-defined]
+    setattr(builtins, "--docs_argspec--", docs_argspec)
 
     import micropip  # noqa: F401
     import pyodide
