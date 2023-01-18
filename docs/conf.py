@@ -41,7 +41,6 @@ extensions = [
     "sphinx_js",
     "sphinx_click",
     "autodocsumm",
-    "sphinx_panels",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
     "versionwarning.extension",
@@ -76,7 +75,7 @@ intersphinx_mapping = {
 }
 
 # Add modules to be mocked.
-mock_modules = ["ruamel.yaml", "tomli"]
+mock_modules = ["tomli"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -185,13 +184,6 @@ if IN_READTHEDOCS:
 
 
 if IN_SPHINX:
-    # Compatibility shims. sphinx-js and sphinxcontrib-napoleon have not been updated for Python 3.10
-    import collections
-    from typing import Callable, Mapping
-
-    collections.Mapping = Mapping  # type: ignore[attr-defined]
-    collections.Callable = Callable  # type: ignore[attr-defined]
-
     base_dir = Path(__file__).resolve().parent.parent
     path_dirs = [
         str(base_dir),
@@ -259,11 +251,9 @@ global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
 
 def typehints_formatter(annotation, config):
-    """Adjust the rendering of Literal types.
-
-    The literal values should be ``rendered as code``.
-    """
+    """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
+        format_annotation,
         get_annotation_args,
         get_annotation_class_name,
         get_annotation_module,
@@ -276,11 +266,13 @@ def typehints_formatter(annotation, config):
     except ValueError:
         return None
     full_name = f"{module}.{class_name}"
-    if full_name == "typing.Literal":
-        formatted_args = "\\[{}]".format(
-            ", ".join("``{}``".format(repr(arg)) for arg in args)
-        )
-        return f":py:data:`~{full_name}`{formatted_args}"
+    if full_name == "ast.Module":
+        return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
+
+    if full_name == "collections.abc.Callable" and args:
+        # Not sure what causes this, it isn't a bug in sphinx-autodoc-typehints
+        fmt = [format_annotation(arg, config) for arg in args]
+        return f":py:class:`~{full_name}`\\[{', '.join(fmt)}]"
     return None
 
 

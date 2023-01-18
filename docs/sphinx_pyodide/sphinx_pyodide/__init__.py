@@ -41,26 +41,22 @@ def patch_templates():
     JsRenderer.rst = patched_rst_method
 
 
-def patch_field():
+def remove_property_prefix():
     """
-    Add extra CSS classes to some documentation fields. We use this in
-    pyodide.css to fix the rendering of autodoc return value annotations.
+    I don't think it is important to distinguish in the docs between properties
+    and attributes. This removes the "property" prefix from properties.
     """
-    from sphinx.util.docfields import Field
+    from sphinx.domains.python import PyProperty
 
-    orig_make_field = Field.make_field
+    def get_signature_prefix(self: PyProperty, sig: str) -> list[str]:
+        return []
 
-    def make_field(self, *args, **kwargs):
-        node = orig_make_field(self, *args, **kwargs)
-        node["classes"].append(self.name)
-        return node
-
-    Field.make_field = make_field
+    PyProperty.get_signature_prefix = get_signature_prefix
 
 
 def setup(app):
     patch_templates()
-    patch_field()
+    remove_property_prefix()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
@@ -68,3 +64,6 @@ def setup(app):
     app.add_directive("js-doc-summary", get_jsdoc_summary_directive(app))
     app.add_directive("js-doc-content", get_jsdoc_content_directive(app))
     app.add_directive("pyodide-package-list", get_packages_summary_directive(app))
+    from .napoleon_fixes import process_docstring
+
+    app.connect("autodoc-process-docstring", process_docstring)
