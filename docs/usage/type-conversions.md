@@ -553,24 +553,22 @@ All entrypoints and exit points from Python code are wrapped in JavaScript `try`
 blocks. At the boundary between Python and JavaScript, errors are caught,
 converted between languages, and rethrown.
 
-JavaScript errors are wrapped in a {any}`JsException <pyodide.JsException>`.
-Python exceptions are converted to a {any}`PythonError <pyodide.PythonError>`.
+JavaScript errors are wrapped in a {py:class}`~pyodide.ffi.JsException`.
+Python exceptions are converted to a {js:class}`~pyodide.PythonError`.
 At present if an exception crosses between Python and JavaScript several times,
 the resulting error message won't be as useful as one might hope.
 
-In order to reduce memory leaks, the {any}`PythonError <pyodide.PythonError>`
-has a formatted traceback, but no reference to the original Python exception.
-The original exception has references to the stack frame and leaking it will
-leak all the local variables from that stack frame. The actual Python exception
-will be stored in
-[`sys.last_value`](https://docs.python.org/3/library/sys.html#sys.last_value) so
-if you need access to it (for instance to produce a traceback with certain
-functions filtered out), use that.
+In order to reduce memory leaks, the {js:class}`~pyodide.PythonError` has a
+formatted traceback, but no reference to the original Python exception. The
+original exception has references to the stack frame and leaking it will leak
+all the local variables from that stack frame. The actual Python exception will
+be stored in {py:data}`sys.last_value` so if you need access to it (for instance
+to produce a traceback with certain functions filtered out), use that.
 
 ```{admonition} Be careful Proxying Stack Frames
 :class: warning
-If you make a {any}`PyProxy` of ``sys.last_value``, you should be especially
-careful to {any}`destroy() <PyProxy.destroy>` it when you are done with it, or
+If you make a {any}`PyProxy` of {py:data}`sys.last_value`, you should be especially
+careful to {js:meth}`~PyProxy.destroy` it when you are done with it, or
 you may leak a large amount of memory if you don't.
 ```
 

@@ -202,7 +202,7 @@ API.runPythonAsync = runPythonAsync;
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
- * module from :any:`sys.modules`. This calls the :any:`pyodide_py` API
+ * module from :py:data:`sys.modules`. This calls the :any:`pyodide_py` API
  * :func:`~pyodide.ffi.register_js_module`.
  *
  * @param name Name of the JavaScript module to add

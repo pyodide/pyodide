@@ -4,6 +4,7 @@ from .jsdoc import (
     get_jsdoc_summary_directive,
 )
 from .lexers import HtmlPyodideLexer, PyodideLexer
+from .mdn_xrefs import add_mdn_xrefs
 from .packages import get_packages_summary_directive
 
 
@@ -92,3 +93,4 @@ def setup(app):
     from .napoleon_fixes import process_docstring
 
     app.connect("autodoc-process-docstring", process_docstring)
+    app.connect("builder-inited", add_mdn_xrefs)
