@@ -222,7 +222,7 @@ resp = await js.fetch('/someurl', {
 })
 ```
 
-The `fetch` API ignores the options that we attempted to provide. You can do
+The {js:func}`fetch` API ignores the options that we attempted to provide. You can do
 this correctly in one of two ways:
 
 ```py
@@ -397,7 +397,8 @@ from mymodule import hello # may raise "ModuleNotFoundError: No module named 'my
 hello()
 ```
 
-If you see this error, call `importlib.invalidate_caches()` before importing the module:
+If you see this error, call {py:func}`importlib.invalidate_caches` before
+importing the module:
 
 ```py
 import importlib
