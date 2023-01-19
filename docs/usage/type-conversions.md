@@ -642,13 +642,12 @@ let sys = pyodide.pyimport("sys");
 
 ### Importing JavaScript objects into Python
 
-JavaScript objects in the
-[`globalThis`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis)
-global scope can be imported into Python using the `js` module.
+JavaScript objects in the :js:data:`globalThis` global scope can be imported
+into Python using the `js` module.
 
 When importing a name from the `js` module, the `js` module looks up JavaScript
-attributes of the `globalThis` scope and translates the JavaScript objects into
-Python.
+attributes of the :js:data:`globalThis` scope and translates the JavaScript
+objects into Python.
 
 ```py
 import js

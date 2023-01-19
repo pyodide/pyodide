@@ -19,6 +19,7 @@ DATA = {
         "ArrayBuffer": "$global/",
         "TypedArray": "$global/",
         "DataView": "$global/",
+        "Uint8Array": "$global/",
         # the JavaScript domain has no exception type for some reason...
         "Error": "$global/",
         "Function": "$global/",
@@ -49,6 +50,7 @@ DATA = {
         "Symbol.toStringTag": "$global/",
         "FinalizationRegistry": "$global/",
         "Promise": "$global/",
+        "globalThis": "$global/",
         "Response": "API/",
     },
     "js:attribute": {

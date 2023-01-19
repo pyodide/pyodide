@@ -2023,13 +2023,15 @@ export class PyBuffer {
    * :any:`PyProxy.getBuffer` will look at the format string to determine the
    * most appropriate option. Most often the result is a :js:class:`Uint8Array`.
    *
-   * .. admonition:: Contiguity :class: warning
+   * .. admonition:: Contiguity
+   *    :class: warning
    *
    *    If the buffer is not contiguous, the ``data`` TypedArray will contain
    *    data that is not part of the buffer. Modifying this data leads to
    *    undefined behavior.
    *
-   * .. admonition:: Readonly buffers :class: warning
+   * .. admonition:: Readonly buffers
+   *    :class: warning
    *
    *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
    *    Modifying a readonly buffer leads to undefined behavior.

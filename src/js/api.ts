@@ -87,7 +87,8 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  *
  * .. code-block:: python
  *
- *    import numpy as np x = np.array([1, 2, 3])
+ *    import numpy as np
+ *    x = np.array([1, 2, 3])
  *
  * :js:func:`loadPackagesFromImports` will call
  * ``pyodide.loadPackage(['numpy'])``.
@@ -226,8 +227,8 @@ export function registerComlink(Comlink: any) {
  * :func:`~pyodide.ffi.register_js_module`. If a JavaScript module with that
  * name does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete the
- * imported module from ``sys.modules``. This calls the :any:`pyodide_py` API
- * :func:`~pyodide.ffi.unregister_js_module`.
+ * imported module from :any:`sys.modules``. This calls the :any:`pyodide_py`
+ * API :func:`~pyodide.ffi.unregister_js_module`.
  *
  * @param name Name of the JavaScript module to remove
  */
