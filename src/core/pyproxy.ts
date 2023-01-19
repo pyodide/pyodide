@@ -560,16 +560,17 @@ export class PyProxyClass {
      */
     pyproxies?: PyProxy[];
     /**
-     * If false, ``toJs`` will throw a ``ConversionError`` rather than
+     * If false, ``toJs`` will throw a :py:exc:`~pyodide.ffi.ConversionError` rather than
      * producing a ``PyProxy``.
      */
     create_pyproxies?: boolean;
     /**
      * A function to be called on an iterable of pairs ``[key, value]``. Convert
      * this iterable of pairs to the desired output. For instance,
-     * ``Object.fromEntries`` would convert the dict to an object, ``Array.from``
-     * converts it to an array of entries, and ``(it) => new Map(it)`` converts
-     * it to a ``Map`` (which is the default behavior).
+     * :js:func:`Object.fromEntries` would convert the dict to an object,
+     * :js:func:`Array.from` converts it to an :js:class:`Array` of pairs, and
+     * ``(it) => new Map(it)`` converts it to a :js:class:`Map` (which is the
+     * default behavior).
      */
     dict_converter?: (array: Iterable<[key: string, value: any]>) => any;
     /**
@@ -1766,14 +1767,14 @@ export class PyProxyBufferMethods {
    * ``toJs``. :js:class:`DataView` has support for big endian data, so you
    * might want to pass ``'dataview'`` as the type argument in that case.
    *
-   * @param type The type of the :js:attr:`PyBuffer.data` field in the output.
-   * Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
+   * @param type The type of the :js:attr:`~pyodide.PyBuffer.data` field in the
+   * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
    * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
    * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
    * optional, if absent ``getBuffer`` will try to determine the appropriate
    * output type based on the buffer format string (see
    * :std:ref:`struct-format-strings`).
-   * @returns :any:`PyBuffer <pyodide.PyBuffer>`
+   * @returns :js:class:`~pyodide.PyBuffer`
    */
   getBuffer(type?: string): PyBuffer {
     let ArrayType: any = undefined;

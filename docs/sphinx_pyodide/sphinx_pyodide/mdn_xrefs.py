@@ -10,6 +10,7 @@ DATA = {
         "fetch": "API/",
         "eval": "$global/",
         "Object.fromEntries": "$global/",
+        "Array.from": "$global/",
         "Atomics.wait": "$global/",
     },
     "js:class": {
@@ -22,6 +23,8 @@ DATA = {
         "ArrayBuffer": "$global/",
         "SharedArrayBuffer": "$global/",
         "TypedArray": "$global/",
+        "TextEncoder": "$global/",
+        "TextDecoder": "$global/",
         "DataView": "$global/",
         "Uint8Array": "$global/",
         "Map": "$global/",
@@ -67,6 +70,7 @@ DATA = {
         "Number.MAX_SAFE_INTEGER": "$global/",
         "null": "$reference/Operators/",
         "Response": "API/",
+        "TypedArray.BYTES_PER_ELEMENT": "$global/",
     },
     "js:attribute": {
         "Response.type": "API/",
