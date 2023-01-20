@@ -18,7 +18,7 @@ S = TypeVar("S")
 
 
 class PyodideFuture(Future[T]):
-    r"""A future with extra ``then``, ``catch``, and ``finally\_`` methods based
+    """A future with extra ``then``, ``catch``, and ``finally_`` methods based
     on the Javascript promise API. ``Webloop.create_future`` returns these so in
     practice all futures encountered in Pyodide should be an instance of
     ``PyodideFuture``.
