@@ -11,13 +11,14 @@ from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
 import tomli
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
 from .io import MetaConfig
+from .logger import logger
 
 BUILD_VARS: set[str] = {
     "PATH",
@@ -171,7 +172,9 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
                 top_level_imports.append(subdir.name)
 
     if not top_level_imports:
-        print(f"Warning: failed to parse top level import name from {whlfile}.")
+        logger.warning(
+            f"WARNING: failed to parse top level import name from {whlfile}."
+        )
         return None
 
     return top_level_imports
@@ -302,6 +305,35 @@ def get_make_environment_vars() -> dict[str, str]:
     return environment
 
 
+def environment_substitute_args(
+    args: dict[str, str], env: dict[str, str] | None = None
+) -> dict[str, Any]:
+    """
+    Substitute $(VAR) in args with the value of the environment variable VAR.
+
+    Parameters
+    ----------
+    args
+        A dictionary of arguments
+
+    env
+        A dictionary of environment variables. If None, use os.environ.
+
+    Returns
+    -------
+    A dictionary of arguments with the substitutions applied.
+    """
+    if env is None:
+        env = dict(os.environ)
+    subbed_args = {}
+    for arg, value in args.items():
+        if isinstance(value, str):
+            for e_name, e_value in env.items():
+                value = value.replace(f"$({e_name})", e_value)
+        subbed_args[arg] = value
+    return subbed_args
+
+
 def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     """
     Recursively search for the root of the Pyodide repository,
@@ -402,11 +434,11 @@ def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
 
 def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
-        print("  stdout:")
-        print(textwrap.indent(result.stdout, "    "))
+        logger.error("  stdout:")
+        logger.error(textwrap.indent(result.stdout, "    "))
     if result.stderr:
-        print("  stderr:")
-        print(textwrap.indent(result.stderr, "    "))
+        logger.error("  stderr:")
+        logger.error(textwrap.indent(result.stderr, "    "))
     raise SystemExit(result.returncode)
 
 
