@@ -41,7 +41,6 @@ if IN_BROWSER:
     #   from _core_docs, adding a type stub would introduce a redundancy
     #   that would be difficult to maintain.
     for t in [
-        "ConversionError",
         "JsException",
         "create_once_callable",
         "create_proxy",

@@ -1182,6 +1182,18 @@ def test_memory_leaks(selenium):
 
 
 @run_in_pyodide
+def test_raise_js_error(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    e = run_js("new Error('hi')")
+    with pytest.raises(JsException):
+        raise e
+
+
+@run_in_pyodide
 def test_js_id(selenium):
     from pyodide.code import run_js
 
