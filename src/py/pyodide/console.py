@@ -517,7 +517,6 @@ def shorten(
 
     Returns
     -------
-    str
         If ``text`` is longer than ``limit``, return the shortened string, otherwise return ``text``.
 
     Examples
