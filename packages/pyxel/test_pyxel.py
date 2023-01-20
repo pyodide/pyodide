@@ -7,16 +7,16 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["pyxel"])
 def test_basic(selenium):
 
-    import pyodide
+    import pyodide.code
 
-    pyodide.run_js(
+    pyodide.code.run_js(
         """
         var sdl2Canvas = document.createElement("canvas");
         sdl2Canvas.id = "canvas";
         sdl2Canvas.tabindex = -1;
 
         document.body.appendChild(sdl2Canvas);
-        pyodide._module.canvas = document.querySelector("#canvas");
+        pyodide._module.canvas = document.querySelector("canvas#canvas");
         """
     )
 
@@ -25,7 +25,6 @@ def test_basic(selenium):
     class App:
         def __init__(self):
             pyxel.init(160, 120, title="Hello Pyxel")
-            pyxel.image(0).load(0, 0, "assets/pyxel_logo_38x16.png")
             pyxel.run(self.update, self.draw)
 
         def update(self):
