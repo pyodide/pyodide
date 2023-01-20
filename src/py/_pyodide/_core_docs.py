@@ -326,7 +326,8 @@ class JsBuffer(JsProxy):
     def to_memoryview(self) -> memoryview:
         """Convert a buffer to a memoryview.
 
-        Copies the data once. This currently has the same effect as :any:`to_py`.
+        Copies the data once. This currently has the same effect as
+        :py:meth:`~JsArray.to_py`.
         """
         raise NotImplementedError
 
@@ -412,8 +413,7 @@ class JsBuffer(JsProxy):
 
         Copies the data twice.
 
-        The encoding argument will be passed to the Javascript `TextDecoder
-        <(https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder)>`_
+        The encoding argument will be passed to the :js:class:`TextDecoder`
         constructor. It should be one of the encodings listed in `the table here
         <https://encoding.spec.whatwg.org/#names-and-labels>`_. The default
         encoding is utf8.
@@ -422,7 +422,7 @@ class JsBuffer(JsProxy):
 
 
 class JsArray(JsProxy, Generic[T]):
-    """A JsProxy of an array, node list, or typed array"""
+    """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
 
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
@@ -442,7 +442,7 @@ class JsArray(JsProxy, Generic[T]):
         """Extend array by appending elements from the iterable."""
 
     def __reversed__(self) -> Iterator[T]:
-        """Return a reverse iterator over the Array."""
+        """Return a reverse iterator over the :js:class:`Array`."""
         raise NotImplementedError
 
     def pop(self, /, index: int = -1) -> T:
@@ -657,11 +657,8 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
 class JsIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript iterator.
 
-    An object is a JsIterator if it has a `next` method and either has a
-    `Symbol.iterator
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_
-    or has no `Symbol.asyncIterator
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_.
+    An object is a :any:`JsAsyncIterator` if it has a :js:meth:`~Iterator.next` method and either has a
+    :js:data:`Symbol.iterator` or has no :js:data:`Symbol.asyncIterator`.
     """
 
     _js_type_flags = ["IS_ITERATOR"]
@@ -676,11 +673,9 @@ class JsIterator(JsProxy, Generic[Tco]):
 class JsAsyncIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript async iterator.
 
-    An object is a JsAsyncIterator if it has a `next` method and either has a
-    `Symbol.asyncIterator
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_
-    or has no `Symbol.iterator
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
+    An object is a :any:`JsAsyncIterator` if it has a
+    :js:meth:`~AsyncIterator.next` method and either has a
+    :js:data:`Symbol.asyncIterator` or has no :js:data:`Symbol.iterator`
     """
 
     _js_type_flags = ["IS_ASYNC_ITERATOR"]
@@ -695,9 +690,7 @@ class JsAsyncIterator(JsProxy, Generic[Tco]):
 class JsIterable(JsProxy, Generic[Tco]):
     """A JavaScript iterable object
 
-    A JavaScript object is iterable if it has a `Symbol.iterator
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_
-    method.
+    A JavaScript object is iterable if it has a :js:data:`Symbol.iterator` method.
     """
 
     _js_type_flags = ["IS_ITERABLE"]
@@ -709,8 +702,7 @@ class JsIterable(JsProxy, Generic[Tco]):
 class JsAsyncIterable(JsProxy, Generic[Tco]):
     """A JavaScript async iterable object
 
-    A JavaScript object is async iterable if it has a `Symbol.asyncIterator
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/asyncIterator>`_
+    A JavaScript object is async iterable if it has a :js:data:`Symbol.asyncIterator`
     method.
     """
 
@@ -724,14 +716,11 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
     """A JavaScript generator
 
     A JavaScript object is treated as a generator if its
-    `Symbol.toStringTag <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toStringTag>`_
-    is ``"Generator"``. Most likely this will be because it is a true
-    `generator <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator>`_
-    produced by the JavaScript runtime, but it may be a custom object trying
-    hard to pretend to be a generator. It should have
-    `next <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_,
-    `return <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>`_, and
-    `throw <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw>`_ methods.
+    :js:data:`Symbol.toStringTag` is ``"Generator"``. Most likely this will be
+    because it is a true :js:class:`Generator` produced by the JavaScript
+    runtime, but it may be a custom object trying hard to pretend to be a
+    generator. It should have :js:meth:`~Generator.next`,
+    :js:meth:`~Generator.return` and :js:meth:`~Generator.throw` methods.
     """
 
     _js_type_flags = ["IS_GENERATOR"]
@@ -817,12 +806,8 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
 
 
 class JsFetchResponse(JsProxy):
-    """A :any:`JsFetchResponse` object represents a response to a `fetch
-    <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ request.
-
-    See `the MDN docs
-    <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ for more
-    information.
+    """A :any:`JsFetchResponse` object represents a :js:data:`Response` to a
+    :js:func:`fetch` request.
     """
 
     bodyUsed: bool
@@ -847,14 +832,15 @@ class JsFetchResponse(JsProxy):
 
 
 class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
-    """A JavaScript async generator
+    """A JavaScript :js:class:`AsyncGenerator`
 
     A JavaScript object is treated as an async generator if it's
-    `Symbol.toStringTag <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/toStringTag>`_
-    is ``"AsyncGenerator"``. Most likely this will be because it is a true async
-    generator produced by the JavaScript runtime, but it may be a custom object
-    trying hard to pretend to be an async generator. It should have ``next``,
-    ``return``, and ``throw`` methods.
+    :js:data:`Symbol.toStringTag` is ``"AsyncGenerator"``. Most likely this will
+    be because it is a true async generator produced by the JavaScript runtime,
+    but it may be a custom object trying hard to pretend to be an async
+    generator. It should have :js:meth:`~AsyncGenerator.next`,
+    :js:meth:`~AsyncGenerator.return`, and :js:meth:`~AsyncGenerator.throw`
+    methods.
     """
 
     _js_type_flags = ["IS_ASYNC_GENERATOR"]
@@ -1161,8 +1147,7 @@ def to_js(
     argument.
 
 
-    In addition to the normal conversions, convert JavaScript `Date
-    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date>`_
+    In addition to the normal conversions, convert JavaScript :js:class:`Date`
     objects to :py:class:`~datetime.datetime` objects:
 
     .. code-block:: python

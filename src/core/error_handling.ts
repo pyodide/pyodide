@@ -256,7 +256,7 @@ Module.handle_js_error = function (e: any) {
  * contains no reference to the Python exception that caused it. You can find
  * the actual Python exception that caused this error as :any:`sys.last_value`.
  *
- * See :ref:`type-translations-errors` for more information.
+ * See :ref:`type translations of errors <type-translations-errors>` for more information.
  *
  * .. admonition:: Avoid leaking stack Frames
  *    :class: warning
