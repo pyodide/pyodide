@@ -87,7 +87,8 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  *
  * .. code-block:: python
  *
- *    import numpy as np x = np.array([1, 2, 3])
+ *    import numpy as np
+ *    x = np.array([1, 2, 3])
  *
  * :js:func:`loadPackagesFromImports` will call
  * ``pyodide.loadPackage(['numpy'])``.
@@ -202,7 +203,7 @@ API.runPythonAsync = runPythonAsync;
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
- * module from :any:`sys.modules`. This calls the :any:`pyodide_py` API
+ * module from :py:data:`sys.modules`. This calls the :any:`pyodide_py` API
  * :func:`~pyodide.ffi.register_js_module`.
  *
  * @param name Name of the JavaScript module to add
@@ -226,8 +227,8 @@ export function registerComlink(Comlink: any) {
  * :func:`~pyodide.ffi.register_js_module`. If a JavaScript module with that
  * name does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete the
- * imported module from ``sys.modules``. This calls the :any:`pyodide_py` API
- * :func:`~pyodide.ffi.unregister_js_module`.
+ * imported module from :py:data:`sys.modules`. This calls the :any:`pyodide_py`
+ * API :func:`~pyodide.ffi.unregister_js_module`.
  *
  * @param name Name of the JavaScript module to remove
  */
@@ -344,7 +345,7 @@ export function pyimport(mod_name: string): PyProxy {
 /**
  * Unpack an archive into a target directory.
  *
- * @param buffer The archive as an ArrayBuffer or TypedArray.
+ * @param buffer The archive as an :js:class:`ArrayBuffer` or :js:class:`TypedArray`.
  * @param format The format of the archive. Should be one of the formats
  * recognized by :any:`shutil.unpack_archive`. By default the options are
  * ``'bztar'``, ``'gztar'``, ``'tar'``, ``'zip'``, and ``'wheel'``. Several
@@ -441,15 +442,15 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 /**
  * Sets the interrupt buffer to be ``interrupt_buffer``. This is only useful
  * when Pyodide is used in a webworker. The buffer should be a
- * ``SharedArrayBuffer`` shared with the main browser thread (or another
+ * :js:class:`SharedArrayBuffer` shared with the main browser thread (or another
  * worker). In that case, signal ``signum`` may be sent by writing ``signum``
  * into the interrupt buffer. If ``signum`` does not satisfy 0 < ``signum`` < 65
  * it will be silently ignored.
  *
  * You can disable interrupts by calling ``setInterruptBuffer(undefined)``.
  *
- * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2), into
- * the interrupt buffer.
+ * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2),
+ * into the interrupt buffer.
  *
  * By default ``SIGINT`` raises a :any:`KeyboardInterrupt` and all other signals
  * are ignored. You can install custom signal handlers with the signal module.

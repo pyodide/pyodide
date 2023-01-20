@@ -172,15 +172,13 @@ class WebLoop(asyncio.AbstractEventLoop):
     loop would because we only have one thread so blocking would stall the
     browser event loop and prevent anything from ever happening.
 
-    We defer all work to the browser event loop using the `setTimeout
-    <https://developer.mozilla.org/en-US/docs/Web/API/setTimeout>`_ function. To
-    ensure that this event loop doesn't stall out UI and other browser handling,
-    we want to make sure that each task is scheduled on the browser event loop
-    as a task not as a microtask. ``setTimeout(callback, 0)`` enqueues the
-    callback as a task so it works well for our purposes.
+    We defer all work to the browser event loop using the :js:func:`setTimeout`
+    function. To ensure that this event loop doesn't stall out UI and other
+    browser handling, we want to make sure that each task is scheduled on the
+    browser event loop as a task not as a microtask. ``setTimeout(callback, 0)``
+    enqueues the callback as a task so it works well for our purposes.
 
-    See `Event Loop Methods
-    <https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop>`_.
+    See the Python :external:doc:`library/asyncio-eventloop` documentation.
     """
 
     def __init__(self):

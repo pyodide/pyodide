@@ -192,10 +192,11 @@ function setStdinError() {
  *
  * - ``null`` or ``undefined``: these are interpreted as end of file.
  * - a string
- * - an ``ArrayBuffer`` or an ``ArrayBufferView`` with ``BYTES_PER_ELEMENT === 1``.
+ * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
+ *   :js:data:`~TypedArray.BYTES_PER_ELEMENT` equal to 1.
  *
  * If a string is returned, a new line is appended if one is not present and the
- * resulting string is turned into a ``Uint8Array`` using ``TextEncoder``.
+ * resulting string is turned into a :js:class:`Uint8Array` using :js:class:`TextEncoder`.
  *
  * Returning a buffer is more efficient and allows returning partial lines of
  * text.
@@ -204,8 +205,8 @@ function setStdinError() {
  * @param options.error If this is set to ``true``, attempts to read from stdin
  * will always set an IO error.
  *
- * @param options.isatty Should ``isatty(stdin)`` be ``true`` or ``false`` (default
- * ``false``).
+ * @param options.isatty Should ``isatty(stdin)`` be ``true`` or ``false``
+ * (default ``false``).
  */
 export function setStdin(
   options: { stdin?: InFuncType; error?: boolean; isatty?: boolean } = {},
