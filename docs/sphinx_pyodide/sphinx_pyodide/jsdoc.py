@@ -471,7 +471,7 @@ class PyodideAnalyzer:
                 elif isinstance(obj, Function):
                     obj.kind = "function"
                     obj.async_ = obj.returns and obj.returns[0].type.startswith(
-                        "Promise<"
+                        ":js:data:`Promise`"
                     )
                 else:
                     obj.kind = "attribute"
