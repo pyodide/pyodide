@@ -236,7 +236,7 @@ if IN_SPHINX:
 
     from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
 
-    JavaScriptDomain.roles["func"] = JSXRefRole()
+    JavaScriptDomain.roles["class"] = JSXRefRole()
 
     import builtins
     from functools import update_wrapper
