@@ -266,7 +266,7 @@ export function toPy(
     defaultConverter?: (
       value: any,
       converter: (value: any) => any,
-      cacheConversion: (input: any, output: any) => any,
+      cacheConversion: (input: any, output: any) => void,
     ) => any;
   } = { depth: -1 },
 ): any {

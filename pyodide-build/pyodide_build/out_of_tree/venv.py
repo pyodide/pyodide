@@ -5,13 +5,7 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import (
-    check_emscripten_version,
-    exit_with_stdio,
-    get_make_flag,
-    get_pyodide_root,
-    in_xbuildenv,
-)
+from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuildenv
 from ..logger import logger
 
 
@@ -223,8 +217,6 @@ def create_pyodide_venv(dest: Path) -> None:
     if dest.exists():
         logger.error(f"ERROR: dest directory '{dest}' already exists")
         sys.exit(1)
-
-    check_emscripten_version()
 
     interp_path = pyodide_dist_dir() / "python"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])

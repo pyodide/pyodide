@@ -12,7 +12,7 @@
 # importing from these.
 __version__ = "0.22.0"
 
-__all__ = ["__version__"]
+__all__ = ["__version__", "console", "code", "ffi", "http", "webloop"]
 
 from typing import Any
 

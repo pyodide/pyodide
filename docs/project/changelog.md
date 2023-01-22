@@ -18,6 +18,13 @@ myst:
 - {{ Enhancement }} Updated Emscripten to version 3.1.30
   {pr}`3471`
 
+- {{ Fix }} Emscripten is no longer required to create a Pyodide virtual
+  environment.
+  {pr}`3485`
+
+- {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
+  {pr}`3484`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
@@ -36,6 +43,12 @@ myst:
 - {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
   when run multiple times.
   {pr}`3445`
+
+### Package Loading
+
+- {{ Fix }} Fix incorrect error message when loading a package
+  include in Pyodide fails.
+  {pr}`3435`
 
 ## Version 0.22.0
 
