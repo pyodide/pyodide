@@ -55,6 +55,10 @@ def test_find_imports():
     assert res == []
 
 
+def test_ffi_import_star():
+    exec("from pyodide.ffi import *", {})
+
+
 def test_pyimport(selenium):
     selenium.run_js(
         """
