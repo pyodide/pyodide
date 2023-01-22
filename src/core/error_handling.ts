@@ -279,7 +279,8 @@ export class PythonError extends Error {
    */
   __error_address: number;
   /**
-   * The Python type, e.g, :any:`RuntimeError` or :any:`KeyError`.
+   * The name of the Python error class, e.g, :any:`RuntimeError` or
+   * :any:`KeyError`.
    */
   type: string;
   constructor(type: string, message: string, error_address: number) {

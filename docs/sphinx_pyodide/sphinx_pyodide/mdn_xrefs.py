@@ -34,8 +34,8 @@ DATA = {
         "Function": "$global/",
     },
     "js:method": {
-        "Iterator.next": "$reference/Iteration_protocols#the_iterator_protocol",
-        "AsyncIterator.next": "$reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols",
+        "Iterator.next": "$reference/Iteration_protocols#next",
+        "AsyncIterator.next": "$reference/Iteration_protocols#next_2",
         "Generator.next": "$global/",
         "Generator.throw": "$global/",
         "Generator.return": "$global/",
@@ -54,6 +54,10 @@ DATA = {
         "Function.call": "$global/",
     },
     "js:data": {
+        "Iterable": "$reference/Iteration_protocols#the_iterable_protocol",
+        "IteratorResult": "$reference/Iteration_protocols#next",
+        "Iterator": "$reference/Iteration_protocols#the_iterator_protocol",
+        "AsyncIterator": "$reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols",
         "Symbol.asyncIterator": "$global/",
         "Symbol.iterator": "$global/",
         "Symbol.toStringTag": "$global/",
@@ -83,6 +87,12 @@ DATA = {
     },
 }
 
+JSDATA = set(DATA["js:data"].keys())
+JSDATA.update([x.lower() for x in JSDATA])
+JSDATA.add("void")
+JSDATA.add("any")
+JSCLASS = set(DATA["js:class"].keys())
+
 # Each entry is a four tuple:
 # (project_name, project_version, url, link_text)
 #
@@ -102,6 +112,25 @@ for type, entries in DATA.items():
             value += key.replace(".", "/")
         url = f"https://developer.mozilla.org/en-US/docs/Web/{value}"
         type_values[key] = (PROJECT_NAME, PROJECT_VERSION, url, USE_NAME_AS_LINK_TEXT)
+        type_values[key.lower()] = (
+            PROJECT_NAME,
+            PROJECT_VERSION,
+            url,
+            USE_NAME_AS_LINK_TEXT,
+        )
+
+INVDATA["js:data"]["void"] = (
+    "typescript docs",
+    "",
+    "https://www.typescriptlang.org/docs/handbook/2/functions.html#void",
+    "-",
+)
+INVDATA["js:data"]["any"] = (
+    "typescript docs",
+    "",
+    "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any",
+    "-",
+)
 
 
 def add_mdn_xrefs(app: Sphinx) -> None:
