@@ -1380,3 +1380,41 @@ async def test_async_gen_throw(selenium):
     """
     )(g3())
     assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": None}]
+
+
+@run_in_pyodide
+def test_roundtrip_no_destroy(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    def isalive(p):
+        return getattr(p, "$$").ptr != 0
+
+    p = create_proxy({1: 2})
+    run_js("(x) => x")(p)
+    assert isalive(p)
+    run_js(
+        """
+    (p) => {
+        p.destroy({destroyRoundtrip : false});
+    }
+    """
+    )(p)
+    assert isalive(p)
+    run_js(
+        """
+    (p) => {
+        p.destroy({destroyRoundtrip : true});
+    }
+    """
+    )(p)
+    assert not isalive(p)
+    p = create_proxy({1: 2})
+    run_js(
+        """
+    (p) => {
+        p.destroy();
+    }
+    """
+    )(p)
+    assert not isalive(p)

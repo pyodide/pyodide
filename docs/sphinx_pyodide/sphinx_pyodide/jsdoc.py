@@ -1,3 +1,4 @@
+import re
 from collections import OrderedDict
 from typing import Any
 
@@ -66,7 +67,11 @@ def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
         child = dict(child)
         if "type" not in child:
             if "signatures" in child:
-                child["comment"] = child["signatures"][0]["comment"]
+                try:
+                    child["comment"] = child["signatures"][0]["comment"]
+                except KeyError:
+                    # TODO: handle no comment case
+                    pass
                 child["type"] = {
                     "type": "reflection",
                     "declaration": dict(child),
@@ -86,6 +91,10 @@ def fix_up_inline_object_signature(self: TsAnalyzer, node: dict[str, Any]) -> No
     params = node.get("parameters", [])
     new_params = []
     for param in params:
+        if "@ignore" in param.get("comment", {}).get("shortText", ""):
+            if not param.get("flags", {}).get("isOptional"):
+                print("sphinx-pyodide warning: Hiding mandatory argument!")
+            continue
         param_type = param["type"]
         if (
             param_type["type"] != "reflection"
@@ -116,6 +125,32 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
 
 TsAnalyzer._convert_node = _convert_node
 
+from os.path import relpath
+
+
+def _containing_deppath(self, node):
+    """Return the path pointing to the module containing the given node.
+    The path is absolute or relative to `root_for_relative_js_paths`.
+    Raises ValueError if one isn't found.
+
+    """
+    from pathlib import Path
+
+    filename = node["sources"][0]["fileName"].replace(".gen", "")
+    deppath = list(Path(self._base_dir).glob("**/" + filename))[0]
+    return relpath(deppath, self._base_dir)
+
+
+TsAnalyzer._containing_deppath = _containing_deppath
+
+
+def _add_type_role(self, name):
+    from sphinx_pyodide.mdn_xrefs import JSDATA
+
+    if name in JSDATA:
+        return f":js:data:`{name}`"
+    return f":js:class:`{name}`"
+
 
 def object_literal_type_name(self, decl):
     """This renders the names of object literal types.
@@ -139,17 +174,21 @@ def object_literal_type_name(self, decl):
         keyname = key["name"]
         keytype = self._type_name(key["type"])
         valuetype = self._type_name(index_sig["type"])
-        children.append(f"[{keyname}: {keytype}]: {valuetype}")
+        children.append(rf"\ **[{keyname}:** {keytype}\ **]:** {valuetype}")
     if "children" in decl:
         for child in decl["children"]:
             maybe_optional = ""
             if child["flags"].get("isOptional"):
                 maybe_optional = "?"
             children.append(
-                child["name"] + maybe_optional + ": " + self._type_name(child["type"])
+                r"\ **"
+                + child["name"]
+                + maybe_optional
+                + ":** "
+                + self._type_name(child["type"])
             )
 
-    return "{" + ", ".join(children) + "}"
+    return r"\ **{**\ " + r"\ **,** ".join(children) + r"\ **}**\ "
 
 
 def function_type_name(self, decl):
@@ -160,12 +199,12 @@ def function_type_name(self, decl):
         decl_sig = decl
     assert decl_sig
     params = [
-        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        rf'\ **{ty["name"]}:** {self._type_name(ty["type"])}'
         for ty in decl_sig.get("parameters", [])
     ]
-    params_str = ", ".join(params)
+    params_str = r"\ **,** ".join(params)
     ret_str = self._type_name(decl_sig["type"])
-    return f"({params_str}) => {ret_str}"
+    return rf"\ **(**\ {params_str}\ **) =>** {ret_str}"
 
 
 def reflection_type_name(self, type):
@@ -187,36 +226,106 @@ def reflection_type_name(self, type):
     """
     decl = type["declaration"]
     if decl["kindString"] == "Type literal" and "signatures" not in decl:
-        return object_literal_type_name(self, decl)
-    return function_type_name(self, decl)
+        return self.object_literal_type_name(decl)
+    return self.function_type_name(decl)
 
 
-def _type_name(self, type):
-    """Monkey patch for sphinx-js type_name
-
-    Rendering various types is left as TODO by _type_name. Fill these in.
-    """
-    res = _orig_type_name(self, type)
-    if "TODO" not in res:
-        # _orig_type_name handled it, leave it alone.
-        return res
+def _type_name_root(self, type):
     type_of_type = type.get("type")
-    if type_of_type == "predicate":
-        return f"boolean (typeguard for {self._type_name(type['targetType'])})"
+
+    if type_of_type == "reference" and type.get("id"):
+        node = self._index[type["id"]]
+        return self._add_type_role(node["name"])
+    if type_of_type == "unknown":
+        if re.match(r"-?\d*(\.\d+)?", type["name"]):  # It's a number.
+            # TypeDoc apparently sticks numeric constants' values into
+            # the type name. String constants? Nope. Function ones? Nope.
+            return "number"
+        return self._add_type_role(type["name"])
+    if type_of_type in ["intrinsic", "reference"]:
+        return self._add_type_role(type["name"])
+    if type_of_type == "stringLiteral":
+        return '"' + type["value"] + '"'
+    if type_of_type == "array":
+        return self._type_name(type["elementType"]) + r"\ **[]**"
+    if type_of_type == "tuple" and type.get("elements"):
+        types = [self._type_name(t) for t in type["elements"]]
+        return r"\ **[**\ " + r"\ **,** ".join(types) + r"\ **]** "
+    if type_of_type == "union":
+        return r" **|** ".join(self._type_name(t) for t in type["types"])
+    if type_of_type == "intersection":
+        return " **&** ".join(self._type_name(t) for t in type["types"])
+    if type_of_type == "typeOperator":
+        return type["operator"] + " " + self._type_name(type["target"])
+        # e.g. "keyof T"
+    if type_of_type == "typeParameter":
+        name = type["name"]
+        constraint = type.get("constraint")
+        if constraint is not None:
+            name += " extends " + self._type_name(constraint)
+            # e.g. K += extends + keyof T
+        return name
     if type_of_type == "reflection":
-        return reflection_type_name(self, type)
+        return self.reflection_type_name(type)
     if type_of_type == "named-tuple-member":
         name = type["name"]
         type = self._type_name(type["element"])
-        return f"{name}: {type}"
+        return rf"\ **{name}:** {type}"
+    if type_of_type == "predicate":
+        return (
+            f":js:data:`boolean` (typeguard for {self._type_name(type['targetType'])})"
+        )
     if type_of_type == "literal" and type["value"] is None:
         return "null"
-    raise NotImplementedError(
-        f"Cannot render type name for type_of_type={type_of_type}"
-    )
+    return "<TODO: other type>"
 
 
-TsAnalyzer._type_name = _type_name
+def _type_name(self, type):
+    """Return a string description of a type.
+
+    :arg type: A TypeDoc-emitted type node
+
+    """
+    name = self._type_name_root(type)
+
+    type_args = type.get("typeArguments")
+    if type_args:
+        arg_names = ", ".join(self._type_name(arg) for arg in type_args)
+        name += rf"\ **<**\ {arg_names}\ **>** "
+    return name
+
+
+for obj in [
+    _add_type_role,
+    object_literal_type_name,
+    reflection_type_name,
+    _type_name_root,
+    _type_name,
+    function_type_name,
+]:
+    setattr(TsAnalyzer, obj.__name__, obj)
+
+
+def _param_type_formatter(param):
+    """Generate types for function parameters specified in field."""
+    if not param.type:
+        return None
+    heads = ["type", param.name]
+    tail = param.type
+    return heads, tail
+
+
+def _return_formatter(return_):
+    """Derive heads and tail from ``@returns`` blocks."""
+    tail = ("%s -- " % return_.type) if return_.type else ""
+    tail += return_.description
+    return ["returns"], tail
+
+
+import sphinx_js.renderers
+
+for obj in [_param_type_formatter, _return_formatter]:  # type:ignore[assignment]
+    setattr(sphinx_js.renderers, obj.__name__, obj)
 
 
 class JSFuncMaybeAsync(JSCallable):
@@ -225,10 +334,15 @@ class JSFuncMaybeAsync(JSCallable):
         "async": directives.flag,
     }
 
-    def handle_signature(self, sig, signode):
+    def get_display_prefix(
+        self,
+    ):
         if "async" in self.options:
-            self.display_prefix = "async"
-        return super().handle_signature(sig, signode)
+            return [
+                addnodes.desc_sig_keyword("async", "async"),
+                addnodes.desc_sig_space(),
+            ]
+        return []
 
 
 JavaScriptDomain.directives["function"] = JSFuncMaybeAsync
@@ -245,7 +359,7 @@ def flatten_suffix_tree(tree):
     result: dict[tuple[str, ...], Any] = {}
     path: list[str] = []
     iters: list[Any] = []
-    cur_iter = iter(tree.items())
+    cur_iter = iter(tree.get("subtree", {}).items())
     while True:
         try:
             [key, val] = next(cur_iter)
@@ -255,13 +369,13 @@ def flatten_suffix_tree(tree):
             cur_iter = iters.pop()
             path.pop()
             continue
-        if isinstance(val, dict):
+        if "subtree" in val:
             iters.append(cur_iter)
             path.append(key)
-            cur_iter = iter(val.items())
-        else:
+            cur_iter = iter(val["subtree"].items())
+        if "value" in val:
             path.append(key)
-            result[tuple(reversed(path))] = val
+            result[tuple(reversed(path))] = val["value"]
             path.pop()
 
 
@@ -302,7 +416,7 @@ class PyodideAnalyzer:
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
         for (key, doclet) in self.doclets.items():
-            if getattr(doclet.value, "is_private", False):
+            if getattr(doclet, "is_private", False):
                 continue
 
             # Remove the part of the key corresponding to the file
@@ -310,15 +424,21 @@ class PyodideAnalyzer:
             filename = key[0]
             toplevelname = key[1]
             if key[-1].startswith("$"):
-                doclet.value.is_private = True
+                doclet.is_private = True
                 continue
-            doclet.value.name = doclet.value.name.rpartition(".")[2]
+            if key[-1] == "constructor":
+                # For whatever reason, sphinx-js does not properly record
+                # whether constructors are private or not. For now, all
+                # constructors are private so leave them all off. TODO: handle
+                # this via a @private decorator in the documentation comment.
+                continue
+            doclet.name = doclet.name.rpartition(".")[2]
             if filename == "module." or filename == "compat.":
                 continue
             if filename == "pyodide.":
                 # Might be named globalThis.something or exports.something.
                 # Trim off the prefix.
-                items["globalThis"] += doclet
+                items["globalThis"].append(doclet)
                 continue
             pyproxy_class_endings = ("Methods", "Class")
             if toplevelname.endswith("#"):
@@ -327,7 +447,7 @@ class PyodideAnalyzer:
                     pyproxy_class_endings
                 ):
                     # Merge all of the PyProxy methods into one API
-                    items["PyProxy"] += doclet
+                    items["PyProxy"].append(doclet)
                 # If it's not part of a PyProxy class, the method will be
                 # documented as part of the class.
                 continue
@@ -339,7 +459,7 @@ class PyodideAnalyzer:
                 # Skip all PyProxy classes, they are documented as one merged
                 # API.
                 continue
-            items["pyodide"] += doclet
+            items["pyodide"].append(doclet)
 
         from operator import attrgetter
 
@@ -351,7 +471,7 @@ class PyodideAnalyzer:
                 elif isinstance(obj, Function):
                     obj.kind = "function"
                     obj.async_ = obj.returns and obj.returns[0].type.startswith(
-                        "Promise<"
+                        ":js:data:`Promise`"
                     )
                 else:
                     obj.kind = "attribute"
@@ -372,16 +492,15 @@ def get_jsdoc_content_directive(app):
         def get_rst(self, obj):
             """Grab the appropriate renderer and render us to rst."""
             if isinstance(obj, Function):
-                renderer = AutoFunctionRenderer
+                cls = AutoFunctionRenderer
             elif isinstance(obj, Class):
-                renderer = AutoClassRenderer
+                cls = AutoClassRenderer
             elif isinstance(obj, Interface):
-                renderer = AutoClassRenderer
+                cls = AutoClassRenderer
             else:
-                renderer = AutoAttributeRenderer
-            rst = renderer(
-                self, app, arguments=["dummy"], options={"members": ["*"]}
-            ).rst([obj.name], obj, use_short_name=False)
+                cls = AutoAttributeRenderer
+            renderer = cls(self, app, arguments=["dummy"], options={"members": ["*"]})
+            rst = renderer.rst([obj.name], obj, use_short_name=False)
             if obj.async_:
                 rst = self.add_async_option_to_rst(rst)
             return rst
@@ -485,14 +604,14 @@ def get_jsdoc_summary_directive(app):
             """
             sig = self.get_sig(obj)
             display_name = obj.name
-            prefix = "*async* " if obj.async_ else ""
+            prefix = "**async** " if obj.async_ else ""
             summary = self.extract_summary(obj.description)
             link_name = pkgname + "." + display_name
             return (prefix, display_name, sig, summary, link_name)
 
         def get_summary_table(self, pkgname, group):
-            """Get the data for a summary table. Return value is set up to be an
-            argument of format_table.
+            """Get the data for a summary tget_summary_tableable. Return value
+            is set up to be an argument of format_table.
             """
             return [self.get_summary_row(pkgname, obj) for obj in group]
 
@@ -501,7 +620,7 @@ def get_jsdoc_summary_directive(app):
         #
         # We have to change the value of one string: qualifier = 'obj   ==>
         # qualifier = 'any'
-        # https://github.com/sphinx-doc/sphinx/blob/3.x/sphinx/ext/autosummary/__init__.py#L392
+        # https://github.com/sphinx-doc/sphinx/blob/6.0.x/sphinx/ext/autosummary/__init__.py#L375
         def format_table(self, items):
             """Generate a proper list of table nodes for autosummary:: directive.
 
@@ -538,20 +657,41 @@ def get_jsdoc_summary_directive(app):
                 body.append(row)
 
             for prefix, name, sig, summary, real_name in items:
-                qualifier = "any"  # <== Only thing changed from autosummary version
+                # The body of this loop is changed from copied code.
+                qualifier = "any"
+                sig = rst.escape(sig)
+                if sig:
+                    sig = f"**{sig}**"
                 if "nosignatures" not in self.options:
-                    col1 = "{}:{}:`{} <{}>`\\ {}".format(
-                        prefix,
-                        qualifier,
-                        name,
-                        real_name,
-                        rst.escape(sig),
-                    )
+                    col1 = f"{prefix}:{qualifier}:`{name} <{real_name}>`\\ {sig}"
                 else:
                     col1 = f"{prefix}:{qualifier}:`{name} <{real_name}>`"
                 col2 = summary
                 append_row(col1, col2)
 
             return [table_spec, table]
+
+    from inspect import iscoroutinefunction
+
+    from sphinx.ext.autosummary import Autosummary, get_import_prefixes_from_env
+
+    # Monkey patch Autosummary to:
+    # 1. include "async" prefix in the summary table for async functions.
+    # 2. Render signature in bold (for better consistency with rest of docs)
+    Autosummary.get_table = JsDocSummary.format_table
+    orig_get_items = Autosummary.get_items
+
+    def get_items(self, names):
+        prefixes = get_import_prefixes_from_env(self.env)
+        items = orig_get_items(self, names)
+        new_items = []
+        for (name, item) in zip(names, items):
+            name = name.removeprefix("~")
+            _, obj, *_ = self.import_by_name(name, prefixes=prefixes)
+            prefix = "**async** " if iscoroutinefunction(obj) else ""
+            new_items.append((prefix, *item))
+        return new_items
+
+    Autosummary.get_items = get_items
 
     return JsDocSummary

@@ -53,16 +53,21 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
-    Module.pyproxy_destroy(px, msg);
+    Module.pyproxy_destroy(px, msg, false);
   }
 });
 
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
+  let px = Module.hiwire.get_value(proxy_id);
+  if (px.$$props.roundtrip) {
+    // Don't destroy roundtrip proxies!
+    return;
+  }
   let msg = undefined;
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);
   }
-  Module.pyproxy_destroy(Module.hiwire.get_value(proxy_id), msg);
+  Module.pyproxy_destroy(px, msg, false);
 });
 
 static PyObject* asyncio;
@@ -216,14 +221,11 @@ JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
   PyObject* repr_py = NULL;
-  const char* repr_utf8 = NULL;
   JsRef repr_js = NULL;
 
   repr_py = PyObject_Repr(pyobj);
   FAIL_IF_NULL(repr_py);
-  repr_utf8 = PyUnicode_AsUTF8(repr_py);
-  FAIL_IF_NULL(repr_utf8);
-  repr_js = hiwire_string_utf8(repr_utf8);
+  repr_js = python2js(repr_py);
 
 finally:
   Py_CLEAR(repr_py);
@@ -246,7 +248,7 @@ finally:
 JsRef
 _pyproxy_type(PyObject* ptrobj)
 {
-  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
+  return hiwire_string_utf8(ptrobj->ob_type->tp_name);
 }
 
 int

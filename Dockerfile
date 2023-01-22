@@ -12,13 +12,19 @@ RUN apt-get update \
         ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
-ADD docs/requirements-doc.txt requirements.txt /
+# Normally, it is a bad idea to install rustup and cargo in
+# system directories (it should not be shared between users),
+# but this docker image is only for building packages, so I hope it is ok.
+RUN wget -q -O - https://sh.rustup.rs | \
+    RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
-RUN pip3 --no-cache-dir install -r /requirements.txt \
-  && pip3 --no-cache-dir install -r /requirements-doc.txt \
-  && sed -i -e "182a\ \ \ \ new_node.end_lineno = 2" -e "393d" \
-    /usr/local/lib/python3.11/site-packages/pytest_pyodide/decorator.py
+ADD requirements.txt docs/requirements-doc.txt /
+ADD pyodide-build /pyodide-build
 
+WORKDIR /
+RUN pip3 --no-cache-dir install -r requirements.txt \
+    && pip3 --no-cache-dir install -r requirements-doc.txt \
+    && rm -rf requirements.txt requirements-doc.txt pyodide-build
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 

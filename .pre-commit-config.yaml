@@ -65,10 +65,12 @@ repos:
           - pytest
           - pydantic
           - unearth
+          - resolvelib
+          - rich
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|docs|conftest.py|src/tests)
+        files: ^(packages/|docs|/conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
@@ -101,7 +103,7 @@ repos:
     rev: "v0.8.0.4"
     hooks:
       - id: shellcheck
-        exclude: ^tools/python$
+        exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.2.2"

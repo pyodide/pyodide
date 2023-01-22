@@ -1,19 +1,11 @@
-import collections
 import gzip
+import inspect
 import json
-import pathlib
 import sys
-import types
-from typing import Mapping, Union
+from pathlib import Path
 
 from docutils.frontend import OptionParser
 from docutils.utils import new_document
-
-# Shim sphinx-js Python 3.10 compatibility
-collections.Mapping = Mapping  # type: ignore[attr-defined]
-types.Union = Union  # type: ignore[attr-defined]
-
-import inspect
 
 if not hasattr(inspect, "getargspec"):
     inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
@@ -22,15 +14,16 @@ if not hasattr(inspect, "getargspec"):
 from sphinx_js.suffix_tree import SuffixTree
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
-test_directory = pathlib.Path(__file__).resolve().parent
+test_directory = Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
+src_dir = test_directory.parents[2] / "src"
 
 
 # tsdoc_dump.json.gz is the source file for the test docs. It can be updated as follows:
 #
 # cp src/core/pyproxy.ts src/js/pyproxy.gen.ts
-# typedoc src/js/*.ts --tsconfig src/js/tsconfig.json --json docs/sphinx_pyodide/tests/
-# gzip docs/sphinx_pyodide/tests/
+# typedoc src/js/*.ts --tsconfig src/js/tsconfig.json --json docs/sphinx_pyodide/tests/tsdoc_dump.json
+# gzip docs/sphinx_pyodide/tests/tsdoc_dump.json
 # rm src/js/pyproxy.gen.ts
 with gzip.open(test_directory / "tsdoc_dump.json.gz") as fh:
     jsdoc_json = json.load(fh)
@@ -43,7 +36,7 @@ from sphinx_pyodide.jsdoc import (
     get_jsdoc_summary_directive,
 )
 
-inner_analyzer = TsAnalyzer(jsdoc_json, "/home/hood/pyodide/src")
+inner_analyzer = TsAnalyzer(jsdoc_json, str(src_dir))
 settings = OptionParser().get_default_values()
 settings.update(settings_json, OptionParser())
 
@@ -64,7 +57,6 @@ def test_flatten_suffix_tree():
     }
     t.add_many(d.items())
     r = flatten_suffix_tree(t._tree)
-    r = {k: v.value for (k, v) in r.items()}
     assert d == r
 
 
@@ -81,26 +73,35 @@ def test_pyodide_analyzer():
     function_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["function"]}
     attribute_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["attribute"]}
     assert function_names == {
-        "runPython",
-        "unregisterJsModule",
-        "loadPackage",
-        "runPythonAsync",
-        "loadPackagesFromImports",
-        "pyimport",
-        "registerJsModule",
-        "isPyProxy",
-        "toPy",
-        "setInterruptBuffer",
         "checkInterrupt",
-        "unpackArchive",
+        "isPyProxy",
+        "loadPackage",
+        "loadPackagesFromImports",
+        "mountNativeFS",
+        "pyimport",
         "registerComlink",
+        "registerJsModule",
+        "runPython",
+        "runPythonAsync",
+        "setDefaultStdout",
+        "setInterruptBuffer",
+        "setStderr",
+        "setStdin",
+        "setStdout",
+        "toPy",
+        "unpackArchive",
+        "unregisterJsModule",
     }
+
     assert attribute_names == {
+        "ERRNO_CODES",
         "FS",
-        "loadedPackages",
-        "globals",
+        "PATH",
         "version",
+        "globals",
+        "loadedPackages",
         "pyodide_py",
+        "version",
     }
 
 
@@ -141,8 +142,8 @@ def test_content():
 
     rp = results["runPython"]
     assert rp["directive"] == "function"
-    assert rp["sig"] == "code, globals=Module.globals)"
-    assert "Runs a string of Python code from JavaScript." in rp["body"]
+    assert rp["sig"] == "code, options)"
+    assert "Runs a string of Python code from JavaScript" in rp["body"]
 
 
 JsDocSummary = get_jsdoc_summary_directive(dummy_app)
@@ -174,9 +175,9 @@ def test_summary():
     attributes = {t[1]: t for t in attributes}
     functions = {t[1]: t for t in functions}
     assert globals["loadPyodide"] == (
-        "*async* ",
+        "**async** ",
         "loadPyodide",
-        "(config)",
+        "(options)",
         "Load the main Pyodide wasm module and initialize it.",
         "globalThis.loadPyodide",
     )
@@ -204,15 +205,15 @@ def test_summary():
     )
 
     assert functions["loadPackagesFromImports"][:-2] == (
-        "*async* ",
+        "**async** ",
         "loadPackagesFromImports",
-        "(code, messageCallback, errorCallback)",
+        "(code, options)",
     )
 
 
 def test_type_name():
     tn = inner_analyzer._type_name
-    assert tn({"name": "void", "type": "intrinsic"}) == "void"
+    assert tn({"name": "void", "type": "intrinsic"}) == ":js:data:`void`"
     assert tn({"value": None, "type": "literal"}) == "null"
     assert (
         tn(
@@ -221,8 +222,8 @@ def test_type_name():
                 "type": "reference",
                 "typeArguments": [{"name": "string", "type": "intrinsic"}],
             }
-        )
-        == "Promise<string>"
+        ).strip()
+        == r":js:data:`Promise`\ **<**\ :js:data:`string`\ **>**"
     )
 
     assert (
@@ -233,8 +234,8 @@ def test_type_name():
                 "targetType": {"name": "PyProxy", "type": "reference"},
                 "type": "predicate",
             }
-        )
-        == "boolean (typeguard for PyProxy)"
+        ).strip()
+        == ":js:data:`boolean` (typeguard for :js:class:`PyProxy`)"
     )
 
     assert (
@@ -261,8 +262,8 @@ def test_type_name():
                 },
                 "type": "reflection",
             }
-        )
-        == "(message: string) => void"
+        ).strip()
+        == r"\ **(**\ \ **message:** :js:data:`string`\ **) =>** :js:data:`void`"
     )
 
     assert (
@@ -290,8 +291,8 @@ def test_type_name():
                     }
                 ],
             }
-        )
-        == "Iterable<[key: string, value: any]>"
+        ).strip()
+        == r":js:data:`Iterable`\ **<**\ \ **[**\ \ **key:** :js:data:`string`\ **,** \ **value:** :js:data:`any`\ **]** \ **>**"
     )
 
     assert (
@@ -315,8 +316,8 @@ def test_type_name():
                 },
                 "type": "reflection",
             }
-        )
-        == "{[key: string]: string}"
+        ).strip()
+        == r"""\ **{**\ \ **[key:** :js:data:`string`\ **]:** :js:data:`string`\ **}**\ """.strip()
     )
 
     assert (
@@ -348,6 +349,6 @@ def test_type_name():
                 },
                 "type": "reflection",
             }
-        )
-        == "{cache: PyProxyCache, destroyed_msg?: string, ptr: number}"
+        ).strip()
+        == r"""\ **{**\ \ **cache:** :js:class:`PyProxyCache`\ **,** \ **destroyed_msg?:** :js:data:`string`\ **,** \ **ptr:** :js:data:`number`\ **}**\ """.strip()
     )

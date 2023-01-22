@@ -27,7 +27,7 @@ You will need to serve these files yourself.
 
 ### Serving locally
 
-With Python 3.7.5+ you can serve Pyodide files locally with `http.server`:
+With Python 3.7.5+ you can serve Pyodide files locally with {py:mod}`http.server`:
 
 ```
 python -m http.server

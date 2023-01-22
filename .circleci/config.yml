@@ -128,11 +128,6 @@ jobs:
             - -pkg3-v20220915-{{ checksum "build_hash.txt" }}-<< parameters.packages >>
 
       - run:
-          name: install rust
-          command: |
-            make rust
-
-      - run:
           name: build packages
           no_output_timeout: 60m
           command: |

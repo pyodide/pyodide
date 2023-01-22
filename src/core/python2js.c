@@ -4,6 +4,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include "python2js.h"
@@ -113,6 +114,52 @@ finally:
   return NULL;
 }
 
+// python2js string conversion
+//
+// FAQs:
+//
+// Q: Why do we use this approach rather than TextDecoder?
+//
+// A: TextDecoder does have an 'ascii' encoding and a 'ucs2' encoding which
+// sound promising. They work in many cases but not in all cases, particularly
+// when strings contain weird unprintable bytes. I suspect these conversion
+// functions are also considerably faster than TextDecoder because it takes
+// complicated extra code to cause the problematic edge case behavior of
+// TextDecoder.
+//
+//
+// Q: Is it okay to use str += more_str in a loop? Does this perform a lot of
+// copies?
+//
+// A: We haven't profiled this but I suspect that the JS VM understands this
+// code quite well and can git it into very performant code.
+// TODO: someone should compare += in a loop to building a list and using
+// list.join("") and see if one is faster than the other.
+
+EM_JS_REF(JsRef, _python2js_ucs1, (const char* ptr, int len), {
+  let jsstr = "";
+  for (let i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
+  }
+  return Hiwire.new_value(jsstr);
+});
+
+EM_JS_REF(JsRef, _python2js_ucs2, (const char* ptr, int len), {
+  let jsstr = "";
+  for (let i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
+  }
+  return Hiwire.new_value(jsstr);
+});
+
+EM_JS_REF(JsRef, _python2js_ucs4, (const char* ptr, int len), {
+  let jsstr = "";
+  for (let i = 0; i < len; ++i) {
+    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
+  }
+  return Hiwire.new_value(jsstr);
+});
+
 static JsRef
 _python2js_unicode(PyObject* x)
 {
@@ -121,14 +168,13 @@ _python2js_unicode(PyObject* x)
   int length = (int)PyUnicode_GET_LENGTH(x);
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
-      return hiwire_string_ucs1(data, length);
+      return _python2js_ucs1(data, length);
     case PyUnicode_2BYTE_KIND:
-      return hiwire_string_ucs2(data, length);
+      return _python2js_ucs2(data, length);
     case PyUnicode_4BYTE_KIND:
-      return hiwire_string_ucs4(data, length);
+      return _python2js_ucs4(data, length);
     default:
-      PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
-      return NULL;
+      assert(false /* invalid Unicode kind */);
   }
 }
 
@@ -806,6 +852,13 @@ finally:
   return py_result;
 }
 
+// As contrasts `destroy_proxies` defined in pyproxy.c and declared in
+// pyproxy.h:
+// 1. This handles JavaScript errors, for the other one JS errors are fatal.
+// 2. This calls `proxy.destroy`, so if it is some other object with a `destroy`
+//    method, that will get called (is this a good thing??)
+// 3. destroy_proxies won't destroy proxies with roundtrip set to true, this
+// will.
 EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
   for (let proxy of Hiwire.get_value(proxies_id)) {
     proxy.destroy();

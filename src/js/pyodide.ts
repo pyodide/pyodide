@@ -10,9 +10,9 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, setStandardStreams, setHomeDirectory } from "./module";
+import { createModule, setHomeDirectory } from "./module";
 import { initializeNativeFS } from "./nativefs";
-import version from "./version";
+import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
@@ -229,46 +229,60 @@ export async function loadPyodide(
   options: {
     /**
      * The URL from which Pyodide will load the main Pyodide runtime and
-     * packages. Defaults to the url that pyodide is loaded from with the file
-     * name (pyodide.js or pyodide.mjs) removed. It is recommended that you
-     * leave this undefined, providing an incorrect value can cause broken
-     * behavior.
+     * packages. It is recommended that you leave this unchanged, providing an
+     * incorrect value can cause broken behavior.
+     *
+     * Default: The url that Pyodide is loaded from with the file name
+     * (``pyodide.js`` or ``pyodide.mjs``) removed.
      */
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide "repodata.json" lock
-     * file. Defaults to ``${indexURL}/repodata.json``. You can produce custom
-     * lock files with :any:`micropip.freeze`
+     * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
+     * file. You can produce custom lock files with :any:`micropip.freeze`.
+     * Default: ```${indexURL}/repodata.json```
      */
     lockFileURL?: string;
 
     /**
-     * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
+     * The home directory which Pyodide will use inside virtual file system.
+     * Default: ``"/home/pyodide"``
      */
     homedir?: string;
-
-    /** Load the full Python standard library.
-     * Setting this to false excludes unvendored modules from the standard library.
-     * Default: false
+    /**
+     * Load the full Python standard library. Setting this to false excludes
+     * unvendored modules from the standard library.
+     * Default: ``false``
      */
     fullStdLib?: boolean;
     /**
-     * Override the standard input callback. Should ask the user for one line of input.
+     * Override the standard input callback. Should ask the user for one line of
+     * input.
      */
     stdin?: () => string;
     /**
      * Override the standard output callback.
-     * Default: undefined
      */
     stdout?: (msg: string) => void;
     /**
      * Override the standard error output callback.
-     * Default: undefined
      */
     stderr?: (msg: string) => void;
+    /**
+     * The object that Pyodide will use for the ``js`` module.
+     * Default: ``globalThis``
+     */
     jsglobals?: object;
+    /**
+     * Command line arguments to pass to Python on startup. See `Python command
+     * line interface options
+     * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
+     * more details. Default: ``[]``
+     */
     args?: string[];
+    /**
+     * @ignore
+     */
     _node_mounts?: string[];
   } = {},
 ): Promise<PyodideInterface> {
@@ -295,6 +309,8 @@ export async function loadPyodide(
   );
 
   const Module = createModule();
+  Module.print = config.stdout;
+  Module.printErr = config.stderr;
   Module.preRun.push(() => {
     for (const mount of config._node_mounts) {
       Module.FS.mkdirTree(mount);
@@ -306,7 +322,6 @@ export async function loadPyodide(
   const API: any = { config };
   Module.API = API;
 
-  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
   setHomeDirectory(Module, config.homedir);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
@@ -343,17 +358,22 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 `,
     );
   }
-
-  initializeNativeFS(Module);
-
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
+  initializeNativeFS(Module);
+
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
-  API.rawRun("import _pyodide_core");
+  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
+  if (err) {
+    Module.API.fatal_loading_error(
+      "Failed to import _pyodide_core\n",
+      captured_stderr,
+    );
+  }
 
   const pyodide = finalizeBootstrap(API, config);
 
@@ -366,7 +386,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   await API.packageIndexReady;
 
   let importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(API.repodata_packages);
+  importhook.register_module_not_found_hook(API._import_name_to_package_name);
 
   if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
@@ -375,5 +395,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   if (config.fullStdLib) {
     await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
   }
+  API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;
 }

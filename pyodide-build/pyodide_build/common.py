@@ -9,14 +9,50 @@ import textwrap
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
 import tomllib
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
 from .io import MetaConfig
+from .logger import logger
+
+BUILD_VARS: set[str] = {
+    "PATH",
+    "PYTHONPATH",
+    "PYODIDE_ROOT",
+    "PYTHONINCLUDE",
+    "NUMPY_LIB",
+    "PYODIDE_PACKAGE_ABI",
+    "HOME",
+    "HOSTINSTALLDIR",
+    "TARGETINSTALLDIR",
+    "SYSCONFIG_NAME",
+    "HOSTSITEPACKAGES",
+    "PYVERSION",
+    "PYMAJOR",
+    "PYMINOR",
+    "PYMICRO",
+    "CPYTHONBUILD",
+    "CPYTHONLIB",
+    "SIDE_MODULE_CFLAGS",
+    "SIDE_MODULE_CXXFLAGS",
+    "SIDE_MODULE_LDFLAGS",
+    "STDLIB_MODULE_CFLAGS",
+    "UNISOLATED_PACKAGES",
+    "WASM_LIBRARY_DIR",
+    "WASM_PKG_CONFIG_PATH",
+    "CARGO_BUILD_TARGET",
+    "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
+    "RUSTFLAGS",
+    "PYODIDE_EMSCRIPTEN_VERSION",
+    "PLATFORM_TRIPLET",
+    "SYSCONFIGDATA_DIR",
+    "RUST_TOOLCHAIN",
+}
 
 
 def emscripten_version() -> str:
@@ -70,6 +106,8 @@ def pyodide_tags() -> Iterator[Tag]:
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
     yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
+    # Following line can be removed once packaging 22.0 is released and we update to it.
+    yield Tag(interpreter=f"cp{PYMAJOR}{PYMINOR}", abi="none", platform="any")
 
 
 def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
@@ -134,7 +172,9 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
                 top_level_imports.append(subdir.name)
 
     if not top_level_imports:
-        print(f"Warning: failed to parse top level import name from {whlfile}.")
+        logger.warning(
+            f"WARNING: failed to parse top level import name from {whlfile}."
+        )
         return None
 
     return top_level_imports
@@ -224,7 +264,6 @@ def get_make_flag(name: str) -> str:
         SIDE_MODULE_LDFLAGS
         SIDE_MODULE_CFLAGS
         SIDE_MODULE_CXXFLAGS
-        TOOLSDIR
     """
     return get_make_environment_vars()[name]
 
@@ -256,10 +295,43 @@ def get_make_environment_vars() -> dict[str, str]:
         equalPos = line.find("=")
         if equalPos != -1:
             varname = line[0:equalPos]
+
+            if varname not in BUILD_VARS:
+                continue
+
             value = line[equalPos + 1 :]
             value = value.strip("'").strip()
             environment[varname] = value
     return environment
+
+
+def environment_substitute_args(
+    args: dict[str, str], env: dict[str, str] | None = None
+) -> dict[str, Any]:
+    """
+    Substitute $(VAR) in args with the value of the environment variable VAR.
+
+    Parameters
+    ----------
+    args
+        A dictionary of arguments
+
+    env
+        A dictionary of environment variables. If None, use os.environ.
+
+    Returns
+    -------
+    A dictionary of arguments with the substitutions applied.
+    """
+    if env is None:
+        env = dict(os.environ)
+    subbed_args = {}
+    for arg, value in args.items():
+        if isinstance(value, str):
+            for e_name, e_value in env.items():
+                value = value.replace(f"$({e_name})", e_value)
+        subbed_args[arg] = value
+    return subbed_args
 
 
 def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
@@ -362,11 +434,11 @@ def replace_env(build_env: Mapping[str, str]) -> Generator[None, None, None]:
 
 def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     if result.stdout:
-        print("  stdout:")
-        print(textwrap.indent(result.stdout, "    "))
+        logger.error("  stdout:")
+        logger.error(textwrap.indent(result.stdout, "    "))
     if result.stderr:
-        print("  stderr:")
-        print(textwrap.indent(result.stderr, "    "))
+        logger.error("  stderr:")
+        logger.error(textwrap.indent(result.stderr, "    "))
     raise SystemExit(result.returncode)
 
 
@@ -377,3 +449,13 @@ def in_xbuildenv() -> bool:
 
 def find_missing_executables(executables: list[str]) -> list[str]:
     return list(filter(lambda exe: shutil.which(exe) is None, executables))
+
+
+@contextmanager
+def chdir(new_dir: Path) -> Generator[None, None, None]:
+    orig_dir = Path.cwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(orig_dir)

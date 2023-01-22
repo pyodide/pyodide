@@ -6,7 +6,7 @@ import __main__
 
 from _pyodide._importhook import jsfinder
 
-from ._core import JsProxy
+from .ffi import JsProxy
 
 
 def save_state() -> dict[str, Any]:

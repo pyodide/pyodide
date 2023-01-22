@@ -47,6 +47,7 @@ Using Pyodide
    usage/type-conversions.md
    usage/wasm-constraints.md
    usage/keyboard-interrupts.md
+   usage/streams.md
    usage/api-reference.md
    usage/faq.md
 

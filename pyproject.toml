@@ -35,6 +35,7 @@ module = [
   "termcolor",
   "test",
   "tomllib",
+  "typer",
 ]
 ignore_missing_imports = true
 

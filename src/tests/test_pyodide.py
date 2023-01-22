@@ -55,6 +55,10 @@ def test_find_imports():
     assert res == []
 
 
+def test_ffi_import_star():
+    exec("from pyodide.ffi import *", {})
+
+
 def test_pyimport(selenium):
     selenium.run_js(
         """
@@ -88,6 +92,7 @@ def test_code_runner():
     assert cr.compile().run({"x": 3}) == 13
 
     # Code transform
+    assert cr.code
     cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
     assert cr.run({"x": 4}) == 17
 
@@ -638,7 +643,7 @@ def test_create_proxy(selenium):
     assert sys.getrefcount(f) == 2
     proxy = create_proxy(f)
     assert sys.getrefcount(f) == 3
-    assert proxy() == 7
+    assert proxy() == 7  # type:ignore[operator]
     testAddListener(proxy)
     assert sys.getrefcount(f) == 3
     assert testCallListener() == 7
@@ -680,7 +685,7 @@ def test_create_proxy_roundtrip(selenium):
     assert o.f.unwrap() is f
     o.f.destroy()
     o.f = create_proxy(f, roundtrip=False)
-    assert o.f is f
+    assert o.f is f  # type: ignore[comparison-overlap]
     run_js("(o) => { o.f.destroy(); }")(o)
 
 
@@ -1064,7 +1069,7 @@ def test_restore_error(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_custom_stdin_stdout(selenium_standalone_noload):
+def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
     selenium = selenium_standalone_noload
     strings = [
         "hello world",
@@ -1116,11 +1121,11 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
     assert (
         selenium.run_js(
             f"""
-        return pyodide.runPython(`
-            [input() for x in range({len(outstrings)})]
-            # ... test more stuff
-        `).toJs();
-        """
+            return pyodide.runPython(`
+                [input() for x in range({len(outstrings)})]
+                # ... test more stuff
+            `).toJs();
+            """
         )
         == outstrings
     )
@@ -1140,6 +1145,97 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
     ]
     stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
+    IN_NODE = runtime == "node"
+    selenium.run_js(
+        f"""
+        pyodide.runPython(`
+            import sys
+            assert not sys.stdin.isatty()
+            assert not sys.stdout.isatty()
+            assert not sys.stderr.isatty()
+        `);
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.isatty() is {IN_NODE}
+            assert sys.stdout.isatty() is {IN_NODE}
+            assert sys.stderr.isatty() is {IN_NODE}
+        `);
+        """
+    )
+
+
+def test_custom_stdin_stdout2(selenium):
+    result = selenium.run_js(
+        """
+        function stdin(){
+            return "hello there!\\nThis is a several\\nline\\nstring";
+        }
+        pyodide.setStdin({stdin});
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "h"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin({stdin, isatty: false});
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "e"
+        `);
+        pyodide.setStdout();
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin({stdin, isatty: true});
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert sys.stdin.isatty()
+        `);
+
+        let stdout_codes = [];
+        function rawstdout(code) {
+            stdout_codes.push(code);
+        }
+        pyodide.setStdout({raw: rawstdout});
+        pyodide.runPython(`
+            print("hello")
+            assert sys.stdin.read(1) == "o"
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setStdout({raw: rawstdout, isatty: false});
+        pyodide.runPython(`
+            print("2hello again")
+            assert sys.stdin.read(1) == " "
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setStdout({raw: rawstdout, isatty: true});
+        pyodide.runPython(`
+            print("3hello")
+            assert sys.stdin.read(1) == "t"
+            assert sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.runPython(`
+            print("partial line", end="")
+        `);
+        let result1 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.runPython(`
+            sys.stdout.flush()
+        `);
+        let result2 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
+        return [result1, result2];
+        """
+    )
+    assert result[0] == "hello\n2hello again\n3hello\n"
+    assert result[1] == "hello\n2hello again\n3hello\npartial line"
 
 
 def test_home_directory(selenium_standalone_noload):
@@ -1260,16 +1356,23 @@ def test_raises_jsexception(selenium):
         raise_jsexception(selenium)
 
 
+@pytest.mark.xfail_browsers(node="Some problem with the logs in node")
 def test_deprecations(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
         """
-        pyodide.loadPackage("micropip", (x) => x);
-        pyodide.loadPackagesFromImports("import micropip", (x) => x);
+        p = [];
+        let cb = (x) => console.log('!!! ' + x);
+        await pyodide.loadPackage("micropip", cb);
+        pyodide.loadPackage("micropip", cb);
+        pyodide.loadPackagesFromImports("import micropip", cb);
+        pyodide.loadPackagesFromImports("import micropip", cb);
         """
     )
-    dep_msg = "Passing a messageCallback or errorCallback as the second or third argument to loadPackage is deprecated and will be removed in v0.24. Instead use { messageCallback : callbackFunc }"
-    assert selenium.logs.count(dep_msg) == 1
+    dep_msg = "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to {} is deprecated and will be removed in v0.24."
+    assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
+    assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
+    assert selenium.logs.count("!!! No new packages to load") == 3
 
 
 @run_in_pyodide(packages=["pytest"])
@@ -1327,6 +1430,14 @@ def test_module_not_found_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
+
+    # liblzma and openssl are libraries not python packages, so it should just fail.
+    for pkg in ["liblzma", "openssl"]:
+        with pytest.raises(ModuleNotFoundError, match="No module named"):
+            importlib.import_module(pkg)
+
+    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+        importlib.import_module("_hashlib")
 
 
 def test_args(selenium_standalone_noload):

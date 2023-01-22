@@ -39,9 +39,11 @@ build:
     -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
+  cxxflags: -fexceptions
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
+    -fexceptions
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython

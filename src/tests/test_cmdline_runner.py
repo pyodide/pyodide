@@ -30,7 +30,7 @@ def needs_emscripten(x):
 
 
 pyodide_root = get_pyodide_root()
-script_path = pyodide_root / "tools/python"
+script_path = pyodide_root / "dist/python"
 
 
 @only_node
@@ -117,10 +117,10 @@ def test_invalid_cmdline_option(selenium):
     assert result.returncode != 0
     assert result.stdout == ""
     assert (
-        re.sub("/[/a-z]*/tools/python", "<...>/tools/python", result.stderr)
+        re.sub("/[/a-z]*/dist/python", "<...>/python", result.stderr)
         == """\
 Argument expected for the -c option
-usage: <...>/tools/python [option] ... [-c cmd | -m mod | file | -] [arg] ...
+usage: <...>/python [option] ... [-c cmd | -m mod | file | -] [arg] ...
 Try `python -h' for more information.
 """
     )
@@ -156,16 +156,14 @@ def venv(runtime):
 @needs_emscripten
 def test_venv_success_log(selenium, capsys):
     with venv_ctxmgr(Path(".venv-pyodide-tmp-test")):
-        msg = dedent(
-            """
-            Creating Pyodide virtualenv at .venv-pyodide-tmp-test
-            ... Configuring virtualenv
-            ... Installing standard library
-            Successfully created Pyodide virtual environment!
-        """
-        ).strip()
+        msgs = [
+            "Creating Pyodide virtualenv at .venv-pyodide-tmp-test",
+            "... Configuring virtualenv",
+            "... Installing standard library",
+            "Successfully created Pyodide virtual environment!",
+        ]
     captured = capsys.readouterr()
-    assert captured.out.strip() == msg
+    assert [l.strip() for l in captured.out.splitlines()] == msgs
     assert captured.err == ""
 
 
@@ -184,8 +182,7 @@ def test_venv_fail_log(selenium, capsys):
     captured = capsys.readouterr()
     assert captured.out.strip() == msg
     assert (
-        captured.err
-        == "ERROR: dest directory '.venv-pyodide-tmp-test' already exists\n"
+        "ERROR: dest directory '.venv-pyodide-tmp-test' already exists" in captured.err
     )
 
 

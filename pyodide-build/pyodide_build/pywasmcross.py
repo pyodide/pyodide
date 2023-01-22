@@ -54,18 +54,8 @@ if IS_COMPILER_INVOCATION:
 import shutil
 import subprocess
 from collections import namedtuple
-from collections.abc import Iterable, Iterator, MutableMapping
-from contextlib import contextmanager
-from tempfile import TemporaryDirectory
-from typing import Any, Literal, NoReturn
-
-from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
-
-
-def symlink_dir() -> Path:
-    return Path(common.get_make_flag("TOOLSDIR")) / "symlinks"
-
+from collections.abc import Iterable, Iterator
+from typing import Literal, NoReturn
 
 ReplayArgs = namedtuple(
     "ReplayArgs",
@@ -80,86 +70,6 @@ ReplayArgs = namedtuple(
         "exports",
     ],
 )
-
-
-def make_command_wrapper_symlinks(
-    symlink_dir: Path, env: MutableMapping[str, str]
-) -> None:
-    """
-    Makes sure all the symlinks that make this script look like a compiler
-    exist.
-    """
-    exec_path = Path(__file__).resolve()
-    for symlink in SYMLINKS:
-        symlink_path = symlink_dir / symlink
-        if os.path.lexists(symlink_path) and not symlink_path.exists():
-            # remove broken symlink so it can be re-created
-            symlink_path.unlink()
-        try:
-            pywasmcross_exe = shutil.which("_pywasmcross")
-            if pywasmcross_exe:
-                symlink_path.symlink_to(pywasmcross_exe)
-            else:
-                symlink_path.symlink_to(exec_path)
-        except FileExistsError:
-            pass
-        if symlink == "c++":
-            var = "CXX"
-        else:
-            var = symlink.upper()
-        env[var] = symlink
-
-
-# Also defined in pyodide_build.io (though avoiding to import dependent modules here)
-_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
-
-
-@contextmanager
-def get_build_env(
-    env: dict[str, str],
-    *,
-    pkgname: str,
-    cflags: str,
-    cxxflags: str,
-    ldflags: str,
-    target_install_dir: str,
-    exports: _BuildSpecExports | list[_BuildSpecExports],
-) -> Iterator[dict[str, str]]:
-    kwargs = dict(
-        pkgname=pkgname,
-        cflags=cflags,
-        cxxflags=cxxflags,
-        ldflags=ldflags,
-        target_install_dir=target_install_dir,
-    )
-
-    args = environment_substitute_args(kwargs, env)
-    args["builddir"] = str(Path(".").absolute())
-    args["exports"] = exports
-
-    with TemporaryDirectory() as symlink_dir_str:
-        symlink_dir = Path(symlink_dir_str)
-        env = dict(env)
-        make_command_wrapper_symlinks(symlink_dir, env)
-
-        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
-        args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
-        args["orig__name__"] = __name__
-        args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
-        args["PATH"] = env["PATH"]
-
-        pywasmcross_env = json.dumps(args)
-        # Store into environment variable and to disk. In most cases we will
-        # load from the environment variable but if some other tool filters
-        # environment variables we will load from disk instead.
-        env["PYWASMCROSS_ARGS"] = pywasmcross_env
-        (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
-
-        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
-        env["_PYTHON_HOST_PLATFORM"] = common.platform()
-        env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-        env["PYTHONPATH"] = str(sysconfig_dir)
-        yield env
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
@@ -184,6 +94,9 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gcc', 'test.c']
     """
+
+    from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output
+
     new_args = ["gcc"]
     found_source = False
     for arg in args[1:]:
@@ -325,6 +238,7 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
                 "--version-script=",
                 "-R/",  # wasm-ld does not accept -R (runtime libraries)
                 "-R.",  # wasm-ld does not accept -R (runtime libraries)
+                "--exclude-libs=",
             )
         ):
             continue
@@ -363,6 +277,7 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         "-pthread",
         # this only applies to compiling fortran code, but we already f2c'd
         "-ffixed-form",
+        "-fallow-argument-mismatch",
         # On Mac, we need to omit some darwin-specific arguments
         "-bundle", "-undefined", "dynamic_lookup",
         # This flag is needed to build numpy with SIMD optimization which we currently disable
@@ -590,12 +505,20 @@ def handle_command_generate_args(
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     elif cmd == "cmake":
-        # If it is a build/install command, we don't do anything.
-        if "--build" in line or "--install" in line:
+        # If it is a build/install command, or running a script, we don't do anything.
+        if "--build" in line or "--install" in line or "-P" in line:
             return line
 
         flags = get_cmake_compiler_flags()
-        line[:1] = ["emcmake", "cmake", *flags]
+        line[:1] = [
+            "emcmake",
+            "cmake",
+            *flags,
+            # Since we create a temporary directory and install compiler symlinks every time,
+            # CMakeCache.txt will contain invalid paths to the compiler when re-running,
+            # so we need to tell CMake to ignore the existing cache and build from scratch.
+            "--fresh",
+        ]
         return line
     elif cmd == "ranlib":
         line[0] = "emranlib"
@@ -704,25 +627,13 @@ def handle_command(
     new_args = handle_command_generate_args(line, args, is_link_cmd)
 
     if args.pkgname == "scipy":
+        from pyodide_build._f2c_fixes import scipy_fixes
+
         scipy_fixes(new_args)
 
     returncode = subprocess.run(new_args).returncode
 
     sys.exit(returncode)
-
-
-def environment_substitute_args(
-    args: dict[str, str], env: dict[str, str] | None = None
-) -> dict[str, Any]:
-    if env is None:
-        env = dict(os.environ)
-    subbed_args = {}
-    for arg, value in args.items():
-        if isinstance(value, str):
-            for e_name, e_value in env.items():
-                value = value.replace(f"$({e_name})", e_value)
-        subbed_args[arg] = value
-    return subbed_args
 
 
 def compiler_main():

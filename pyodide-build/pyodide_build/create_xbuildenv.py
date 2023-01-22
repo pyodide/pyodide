@@ -10,6 +10,7 @@ from .common import (
     get_unisolated_packages,
 )
 from .io import MetaConfig
+from .logger import logger
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -55,11 +56,9 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
         sysconfig_dir,
         Path("Makefile.envs"),
         wasm_lib_dir / "cmake",
-        Path("tools/pyo3_config.ini"),
-        Path("tools/python"),
-        Path("tools/cmake"),
         Path("dist/repodata.json"),
         Path("dist/pyodide_py.tar"),
+        Path("dist/python"),
     ]
     to_copy.extend(
         x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")
@@ -105,7 +104,7 @@ def main(args: argparse.Namespace) -> None:
         encoding="utf8",
     )
     if res.returncode != 0:
-        print("Failed to install node-fetch:")
+        logger.error("Failed to install node-fetch:")
         exit_with_stdio(res)
 
     res = subprocess.run(
@@ -114,7 +113,7 @@ def main(args: argparse.Namespace) -> None:
         encoding="utf8",
     )
     if res.returncode != 0:
-        print("Failed to run pip freeze:")
+        logger.error("Failed to run pip freeze:")
         exit_with_stdio(res)
 
     (xbuildenv_path / "requirements.txt").write_text(res.stdout)

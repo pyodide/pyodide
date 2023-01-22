@@ -5,6 +5,7 @@
   pre-commit
   # testing
   build==0.7.0
+  sphinx-click
   hypothesis
   pytest
   pytest-asyncio
