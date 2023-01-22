@@ -1,3 +1,4 @@
+import re
 from collections import OrderedDict
 from typing import Any
 
@@ -143,6 +144,14 @@ def _containing_deppath(self, node):
 TsAnalyzer._containing_deppath = _containing_deppath
 
 
+def _add_type_role(self, name):
+    from sphinx_pyodide.mdn_xrefs import JSDATA
+
+    if name in JSDATA:
+        return f":js:data:`{name}`"
+    return f":js:class:`{name}`"
+
+
 def object_literal_type_name(self, decl):
     """This renders the names of object literal types.
 
@@ -165,17 +174,21 @@ def object_literal_type_name(self, decl):
         keyname = key["name"]
         keytype = self._type_name(key["type"])
         valuetype = self._type_name(index_sig["type"])
-        children.append(f"[{keyname}: {keytype}]: {valuetype}")
+        children.append(rf"\ **[{keyname}:** {keytype}\ **]:** {valuetype}")
     if "children" in decl:
         for child in decl["children"]:
             maybe_optional = ""
             if child["flags"].get("isOptional"):
                 maybe_optional = "?"
             children.append(
-                child["name"] + maybe_optional + ": " + self._type_name(child["type"])
+                r"\ **"
+                + child["name"]
+                + maybe_optional
+                + ":** "
+                + self._type_name(child["type"])
             )
 
-    return "{" + ", ".join(children) + "}"
+    return r"\ **{**\ " + r"\ **,** ".join(children) + r"\ **}**\ "
 
 
 def function_type_name(self, decl):
@@ -186,12 +199,12 @@ def function_type_name(self, decl):
         decl_sig = decl
     assert decl_sig
     params = [
-        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        rf'\ **{ty["name"]}:** {self._type_name(ty["type"])}'
         for ty in decl_sig.get("parameters", [])
     ]
-    params_str = ", ".join(params)
+    params_str = r"\ **,** ".join(params)
     ret_str = self._type_name(decl_sig["type"])
-    return f"({params_str}) => {ret_str}"
+    return rf"\ **(**\ {params_str}\ **) =>** {ret_str}"
 
 
 def reflection_type_name(self, type):
@@ -213,36 +226,106 @@ def reflection_type_name(self, type):
     """
     decl = type["declaration"]
     if decl["kindString"] == "Type literal" and "signatures" not in decl:
-        return object_literal_type_name(self, decl)
-    return function_type_name(self, decl)
+        return self.object_literal_type_name(decl)
+    return self.function_type_name(decl)
 
 
-def _type_name(self, type):
-    """Monkey patch for sphinx-js type_name
-
-    Rendering various types is left as TODO by _type_name. Fill these in.
-    """
-    res = _orig_type_name(self, type)
-    if "TODO" not in res:
-        # _orig_type_name handled it, leave it alone.
-        return res
+def _type_name_root(self, type):
     type_of_type = type.get("type")
-    if type_of_type == "predicate":
-        return f"boolean (typeguard for {self._type_name(type['targetType'])})"
+
+    if type_of_type == "reference" and type.get("id"):
+        node = self._index[type["id"]]
+        return self._add_type_role(node["name"])
+    if type_of_type == "unknown":
+        if re.match(r"-?\d*(\.\d+)?", type["name"]):  # It's a number.
+            # TypeDoc apparently sticks numeric constants' values into
+            # the type name. String constants? Nope. Function ones? Nope.
+            return "number"
+        return self._add_type_role(type["name"])
+    if type_of_type in ["intrinsic", "reference"]:
+        return self._add_type_role(type["name"])
+    if type_of_type == "stringLiteral":
+        return '"' + type["value"] + '"'
+    if type_of_type == "array":
+        return self._type_name(type["elementType"]) + r"\ **[]**"
+    if type_of_type == "tuple" and type.get("elements"):
+        types = [self._type_name(t) for t in type["elements"]]
+        return r"\ **[**\ " + r"\ **,** ".join(types) + r"\ **]** "
+    if type_of_type == "union":
+        return r" **|** ".join(self._type_name(t) for t in type["types"])
+    if type_of_type == "intersection":
+        return " **&** ".join(self._type_name(t) for t in type["types"])
+    if type_of_type == "typeOperator":
+        return type["operator"] + " " + self._type_name(type["target"])
+        # e.g. "keyof T"
+    if type_of_type == "typeParameter":
+        name = type["name"]
+        constraint = type.get("constraint")
+        if constraint is not None:
+            name += " extends " + self._type_name(constraint)
+            # e.g. K += extends + keyof T
+        return name
     if type_of_type == "reflection":
-        return reflection_type_name(self, type)
+        return self.reflection_type_name(type)
     if type_of_type == "named-tuple-member":
         name = type["name"]
         type = self._type_name(type["element"])
-        return f"{name}: {type}"
+        return rf"\ **{name}:** {type}"
+    if type_of_type == "predicate":
+        return (
+            f":js:data:`boolean` (typeguard for {self._type_name(type['targetType'])})"
+        )
     if type_of_type == "literal" and type["value"] is None:
         return "null"
-    raise NotImplementedError(
-        f"Cannot render type name for type_of_type={type_of_type}"
-    )
+    return "<TODO: other type>"
 
 
-TsAnalyzer._type_name = _type_name
+def _type_name(self, type):
+    """Return a string description of a type.
+
+    :arg type: A TypeDoc-emitted type node
+
+    """
+    name = self._type_name_root(type)
+
+    type_args = type.get("typeArguments")
+    if type_args:
+        arg_names = ", ".join(self._type_name(arg) for arg in type_args)
+        name += rf"\ **<**\ {arg_names}\ **>** "
+    return name
+
+
+for obj in [
+    _add_type_role,
+    object_literal_type_name,
+    reflection_type_name,
+    _type_name_root,
+    _type_name,
+    function_type_name,
+]:
+    setattr(TsAnalyzer, obj.__name__, obj)
+
+
+def _param_type_formatter(param):
+    """Generate types for function parameters specified in field."""
+    if not param.type:
+        return None
+    heads = ["type", param.name]
+    tail = param.type
+    return heads, tail
+
+
+def _return_formatter(return_):
+    """Derive heads and tail from ``@returns`` blocks."""
+    tail = ("%s -- " % return_.type) if return_.type else ""
+    tail += return_.description
+    return ["returns"], tail
+
+
+import sphinx_js.renderers
+
+for obj in [_param_type_formatter, _return_formatter]:  # type:ignore[assignment]
+    setattr(sphinx_js.renderers, obj.__name__, obj)
 
 
 class JSFuncMaybeAsync(JSCallable):
@@ -388,7 +471,7 @@ class PyodideAnalyzer:
                 elif isinstance(obj, Function):
                     obj.kind = "function"
                     obj.async_ = obj.returns and obj.returns[0].type.startswith(
-                        "Promise<"
+                        ":js:data:`Promise`"
                     )
                 else:
                     obj.kind = "attribute"
@@ -409,16 +492,15 @@ def get_jsdoc_content_directive(app):
         def get_rst(self, obj):
             """Grab the appropriate renderer and render us to rst."""
             if isinstance(obj, Function):
-                renderer = AutoFunctionRenderer
+                cls = AutoFunctionRenderer
             elif isinstance(obj, Class):
-                renderer = AutoClassRenderer
+                cls = AutoClassRenderer
             elif isinstance(obj, Interface):
-                renderer = AutoClassRenderer
+                cls = AutoClassRenderer
             else:
-                renderer = AutoAttributeRenderer
-            rst = renderer(
-                self, app, arguments=["dummy"], options={"members": ["*"]}
-            ).rst([obj.name], obj, use_short_name=False)
+                cls = AutoAttributeRenderer
+            renderer = cls(self, app, arguments=["dummy"], options={"members": ["*"]})
+            rst = renderer.rst([obj.name], obj, use_short_name=False)
             if obj.async_:
                 rst = self.add_async_option_to_rst(rst)
             return rst
