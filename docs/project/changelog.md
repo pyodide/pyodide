@@ -22,6 +22,9 @@ myst:
 - {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
   {pr}`3484`
 
+- {{ Fix }} `pyodide config` won't print extra messages anymore.
+  {pr}`3483`
+
 ## Version 0.22.0
 
 _January 3, 2023_
