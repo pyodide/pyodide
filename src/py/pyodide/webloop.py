@@ -18,8 +18,10 @@ S = TypeVar("S")
 
 
 class PyodideFuture(Future[T]):
-    """A future with extra then, catch, and finally_ methods based on the
-    Javascript promise API.
+    """A future with extra ``then``, ``catch``, and ``finally_`` methods based
+    on the Javascript promise API. ``Webloop.create_future`` returns these so in
+    practice all futures encountered in Pyodide should be an instance of
+    ``PyodideFuture``.
     """
 
     @overload
@@ -81,8 +83,8 @@ class PyodideFuture(Future[T]):
 
         Returns
         -------
-        A new future to be resolved when the original future is done and the
-        appropriate callback is also done.
+            A new future to be resolved when the original future is done and the
+            appropriate callback is also done.
         """
         result: PyodideFuture[S] = PyodideFuture()
 
@@ -135,9 +137,13 @@ class PyodideFuture(Future[T]):
     def catch(
         self, onrejected: Callable[[BaseException], object]
     ) -> "PyodideFuture[Any]":
+        """Equivalent to ``then(None, onrejected)``"""
         return self.then(None, onrejected)
 
     def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
+        """When the future is either resolved or rejected, call onfinally with
+        no arguments.
+        """
         result: PyodideFuture[T] = PyodideFuture()
 
         async def callback(fut: Future[T]) -> None:
@@ -593,4 +599,4 @@ def _initialize_event_loop():
     policy.get_event_loop()
 
 
-__all__ = ["WebLoop", "WebLoopPolicy"]
+__all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture"]
