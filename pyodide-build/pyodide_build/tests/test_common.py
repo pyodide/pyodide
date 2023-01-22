@@ -3,6 +3,7 @@ import zipfile
 import pytest
 
 from pyodide_build.common import (
+    environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
     get_make_environment_vars,
