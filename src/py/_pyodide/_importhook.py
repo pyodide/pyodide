@@ -134,26 +134,15 @@ def register_js_finder() -> None:
 
 
 STDLIBS = sys.stdlib_module_names | {"test"}
-UNVENDORED_STDLIBS_MAP = {
-    "distutils": ["distutils"],
-    "ssl": ["ssl", "_ssl"],
-    "lzma": ["lzma", "_lzma"],
-    "sqlite3": ["sqlite3", "_sqlite3"],
-    "hashlib": ["_hashlib"],
-}
-UNVENDORED_STDLIBS = list(UNVENDORED_STDLIBS_MAP.keys())
+# TODO: Move this list to js side
+UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "hashlib"]
 UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
-UNVENDORED_STDLIBS_MODULES = {
-    importname: pkgname
-    for pkgname, importnames in UNVENDORED_STDLIBS_MAP.items()
-    for importname in importnames
-} | {"test": "test"}
 
 
 from importlib import _bootstrap  # type: ignore[attr-defined]
 
 orig_get_module_not_found_error: Any = None
-REPODATA_PACKAGES: list[str] = []
+REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME: dict[str, str] = {}
 
 SEE_PACKAGE_LOADING = (
     "\nSee https://pyodide.org/en/stable/usage/loading-packages.html for more details."
@@ -161,29 +150,34 @@ SEE_PACKAGE_LOADING = (
 
 YOU_CAN_INSTALL_IT_BY = """
 You can install it by calling:
-  await micropip.install("{name}") in Python, or
-  await pyodide.loadPackage("{name}") in JavaScript\
+  await micropip.install("{package_name}") in Python, or
+  await pyodide.loadPackage("{package_name}") in JavaScript\
 """
 
 
-def get_module_not_found_error(name):
-    if name not in REPODATA_PACKAGES and name not in STDLIBS:
-        return orig_get_module_not_found_error(name)
+def get_module_not_found_error(import_name):
 
-    if name in UNVENDORED_STDLIBS_MODULES:
-        msg = "The module '{name}' is unvendored from the Python standard library in the Pyodide distribution."
+    package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(import_name, "")
+
+    if not package_name and import_name not in STDLIBS:
+        return orig_get_module_not_found_error(import_name)
+
+    if package_name in UNVENDORED_STDLIBS_AND_TEST:
+        msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
         msg += YOU_CAN_INSTALL_IT_BY
-        name = UNVENDORED_STDLIBS_MODULES[name]
-    elif name in REPODATA_PACKAGES:
-        msg = "The module '{name}' is included in the Pyodide distribution, but it is not installed."
-        msg += YOU_CAN_INSTALL_IT_BY
-    else:
+    elif import_name in STDLIBS:
         msg = (
-            "The module '{name}' is removed from the Python standard library in the"
+            "The module '{import_name}' is removed from the Python standard library in the"
             " Pyodide distribution due to browser limitations."
         )
+    else:
+        msg = "The module '{package_name}' is included in the Pyodide distribution, but it is not installed."
+        msg += YOU_CAN_INSTALL_IT_BY
+
     msg += SEE_PACKAGE_LOADING
-    return ModuleNotFoundError(msg.format(name=name))
+    return ModuleNotFoundError(
+        msg.format(import_name=import_name, package_name=package_name)
+    )
 
 
 def register_module_not_found_hook(packages: Any) -> None:
@@ -194,48 +188,7 @@ def register_module_not_found_hook(packages: Any) -> None:
     in order to prevent any unexpected side effects.
     """
     global orig_get_module_not_found_error
-    global REPODATA_PACKAGES
-    REPODATA_PACKAGES = packages.to_py()
+    global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
+    REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
     orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
     _bootstrap._get_module_not_found_error = get_module_not_found_error
-
-
-class RepodataPackagesFinder(MetaPathFinder):
-    """
-    A MetaPathFinder that handles packages in repodata.json.
-
-    This class simply raises an error if a package is in repodata.json but not loaded yet.
-    This needs to be added to the end of sys.meta_path, so if a package
-    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
-    """
-
-    def __init__(self, packages: dict[str, Any]) -> None:
-        self.repodata_packages = packages
-
-    def find_spec(
-        self,
-        fullname: str,
-        path: Sequence[bytes | str] | None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        [parent, _, _] = fullname.partition(".")
-
-        if not parent or parent in sys.modules or parent not in self.repodata_packages:
-            return None
-
-        return None
-
-
-def register_repodata_packages_finder(packages: Any) -> None:
-    """
-    A function that adds RepodataPackagesFinder to the end of sys.meta_path.
-
-    Note that this finder must be placed in the end of meta_paths
-    in order to prevent any unexpected side effects.
-    """
-
-    for importer in sys.meta_path:
-        if isinstance(importer, RepodataPackagesFinder):
-            raise RuntimeError("RepodataPackagesFinder already registered")
-
-    sys.meta_path.append(RepodataPackagesFinder(packages.to_py()))
