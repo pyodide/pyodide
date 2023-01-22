@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Emscripten is no longer required to create a Pyodide virtual
+  environment.
+  {pr}`3485`
+
 - {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
   {pr}`3484`
 
