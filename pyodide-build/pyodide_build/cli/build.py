@@ -2,7 +2,6 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -125,7 +124,7 @@ def url(
 
 
 def source(
-    source_location: "Optional[str]" = typer.Argument(None),
+    source_location: str | None = typer.Argument(None),
     exports: str = typer.Option(
         "requested",
         help="Which symbols should be exported when linking .so files?",
@@ -135,13 +134,15 @@ def source(
     """Use pypa/build to build a Python package from source"""
     initialize_pyodide_root()
     common.check_emscripten_version()
-    os.chdir(source_location)
+    if source_location:
+        os.chdir(source_location)
     build.run(exports, ctx.args)
 
 
 # simple 'pyodide build' command
 def main(
-    source_location: "Optional[str]" = typer.Argument(
+    source_location: str
+    | None = typer.Argument(
         "",
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
