@@ -3,6 +3,7 @@ package:
   version: 1.0.0 # Nonsense
   top-level:
     - ssl
+    - _ssl
 build:
   type: cpython_module
   script: |
