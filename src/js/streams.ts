@@ -358,6 +358,7 @@ const textdecoder = new TextDecoder();
 function make_get_char(infunc: InFuncType): GetCharType {
   let index = 0;
   let buf: Uint8Array = new Uint8Array(0);
+  let insertEOF = false;
   // get_char has 3 particular return values:
   // a.) the next character represented as an integer
   // b.) undefined to signal that no data is currently available
@@ -365,6 +366,10 @@ function make_get_char(infunc: InFuncType): GetCharType {
   return function get_char() {
     try {
       if (index >= buf.length) {
+        if (insertEOF) {
+          insertEOF = false;
+          return null;
+        }
         let input = infunc();
         if (input === undefined || input === null) {
           return null;
@@ -374,6 +379,7 @@ function make_get_char(infunc: InFuncType): GetCharType {
             input += "\n";
           }
           buf = textencoder.encode(input);
+          insertEOF = true;
         } else if (ArrayBuffer.isView(input)) {
           if ((input as any).BYTES_PER_ELEMENT !== 1) {
             throw new Error("Expected BYTES_PER_ELEMENT to be 1");
