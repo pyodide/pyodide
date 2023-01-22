@@ -20,7 +20,7 @@ try:
 except ImportError:
     loadedPackages = None
 
-from ._core import IN_BROWSER, JsArray, JsBuffer, to_js
+from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:

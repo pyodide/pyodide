@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
+  {pr}`3484`
+
 ## Version 0.22.0
 
 _January 3, 2023_

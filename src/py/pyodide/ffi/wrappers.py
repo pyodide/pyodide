@@ -1,13 +1,7 @@
 from collections.abc import Callable
 from typing import Any, Protocol, cast
 
-from .._core import (
-    IN_BROWSER,
-    JsDomElement,
-    JsProxy,
-    create_once_callable,
-    create_proxy,
-)
+from . import IN_BROWSER, JsDomElement, JsProxy, create_once_callable, create_proxy
 
 if IN_BROWSER:
     from js import clearInterval, clearTimeout, setInterval, setTimeout
