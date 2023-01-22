@@ -5,6 +5,7 @@ package:
     - always
   top-level:
     - lzma
+    - _lzma
 build:
   type: cpython_module
   script: |

@@ -3,6 +3,8 @@ from collections.abc import Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from ._py_compile import _compile
+
 # This files are removed from the stdlib by default
 REMOVED_FILES = (
     # package management
@@ -118,11 +120,6 @@ def create_zipfile(
         A BytesIO object containing the zip file.
     """
 
-    if pycompile:
-        raise NotImplementedError(
-            "TODO: implement after https://github.com/pyodide/pyodide/pull/3253 is merged"
-        )
-
     libdir = Path(libdir)
     output = Path(output)
     output = output.with_name(output.name.rstrip(".zip"))
@@ -134,4 +131,8 @@ def create_zipfile(
         temp_dir = Path(temp_dir_str)
         shutil.copytree(libdir, temp_dir, ignore=filterfunc, dirs_exist_ok=True)
 
-        shutil.make_archive(str(output), "zip", temp_dir)
+        archive: Path | str = shutil.make_archive(str(output), "zip", temp_dir)
+        archive = Path(archive)
+
+    if pycompile:
+        _compile(archive, archive, verbose=False, keep=False)

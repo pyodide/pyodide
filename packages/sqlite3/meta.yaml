@@ -5,6 +5,7 @@ package:
     - always
   top-level:
     - sqlite3
+    - _sqlite3
 build:
   type: cpython_module
   script: |

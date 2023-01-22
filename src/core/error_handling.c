@@ -295,18 +295,16 @@ int
 error_handling_init(PyObject* core_module)
 {
   bool success = false;
-  internal_error = PyErr_NewException("pyodide.InternalError", NULL, NULL);
-  FAIL_IF_NULL(internal_error);
+  PyObject* _pyodide_core_docs = NULL;
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
 
-  conversion_error = PyErr_NewExceptionWithDoc(
-    "pyodide.ConversionError",
-    PyDoc_STR("Raised when conversion between Javascript and Python fails."),
-    NULL,
-    NULL);
+  internal_error = PyObject_GetAttrString(_pyodide_core_docs, "InternalError");
+  FAIL_IF_NULL(internal_error);
+  conversion_error =
+    PyObject_GetAttrString(_pyodide_core_docs, "ConversionError");
   FAIL_IF_NULL(conversion_error);
-  // ConversionError is public
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(core_module, "ConversionError", conversion_error));
+
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   tbmod = PyImport_ImportModule("traceback");

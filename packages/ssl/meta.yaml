@@ -5,6 +5,7 @@ package:
     - always
   top-level:
     - ssl
+    - _ssl
 build:
   type: cpython_module
   script: |

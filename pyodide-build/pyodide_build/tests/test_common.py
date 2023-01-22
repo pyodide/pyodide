@@ -167,3 +167,22 @@ def test_find_missing_executables(monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(shutil, "which", lambda exe: "/bin")
         assert [] == find_missing_executables(pkgs)
+
+
+def test_environment_var_substitution(monkeypatch):
+    monkeypatch.setenv("PYODIDE_BASE", "pyodide_build_dir")
+    monkeypatch.setenv("BOB", "Robert Mc Roberts")
+    monkeypatch.setenv("FRED", "Frederick F. Freddertson Esq.")
+    monkeypatch.setenv("JIM", "James Ignatius Morrison:Jimmy")
+    args = environment_substitute_args(
+        {
+            "ldflags": '"-l$(PYODIDE_BASE)"',
+            "cxxflags": "$(BOB)",
+            "cflags": "$(FRED)",
+        }
+    )
+    assert (
+        args["cflags"] == "Frederick F. Freddertson Esq."
+        and args["cxxflags"] == "Robert Mc Roberts"
+        and args["ldflags"] == '"-lpyodide_build_dir"'
+    )

@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Updated Emscripten to version 3.1.30
+  {pr}`3471`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
@@ -28,7 +31,7 @@ myst:
 
 - Added `pyodide create-zipfile` CLI command that creates a zip file of a directory.
   This command is hidden by default since it is not intended for use by end users.
-  {pr}`3411`
+  {pr}`3411` {pr}`3463`
 
 - {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
   packages.
@@ -37,6 +40,12 @@ myst:
 - {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
   when run multiple times.
   {pr}`3445`
+
+### Package Loading
+
+- {{ Fix }} Fix incorrect error message when loading a package
+  include in Pyodide fails.
+  {pr}`3435`
 
 ## Version 0.22.0
 
