@@ -73,9 +73,15 @@
 
       async function main() {
         let term;
+        let returnEOF = false;
         globalThis.pyodide = await loadPyodide({
           stdin: () => {
+            if (returnEOF) {
+              returnEOF = false;
+              return null;
+            }
             let result = prompt();
+            returnEOF = true;
             echo(result);
             return result;
           },
