@@ -9,13 +9,18 @@ NODE_XFAIL_REASON = (
 
 # Need to skip_refcount_check because we use matplotlib
 
+
 def galpy_test_decorator(**kwargs):
     def dec(f):
-        return reduce(lambda x, g: g(x), 
-        [
-            pytest.mark.xfail_browsers(node=NODE_XFAIL_REASON, **kwargs),
-            pytest.mark.skip_refcount_check,
-        ], f)
+        return reduce(
+            lambda x, g: g(x),
+            [
+                pytest.mark.xfail_browsers(node=NODE_XFAIL_REASON, **kwargs),
+                pytest.mark.skip_refcount_check,
+            ],
+            f,
+        )
+
     return dec
 
 
