@@ -333,7 +333,7 @@ jobs:
           command: |
             make npm-link
             pip install -r requirements.txt
-            npm install -g node-fetch@2
+            npm install node-fetch@2
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-js:
