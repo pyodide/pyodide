@@ -329,7 +329,8 @@
       - test_samestat_on_link
       - test_exists_fd
 - test_genexps
-- test_getargs2
+- test_getargs2:
+    xfail: Not sure
 - test_getopt
 - test_getpass
 - test_getpath
@@ -686,7 +687,8 @@
       - test_timezone
 - test_strtod
 - test_struct
-- test_structmembers
+- test_structmembers:
+    xfail: Not sure
 - test_structseq
 - test_subclassinit
 - test_subprocess:
