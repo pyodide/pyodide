@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Update }} Pyodide now runs Python 3.11.1.
+  {pr}`3252`
+
 - {{ Enhancement }} Updated Emscripten to version 3.1.30
   {pr}`3471`
 
