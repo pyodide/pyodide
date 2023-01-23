@@ -5,24 +5,14 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import (
-    check_emscripten_version,
-    exit_with_stdio,
-    get_make_flag,
-    get_pyodide_root,
-    in_xbuildenv,
-)
-
-
-def eprint(*args, **kwargs):
-    """Print to stderr"""
-    print(*args, **kwargs, file=sys.stderr)
+from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuildenv
+from ..logger import logger
 
 
 def check_result(result: subprocess.CompletedProcess[str], msg: str) -> None:
     """Abort if the process returns a nonzero error code"""
     if result.returncode != 0:
-        eprint(msg)
+        logger.error(msg)
         exit_with_stdio(result)
 
 
@@ -41,10 +31,14 @@ def check_host_python_version(session: Any) -> None:
         return
     pyodide_version_fmt = ".".join(pyodide_version)
     sys_version_fmt = ".".join(sys_version)
-    eprint(
+    logger.stderr(
         f"Expected host Python version to be {pyodide_version_fmt} but got version {sys_version_fmt}"
     )
     sys.exit(1)
+
+
+def pyodide_dist_dir() -> Path:
+    return get_pyodide_root() / "dist"
 
 
 def create_pip_conf(venv_root: Path) -> None:
@@ -60,7 +54,7 @@ def create_pip_conf(venv_root: Path) -> None:
     else:
         # In the Pyodide development environment, the Pyodide dist directory
         # should contain the needed wheels. find-links
-        repo = f'find-links={get_pyodide_root()/"dist"}'
+        repo = f"find-links={pyodide_dist_dir()}"
 
     # Prevent attempts to install binary wheels from source.
     # Maybe some day we can convince pip to invoke `pyodide build` as the build
@@ -217,17 +211,14 @@ def install_stdlib(venv_bin: Path) -> None:
 
 def create_pyodide_venv(dest: Path) -> None:
     """Create a Pyodide virtualenv and store it into dest"""
-    print("Creating Pyodide virtualenv at", str(dest))
+    logger.info(f"Creating Pyodide virtualenv at {dest}")
     from virtualenv import session_via_cli
 
     if dest.exists():
-        eprint(f"ERROR: dest directory '{dest}' already exists")
+        logger.error(f"ERROR: dest directory '{dest}' already exists")
         sys.exit(1)
 
-    check_emscripten_version()
-
-    pyodide_root = get_pyodide_root()
-    interp_path = pyodide_root / "tools/python"
+    interp_path = pyodide_dist_dir() / "python"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
     check_host_python_version(session)
 
@@ -236,14 +227,14 @@ def create_pyodide_venv(dest: Path) -> None:
         venv_root = Path(session.creator.dest).absolute()
         venv_bin = venv_root / "bin"
 
-        print("... Configuring virtualenv")
+        logger.info("... Configuring virtualenv")
         create_pip_conf(venv_root)
         create_pip_script(venv_bin)
         create_pyodide_script(venv_bin)
-        print("... Installing standard library")
+        logger.info("... Installing standard library")
         install_stdlib(venv_bin)
     except (Exception, KeyboardInterrupt, SystemExit):
         shutil.rmtree(session.creator.dest)
         raise
 
-    print("Successfully created Pyodide virtual environment!")
+    logger.success("Successfully created Pyodide virtual environment!")

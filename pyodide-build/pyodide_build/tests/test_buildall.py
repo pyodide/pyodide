@@ -53,7 +53,7 @@ def test_generate_dependency_graph_disabled(monkeypatch):
 
 def test_generate_repodata(tmp_path):
     pkg_map = buildall.generate_dependency_graph(
-        RECIPE_DIR, {"pkg_1", "pkg_2", "libtest"}
+        RECIPE_DIR, {"pkg_1", "pkg_2", "libtest", "libtest_shared"}
     )
     hashes = {}
     for pkg in pkg_map.values():
@@ -77,16 +77,22 @@ def test_generate_repodata(tmp_path):
         "pkg_2",
         "pkg_3",
         "pkg_3_1",
+        "libtest_shared",
     }
     assert package_data["packages"]["pkg_1"] == {
         "name": "pkg_1",
         "version": "1.0.0",
         "file_name": "pkg_1.whl",
-        "depends": ["pkg_1_1", "pkg_3"],
+        "depends": ["pkg_1_1", "pkg_3", "libtest_shared"],
         "imports": ["pkg_1"],
         "install_dir": "site",
         "sha256": hashes["pkg_1"],
     }
+
+    sharedlib_imports = package_data["packages"]["libtest_shared"]["imports"]
+    assert not sharedlib_imports, (
+        "shared libraries should not have any imports, but got " f"{sharedlib_imports}"
+    )
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
@@ -94,7 +100,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args: Any) -> None:
+        def build(self, args: Any) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -102,7 +108,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
     buildall.build_from_graph(
-        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
+        pkg_map, argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
     )
 
     assert set(build_list) == {
@@ -111,6 +117,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
         "pkg_2",
         "pkg_3",
         "pkg_3_1",
+        "libtest_shared",
     }
     assert build_list.index("pkg_1_1") < build_list.index("pkg_1")
     assert build_list.index("pkg_3") < build_list.index("pkg_1")
@@ -124,7 +131,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
     class MockPackage(buildall.Package):
         n_builds = 0
 
-        def build(self, outputdir: Path, args: Any) -> None:
+        def build(self, args: Any) -> None:
             sleep(0.005)
             self.n_builds += 1
             # check that each build is only run once
@@ -135,7 +142,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, packages={"*"})
 
     buildall.build_from_graph(
-        pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
+        pkg_map, argparse.Namespace(n_jobs=n_jobs, force_rebuild=False)
     )
 
 
@@ -144,7 +151,7 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args: Any) -> None:
+        def build(self, args: Any) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -153,7 +160,7 @@ def test_build_error(n_jobs, monkeypatch):
 
     with pytest.raises(ValueError, match="Failed build"):
         buildall.build_from_graph(
-            pkg_map, Path("."), argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
+            pkg_map, argparse.Namespace(n_jobs=n_jobs, force_rebuild=True)
         )
 
 

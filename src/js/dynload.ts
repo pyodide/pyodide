@@ -12,6 +12,7 @@ type ReadFileType = (path: string) => Uint8Array;
 
 // File System-like type which can be passed to
 // Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+
 type LoadDynlibFS = {
   readFile: ReadFileType;
   findObject: (path: string, dontResolveLastLink: boolean) => any;
@@ -25,6 +26,7 @@ type LoadDynlibFS = {
  * @param searchDirs The list of directories to search for the library
  * @param readFileFunc The function to read a file, if not provided, Module.FS.readFile will be used
  * @returns A filesystem-like object
+ * @private
  */
 function createDynlibFS(
   lib: string,
@@ -32,10 +34,9 @@ function createDynlibFS(
   readFileFunc?: ReadFileType,
 ): LoadDynlibFS {
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
-  const defaultSearchDirs = [API.dsodir, API.sitepackages, dirname];
 
   let _searchDirs = searchDirs || [];
-  _searchDirs = _searchDirs.concat(defaultSearchDirs);
+  _searchDirs = _searchDirs.concat(API.defaultLdLibraryPath, [dirname]);
 
   const resolvePath = (path: string) => {
     if (DEBUG) {

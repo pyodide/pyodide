@@ -1,11 +1,11 @@
 package:
   name: unyt
-  version: 2.8.0
+  version: 2.9.3
   top-level:
     - unyt
 source:
-  url: https://files.pythonhosted.org/packages/8a/ca/d899183a35fbc6bff4a4425dbb951ca48e58a9e533f547feb4384cb30592/unyt-2.8.0-py2.py3-none-any.whl
-  sha256: 8b3278990fe0f72723f43d9a1cf46703ef63f3270424a0dbd7e74cd28c3a2d54
+  url: https://files.pythonhosted.org/packages/ea/78/c05ae0bf409c612c058cbd4a65c77b239ae41f623f0780e19efc691e681a/unyt-2.9.3-py2.py3-none-any.whl
+  sha256: 87eaf38dae96a7385fbfab5e875119b5afdbc707bcfa1948710d2e843534ccc7
 requirements:
   run:
     - numpy

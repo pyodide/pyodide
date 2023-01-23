@@ -23,6 +23,12 @@
   debuggers, and automatic installation of
   any imported packages supported by Pyodide's `micropip`.
 
+## Workarounds for common WASM and browser limitations
+
+- [pyodide-http](https://github.com/koenvo/pyodide-http) Provides patches for
+  widely used http libraries to make them work in Pyodide environments like
+  JupyterLite.
+
 ## Dashboards and visualization
 
 - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution
@@ -35,3 +41,4 @@
   It uses Pyodide to execute Python code.
 - [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
   Gamma. It's an in-browser answer engine with a Pyodide backend.
+- [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.

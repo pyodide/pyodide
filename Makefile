@@ -13,6 +13,7 @@ all: check \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
 	dist/package.json \
+	dist/python \
 	dist/console.html \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
@@ -30,6 +31,7 @@ dist/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
+	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/main.o  \
@@ -122,11 +124,13 @@ dist/test.html: src/templates/test.html
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@
 
+dist/python: src/templates/python
+	cp $< $@
+
 .PHONY: dist/console.html
 dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
 
 .PHONY: docs/_build/html/console.html
 docs/_build/html/console.html: src/templates/console.html
@@ -193,6 +197,7 @@ emsdk/emsdk/.complete:
 
 
 rust:
+	echo -e '\033[0;31m[WARNING] The target `make rust` is only for development and we do not guarantee that it will work or be maintained.\033[0m'
 	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)

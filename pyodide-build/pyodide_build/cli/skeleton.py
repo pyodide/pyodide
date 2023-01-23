@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import typer  # type: ignore[import]
+import typer
 
 from .. import common, mkpkg
 
@@ -49,7 +49,7 @@ def new_recipe_pypi(
     ),
 ) -> None:
     """
-    Create a new package.
+    Create a new package from PyPI.
     """
     pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
     recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)

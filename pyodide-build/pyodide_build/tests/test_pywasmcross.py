@@ -8,7 +8,6 @@ from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
 from pyodide_build.pywasmcross import (
     calculate_exports,
-    environment_substitute_args,
     get_cmake_compiler_flags,
     get_library_output,
 )
@@ -183,25 +182,6 @@ def test_conda_unsupported_args():
     )
 
 
-def test_environment_var_substitution(monkeypatch):
-    monkeypatch.setenv("PYODIDE_BASE", "pyodide_build_dir")
-    monkeypatch.setenv("BOB", "Robert Mc Roberts")
-    monkeypatch.setenv("FRED", "Frederick F. Freddertson Esq.")
-    monkeypatch.setenv("JIM", "James Ignatius Morrison:Jimmy")
-    args = environment_substitute_args(
-        {
-            "ldflags": '"-l$(PYODIDE_BASE)"',
-            "cxxflags": "$(BOB)",
-            "cflags": "$(FRED)",
-        }
-    )
-    assert (
-        args["cflags"] == "Frederick F. Freddertson Esq."
-        and args["cxxflags"] == "Robert Mc Roberts"
-        and args["ldflags"] == '"-lpyodide_build_dir"'
-    )
-
-
 @pytest.mark.xfail(reason="FIXME: emcc is not available during test")
 def test_exports_node(tmp_path):
     template = """
@@ -263,6 +243,14 @@ def test_get_cmake_compiler_flags():
 
     for emscripten_compiler in emscripten_compilers:
         assert emscripten_compiler not in cmake_flags
+
+
+def test_handle_command_cmake():
+    args = BuildArgs()
+    assert "--fresh" in handle_command_generate_args(["cmake", "./"], args, False)  # type: ignore[arg-type]
+
+    build_cmd = ["cmake", "--build", "." "--target", "target"]
+    assert handle_command_generate_args(build_cmd, args, False) == build_cmd  # type: ignore[arg-type]
 
 
 def test_get_library_output():

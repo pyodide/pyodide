@@ -42,25 +42,26 @@
 #include "structmember.h"
 
 // clang-format off
-#define IS_ITERABLE   (1<<0)
-#define IS_ITERATOR   (1<<1)
-#define HAS_LENGTH    (1<<2)
-#define HAS_GET       (1<<3)
-#define HAS_SET       (1<<4)
-#define HAS_HAS       (1<<5)
-#define HAS_INCLUDES  (1<<6)
-#define IS_AWAITABLE  (1<<7)
-#define IS_BUFFER     (1<<8)
-#define IS_CALLABLE   (1<<9)
-#define IS_ARRAY      (1<<10)
-#define IS_NODE_LIST  (1<<11)
-#define IS_TYPEDARRAY (1<<12)
-#define IS_DOUBLE_PROXY (1 << 13)
-#define IS_OBJECT_MAP (1 << 14)
-#define IS_ASYNC_ITERABLE (1 << 15)
-#define IS_GENERATOR (1 << 16)
+#define IS_ITERABLE        (1 << 0)
+#define IS_ITERATOR        (1 << 1)
+#define HAS_LENGTH         (1 << 2)
+#define HAS_GET            (1 << 3)
+#define HAS_SET            (1 << 4)
+#define HAS_HAS            (1 << 5)
+#define HAS_INCLUDES       (1 << 6)
+#define IS_AWAITABLE       (1 << 7)
+#define IS_BUFFER          (1 << 8)
+#define IS_CALLABLE        (1 << 9)
+#define IS_ARRAY           (1 << 10)
+#define IS_NODE_LIST       (1 << 11)
+#define IS_TYPEDARRAY      (1 << 12)
+#define IS_DOUBLE_PROXY    (1 << 13)
+#define IS_OBJECT_MAP      (1 << 14)
+#define IS_ASYNC_ITERABLE  (1 << 15)
+#define IS_GENERATOR       (1 << 16)
 #define IS_ASYNC_GENERATOR (1 << 17)
-
+#define IS_ASYNC_ITERATOR  (1 << 18)
+#define IS_ERROR           (1 << 19)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -98,6 +99,11 @@ static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
 
+static char* PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL =
+  "This borrowed proxy was automatically destroyed at the "
+  "end of a function call. Try using "
+  "create_proxy or create_once_callable.";
+
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
@@ -124,6 +130,12 @@ typedef struct
 
 #define JsProxy_REF(x) (((JsProxy*)x)->js)
 #define JsMethod_THIS(x) (((JsProxy*)x)->this_)
+#define JsMethod_VECTORCALL(x) (((JsProxy*)x)->vectorcall)
+
+#define JsBuffer_FORMAT(x) (((JsProxy*)x)->format)
+#define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->byteLength)
+#define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->itemsize)
+#define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->check_assignments)
 
 static void
 JsProxy_dealloc(JsProxy* self)
@@ -403,7 +415,12 @@ handle_next_result(JsRef next_res, PyObject** result){
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
   *result = js2python(idresult);
-  FAIL_IF_NULL(result);
+  FAIL_IF_NULL(*result);
+  if(pyproxy_Check(idresult)) {
+    destroy_proxy(idresult,
+                  "This borrowed proxy was automatically destroyed at the end"
+                  " of a generator");
+  }
 
   res = done ? PYGEN_RETURN : PYGEN_NEXT;
 finally:
@@ -416,19 +433,26 @@ finally:
 PySendResult
 JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
+  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   *result = NULL;
   PySendResult ret = PYGEN_ERROR;
 
   if (arg) {
-    jsarg = python2js(arg);
+    proxies = JsArray_New();
+    FAIL_IF_NULL(proxies);
+    jsarg = python2js_track_proxies(arg, proxies);
     FAIL_IF_NULL(jsarg);
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
   FAIL_IF_NULL(next_res);
   ret = handle_next_result(next_res, result);
 finally:
+  if (proxies) {
+    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  }
+  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return ret;
@@ -541,7 +565,7 @@ process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
     JsRef exc;
     if (PyErr_ExceptionMatches(Exc_JsException)) {
       PyErr_Fetch(&typ, &val, &tb);
-      exc = JsException_AsJs(val); // cannot fail.
+      exc = JsProxy_REF(val);
       Py_CLEAR(typ);
       Py_CLEAR(val);
       Py_CLEAR(tb);
@@ -690,12 +714,11 @@ _agen_handle_result_js_c(PyObject* set_result,
     goto return_error;
   }
 
-  // TODO: generator lifetime handling
-  // if (status == 1 && pyproxy_Check(jsvalue)) {
-  //   destroy_proxy(jsvalue,
-  //                 "This borrowed proxy was automatically destroyed at the end
-  //                 " "of an async generator");
-  // }
+  if (status == 1 && pyproxy_Check(jsvalue)) {
+    destroy_proxy(jsvalue,
+                  "This borrowed proxy was automatically destroyed at the end"
+                  " of an async generator");
+  }
 
   if (status == 0) {
     PyObject_CallOneArg(set_result, pyvalue);
@@ -835,19 +858,25 @@ finally:
 static PyObject*
 JsGenerator_asend(PyObject* self, PyObject* arg)
 {
+  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   PyObject* result = NULL;
   if (arg != NULL) {
-    jsarg = python2js(arg);
+    proxies = JsArray_New();
+    FAIL_IF_NULL(proxies);
+    jsarg = python2js_track_proxies(arg, proxies);
     FAIL_IF_NULL(jsarg);
   }
-
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
   FAIL_IF_NULL(next_res);
   result = _agen_handle_result(next_res, false);
 
 finally:
+  if (proxies) {
+    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  }
+  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return result;
@@ -2749,13 +2778,103 @@ EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
               "at the end of an asynchronous function call. Try " +
               "using create_proxy or create_once_callable.";
     for (let px of proxies) {
-      Module.pyproxy_destroy(px, msg);
+      Module.pyproxy_destroy(px, msg, false);
     }
     if (API.isPyProxy(result)) {
-      Module.pyproxy_destroy(result, msg);
+      Module.pyproxy_destroy(result, msg, false);
     }
   });
 });
+
+// clang-format off
+EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
+  const proxies = new Set(Hiwire.get_value(proxiesid));
+  const gen = Hiwire.get_value(genid);
+  const msg =
+    "This borrowed proxy was automatically destroyed " +
+    "when a generator completed execution. Try " +
+    "using create_proxy or create_once_callable.";
+  function cleanup() {
+    proxies.forEach((px) => Module.pyproxy_destroy(px, msg));
+  }
+  function wrap(funcname) {
+    return function (val) {
+      if(API.isPyProxy(val)) {
+        val = val.copy();
+        proxies.add(val);
+      }
+      let res;
+      try {
+        res = gen[funcname](val);
+      } catch (e) {
+        cleanup();
+        throw e;
+      }
+      if (res.done) {
+        // Don't destroy the return value!
+        proxies.delete(res.value);
+        cleanup();
+      }
+      return res;
+    };
+  }
+  return Hiwire.new_value({
+    get [Symbol.toStringTag]() {
+      return "Generator";
+    },
+    [Symbol.iterator]() {
+      return this;
+    },
+    next: wrap("next"),
+    throw: wrap("throw"),
+    return: wrap("return"),
+  });
+});
+
+EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
+  const proxies = new Set(Hiwire.get_value(proxiesid));
+  const gen = Hiwire.get_value(genid);
+  const msg =
+    "This borrowed proxy was automatically destroyed " +
+    "when an asynchronous generator completed execution. Try " +
+    "using create_proxy or create_once_callable.";
+  function cleanup() {
+    proxies.forEach((px) => Module.pyproxy_destroy(px, msg));
+  }
+  function wrap(funcname) {
+    return async function (val) {
+      if(API.isPyProxy(val)) {
+        val = val.copy();
+        proxies.add(val);
+      }
+      let res;
+      try {
+        res = await gen[funcname](val);
+      } catch (e) {
+        cleanup();
+        throw e;
+      }
+      if (res.done) {
+        // Don't destroy the return value!
+        proxies.delete(res.value);
+        cleanup();
+      }
+      return res;
+    };
+  }
+  return Hiwire.new_value({
+    get [Symbol.toStringTag]() {
+      return "AsyncGenerator";
+    },
+    [Symbol.asyncIterator]() {
+      return this;
+    },
+    next: wrap("next"),
+    throw: wrap("throw"),
+    return: wrap("return"),
+  });
+});
+// clang-format on
 
 /**
  * __call__ overload for methods. Controlled by IS_CALLABLE.
@@ -2770,7 +2889,7 @@ JsMethod_Vectorcall(PyObject* self,
   JsRef proxies = NULL;
   JsRef idargs = NULL;
   JsRef idresult = NULL;
-  bool result_is_promise = false;
+  bool destroy_args = true;
   JsRef async_done_callback = NULL;
   PyObject* pyresult = NULL;
 
@@ -2782,36 +2901,53 @@ JsMethod_Vectorcall(PyObject* self,
   FAIL_IF_NULL(idargs);
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
-  result_is_promise = hiwire_is_promise(idresult);
-  if (!result_is_promise) {
-    pyresult = js2python(idresult);
-  } else {
-    // Result was a promise. In this case we don't want to destroy the arguments
-    // until the promise is ready. Furthermore, since we destroy the result of
-    // the Promise, we deny the user access to the Promise (would cause
-    // exceptions). Instead we return a Future. When the promise is ready, we
-    // resolve the Future with the result from the Promise and destroy the
-    // arguments and result.
+  // various cases where we want to extend the lifetime of the arguments:
+  // 1. if the return value is a promise we extend arguments lifetime until
+  // promise
+  //    resolves.
+  // 2. If the return value is a sync or async generator we extend the lifetime
+  //    of the arguments until the generator returns.
+  bool is_promise = hiwire_is_promise(idresult);
+  bool is_generator = !is_promise && hiwire_is_generator(idresult);
+  bool is_async_generator =
+    !is_promise && !is_generator && hiwire_is_async_generator(idresult);
+  destroy_args = (!is_promise) && (!is_generator) && (!is_async_generator);
+  if (is_generator) {
+    JsRef temp = wrap_generator(idresult, proxies);
+    FAIL_IF_NULL(temp);
+    hiwire_decref(idresult);
+    idresult = temp;
+  } else if (is_async_generator) {
+    JsRef temp = wrap_async_generator(idresult, proxies);
+    FAIL_IF_NULL(temp);
+    hiwire_decref(idresult);
+    idresult = temp;
+  }
+  if (is_promise) {
+    // Since we will destroy the result of the Promise when it resolves we deny
+    // the user access to the Promise (which would destroyed proxy exceptions).
+    // Instead we return a Future. When the promise is ready, we resolve the
+    // Future with the result from the Promise and destroy the arguments and
+    // result.
     async_done_callback = get_async_js_call_done_callback(proxies);
     FAIL_IF_NULL(async_done_callback);
     pyresult = wrap_promise(idresult, async_done_callback);
+  } else {
+    pyresult = js2python(idresult);
   }
   FAIL_IF_NULL(pyresult);
 
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
-  if (!(success && result_is_promise)) {
+  if (!success || destroy_args) {
     // If we succeeded and the result was a promise then we destroy the
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
     if (idresult != NULL && pyproxy_Check(idresult)) {
       JsArray_Push_unchecked(proxies, idresult);
     }
-    destroy_proxies(proxies,
-                    "This borrowed proxy was automatically destroyed at the "
-                    "end of a function call. Try using "
-                    "create_proxy or create_once_callable.");
+    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);
@@ -2897,11 +3033,10 @@ finally:
 }
 
 static int
-JsMethod_cinit(PyObject* obj, JsRef this_)
+JsMethod_cinit(PyObject* self, JsRef this_)
 {
-  JsProxy* self = (JsProxy*)obj;
-  self->this_ = hiwire_incref(this_);
-  self->vectorcall = JsMethod_Vectorcall;
+  JsMethod_THIS(self) = hiwire_incref(this_);
+  JsMethod_VECTORCALL(self) = JsMethod_Vectorcall;
   return 0;
 }
 
@@ -3001,28 +3136,31 @@ static PyTypeObject BufferType = {
 static int
 check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
 {
-  if (view.len != self->byteLength) {
+  int byteLength = JsBuffer_BYTE_LENGTH(self);
+  char* format = JsBuffer_FORMAT(self);
+  Py_ssize_t itemsize = JsBuffer_ITEMSIZE(self);
+  if (view.len != byteLength) {
     if (dir) {
       PyErr_Format(
         PyExc_ValueError,
         "cannot assign from TypedArray of length %d to buffer of length %d",
-        self->byteLength,
+        byteLength,
         view.len);
     } else {
       PyErr_Format(
         PyExc_ValueError,
         "cannot assign to TypedArray of length %d from buffer of length %d",
         view.len,
-        self->byteLength);
+        byteLength);
     }
     return -1;
   }
   if (safe) {
     bool compatible;
-    if (view.format && self->format) {
-      compatible = strcmp(view.format, self->format) != 0;
+    if (view.format && format) {
+      compatible = strcmp(view.format, format) != 0;
     } else {
-      compatible = view.itemsize == self->itemsize;
+      compatible = view.itemsize == itemsize;
     }
     if (!compatible) {
       PyErr_Format(PyExc_ValueError,
@@ -3047,7 +3185,7 @@ JsBuffer_assign_to(PyObject* obj, PyObject* target)
 
   FAIL_IF_MINUS_ONE(
     PyObject_GetBuffer(target, &view, PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE));
-  bool safe = self->check_assignments;
+  bool safe = JsBuffer_CHECK_ASSIGNMENTS(self);
   bool dir = true;
   FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
   FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(JsProxy_REF(self), view.buf));
@@ -3080,7 +3218,7 @@ JsBuffer_assign(PyObject* obj, PyObject* source)
   Py_buffer view = { 0 };
 
   FAIL_IF_MINUS_ONE(PyObject_GetBuffer(source, &view, PyBUF_ANY_CONTIGUOUS));
-  bool safe = self->check_assignments;
+  bool safe = JsBuffer_CHECK_ASSIGNMENTS(self);
   bool dir = false;
   FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
   FAIL_IF_MINUS_ONE(hiwire_assign_from_ptr(JsProxy_REF(self), view.buf));
@@ -3222,8 +3360,10 @@ static PyObject*
 JsBuffer_tomemoryview(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
-  return JsBuffer_CopyIntoMemoryView(
-    self->js, self->byteLength, self->format, self->itemsize);
+  return JsBuffer_CopyIntoMemoryView(self->js,
+                                     JsBuffer_BYTE_LENGTH(self),
+                                     JsBuffer_FORMAT(self),
+                                     JsBuffer_ITEMSIZE(self));
 }
 
 static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
@@ -3236,7 +3376,7 @@ static PyObject*
 JsBuffer_tobytes(PyObject* buffer, PyObject* _ignored)
 {
   JsProxy* self = (JsProxy*)buffer;
-  return JsBuffer_CopyIntoBytes(self->js, self->byteLength);
+  return JsBuffer_CopyIntoBytes(self->js, JsBuffer_BYTE_LENGTH(self));
 }
 
 static PyMethodDef JsBuffer_tobytes_MethodDef = {
@@ -3343,11 +3483,11 @@ JsBuffer_cinit(PyObject* obj)
   // format string is borrowed from hiwire_get_buffer_datatype, DO NOT
   // DEALLOCATE!
   hiwire_get_buffer_info(JsProxy_REF(self),
-                         &self->byteLength,
-                         &self->format,
-                         &self->itemsize,
-                         &self->check_assignments);
-  if (self->format == NULL) {
+                         &JsBuffer_BYTE_LENGTH(self),
+                         &JsBuffer_FORMAT(self),
+                         &JsBuffer_ITEMSIZE(self),
+                         &JsBuffer_CHECK_ASSIGNMENTS(self));
+  if (JsBuffer_FORMAT(self) == NULL) {
     char* typename = hiwire_constructor_name(JsProxy_REF(self));
     PyErr_Format(
       PyExc_RuntimeError,
@@ -3446,7 +3586,8 @@ JsProxy_create_subtype(int flags)
     goto skip_container_slots;
   }
 
-  if (flags & IS_ITERABLE) {
+  if ((flags & IS_ITERABLE) && !(flags & IS_ITERATOR)) {
+    // If it is an iterator we should use SelfIter instead.
     if (mapping) {
       // Prefer `obj.keys()` over `obj[Symbol.iterator]()`
       slots[cur_slot++] =
@@ -3457,11 +3598,21 @@ JsProxy_create_subtype(int flags)
         (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
     }
   }
-  if (flags & IS_ASYNC_ITERABLE) {
+  if ((flags & IS_ASYNC_ITERABLE) && !(flags & IS_ASYNC_ITERATOR)) {
     // This uses `obj[Symbol.asyncIterator]()`
+    // If it is an iterator we should use SelfIter instead.
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_am_aiter,
                                        .pfunc = (void*)JsProxy_GetAsyncIter };
   }
+
+  // If it's an iterator, we aren't sure whether it is an async iterator or a
+  // sync iterator -- they both define a next method, you have to see whether
+  // the result is  a promise or not to learn whether we are async. But most
+  // iterators also define `Symbol.iterator` to return themself, and most async
+  // iterators define `Symbol.asyncIterator` to return themself. So if one of
+  // these is defined but not the other, we use this to decide what type we are.
+
+  // Iterator methods
   if (flags & IS_ITERATOR) {
     // We're not sure whether it is an async iterator or a sync iterator. So add
     // both methods and raise at runtime if someone uses the wrong one.
@@ -3473,12 +3624,16 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_send, .pfunc = (void*)JsProxy_am_send };
+    methods[cur_method++] = JsGenerator_send_MethodDef;
+  }
+
+  // Async iterator methods
+  if (flags & IS_ASYNC_ITERATOR) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_aiter, .pfunc = (void*)PyObject_SelfIter };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_anext, .pfunc = (void*)JsGenerator_anext };
     // Send works okay on any js object that has a "next" method
-    methods[cur_method++] = JsGenerator_send_MethodDef;
     methods[cur_method++] = JsGenerator_asend_MethodDef;
   }
   if (flags & IS_GENERATOR) {
@@ -3715,7 +3870,7 @@ finally:
 
 #define SET_FLAG_IF(flag, cond)                                                \
   if (cond) {                                                                  \
-    type_flags |= flag                                                         \
+    type_flags |= flag;                                                        \
   }
 
 EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
@@ -3733,7 +3888,8 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
   SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
   SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
-  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function')
+  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] === 'function' || typeof obj[Symbol.asyncIterator] !== 'function') );
+  SET_FLAG_IF(IS_ASYNC_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] !== 'function' || typeof obj[Symbol.asyncIterator] === 'function') );
   SET_FLAG_IF(HAS_LENGTH,
     (typeof obj.size === "number") ||
     (typeof obj.length === "number" && typeof obj !== "function"));
@@ -3806,6 +3962,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   } else {
     type_flags = compute_typeflags(object);
     if (type_flags == -1) {
+      fail_test();
       PyErr_SetString(internal_error,
                       "Internal error occurred in compute_typeflags");
       return NULL;
@@ -3955,12 +4112,29 @@ finally:
   return success ? 0 : -1;
 }
 
+static int
+add_flag(PyObject* dict, char* name, int value)
+{
+  PyObject* value_py = NULL;
+  bool success = false;
+
+  value_py = PyLong_FromLong(value);
+  FAIL_IF_NULL(value_py);
+  FAIL_IF_MINUS_ONE(PyDict_SetItemString(dict, name, value_py));
+
+  success = true;
+finally:
+  Py_CLEAR(value_py);
+  return success ? 0 : -1;
+}
+
 int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
   PyObject* asyncio_module = NULL;
+  PyObject* flag_dict = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -3976,8 +4150,10 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
-#define AddFlag(flag)                                                          \
-  FAIL_IF_MINUS_ONE(PyModule_AddIntConstant(core_module, #flag, flag))
+  flag_dict = PyDict_New();
+  FAIL_IF_NULL(flag_dict);
+
+#define AddFlag(flag) FAIL_IF_MINUS_ONE(add_flag(flag_dict, #flag, flag))
 
   AddFlag(IS_ITERABLE);
   AddFlag(IS_ITERATOR);
@@ -3997,8 +4173,10 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_ASYNC_ITERABLE);
   AddFlag(IS_GENERATOR);
   AddFlag(IS_ASYNC_GENERATOR);
+  AddFlag(IS_ASYNC_ITERATOR);
 
 #undef AddFlag
+  FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_module, "js_flags", flag_dict));
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);

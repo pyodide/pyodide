@@ -21,7 +21,7 @@ If there is no wheel on PyPI, but you believe there is nothing preventing it (it
 is a Python package without C extensions):
 
 - you can create the wheel yourself by running
-  ```py
+  ```sh
   python -m pip install build
   python -m build
   ```
@@ -42,110 +42,87 @@ any compilation commands.
 
 ## Building Python wheels (out of tree)
 
-```{warning}
-This feature is still experimental in Pyodide 0.21.0.
-```
-
-It is now possible to build Python wheels for WASM/Emscripten separately from the Pyodide package tree using the following steps,
-
-1. Install pyodide-build,
-   ```
-   pip install pyodide-build
-   ```
-2. Build the WASM/Emscripten package wheel by running,
-   ```
-   pyodide build
-   ```
-   in the package folder (where the `setup.py` or `pyproject.toml` file is
-   located). This command would produce a binary wheel in the `dist/` folder,
-   similarly to the [PyPa build](https://pypa-build.readthedocs.io/en/latest/)
-   command.
-3. Make the resulting file accessible as part of your web applications, and
-   install it with `micropip.install` by URL.
-
-Below is a more complete example for building a Python wheel out of tree with Github Actions CI,
-
-```
-runs-on: ubuntu-latest
-  steps:
-  - uses: actions/checkout@v3
-  - uses: actions/setup-python@v4
-     with:
-       python-version: 3.10.2
-  - uses: mymindstorm/setup-emsdk@v11
-     with:
-       version: 3.1.14
-  - run: pip install pyodide-build==0.21.0
-  - run: pyodide build
-```
-
-#### Notes
-
-- the resulting package wheels have a file name of the form
-  `*-cp310-cp310-emscripten_3_1_14_wasm32.whl` and are compatible only for a
-  given Python and Emscripten versions. In the Pyodide distribution, Python and
-  Emscripten are updated simultaneously.
-- PyPi for now does not support wasm32 wheels so you will not be able to upload them there.
+Starting with Pyodide 0.22.0, it is now possible to build Python wheels for Pyodide
+for many packages separately from the Pyodide package tree. See {ref}`building-and-testing-packages-out-of-tree` for more details.
 
 ## Building a Python package (in tree)
 
 This section documents how to add a new package to the Pyodide distribution.
 
-### 1. Creating the `meta.yaml` file
+As a starting point, you may want to look at the `meta.yaml` files for some
+other Pyodide packages in the [`packages/`
+folder](https://github.com/pyodide/pyodide/tree/main/packages).
 
-To build a Python package, you need to create a `meta.yaml` file that defines a
-"recipe" which may include build commands and "patches" (source code edits),
-amongst other things.
+### Prerequisites
 
-If your package is on PyPI, the easiest place to start is with the
-{ref}`mkpkg tool <pyodide-mkpkg>`.
-
-First clone and build the Pyodide git repo like this:
+First clone the Pyodide git repository:
 
 ```bash
 git clone https://github.com/pyodide/pyodide
 cd pyodide
 ```
 
-If you'd like to use a Docker container, you can now run this command:
+If you have trouble with missing dependencies (or are not running linux) you can
+use the `pyodide-env` docker container with:
 
 ```bash
-./run_docker --pre-built
+./run_docker
 ```
 
-This will mount the current working directory as `/src` within the container.
+This will mount the current working directory as `/src` within the container so
+if you build the package within the container the files created will persist in
+the directory after you exit the container.
 
-Now run `make` to build the relevant Pyodide tools:
+You should install `pyodide-build`:
 
 ```bash
-make
+pip install -e pyodide-build
 ```
 
-Now install `pyodide_build` with:
+If you want to build the package, you will need to build Python which you can do
+as follows:
 
 ```bash
-pip install ./pyodide-build
+make -C cpython
 ```
 
-And now you can run `mkpkg`:
+This also builds the appropriate version of Emscripten.
 
-```bash
-python -m pyodide_build mkpkg <package-name>
+### Creating the `meta.yaml` file
+
+To build a Python package in tree, you need to create a `meta.yaml` file that
+defines a "recipe" which may include build commands and "patches" (source code
+edits), amongst other things.
+
+If your package is on PyPI, the easiest place to start is with the
+`pyodide skeleton pypi` command. Run
+
+```
+pyodide skeleton pypi <package-name>
 ```
 
 This will generate a `meta.yaml` file under `packages/<package-name>/` (see
-{ref}`meta-yaml-spec`) that should work out of the box for many simple Python
-packages. This tool will populate the latest version, download link and sha256
-hash by querying PyPI. It doesn't currently handle package dependencies, so you
-will need to specify those yourself.
+{ref}`meta-yaml-spec`). The `pyodide` cli tool will populate the latest version,
+the download link and the sha256 hash by querying PyPI.
 
-You can also use the `meta.yaml` of other Pyodide packages in the [`packages/`
-folder](https://github.com/pyodide/pyodide/tree/main/packages) as a starting point.
+It doesn't currently handle package dependencies, so you will need to specify
+those yourself in the `requirements` section of the `meta.yaml` file.
+
+```yaml
+requirements:
+  host:
+    # Dependencies that are needed to build the package
+    - cffi
+  run:
+    # Dependencies that are needed to run the package
+    - cffi
+    - numpy
+```
 
 ```{note}
-To reliably determine build and runtime dependencies, including for non Python
-libraries, it is often useful to verify if the package was already built on
-[conda-forge](https://conda-forge.org/) and open the corresponding `meta.yaml`
+To determine build and runtime dependencies, including for non Python
+libraries, it is often useful to check if the package was already built on
+[conda-forge](https://conda-forge.org/) look at the corresponding `meta.yaml`
 file. This can be done either by checking if the URL
 `https://github.com/conda-forge/<package-name>-feedstock/blob/master/recipe/meta.yaml`
 exists, or by searching the [conda-forge GitHub
@@ -155,8 +132,29 @@ The Pyodide `meta.yaml` file format was inspired by the one in conda, however it
 not strictly compatible.
 ```
 
-The package may have special build requirements - e.g. specified in its Github
-README. If so, you can add extra build commands to the `meta.yaml` like this:
+### Building the package
+
+Once the `meta.yaml` file is ready, build the package with the following
+command
+
+```sh
+pyodide build-recipes <package-name> --install
+```
+
+and see if there are any errors.
+
+### Loading the package
+
+If the build succeeds you can try to load the package:
+
+1. Serve the dist directory with `python -m http.server --directory ./dist`
+2. Open `localhost:<port>/console.html` and try to import the package
+3. You can test the package in the repl
+
+### Fixing build issues
+
+If there are errors you might need to add a build script to set You can add
+extra build commands to the `meta.yaml` like this:
 
 ```yaml
 build:
@@ -165,29 +163,11 @@ build:
     export MY_ENV_VARIABLE=FOO
 ```
 
-### 2. Building the package and investigating issues
+You can also inject extra compile and link flags with the `cflags` and `ldflags`
+keys. You can modify the wheel after it is built with the `post:` key.
 
-Once the `meta.yaml` file is ready, build the package with the following
-command
-
-```sh
-python -m pyodide_build buildall --only 'package-name' packages dist
-```
-
-and see if there are any errors.
-
-If there are errors you might need to
-
-- patch the package by adding `.patch` files to `packages/<package-name>/patches`
-- add the patch files to the `source/patches` field in the `meta.yaml` file
-
-then restart the build.
-
-If the build succeeds you can try to load the package by
-
-1. Serve the dist directory with `python -m http.server`
-2. Open `localhost:<port>/console.html` and try to import the package
-3. You can test the package in the repl
+If you need to patch the package's source to fix build issues, see the section
+on Generating patches below.
 
 ### Writing tests for your package
 
@@ -238,6 +218,23 @@ If the package has a git repository, the easiest way to make a patch is usually:
 4. Use `git format-patch <version> -o <pyodide-root>/packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
+5. You also need to add the patches to the `meta.yaml` file:
+
+```yaml
+source:
+  url: https://files.pythonhosted.org/packages/somehash/some-pkg-1.2.3.tar.gz
+  sha256: somehash
+  patches:
+    - 0001-patch-some-thing.patch
+    - 0002-patch-some-other-thing.patch
+```
+
+The following command will write out the properly formatted file list to use in
+the `patches` key:
+
+```sh
+find patches/ -type f | sed 's/^/    - /g'
+```
 
 ### Migrating Patches
 
@@ -382,33 +379,12 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 
 We currently build `cryptography` which is a Rust extension built with PyO3 and
 `setuptools-rust`. It should be reasonably easy to build other Rust extensions.
-Currently it is necessary to run `source $CARGO_HOME/env` in the build script [as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
+If you want to build a package with Rust extension, you will need Rust >= 1.41,
+and you need to set the rustup toolchain to `nightly`, and the target to
+`wasm32-unknown-emscripten` in the build script
+[as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
 but other than that there may be no other issues if you are lucky.
 
-As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224), by default certain wasm-related `RUSTFLAGS` are set during `build.script` and can be removed with `export RUSTFLAGS=""`.
-
-#### Setting up Rust in the docker container
-
-This part is for developers who use the docker image and wish to compile Python packages containing Rust code.
-If you clone the Pyodide repo from Github the docker container will not have `rust` installed. For this you'd need to install `rust` using the preferred method described [here](https://www.rust-lang.org/tools/install).
-
-```
-apt update
-apt install curl
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-After install, you'll need to switch to the nighly build, as a certain flag `-Z` -which is used to compile `cryptography`- is only available in the nighly builds.
-
-```
-"$HOME/.cargo/env"
-rustup default nightly
-```
-
-Finally, you'd need to add the `wasm32-unknown-emscripten` target.
-
-```
-rustup target add wasm32-unknown-emscripten
-```
-
-After these steps you'll be able to compile `cryptography` and other PyO3 based projects.
+As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224),
+by default certain wasm-related `RUSTFLAGS` are set during `build.script`
+and can be removed with `export RUSTFLAGS=""`.

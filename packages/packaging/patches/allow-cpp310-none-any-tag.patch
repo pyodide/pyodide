@@ -1,0 +1,54 @@
+From b8b2f8aa47c0676628f336487a31f602bea0c857 Mon Sep 17 00:00:00 2001
+From: Thimo <thimo.kraemer@joonis.de>
+Date: Sat, 20 Aug 2022 00:10:48 +0200
+Subject: [PATCH] Add a "cpNNN-none-any" tag (#541)
+
+Note: Can be removed with >=22.1 packaging release
+
+Closes #511
+
+See https://github.com/pypa/pip/issues/10923 for motivation.
+
+Co-authored-by: Brett Cannon <brett@python.org>
+---
+ packaging/tags.py  |  7 +++++--
+ tests/test_tags.py | 13 +++++++++++++
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/packaging/tags.py b/packaging/tags.py
+index 5b6c5ffd..a0e1ea23 100644
+--- a/packaging/tags.py
++++ b/packaging/tags.py
+@@ -499,6 +499,9 @@ def sys_tags(*, warn: bool = False) -> Iterator[Tag]:
+         yield from generic_tags()
+ 
+     if interp_name == "pp":
+-        yield from compatible_tags(interpreter="pp3")
++        interp = "pp3"
++    elif interp_name == "cp":
++        interp = "cp" + interpreter_version(warn=warn)
+     else:
+-        yield from compatible_tags()
++        interp = None
++    yield from compatible_tags(interpreter=interp)
+diff --git a/tests/test_tags.py b/tests/test_tags.py
+index 06cd3b4a..39515e8d 100644
+--- a/tests/test_tags.py
++++ b/tests/test_tags.py
+@@ -1226,3 +1226,16 @@ def test_pypy_first_none_any_tag(self, monkeypatch):
+                 break
+ 
+         assert tag == tags.Tag("pp3", "none", "any")
++
++    def test_cpython_first_none_any_tag(self, monkeypatch):
++        # When building the complete list of cpython tags, make sure the first
++        # <interpreter>-none-any one is cpxx-none-any
++        monkeypatch.setattr(tags, "interpreter_name", lambda: "cp")
++
++        # Find the first tag that is ABI- and platform-agnostic.
++        for tag in tags.sys_tags():
++            if tag.abi == "none" and tag.platform == "any":
++                break
++
++        interpreter = f"cp{tags.interpreter_version()}"
++        assert tag == tags.Tag(interpreter, "none", "any")
