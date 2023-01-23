@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} pyodide build: Don't pass the directory to the build backend args,
+  only pass the arguments.
+  {pr}`3490`
+
 ## Version 0.22.0
 
 _January 3, 2023_
