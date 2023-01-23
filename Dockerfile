@@ -73,10 +73,13 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
 #       97
 #============================================
 
-RUN CHROMEDRIVER_VERSION_FULL=107.0.5304.62 \
+RUN if [ $CHROME_VERSION = "latest" ]; \
+  then CHROMEDRIVER_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE"); \
+  else CHROMEDRIVER_VERSION_FULL=$(wget --no-verbose -O - "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION}"); \
+  fi \
   && CHROME_VERSION_MAJOR=$(echo $CHROMEDRIVER_VERSION_FULL | cut -d '.' -f 1) \
   && CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://versionhistory.googleapis.com/v1/chrome/platforms/linux/channels/stable/versions" | jq -r '.versions[] | .version' | grep "^${CHROME_VERSION_MAJOR}" | head -n 1) \
-  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
+  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
   && apt-get update \
   && apt install -qqy /tmp/google-chrome.deb \
