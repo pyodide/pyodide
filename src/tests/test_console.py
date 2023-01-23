@@ -393,8 +393,8 @@ def test_console_html(selenium):
             >>> 1+
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
-                  ^
-            SyntaxError: invalid syntax]
+                 ^
+            SyntaxError: incomplete input]
             """
         ).strip()
     )
