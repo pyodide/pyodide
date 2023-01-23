@@ -13,7 +13,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, NoReturn
 
-import tomllib
+if sys.version_info < (3, 11, 0):
+    import tomli as tomllib  # type:ignore[import]
+else:
+    import tomllib
+
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
