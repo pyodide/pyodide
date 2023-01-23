@@ -8,18 +8,18 @@ NODE_XFAIL_REASON = (
 )
 
 # Need to skip_refcount_check because we use matplotlib
-DECORATORS = [
-    pytest.mark.xfail_browsers(node=NODE_XFAIL_REASON),
-    pytest.mark.skip_refcount_check,
-]
+
+def galpy_test_decorator(**kwargs):
+    def dec(f):
+        return reduce(lambda x, g: g(x), 
+        [
+            pytest.mark.xfail_browsers(node=NODE_XFAIL_REASON, **kwargs),
+            pytest.mark.skip_refcount_check,
+        ], f)
+    return dec
 
 
-def galpy_test_decorator(f):
-    return reduce(lambda x, g: g(x), DECORATORS, f)
-
-
-@pytest.mark.xfail_browsers(node=NODE_XFAIL_REASON, firefox="times out")
-@pytest.mark.skip_refcount_check
+@galpy_test_decorator(firefox="times out")
 @run_in_pyodide(
     packages=[
         "galpy",
@@ -39,7 +39,7 @@ def test_integrate(selenium):
     return None
 
 
-@galpy_test_decorator
+@galpy_test_decorator(firefox="times out")
 @run_in_pyodide(
     packages=[
         "galpy",
@@ -65,7 +65,7 @@ def test_actionAngle(selenium):
     return None
 
 
-@galpy_test_decorator
+@galpy_test_decorator()
 @run_in_pyodide(
     packages=[
         "galpy",
