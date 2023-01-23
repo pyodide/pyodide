@@ -3,8 +3,8 @@ import textwrap
 import traceback
 import zipfile
 from collections.abc import Mapping
-from pathlib import Path
 from importlib.util import MAGIC_NUMBER
+from pathlib import Path
 
 import pytest
 from packaging.utils import InvalidWheelFilename
