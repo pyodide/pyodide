@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, NoReturn
 
 if sys.version_info < (3, 11, 0):
-    import tomli as tomllib  # type:ignore[import]
+    import tomli as tomllib
 else:
     import tomllib
 
