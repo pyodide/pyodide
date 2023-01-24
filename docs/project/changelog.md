@@ -25,6 +25,10 @@ myst:
 - {{ Fix }} `pyodide config` won't print extra messages anymore.
   {pr}`3483`
 
+- {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
+  it will insert an EOF automatically after each string or buffer. Defaults to `true`.
+  {pr}`3488`
+
 - {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
   when run multiple times.
   {pr}`3445`
