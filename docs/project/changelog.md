@@ -37,6 +37,10 @@ myst:
   when run multiple times.
   {pr}`3445`
 
+- {{ Fix }} pyodide build: Don't pass the directory to the build backend args,
+  only pass the arguments.
+  {pr}`3490`
+
 ### Package Loading
 
 - {{ Fix }} Fix incorrect error message when loading a package
