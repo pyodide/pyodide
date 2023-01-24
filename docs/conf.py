@@ -171,6 +171,13 @@ html_title = f"Version {version}"
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
 
+if IN_SPHINX:
+    # Monkey patch for python3.11 incompatible code
+    import inspect
+
+    if not hasattr(inspect, "getargspec"):
+        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
 
 if IN_READTHEDOCS:
     env = {"PYODIDE_BASE_URL": CDN_URL}

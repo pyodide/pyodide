@@ -13,7 +13,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, NoReturn
 
-import tomli
+if sys.version_info < (3, 11, 0):
+    import tomli as tomllib
+else:
+    import tomllib
+
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
@@ -352,8 +356,8 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
 
         try:
             with pyproject_file.open("rb") as f:
-                configs = tomli.load(f)
-        except tomli.TOMLDecodeError as e:
+                configs = tomllib.load(f)
+        except tomllib.TOMLDecodeError as e:
             raise ValueError(f"Could not parse {pyproject_file}.") from e
 
         if "tool" in configs and "pyodide" in configs["tool"]:

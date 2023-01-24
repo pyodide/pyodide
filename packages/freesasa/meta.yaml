@@ -1,11 +1,12 @@
 package:
   name: freesasa
-  version: 2.1.0
+  version: 2.2.0b2
+  _disabled: true
   top-level:
     - freesasa
 source:
-  sha256: dca2a71f5a315aff3ad8ee96130d0e17003265d82241378ffc0dcb0f98bf2203
-  url: https://files.pythonhosted.org/packages/a8/af/66991b63b705cd1e1c77fdaec157747275ba5c27b5c9dff7a2e35a43477a/freesasa-2.1.0.tar.gz
+  sha256: 3ab9da0d567451eed9679e2364b00e84b52326ebdca6e0981cb04ea9e61641f9
+  url: https://files.pythonhosted.org/packages/08/cd/1172cfc39a6bad270934ca359bb0faf8dc88a2c3b0cc0055b12c6a1bddce/freesasa-2.2.0b2.tar.gz
 about:
   home: http://freesasa.github.io/
   PyPI: https://pypi.org/project/freesasa
