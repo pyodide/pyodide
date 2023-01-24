@@ -7,6 +7,7 @@ from pyodide_build.common import (
     CORE_PACKAGES,
     CORE_SCIPY_PACKAGES,
     _parse_package_subset,
+    environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
     get_make_environment_vars,
@@ -75,7 +76,6 @@ def test_get_make_environment_vars():
     assert "SIDE_MODULE_LDFLAGS" in vars
     assert "SIDE_MODULE_CFLAGS" in vars
     assert "SIDE_MODULE_CXXFLAGS" in vars
-    assert "TOOLSDIR" in vars
 
 
 def test_wheel_paths():
@@ -111,6 +111,7 @@ def test_wheel_paths():
         f"py2.py3-none-{PLATFORM}",
         "py3-none-any",
         "py2.py3-none-any",
+        f"{current_version}-none-any",
     ]
 
 
@@ -217,3 +218,22 @@ def test_find_missing_executables(monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(shutil, "which", lambda exe: "/bin")
         assert [] == find_missing_executables(pkgs)
+
+
+def test_environment_var_substitution(monkeypatch):
+    monkeypatch.setenv("PYODIDE_BASE", "pyodide_build_dir")
+    monkeypatch.setenv("BOB", "Robert Mc Roberts")
+    monkeypatch.setenv("FRED", "Frederick F. Freddertson Esq.")
+    monkeypatch.setenv("JIM", "James Ignatius Morrison:Jimmy")
+    args = environment_substitute_args(
+        {
+            "ldflags": '"-l$(PYODIDE_BASE)"',
+            "cxxflags": "$(BOB)",
+            "cflags": "$(FRED)",
+        }
+    )
+    assert (
+        args["cflags"] == "Frederick F. Freddertson Esq."
+        and args["cxxflags"] == "Robert Mc Roberts"
+        and args["ldflags"] == '"-lpyodide_build_dir"'
+    )

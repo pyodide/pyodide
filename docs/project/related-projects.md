@@ -41,3 +41,4 @@
   It uses Pyodide to execute Python code.
 - [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
   Gamma. It's an in-browser answer engine with a Pyodide backend.
+- [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.

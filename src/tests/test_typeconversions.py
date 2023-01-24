@@ -543,7 +543,7 @@ def test_python2js_track_proxies(selenium):
             }
         }
         check(result);
-        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ConversionError");
+        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ffi.ConversionError");
         x.destroy();
         """
     )
@@ -585,7 +585,7 @@ def test_wrong_way_track_proxies(selenium):
     destroy_proxies(proxylist)
     checkDestroyed(r)
     with raises(TypeError):
-        to_js(x, pyproxies=[])
+        to_js(x, pyproxies=[])  # type:ignore[call-overload]
     with raises(TypeError):
         to_js(x, pyproxies=Object.new())
     with raises(ConversionError):

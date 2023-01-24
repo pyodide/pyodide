@@ -1,5 +1,8 @@
 import { Module } from "./module";
 
+/**
+ * @private
+ */
 export function initializeNativeFS(module: Module) {
   const FS = module.FS;
   const MEMFS = module.FS.filesystems.MEMFS;

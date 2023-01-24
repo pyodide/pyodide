@@ -1,13 +1,17 @@
+# flake8: noqa
+
 import os
 import shutil
 from pathlib import Path
 
 import pytest
+import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
-from pyodide_build import __version__ as pyodide_build_version
 from pyodide_build import common
-from pyodide_build.cli import build, skeleton
+from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
+
+from .fixture import temp_python_lib
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -58,18 +62,9 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
-def test_build_recipe_with_pyodide(tmp_path, monkeypatch, request, runtime):
-    if runtime != "node":
-        pytest.xfail("node only")
-    test_build_recipe(tmp_path, monkeypatch, request)
+def test_build_recipe(selenium, tmp_path, monkeypatch, request):
+    # TODO: Run this test without building Pyodide
 
-
-def test_build_recipe(tmp_path, monkeypatch, request):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first"
-            )
     output_dir = tmp_path / "dist"
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
@@ -85,10 +80,12 @@ def test_build_recipe(tmp_path, monkeypatch, request):
     for build_dir in recipe_dir.rglob("build"):
         shutil.rmtree(build_dir)
 
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
     result = runner.invoke(
-        build.app,
+        app,
         [
-            "recipe",
             *pkgs.keys(),
             "--recipe-dir",
             recipe_dir,
@@ -107,29 +104,84 @@ def test_build_recipe(tmp_path, monkeypatch, request):
     assert len(built_wheels) == len(pkgs_to_build)
 
 
-def test_fetch_or_build_pypi_with_pyodide(tmp_path, runtime):
-    if runtime != "node":
-        pytest.xfail("node only")
-    test_fetch_or_build_pypi(tmp_path)
+def test_config_list():
+
+    result = runner.invoke(
+        config.app,
+        [
+            "list",
+        ],
+    )
+
+    envs = result.stdout.splitlines()
+    keys = [env.split("=")[0] for env in envs]
+
+    for cfg_name in config.PYODIDE_CONFIGS.keys():
+        assert cfg_name in keys
 
 
-def test_fetch_or_build_pypi(tmp_path):
-    if "dev" in pyodide_build_version:
-        if "EMSDK" not in os.environ or "PYODIDE_ROOT" not in os.environ:
-            pytest.skip(
-                reason="Can't build recipe in dev mode without building pyodide first. Skipping test"
-            )
-    output_dir = tmp_path / "dist"
-    # one pure-python package (doesn't need building) and one sdist package (needs building)
-    pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
+@pytest.mark.parametrize("cfg_name,env_var", config.PYODIDE_CONFIGS.items())
+def test_config_get(cfg_name, env_var):
 
-    os.chdir(tmp_path)
-    for p in pkgs:
-        result = runner.invoke(
-            build.app,
-            ["main", p],
-        )
-        assert result.exit_code == 0, result.stdout
+    result = runner.invoke(
+        config.app,
+        [
+            "get",
+            cfg_name,
+        ],
+    )
 
-    built_wheels = set(output_dir.glob("*.whl"))
-    assert len(built_wheels) == len(pkgs)
+    assert result.stdout.strip() == common.get_make_flag(env_var)
+
+
+def test_create_zipfile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.py" in zf.namelist()
+        assert "module2.py" in zf.namelist()
+
+
+def test_create_zipfile_compile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+            "--pycompile",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.pyc" in zf.namelist()
+        assert "module2.pyc" in zf.namelist()

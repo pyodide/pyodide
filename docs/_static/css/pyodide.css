@@ -3,6 +3,7 @@
   opacity: 0.7;
 }
 
+/* Don't make code smaller than other text it looks ugly */
 code {
   font-size: 100% !important;
 }
@@ -20,4 +21,22 @@ code {
 /* Remove "captions" in text table of contents, keep subsections in sidebar */
 .toctree-wrapper > .caption {
   display: none;
+}
+
+/* Display "async", "class" prefixes and parameters in upright style not italic */
+.sig-param,
+.property {
+  font-style: normal;
+}
+
+.js.attribute.type {
+  font-weight: bold;
+}
+
+code.literal {
+  /* I don't like the badge py-data puts around code literals, it is too aggressive */
+  background-color: unset;
+  border: unset;
+  /* Shrink the horizontal padding a little */
+  padding: 0.1rem;
 }

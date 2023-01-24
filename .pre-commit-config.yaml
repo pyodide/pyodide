@@ -1,6 +1,6 @@
 exclude: (^.*patches|.*\.cgi$|^packages/micropip/src/micropip/externals|^benchmark/benchmarks$)
 default_language_version:
-  python: "3.10"
+  python: "3.11"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v4.4.0"
@@ -65,10 +65,12 @@ repos:
           - pytest
           - pydantic
           - unearth
+          - resolvelib
+          - rich
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|docs|conftest.py|src/tests)
+        files: ^(packages/|docs|/conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
@@ -101,7 +103,7 @@ repos:
     rev: "v0.8.0.4"
     hooks:
       - id: shellcheck
-        exclude: ^tools/python$
+        exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
     rev: "v2.2.2"

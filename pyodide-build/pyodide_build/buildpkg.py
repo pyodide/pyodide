@@ -16,7 +16,7 @@ import sys
 import sysconfig
 import textwrap
 import urllib
-from collections.abc import Generator, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -25,19 +25,16 @@ from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
 
-from . import common, pywasmcross
-from .common import exit_with_stdio, find_matching_wheels, find_missing_executables
+from . import common, pypabuild
+from .common import (
+    chdir,
+    exit_with_stdio,
+    find_matching_wheels,
+    find_missing_executables,
+    set_build_environment,
+)
 from .io import MetaConfig, _BuildSpec, _SourceSpec
-
-
-@contextmanager
-def chdir(new_dir: Path) -> Generator[None, None, None]:
-    orig_dir = Path.cwd()
-    try:
-        os.chdir(new_dir)
-        yield
-    finally:
-        os.chdir(orig_dir)
+from .logger import logger
 
 
 def _make_whlfile(
@@ -94,8 +91,8 @@ class BashRunnerWithSharedEnvironment:
             **opts,
         )
         if result.returncode != 0:
-            print("ERROR: bash command failed")
-            print(textwrap.indent(cmd, "    "))
+            logger.error("ERROR: bash command failed")
+            logger.error(textwrap.indent(cmd, "    "))
             exit_with_stdio(result)
 
         self.env = json.loads(self._reader.readline())
@@ -120,48 +117,8 @@ class BashRunnerWithSharedEnvironment:
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env = {
-        key: os.environ[key]
-        for key in [
-            # TODO: Stabilize and document more of these in meta-yaml.md
-            "PATH",
-            "PYTHONPATH",
-            "PYODIDE_ROOT",
-            "PYTHONINCLUDE",
-            "NUMPY_LIB",
-            "PYODIDE_PACKAGE_ABI",
-            "HOME",
-            "HOSTINSTALLDIR",
-            "TARGETINSTALLDIR",
-            "SYSCONFIG_NAME",
-            "HOSTSITEPACKAGES",
-            "PYMAJOR",
-            "PYMINOR",
-            "PYMICRO",
-            "CPYTHONBUILD",
-            "CPYTHONLIB",
-            "SIDE_MODULE_CFLAGS",
-            "SIDE_MODULE_LDFLAGS",
-            "STDLIB_MODULE_CFLAGS",
-            "UNISOLATED_PACKAGES",
-            "WASM_LIBRARY_DIR",
-            "WASM_PKG_CONFIG_PATH",
-            "CARGO_BUILD_TARGET",
-            "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
-            "CARGO_HOME",
-            "RUSTFLAGS",
-            "PYO3_CONFIG_FILE",
-            "PYODIDE_CMAKE_TOOLCHAIN_FILE",
-        ]
-    } | {"PYODIDE": "1"}
-    if "PYODIDE_JOBS" in os.environ:
-        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-
-    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
-    if "PKG_CONFIG_PATH" in os.environ:
-        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
-
-    env["CMAKE_TOOLCHAIN_FILE"] = env["PYODIDE_CMAKE_TOOLCHAIN_FILE"]
+    env: dict[str, str] = {}
+    set_build_environment(env)
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
@@ -374,7 +331,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
                 encoding="utf-8",
             )
             if result.returncode != 0:
-                print(f"ERROR: Patch {pkg_root/patch} failed")
+                logger.error(f"ERROR: Patch {pkg_root/patch} failed")
                 exit_with_stdio(result)
 
     # Add any extra files
@@ -393,7 +350,7 @@ def unpack_wheel(path: Path) -> None:
             encoding="utf-8",
         )
         if result.returncode != 0:
-            print(f"ERROR: Unpacking wheel {path.name} failed")
+            logger.error(f"ERROR: Unpacking wheel {path.name} failed")
             exit_with_stdio(result)
 
 
@@ -405,7 +362,7 @@ def pack_wheel(path: Path) -> None:
             encoding="utf-8",
         )
         if result.returncode != 0:
-            print(f"ERROR: Packing wheel {path} failed")
+            logger.error(f"ERROR: Packing wheel {path} failed")
             exit_with_stdio(result)
 
 
@@ -449,7 +406,7 @@ def compile(
     if build_metadata.package_type != "package":
         return
 
-    build_env_ctx = pywasmcross.get_build_env(
+    build_env_ctx = pypabuild.get_build_env(
         env=bash_runner.env,
         pkgname=name,
         cflags=build_metadata.cflags,
@@ -507,10 +464,10 @@ def copy_sharedlibs(
 
     if dep_map:
         dep_map_new = copylib(wheel_dir, dep_map, lib_sdir)
-        print("Copied shared libraries:")
+        logger.info("Copied shared libraries:")
         for lib, path in dep_map_new.items():
             original_path = dep_map[lib]
-            print(f"  {original_path} -> {path}")
+            logger.info(f"  {original_path} -> {path}")
 
         return dep_map_new
 
@@ -555,7 +512,7 @@ def package_wheel(
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
-    print(f"Unpacking wheel to {str(wheel)}")
+    logger.info(f"Unpacking wheel to {str(wheel)}")
     unpack_wheel(wheel)
     wheel.unlink()
     name, ver, _ = wheel.name.split("-", 2)
@@ -568,11 +525,11 @@ def package_wheel(
 
     post = build_metadata.post
     if post:
-        print("Running post script in ", str(Path.cwd().absolute()))
+        logger.info(f"Running post script in {Path.cwd().absolute()}")
         bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
         result = bash_runner.run(post)
         if result.returncode != 0:
-            print("ERROR: post failed")
+            logger.error("ERROR: post failed")
             exit_with_stdio(result)
 
     vendor_sharedlib = build_metadata.vendor_sharedlib
@@ -693,7 +650,7 @@ def run_script(
     with chdir(srcpath):
         result = bash_runner.run(script)
         if result.returncode != 0:
-            print("ERROR: script failed")
+            logger.error("ERROR: script failed")
             exit_with_stdio(result)
 
 
@@ -938,7 +895,8 @@ def main(args: argparse.Namespace) -> None:
 
     name = pkg.package.name
     t0 = datetime.now()
-    print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
+    timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"[{timestamp}] Building package {name}...")
     success = True
     try:
         build_package(
@@ -958,9 +916,13 @@ def main(args: argparse.Namespace) -> None:
         datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
         total_seconds = f"{(t1 - t0).total_seconds():.1f}"
         status = "Succeeded" if success else "Failed"
-        print(
+        msg = (
             f"{datestamp} {status} building package {name} in {total_seconds} seconds."
         )
+        if success:
+            logger.success(msg)
+        else:
+            logger.error(msg)
 
 
 if __name__ == "__main__":

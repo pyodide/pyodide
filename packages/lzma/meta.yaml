@@ -3,6 +3,7 @@ package:
   version: 1.0.0 # Nonsense
   top-level:
     - lzma
+    - _lzma
 build:
   type: cpython_module
   script: |

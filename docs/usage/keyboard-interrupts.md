@@ -10,23 +10,23 @@ which takes some effort to set up.
 ## Setting up interrupts
 
 In order to use interrupts you must be using Pyodide in a webworker.
-You also will need to use a `SharedArrayBuffer`, which means that your server
+You also will need to use a {js:class}`SharedArrayBuffer`, which means that your
+server
 must set appropriate security headers. See [the MDN
 docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements)
 for more information.
 
-To use the interrupt system, you should create a `SharedArrayBuffer` on either
-the main thread or the worker thread and share it with the other thread. You
-should use {any}`pyodide.setInterruptBuffer` to set the interrupt buffer on the
-Pyodide thread. When you want to indicate an interrupt, write a `2` into the
-interrupt buffer. When the interrupt signal is processed, Pyodide will set the
-value of the interrupt buffer back to `0`.
+To use the interrupt system, you should create a {js:class}`SharedArrayBuffer`
+on either the main thread or the worker thread and share it with the other
+thread. You should use {js:func}`pyodide.setInterruptBuffer` to set the
+interrupt buffer on the Pyodide thread. When you want to indicate an interrupt,
+write a `2` into the interrupt buffer. When the interrupt signal is processed,
+Pyodide will set the value of the interrupt buffer back to `0`.
 
-By default, when the interrupt fires, a `KeyboardInterrupt` is raised. [Using
-the `signal`
-module](https://docs.python.org/3/library/signal.html#signal.signal), it is
-possible to register a custom Python function to handle `SIGINT`. If you
-register a custom handler function it will be called instead.
+By default, when the interrupt fires, a {py:exc}`KeyboardInterrupt` is raised.
+Using the {py:mod}`signal` module, it is possible to register a custom Python
+function to handle {py:data}`~signal.SIGINT`. If you register a custom handler
+function it will be called instead.
 
 Here is a very basic example. Main thread code:
 
@@ -65,12 +65,11 @@ self.addEventListener("message", (msg) => {
 ## Allowing JavaScript code to be interrupted
 
 The interrupt system above allows interruption of Python code and also of C code
-that opts to allow itself to be interrupted by periodically calling
-[`PyErr_CheckSignals`](https://docs.python.org/3/c-api/exceptions.html?highlight=pyerr_checksignals#c.PyErr_CheckSignals).
-There is also a function {any}`pyodide.checkInterrupt` that allows JavaScript
-functions called from Python to check for an interrupt. As a simple example, we
-can implement an interruptible sleep function using
-[`Atomics.wait`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics/wait):
+that allows itself to be interrupted by periodically calling
+{c:func}`PyErr_CheckSignals`. There is also a function
+{js:func}`pyodide.checkInterrupt` that allows JavaScript functions called from
+Python to check for an interrupt. As a simple example, we can implement an
+interruptible sleep function using {js:func}`Atomics.wait`:
 
 ```js
 let blockingSleepBuffer = new Int32Array(new SharedArrayBuffer(4));

@@ -20,7 +20,7 @@ try:
 except ImportError:
     loadedPackages = None
 
-from ._core import IN_BROWSER, JsArray, JsBuffer, to_js
+from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -147,7 +147,7 @@ def unpack_buffer(
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsArray | None:
+) -> JsArray[str] | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 

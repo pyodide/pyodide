@@ -1182,6 +1182,18 @@ def test_memory_leaks(selenium):
 
 
 @run_in_pyodide
+def test_raise_js_error(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    e = run_js("new Error('hi')")
+    with pytest.raises(JsException):
+        raise e
+
+
+@run_in_pyodide
 def test_js_id(selenium):
     from pyodide.code import run_js
 
@@ -1800,7 +1812,7 @@ def test_gen_send_type_errors(selenium):
     with pytest.raises(
         TypeError, match='Result should have type "object" not "number"'
     ):
-        g.send(None)
+        g.send(None)  # type:ignore[attr-defined]
 
     g = run_js(
         """
@@ -2001,7 +2013,7 @@ async def test_agen_asend(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsAsyncIterator, JsIterator
+    from pyodide.ffi import JsAsyncGenerator, JsIterator
 
     it = run_js(
         """
@@ -2014,7 +2026,7 @@ async def test_agen_asend(selenium):
         """
     )
 
-    assert isinstance(it, JsAsyncIterator)
+    assert isinstance(it, JsAsyncGenerator)
     assert not isinstance(it, JsIterator)
 
     assert await it.asend(None) == 2
@@ -2107,3 +2119,81 @@ async def test_agen_aclose(selenium):
     assert await g.aclose() is None  # type:ignore[func-returns-value]
     p.destroy()
     assert l == ["finally"]
+
+
+@run_in_pyodide
+def test_gen_lifetimes(selenium):
+    import sys
+
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsGenerator
+
+    # Check that:
+    # 1. The lifetime of the generator argument is extended
+    # 2. The lifetime of the objects we `send` to the generator are extended
+    # 3. The returned pyproxy is successfully received in JavaScript
+    # 4. The returned pyproxy is destroyed
+    f = run_js(
+        """
+        (function *(x) {
+            let l = [x];
+            l.push(yield);
+            l.push(yield);
+            l.push(yield);
+            return pyodide.toPy(l.map((x) => x.toString()));
+        })
+        """
+    )
+    g = f({1})
+    assert isinstance(g, JsGenerator)
+    g.send(None)
+    g.send({2})
+    g.send({3})
+    with pytest.raises(StopIteration) as exc_info:
+        g.send({4})
+
+    v = exc_info.value.value
+    del exc_info
+    assert v == ["{1}", "{2}", "{3}", "{4}"]
+    assert sys.getrefcount(v) == 2
+
+
+@run_in_pyodide
+async def test_agen_lifetimes(selenium):
+    import sys
+    from asyncio import sleep
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsAsyncGenerator
+
+    # Check that:
+    # 1. The lifetime of the generator argument is extended
+    # 2. The lifetime of the objects we `asend` to the generator are extended
+    # 3. The returned pyproxy is successfully received in JavaScript
+    # 4. The returned pyproxy is destroyed
+    f = run_js(
+        """
+        (async function *(x) {
+            let l = [x];
+            l.push(yield);
+            l.push(yield);
+            l.push(yield);
+            return pyodide.toPy(l.map((x) => x.toString()));
+        })
+        """
+    )
+    g = f({1})
+    assert isinstance(g, JsAsyncGenerator)
+    await g.asend(None)
+    await g.asend({2})
+    await g.asend({3})
+    # This approach is a bit odd but it gets the refcount right. In various
+    # other ways, someone else holds on to a reference to the exception.
+    res = g.asend({4})
+    await sleep(0.01)
+    v = res.exception().args[0]  # type:ignore[attr-defined]
+    del res
+    assert v == ["{1}", "{2}", "{3}", "{4}"]
+    assert sys.getrefcount(v) == 2

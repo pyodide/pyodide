@@ -1,11 +1,14 @@
 import argparse
 from pathlib import Path
 
-import typer  # type: ignore[import]
+import typer
 
 from .. import buildall
 
+app = typer.Typer()
 
+
+@app.command()  # type: ignore[misc]
 def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"

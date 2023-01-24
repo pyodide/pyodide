@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.22.0-dev.0",
+  "version": "0.22.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -135,5 +135,6 @@
     "base-64": "^1.0.0",
     "node-fetch": "^2.6.1",
     "ws": "^8.5.0"
-  }
+  },
+  "types": "./pyodide.d.ts"
 }
