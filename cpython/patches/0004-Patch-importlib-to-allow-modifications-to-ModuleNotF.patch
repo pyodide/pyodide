@@ -1,0 +1,36 @@
+From 90812b6dc97860ef164a2810ebf5f3121dfc919e Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 16 Nov 2022 14:02:53 -0800
+Subject: [PATCH 4/4] Patch importlib to allow modifications to
+ ModuleNotFoundError
+
+---
+ Lib/importlib/_bootstrap.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/Lib/importlib/_bootstrap.py b/Lib/importlib/_bootstrap.py
+index afb95f4e1d..32fe7a68bf 100644
+--- a/Lib/importlib/_bootstrap.py
++++ b/Lib/importlib/_bootstrap.py
+@@ -1119,6 +1119,9 @@ def _sanity_check(name, package, level):
+ _ERR_MSG_PREFIX = 'No module named '
+ _ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
+ 
++def _get_module_not_found_error(name):
++    return ModuleNotFoundError(_ERR_MSG.format(name), name=name)
++
+ def _find_and_load_unlocked(name, import_):
+     path = None
+     parent = name.rpartition('.')[0]
+@@ -1139,7 +1142,7 @@ def _find_and_load_unlocked(name, import_):
+         child = name.rpartition('.')[2]
+     spec = _find_spec(name, path)
+     if spec is None:
+-        raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
++        raise _get_module_not_found_error(name)
+     else:
+         if parent_spec:
+             # Temporarily add child we are currently importing to parent's
+-- 
+2.25.1
+

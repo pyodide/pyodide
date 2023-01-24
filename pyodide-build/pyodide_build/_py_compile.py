@@ -22,16 +22,16 @@ def _specialize_convert_tags(tags: set[Tag] | frozenset[Tag], wheel_name: str) -
     >>> from packaging.tags import parse_tag
     >>> tags = parse_tag("py2.py3-none-any")
     >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp310-none-any'
-    >>> tags = parse_tag("cp310-cp310-emscripten_3_1_24_wasm32")
+    'cp311-none-any'
+    >>> tags = parse_tag("cp311-cp311-emscripten_3_1_24_wasm32")
     >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp310-cp310-emscripten_3_1_24_wasm32'
+    'cp311-cp311-emscripten_3_1_24_wasm32'
     >>> tags = parse_tag("py310.py311-any-none")
     >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp310-any-none'
+    'cp311-any-none'
     >>> tags = parse_tag("py36-abi3-none")
     >>> str(_specialize_convert_tags(set(tags), ""))
-    'cp310-abi3-none'
+    'cp311-abi3-none'
     """
     if len(tags) == 0:
         raise ValueError("Failed to parse tags from the wheel file name: {wheel_name}!")
@@ -61,20 +61,20 @@ def _py_compile_wheel_name(wheel_name: str) -> str:
     Examples
     --------
     >>> _py_compile_wheel_name('micropip-0.1.0-py3-none-any.whl')
-    'micropip-0.1.0-cp310-none-any.whl'
-    >>> _py_compile_wheel_name("numpy-1.22.4-cp310-cp310-emscripten_3_1_24_wasm32.whl")
-    'numpy-1.22.4-cp310-cp310-emscripten_3_1_24_wasm32.whl'
+    'micropip-0.1.0-cp311-none-any.whl'
+    >>> _py_compile_wheel_name("numpy-1.22.4-cp311-cp311-emscripten_3_1_24_wasm32.whl")
+    'numpy-1.22.4-cp311-cp311-emscripten_3_1_24_wasm32.whl'
     >>> # names with '_' are preserved (instead of using '-')
-    >>> _py_compile_wheel_name("a_b-0.0.0-cp310-cp310-emscripten_3_1_24_wasm32.whl")
-    'a_b-0.0.0-cp310-cp310-emscripten_3_1_24_wasm32.whl'
+    >>> _py_compile_wheel_name("a_b-0.0.0-cp311-cp311-emscripten_3_1_24_wasm32.whl")
+    'a_b-0.0.0-cp311-cp311-emscripten_3_1_24_wasm32.whl'
     >>> # if there are multiple tags (e.g. py2 & py3), we only keep the relevant one
     >>> _py_compile_wheel_name('attrs-21.4.0-py2.py3-none-any.whl')
-    'attrs-21.4.0-cp310-none-any.whl'
+    'attrs-21.4.0-cp311-none-any.whl'
 
 
     # >>> msg = "Processing more than one tag is not implemented"
     # >>> with pytest.rases(NotImplementedError, match=msg):
-    # ...     _py_compile_wheel_name("numpy-1.23.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl")
+    # ...     _py_compile_wheel_name("numpy-1.23.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl")
     """
     name, version, build, tags = parse_wheel_filename(wheel_name)
     if build:

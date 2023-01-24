@@ -224,6 +224,11 @@ def docs_argspec(argspec: str) -> Any:
 
 
 if IN_SPHINX:
+    import inspect
+
+    if not hasattr(inspect, "getargspec"):
+        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
     base_dir = Path(__file__).resolve().parent.parent
     path_dirs = [
         str(base_dir),
