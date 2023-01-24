@@ -462,6 +462,10 @@ def chdir(new_dir: Path) -> Generator[None, None, None]:
 
 
 def set_build_environment(env: dict[str, str]) -> None:
+    """Assign build environment variables to env.
+
+    Sets common environment between in tree and out of tree package builds.
+    """
     env.update({key: os.environ[key] for key in BUILD_VARS})
     env["PYODIDE"] = "1"
     if "PYODIDE_JOBS" in os.environ:

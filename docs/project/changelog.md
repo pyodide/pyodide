@@ -28,6 +28,10 @@ myst:
 - {{ Fix }} `pyodide config` won't print extra messages anymore.
   {pr}`3483`
 
+- {{ Fix }} Pass the same environment variables for out of tree builds as for in
+  tree builds.
+  {pr}`3495`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
