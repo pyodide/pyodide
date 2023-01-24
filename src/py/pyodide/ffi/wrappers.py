@@ -33,8 +33,9 @@ EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], Destroyable] = {}
 def add_event_listener(
     elt: JsDomElement, event: str, listener: Callable[[Any], None]
 ) -> None:
-    """Wrapper for JavaScript's addEventListener() which automatically manages the lifetime
-    of a JsProxy corresponding to the listener param.
+    """Wrapper for JavaScript's
+    :js:meth:`~EventTarget.addEventListener` which automatically manages the lifetime of a
+    JsProxy corresponding to the ``listener`` parameter.
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
@@ -44,8 +45,9 @@ def add_event_listener(
 def remove_event_listener(
     elt: JsDomElement, event: str, listener: Callable[[Any], None]
 ) -> None:
-    """Wrapper for JavaScript's removeEventListener() which automatically manages the lifetime
-    of a JsProxy corresponding to the listener param.
+    """Wrapper for JavaScript's
+    :js:meth:`~EventTarget.removeEventListener` which automatically manages the
+    lifetime of a JsProxy corresponding to the ``listener`` parameter.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
     elt.removeEventListener(event, cast(Callable[[Any], None], proxy))
@@ -56,8 +58,9 @@ TIMEOUTS: dict[int, Destroyable] = {}
 
 
 def set_timeout(callback: Callable[[], None], timeout: int) -> int | JsProxy:
-    """Wrapper for JavaScript's setTimeout() which automatically manages the lifetime
-    of a JsProxy corresponding to the callback param.
+    """Wrapper for JavaScript's :js:func:`setTimeout` which
+    automatically manages the lifetime of a JsProxy corresponding to the
+    callback param.
     """
     id = -1
 
@@ -74,8 +77,9 @@ def set_timeout(callback: Callable[[], None], timeout: int) -> int | JsProxy:
 
 
 def clear_timeout(timeout_retval: int | JsProxy) -> None:
-    """Wrapper for JavaScript's clearTimeout() which automatically manages the lifetime
-    of a JsProxy corresponding to the callback param.
+    """Wrapper for JavaScript's :js:func:`clearTimeout` which
+    automatically manages the lifetime of a JsProxy corresponding to the
+    ``callback`` parameter.
     """
     clearTimeout(timeout_retval)
     id = timeout_retval if isinstance(timeout_retval, int) else timeout_retval.js_id
@@ -86,8 +90,9 @@ INTERVAL_CALLBACKS: dict[int, Destroyable] = {}
 
 
 def set_interval(callback: Callable[[], None], interval: int) -> int | JsProxy:
-    """Wrapper for JavaScript's setInterval() which automatically manages the lifetime
-    of a JsProxy corresponding to the callback param.
+    """Wrapper for JavaScript's :js:func:`setInterval` which
+    automatically manages the lifetime of a JsProxy corresponding to the
+    ``callback`` parameter.
     """
     proxy = create_proxy(callback)
     interval_retval = setInterval(cast(Callable[[], None], proxy), interval)
@@ -97,8 +102,9 @@ def set_interval(callback: Callable[[], None], interval: int) -> int | JsProxy:
 
 
 def clear_interval(interval_retval: int | JsProxy) -> None:
-    """Wrapper for JavaScript's clearInterval() which automatically manages the lifetime
-    of a JsProxy corresponding to the callback param.
+    """Wrapper for JavaScript's :js:func:`clearInterval`
+    which automatically manages the lifetime of a JsProxy corresponding to
+    the ``callback`` parameter.
     """
     clearInterval(interval_retval)
     id = interval_retval if isinstance(interval_retval, int) else interval_retval.js_id

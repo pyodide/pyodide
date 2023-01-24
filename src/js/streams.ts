@@ -194,13 +194,14 @@ function setStdinError() {
  * - ``null`` or ``undefined``: these are interpreted as end of file.
  * - a number
  * - a string
- * - an ``ArrayBuffer`` or an ``ArrayBufferView`` with ``BYTES_PER_ELEMENT === 1``.
+ * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
+ *   :js:data:`~TypedArray.BYTES_PER_ELEMENT` equal to 1.
  *
  * If a number is returned, it is interpreted as a single character code. The
  * number should be between 0 and 255.
  *
  * If a string is returned, a new line is appended if one is not present and the
- * resulting string is turned into a ``Uint8Array`` using ``TextEncoder``.
+ * resulting string is turned into a :js:class:`Uint8Array` using :js:class:`TextEncoder`.
  *
  * Returning a buffer is more efficient and allows returning partial lines of
  * text.

@@ -32,13 +32,12 @@ def open_url(url: str) -> StringIO:
 
     Parameters
     ----------
-    url : str
+    url :
        URL to fetch
 
     Returns
     -------
-    io.StringIO
-        the contents of the URL.
+        The contents of the URL.
     """
 
     req = XMLHttpRequest.new()
@@ -48,18 +47,14 @@ def open_url(url: str) -> StringIO:
 
 
 class FetchResponse:
-    """A wrapper for a Javascript fetch response.
-
-    See also the Javascript fetch
-    `Response <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ api
-    docs.
+    """A wrapper for a Javascript fetch :js:data:`Response`.
 
     Parameters
     ----------
     url
         URL to fetch
     js_response
-        A JsProxy of the fetch response
+        A :any:`JsProxy` of the fetch response
     """
 
     def __init__(self, url: str, js_response: JsFetchResponse):
@@ -70,40 +65,58 @@ class FetchResponse:
     def body_used(self) -> bool:
         """Has the response been used yet?
 
-        (If so, attempting to retrieve the body again will raise an OSError.)
+        If so, attempting to retrieve the body again will raise an
+        :any:`OSError`. Use :py:meth:`~FetchResponse.clone` first to avoid this.
+        See :js:attr:`Response.bodyUsed`.
         """
         return self.js_response.bodyUsed
 
     @property
     def ok(self) -> bool:
-        """Was the request successful?"""
+        """Was the request successful?
+
+        See :js:attr:`Response.ok`.
+        """
         return self.js_response.ok
 
     @property
     def redirected(self) -> bool:
-        """Was the request redirected?"""
+        """Was the request redirected?
+
+        See :js:attr:`Response.redirected`.
+        """
         return self.js_response.redirected
 
     @property
     def status(self) -> int:
-        """Response status code"""
+        """Response status code
+
+        See :js:attr:`Response.status`.
+        """
         return self.js_response.status
 
     @property
     def status_text(self) -> str:
-        """Response status text"""
+        """Response status text
+
+        See :js:attr:`Response.statusText`.
+        """
         return self.js_response.statusText
 
     @property
     def type(self) -> str:
-        """The `type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>`_ of the response."""
+        """The type of the response.
+
+        See :js:attr:`Response.type`.
+        """
         return self.js_response.type
 
     @property
     def url(self) -> str:
-        """The `url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>`_ of the response.
+        """The url of the response.
 
-        It may be different than the url passed to fetch.
+        The value may be different than the url passed to fetch.
+        See :js:attr:`Response.url`.
         """
         return self.js_response.url
 
@@ -116,17 +129,20 @@ class FetchResponse:
             raise OSError("Response body is already used")
 
     def clone(self) -> "FetchResponse":
-        """Return an identical copy of the FetchResponse.
+        """Return an identical copy of the :any:`FetchResponse`.
 
-        This method exists to allow multiple uses of response objects. See
-        `Response.clone <https://developer.mozilla.org/en-US/docs/Web/API/Response/clone>`_
+        This method exists to allow multiple uses of :any:`FetchResponse`
+        objects. See :js:meth:`Response.clone`.
         """
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
         return FetchResponse(self._url, self.js_response.clone())
 
     async def buffer(self) -> JsBuffer:
-        """Return the response body as a Javascript ArrayBuffer"""
+        """Return the response body as a Javascript :js:class:`ArrayBuffer`.
+
+        See :js:meth:`Response.arrayBuffer`.
+        """
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
@@ -136,16 +152,16 @@ class FetchResponse:
         return await self.js_response.text()
 
     async def json(self, **kwargs: Any) -> Any:
-        """Return the response body as a Javascript JSON object.
+        """Treat the response body as a JSON string and use
+        :py:func:`json.loads` to parse it into a Python object.
 
-        Any keyword arguments are passed to `json.loads
-        <https://docs.python.org/3.8/library/json.html#json.loads>`_.
+        Any keyword arguments are passed to :py:func:`json.loads`.
         """
         self._raise_if_failed()
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
-        """Return the response body as a memoryview object"""
+        """Return the response body as a :any:`memoryview` object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
@@ -190,22 +206,23 @@ class FetchResponse:
     ) -> None:
         """Treat the data as an archive and unpack it into target directory.
 
-        Assumes that the file is an archive in a format that shutil has an
-        unpacker for. The arguments extract_dir and format are passed directly
-        on to ``shutil.unpack_archive``.
+        Assumes that the file is an archive in a format that :any:`shutil` has
+        an unpacker for. The arguments ``extract_dir`` and ``format`` are passed
+        directly on to :any:`shutil.unpack_archive`.
 
         Parameters
         ----------
-        extract_dir : str
-            Directory to extract the archive into. If not
-            provided, the current working directory is used.
+        extract_dir :
+            Directory to extract the archive into. If not provided, the current
+            working directory is used.
 
-        format : str
-            The archive format: one of “zip”, “tar”, “gztar”, “bztar”.
-            Or any other format registered with ``shutil.register_unpack_format()``. If not
-            provided, ``unpack_archive()`` will use the archive file name extension
-            and see if an unpacker was registered for that extension. In case
-            none is found, a ``ValueError`` is raised.
+        format :
+            The archive format: one of ``"zip"``, ``"tar"``, ``"gztar"``,
+            ``"bztar"``. Or any other format registered with
+            :py:func:`shutil.register_unpack_format`. If not provided,
+            :py:meth:`unpack_archive` will use the archive file name extension and
+            see if an unpacker was registered for that extension. In case none
+            is found, a :any:`ValueError` is raised.
         """
         buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]
@@ -215,20 +232,19 @@ class FetchResponse:
 async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     r"""Fetch the url and return the response.
 
-    This functions provides a similar API to the JavaScript `fetch function
-    <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
+    This functions provides a similar API to :js:func:`fetch` however it is
     designed to be convenient to use from Python. The
-    :class:`pyodide.http.FetchResponse` has methods with the output types
+    :class:`~pyodide.http.FetchResponse` has methods with the output types
     already converted to Python objects.
 
     Parameters
     ----------
-    url : str
+    url :
         URL to fetch.
 
-    \*\*kwargs : Any
+    \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
-        <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
+        <https://developer.mozilla.org/en-US/docs/Web/API/fetch#options>`_.
     """
     try:
         return FetchResponse(

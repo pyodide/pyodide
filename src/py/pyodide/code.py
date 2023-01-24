@@ -11,10 +11,10 @@ from _pyodide._base import (
 
 def run_js(code: str, /) -> Any:
     """
-    A wrapper for the JavaScript 'eval' function.
+    A wrapper for the :js:func:`eval` function.
 
     Runs ``code`` as a Javascript code string and returns the result. Unlike
-    JavaScript's ``eval``, if ``code`` is not a string we raise a :any:`TypeError`.
+    :js:func:`eval`, if ``code`` is not a string we raise a :any:`TypeError`.
     """
     from js import eval as eval_
 

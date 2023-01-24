@@ -10,14 +10,15 @@ which is the equivalent of the object from the source language, for example
 converting a Python string to the equivalent a JavaScript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a JavaScript object into
-Python, the result is a {any}`JsProxy <pyodide.ffi.JsProxy>` object. When we proxy a Python object
-into JavaScript, the result is a {any}`PyProxy` object. A proxied object can be
-explicitly converted using the explicit conversion methods {any}`JsProxy.to_py`
-and {any}`PyProxy.toJs`.
+Python, the result is a {py:class}`~pyodide.ffi.JsProxy` object. When we proxy a
+Python object into JavaScript, the result is a {any}`PyProxy` object. A proxied
+object can be explicitly converted using the explicit conversion methods
+{py:meth}`JsProxy.to_py <pyodide.ffi.JsProxy.to_py>` and
+{js:func}`PyProxy.toJs`.
 
 Python to JavaScript translations occur:
 
-- when returning the final expression from a {any}`pyodide.runPython` call,
+- when returning the final expression from a {js:func}`pyodide.runPython` call,
 - when [importing Python objects into JavaScript](type-translations_using-py-obj-from-js)
 - when passing arguments to a JavaScript function called from Python,
 - when returning the results of a Python function called from JavaScript,
@@ -28,14 +29,14 @@ JavaScript to Python translations occur:
 - when [importing from the `js` module](type-translations_using-js-obj-from-py)
 - when passing arguments to a Python function called from JavaScript
 - when returning the result of a JavaScript function called from Python
-- when accessing an attribute of a {any}`JsProxy <pyodide.ffi.JsProxy>`
+- when accessing an attribute of a {py:class}`~pyodide.ffi.JsProxy`
 
 ```{admonition} Memory Leaks and Python to JavaScript translations
 :class: warning
 
 Any time a Python to JavaScript translation occurs, it may create a
 {any}`PyProxy`. To avoid memory leaks, you must store the {any}`PyProxy` and
-{any}`destroy <PyProxy.destroy>` it when you are done with it. See
+{js:func}`~PyProxy.destroy` it when you are done with it. See
 {ref}`call-py-from-js` for more info.
 ```
 
@@ -45,11 +46,7 @@ Translating an object from Python to JavaScript and then back to Python is
 guaranteed to give an object that is equal to the original object. Furthermore,
 if the object is proxied into JavaScript, then translation back unwraps the
 proxy, and the result of the round trip conversion `is` the original object (in
-the sense that they live at the same memory address). There are a few
-exceptions:
-
-1. `nan` is converted to `nan` after a round trip but `nan != nan`
-2. proxies created using {any}`pyodide.ffi.create_proxy` will be unwrapped.
+the sense that they live at the same memory address).
 
 Translating an object from JavaScript to Python and then back to JavaScript
 gives an object that is `===` to the original object. Furthermore, if the object
@@ -58,17 +55,19 @@ of the round trip conversion is the original object (in the sense that they live
 at the same memory address). There are a few exceptions:
 
 1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. `null` is converted to `undefined` after a round trip, and
-3. a `BigInt` will be converted to a `Number` after a round trip unless its
-   absolute value is greater than `Number.MAX_SAFE_INTEGER` (i.e., 2^53).
+2. {js:data}`null` is converted to {js:data}`undefined` after a round trip, and
+3. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
+   trip unless its absolute value is greater than
+   {js:data}`Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
 ## Implicit conversions
 
 We implicitly convert immutable types but not mutable types. This ensures that
 mutable Python objects can be modified from JavaScript and vice-versa. Python
-has immutable types such as `tuple` and `bytes` that have no equivalent in
-JavaScript. In order to ensure that round trip translations yield an object of
-the same type as the original object, we proxy `tuple` and `bytes` objects.
+has immutable types such as {py:class}`tuple` and {py:class}`bytes` that have no
+equivalent in JavaScript. In order to ensure that round trip translations yield
+an object of the same type as the original object, we proxy {py:class}`tuple`
+and {py:class}`bytes` objects.
 
 (type-translations_py2js-table)=
 
@@ -77,17 +76,18 @@ the same type as the original object, we proxy `tuple` and `bytes` objects.
 The following immutable types are implicitly converted from Python to
 JavaScript:
 
-| Python  | JavaScript             |
-| ------- | ---------------------- |
-| `int`   | `Number` or `BigInt`\* |
-| `float` | `Number`               |
-| `str`   | `String`               |
-| `bool`  | `Boolean`              |
-| `None`  | `undefined`            |
+| Python            | JavaScript                               |
+| ----------------- | ---------------------------------------- |
+| {py:class}`int`   | {js:data}`Number` or {js:data}`BigInt`\* |
+| {py:class}`float` | {js:data}`Number`                        |
+| {py:class}`str`   | {js:data}`String`                        |
+| {py:class}`bool`  | {js:data}`Boolean`                       |
+| {py:data}`None`   | {js:data}`undefined`                     |
 
-\* An `int` is converted to a `Number` if the `int` is between -2^53 and
-2^53 inclusive, otherwise it is converted to a `BigInt`. (If the browser does
-not support `BigInt` then a `Number` will be used instead. In this case,
+\* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
+is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
+converted to a {js:data}`BigInt`. (If the browser does not support
+{js:data}`BigInt` then a {js:data}`Number` will be used instead. In this case,
 conversion of large integers from Python to JavaScript is lossy.)
 
 (type-translations_js2py-table)=
@@ -97,18 +97,18 @@ conversion of large integers from Python to JavaScript is lossy.)
 The following immutable types are implicitly converted from JavaScript to
 Python:
 
-| JavaScript  | Python                            |
-| ----------- | --------------------------------- |
-| `Number`    | `int` or `float` as appropriate\* |
-| `BigInt`    | `int`                             |
-| `String`    | `str`                             |
-| `Boolean`   | `bool`                            |
-| `undefined` | `None`                            |
-| `null`      | `None`                            |
+| JavaScript           | Python                                                |
+| -------------------- | ----------------------------------------------------- |
+| {js:data}`Number`    | {py:class}`int` or {py:class}`float` as appropriate\* |
+| {js:data}`BigInt`    | {py:class}`int`                                       |
+| {js:data}`String`    | {py:class}`str`                                       |
+| {js:data}`Boolean`   | {py:class}`bool`                                      |
+| {js:data}`undefined` | {py:data}`None`                                       |
+| {js:data}`null`      | {py:data}`None`                                       |
 
-\* A number is converted to an `int` if it is between -2^53 and 2^53
-inclusive and its fractional part is zero. Otherwise, it is converted to a
-float.
+\* A {js:data}`Number` is converted to an {py:class}`int` if the absolute value
+is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` and its fractional
+part is zero. Otherwise, it is converted to a {py:class}`float`.
 
 ## Proxying
 
@@ -174,7 +174,7 @@ function dir(x) {
 }
 ```
 
-As a special case, JavaScript `Array`, `HTMLCollection`, and `NodeList` are
+As a special case, JavaScript {js:class}`Array`, {js:class}`HTMLCollection`, and {js:class}`NodeList` are
 container types, but instead of using `array.get(7)` to get the 7th element,
 JavaScript uses `array[7]`. For these cases, we translate:
 
@@ -235,39 +235,41 @@ foo(); // throws Error: Object has already been destroyed
 ### Python to JavaScript
 
 Explicit conversion of a {any}`PyProxy` into a native JavaScript object is done
-with the {any}`PyProxy.toJs` method. You can also perform such a conversion in
+with the {js:func}`PyProxy.toJs` method. You can also perform such a conversion in
 Python using {any}`to_js <pyodide.ffi.to_js>` which behaves in much the same way. By
-default, the `toJs` method does a recursive "deep" conversion, to do a shallow
+default, the {js:func}`~PyProxy.toJs` method does a recursive "deep" conversion, to do a shallow
 conversion use `proxy.toJs({depth : 1})`. In addition to [the normal type
-conversion](type-translations_py2js-table), `toJs` method performs the following
+conversion](type-translations_py2js-table), {js:func}`~PyProxy.toJs` method performs the following
 explicit conversions:
 
-| Python          | JavaScript   |
-| --------------- | ------------ |
-| `list`, `tuple` | `Array`      |
-| `dict`          | `Map`        |
-| `set`           | `Set`        |
-| a buffer\*      | `TypedArray` |
+| Python                              | JavaScript             |
+| ----------------------------------- | ---------------------- |
+| {py:class}`list`, {py:class}`tuple` | {js:class}`Array`      |
+| {py:class}`dict`                    | {js:class}`Map`        |
+| {py:class}`set`                     | {js:class}`Set`        |
+| a buffer\*                          | {js:class}`TypedArray` |
 
 \* Examples of buffers include bytes objects and numpy arrays.
 
-If you need to convert `dict` instead to `Object`, you can pass
-`Object.fromEntries` as the `dict_converter` argument:
+If you need to convert {py:class}`dict` instead to {js:data}`Object`, you can pass
+{js:func}`Object.fromEntries` as the `dict_converter` argument:
 `proxy.toJs({dict_converter : Object.fromEntries})`.
 
-In JavaScript, `Map` and `Set` keys are compared using object identity unless
-the key is an immutable type (meaning a string, a number, a bigint, a boolean,
-`undefined`, or `null`). On the other hand, in Python, `dict` and `set` keys are
-compared using deep equality. If a key is encountered in a `dict` or `set` that
-would have different semantics in JavaScript than in Python, then a
-`ConversionError` will be thrown.
+In JavaScript, {js:class}`Map` and {js:class}`Set` keys are compared using
+object identity unless the key is an immutable type (meaning a
+{js:data}`String`, a {js:data}`Number`, a {js:data}`BigInt`, a
+{js:data}`Boolean`, {js:data}`undefined`, or {js:data}`null`). On the other
+hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared using
+deep equality. If a key is encountered in a {py:class}`dict` or {py:class}`set`
+that would have different semantics in JavaScript than in Python, then a
+{py:exc}`~pyodide.ffi.ConversionError` will be thrown.
 
-See {ref}`buffer_tojs` for the behavior of `toJs` on buffers.
+See {ref}`buffer_tojs` for the behavior of {js:func}`~PyProxy.toJs` on buffers.
 
 ````{admonition} Memory Leaks and toJs
 :class: warning
 
-The {any}`toJs <PyProxy.toJs>` method can create many proxies at arbitrary
+The {js:func}`~PyProxy.toJs` method can create many proxies at arbitrary
 depth. It is your responsibility to manually `destroy` these proxies if you wish
 to avoid memory leaks. The `pyproxies` argument to `toJs` is designed to help
 with this:
@@ -292,20 +294,23 @@ raised instead.
 
 ### JavaScript to Python
 
-Explicit conversion of a {any}`JsProxy <pyodide.ffi.JsProxy>` into a native Python object is done with
-the {any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive
-"deep" conversion, to do a shallow conversion use `proxy.to_py(depth=1)` The
-`to_py` method performs the following explicit conversions:
+Explicit conversion of a {py:class}`~pyodide.ffi.JsProxy` into a native Python
+object is done with the {py:meth}`JsProxy.to_py() <pyodide.ffi.JsProxy.to_py>`
+method. By default, the {py:meth}`~pyodide.ffi.JsProxy.to_py` method does a
+recursive "deep" conversion, to do a shallow conversion use
+`proxy.to_py(depth=1)`. The {py:meth}`~pyodide.ffi.JsProxy.to_py` method
+performs the following explicit conversions:
 
-| JavaScript | Python |
-| ---------- | ------ |
-| `Array`    | `list` |
-| `Object`\* | `dict` |
-| `Map`      | `dict` |
-| `Set`      | `set`  |
+| JavaScript          | Python           |
+| ------------------- | ---------------- |
+| {js:class}`Array`   | {py:class}`list` |
+| {js:data}`Object`\* | {py:class}`dict` |
+| {js:class}`Map`     | {py:class}`dict` |
+| {js:class}`Set`     | {py:class}`set`  |
 
-\* `to_py` will only convert an object into a dictionary if its constructor is
-`Object`, otherwise the object will be left alone. Example:
+\* {py:meth}`~pyodide.ffi.JsProxy.to_py` will only convert an {js:data}`Object` into a
+dictionary if its constructor is `Object`, otherwise the object will be left
+alone. Example:
 
 ```pyodide
 class Test {};
@@ -321,15 +326,18 @@ pyodide.runPython(`
 `);
 ```
 
-In JavaScript, `Map` and `Set` keys are compared using object identity unless
-the key is an immutable type (meaning a string, a number, a bigint, a boolean,
-`undefined`, or `null`). On the other hand, in Python, `dict` and `set` keys are
-compared using deep equality. If a key is encountered in a `Map` or `Set` that
-would have different semantics in Python than in JavaScript, then a
-`ConversionError` will be thrown. Also, in JavaScript, `true !== 1` and `false !== 0`, but in Python, `True == 1` and `False == 0`. This has the result that a
-JavaScript map can use `true` and `1` as distinct keys but a Python `dict`
-cannot. If the JavaScript map contains both `true` and `1` a `ConversionError`
-will be thrown.
+In JavaScript, {js:class}`Map` and {js:class}`Set` keys are compared using
+object identity unless the key is an immutable type (meaning a
+{js:data}`String`, a {js:data}`Number`, a {js:data}`BigInt`, a
+{js:data}`Boolean`, {js:data}`undefined`, or {js:data}`null`). On the other
+hand, in Python, {py:class}`dict` and {py:class}`set` keys are compared using
+deep equality. If a key is encountered in a {js:class}`Map` or {js:class}`Set`
+that would have different semantics in Python than in JavaScript, then a
+{py:exc}`~pyodide.ffi.ConversionError` will be thrown. Also, in JavaScript,
+`true !== 1` and `false !== 0`, but in Python, `True == 1` and `False == 0`.
+This has the result that a JavaScript map can use `true` and `1` as distinct
+keys but a Python {py:class}`dict` cannot. If the JavaScript map contains both
+`true` and `1` a {py:exc}`~pyodide.ffi.ConversionError` will be thrown.
 
 ## Functions
 
@@ -357,9 +365,10 @@ let result_js = result_py.toJs();
 result_py.destroy();
 ```
 
-If a function is intended to be used from JavaScript, you can use {any}`to_js <pyodide.ffi.to_js>` on the return value. This prevents the return value from
-leaking without requiring the JavaScript code to explicitly destroy it. This is
-particularly important for callbacks.
+If a function is intended to be used from JavaScript, you can use
+{py:func}`~pyodide.ffi.to_js` on the return value. This prevents the return
+value from leaking without requiring the JavaScript code to explicitly destroy
+it. This is particularly important for callbacks.
 
 ```pyodide
 let test = pyodide.runPython(`
@@ -372,8 +381,8 @@ let result = test([1,2,3,4]);
 // result is the array [1, 4, 9, 16], nothing needs to be destroyed.
 ```
 
-If you need to use a key word argument, use {any}`callKwargs <PyProxy.callKwargs>`. The last argument should be a JavaScript object with the
-key value arguments.
+If you need to use a key word argument, use {js:func}`~PyProxy.callKwargs`. The
+last argument should be a JavaScript object with the key value arguments.
 
 ```pyodide
 let test = pyodide.runPython(`
@@ -406,21 +415,24 @@ When a JavaScript function is called, and it returns anything but a promise, if
 the result is a `PyProxy` it is destroyed. Also, any arguments that are
 PyProxies that were created in the process of argument conversion are also
 destroyed. If the `PyProxy` was created in Python using
-{any}`pyodide.ffi.create_proxy` it is not destroyed.
+{py:func}`~pyodide.ffi.create_proxy` it is not destroyed.
 
-When a JavaScript function returns a `Promise` (for example, if the function is
-an `async` function), it is assumed that the `Promise` is going to do some work
-that uses the arguments of the function, so it is not safe to destroy them until
-the `Promise` resolves. In this case, the proxied function returns a Python
-`Future` instead of the original `Promise`. When the `Promise` resolves, the
-result is converted to Python and the converted value is used to resolve the
-`Future`. Then if the result is a `PyProxy` it is destroyed. Any PyProxies
-created in converting the arguments are also destroyed at this point.
+When a JavaScript function returns a {js:data}`Promise` (for example, if the
+function is an `async` function), it is assumed that the {js:data}`Promise` is
+going to do some work that uses the arguments of the function, so it is not safe
+to destroy them until the {js:data}`Promise` resolves. In this case, the proxied
+function returns a Python {py:class}`~asyncio.Future` instead of the original
+{js:data}`Promise`. When the {js:data}`Promise` resolves, the result is
+converted to Python and the converted value is used to resolve the
+{py:class}`~asyncio.Future`. Then if the result is a `PyProxy` it is destroyed.
+Any PyProxies created in converting the arguments are also destroyed at this
+point.
 
 As a result of this, if a `PyProxy` is persisted to be used later, then it must
 either be copied using {any}`PyProxy.copy` in JavaScript, or it must be created
-with {any}`pyodide.ffi.create_proxy` or {any}`pyodide.ffi.create_once_callable`. If it's only
-going to be called once use {any}`pyodide.ffi.create_once_callable`:
+with {py:func}`~pyodide.ffi.create_proxy` or
+{py:func}`~pyodide.ffi.create_once_callable`. If it's only going to be called
+once use {py:func}`~pyodide.ffi.create_once_callable`:
 
 ```py
 from pyodide import create_once_callable
@@ -430,7 +442,7 @@ def my_callback():
 setTimeout(create_once_callable(my_callback), 1000)
 ```
 
-If it's going to be called many times use `create_proxy`:
+If it's going to be called many times use {py:func}`~pyodide.ffi.create_proxy`:
 
 ```py
 from pyodide import create_proxy
@@ -449,12 +461,12 @@ proxy.destroy()
 
 ### Using JavaScript Typed Arrays from Python
 
-JavaScript ArrayBuffers and ArrayBuffer views (`Int8Array` and friends) are
-proxied into Python. Python can't directly access arrays if they are outside
-the WASM heap, so it's impossible to directly use these proxied buffers as Python
-buffers. You can convert such a proxy to a Python `memoryview` using the `to_py`
-api. This makes it easy to correctly convert the array to a Numpy array using
-`numpy.asarray`:
+JavaScript {js:class}`ArrayBuffer` and {js:class}`TypedArray` objects are
+proxied into Python. Python can't directly access arrays if they are outside the
+WASM heap, so it's impossible to directly use these proxied buffers as Python
+buffers. You can convert such a proxy to a Python {py:class}`memoryview` using
+the {py:meth}`~pyodide.ffi.JsProxy.to_py` api. This makes it easy to correctly convert the array to a Numpy
+array using {py:func}`numpy.asarray`:
 
 ```pyodide
 self.jsarray = new Float32Array([1,2,3, 4, 5, 6]);
@@ -468,7 +480,7 @@ pyodide.runPython(`
 ```
 
 After manipulating `numpy_array` you can assign the value back to
-`jsarray` using {any}`JsBuffer.assign`:
+`jsarray` using {py:meth}`~pyodide.ffi.JsBuffer.assign`:
 
 ```pyodide
 pyodide.runPython(`
@@ -478,14 +490,11 @@ pyodide.runPython(`
 console.log(jsarray); // [1, 2, 3, 4, 77, 6]
 ```
 
-The {any}`JsBuffer.assign` and {any}`JsBuffer.assign_to` methods can be used to
-assign a JavaScript buffer from / to a Python buffer which is appropriately
-sized and contiguous. The assignment methods will only work if the data types
-match, the total length of the buffers match, and the Python buffer is
-contiguous.
-
-These APIs are currently experimental, hopefully we will improve them in the
-future.
+The {py:meth}`~pyodide.ffi.JsBuffer.assign` and
+{py:meth}`~pyodide.ffi.JsBuffer.assign_to` methods can be used to assign a
+JavaScript buffer from / to a Python buffer which is appropriately sized and
+contiguous. The assignment methods will only work if the data types match, the
+total length of the buffers match, and the Python buffer is contiguous.
 
 (buffer_tojs)=
 
@@ -494,16 +503,16 @@ future.
 Python objects supporting the [Python Buffer
 protocol](https://docs.python.org/3/c-api/buffer.html) are proxied into
 JavaScript. The data inside the buffer can be accessed via the
-{any}`PyProxy.toJs` method or the {any}`PyProxy.getBuffer` method. The `toJs`
-API copies the buffer into JavaScript, whereas the `getBuffer` method allows low
-level access to the WASM memory backing the buffer. The `getBuffer` API is more
-powerful but requires care to use correctly. For simple use cases the `toJs` API
-should be preferred.
+{js:func}`PyProxy.toJs` method or the {js:func}`PyProxy.getBuffer` method. The
+{js:func}`~PyProxy.toJs` API copies the buffer into JavaScript, whereas the
+{js:func}`~PyProxy.getBuffer` method allows low level access to the WASM memory
+backing the buffer. The `getBuffer` API is more powerful but requires care to
+use correctly. For simple use cases the `toJs` API should be preferred.
 
 If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
-it to a single `TypedArray`. However, in the case that the format of the buffer
-is `'s'`, we will convert the buffer to a string and if the format is `'?'` we
-will convert it to an Array of booleans.
+it to a single {js:class}`TypedArray`. However, in the case that the format of
+the buffer is `'s'`, we will convert the buffer to a string and if the format is
+`'?'` we will convert it to an {js:class}`Array` of booleans.
 
 If the dimension is greater than one, we will convert it to a nested JavaScript
 array, with the innermost dimension handled in the same way we would handle a 1d
@@ -512,12 +521,12 @@ array.
 An example of a case where you would not want to use the `toJs` method is when
 the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
 1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
-{any}`PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped 1920
-x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
+{js:func}`~PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped
+1920 x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
 Typically, the innermost dimension won't matter for performance.
 
-The {any}`PyProxy.getBuffer` method can be used to retrieve a reference to a
-JavaScript typed array that points to the data backing the Python object,
+The {js:func}`~PyProxy.getBuffer` method can be used to retrieve a reference to
+a JavaScript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a JavaScript ndarray library if one is present. For instance, if
 you load the JavaScript [ndarray](https://github.com/scijs/ndarray) package, you
@@ -553,24 +562,22 @@ All entrypoints and exit points from Python code are wrapped in JavaScript `try`
 blocks. At the boundary between Python and JavaScript, errors are caught,
 converted between languages, and rethrown.
 
-JavaScript errors are wrapped in a {any}`JsException <pyodide.JsException>`.
-Python exceptions are converted to a {any}`PythonError <pyodide.PythonError>`.
+JavaScript errors are wrapped in a {py:class}`~pyodide.ffi.JsException`.
+Python exceptions are converted to a {js:class}`~pyodide.PythonError`.
 At present if an exception crosses between Python and JavaScript several times,
 the resulting error message won't be as useful as one might hope.
 
-In order to reduce memory leaks, the {any}`PythonError <pyodide.PythonError>`
-has a formatted traceback, but no reference to the original Python exception.
-The original exception has references to the stack frame and leaking it will
-leak all the local variables from that stack frame. The actual Python exception
-will be stored in
-[`sys.last_value`](https://docs.python.org/3/library/sys.html#sys.last_value) so
-if you need access to it (for instance to produce a traceback with certain
-functions filtered out), use that.
+In order to reduce memory leaks, the {js:class}`~pyodide.PythonError` has a
+formatted traceback, but no reference to the original Python exception. The
+original exception has references to the stack frame and leaking it will leak
+all the local variables from that stack frame. The actual Python exception will
+be stored in {py:data}`sys.last_value` so if you need access to it (for instance
+to produce a traceback with certain functions filtered out), use that.
 
 ```{admonition} Be careful Proxying Stack Frames
 :class: warning
-If you make a {any}`PyProxy` of ``sys.last_value``, you should be especially
-careful to {any}`destroy() <PyProxy.destroy>` it when you are done with it, or
+If you make a {any}`PyProxy` of {py:data}`sys.last_value`, you should be especially
+careful to {js:meth}`~PyProxy.destroy` it when you are done with it, or
 you may leak a large amount of memory if you don't.
 ```
 
@@ -644,13 +651,12 @@ let sys = pyodide.pyimport("sys");
 
 ### Importing JavaScript objects into Python
 
-JavaScript objects in the
-[`globalThis`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis)
-global scope can be imported into Python using the `js` module.
+JavaScript objects in the {js:data}`globalThis` global scope can be imported
+into Python using the `js` module.
 
 When importing a name from the `js` module, the `js` module looks up JavaScript
-attributes of the `globalThis` scope and translates the JavaScript objects into
-Python.
+attributes of the {js:data}`globalThis` scope and translates the JavaScript
+objects into Python.
 
 ```py
 import js
