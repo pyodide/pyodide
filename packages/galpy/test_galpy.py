@@ -70,7 +70,7 @@ def test_actionAngle(selenium):
     return None
 
 
-@galpy_test_decorator()
+@galpy_test_decorator(firefox="times out")
 @run_in_pyodide(
     packages=[
         "galpy",
