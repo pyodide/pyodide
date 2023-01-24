@@ -8,7 +8,7 @@ function ensureCaughtObjectIsError(e: any): Error {
   if (typeof e === "string") {
     // Sometimes emscripten throws a raw string...
     e = new Error(e);
-  } else if (typeof e === "object" && e.name === "ExitStatus") {
+  } else if (e && typeof e === "object" && e.name === "ExitStatus") {
     let status = e.status;
     e = new Exit(e.message);
     e.status = status;
