@@ -32,6 +32,10 @@ myst:
   tree builds.
   {pr}`3495`
 
+- {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
+  it will insert an EOF automatically after each string or buffer. Defaults to `true`.
+  {pr}`3488`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
