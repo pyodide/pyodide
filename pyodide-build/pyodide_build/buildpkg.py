@@ -27,11 +27,11 @@ from urllib import request
 
 from . import common, pypabuild
 from .common import (
-    BUILD_VARS,
     chdir,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
+    set_build_environment,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -117,20 +117,8 @@ class BashRunnerWithSharedEnvironment:
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env = {key: os.environ[key] for key in BUILD_VARS} | {"PYODIDE": "1"}
-    if "PYODIDE_JOBS" in os.environ:
-        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-
-    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
-    if "PKG_CONFIG_PATH" in os.environ:
-        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
-
-    tools_dir = Path(__file__).parent / "tools"
-
-    env["CMAKE_TOOLCHAIN_FILE"] = str(
-        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-    )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+    env: dict[str, str] = {}
+    set_build_environment(env)
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
