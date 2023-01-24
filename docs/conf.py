@@ -147,7 +147,7 @@ except ImportError:
 
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
-if IN_SPHINX or IN_READTHEDOCS:
+if IN_SPHINX:
     sys.path = extra_sys_path_dirs + sys.path
     import builtins
 
@@ -156,6 +156,12 @@ if IN_SPHINX or IN_READTHEDOCS:
     # override docs_argspec, _pyodide.docs_argspec will read this value back.
     # Must do this before importing pyodide!
     setattr(builtins, "--docs_argspec--", docs_argspec)
+
+    # Monkey patch for python3.11 incompatible code
+    import inspect
+
+    if not hasattr(inspect, "getargspec"):
+        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
 
 import pyodide
 
@@ -171,15 +177,9 @@ html_title = f"Version {version}"
 
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
 
-if IN_SPHINX:
-    # Monkey patch for python3.11 incompatible code
-    import inspect
-
-    if not hasattr(inspect, "getargspec"):
-        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
-
 
 if IN_READTHEDOCS:
+    # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
     os.makedirs("_build/html", exist_ok=True)
     res = subprocess.check_output(
