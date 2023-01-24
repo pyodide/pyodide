@@ -93,7 +93,6 @@ API.fatal_error = function (e: any) {
   e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
   const isexit = e instanceof Exit;
-  console.log({ e, isexit });
   if (!isexit) {
     console.error(
       "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
