@@ -8,6 +8,10 @@ function ensureCaughtObjectIsError(e: any): Error {
   if (typeof e === "string") {
     // Sometimes emscripten throws a raw string...
     e = new Error(e);
+  } else if (e && typeof e === "object" && e.name === "ExitStatus") {
+    let status = e.status;
+    e = new Exit(e.message);
+    e.status = status;
   } else if (
     typeof e !== "object" ||
     e === null ||
@@ -97,20 +101,27 @@ API.fatal_error = function (e: any) {
   // Mark e so we know not to handle it later in EM_JS wrappers
   e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
-  console.error(
-    "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
-  );
-  console.error("The cause of the fatal error was:");
-  if (API.inTestHoist) {
-    // Test hoist won't print the error object in a useful way so convert it to
-    // string.
-    console.error(e.toString());
-    console.error(e.stack);
-  } else {
-    console.error(e);
+  const isexit = e instanceof Exit;
+  if (!isexit) {
+    console.error(
+      "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
+    );
+    console.error("The cause of the fatal error was:");
+    if (API.inTestHoist) {
+      // Test hoist won't print the error object in a useful way so convert it to
+      // string.
+      console.error(e.toString());
+      console.error(e.stack);
+    } else {
+      console.error(e);
+    }
   }
   try {
-    Module._dump_traceback();
+    if (!isexit) {
+      Module._dump_traceback();
+    }
+    let reason = isexit ? "exited" : "fatally failed";
+    let msg = `Pyodide already ${reason} and can no longer be used.`;
     for (let key of Object.keys(API.public_api)) {
       if (key.startsWith("_") || key === "version") {
         continue;
@@ -119,9 +130,7 @@ API.fatal_error = function (e: any) {
         enumerable: true,
         configurable: true,
         get: () => {
-          throw new Error(
-            "Pyodide already fatally failed and can no longer be used.",
-          );
+          throw new Error(msg);
         },
       });
     }
@@ -134,11 +143,6 @@ API.fatal_error = function (e: any) {
   }
   throw e;
 };
-
-class FatalPyodideError extends Error {}
-Object.defineProperty(FatalPyodideError.prototype, "name", {
-  value: FatalPyodideError.name,
-});
 
 let stderr_chars: number[] = [];
 API.capture_stderr = function () {
@@ -288,7 +292,8 @@ export class PythonError extends Error {
    */
   __error_address: number;
   /**
-   * The Python type, e.g, :any:`RuntimeError` or :any:`KeyError`.
+   * The name of the Python error class, e.g, :any:`RuntimeError` or
+   * :any:`KeyError`.
    */
   type: string;
   constructor(type: string, message: string, error_address: number) {
@@ -300,9 +305,6 @@ export class PythonError extends Error {
     this.__error_address = error_address;
   }
 }
-Object.defineProperty(PythonError.prototype, "name", {
-  value: PythonError.name,
-});
 API.PythonError = PythonError;
 // A special marker. If we call a CPython API from an EM_JS function and the
 // CPython API sets an error, we might want to return an error status back to
@@ -318,7 +320,14 @@ class _PropagatePythonError extends Error {
     );
   }
 }
-Object.defineProperty(_PropagatePythonError.prototype, "name", {
-  value: _PropagatePythonError.name,
-});
+function setName(errClass: any) {
+  Object.defineProperty(errClass.prototype, "name", {
+    value: errClass.name,
+  });
+}
+
+class FatalPyodideError extends Error {}
+class Exit extends Error {}
+[_PropagatePythonError, FatalPyodideError, Exit, PythonError].forEach(setName);
+
 Module._PropagatePythonError = _PropagatePythonError;

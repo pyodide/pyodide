@@ -9,7 +9,7 @@ sphinx-issues
 sphinx-js>=3.2.1
 sphinx-version-warning>=1.1.2
 sphinx-click
-sphinx-autodoc-typehints>=1.21.3
+sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
 pydantic
 # Packages that we want to document as part of the Pyodide CLI

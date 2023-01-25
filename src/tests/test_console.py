@@ -81,6 +81,7 @@ def test_completion():
         [
             "print.__ge__(",
             "print.__getattribute__(",
+            "print.__getstate__()",
             "print.__gt__(",
         ],
         8,
@@ -392,8 +393,8 @@ def test_console_html(selenium):
             >>> 1+
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
-                  ^
-            SyntaxError: invalid syntax]
+                 ^
+            SyntaxError: incomplete input]
             """
         ).strip()
     )
@@ -435,6 +436,7 @@ def test_console_html(selenium):
             [[;;;terminal-error]Traceback (most recent call last):
               File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
+                       ^^^^^^^^^^^
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """

@@ -233,6 +233,7 @@ def clean_pkg_install_stdout(stdout: str) -> str:
     # Remove version numbers
     stdout = re.sub(r"(?<=[<>=_-])[\d+](\.?_?[\d+])*", "*", stdout)
     stdout = re.sub(r" /[a-zA-Z0-9/]*/dist", " .../dist", stdout)
+    stdout = re.sub(r"cp[0-9]*", "cpxxx", stdout)
 
     return stdout.strip()
 
@@ -252,7 +253,7 @@ Successfully installed regex-2.0
         )
         == """\
 Looking in links: .../dist
-Processing ./dist/regex-*-cp310-cp310-emscripten_*_wasm32.whl
+Processing ./dist/regex-*-cpxxx-cpxxx-emscripten_*_wasm32.whl
 Installing collected packages: regex
 Successfully installed regex-*\
 """
@@ -354,7 +355,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cp310-cp310-emscripten_*_wasm32.whl
+            Processing ./dist/regex-*-cpxxx-cpxxx-emscripten_*_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
             """
@@ -387,14 +388,19 @@ def test_pypa_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
-    version = "0.21.2"  # just need some version that already exists
+    version = "0.21.0"  # just need some version that already exists
     download_xbuildenv(version, path)
+
+    # We don't need host dependencies for this test so zero them out
+    (path / "xbuildenv/requirements.txt").write_text("")
+
     install_xbuildenv(version, path)
     pip_opts = [
         "--index-url",
         "file:" + str((path / "xbuildenv/pyodide-root/pypa_index").resolve()),
         "--platform=emscripten_3_1_14_wasm32",
         "--only-binary=:all:",
+        "--python-version=310",
         "-t",
         str(path / "temp_lib"),
     ]
@@ -416,6 +422,10 @@ def test_pypa_index(tmp_path):
         capture_output=True,
         encoding="utf8",
     )
+    print("\n\nstdout:")
+    print(result.stdout)
+    print("\n\nstderr:")
+    print(result.stderr)
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (

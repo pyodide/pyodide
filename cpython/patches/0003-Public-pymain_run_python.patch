@@ -1,17 +1,17 @@
-From 3f67ed75d007f3b5917c0d0da6ba83f6d2ef9258 Mon Sep 17 00:00:00 2001
+From 8dc93243eb0cdf27a81e9baf156df621cc8e2eb9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 17 Jul 2022 14:40:39 +0100
-Subject: [PATCH 13/14] Public pymain_run_python
+Subject: [PATCH 3/4] Public pymain_run_python
 
 ---
  Modules/main.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Modules/main.c b/Modules/main.c
-index 2684d23067..e7c33106c5 100644
+index 6904e3f76e..07bea58080 100644
 --- a/Modules/main.c
 +++ b/Modules/main.c
-@@ -530,7 +530,7 @@ pymain_repl(PyConfig *config, int *exitcode)
+@@ -537,7 +537,7 @@ pymain_repl(PyConfig *config, int *exitcode)
  }
  
  
@@ -19,7 +19,7 @@ index 2684d23067..e7c33106c5 100644
 +void
  pymain_run_python(int *exitcode)
  {
-     PyInterpreterState *interp = _PyInterpreterState_GET();
+     PyObject *main_importer_path = NULL;
 -- 
 2.25.1
 

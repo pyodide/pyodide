@@ -8,7 +8,7 @@ from asyncio import Future
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from ._core import IN_BROWSER, create_once_callable
+from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
@@ -18,8 +18,10 @@ S = TypeVar("S")
 
 
 class PyodideFuture(Future[T]):
-    """A future with extra then, catch, and finally_ methods based on the
-    Javascript promise API.
+    """A future with extra ``then``, ``catch``, and ``finally_`` methods based
+    on the Javascript promise API. ``Webloop.create_future`` returns these so in
+    practice all futures encountered in Pyodide should be an instance of
+    ``PyodideFuture``.
     """
 
     @overload
@@ -81,8 +83,8 @@ class PyodideFuture(Future[T]):
 
         Returns
         -------
-        A new future to be resolved when the original future is done and the
-        appropriate callback is also done.
+            A new future to be resolved when the original future is done and the
+            appropriate callback is also done.
         """
         result: PyodideFuture[S] = PyodideFuture()
 
@@ -135,9 +137,13 @@ class PyodideFuture(Future[T]):
     def catch(
         self, onrejected: Callable[[BaseException], object]
     ) -> "PyodideFuture[Any]":
+        """Equivalent to ``then(None, onrejected)``"""
         return self.then(None, onrejected)
 
     def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
+        """When the future is either resolved or rejected, call onfinally with
+        no arguments.
+        """
         result: PyodideFuture[T] = PyodideFuture()
 
         async def callback(fut: Future[T]) -> None:
@@ -579,7 +585,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 
 def _initialize_event_loop():
-    from ._core import IN_BROWSER
+    from .ffi import IN_BROWSER
 
     if not IN_BROWSER:
         return
@@ -593,4 +599,4 @@ def _initialize_event_loop():
     policy.get_event_loop()
 
 
-__all__ = ["WebLoop", "WebLoopPolicy"]
+__all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture"]
