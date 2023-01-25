@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from .io import MetaConfig
+from .logger import logger
 
 
 @functools.lru_cache(maxsize=1)
@@ -81,6 +82,14 @@ def load_recipes(
         elif name_or_tag == "no-numpy-dependents":
             # This is a meta package and will be handled outside of this function
             recipes["no-numpy-dependents"] = None  # type: ignore[assignment]
+
+        elif name_or_tag in ("core", "min-scipy-stack"):
+            logger.warning(
+                f"Using meta package without the 'tag:' prefix is deprecated,"
+                f" use 'tag:{name_or_tag}' instead."
+            )
+            for recipe in tagged_recipes[name_or_tag]:
+                recipes[recipe.package.name] = recipe.copy(deep=True)
         else:
             raise ValueError(f"Unknown package name or tag: {name_or_tag}")
 
