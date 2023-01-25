@@ -184,26 +184,29 @@ if IN_READTHEDOCS:
     env = {"PYODIDE_BASE_URL": CDN_URL}
     os.makedirs(f"{TARGET_DIR}/html", exist_ok=True)
     res = subprocess.check_output(
-        ["make", "-C", "..", f"docs/{TARGET_DIR}/html/console.html"],
+        ["make", "-C", "..", "dist/console.html"],
         env=env,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
     )
     print(res)
+
     # insert the Plausible analytics script to console.html
-    console_path = Path(TARGET_DIR) / "html/console.html"
-    console_html = console_path.read_text().splitlines(keepends=True)
-    for idx, line in enumerate(list(console_html)):
+    console_html_lines = (
+        Path("../dist/console.html").read_text().splitlines(keepends=True)
+    )
+    for idx, line in enumerate(list(console_html_lines)):
         if 'pyodide.js">' in line:
             # insert the analytics script after the `pyodide.js` script
-            console_html.insert(
+            console_html_lines.insert(
                 idx,
                 '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
             )
             break
     else:
         raise ValueError("Could not find pyodide.js in the <head> section")
-    console_path.write_text("".join(console_html))
+    output_path = Path(TARGET_DIR) / "html/console.html"
+    output_path.write_text("".join(console_html_lines))
 
 
 if IN_SPHINX:
