@@ -178,31 +178,35 @@ html_title = f"Version {version}"
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
 
 
-if IN_READTHEDOCS:
+def write_console_html(app):
     # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
-    os.makedirs("_build/html", exist_ok=True)
+    os.makedirs(app.outdir, exist_ok=True)
+    os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
-        ["make", "-C", "..", "docs/_build/html/console.html"],
+        ["make", "-C", "..", "dist/console.html"],
         env=env,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
     )
     print(res)
+
     # insert the Plausible analytics script to console.html
-    console_path = Path("_build/html/console.html")
-    console_html = console_path.read_text().splitlines(keepends=True)
-    for idx, line in enumerate(list(console_html)):
+    console_html_lines = (
+        Path("../dist/console.html").read_text().splitlines(keepends=True)
+    )
+    for idx, line in enumerate(list(console_html_lines)):
         if 'pyodide.js">' in line:
             # insert the analytics script after the `pyodide.js` script
-            console_html.insert(
+            console_html_lines.insert(
                 idx,
                 '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
             )
             break
     else:
         raise ValueError("Could not find pyodide.js in the <head> section")
-    console_path.write_text("".join(console_html))
+    output_path = Path(app.outdir) / "console.html"
+    output_path.write_text("".join(console_html_lines))
 
 
 if IN_SPHINX:
@@ -283,3 +287,4 @@ def typehints_formatter(annotation, config):
 def setup(app):
     app.add_config_value("global_replacements", {}, True)
     app.connect("source-read", globalReplace)
+    write_console_html(app)
