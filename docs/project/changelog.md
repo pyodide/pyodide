@@ -13,29 +13,33 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.22.1
 
-- {{ Fix }} Emscripten is no longer required to create a Pyodide virtual
-  environment.
-  {pr}`3485`
+_January 25, 2023_
+
+- {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
+  it will insert an EOF automatically after each string or buffer. Defaults to
+  `true`. This also affects the behavior of `
+{pr}`3488`
 
 - {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
   {pr}`3484`
 
-- {{ Fix }} `pyodide config` won't print extra messages anymore.
-  {pr}`3483`
-
-- {{ Fix }} Pass the same environment variables for out of tree builds as for in
-  tree builds.
-  {pr}`3495`
-
-- {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
-  it will insert an EOF automatically after each string or buffer. Defaults to `true`.
-  {pr}`3488`
-
 - {{ Enhancement }} Pyodide displays a better message when someone calls posix
   `exit` or `os._exit`.
   {pr}`3496`
+
+### Package Loading
+
+- {{ Fix }} Fix incorrect error message when loading a package
+  include in Pyodide fails.
+  {pr}`3435`
+
+### Build system
+
+- {{ Fix }} Emscripten is no longer required to create a Pyodide virtual
+  environment.
+  {pr}`3485`
 
 - {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
   when run multiple times.
@@ -45,11 +49,12 @@ myst:
   only pass the arguments.
   {pr}`3490`
 
-### Package Loading
+- {{ Fix }} `pyodide config` won't print extra messages anymore.
+  {pr}`3483`
 
-- {{ Fix }} Fix incorrect error message when loading a package
-  include in Pyodide fails.
-  {pr}`3435`
+- {{ Fix }} Pass the same environment variables for out of tree builds as for in
+  tree builds.
+  {pr}`3495`
 
 ## Version 0.22.0
 
