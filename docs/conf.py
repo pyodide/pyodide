@@ -179,18 +179,19 @@ global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
 
 
 if IN_READTHEDOCS:
+    TARGET_DIR = "_readthedocs"
     # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
-    os.makedirs("_build/html", exist_ok=True)
+    os.makedirs(f"{TARGET_DIR}/html", exist_ok=True)
     res = subprocess.check_output(
-        ["make", "-C", "..", "docs/_build/html/console.html"],
+        ["make", "-C", "..", f"docs/{TARGET_DIR}/html/console.html"],
         env=env,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
     )
     print(res)
     # insert the Plausible analytics script to console.html
-    console_path = Path("_build/html/console.html")
+    console_path = Path(TARGET_DIR) / "html/console.html"
     console_html = console_path.read_text().splitlines(keepends=True)
     for idx, line in enumerate(list(console_html)):
         if 'pyodide.js">' in line:
