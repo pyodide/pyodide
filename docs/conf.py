@@ -183,6 +183,7 @@ if IN_READTHEDOCS:
     # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
     os.makedirs(f"{TARGET_DIR}/html", exist_ok=True)
+    os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
         ["make", "-C", "..", "dist/console.html"],
         env=env,
