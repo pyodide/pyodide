@@ -155,6 +155,8 @@ dist/webworker_dev.js: src/templates/webworker.js
 
 .PHONY: libgl
 libgl:
+	# TODO(ryanking13): Link this to a side module not to the main module.
+	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
 
 .PHONY: lint
