@@ -48,6 +48,20 @@ myst:
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
 
+- {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
+  packages.
+  {pr}`3444`
+
+- {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
+  you must prefix `tag:` to the meta-package name. For example, to build the
+  `core` meta-package, you must run `pyodide build-recipes tag:core`, or
+  `PYODIDE_PACKAGES="tag:core" make`.
+  {pr}`3444`
+
+- {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
+  when run multiple times.
+  {pr}`3445`
+
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
@@ -57,14 +71,6 @@ myst:
 - Added `pyodide create-zipfile` CLI command that creates a zip file of a directory.
   This command is hidden by default since it is not intended for use by end users.
   {pr}`3411` {pr}`3463`
-
-- {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
-  packages.
-  {pr}`3444`
-
-- {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
-  when run multiple times.
-  {pr}`3445`
 
 ### Package Loading
 

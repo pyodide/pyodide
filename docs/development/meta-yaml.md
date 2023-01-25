@@ -49,11 +49,11 @@ as a top-level import names.
 
 The list of tag of the package. This is a meta information used to group
 the package. Normally this is not needed, but it can be useful to group
-packages by functionality. For example, the `min-scipy-stack` tag is used
-to group packages that are part of the minimal scipy stack.
+packages by functionality. Following tags are currently used in Pyodide:
 
-A special tag `always` can be used to indicate that the package
-should always be built.
+- always: This package is always built.
+- core: This package is part of the core Pyodide package.
+- min-scipy-stack: This package is part of the minimal scipy stack.
 
 ## `source`
 
