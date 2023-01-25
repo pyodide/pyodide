@@ -1,7 +1,6 @@
 import functools
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
 
 from .io import MetaConfig
 
@@ -27,7 +26,7 @@ def load_recipes(
     recipe_dir: Path,
     names_or_tags: Iterable[str],
     load_always_tag: bool = True,
-) -> tuple[dict[str, MetaConfig], dict[str, Any]]:
+) -> dict[str, MetaConfig]:
     """
     Load the recipes for the given package names or tags.
     Note that this function does not do any dependency resolution.
@@ -48,8 +47,6 @@ def load_recipes(
     -------
     recipes
         Dictionary of package name => config
-    flags
-        Extra flags that should be handled by the caller
     """
 
     available_recipes = load_all_recipes(recipe_dir)
@@ -61,7 +58,6 @@ def load_recipes(
             tagged_recipes.setdefault(_tag, []).append(recipe)
 
     recipes: dict[str, MetaConfig] = {}
-    flags: dict[str, Any] = {}
 
     for name_or_tag in names_or_tags:
         # 1. package name
@@ -69,21 +65,21 @@ def load_recipes(
             recipes[name_or_tag] = available_recipes[name_or_tag].copy(deep=True)
 
         # 2. tag
-        elif name_or_tag in tagged_recipes:
+        elif name_or_tag.startswith("tag:") and name_or_tag[4:] in tagged_recipes:
             for recipe in tagged_recipes[name_or_tag]:
                 recipes[recipe.package.name] = recipe.copy(deep=True)
 
         # 3. meta packages
         elif name_or_tag == "*":  # all packages
-            recipes = {
-                name: package.copy(deep=True)
-                for name, package in available_recipes.items()
-            }
+            recipes.update(
+                {
+                    name: package.copy(deep=True)
+                    for name, package in available_recipes.items()
+                }
+            )
         elif name_or_tag == "no-numpy-dependents":
-            flags[
-                "no-numpy-dependents"
-            ] = True  # This flag will be handled by the caller
-
+            # This is a meta package and will be handled outside of this function
+            recipes["no-numpy-dependents"] = None  # type: ignore[assignment]
         else:
             raise ValueError(f"Unknown package name or tag: {name_or_tag}")
 
@@ -92,4 +88,4 @@ def load_recipes(
         for recipe in always_recipes:
             recipes[recipe.package.name] = recipe.copy(deep=True)
 
-    return recipes, flags
+    return recipes

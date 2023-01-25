@@ -326,7 +326,6 @@ def generate_dependency_graph(
     packages_dir: Path,
     requested: set[str],
     disabled: set[str] | None = None,
-    flags: dict[str, Any] | None = None,
 ) -> dict[str, BasePackage]:
     """This generates a dependency graph for given packages.
 
@@ -347,8 +346,6 @@ def generate_dependency_graph(
         A set of packages to build
     disabled
         A set of packages to not build
-    flags
-        Some extra flags that will enable / disable packages
 
     Returns
     -------
@@ -361,15 +358,16 @@ def generate_dependency_graph(
 
     if not disabled:
         disabled = set()
-    if not flags:
-        flags = {}
 
     # Create dependency graph.
     # On first pass add all dependencies regardless of whether
     # disabled since it might happen because of a transitive dependency
     graph = {}
     all_recipes = recipe.load_all_recipes(packages_dir)
+    no_numpy_dependents = "no-numpy-dependents" in requested
+    requested.discard("no-numpy-dependents")
     packages = requested.copy()
+
     while packages:
         pkgname = packages.pop()
 
@@ -388,7 +386,7 @@ def generate_dependency_graph(
         if pkgname in disabled:
             pkg.disabled = True
             continue
-        if "no-numpy-dependents" in flags and "numpy" in pkg.dependencies:
+        if no_numpy_dependents and "numpy" in pkg.dependencies:
             pkg.disabled = True
             continue
         for dep in pkg.dependencies:
@@ -700,9 +698,9 @@ def build_packages(
     packages_dir: Path, args: argparse.Namespace
 ) -> dict[str, BasePackage]:
     requested, disabled = _parse_package_query(args.only)
-    requested_packages, flags = recipe.load_recipes(packages_dir, requested)
+    requested_packages = recipe.load_recipes(packages_dir, requested)
     pkg_map = generate_dependency_graph(
-        packages_dir, set(requested_packages.keys()), disabled, flags
+        packages_dir, set(requested_packages.keys()), disabled
     )
 
     build_from_graph(pkg_map, args)
