@@ -26,7 +26,7 @@ def load_all_recipes(recipe_dir: Path) -> dict[str, MetaConfig]:
 def load_recipes(
     recipe_dir: Path,
     names_or_tags: Iterable[str],
-    load_always: bool = True,
+    load_always_tag: bool = True,
 ) -> tuple[dict[str, MetaConfig], dict[str, Any]]:
     """
     Load the recipes for the given package names or tags.
@@ -41,7 +41,7 @@ def load_recipes(
         It also supports the following special values:
             - "*" : all packages
             - "no-numpy-dependents" : all packages except those that depend on numpy (including numpy itself)
-    load_always
+    load_always_tag
         Whether to load packages with the "always" tag/
 
     Returns
@@ -87,7 +87,7 @@ def load_recipes(
         else:
             raise ValueError(f"Unknown package name or tag: {name_or_tag}")
 
-    if load_always:
+    if load_always_tag:
         always_recipes = tagged_recipes.get("always", [])
         for recipe in always_recipes:
             recipes[recipe.package.name] = recipe.copy(deep=True)
