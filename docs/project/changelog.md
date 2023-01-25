@@ -39,6 +39,10 @@ myst:
   it will insert an EOF automatically after each string or buffer. Defaults to `true`.
   {pr}`3488`
 
+- {{ Enhancement }} Pyodide displays a better message when someone calls posix
+  `exit` or `os._exit`.
+  {pr}`3496`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
