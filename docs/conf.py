@@ -19,12 +19,6 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
-pyodide_version = "0.22.0"
-
-if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
-    CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
-else:
-    CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full/"
 
 # -- General configuration ---------------------------------------------------
 
@@ -46,6 +40,7 @@ extensions = [
     "versionwarning.extension",
     "sphinx_issues",
     "sphinx_autodoc_typehints",
+    "sphinx_design",  # Used for tabs in building-from-sources.md
 ]
 
 
@@ -72,10 +67,11 @@ autodoc_default_flags = ["members", "inherited-members"]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.10", None),
     "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
 # Add modules to be mocked.
-mock_modules = ["ruamel.yaml", "tomli"]
+mock_modules = ["tomli"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -131,20 +127,14 @@ htmlhelp_basename = "Pyodidedoc"
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
-
-def delete_attrs(cls):
-    """Prevent attributes of a class or module from being documented.
-
-    The top level documentation comment of the class or module will still be
-    rendered.
-    """
-    for name in dir(cls):
-        if not name.startswith("_"):
-            try:
-                delattr(cls, name)
-            except Exception:
-                pass
-
+base_dir = Path(__file__).resolve().parent.parent
+extra_sys_path_dirs = [
+    str(base_dir),
+    str(base_dir / "pyodide-build"),
+    str(base_dir / "docs/sphinx_pyodide"),
+    str(base_dir / "src/py"),
+    str(base_dir / "packages/micropip/src"),
+]
 
 # Try not to cause side effects if we are imported incidentally.
 
@@ -157,7 +147,39 @@ except ImportError:
 
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
+if IN_SPHINX:
+    sys.path = extra_sys_path_dirs + sys.path
+    import builtins
+
+    from sphinx_pyodide.util import docs_argspec
+
+    # override docs_argspec, _pyodide.docs_argspec will read this value back.
+    # Must do this before importing pyodide!
+    setattr(builtins, "--docs_argspec--", docs_argspec)
+
+    # Monkey patch for python3.11 incompatible code
+    import inspect
+
+    if not hasattr(inspect, "getargspec"):
+        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
+import pyodide
+
+# The full version, including alpha/beta/rc tags.
+release = version = pyodide.__version__
+
+if ".dev" in version or os.environ.get("READTHEDOCS_VERSION") == "latest":
+    CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
+else:
+    CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
+
+html_title = f"Version {version}"
+
+global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
+
+
 if IN_READTHEDOCS:
+    # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
     os.makedirs("_build/html", exist_ok=True)
     res = subprocess.check_output(
@@ -184,36 +206,13 @@ if IN_READTHEDOCS:
 
 
 if IN_SPHINX:
-    # Compatibility shims. sphinx-js and sphinxcontrib-napoleon have not been updated for Python 3.10
-    import collections
-    from typing import Callable, Mapping
-
-    collections.Mapping = Mapping  # type: ignore[attr-defined]
-    collections.Callable = Callable  # type: ignore[attr-defined]
-
-    base_dir = Path(__file__).resolve().parent.parent
-    path_dirs = [
-        str(base_dir),
-        str(base_dir / "pyodide-build"),
-        str(base_dir / "docs/sphinx_pyodide"),
-        str(base_dir / "src/py"),
-        str(base_dir / "packages/micropip/src"),
-    ]
-    sys.path = path_dirs + sys.path
-
     from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
 
-    JavaScriptDomain.roles["func"] = JSXRefRole()
+    JavaScriptDomain.roles["class"] = JSXRefRole()
 
-    import micropip  # noqa: F401
-    import pyodide
     from pyodide.ffi import JsProxy
 
     del JsProxy.__new__
-
-    # The full version, including alpha/beta/rc tags.
-    release = version = pyodide.__version__
-    html_title = f"Version {version}"
 
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
@@ -235,6 +234,8 @@ if IN_SPHINX:
 
     # Prevent API docs for webloop methods: they are the same as for base event loop
     # and it clutters api docs too much
+    from sphinx_pyodide.util import delete_attrs
+
     import pyodide.console
     import pyodide.webloop
 
@@ -254,16 +255,12 @@ def globalReplace(app, docname, source):
     source[0] = result
 
 
-global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
+always_document_param_types = True
 
 
 def typehints_formatter(annotation, config):
-    """Adjust the rendering of Literal types.
-
-    The literal values should be ``rendered as code``.
-    """
+    """Adjust the rendering of various types that sphinx_autodoc_typehints mishandles"""
     from sphinx_autodoc_typehints import (
-        get_annotation_args,
         get_annotation_class_name,
         get_annotation_module,
     )
@@ -271,15 +268,15 @@ def typehints_formatter(annotation, config):
     try:
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
-        args = get_annotation_args(annotation, module, class_name)
     except ValueError:
         return None
     full_name = f"{module}.{class_name}"
-    if full_name == "typing.Literal":
-        formatted_args = "\\[{}]".format(
-            ", ".join("``{}``".format(repr(arg)) for arg in args)
-        )
-        return f":py:data:`~{full_name}`{formatted_args}"
+    if full_name == "typing.TypeVar":
+        # The way sphinx-autodoc-typehints renders TypeVar is too noisy for my
+        # taste
+        return f"``{annotation.__name__}``"
+    if full_name == "ast.Module":
+        return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
     return None
 
 

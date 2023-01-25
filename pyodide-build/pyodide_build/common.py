@@ -11,9 +11,13 @@ from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
-import tomli
+if sys.version_info < (3, 11, 0):
+    import tomli as tomllib
+else:
+    import tomllib
+
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
@@ -305,6 +309,35 @@ def get_make_environment_vars() -> dict[str, str]:
     return environment
 
 
+def environment_substitute_args(
+    args: dict[str, str], env: dict[str, str] | None = None
+) -> dict[str, Any]:
+    """
+    Substitute $(VAR) in args with the value of the environment variable VAR.
+
+    Parameters
+    ----------
+    args
+        A dictionary of arguments
+
+    env
+        A dictionary of environment variables. If None, use os.environ.
+
+    Returns
+    -------
+    A dictionary of arguments with the substitutions applied.
+    """
+    if env is None:
+        env = dict(os.environ)
+    subbed_args = {}
+    for arg, value in args.items():
+        if isinstance(value, str):
+            for e_name, e_value in env.items():
+                value = value.replace(f"$({e_name})", e_value)
+        subbed_args[arg] = value
+    return subbed_args
+
+
 def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     """
     Recursively search for the root of the Pyodide repository,
@@ -323,8 +356,8 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
 
         try:
             with pyproject_file.open("rb") as f:
-                configs = tomli.load(f)
-        except tomli.TOMLDecodeError as e:
+                configs = tomllib.load(f)
+        except tomllib.TOMLDecodeError as e:
             raise ValueError(f"Could not parse {pyproject_file}.") from e
 
         if "tool" in configs and "pyodide" in configs["tool"]:
@@ -430,3 +463,25 @@ def chdir(new_dir: Path) -> Generator[None, None, None]:
         yield
     finally:
         os.chdir(orig_dir)
+
+
+def set_build_environment(env: dict[str, str]) -> None:
+    """Assign build environment variables to env.
+
+    Sets common environment between in tree and out of tree package builds.
+    """
+    env.update({key: os.environ[key] for key in BUILD_VARS})
+    env["PYODIDE"] = "1"
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
+    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    if "PKG_CONFIG_PATH" in os.environ:
+        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+
+    tools_dir = Path(__file__).parent / "tools"
+
+    env["CMAKE_TOOLCHAIN_FILE"] = str(
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+    )
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")

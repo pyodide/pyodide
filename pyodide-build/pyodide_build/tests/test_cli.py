@@ -158,3 +158,30 @@ def test_create_zipfile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.py" in zf.namelist()
         assert "module2.py" in zf.namelist()
+
+
+def test_create_zipfile_compile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+            "--pycompile",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.pyc" in zf.namelist()
+        assert "module2.pyc" in zf.namelist()
