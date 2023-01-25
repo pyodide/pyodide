@@ -178,11 +178,10 @@ html_title = f"Version {version}"
 global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
 
 
-if IN_READTHEDOCS:
-    TARGET_DIR = "_readthedocs/html"
+def write_console_html(app):
     # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
-    os.makedirs(TARGET_DIR, exist_ok=True)
+    os.makedirs(app.outdir, exist_ok=True)
     os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
         ["make", "-C", "..", "dist/console.html"],
@@ -206,7 +205,7 @@ if IN_READTHEDOCS:
             break
     else:
         raise ValueError("Could not find pyodide.js in the <head> section")
-    output_path = Path(TARGET_DIR) / "console.html"
+    output_path = Path(app.outdir) / "console.html"
     output_path.write_text("".join(console_html_lines))
 
 
@@ -288,3 +287,4 @@ def typehints_formatter(annotation, config):
 def setup(app):
     app.add_config_value("global_replacements", {}, True)
     app.connect("source-read", globalReplace)
+    write_console_html(app)
