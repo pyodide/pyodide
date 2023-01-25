@@ -206,7 +206,7 @@ if IN_READTHEDOCS:
             break
     else:
         raise ValueError("Could not find pyodide.js in the <head> section")
-    output_path = Path(TARGET_DIR) / "/console.html"
+    output_path = Path(TARGET_DIR) / "console.html"
     output_path.write_text("".join(console_html_lines))
 
 
