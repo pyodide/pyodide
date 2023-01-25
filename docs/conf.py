@@ -179,10 +179,10 @@ global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
 
 
 if IN_READTHEDOCS:
-    TARGET_DIR = "_readthedocs"
+    TARGET_DIR = "_readthedocs/html"
     # Make console.html file
     env = {"PYODIDE_BASE_URL": CDN_URL}
-    os.makedirs(f"{TARGET_DIR}/html", exist_ok=True)
+    os.makedirs(TARGET_DIR, exist_ok=True)
     os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
         ["make", "-C", "..", "dist/console.html"],
@@ -206,7 +206,7 @@ if IN_READTHEDOCS:
             break
     else:
         raise ValueError("Could not find pyodide.js in the <head> section")
-    output_path = Path(TARGET_DIR) / "html/console.html"
+    output_path = Path(TARGET_DIR) / "/console.html"
     output_path.write_text("".join(console_html_lines))
 
 
