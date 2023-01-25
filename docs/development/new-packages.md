@@ -83,6 +83,7 @@ If you want to build the package, you will need to build Python which you can do
 as follows:
 
 ```bash
+make -C emsdk
 make -C cpython
 ```
 

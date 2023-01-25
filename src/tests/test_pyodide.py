@@ -55,6 +55,10 @@ def test_find_imports():
     assert res == []
 
 
+def test_ffi_import_star():
+    exec("from pyodide.ffi import *", {})
+
+
 def test_pyimport(selenium):
     selenium.run_js(
         """
@@ -433,7 +437,10 @@ def test_check_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import test;
-                test();
+                try:
+                    test();
+                finally:
+                    del test
             `);
         } catch(e){
             err = e;
@@ -837,6 +844,29 @@ def test_fatal_error(selenium_standalone):
         assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+def test_exit_error(selenium_standalone):
+    x = selenium_standalone.run_js(
+        """
+        try {
+            pyodide.runPython(`
+                import os
+                def f():
+                    g()
+                def g():
+                    h()
+                def h():
+                    os._exit(0)
+                f()
+            `);
+        } catch(e){
+            return e.toString();
+        }
+        """
+    )
+    assert x == "Exit: Program terminated with exit(0)"
 
 
 def test_reentrant_error(selenium):

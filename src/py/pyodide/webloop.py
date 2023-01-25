@@ -8,7 +8,7 @@ from asyncio import Future
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from ._core import IN_BROWSER, create_once_callable
+from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
@@ -585,7 +585,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 
 def _initialize_event_loop():
-    from ._core import IN_BROWSER
+    from .ffi import IN_BROWSER
 
     if not IN_BROWSER:
         return

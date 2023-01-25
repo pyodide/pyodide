@@ -14,9 +14,11 @@ def run(exports: Any, args: list[str], outdir: Path | None = None) -> Path:
     cxxflags += f" {os.environ.get('CXXFLAGS', '')}"
     ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
     ldflags += f" {os.environ.get('LDFLAGS', '')}"
+    env = os.environ.copy()
+    common.set_build_environment(env)
 
     build_env_ctx = pypabuild.get_build_env(
-        env=os.environ.copy(),
+        env=env,
         pkgname="",
         cflags=cflags,
         cxxflags=cxxflags,

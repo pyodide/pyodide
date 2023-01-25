@@ -15,8 +15,33 @@ myst:
 
 ## Unreleased
 
+- {{ Update }} Pyodide now runs Python 3.11.1.
+  {pr}`3252`
+
 - {{ Enhancement }} Updated Emscripten to version 3.1.30
   {pr}`3471`
+
+- {{ Fix }} Emscripten is no longer required to create a Pyodide virtual
+  environment.
+  {pr}`3485`
+
+- {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
+  {pr}`3484`
+
+- {{ Fix }} `pyodide config` won't print extra messages anymore.
+  {pr}`3483`
+
+- {{ Fix }} Pass the same environment variables for out of tree builds as for in
+  tree builds.
+  {pr}`3495`
+
+- {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
+  it will insert an EOF automatically after each string or buffer. Defaults to `true`.
+  {pr}`3488`
+
+- {{ Enhancement }} Pyodide displays a better message when someone calls posix
+  `exit` or `os._exit`.
+  {pr}`3496`
 
 ### Build System
 
