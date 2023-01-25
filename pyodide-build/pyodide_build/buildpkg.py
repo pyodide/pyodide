@@ -16,7 +16,7 @@ import sys
 import sysconfig
 import textwrap
 import urllib
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -27,13 +27,22 @@ from urllib import request
 
 from . import common, pywasmcross
 from .common import (
-    chdir,
+    BUILD_VARS,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
-    set_build_environment,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
+
+
+@contextmanager
+def chdir(new_dir: Path) -> Generator[None, None, None]:
+    orig_dir = Path.cwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(orig_dir)
 
 
 def _make_whlfile(
@@ -116,8 +125,20 @@ class BashRunnerWithSharedEnvironment:
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env: dict[str, str] = {}
-    set_build_environment(env)
+    env = {key: os.environ[key] for key in BUILD_VARS} | {"PYODIDE": "1"}
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
+    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    if "PKG_CONFIG_PATH" in os.environ:
+        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+
+    tools_dir = Path(__file__).parent / "tools"
+
+    env["CMAKE_TOOLCHAIN_FILE"] = str(
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+    )
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)

@@ -503,7 +503,6 @@ def generate_packagedata(
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
             "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
-            "imports": [],
         }
 
         pkg_type = pkg.package_type
@@ -515,11 +514,9 @@ def generate_packagedata(
             )
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
-
-        if pkg.package_type not in ("static_library", "shared_library"):
-            pkg_entry["imports"] = (
-                pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
-            )
+        pkg_entry["imports"] = (
+            pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
+        )
 
         packages[name.lower()] = pkg_entry
 

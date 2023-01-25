@@ -19,8 +19,7 @@ type InFuncType = () =>
   | undefined
   | string
   | ArrayBuffer
-  | ArrayBufferView
-  | number;
+  | ArrayBufferView;
 
 // To define the output behavior of a tty we need to define put_char and fsync.
 // fsync flushes the stream.
@@ -192,13 +191,9 @@ function setStdinError() {
  * the current input buffer is exhausted. It should return one of:
  *
  * - ``null`` or ``undefined``: these are interpreted as end of file.
- * - a number
  * - a string
  * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
  *   :js:data:`~TypedArray.BYTES_PER_ELEMENT` equal to 1.
- *
- * If a number is returned, it is interpreted as a single character code. The
- * number should be between 0 and 255.
  *
  * If a string is returned, a new line is appended if one is not present and the
  * resulting string is turned into a :js:class:`Uint8Array` using :js:class:`TextEncoder`.
@@ -209,18 +204,12 @@ function setStdinError() {
  * @param options.stdin The stdin handler.
  * @param options.error If this is set to ``true``, attempts to read from stdin
  * will always set an IO error.
+ *
  * @param options.isatty Should ``isatty(stdin)`` be ``true`` or ``false``
  * (default ``false``).
- * @param options.autoEOF Insert an EOF automatically after each string
- * or buffer? (default ``true``).
  */
 export function setStdin(
-  options: {
-    stdin?: InFuncType;
-    error?: boolean;
-    isatty?: boolean;
-    autoEOF?: boolean;
-  } = {},
+  options: { stdin?: InFuncType; error?: boolean; isatty?: boolean } = {},
 ) {
   if (options.stdin && options.error) {
     throw new TypeError(
@@ -232,10 +221,8 @@ export function setStdin(
     return;
   }
   if (options.stdin) {
-    let autoEOF = options.autoEOF;
-    autoEOF = autoEOF === undefined ? true : autoEOF;
     isattys.stdin = !!options.isatty;
-    const get_char = make_get_char(options.stdin, autoEOF);
+    const get_char = make_get_char(options.stdin);
     ttyout_ops.get_char = get_char;
     ttyerr_ops.get_char = get_char;
     refreshStreams();
@@ -368,10 +355,9 @@ export function setStderr(
 const textencoder = new TextEncoder();
 const textdecoder = new TextDecoder();
 
-function make_get_char(infunc: InFuncType, autoEOF: boolean): GetCharType {
+function make_get_char(infunc: InFuncType): GetCharType {
   let index = 0;
   let buf: Uint8Array = new Uint8Array(0);
-  let insertEOF = false;
   // get_char has 3 particular return values:
   // a.) the next character represented as an integer
   // b.) undefined to signal that no data is currently available
@@ -379,17 +365,11 @@ function make_get_char(infunc: InFuncType, autoEOF: boolean): GetCharType {
   return function get_char() {
     try {
       if (index >= buf.length) {
-        if (insertEOF) {
-          insertEOF = false;
-          return null;
-        }
         let input = infunc();
         if (input === undefined || input === null) {
           return null;
         }
-        if (typeof input === "number") {
-          return input;
-        } else if (typeof input === "string") {
+        if (typeof input === "string") {
           if (!input.endsWith("\n")) {
             input += "\n";
           }
@@ -410,9 +390,6 @@ function make_get_char(infunc: InFuncType, autoEOF: boolean): GetCharType {
         }
         if (buf.length === 0) {
           return null;
-        }
-        if (autoEOF) {
-          insertEOF = true;
         }
         index = 0;
       }

@@ -2,8 +2,8 @@ import json
 from io import StringIO
 from typing import IO, Any
 
+from ._core import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 from ._package_loader import unpack_buffer
-from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
     from js import Object

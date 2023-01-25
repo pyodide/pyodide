@@ -9,7 +9,6 @@ import textwrap
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
-from contextlib import contextmanager
 from pathlib import Path
 from typing import NoReturn
 
@@ -415,35 +414,3 @@ def in_xbuildenv() -> bool:
 
 def find_missing_executables(executables: list[str]) -> list[str]:
     return list(filter(lambda exe: shutil.which(exe) is None, executables))
-
-
-@contextmanager
-def chdir(new_dir: Path) -> Generator[None, None, None]:
-    orig_dir = Path.cwd()
-    try:
-        os.chdir(new_dir)
-        yield
-    finally:
-        os.chdir(orig_dir)
-
-
-def set_build_environment(env: dict[str, str]) -> None:
-    """Assign build environment variables to env.
-
-    Sets common environment between in tree and out of tree package builds.
-    """
-    env.update({key: os.environ[key] for key in BUILD_VARS})
-    env["PYODIDE"] = "1"
-    if "PYODIDE_JOBS" in os.environ:
-        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-
-    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
-    if "PKG_CONFIG_PATH" in os.environ:
-        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
-
-    tools_dir = Path(__file__).parent / "tools"
-
-    env["CMAKE_TOOLCHAIN_FILE"] = str(
-        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-    )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")

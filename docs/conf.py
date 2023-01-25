@@ -19,6 +19,12 @@ panels_add_bootstrap_css = False
 
 project = "Pyodide"
 copyright = "2019-2022, Pyodide contributors and Mozilla"
+pyodide_version = "0.22.0"
+
+if ".dev" in pyodide_version or os.environ.get("READTHEDOCS_VERSION") == "latest":
+    CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
+else:
+    CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full/"
 
 # -- General configuration ---------------------------------------------------
 
@@ -127,14 +133,20 @@ htmlhelp_basename = "Pyodidedoc"
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
-base_dir = Path(__file__).resolve().parent.parent
-extra_sys_path_dirs = [
-    str(base_dir),
-    str(base_dir / "pyodide-build"),
-    str(base_dir / "docs/sphinx_pyodide"),
-    str(base_dir / "src/py"),
-    str(base_dir / "packages/micropip/src"),
-]
+
+def delete_attrs(cls):
+    """Prevent attributes of a class or module from being documented.
+
+    The top level documentation comment of the class or module will still be
+    rendered.
+    """
+    for name in dir(cls):
+        if not name.startswith("_"):
+            try:
+                delattr(cls, name)
+            except Exception:
+                pass
+
 
 # Try not to cause side effects if we are imported incidentally.
 
@@ -147,76 +159,101 @@ except ImportError:
 
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
-if IN_SPHINX:
-    sys.path = extra_sys_path_dirs + sys.path
-    import builtins
-
-    from sphinx_pyodide.util import docs_argspec
-
-    # override docs_argspec, _pyodide.docs_argspec will read this value back.
-    # Must do this before importing pyodide!
-    setattr(builtins, "--docs_argspec--", docs_argspec)
-
-    # Monkey patch for python3.11 incompatible code
-    import inspect
-
-    if not hasattr(inspect, "getargspec"):
-        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
-
-import pyodide
-
-# The full version, including alpha/beta/rc tags.
-release = version = pyodide.__version__
-
-if ".dev" in version or os.environ.get("READTHEDOCS_VERSION") == "latest":
-    CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
-else:
-    CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
-
-html_title = f"Version {version}"
-
-global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
-
-
-def write_console_html(app):
-    # Make console.html file
+if IN_READTHEDOCS:
     env = {"PYODIDE_BASE_URL": CDN_URL}
-    os.makedirs(app.outdir, exist_ok=True)
-    os.makedirs("../dist", exist_ok=True)
+    os.makedirs("_build/html", exist_ok=True)
     res = subprocess.check_output(
-        ["make", "-C", "..", "dist/console.html"],
+        ["make", "-C", "..", "docs/_build/html/console.html"],
         env=env,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
     )
     print(res)
-
     # insert the Plausible analytics script to console.html
-    console_html_lines = (
-        Path("../dist/console.html").read_text().splitlines(keepends=True)
-    )
-    for idx, line in enumerate(list(console_html_lines)):
+    console_path = Path("_build/html/console.html")
+    console_html = console_path.read_text().splitlines(keepends=True)
+    for idx, line in enumerate(list(console_html)):
         if 'pyodide.js">' in line:
             # insert the analytics script after the `pyodide.js` script
-            console_html_lines.insert(
+            console_html.insert(
                 idx,
                 '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
             )
             break
     else:
         raise ValueError("Could not find pyodide.js in the <head> section")
-    output_path = Path(app.outdir) / "console.html"
-    output_path.write_text("".join(console_html_lines))
+    console_path.write_text("".join(console_html))
+
+
+def docs_argspec(argspec: str) -> Any:
+    """Decorator to override the argument spec of the function that is
+    rendered in the docs.
+
+    If the documentation finds a __wrapped__ attribute, it will use that to
+    render the argspec instead of the function itself. Assign an appropriate
+    fake function to __wrapped__ with the desired argspec.
+    """
+
+    def dec(func):
+        d = func.__globals__
+        TEMP_NAME = "_xxxffff___"
+        assert TEMP_NAME not in d
+        code = dedent(
+            f"""\
+            def {TEMP_NAME}{argspec}:
+                pass
+            """
+        )
+        # exec in func.__globals__ context so that type hints don't case NameErrors.
+        exec(code, d)
+        f = d.pop(TEMP_NAME)
+
+        # # Run update_wrapper but keep f's annotations and don't set
+        # # f.__wrapped__ (would cause an infinite loop!)
+        annotations = f.__annotations__
+        update_wrapper(f, func)
+        f.__annotations__ = annotations
+        del f.__wrapped__
+
+        # Set wrapper to be our fake function
+        func.__wrapped__ = f
+
+        return func
+
+    return dec
 
 
 if IN_SPHINX:
+    base_dir = Path(__file__).resolve().parent.parent
+    path_dirs = [
+        str(base_dir),
+        str(base_dir / "pyodide-build"),
+        str(base_dir / "docs/sphinx_pyodide"),
+        str(base_dir / "src/py"),
+        str(base_dir / "packages/micropip/src"),
+    ]
+    sys.path = path_dirs + sys.path
+
     from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
 
     JavaScriptDomain.roles["class"] = JSXRefRole()
 
+    import builtins
+    from functools import update_wrapper
+    from textwrap import dedent
+
+    # override docs_argspec, _pyodide.docs_argspec will read this value back.
+    # Must do this before importing pyodide!
+    setattr(builtins, "--docs_argspec--", docs_argspec)
+
+    import pyodide
     from pyodide.ffi import JsProxy
 
     del JsProxy.__new__
+
+    # The full version, including alpha/beta/rc tags.
+    release = version = pyodide.__version__
+    html_title = f"Version {version}"
 
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
@@ -238,8 +275,6 @@ if IN_SPHINX:
 
     # Prevent API docs for webloop methods: they are the same as for base event loop
     # and it clutters api docs too much
-    from sphinx_pyodide.util import delete_attrs
-
     import pyodide.console
     import pyodide.webloop
 
@@ -258,6 +293,8 @@ def globalReplace(app, docname, source):
         result = result.replace(key, app.config.global_replacements[key])
     source[0] = result
 
+
+global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL}
 
 always_document_param_types = True
 
@@ -287,4 +324,3 @@ def typehints_formatter(annotation, config):
 def setup(app):
     app.add_config_value("global_replacements", {}, True)
     app.connect("source-read", globalReplace)
-    write_console_html(app)

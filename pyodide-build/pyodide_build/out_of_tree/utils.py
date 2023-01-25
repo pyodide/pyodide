@@ -1,12 +1,10 @@
 import os
-from contextlib import ExitStack, redirect_stdout
-from io import StringIO
 from pathlib import Path
 
 from ..common import search_pyodide_root
 
 
-def ensure_env_installed(env: Path, *, quiet: bool = False) -> None:
+def ensure_env_installed(env: Path) -> None:
     if env.exists():
         return
     from .. import __version__
@@ -17,16 +15,11 @@ def ensure_env_installed(env: Path, *, quiet: bool = False) -> None:
             "To use out of tree builds with development Pyodide, you must explicitly set PYODIDE_ROOT"
         )
 
-    with ExitStack() as stack:
-        if quiet:
-            # Prevent writes to stdout
-            stack.enter_context(redirect_stdout(StringIO()))
-
-        download_xbuildenv(__version__, env)
-        install_xbuildenv(__version__, env)
+    download_xbuildenv(__version__, env)
+    install_xbuildenv(__version__, env)
 
 
-def initialize_pyodide_root(*, quiet: bool = False) -> None:
+def initialize_pyodide_root() -> None:
     if "PYODIDE_ROOT" in os.environ:
         return
     try:
@@ -36,4 +29,4 @@ def initialize_pyodide_root(*, quiet: bool = False) -> None:
         pass
     env = Path(".pyodide-xbuildenv")
     os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
-    ensure_env_installed(env, quiet=quiet)
+    ensure_env_installed(env)

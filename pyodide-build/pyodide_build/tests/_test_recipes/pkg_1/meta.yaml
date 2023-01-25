@@ -8,11 +8,9 @@ requirements:
   host:
     - pkg_1_1
     - pkg_3
-    - libtest_shared
   run:
     - pkg_1_1
     - pkg_3
-    - libtest_shared
 test:
   imports:
     - pkg_1
