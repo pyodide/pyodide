@@ -11,6 +11,8 @@ build:
   # so it cannot be unvendored
   unvendor-tests: false
   exports: requested # Astropy uses dlsym so we need to export more than just PyInit_astropy
+  cflags: |
+    -I $(HOSTSITEPACKAGES)/numpy/core/include
 requirements:
   host:
     - packaging

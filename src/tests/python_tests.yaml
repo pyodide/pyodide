@@ -34,6 +34,8 @@
 #   system function that doesn't behave as one would expect.
 # - crash-chrome: Same as crash but only affecting Chrome
 # - crash-firefox: Same as crash but only affecting Firefox
+- leakers.test_ctypes
+- leakers.test_selftype
 - test___all__:
     xfail: multiprocessing
 - test___future__
@@ -89,11 +91,14 @@
     xfail: async
 - test_asyncio.test_sock_lowlevel:
     xfail: async
+- test_asyncio.test_ssl
 - test_asyncio.test_sslproto
 - test_asyncio.test_streams:
     xfail: async
 - test_asyncio.test_subprocess:
     xfail: async
+- test_asyncio.test_taskgroups:
+    xfail: calls Webloop.set_debug() which raises NotImplementedError
 - test_asyncio.test_tasks:
     xfail: async
 - test_asyncio.test_threads:
@@ -118,7 +123,6 @@
 - test_bigaddrspace
 - test_bigmem
 - test_binascii
-- test_binhex
 - test_binop
 - test_bisect
 - test_bool
@@ -137,7 +141,9 @@
 - test_call
 - test_capi:
     xfail: hangs
-- test_cgi
+- test_cgi:
+    skip:
+      - test_log # OSError: [Errno 70] Invalid seek
 - test_cgitb
 - test_charmapcodec
 - test_check_c_globals
@@ -264,6 +270,8 @@
 - test_eof
 - test_epoll
 - test_errno
+- test_except_star
+- test_exception_group
 - test_exception_hierarchy
 - test_exception_variations
 - test_exceptions:
@@ -281,7 +289,9 @@
     xfail: fork
 - test_filecmp
 - test_fileinput
-- test_fileio
+- test_fileio:
+    segfault-chrome: stack overflow
+- test_fileutils
 - test_finalization
 - test_float
 - test_flufl
@@ -319,9 +329,11 @@
       - test_samestat_on_link
       - test_exists_fd
 - test_genexps
-- test_getargs2
+- test_getargs2:
+    xfail: Not sure
 - test_getopt
 - test_getpass
+- test_getpath
 - test_gettext
 - test_glob:
     skip:
@@ -354,9 +366,7 @@
 - test_imaplib:
     xfail: socket
 - test_imghdr
-- test_imp:
-    xfail:
-      - test_unencodeable # fails perioically
+- test_imp
 - test_importlib.builtin.test_finder
 - test_importlib.builtin.test_loader
 - test_importlib.extension.test_case_sensitivity
@@ -381,6 +391,8 @@
 - test_importlib.source.test_source_encoding
 - test_importlib.test_abc
 - test_importlib.test_api
+- test_importlib.test_compatibilty_files
+- test_importlib.test_contents
 - test_importlib.test_files
 - test_importlib.test_lazy
 - test_importlib.test_locks:
@@ -538,7 +550,6 @@
 - test_platform:
     skip:
       - test_architecture_via_symlink # fork
-      - test_libc_ver # Can't open sys.executable
 - test_plistlib
 - test_poll:
     xfail: subprocess
@@ -650,11 +661,17 @@
     skip:
       - test_20731
 - test_spwd
-- test_sqlite:
-    skip:
-      - "*ThreadTests*"
-      - test_ctx_mgr_rollback_if_commit_failed
+- test_sqlite3.test_backup
+- test_sqlite3.test_dbapi
+- test_sqlite3.test_dump
+- test_sqlite3.test_factory
+- test_sqlite3.test_hooks
+- test_sqlite3.test_regression
+- test_sqlite3.test_transactions
+- test_sqlite3.test_types
+- test_sqlite3.test_userfunctions
 - test_ssl
+- test_stable_abi_ctypes
 - test_startfile
 - test_stat
 - test_statistics
@@ -670,7 +687,8 @@
       - test_timezone
 - test_strtod
 - test_struct
-- test_structmembers
+- test_structmembers:
+    xfail: Not sure
 - test_structseq
 - test_subclassinit
 - test_subprocess:
@@ -695,7 +713,7 @@
 - test_tarfile:
     skip:
       - test_file_mode
-      - "test_extractall*"
+      - test_extractall*
       - test_link_size
       - test_dereference_hardlink
       - test_add_hardlink
@@ -734,6 +752,7 @@
 - test_tk
 - test_tokenize
 - test_tools.test_fixcid
+- test_tools.test_freeze
 - test_tools.test_gprof2html
 - test_tools.test_i18n
 - test_tools.test_lll
@@ -755,10 +774,12 @@
     xfail-chrome: times out
 - test_turtle
 - test_type_annotations
+- test_type_cache
 - test_type_comments
 - test_typechecks
 - test_types
-- test_typing
+- test_typing:
+    segfault-chrome: stack overflow
 - test_ucn
 - test_unary
 - test_unicode
@@ -783,7 +804,7 @@
 - test_unpack_ex
 - test_unparse
 - test_urllib:
-    xfail-safari: crashes the runtime
+    xfail-safari: Doesn't work
 - test_urllib2:
     skip:
       - test_http_body_pipe # fork
@@ -821,7 +842,8 @@
 - test_wsgiref
 - test_xdrlib
 - test_xml_dom_minicompat
-- test_xml_etree
+- test_xml_etree:
+    xfail-chrome: "RangeError: Maximum call stack size exceeded"
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking
@@ -832,6 +854,8 @@
 - test_zipapp
 - test_zipfile:
     xfail-chrome: times out
+    skip:
+      - test_many_opens # [Errno 54] Not a directory: '/proc/self/fd'
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support

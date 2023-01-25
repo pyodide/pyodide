@@ -90,7 +90,4 @@ def setup(app):
     app.add_directive("js-doc-summary", get_jsdoc_summary_directive(app))
     app.add_directive("js-doc-content", get_jsdoc_content_directive(app))
     app.add_directive("pyodide-package-list", get_packages_summary_directive(app))
-    from .napoleon_fixes import process_docstring
-
-    app.connect("autodoc-process-docstring", process_docstring)
     app.connect("builder-inited", add_mdn_xrefs)

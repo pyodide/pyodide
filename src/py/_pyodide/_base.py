@@ -21,8 +21,7 @@ def should_quiet(source: str, /) -> bool:
 
     Returns
     -------
-
-    ``True`` if the last nonwhitespace character of ``source`` is a semicolon.
+        ``True`` if the last nonwhitespace character of ``source`` is a semicolon.
 
     Examples
     --------
@@ -419,11 +418,10 @@ def eval_code(
 
     Returns
     -------
-
-    If the last nonwhitespace character of ``source`` is a semicolon, return
-    ``None``. If the last statement is an expression, return the result of the
-    expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
-    parameters to modify this default behavior.
+        If the last nonwhitespace character of ``source`` is a semicolon, return
+        ``None``. If the last statement is an expression, return the result of the
+        expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
+        parameters to modify this default behavior.
 
     Examples
     --------

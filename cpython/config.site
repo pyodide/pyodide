@@ -1,7 +1,0 @@
-ac_cv_file__dev_ptmx=no
-ac_cv_file__dev_ptc=no
-ac_cv_func_dlopen=yes
-ac_cv_lib_socket_socket=no
-ac_cv_header_linux_vm_sockets_h=yes
-ac_cv_little_endian_double=yes
-ax_cv_c_float_words_bigendian=no

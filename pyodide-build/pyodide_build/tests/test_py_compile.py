@@ -3,6 +3,7 @@ import textwrap
 import traceback
 import zipfile
 from collections.abc import Mapping
+from importlib.util import MAGIC_NUMBER
 from pathlib import Path
 
 import pytest
@@ -63,7 +64,8 @@ def test_py_compile_wheel(tmp_path):
             else:
                 val = fh_zip.read(key + "c")
                 # Looks like Python bytecode
-                assert key.encode("utf-8") + b"\xda\x08<module>" in val
+                assert key.encode("utf-8") in val
+                assert val.startswith(MAGIC_NUMBER)
 
 
 def test_py_compile_exceptions(tmp_path):

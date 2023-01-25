@@ -7,7 +7,7 @@
    {% if type -%}
       .. rst-class:: js attribute type
 
-          type: ``{{ type|indent(3) }}``
+          type: {{ type|indent(3) }}
    {%- endif %}
 
    {% if description -%}

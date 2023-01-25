@@ -1,10 +1,16 @@
 import gzip
+import inspect
 import json
 import sys
 from pathlib import Path
 
 from docutils.frontend import OptionParser
 from docutils.utils import new_document
+
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
+
 from sphinx_js.suffix_tree import SuffixTree
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
@@ -207,7 +213,7 @@ def test_summary():
 
 def test_type_name():
     tn = inner_analyzer._type_name
-    assert tn({"name": "void", "type": "intrinsic"}) == "void"
+    assert tn({"name": "void", "type": "intrinsic"}) == ":js:data:`void`"
     assert tn({"value": None, "type": "literal"}) == "null"
     assert (
         tn(
@@ -216,8 +222,8 @@ def test_type_name():
                 "type": "reference",
                 "typeArguments": [{"name": "string", "type": "intrinsic"}],
             }
-        )
-        == "Promise<string>"
+        ).strip()
+        == r":js:data:`Promise`\ **<**\ :js:data:`string`\ **>**"
     )
 
     assert (
@@ -228,8 +234,8 @@ def test_type_name():
                 "targetType": {"name": "PyProxy", "type": "reference"},
                 "type": "predicate",
             }
-        )
-        == "boolean (typeguard for PyProxy)"
+        ).strip()
+        == ":js:data:`boolean` (typeguard for :js:class:`PyProxy`)"
     )
 
     assert (
@@ -256,8 +262,8 @@ def test_type_name():
                 },
                 "type": "reflection",
             }
-        )
-        == "(message: string) => void"
+        ).strip()
+        == r"\ **(**\ \ **message:** :js:data:`string`\ **) =>** :js:data:`void`"
     )
 
     assert (
@@ -285,8 +291,8 @@ def test_type_name():
                     }
                 ],
             }
-        )
-        == "Iterable<[key: string, value: any]>"
+        ).strip()
+        == r":js:data:`Iterable`\ **<**\ \ **[**\ \ **key:** :js:data:`string`\ **,** \ **value:** :js:data:`any`\ **]** \ **>**"
     )
 
     assert (
@@ -310,8 +316,8 @@ def test_type_name():
                 },
                 "type": "reflection",
             }
-        )
-        == "{[key: string]: string}"
+        ).strip()
+        == r"""\ **{**\ \ **[key:** :js:data:`string`\ **]:** :js:data:`string`\ **}**\ """.strip()
     )
 
     assert (
@@ -343,6 +349,6 @@ def test_type_name():
                 },
                 "type": "reflection",
             }
-        )
-        == "{cache: PyProxyCache, destroyed_msg?: string, ptr: number}"
+        ).strip()
+        == r"""\ **{**\ \ **cache:** :js:class:`PyProxyCache`\ **,** \ **destroyed_msg?:** :js:data:`string`\ **,** \ **ptr:** :js:data:`number`\ **}**\ """.strip()
     )

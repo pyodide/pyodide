@@ -211,12 +211,17 @@
         };
         term.ready = Promise.resolve();
         pyodide._api.on_fatal = async (e) => {
-          term.error(
-            "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
-          );
-          term.error("The cause of the fatal error was:");
-          term.error(e);
-          term.error("Look in the browser console for more details.");
+          if (e.name === "Exit") {
+            term.error(e);
+            term.error("Pyodide exited and can no longer be used.");
+          } else {
+            term.error(
+              "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
+            );
+            term.error("The cause of the fatal error was:");
+            term.error(e);
+            term.error("Look in the browser console for more details.");
+          }
           await term.ready;
           term.pause();
           await sleep(15);
