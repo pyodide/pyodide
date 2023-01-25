@@ -947,6 +947,8 @@ class JsRawException(JsProxy):
 class JsException(Exception):
     """
     A wrapper around a JavaScript Error to allow it to be thrown in Python.
+
+    The js_error field contains a JsProxy for the wrapped error.
     See :ref:`type-translations-errors`.
     """
 
@@ -958,6 +960,12 @@ class JsException(Exception):
 
 class ConversionError(Exception):
     """An error thrown when conversion between JavaScript and Python fails."""
+
+
+class InternalError(Exception):
+    """Thrown when a recoverable assertion error occurs in internal Pyodide code"""
+
+    pass
 
 
 class JsDomElement(JsProxy):
@@ -1220,3 +1228,29 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
 
 __name__ = _save_name
 del _save_name
+
+__all__ = [
+    "ConversionError",
+    "JsArray",
+    "JsAsyncGenerator",
+    "JsAsyncIterable",
+    "JsAsyncIterator",
+    "JsBuffer",
+    "JsDoubleProxy",
+    "JsException",
+    "JsFetchResponse",
+    "JsGenerator",
+    "JsIterable",
+    "JsIterator",
+    "JsMap",
+    "JsMutableMap",
+    "JsPromise",
+    "JsProxy",
+    "JsDomElement",
+    "JsCallable",
+    "JsTypedArray",
+    "create_once_callable",
+    "create_proxy",
+    "destroy_proxies",
+    "to_js",
+]

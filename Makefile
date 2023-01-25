@@ -132,13 +132,6 @@ dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-.PHONY: docs/_build/html/console.html
-docs/_build/html/console.html: src/templates/console.html
-	mkdir -p docs/_build/html
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
-
 .PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
