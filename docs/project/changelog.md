@@ -33,6 +33,10 @@ myst:
   it will insert an EOF automatically after each string or buffer. Defaults to `true`.
   {pr}`3488`
 
+- {{ Enhancement }} Pyodide displays a better message when someone calls posix
+  `exit` or `os._exit`.
+  {pr}`3496`
+
 - {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
   when run multiple times.
   {pr}`3445`
