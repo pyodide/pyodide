@@ -20,19 +20,19 @@ def test_generate_dependency_graph():
 
 
 @pytest.mark.parametrize(
-    "requested, disabled, flags, out",
+    "requested, disabled, out",
     [
-        ({"scipy"}, set(), {}, {"scipy", "numpy", "CLAPACK"}),
-        ({"scipy"}, {"numpy"}, {}, set()),
-        ({"scipy", "CLAPACK"}, {"numpy"}, {}, {"CLAPACK"}),
-        ({"scikit-learn"}, {"numpy"}, {}, set()),
-        ({"scikit-learn", "scipy"}, {"joblib"}, {}, {"scipy", "numpy", "CLAPACK"}),
-        ({"scikit-learn"}, set(), {"no-numpy-dependents"}, set()),
-        ({"scikit-learn", "numpy"}, set(), {"no-numpy-dependents"}, {"numpy"}),
+        ({"scipy"}, set(), {"scipy", "numpy", "CLAPACK"}),
+        ({"scipy"}, {"numpy"}, set()),
+        ({"scipy", "CLAPACK"}, {"numpy"}, {"CLAPACK"}),
+        ({"scikit-learn"}, {"numpy"}, set()),
+        ({"scikit-learn", "scipy"}, {"joblib"}, {"scipy", "numpy", "CLAPACK"}),
+        ({"scikit-learn", "no-numpy-dependents"}, set(), set()),
+        ({"scikit-learn", "numpy", "no-numpy-dependents"}, set(), {"numpy"}),
     ],
 )
-def test_generate_dependency_graph2(requested, disabled, flags, out):
-    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, requested, disabled, flags)
+def test_generate_dependency_graph2(requested, disabled, out):
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, requested, disabled)
     assert set(pkg_map.keys()) == out
 
 

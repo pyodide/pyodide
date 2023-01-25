@@ -66,7 +66,8 @@ def load_recipes(
 
         # 2. tag
         elif name_or_tag.startswith("tag:") and name_or_tag[4:] in tagged_recipes:
-            for recipe in tagged_recipes[name_or_tag]:
+            tag = name_or_tag[4:]
+            for recipe in tagged_recipes[tag]:
                 recipes[recipe.package.name] = recipe.copy(deep=True)
 
         # 3. meta packages

@@ -69,6 +69,7 @@ def test_build_recipe(selenium, tmp_path, monkeypatch, request):
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
     pkgs = {
+        "pkg_test_tag_always": {},
         "pkg_test_graph1": {"pkg_test_graph2"},
         "pkg_test_graph3": {},
     }
