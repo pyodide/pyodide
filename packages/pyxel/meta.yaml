@@ -9,12 +9,13 @@ build:
     rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
     rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
 
-    embuilder build sdl2 --pic
+    embuilder build sdl2 libgl --pic
     export RUSTFLAGS="\
       -C link-arg=-s \
       -C link-arg=USE_SDL=2 \
       -C link-arg=-fPIC \
       -C link-arg=-lSDL2 \
+      -C link-arg=-lGL \
     "
 
 requirements:

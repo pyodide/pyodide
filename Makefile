@@ -40,7 +40,6 @@ dist/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/js/_pyodide.out.js \
 	$(wildcard src/py/lib/*.py) \
-	libgl \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
@@ -152,10 +151,6 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-
-.PHONY: libgl
-libgl:
-	embuilder build libgl
 
 .PHONY: lint
 lint:

@@ -126,7 +126,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	\
-	-lGL \
 	-legl.js \
 	-lwebgl.js \
 	-lhtml5_webgl.js \
