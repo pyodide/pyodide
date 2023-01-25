@@ -126,6 +126,7 @@ struct MethodFields
 struct ExceptionFields
 {
   PyObject* args;
+  PyObject* notes;
   PyObject* traceback;
   PyObject* context;
   PyObject* cause;
@@ -167,12 +168,19 @@ _Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
     "'" #field "' layout conflict between JsProxy and PyExc_BaseException");
 
 CHECK_EXC_FIELD(args);
+CHECK_EXC_FIELD(notes);
 CHECK_EXC_FIELD(traceback);
 CHECK_EXC_FIELD(context);
 CHECK_EXC_FIELD(cause);
 CHECK_EXC_FIELD(suppress_context);
 
+#define FIELD_SIZE(type, field) sizeof(((type*)0)->field)
+
 #undef CHEC_EXC_FIELD
+_Static_assert(sizeof(PyBaseExceptionObject) ==
+                 sizeof(PyObject) + FIELD_SIZE(JsProxy, dict) +
+                   sizeof(struct ExceptionFields),
+               "size conflict between JsProxy and PyExc_BaseException");
 
 #define JsProxy_REF(x) (((JsProxy*)x)->js)
 #define JsProxy_DICT(x) (((JsProxy*)x)->dict)
