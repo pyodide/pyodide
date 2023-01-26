@@ -930,32 +930,40 @@ class JsOnceCallable(JsCallable):
         pass
 
 
-class JsRawException(JsProxy):
-    @property
-    def name(self) -> str:
-        return ""
+class JsException(JsProxy, Exception):
+    """A JavaScript Error.
 
-    @property
-    def message(self) -> str:
-        return ""
-
-    @property
-    def stack(self) -> str:
-        return ""
-
-
-class JsException(Exception):
-    """
-    A wrapper around a JavaScript Error to allow it to be thrown in Python.
-
-    The js_error field contains a JsProxy for the wrapped error.
-    See :ref:`type-translations-errors`.
+    These are pickleable unlike other JsProxies.
     """
 
-    @property
-    def js_error(self) -> JsRawException:
-        """The original JavaScript error"""
-        return JsRawException(_instantiate_token)
+    # Note: Unlike many of these classes, this one is never actually seen by the
+    # user IN_BROWSER (it's replaced by a different JsException in
+    # pyodide._core). We use it to unpickle errors so we need it to be
+    # instantiable.
+    def __new__(cls, *args, **kwargs):
+        if args[0] == _instantiate_token:
+            return super().__new__(cls, *args, **kwargs)
+        return cls._new_exc(*args, **kwargs)
+
+    @classmethod
+    def _new_exc(cls, name: str, message: str = "", stack: str = "") -> "JsException":
+        result = super().__new__(JsException, _instantiate_token)
+        result.name = name
+        result.message = message
+        result.stack = stack
+        return result
+
+    def __str__(self):
+        return f"{self.name}: {self.message}"
+
+    name: str
+    """The name of the error type"""
+
+    message: str
+    """The error message"""
+
+    stack: str
+    """The JavaScript stack trace"""
 
 
 class ConversionError(Exception):

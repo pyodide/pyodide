@@ -1367,7 +1367,7 @@ def test_pickle_jsexception(selenium):
 
 
 def test_raises_jsexception(selenium):
-    from pytest_pyodide.pyodide import JsException
+    from pyodide.ffi import JsException
 
     @run_in_pyodide
     def raise_jsexception(selenium):
