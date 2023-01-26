@@ -251,4 +251,4 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
             url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
         )
     except JsException as e:
-        raise OSError(e.js_error.message) from None
+        raise OSError(e.message) from None
