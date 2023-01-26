@@ -363,7 +363,7 @@ def _resolve_and_build(
         version_file.close()
 
 
-def build_multiple_wheels_from_pypi(
+def build_wheels_from_pypi_requirements(
     reqs: list[str],
     target_folder: Path,
     build_dependencies: bool,

@@ -13,7 +13,7 @@ from .. import common
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
     build_dependencies_for_wheel,
-    build_multiple_wheels_from_pypi,
+    build_wheels_from_pypi_requirements,
     fetch_pypi_package,
 )
 from ..out_of_tree.utils import initialize_pyodide_root
@@ -167,7 +167,7 @@ def main(
         with open(source_location) as f:
             reqs = [x.strip() for x in f.readlines()]
         try:
-            build_multiple_wheels_from_pypi(
+            build_wheels_from_pypi_requirements(
                 reqs,
                 Path("./dist").resolve(),
                 build_dependencies,
