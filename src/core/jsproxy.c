@@ -93,7 +93,6 @@ static PyObject* collections_abc;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_get_event_loop;
-static PyTypeObject* PyExc_BaseException_Type;
 static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
@@ -110,48 +109,144 @@ static char* PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL =
 // This is a Python object that provides idiomatic access to a JavaScript
 // object.
 
-// clang-format off
-typedef struct
+struct BufferFields
 {
-  PyObject_HEAD
-  JsRef js;
-// fields for methods
-  JsRef this_;
-  vectorcallfunc vectorcall;
-// fields for buffers
   Py_ssize_t byteLength;
   char* format;
   Py_ssize_t itemsize;
   bool check_assignments;
-// Currently just for module objects
+};
+
+struct MethodFields
+{
+  JsRef this_;
+  vectorcallfunc vectorcall;
+};
+
+struct ExceptionFields
+{
+  PyObject* args;
+  PyObject* notes;
+  PyObject* traceback;
+  PyObject* context;
+  PyObject* cause;
+  char suppress_context;
+};
+
+// clang-format off
+
+// dict and js fields always needs to be in the same place.
+// dict field is part of PyBaseExceptionObject, so it should go up top.
+// The js field has to come after ExceptionFields so we get the memory layout
+// right so we put it at the end
+// In between we have a union with the extra fields that are used by just by one
+// of JsBuffer, JsCallable, and JsException
+
+typedef struct
+{
+  PyObject_HEAD
   PyObject* dict;
+  union {
+    struct BufferFields bf;
+    struct MethodFields mf;
+    struct ExceptionFields ef;
+  } tf;
+  JsRef js;
 } JsProxy;
 // clang-format on
 
+// Layout of dict and ExceptionFields needs to exactly match the layout of the
+// same-name fields of BaseException. Otherwise bad things will happen. Check it
+// with static asserts!
+_Static_assert(offsetof(PyBaseExceptionObject, dict) == offsetof(JsProxy, dict),
+               "dict layout conflict between JsProxy and PyExc_BaseException");
+
+#define CHECK_EXC_FIELD(field)                                                 \
+  _Static_assert(                                                              \
+    offsetof(PyBaseExceptionObject, field) ==                                  \
+      offsetof(JsProxy, tf) + offsetof(struct ExceptionFields, field),         \
+    "'" #field "' layout conflict between JsProxy and PyExc_BaseException");
+
+CHECK_EXC_FIELD(args);
+CHECK_EXC_FIELD(notes);
+CHECK_EXC_FIELD(traceback);
+CHECK_EXC_FIELD(context);
+CHECK_EXC_FIELD(cause);
+CHECK_EXC_FIELD(suppress_context);
+
+#define FIELD_SIZE(type, field) sizeof(((type*)0)->field)
+
+#undef CHEC_EXC_FIELD
+_Static_assert(sizeof(PyBaseExceptionObject) ==
+                 sizeof(PyObject) + FIELD_SIZE(JsProxy, dict) +
+                   sizeof(struct ExceptionFields),
+               "size conflict between JsProxy and PyExc_BaseException");
+
 #define JsProxy_REF(x) (((JsProxy*)x)->js)
-#define JsMethod_THIS(x) (((JsProxy*)x)->this_)
-#define JsMethod_VECTORCALL(x) (((JsProxy*)x)->vectorcall)
+#define JsProxy_DICT(x) (((JsProxy*)x)->dict)
 
-#define JsBuffer_FORMAT(x) (((JsProxy*)x)->format)
-#define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->byteLength)
-#define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->itemsize)
-#define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->check_assignments)
+#define JsMethod_THIS(x) (((JsProxy*)x)->tf.mf.this_)
+#define JsMethod_VECTORCALL(x) (((JsProxy*)x)->tf.mf.vectorcall)
 
-static void
-JsProxy_dealloc(JsProxy* self)
+#define JsException_ARGS(x) (((JsProxy*)x)->tf.ef.args)
+
+#define JsBuffer_FORMAT(x) (((JsProxy*)x)->tf.bf.format)
+#define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->tf.bf.byteLength)
+#define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->tf.bf.itemsize)
+#define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->tf.bf.check_assignments)
+
+int
+JsProxy_getflags(PyObject* self)
 {
-  if (pyproxy_Check(self->this_)) {
-    destroy_proxy(self->this_, NULL);
+  PyObject* pyflags =
+    _PyObject_GetAttrId((PyObject*)Py_TYPE(self), &PyId__js_type_flags);
+  if (pyflags == NULL) {
+    return -1;
+  }
+  int result = PyLong_AsLong(pyflags);
+  Py_CLEAR(pyflags);
+  return result;
+}
+
+static int
+JsProxy_clear(PyObject* self)
+{
+  int flags = JsProxy_getflags(self);
+  if (flags == -1) {
+    return -1;
+  }
+  if ((flags & IS_CALLABLE) && (JsMethod_THIS(self) != NULL)) {
+    if (pyproxy_Check(JsMethod_THIS(self))) {
+      destroy_proxy(JsMethod_THIS(self), NULL);
+    }
+    hiwire_CLEAR(JsMethod_THIS(self));
   }
 #ifdef DEBUG_F
   extern bool tracerefs;
   if (tracerefs) {
-    printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+    printf("jsproxy clear %zd, %zd\n", (long)self, (long)JsProxy_REF(self));
   }
 #endif
-  hiwire_CLEAR(self->js);
-  hiwire_CLEAR(self->this_);
+  if (flags & IS_ERROR) {
+    if (((PyTypeObject*)PyExc_Exception)->tp_clear(self)) {
+      return -1;
+    }
+  }
+  hiwire_CLEAR(JsProxy_REF(self));
+  return 0;
+}
+
+static void
+JsProxy_dealloc(PyObject* self)
+{
+  int flags = JsProxy_getflags(self);
+  FAIL_IF_MINUS_ONE(flags);
+  FAIL_IF_MINUS_ONE(JsProxy_clear(self));
   Py_TYPE(self)->tp_free((PyObject*)self);
+  return;
+finally:
+  printf("Internal Pyodide error Unraiseable error in JsProxy_dealloc:\n");
+  PyErr_Print();
 }
 
 /**
@@ -495,7 +590,91 @@ static PyMethodDef JsGenerator_send_MethodDef = {
   METH_O,
 };
 
-static PyObject* Exc_JsException;
+static PyObject* JsException;
+
+static PyObject*
+JsException_reduce(PyObject* self, PyObject* Py_UNUSED(ignored))
+{
+  // Record name, message, and stack.
+  // See _core_docs.JsException._new_exc where the unpickling will happen.
+  PyObject* res = NULL;
+  PyObject* args = NULL;
+  PyObject* name = NULL;
+  PyObject* message = NULL;
+  PyObject* stack = NULL;
+
+  name = PyObject_GetAttrString(self, "name");
+  FAIL_IF_NULL(name);
+  message = PyObject_GetAttrString(self, "message");
+  FAIL_IF_NULL(message);
+  stack = PyObject_GetAttrString(self, "stack");
+  FAIL_IF_NULL(stack);
+
+  args = PyTuple_Pack(3, name, message, stack);
+  FAIL_IF_NULL(args);
+
+  PyObject* dict = JsProxy_DICT(self);
+  if (dict) {
+    res = PyTuple_Pack(3, Py_TYPE(self), args, dict);
+  } else {
+    res = PyTuple_Pack(2, Py_TYPE(self), args);
+  }
+
+finally:
+  Py_CLEAR(args);
+  Py_CLEAR(name);
+  Py_CLEAR(message);
+  Py_CLEAR(stack);
+  return res;
+}
+
+static PyMethodDef JsException_reduce_MethodDef = {
+  "__reduce__",
+  (PyCFunction)JsException_reduce,
+  METH_NOARGS
+};
+
+PyObject*
+JsException_js_error_getter(PyObject* self, void* closure)
+{
+  Py_INCREF(self);
+  return self;
+}
+
+EM_JS_REF(JsRef,
+          JsException_new_helper,
+          (char* name_ptr, char* message_ptr, char* stack_ptr),
+          {
+            let name = UTF8ToString(name_ptr);
+            let message = UTF8ToString(message_ptr);
+            let stack = UTF8ToString(stack_ptr);
+            return Hiwire.new_value(API.deserializeError(name, message, stack));
+          });
+
+// We use this to unpickle JsException objects.
+static PyObject*
+JsException_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds)
+{
+  static char* kwlist[] = { "name", "message", "stack", 0 };
+  char* name;
+  char* message = "";
+  char* stack = "";
+  if (!PyArg_ParseTupleAndKeywords(
+        args, kwds, "s|ss:__new__", kwlist, &name, &message, &stack)) {
+    return NULL;
+  }
+  JsRef result = JsException_new_helper(name, message, stack);
+  if (result == NULL) {
+    return NULL;
+  }
+  return js2python(result);
+}
+
+static int
+JsException_init(PyBaseExceptionObject* self, PyObject* args, PyObject* kwds)
+{
+  return 0;
+}
 
 /**
  * Shared logic between throw and async throw.
@@ -563,7 +742,7 @@ process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
     res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
   } else {
     JsRef exc;
-    if (PyErr_ExceptionMatches(Exc_JsException)) {
+    if (PyErr_ExceptionMatches(JsException)) {
       PyErr_Fetch(&typ, &val, &tb);
       exc = JsProxy_REF(val);
       Py_CLEAR(typ);
@@ -2545,156 +2724,6 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
   return 0;
 }
 
-/**
- * A wrapper for JsProxy that inherits from Exception. TODO: consider just
- * making JsProxy of an exception inherit from Exception?
- */
-typedef struct
-{
-  PyException_HEAD PyObject* js_error;
-} JsExceptionObject;
-
-// Pickle support
-static PyObject*
-JsException_reduce(PyBaseExceptionObject* self, PyObject* Py_UNUSED(ignored))
-{
-  // We can't pickle the js_error because it is a JsProxy.
-  // The point of this function is to convert it to a string.
-  // Compare OSError_reduce in cpython/Objects/exceptions.c which is similar.
-  PyObject* res = NULL;
-
-  PyObject* args;
-
-  PyObject* tmp;
-  tmp = PyTuple_GET_ITEM(self->args, 0);
-
-  if (!JsProxy_Check(tmp)) {
-    // If for some reason js_error isn't a JsProxy, leave it alone.
-    args = self->args;
-    Py_INCREF(args);
-  } else {
-    // Make a new tuple, for the first entry use the repr of js_error.
-    args = PyTuple_New(PyTuple_GET_SIZE(self->args));
-    tmp = PyObject_Repr(tmp);
-    PyTuple_SET_ITEM(args, 0, tmp);
-
-    // Copy over all other entries
-    for (int i = 1; i < PyTuple_GET_SIZE(self->args); i++) {
-      tmp = PyTuple_GET_ITEM(self->args, i);
-      Py_INCREF(tmp);
-      PyTuple_SET_ITEM(self->args, i, tmp);
-    }
-  }
-
-  // This is now just like BaseException_reduce
-  if (self->dict)
-    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
-  else
-    res = PyTuple_Pack(2, Py_TYPE(self), args);
-  Py_DECREF(args);
-  return res;
-}
-
-static PyMethodDef JsException_methods[] = {
-  { "__reduce__", (PyCFunction)JsException_reduce, METH_NOARGS },
-  { NULL } /* Sentinel */
-};
-
-static PyMemberDef JsException_members[] = {
-  { "js_error",
-    T_OBJECT_EX,
-    offsetof(JsExceptionObject, js_error),
-    READONLY,
-    PyDoc_STR("A wrapper around a Javascript Error to allow the Error to be "
-              "thrown in Python.") },
-  { NULL } /* Sentinel */
-};
-
-static int
-JsException_init(JsExceptionObject* self, PyObject* args, PyObject* kwds)
-{
-  Py_ssize_t size = PyTuple_GET_SIZE(args);
-  PyObject* js_error;
-  if (size == 0) {
-    PyErr_SetString(
-      PyExc_TypeError,
-      "__init__() missing 1 required positional argument: 'js_error'.");
-    return -1;
-  }
-
-  js_error = PyTuple_GET_ITEM(args, 0);
-  if (!PyObject_TypeCheck(js_error, &JsProxyType)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "Argument 'js_error' must be an instance of JsProxy.");
-    return -1;
-  }
-
-  if (PyExc_BaseException_Type->tp_init((PyObject*)self, args, kwds) == -1)
-    return -1;
-
-  Py_CLEAR(self->js_error);
-  Py_INCREF(js_error);
-  self->js_error = js_error;
-  return 0;
-}
-
-static int
-JsException_clear(JsExceptionObject* self)
-{
-  Py_CLEAR(self->js_error);
-  return PyExc_BaseException_Type->tp_clear((PyObject*)self);
-}
-
-static void
-JsException_dealloc(JsExceptionObject* self)
-{
-  JsException_clear(self);
-  PyExc_BaseException_Type->tp_free((PyObject*)self);
-}
-
-static int
-JsException_traverse(JsExceptionObject* self, visitproc visit, void* arg)
-{
-  Py_VISIT(self->js_error);
-  return PyExc_BaseException_Type->tp_traverse((PyObject*)self, visit, arg);
-}
-
-// Not sure we are interfacing with the GC correctly. There should be a call to
-// PyObject_GC_Track somewhere?
-static PyTypeObject _Exc_JsException = {
-  PyVarObject_HEAD_INIT(NULL, 0) "pyodide.JsException",
-  .tp_basicsize = sizeof(JsExceptionObject),
-  .tp_dealloc = (destructor)JsException_dealloc,
-  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-  .tp_doc =
-    PyDoc_STR("An exception which wraps a Javascript error. The js_error field "
-              "contains a JsProxy for the wrapped error."),
-  .tp_traverse = (traverseproc)JsException_traverse,
-  .tp_clear = (inquiry)JsException_clear,
-  .tp_members = JsException_members,
-  .tp_methods = JsException_methods,
-  // PyExc_Exception isn't static so we fill in .tp_base in JsProxy_init
-  // .tp_base = (PyTypeObject *)PyExc_Exception,
-  .tp_dictoffset = offsetof(JsExceptionObject, dict),
-  .tp_init = (initproc)JsException_init
-};
-static PyObject* Exc_JsException = (PyObject*)&_Exc_JsException;
-
-static PyObject*
-JsProxy_new_error(JsRef idobj)
-{
-  PyObject* proxy = NULL;
-  PyObject* result = NULL;
-  proxy = JsProxyType.tp_alloc(&JsProxyType, 0);
-  FAIL_IF_NULL(proxy);
-  FAIL_IF_NONZERO(JsProxy_cinit(proxy, idobj));
-  result = PyObject_CallOneArg(Exc_JsException, proxy);
-  FAIL_IF_NULL(result);
-finally:
-  Py_CLEAR(proxy);
-  return result;
-}
-
 ////////////////////////////////////////////////////////////
 // JsMethod
 //
@@ -3541,6 +3570,8 @@ JsProxy_create_subtype(int flags)
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
+  PyGetSetDef getsets[5];
+  int cur_getset = 0;
 
   methods[cur_method++] = JsProxy_Dir_MethodDef;
   methods[cur_method++] = JsProxy_toPy_MethodDef;
@@ -3548,13 +3579,14 @@ JsProxy_create_subtype(int flags)
   methods[cur_method++] = JsProxy_object_keys_MethodDef;
   methods[cur_method++] = JsProxy_object_values_MethodDef;
 
-  PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
 
   bool obj_map = (flags & IS_OBJECT_MAP);
   int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
   bool mapping = (flags & mapping_flags) == mapping_flags;
   bool mutable_mapping = mapping && (flags & HAS_SET);
+  char* type_name = "pyodide.ffi.JsProxy";
+  int basicsize = sizeof(JsProxy);
   mapping = mapping || obj_map;
   mutable_mapping = mutable_mapping || obj_map;
 
@@ -3700,6 +3732,13 @@ skip_container_slots:
     // We could test separately for whether a function is constructable,
     // but it generates a lot of false positives.
     methods[cur_method++] = JsMethod_Construct_MethodDef;
+    members[cur_member++] = (PyMemberDef){
+      .name = "__vectorcalloffset__",
+      .type = T_PYSSIZET,
+      .flags = READONLY,
+      .offset =
+        offsetof(JsProxy, tf) + offsetof(struct MethodFields, vectorcall),
+    };
   }
   if (flags & IS_ARRAY) {
     // If the object is an array (or a HTMLCollection or NodeList), then we want
@@ -3756,50 +3795,105 @@ skip_container_slots:
                  IS_DOUBLE_PROXY | IS_ITERATOR))) {
     methods[cur_method++] = JsProxy_as_object_map_MethodDef;
   }
+  if (flags & IS_ERROR) {
+    type_name = "pyodide.ffi.JsException";
+    methods[cur_method++] = JsException_reduce_MethodDef;
+    getsets[cur_getset++] = (PyGetSetDef){
+      .name = "js_error",
+      .get = JsException_js_error_getter,
+    };
+    tp_flags |= Py_TPFLAGS_HAVE_GC;
+    tp_flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_traverse,
+                     .pfunc =
+                       (void*)((PyTypeObject*)PyExc_Exception)->tp_traverse };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_new, .pfunc = JsException_new };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_tp_init, .pfunc = JsException_init };
+  }
 
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
+  getsets[cur_getset++] = (PyGetSetDef){ 0 };
 
   bool success = false;
-  PyMethodDef* methods_heap = NULL;
+  void* mem = NULL;
   PyObject* bases = NULL;
   PyObject* flags_obj = NULL;
   PyObject* result = NULL;
 
   // PyType_FromSpecWithBases copies "members" automatically into the end of the
   // type. It doesn't store the slots. But it just copies the pointer to
-  // "methods" into the PyTypeObject, so if we give it a stack allocated methods
-  // there will be trouble. (There are several other buggy behaviors in
-  // PyType_FromSpecWithBases, like if you use two PyMembers slots, the first
-  // one with more members than the second, it will corrupt memory). If the type
-  // object were later deallocated, we would leak this memory. It's unclear how
-  // to fix that, but we store the type in JsProxy_TypeDict forever anyway so it
-  // will never be deallocated.
-  methods_heap = (PyMethodDef*)PyMem_Malloc(sizeof(PyMethodDef) * cur_method);
+  // "methods" and "getsets" into the PyTypeObject, so if we give it stack
+  // allocated methods or getsets there will be trouble. Instead, heap allocate
+  // some memory and copy them over.
+  //
+  // If the type object were later deallocated, we would leak this memory. It's
+  // unclear how to fix that, but we store the type in JsProxy_TypeDict forever
+  // anyway so it will never be deallocated.
+  mem = PyMem_Malloc(sizeof(PyMethodDef) * cur_method +
+                     sizeof(PyGetSetDef) * cur_getset);
+  PyMethodDef* methods_heap = (PyMethodDef*)mem;
+  PyGetSetDef* getsets_heap = (PyGetSetDef*)(methods_heap + cur_method);
   if (methods_heap == NULL) {
     PyErr_NoMemory();
     FAIL();
   }
   memcpy(methods_heap, methods, sizeof(PyMethodDef) * cur_method);
+  memcpy(getsets_heap, getsets, sizeof(PyGetSetDef) * cur_getset);
 
   slots[cur_slot++] =
     (PyType_Slot){ .slot = Py_tp_members, .pfunc = (void*)members };
   slots[cur_slot++] =
     (PyType_Slot){ .slot = Py_tp_methods, .pfunc = (void*)methods_heap };
+  slots[cur_slot++] =
+    (PyType_Slot){ .slot = Py_tp_getset, .pfunc = (void*)getsets_heap };
   slots[cur_slot++] = (PyType_Slot){ 0 };
 
   // clang-format off
   PyType_Spec spec = {
-    .name = "pyodide.JsProxy",
-    .basicsize = sizeof(JsProxy),
+    .name = type_name,
+    .basicsize = basicsize,
     .itemsize = 0,
     .flags = tp_flags,
     .slots = slots,
   };
   // clang-format on
-  bases = Py_BuildValue("(O)", base);
-  FAIL_IF_NULL(bases);
-  result = PyType_FromSpecWithBases(&spec, bases);
+  if (flags & IS_ERROR) {
+    bases = PyTuple_Pack(2, &JsProxyType, PyExc_Exception);
+    FAIL_IF_NULL(bases);
+    // The multiple inheritance we are doing is not recognized as legal by
+    // Python:
+    //
+    // 1. the solid_base of JsProxy is JsProxy.
+    // 2. the solid_base of Exception is BaseException.
+    // 3. Neither issubclass(JsProxy, BaseException) nor
+    //    issubclass(BaseException, JsProxy).
+    // 4. If you use multiple inheritance, the sold_bases of the different bases
+    //    are required to be totally ordered (otherwise Python assumes there is
+    //    a memory layout clash).
+    //
+    // So Python concludes that there is a memory layout clash. However, we have
+    // carefully ensured that the memory layout is okay (with the
+    // _Static_assert's at the top of this file) so now we need to trick the
+    // subclass creation algorithm.
+    //
+    // We temporarily set the mro of JsProxy to be (BaseException,) so that
+    // issubclass(JsProxy, BaseException) returns True. This convinces
+    // PyType_FromSpecWithBases that everything is okay. Once we have created
+    // the type, we restore the mro.
+    PyObject* save_mro = JsProxyType.tp_mro;
+    JsProxyType.tp_mro = PyTuple_Pack(1, PyExc_BaseException);
+    result = PyType_FromSpecWithBases(&spec, bases);
+    Py_CLEAR(JsProxyType.tp_mro);
+    JsProxyType.tp_mro = save_mro;
+  } else {
+    bases = PyTuple_Pack(1, &JsProxyType);
+    FAIL_IF_NULL(bases);
+    result = PyType_FromSpecWithBases(&spec, bases);
+  }
   FAIL_IF_NULL(result);
   PyObject* abc = NULL;
   if (flags & (IS_ARRAY | IS_TYPEDARRAY)) {
@@ -3822,13 +3916,6 @@ skip_container_slots:
   }
 
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
-  if (flags & IS_CALLABLE) {
-    // Python 3.9 provides an alternate way to do this by setting a special
-    // member __vectorcall_offset__, we might consider switching to using that
-    // approach.
-    ((PyTypeObject*)result)->tp_vectorcall_offset =
-      offsetof(JsProxy, vectorcall);
-  }
   flags_obj = PyLong_FromLong(flags);
   FAIL_IF_NULL(flags_obj);
   FAIL_IF_MINUS_ONE(
@@ -3838,8 +3925,8 @@ skip_container_slots:
 finally:
   Py_CLEAR(bases);
   Py_CLEAR(flags_obj);
-  if (!success && methods_heap != NULL) {
-    PyMem_Free(methods_heap);
+  if (!success && mem != NULL) {
+    PyMem_Free(mem);
   }
   return result;
 }
@@ -3884,6 +3971,10 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   const constructorName = obj.constructor ? obj.constructor.name : "";
   let typeTag = getTypeTag(obj);
 
+  // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
+  // we'll run into trouble. I think that for this to happen, someone would have
+  // to pass in some weird and maliciously constructed object. Anyways for
+  // maximum safety, we double check that only one of these is set.
   SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
   SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
   SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
@@ -3898,7 +3989,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(HAS_HAS, typeof obj.has === "function");
   SET_FLAG_IF(HAS_INCLUDES, typeof obj.includes === "function");
   SET_FLAG_IF(IS_BUFFER,
-              ArrayBuffer.isView(obj) || (constructorName === "ArrayBuffer"));
+              (ArrayBuffer.isView(obj) || (constructorName === "ArrayBuffer")) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
   SET_FLAG_IF(IS_ARRAY, Array.isArray(obj));
   SET_FLAG_IF(IS_NODE_LIST,
@@ -3908,6 +3999,7 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
               ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
+  SET_FLAG_IF(IS_ERROR, (typeof obj.stack === "string" && typeof obj.message === "string") && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
   // clang-format on
   return type_flags;
 });
@@ -3934,6 +4026,15 @@ create_proxy_of_type(int type_flags, JsRef object, JsRef this)
   if (type_flags & IS_BUFFER) {
     FAIL_IF_NONZERO(JsBuffer_cinit(result));
   }
+  if (type_flags & IS_ERROR) {
+    PyObject* arg =
+      create_proxy_of_type(type_flags & (~IS_ERROR), object, this);
+    FAIL_IF_NULL(arg);
+    PyObject* args = PyTuple_Pack(1, arg);
+    Py_CLEAR(arg);
+    FAIL_IF_NULL(args);
+    JsException_ARGS(result) = args;
+  }
 
   success = true;
 finally:
@@ -3957,8 +4058,6 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_comlink_proxy(object)) {
     // Comlink proxies are weird and break our feature detection pretty badly.
     type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
-  } else if (hiwire_is_error(object)) {
-    return JsProxy_new_error(object);
   } else {
     type_flags = compute_typeflags(object);
     if (type_flags == -1) {
@@ -3988,20 +4087,6 @@ JsProxy_AsJs(PyObject* x)
 {
   JsProxy* js_proxy = (JsProxy*)x;
   return hiwire_incref(js_proxy->js);
-}
-
-bool
-JsException_Check(PyObject* x)
-{
-  return PyObject_TypeCheck(x, (PyTypeObject*)Exc_JsException);
-}
-
-JsRef
-JsException_AsJs(PyObject* err)
-{
-  JsExceptionObject* err_obj = (JsExceptionObject*)err;
-  JsProxy* js_error = (JsProxy*)(err_obj->js_error);
-  return hiwire_incref(js_error->js);
 }
 
 static PyMethodDef methods[] = {
@@ -4174,6 +4259,7 @@ JsProxy_init(PyObject* core_module)
   AddFlag(IS_GENERATOR);
   AddFlag(IS_ASYNC_GENERATOR);
   AddFlag(IS_ASYNC_ITERATOR);
+  AddFlag(IS_ERROR);
 
 #undef AddFlag
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_module, "js_flags", flag_dict));
@@ -4191,15 +4277,16 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_MINUS_ONE(
     PyModule_AddObject(core_module, "jsproxy_typedict", JsProxy_TypeDict));
 
-  PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
-  _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
-
   FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
   FAIL_IF_MINUS_ONE(PyType_Ready(&BufferType));
-  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
+  JsException = (PyObject*)JsProxy_get_subtype(IS_ERROR);
+  FAIL_IF_NULL(JsException);
+  FAIL_IF_MINUS_ONE(
+    PyObject_SetAttrString(core_module, "JsException", JsException));
 
   success = true;
 finally:
   Py_CLEAR(asyncio_module);
+  Py_CLEAR(flag_dict);
   return success ? 0 : -1;
 }

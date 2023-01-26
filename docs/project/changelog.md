@@ -15,6 +15,12 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
+  thrown as Python exceptions. Previously Pyodide automatically wrapped them in
+  a `JsException` but that is no longer needed -- now `JsException` inherits
+  from both `JsProxy` and `Exception`.
+  {pr}`3455`
+
 - {{ Update }} Pyodide now runs Python 3.11.1.
   {pr}`3252`
 
