@@ -42,10 +42,6 @@ myst:
   `PYODIDE_PACKAGES="tag:core" make`.
   {pr}`3444`
 
-- {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
-  when run multiple times.
-  {pr}`3445`
-
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting .py files
