@@ -27,6 +27,12 @@ myst:
 - {{ Enhancement }} Updated Emscripten to version 3.1.30
   {pr}`3471`
 
+- {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
+  `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
+  are using these libraries in a package that are built out-of-tree, you will
+  need to link them to the package manually.
+  {pr}`3505`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
