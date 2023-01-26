@@ -127,22 +127,28 @@ htmlhelp_basename = "Pyodidedoc"
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
-base_dir = Path(__file__).resolve().parent.parent
-extra_sys_path_dirs = [
-    str(base_dir),
-    str(base_dir / "pyodide-build"),
-    str(base_dir / "docs/sphinx_pyodide"),
-    str(base_dir / "src/py"),
-    str(base_dir / "packages/micropip/src"),
-]
-
 # Try not to cause side effects if we are imported incidentally.
 
 IN_SPHINX = "sphinx" in sys.modules and hasattr(sys.modules["sphinx"], "application")
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
+
+base_dir = Path(__file__).resolve().parent.parent
+extra_sys_path_dirs = [
+    str(base_dir),
+    str(base_dir / "pyodide-build"),
+    str(base_dir / "src/py"),
+    str(base_dir / "packages/micropip/src"),
+]
+
+
 if IN_SPHINX:
-    sys.path = extra_sys_path_dirs + sys.path
+    # sphinx_pyodide is imported before setup() is called because it's a sphinx
+    # extension, so we need it to be on the path early. Everything else can be
+    # added to the path in setup().
+    #
+    # TODO: pip install -e sphinx-pyodide instead.
+    sys.path = [str(base_dir / "docs/sphinx_pyodide")] + sys.path
 
 
 def patch_docs_argspec():
@@ -316,6 +322,7 @@ def typehints_formatter(annotation, config):
 
 
 def setup(app):
+    sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
     app.connect("source-read", global_replace)
