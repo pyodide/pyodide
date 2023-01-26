@@ -39,9 +39,6 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
-int
-pyodide_js_init(void);
-
 PyObject*
 PyInit__pyodide_core(void)
 {
