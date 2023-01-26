@@ -1,0 +1,13 @@
+package:
+  name: cramjam
+  version: 2.6.2
+  top-level:
+    - cramjam
+source:
+  url: https://files.pythonhosted.org/packages/03/68/b6a79d363e2796012ad1f0aae9b452050509203e7b7b0ebb0eab97b2b48f/cramjam-2.6.2.tar.gz
+  sha256: 1ffdc8d1381b5fee57b33b537e38fa7fd29e8d8f3b544dbab1d71dbfaaec3bef
+about:
+  home: ""
+  PyPI: https://pypi.org/project/cramjam
+  summary: Thin Python bindings to de/compression algorithms in Rust
+  license: MIT
