@@ -323,6 +323,7 @@ def _resolve_and_build(
     target_folder: Path,
     build_dependencies: bool,
     extras: list[str],
+    output_lockfile: bool,
 ) -> None:
     requirements = []
 
@@ -347,14 +348,19 @@ def _resolve_and_build(
     # Kick off the resolution process, and get the final result.
     result = resolver.resolve(requirements)
     target_folder.mkdir(parents=True, exist_ok=True)
-    with open(target_folder / "package-versions.txt", "w") as version_file:
-        for x in result.mapping.values():
-            download_or_build_wheel(x.url, target_folder)
-            if len(x.extras) > 0:
-                extratxt = "[" + ",".join(x.extras) + "]"
-            else:
-                extratxt = ""
+    version_file = None
+    if output_lockfile:
+        version_file = open(target_folder / "package-versions.txt", "w")
+    for x in result.mapping.values():
+        download_or_build_wheel(x.url, target_folder)
+        if len(x.extras) > 0:
+            extratxt = "[" + ",".join(x.extras) + "]"
+        else:
+            extratxt = ""
+        if version_file:
             version_file.write(f"{x.name}{extratxt}=={x.version}\n")
+    if version_file:
+        version_file.close()
 
 
 def build_multiple_wheels_from_pypi(
@@ -364,6 +370,7 @@ def build_multiple_wheels_from_pypi(
     skip_dependency: list[str],
     exports: str,
     build_flags: list[str],
+    output_lockfile: bool,
 ) -> None:
     """
     Given a list of package requirements, build or fetch them. If build_dependencies is true, then
@@ -372,7 +379,13 @@ def build_multiple_wheels_from_pypi(
     _parse_skip_list(skip_dependency)
     PyPIProvider.BUILD_EXPORTS = exports
     PyPIProvider.BUILD_FLAGS = build_flags
-    _resolve_and_build(reqs, target_folder, build_dependencies, extras=[])
+    _resolve_and_build(
+        reqs,
+        target_folder,
+        build_dependencies,
+        extras=[],
+        output_lockfile=output_lockfile,
+    )
 
 
 def build_dependencies_for_wheel(
@@ -381,6 +394,7 @@ def build_dependencies_for_wheel(
     skip_dependency: list[str],
     exports: str,
     build_flags: list[str],
+    output_lockfile: bool,
 ) -> None:
     """Extract dependencies from this wheel and build pypi dependencies
     for each one in ./dist/
@@ -404,16 +418,23 @@ def build_dependencies_for_wheel(
 
     deps: list[str] = metadata.get_all("Requires-Dist", [])
     metadata.get("version")
-    _resolve_and_build(deps, wheel.parent, build_dependencies=True, extras=extras)
+    _resolve_and_build(
+        deps,
+        wheel.parent,
+        build_dependencies=True,
+        extras=extras,
+        output_lockfile=output_lockfile,
+    )
     # add the current wheel to the package-versions.txt
-    with open(wheel.parent / "package-versions.txt", "a") as version_txt:
-        name = metadata.get("Name")
-        version = metadata.get("Version")
-        if extras:
-            extratxt = "[" + ",".join(extras) + "]"
-        else:
-            extratxt = ""
-        version_txt.write(f"{name}{extratxt}=={version}\n")
+    if output_lockfile:
+        with open(wheel.parent / "package-versions.txt", "a") as version_txt:
+            name = metadata.get("Name")
+            version = metadata.get("Version")
+            if extras:
+                extratxt = "[" + ",".join(extras) + "]"
+            else:
+                extratxt = ""
+            version_txt.write(f"{name}{extratxt}=={version}\n")
 
 
 def fetch_pypi_package(package_spec: str, destdir: Path) -> Path:

@@ -20,7 +20,7 @@ myst:
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
 
-- {{ Enhancement}} Added `pyodide-build` support for building a list of packages from a requirements.txt file. Also auto-output a list of chosen dependencies in the same format when building a package and dependencies. This enables repeatable builds of packages. {pr}`3469`
+- {{ Enhancement}} Added `pyodide-build` support for building a list of packages from a requirements.txt file. Also can output a list of chosen dependencies in the same format when building a package and dependencies using the `--output-lockfile` argument. This enables repeatable builds of packages. {pr}`3469`
 
 ### Pyodide CLI
 

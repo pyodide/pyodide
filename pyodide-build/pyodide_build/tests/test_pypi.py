@@ -324,9 +324,8 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
     with chdir(tmp_path):
         result = runner.invoke(
             app,
-            ["requirements.txt", "--build-dependencies"],
+            ["requirements.txt", "--build-dependencies", "--output-lockfile"],
         )
-    print(result.stdout)
     # this should work
     assert result.exit_code == 0, result.stdout
     built_wheels = list(output_dir.glob("*.whl"))

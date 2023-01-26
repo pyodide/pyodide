@@ -134,6 +134,10 @@ def main(
     build_dependencies: bool = typer.Option(
         False, help="Fetch non-pyodide dependencies from pypi and build them too."
     ),
+    output_lockfile: bool = typer.Option(
+        False,
+        help="Output list of resolved dependencies alongside the build in dist/package_versions.txt",
+    ),
     skip_dependency: list[str] = typer.Option(
         [],
         help="Skip building or resolving a single dependency. Use multiple times or provide a comma separated list to skip multiple dependencies.",
@@ -162,22 +166,23 @@ def main(
             )
         with open(source_location) as f:
             reqs = [x.strip() for x in f.readlines()]
-            try:
-                build_multiple_wheels_from_pypi(
-                    reqs,
-                    Path("./dist").resolve(),
-                    build_dependencies,
-                    skip_dependency,
-                    exports,
-                    ctx.args,
-                )
-            except BaseException as e:
-                import traceback
+        try:
+            build_multiple_wheels_from_pypi(
+                reqs,
+                Path("./dist").resolve(),
+                build_dependencies,
+                skip_dependency,
+                exports,
+                ctx.args,
+                output_lockfile=output_lockfile,
+            )
+        except BaseException as e:
+            import traceback
 
-                print("Failed building multiple wheels:", traceback.format_exc())
-                raise e
+            print("Failed building multiple wheels:", traceback.format_exc())
+            raise e
 
-            return
+        return
     elif source_location.find("/") == -1:
         # try fetch or build from pypi
         wheel = pypi(source_location, exports, ctx)
@@ -187,7 +192,12 @@ def main(
     if build_dependencies:
         try:
             build_dependencies_for_wheel(
-                wheel, extras, skip_dependency, exports, ctx.args
+                wheel,
+                extras,
+                skip_dependency,
+                exports,
+                ctx.args,
+                output_lockfile=output_lockfile,
             )
         except BaseException as e:
             import traceback
