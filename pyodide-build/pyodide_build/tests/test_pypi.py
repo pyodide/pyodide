@@ -319,8 +319,9 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
     # override a dependency version and build
     # pkg-a
     with open(tmp_path / "requirements.txt", "w") as req_file:
-        req_file.write("pkg-c~=1.0.0\npkg-a\n")
-
+        req_file.write(
+            "  # Whole line comment\npkg-c~=1.0.0 # end of line comment\npkg-a\n"
+        )
     with chdir(tmp_path):
         result = runner.invoke(
             app,
@@ -352,3 +353,21 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
             assert x.name.find("1.0.0") != -1, x.name
 
     assert len(built_wheels) == 2
+
+
+def test_bad_requirements_text(selenium, tmp_path):
+    app = typer.Typer()
+    app.command()(build.main)
+    # test 1 - error on URL location in requirements
+    # test 2 - error on advanced options
+    # test 3 - error on editable install of package
+    bad_lines = [" pkg-c@http://www.pkg-c.org", "  -r bob.txt", "   -e pkg-c"]
+    for line in bad_lines:
+        with open(tmp_path / "requirements.txt", "w") as req_file:
+            req_file.write(line + "\n")
+        with chdir(tmp_path):
+            result = runner.invoke(
+                app,
+                ["requirements.txt"],
+            )
+            assert result.exit_code != 0 and line.strip() in str(result)

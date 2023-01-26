@@ -164,8 +164,24 @@ def main(
             raise RuntimeError(
                 f"Couldn't find requirements text file {source_location}"
             )
+        reqs = []
         with open(source_location) as f:
-            reqs = [x.strip() for x in f.readlines()]
+            raw_reqs = [x.strip() for x in f.readlines()]
+        for x in raw_reqs:
+            # remove comments
+            comment_pos = x.find("#")
+            if comment_pos != -1:
+                x = x[:comment_pos].strip()
+            if len(x) > 0:
+                if x[0] == "-":
+                    raise RuntimeError(
+                        f"pyodide build only supports name-based PEP508 requirements. [{x}] will not work."
+                    )
+                if x.find("@") != -1:
+                    raise RuntimeError(
+                        f"pyodide build does not support URL based requirements. [{x}] will not work"
+                    )
+                reqs.append(x)
         try:
             build_wheels_from_pypi_requirements(
                 reqs,
