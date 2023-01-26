@@ -1,5 +1,4 @@
 import subprocess
-from typing import Any
 
 import pytest
 
@@ -11,6 +10,19 @@ from pyodide_build.pywasmcross import (
     get_cmake_compiler_flags,
     get_library_output,
 )
+
+
+@pytest.fixture(scope="function")
+def build_args():
+    yield BuildArgs(
+        cflags="",
+        cxxflags="",
+        ldflags="",
+        target_install_dir="",
+        host_install_dir="",
+        pythoninclude="python/include",
+        exports="whole_archive",
+    )
 
 
 def _args_wrapper(func):
@@ -34,7 +46,7 @@ def _args_wrapper(func):
 f2c_wrap = _args_wrapper(replay_f2c)
 
 
-def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
+def generate_args(line: str, args: BuildArgs, is_link_cmd: bool = False) -> str:
     splitline = line.split()
     res = handle_command_generate_args(splitline, args, is_link_cmd)
 
@@ -48,9 +60,10 @@ def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
             res.remove(arg)
 
     if "-c" in splitline:
-        include_index = res.index("python/include")
-        del res[include_index]
-        del res[include_index - 1]
+        if "python/include" in res:
+            include_index = res.index("python/include")
+            del res[include_index]
+            del res[include_index - 1]
 
     if is_link_cmd:
         arg = "-Wl,--fatal-warnings"
@@ -59,8 +72,8 @@ def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
     return " ".join(res)
 
 
-def test_handle_command():
-    args = BuildArgs()
+def test_handle_command(build_args):
+    args = build_args
     assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [
         "echo",
         "wasm32-emscripten",
@@ -90,6 +103,7 @@ def test_handle_command():
         cflags="-I./lib2",
         cxxflags="-std=c++11",
         ldflags="-lm",
+        exports="whole_archive",
     )
     assert (
         generate_args("gcc -I./lib1 -c test.cpp -o test.o", args)
@@ -102,6 +116,7 @@ def test_handle_command():
         cxxflags="",
         ldflags="-lm",
         target_install_dir="",
+        exports="whole_archive",
     )
     assert (
         generate_args("gcc -c test.o -o test.so", args, True)
@@ -115,10 +130,10 @@ def test_handle_command():
     )
 
 
-def test_handle_command_ldflags():
+def test_handle_command_ldflags(build_args):
     # Make sure to remove unsupported link flags for wasm-ld
 
-    args = BuildArgs()
+    args = build_args
     assert (
         generate_args(
             "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -c test.o -o test.so",
@@ -137,10 +152,10 @@ def test_handle_command_ldflags():
         (".c", ".so", "emcc", "ldflags"),
     ],
 )
-def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
+def test_handle_command_optflags(in_ext, out_ext, executable, flag_name, build_args):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
-    args = BuildArgs()
+    args = build_args
     setattr(args, flag_name, "-Oz")
     assert (
         generate_args(f"gcc -O3 -c test.{in_ext} -o test.{out_ext}", args, True)
@@ -158,10 +173,10 @@ def test_f2c():
     )
 
 
-def test_conda_unsupported_args():
+def test_conda_unsupported_args(build_args):
     # Check that compile arguments that are not supported by emcc and are sometimes
     # used in conda are removed.
-    args = BuildArgs()
+    args = build_args
     assert generate_args("gcc -c test.o -B /compiler_compat -o test.so", args) == (
         "emcc -c test.o -o test.so"
     )
@@ -234,8 +249,8 @@ def test_get_cmake_compiler_flags():
         assert emscripten_compiler not in cmake_flags
 
 
-def test_handle_command_cmake():
-    args = BuildArgs()
+def test_handle_command_cmake(build_args):
+    args = build_args
     assert "--fresh" in handle_command_generate_args(["cmake", "./"], args, False)
 
     build_cmd = ["cmake", "--build", "." "--target", "target"]

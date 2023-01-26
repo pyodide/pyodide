@@ -554,7 +554,9 @@ def handle_command_generate_args(
             new_args.extend(build_args.cflags.split())
         elif new_args[0] == "em++":
             new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
-        new_args.extend(["-I", build_args.pythoninclude])
+
+        if build_args.pythoninclude:
+            new_args.extend(["-I", build_args.pythoninclude])
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
