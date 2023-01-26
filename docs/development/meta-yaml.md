@@ -47,12 +47,12 @@ as a top-level import names.
 
 ### `package/tag`
 
-The list of tag of the package. This is a meta information used to group
-the package. Normally this is not needed, but it can be useful to group
-packages by functionality. Following tags are currently used in Pyodide:
+The list of tags of the package. This is meta information used to group
+packages by functionality. Normally this is not needed.
+The following tags are currently used in Pyodide:
 
 - always: This package is always built.
-- core: This package is part of the core Pyodide package.
+- core: This package is used in the Pyodide core test suite.
 - min-scipy-stack: This package is part of the minimal scipy stack.
 
 ## `source`

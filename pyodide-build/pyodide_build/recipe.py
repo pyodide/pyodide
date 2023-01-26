@@ -66,8 +66,10 @@ def load_recipes(
             recipes[name_or_tag] = available_recipes[name_or_tag].copy(deep=True)
 
         # 2. tag
-        elif name_or_tag.startswith("tag:") and name_or_tag[4:] in tagged_recipes:
-            tag = name_or_tag[4:]
+        elif (
+            name_or_tag.startswith("tag:")
+            and (tag := name_or_tag.remove_prefix("tag:")) in tagged_recipes
+        ):
             for recipe in tagged_recipes[tag]:
                 recipes[recipe.package.name] = recipe.copy(deep=True)
 
