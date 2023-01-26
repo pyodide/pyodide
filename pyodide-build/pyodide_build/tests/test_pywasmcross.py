@@ -1,5 +1,4 @@
 import subprocess
-from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -7,22 +6,11 @@ import pytest
 from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
 from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
 from pyodide_build.pywasmcross import (
+    BuildArgs,
     calculate_exports,
     get_cmake_compiler_flags,
     get_library_output,
 )
-
-
-@dataclass
-class BuildArgs:
-    """An object to hold build arguments"""
-
-    cflags: str = ""
-    cxxflags: str = ""
-    ldflags: str = ""
-    target_install_dir: str = ""
-    pythoninclude: str = "python/include"
-    exports: str = "whole_archive"
 
 
 def _args_wrapper(func):
@@ -73,7 +61,7 @@ def generate_args(line: str, args: Any, is_link_cmd: bool = False) -> str:
 
 def test_handle_command():
     args = BuildArgs()
-    assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [  # type: ignore[arg-type]
+    assert handle_command_generate_args(["gcc", "-print-multiarch"], args, True) == [
         "echo",
         "wasm32-emscripten",
     ]
@@ -152,7 +140,8 @@ def test_handle_command_ldflags():
 def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
-    args = BuildArgs(**{flag_name: "-Oz"})
+    args = BuildArgs()
+    setattr(args, flag_name, "-Oz")
     assert (
         generate_args(f"gcc -O3 -c test.{in_ext} -o test.{out_ext}", args, True)
         == f"{executable} -Oz -c test.{in_ext} -o test.{out_ext}"
@@ -247,10 +236,10 @@ def test_get_cmake_compiler_flags():
 
 def test_handle_command_cmake():
     args = BuildArgs()
-    assert "--fresh" in handle_command_generate_args(["cmake", "./"], args, False)  # type: ignore[arg-type]
+    assert "--fresh" in handle_command_generate_args(["cmake", "./"], args, False)
 
     build_cmd = ["cmake", "--build", "." "--target", "target"]
-    assert handle_command_generate_args(build_cmd, args, False) == build_cmd  # type: ignore[arg-type]
+    assert handle_command_generate_args(build_cmd, args, False) == build_cmd
 
 
 def test_get_library_output():
