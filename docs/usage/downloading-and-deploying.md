@@ -16,8 +16,13 @@ Pyodide is available from the JsDelivr CDN
 ### GitHub releases
 
 You can also download Pyodide packages from [GitHub
-releases](https://github.com/pyodide/pyodide/releases)
-(the `pyodide-build-*.tar.bz2` file).
+releases](https://github.com/pyodide/pyodide/releases). The full distribution
+including all vendored packages is available as `pyodide-{{VERSION}}.tar.bz2`.
+The full distribution is quite large (200+ megabytes). The minimal set of files
+needed to start Pyodide is included as `pyodide-core-{{VERSION}}.tar.bz2`. It is
+intended for use with node which will automatically install missing packages
+from the cdn -- it is the same set of files that are installed if you use `npm
+install pyodide`. It may also be convenient for other purposes.
 
 You will need to serve these files yourself.
 
