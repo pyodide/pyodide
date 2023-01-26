@@ -18,6 +18,10 @@ myst:
 - {{ Update }} Pyodide now runs Python 3.11.1.
   {pr}`3252`
 
+- {{ Update }} We now build libpyodide.a so the Pyodide foreign function
+  interface can be experimentally linked into other Emscripten builds of Python.
+  {pr}`3335`
+
 - {{ Enhancement }} Updated Emscripten to version 3.1.30
   {pr}`3471`
 
