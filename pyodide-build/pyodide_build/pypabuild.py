@@ -163,7 +163,24 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
             symlink_path.unlink()
         try:
             pywasmcross_exe = shutil.which("_pywasmcross")
-            if pywasmcross_exe:
+            pywasmcross_exe_pyenv = None
+
+            # pyenv creates a shim that eventually calls the real executable,
+            # but it doesn't work well when a shim has a incorrect filename, which is our case.
+            # Therefore, we need to find a real executable path...
+            if "PYENV_ROOT" in os.environ and shutil.which("pyenv"):
+                import subprocess
+
+                try:
+                    pywasmcross_exe_pyenv = subprocess.check_output(
+                        ["pyenv", "which", "_pywasmcross"], text=True
+                    ).strip()
+                except subprocess.CalledProcessError:
+                    pass
+
+            if pywasmcross_exe_pyenv:
+                symlink_path.symlink_to(pywasmcross_exe_pyenv)
+            elif pywasmcross_exe:
                 symlink_path.symlink_to(pywasmcross_exe)
             else:
                 symlink_path.symlink_to(pywasmcross.__file__)
