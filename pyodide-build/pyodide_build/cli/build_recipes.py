@@ -3,7 +3,8 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall
+from .. import buildall, common
+from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def recipe(
@@ -51,6 +52,11 @@ def recipe(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
+    initialize_pyodide_root()
+
+    if common.in_xbuildenv():
+        common.check_emscripten_version()
+
     root = Path.cwd()
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir)
     install_dir_ = root / "dist" if not install_dir else Path(install_dir)

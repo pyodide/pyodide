@@ -5,7 +5,7 @@ from pathlib import Path
 
 import typer
 
-from .. import common, mkpkg
+from .. import mkpkg
 
 app = typer.Typer()
 
@@ -39,20 +39,17 @@ def new_recipe_pypi(
         help="Which source format is preferred. Options are wheel or sdist. "
         "If not specified, then either a wheel or an sdist will be used. ",
     ),
-    root: str = typer.Option(
-        None, help="The root directory of the Pyodide.", envvar="PYODIDE_ROOT"
-    ),
     recipe_dir: str = typer.Option(
         None,
         help="The directory containing the recipe of packages."
-        "If not specified, the default is `packages` in the root directory.",
+        "If not specified, the default is `<cwd>/packages`.",
     ),
 ) -> None:
     """
     Create a new package from PyPI.
     """
-    pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
-    recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
+    root = Path.cwd()
+    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir)
 
     if update or update_patched:
         mkpkg.update_package(
