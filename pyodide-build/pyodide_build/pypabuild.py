@@ -244,7 +244,11 @@ def get_build_env(
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = common.platform()
         env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-        env["PYTHONPATH"] = str(sysconfig_dir)
+
+        # Make sure that the isolated build environment can find pyodide-build
+        pyodide_build_root = Path(__file__).parent.parent
+
+        env["PYTHONPATH"] = f"{str(sysconfig_dir)}:{pyodide_build_root}"
         yield env
 
 
