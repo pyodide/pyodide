@@ -127,28 +127,31 @@ htmlhelp_basename = "Pyodidedoc"
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
 
+# Try not to cause side effects if we are imported incidentally.
+
+IN_SPHINX = "sphinx" in sys.modules and hasattr(sys.modules["sphinx"], "application")
+IN_READTHEDOCS = "READTHEDOCS" in os.environ
+
+
 base_dir = Path(__file__).resolve().parent.parent
 extra_sys_path_dirs = [
     str(base_dir),
     str(base_dir / "pyodide-build"),
-    str(base_dir / "docs/sphinx_pyodide"),
     str(base_dir / "src/py"),
     str(base_dir / "packages/micropip/src"),
 ]
 
-# Try not to cause side effects if we are imported incidentally.
-
-try:
-    import sphinx
-
-    IN_SPHINX = hasattr(sphinx, "application")
-except ImportError:
-    IN_SPHINX = False
-
-IN_READTHEDOCS = "READTHEDOCS" in os.environ
 
 if IN_SPHINX:
-    sys.path = extra_sys_path_dirs + sys.path
+    # sphinx_pyodide is imported before setup() is called because it's a sphinx
+    # extension, so we need it to be on the path early. Everything else can be
+    # added to the path in setup().
+    #
+    # TODO: pip install -e sphinx-pyodide instead.
+    sys.path = [str(base_dir / "docs/sphinx_pyodide")] + sys.path
+
+
+def patch_docs_argspec():
     import builtins
 
     from sphinx_pyodide.util import docs_argspec
@@ -157,30 +160,52 @@ if IN_SPHINX:
     # Must do this before importing pyodide!
     setattr(builtins, "--docs_argspec--", docs_argspec)
 
+
+def patch_inspect():
     # Monkey patch for python3.11 incompatible code
     import inspect
 
     if not hasattr(inspect, "getargspec"):
         inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
 
-import pyodide
 
-# The full version, including alpha/beta/rc tags.
-release = version = pyodide.__version__
+def prevent_parens_after_js_class_xrefs():
+    from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
 
-if ".dev" in version or os.environ.get("READTHEDOCS_VERSION") == "latest":
-    CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
-else:
-    CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
+    JavaScriptDomain.roles["class"] = JSXRefRole()
 
-html_title = f"Version {version}"
 
-global_replacements = {"{{PYODIDE_CDN_URL}}": CDN_URL, "{{VERSION}}": version}
+def apply_patches():
+    patch_docs_argspec()
+    patch_inspect()
+    prevent_parens_after_js_class_xrefs()
+
+
+def calculate_pyodide_version(app):
+    import pyodide
+
+    config = app.config
+
+    # The full version, including alpha/beta/rc tags.
+    config.release = config.version = version = pyodide.__version__
+
+    if ".dev" in version or os.environ.get("READTHEDOCS_VERSION") == "latest":
+        CDN_URL = "https://cdn.jsdelivr.net/pyodide/dev/full/"
+    else:
+        CDN_URL = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
+
+    app.config.CDN_URL = CDN_URL
+    app.config.html_title = f"Version {version}"
+
+    app.config.global_replacements = {
+        "{{PYODIDE_CDN_URL}}": CDN_URL,
+        "{{VERSION}}": version,
+    }
 
 
 def write_console_html(app):
     # Make console.html file
-    env = {"PYODIDE_BASE_URL": CDN_URL}
+    env = {"PYODIDE_BASE_URL": app.config.CDN_URL}
     os.makedirs(app.outdir, exist_ok=True)
     os.makedirs("../dist", exist_ok=True)
     res = subprocess.check_output(
@@ -209,33 +234,34 @@ def write_console_html(app):
     output_path.write_text("".join(console_html_lines))
 
 
-if IN_SPHINX:
-    from sphinx.domains.javascript import JavaScriptDomain, JSXRefRole
+def ensure_typedoc_on_path():
+    if shutil.which("typedoc"):
+        return
+    os.environ["PATH"] += f':{str(Path("../src/js/node_modules/.bin").resolve())}'
+    print(os.environ["PATH"])
+    if shutil.which("typedoc"):
+        return
+    if IN_READTHEDOCS:
+        subprocess.run(["npm", "ci"], cwd="../src/js")
+    if shutil.which("typedoc"):
+        return
+    raise Exception(
+        "Before building the Pyodide docs you must run 'npm install' in 'src/js'."
+    )
 
-    JavaScriptDomain.roles["class"] = JSXRefRole()
 
-    from pyodide.ffi import JsProxy
-
-    del JsProxy.__new__
-
+def create_generated_typescript_files(app):
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
-    js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
+    app.config.js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
 
     def remove_pyproxy_gen_ts():
         Path("../src/js/pyproxy.gen.ts").unlink(missing_ok=True)
 
     atexit.register(remove_pyproxy_gen_ts)
 
-    os.environ["PATH"] += f':{str(Path("../src/js/node_modules/.bin").resolve())}'
-    print(os.environ["PATH"])
-    if IN_READTHEDOCS:
-        subprocess.run(["npm", "ci"], cwd="../src/js")
-    elif not shutil.which("typedoc"):
-        raise Exception(
-            "Before building the Pyodide docs you must run 'npm install' in 'src/js'."
-        )
 
+def prune_webloop_docs():
     # Prevent API docs for webloop methods: they are the same as for base event loop
     # and it clutters api docs too much
     from sphinx_pyodide.util import delete_attrs
@@ -251,8 +277,19 @@ if IN_SPHINX:
         sys.modules[module] = mock.Mock()
 
 
+def prune_jsproxy_constructor_docs():
+    from pyodide.ffi import JsProxy
+
+    del JsProxy.__new__
+
+
+def prune_docs():
+    prune_webloop_docs()
+    prune_jsproxy_constructor_docs()
+
+
 # https://github.com/sphinx-doc/sphinx/issues/4054
-def globalReplace(app, docname, source):
+def global_replace(app, docname, source):
     result = source[0]
     for key in app.config.global_replacements:
         result = result.replace(key, app.config.global_replacements[key])
@@ -285,6 +322,13 @@ def typehints_formatter(annotation, config):
 
 
 def setup(app):
+    sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
-    app.connect("source-read", globalReplace)
+    app.add_config_value("CDN_URL", "", True)
+    app.connect("source-read", global_replace)
+
+    apply_patches()
+    ensure_typedoc_on_path()
+    create_generated_typescript_files(app)
     write_console_html(app)
+    prune_docs()

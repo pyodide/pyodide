@@ -24,6 +24,10 @@ myst:
 - {{ Update }} Pyodide now runs Python 3.11.1.
   {pr}`3252`
 
+- {{ Update }} We now build libpyodide.a so the Pyodide foreign function
+  interface can be experimentally linked into other Emscripten builds of Python.
+  {pr}`3335`
+
 - {{ Enhancement }} Updated Emscripten to version 3.1.30
   {pr}`3471`
 
@@ -31,6 +35,16 @@ myst:
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
+
+- {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
+  packages.
+  {pr}`3444`
+
+- {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
+  you must prefix `tag:` to the meta-package name. For example, to build the
+  `core` meta-package, you must run `pyodide build-recipes tag:core`, or
+  `PYODIDE_PACKAGES="tag:core" make`.
+  {pr}`3444`
 
 ### Pyodide CLI
 
