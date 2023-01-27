@@ -30,10 +30,10 @@ def get_packages_summary_directive(app):
                 name, version, is_package, tag = self.parse_package_info(package)
 
                 # skip libraries (e.g. libxml, libyaml, ...) and test only packages
-                if not is_package or tag == PYODIDE_TESTONLY:
+                if not is_package or PYODIDE_TESTONLY in tag:
                     continue
 
-                if tag == PYODIDE_STDLIB:
+                if PYODIDE_STDLIB in tag:
                     version = "Pyodide standard library"
 
                 packages[name] = {
@@ -50,7 +50,7 @@ def get_packages_summary_directive(app):
 
         def parse_package_info(
             self, config: pathlib.Path
-        ) -> tuple[str, str, bool, str]:
+        ) -> tuple[str, str, bool, list[str]]:
             yaml_data = MetaConfig.from_yaml(config)
 
             name = yaml_data.package.name

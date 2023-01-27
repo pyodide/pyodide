@@ -28,7 +28,7 @@ from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
 
-from . import common
+from . import common, recipe
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
@@ -87,14 +87,10 @@ class BasePackage:
 
 @dataclasses.dataclass
 class Package(BasePackage):
-    def __init__(self, pkgdir: Path):
+    def __init__(self, pkgdir: Path, config: MetaConfig):
         self.pkgdir = pkgdir
+        self.meta = config.copy(deep=True)
 
-        pkgpath = pkgdir / "meta.yaml"
-        if not pkgpath.is_file():
-            raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
-
-        self.meta = MetaConfig.from_yaml(pkgpath)
         self.name = self.meta.package.name
         self.version = self.meta.package.version
         self.disabled = self.meta.package.disabled
@@ -249,7 +245,9 @@ class ReplProgressFormatter:
         return self.main_grid
 
 
-def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
+def _validate_package_map(pkg_map: dict[str, BasePackage]) -> bool:
+
+    # Check if dependencies are valid
     for pkg_name, pkg in pkg_map.items():
         for runtime_dep_name in pkg.run_dependencies:
             runtime_dep = pkg_map[runtime_dep_name]
@@ -258,11 +256,78 @@ def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
                     f"{pkg_name} has an invalid dependency: {runtime_dep_name}. Static libraries must be a host dependency."
                 )
 
+    # Check executables required to build packages are available
+    missing_executables = defaultdict(list)
+    for name, pkg in pkg_map.items():
+        for exe in find_missing_executables(pkg.executables_required):
+            missing_executables[exe].append(name)
+
+    if missing_executables:
+        error_msg = "The following executables are missing in the host system:\n"
+        for executable, pkgs in missing_executables.items():
+            error_msg += f"- {executable} (required by: {', '.join(pkgs)})\n"
+
+        raise RuntimeError(error_msg)
+
+    return True
+
+
+def _parse_package_query(query: list[str] | str | None) -> tuple[set[str], set[str]]:
+    """
+    Parse a package query string into a list of requested packages and a list of
+    disabled packages.
+
+    Parameters
+    ----------
+    query
+        A list of packages to build, this can be a comma separated string.
+
+    Returns
+    -------
+    A tuple of two lists, the first list contains requested packages, the second
+    list contains disabled packages.
+
+    Examples
+    --------
+    >>> _parse_package_query(None)
+    (set(), set())
+    >>> requested, disabled = _parse_package_query("a,b,c")
+    >>> requested == {'a', 'b', 'c'}, disabled == set()
+    (True, True)
+    >>> requested, disabled = _parse_package_query("a,b,!c")
+    >>> requested == {'a', 'b'}, disabled == {'c'}
+    (True, True)
+    >>> requested, disabled = _parse_package_query(["a", "b", "!c"])
+    >>> requested == {'a', 'b'}, disabled == {'c'}
+    (True, True)
+    """
+    if not query:
+        query = []
+
+    if isinstance(query, str):
+        query = [el.strip() for el in query.split(",")]
+
+    requested = set()
+    disabled = set()
+
+    for name in query:
+        if not name:  # empty string
+            continue
+
+        if name.startswith("!"):
+            disabled.add(name[1:])
+        else:
+            requested.add(name)
+
+    return requested, disabled
+
 
 def generate_dependency_graph(
-    packages_dir: Path, packages: set[str]
+    packages_dir: Path,
+    requested: set[str],
+    disabled: set[str] | None = None,
 ) -> dict[str, BasePackage]:
-    """This generates a dependency graph for listed packages.
+    """This generates a dependency graph for given packages.
 
     A node in the graph is a BasePackage object defined above, which maintains
     a list of dependencies and also dependents. That is, each node stores both
@@ -273,63 +338,52 @@ def generate_dependency_graph(
     BasePackage object. The function returns pkg_map, which contains all
     packages in the graph as its values.
 
-    Parameters:
-     - packages_dir: directory that contains packages
-     - packages: set of packages to build. If None, then all packages in
-       packages_dir are compiled.
+    Parameters
+    ----------
+    packages_dir
+        A directory that contains packages
+    requested
+        A set of packages to build
+    disabled
+        A set of packages to not build
 
-    Returns:
-     - pkg_map: dictionary mapping package names to BasePackage objects
+    Returns
+    -------
+    A dictionary mapping package names to BasePackage objects
     """
+
     pkg: BasePackage
     pkgname: str
     pkg_map: dict[str, BasePackage] = {}
 
-    if "*" in packages:
-        packages.discard("*")
-        packages.update(
-            str(x.name) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
-        )
-
-    no_numpy_dependents = "no-numpy-dependents" in packages
-    if no_numpy_dependents:
-        packages.discard("no-numpy-dependents")
-
-    disabled_packages = set()
-    for pkgname in list(packages):
-        if pkgname.startswith("!"):
-            packages.discard(pkgname)
-            disabled_packages.add(pkgname[1:])
-
-    # Record which packages were requested. We need this information because
-    # some packages are reachable from the initial set but are only reachable
-    # via a disabled dependency.
-    # Example: scikit-learn needs joblib & scipy, scipy needs numpy but numpy disabled.
-    # We don't want to build joblib.
-    requested = set(packages)
+    if not disabled:
+        disabled = set()
 
     # Create dependency graph.
     # On first pass add all dependencies regardless of whether
     # disabled since it might happen because of a transitive dependency
     graph = {}
+    all_recipes = recipe.load_all_recipes(packages_dir)
+    no_numpy_dependents = "no-numpy-dependents" in requested
+    requested.discard("no-numpy-dependents")
+    packages = requested.copy()
+
     while packages:
         pkgname = packages.pop()
 
-        pkg = Package(packages_dir / pkgname)
+        pkg = Package(packages_dir / pkgname, all_recipes[pkgname])
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
         for dep in pkg.dependencies:
             if pkg_map.get(dep) is None:
                 packages.add(dep)
 
-    validate_dependencies(pkg_map)
-
     # Traverse in build order (dependencies first then dependents)
     # Mark a package as disabled if they've either been explicitly disabled
     # or if any of its transitive dependencies were marked disabled.
     for pkgname in TopologicalSorter(graph).static_order():
         pkg = pkg_map[pkgname]
-        if pkgname in disabled_packages:
+        if pkgname in disabled:
             pkg.disabled = True
             continue
         if no_numpy_dependents and "numpy" in pkg.dependencies:
@@ -344,34 +398,25 @@ def generate_dependency_graph(
     # dependencies).
     # Locate the subset of packages that are transitive dependencies of packages
     # that are requested and not disabled.
+    requested_with_deps = requested.copy()
     for pkgname in reversed(list(TopologicalSorter(graph).static_order())):
         pkg = pkg_map[pkgname]
         if pkg.disabled:
-            requested.discard(pkgname)
+            requested_with_deps.discard(pkgname)
             continue
 
-        if pkgname not in requested:
+        if pkgname not in requested_with_deps:
             continue
 
-        requested.update(pkg.dependencies)
+        requested_with_deps.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
 
-    # Check executables required to build packages
-    missing_executables = defaultdict(list)
-    for name in requested:
-        pkg = pkg_map[name]
-        for exe in find_missing_executables(pkg.executables_required):
-            missing_executables[exe].append(name)
+    pkg_map = {name: pkg_map[name] for name in requested_with_deps}
 
-    if missing_executables:
-        error_msg = "The following executables are missing in the host system:\n"
-        for executable, pkgs in missing_executables.items():
-            error_msg += f"- {executable} (required by: {', '.join(pkgs)})\n"
+    _validate_package_map(pkg_map)
 
-        raise RuntimeError(error_msg)
-
-    return {name: pkg_map[name] for name in requested}
+    return pkg_map
 
 
 def job_priority(pkg: BasePackage) -> int:
@@ -652,8 +697,11 @@ def copy_packages_to_dist_dir(
 def build_packages(
     packages_dir: Path, args: argparse.Namespace
 ) -> dict[str, BasePackage]:
-    packages = common._parse_package_subset(args.only)
-    pkg_map = generate_dependency_graph(packages_dir, packages)
+    requested, disabled = _parse_package_query(args.only)
+    requested_packages = recipe.load_recipes(packages_dir, requested)
+    pkg_map = generate_dependency_graph(
+        packages_dir, set(requested_packages.keys()), disabled
+    )
 
     build_from_graph(pkg_map, args)
     for pkg in pkg_map.values():

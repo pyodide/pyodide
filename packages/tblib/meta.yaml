@@ -1,6 +1,9 @@
 package:
   name: tblib
   version: 1.7.0
+  tag:
+    - core
+    - min-scipy-stack
   top-level:
     - tblib
 source:

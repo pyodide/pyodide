@@ -2,6 +2,8 @@ package:
   name: micropip
   # This version needs to be consistent with docs/requirements-doc.txt
   version: "0.2.0"
+  tag:
+    - always
   top-level:
     - micropip
 

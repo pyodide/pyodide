@@ -45,6 +45,16 @@ Some packages may have multiple top-level import names.
 For instance, `setuptools` exposes `setuptools` and `pkg_resources`
 as a top-level import names.
 
+### `package/tag`
+
+The list of tags of the package. This is meta information used to group
+packages by functionality. Normally this is not needed.
+The following tags are currently used in Pyodide:
+
+- always: This package is always built.
+- core: This package is used in the Pyodide core test suite.
+- min-scipy-stack: This package is part of the minimal scipy stack.
+
 ## `source`
 
 ### `source/url`

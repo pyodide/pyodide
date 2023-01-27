@@ -69,7 +69,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            PYODIDE_PACKAGES="core" make
+            PYODIDE_PACKAGES="tag:core" make
             ccache -s
 
       - run:
