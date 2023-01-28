@@ -285,6 +285,8 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         # gcc flag that clang does not support
         "-Bsymbolic-functions",
         '-fno-second-underscore',
+        '-fstack-protector',  # doesn't work?
+        '-fno-strict-overflow',  # warning: argument unused during compilation
     ]:
         return None
     # fmt: on
