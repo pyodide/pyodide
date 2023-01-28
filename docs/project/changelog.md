@@ -28,8 +28,8 @@ myst:
   interface can be experimentally linked into other Emscripten builds of Python.
   {pr}`3335`
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.30
-  {pr}`3471`
+- {{ Enhancement }} Updated Emscripten to version 3.1.31
+  {pr}`3471`, {pr}`3517`
 
 ### Build System
 
