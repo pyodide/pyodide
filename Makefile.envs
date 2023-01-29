@@ -113,7 +113,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s POLYFILL \
 	-s MIN_SAFARI_VERSION=140000 \
 	-s STACK_SIZE=5MB \
-	-sSTRICT_JS \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
