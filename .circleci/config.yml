@@ -96,7 +96,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar} dist/{package,repodata}.json
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,.asm.data,_py.tar,} dist/{package,repodata}.json dist/python-stdlib.zip
 
       - store_artifacts:
           path: /root/repo/dist/

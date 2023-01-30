@@ -65,6 +65,7 @@
     "pyodide.asm.wasm",
     "pyodide.asm.data",
     "pyodide_py.tar",
+    "python_stdlib.zip",
     "pyodide.mjs",
     "pyodide.js.map",
     "pyodide.mjs.map",
