@@ -5,7 +5,6 @@ Build all of the packages in a given directory.
 """
 
 import argparse
-import copy
 import dataclasses
 import hashlib
 import json
@@ -33,6 +32,7 @@ from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
+from .pywasmcross import BuildArgs
 
 
 class BuildError(Exception):
@@ -75,7 +75,7 @@ class BasePackage:
     def needs_rebuild(self) -> bool:
         return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
 
-    def build(self, args: Any) -> None:
+    def build(self, build_args: BuildArgs) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -126,7 +126,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, args: Any) -> None:
+    def build(self, build_args: BuildArgs) -> None:
 
         p = subprocess.run(
             [
@@ -135,11 +135,11 @@ class Package(BasePackage):
                 "pyodide_build",
                 "buildpkg",
                 str(self.pkgdir / "meta.yaml"),
-                f"--cflags={args.cflags}",
-                f"--cxxflags={args.cxxflags}",
-                f"--ldflags={args.ldflags}",
-                f"--target-install-dir={args.target_install_dir}",
-                f"--host-install-dir={args.host_install_dir}",
+                f"--cflags={build_args.cflags}",
+                f"--cxxflags={build_args.cxxflags}",
+                f"--ldflags={build_args.ldflags}",
+                f"--target-install-dir={build_args.target_install_dir}",
+                f"--host-install-dir={build_args.host_install_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
                 # been updated and should be rebuilt even though its own
@@ -151,17 +151,13 @@ class Package(BasePackage):
             stderr=subprocess.DEVNULL,
         )
 
-        log_dir = Path(args.log_dir).resolve() if args.log_dir else None
-        if log_dir and (self.pkgdir / "build.log").exists():
-            log_dir.mkdir(exist_ok=True, parents=True)
-            shutil.copy(
-                self.pkgdir / "build.log",
-                log_dir / f"{self.name}.log",
-            )
-
         if p.returncode != 0:
             logger.error(f"Error building {self.name}. Printing build logs.")
-            logger.error((self.pkgdir / "build.log").read_text(encoding="utf-8"))
+            logfile = self.pkgdir / "build.log"
+            if logfile.is_file():
+                logger.error(logfile.read_text(encoding="utf-8"))
+            else:
+                logger.error("ERROR: No build log found.")
             logger.error("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
 
@@ -474,9 +470,14 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     return needs_build
 
 
-def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) -> None:
+def build_from_graph(
+    pkg_map: dict[str, BasePackage],
+    build_args: BuildArgs,
+    n_jobs: int = 1,
+    force_rebuild: bool = False,
+) -> None:
     """
-    This builds packages in pkg_map in parallel, building at most args.n_jobs
+    This builds packages in pkg_map in parallel, building at most n_jobs
     packages at once.
 
     We have a priority queue of packages we are ready to build (build_queue),
@@ -484,7 +485,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
     priority is based on the number of dependents --- we prefer to build
     packages with more dependents first.
 
-    To build packages in parallel, we use a thread pool of args.n_jobs many
+    To build packages in parallel, we use a thread pool of n_jobs many
     threads listening to build_queue. When the thread is free, it takes an
     item off build_queue and builds it. Once the package is built, it sends the
     package to the built_queue. The main thread listens to the built_queue and
@@ -496,7 +497,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
 
-    if args.force_rebuild:
+    if force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
     else:
@@ -553,7 +554,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
 
             success = True
             try:
-                pkg.build(args)
+                pkg.build(build_args)
             except Exception as e:
                 built_queue.put(e)
                 success = False
@@ -566,7 +567,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
             # Release the GIL so new packages get queued
             sleep(0.01)
 
-    for n in range(0, args.n_jobs):
+    for n in range(0, n_jobs):
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
@@ -695,15 +696,19 @@ def copy_packages_to_dist_dir(
 
 
 def build_packages(
-    packages_dir: Path, args: argparse.Namespace
+    packages_dir: Path,
+    targets: str,
+    build_args: BuildArgs,
+    n_jobs: int = 1,
+    force_rebuild: bool = False,
 ) -> dict[str, BasePackage]:
-    requested, disabled = _parse_package_query(args.only)
+    requested, disabled = _parse_package_query(targets)
     requested_packages = recipe.load_recipes(packages_dir, requested)
     pkg_map = generate_dependency_graph(
         packages_dir, set(requested_packages.keys()), disabled
     )
 
-    build_from_graph(pkg_map, args)
+    build_from_graph(pkg_map, build_args, n_jobs, force_rebuild)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
@@ -714,6 +719,28 @@ def build_packages(
         pkg.unvendored_tests = pkg.tests_path()
 
     return pkg_map
+
+
+def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
+    """
+    Copy build logs of packages to the log directory.
+    Parameters
+    ----------
+    pkg_map
+        A dictionary mapping package names to package objects.
+    log_dir
+        The directory to copy the logs to.
+    """
+
+    log_dir.mkdir(exist_ok=True, parents=True)
+    logger.info(f"Copying build logs to {log_dir}")
+
+    for pkg in pkg_map.values():
+        log_file = pkg.pkgdir / "build.log"
+        if log_file.exists():
+            shutil.copy(log_file, log_dir / f"{pkg.name}.log")
+        else:
+            logger.warning(f"Warning: {pkg.name} has no build log")
 
 
 def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
@@ -731,10 +758,15 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
     """
 
     output_dir.mkdir(exist_ok=True, parents=True)
-    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
-    package_data = generate_repodata(output_dir, pkg_map)
 
-    with open(output_dir / "repodata.json", "w") as fd:
+    logger.info(f"Copying built packages to {output_dir}")
+    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
+
+    repodata_path = output_dir / "repodata.json"
+    logger.info(f"Writing repodata.json to {repodata_path}")
+
+    package_data = generate_repodata(output_dir, pkg_map)
+    with repodata_path.open("w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 
@@ -827,19 +859,19 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
-    args = copy.deepcopy(args)
+def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
+    args = dataclasses.replace(build_args)
 
     if args.cflags is None:
-        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
+        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
     if args.cxxflags is None:
-        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
+        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
     if args.ldflags is None:
-        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
+        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
     if args.target_install_dir is None:
-        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
+        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
-        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
+        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
 
     return args
 
@@ -847,8 +879,33 @@ def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
 def main(args: argparse.Namespace) -> None:
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
-    args = set_default_args(args)
-    pkg_map = build_packages(packages_dir, args)
+    targets = args.only
+    n_jobs = args.n_jobs
+    log_dir = Path(args.log_dir) if args.log_dir else None
+    force_rebuild = args.force_rebuild
+
+    build_args = BuildArgs(
+        pkgname="",
+        cflags=args.cflags,
+        cxxflags=args.cxxflags,
+        ldflags=args.ldflags,
+        target_install_dir=args.target_install_dir,
+        host_install_dir=args.host_install_dir,
+    )
+
+    build_args = set_default_build_args(build_args)
+
+    pkg_map = build_packages(
+        packages_dir,
+        targets,
+        build_args=build_args,
+        n_jobs=n_jobs,
+        force_rebuild=force_rebuild,
+    )
+
+    if log_dir:
+        copy_logs(pkg_map, log_dir)
+
     install_packages(pkg_map, outputdir)
 
 

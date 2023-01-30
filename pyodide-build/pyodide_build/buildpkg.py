@@ -35,6 +35,7 @@ from .common import (
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
+from .pywasmcross import BuildArgs
 
 
 def _make_whlfile(
@@ -693,17 +694,16 @@ def needs_rebuild(
     return False
 
 
-def build_package(
+def _build_package_inner(
     pkg_root: Path,
     pkg: MetaConfig,
+    build_args: BuildArgs,
     *,
-    target_install_dir: str,
-    host_install_dir: str,
-    force_rebuild: bool,
-    continue_: bool,
+    force_rebuild: bool = False,
+    continue_: bool = False,
 ) -> None:
     """
-    Build the package. The main entrypoint in this module.
+    Build the package.
 
     pkg_root
         The path to the root directory for the package. Generally
@@ -712,11 +712,8 @@ def build_package(
     pkg
         The package metadata parsed from the meta.yaml file in pkg_root
 
-    target_install_dir
-        The path to the target Python installation
-
-    host_install_dir
-        Directory for installing built host packages.
+    build_args
+        The extra build arguments passed to the build script.
     """
     source_metadata = pkg.source
     build_metadata = pkg.build
@@ -790,14 +787,132 @@ def build_package(
                     srcpath,
                     build_metadata,
                     bash_runner,
-                    target_install_dir=target_install_dir,
+                    target_install_dir=build_args.target_install_dir,
                 )
 
-            package_wheel(name, srcpath, build_metadata, bash_runner, host_install_dir)
+            package_wheel(
+                name, srcpath, build_metadata, bash_runner, build_args.host_install_dir
+            )
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
 
         create_packaged_token(build_dir)
+
+
+def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
+    """
+    Load the package configuration from the given directory.
+
+    Parameters
+    ----------
+    package_dir
+        The directory containing the package configuration, or the path to the
+        package configuration file.
+
+    Returns
+    -------
+    pkg_dir
+        The directory containing the package configuration.
+    pkg
+        The package configuration.
+    """
+    if not package_dir.exists():
+        raise FileNotFoundError(f"Package directory {package_dir} does not exist")
+
+    if package_dir.is_dir():
+        meta_file = package_dir / "meta.yaml"
+    else:
+        meta_file = package_dir
+        package_dir = meta_file.parent
+
+    return package_dir, MetaConfig.from_yaml(meta_file)
+
+
+def _check_exetuables(pkg: MetaConfig) -> None:
+    """
+    Check that the executables required to build the package are available.
+
+    Parameters
+    ----------
+    pkg : MetaConfig
+        The package configuration.
+
+    """
+    missing_executables = find_missing_executables(pkg.requirements.executable)
+    if missing_executables:
+        missing_string = ", ".join(missing_executables)
+        error_msg = (
+            "The following executables are required but missing in the host system: "
+            + missing_string
+        )
+        raise RuntimeError(error_msg)
+
+
+def build_package(
+    package: str | Path,
+    build_args: BuildArgs,
+    force_rebuild: bool = False,
+    continue_: bool = False,
+) -> None:
+    """
+    Build the package. The main entrypoint in this module.
+
+    Parameters
+    ----------
+    package
+        The path to the package configuration file or the directory containing
+        the package configuration file.
+
+    build_args
+        The extra build arguments passed to the build script.
+
+    force_rebuild
+        If True, the package will be rebuilt even if it is already up-to-date.
+
+    continue_
+        If True, continue a build from the middle. For debugging. Implies "--force-rebuild".
+    """
+
+    force_rebuild = force_rebuild or continue_
+
+    meta_file = Path(package).resolve()
+    pkg_root, pkg = _load_package_config(meta_file)
+
+    _check_exetuables(pkg)
+
+    pkg.build.cflags += f" {build_args.cflags}"
+    pkg.build.cxxflags += f" {build_args.cxxflags}"
+    pkg.build.ldflags += f" {build_args.ldflags}"
+
+    name = pkg.package.name
+    t0 = datetime.now()
+    timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
+    logger.info(f"[{timestamp}] Building package {name}...")
+    success = True
+    try:
+        _build_package_inner(
+            pkg_root,
+            pkg,
+            build_args,
+            force_rebuild=force_rebuild,
+            continue_=continue_,
+        )
+
+    except Exception:
+        success = False
+        raise
+    finally:
+        t1 = datetime.now()
+        datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
+        total_seconds = f"{(t1 - t0).total_seconds():.1f}"
+        status = "Succeeded" if success else "Failed"
+        msg = (
+            f"{datestamp} {status} building package {name} in {total_seconds} seconds."
+        )
+        if success:
+            logger.success(msg)
+        else:
+            logger.error(msg)
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -871,58 +986,15 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
 
 
 def main(args: argparse.Namespace) -> None:
-    continue_ = not not args.continue_
-    # --continue implies --force-rebuild
-    force_rebuild = args.force_rebuild or continue_
-
-    meta_file = Path(args.package[0]).resolve()
-
-    pkg_root = meta_file.parent
-    pkg = MetaConfig.from_yaml(meta_file)
-
-    pkg.build.cflags += f" {args.cflags}"
-    pkg.build.cxxflags += f" {args.cxxflags}"
-    pkg.build.ldflags += f" {args.ldflags}"
-
-    missing_executables = find_missing_executables(pkg.requirements.executable)
-    if missing_executables:
-        missing_string = ", ".join(missing_executables)
-        error_msg = (
-            "The following executables are required but missing in the host system: "
-            + missing_string
-        )
-        raise RuntimeError(error_msg)
-
-    name = pkg.package.name
-    t0 = datetime.now()
-    timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
-    logger.info(f"[{timestamp}] Building package {name}...")
-    success = True
-    try:
-        build_package(
-            pkg_root,
-            pkg,
-            target_install_dir=args.target_install_dir,
-            host_install_dir=args.host_install_dir,
-            force_rebuild=force_rebuild,
-            continue_=continue_,
-        )
-
-    except Exception:
-        success = False
-        raise
-    finally:
-        t1 = datetime.now()
-        datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
-        total_seconds = f"{(t1 - t0).total_seconds():.1f}"
-        status = "Succeeded" if success else "Failed"
-        msg = (
-            f"{datestamp} {status} building package {name} in {total_seconds} seconds."
-        )
-        if success:
-            logger.success(msg)
-        else:
-            logger.error(msg)
+    build_args = BuildArgs(
+        pkgname="",
+        cflags=args.cflags,
+        cxxflags=args.cxxflags,
+        ldflags=args.ldflags,
+        target_install_dir=args.target_install_dir,
+        host_install_dir=args.host_install_dir,
+    )
+    build_package(args.package[0], build_args, args.force_rebuild, args.continue_)
 
 
 if __name__ == "__main__":

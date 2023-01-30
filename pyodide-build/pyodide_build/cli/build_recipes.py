@@ -1,9 +1,8 @@
-import argparse
 from pathlib import Path
 
 import typer
 
-from .. import buildall
+from .. import buildall, pywasmcross
 
 
 def recipe(
@@ -52,25 +51,33 @@ def recipe(
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
     root = Path.cwd()
-    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir)
-    install_dir_ = root / "dist" if not install_dir else Path(install_dir)
+    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
+    install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
+    log_dir_ = None if not log_dir else Path(log_dir).resolve()
 
-    # Note: to make minimal changes to the existing pyodide-build entrypoint,
-    #       keep arguments of buildall unghanged.
-    # TODO: refactor this when we remove pyodide-build entrypoint.
-    args = argparse.Namespace(**ctx.params)
-    args.dir = args.recipe_dir
+    build_args = pywasmcross.BuildArgs(
+        pkgname="",
+        cflags=cflags,
+        cxxflags=cxxflags,
+        ldflags=ldflags,
+        target_install_dir=target_install_dir,
+        host_install_dir=host_install_dir,
+    )
 
-    if len(args.packages) == 1 and "," in args.packages[0]:
+    if len(packages) == 1 and "," in packages[0]:
         # Handle packages passed with old comma separated syntax.
         # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
-        args.only = args.packages[0].replace(" ", "")
+        targets = packages[0].replace(" ", "")
     else:
-        args.only = ",".join(args.packages)
+        targets = ",".join(packages)
 
-    args = buildall.set_default_args(args)
+    build_args = buildall.set_default_build_args(build_args)
+    pkg_map = buildall.build_packages(
+        recipe_dir_, targets, build_args, n_jobs, force_rebuild
+    )
 
-    pkg_map = buildall.build_packages(recipe_dir_, args)
+    if log_dir_:
+        buildall.copy_logs(pkg_map, log_dir_)
 
     if install:
         buildall.install_packages(pkg_map, install_dir_)
