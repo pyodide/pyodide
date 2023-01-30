@@ -171,8 +171,7 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		sed 's/^#pragma clang.*//g' \
 		>> $@
 
-.PHONY: pyodide_build
-pyodide_build:
+pyodide_build: ./pyodide-build/pyodide_build/**
 	$(HOSTPYTHON) -m pip install -e ./pyodide-build
 	which pyodide-build >/dev/null
 	which pyodide >/dev/null
@@ -239,7 +238,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/repodata.json: FORCE
+dist/repodata.json: FORCE pyodide_build
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
