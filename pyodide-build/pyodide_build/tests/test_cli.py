@@ -128,7 +128,7 @@ def test_build_recipe_no_deps(selenium, tmp_path):
     assert result.exit_code == 0, result.stdout
 
     for pkg in pkgs_to_build:
-        assert f"built {pkg} in" in result.stdout
+        assert f"Succeeded building package {pkg}" in result.stdout
 
     for pkg in pkgs_to_build:
         dist_dir = recipe_dir / pkg / "dist"
@@ -170,7 +170,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert "Successfully built" not in result.stdout
+    assert f"Succeeded building package {pkg}" not in result.stdout
 
     result = runner.invoke(
         app,
@@ -184,7 +184,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert "Successfully built" in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
 
 
 def test_build_recipe_no_deps_continue(selenium, tmp_path):
@@ -210,22 +210,24 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
     )
 
     assert result.exit_code == 0, result.stdout
-    assert "Successfully built" in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
 
-    for whl in (recipe_dir / pkg / "dist").glob("*.whl"):
-        whl.unlink()
+    for wheels in (recipe_dir / pkg / "build").rglob("*.whl"):
+        wheels.unlink()
 
     pyproject_toml = next((recipe_dir / pkg / "build").rglob("pyproject.toml"))
 
     # Modify some metadata and check it is applied when rebuilt with --continue flag
     version = "99.99.99"
     with open(pyproject_toml, encoding="utf-8") as f:
-        pyproject = f.read()
+        pyproject_data = f.read()
 
-    pyproject.replace('version = "1.0.0"', f'version = "{version}"')
+    pyproject_data = pyproject_data.replace(
+        'version = "1.0.0"', f'version = "{version}"'
+    )
 
     with open(pyproject_toml, "w", encoding="utf-8") as f:
-        f.write(pyproject)
+        f.write(pyproject_data)
 
     result = runner.invoke(
         app,
@@ -239,7 +241,7 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert "Successfully built" in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
     assert f"{pkg}-{version}-py3-none-any.whl" in result.stdout
 
 
