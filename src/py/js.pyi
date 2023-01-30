@@ -1,10 +1,8 @@
-from asyncio import Future
 from typing import Any, Callable, Iterable
 
 from _pyodide._core_docs import _JsProxyMetaClass
 from pyodide.ffi import (
     JsArray,
-    JsBuffer,
     JsDomElement,
     JsFetchResponse,
     JsProxy,
