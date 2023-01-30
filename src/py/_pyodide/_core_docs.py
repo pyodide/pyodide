@@ -94,7 +94,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
     For more information see the :ref:`type-translations` documentation. In
     particular, see
     :ref:`the list of __dunder__ methods <type-translations-jsproxy>`
-    that are (conditionally) implemented on :any:`JsProxy`.
+    that are (conditionally) implemented on :py:class:`JsProxy`.
     """
 
     _js_type_flags: Any = 0
@@ -250,7 +250,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
 
 class JsDoubleProxy(JsProxy):
-    """A double proxy created with :any:`create_proxy`."""
+    """A double proxy created with :py:func:`create_proxy`."""
 
     _js_type_flags = ["IS_DOUBLE_PROXY"]
 
@@ -259,7 +259,7 @@ class JsDoubleProxy(JsProxy):
         pass
 
     def unwrap(self) -> Any:
-        """Unwrap a double proxy created with :any:`create_proxy` into the
+        """Unwrap a double proxy created with :py:func:`create_proxy` into the
         wrapped Python object.
         """
         raise NotImplementedError
@@ -448,7 +448,7 @@ class JsArray(JsProxy, Generic[T]):
     def pop(self, /, index: int = -1) -> T:
         """Remove and return the ``item`` at ``index`` (default last).
 
-        Raises :any:`IndexError` if list is empty or index is out of range.
+        Raises :py:exc:`IndexError` if list is empty or index is out of range.
         """
         raise NotImplementedError
 
@@ -461,7 +461,7 @@ class JsArray(JsProxy, Generic[T]):
     def index(self, /, value: T, start: int = 0, stop: int = sys.maxsize) -> int:
         """Return first ``index`` at which ``value`` appears in the ``Array``.
 
-        Raises :any:`ValueError` if the value is not present.
+        Raises :py:exc:`ValueError` if the value is not present.
         """
         raise NotImplementedError
 
@@ -558,7 +558,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     number (idiomatically it should be called ``size``) and it must be iterable.
 
     Instances of the JavaScript builtin ``Map`` class are ``JsMutableMap`` s.
-    Also proxies returned by :any:`JsProxy.as_object_map` are instances of
+    Also proxies returned by :py:meth:`JsProxy.as_object_map` are instances of
     ``JsMap`` .
     """
 
@@ -657,7 +657,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
 class JsIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript iterator.
 
-    An object is a :any:`JsAsyncIterator` if it has a :js:meth:`~Iterator.next` method and either has a
+    An object is a :py:class:`JsAsyncIterator` if it has a :js:meth:`~Iterator.next` method and either has a
     :js:data:`Symbol.iterator` or has no :js:data:`Symbol.asyncIterator`.
     """
 
@@ -673,7 +673,7 @@ class JsIterator(JsProxy, Generic[Tco]):
 class JsAsyncIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript async iterator.
 
-    An object is a :any:`JsAsyncIterator` if it has a
+    An object is a :py:class:`JsAsyncIterator` if it has a
     :js:meth:`~AsyncIterator.next` method and either has a
     :js:data:`Symbol.asyncIterator` or has no :js:data:`Symbol.iterator`
     """
@@ -731,7 +731,7 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
 
         The ``value`` argument becomes the result of the current yield
         expression. The ``send()`` method returns the next value yielded by the
-        generator, or raises :any:`StopIteration` if the generator exits without
+        generator, or raises :py:exc:`StopIteration` if the generator exits without
         yielding another value. When ``send()`` is called to start the
         generator, the argument will be ignored. Unlike in Python, we cannot
         detect that the generator hasn't started yet, and no error will be
@@ -769,7 +769,7 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
         returns the next value yielded by the generator function.
 
         If the generator exits without yielding another value, a
-        :any:`StopIteration` exception is raised. If the generator function does
+        :py:exc:`StopIteration` exception is raised. If the generator function does
         not catch the passed-in exception, or raises a different exception, then
         that exception propagates to the caller.
 
@@ -787,13 +787,13 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
         raise NotImplementedError
 
     def close(self) -> None:
-        """Raises a :any:`GeneratorExit` at the point where the generator
+        """Raises a :py:exc:`GeneratorExit` at the point where the generator
         function was paused.
 
         If the generator function then exits gracefully, is already closed, or
-        raises :any:`GeneratorExit` (by not catching the exception), ``close()``
+        raises :py:exc:`GeneratorExit` (by not catching the exception), ``close()``
         returns to its caller. If the generator yields a value, a
-        :any:`RuntimeError` is raised. If the generator raises any other
+        :py:exc:`RuntimeError` is raised. If the generator raises any other
         exception, it is propagated to the caller. ``close()`` does nothing if
         the generator has already exited due to an exception or normal exit.
         """
@@ -858,7 +858,7 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
         The ``value`` argument becomes the result of the current yield
         expression. The awaitable returned by the ``asend()`` method will return
         the next value yielded by the generator or raises
-        :any:`StopAsyncIteration` if the asynchronous generator returns. If the
+        :py:exc:`StopAsyncIteration` if the asynchronous generator returns. If the
         generator returned a value, this value is discarded (because in Python
         async generators cannot return a value).
 
@@ -895,7 +895,7 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
         generator was paused.
 
         The awaitable returned by ``athrow()`` method will return the next value
-        yielded by the generator or raises :any:`StopAsyncIteration` if the
+        yielded by the generator or raises :py:exc:`StopAsyncIteration` if the
         asynchronous generator returns. If the generator returned a value, this
         value is discarded (because in Python async generators cannot return a
         value). If the generator function does not catch the passed-in
@@ -905,13 +905,13 @@ class JsAsyncGenerator(JsAsyncIterable[Tco], Generic[Tco, Tcontra, Vco]):
         raise NotImplementedError
 
     def aclose(self) -> Awaitable[None]:
-        """Raises a :any:`GeneratorExit` at the point where the generator
+        """Raises a :py:exc:`GeneratorExit` at the point where the generator
         function was paused.
 
         If the generator function then exits gracefully, is already closed, or
-        raises :any:`GeneratorExit` (by not catching the exception),
+        raises :py:exc:`GeneratorExit` (by not catching the exception),
         ``aclose()`` returns to its caller. If the generator yields a value, a
-        :any:`RuntimeError` is raised. If the generator raises any other
+        :py:exc:`RuntimeError` is raised. If the generator raises any other
         exception, it is propagated to the caller. ``aclose()`` does nothing if
         the generator has already exited due to an exception or normal exit.
         """
@@ -1011,9 +1011,9 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
 def create_proxy(
     obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
 ) -> JsDoubleProxy:
-    """Create a :any:`JsProxy` of a :any:`PyProxy`.
+    """Create a :py:class:`JsProxy` of a :js:class:`PyProxy`.
 
-    This allows explicit control over the lifetime of the :any:`PyProxy` from
+    This allows explicit control over the lifetime of the :js:class:`PyProxy` from
     Python: call the :py:meth:`~JsDoubleProxy.destroy` API when done.
 
     Parameters
@@ -1029,7 +1029,7 @@ def create_proxy(
         When the proxy is converted back from JavaScript to Python, if this is
         ``True`` it is converted into a double proxy. If ``False``, it is
         unwrapped into a Python object. In the case that ``roundtrip`` is
-        ``True`` it is possible to unwrap a double proxy with the :any:`unwrap`
+        ``True`` it is possible to unwrap a double proxy with the :py:meth:`unwrap`
         method. This is useful to allow easier control of lifetimes from Python:
 
         .. code-block:: python
@@ -1113,10 +1113,10 @@ def to_js(
 ) -> Any:
     """Convert the object to JavaScript.
 
-    This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
+    This is similar to :js:meth:`PyProxy.toJs`, but for use from Python. If the
     object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this method
-    will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had used
+    will return a :py:class:`JsProxy` of a :js:class:`PyProxy`, as if you had used
     :func:`~pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
@@ -1227,8 +1227,8 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JavaScript Array of PyProxies. Intended for use
-    with the arrays created from the "pyproxies" argument of :any:`PyProxy.toJs`
-    and :any:`to_js`. This method is necessary because indexing the Array from
+    with the arrays created from the "pyproxies" argument of :js:meth:`PyProxy.toJs`
+    and :py:func:`to_js`. This method is necessary because indexing the Array from
     Python automatically unwraps the PyProxy into the wrapped Python object.
     """
     pass

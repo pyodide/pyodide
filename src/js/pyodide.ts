@@ -21,16 +21,21 @@ export type { PyodideInterface };
 export type {
   PyProxy,
   PyProxyWithLength,
-  PyProxyDict,
   PyProxyWithGet,
   PyProxyWithSet,
   PyProxyWithHas,
+  PyProxyDict,
+  PyDict,
   PyProxyIterable,
+  PyIterable,
   PyProxyIterator,
+  PyIterator,
   PyProxyAwaitable,
-  PyProxyBuffer,
+  PyAwaitable,
   PyProxyCallable,
+  PyCallable,
   TypedArray,
+  PyProxyBuffer,
   PyBuffer,
 } from "./pyproxy.gen";
 

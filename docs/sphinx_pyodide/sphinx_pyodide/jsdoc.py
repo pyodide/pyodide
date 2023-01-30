@@ -13,19 +13,20 @@ from sphinx.domains.javascript import JavaScriptDomain, JSCallable
 from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
-from sphinx_js.ir import Class, Function, Interface
+from sphinx_js.ir import Class, Function, Interface, Pathname
 from sphinx_js.parsers import PathVisitor, path_and_formal_params
 from sphinx_js.renderers import (
     AutoAttributeRenderer,
     AutoClassRenderer,
     AutoFunctionRenderer,
+    JsRenderer,
 )
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
+from sphinx_js.typedoc import make_path_segments
 
 _orig_convert_node = TsAnalyzer._convert_node
-_orig_type_name = TsAnalyzer._type_name
-
 _orig_constructor_and_members = TsAnalyzer._constructor_and_members
+_orig_top_level_properties = TsAnalyzer._top_level_properties
 
 
 def _constructor_and_members(self, cls):
@@ -37,6 +38,31 @@ def _constructor_and_members(self, cls):
 
 
 TsAnalyzer._constructor_and_members = _constructor_and_members
+
+commentdict = {}
+
+
+def _top_level_properties(self, node):
+    result = _orig_top_level_properties(self, node)
+    path = str(Pathname(make_path_segments(node, self._base_dir)))
+    commentdict[path] = node.get("comment") or {}
+    return result
+
+
+TsAnalyzer._top_level_properties = _top_level_properties
+
+orig_JsRenderer_rst_ = JsRenderer.rst
+
+
+def JsRenderer_rst(self, partial_path, obj, use_short_name=False):
+    for x in commentdict[str(obj.path)].get("tags", []):
+        if x["tag"] == "deprecated":
+            obj.deprecated = x["text"]
+    return orig_JsRenderer_rst_(self, partial_path, obj, use_short_name)
+
+
+for cls in [AutoAttributeRenderer, AutoFunctionRenderer, AutoClassRenderer]:
+    cls.rst = JsRenderer_rst
 
 
 def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
@@ -345,6 +371,27 @@ class JSFuncMaybeAsync(JSCallable):
         return []
 
 
+def _template_vars(self, name, obj):
+    for x in commentdict[str(obj.path)].get("tags", []):
+        if x["tag"] == "deprecated":
+            obj.deprecated = x["text"]
+    result = dict(
+        name=name,
+        params=self._formal_params(obj),
+        fields=self._fields(obj),
+        description=obj.description,
+        examples=obj.examples,
+        deprecated=obj.deprecated,
+        is_optional=obj.is_optional,
+        is_static=obj.is_static,
+        see_also=obj.see_alsos,
+        content="\n".join(self._content),
+    )
+    return result
+
+
+AutoFunctionRenderer._template_vars = _template_vars
+
 JavaScriptDomain.directives["function"] = JSFuncMaybeAsync
 
 
@@ -415,6 +462,8 @@ class PyodideAnalyzer:
         modules = ["globalThis", "pyodide", "PyProxy"]
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
+        pyproxy_subclasses = []
+        pyproxy_methods: dict[str, list[Any]] = {}
         for (key, doclet) in self.doclets.items():
             if getattr(doclet, "is_private", False):
                 continue
@@ -426,6 +475,12 @@ class PyodideAnalyzer:
             if key[-1].startswith("$"):
                 doclet.is_private = True
                 continue
+
+            if doclet.name.startswith("["):
+                # This is a symbol.
+                # \u2024 looks like a dot but won't get split by `.split(".")`.
+                doclet.name = "[Symbol\u2024" + doclet.name[1:]
+
             if key[-1] == "constructor":
                 # For whatever reason, sphinx-js does not properly record
                 # whether constructors are private or not. For now, all
@@ -440,26 +495,40 @@ class PyodideAnalyzer:
                 # Trim off the prefix.
                 items["globalThis"].append(doclet)
                 continue
-            pyproxy_class_endings = ("Methods", "Class")
+
+            if filename == "pyproxy.gen." and toplevelname.endswith("Methods#"):
+                l = pyproxy_methods.setdefault(toplevelname.removesuffix("#"), [])
+                l.append(doclet)
+                continue
+
             if toplevelname.endswith("#"):
                 # This is a class method.
-                if filename == "pyproxy.gen." and toplevelname[:-1].endswith(
-                    pyproxy_class_endings
-                ):
-                    # Merge all of the PyProxy methods into one API
-                    items["PyProxy"].append(doclet)
                 # If it's not part of a PyProxy class, the method will be
                 # documented as part of the class.
                 continue
-            if filename == "pyproxy.gen." and toplevelname.endswith(
-                pyproxy_class_endings
-            ):
+
+            if filename == "pyproxy.gen." and toplevelname.endswith("Methods"):
                 continue
-            if filename.startswith("PyProxy"):
-                # Skip all PyProxy classes, they are documented as one merged
-                # API.
-                continue
+
+            if filename == "pyproxy.gen." and isinstance(doclet, Class):
+                pyproxy_subclasses.append(doclet)
+
+            # if filename == "pyproxy.gen.":
+            #     items["PyProxy"].append(doclet)
+            # else:
             items["pyodide"].append(doclet)
+
+        for cls in pyproxy_subclasses:
+            methods_supers = [
+                x for x in cls.supers if x.segments[-1] in pyproxy_methods
+            ]
+            cls.supers = [
+                x for x in cls.supers if x.segments[-1] not in pyproxy_methods
+            ]
+            for x in cls.supers:
+                x.segments = [x.segments[-1]]
+            for x in methods_supers:
+                cls.members.extend(pyproxy_methods[x.segments[-1]])
 
         from operator import attrgetter
 
@@ -530,7 +599,8 @@ def get_jsdoc_content_directive(app):
             module = self.arguments[0]
             values = app._sphinxjs_analyzer.js_docs[module]
             rst = []
-            rst.append([f".. js:module:: {module}"])
+            if module != "PyProxy":
+                rst.append([f".. js:module:: {module}"])
             for group in values.values():
                 rst.append(self.get_rst_for_group(group))
             joined_rst = "\n\n".join(["\n\n".join(r) for r in rst])

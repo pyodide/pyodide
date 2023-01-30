@@ -4,7 +4,22 @@ declare var API: any;
 import "./module.ts";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
+import {
+  isPyProxy,
+  PyBuffer,
+  PyProxy,
+  TypedArray,
+  PyProxyWithLength,
+  PyProxyWithGet,
+  PyProxyWithSet,
+  PyProxyWithHas,
+  PyDict,
+  PyIterable,
+  PyIterator,
+  PyAwaitable,
+  PyCallable,
+  PyProxyBuffer,
+} from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
@@ -504,6 +519,17 @@ export type PyodideInterface = {
   setStdin: typeof setStdin;
   setStdout: typeof setStdout;
   setStderr: typeof setStderr;
+  PyProxy: typeof PyProxy;
+  PyProxyWithLength: typeof PyProxyWithLength;
+  PyProxyWithGet: typeof PyProxyWithGet;
+  PyProxyWithSet: typeof PyProxyWithSet;
+  PyProxyWithHas: typeof PyProxyWithHas;
+  PyDict: typeof PyDict;
+  PyIterable: typeof PyIterable;
+  PyIterator: typeof PyIterator;
+  PyAwaitable: typeof PyAwaitable;
+  PyCallable: typeof PyCallable;
+  PyProxyBuffer: typeof PyProxyBuffer;
 };
 
 /**
@@ -570,6 +596,17 @@ API.makePublicAPI = function (): PyodideInterface {
     PyBuffer,
     _module: Module,
     _api: API,
+    PyProxy,
+    PyProxyWithLength,
+    PyProxyWithGet,
+    PyProxyWithSet,
+    PyProxyWithHas,
+    PyDict,
+    PyIterable,
+    PyIterator,
+    PyAwaitable,
+    PyCallable,
+    PyProxyBuffer,
     setStdin,
     setStdout,
     setStderr,
