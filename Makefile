@@ -171,13 +171,13 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		sed 's/^#pragma clang.*//g' \
 		>> $@
 
-.PHONY: pyodide-build
-pyodide-build:
+.PHONY: pyodide_build
+pyodide_build:
 	$(HOSTPYTHON) -m pip install -e ./pyodide-build
 	which pyodide-build >/dev/null
 	which pyodide >/dev/null
 
-dist/python_stdlib.zip: pyodide-build $(CPYTHONLIB)
+dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
 	pyodide create-zipfile $(CPYTHONLIB) --output $@
 
 dist/test.html: src/templates/test.html
