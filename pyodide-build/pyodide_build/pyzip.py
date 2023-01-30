@@ -14,6 +14,7 @@ REMOVED_FILES = (
     "lib2to3/",
     # other platforms
     "_osx_support.py",
+    "_aix_support.py",
     # Not supported by browser
     "curses/",
     "dbm/",
@@ -31,6 +32,10 @@ UNVENDORED_FILES = (
     "sqlite3",
     "ssl.py",
     "lzma.py",
+    "_pydecimal.py",
+    "_pyio.py",
+    "pydoc_data",
+    "pydoc.py",
 )
 
 

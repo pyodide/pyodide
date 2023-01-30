@@ -1,0 +1,15 @@
+package:
+  name: pyio
+  version: 1.0.0 # Nonsense
+  tag:
+    - always
+  top-level:
+    - _pyio
+build:
+  type: cpython_module
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONLIB
+
+    cp _pyio.py $DISTDIR
