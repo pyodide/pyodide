@@ -37,7 +37,7 @@ myst:
   need to link them to the package manually.
   {pr}`3505`
 
-- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now move to
+- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now moved to
   `test/ctypes` and `test/unittest` respectively. This change is adapted from
   [CPython 3.12](https://github.com/python/cpython/issues/93839).
   {pr}`3507`
