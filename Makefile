@@ -17,6 +17,7 @@ all: check \
 	dist/console.html \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
+	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
@@ -169,6 +170,15 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
 		sed 's/^#pragma clang.*//g' \
 		>> $@
+
+.PHONY: pyodide-build
+pyodide-build:
+	$(HOSTPYTHON) -m pip install -e ./pyodide-build
+	which pyodide-build >/dev/null
+	which pyodide >/dev/null
+
+dist/python_stdlib.zip: pyodide-build $(CPYTHONLIB)
+	pyodide create-zipfile $(CPYTHONLIB) --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@
