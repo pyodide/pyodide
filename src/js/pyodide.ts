@@ -73,15 +73,8 @@ function wrapPythonGlobals(
  */
 function saveStreamToFile(Module: any, stream: Uint8Array, fileName: string) {
   const f = Module.FS.open(fileName, "w");
-  Module.FS.write(
-    f,
-    stream,
-    0,
-    stream.byteLength,
-    undefined,
-    true,
-  );
-  Module.FS.close(stream);
+  Module.FS.write(f, stream, 0, stream.byteLength, undefined, true);
+  Module.FS.close(f);
 }
 
 /**
