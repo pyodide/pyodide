@@ -603,7 +603,8 @@
     xfail: All tests fork
 - test_reprlib
 - test_resource
-- test_richcmp
+- test_richcmp:
+    xfail: Maximum call stack size exceeded
 - test_rlcompleter
 - test_robotparser:
     xfail: socket
