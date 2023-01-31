@@ -42,6 +42,10 @@ myst:
   [CPython 3.12](https://github.com/python/cpython/issues/93839).
   {pr}`3507`
 
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard library.
+  Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
+  {pr}`3525`
+
 ### Build System
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.

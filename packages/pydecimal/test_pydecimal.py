@@ -3,9 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["test", "pydecimal"], pytest_assert_rewrites=False)
 def test_pydecimal(selenium):
-    import sys
     import unittest
-    import unittest.mock
     from test import libregrtest  # type:ignore[attr-defined]
 
     name = "test_decimal"
