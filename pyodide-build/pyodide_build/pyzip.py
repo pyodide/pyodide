@@ -33,12 +33,6 @@ UNVENDORED_FILES = (
     "lzma.py",
 )
 
-# TODO: These modules have test directory which we unvendors it separately.
-#       So we should not pack them into the zip file in order to make e.g. import ctypes.test work.
-#       Note that all these tests are moved to the subdirectory of `test` module in upstream CPython 3.12.0a1.
-#       So we don't need this after we upgrade to 3.12.0
-NOT_ZIPPED_FILES = ("ctypes/", "unittest/")
-
 
 def default_filterfunc(
     root: Path, verbose: bool = False
@@ -54,8 +48,7 @@ def default_filterfunc(
 
     def filterfunc(path: Path | str, names: list[str]) -> set[str]:
         filtered_files = {
-            (root / f).resolve()
-            for f in REMOVED_FILES + UNVENDORED_FILES + NOT_ZIPPED_FILES
+            (root / f).resolve() for f in REMOVED_FILES + UNVENDORED_FILES
         }
 
         path = Path(path).resolve()
