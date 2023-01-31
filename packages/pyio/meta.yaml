@@ -10,6 +10,6 @@ build:
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist
-    cd $CPYTHONLIB
+    cd $CPYTHONBUILD
 
-    cp _pyio.py $DISTDIR
+    cp Lib/_pyio.py $DISTDIR

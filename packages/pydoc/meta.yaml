@@ -11,7 +11,7 @@ build:
   script: |
     mkdir dist
     export DISTDIR=$(pwd)/dist
-    cd $CPYTHONLIB
+    cd $CPYTHONBUILD/Lib
 
     tar --exclude=__pycache__ -cf - pydoc_data | tar -C $DISTDIR -xf -
     cp pydoc.py $DISTDIR
