@@ -2,7 +2,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["test", "pydoc"], pytest_assert_rewrites=False)
-def test_distutils(selenium):
+def test_pydoc(selenium):
     import sys
     import unittest
     import unittest.mock
@@ -10,7 +10,10 @@ def test_distutils(selenium):
 
     name = "test_pydoc"
 
-    ignore_tests = []
+    ignore_tests = [
+        "test_server", # fork
+        "test_synopsis_sourceless", # expects __pycache__
+    ]
     try:
         libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
     except SystemExit as e:

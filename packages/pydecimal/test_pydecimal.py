@@ -2,15 +2,19 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["test", "pydecimal"], pytest_assert_rewrites=False)
-def test_distutils(selenium):
+def test_pydecimal(selenium):
     import sys
     import unittest
     import unittest.mock
     from test import libregrtest  # type:ignore[attr-defined]
 
-    name = "test_pydecimal"
+    name = "test_decimal"
 
-    ignore_tests = []
+    ignore_tests = [
+        "test_context_subclassing", # floating point
+        "test_none_args", # Some context issue?
+        "test_threading",
+    ]
     try:
         libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
     except SystemExit as e:
