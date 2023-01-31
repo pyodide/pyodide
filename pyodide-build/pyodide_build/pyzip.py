@@ -34,7 +34,6 @@ UNVENDORED_FILES = (
     "lzma.py",
     "_pydecimal.py",
     "pydoc_data",
-    "pydoc.py",
 )
 
 
