@@ -170,7 +170,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert f"running bdist_wheel" not in result.stdout
+    assert "Creating virtualenv isolated environment" not in result.stdout
     assert f"Succeeded building package {pkg}" in result.stdout
 
     result = runner.invoke(
@@ -185,7 +185,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert f"running bdist_wheel" in result.stdout
+    assert "Creating virtualenv isolated environment" in result.stdout
     assert f"Succeeded building package {pkg}" in result.stdout
 
 
