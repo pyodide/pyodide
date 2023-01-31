@@ -67,6 +67,10 @@ myst:
   This command is hidden by default since it is not intended for use by end users.
   {pr}`3411` {pr}`3463`
 
+### Packages
+
+- New packages: pyxel {pr}`3508`
+
 ## Version 0.22.1
 
 _January 25, 2023_
