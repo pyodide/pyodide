@@ -15,5 +15,4 @@ sqlite3
 ssl.py
 lzma.py
 _pydecimal.py
-_pyio.py
 pydoc_data

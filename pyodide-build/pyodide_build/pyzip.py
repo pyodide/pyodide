@@ -33,7 +33,6 @@ UNVENDORED_FILES = (
     "ssl.py",
     "lzma.py",
     "_pydecimal.py",
-    "_pyio.py",
     "pydoc_data",
     "pydoc.py",
 )
