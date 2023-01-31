@@ -1,7 +1,7 @@
 From 90812b6dc97860ef164a2810ebf5f3121dfc919e Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 16 Nov 2022 14:02:53 -0800
-Subject: [PATCH 4/4] Patch importlib to allow modifications to
+Subject: [PATCH 2/8] Patch importlib to allow modifications to
  ModuleNotFoundError
 
 ---

@@ -1,0 +1,40 @@
+From 50ebd72fb0e69c78f95cea3d4a47589beb91ac37 Mon Sep 17 00:00:00 2001
+From: Christian Heimes <christian@python.org>
+Date: Tue, 21 Jun 2022 14:51:39 +0200
+Subject: [PATCH 7/8] gh-93839: Use load_package_tests() for testmock (GH-94055)
+
+Fixes failing tests on WebAssembly platforms.
+
+Automerge-Triggered-By: GH:tiran
+---
+ Lib/test/test_unittest/testmock/__init__.py | 17 +++--------------
+ 1 file changed, 3 insertions(+), 14 deletions(-)
+
+diff --git a/Lib/test/test_unittest/testmock/__init__.py b/Lib/test/test_unittest/testmock/__init__.py
+index 6ee60b2376..bc502ef32d 100644
+--- a/Lib/test/test_unittest/testmock/__init__.py
++++ b/Lib/test/test_unittest/testmock/__init__.py
+@@ -1,17 +1,6 @@
+-import os
+-import sys
+-import unittest
++import os.path
++from test.support import load_package_tests
+ 
+ 
+-here = os.path.dirname(__file__)
+-loader = unittest.defaultTestLoader
+-
+ def load_tests(*args):
+-    suite = unittest.TestSuite()
+-    for fn in os.listdir(here):
+-        if fn.startswith("test") and fn.endswith(".py"):
+-            modname = "test.test_unittest.testmock." + fn[:-3]
+-            __import__(modname)
+-            module = sys.modules[modname]
+-            suite.addTest(loader.loadTestsFromModule(module))
+-    return suite
++    return load_package_tests(os.path.dirname(__file__), *args)
+-- 
+2.29.2.windows.2
+

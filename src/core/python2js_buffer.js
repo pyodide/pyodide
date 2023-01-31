@@ -117,7 +117,6 @@ JS_FILE(python2js_buffer_init, () => {
    * @private
    */
   Module.python2js_buffer_1d_contiguous = function (ptr, stride, n) {
-    "use strict";
     let byteLength = stride * n;
     // Note: slice here is a copy (as opposed to subarray which is not)
     return HEAP8.slice(ptr, ptr + byteLength).buffer;
@@ -145,7 +144,6 @@ JS_FILE(python2js_buffer_init, () => {
     n,
     itemsize,
   ) {
-    "use strict";
     let byteLength = itemsize * n;
     // Make new memory of the appropriate size
     let buffer = new Uint8Array(byteLength);
@@ -180,7 +178,6 @@ JS_FILE(python2js_buffer_init, () => {
    * @private
    */
   Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
-    "use strict";
     // Stride and suboffset are signed, n is unsigned.
     let n = DEREF_U32(bufferData.shape, curdim);
     let stride = DEREF_I32(bufferData.strides, curdim);
@@ -238,7 +235,6 @@ JS_FILE(python2js_buffer_init, () => {
    * @private
    */
   Module.get_converter = function (format, itemsize) {
-    "use strict";
     let formatStr = UTF8ToString(format);
     let [ArrayType, bigEndian] = Module.processBufferFormatString(formatStr);
     let formatChar = formatStr.slice(-1);

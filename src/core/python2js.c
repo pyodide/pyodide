@@ -388,8 +388,6 @@ _python2js_proxy(PyObject* x)
 {
   if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
-  } else if (JsException_Check(x)) {
-    return JsException_AsJs(x);
   }
   return Js_novalue;
 }
@@ -793,8 +791,7 @@ to_js(PyObject* self,
   }
 
   if (obj == Py_None || PyBool_Check(obj) || PyLong_Check(obj) ||
-      PyFloat_Check(obj) || PyUnicode_Check(obj) || JsProxy_Check(obj) ||
-      JsException_Check(obj)) {
+      PyFloat_Check(obj) || PyUnicode_Check(obj) || JsProxy_Check(obj)) {
     // No point in converting these and it'd be useless to proxy them since
     // they'd just get converted back by `js2python` at the end
     Py_INCREF(obj);

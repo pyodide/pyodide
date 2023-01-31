@@ -131,10 +131,10 @@ they are case-sensitive.
 If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessary to run
 the core test suite is installed, including "micropip", "pyparsing", "pytz",
 "packaging", "Jinja2", "regex". This is equivalent to setting
-`PYODIDE_PACKAGES='core'`
+`PYODIDE_PACKAGES='tag:core'`
 meta-package. Other supported meta-packages are,
 
-- "min-scipy-stack": includes the "core" meta-package as well as some
+- "tag:min-scipy-stack": includes the "core" meta-package as well as some
   core packages from the scientific python stack and their dependencies:
   "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
   "pytest". This option is non exhaustive and is mainly intended to make build

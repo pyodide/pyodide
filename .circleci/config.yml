@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20230123-chrome107-firefox109-py311
+    - image: pyodide/pyodide-env:20230126-chrome109-firefox109-py311
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -69,7 +69,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            PYODIDE_PACKAGES="core" make
+            PYODIDE_PACKAGES="tag:core" make
             ccache -s
 
       - run:

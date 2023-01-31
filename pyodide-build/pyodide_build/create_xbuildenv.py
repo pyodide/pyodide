@@ -9,8 +9,8 @@ from .common import (
     get_pyodide_root,
     get_unisolated_packages,
 )
-from .io import MetaConfig
 from .logger import logger
+from .recipe import load_all_recipes
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -31,9 +31,9 @@ def copy_xbuild_files(xbuildenv_path: Path) -> None:
     # pip install -t $HOSTSITEPACKAGES -r requirements.txt
     # cp site-packages-extras $HOSTSITEPACKAGES
     site_packages_extras = xbuildenv_path / "site-packages-extras"
-    for pkg in (PYODIDE_ROOT / "packages").glob("**/meta.yaml"):
-        config = MetaConfig.from_yaml(pkg)
-        xbuild_files = config.build.cross_build_files
+    recipes = load_all_recipes(PYODIDE_ROOT / "packages")
+    for recipe in recipes.values():
+        xbuild_files = recipe.build.cross_build_files
         for path in xbuild_files:
             target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)

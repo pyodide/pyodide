@@ -331,3 +331,40 @@ class Exit extends Error {}
 [_PropagatePythonError, FatalPyodideError, Exit, PythonError].forEach(setName);
 
 Module._PropagatePythonError = _PropagatePythonError;
+
+// Stolen from:
+// https://github.com/sindresorhus/serialize-error/blob/main/error-constructors.js
+API.errorConstructors = new Map(
+  [
+    // Native ES errors https://262.ecma-international.org/12.0/#sec-well-known-intrinsic-objects
+    EvalError,
+    RangeError,
+    ReferenceError,
+    SyntaxError,
+    TypeError,
+    URIError,
+
+    // Built-in errors
+    globalThis.DOMException,
+
+    // Node-specific errors
+    // https://nodejs.org/api/errors.html
+    // @ts-ignore
+    globalThis.AssertionError,
+    // @ts-ignore
+    globalThis.SystemError,
+  ]
+    .filter((x) => x)
+    .map((x) => [x.constructor.name, x]),
+);
+
+API.deserializeError = function (name: string, message: string, stack: string) {
+  const cons = API.errorConstructors.get(name) || Error;
+  const err = new cons(message);
+  if (!API.errorConstructors.has(name)) {
+    err.name = name;
+  }
+  err.message = message;
+  err.stack = stack;
+  return err;
+};
