@@ -1,6 +1,8 @@
 package:
   name: sqlite3
   version: 1.0.0 # Nonsense
+  tag:
+    - always
   top-level:
     - sqlite3
     - _sqlite3
@@ -12,7 +14,7 @@ build:
     cd $CPYTHONBUILD
 
     export FILES=(
-      "Modules/_sqlite/cache.c"
+      "Modules/_sqlite/blob.c"
       "Modules/_sqlite/connection.c"
       "Modules/_sqlite/cursor.c"
       "Modules/_sqlite/microprotocols.c"

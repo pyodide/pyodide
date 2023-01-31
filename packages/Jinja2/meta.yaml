@@ -1,6 +1,9 @@
 package:
   name: Jinja2
   version: 3.1.2
+  tag:
+    - core
+    - min-scipy-stack
   top-level:
     - jinja2
 requirements:

@@ -1,10 +1,16 @@
 import gzip
+import inspect
 import json
 import sys
 from pathlib import Path
 
 from docutils.frontend import OptionParser
 from docutils.utils import new_document
+
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
+
 from sphinx_js.suffix_tree import SuffixTree
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 

@@ -27,24 +27,75 @@ all: check \
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
 	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
-dist/pyodide.asm.js: \
+src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
+# Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
+# when linked, Emscripten will include it. We use the same pathway that EM_JS
+# uses, but EM_JS is itself unsuitable. Why? Because the C preprocessor /
+# compiler modified strings and there is no "raw" strings feature. In
+# particular, it seems to choke on regex in the JavaScript code. Our bundle
+# includes vendored npm packages which we have no control over, so it is not
+# simple to rewrite the code to restrict it to syntax that is legal inside of
+# EM_JS.
+#
+# To get around this problem, we use an array initializer instead of a string
+# initializer. We write a string file and then convert it to a .c file with xxd
+# as suggested here:
+# https://unix.stackexchange.com/questions/176111/how-to-dump-a-binary-file-as-a-c-c-string-literal
+# We use `xxd -i -` which converts the input to a comma separated list of
+# hexadecimal pairs which can go into an array initializer.
+#
+# EM_JS works by injecting a string variable into a special section called em_js
+# called __em_js__<function_name>. The contents of this variable are of the form
+# "argspec<::>body". The argspec is used to generate the JavaScript function
+# declaration:
+# https://github.com/emscripten-core/emscripten/blob/085fe968d43c7d3674376f29667d6e5f42b24966/emscripten.py?plain=1#L603
+#
+# The body has to start with a function block, but it is possible to inject
+# extra stuff after the block ends. We make a 0-argument function called
+# pyodide_js_init. Immediately after that we inject pre.js and then a call to
+# the init function.
+	# First the data file
+	rm -f tmp.dat
+	echo '()<::>{' >> tmp.dat             # zero argument argspec and start body
+	cat src/js/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
+	echo '}' >> tmp.dat                   # Close function body
+	cat src/core/pre.js >> tmp.dat        # Execute pre.js too
+	echo "pyodide_js_init();" >> tmp.dat  # Then execute the function.
+
+	# Now generate the C file. Define a string __em_js__pyodide_js_init with
+	# contents from tmp.dat
+	rm -f src/core/pyodide_pre.gen.c
+	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' >> src/core/pyodide_pre.gen.c
+	echo 'char __em_js__pyodide_js_init[] = {'  >> src/core/pyodide_pre.gen.c
+	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
+	# Add a null byte to terminate the string
+	echo ', 0};' >> src/core/pyodide_pre.gen.c
+
+	rm tmp.dat
+	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
+
+dist/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
 	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
-	src/core/main.o  \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/js/_pyodide.out.js \
+	src/core/pyodide_pre.o
+	emar rcs dist/libpyodide.a $(filter %.o,$^)
+
+
+dist/pyodide.asm.js: \
+	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)
+	$(CPYTHONLIB) \
+	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
-	$(CXX) -o dist/pyodide.asm.js $(filter %.o,$^) \
-		$(MAIN_MODULE_LDFLAGS)
+	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
@@ -115,7 +166,8 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	echo "// Do not edit it directly!" >> $@
 	cat src/core/pyproxy.ts | \
 		sed '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
-		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - \
+		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
+		sed 's/^#pragma clang.*//g' \
 		>> $@
 
 dist/test.html: src/templates/test.html
@@ -131,13 +183,6 @@ dist/python: src/templates/python
 dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
-.PHONY: docs/_build/html/console.html
-docs/_build/html/console.html: src/templates/console.html
-	mkdir -p docs/_build/html
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
 
 .PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js

@@ -34,6 +34,8 @@ module = [
   "virtualenv",
   "termcolor",
   "test",
+  "tomllib",
+  "tomli",
   "typer",
 ]
 ignore_missing_imports = true
