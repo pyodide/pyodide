@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["test", "pydoc"], pytest_assert_rewrites=False)
+@run_in_pyodide(packages=["test", "pydoc_data"], pytest_assert_rewrites=False)
 def test_pydoc(selenium):
     import sys
     import unittest

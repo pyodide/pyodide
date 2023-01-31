@@ -579,10 +579,7 @@
     skip:
       - test_stdin # fork
 - test_pyclbr
-- test_pydoc:
-    skip:
-      - test_server # fork
-      - test_synopsis_sourceless # expects __pycache__
+# - test_pydoc  # unvendored
 - test_pyexpat
 - test_queue:
     # More than half of these make a thread
