@@ -11,8 +11,8 @@ def test_pydecimal(selenium):
     name = "test_decimal"
 
     ignore_tests = [
-        "test_context_subclassing", # floating point
-        "test_none_args", # Some context issue?
+        "test_context_subclassing",  # floating point
+        "test_none_args",  # Some context issue?
         "test_threading",
     ]
     try:

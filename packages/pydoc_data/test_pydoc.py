@@ -11,8 +11,8 @@ def test_pydoc(selenium):
     name = "test_pydoc"
 
     ignore_tests = [
-        "test_server", # fork
-        "test_synopsis_sourceless", # expects __pycache__
+        "test_server",  # fork
+        "test_synopsis_sourceless",  # expects __pycache__
     ]
     try:
         libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
