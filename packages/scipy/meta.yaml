@@ -20,7 +20,7 @@ source:
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
-    - patches/0002-loadDynamicLibrary-flapack.patch
+    # - patches/0002-loadDynamicLibrary-flapack.patch
     # - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
     - patches/0004-int-to-string.patch
     - patches/0005-fix-fotran-files-minpack.patch
@@ -53,7 +53,7 @@ build:
     set -x
     export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
-    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
     pip install -t $HOSTSITEPACKAGES pythran
     # TODO do I need the additional functions from LAPACK? It seems like
