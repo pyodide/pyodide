@@ -15,7 +15,7 @@ import { initializeNativeFS } from "./nativefs";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+import type { PyProxy, PyDict } from "./pyproxy.gen";
 export type { PyodideInterface };
 
 export type {
@@ -50,10 +50,7 @@ export { version };
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(
-  globals_dict: PyProxyDict,
-  builtins_dict: PyProxyDict,
-) {
+function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
       if (symbol === "get") {
@@ -128,10 +125,10 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   // Set up globals
   let globals = API.runPythonInternal(
     "import __main__; __main__.__dict__",
-  ) as PyProxyDict;
+  ) as PyDict;
   let builtins = API.runPythonInternal(
     "import builtins; builtins.__dict__",
-  ) as PyProxyDict;
+  ) as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.

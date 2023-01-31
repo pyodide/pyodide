@@ -14,12 +14,13 @@ type GetCharType = () => null | number;
 
 // The type of the function we expect the user to give us. make_get_char takes
 // one of these and turns it into a GetCharType function for us.
-type InFuncType = () =>
+/** @private */
+export type InFuncType = () =>
   | null
   | undefined
   | string
   | ArrayBuffer
-  | ArrayBufferView
+  | Uint8Array
   | number;
 
 // To define the output behavior of a tty we need to define put_char and fsync.
@@ -191,7 +192,7 @@ function setStdinError() {
  * The stdin handler is called with zero arguments whenever stdin is read and
  * the current input buffer is exhausted. It should return one of:
  *
- * - ``null`` or ``undefined``: these are interpreted as end of file.
+ * - :js:data:`null` or :js:data:`undefined`: these are interpreted as end of file.
  * - a number
  * - a string
  * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with

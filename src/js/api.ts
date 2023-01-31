@@ -73,7 +73,7 @@ API.runPythonInternal = function (code: string): any {
 };
 
 /**
- * Runs a string of Python code from JavaScript, using :any:`pyodide.code.eval_code`
+ * Runs a string of Python code from JavaScript, using :py:func:`~pyodide.code.eval_code`
  * to evaluate the code. If the last statement in the Python code is an
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
@@ -81,9 +81,9 @@ API.runPythonInternal = function (code: string): any {
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
- *        Defaults to :any:`pyodide.globals`.
+ *        Defaults to :js:attr:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript. See the
- *          documentation for :any:`pyodide.code.eval_code` for more info.
+ *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
  */
 export function runPython(
   code: string,
@@ -174,7 +174,7 @@ export async function loadPackagesFromImports(
 
 /**
  * Run a Python code string with top level await using
- * :any:`pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
+ * :py:func:`~pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
  * resolves when execution completes. If the last statement in the Python code
  * is an expression (and the code doesn't end with a semicolon), the returned
  * promise will resolve to the value of this expression.
@@ -202,7 +202,7 @@ export async function loadPackagesFromImports(
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
- * Defaults to :any:`pyodide.globals`.
+ * Defaults to :js:attr:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript.
  * @async
  */
@@ -222,7 +222,7 @@ API.runPythonAsync = runPythonAsync;
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
- * module from :py:data:`sys.modules`. This calls the :any:`pyodide_py` API
+ * module from :py:data:`sys.modules`. This calls
  * :func:`~pyodide.ffi.register_js_module`.
  *
  * @param name Name of the JavaScript module to add
@@ -246,8 +246,8 @@ export function registerComlink(Comlink: any) {
  * :func:`~pyodide.ffi.register_js_module`. If a JavaScript module with that
  * name does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete the
- * imported module from :py:data:`sys.modules`. This calls the :any:`pyodide_py`
- * API :func:`~pyodide.ffi.unregister_js_module`.
+ * imported module from :py:data:`sys.modules`. This calls
+ * :func:`~pyodide.ffi.unregister_js_module`.
  *
  * @param name Name of the JavaScript module to remove
  */
@@ -403,18 +403,19 @@ export function unpackArchive(
   });
 }
 
-type NativeFS = {
-  syncfs: Function;
+/** @private */
+export type NativeFS = {
+  syncfs: () => Promise<void>;
 };
 
 /**
- * Mounts FileSystemDirectoryHandle in to the target directory.
+ * Mounts a ``FileSystemDirectoryHandle`` into the target directory.
  *
  * @param path The absolute path in the Emscripten file system to mount the
  * native directory. If the directory does not exist, it will be created. If it
  * does exist, it must be empty.
- * @param fileSystemHandle A handle returned by navigator.storage.getDirectory()
- * or window.showDirectoryPicker().
+ * @param fileSystemHandle A handle returned by ``navigator.storage.getDirectory()``
+ * or ``window.showDirectoryPicker()``.
  */
 export async function mountNativeFS(
   path: string,
@@ -468,7 +469,7 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  *
  * You can disable interrupts by calling ``setInterruptBuffer(undefined)``.
  *
- * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2),
+ * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2)
  * into the interrupt buffer.
  *
  * By default ``SIGINT`` raises a :any:`KeyboardInterrupt` and all other signals
