@@ -135,7 +135,7 @@ def register_js_finder() -> None:
 
 STDLIBS = sys.stdlib_module_names | {"test"}
 # TODO: Move this list to js side
-UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "hashlib", "pydoc", "pydecimal"]
+UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "hashlib", "pydoc_data", "pydecimal"]
 UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
 
 
