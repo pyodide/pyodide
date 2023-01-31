@@ -7,8 +7,8 @@ import { loadPackage, loadedPackages } from "./load-package";
 import {
   isPyProxy,
   PyBuffer,
-  PyProxy,
   TypedArray,
+  PyProxy,
   PyProxyWithLength,
   PyProxyWithGet,
   PyProxyWithSet,
@@ -17,6 +17,10 @@ import {
   PyIterable,
   PyIterator,
   PyAwaitable,
+  PyAsyncIterable,
+  PyAsyncIterator,
+  PyGenerator,
+  PyAsyncGenerator,
   PyCallable,
   PyProxyBuffer,
 } from "./pyproxy.gen";
@@ -530,6 +534,10 @@ export type PyodideInterface = {
   PyAwaitable: typeof PyAwaitable;
   PyCallable: typeof PyCallable;
   PyProxyBuffer: typeof PyProxyBuffer;
+  PyAsyncIterable: typeof PyAsyncIterable;
+  PyAsyncIterator: typeof PyAsyncIterator;
+  PyGenerator: typeof PyGenerator;
+  PyAsyncGenerator: typeof PyAsyncGenerator;
 };
 
 /**
@@ -605,6 +613,10 @@ API.makePublicAPI = function (): PyodideInterface {
     PyIterable,
     PyIterator,
     PyAwaitable,
+    PyAsyncIterable,
+    PyAsyncIterator,
+    PyGenerator,
+    PyAsyncGenerator,
     PyCallable,
     PyProxyBuffer,
     setStdin,
