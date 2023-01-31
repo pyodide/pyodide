@@ -188,4 +188,5 @@ main();
    :hidden:
 
    packages-in-pyodide.md
+   sdl.md
 ```
