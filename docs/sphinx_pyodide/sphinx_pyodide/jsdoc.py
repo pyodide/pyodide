@@ -41,10 +41,14 @@ TsAnalyzer._constructor_and_members = _constructor_and_members
 
 commentdict = {}
 
+FFI_FIELDS: set[str] = set()
+
 
 def _top_level_properties(self, node):
     result = _orig_top_level_properties(self, node)
     path = str(Pathname(make_path_segments(node, self._base_dir)))
+    if node["name"] == "ffi":
+        FFI_FIELDS.update(x["name"] for x in node["type"]["declaration"]["children"])
     commentdict[path] = node.get("comment") or {}
     return result
 
@@ -58,6 +62,8 @@ def JsRenderer_rst(self, partial_path, obj, use_short_name=False):
     for x in commentdict[str(obj.path)].get("tags", []):
         if x["tag"] == "deprecated":
             obj.deprecated = x["text"]
+        if x["tag"] == "hidetype":
+            obj.type = ""
     return orig_JsRenderer_rst_(self, partial_path, obj, use_short_name)
 
 
@@ -473,7 +479,7 @@ class PyodideAnalyzer:
             # this via a @private decorator in the documentation comment.
             doclet.is_private = True
             return
-        print("key:", key)
+
         if filename in ["module.", "compat."]:
             doclet.is_private = True
             return
@@ -493,7 +499,7 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([("attribute", []), ("function", []), ("class", [])])
 
-        modules = ["globalThis", "pyodide", "PyProxy"]
+        modules = ["globalThis", "pyodide", "pyodide.ffi"]
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
         pyproxy_subclasses = []
@@ -542,7 +548,10 @@ class PyodideAnalyzer:
             # if filename == "pyproxy.gen.":
             #     items["PyProxy"].append(doclet)
             # else:
-            items["pyodide"].append(doclet)
+            if doclet.name in FFI_FIELDS:
+                items["pyodide.ffi"].append(doclet)
+            else:
+                items["pyodide"].append(doclet)
 
         for cls in pyproxy_subclasses:
             methods_supers = [

@@ -1,29 +1,11 @@
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
-import "./module.ts";
+import "./module";
+import { ffi } from "./ffi";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import {
-  isPyProxy,
-  PyBuffer,
-  TypedArray,
-  PyProxy,
-  PyProxyWithLength,
-  PyProxyWithGet,
-  PyProxyWithSet,
-  PyProxyWithHas,
-  PyDict,
-  PyIterable,
-  PyIterator,
-  PyAwaitable,
-  PyAsyncIterable,
-  PyAsyncIterator,
-  PyGenerator,
-  PyAsyncGenerator,
-  PyCallable,
-  PyProxyBuffer,
-} from "./pyproxy.gen";
+import { isPyProxy, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
@@ -113,7 +95,7 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param code The code to inspect.
- * @param options Options passed to :any:`pyodide.loadPackage`.
+ * @param options Options passed to :js:func:`pyodide.loadPackage`.
  * @param options.messageCallback A callback, called with progress messages
  *    (optional)
  * @param options.errorCallback A callback, called with error/warning messages
@@ -258,8 +240,8 @@ export function unregisterJsModule(name: string) {
 /**
  * Convert a JavaScript object to a Python object as best as possible.
  *
- * This is similar to :any:`JsProxy.to_py` but for use from JavaScript. If the
- * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
+ * This is similar to :py:meth:`JsProxy.to_py` but for use from JavaScript. If the
+ * object is immutable or a :py:class:`PyProxy`, it will be returned unchanged. If
  * the object cannot be converted into Python, it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
@@ -280,7 +262,7 @@ export function toPy(
     depth: number;
     /**
      * Optional argument to convert objects with no default conversion. See the
-     * documentation of :any:`JsProxy.to_py`.
+     * documentation of :py:meth:`JsProxy.to_py`.
      */
     defaultConverter?: (
       value: any,
@@ -366,7 +348,7 @@ export function pyimport(mod_name: string): PyProxy {
  *
  * @param buffer The archive as an :js:class:`ArrayBuffer` or :js:class:`TypedArray`.
  * @param format The format of the archive. Should be one of the formats
- * recognized by :any:`shutil.unpack_archive`. By default the options are
+ * recognized by :py:func:`shutil.unpack_archive`. By default the options are
  * ``'bztar'``, ``'gztar'``, ``'tar'``, ``'zip'``, and ``'wheel'``. Several
  * synonyms are accepted for each format, e.g., for ``'gztar'`` any of
  * ``'.gztar'``, ``'.tar.gz'``, ``'.tgz'``, ``'tar.gz'`` or ``'tgz'`` are
@@ -469,10 +451,10 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  *
  * You can disable interrupts by calling ``setInterruptBuffer(undefined)``.
  *
- * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2)
+ * If you wish to trigger a :py:exc:`KeyboardInterrupt`, write ``SIGINT`` (a 2)
  * into the interrupt buffer.
  *
- * By default ``SIGINT`` raises a :any:`KeyboardInterrupt` and all other signals
+ * By default ``SIGINT`` raises a :py:exc:`KeyboardInterrupt` and all other signals
  * are ignored. You can install custom signal handlers with the signal module.
  * Even signals that normally have special meaning and can't be overridden like
  * ``SIGKILL`` and ``SIGSEGV`` are ignored by default and can be used for any
@@ -484,7 +466,7 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
 }
 
 /**
- * Throws a :any:`KeyboardInterrupt` error if a :any:`KeyboardInterrupt` has
+ * Throws a :py:exc:`KeyboardInterrupt` error if a :py:exc:`KeyboardInterrupt` has
  * been requested via the interrupt buffer.
  *
  * This can be used to enable keyboard interrupts during execution of JavaScript
@@ -496,50 +478,6 @@ export function checkInterrupt() {
     Module._pythonexc2js();
   }
 }
-
-export type PyodideInterface = {
-  globals: typeof globals;
-  FS: typeof FS;
-  PATH: typeof PATH;
-  ERRNO_CODES: typeof ERRNO_CODES;
-  pyodide_py: typeof pyodide_py;
-  version: typeof version;
-  loadPackage: typeof loadPackage;
-  loadPackagesFromImports: typeof loadPackagesFromImports;
-  loadedPackages: typeof loadedPackages;
-  isPyProxy: typeof isPyProxy;
-  runPython: typeof runPython;
-  runPythonAsync: typeof runPythonAsync;
-  registerJsModule: typeof registerJsModule;
-  unregisterJsModule: typeof unregisterJsModule;
-  setInterruptBuffer: typeof setInterruptBuffer;
-  checkInterrupt: typeof checkInterrupt;
-  toPy: typeof toPy;
-  pyimport: typeof pyimport;
-  unpackArchive: typeof unpackArchive;
-  mountNativeFS: typeof mountNativeFS;
-  registerComlink: typeof registerComlink;
-  PythonError: typeof PythonError;
-  PyBuffer: typeof PyBuffer;
-  setStdin: typeof setStdin;
-  setStdout: typeof setStdout;
-  setStderr: typeof setStderr;
-  PyProxy: typeof PyProxy;
-  PyProxyWithLength: typeof PyProxyWithLength;
-  PyProxyWithGet: typeof PyProxyWithGet;
-  PyProxyWithSet: typeof PyProxyWithSet;
-  PyProxyWithHas: typeof PyProxyWithHas;
-  PyDict: typeof PyDict;
-  PyIterable: typeof PyIterable;
-  PyIterator: typeof PyIterator;
-  PyAwaitable: typeof PyAwaitable;
-  PyCallable: typeof PyCallable;
-  PyProxyBuffer: typeof PyProxyBuffer;
-  PyAsyncIterable: typeof PyAsyncIterable;
-  PyAsyncIterator: typeof PyAsyncIterator;
-  PyGenerator: typeof PyGenerator;
-  PyAsyncGenerator: typeof PyAsyncGenerator;
-};
 
 /**
  * An alias to the `Emscripten File System API
@@ -572,59 +510,44 @@ export let PATH: any;
  */
 export let ERRNO_CODES: { [code: string]: number };
 
-/**
- * @private
- */
-API.makePublicAPI = function (): PyodideInterface {
-  FS = Module.FS;
-  PATH = Module.PATH;
-  ERRNO_CODES = Module.ERRNO_CODES;
-  let namespace = {
-    globals,
-    FS,
-    PATH,
-    ERRNO_CODES,
-    pyodide_py,
-    version,
-    loadPackage,
-    loadPackagesFromImports,
-    loadedPackages,
-    isPyProxy,
-    runPython,
-    runPythonAsync,
-    registerJsModule,
-    unregisterJsModule,
-    setInterruptBuffer,
-    checkInterrupt,
-    toPy,
-    pyimport,
-    unpackArchive,
-    mountNativeFS,
-    registerComlink,
-    PythonError,
-    PyBuffer,
-    _module: Module,
-    _api: API,
-    PyProxy,
-    PyProxyWithLength,
-    PyProxyWithGet,
-    PyProxyWithSet,
-    PyProxyWithHas,
-    PyDict,
-    PyIterable,
-    PyIterator,
-    PyAwaitable,
-    PyAsyncIterable,
-    PyAsyncIterator,
-    PyGenerator,
-    PyAsyncGenerator,
-    PyCallable,
-    PyProxyBuffer,
-    setStdin,
-    setStdout,
-    setStderr,
-  };
+/** @private */
+export const PyodideAPI = {
+  globals: {} as PyProxy,
+  FS,
+  PATH,
+  ERRNO_CODES: {} as { [code: string]: number },
+  pyodide_py: {} as PyProxy,
+  version,
+  loadPackage,
+  loadPackagesFromImports,
+  loadedPackages,
+  isPyProxy,
+  runPython,
+  runPythonAsync,
+  registerJsModule,
+  unregisterJsModule,
+  setInterruptBuffer,
+  checkInterrupt,
+  toPy,
+  pyimport,
+  unpackArchive,
+  mountNativeFS,
+  registerComlink,
+  PythonError,
+  PyBuffer,
+  ffi,
+  setStdin,
+  setStdout,
+  setStderr,
+};
 
-  API.public_api = namespace;
-  return namespace;
+/** @hidetype */
+export type PyodideInterface = typeof PyodideAPI;
+
+/** @private */
+API.makePublicAPI = function () {
+  PyodideAPI.FS = Module.FS;
+  PyodideAPI.PATH = Module.PATH;
+  PyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
+  return PyodideAPI;
 };

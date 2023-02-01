@@ -19,3 +19,19 @@ Backward compatibility of the API is not guaranteed at this point.
 
 .. js-doc-content:: pyodide
 ```
+
+(js-api-pyodide-ffi)=
+
+## pyodide.ffi
+
+To import types from `pyodide.ffi` you can use for example
+
+```js
+import type { PyProxy } from "pyodide/ffi";
+```
+
+```{eval-rst}
+.. js-doc-summary:: pyodide.ffi
+
+.. js-doc-content:: pyodide.ffi
+```
