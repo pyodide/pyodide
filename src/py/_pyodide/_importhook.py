@@ -134,17 +134,7 @@ def register_js_finder() -> None:
 
 
 STDLIBS = sys.stdlib_module_names | {"test"}
-# TODO: Move this list to js side
-UNVENDORED_STDLIBS = [
-    "distutils",
-    "ssl",
-    "lzma",
-    "sqlite3",
-    "hashlib",
-    "pydoc_data",
-    "pydecimal",
-]
-UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
+UNVENDORED_STDLIBS_AND_TEST: set[str] = set()
 
 
 from importlib import _bootstrap  # type: ignore[attr-defined]
@@ -199,6 +189,6 @@ def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
     global UNVENDORED_STDLIBS_AND_TEST
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
-    UNVENDORED_STDLIBS_AND_TEST = unvendored.to_py()
+    UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())
     orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
     _bootstrap._get_module_not_found_error = get_module_not_found_error
