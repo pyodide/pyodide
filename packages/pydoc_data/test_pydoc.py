@@ -3,7 +3,6 @@ from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["test", "pydoc_data"], pytest_assert_rewrites=False)
 def test_pydoc(selenium):
-    import unittest
     from test import libregrtest  # type:ignore[attr-defined]
 
     name = "test_pydoc"
