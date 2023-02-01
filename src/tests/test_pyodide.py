@@ -1319,11 +1319,10 @@ def test_fullstdlib(selenium_standalone_noload):
         await pyodide.loadPackage("micropip");
 
         pyodide.runPython(`
-            import _pyodide
+            import pyodide_js
             import micropip
             loaded_packages = micropip.list()
-            print(loaded_packages)
-            assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
+            assert all((lib in micropip.list()) for lib in pyodide_js._api.repodata_unvendored_stdlibs)
         `);
         """
     )

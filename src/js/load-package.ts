@@ -39,6 +39,16 @@ async function initializePackageIndex(lockFileURL: string) {
   API.repodata_info = repodata.info;
   API.repodata_packages = repodata.packages;
 
+  if (repodata.unvendored_stdlibs !== undefined) {
+    API.repodata_unvendored_stdlibs_and_test = repodata.unvendored_stdlibs;
+  } else {
+    API.repodata_unvendored_stdlibs_and_test = [];
+  }
+
+  API.repodata_unvendored_stdlibs = API.repodata_unvendored_stdlibs_and_test.filter(
+    (lib: string) => lib !== "test"
+  );
+
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
   for (let name of Object.keys(API.repodata_packages)) {

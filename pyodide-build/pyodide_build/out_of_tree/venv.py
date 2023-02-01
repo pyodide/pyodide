@@ -195,12 +195,12 @@ def install_stdlib(venv_bin: Path) -> None:
             "-c",
             dedent(
                 f"""
-                from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
-                from pyodide_js import loadPackage;
+                from pyodide_js import loadPackage
                 from pyodide_js._api import repodata_packages
+                from pyodide_js._api import repodata_unvendored_stdlibs_and_test
                 shared_libs = [pkgname for (pkgname,pkg) in repodata_packages.object_entries() if getattr(pkg, "shared_library", False)]
 
-                to_load = [*UNVENDORED_STDLIBS_AND_TEST, *shared_libs, *{to_load!r}]
+                to_load = [*repodata_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
                 loadPackage(to_load);
                 """
             ),

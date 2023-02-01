@@ -393,7 +393,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
+    await pyodide.loadPackage(API.repodata_unvendored_stdlibs);
   }
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;

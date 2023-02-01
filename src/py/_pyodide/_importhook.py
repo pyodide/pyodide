@@ -180,7 +180,7 @@ def get_module_not_found_error(import_name):
     )
 
 
-def register_module_not_found_hook(packages: Any) -> None:
+def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     """
     A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
 
@@ -189,6 +189,8 @@ def register_module_not_found_hook(packages: Any) -> None:
     """
     global orig_get_module_not_found_error
     global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
+    global UNVENDORED_STDLIBS_AND_TEST
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
+    UNVENDORED_STDLIBS_AND_TEST = unvendored.to_py()
     orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
     _bootstrap._get_module_not_found_error = get_module_not_found_error
