@@ -145,7 +145,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         Note that ``len(x.as_object_map())`` evaluates in O(n) time (it iterates
         over the object and counts how many ownKeys it has). If you need to
-        compute the length in O(1) time, use a real ``Map`` instead.
+        compute the length in O(1) time, use a real :js:class:`Map` instead.
         """
         raise NotImplementedError
 
@@ -187,7 +187,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         --------
 
         Here are a couple examples of converter functions. In addition to the
-        normal conversions, convert ``Date`` to ``datetime``:
+        normal conversions, convert :js:class:`Date`` to :py:class:`~datetime.datetime`:
 
         .. code-block:: python
 
@@ -220,7 +220,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
                 }
             }
 
-        We can use the following ``default_converter`` to convert ``Pair`` to ``list``:
+        We can use the following ``default_converter`` to convert ``Pair`` to :py:class:`list`:
 
         .. code-block:: python
 
@@ -266,9 +266,13 @@ class JsDoubleProxy(JsProxy):
 
 
 class JsPromise(JsProxy):
-    """A JsProxy of a promise (or some other awaitable JavaScript object).
+    """A :py:class:`~pyodide.ffi.JsProxy` of a :js:class:`Promise`
 
-    A JavaScript object is considered to be a Promise if it has a "then" method.
+    Or of some other `thenable
+    <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables>`_
+    JavaScript object.
+
+    A JavaScript object is considered to be a :js:class:`Promise` if it has a ``then`` method.
     """
 
     _js_type_flags = ["IS_AWAITABLE"]
@@ -276,7 +280,7 @@ class JsPromise(JsProxy):
     def then(
         self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
     ) -> "JsPromise":
-        """The ``Promise.then`` API, wrapped to manage the lifetimes of the
+        """The :js:meth:`Promise.then` API, wrapped to manage the lifetimes of the
         handlers.
 
         Pyodide will automatically release the references to the handlers
@@ -285,7 +289,7 @@ class JsPromise(JsProxy):
         raise NotImplementedError
 
     def catch(self, onrejected: Callable[[Any], Any], /) -> "JsPromise":
-        """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
+        """The :js:meth:`Promise.catch` API, wrapped to manage the lifetimes of the
         handler.
 
         Pyodide will automatically release the references to the handler
@@ -294,7 +298,7 @@ class JsPromise(JsProxy):
         raise NotImplementedError
 
     def finally_(self, onfinally: Callable[[], Any], /) -> "JsPromise":
-        """The ``Promise.finally`` API, wrapped to manage the lifetimes of
+        """The :js:meth:`Promise.finally` API, wrapped to manage the lifetimes of
         the handler.
 
         Pyodide will automatically release the references to the handler
@@ -623,7 +627,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
                 Extra key-values pairs to insert into the map. Only usable for
                 inserting extra strings.
 
-        If ``other`` is present and is a :any:`Mapping` or has a ``keys``
+        If ``other`` is present and is a :py:class:`~collections.abc.Mapping` or has a ``keys``
         method, does
 
         .. code-block:: python
@@ -806,7 +810,7 @@ class JsGenerator(JsIterable[Tco], Generic[Tco, Tcontra, Vco]):
 
 
 class JsFetchResponse(JsProxy):
-    """A :any:`JsFetchResponse` object represents a :js:data:`Response` to a
+    """A :py:class:`JsFetchResponse` object represents a :js:data:`Response` to a
     :js:func:`fetch` request.
     """
 
@@ -1011,10 +1015,11 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
 def create_proxy(
     obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
 ) -> JsDoubleProxy:
-    """Create a :py:class:`JsProxy` of a :js:class:`PyProxy`.
+    """Create a :py:class:`JsProxy` of a :js:class:`~pyodide.ffi.PyProxy`.
 
-    This allows explicit control over the lifetime of the :js:class:`PyProxy` from
-    Python: call the :py:meth:`~JsDoubleProxy.destroy` API when done.
+    This allows explicit control over the lifetime of the
+    :js:class:`~pyodide.ffi.PyProxy` from Python: call the
+    :py:meth:`~JsDoubleProxy.destroy` API when done.
 
     Parameters
     ----------
@@ -1022,15 +1027,16 @@ def create_proxy(
         The object to wrap.
 
     capture_this :
-        If the object is callable, should ``this`` be passed as the first argument
-        when calling it from JavaScript.
+        If the object is callable, should ``this`` be passed as the first
+        argument when calling it from JavaScript.
 
     roundtrip:
         When the proxy is converted back from JavaScript to Python, if this is
         ``True`` it is converted into a double proxy. If ``False``, it is
         unwrapped into a Python object. In the case that ``roundtrip`` is
-        ``True`` it is possible to unwrap a double proxy with the :py:meth:`unwrap`
-        method. This is useful to allow easier control of lifetimes from Python:
+        ``True`` it is possible to unwrap a double proxy with the
+        :py:meth:`JsDoubleProxy.unwrap` method. This is useful to allow easier
+        control of lifetimes from Python:
 
         .. code-block:: python
 
@@ -1113,10 +1119,10 @@ def to_js(
 ) -> Any:
     """Convert the object to JavaScript.
 
-    This is similar to :js:meth:`PyProxy.toJs`, but for use from Python. If the
+    This is similar to :js:meth:`~pyodide.ffi.PyProxy.toJs`, but for use from Python. If the
     object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this method
-    will return a :py:class:`JsProxy` of a :js:class:`PyProxy`, as if you had used
+    will return a :py:class:`JsProxy` of a :js:class:`~pyodide.ffi.PyProxy`, as if you had used
     :func:`~pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
@@ -1131,13 +1137,13 @@ def to_js(
         infinite. Set this to 1 to do a shallow conversion.
 
     pyproxies:
-        Should be a JavaScript ``Array``. If provided, any ``PyProxies``
-        generated will be stored here. You can later use :any:`destroy_proxies`
+        Should be a JavaScript :js:class:`Array`. If provided, any ``PyProxies``
+        generated will be stored here. You can later use :py:meth:`destroy_proxies`
         if you want to destroy the proxies from Python (or from JavaScript you
-        can just iterate over the ``Array`` and destroy the proxies).
+        can just iterate over the :js:class:`Array` and destroy the proxies).
 
     create_pyproxies:
-        If you set this to :any:`False`, :any:`to_js` will raise an error rather
+        If you set this to :py:data:`False`, :py:func:`to_js` will raise an error rather
         than creating any pyproxies.
 
     dict_converter:
@@ -1195,7 +1201,7 @@ def to_js(
                 self.first = first self.second = second
 
     We can use the following ``default_converter`` to convert ``Pair`` to
-    ``Array``:
+    :js:class:`Array`:
 
     .. code-block:: python
 
@@ -1227,7 +1233,7 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JavaScript Array of PyProxies. Intended for use
-    with the arrays created from the "pyproxies" argument of :js:meth:`PyProxy.toJs`
+    with the arrays created from the "pyproxies" argument of :js:meth:`~pyodide.ffi.PyProxy.toJs`
     and :py:func:`to_js`. This method is necessary because indexing the Array from
     Python automatically unwraps the PyProxy into the wrapped Python object.
     """

@@ -49,7 +49,7 @@ class JsFinder(MetaPathFinder):
         can then be imported from Python using the standard Python import
         system. If another module by the same name has already been imported,
         this won't have much effect unless you also delete the imported module
-        from :any:`sys.modules`. This is called by the JavaScript API
+        from :py:data:`sys.modules`. This is called by the JavaScript API
         :js:func:`pyodide.registerJsModule`.
 
         Parameters
@@ -78,7 +78,7 @@ class JsFinder(MetaPathFinder):
         :py:func:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
-        imported module from ``sys.modules``. This is called by the JavaScript
+        imported module from :py:data:`sys.modules`. This is called by the JavaScript
         API :js:func:`pyodide.unregisterJsModule`.
 
         Parameters

@@ -2215,12 +2215,12 @@ export class PyBufferView {
   data: TypedArray;
 
   /**
-   * Is it C contiguous? See :any:`memoryview.c_contiguous`.
+   * Is it C contiguous? See :py:attr:`memoryview.c_contiguous`.
    */
   c_contiguous: boolean;
 
   /**
-   * Is it Fortran contiguous? See :any:`memoryview.f_contiguous`.
+   * Is it Fortran contiguous? See :py:attr:`memoryview.f_contiguous`.
    */
   f_contiguous: boolean;
 

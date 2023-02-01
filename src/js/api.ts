@@ -240,8 +240,8 @@ export function unregisterJsModule(name: string) {
 /**
  * Convert a JavaScript object to a Python object as best as possible.
  *
- * This is similar to :py:meth:`JsProxy.to_py` but for use from JavaScript. If the
- * object is immutable or a :py:class:`PyProxy`, it will be returned unchanged. If
+ * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from JavaScript. If the
+ * object is immutable or a :py:class:`~pyodide.ffi.PyProxy`, it will be returned unchanged. If
  * the object cannot be converted into Python, it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
@@ -262,7 +262,7 @@ export function toPy(
     depth: number;
     /**
      * Optional argument to convert objects with no default conversion. See the
-     * documentation of :py:meth:`JsProxy.to_py`.
+     * documentation of :py:meth:`~pyodide.ffi.JsProxy.to_py`.
      */
     defaultConverter?: (
       value: any,
@@ -470,7 +470,7 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
  * been requested via the interrupt buffer.
  *
  * This can be used to enable keyboard interrupts during execution of JavaScript
- * code, just as :any:`PyErr_CheckSignals` is used to enable keyboard interrupts
+ * code, just as :c:func:`PyErr_CheckSignals` is used to enable keyboard interrupts
  * during execution of C code.
  */
 export function checkInterrupt() {
