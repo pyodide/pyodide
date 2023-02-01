@@ -239,7 +239,7 @@ export async function loadPyodide(
 
     /**
      * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
-     * file. You can produce custom lock files with :any:`micropip.freeze`.
+     * file. You can produce custom lock files with :py:func:`micropip.freeze`.
      * Default: ```${indexURL}/repodata.json```
      */
     lockFileURL?: string;

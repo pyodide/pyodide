@@ -54,7 +54,7 @@ class FetchResponse:
     url
         URL to fetch
     js_response
-        A :any:`JsProxy` of the fetch response
+        A :py:class:`~pyodide.ffi.JsProxy` of the fetch response
     """
 
     def __init__(self, url: str, js_response: JsFetchResponse):
@@ -66,7 +66,7 @@ class FetchResponse:
         """Has the response been used yet?
 
         If so, attempting to retrieve the body again will raise an
-        :any:`OSError`. Use :py:meth:`~FetchResponse.clone` first to avoid this.
+        :py:exc:`OSError`. Use :py:meth:`~FetchResponse.clone` first to avoid this.
         See :js:attr:`Response.bodyUsed`.
         """
         return self.js_response.bodyUsed
@@ -129,9 +129,9 @@ class FetchResponse:
             raise OSError("Response body is already used")
 
     def clone(self) -> "FetchResponse":
-        """Return an identical copy of the :any:`FetchResponse`.
+        """Return an identical copy of the :py:class:`FetchResponse`.
 
-        This method exists to allow multiple uses of :any:`FetchResponse`
+        This method exists to allow multiple uses of :py:class:`FetchResponse`
         objects. See :js:meth:`Response.clone`.
         """
         if self.js_response.bodyUsed:
@@ -161,7 +161,7 @@ class FetchResponse:
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
-        """Return the response body as a :any:`memoryview` object"""
+        """Return the response body as a :py:class:`memoryview` object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
@@ -206,9 +206,9 @@ class FetchResponse:
     ) -> None:
         """Treat the data as an archive and unpack it into target directory.
 
-        Assumes that the file is an archive in a format that :any:`shutil` has
+        Assumes that the file is an archive in a format that :py:mod:`shutil` has
         an unpacker for. The arguments ``extract_dir`` and ``format`` are passed
-        directly on to :any:`shutil.unpack_archive`.
+        directly on to :py:func:`shutil.unpack_archive`.
 
         Parameters
         ----------
@@ -222,7 +222,7 @@ class FetchResponse:
             :py:func:`shutil.register_unpack_format`. If not provided,
             :py:meth:`unpack_archive` will use the archive file name extension and
             see if an unpacker was registered for that extension. In case none
-            is found, a :any:`ValueError` is raised.
+            is found, a :py:exc:`ValueError` is raised.
         """
         buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]

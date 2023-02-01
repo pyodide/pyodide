@@ -50,8 +50,8 @@ See issue {issue}`1940`.
 
 Currently, Pyodide has two ways of loading packages:
 
-- {any}`pyodide.loadPackage` for packages built with Pyodide and
-- {any}`micropip.install` for pure Python packages from PyPI.
+- {js:func}`pyodide.loadPackage` for packages built with Pyodide and
+- {py:func}`micropip.install` for pure Python packages from PyPI.
 
 The relationship between these tools is currently confusing.
 
