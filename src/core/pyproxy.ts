@@ -952,6 +952,7 @@ export class PyIterable extends PyProxy {
 
 export interface PyIterable extends PyProxyIterableMethods {}
 
+/** @deprecated Use :js:class:`pyodide.ffi.PyIterable` instead. */
 export type PyProxyIterable = PyIterable;
 
 // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
@@ -1096,6 +1097,7 @@ export class PyIterator extends PyProxy {
 
 export interface PyIterator extends PyProxyIteratorMethods {}
 
+/** @deprecated Use :js:class:`pyodide.ffi.PyIterator` instead. */
 export type PyProxyIterator = PyIterator;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
@@ -1609,6 +1611,7 @@ export class PyAwaitable extends PyProxy {
 }
 
 export interface PyAwaitable extends Promise<any> {}
+/** @deprecated Use :js:class:`pyodide.ffi.PyAwaitable` instead. */
 export type PyProxyAwaitable = PyAwaitable;
 
 /**
@@ -1712,8 +1715,7 @@ export class PyProxyAwaitableMethods {
 }
 
 /**
- * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is :std:term:`callable`
- * (i.e., has a :meth:`~object.__call__` method).
+ * @deprecated Use :js:class:`pyodide.ffi.PyCallable` instead.
  */
 export type PyProxyCallable = PyCallable;
 
@@ -2076,7 +2078,8 @@ export interface PyDict
     PyProxyWithHas,
     PyProxyWithLength,
     PyIterable {}
-/** @deprecated */
+
+/** @deprecated Use :js:class:`pyodide.ffi.PyDict` instead. */
 export type PyProxyDict = PyDict;
 
 /**

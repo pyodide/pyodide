@@ -45,11 +45,11 @@ FFI_FIELDS: set[str] = set()
 
 
 def _top_level_properties(self, node):
-    result = _orig_top_level_properties(self, node)
     path = str(Pathname(make_path_segments(node, self._base_dir)))
+    commentdict[path] = node.get("comment") or {}
+    result = _orig_top_level_properties(self, node)
     if node["name"] == "ffi":
         FFI_FIELDS.update(x["name"] for x in node["type"]["declaration"]["children"])
-    commentdict[path] = node.get("comment") or {}
     return result
 
 
