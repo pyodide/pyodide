@@ -549,5 +549,9 @@ API.makePublicAPI = function () {
   PyodideAPI.FS = Module.FS;
   PyodideAPI.PATH = Module.PATH;
   PyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
+  // @ts-ignore
+  PyodideAPI._module = Module;
+  // @ts-ignore
+  PyodideAPI._api = API;
   return PyodideAPI;
 };
