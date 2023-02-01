@@ -223,7 +223,7 @@ def test_type_name():
                 "typeArguments": [{"name": "string", "type": "intrinsic"}],
             }
         ).strip()
-        == r":js:data:`Promise`\ **<**\ :js:data:`string`\ **>**"
+        == r":js:class:`Promise`\ **<**\ :js:data:`string`\ **>**"
     )
 
     assert (

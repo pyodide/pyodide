@@ -28,13 +28,43 @@ myst:
   interface can be experimentally linked into other Emscripten builds of Python.
   {pr}`3335`
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.30
-  {pr}`3471`
+- {{ Enhancement }} Updated Emscripten to version 3.1.31
+  {pr}`3471`, {pr}`3517`
+
+- {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
+  `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
+  are using these libraries in a package that are built out-of-tree, you will
+  need to link them to the package manually.
+  {pr}`3505`
+
+- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now moved to
+  `test/ctypes` and `test/unittest` respectively. This change is adapted from
+  [CPython 3.12](https://github.com/python/cpython/issues/93839).
+  {pr}`3507`
+
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard library.
+  Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
+  {pr}`3525`
 
 ### Build System
 
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command
+  to fetch and build dependencies of a package being built.
+  Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
+
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
+
+- {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
+  packages.
+  {pr}`3444`
+
+- {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
+  you must prefix `tag:` to the meta-package name. For example, to build the
+  `core` meta-package, you must run `pyodide build-recipes tag:core`, or
+  `PYODIDE_PACKAGES="tag:core" make`.
+  {pr}`3444`
 
 ### Pyodide CLI
 
@@ -94,10 +124,6 @@ _January 25, 2023_
 _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
-
-- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
-  built. Also adds `--skip-dependency` to ignore selected dependencies.
-  {pr}`3310`
 
 ### Deployment and testing
 
@@ -233,9 +259,8 @@ _January 3, 2023_
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Added a new API `pyodide.mountNativeFS`
-  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
-  into the Pyodide file system.
+- {{ Enhancement }} Added a new API `pyodide.mountNativeFS` which mounts a
+  {js:class}`FileSystemDirectoryHandle` into the Pyodide file system.
   {pr}`2987`
 
 - {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
@@ -1516,7 +1541,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a JavaScript `Promise`.
   {pr}`1324`
 - {{ Fix }} `micropip.install` now interacts correctly with
-  {any}`pyodide.loadPackage`.
+  {js:func}`pyodide.loadPackage`.
   {pr}`1457`
 - {{ Fix }} `micropip.install` now handles version constraints correctly
   even if there is a version of the package available from the Pyodide `indexURL`.

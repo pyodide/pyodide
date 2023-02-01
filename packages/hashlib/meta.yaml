@@ -1,6 +1,8 @@
 package:
   name: hashlib
   version: 1.0.0 # Nonsense
+  tag:
+    - always
   top-level:
     - _hashlib
 build:
