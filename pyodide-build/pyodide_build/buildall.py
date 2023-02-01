@@ -602,11 +602,6 @@ def _generate_package_hash(full_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def _get_unvendored_stdlibs(pkg_map: dict[str, BasePackage]) -> list[str]:
-    unvendored_stdlibs = filter(lambda pkg: pkg.package_type == "cpython_module", pkg_map.values())
-    return [pkg.name for pkg in unvendored_stdlibs]
-
-
 def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, Any]:
@@ -622,6 +617,7 @@ def generate_packagedata(
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
             "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
+            "package_type": pkg.package_type,
             "imports": [],
         }
 
@@ -683,8 +679,7 @@ def generate_repodata(
         "python": sys.version.partition(" ")[0],
     }
     packages = generate_packagedata(output_dir, pkg_map)
-    unvendored_stdlibs = _get_unvendored_stdlibs(pkg_map)
-    return dict(info=info, packages=packages, unvendored_stdlibs=unvendored_stdlibs)
+    return dict(info=info, packages=packages)
 
 
 def copy_packages_to_dist_dir(
