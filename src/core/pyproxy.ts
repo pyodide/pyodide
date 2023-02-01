@@ -19,6 +19,10 @@ declare var Hiwire: any;
 declare var API: any;
 declare var HEAPU32: Uint32Array;
 
+declare function stackSave(): number;
+declare function stackRestore(ptr: number): void;
+declare function stackAlloc(size: number): number;
+
 // pyodide-skip
 
 // Just for this file, we implement a special "skip" pragma. These lines are
@@ -1127,8 +1131,8 @@ export class PyProxyIteratorMethods {
     let idarg = Hiwire.new_value(arg);
     let status;
     let done;
-    let stackTop = Module.stackSave();
-    let res_ptr = Module.stackAlloc(4);
+    let stackTop = stackSave();
+    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
       status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
@@ -1139,7 +1143,7 @@ export class PyProxyIteratorMethods {
       Hiwire.decref(idarg);
     }
     let idresult = DEREF_U32(res_ptr, 0);
-    Module.stackRestore(stackTop);
+    stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
@@ -1180,8 +1184,8 @@ export class PyProxyGeneratorMethods {
     let idarg = Hiwire.new_value(exc);
     let status;
     let done;
-    let stackTop = Module.stackSave();
-    let res_ptr = Module.stackAlloc(4);
+    let stackTop = stackSave();
+    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
       status = Module.__pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
@@ -1192,7 +1196,7 @@ export class PyProxyGeneratorMethods {
       Hiwire.decref(idarg);
     }
     let idresult = DEREF_U32(res_ptr, 0);
-    Module.stackRestore(stackTop);
+    stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
@@ -1223,8 +1227,8 @@ export class PyProxyGeneratorMethods {
     let idarg = Hiwire.new_value(v);
     let status;
     let done;
-    let stackTop = Module.stackSave();
-    let res_ptr = Module.stackAlloc(4);
+    let stackTop = stackSave();
+    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
       status = Module.__pyproxyGen_return(_getPtr(this), idarg, res_ptr);
@@ -1235,7 +1239,7 @@ export class PyProxyGeneratorMethods {
       Hiwire.decref(idarg);
     }
     let idresult = DEREF_U32(res_ptr, 0);
-    Module.stackRestore(stackTop);
+    stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
@@ -1936,8 +1940,8 @@ export class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let orig_stack_ptr = Module.stackSave();
-    let buffer_struct_ptr = Module.stackAlloc(
+    let orig_stack_ptr = stackSave();
+    let buffer_struct_ptr = stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0),
     );
     let this_ptr = _getPtr(this);
@@ -1969,7 +1973,7 @@ export class PyProxyBufferMethods {
     let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
     let format = Module.UTF8ToString(format_ptr);
-    Module.stackRestore(orig_stack_ptr);
+    stackRestore(orig_stack_ptr);
 
     let success = false;
     try {

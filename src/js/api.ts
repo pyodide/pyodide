@@ -540,6 +540,8 @@ export const PyodideAPI = {
   setStderr,
 };
 
+API.public_api = PyodideAPI;
+
 /** @hidetype */
 export type PyodideInterface = typeof PyodideAPI;
 
