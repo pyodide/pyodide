@@ -211,11 +211,7 @@
 - test_dbm_ndbm:
     xfail: dbm
 - test_decimal:
-    xfail-chrome: times out
-    skip:
-      - test_context_subclassing # floating point
-      - test_none_args # Some context issue?
-      - test_threading
+    xfail: _pydecimal unvendored
 - test_decorators
 - test_defaultdict
 - test_deque
@@ -579,7 +575,8 @@
     skip:
       - test_stdin # fork
 - test_pyclbr
-# - test_pydoc  # unvendored
+- test_pydoc:
+    xfail: pydoc_data unvendored
 - test_pyexpat
 - test_queue:
     # More than half of these make a thread
