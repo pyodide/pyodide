@@ -28,10 +28,30 @@ myst:
   interface can be experimentally linked into other Emscripten builds of Python.
   {pr}`3335`
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.30
-  {pr}`3471`
+- {{ Enhancement }} Updated Emscripten to version 3.1.31
+  {pr}`3471`, {pr}`3517`
+
+- {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
+  `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
+  are using these libraries in a package that are built out-of-tree, you will
+  need to link them to the package manually.
+  {pr}`3505`
+
+- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now moved to
+  `test/ctypes` and `test/unittest` respectively. This change is adapted from
+  [CPython 3.12](https://github.com/python/cpython/issues/93839).
+  {pr}`3507`
+
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard library.
+  Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
+  {pr}`3525`
 
 ### Build System
+
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command
+  to fetch and build dependencies of a package being built.
+  Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
@@ -104,10 +124,6 @@ _January 25, 2023_
 _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
-
-- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
-  built. Also adds `--skip-dependency` to ignore selected dependencies.
-  {pr}`3310`
 
 ### Deployment and testing
 

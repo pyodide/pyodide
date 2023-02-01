@@ -211,11 +211,7 @@
 - test_dbm_ndbm:
     xfail: dbm
 - test_decimal:
-    xfail-chrome: times out
-    skip:
-      - test_context_subclassing # floating point
-      - test_none_args # Some context issue?
-      - test_threading
+    xfail: _pydecimal unvendored
 - test_decorators
 - test_defaultdict
 - test_deque
@@ -580,9 +576,7 @@
       - test_stdin # fork
 - test_pyclbr
 - test_pydoc:
-    skip:
-      - test_server # fork
-      - test_synopsis_sourceless # expects __pycache__
+    xfail: pydoc_data unvendored
 - test_pyexpat
 - test_queue:
     # More than half of these make a thread
@@ -606,7 +600,8 @@
     xfail: All tests fork
 - test_reprlib
 - test_resource
-- test_richcmp
+- test_richcmp:
+    xfail: Maximum call stack size exceeded
 - test_rlcompleter
 - test_robotparser:
     xfail: socket
