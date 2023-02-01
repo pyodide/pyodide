@@ -2260,6 +2260,6 @@ export class PyBufferView {
 /**
  * An alias for :js:class:`~pyodide.ffi.PyBufferView`.
  * @hidetype
- * @deprecated The plan is to eventually change this into an alias for :js:class:`PyProxyBuffer`.
+ * @deprecated The plan is to eventually change this into an alias for :js:class:`~pyodide.ffi.PyProxyBuffer`.
  */
 export const PyBuffer = PyBufferView;
