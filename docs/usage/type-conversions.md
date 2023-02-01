@@ -11,7 +11,7 @@ converting a Python string to the equivalent a JavaScript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a JavaScript object into
 Python, the result is a {py:class}`~pyodide.ffi.JsProxy` object. When we proxy a
-Python object into JavaScript, the result is a {any}`PyProxy` object. A proxied
+Python object into JavaScript, the result is a {js:class}`PyProxy` object. A proxied
 object can be explicitly converted using the explicit conversion methods
 {py:meth}`JsProxy.to_py <pyodide.ffi.JsProxy.to_py>` and
 {js:func}`PyProxy.toJs`.
@@ -22,7 +22,7 @@ Python to JavaScript translations occur:
 - when [importing Python objects into JavaScript](type-translations_using-py-obj-from-js)
 - when passing arguments to a JavaScript function called from Python,
 - when returning the results of a Python function called from JavaScript,
-- when accessing an attribute of a {any}`PyProxy`
+- when accessing an attribute of a {js:class}`PyProxy`
 
 JavaScript to Python translations occur:
 
@@ -35,7 +35,7 @@ JavaScript to Python translations occur:
 :class: warning
 
 Any time a Python to JavaScript translation occurs, it may create a
-{any}`PyProxy`. To avoid memory leaks, you must store the {any}`PyProxy` and
+{js:class}`PyProxy`. To avoid memory leaks, you must store the {js:class}`PyProxy` and
 {js:func}`~PyProxy.destroy` it when you are done with it. See
 {ref}`call-py-from-js` for more info.
 ```
@@ -120,8 +120,8 @@ language.
 
 ### Proxying from JavaScript into Python
 
-When most JavaScript objects are translated into Python a {any}`JsProxy <pyodide.ffi.JsProxy>` is
-returned. The following operations are currently supported on a {any}`JsProxy <pyodide.ffi.JsProxy>`:
+When most JavaScript objects are translated into Python a {py:class}`~pyodide.ffi.JsProxy` is
+returned. The following operations are currently supported on a {py:class}`~pyodide.ffi.JsProxy`:
 
 | Python                             | JavaScript                        |
 | ---------------------------------- | --------------------------------- |
@@ -189,11 +189,11 @@ JavaScript uses `array[7]`. For these cases, we translate:
 
 ### Proxying from Python into JavaScript
 
-When most Python objects are translated to JavaScript a {any}`PyProxy` is
+When most Python objects are translated to JavaScript a {js:class}`PyProxy` is
 produced.
 
 Fewer operations can be overloaded in JavaScript than in Python, so some
-operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy <pyodide.ffi.JsProxy>`. The
+operations are more cumbersome on a {js:class}`PyProxy` than on a {py:class}`~pyodide.ffi.JsProxy`. The
 following operations are supported:
 
 | JavaScript                          | Python              |
@@ -234,9 +234,9 @@ foo(); // throws Error: Object has already been destroyed
 
 ### Python to JavaScript
 
-Explicit conversion of a {any}`PyProxy` into a native JavaScript object is done
+Explicit conversion of a {js:class}`PyProxy` into a native JavaScript object is done
 with the {js:func}`PyProxy.toJs` method. You can also perform such a conversion in
-Python using {any}`to_js <pyodide.ffi.to_js>` which behaves in much the same way. By
+Python using {py:func}`~pyodide.ffi.to_js` which behaves in much the same way. By
 default, the {js:func}`~PyProxy.toJs` method does a recursive "deep" conversion, to do a shallow
 conversion use `proxy.toJs({depth : 1})`. In addition to [the normal type
 conversion](type-translations_py2js-table), {js:func}`~PyProxy.toJs` method performs the following
@@ -428,8 +428,8 @@ converted to Python and the converted value is used to resolve the
 Any PyProxies created in converting the arguments are also destroyed at this
 point.
 
-As a result of this, if a `PyProxy` is persisted to be used later, then it must
-either be copied using {any}`PyProxy.copy` in JavaScript, or it must be created
+As a result of this, if a {js:class}`PyProxy` is persisted to be used later, then it must
+either be copied using {js:meth}`PyProxy.copy` in JavaScript, or it must be created
 with {py:func}`~pyodide.ffi.create_proxy` or
 {py:func}`~pyodide.ffi.create_once_callable`. If it's only going to be called
 once use {py:func}`~pyodide.ffi.create_once_callable`:
@@ -576,7 +576,7 @@ to produce a traceback with certain functions filtered out), use that.
 
 ```{admonition} Be careful Proxying Stack Frames
 :class: warning
-If you make a {any}`PyProxy` of {py:data}`sys.last_value`, you should be especially
+If you make a {js:class}`PyProxy` of {py:data}`sys.last_value`, you should be especially
 careful to {js:meth}`~PyProxy.destroy` it when you are done with it, or
 you may leak a large amount of memory if you don't.
 ```
@@ -614,7 +614,7 @@ objects on the custom namespaces.
 ### Importing Python objects into JavaScript
 
 A Python global variable in the `__main__` global scope can be imported into
-JavaScript using the {any}`pyodide.globals.get <PyProxy.get>` method. Given the
+JavaScript using the {js:meth}`pyodide.globals.get <PyProxy.get>` method. Given the
 name of the Python global variable, it returns the value of the variable
 translated to JavaScript.
 
@@ -624,8 +624,8 @@ let x = pyodide.globals.get("x");
 
 As always, if the result is a `PyProxy` and you care about not leaking the
 Python object, you must destroy it when you are done. It's also possible to set
-values in the Python global scope with {any}`pyodide.globals.set <PyProxy.set>`
-or remove them with {any}`pyodide.globals.delete <PyProxy.delete>`:
+values in the Python global scope with {js:meth}`pyodide.globals.set <PyProxy.set>`
+or remove them with {js:meth}`pyodide.globals.delete <PyProxy.delete>`:
 
 ```pyodide
 pyodide.globals.set("x", 2);
@@ -641,7 +641,7 @@ pyodide.runPython("x=2", my_py_namespace);
 let x = my_py_namespace.get("x");
 ```
 
-To access a Python module from JavaScript, use {any}`pyodide.pyimport`:
+To access a Python module from JavaScript, use {js:func}`~pyodide.pyimport`:
 
 ```js
 let sys = pyodide.pyimport("sys");
@@ -673,7 +673,7 @@ console.log(window.x); // 2
 ```
 
 You can create your own custom JavaScript modules using
-{any}`pyodide.registerJsModule` and they will behave like the `js` module except
+{js:func}`pyodide.registerJsModule` and they will behave like the `js` module except
 with a custom scope:
 
 ```pyodide

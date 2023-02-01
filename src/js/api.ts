@@ -54,7 +54,7 @@ API.runPythonInternal = function (code: string): any {
 };
 
 /**
- * Runs a string of Python code from JavaScript, using :any:`pyodide.code.eval_code`
+ * Runs a string of Python code from JavaScript, using :py:func:`~pyodide.code.eval_code`
  * to evaluate the code. If the last statement in the Python code is an
  * expression (and the code doesn't end with a semicolon), the value of the
  * expression is returned.
@@ -62,9 +62,9 @@ API.runPythonInternal = function (code: string): any {
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
- *        Defaults to :any:`pyodide.globals`.
+ *        Defaults to :js:attr:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript. See the
- *          documentation for :any:`pyodide.code.eval_code` for more info.
+ *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
  */
 export function runPython(
   code: string,
@@ -94,7 +94,7 @@ let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
  * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param code The code to inspect.
- * @param options Options passed to :any:`pyodide.loadPackage`.
+ * @param options Options passed to :js:func:`pyodide.loadPackage`.
  * @param options.messageCallback A callback, called with progress messages
  *    (optional)
  * @param options.errorCallback A callback, called with error/warning messages
@@ -155,7 +155,7 @@ export async function loadPackagesFromImports(
 
 /**
  * Run a Python code string with top level await using
- * :any:`pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
+ * :py:func:`~pyodide.code.eval_code_async` to evaluate the code. Returns a promise which
  * resolves when execution completes. If the last statement in the Python code
  * is an expression (and the code doesn't end with a semicolon), the returned
  * promise will resolve to the value of this expression.
@@ -183,7 +183,7 @@ export async function loadPackagesFromImports(
  * @param code Python code to evaluate
  * @param options
  * @param options.globals An optional Python dictionary to use as the globals.
- * Defaults to :any:`pyodide.globals`.
+ * Defaults to :js:attr:`pyodide.globals`.
  * @returns The result of the Python code translated to JavaScript.
  * @async
  */
@@ -203,7 +203,7 @@ API.runPythonAsync = runPythonAsync;
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
- * module from :py:data:`sys.modules`. This calls the :any:`pyodide_py` API
+ * module from :py:data:`sys.modules`. This calls
  * :func:`~pyodide.ffi.register_js_module`.
  *
  * @param name Name of the JavaScript module to add
@@ -227,8 +227,8 @@ export function registerComlink(Comlink: any) {
  * :func:`~pyodide.ffi.register_js_module`. If a JavaScript module with that
  * name does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete the
- * imported module from :py:data:`sys.modules`. This calls the :any:`pyodide_py`
- * API :func:`~pyodide.ffi.unregister_js_module`.
+ * imported module from :py:data:`sys.modules`. This calls
+ * :func:`~pyodide.ffi.unregister_js_module`.
  *
  * @param name Name of the JavaScript module to remove
  */
@@ -239,8 +239,8 @@ export function unregisterJsModule(name: string) {
 /**
  * Convert a JavaScript object to a Python object as best as possible.
  *
- * This is similar to :any:`JsProxy.to_py` but for use from JavaScript. If the
- * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
+ * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from JavaScript. If the
+ * object is immutable or a :py:class:`~pyodide.PyProxy`, it will be returned unchanged. If
  * the object cannot be converted into Python, it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
@@ -261,7 +261,7 @@ export function toPy(
     depth: number;
     /**
      * Optional argument to convert objects with no default conversion. See the
-     * documentation of :any:`JsProxy.to_py`.
+     * documentation of :py:meth:`~pyodide.ffi.JsProxy.to_py`.
      */
     defaultConverter?: (
       value: any,
@@ -347,7 +347,7 @@ export function pyimport(mod_name: string): PyProxy {
  *
  * @param buffer The archive as an :js:class:`ArrayBuffer` or :js:class:`TypedArray`.
  * @param format The format of the archive. Should be one of the formats
- * recognized by :any:`shutil.unpack_archive`. By default the options are
+ * recognized by :py:func:`shutil.unpack_archive`. By default the options are
  * ``'bztar'``, ``'gztar'``, ``'tar'``, ``'zip'``, and ``'wheel'``. Several
  * synonyms are accepted for each format, e.g., for ``'gztar'`` any of
  * ``'.gztar'``, ``'.tar.gz'``, ``'.tgz'``, ``'tar.gz'`` or ``'tgz'`` are
@@ -384,18 +384,19 @@ export function unpackArchive(
   });
 }
 
-type NativeFS = {
-  syncfs: Function;
+/** @private */
+export type NativeFS = {
+  syncfs: () => Promise<void>;
 };
 
 /**
- * Mounts FileSystemDirectoryHandle in to the target directory.
+ * Mounts a ``FileSystemDirectoryHandle`` into the target directory.
  *
  * @param path The absolute path in the Emscripten file system to mount the
  * native directory. If the directory does not exist, it will be created. If it
  * does exist, it must be empty.
- * @param fileSystemHandle A handle returned by navigator.storage.getDirectory()
- * or window.showDirectoryPicker().
+ * @param fileSystemHandle A handle returned by ``navigator.storage.getDirectory()``
+ * or ``window.showDirectoryPicker()``.
  */
 export async function mountNativeFS(
   path: string,
@@ -449,10 +450,10 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  *
  * You can disable interrupts by calling ``setInterruptBuffer(undefined)``.
  *
- * If you wish to trigger a :any:`KeyboardInterrupt`, write ``SIGINT`` (a 2),
+ * If you wish to trigger a :py:exc:`KeyboardInterrupt`, write ``SIGINT`` (a 2)
  * into the interrupt buffer.
  *
- * By default ``SIGINT`` raises a :any:`KeyboardInterrupt` and all other signals
+ * By default ``SIGINT`` raises a :py:exc:`KeyboardInterrupt` and all other signals
  * are ignored. You can install custom signal handlers with the signal module.
  * Even signals that normally have special meaning and can't be overridden like
  * ``SIGKILL`` and ``SIGSEGV`` are ignored by default and can be used for any
@@ -464,11 +465,11 @@ export function setInterruptBuffer(interrupt_buffer: TypedArray) {
 }
 
 /**
- * Throws a :any:`KeyboardInterrupt` error if a :any:`KeyboardInterrupt` has
+ * Throws a :py:exc:`KeyboardInterrupt` error if a :py:exc:`KeyboardInterrupt` has
  * been requested via the interrupt buffer.
  *
  * This can be used to enable keyboard interrupts during execution of JavaScript
- * code, just as :any:`PyErr_CheckSignals` is used to enable keyboard interrupts
+ * code, just as :c:func:`PyErr_CheckSignals` is used to enable keyboard interrupts
  * during execution of C code.
  */
 export function checkInterrupt() {

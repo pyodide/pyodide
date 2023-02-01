@@ -562,7 +562,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
-    A simple event loop policy for managing :any:`WebLoop`-based event loops.
+    A simple event loop policy for managing :py:class:`WebLoop`-based event loops.
     """
 
     def __init__(self):
