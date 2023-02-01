@@ -16,7 +16,7 @@ such as `https://cdn.jsdelivr.net/pyodide`. This is the solution
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
-{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
+{js:func}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
 and attach listeners to it using its `.onerror` and `.onmessage`
@@ -96,7 +96,7 @@ two things:
 
 These are the required tasks it should fulfill, but it can do other things. For
 example, to always load packages `numpy` and `pytz`, you would insert the line
-{any}`await pyodide.loadPackage(['numpy', 'pytz']); <pyodide.loadPackage>` as
+{js:func}`await pyodide.loadPackage(['numpy', 'pytz']); <pyodide.loadPackage>` as
 shown below:
 
 ```js

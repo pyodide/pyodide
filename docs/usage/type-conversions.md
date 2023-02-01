@@ -145,7 +145,7 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | `await proxy`                      | `await x`                         |
 
 Note that each of these operations is only supported if the proxied JavaScript
-object supports the corresponding operation. See {any}`the JsProxy API docs <pyodide.ffi.JsProxy>` for the rest of the methods supported on {any}`JsProxy <pyodide.ffi.JsProxy>`. Some other
+object supports the corresponding operation. See {py:class}`the JsProxy API docs <pyodide.ffi.JsProxy>` for the rest of the methods supported on {py:class}`~pyodide.ffi.JsProxy`. Some other
 code snippets:
 
 ```py

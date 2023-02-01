@@ -39,7 +39,7 @@ The version of the package.
 ### `package/top-level`
 
 The list of top-level import name for the package.
-This key is used in {any}`pyodide.loadPackagesFromImports`.
+This key is used in {js:func}`pyodide.loadPackagesFromImports`.
 For example, the top-level import name for the `scikit-learn` is `sklearn`.
 Some packages may have multiple top-level import names.
 For instance, `setuptools` exposes `setuptools` and `pkg_resources`
