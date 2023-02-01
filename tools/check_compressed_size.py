@@ -37,7 +37,7 @@ def check_size(file: str | Path) -> None:
 
     if brotli:
         compress_data_brotli = brotli.compress(data)
-        print(f"    Brotli compressed size: {len(compress_data_brotli)} KB")
+        print(f"    Brotli compressed size: {kb(len(compress_data_brotli))} KB")
 
 
 def main():
