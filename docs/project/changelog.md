@@ -42,7 +42,16 @@ myst:
   [CPython 3.12](https://github.com/python/cpython/issues/93839).
   {pr}`3507`
 
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard library.
+  Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
+  {pr}`3525`
+
 ### Build System
+
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command
+  to fetch and build dependencies of a package being built.
+  Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
@@ -115,10 +124,6 @@ _January 25, 2023_
 _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
-
-- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
-  built. Also adds `--skip-dependency` to ignore selected dependencies.
-  {pr}`3310`
 
 ### Deployment and testing
 

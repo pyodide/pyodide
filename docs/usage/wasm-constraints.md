@@ -32,6 +32,17 @@ Instead, it is better to load individual modules as needed using
   you need to call `pyodide.loadPackage('hashlib')` or `micropip.install('hashlib')`
   **before** importing hashlib.
 
+- decimal: The decimal module has C (\_decimal) and Python (\_pydecimal) implementations
+  with the same functionality. The Python implementation is not available by default.
+  If you need a Python implementation of decimal, you need to call
+  `pyodide.loadPackage('pydecimal')` or `micropip.install('pydecimal')`,
+  then explicitly import `_pydecimal`.
+
+- pydoc: Help messages for Python builtins are not available by default
+  in order to reduce the initial download size. You need to call
+  `pyodide.loadPackage('pydoc_data')` or `micropip.install('pydoc_data')`
+  to enable them.
+
 ### Removed modules
 
 The following modules are removed from the standard library to reduce download size and
