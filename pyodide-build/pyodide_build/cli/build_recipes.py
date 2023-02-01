@@ -6,6 +6,12 @@ from .. import buildall, common, pywasmcross
 from ..out_of_tree.utils import initialize_pyodide_root
 
 
+def _get_num_cores() -> int:
+    import multiprocessing
+
+    return multiprocessing.cpu_count()
+
+
 def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
@@ -47,7 +53,10 @@ def recipe(
         False,
         help="Force rebuild of all packages regardless of whether they appear to have been updated",
     ),
-    n_jobs: int = typer.Option(4, help="Number of packages to build in parallel"),
+    n_jobs: int = typer.Option(
+        None,
+        help="Number of packages to build in parallel  (default: # of cores in the system)",
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
@@ -60,6 +69,7 @@ def recipe(
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
     install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
     log_dir_ = None if not log_dir else Path(log_dir).resolve()
+    n_jobs = n_jobs or _get_num_cores()
 
     build_args = pywasmcross.BuildArgs(
         pkgname="",
