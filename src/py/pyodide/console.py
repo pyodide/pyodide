@@ -154,7 +154,7 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
-    """A future with extra fields used as the return value for :py:class:`Console` apis."""
+    """A future with extra fields used as the return value for :any:`Console` apis."""
 
     syntax_check: ConsoleFutureStatus
     """
@@ -195,7 +195,7 @@ class Console:
     asynchronous execution of the code.
 
     The stream callbacks can be modified directly by assigning to
-    :py:attr:`~Console.stdin_callback` (for example) as long as
+    :any:`Console.stdin_callback` (for example) as long as
     ``persistent_stream_redirection`` is ``False``.
 
     Parameters
@@ -207,20 +207,20 @@ class Console:
 
     stdin_callback :
 
-        Function to call at each read from :py:data:`sys.stdin`. Defaults to :py:data:`None`.
+        Function to call at each read from :any:`sys.stdin`. Defaults to :any:`None`.
 
     stdout_callback :
 
-        Function to call at each write to :py:data:`sys.stdout`. Defaults to :py:data:`None`.
+        Function to call at each write to :any:`sys.stdout`. Defaults to :any:`None`.
 
     stderr_callback :
 
-        Function to call at each write to :py:data:`sys.stderr`. Defaults to :py:data:`None`.
+        Function to call at each write to :any:`sys.stderr`. Defaults to :any:`None`.
 
     persistent_stream_redirection :
 
         Should redirection of standard streams be kept between calls to
-        :py:meth:`~Console.runcode`? Defaults to :py:data:`False`.
+        :py:meth:`~Console.runcode`? Defaults to :any:`False`.
 
     filename :
 
@@ -231,19 +231,19 @@ class Console:
     """The namespace used as the globals"""
 
     stdin_callback: Callable[[int], str] | None
-    """The function to call at each read from :py:data:`sys.stdin`"""
+    """The function to call at each read from :any:`sys.stdin`"""
 
     stdout_callback: Callable[[str], None] | None
-    """Function to call at each write to :py:data:`sys.stdout`."""
+    """Function to call at each write to :any:`sys.stdout`."""
 
     stderr_callback: Callable[[str], None] | None
-    """Function to call at each write to :py:data:`sys.stderr`."""
+    """Function to call at each write to :any:`sys.stderr`."""
 
     buffer: list[str]
-    """The list of strings that have been :py:meth:`pushed <Console.push>` to the console."""
+    """The list of strings that have been :any:`pushed <Console.push>` to the console."""
 
     completer_word_break_characters: str
-    """The set of characters considered by :py:meth:`complete <Console.complete>` to be word breaks."""
+    """The set of characters considered by :any:`complete <Console.complete>` to be word breaks."""
 
     def __init__(
         self,
@@ -447,9 +447,9 @@ class Console:
 
         Returns
         -------
-        completions : :py:class:`list`\[:py:class:`str`]
+        completions : :any:`list`\[:any:`str`]
             A list of completion strings.
-        start : :py:class:`int`
+        start : :any:`int`
             The index where completion starts.
 
         Examples
@@ -470,7 +470,7 @@ class Console:
 
 
 class PyodideConsole(Console):
-    """A subclass of :py:class:`Console` that uses :js:func:`pyodide.loadPackagesFromImports` before running the code."""
+    """A subclass of :any:`Console` that uses :any:`pyodide.loadPackagesFromImports` before running the code."""
 
     async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
         """Execute a code object.
@@ -480,7 +480,7 @@ class PyodideConsole(Console):
             The return value is a dependent sum type with the following possibilities:
             * `("success", result : Any)` -- the code executed successfully
             * `("exception", message : str)` -- An exception occurred. `message` is the
-            result of calling :py:meth:`Console.formattraceback`.
+            result of calling :any:`Console.formattraceback`.
         """
         from pyodide_js import loadPackagesFromImports
 

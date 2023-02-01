@@ -77,7 +77,6 @@ DATA = {
         "TypedArray.BYTES_PER_ELEMENT": "$global/",
     },
     "js:attribute": {
-        "TypedArray.byteLength": "$global/",
         "Response.type": "API/",
         "Response.url": "API/",
         "Response.statusText": "API/",
