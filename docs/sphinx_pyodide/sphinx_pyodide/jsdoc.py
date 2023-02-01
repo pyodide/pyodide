@@ -382,27 +382,6 @@ class JSFuncMaybeAsync(JSCallable):
         return []
 
 
-def _template_vars(self, name, obj):
-    for x in commentdict[str(obj.path)].get("tags", []):
-        if x["tag"] == "deprecated":
-            obj.deprecated = x["text"]
-    result = dict(
-        name=name,
-        params=self._formal_params(obj),
-        fields=self._fields(obj),
-        description=obj.description,
-        examples=obj.examples,
-        deprecated=obj.deprecated,
-        is_optional=obj.is_optional,
-        is_static=obj.is_static,
-        see_also=obj.see_alsos,
-        content="\n".join(self._content),
-    )
-    return result
-
-
-AutoFunctionRenderer._template_vars = _template_vars
-
 JavaScriptDomain.directives["function"] = JSFuncMaybeAsync
 
 
