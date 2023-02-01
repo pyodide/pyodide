@@ -233,9 +233,8 @@ _January 3, 2023_
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Added a new API `pyodide.mountNativeFS`
-  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
-  into the Pyodide file system.
+- {{ Enhancement }} Added a new API `pyodide.mountNativeFS` which mounts a
+  {js:class}`FileSystemDirectoryHandle` into the Pyodide file system.
   {pr}`2987`
 
 - {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will

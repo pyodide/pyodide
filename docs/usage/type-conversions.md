@@ -417,12 +417,12 @@ PyProxies that were created in the process of argument conversion are also
 destroyed. If the `PyProxy` was created in Python using
 {py:func}`~pyodide.ffi.create_proxy` it is not destroyed.
 
-When a JavaScript function returns a {js:data}`Promise` (for example, if the
-function is an `async` function), it is assumed that the {js:data}`Promise` is
+When a JavaScript function returns a {js:class}`Promise` (for example, if the
+function is an `async` function), it is assumed that the {js:class}`Promise` is
 going to do some work that uses the arguments of the function, so it is not safe
-to destroy them until the {js:data}`Promise` resolves. In this case, the proxied
+to destroy them until the {js:class}`Promise` resolves. In this case, the proxied
 function returns a Python {py:class}`~asyncio.Future` instead of the original
-{js:data}`Promise`. When the {js:data}`Promise` resolves, the result is
+{js:class}`Promise`. When the {js:class}`Promise` resolves, the result is
 converted to Python and the converted value is used to resolve the
 {py:class}`~asyncio.Future`. Then if the result is a `PyProxy` it is destroyed.
 Any PyProxies created in converting the arguments are also destroyed at this

@@ -266,9 +266,7 @@ class JsDoubleProxy(JsProxy):
 
 
 class JsPromise(JsProxy):
-    """A :py:class:`~pyodide.ffi.JsProxy` of a :js:class:`Promise`
-
-    Or of some other `thenable
+    """A :py:class:`~pyodide.ffi.JsProxy` of a :js:class:`Promise` or some other `thenable
     <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables>`_
     JavaScript object.
 
@@ -1015,10 +1013,10 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
 def create_proxy(
     obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
 ) -> JsDoubleProxy:
-    """Create a :py:class:`JsProxy` of a :js:class:`~pyodide.PyProxy`.
+    """Create a :py:class:`JsProxy` of a :js:class:`PyProxy`.
 
     This allows explicit control over the lifetime of the
-    :js:class:`~pyodide.PyProxy` from Python: call the
+    :js:class:`PyProxy` from Python: call the
     :py:meth:`~JsDoubleProxy.destroy` API when done.
 
     Parameters
@@ -1119,10 +1117,10 @@ def to_js(
 ) -> Any:
     """Convert the object to JavaScript.
 
-    This is similar to :js:meth:`~pyodide.PyProxy.toJs`, but for use from Python. If the
+    This is similar to :js:meth:`PyProxy.toJs`, but for use from Python. If the
     object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this method
-    will return a :py:class:`JsProxy` of a :js:class:`~pyodide.PyProxy`, as if you had used
+    will return a :py:class:`JsProxy` of a :js:class:`PyProxy`, as if you had used
     :func:`~pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
@@ -1233,7 +1231,7 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JavaScript Array of PyProxies. Intended for use
-    with the arrays created from the "pyproxies" argument of :js:meth:`~pyodide.PyProxy.toJs`
+    with the arrays created from the "pyproxies" argument of :js:meth:`PyProxy.toJs`
     and :py:func:`to_js`. This method is necessary because indexing the Array from
     Python automatically unwraps the PyProxy into the wrapped Python object.
     """

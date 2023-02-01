@@ -240,7 +240,7 @@ export function unregisterJsModule(name: string) {
  * Convert a JavaScript object to a Python object as best as possible.
  *
  * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from JavaScript. If the
- * object is immutable or a :py:class:`~pyodide.PyProxy`, it will be returned unchanged. If
+ * object is immutable or a :py:class:`PyProxy`, it will be returned unchanged. If
  * the object cannot be converted into Python, it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
@@ -390,7 +390,7 @@ export type NativeFS = {
 };
 
 /**
- * Mounts a ``FileSystemDirectoryHandle`` into the target directory.
+ * Mounts a :js:class:`FileSystemDirectoryHandle` into the target directory.
  *
  * @param path The absolute path in the Emscripten file system to mount the
  * native directory. If the directory does not exist, it will be created. If it

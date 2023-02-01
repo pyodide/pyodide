@@ -52,7 +52,7 @@ as a top-level import names.
 The URL of the source tarball.
 
 The tarball may be in any of the formats supported by Python's
-`shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
+{py:func}`shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
 ### `source/extract_dir`
 

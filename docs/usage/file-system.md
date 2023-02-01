@@ -76,8 +76,7 @@ The File System Access API is only supported in Chromium based browsers: Chrome 
 ## Mounting a directory
 
 Pyodide provides an API {js:func}`pyodide.mountNativeFS` which mounts a
-[`FileSystemDirectoryHandle`](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
-into the Pyodide Python file system.
+{js:class}`FileSystemDirectoryHandle` into the Pyodide Python file system.
 
 ```js
 const dirHandle = await showDirectoryPicker();

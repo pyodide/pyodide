@@ -240,10 +240,14 @@ class Console:
     """Function to call at each write to :py:data:`sys.stderr`."""
 
     buffer: list[str]
-    """The list of strings that have been :py:meth:`pushed <Console.push>` to the console."""
+    """The list of lines of code that have been the argument to
+    :py:meth:`~Console.push`.
+
+    This is emptied whenever the code is executed.
+    """
 
     completer_word_break_characters: str
-    """The set of characters considered by :py:meth:`complete <Console.complete>` to be word breaks."""
+    """The set of characters considered by :py:meth:`~Console.complete` to be word breaks."""
 
     def __init__(
         self,
