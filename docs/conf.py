@@ -327,6 +327,7 @@ def setup(app):
     app.add_config_value("CDN_URL", "", True)
     app.connect("source-read", global_replace)
 
+    calculate_pyodide_version(app)
     apply_patches()
     ensure_typedoc_on_path()
     create_generated_typescript_files(app)
