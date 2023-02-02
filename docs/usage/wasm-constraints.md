@@ -16,7 +16,7 @@ You can load all unvendored stdlib modules
 when initializing Pyodide with, `loadPyodide({ fullStdLib : true })`.
 However this has a significant impact on the download size.
 Instead, it is better to load individual modules as needed using
-{any}`pyodide.loadPackage` or {any}`micropip.install`.
+{js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
 - distutils
 - ssl
