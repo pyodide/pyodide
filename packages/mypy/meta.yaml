@@ -1,0 +1,18 @@
+package:
+  name: mypy
+  version: "0.991"
+  top-level:
+    - mypyc
+    - mypy
+source:
+  url: https://files.pythonhosted.org/packages/0e/5c/fbe112ca73d4c6a9e65336f48099c60800514d8949b4129c093a84a28dc8/mypy-0.991.tar.gz
+  sha256: 3c0165ba8f354a6d9881809ef29f1a9318a236a6d81c690094c5df32107bde06
+build:
+  script: |
+    export MYPY_USE_MYPYC=1
+    export MYPYC_OPT_LEVEL=3
+about:
+  home: http://www.mypy-lang.org/
+  PyPI: https://pypi.org/project/mypy
+  summary: Optional static typing for Python
+  license: MIT License

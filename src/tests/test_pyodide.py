@@ -55,6 +55,10 @@ def test_find_imports():
     assert res == []
 
 
+def test_ffi_import_star():
+    exec("from pyodide.ffi import *", {})
+
+
 def test_pyimport(selenium):
     selenium.run_js(
         """
@@ -433,7 +437,10 @@ def test_check_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import test;
-                test();
+                try:
+                    test();
+                finally:
+                    del test
             `);
         } catch(e){
             err = e;
@@ -837,6 +844,29 @@ def test_fatal_error(selenium_standalone):
         assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+def test_exit_error(selenium_standalone):
+    x = selenium_standalone.run_js(
+        """
+        try {
+            pyodide.runPython(`
+                import os
+                def f():
+                    g()
+                def g():
+                    h()
+                def h():
+                    os._exit(0)
+                f()
+            `);
+        } catch(e){
+            return e.toString();
+        }
+        """
+    )
+    assert x == "Exit: Program terminated with exit(0)"
 
 
 def test_reentrant_error(selenium):
@@ -1337,7 +1367,7 @@ def test_pickle_jsexception(selenium):
 
 
 def test_raises_jsexception(selenium):
-    from pytest_pyodide.pyodide import JsException
+    from pyodide.ffi import JsException
 
     @run_in_pyodide
     def raise_jsexception(selenium):
@@ -1423,6 +1453,14 @@ def test_module_not_found_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
+
+    # liblzma and openssl are libraries not python packages, so it should just fail.
+    for pkg in ["liblzma", "openssl"]:
+        with pytest.raises(ModuleNotFoundError, match="No module named"):
+            importlib.import_module(pkg)
+
+    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+        importlib.import_module("_hashlib")
 
 
 def test_args(selenium_standalone_noload):

@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20230110-chrome108-firefox107
+    - image: pyodide/pyodide-env:20230126-chrome109-firefox109-py311
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -69,7 +69,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            PYODIDE_PACKAGES="core" make
+            PYODIDE_PACKAGES="tag:core" make
             ccache -s
 
       - run:
@@ -293,12 +293,12 @@ jobs:
           command: |
             curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
             bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
-            ~/miniforge3/bin/conda create -n pyodide python=3.10 -y
+            ~/miniforge3/bin/conda create -n pyodide python=3.11 -y
       - run:
           name: install dependencies
           command: |
             export PATH="$HOME/miniforge3/bin:$PATH"
-            conda create -n pyodide python=3.10 -y
+            conda create -n pyodide python=3.11 -y
             source activate pyodide
             python -m pip install -r requirements.txt
             pip install -e ./pyodide-build
@@ -334,7 +334,7 @@ jobs:
             make npm-link
             pip install -r requirements.txt
             npm install -g node-fetch@2
-            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
+            pytest -s benchmark/stack_usage.py --rt node chrome firefox | sed -n 's/## //pg'
 
   test-js:
     <<: *defaults
@@ -382,7 +382,7 @@ jobs:
             git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
             git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
 
-            python3.10 -m venv .venv-host
+            python -m venv .venv-host
             source .venv-host/bin/activate
             pip install $PYODIDE_ROOT/pyodide-build
             pyodide venv .venv-pyodide

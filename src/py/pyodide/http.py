@@ -2,8 +2,8 @@ import json
 from io import StringIO
 from typing import IO, Any
 
-from ._core import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 from ._package_loader import unpack_buffer
+from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
     from js import Object
@@ -47,18 +47,14 @@ def open_url(url: str) -> StringIO:
 
 
 class FetchResponse:
-    """A wrapper for a Javascript fetch response.
-
-    See also the Javascript fetch
-    `Response <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ api
-    docs.
+    """A wrapper for a Javascript fetch :js:data:`Response`.
 
     Parameters
     ----------
     url
         URL to fetch
     js_response
-        A :any:`JsProxy` of the fetch response
+        A :py:class:`~pyodide.ffi.JsProxy` of the fetch response
     """
 
     def __init__(self, url: str, js_response: JsFetchResponse):
@@ -69,35 +65,49 @@ class FetchResponse:
     def body_used(self) -> bool:
         """Has the response been used yet?
 
-        (If so, attempting to retrieve the body again will raise an :any:`OSError`.)
+        If so, attempting to retrieve the body again will raise an
+        :py:exc:`OSError`. Use :py:meth:`~FetchResponse.clone` first to avoid this.
+        See :js:attr:`Response.bodyUsed`.
         """
         return self.js_response.bodyUsed
 
     @property
     def ok(self) -> bool:
-        """Was the request successful?"""
+        """Was the request successful?
+
+        See :js:attr:`Response.ok`.
+        """
         return self.js_response.ok
 
     @property
     def redirected(self) -> bool:
-        """Was the request redirected?"""
+        """Was the request redirected?
+
+        See :js:attr:`Response.redirected`.
+        """
         return self.js_response.redirected
 
     @property
     def status(self) -> int:
-        """Response status code"""
+        """Response status code
+
+        See :js:attr:`Response.status`.
+        """
         return self.js_response.status
 
     @property
     def status_text(self) -> str:
-        """Response status text"""
+        """Response status text
+
+        See :js:attr:`Response.statusText`.
+        """
         return self.js_response.statusText
 
     @property
     def type(self) -> str:
         """The type of the response.
 
-        See the MDN docs for `Response.type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>`_.
+        See :js:attr:`Response.type`.
         """
         return self.js_response.type
 
@@ -105,8 +115,8 @@ class FetchResponse:
     def url(self) -> str:
         """The url of the response.
 
-        See the MDN docs for `Response.url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>`_.
         The value may be different than the url passed to fetch.
+        See :js:attr:`Response.url`.
         """
         return self.js_response.url
 
@@ -119,19 +129,20 @@ class FetchResponse:
             raise OSError("Response body is already used")
 
     def clone(self) -> "FetchResponse":
-        """Return an identical copy of the :any:`FetchResponse`.
+        """Return an identical copy of the :py:class:`FetchResponse`.
 
-        This method exists to allow multiple uses of :any:`FetchResponse`
-        objects. It wraps `Response.clone
-        <https://developer.mozilla.org/en-US/docs/Web/API/Response/clone>`_
+        This method exists to allow multiple uses of :py:class:`FetchResponse`
+        objects. See :js:meth:`Response.clone`.
         """
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
         return FetchResponse(self._url, self.js_response.clone())
 
     async def buffer(self) -> JsBuffer:
-        """Return the response body as a Javascript `ArrayBuffer
-        <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer>`_."""
+        """Return the response body as a Javascript :js:class:`ArrayBuffer`.
+
+        See :js:meth:`Response.arrayBuffer`.
+        """
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
@@ -150,7 +161,7 @@ class FetchResponse:
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
-        """Return the response body as a :any:`memoryview` object"""
+        """Return the response body as a :py:class:`memoryview` object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
@@ -195,9 +206,9 @@ class FetchResponse:
     ) -> None:
         """Treat the data as an archive and unpack it into target directory.
 
-        Assumes that the file is an archive in a format that :any:`shutil` has
+        Assumes that the file is an archive in a format that :py:mod:`shutil` has
         an unpacker for. The arguments ``extract_dir`` and ``format`` are passed
-        directly on to :any:`shutil.unpack_archive`.
+        directly on to :py:func:`shutil.unpack_archive`.
 
         Parameters
         ----------
@@ -211,7 +222,7 @@ class FetchResponse:
             :py:func:`shutil.register_unpack_format`. If not provided,
             :py:meth:`unpack_archive` will use the archive file name extension and
             see if an unpacker was registered for that extension. In case none
-            is found, a :any:`ValueError` is raised.
+            is found, a :py:exc:`ValueError` is raised.
         """
         buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]
@@ -221,8 +232,7 @@ class FetchResponse:
 async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     r"""Fetch the url and return the response.
 
-    This functions provides a similar API to the JavaScript `fetch function
-    <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
+    This functions provides a similar API to :js:func:`fetch` however it is
     designed to be convenient to use from Python. The
     :class:`~pyodide.http.FetchResponse` has methods with the output types
     already converted to Python objects.
@@ -234,11 +244,11 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
 
     \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
-        <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
+        <https://developer.mozilla.org/en-US/docs/Web/API/fetch#options>`_.
     """
     try:
         return FetchResponse(
             url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
         )
     except JsException as e:
-        raise OSError(e.js_error.message) from None
+        raise OSError(e.message) from None

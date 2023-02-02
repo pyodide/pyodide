@@ -1,6 +1,9 @@
 package:
   name: pytest
   version: 7.2.0
+  tag:
+    - core
+    - min-scipy-stack
   top-level:
     - _pytest
     - pytest

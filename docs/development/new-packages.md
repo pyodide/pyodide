@@ -83,6 +83,7 @@ If you want to build the package, you will need to build Python which you can do
 as follows:
 
 ```bash
+make -C emsdk
 make -C cpython
 ```
 
@@ -293,7 +294,7 @@ build. We automate the following steps:
 - Repack the wheel with `python -m wheel pack`
 
 Lastly, a `repodata.json` file is created containing the dependency tree of all
-packages, so {any}`pyodide.loadPackage` can load a package's dependencies
+packages, so {js:func}`pyodide.loadPackage` can load a package's dependencies
 automatically.
 
 ### Partial Rebuilds

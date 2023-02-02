@@ -1,5 +1,5 @@
-export PYVERSION ?= 3.10.2
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.29
+export PYVERSION ?= 3.11.1
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.31
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -103,6 +103,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+	-sEXPORTED_RUNTIME_METHODS='stackAlloc,stackRestore,stackSave' \
 	-s DEMANGLE_SUPPORT=1 \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
@@ -113,6 +114,8 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s POLYFILL \
 	-s MIN_SAFARI_VERSION=140000 \
 	-s STACK_SIZE=5MB \
+	-s AUTO_JS_LIBRARIES=0 \
+	-s AUTO_NATIVE_LIBRARIES=0 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
@@ -130,10 +133,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--exclude-file "*__pycache__*" \
 	--exclude-file "*/test/*" \
 	--exclude-file "*/tests/*" \
-	--exclude-file "*/distutils/*" \
-	--pre-js src/core/pre.js \
-	--pre-js src/js/_pyodide.out.js \
-	--post-js src/core/post.js
+	--exclude-file "*/distutils/*"
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

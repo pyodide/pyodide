@@ -45,20 +45,6 @@ JsBuffer_CloneIntoPython(JsRef jsbuffer,
                          char* format,
                          Py_ssize_t itemsize);
 
-/** Check if a Python object is a JsException object.
- *  \param x The Python object
- *  \return 1 if the object is a JsException object.
- */
-bool
-JsException_Check(PyObject* x);
-
-/** Grab the underlying JavaScript error from the JsException object.
- *  \param x The JsProxy object.  Must confirm that it is a JsException object
- * using JsProxy_Check. \return The JavaScript object.
- */
-JsRef
-JsException_AsJs(PyObject* x);
-
 /** Initialize global state for the JsProxy functionality. */
 int
 JsProxy_init(PyObject* core_module);

@@ -69,13 +69,12 @@ def test_build_recipe(selenium, tmp_path, monkeypatch, request):
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
     pkgs = {
+        "pkg_test_tag_always": {},
         "pkg_test_graph1": {"pkg_test_graph2"},
         "pkg_test_graph3": {},
     }
 
     pkgs_to_build = pkgs.keys() | {p for v in pkgs.values() for p in v}
-
-    monkeypatch.setattr(common, "ALWAYS_PACKAGES", {})
 
     for build_dir in recipe_dir.rglob("build"):
         shutil.rmtree(build_dir)
@@ -158,3 +157,30 @@ def test_create_zipfile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.py" in zf.namelist()
         assert "module2.py" in zf.namelist()
+
+
+def test_create_zipfile_compile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+            "--pycompile",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.pyc" in zf.namelist()
+        assert "module2.pyc" in zf.namelist()

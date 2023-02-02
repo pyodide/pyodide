@@ -15,12 +15,58 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
+  thrown as Python exceptions. Previously Pyodide automatically wrapped them in
+  a `JsException` but that is no longer needed -- now `JsException` inherits
+  from both `JsProxy` and `Exception`.
+  {pr}`3455`
+
+- {{ Update }} Pyodide now runs Python 3.11.1.
+  {pr}`3252`
+
+- {{ Update }} We now build libpyodide.a so the Pyodide foreign function
+  interface can be experimentally linked into other Emscripten builds of Python.
+  {pr}`3335`
+
+- {{ Enhancement }} Updated Emscripten to version 3.1.31
+  {pr}`3471`, {pr}`3517`
+
+- {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
+  `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
+  are using these libraries in a package that are built out-of-tree, you will
+  need to link them to the package manually.
+  {pr}`3505`
+
+- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now moved to
+  `test/ctypes` and `test/unittest` respectively. This change is adapted from
+  [CPython 3.12](https://github.com/python/cpython/issues/93839).
+  {pr}`3507`
+
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard library.
+  Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
+  {pr}`3525`
+
 ### Build System
+
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command
+  to fetch and build dependencies of a package being built.
+  Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
 
 - {{ Enhancement}} Added `pyodide-build` support for building a list of packages from a requirements.txt file. Also can output a list of chosen dependencies in the same format when building a package and dependencies using the `--output-lockfile` argument. This enables repeatable builds of packages. {pr}`3469`
+
+- {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
+  packages.
+  {pr}`3444`
+
+- {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
+  you must prefix `tag:` to the meta-package name. For example, to build the
+  `core` meta-package, you must run `pyodide build-recipes tag:core`, or
+  `PYODIDE_PACKAGES="tag:core" make`.
+  {pr}`3444`
 
 ### Pyodide CLI
 
@@ -30,21 +76,56 @@ myst:
 
 - Added `pyodide create-zipfile` CLI command that creates a zip file of a directory.
   This command is hidden by default since it is not intended for use by end users.
-  {pr}`3411`
+  {pr}`3411` {pr}`3463`
+
+## Version 0.22.1
+
+_January 25, 2023_
+
+- {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
+  it will insert an EOF automatically after each string or buffer. Defaults to
+  `true`. This also affects the behavior of `
+{pr}`3488`
+
+- {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
+  {pr}`3484`
+
+- {{ Enhancement }} Pyodide displays a better message when someone calls posix
+  `exit` or `os._exit`.
+  {pr}`3496`
+
+### Package Loading
+
+- {{ Fix }} Fix incorrect error message when loading a package
+  include in Pyodide fails.
+  {pr}`3435`
+
+### Build system
+
+- {{ Fix }} Emscripten is no longer required to create a Pyodide virtual
+  environment.
+  {pr}`3485`
 
 - {{ Fix }} Fixed a bug where `pyodide build` would fail on package that use CMake,
   when run multiple times.
   {pr}`3445`
+
+- {{ Fix }} pyodide build: Don't pass the directory to the build backend args,
+  only pass the arguments.
+  {pr}`3490`
+
+- {{ Fix }} `pyodide config` won't print extra messages anymore.
+  {pr}`3483`
+
+- {{ Fix }} Pass the same environment variables for out of tree builds as for in
+  tree builds.
+  {pr}`3495`
 
 ## Version 0.22.0
 
 _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
-
-- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
-  built. Also adds `--skip-dependency` to ignore selected dependencies.
-  {pr}`3310`
 
 ### Deployment and testing
 
@@ -180,9 +261,8 @@ _January 3, 2023_
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Added a new API `pyodide.mountNativeFS`
-  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
-  into the Pyodide file system.
+- {{ Enhancement }} Added a new API `pyodide.mountNativeFS` which mounts a
+  {js:class}`FileSystemDirectoryHandle` into the Pyodide file system.
   {pr}`2987`
 
 - {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
@@ -1463,7 +1543,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a JavaScript `Promise`.
   {pr}`1324`
 - {{ Fix }} `micropip.install` now interacts correctly with
-  {any}`pyodide.loadPackage`.
+  {js:func}`pyodide.loadPackage`.
   {pr}`1457`
 - {{ Fix }} `micropip.install` now handles version constraints correctly
   even if there is a version of the package available from the Pyodide `indexURL`.

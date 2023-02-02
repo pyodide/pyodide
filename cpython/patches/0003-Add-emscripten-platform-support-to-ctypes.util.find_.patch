@@ -1,7 +1,7 @@
 From bb33672157df771613c9d6c61756c5294f13333d Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 2 Dec 2022 11:36:44 +0000
-Subject: [PATCH 15/15] Add emscripten platform support to
+Subject: [PATCH 3/8] Add emscripten platform support to
  ctypes.util.find_library
 
 ---

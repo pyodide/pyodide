@@ -13,12 +13,16 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, NoReturn
 
-import tomli
+if sys.version_info < (3, 11, 0):
+    import tomli as tomllib
+else:
+    import tomllib
+
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
-from .io import MetaConfig
 from .logger import logger
+from .recipe import load_all_recipes
 
 BUILD_VARS: set[str] = {
     "PATH",
@@ -180,83 +184,6 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     return top_level_imports
 
 
-ALWAYS_PACKAGES = {
-    "pyparsing",
-    "packaging",
-    "micropip",
-    "distutils",
-    "test",
-    "ssl",
-    "lzma",
-    "sqlite3",
-    "hashlib",
-}
-
-CORE_PACKAGES = {
-    "micropip",
-    "pyparsing",
-    "pytz",
-    "packaging",
-    "Jinja2",
-    "regex",
-    "fpcast-test",
-    "sharedlib-test-py",
-    "cpp-exceptions-test",
-    "pytest",
-    "tblib",
-}
-
-CORE_SCIPY_PACKAGES = {
-    "numpy",
-    "scipy",
-    "pandas",
-    "matplotlib",
-    "scikit-learn",
-    "joblib",
-    "pytest",
-}
-
-
-def _parse_package_subset(query: str | None) -> set[str]:
-    """Parse the list of packages specified with PYODIDE_PACKAGES env var.
-
-    Also add the list of mandatory packages: ["pyparsing", "packaging",
-    "micropip"]
-
-    Supports following meta-packages,
-     - 'core': corresponds to packages needed to run the core test suite
-       {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "fpcast-test"}. This is the default option
-       if query is None.
-     - 'min-scipy-stack': includes the "core" meta-package as well as some of the
-       core packages from the scientific python stack and their dependencies:
-       {"numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib", "pytest"}.
-       This option is non exhaustive and is mainly intended to make build faster
-       while testing a diverse set of scientific packages.
-     - '*': corresponds to all packages (returns None)
-
-    Note: None as input is equivalent to PYODIDE_PACKAGES being unset and leads
-    to only the core packages being built.
-
-    Returns:
-      a set of package names to build or None (build all packages).
-    """
-    if query is None:
-        query = "core"
-
-    packages = {el.strip() for el in query.split(",")}
-    packages.update(ALWAYS_PACKAGES)
-    # handle meta-packages
-    if "core" in packages:
-        packages |= CORE_PACKAGES
-        packages.discard("core")
-    if "min-scipy-stack" in packages:
-        packages |= CORE_PACKAGES | CORE_SCIPY_PACKAGES
-        packages.discard("min-scipy-stack")
-
-    packages.discard("")
-    return packages
-
-
 def get_make_flag(name: str) -> str:
     """Get flags from makefile.envs.
 
@@ -352,8 +279,8 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
 
         try:
             with pyproject_file.open("rb") as f:
-                configs = tomli.load(f)
-        except tomli.TOMLDecodeError as e:
+                configs = tomllib.load(f)
+        except tomllib.TOMLDecodeError as e:
             raise ValueError(f"Could not parse {pyproject_file}.") from e
 
         if "tool" in configs and "pyodide" in configs["tool"]:
@@ -409,13 +336,11 @@ def get_unisolated_packages() -> list[str]:
         unisolated_packages = unisolated_file.read_text().splitlines()
     else:
         unisolated_packages = []
-        for pkg in (PYODIDE_ROOT / "packages").glob("*/meta.yaml"):
-            try:
-                config = MetaConfig.from_yaml(pkg)
-            except Exception as e:
-                raise ValueError(f"Could not parse {pkg}.") from e
+        recipe_dir = PYODIDE_ROOT / "packages"
+        recipes = load_all_recipes(recipe_dir)
+        for name, config in recipes.items():
             if config.build.cross_build_env:
-                unisolated_packages.append(config.package.name)
+                unisolated_packages.append(name)
     os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
     return unisolated_packages
 
@@ -459,3 +384,25 @@ def chdir(new_dir: Path) -> Generator[None, None, None]:
         yield
     finally:
         os.chdir(orig_dir)
+
+
+def set_build_environment(env: dict[str, str]) -> None:
+    """Assign build environment variables to env.
+
+    Sets common environment between in tree and out of tree package builds.
+    """
+    env.update({key: os.environ[key] for key in BUILD_VARS})
+    env["PYODIDE"] = "1"
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
+    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    if "PKG_CONFIG_PATH" in os.environ:
+        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+
+    tools_dir = Path(__file__).parent / "tools"
+
+    env["CMAKE_TOOLCHAIN_FILE"] = str(
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+    )
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")

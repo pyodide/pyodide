@@ -1,6 +1,8 @@
 package:
   name: matplotlib
   version: 3.5.2
+  tag:
+    - min-scipy-stack
   top-level:
     - pylab
     - mpl_toolkits

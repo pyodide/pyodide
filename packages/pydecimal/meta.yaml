@@ -1,0 +1,15 @@
+package:
+  name: pydecimal
+  version: 1.0.0 # Nonsense
+  tag:
+    - always
+  top-level:
+    - _pydecimal
+build:
+  type: cpython_module
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD
+
+    cp Lib/_pydecimal.py $DISTDIR

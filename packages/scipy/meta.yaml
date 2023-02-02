@@ -1,6 +1,8 @@
 package:
   name: scipy
   version: 1.9.3
+  tag:
+    - min-scipy-stack
   top-level:
     - scipy
 
