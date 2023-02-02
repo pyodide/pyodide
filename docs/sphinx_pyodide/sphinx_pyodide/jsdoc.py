@@ -27,6 +27,7 @@ from sphinx_js.typedoc import make_path_segments
 _orig_convert_node = TsAnalyzer._convert_node
 _orig_constructor_and_members = TsAnalyzer._constructor_and_members
 _orig_top_level_properties = TsAnalyzer._top_level_properties
+_orig_convert_all_nodes = TsAnalyzer._convert_all_nodes
 
 
 def _constructor_and_members(self, cls):
@@ -44,13 +45,34 @@ commentdict = {}
 FFI_FIELDS: set[str] = set()
 
 
+def _convert_all_nodes(self, root):
+    for node in root.get("children", []):
+        if node["name"] == "ffi":
+            FFI_FIELDS.update(x["name"] for x in node["children"])
+            break
+    return _orig_convert_all_nodes(self, root)
+
+
+TsAnalyzer._convert_all_nodes = _convert_all_nodes
+
+
 def _top_level_properties(self, node):
     path = str(Pathname(make_path_segments(node, self._base_dir)))
     commentdict[path] = node.get("comment") or {}
     result = _orig_top_level_properties(self, node)
-    if node["name"] == "ffi":
-        FFI_FIELDS.update(x["name"] for x in node["type"]["declaration"]["children"])
     return result
+
+
+def get_tag(doclet, tag):
+    tags = commentdict[str(doclet.path)].get("tags", [])
+    for t in tags:
+        if t["tag"] == tag:
+            return True, t["text"]
+    return False, None
+
+
+def has_tag(doclet, tag):
+    return get_tag(doclet, tag)[0]
 
 
 TsAnalyzer._top_level_properties = _top_level_properties
@@ -59,11 +81,12 @@ orig_JsRenderer_rst_ = JsRenderer.rst
 
 
 def JsRenderer_rst(self, partial_path, obj, use_short_name=False):
-    for x in commentdict[str(obj.path)].get("tags", []):
-        if x["tag"] == "deprecated":
-            obj.deprecated = x["text"]
-        if x["tag"] == "hidetype":
-            obj.type = ""
+    match get_tag(obj, "deprecated"):
+        case (True, text):
+            # This is definitely not unreachable...
+            obj.deprecated = text  # type: ignore[unreachable]
+    if has_tag(obj, "hidetype"):
+        obj.type = ""
     return orig_JsRenderer_rst_(self, partial_path, obj, use_short_name)
 
 
@@ -181,6 +204,8 @@ def _add_type_role(self, name):
 
     if name in JSDATA:
         return f":js:data:`{name}`"
+    if name in FFI_FIELDS:
+        return f":js:class:`~pyodide.ffi.{name}`"
     return f":js:class:`{name}`"
 
 
@@ -524,10 +549,7 @@ class PyodideAnalyzer:
             if filename == "pyproxy.gen." and isinstance(doclet, Class):
                 pyproxy_subclasses.append(doclet)
 
-            # if filename == "pyproxy.gen.":
-            #     items["PyProxy"].append(doclet)
-            # else:
-            if doclet.name in FFI_FIELDS:
+            if doclet.name in FFI_FIELDS and not has_tag(doclet, "alias"):
                 items["pyodide.ffi"].append(doclet)
             else:
                 items["pyodide"].append(doclet)
@@ -548,16 +570,21 @@ class PyodideAnalyzer:
 
         for key, value in items.items():
             for obj in sorted(value, key=attrgetter("name")):
-                obj.async_ = False
-                if isinstance(obj, Class):
+                _, kind = get_tag(obj, "doc_kind")
+                if kind:
+                    obj.kind = kind
+                elif isinstance(obj, Class):
                     obj.kind = "class"
                 elif isinstance(obj, Function):
                     obj.kind = "function"
+                else:
+                    obj.kind = "attribute"
+
+                obj.async_ = False
+                if isinstance(obj, Function):
                     obj.async_ = obj.returns and obj.returns[0].type.startswith(
                         ":js:class:`Promise`"
                     )
-                else:
-                    obj.kind = "attribute"
                 self.js_docs[key][obj.kind].append(obj)
 
 

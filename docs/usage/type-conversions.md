@@ -11,10 +11,10 @@ converting a Python string to the equivalent a JavaScript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a JavaScript object into
 Python, the result is a {py:class}`~pyodide.ffi.JsProxy` object. When we proxy a
-Python object into JavaScript, the result is a {js:class}`PyProxy` object. A proxied
+Python object into JavaScript, the result is a {js:class}`~pyodide.ffi.PyProxy` object. A proxied
 object can be explicitly converted using the explicit conversion methods
-{py:meth}`JsProxy.to_py <pyodide.ffi.JsProxy.to_py>` and
-{js:func}`PyProxy.toJs`.
+{py:meth}`JsProxy.to_py() <pyodide.ffi.JsProxy.to_py>` and
+{js:func}`PyProxy.toJs() <pyodide.ffi.PyProxy.toJs>`.
 
 Python to JavaScript translations occur:
 
@@ -22,7 +22,7 @@ Python to JavaScript translations occur:
 - when [importing Python objects into JavaScript](type-translations_using-py-obj-from-js)
 - when passing arguments to a JavaScript function called from Python,
 - when returning the results of a Python function called from JavaScript,
-- when accessing an attribute of a {js:class}`PyProxy`
+- when accessing an attribute of a {js:class}`~pyodide.ffi.PyProxy`
 
 JavaScript to Python translations occur:
 
@@ -35,8 +35,8 @@ JavaScript to Python translations occur:
 :class: warning
 
 Any time a Python to JavaScript translation occurs, it may create a
-{js:class}`PyProxy`. To avoid memory leaks, you must store the {js:class}`PyProxy` and
-{js:func}`~PyProxy.destroy` it when you are done with it. See
+{js:class}`~pyodide.ffi.PyProxy`. To avoid memory leaks, you must store the {js:class}`~pyodide.ffi.PyProxy` and
+{js:func}`~pyodide.ffi.PyProxy.destroy` it when you are done with it. See
 {ref}`call-py-from-js` for more info.
 ```
 
@@ -189,11 +189,11 @@ JavaScript uses `array[7]`. For these cases, we translate:
 
 ### Proxying from Python into JavaScript
 
-When most Python objects are translated to JavaScript a {js:class}`PyProxy` is
+When most Python objects are translated to JavaScript a {js:class}`~pyodide.ffi.PyProxy` is
 produced.
 
 Fewer operations can be overloaded in JavaScript than in Python, so some
-operations are more cumbersome on a {js:class}`PyProxy` than on a {py:class}`~pyodide.ffi.JsProxy`. The
+operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a {py:class}`~pyodide.ffi.JsProxy`. The
 following operations are supported:
 
 | JavaScript                          | Python              |
@@ -234,12 +234,12 @@ foo(); // throws Error: Object has already been destroyed
 
 ### Python to JavaScript
 
-Explicit conversion of a {js:class}`PyProxy` into a native JavaScript object is done
-with the {js:func}`PyProxy.toJs` method. You can also perform such a conversion in
+Explicit conversion of a {js:class}`~pyodide.ffi.PyProxy` into a native JavaScript object is done
+with the {js:func}`~pyodide.ffi.PyProxy.toJs` method. You can also perform such a conversion in
 Python using {py:func}`~pyodide.ffi.to_js` which behaves in much the same way. By
-default, the {js:func}`~PyProxy.toJs` method does a recursive "deep" conversion, to do a shallow
+default, the {js:func}`~pyodide.ffi.PyProxy.toJs` method does a recursive "deep" conversion, to do a shallow
 conversion use `proxy.toJs({depth : 1})`. In addition to [the normal type
-conversion](type-translations_py2js-table), {js:func}`~PyProxy.toJs` method performs the following
+conversion](type-translations_py2js-table), {js:func}`~pyodide.ffi.PyProxy.toJs` method performs the following
 explicit conversions:
 
 | Python                              | JavaScript             |
@@ -264,12 +264,12 @@ deep equality. If a key is encountered in a {py:class}`dict` or {py:class}`set`
 that would have different semantics in JavaScript than in Python, then a
 {py:exc}`~pyodide.ffi.ConversionError` will be thrown.
 
-See {ref}`buffer_tojs` for the behavior of {js:func}`~PyProxy.toJs` on buffers.
+See {ref}`buffer_tojs` for the behavior of {js:func}`~pyodide.ffi.PyProxy.toJs` on buffers.
 
 ````{admonition} Memory Leaks and toJs
 :class: warning
 
-The {js:func}`~PyProxy.toJs` method can create many proxies at arbitrary
+The {js:func}`~pyodide.ffi.PyProxy.toJs` method can create many proxies at arbitrary
 depth. It is your responsibility to manually `destroy` these proxies if you wish
 to avoid memory leaks. The `pyproxies` argument to `toJs` is designed to help
 with this:
@@ -381,7 +381,7 @@ let result = test([1,2,3,4]);
 // result is the array [1, 4, 9, 16], nothing needs to be destroyed.
 ```
 
-If you need to use a key word argument, use {js:func}`~PyProxy.callKwargs`. The
+If you need to use a key word argument, use {js:func}`~pyodide.ffi.PyProxy.callKwargs`. The
 last argument should be a JavaScript object with the key value arguments.
 
 ```pyodide
@@ -428,9 +428,9 @@ converted to Python and the converted value is used to resolve the
 Any PyProxies created in converting the arguments are also destroyed at this
 point.
 
-As a result of this, if a {js:class}`PyProxy` is persisted to be used later, then it must
-either be copied using {js:meth}`PyProxy.copy` in JavaScript, or it must be created
-with {py:func}`~pyodide.ffi.create_proxy` or
+As a result of this, if a {js:class}`~pyodide.ffi.PyProxy` is persisted to be
+used later, then it must either be copied using {js:meth}`~pyodide.ffi.PyProxy.copy` in
+JavaScript, or it must be created with {py:func}`~pyodide.ffi.create_proxy` or
 {py:func}`~pyodide.ffi.create_once_callable`. If it's only going to be called
 once use {py:func}`~pyodide.ffi.create_once_callable`:
 
@@ -503,9 +503,9 @@ total length of the buffers match, and the Python buffer is contiguous.
 Python objects supporting the [Python Buffer
 protocol](https://docs.python.org/3/c-api/buffer.html) are proxied into
 JavaScript. The data inside the buffer can be accessed via the
-{js:func}`PyProxy.toJs` method or the {js:func}`PyProxy.getBuffer` method. The
-{js:func}`~PyProxy.toJs` API copies the buffer into JavaScript, whereas the
-{js:func}`~PyProxy.getBuffer` method allows low level access to the WASM memory
+{js:func}`~pyodide.ffi.PyProxy.toJs` method or the {js:func}`~pyodide.ffi.PyProxy.getBuffer` method. The
+{js:func}`~pyodide.ffi.PyProxy.toJs` API copies the buffer into JavaScript, whereas the
+{js:func}`~pyodide.ffi.PyProxy.getBuffer` method allows low level access to the WASM memory
 backing the buffer. The `getBuffer` API is more powerful but requires care to
 use correctly. For simple use cases the `toJs` API should be preferred.
 
@@ -521,11 +521,11 @@ array.
 An example of a case where you would not want to use the `toJs` method is when
 the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
 1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
-{js:func}`~PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped
+{js:func}`~pyodide.ffi.PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped
 1920 x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
 Typically, the innermost dimension won't matter for performance.
 
-The {js:func}`~PyProxy.getBuffer` method can be used to retrieve a reference to
+The {js:func}`~pyodide.ffi.PyProxy.getBuffer` method can be used to retrieve a reference to
 a JavaScript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a JavaScript ndarray library if one is present. For instance, if
@@ -576,8 +576,8 @@ to produce a traceback with certain functions filtered out), use that.
 
 ```{admonition} Be careful Proxying Stack Frames
 :class: warning
-If you make a {js:class}`PyProxy` of {py:data}`sys.last_value`, you should be especially
-careful to {js:meth}`~PyProxy.destroy` it when you are done with it, or
+If you make a {js:class}`~pyodide.ffi.PyProxy` of {py:data}`sys.last_value`, you should be especially
+careful to {js:meth}`~pyodide.ffi.PyProxy.destroy` it when you are done with it, or
 you may leak a large amount of memory if you don't.
 ```
 

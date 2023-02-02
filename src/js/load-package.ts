@@ -349,9 +349,9 @@ let loadPackagePositionalCallbackDeprecationWarned = false;
  * @param names Either a single package name or URL or a list of them. URLs can
  * be absolute or relative. The URLs must have file name ``<package-name>.js``
  * and there must be a file called ``<package-name>.data`` in the same
- * directory. The argument can be a :js:class:`PyProxy` of a list, in
+ * directory. The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
  * which case the list will be converted to JavaScript and the
- * :js:class:`PyProxy` will be destroyed.
+ * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
  * @param options
  * @param options.messageCallback A callback, called with progress messages
  *    (optional)

@@ -30,7 +30,8 @@ export type {
   PyProxyAwaitable,
   PyProxyCallable,
   TypedArray,
-  PyBuffer,
+  PyBuffer as PyProxyBuffer,
+  PyBufferView as PyBuffer,
 } from "./pyproxy.gen";
 
 export type Py2JsResult = any;

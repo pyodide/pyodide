@@ -13,7 +13,7 @@ export type {
   PyAsyncGenerator,
   PyAwaitable,
   PyCallable,
-  PyProxyBuffer,
+  PyBuffer,
   PyBufferView,
 } from "./pyproxy.gen";
 
@@ -32,7 +32,7 @@ import {
   PyAsyncGenerator,
   PyAwaitable,
   PyCallable,
-  PyProxyBuffer,
+  PyBuffer,
   PyBufferView,
 } from "./pyproxy.gen";
 
@@ -55,6 +55,6 @@ export const ffi = {
   PyAsyncGenerator,
   PyAwaitable,
   PyCallable,
-  PyProxyBuffer,
+  PyBuffer,
   PyBufferView,
 };

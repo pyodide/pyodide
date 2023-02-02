@@ -5,7 +5,13 @@ import "./module";
 import { ffi } from "./ffi";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { isPyProxy, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
+import {
+  isPyProxy,
+  PyBufferView,
+  PyBuffer,
+  TypedArray,
+  PyProxy,
+} from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
@@ -240,9 +246,10 @@ export function unregisterJsModule(name: string) {
 /**
  * Convert a JavaScript object to a Python object as best as possible.
  *
- * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from JavaScript. If the
- * object is immutable or a :py:class:`PyProxy`, it will be returned unchanged. If
- * the object cannot be converted into Python, it will be returned unchanged.
+ * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from
+ * JavaScript. If the object is immutable or a :js:class:`~pyodide.ffi.PyProxy`,
+ * it will be returned unchanged. If the object cannot be converted into Python,
+ * it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
@@ -534,7 +541,8 @@ export const PyodideAPI = {
   mountNativeFS,
   registerComlink,
   PythonError,
-  PyBuffer,
+  PyBuffer: PyBufferView,
+  PyProxyBuffer: PyBuffer,
   ffi,
   setStdin,
   setStdout,
