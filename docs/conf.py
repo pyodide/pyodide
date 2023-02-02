@@ -336,6 +336,7 @@ def setup(app):
 
     set_announcement_message()
     apply_patches()
+    calculate_pyodide_version(app)
     ensure_typedoc_on_path()
     create_generated_typescript_files(app)
     write_console_html(app)
