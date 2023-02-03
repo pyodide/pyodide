@@ -134,9 +134,9 @@ def main(
     build_dependencies: bool = typer.Option(
         False, help="Fetch non-pyodide dependencies from pypi and build them too."
     ),
-    output_lockfile: bool = typer.Option(
-        False,
-        help="Output list of resolved dependencies alongside the build in dist/package_versions.txt",
+    output_lockfile: str = typer.Option(
+        None,
+        help="Output list of resolved dependencies to a file in requirements.txt format",
     ),
     skip_dependency: list[str] = typer.Option(
         [],
