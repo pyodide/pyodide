@@ -467,7 +467,7 @@ export class PyProxy {
   }
 
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
     return API.isPyProxy(obj);
   }
 
@@ -643,7 +643,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithLength`` instead.
    */
   @warnOnce(
-    "supportsLength is deprecated, use `instanceof pyodide.ffi.PyProxyWithLength` instead",
+    "supportsLength() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithLength` instead.",
   )
   supportsLength(): this is PyProxyWithLength {
     return !!(this.$$flags & HAS_LENGTH);
@@ -653,7 +653,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithGet`` instead.
    */
   @warnOnce(
-    "supportsGet is deprecated, use `instanceof pyodide.ffi.PyProxyWithGet` instead",
+    "supportsGet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithGet` instead.",
   )
   supportsGet(): this is PyProxyWithGet {
     return !!(this.$$flags & HAS_GET);
@@ -663,7 +663,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithSet`` instead.
    */
   @warnOnce(
-    "supportsSet is deprecated, use `instanceof pyodide.ffi.PyProxyWithSet` instead",
+    "supportsSet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithSet` instead.",
   )
   supportsSet(): this is PyProxyWithSet {
     return !!(this.$$flags & HAS_SET);
@@ -673,7 +673,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithHas`` instead.
    */
   @warnOnce(
-    "supportsHas is deprecated, use `instanceof pyodide.ffi.PyProxyWithHas` instead",
+    "supportsHas() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithHas` instead.",
   )
   supportsHas(): this is PyProxyWithHas {
     return !!(this.$$flags & HAS_CONTAINS);
@@ -684,7 +684,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyIterable`` instead.
    */
   @warnOnce(
-    "isIterable is deprecated, use `instanceof pyodide.ffi.PyIterable` instead",
+    "isIterable() is deprecated. Use `instanceof pyodide.ffi.PyIterable` instead.",
   )
   isIterable(): this is PyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
@@ -695,7 +695,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyIterator`` instead.
    */
   @warnOnce(
-    "isIterator is deprecated, use `instanceof pyodide.ffi.PyIterator` instead",
+    "isIterator() is deprecated. Use `instanceof pyodide.ffi.PyIterator` instead.",
   )
   isIterator(): this is PyIterator {
     return !!(this.$$flags & IS_ITERATOR);
@@ -705,7 +705,7 @@ export class PyProxy {
    * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyAwaitable <pyodide.ffi.PyAwaitable>` instead.
    */
   @warnOnce(
-    "isAwaitable is deprecated, use `instanceof pyodide.ffi.PyAwaitable` instead",
+    "isAwaitable() is deprecated. Use `instanceof pyodide.ffi.PyAwaitable` instead.",
   )
   isAwaitable(): this is PyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
@@ -715,7 +715,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyBuffer`` instead.
    */
   @warnOnce(
-    "isBuffer is deprecated, use `instanceof pyodide.ffi.PyBuffer` instead",
+    "isBuffer() is deprecated. Use `instanceof pyodide.ffi.PyBuffer` instead.",
   )
   isBuffer(): this is PyBuffer {
     return !!(this.$$flags & IS_BUFFER);
@@ -725,7 +725,7 @@ export class PyProxy {
    * @deprecated ``obj instanceof pyodide.ffi.PyCallable`` instead.
    */
   @warnOnce(
-    "isCallable is deprecated, use `instanceof pyodide.ffi.PyCallable` instead",
+    "isCallable() is deprecated. Use `instanceof pyodide.ffi.PyCallable` instead.",
   )
   isCallable(): this is PyCallable {
     return !!(this.$$flags & IS_CALLABLE);
@@ -738,8 +738,8 @@ export class PyProxy {
  */
 export class PyProxyWithLength extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & HAS_LENGTH);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_LENGTH);
   }
 }
 
@@ -774,8 +774,8 @@ export class PyLengthMethods {
  */
 export class PyProxyWithGet extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & HAS_GET);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_GET);
   }
 }
 
@@ -820,8 +820,8 @@ export class PyGetItemMethods {
  */
 export class PyProxyWithSet extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & HAS_SET);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_SET);
   }
 }
 
@@ -884,8 +884,8 @@ export class PySetItemMethods {
  */
 export class PyProxyWithHas extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & HAS_CONTAINS);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_CONTAINS);
   }
 }
 
@@ -964,8 +964,8 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
  */
 export class PyIterable extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_ITERABLE);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
 }
 
@@ -1068,8 +1068,11 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
  */
 export class PyAsyncIterable extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_ASYNC_ITERABLE);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return (
+      API.isPyProxy(obj) &&
+      !!(obj.$$flags & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
+    );
   }
 }
 
@@ -1109,8 +1112,8 @@ export class PyAsyncIterableMethods {
  */
 export class PyIterator extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_ITERATOR);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ITERATOR);
   }
 }
 
@@ -1174,8 +1177,8 @@ export class PyIteratorMethods {
  */
 export class PyGenerator extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_GENERATOR);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_GENERATOR);
   }
 }
 
@@ -1270,8 +1273,8 @@ export class PyGeneratorMethods {
  */
 export class PyAsyncIterator extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_ASYNC_ITERATOR);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_ITERATOR);
   }
 }
 
@@ -1334,8 +1337,8 @@ export class PyAsyncIteratorMethods {
  */
 export class PyAsyncGenerator extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_ASYNC_GENERATOR);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_GENERATOR);
   }
 }
 
@@ -1624,8 +1627,8 @@ let PyProxyHandlers = {
  */
 export class PyAwaitable extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(this.$$flags & IS_AWAITABLE);
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_AWAITABLE);
   }
 }
 
@@ -1739,7 +1742,7 @@ export class PyAwaitableMethods {
  */
 export class PyCallable extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyCallable {
+  static [Symbol.hasInstance](obj: any): obj is PyCallable {
     return API.isPyProxy(obj) && !!(obj.$$flags & IS_CALLABLE);
   }
 }
@@ -1923,7 +1926,7 @@ let type_to_array_map: Map<string, any> = new Map([
  */
 export class PyBuffer extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyBuffer {
+  static [Symbol.hasInstance](obj: any): obj is PyBuffer {
     return API.isPyProxy(obj) && !!(obj.$$flags & IS_BUFFER);
   }
 }
@@ -2093,7 +2096,7 @@ export type TypedArray =
  */
 export class PyDict extends PyProxy {
   /** @private */
-  [Symbol.hasInstance](obj: any): obj is PyProxy {
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
     // TODO: allow MutableMappings?
     return API.isPyProxy(obj) && obj.type === "dict";
   }
