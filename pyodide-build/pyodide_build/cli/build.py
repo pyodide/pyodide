@@ -127,7 +127,7 @@ def main(
         "",
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
-    requirements_txt: str = typer.Option(
+    requirements_txt: str = typer.Option(None,
         "--requirements",
         "-r",
         help="Build a list of package requirements from a requirements.txt file",
