@@ -349,7 +349,7 @@ def _resolve_and_build(
     result = resolver.resolve(requirements)
     target_folder.mkdir(parents=True, exist_ok=True)
     version_file = None
-    if output_lockfile is not None and len(output_lockfile)>0:
+    if output_lockfile is not None and len(output_lockfile) > 0:
         version_file = open(output_lockfile, "w")
     for x in result.mapping.values():
         download_or_build_wheel(x.url, target_folder)
@@ -426,7 +426,7 @@ def build_dependencies_for_wheel(
         output_lockfile=output_lockfile,
     )
     # add the current wheel to the package-versions.txt
-    if output_lockfile is not None and len(output_lockfile)>0:
+    if output_lockfile is not None and len(output_lockfile) > 0:
         with open(output_lockfile, "a") as version_txt:
             name = metadata.get("Name")
             version = metadata.get("Version")
