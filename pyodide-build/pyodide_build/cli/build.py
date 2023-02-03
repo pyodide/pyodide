@@ -127,7 +127,9 @@ def main(
         "",
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
-    requirements_txt: str|None= typer.Option(None,
+    requirements_txt: str
+    | None = typer.Option(
+        None,
         "--requirements",
         "-r",
         help="Build a list of package requirements from a requirements.txt file",
@@ -139,7 +141,8 @@ def main(
     build_dependencies: bool = typer.Option(
         False, help="Fetch non-pyodide dependencies from pypi and build them too."
     ),
-    output_lockfile: str|None = typer.Option(
+    output_lockfile: str
+    | None = typer.Option(
         None,
         help="Output list of resolved dependencies to a file in requirements.txt format",
     ),
