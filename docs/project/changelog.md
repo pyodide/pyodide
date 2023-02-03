@@ -46,6 +46,11 @@ myst:
   Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
   {pr}`3525`
 
+- {{ Fix }} Calling `loadPyodide` repeatedly in Node no longer results in
+  `MaxListenersExceededWarning`. Also, calling `loadPyodide` in Node v14 no
+  longer changes unhandled rejections in promises.
+  {pr}`3542`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -82,8 +87,9 @@ _January 25, 2023_
 
 - {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
   it will insert an EOF automatically after each string or buffer. Defaults to
-  `true`. This also affects the behavior of `
-{pr}`3488`
+  `true`. This also affects the behavior of the `stdin` argument to
+  `loadPyodide`.
+  {pr}`3488`
 
 - {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
   {pr}`3484`
