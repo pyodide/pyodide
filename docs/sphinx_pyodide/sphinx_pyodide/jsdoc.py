@@ -206,7 +206,7 @@ def _containing_deppath(self, node):
     from pathlib import Path
 
     filename = node["sources"][0]["fileName"].replace(".gen", "")
-    deppath = list(Path(self._base_dir).glob("**/" + filename))[0]
+    deppath = next(Path(self._base_dir).glob("**/" + filename), "")
     return relpath(deppath, self._base_dir)
 
 
