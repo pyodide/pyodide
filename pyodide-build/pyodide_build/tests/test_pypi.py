@@ -325,7 +325,7 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
     with chdir(tmp_path):
         result = runner.invoke(
             app,
-            ["requirements.txt", "--build-dependencies", "--output-lockfile","lockfile.txt"],
+            ["-r","requirements.txt", "--build-dependencies", "--output-lockfile","lockfile.txt"],
         )
     # this should work
     assert result.exit_code == 0, result.stdout
@@ -343,7 +343,7 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
     with chdir(tmp_path):
         result = runner.invoke(
             app,
-            [str(tmp_path / "lockfile.txt")],
+            ["-r",str(tmp_path / "lockfile.txt")],
         )
 
     # should still have built 1.0.0 of pkg-c
@@ -352,7 +352,7 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
         if x.name.startswith("pkg_c"):
             assert x.name.find("1.0.0") != -1, x.name
 
-    assert len(built_wheels) == 2
+    assert len(built_wheels) == 2, result.stdout
 
 
 def test_bad_requirements_text(selenium, tmp_path):

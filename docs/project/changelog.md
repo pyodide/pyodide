@@ -56,7 +56,7 @@ myst:
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
 
-- {{ Enhancement}} Added `pyodide-build` support for building a list of packages from a requirements.txt file. Also can output a list of chosen dependencies in the same format when building a package and dependencies using the `--output-lockfile` argument. This enables repeatable builds of packages. {pr}`3469`
+- {{ Enhancement}} Added `pyodide-build` support for building a list of packages from a requirements.txt file with `pyodide buil -r <requirements.txt>`. Also can output a list of chosen dependencies in the same format when building a package and dependencies using the `--output-lockfile <lockfile.txt>` argument. This enables repeatable builds of packages. {pr}`3469`
 
 - {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
   packages.
