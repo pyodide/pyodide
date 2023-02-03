@@ -88,3 +88,10 @@ def test_ctypes_util_find_library(selenium):
         assert find_library("foo") == os.path.join(tmpdir, "libfoo.so")
         assert find_library("bar") == os.path.join(tmpdir, "libbar.so")
         assert find_library("baz") is None
+
+
+@run_in_pyodide
+def test_encodings_deepfrozen(selenium):
+    import encodings
+
+    assert repr(encodings) == "<module 'encodings' (frozen)>"
