@@ -156,13 +156,13 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/i
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export RUST_TOOLCHAIN=nightly-2022-06-26
-
+export PYO3_CROSS_LIB_DIR=${CPYTHONINSTALL}/lib
+export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 
 # idealy we could automatically include all SIDE_MODULE_LDFLAGS here
 export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-Z link-native-libraries=no
-
 .output_vars:
 	set
