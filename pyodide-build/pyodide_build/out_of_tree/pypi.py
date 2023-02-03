@@ -323,7 +323,7 @@ def _resolve_and_build(
     target_folder: Path,
     build_dependencies: bool,
     extras: list[str],
-    output_lockfile: str|None,
+    output_lockfile: str | None,
 ) -> None:
     requirements = []
 
@@ -370,7 +370,7 @@ def build_wheels_from_pypi_requirements(
     skip_dependency: list[str],
     exports: str,
     build_flags: list[str],
-    output_lockfile: str|None,
+    output_lockfile: str | None,
 ) -> None:
     """
     Given a list of package requirements, build or fetch them. If build_dependencies is true, then
@@ -394,7 +394,7 @@ def build_dependencies_for_wheel(
     skip_dependency: list[str],
     exports: str,
     build_flags: list[str],
-    output_lockfile: str|None,
+    output_lockfile: str | None,
 ) -> None:
     """Extract dependencies from this wheel and build pypi dependencies
     for each one in ./dist/

@@ -113,11 +113,12 @@ def _make_fake_package(
                 f.write(f'print("Hello from compiled module {name}")')
             with open(build_path / "setup.py", "w") as sf:
                 sf.write(
-                    f'''
+                    f"""
 from setuptools import setup
 from Cython.Build import cythonize
 setup(ext_modules=cythonize("src/{module_name}/*.pyx",language_level=3))
-''')
+"""
+                )
             with open(build_path / "MANIFEST.in", "w") as mf:
                 mf.write("global-include *.pyx\n")
             subprocess.run(
@@ -332,7 +333,13 @@ pkg-a
     with chdir(tmp_path):
         result = runner.invoke(
             app,
-            ["-r","requirements.txt", "--build-dependencies", "--output-lockfile","lockfile.txt"],
+            [
+                "-r",
+                "requirements.txt",
+                "--build-dependencies",
+                "--output-lockfile",
+                "lockfile.txt",
+            ],
         )
     # this should work
     assert result.exit_code == 0, result.stdout
@@ -350,7 +357,7 @@ pkg-a
     with chdir(tmp_path):
         result = runner.invoke(
             app,
-            ["-r",str(tmp_path / "lockfile.txt")],
+            ["-r", str(tmp_path / "lockfile.txt")],
         )
 
     # should still have built 1.0.0 of pkg-c
@@ -375,6 +382,6 @@ def test_bad_requirements_text(selenium, tmp_path):
         with chdir(tmp_path):
             result = runner.invoke(
                 app,
-                ["-r","requirements.txt"],
+                ["-r", "requirements.txt"],
             )
             assert result.exit_code != 0 and line.strip() in str(result)
