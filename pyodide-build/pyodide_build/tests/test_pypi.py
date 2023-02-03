@@ -113,8 +113,11 @@ def _make_fake_package(
                 f.write(f'print("Hello from compiled module {name}")')
             with open(build_path / "setup.py", "w") as sf:
                 sf.write(
-                    f'from setuptools import setup\nfrom Cython.Build import cythonize\nsetup(ext_modules=cythonize("src/{module_name}/*.pyx",language_level=3))'
-                )
+                    f'''
+from setuptools import setup
+from Cython.Build import cythonize
+setup(ext_modules=cythonize("src/{module_name}/*.pyx",language_level=3))
+''')
             with open(build_path / "MANIFEST.in", "w") as mf:
                 mf.write("global-include *.pyx\n")
             subprocess.run(
@@ -320,7 +323,11 @@ def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
     # pkg-a
     with open(tmp_path / "requirements.txt", "w") as req_file:
         req_file.write(
-            "  # Whole line comment\npkg-c~=1.0.0 # end of line comment\npkg-a\n"
+            """
+# Whole line comment
+pkg-c~=1.0.0 # end of line comment
+pkg-a
+            """
         )
     with chdir(tmp_path):
         result = runner.invoke(
@@ -368,6 +375,6 @@ def test_bad_requirements_text(selenium, tmp_path):
         with chdir(tmp_path):
             result = runner.invoke(
                 app,
-                ["requirements.txt"],
+                ["-r","requirements.txt"],
             )
             assert result.exit_code != 0 and line.strip() in str(result)
