@@ -649,7 +649,7 @@ export class PyodideAPI {
 
   static get PyProxyBuffer() {
     console.warn(
-      "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyProxyBuffer` instead.",
+      "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead.",
     );
     Object.defineProperty(this, "PyProxyBuffer", { value: PyBuffer });
     return PyBuffer;
