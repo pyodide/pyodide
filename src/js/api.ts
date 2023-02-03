@@ -604,6 +604,10 @@ export class PyodideAPI {
   static setStdout = setStdout;
   /** @hidden */
   static setStderr = setStderr;
+  /** @hidden */
+  static setInterruptBuffer = setInterruptBuffer;
+  /** @hidden */
+  static checkInterrupt = checkInterrupt;
 
   /**
    * Is ``jsobj`` a :js:class:`~pyodide.ffi.PyProxy`?
