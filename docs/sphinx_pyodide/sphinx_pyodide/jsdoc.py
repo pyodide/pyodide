@@ -206,8 +206,10 @@ def _containing_deppath(self, node):
     from pathlib import Path
 
     filename = node["sources"][0]["fileName"].replace(".gen", "")
-    deppath = next(Path(self._base_dir).glob("**/" + filename), "")
-    return relpath(deppath, self._base_dir)
+    deppath = next(Path(self._base_dir).glob("**/" + filename), None)
+    if deppath:
+        return relpath(deppath, self._base_dir)
+    return ""
 
 
 TsAnalyzer._containing_deppath = _containing_deppath
