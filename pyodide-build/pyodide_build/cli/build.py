@@ -127,7 +127,8 @@ def main(
         "",
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
-    requirements_txt: str= typer.Option("",
+    requirements_txt: str = typer.Option(
+        "",
         "--requirements",
         "-r",
         help="Build a list of package requirements from a requirements.txt file",
@@ -152,7 +153,7 @@ def main(
     """Use pypa/build to build a Python package from source, pypi or url."""
     extras: list[str] = []
 
-    if len(requirements_txt)>0:
+    if len(requirements_txt) > 0:
         # a requirements.txt - build it (and optionally deps)
         if not Path(requirements_txt).exists():
             raise RuntimeError(
