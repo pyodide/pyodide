@@ -127,9 +127,7 @@ def main(
         "",
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
-    requirements_txt: str
-    | None = typer.Option(
-        None,
+    requirements_txt: str= typer.Option("",
         "--requirements",
         "-r",
         help="Build a list of package requirements from a requirements.txt file",
@@ -141,9 +139,8 @@ def main(
     build_dependencies: bool = typer.Option(
         False, help="Fetch non-pyodide dependencies from pypi and build them too."
     ),
-    output_lockfile: str
-    | None = typer.Option(
-        None,
+    output_lockfile: str = typer.Option(
+        "",
         help="Output list of resolved dependencies to a file in requirements.txt format",
     ),
     skip_dependency: list[str] = typer.Option(
@@ -155,7 +152,7 @@ def main(
     """Use pypa/build to build a Python package from source, pypi or url."""
     extras: list[str] = []
 
-    if requirements_txt is not None:
+    if len(requirements_txt)>0:
         # a requirements.txt - build it (and optionally deps)
         if not Path(requirements_txt).exists():
             raise RuntimeError(
