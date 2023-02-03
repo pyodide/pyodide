@@ -23,6 +23,8 @@ declare function stackSave(): number;
 declare function stackRestore(ptr: number): void;
 declare function stackAlloc(size: number): number;
 
+import { warnOnce } from "./util";
+
 // pyodide-skip
 
 // Just for this file, we implement a special "skip" pragma. These lines are
@@ -445,25 +447,6 @@ export interface PyProxy {
   [x: string]: any;
 }
 
-function deprecationWarnOnce(warning: string): MethodDecorator {
-  let warned = false;
-  return function (
-    _target: any,
-    _key: string | symbol,
-    descriptor: TypedPropertyDescriptor<any>,
-  ): TypedPropertyDescriptor<any> {
-    const original = descriptor.value;
-    descriptor.value = function (...args: any) {
-      if (!warned) {
-        warned = true;
-        console.warn(warning);
-      }
-      return original.call(this, ...args);
-    };
-    return descriptor;
-  };
-}
-
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` is an object that allows idiomatic use of a Python object from
  * JavaScript. See :ref:`type-translations-pyproxy`.
@@ -664,7 +647,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithLength`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithLength`` instead.
    */
-  @deprecationWarnOnce(
+  @warnOnce(
     "supportsLength is deprecated, use `instanceof PyProxyWithLength` instead",
   )
   supportsLength(): this is PyProxyWithLength {
@@ -674,7 +657,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithGet`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithGet`` instead.
    */
-  @deprecationWarnOnce(
+  @warnOnce(
     "supportsGet is deprecated, use `instanceof PyProxyWithGet` instead",
   )
   supportsGet(): this is PyProxyWithGet {
@@ -684,7 +667,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithSet`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithSet`` instead.
    */
-  @deprecationWarnOnce(
+  @warnOnce(
     "supportsSet is deprecated, use `instanceof PyProxyWithSet` instead",
   )
   supportsSet(): this is PyProxyWithSet {
@@ -694,7 +677,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithHas`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithHas`` instead.
    */
-  @deprecationWarnOnce(
+  @warnOnce(
     "supportsHas is deprecated, use `instanceof PyProxyWithHas` instead",
   )
   supportsHas(): this is PyProxyWithHas {
@@ -705,9 +688,7 @@ export class PyProxy {
    * :js:class:`~pyodide.ffi.PyIterable`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyIterable`` instead.
    */
-  @deprecationWarnOnce(
-    "isIterable is deprecated, use `instanceof PyIterable` instead",
-  )
+  @warnOnce("isIterable is deprecated, use `instanceof PyIterable` instead")
   isIterable(): this is PyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
@@ -716,9 +697,7 @@ export class PyProxy {
    * :js:class:`~pyodide.ffi.PyIterator`
    * @deprecated Use ``obj instanceof pyodide.ffi.PyIterator`` instead.
    */
-  @deprecationWarnOnce(
-    "isIterator is deprecated, use `instanceof PyIterator` instead",
-  )
+  @warnOnce("isIterator is deprecated, use `instanceof PyIterator` instead")
   isIterator(): this is PyIterator {
     return !!(this.$$flags & IS_ITERATOR);
   }
@@ -726,9 +705,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyAwaitable`
    * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyAwaitable <pyodide.ffi.PyAwaitable>` instead.
    */
-  @deprecationWarnOnce(
-    "isAwaitable is deprecated, use `instanceof PyAwaitable` instead",
-  )
+  @warnOnce("isAwaitable is deprecated, use `instanceof PyAwaitable` instead")
   isAwaitable(): this is PyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
   }
@@ -736,9 +713,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyBuffer`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyBuffer`` instead.
    */
-  @deprecationWarnOnce(
-    "isBuffer is deprecated, use `instanceof PyBuffer` instead",
-  )
+  @warnOnce("isBuffer is deprecated, use `instanceof PyBuffer` instead")
   isBuffer(): this is PyBuffer {
     return !!(this.$$flags & IS_BUFFER);
   }
@@ -746,9 +721,7 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyCallable`.
    * @deprecated ``obj instanceof pyodide.ffi.PyCallable`` instead.
    */
-  @deprecationWarnOnce(
-    "isCallable is deprecated, use `instanceof PyCallable` instead",
-  )
+  @warnOnce("isCallable is deprecated, use `instanceof PyCallable` instead")
   isCallable(): this is PyCallable {
     return !!(this.$$flags & IS_CALLABLE);
   }
@@ -1756,16 +1729,20 @@ export class PyAwaitableMethods {
 }
 
 /**
- * @deprecated Use :js:class:`pyodide.ffi.PyCallable` instead.
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is
+ * :std:term:`callable` (i.e., has an :py:meth:`~operator.__call__` method).
  */
-export type PyProxyCallable = PyCallable;
-
 export class PyCallable extends PyProxy {
   /** @private */
   [Symbol.hasInstance](obj: any): obj is PyCallable {
     return API.isPyProxy(obj) && !!(obj.$$flags & IS_CALLABLE);
   }
 }
+
+/**
+ * @deprecated Use :js:class:`pyodide.ffi.PyCallable` instead.
+ */
+export type PyProxyCallable = PyCallable;
 
 export interface PyCallable extends PyCallableMethods {
   (...args: any[]): any;
@@ -1778,8 +1755,9 @@ export class PyCallableMethods {
    * :js:meth:`Function.apply`.
    *
    * @param thisArg The ``this`` argument. Has no effect unless the
-   * :js:class:`~pyodide.ffi.PyProxy` has :js:meth:`captureThis` set. If :js:meth:`captureThis` is set, it
-   * will be passed as the first argument to the Python function.
+   * :js:class:`~pyodide.ffi.PyCallable` has :js:meth:`captureThis` set. If
+   * :js:meth:`captureThis` is set, it will be passed as the first argument to
+   * the Python function.
    * @param jsargs The array of arguments
    * @returns The result from the function call.
    */
@@ -1797,8 +1775,9 @@ export class PyCallableMethods {
    * individually. See :js:meth:`Function.call`.
    *
    * @param thisArg The ``this`` argument. Has no effect unless the
-   * :js:class:`~pyodide.ffi.PyProxy` has :js:meth:`captureThis` set. If :js:meth:`captureThis` is set, it
-   * will be passed as the first argument to the Python function.
+   * :js:class:`~pyodide.ffi.PyCallable` has :js:meth:`captureThis` set. If
+   * :js:meth:`captureThis` is set, it will be passed as the first argument to
+   * the Python function.
    * @param jsargs The arguments
    * @returns The result from the function call.
    */
@@ -1832,11 +1811,11 @@ export class PyCallableMethods {
    * arguments preceding any provided when the new function is called. See
    * :js:meth:`Function.bind`.
    *
-   * If the `PyProxy` does not have :js:meth:`captureThis` set, the ``this``
-   * parameter will be discarded. If it does have :js:meth:`captureThis` set,
-   * ``thisArg`` will be set to the first argument of the Python function. The
-   * returned proxy and the original proxy have the same lifetime so destroying
-   * either destroys both.
+   * If the :js:class:`~pyodide.ffi.PyCallable` does not have
+   * :js:meth:`captureThis` set, the ``this`` parameter will be discarded. If it
+   * does have :js:meth:`captureThis` set, ``thisArg`` will be set to the first
+   * argument of the Python function. The returned proxy and the original proxy
+   * have the same lifetime so destroying either destroys both.
    *
    * @param thisArg The value to be passed as the ``this`` parameter to the
    * target function ``func`` when the bound function is called.
@@ -1931,8 +1910,11 @@ let type_to_array_map: Map<string, any> = new Map([
 ]);
 
 /**
- * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object supports the Python
- * :external:doc:`c-api/buffer`
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object supports the
+ * Python :external:doc:`c-api/buffer`.
+ *
+ * Examples of buffers include {py:class}`bytes` objects and numpy
+ * {external+numpy:ref}`arrays`.
  */
 export class PyBuffer extends PyProxy {
   /** @private */
@@ -1941,9 +1923,7 @@ export class PyBuffer extends PyProxy {
   }
 }
 
-export interface PyBuffer extends PyBufferMethods {
-  (...args: any[]): any;
-}
+export interface PyBuffer extends PyBufferMethods {}
 
 export class PyBufferMethods {
   /**
@@ -1952,22 +1932,23 @@ export class PyBufferMethods {
    *
    * We do not support suboffsets, if the buffer requires suboffsets we will
    * throw an error. JavaScript nd array libraries can't handle suboffsets
-   * anyways. In this case, you should use the :js:meth:`~PyProxy.toJs` api or copy the
-   * buffer to one that doesn't use suboffsets (using e.g.,
+   * anyways. In this case, you should use the :js:meth:`~PyProxy.toJs` api or
+   * copy the buffer to one that doesn't use suboffsets (using e.g.,
    * :py:func:`numpy.ascontiguousarray`).
    *
    * If the buffer stores big endian data or half floats, this function will
    * fail without an explicit type argument. For big endian data you can use
-   * :js:meth:`~PyProxy.toJs`. :js:class:`DataView` has support for big endian data, so you
-   * might want to pass ``'dataview'`` as the type argument in that case.
+   * :js:meth:`~PyProxy.toJs`. :js:class:`DataView` has support for big endian
+   * data, so you might want to pass ``'dataview'`` as the type argument in that
+   * case.
    *
-   * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field in the
-   * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
-   * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
-   * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
-   * optional, if absent :js:meth:`getBuffer` will try to determine the appropriate
-   * output type based on the buffer format string (see
-   * :std:ref:`struct-format-strings`).
+   * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
+   * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
+   * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
+   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument
+   * is optional, if absent :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try
+   * to determine the appropriate output type based on the buffer format string
+   * (see :std:ref:`struct-format-strings`).
    */
   getBuffer(type?: string): PyBufferView {
     let ArrayType: any = undefined;
@@ -2125,7 +2106,7 @@ export type PyProxyDict = PyDict;
 
 /**
  * A class to allow access to Python data buffers from JavaScript. These are
- * produced by :js:meth:`~PyBuffer.getBuffer` and cannot be constructed directly.
+ * produced by :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` and cannot be constructed directly.
  * When you are done, release it with the :js:func:`~PyBufferView.release` method.
  * See the Python :external:doc:`c-api/buffer` documentation for more
  * information.
@@ -2232,9 +2213,9 @@ export class PyBufferView {
    * The actual data. A typed array of an appropriate size backed by a segment
    * of the WASM memory.
    *
-   * The ``type`` argument of :js:meth:`~PyBuffer.getBuffer` determines
+   * The ``type`` argument of :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` determines
    * which sort of :js:class:`TypedArray` or :js:class:`DataView` to return. By
-   * default :js:meth:`~PyBuffer.getBuffer` will look at the format string
+   * default :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will look at the format string
    * to determine the most appropriate option. Most often the result is a
    * :js:class:`Uint8Array`.
    *

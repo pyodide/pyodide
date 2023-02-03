@@ -144,7 +144,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         or similar.
 
         Note that ``len(x.as_object_map())`` evaluates in O(n) time (it iterates
-        over the object and counts how many ownKeys it has). If you need to
+        over the object and counts how many :js:func:`~Reflect.ownKeys` it has). If you need to
         compute the length in O(1) time, use a real :js:class:`Map` instead.
         """
         raise NotImplementedError

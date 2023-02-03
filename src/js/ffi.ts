@@ -17,6 +17,8 @@ export type {
   PyBufferView,
 } from "./pyproxy.gen";
 
+export type { PythonError } from "./error_handling.gen";
+
 import {
   PyProxy,
   PyProxyWithLength,
@@ -35,6 +37,8 @@ import {
   PyBuffer,
   PyBufferView,
 } from "./pyproxy.gen";
+
+import { PythonError } from "./error_handling.gen";
 
 /**
  * See :ref:`js-api-pyodide-ffi`
@@ -57,4 +61,5 @@ export const ffi = {
   PyCallable,
   PyBuffer,
   PyBufferView,
+  PythonError,
 };

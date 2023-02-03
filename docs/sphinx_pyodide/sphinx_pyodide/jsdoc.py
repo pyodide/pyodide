@@ -49,6 +49,7 @@ def _convert_all_nodes(self, root):
     for node in root.get("children", []):
         if node["name"] == "ffi":
             FFI_FIELDS.update(x["name"] for x in node["children"])
+            FFI_FIELDS.remove("ffi")
             break
     return _orig_convert_all_nodes(self, root)
 
@@ -57,6 +58,13 @@ TsAnalyzer._convert_all_nodes = _convert_all_nodes
 
 
 def _top_level_properties(self, node):
+    if "comment" not in node:
+        sig = {}
+        if "getSignature" in node:
+            sig = node["getSignature"][0]
+        elif "signatures" in node:
+            sig = node["signatures"][0]
+        node["comment"] = sig.get("comment", {})
     path = str(Pathname(make_path_segments(node, self._base_dir)))
     commentdict[path] = node.get("comment") or {}
     result = _orig_top_level_properties(self, node)
@@ -84,7 +92,10 @@ def JsRenderer_rst(self, partial_path, obj, use_short_name=False):
     match get_tag(obj, "deprecated"):
         case (True, text):
             # This is definitely not unreachable...
-            obj.deprecated = text  # type: ignore[unreachable]
+            if not text.strip():  # type: ignore[unreachable]
+                obj.deprecated = True
+            else:
+                obj.deprecated = text
     if has_tag(obj, "hidetype"):
         obj.type = ""
     return orig_JsRenderer_rst_(self, partial_path, obj, use_short_name)
@@ -175,7 +186,10 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
     node["extendedTypes"] = [t for t in node.get("extendedTypes", []) if "id" in t]
     # See docstring for destructure_param
     fix_up_inline_object_signature(self, node)
-    return _orig_convert_node(self, node)
+    converted, more_todo = _orig_convert_node(self, node)
+    if converted:
+        converted.is_private = node.get("flags", {}).get("isPrivate", False)
+    return converted, more_todo
 
 
 TsAnalyzer._convert_node = _convert_node
@@ -512,15 +526,6 @@ class PyodideAnalyzer:
         for (key, doclet) in self.doclets.items():
             self.set_doclet_is_private(key, doclet)
 
-        for doclet in self.doclets.values():
-            if doclet.is_private:
-                continue
-
-            if doclet.name.startswith("["):
-                # This is a symbol.
-                # \u2024 looks like a dot but won't get split by `.split(".")`.
-                doclet.name = "[Symbol\u2024" + doclet.name[1:]
-
         for (key, doclet) in self.doclets.items():
             if doclet.is_private:
                 continue
@@ -528,10 +533,13 @@ class PyodideAnalyzer:
             filename = key[0]
             toplevelname = key[1]
             doclet.name = doclet.name.rpartition(".")[2]
+            if doclet.name.startswith("["):
+                # a symbol.
+                # \u2024 looks like a period but is not a period.
+                # This isn't ideal, but otherwise the coloring is weird.
+                doclet.name = "[Symbol\u2024" + doclet.name[1:]
 
             if filename == "pyodide.":
-                # Might be named globalThis.something or exports.something.
-                # Trim off the prefix.
                 items["globalThis"].append(doclet)
                 continue
 
@@ -541,8 +549,8 @@ class PyodideAnalyzer:
                 continue
 
             if toplevelname.endswith("#"):
-                # This is a class method.
-                # If it's not part of a PyProxy class, the method will be
+                # This is a class method. If it's not part of a PyProxyXMethods
+                # class (which we already dealt with), the method will be
                 # documented as part of the class.
                 continue
 

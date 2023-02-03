@@ -374,7 +374,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 
   const pyodide = finalizeBootstrap(API, config);
 
-  // API.runPython works starting here.
+  // runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
     // loaded. But in other cases it's harmless.
