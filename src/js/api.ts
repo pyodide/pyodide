@@ -508,7 +508,20 @@ export let PATH: any;
  */
 export let ERRNO_CODES: { [code: string]: number };
 
-/** @private */
+/**
+ * Why is this a class rather than an object?
+ * 1. It causes documentation items to be created for the entries so we can copy
+ *    the definitions here rather than making pointless exports.
+ * 2. We can use @warnOnce decorators (currently can only decorate class
+ *    methods)
+ * 3. It allows us to rebind names `PyBuffer` etc without causing
+ *    `dts-bundle-generator` to generate broken type declarations.
+ *
+ * Between typescript, typedoc, dts-bundle-generator, rollup, and Emscripten,
+ * there are a lot of constraints so we have to do some slightly weird things.
+ * We convert it back into an object in makePublicAPI.
+ * @private
+ */
 export class PyodideAPI {
   /**
    *
@@ -646,19 +659,22 @@ export class PyodideAPI {
   }
 }
 
-API.public_api = PyodideAPI;
-
 /** @hidetype */
 export type PyodideInterface = typeof PyodideAPI;
 
 /** @private */
 API.makePublicAPI = function () {
-  PyodideAPI.FS = Module.FS;
-  PyodideAPI.PATH = Module.PATH;
-  PyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
-  // @ts-ignore
-  PyodideAPI._module = Module;
-  // @ts-ignore
-  PyodideAPI._api = API;
-  return PyodideAPI;
+  // Create a copy of PyodideAPI that is an object instead of a class. This
+  // displays a bit better in debuggers / consoles.
+  const pyodideAPI = Object.create(
+    {},
+    Object.getOwnPropertyDescriptors(PyodideAPI),
+  );
+  API.public_api = pyodideAPI;
+  pyodideAPI.FS = Module.FS;
+  pyodideAPI.PATH = Module.PATH;
+  pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
+  pyodideAPI._module = Module;
+  pyodideAPI._api = API;
+  return pyodideAPI;
 };

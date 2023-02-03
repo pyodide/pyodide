@@ -35,8 +35,9 @@ export function warnOnce(warning: string): MethodDecorator {
     _key: string | symbol,
     descriptor: TypedPropertyDescriptor<any>,
   ): TypedPropertyDescriptor<any> {
-    const original = descriptor.value;
-    descriptor.value = function (...args: any) {
+    const key = descriptor.value ? "value" : "get";
+    const original = descriptor[key];
+    descriptor[key] = function (...args: any) {
       if (!warned) {
         warned = true;
         console.warn(warning);
