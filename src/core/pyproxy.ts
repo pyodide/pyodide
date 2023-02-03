@@ -61,12 +61,7 @@ declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
 // end-pyodide-skip
 
-/**
- * Is ``jsobj`` a :js:class:`~pyodide.ffi.PyProxy`?
- * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyProxy <pyodide.ffi.PyProxy>` instead.
- * @param jsobj Object to test.
- */
-export function isPyProxy(jsobj: any): jsobj is PyProxy {
+function isPyProxy(jsobj: any): jsobj is PyProxy {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
 }
 API.isPyProxy = isPyProxy;
@@ -648,7 +643,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithLength`` instead.
    */
   @warnOnce(
-    "supportsLength is deprecated, use `instanceof PyProxyWithLength` instead",
+    "supportsLength is deprecated, use `instanceof pyodide.ffi.PyProxyWithLength` instead",
   )
   supportsLength(): this is PyProxyWithLength {
     return !!(this.$$flags & HAS_LENGTH);
@@ -658,7 +653,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithGet`` instead.
    */
   @warnOnce(
-    "supportsGet is deprecated, use `instanceof PyProxyWithGet` instead",
+    "supportsGet is deprecated, use `instanceof pyodide.ffi.PyProxyWithGet` instead",
   )
   supportsGet(): this is PyProxyWithGet {
     return !!(this.$$flags & HAS_GET);
@@ -668,7 +663,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithSet`` instead.
    */
   @warnOnce(
-    "supportsSet is deprecated, use `instanceof PyProxyWithSet` instead",
+    "supportsSet is deprecated, use `instanceof pyodide.ffi.PyProxyWithSet` instead",
   )
   supportsSet(): this is PyProxyWithSet {
     return !!(this.$$flags & HAS_SET);
@@ -678,7 +673,7 @@ export class PyProxy {
    * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithHas`` instead.
    */
   @warnOnce(
-    "supportsHas is deprecated, use `instanceof PyProxyWithHas` instead",
+    "supportsHas is deprecated, use `instanceof pyodide.ffi.PyProxyWithHas` instead",
   )
   supportsHas(): this is PyProxyWithHas {
     return !!(this.$$flags & HAS_CONTAINS);
@@ -688,7 +683,9 @@ export class PyProxy {
    * :js:class:`~pyodide.ffi.PyIterable`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyIterable`` instead.
    */
-  @warnOnce("isIterable is deprecated, use `instanceof PyIterable` instead")
+  @warnOnce(
+    "isIterable is deprecated, use `instanceof pyodide.ffi.PyIterable` instead",
+  )
   isIterable(): this is PyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
@@ -697,7 +694,9 @@ export class PyProxy {
    * :js:class:`~pyodide.ffi.PyIterator`
    * @deprecated Use ``obj instanceof pyodide.ffi.PyIterator`` instead.
    */
-  @warnOnce("isIterator is deprecated, use `instanceof PyIterator` instead")
+  @warnOnce(
+    "isIterator is deprecated, use `instanceof pyodide.ffi.PyIterator` instead",
+  )
   isIterator(): this is PyIterator {
     return !!(this.$$flags & IS_ITERATOR);
   }
@@ -705,7 +704,9 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyAwaitable`
    * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyAwaitable <pyodide.ffi.PyAwaitable>` instead.
    */
-  @warnOnce("isAwaitable is deprecated, use `instanceof PyAwaitable` instead")
+  @warnOnce(
+    "isAwaitable is deprecated, use `instanceof pyodide.ffi.PyAwaitable` instead",
+  )
   isAwaitable(): this is PyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
   }
@@ -713,7 +714,9 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyBuffer`.
    * @deprecated Use ``obj instanceof pyodide.ffi.PyBuffer`` instead.
    */
-  @warnOnce("isBuffer is deprecated, use `instanceof PyBuffer` instead")
+  @warnOnce(
+    "isBuffer is deprecated, use `instanceof pyodide.ffi.PyBuffer` instead",
+  )
   isBuffer(): this is PyBuffer {
     return !!(this.$$flags & IS_BUFFER);
   }
@@ -721,7 +724,9 @@ export class PyProxy {
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyCallable`.
    * @deprecated ``obj instanceof pyodide.ffi.PyCallable`` instead.
    */
-  @warnOnce("isCallable is deprecated, use `instanceof PyCallable` instead")
+  @warnOnce(
+    "isCallable is deprecated, use `instanceof pyodide.ffi.PyCallable` instead",
+  )
   isCallable(): this is PyCallable {
     return !!(this.$$flags & IS_CALLABLE);
   }

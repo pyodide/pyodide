@@ -511,7 +511,8 @@ export let ERRNO_CODES: { [code: string]: number };
 /**
  * Why is this a class rather than an object?
  * 1. It causes documentation items to be created for the entries so we can copy
- *    the definitions here rather than making pointless exports.
+ *    the definitions here rather than having to export things just so that they
+ *    appear in the docs.
  * 2. We can use @warnOnce decorators (currently can only decorate class
  *    methods)
  * 3. It allows us to rebind names `PyBuffer` etc without causing
@@ -520,6 +521,9 @@ export let ERRNO_CODES: { [code: string]: number };
  * Between typescript, typedoc, dts-bundle-generator, rollup, and Emscripten,
  * there are a lot of constraints so we have to do some slightly weird things.
  * We convert it back into an object in makePublicAPI.
+ *
+ * TODO: move the definitions of public things defined in this file into the
+ * class body.
  * @private
  */
 export class PyodideAPI {
@@ -607,7 +611,7 @@ export class PyodideAPI {
    * @param jsobj Object to test.
    */
   @warnOnce(
-    "pyodide.isPyProxy is deprecated. Use `obj instanceof pyodide.PyProxy` instead.",
+    "pyodide.isPyProxy is deprecated. Use `obj instanceof pyodide.ffi.PyProxy` instead.",
   )
   static isPyProxy(jsobj: any): jsobj is PyProxy {
     return API.isPyProxy(jsobj);
