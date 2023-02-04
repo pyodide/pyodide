@@ -1457,3 +1457,13 @@ def test_roundtrip_no_destroy(selenium):
     """
     )(p)
     assert not isalive(p)
+
+
+@run_in_pyodide
+async def test_multiple_interpreters(selenium):
+    from js import loadPyodide  # type:ignore[attr-defined]
+
+    py2 = await loadPyodide()
+    d1 = {"a": 2}
+    d2 = py2.runPython(str(d1))
+    assert d2.toJs().to_py() == d1
