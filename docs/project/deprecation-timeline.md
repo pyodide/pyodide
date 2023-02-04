@@ -10,6 +10,12 @@ state, this list is subject to change and some features can be removed without
 deprecation warnings. More details about each item can often be found in the
 {ref}`changelog`.
 
+## 0.25.0
+
+- Typescript type imports for `PyProxy` subtypes from `pyodide` will be removed.
+
+- The methods `PyProxy.supportsHas`, `PyProxy.isCallable`, etc will be removed.
+
 ## 0.24.0
 
 - The `messageCallback` and `errorCallback` argument to `loadPackage` and
