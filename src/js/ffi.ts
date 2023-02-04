@@ -15,6 +15,7 @@ export type {
   PyCallable,
   PyBuffer,
   PyBufferView,
+  TypedArray,
 } from "./pyproxy.gen";
 
 export type { PythonError } from "./error_handling.gen";
