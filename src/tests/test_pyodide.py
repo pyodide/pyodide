@@ -1460,7 +1460,10 @@ def test_deprecations(selenium_standalone):
         "supportsSet",
         "supportsHas",
     ]:
-        assert sum(f"{name}() is deprecated. Use" in s for s in selenium.logs)
+        assert (
+            sum(f"{name}() is deprecated. Use" in s for s in selenium.logs.split("\n"))
+            == 1
+        )
 
 
 @run_in_pyodide(packages=["pytest"])
