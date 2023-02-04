@@ -18,6 +18,21 @@ import {
 // Have to @ts-ignore these or we get "only refers to a type, but is being used
 // as a value here."
 // They will still fail if not deprecated properly.
+//
+// A bunch of these don't work so they are commented out. This seems to be due
+// to limitations in tsd. It works as expected on interfaces and types, but fails
+// on classes...
+
+// @ts-ignore
+// expectDeprecated(PyProxy);
+// // @ts-ignore
+// expectDeprecated(PyProxyWithHas);
+// // @ts-ignore
+// expectDeprecated(PyProxyWithGet);
+// // @ts-ignore
+// expectDeprecated(PyProxyWithSet);
+// // @ts-ignore
+// expectDeprecated(PyProxyWithLength);
 // @ts-ignore
 expectDeprecated(PyProxyIterable);
 // @ts-ignore
@@ -28,16 +43,12 @@ expectDeprecated(PyProxyAwaitable);
 expectDeprecated(PyProxyCallable);
 // @ts-ignore
 expectDeprecated(PyProxyDict);
-
-// These other ones don't work.
 // // @ts-ignore
 // expectDeprecated(PyProxyBuffer);
 // // @ts-ignore
-// expectDeprecated(PyProxy);
-// // @ts-ignore
-// expectDeprecated(PyProxyWithLength);
-// // @ts-ignore
 // expectDeprecated(PyBuffer);
+// @ts-ignore
+expectDeprecated(TypedArray);
 
 let px: PyProxy = {} as PyProxy;
 expectDeprecated(px.isAwaitable);

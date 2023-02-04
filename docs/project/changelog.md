@@ -46,6 +46,21 @@ myst:
   Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
   {pr}`3525`
 
+- {{ Enhancement }} Added subclasses of `PyProxy` for each mixin. These can be
+  used to check whether a `PyProxy` supports a given set of methods with
+  `instanceof` e.g., `x instanceof pyodide.ffi.PyDict`.
+  {pr}`3523`
+
+- {{ Breaking }} The methods for checking `PyProxy` capabilities (e.g.,
+  `supportsHas`, `isCallable`) are now deprecated. Use e.g.,
+  `instanceof pyodide.ffi.PyCallable` instead.
+  {pr}`3523`
+
+- {{ Breaking }} Type exports of `PyProxy` subtypes have been moved from
+  `pyodide` to `pyodide/ffi` and many of them have changed names. The original
+  exports are still available but they are deprecated.
+  {pr}`3523`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
