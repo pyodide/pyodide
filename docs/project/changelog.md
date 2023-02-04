@@ -76,6 +76,10 @@ myst:
   This command is hidden by default since it is not intended for use by end users.
   {pr}`3411` {pr}`3463`
 
+- `pyodide build-recipes` now accepts `--no-deps` parameter,
+  which skips building dependencies of the package. This replaces `pyodide-build buildpkg`.
+  {pr}`3520`
+
 ## Version 0.22.1
 
 _January 25, 2023_
