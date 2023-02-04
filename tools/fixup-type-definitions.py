@@ -27,6 +27,7 @@ def main(filename):
         text = re.sub(r"\n(export )?interface (Py[A-Za-z]*).*", deprecated, text)
         text = re.sub(r"\n(declare class) (PyBufferView)", deprecated, text)
         text = re.sub(r"\n(export type) (TypedArray)", deprecated, text)
+        text = text.replace("export type ConfigType", "type ConfigType")
     if path.name == "ffi.d.ts":
         text = text.replace("export declare const ffi", "declare const ffi")
 
