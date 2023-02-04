@@ -527,49 +527,16 @@ export let ERRNO_CODES: { [code: string]: number };
  * @private
  */
 export class PyodideAPI {
-  /**
-   *
-   * An alias to the global Python namespace.
-   *
-   * For example, to access a variable called ``foo`` in the Python global
-   * scope, use ``pyodide.globals.get("foo")``
-   */
-  static globals = {} as PyProxy; // actually defined in loadPyodide (see pyodide.ts)
-  /**
-   * An alias to the `Emscripten File System API
-   * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
-   *
-   * This provides a wide range of POSIX-`like` file/device operations, including
-   * `mount
-   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
-   * which can be used to extend the in-memory filesystem with features like `persistence
-   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
-   *
-   * While all the file systems implementations are enabled, only the default
-   * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
-   * are available as members of ``FS.filesystems``:
-   * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
-   */
-  static FS = {} as any;
-  /**
-   * An alias to the `Emscripten Path API
-   * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
-   *
-   * This provides a variety of operations for working with file system paths, such as
-   * ``dirname``, ``normalize``, and ``splitPath``.
-   */
-  static PATH = {} as any;
-  /**
-   * A map from posix error names to error codes.
-   */
-  static ERRNO_CODES = {} as { [code: string]: number };
-  /**
-   * An alias to the Python :ref:`pyodide <python-api>` package.
-   *
-   * You can use this to call functions defined in the Pyodide Python package
-   * from JavaScript.
-   */
-  static pyodide_py = {} as PyProxy; // actually defined in loadPyodide (see pyodide.ts)
+  /** @hidden */
+  static globals = globals;
+  /** @hidden */
+  static FS = FS;
+  /** @hidden */
+  static PATH = PATH;
+  /** @hidden */
+  static ERRNO_CODES = ERRNO_CODES;
+  /** @hidden */
+  static pyodide_py = pyodide_py;
   /** @hidden */
   static version = version;
   /** @hidden */
