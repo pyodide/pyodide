@@ -50,7 +50,7 @@ ignore_missing_imports = true
 select = ['E', 'F', "W", 'B', 'UP', 'I']
 # Remove E999 once pattern matching is supported
 # https://github.com/charliermarsh/ruff/issues/282
-ignore = ["E402", "E501","E731", "E741", "E999"]
+ignore = ["E402", "E501", "E731", "E741", "E999"]
 target-version = "py311"
 
 [tool.ruff.isort]
