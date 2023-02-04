@@ -113,7 +113,11 @@ def _make_fake_package(
                 f.write(f'print("Hello from compiled module {name}")')
             with open(build_path / "setup.py", "w") as sf:
                 sf.write(
-                    f'from setuptools import setup\nfrom Cython.Build import cythonize\nsetup(ext_modules=cythonize("src/{module_name}/*.pyx",language_level=3))'
+                    f"""
+from setuptools import setup
+from Cython.Build import cythonize
+setup(ext_modules=cythonize("src/{module_name}/*.pyx",language_level=3))
+"""
                 )
             with open(build_path / "MANIFEST.in", "w") as mf:
                 mf.write("global-include *.pyx\n")
@@ -307,3 +311,77 @@ def test_fake_pypi_extras_build(selenium, tmp_path, fake_pypi_url):
     assert result.exit_code == 0, result.stdout
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 2
+
+
+def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
+    # TODO: - make test run without pyodide
+    output_dir = tmp_path / "dist"
+    # build package that resolves right
+    app = typer.Typer()
+    app.command()(build.main)
+
+    # override a dependency version and build
+    # pkg-a
+    with open(tmp_path / "requirements.txt", "w") as req_file:
+        req_file.write(
+            """
+# Whole line comment
+pkg-c~=1.0.0 # end of line comment
+pkg-a
+            """
+        )
+    with chdir(tmp_path):
+        result = runner.invoke(
+            app,
+            [
+                "-r",
+                "requirements.txt",
+                "--build-dependencies",
+                "--output-lockfile",
+                "lockfile.txt",
+            ],
+        )
+    # this should work
+    assert result.exit_code == 0, result.stdout
+    built_wheels = list(output_dir.glob("*.whl"))
+    assert len(built_wheels) == 2, result.stdout
+
+    # should have built version 1.0.0 of pkg-c
+    for x in built_wheels:
+        if x.name.startswith("pkg_c"):
+            assert x.name.find("1.0.0") != -1, x.name
+        x.unlink()
+
+    # rebuild from package-versions lockfile and
+    # check it outputs the same version number
+    with chdir(tmp_path):
+        result = runner.invoke(
+            app,
+            ["-r", str(tmp_path / "lockfile.txt")],
+        )
+
+    # should still have built 1.0.0 of pkg-c
+    built_wheels = list(output_dir.glob("*.whl"))
+    for x in built_wheels:
+        if x.name.startswith("pkg_c"):
+            assert x.name.find("1.0.0") != -1, x.name
+
+    assert len(built_wheels) == 2, result.stdout
+
+
+def test_bad_requirements_text(selenium, tmp_path):
+    app = typer.Typer()
+    app.command()(build.main)
+    # test 1 - error on URL location in requirements
+    # test 2 - error on advanced options
+    # test 3 - error on editable install of package
+    bad_lines = [" pkg-c@http://www.pkg-c.org", "  -r bob.txt", "   -e pkg-c"]
+    for line in bad_lines:
+        with open(tmp_path / "requirements.txt", "w") as req_file:
+            req_file.write(line + "\n")
+        with chdir(tmp_path):
+            result = runner.invoke(
+                app,
+                ["-r", "requirements.txt"],
+            )
+            assert result.exit_code != 0 and line.strip() in str(result)

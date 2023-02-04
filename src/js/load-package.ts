@@ -39,14 +39,26 @@ async function initializePackageIndex(lockFileURL: string) {
   }
   API.repodata_info = repodata.info;
   API.repodata_packages = repodata.packages;
+  API.repodata_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
   for (let name of Object.keys(API.repodata_packages)) {
-    for (let import_name of API.repodata_packages[name].imports) {
+    const pkg = API.repodata_packages[name];
+
+    for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
+
+    if (pkg.package_type === "cpython_module") {
+      API.repodata_unvendored_stdlibs_and_test.push(name);
+    }
   }
+
+  API.repodata_unvendored_stdlibs =
+    API.repodata_unvendored_stdlibs_and_test.filter(
+      (lib: string) => lib !== "test",
+    );
 }
 
 API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
