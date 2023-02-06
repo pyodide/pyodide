@@ -48,14 +48,10 @@ export type NativeFS = {
   syncfs: () => Promise<void>;
 };
 
-/**
- * @private
- */
+/** @private */
 API.saveState = () => API.pyodide_py._state.save_state();
 
-/**
- * @private
- */
+/** @private */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 
 /**
