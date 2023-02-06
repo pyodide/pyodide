@@ -17,6 +17,7 @@ export const memoize = (fn: CallableFunction) => {
   };
 };
 
+/** @private */
 export function makeWarnOnce(warning: string) {
   let warned = false;
   return function () {
