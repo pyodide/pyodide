@@ -1,4 +1,5 @@
-from typing import Any, Callable, Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from _pyodide._core_docs import _JsProxyMetaClass
 from pyodide.ffi import (

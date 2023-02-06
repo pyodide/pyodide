@@ -7,8 +7,8 @@ from pyodide_build.pywasmcross import (
     calculate_exports,
     get_cmake_compiler_flags,
     get_library_output,
-    handle_command_generate_args,  # noqa: E402
-    replay_f2c,  # noqa: E402
+    handle_command_generate_args,
+    replay_f2c,
 )
 
 
