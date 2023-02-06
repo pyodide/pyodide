@@ -2,13 +2,13 @@ import subprocess
 
 import pytest
 
-from pyodide_build.pywasmcross import handle_command_generate_args  # noqa: E402
-from pyodide_build.pywasmcross import replay_f2c  # noqa: E402
 from pyodide_build.pywasmcross import (
     BuildArgs,
     calculate_exports,
     get_cmake_compiler_flags,
     get_library_output,
+    handle_command_generate_args,
+    replay_f2c,
 )
 
 

@@ -133,7 +133,7 @@ def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
         _, _, _, tags = parse_wheel_filename(wheel.name)
         wheel_tags_list.append(tags)
     for supported_tag in pyodide_tags():
-        for wheel_path, wheel_tags in zip(wheel_paths, wheel_tags_list):
+        for wheel_path, wheel_tags in zip(wheel_paths, wheel_tags_list, strict=True):
             if supported_tag in wheel_tags:
                 yield wheel_path
 

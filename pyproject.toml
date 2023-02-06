@@ -40,12 +40,34 @@ module = [
 ]
 ignore_missing_imports = true
 
-[tool.pycln]
-all = true
+[tool.ruff]
+select = [
+  "E",     # pycodestyles
+  "W",     # pycodestyles
+  "F",     # pyflakes
+  "B0",    # bugbear (all B0* checks enabled by default)
+  "B904",  # bugbear (Within an except clause, raise exceptions with raise ... from err)
+  "B905",  # bugbear (zip() without an explicit strict= parameter set.)
+  "UP",    # pyupgrade
+  "I",     # isort
+  "PGH",   # pygrep-hooks
+]
+# Remove E999 once pattern matching is supported
+# https://github.com/charliermarsh/ruff/issues/282
+ignore = ["E402", "E501", "E731", "E741", "E999"]
+target-version = "py311"
 
-[tool.isort]
-profile = "black"
-known_first_party = [
+[tool.ruff.per-file-ignores]
+"src/py/_pyodide/_base.py" = [
+  "PGH001",  # No builtin `eval()` allowed
+]
+"src/tests/test_typeconversions.py" = [
+  "PGH001",  # No builtin `eval()` allowed
+]
+
+
+[tool.ruff.isort]
+known-first-party = [
   "pyodide",
   "pyodide_js",
   "micropip",
@@ -53,8 +75,11 @@ known_first_party = [
   "_pyodide",
   "js",
 ]
-known_third_party = [
+known-third-party = [
   "build",
 ]
+
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
 
 [tool.pyodide]
