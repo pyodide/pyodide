@@ -286,7 +286,7 @@ build. We automate the following steps:
     - Install the build dependencies requested in the package `build-requires`.
       (We ignore all version constraints on the unisolated packages, but version
       constraints on other packages are respected.
-    - Run the PEP 517 build backend associated to the project to generate a wheel.
+    - Run the {pep}`517` build backend associated to the project to generate a wheel.
 - Unpack the wheel with `python -m wheel unpack`.
 - Run the `build/post` script in the unpacked wheel directory if it's present.
 - Unvendor unit tests included in the installation folder to a separate zip file
