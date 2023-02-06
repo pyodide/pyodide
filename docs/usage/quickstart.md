@@ -23,7 +23,7 @@ releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
 yourself. See {ref}`downloading_deploying` for more details.
 
 The `pyodide.js` file defines a single async function called
-{any}`loadPyodide <globalThis.loadPyodide>` which sets up the Python environment
+{js:func}`~globalThis.loadPyodide` which sets up the Python environment
 and returns {js:mod}`the Pyodide top level namespace <pyodide>`.
 
 ```pyodide
@@ -40,7 +40,7 @@ main();
 
 ## Running Python code
 
-Python code is run using the {any}`pyodide.runPython` function. It takes as
+Python code is run using the {js:func}`pyodide.runPython` function. It takes as
 input a string of Python code. If the code ends in an expression, it returns the
 result of the expression, translated to JavaScript objects (see
 {ref}`type-translations`). For example the following code will return the
@@ -139,7 +139,7 @@ Create and save a test `index.html` page with the following contents:
 ## Accessing Python scope from JavaScript
 
 All functions and variables defined in the Python global scope are accessible
-via the {any}`pyodide.globals` object.
+via the {js:attr}`pyodide.globals` object.
 
 For example, if you run the code `x = numpy.ones([3,3])` in Python global scope,
 you can access the global variable `x` from JavaScript in your browser's

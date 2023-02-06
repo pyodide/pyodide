@@ -32,6 +32,8 @@ DATA = {
         # the JavaScript domain has no exception type for some reason...
         "Error": "$global/",
         "Function": "$global/",
+        "Promise": "$global/",
+        "FileSystemDirectoryHandle": "API/",
     },
     "js:method": {
         "Iterator.next": "$reference/Iteration_protocols#next",
@@ -62,7 +64,6 @@ DATA = {
         "Symbol.iterator": "$global/",
         "Symbol.toStringTag": "$global/",
         "FinalizationRegistry": "$global/",
-        "Promise": "$global/",
         "globalThis": "$global/",
         "NaN": "$global/",
         "undefined": "$global/",
@@ -77,6 +78,7 @@ DATA = {
         "TypedArray.BYTES_PER_ELEMENT": "$global/",
     },
     "js:attribute": {
+        "TypedArray.byteLength": "$global/",
         "Response.type": "API/",
         "Response.url": "API/",
         "Response.statusText": "API/",

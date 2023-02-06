@@ -137,7 +137,11 @@ jobs:
           ccache -s
 
       - name: check-size
-        run: ls -lh dist/
+        run: |
+          ls -lh dist/
+
+          pip install brotli
+          ./tools/check_compressed_size.py dist/pyodide.asm.*
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v2

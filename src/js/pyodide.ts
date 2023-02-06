@@ -242,7 +242,7 @@ export async function loadPyodide(
 
     /**
      * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
-     * file. You can produce custom lock files with :any:`micropip.freeze`.
+     * file. You can produce custom lock files with :py:func:`micropip.freeze`.
      * Default: ```${indexURL}/repodata.json```
      */
     lockFileURL?: string;
@@ -396,14 +396,17 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   await API.packageIndexReady;
 
   let importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(API._import_name_to_package_name);
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.repodata_unvendored_stdlibs_and_test,
+  );
 
   if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
+    await pyodide.loadPackage(API.repodata_unvendored_stdlibs);
   }
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;

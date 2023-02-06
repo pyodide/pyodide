@@ -42,10 +42,26 @@ myst:
   [CPython 3.12](https://github.com/python/cpython/issues/93839).
   {pr}`3507`
 
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard library.
+  Now these modules need to be loaded with `pyodide.loadPackage` or `micropip.install`
+  {pr}`3525`
+
+- {{ Fix }} Calling `loadPyodide` repeatedly in Node no longer results in
+  `MaxListenersExceededWarning`. Also, calling `loadPyodide` in Node v14 no
+  longer changes unhandled rejections in promises.
+  {pr}`3542`
+
 ### Build System
+
+- {{ Enhancement}} Add `--build-dependencies` to pyodide build command
+  to fetch and build dependencies of a package being built.
+  Also adds `--skip-dependency` to ignore selected dependencies.
+  {pr}`3310`
 
 - {{ Enhancement }} Improved logging in `pyodide-build` with rich.
   {pr}`3442`
+
+- {{ Enhancement}} Added `pyodide-build` support for building a list of packages from a requirements.txt file with `pyodide build -r <requirements.txt>`. Also can output a list of chosen dependencies in the same format when building a package and dependencies using the `--output-lockfile <lockfile.txt>` argument. This enables repeatable builds of packages. {pr}`3469`
 
 - {{ Enhancement }} Added `package/tag` key to the `meta.yaml` spec to group
   packages.
@@ -67,14 +83,19 @@ myst:
   This command is hidden by default since it is not intended for use by end users.
   {pr}`3411` {pr}`3463`
 
+- `pyodide build-recipes` now accepts `--no-deps` parameter,
+  which skips building dependencies of the package. This replaces `pyodide-build buildpkg`.
+  {pr}`3520`
+
 ## Version 0.22.1
 
 _January 25, 2023_
 
 - {{ Breaking }} `setStdin` now accepts an extra `autoEOF` parameter. If `true`,
   it will insert an EOF automatically after each string or buffer. Defaults to
-  `true`. This also affects the behavior of `
-{pr}`3488`
+  `true`. This also affects the behavior of the `stdin` argument to
+  `loadPyodide`.
+  {pr}`3488`
 
 - {{ Fix }} `from pyodide.ffi import *` doesn't raise an `ImportError` anymore.
   {pr}`3484`
@@ -115,10 +136,6 @@ _January 25, 2023_
 _January 3, 2023_
 
 [See the release notes for a summary.](https://blog.pyodide.org/posts/0.22-release/)
-
-- {{ Enhancement}} Add `--build-dependencies` to pyodide build command to fetch and build dependencies of a package being
-  built. Also adds `--skip-dependency` to ignore selected dependencies.
-  {pr}`3310`
 
 ### Deployment and testing
 
@@ -254,9 +271,8 @@ _January 3, 2023_
   module-type service workers.
   {pr}`3070`
 
-- {{ Enhancement }} Added a new API `pyodide.mountNativeFS`
-  which mounts [FileSystemDirectoryHandle](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
-  into the Pyodide file system.
+- {{ Enhancement }} Added a new API `pyodide.mountNativeFS` which mounts a
+  {js:class}`FileSystemDirectoryHandle` into the Pyodide file system.
   {pr}`2987`
 
 - {{ Enhancement }} `loadPyodide` has a new option called `args`. This list will
@@ -1537,7 +1553,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a JavaScript `Promise`.
   {pr}`1324`
 - {{ Fix }} `micropip.install` now interacts correctly with
-  {any}`pyodide.loadPackage`.
+  {js:func}`pyodide.loadPackage`.
   {pr}`1457`
 - {{ Fix }} `micropip.install` now handles version constraints correctly
   even if there is a version of the package available from the Pyodide `indexURL`.

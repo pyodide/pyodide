@@ -37,7 +37,6 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    "versionwarning.extension",
     "sphinx_issues",
     "sphinx_autodoc_typehints",
     "sphinx_design",  # Used for tabs in building-from-sources.md
@@ -51,15 +50,12 @@ jsdoc_config_path = "../src/js/tsconfig.json"
 root_for_relative_js_paths = "../src/"
 issues_github_path = "pyodide/pyodide"
 
-versionwarning_messages = {
-    "latest": (
-        "This is the development version of the documentation. "
-        'See <a href="https://pyodide.org/">here</a> for latest stable '
-        "documentation. Please do not use Pyodide with non "
-        "versioned (`dev`) URLs from the CDN for deployed applications!"
-    )
-}
-versionwarning_body_selector = "#main-content > div"
+versionwarning_message = (
+    "This is the development version of the documentation. "
+    'See <a href="https://pyodide.org/">here</a> for latest stable '
+    "documentation. Please do not use Pyodide with non "
+    "versioned (`dev`) URLs from the CDN for deployed applications!"
+)
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
@@ -105,7 +101,9 @@ html_theme = "sphinx_book_theme"
 html_logo = "_static/img/pyodide-logo.png"
 
 # theme-specific options
-html_theme_options: dict[str, Any] = {}
+html_theme_options: dict[str, Any] = {
+    "announcement": "",
+}
 
 # paths that contain custom static files (such as style sheets)
 html_static_path = ["_static"]
@@ -131,6 +129,9 @@ epub_exclude_files = ["search.html"]
 
 IN_SPHINX = "sphinx" in sys.modules and hasattr(sys.modules["sphinx"], "application")
 IN_READTHEDOCS = "READTHEDOCS" in os.environ
+IN_READTHEDOCS_LATEST = (
+    IN_READTHEDOCS and os.environ.get("READTHEDOCS_VERSION") == "latest"
+)
 
 
 base_dir = Path(__file__).resolve().parent.parent
@@ -201,6 +202,12 @@ def calculate_pyodide_version(app):
         "{{PYODIDE_CDN_URL}}": CDN_URL,
         "{{VERSION}}": version,
     }
+
+
+def set_announcement_message():
+    html_theme_options["announcement"] = (
+        versionwarning_message if IN_READTHEDOCS_LATEST else ""
+    )
 
 
 def write_console_html(app):
@@ -327,7 +334,9 @@ def setup(app):
     app.add_config_value("CDN_URL", "", True)
     app.connect("source-read", global_replace)
 
+    set_announcement_message()
     apply_patches()
+    calculate_pyodide_version(app)
     ensure_typedoc_on_path()
     create_generated_typescript_files(app)
     write_console_html(app)

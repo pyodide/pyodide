@@ -754,11 +754,19 @@ def _build_package_inner(
     import subprocess
     import sys
 
-    tee = subprocess.Popen(["tee", pkg_root / "build.log"], stdin=subprocess.PIPE)
-    # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
-    # of any child processes we spawn)
-    os.dup2(tee.stdin.fileno(), sys.stdout.fileno())  # type: ignore[union-attr]
-    os.dup2(tee.stdin.fileno(), sys.stderr.fileno())  # type: ignore[union-attr]
+    try:
+        stdout_fileno = sys.stdout.fileno()
+        stderr_fileno = sys.stderr.fileno()
+
+        tee = subprocess.Popen(["tee", pkg_root / "build.log"], stdin=subprocess.PIPE)
+
+        # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+        # of any child processes we spawn)
+        os.dup2(tee.stdin.fileno(), stdout_fileno)  # type: ignore[union-attr]
+        os.dup2(tee.stdin.fileno(), stderr_fileno)  # type: ignore[union-attr]
+    except OSError:
+        # This normally happens when testing
+        logger.warning("stdout/stderr does not have a fileno, not logging to file")
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         bash_runner.env["PKGDIR"] = str(pkg_root)

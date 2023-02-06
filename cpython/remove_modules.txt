@@ -1,4 +1,5 @@
 _osx_support.py
+_aix_support.py
 curses
 dbm
 ensurepip
@@ -13,3 +14,5 @@ webbrowser.py
 sqlite3
 ssl.py
 lzma.py
+_pydecimal.py
+pydoc_data

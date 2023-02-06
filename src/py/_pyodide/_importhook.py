@@ -49,8 +49,8 @@ class JsFinder(MetaPathFinder):
         can then be imported from Python using the standard Python import
         system. If another module by the same name has already been imported,
         this won't have much effect unless you also delete the imported module
-        from :any:`sys.modules`. This is called by the JavaScript API
-        :any:`pyodide.registerJsModule`.
+        from :py:data:`sys.modules`. This is called by the JavaScript API
+        :js:func:`pyodide.registerJsModule`.
 
         Parameters
         ----------
@@ -74,12 +74,12 @@ class JsFinder(MetaPathFinder):
     def unregister_js_module(self, name: str) -> None:
         """
         Unregisters a JavaScript module with given name that has been previously
-        registered with :any:`pyodide.registerJsModule` or
-        :any:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
+        registered with :js:func:`pyodide.registerJsModule` or
+        :py:func:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
-        imported module from ``sys.modules``. This is called by the JavaScript
-        API :any:`pyodide.unregisterJsModule`.
+        imported module from :py:data:`sys.modules`. This is called by the JavaScript
+        API :js:func:`pyodide.unregisterJsModule`.
 
         Parameters
         ----------
@@ -134,9 +134,7 @@ def register_js_finder() -> None:
 
 
 STDLIBS = sys.stdlib_module_names | {"test"}
-# TODO: Move this list to js side
-UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "hashlib"]
-UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
+UNVENDORED_STDLIBS_AND_TEST: set[str] = set()
 
 
 from importlib import _bootstrap  # type: ignore[attr-defined]
@@ -180,7 +178,7 @@ def get_module_not_found_error(import_name):
     )
 
 
-def register_module_not_found_hook(packages: Any) -> None:
+def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     """
     A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
 
@@ -189,6 +187,8 @@ def register_module_not_found_hook(packages: Any) -> None:
     """
     global orig_get_module_not_found_error
     global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
+    global UNVENDORED_STDLIBS_AND_TEST
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
+    UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())
     orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
     _bootstrap._get_module_not_found_error = get_module_not_found_error

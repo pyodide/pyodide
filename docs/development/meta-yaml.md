@@ -39,7 +39,7 @@ The version of the package.
 ### `package/top-level`
 
 The list of top-level import name for the package.
-This key is used in {any}`pyodide.loadPackagesFromImports`.
+This key is used in {js:func}`pyodide.loadPackagesFromImports`.
 For example, the top-level import name for the `scikit-learn` is `sklearn`.
 Some packages may have multiple top-level import names.
 For instance, `setuptools` exposes `setuptools` and `pkg_resources`
@@ -62,7 +62,7 @@ The following tags are currently used in Pyodide:
 The URL of the source tarball.
 
 The tarball may be in any of the formats supported by Python's
-`shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
+{py:func}`shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
 ### `source/extract_dir`
 
