@@ -1,6 +1,7 @@
 import sys
 from collections.abc import (
     AsyncIterator,
+    Awaitable,
     Callable,
     ItemsView,
     Iterable,
@@ -13,7 +14,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Awaitable, Generic, TypeVar, overload
+from typing import IO, Any, Generic, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
