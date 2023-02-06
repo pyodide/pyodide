@@ -607,10 +607,10 @@ export type PyodideInterface = typeof PyodideAPI;
 API.makePublicAPI = function () {
   // Create a copy of PyodideAPI that is an object instead of a class. This
   // displays a bit better in debuggers / consoles.
-  const pyodideAPI = Object.create(
-    {},
-    Object.getOwnPropertyDescriptors(PyodideAPI),
-  );
+  let d = Object.getOwnPropertyDescriptors(PyodideAPI);
+  // @ts-ignore
+  delete d["prototype"];
+  const pyodideAPI = Object.create({}, d);
   API.public_api = pyodideAPI;
   pyodideAPI.FS = Module.FS;
   pyodideAPI.PATH = Module.PATH;
