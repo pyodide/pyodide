@@ -127,7 +127,7 @@ type PyProxyProps = {
   /**
    * captureThis tracks whether this should be passed as the first argument to
    * the Python function or not. We keep it false by default. To make a PyProxy
-   * where the `this` argument is included, call the `captureThis` method.
+   * where the ``this`` argument is included, call the :js:meth:`captureThis` method.
    */
   captureThis: boolean;
   /**
@@ -135,7 +135,7 @@ type PyProxyProps = {
    */
   isBound: boolean;
   /**
-   * the `this` value that has been bound to the PyProxy
+   * the ``this`` value that has been bound to the PyProxy
    */
   boundThis?: any;
   /**
@@ -153,7 +153,7 @@ type PyProxyProps = {
  * allows the copy of the PyProxy to share its attribute cache with the original
  * version. In all other cases, pyproxy_new should be called with one argument.
  *
- * In the case that the Python object is callable, PyProxyClass inherits from
+ * In the case that the Python object is callable, PyProxy inherits from
  * Function so that PyProxy objects can be callable. In that case we MUST expose
  * certain properties inherited from Function, but we do our best to remove as
  * many as possible.
@@ -552,16 +552,18 @@ export class PyProxyClass {
     /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
     /**
-     * If provided, ``toJs`` will store all PyProxies created in this list. This
-     * allows you to easily destroy all the PyProxies by iterating the list
-     * without having to recurse over the generated structure. The most common
-     * use case is to create a new empty list, pass the list as `pyproxies`, and
-     * then later iterate over `pyproxies` to destroy all of created proxies.
+     * If provided, :js:meth:`toJs` will store all PyProxies created in this
+     * list. This allows you to easily destroy all the PyProxies by iterating
+     * the list without having to recurse over the generated structure. The most
+     * common use case is to create a new empty list, pass the list as
+     * ``pyproxies``, and then later iterate over ``pyproxies`` to destroy all of
+     * created proxies.
      */
     pyproxies?: PyProxy[];
     /**
-     * If false, ``toJs`` will throw a :py:exc:`~pyodide.ffi.ConversionError` rather than
-     * producing a ``PyProxy``.
+     * If false, :js:meth:`toJs` will throw a
+     * :py:exc:`~pyodide.ffi.ConversionError` rather than producing a
+     * :js:class:`PyProxy`.
      */
     create_pyproxies?: boolean;
     /**

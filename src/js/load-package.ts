@@ -38,14 +38,26 @@ async function initializePackageIndex(lockFileURL: string) {
   }
   API.repodata_info = repodata.info;
   API.repodata_packages = repodata.packages;
+  API.repodata_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
   for (let name of Object.keys(API.repodata_packages)) {
-    for (let import_name of API.repodata_packages[name].imports) {
+    const pkg = API.repodata_packages[name];
+
+    for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
+
+    if (pkg.package_type === "cpython_module") {
+      API.repodata_unvendored_stdlibs_and_test.push(name);
+    }
   }
+
+  API.repodata_unvendored_stdlibs =
+    API.repodata_unvendored_stdlibs_and_test.filter(
+      (lib: string) => lib !== "test",
+    );
 }
 
 API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
@@ -346,12 +358,12 @@ let loadPackagePositionalCallbackDeprecationWarned = false;
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
  *
- * @param names Either a single package name or
- * URL or a list of them. URLs can be absolute or relative. The URLs must have
- * file name ``<package-name>.js`` and there must be a file called
- * ``<package-name>.data`` in the same directory. The argument can be a
- * ``PyProxy`` of a list, in which case the list will be converted to JavaScript
- * and the ``PyProxy`` will be destroyed.
+ * @param names Either a single package name or URL or a list of them. URLs can
+ * be absolute or relative. The URLs must have file name ``<package-name>.js``
+ * and there must be a file called ``<package-name>.data`` in the same
+ * directory. The argument can be a :js:class:`PyProxy` of a list, in
+ * which case the list will be converted to JavaScript and the
+ * :js:class:`PyProxy` will be destroyed.
  * @param options
  * @param options.messageCallback A callback, called with progress messages
  *    (optional)

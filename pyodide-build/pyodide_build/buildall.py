@@ -617,6 +617,7 @@ def generate_packagedata(
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
             "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
+            "package_type": pkg.package_type,
             "imports": [],
         }
 

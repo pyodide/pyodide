@@ -7,7 +7,7 @@
 If you are using Pyodide in the browser, you should download external files and
 save them to the virtual file system. The recommended way to do this is to zip
 the files and unpack them into the file system with
-{any}`pyodide.unpackArchive`:
+{js:func}`pyodide.unpackArchive`:
 
 ```pyodide
 let zipResponse = await fetch("myfiles.zip");
@@ -15,8 +15,9 @@ let zipBinary = await zipResponse.arrayBuffer();
 pyodide.unpackArchive(zipBinary, "zip");
 ```
 
-You can also download the files from Python using {any}`pyodide.http.pyfetch`,
-which is a convenient wrapper of JavaScript {js:func}`fetch`:
+You can also download the files from Python using
+{py:func}`~pyodide.http.pyfetch`, which is a convenient wrapper of JavaScript
+{js:func}`fetch`:
 
 ```pyodide
 await pyodide.runPythonAsync(`
@@ -59,7 +60,7 @@ For development purposes, you can serve your files with a
 
 ## How can I execute code in a custom namespace?
 
-The second argument to {any}`pyodide.runPython` is an options object which may
+The second argument to {js:func}`pyodide.runPython` is an options object which may
 include a `globals` element which is a namespace for code to read from and write
 to. The provided namespace must be a Python dictionary.
 
@@ -123,7 +124,8 @@ if "PYODIDE" in os.environ:
 
 ## How do I create custom Python packages from JavaScript?
 
-Put a collection of functions into a JavaScript object and use {any}`pyodide.registerJsModule`:
+Put a collection of functions into a JavaScript object and use
+{js:func}`pyodide.registerJsModule`:
 JavaScript:
 
 ```javascript
@@ -254,7 +256,7 @@ resp = await js.fetch('example.com/some_api', to_js({
 ## How can I control the behavior of stdin / stdout / stderr?
 
 If you wish to override `stdin`, `stdout` or `stderr` for the entire Pyodide
-runtime, you can pass options to {any}`loadPyodide <globalThis.loadPyodide>`: If
+runtime, you can pass options to {js:func}`~globalThis.loadPyodide`: If
 you say
 
 ```js
@@ -339,12 +341,12 @@ This can happen for two reasons,
    issue for this package doesn't exist already. Then follow
    {ref}`new-packages`.
 
-## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
+## How can I change the behavior of {js:func}`~pyodide.runPython` and {js:func}`~pyodide.runPythonAsync`?
 
 You can directly call Python functions from JavaScript. For most purposes it
 makes sense to make your own Python function as an entrypoint and call that
-instead of redefining `runPython`. The definitions of {any}`runPython
-<pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
+instead of redefining `runPython`. The definitions of
+{js:func}`~pyodide.runPython` and {js:func}`~pyodide.runPythonAsync` are very
 simple:
 
 ```javascript
@@ -359,7 +361,7 @@ async function runPythonAsync(code) {
 }
 ```
 
-To make your own version of {any}`runPython <pyodide.runPython>` you could do:
+To make your own version of {js:func}`~pyodide.runPython` you could do:
 
 ```pyodide
 const my_eval_code = pyodide.runPython(`
@@ -378,9 +380,9 @@ function myRunPython(code){
 
 Then `myRunPython("2+7")` returns `[None, 9]` and
 `myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`. If you want
-to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
-monkey patch {any}`pyodide.code.find_imports` which takes `code` as an argument
-and returns a list of packages imported.
+to change which packages {js:func}`pyodide.loadPackagesFromImports` loads, you
+can monkey patch {py:func}`pyodide.code.find_imports` which takes `code` as an
+argument and returns a list of packages imported.
 
 ## Why can't I import a file I just wrote to the file system?
 

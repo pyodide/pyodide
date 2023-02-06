@@ -62,7 +62,7 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
-def test_build_recipe(selenium, tmp_path, monkeypatch, request):
+def test_build_recipe(selenium, tmp_path):
     # TODO: Run this test without building Pyodide
 
     output_dir = tmp_path / "dist"
@@ -101,6 +101,150 @@ def test_build_recipe(selenium, tmp_path, monkeypatch, request):
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == len(pkgs_to_build)
+
+
+def test_build_recipe_no_deps(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    recipe_dir = Path(__file__).parent / "_test_recipes"
+
+    for build_dir in recipe_dir.rglob("build"):
+        shutil.rmtree(build_dir)
+
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
+    pkgs_to_build = ["pkg_test_graph1", "pkg_test_graph3"]
+    result = runner.invoke(
+        app,
+        [
+            *pkgs_to_build,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+
+    for pkg in pkgs_to_build:
+        assert f"Succeeded building package {pkg}" in result.stdout
+
+    for pkg in pkgs_to_build:
+        dist_dir = recipe_dir / pkg / "dist"
+        assert len(list(dist_dir.glob("*.whl"))) == 1
+
+
+def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    recipe_dir = Path(__file__).parent / "_test_recipes"
+
+    for build_dir in recipe_dir.rglob("build"):
+        shutil.rmtree(build_dir)
+
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
+    pkg = "pkg_test_graph1"
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Creating virtualenv isolated environment" not in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
+
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+            "--force-rebuild",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Creating virtualenv isolated environment" in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
+
+
+def test_build_recipe_no_deps_continue(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    recipe_dir = Path(__file__).parent / "_test_recipes"
+
+    for build_dir in recipe_dir.rglob("build"):
+        shutil.rmtree(build_dir)
+
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
+    pkg = "pkg_test_graph1"
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
+
+    for wheels in (recipe_dir / pkg / "build").rglob("*.whl"):
+        wheels.unlink()
+
+    pyproject_toml = next((recipe_dir / pkg / "build").rglob("pyproject.toml"))
+
+    # Modify some metadata and check it is applied when rebuilt with --continue flag
+    version = "99.99.99"
+    with open(pyproject_toml, encoding="utf-8") as f:
+        pyproject_data = f.read()
+
+    pyproject_data = pyproject_data.replace(
+        'version = "1.0.0"', f'version = "{version}"'
+    )
+
+    with open(pyproject_toml, "w", encoding="utf-8") as f:
+        f.write(pyproject_data)
+
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+            "--continue",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert f"Succeeded building package {pkg}" in result.stdout
+    assert f"{pkg}-{version}-py3-none-any.whl" in result.stdout
 
 
 def test_config_list():

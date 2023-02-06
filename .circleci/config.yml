@@ -74,7 +74,11 @@ jobs:
 
       - run:
           name: check-size
-          command: du dist/ -abh --max-depth 1  | sort -k 2
+          command: |
+            du dist/ -abh --max-depth 1  | sort -k 2
+
+            pip install brotli
+            ./tools/check_compressed_size.py dist/pyodide.asm.*
 
       - save_cache:
           paths:

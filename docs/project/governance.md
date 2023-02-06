@@ -19,7 +19,7 @@ describes how to participate and earn merit in the Pyodide community.
 Contributors are community members who contribute in concrete ways to the
 project. Anyone can become a contributor, and contributions can take many forms,
 for instance, answering user questions – not only code – as detailed in
-{any}`how_to_contribute`.
+{ref}`how_to_contribute`.
 
 ### Community members team
 
