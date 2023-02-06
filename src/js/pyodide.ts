@@ -373,7 +373,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 
   const python_stdlib_promise_zip = await python_stdlib_promise;
   // TODO: find a way to detect Python version dynamically...?
-  saveStreamToFile(Module, python_stdlib_promise_zip, "lib/python311.zip");
+  saveStreamToFile(Module, python_stdlib_promise_zip, "/lib/python311.zip");
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);

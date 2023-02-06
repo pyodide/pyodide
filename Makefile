@@ -171,7 +171,7 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		sed 's/^#pragma clang.*//g' \
 		>> $@
 
-pyodide_build: ./pyodide-build/pyodide_build/**
+pyodide_build: FORCE ./pyodide-build/pyodide_build/**
 	$(HOSTPYTHON) -m pip install -e ./pyodide-build
 	which pyodide-build >/dev/null
 	which pyodide >/dev/null
