@@ -5,29 +5,29 @@
 Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
 
-- {any}`micropip.install` (Python) for pure Python packages with wheels
-  as well as Pyodide packages (including Emscripten/wasm32 binary wheels). It
-  can install packages from PyPI, the JsDelivr CDN or from other URLs.
-- {any}`pyodide.loadPackage` (Javascript) for packages built with Pyodide. This
-  is a function with less overhead but also more limited functionality.
-  micropip uses this function to load Pyodide packages. In most cases you
-  should be using micropip.
+- {py:func}`micropip.install` (Python) for pure Python packages with wheels as
+  well as Pyodide packages (including Emscripten/wasm32 binary wheels). It can
+  install packages from PyPI, the JsDelivr CDN or from other URLs.
+- {js:func}`pyodide.loadPackage` (Javascript) for packages built with Pyodide.
+  This is a function with less overhead but also more limited functionality.
+  micropip uses this function to load Pyodide packages. In most cases you should
+  be using micropip.
 
 In some cases, and in particular in the REPL, packages are installed implicitly
-from imports. The Pyodide REPL uses {any}`pyodide.loadPackagesFromImports` to
-automatically download all packages that the code snippet imports. This is
+from imports. The Pyodide REPL uses {js:func}`pyodide.loadPackagesFromImports`
+to automatically download all packages that the code snippet imports. This is
 useful since users might import unexpected packages in REPL. At present,
-{any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
-download packages from PyPI, it will only download packages included in the
-Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of
-packages included in Pyodide.
+{js:func}`~pyodide.loadPackagesFromImports` will not download packages from
+PyPI, it will only download packages included in the Pyodide distribution. See
+{ref}`packages-in-pyodide` to check the full list of packages included in
+Pyodide.
 
 ## How to chose between `micropip.install` and `pyodide.loadPackage`?
 
-While {any}`micropip.install` is written in Python and
-{any}`pyodide.loadPackage` in Javascript this has no incidence on when
-to use each of these functions. Indeed, you can easily switch languages using
-the {ref}`type-translations` with,
+While {py:func}`micropip.install` is written in Python and
+{js:func}`pyodide.loadPackage` in Javascript this has no incidence on when to
+use each of these functions. Indeed, you can easily switch languages using the
+{ref}`type-translations` with,
 
 - from Javascript,
   ```javascript
@@ -39,8 +39,8 @@ the {ref}`type-translations` with,
   await pyodide_js.loadPackage('package_name')
   ```
 
-Instead, the general advice is to use {any}`micropip.install` for everything
-except in the following cases where {any}`pyodide.loadPackage` might be more
+Instead, the general advice is to use {py:func}`micropip.install` for everything
+except in the following cases where {js:func}`pyodide.loadPackage` might be more
 appropriate,
 
 - to load micropip itself,
@@ -134,10 +134,10 @@ for more information about CORS.
 </html>
 ```
 
-## Loading packages with {any}`pyodide.loadPackage`
+## Loading packages with {js:func}`pyodide.loadPackage`
 
 Packages included in the official Pyodide repository can be loaded using
-{any}`pyodide.loadPackage`:
+{js:func}`~pyodide.loadPackage`:
 
 ```js
 await pyodide.loadPackage("numpy");
@@ -154,21 +154,22 @@ await pyodide.loadPackage(
 The file name must be a valid wheel name.
 
 When you request a package from the official repository, all of the package's
-dependencies are also loaded. There is no dependency resolution when
-loading packages from custom URLs. If you want dependency resolution for custom URLs, use `micropip`.
+dependencies are also loaded. There is no dependency resolution when loading
+packages from custom URLs. If you want dependency resolution for custom URLs,
+use {mod}`micropip`.
 
 In general, loading a package twice is not permitted. However, one can override
 a dependency by loading a custom URL with the same package name before loading
 the dependent package.
 
 Multiple packages can also be loaded at the same time by passing a list to
-{any}`pyodide.loadPackage`.
+{js:func}`~pyodide.loadPackage`.
 
 ```js
 await pyodide.loadPackage(["cycler", "pytz"]);
 ```
 
-{any}`pyodide.loadPackage` returns a `Promise` which resolves when all the
+{js:func}`~pyodide.loadPackage` returns a {js:class}`Promise` which resolves when all the
 packages are finished loading:
 
 ```javascript

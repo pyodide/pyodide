@@ -44,6 +44,9 @@ def stream_redirected(to=os.devnull, stream=None):
     if stream is None:
         stream = sys.stdout
     try:
+        if not hasattr(stream, "fileno"):
+            yield
+            return
         stream_fd = stream.fileno()
     except io.UnsupportedOperation:
         # in case we're already capturing to something that isn't really a file
@@ -227,6 +230,9 @@ class PyPIProvider(APBase):
     BUILD_SKIP: list[str] = []
     BUILD_EXPORTS: str = ""
 
+    def __init__(self, build_dependencies: bool):
+        self.build_dependencies = build_dependencies
+
     def identify(self, requirement_or_candidate):
         base = canonicalize_name(requirement_or_candidate.name)
         return base
@@ -274,9 +280,10 @@ class PyPIProvider(APBase):
 
     def get_dependencies(self, candidate):
         deps = []
-        for d in candidate.dependencies:
-            if d.name not in PyPIProvider.BUILD_SKIP:
-                deps.append(d)
+        if self.build_dependencies:
+            for d in candidate.dependencies:
+                if d.name not in PyPIProvider.BUILD_SKIP:
+                    deps.append(d)
         if candidate.extras:
             # add the base package as a dependency too, so we can avoid conflicts between same package
             # but with different extras
@@ -297,21 +304,7 @@ def _get_json_package_list(fname: Path) -> Generator[str, None, None]:
                 yield k
 
 
-def build_dependencies_for_wheel(
-    wheel: Path,
-    extras: list[str],
-    skip_dependency: list[str],
-    exports: str,
-    build_flags: list[str],
-) -> None:
-    """Extract dependencies from this wheel and build pypi dependencies
-    for each one in ./dist/
-
-    n.b. because dependency resolution may need to backtrack, this
-    is potentially quite slow in the case that one needs to build an
-    sdist in order to discover dependencies of a candidate sub-dependency.
-    """
-    metadata = None
+def _parse_skip_list(skip_dependency: list[str]) -> None:
     PyPIProvider.BUILD_SKIP = []
     for skip in skip_dependency:
         split_deps = skip.split(",")
@@ -324,6 +317,95 @@ def build_dependencies_for_wheel(
             else:
                 PyPIProvider.BUILD_SKIP.append(dep)
 
+
+def _resolve_and_build(
+    deps: list[str],
+    target_folder: Path,
+    build_dependencies: bool,
+    extras: list[str],
+    output_lockfile: str | None,
+) -> None:
+    requirements = []
+
+    target_env = {
+        "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
+        "sys_platform": common.platform().split("_")[0],
+        "extra": ",".join(extras),
+    }
+
+    for d in deps:
+        r = Requirement(d)
+        if (r.name not in PyPIProvider.BUILD_SKIP) and (
+            (not r.marker) or r.marker.evaluate(target_env)
+        ):
+            requirements.append(r)
+
+    # Create the (reusable) resolver.
+    provider = PyPIProvider(build_dependencies=build_dependencies)
+    reporter = BaseReporter()
+    resolver: Resolver[Requirement, Candidate, str] = Resolver(provider, reporter)
+
+    # Kick off the resolution process, and get the final result.
+    result = resolver.resolve(requirements)
+    target_folder.mkdir(parents=True, exist_ok=True)
+    version_file = None
+    if output_lockfile is not None and len(output_lockfile) > 0:
+        version_file = open(output_lockfile, "w")
+    for x in result.mapping.values():
+        download_or_build_wheel(x.url, target_folder)
+        if len(x.extras) > 0:
+            extratxt = "[" + ",".join(x.extras) + "]"
+        else:
+            extratxt = ""
+        if version_file:
+            version_file.write(f"{x.name}{extratxt}=={x.version}\n")
+    if version_file:
+        version_file.close()
+
+
+def build_wheels_from_pypi_requirements(
+    reqs: list[str],
+    target_folder: Path,
+    build_dependencies: bool,
+    skip_dependency: list[str],
+    exports: str,
+    build_flags: list[str],
+    output_lockfile: str | None,
+) -> None:
+    """
+    Given a list of package requirements, build or fetch them. If build_dependencies is true, then
+    package dependencies will be built or fetched also.
+    """
+    _parse_skip_list(skip_dependency)
+    PyPIProvider.BUILD_EXPORTS = exports
+    PyPIProvider.BUILD_FLAGS = build_flags
+    _resolve_and_build(
+        reqs,
+        target_folder,
+        build_dependencies,
+        extras=[],
+        output_lockfile=output_lockfile,
+    )
+
+
+def build_dependencies_for_wheel(
+    wheel: Path,
+    extras: list[str],
+    skip_dependency: list[str],
+    exports: str,
+    build_flags: list[str],
+    output_lockfile: str | None,
+) -> None:
+    """Extract dependencies from this wheel and build pypi dependencies
+    for each one in ./dist/
+
+    n.b. because dependency resolution may need to backtrack, this
+    is potentially quite slow in the case that one needs to build an
+    sdist in order to discover dependencies of a candidate sub-dependency.
+    """
+    metadata = None
+    _parse_skip_list(skip_dependency)
+
     PyPIProvider.BUILD_EXPORTS = exports
     PyPIProvider.BUILD_FLAGS = build_flags
     with ZipFile(wheel) as z:
@@ -335,30 +417,24 @@ def build_dependencies_for_wheel(
         raise RuntimeError(f"Can't find package metadata in {wheel}")
 
     deps: list[str] = metadata.get_all("Requires-Dist", [])
-    requirements = []
-
-    target_env = {
-        "extra": ",".join(extras),
-        "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
-        "sys_platform": common.platform().split("_")[0],
-    }
-
-    for d in deps:
-        r = Requirement(d)
-        if (r.name not in PyPIProvider.BUILD_SKIP) and (
-            (not r.marker) or r.marker.evaluate(target_env)
-        ):
-            requirements.append(r)
-
-    # Create the (reusable) resolver.
-    provider = PyPIProvider()
-    reporter = BaseReporter()
-    resolver: Resolver[Requirement, Candidate, str] = Resolver(provider, reporter)
-
-    # Kick off the resolution process, and get the final result.
-    result = resolver.resolve(requirements)
-    for x in result.mapping.values():
-        download_or_build_wheel(x.url, wheel.parent)
+    metadata.get("version")
+    _resolve_and_build(
+        deps,
+        wheel.parent,
+        build_dependencies=True,
+        extras=extras,
+        output_lockfile=output_lockfile,
+    )
+    # add the current wheel to the package-versions.txt
+    if output_lockfile is not None and len(output_lockfile) > 0:
+        with open(output_lockfile, "a") as version_txt:
+            name = metadata.get("Name")
+            version = metadata.get("Version")
+            if extras:
+                extratxt = "[" + ",".join(extras) + "]"
+            else:
+                extratxt = ""
+            version_txt.write(f"{name}{extratxt}=={version}\n")
 
 
 def fetch_pypi_package(package_spec: str, destdir: Path) -> Path:

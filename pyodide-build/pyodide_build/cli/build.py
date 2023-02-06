@@ -11,7 +11,11 @@ import typer
 
 from .. import common
 from ..out_of_tree import build
-from ..out_of_tree.pypi import build_dependencies_for_wheel, fetch_pypi_package
+from ..out_of_tree.pypi import (
+    build_dependencies_for_wheel,
+    build_wheels_from_pypi_requirements,
+    fetch_pypi_package,
+)
 from ..out_of_tree.utils import initialize_pyodide_root
 
 
@@ -123,12 +127,22 @@ def main(
         "",
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
+    requirements_txt: str = typer.Option(
+        "",
+        "--requirements",
+        "-r",
+        help="Build a list of package requirements from a requirements.txt file",
+    ),
     exports: str = typer.Option(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
     build_dependencies: bool = typer.Option(
         False, help="Fetch non-pyodide dependencies from pypi and build them too."
+    ),
+    output_lockfile: str = typer.Option(
+        "",
+        help="Output list of resolved dependencies to a file in requirements.txt format",
     ),
     skip_dependency: list[str] = typer.Option(
         [],
@@ -138,11 +152,52 @@ def main(
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
     extras: list[str] = []
+
+    if len(requirements_txt) > 0:
+        # a requirements.txt - build it (and optionally deps)
+        if not Path(requirements_txt).exists():
+            raise RuntimeError(
+                f"Couldn't find requirements text file {requirements_txt}"
+            )
+        reqs = []
+        with open(requirements_txt) as f:
+            raw_reqs = [x.strip() for x in f.readlines()]
+        for x in raw_reqs:
+            # remove comments
+            comment_pos = x.find("#")
+            if comment_pos != -1:
+                x = x[:comment_pos].strip()
+            if len(x) > 0:
+                if x[0] == "-":
+                    raise RuntimeError(
+                        f"pyodide build only supports name-based PEP508 requirements. [{x}] will not work."
+                    )
+                if x.find("@") != -1:
+                    raise RuntimeError(
+                        f"pyodide build does not support URL based requirements. [{x}] will not work"
+                    )
+                reqs.append(x)
+        try:
+            build_wheels_from_pypi_requirements(
+                reqs,
+                Path("./dist").resolve(),
+                build_dependencies,
+                skip_dependency,
+                exports,
+                ctx.args,
+                output_lockfile=output_lockfile,
+            )
+        except BaseException as e:
+            import traceback
+
+            print("Failed building multiple wheels:", traceback.format_exc())
+            raise e
+        return
+
     if source_location is not None:
         extras = re.findall(r"\[(\w+)\]", source_location)
         if len(extras) != 0:
             source_location = source_location[0 : source_location.find("[")]
-
     if not source_location:
         # build the current folder
         wheel = source(".", exports, ctx)
@@ -160,7 +215,12 @@ def main(
     if build_dependencies:
         try:
             build_dependencies_for_wheel(
-                wheel, extras, skip_dependency, exports, ctx.args
+                wheel,
+                extras,
+                skip_dependency,
+                exports,
+                ctx.args,
+                output_lockfile=output_lockfile,
             )
         except BaseException as e:
             import traceback

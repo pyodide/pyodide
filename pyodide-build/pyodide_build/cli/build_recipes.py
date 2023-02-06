@@ -2,7 +2,9 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall, pywasmcross
+from .. import buildall, buildpkg, pywasmcross
+from ..common import init_environment
+from ..logger import logger
 
 
 def recipe(
@@ -13,6 +15,9 @@ def recipe(
         None,
         help="The directory containing the recipe of packages. "
         "If not specified, the default is `./packages`",
+    ),
+    no_deps: bool = typer.Option(
+        False, help="If true, do not build dependencies of the specified packages. "
     ),
     install: bool = typer.Option(
         False,
@@ -46,8 +51,12 @@ def recipe(
         False,
         help="Force rebuild of all packages regardless of whether they appear to have been updated",
     ),
+    continue_: bool = typer.Option(
+        False,
+        "--continue",
+        help="Continue a build from the middle. For debugging. Implies '--force-rebuild'",
+    ),
     n_jobs: int = typer.Option(4, help="Number of packages to build in parallel"),
-    ctx: typer.Context = typer.Context,
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
     root = Path.cwd()
@@ -55,29 +64,45 @@ def recipe(
     install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
     log_dir_ = None if not log_dir else Path(log_dir).resolve()
 
+    if not recipe_dir_.is_dir():
+        raise FileNotFoundError(f"Recipe directory {recipe_dir_} not found")
+
+    init_environment()
+
     build_args = pywasmcross.BuildArgs(
-        pkgname="",
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir=target_install_dir,
         host_install_dir=host_install_dir,
     )
-
-    if len(packages) == 1 and "," in packages[0]:
-        # Handle packages passed with old comma separated syntax.
-        # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
-        targets = packages[0].replace(" ", "")
-    else:
-        targets = ",".join(packages)
-
     build_args = buildall.set_default_build_args(build_args)
-    pkg_map = buildall.build_packages(
-        recipe_dir_, targets, build_args, n_jobs, force_rebuild
-    )
 
-    if log_dir_:
-        buildall.copy_logs(pkg_map, log_dir_)
+    if no_deps:
+        if install or log_dir_:
+            logger.warning(
+                "WARNING: when --no-deps is set, --install and --log-dir parameters are ignored",
+            )
 
-    if install:
-        buildall.install_packages(pkg_map, install_dir_)
+        # TODO: use multiprocessing?
+        for package in packages:
+            package_path = recipe_dir_ / package
+            buildpkg.build_package(package_path, build_args, force_rebuild, continue_)
+
+    else:
+        if len(packages) == 1 and "," in packages[0]:
+            # Handle packages passed with old comma separated syntax.
+            # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
+            targets = packages[0].replace(" ", "")
+        else:
+            targets = ",".join(packages)
+
+        pkg_map = buildall.build_packages(
+            recipe_dir_, targets, build_args, n_jobs, force_rebuild
+        )
+
+        if log_dir_:
+            buildall.copy_logs(pkg_map, log_dir_)
+
+        if install:
+            buildall.install_packages(pkg_map, install_dir_)

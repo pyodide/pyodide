@@ -10,6 +10,7 @@ DATA = {
         "fetch": "API/",
         "eval": "$global/",
         "Object.fromEntries": "$global/",
+        "Reflect.ownKeys": "$global/",
         "Array.from": "$global/",
         "Atomics.wait": "$global/",
     },
@@ -32,6 +33,8 @@ DATA = {
         # the JavaScript domain has no exception type for some reason...
         "Error": "$global/",
         "Function": "$global/",
+        "Promise": "$global/",
+        "FileSystemDirectoryHandle": "API/",
     },
     "js:method": {
         "Iterator.next": "$reference/Iteration_protocols#next",
@@ -62,7 +65,6 @@ DATA = {
         "Symbol.iterator": "$global/",
         "Symbol.toStringTag": "$global/",
         "FinalizationRegistry": "$global/",
-        "Promise": "$global/",
         "globalThis": "$global/",
         "NaN": "$global/",
         "undefined": "$global/",
@@ -77,6 +79,7 @@ DATA = {
         "TypedArray.BYTES_PER_ELEMENT": "$global/",
     },
     "js:attribute": {
+        "TypedArray.byteLength": "$global/",
         "Response.type": "API/",
         "Response.url": "API/",
         "Response.statusText": "API/",
@@ -85,6 +88,7 @@ DATA = {
         "Response.redirected": "API/",
         "Response.status": "API/",
     },
+    "std:label": {"async function": "$reference/Statements/async_function"},
 }
 
 JSDATA = set(DATA["js:data"].keys())
@@ -119,18 +123,24 @@ for type, entries in DATA.items():
             USE_NAME_AS_LINK_TEXT,
         )
 
-INVDATA["js:data"]["void"] = (
-    "typescript docs",
-    "",
-    "https://www.typescriptlang.org/docs/handbook/2/functions.html#void",
-    "-",
-)
-INVDATA["js:data"]["any"] = (
-    "typescript docs",
-    "",
-    "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any",
-    "-",
-)
+for key, url in [
+    ("void", "https://www.typescriptlang.org/docs/handbook/2/functions.html#void"),
+    ("any", "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any"),
+]:
+    INVDATA["js:data"][key] = (
+        "typescript docs",
+        "",
+        url,
+        "-",
+    )
+
+for key in ["stdin", "stdout", "stderr"]:
+    INVDATA["js:data"][f"process.{key}"] = (
+        "node docs",
+        "",
+        f"https://nodejs.org/api/process.html#process{key}",
+        "-",
+    )
 
 
 def add_mdn_xrefs(app: Sphinx) -> None:

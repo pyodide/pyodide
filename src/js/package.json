@@ -69,6 +69,7 @@
     "pyodide.js.map",
     "pyodide.mjs.map",
     "pyodide.d.ts",
+    "ffi.d.ts",
     "repodata.json",
     "console.html"
   ],

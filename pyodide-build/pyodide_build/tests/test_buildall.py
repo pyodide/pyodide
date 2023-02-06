@@ -80,9 +80,14 @@ def test_generate_repodata(tmp_path):
         "file_name": "pkg_1.whl",
         "depends": ["pkg_1_1", "pkg_3", "libtest_shared"],
         "imports": ["pkg_1"],
+        "package_type": "package",
         "install_dir": "site",
         "sha256": hashes["pkg_1"],
     }
+
+    assert (
+        package_data["packages"]["libtest_shared"]["package_type"] == "shared_library"
+    )
 
     sharedlib_imports = package_data["packages"]["libtest_shared"]["imports"]
     assert not sharedlib_imports, (

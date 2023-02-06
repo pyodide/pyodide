@@ -15,23 +15,23 @@ import { initializeNativeFS } from "./nativefs";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+import type { PyProxy, PyDict } from "./pyproxy.gen";
 export type { PyodideInterface };
 
 export type {
   PyProxy,
   PyProxyWithLength,
-  PyProxyDict,
   PyProxyWithGet,
   PyProxyWithSet,
   PyProxyWithHas,
+  PyProxyDict,
   PyProxyIterable,
   PyProxyIterator,
   PyProxyAwaitable,
-  PyProxyBuffer,
   PyProxyCallable,
   TypedArray,
-  PyBuffer,
+  PyBuffer as PyProxyBuffer,
+  PyBufferView as PyBuffer,
 } from "./pyproxy.gen";
 
 export type Py2JsResult = any;
@@ -45,10 +45,7 @@ export { version };
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(
-  globals_dict: PyProxyDict,
-  builtins_dict: PyProxyDict,
-) {
+function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
       if (symbol === "get") {
@@ -123,10 +120,10 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   // Set up globals
   let globals = API.runPythonInternal(
     "import __main__; __main__.__dict__",
-  ) as PyProxyDict;
+  ) as PyDict;
   let builtins = API.runPythonInternal(
     "import builtins; builtins.__dict__",
-  ) as PyProxyDict;
+  ) as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
@@ -239,7 +236,7 @@ export async function loadPyodide(
 
     /**
      * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
-     * file. You can produce custom lock files with :any:`micropip.freeze`.
+     * file. You can produce custom lock files with :py:func:`micropip.freeze`.
      * Default: ```${indexURL}/repodata.json```
      */
     lockFileURL?: string;
@@ -377,7 +374,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 
   const pyodide = finalizeBootstrap(API, config);
 
-  // API.runPython works starting here.
+  // runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
     // loaded. But in other cases it's harmless.
@@ -386,14 +383,17 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   await API.packageIndexReady;
 
   let importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(API._import_name_to_package_name);
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.repodata_unvendored_stdlibs_and_test,
+  );
 
   if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
+    await pyodide.loadPackage(API.repodata_unvendored_stdlibs);
   }
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;

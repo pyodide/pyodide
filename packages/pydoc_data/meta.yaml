@@ -1,0 +1,15 @@
+package:
+  name: pydoc_data
+  version: 1.0.0 # Nonsense
+  tag:
+    - always
+  top-level:
+    - pydoc_data
+build:
+  type: cpython_module
+  script: |
+    mkdir dist
+    export DISTDIR=$(pwd)/dist
+    cd $CPYTHONBUILD/Lib
+
+    tar --exclude=__pycache__ -cf - pydoc_data | tar -C $DISTDIR -xf -

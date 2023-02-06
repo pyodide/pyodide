@@ -11,10 +11,10 @@ converting a Python string to the equivalent a JavaScript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a JavaScript object into
 Python, the result is a {py:class}`~pyodide.ffi.JsProxy` object. When we proxy a
-Python object into JavaScript, the result is a {any}`PyProxy` object. A proxied
+Python object into JavaScript, the result is a {js:class}`~pyodide.ffi.PyProxy` object. A proxied
 object can be explicitly converted using the explicit conversion methods
-{py:meth}`JsProxy.to_py <pyodide.ffi.JsProxy.to_py>` and
-{js:func}`PyProxy.toJs`.
+{py:meth}`JsProxy.to_py() <pyodide.ffi.JsProxy.to_py>` and
+{js:func}`PyProxy.toJs() <pyodide.ffi.PyProxy.toJs>`.
 
 Python to JavaScript translations occur:
 
@@ -22,7 +22,7 @@ Python to JavaScript translations occur:
 - when [importing Python objects into JavaScript](type-translations_using-py-obj-from-js)
 - when passing arguments to a JavaScript function called from Python,
 - when returning the results of a Python function called from JavaScript,
-- when accessing an attribute of a {any}`PyProxy`
+- when accessing an attribute of a {js:class}`~pyodide.ffi.PyProxy`
 
 JavaScript to Python translations occur:
 
@@ -35,8 +35,8 @@ JavaScript to Python translations occur:
 :class: warning
 
 Any time a Python to JavaScript translation occurs, it may create a
-{any}`PyProxy`. To avoid memory leaks, you must store the {any}`PyProxy` and
-{js:func}`~PyProxy.destroy` it when you are done with it. See
+{js:class}`~pyodide.ffi.PyProxy`. To avoid memory leaks, you must store the {js:class}`~pyodide.ffi.PyProxy` and
+{js:func}`~pyodide.ffi.PyProxy.destroy` it when you are done with it. See
 {ref}`call-py-from-js` for more info.
 ```
 
@@ -120,8 +120,8 @@ language.
 
 ### Proxying from JavaScript into Python
 
-When most JavaScript objects are translated into Python a {any}`JsProxy <pyodide.ffi.JsProxy>` is
-returned. The following operations are currently supported on a {any}`JsProxy <pyodide.ffi.JsProxy>`:
+When most JavaScript objects are translated into Python a {py:class}`~pyodide.ffi.JsProxy` is
+returned. The following operations are currently supported on a {py:class}`~pyodide.ffi.JsProxy`:
 
 | Python                             | JavaScript                        |
 | ---------------------------------- | --------------------------------- |
@@ -145,8 +145,9 @@ returned. The following operations are currently supported on a {any}`JsProxy <p
 | `await proxy`                      | `await x`                         |
 
 Note that each of these operations is only supported if the proxied JavaScript
-object supports the corresponding operation. See {any}`the JsProxy API docs <pyodide.ffi.JsProxy>` for the rest of the methods supported on {any}`JsProxy <pyodide.ffi.JsProxy>`. Some other
-code snippets:
+object supports the corresponding operation. See {py:class}`the JsProxy API docs
+<pyodide.ffi.JsProxy>` for the rest of the methods supported on
+{py:class}`~pyodide.ffi.JsProxy`. Some other code snippets:
 
 ```py
 for v in proxy:
@@ -161,8 +162,8 @@ for (let v of x) {
 }
 ```
 
-The `dir` method has been overloaded to return all keys on the prototype chain
-of `x`, so `dir(x)` roughly translates to:
+The {py:func}`dir` method has been overloaded to return all keys on the
+prototype chain of `x`, so `dir(x)` roughly translates to:
 
 ```js
 function dir(x) {
@@ -174,9 +175,9 @@ function dir(x) {
 }
 ```
 
-As a special case, JavaScript {js:class}`Array`, {js:class}`HTMLCollection`, and {js:class}`NodeList` are
-container types, but instead of using `array.get(7)` to get the 7th element,
-JavaScript uses `array[7]`. For these cases, we translate:
+As a special case, JavaScript {js:class}`Array`, {js:class}`HTMLCollection`, and
+{js:class}`NodeList` are container types, but instead of using `array.get(7)` to
+get the 7th element, JavaScript uses `array[7]`. For these cases, we translate:
 
 | Python             | JavaScript          |
 | ------------------ | ------------------- |
@@ -185,16 +186,38 @@ JavaScript uses `array[7]`. For these cases, we translate:
 | `idx in proxy`     | `idx in array`      |
 | `del proxy[idx]`   | `array.splice(idx)` |
 
+If you need to access the fields in a JavaScript object, you must use
+`obj.field_name` or if the name of the field is not a valid Python identifier,
+`getattr(obj, "field name")`. If you want to access the fields of the object
+like `obj["field name"]` you can use
+{py:meth}`~pyodide.ffi.JsProxy.as_object_map`:
+
+```py
+from pyodide.code import run_js
+
+obj = run_js(
+    """
+    ({
+      a: 7,
+      b: 9,
+      $c: 11
+    })
+    """
+)
+obj_map = obj.as_object_map()
+assert obj_map["$c"] == 11
+```
+
 (type-translations-pyproxy)=
 
 ### Proxying from Python into JavaScript
 
-When most Python objects are translated to JavaScript a {any}`PyProxy` is
-produced.
+When most Python objects are translated to JavaScript a
+{js:class}`~pyodide.ffi.PyProxy` is produced.
 
 Fewer operations can be overloaded in JavaScript than in Python, so some
-operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy <pyodide.ffi.JsProxy>`. The
-following operations are supported:
+operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
+{py:class}`~pyodide.ffi.JsProxy`. The following operations are supported:
 
 | JavaScript                          | Python              |
 | ----------------------------------- | ------------------- |
@@ -234,25 +257,28 @@ foo(); // throws Error: Object has already been destroyed
 
 ### Python to JavaScript
 
-Explicit conversion of a {any}`PyProxy` into a native JavaScript object is done
-with the {js:func}`PyProxy.toJs` method. You can also perform such a conversion in
-Python using {any}`to_js <pyodide.ffi.to_js>` which behaves in much the same way. By
-default, the {js:func}`~PyProxy.toJs` method does a recursive "deep" conversion, to do a shallow
-conversion use `proxy.toJs({depth : 1})`. In addition to [the normal type
-conversion](type-translations_py2js-table), {js:func}`~PyProxy.toJs` method performs the following
-explicit conversions:
+Explicit conversion of a {js:class}`~pyodide.ffi.PyProxy` into a native
+JavaScript object is done with the {js:func}`~pyodide.ffi.PyProxy.toJs` method.
+You can also perform such a conversion in Python using
+{py:func}`~pyodide.ffi.to_js` which behaves in much the same way. By default,
+the {js:func}`~pyodide.ffi.PyProxy.toJs` method does a recursive "deep"
+conversion, to do a shallow conversion use `proxy.toJs({depth : 1})`. In
+addition to [the normal type conversion](type-translations_py2js-table), the
+{js:func}`~pyodide.ffi.PyProxy.toJs` method performs the following explicit
+conversions:
 
-| Python                              | JavaScript             |
-| ----------------------------------- | ---------------------- |
-| {py:class}`list`, {py:class}`tuple` | {js:class}`Array`      |
-| {py:class}`dict`                    | {js:class}`Map`        |
-| {py:class}`set`                     | {js:class}`Set`        |
-| a buffer\*                          | {js:class}`TypedArray` |
+| Python                                    | JavaScript             |
+| ----------------------------------------- | ---------------------- |
+| {py:class}`list`, {py:class}`tuple`       | {js:class}`Array`      |
+| {py:class}`dict`                          | {js:class}`Map`        |
+| {py:class}`set`                           | {js:class}`Set`        |
+| {external:doc}`a buffer <c-api/buffer>`\* | {js:class}`TypedArray` |
 
-\* Examples of buffers include bytes objects and numpy arrays.
+\* Examples of buffers include {py:class}`bytes` objects and numpy
+{external+numpy:ref}`arrays`.
 
-If you need to convert {py:class}`dict` instead to {js:data}`Object`, you can pass
-{js:func}`Object.fromEntries` as the `dict_converter` argument:
+If you need to convert {py:class}`dict` instead to {js:data}`Object`, you can
+pass {js:func}`Object.fromEntries` as the `dict_converter` argument:
 `proxy.toJs({dict_converter : Object.fromEntries})`.
 
 In JavaScript, {js:class}`Map` and {js:class}`Set` keys are compared using
@@ -264,15 +290,15 @@ deep equality. If a key is encountered in a {py:class}`dict` or {py:class}`set`
 that would have different semantics in JavaScript than in Python, then a
 {py:exc}`~pyodide.ffi.ConversionError` will be thrown.
 
-See {ref}`buffer_tojs` for the behavior of {js:func}`~PyProxy.toJs` on buffers.
+See {ref}`buffer_tojs` for the behavior of {js:func}`~pyodide.ffi.PyProxy.toJs` on buffers.
 
 ````{admonition} Memory Leaks and toJs
 :class: warning
 
-The {js:func}`~PyProxy.toJs` method can create many proxies at arbitrary
-depth. It is your responsibility to manually `destroy` these proxies if you wish
-to avoid memory leaks. The `pyproxies` argument to `toJs` is designed to help
-with this:
+The {js:func}`~pyodide.ffi.PyProxy.toJs` method can create many proxies at arbitrary
+depth. It is your responsibility to manually {js:meth}`~pyodide.ffi.PyProxy.destroy`
+these proxies if you wish to avoid memory leaks. The `pyproxies` argument to
+{js:meth}`~pyodide.ffi.PyProxy.toJs` is designed to help with this:
 ```js
 let pyproxies = [];
 proxy.toJs({pyproxies});
@@ -286,8 +312,8 @@ proxy.destroy();
 ```
 As an alternative, if you wish to assert that the object should be fully
 converted and no proxies should be created, you can use
-`proxy.toJs({create_proxies : false})`. If a proxy would be created, an error is
-raised instead.
+`proxy.toJs({create_proxies : false})`. If a proxy would be created, a
+{py:exc}`~pyodide.ffi.ConversionError` is raised instead.
 ````
 
 (type-translations-jsproxy-to-py)=
@@ -308,9 +334,9 @@ performs the following explicit conversions:
 | {js:class}`Map`     | {py:class}`dict` |
 | {js:class}`Set`     | {py:class}`set`  |
 
-\* {py:meth}`~pyodide.ffi.JsProxy.to_py` will only convert an {js:data}`Object` into a
-dictionary if its constructor is `Object`, otherwise the object will be left
-alone. Example:
+\* {py:meth}`~pyodide.ffi.JsProxy.to_py` will only convert an {js:data}`Object`
+into a dictionary if its constructor is {js:data}`Object`, otherwise the object
+will be left alone. Example:
 
 ```pyodide
 class Test {};
@@ -348,7 +374,7 @@ keys but a Python {py:class}`dict` cannot. If the JavaScript map contains both
 If a Python object is callable, the proxy will be callable too. The arguments
 will be translated from JavaScript to Python as appropriate, and the return
 value will be translated from JavaScript back to Python. If the return value is
-a `PyProxy`, you must explicitly destroy it or else it will be leaked.
+a {js:class}`~pyodide.ffi.PyProxy`, you must explicitly destroy it or else it will be leaked.
 
 An example:
 
@@ -381,7 +407,7 @@ let result = test([1,2,3,4]);
 // result is the array [1, 4, 9, 16], nothing needs to be destroyed.
 ```
 
-If you need to use a key word argument, use {js:func}`~PyProxy.callKwargs`. The
+If you need to use a key word argument, use {js:func}`~pyodide.ffi.PyCallable.callKwargs`. The
 last argument should be a JavaScript object with the key value arguments.
 
 ```pyodide
@@ -411,26 +437,15 @@ f(a=2, b=3)
 then the JavaScript function receives one argument which is a JavaScript object
 `{a : 2, b : 3}`.
 
-When a JavaScript function is called, and it returns anything but a promise, if
-the result is a `PyProxy` it is destroyed. Also, any arguments that are
-PyProxies that were created in the process of argument conversion are also
-destroyed. If the `PyProxy` was created in Python using
-{py:func}`~pyodide.ffi.create_proxy` it is not destroyed.
+When a JavaScript function is called, if the return value not a
+{js:class}`Promise`, a {js:class}`Generator`, or an {js:class}`AsyncGenerator`,
+any arguments that are PyProxies that were created in the process of argument
+conversion are also destroyed. If the result is a
+{js:class}`~pyodide.ffi.PyProxy` it is also destroyed.
 
-When a JavaScript function returns a {js:data}`Promise` (for example, if the
-function is an `async` function), it is assumed that the {js:data}`Promise` is
-going to do some work that uses the arguments of the function, so it is not safe
-to destroy them until the {js:data}`Promise` resolves. In this case, the proxied
-function returns a Python {py:class}`~asyncio.Future` instead of the original
-{js:data}`Promise`. When the {js:data}`Promise` resolves, the result is
-converted to Python and the converted value is used to resolve the
-{py:class}`~asyncio.Future`. Then if the result is a `PyProxy` it is destroyed.
-Any PyProxies created in converting the arguments are also destroyed at this
-point.
-
-As a result of this, if a `PyProxy` is persisted to be used later, then it must
-either be copied using {any}`PyProxy.copy` in JavaScript, or it must be created
-with {py:func}`~pyodide.ffi.create_proxy` or
+As a result of this, if a {js:class}`~pyodide.ffi.PyProxy` is persisted to be
+used later, then it must either be copied using {js:meth}`~pyodide.ffi.PyProxy.copy` in
+JavaScript, or it must be created with {py:func}`~pyodide.ffi.create_proxy` or
 {py:func}`~pyodide.ffi.create_once_callable`. If it's only going to be called
 once use {py:func}`~pyodide.ffi.create_once_callable`:
 
@@ -456,6 +471,22 @@ document.body.addEventListener("click", proxy)
 document.body.removeEventListener("click", proxy)
 proxy.destroy()
 ```
+
+When a JavaScript function returns a {js:class}`Promise` (for example, if the
+function is an {ref}`async function`), it is assumed that the {js:class}`Promise` is
+going to do some work that uses the arguments of the function, so it is not safe
+to destroy them until the {js:class}`Promise` resolves. In this case, the
+proxied function returns a Python {py:class}`~asyncio.Future` instead of the
+original {js:class}`Promise`. When the {js:class}`Promise` resolves, the result
+is converted to Python and the converted value is used to resolve the
+{py:class}`~asyncio.Future`. Then if the result is a
+{js:class}`~pyodide.ffi.PyProxy` it is destroyed. Any PyProxies created in
+converting the arguments are also destroyed at this point.
+
+Similarly, if the return value is a {js:class}`Generator` or
+{js:class}`AsyncGenerator`, then the arguments (and all values sent to the
+generator) are kept alive until it is exhausted, or until
+{py:meth}`~pyodide.ffi.JsGenerator.close` is called.
 
 ## Buffers
 
@@ -503,29 +534,35 @@ total length of the buffers match, and the Python buffer is contiguous.
 Python objects supporting the [Python Buffer
 protocol](https://docs.python.org/3/c-api/buffer.html) are proxied into
 JavaScript. The data inside the buffer can be accessed via the
-{js:func}`PyProxy.toJs` method or the {js:func}`PyProxy.getBuffer` method. The
-{js:func}`~PyProxy.toJs` API copies the buffer into JavaScript, whereas the
-{js:func}`~PyProxy.getBuffer` method allows low level access to the WASM memory
-backing the buffer. The `getBuffer` API is more powerful but requires care to
-use correctly. For simple use cases the `toJs` API should be preferred.
+{js:func}`~pyodide.ffi.PyProxy.toJs` method or the
+{js:func}`~pyodide.ffi.PyBuffer.getBuffer` method. The
+{js:func}`~pyodide.ffi.PyProxy.toJs` API copies the buffer into JavaScript,
+whereas the {js:func}`~pyodide.ffi.PyBuffer.getBuffer` method allows low level
+access to the WASM memory backing the buffer. The
+{js:func}`~pyodide.ffi.PyBuffer.getBuffer` API is more powerful but requires
+care to use correctly. For simple use cases the
+{js:func}`~pyodide.ffi.PyProxy.toJs` API should be preferred.
 
-If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
-it to a single {js:class}`TypedArray`. However, in the case that the format of
-the buffer is `'s'`, we will convert the buffer to a string and if the format is
-`'?'` we will convert it to an {js:class}`Array` of booleans.
+If the buffer is zero or one-dimensional, then
+{js:func}`~pyodide.ffi.PyProxy.toJs` will in most cases convert it to a single
+{js:class}`TypedArray`. However, in the case that the format of the buffer is
+`'s'`, we will convert the buffer to a string and if the format is `'?'` we will
+convert it to an {js:class}`Array` of booleans.
 
 If the dimension is greater than one, we will convert it to a nested JavaScript
 array, with the innermost dimension handled in the same way we would handle a 1d
 array.
 
-An example of a case where you would not want to use the `toJs` method is when
-the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
-1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
-{js:func}`~PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped
-1920 x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
+An example of a case where you would not want to use the
+{js:func}`~pyodide.ffi.PyProxy.toJs` method is when the buffer is bitmapped
+image data. If for instance you have a 3d buffer shaped 1920 x 1080 x 4, then
+{js:func}`~pyodide.ffi.PyProxy.toJs` will be extremely slow. In this case you
+could use {js:func}`~pyodide.ffi.PyProxy.getBuffer`. On the other hand, if you
+have a 3d buffer shaped 1920 x 4 x 1080, the performance of
+{js:func}`~pyodide.ffi.PyProxy.toJs` will most likely be satisfactory.
 Typically, the innermost dimension won't matter for performance.
 
-The {js:func}`~PyProxy.getBuffer` method can be used to retrieve a reference to
+The {js:func}`~pyodide.ffi.PyProxy.getBuffer` method can be used to retrieve a reference to
 a JavaScript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a JavaScript ndarray library if one is present. For instance, if
@@ -576,8 +613,8 @@ to produce a traceback with certain functions filtered out), use that.
 
 ```{admonition} Be careful Proxying Stack Frames
 :class: warning
-If you make a {any}`PyProxy` of {py:data}`sys.last_value`, you should be especially
-careful to {js:meth}`~PyProxy.destroy` it when you are done with it, or
+If you make a {js:class}`~pyodide.ffi.PyProxy` of {py:data}`sys.last_value`, you should be especially
+careful to {js:meth}`~pyodide.ffi.PyProxy.destroy` it when you are done with it, or
 you may leak a large amount of memory if you don't.
 ```
 
@@ -614,7 +651,7 @@ objects on the custom namespaces.
 ### Importing Python objects into JavaScript
 
 A Python global variable in the `__main__` global scope can be imported into
-JavaScript using the {any}`pyodide.globals.get <PyProxy.get>` method. Given the
+JavaScript using the {js:meth}`pyodide.globals.get() <pyodide.ffi.PyProxyWithGet.get>` method. Given the
 name of the Python global variable, it returns the value of the variable
 translated to JavaScript.
 
@@ -622,10 +659,10 @@ translated to JavaScript.
 let x = pyodide.globals.get("x");
 ```
 
-As always, if the result is a `PyProxy` and you care about not leaking the
+As always, if the result is a {js:class}`~pyodide.ffi.PyProxy` and you care about not leaking the
 Python object, you must destroy it when you are done. It's also possible to set
-values in the Python global scope with {any}`pyodide.globals.set <PyProxy.set>`
-or remove them with {any}`pyodide.globals.delete <PyProxy.delete>`:
+values in the Python global scope with {js:meth}`pyodide.globals.set() <pyodide.ffi.PyProxyWithSet.set>`
+or remove them with {js:meth}`pyodide.globals.delete() <pyodide.ffi.PyProxyWithSet.delete>`:
 
 ```pyodide
 pyodide.globals.set("x", 2);
@@ -641,7 +678,7 @@ pyodide.runPython("x=2", my_py_namespace);
 let x = my_py_namespace.get("x");
 ```
 
-To access a Python module from JavaScript, use {any}`pyodide.pyimport`:
+To access a Python module from JavaScript, use {js:func}`~pyodide.pyimport`:
 
 ```js
 let sys = pyodide.pyimport("sys");
@@ -673,7 +710,7 @@ console.log(window.x); // 2
 ```
 
 You can create your own custom JavaScript modules using
-{any}`pyodide.registerJsModule` and they will behave like the `js` module except
+{js:func}`pyodide.registerJsModule` and they will behave like the `js` module except
 with a custom scope:
 
 ```pyodide

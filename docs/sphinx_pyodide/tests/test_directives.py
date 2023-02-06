@@ -214,7 +214,7 @@ def test_summary():
 def test_type_name():
     tn = inner_analyzer._type_name
     assert tn({"name": "void", "type": "intrinsic"}) == ":js:data:`void`"
-    assert tn({"value": None, "type": "literal"}) == "null"
+    assert tn({"value": None, "type": "literal"}) == ":js:data:`null`"
     assert (
         tn(
             {
@@ -223,7 +223,7 @@ def test_type_name():
                 "typeArguments": [{"name": "string", "type": "intrinsic"}],
             }
         ).strip()
-        == r":js:data:`Promise`\ **<**\ :js:data:`string`\ **>**"
+        == r":js:class:`Promise`\ **<**\ :js:data:`string`\ **>**"
     )
 
     assert (
