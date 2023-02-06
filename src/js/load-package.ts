@@ -12,7 +12,8 @@ import {
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
-import { PyProxy, isPyProxy } from "./pyproxy.gen";
+import { PyProxy } from "./pyproxy.gen";
+import { makeWarnOnce } from "./util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -352,7 +353,12 @@ async function downloadAndInstall(
 
 const acquirePackageLock = createLock();
 
-let loadPackagePositionalCallbackDeprecationWarned = false;
+const cbDeprecationWarnOnce = makeWarnOnce(
+  "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackage " +
+    "is deprecated and will be removed in v0.24. Instead use:\n" +
+    "   { messageCallback : callbackFunc }",
+);
+
 /**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
@@ -361,9 +367,9 @@ let loadPackagePositionalCallbackDeprecationWarned = false;
  * @param names Either a single package name or URL or a list of them. URLs can
  * be absolute or relative. The URLs must have file name ``<package-name>.js``
  * and there must be a file called ``<package-name>.data`` in the same
- * directory. The argument can be a :js:class:`PyProxy` of a list, in
+ * directory. The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
  * which case the list will be converted to JavaScript and the
- * :js:class:`PyProxy` will be destroyed.
+ * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
  * @param options
  * @param options.messageCallback A callback, called with progress messages
  *    (optional)
@@ -386,14 +392,7 @@ export async function loadPackage(
   errorCallbackDeprecated?: (message: string) => void,
 ) {
   if (typeof options === "function") {
-    if (!loadPackagePositionalCallbackDeprecationWarned) {
-      console.warn(
-        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackage " +
-          "is deprecated and will be removed in v0.24. Instead use:\n" +
-          "   { messageCallback : callbackFunc }",
-      );
-      loadPackagePositionalCallbackDeprecationWarned = true;
-    }
+    cbDeprecationWarnOnce();
     options = {
       messageCallback: options,
       errorCallback: errorCallbackDeprecated,
@@ -402,7 +401,7 @@ export async function loadPackage(
 
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
-  if (isPyProxy(names)) {
+  if (names instanceof PyProxy) {
     names = names.toJs();
   }
   if (!Array.isArray(names)) {

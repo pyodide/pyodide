@@ -1,16 +1,17 @@
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
-import "./module.ts";
+import "./module";
+import { ffi } from "./ffi";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { isPyProxy, PyBuffer, PyProxy, TypedArray } from "./pyproxy.gen";
+import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
-export { loadPackage, loadedPackages, isPyProxy };
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
+import { makeWarnOnce } from "./util";
 
 API.loadBinaryFile = loadBinaryFile;
 
@@ -77,7 +78,11 @@ export function runPython(
 }
 API.runPython = runPython;
 
-let loadPackagesFromImportsPositionalCallbackDeprecationWarned = false;
+const positionalCallbackWarnOnce = makeWarnOnce(
+  "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackageFromImports " +
+    "is deprecated and will be removed in v0.24. Instead use:\n" +
+    "   { messageCallback : callbackFunc }",
+);
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
  * any known packages that the code chunk imports. Uses the Python API
@@ -116,14 +121,7 @@ export async function loadPackagesFromImports(
   errorCallbackDeprecated?: (message: string) => void,
 ) {
   if (typeof options === "function") {
-    if (!loadPackagesFromImportsPositionalCallbackDeprecationWarned) {
-      console.warn(
-        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackageFromImports " +
-          "is deprecated and will be removed in v0.24. Instead use:\n" +
-          "   { messageCallback : callbackFunc }",
-      );
-      loadPackagesFromImportsPositionalCallbackDeprecationWarned = true;
-    }
+    positionalCallbackWarnOnce();
     options = {
       messageCallback: options,
       errorCallback: errorCallbackDeprecated,
@@ -239,9 +237,10 @@ export function unregisterJsModule(name: string) {
 /**
  * Convert a JavaScript object to a Python object as best as possible.
  *
- * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from JavaScript. If the
- * object is immutable or a :py:class:`PyProxy`, it will be returned unchanged. If
- * the object cannot be converted into Python, it will be returned unchanged.
+ * This is similar to :py:meth:`~pyodide.ffi.JsProxy.to_py` but for use from
+ * JavaScript. If the object is immutable or a :js:class:`~pyodide.ffi.PyProxy`,
+ * it will be returned unchanged. If the object cannot be converted into Python,
+ * it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
@@ -478,35 +477,6 @@ export function checkInterrupt() {
   }
 }
 
-export type PyodideInterface = {
-  globals: typeof globals;
-  FS: typeof FS;
-  PATH: typeof PATH;
-  ERRNO_CODES: typeof ERRNO_CODES;
-  pyodide_py: typeof pyodide_py;
-  version: typeof version;
-  loadPackage: typeof loadPackage;
-  loadPackagesFromImports: typeof loadPackagesFromImports;
-  loadedPackages: typeof loadedPackages;
-  isPyProxy: typeof isPyProxy;
-  runPython: typeof runPython;
-  runPythonAsync: typeof runPythonAsync;
-  registerJsModule: typeof registerJsModule;
-  unregisterJsModule: typeof unregisterJsModule;
-  setInterruptBuffer: typeof setInterruptBuffer;
-  checkInterrupt: typeof checkInterrupt;
-  toPy: typeof toPy;
-  pyimport: typeof pyimport;
-  unpackArchive: typeof unpackArchive;
-  mountNativeFS: typeof mountNativeFS;
-  registerComlink: typeof registerComlink;
-  PythonError: typeof PythonError;
-  PyBuffer: typeof PyBuffer;
-  setStdin: typeof setStdin;
-  setStdout: typeof setStdout;
-  setStderr: typeof setStderr;
-};
-
 /**
  * An alias to the `Emscripten File System API
  * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
@@ -539,43 +509,152 @@ export let PATH: any;
 export let ERRNO_CODES: { [code: string]: number };
 
 /**
+ * Why is this a class rather than an object?
+ * 1. It causes documentation items to be created for the entries so we can copy
+ *    the definitions here rather than having to export things just so that they
+ *    appear in the docs.
+ * 2. We can use @warnOnce decorators (currently can only decorate class
+ *    methods)
+ * 3. It allows us to rebind names `PyBuffer` etc without causing
+ *    `dts-bundle-generator` to generate broken type declarations.
+ *
+ * Between typescript, typedoc, dts-bundle-generator, rollup, and Emscripten,
+ * there are a lot of constraints so we have to do some slightly weird things.
+ * We convert it back into an object in makePublicAPI.
+ *
+ * TODO: move the definitions of public things defined in this file into the
+ * class body.
  * @private
  */
-API.makePublicAPI = function (): PyodideInterface {
-  FS = Module.FS;
-  PATH = Module.PATH;
-  ERRNO_CODES = Module.ERRNO_CODES;
-  let namespace = {
-    globals,
-    FS,
-    PATH,
-    ERRNO_CODES,
-    pyodide_py,
-    version,
-    loadPackage,
-    loadPackagesFromImports,
-    loadedPackages,
-    isPyProxy,
-    runPython,
-    runPythonAsync,
-    registerJsModule,
-    unregisterJsModule,
-    setInterruptBuffer,
-    checkInterrupt,
-    toPy,
-    pyimport,
-    unpackArchive,
-    mountNativeFS,
-    registerComlink,
-    PythonError,
-    PyBuffer,
-    _module: Module,
-    _api: API,
-    setStdin,
-    setStdout,
-    setStderr,
-  };
+export class PyodideAPI {
+  /** @hidden */
+  static globals = globals;
+  /** @hidden */
+  static FS = FS;
+  /** @hidden */
+  static PATH = PATH;
+  /** @hidden */
+  static ERRNO_CODES = ERRNO_CODES;
+  /** @hidden */
+  static pyodide_py = pyodide_py;
+  /** @hidden */
+  static version = version;
+  /** @hidden */
+  static loadPackage = loadPackage;
+  /** @hidden */
+  static loadPackagesFromImports = loadPackagesFromImports;
+  /** @hidden */
+  static loadedPackages = loadedPackages;
+  /** @hidden */
+  static runPython = runPython;
+  /** @hidden */
+  static runPythonAsync = runPythonAsync;
+  /** @hidden */
+  static registerJsModule = registerJsModule;
+  /** @hidden */
+  static unregisterJsModule = unregisterJsModule;
+  /** @hidden */
+  static toPy = toPy;
+  /** @hidden */
+  static pyimport = pyimport;
+  /** @hidden */
+  static unpackArchive = unpackArchive;
+  /** @hidden */
+  static mountNativeFS = mountNativeFS;
+  /** @hidden */
+  static registerComlink = registerComlink;
+  /** @hidden */
+  static ffi = ffi;
+  /** @hidden */
+  static setStdin = setStdin;
+  /** @hidden */
+  static setStdout = setStdout;
+  /** @hidden */
+  static setStderr = setStderr;
+  /** @hidden */
+  static setInterruptBuffer = setInterruptBuffer;
+  /** @hidden */
+  static checkInterrupt = checkInterrupt;
 
-  API.public_api = namespace;
-  return namespace;
+  /**
+   * Is ``jsobj`` a :js:class:`~pyodide.ffi.PyProxy`?
+   * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyProxy <pyodide.ffi.PyProxy>` instead.
+   * @param jsobj Object to test.
+   */
+  static isPyProxy(jsobj: any): jsobj is PyProxy {
+    console.warn(
+      "pyodide.isPyProxy() is deprecated. Use `instanceof pyodide.ffi.PyProxy` instead.",
+    );
+    this.isPyProxy = API.isPyProxy;
+    return API.isPyProxy(jsobj);
+  }
+
+  /**
+   * An alias for :js:class:`pyodide.ffi.PyBufferView`.
+   *
+   * @hidetype
+   * @alias
+   * @doc_kind class
+   * @deprecated
+   */
+  static get PyBuffer() {
+    console.warn(
+      "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead.",
+    );
+    Object.defineProperty(this, "PyBuffer", { value: PyBufferView });
+    return PyBufferView;
+  }
+
+  /**
+   * An alias for :js:class:`pyodide.ffi.PyBuffer`.
+   *
+   * @hidetype
+   * @alias
+   * @doc_kind class
+   * @deprecated
+   */
+
+  static get PyProxyBuffer() {
+    console.warn(
+      "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead.",
+    );
+    Object.defineProperty(this, "PyProxyBuffer", { value: PyBuffer });
+    return PyBuffer;
+  }
+
+  /**
+   * An alias for :js:class:`pyodide.ffi.PyBuffer`.
+   *
+   * @hidetype
+   * @alias
+   * @doc_kind class
+   * @deprecated
+   */
+  static get PythonError() {
+    console.warn(
+      "pyodide.PythonError is deprecated. Use `pyodide.ffi.PythonError` instead.",
+    );
+    Object.defineProperty(this, "PythonError", { value: PythonError });
+    return PythonError;
+  }
+}
+
+/** @hidetype */
+export type PyodideInterface = typeof PyodideAPI;
+
+/** @private */
+API.makePublicAPI = function () {
+  // Create a copy of PyodideAPI that is an object instead of a class. This
+  // displays a bit better in debuggers / consoles.
+  const pyodideAPI = Object.create(
+    {},
+    Object.getOwnPropertyDescriptors(PyodideAPI),
+  );
+  API.public_api = pyodideAPI;
+  pyodideAPI.FS = Module.FS;
+  pyodideAPI.PATH = Module.PATH;
+  pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
+  pyodideAPI._module = Module;
+  pyodideAPI._api = API;
+  return pyodideAPI;
 };
