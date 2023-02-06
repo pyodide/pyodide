@@ -3,8 +3,11 @@ package:
   version: de4d5646eb1ac6a0e663a4c9bc797dad8226aedb
 
 source:
+  # sha256: 148a959b61ffa4d77e810ceb3114765501d70c982cbb302a00954b81bc918e46
+  # url: https://github.com/xianyi/OpenBLAS/archive/de4d5646eb1ac6a0e663a4c9bc797dad8226aedb.zip
   sha256: 148a959b61ffa4d77e810ceb3114765501d70c982cbb302a00954b81bc918e46
   url: https://github.com/xianyi/OpenBLAS/archive/de4d5646eb1ac6a0e663a4c9bc797dad8226aedb.zip
+
   patches:
     - patches/0001-Add-Wno-implicit-function-declaration-flag.patch
 
@@ -16,11 +19,11 @@ build:
     chmod u+x f_check
     chmod u+x exports/gensymbol
     # Replace void returns by int returns
-    # sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
-    # sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
-    # sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
+    sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
+    sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
+    sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
 
-    make CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
+    make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
     cp libopenblas.so dist/
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
