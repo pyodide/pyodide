@@ -102,6 +102,7 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.lo
 	cp Setup.local $(BUILD)/Modules/
 	( \
 		cd $(BUILD); \
+		make regen-frozen; \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	touch $(BUILD)/$(LIB)
