@@ -78,16 +78,16 @@ function saveStreamToFile(Module: any, stream: Uint8Array, fileName: string) {
  * @private
  */
 function installStdlib(Module: any, stdlib: Uint8Array) {
-  // TODO: find a way to detect Python version dynamically...?
+  // TODO: Get python version from sys.version_info?
   saveStreamToFile(Module, stdlib, "/lib/python311.zip");
 
   // importlib is not available yet, so we can't use importlib.invalidate_caches here.
+  // Python’s default sys.meta_path has three meta path finders, and the third one is the
+  // path based finder.
   const code = `
-    import sys
-    for finder in sys.meta_path:
-      if hasattr(finder, 'invalidate_caches'):
-          finder.invalidate_caches()
-  `;
+import sys
+sys.meta_path[2].invalidate_caches()
+`;
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
     Module.API.fatal_loading_error(
