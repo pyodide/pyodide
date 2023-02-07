@@ -17,7 +17,7 @@ index dd208c7847..4a35f04e9e 100644
          # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
 -        #'<encodings.*>',
 +        'encodings.__init__ : encodings',
-+        'encodings.alias',
++        'encodings.aliases',
 +        'encodings.utf_8',
          'io',
          ]),
