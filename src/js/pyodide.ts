@@ -77,6 +77,29 @@ function saveStreamToFile(Module: any, stream: Uint8Array, fileName: string) {
 /**
  * @private
  */
+function installStdlib(Module: any, stdlib: Uint8Array) {
+  // TODO: find a way to detect Python version dynamically...?
+  saveStreamToFile(Module, stdlib, "/lib/python311.zip");
+
+  // importlib is not available yet, so we can't use importlib.invalidate_caches here.
+  const code = `
+    import sys
+    for finder in sys.meta_path:
+      if hasattr(finder, 'invalidate_caches'):
+          finder.invalidate_caches()
+  `;
+  let [errcode, captured_stderr] = Module.API.rawRun(code);
+  if (errcode) {
+    Module.API.fatal_loading_error(
+      "Failed to install standard library.\n",
+      captured_stderr,
+    );
+  }
+}
+
+/**
+ * @private
+ */
 function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
   saveStreamToFile(Module, pyodide_py_tar, fileName);
@@ -94,7 +117,7 @@ del importlib
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
     Module.API.fatal_loading_error(
-      "Failed to unpack standard library.\n",
+      "Failed to unpack pyodide_py.\n",
       captured_stderr,
     );
   }
@@ -369,8 +392,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   initializeNativeFS(Module);
 
   const python_stdlib_promise_zip = await python_stdlib_promise;
-  // TODO: find a way to detect Python version dynamically...?
-  saveStreamToFile(Module, python_stdlib_promise_zip, "/lib/python311.zip");
+  installStdlib(Module, python_stdlib_promise_zip);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
