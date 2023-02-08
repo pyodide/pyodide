@@ -67,6 +67,12 @@ myst:
   longer changes unhandled rejections in promises.
   {pr}`3542`
 
+- {{ Enhancement }} Checking whether an object is an instance of a `PyProxy` now
+  only recognizes a `PyProxy` generated from the same Python interpreter. This
+  means that creating multiple interpreters and importing a `PyProxy` from one
+  into another no longer causes a fatal error.
+  {pr}`3545`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
