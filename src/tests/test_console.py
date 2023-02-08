@@ -148,6 +148,33 @@ def test_interactive_console():
     asyncio.run(test())
 
 
+def test_nbsp():
+    shell = Console()
+
+    async def get_result_replace(input):
+        res = shell.push(input, replace_nbsp=True)
+        assert res.syntax_check == "complete"
+        return await res
+
+    async def test():
+        fut = shell.push("import\xa0sys", replace_nbsp=False)
+        try:
+            await fut
+        except Exception:
+            assert fut.formatted_error is not None
+            assert (
+                "SyntaxError: invalid non-printable character U+00A0"
+                in fut.formatted_error
+            )
+
+        assert await get_result_replace("x\xa0=\xa05") is None
+        assert await get_result_replace("x") == 5
+        assert await get_result_replace("x\xa0\xa0**\xa0\xa02") == 25
+        assert await get_result_replace("import\xa0\xa0sys") is None
+
+    asyncio.run(test())
+
+
 def test_top_level_await():
     from asyncio import Queue, sleep
 

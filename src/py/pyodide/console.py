@@ -333,6 +333,10 @@ class Console:
         finally:
             self._streams_redirected = False
 
+    def _replace_nbsp(self, string: str) -> str:
+        string_ = string.replace("\u00A0", " ")
+        return string_
+
     def runsource(self, source: str, filename: str = "<console>") -> ConsoleFuture:
         """Compile and run source code in the interpreter."""
         res: ConsoleFuture | None
@@ -415,7 +419,7 @@ class Console:
             traceback.format_exception(type(e), e, e.__traceback__, -nframes)
         )
 
-    def push(self, line: str) -> ConsoleFuture:
+    def push(self, line: str, replace_nbsp: bool = False) -> ConsoleFuture:
         """Push a line to the interpreter.
 
         The line should not have a trailing newline; it may have internal
@@ -425,9 +429,16 @@ class Console:
         invalid, the buffer is reset; otherwise, the command is incomplete, and
         the buffer is left as it was after the line was appended.
 
+        If replace_nbsp is True, replace all "NO-BREAK SPACE (U+00A0)" letters
+        into regular space (U+0020).
+
         The return value is the result of calling :py:meth:`~Console.runsource` on the current buffer
         contents.
         """
+
+        if replace_nbsp:
+            line = self._replace_nbsp(line)
+
         self.buffer.append(line)
         source = "\n".join(self.buffer)
         result = self.runsource(source, self.filename)
