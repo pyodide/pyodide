@@ -8,6 +8,11 @@
     goto finally;                                                              \
   }
 
+#define MAJOR_MINOR                                                            \
+  Py_STRINGIFY(PY_MAJOR_VERSION) "." Py_STRINGIFY(PY_MINOR_VERSION)
+#define MAJOR_MINOR_NODOT                                                      \
+  Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION)
+
 // Initialize python. exit() and print message to stderr on failure.
 static void
 initialize_python(int argc, char** argv)
@@ -29,7 +34,25 @@ initialize_python(int argc, char** argv)
 
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
+
+  // Specify sys.path explicitly.
+  // Directories like site-packages, lib-dynload might not exist
+  // on initialization, but we want them to be in sys.path.
+
+  wchar_t* paths[4] = {
+    (L"/lib/python" MAJOR_MINOR_NODOT L".zip"),
+    (L"/lib/python" MAJOR_MINOR),
+    (L"/lib/python" MAJOR_MINOR L"/lib-dynload"),
+    (L"/lib/python" MAJOR_MINOR L"/site-packages"),
+  };
+
+  config.module_search_paths_set = 1;
+  status = PyConfig_SetWideStringList(
+    &config, &config.module_search_paths, Py_ARRAY_LENGTH(paths), paths);
+  FAIL_IF_STATUS_EXCEPTION(status);
+
   config.write_bytecode = false;
+
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);
 

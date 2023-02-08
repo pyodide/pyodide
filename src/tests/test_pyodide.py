@@ -1296,6 +1296,24 @@ def test_version_variable(selenium):
     assert js_version == py_version == core_version
 
 
+@run_in_pyodide
+def test_default_sys_path(selenium):
+    import sys
+    from sys import version_info
+
+    major = version_info[0]
+    minor = version_info[1]
+    paths = [
+        f"/lib/python{major}{minor}.zip",
+        f"/lib/python{major}.{minor}",
+        f"/lib/python{major}.{minor}/lib-dynload",
+        f"/lib/python{major}.{minor}/site-packages",
+    ]
+
+    for path in paths:
+        assert path in sys.path
+
+
 def test_sys_path0(selenium):
     selenium.run_js(
         """
