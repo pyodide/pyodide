@@ -62,7 +62,7 @@ declare function Py_EXIT(): void;
 // end-pyodide-skip
 
 function isPyProxy(jsobj: any): jsobj is PyProxy {
-  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
+  return jsobj instanceof PyProxy;
 }
 API.isPyProxy = isPyProxy;
 
@@ -464,11 +464,6 @@ export class PyProxy {
    */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
-  }
-
-  /** @private */
-  static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj);
   }
 
   /** @private */
