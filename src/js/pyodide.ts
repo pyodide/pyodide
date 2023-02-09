@@ -81,12 +81,22 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   // TODO: Get python version from sys.version_info?
   saveStreamToFile(Module, stdlib, "/lib/python311.zip");
 
-  // importlib is not available yet, so we can't use importlib.invalidate_caches here.
-  // Python’s default sys.meta_path has three meta path finders, and the third one is the
-  // path based finder.
+  // 1) importlib is not available yet, so we can't use importlib.invalidate_caches here.
+  //    Python’s default sys.meta_path has three meta path finders, and the third one is the
+  //    path based finder.
+  // 2) _imp._override_frozen_modules_for_tests is a private API, but it is the only way to
+  //    disable the frozen modules.
+  //    Why are we disabling the frozen modules? Because we freeze only minimal parts of
+  //    the `encodings` module that are needed for bootstrap, but it makes impossible to
+  //    use the full `encodings` module. So after the bootstrap, we disable the frozen
+  //    modules and use the full `encodings` module.
   const code = `
 import sys
 sys.meta_path[2].invalidate_caches()
+
+import _imp
+_imp._override_frozen_modules_for_tests(-1)
+del _imp
 `;
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
