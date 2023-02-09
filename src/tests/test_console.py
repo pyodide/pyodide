@@ -372,10 +372,6 @@ def test_console_html(selenium):
         == ">>> print('[[;#A00;]Hello World]')\n[[;#A00;]Hello World]"
     )
 
-    assert exec_and_get_result("1\xa0+1") == ">>> 1 +1\n2"
-    assert exec_and_get_result("1+\xa01") == ">>> 1+ 1\n2"
-    assert exec_and_get_result("1\xa0\xa0\xa0+1") == ">>> 1   +1\n2"
-
     term_exec(
         """
         async def f():
@@ -467,3 +463,28 @@ def test_console_html(selenium):
             """
         ).strip()
     )
+
+
+@pytest.mark.xfail_browsers(node="Not available in node")
+def test_console_html_nbsp(selenium):
+    selenium.goto(
+        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+    )
+    selenium.javascript_setup()
+    selenium.run_js(
+        """
+        await window.console_ready;
+        """
+    )
+
+    ret = selenium.run_js(
+        """
+        await term.ready;
+        term.clear();
+        let x="1\u00a0\u00a0+\u00a01";
+        term.exec(x);
+        await term.ready;
+        return term.get_output().trim();
+        """
+    )
+    assert ret == ">>> 1  + 1\n2"
