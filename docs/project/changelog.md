@@ -100,6 +100,10 @@ myst:
   `PYODIDE_PACKAGES="tag:core" make`.
   {pr}`3444`
 
+- {{ Enhancement }} `pyodide build-recipes` now autodetect number of
+  CPU cores in the system and use them for parallel builds.
+  {pr}`3559`
+
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting
