@@ -88,3 +88,26 @@ def test_ctypes_util_find_library(selenium):
         assert find_library("foo") == os.path.join(tmpdir, "libfoo.so")
         assert find_library("bar") == os.path.join(tmpdir, "libbar.so")
         assert find_library("baz") is None
+
+
+@run_in_pyodide
+def test_encodings_deepfrozen(selenium):
+    # We deepfreeze encodings module partially,
+    # then after bootstrap, we disable loading frozen modules.
+
+    import encodings
+    import encodings.aliases
+    import encodings.ascii
+    import encodings.cp437
+    import encodings.utf_8
+
+    modules = [
+        encodings,
+        encodings.utf_8,
+        encodings.aliases,
+        encodings.cp437,
+        encodings.ascii,
+    ]
+
+    for mod in modules:
+        assert "frozen" not in repr(mod)
