@@ -93,7 +93,6 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   const code = `
 import sys
 sys.meta_path[2].invalidate_caches()
-
 import _imp
 _imp._override_frozen_modules_for_tests(-1)
 del _imp
