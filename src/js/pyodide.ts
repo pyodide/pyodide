@@ -91,11 +91,11 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   //    use the full `encodings` module. So after the bootstrap, we disable the frozen
   //    modules and use the full `encodings` module.
   const code = `
-import sys
+import sys, _imp
 sys.meta_path[2].invalidate_caches()
-import _imp
+del sys.modules["encodings"]
 _imp._override_frozen_modules_for_tests(-1)
-del _imp
+del sys, _imp
 `;
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
