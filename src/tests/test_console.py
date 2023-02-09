@@ -448,6 +448,10 @@ def test_console_html(selenium):
     assert len(long_output) == 4
     assert long_output[2] == "<long output truncated>"
 
+    # nbsp characters should be replaced with spaces, and not cause a syntax error
+    nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
+    assert "SyntaxError" not in exec_and_get_result(nbsp)
+
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
     res = selenium.run_js("return term.get_output().trim();")
@@ -463,28 +467,3 @@ def test_console_html(selenium):
             """
         ).strip()
     )
-
-
-@pytest.mark.xfail_browsers(node="Not available in node")
-def test_console_html_nbsp(selenium):
-    selenium.goto(
-        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
-    )
-    selenium.javascript_setup()
-    selenium.run_js(
-        """
-        await window.console_ready;
-        """
-    )
-
-    ret = selenium.run_js(
-        """
-        await term.ready;
-        term.clear();
-        let x="1\u00a0\u00a0+\u00a01";
-        term.exec(x);
-        await term.ready;
-        return term.get_output().trim();
-        """
-    )
-    assert ret == ">>> 1  + 1\n2"
