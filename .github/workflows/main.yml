@@ -141,7 +141,7 @@ jobs:
           ls -lh dist/
 
           pip install brotli
-          ./tools/check_compressed_size.py dist/pyodide.asm.*
+          ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v2

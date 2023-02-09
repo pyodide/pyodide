@@ -78,7 +78,7 @@ jobs:
             du dist/ -abh --max-depth 1  | sort -k 2
 
             pip install brotli
-            ./tools/check_compressed_size.py dist/pyodide.asm.*
+            ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - save_cache:
           paths:
