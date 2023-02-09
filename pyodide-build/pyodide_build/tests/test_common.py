@@ -194,11 +194,11 @@ def test_get_num_cores(monkeypatch):
     import os
 
     with monkeypatch.context() as m:
-        m.setattr(os, "cpu_found", lambda exe: 2)
+        m.setattr(os, "cpu_count", lambda exe: 2)
 
         assert get_num_cores() == 2
 
     with monkeypatch.context() as m:
-        m.setattr(os, "cpu_found", lambda exe: None)
+        m.setattr(os, "cpu_count", lambda exe: None)
 
         assert get_num_cores() == 1
