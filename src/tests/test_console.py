@@ -372,6 +372,10 @@ def test_console_html(selenium):
         == ">>> print('[[;#A00;]Hello World]')\n[[;#A00;]Hello World]"
     )
 
+    assert exec_and_get_result("1\xa0+1") == ">>> 1 +1\n2"
+    assert exec_and_get_result("1+\xa01") == ">>> 1+ 1\n2"
+    assert exec_and_get_result("1\xa0\xa0\xa0+1") == ">>> 1   +1\n2"
+
     term_exec(
         """
         async def f():
