@@ -73,6 +73,10 @@ myst:
   into another no longer causes a fatal error.
   {pr}`3545`
 
+- {{ Fix }} Non-breaking space characters are now automatically converted to
+  regular spaces in pyodide REPL.
+  {pr}`3558`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
