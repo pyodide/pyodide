@@ -100,8 +100,8 @@ myst:
   `PYODIDE_PACKAGES="tag:core" make`.
   {pr}`3444`
 
-- {{ Enhancement }} `pyodide build-recipes` now autodetect number of
-  CPU cores in the system and use them for parallel builds.
+- {{ Enhancement }} `pyodide build-recipes` now autodetects the number of
+  CPU cores in the system and uses them for parallel builds.
   {pr}`3559`
 
 ### Pyodide CLI
