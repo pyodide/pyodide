@@ -18,6 +18,7 @@ from build.__main__ import (
     _ProjectBuilder,
 )
 from build.env import IsolatedEnv
+
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross
@@ -155,20 +156,19 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
     -------
     The dictionary of compiler environment variables that points to the symlinks.
     """
+
+    pywasmcross_exe = symlink_dir / "pywasmcross.py"
+    shutil.copy2(pywasmcross.__file__, pywasmcross_exe)
+    pywasmcross_exe.chmod(0o755)
+
     env = {}
     for symlink in pywasmcross.SYMLINKS:
         symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
-        try:
-            pywasmcross_exe = shutil.which("_pywasmcross")
-            if pywasmcross_exe:
-                symlink_path.symlink_to(pywasmcross_exe)
-            else:
-                symlink_path.symlink_to(pywasmcross.__file__)
-        except FileExistsError:
-            pass
+
+        symlink_path.symlink_to(pywasmcross_exe)
         if symlink == "c++":
             var = "CXX"
         else:
