@@ -82,8 +82,6 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   saveStreamToFile(Module, stdlib, "/lib/python311.zip");
 
   // 1) importlib is not available yet, so we can't use importlib.invalidate_caches here.
-  //    Python’s default sys.meta_path has three meta path finders, and the third one is the
-  //    path based finder.
   // 2) _imp._override_frozen_modules_for_tests is a private API, but it is the only way to
   //    disable the frozen modules.
   //    Why are we disabling the frozen modules? Because we freeze only minimal parts of
@@ -92,7 +90,7 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   //    modules and use the full `encodings` module.
   const code = `
 import sys, _imp
-sys.meta_path[2].invalidate_caches()
+for f in sys.meta_path: f.invalidate_caches() if hasattr(f, "invalidate_caches") else None
 del sys.modules["encodings"]
 del sys.modules["encodings.utf_8"]
 del sys.modules["encodings.aliases"]
