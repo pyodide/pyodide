@@ -448,6 +448,10 @@ def test_console_html(selenium):
     assert len(long_output) == 4
     assert long_output[2] == "<long output truncated>"
 
+    # nbsp characters should be replaced with spaces, and not cause a syntax error
+    nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
+    assert "SyntaxError" not in exec_and_get_result(nbsp)
+
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
     res = selenium.run_js("return term.get_output().trim();")

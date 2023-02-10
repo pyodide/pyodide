@@ -406,3 +406,17 @@ def set_build_environment(env: dict[str, str]) -> None:
         tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
     )
     env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+
+
+def get_num_cores() -> int:
+    """
+    Get the number of cores available on the system.
+    If the number of cores cannot be determined, return 1.
+    """
+    import os
+
+    cpu_count = os.cpu_count()
+    if cpu_count is not None:
+        return cpu_count
+    else:
+        return 1

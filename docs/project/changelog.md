@@ -73,6 +73,10 @@ myst:
   into another no longer causes a fatal error.
   {pr}`3545`
 
+- {{ Fix }} Non-breaking space characters are now automatically converted to
+  regular spaces in pyodide REPL.
+  {pr}`3558`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -99,6 +103,10 @@ myst:
   `core` meta-package, you must run `pyodide build-recipes tag:core`, or
   `PYODIDE_PACKAGES="tag:core" make`.
   {pr}`3444`
+
+- {{ Enhancement }} `pyodide build-recipes` now autodetects the number of
+  CPU cores in the system and uses them for parallel builds.
+  {pr}`3559`
 
 ### Pyodide CLI
 
