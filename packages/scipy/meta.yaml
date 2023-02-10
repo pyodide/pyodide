@@ -38,7 +38,6 @@ source:
 build:
   cflags: |
     -I$(WASM_LIBRARY_DIR)/include
-    -I$(HOSTSITEPACKAGES)/pythran/
     -Wno-return-type
     -DUNDERSCORE_G77
   cxxflags: -fexceptions
@@ -57,7 +56,6 @@ build:
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/clapack_all.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
 
-    pip install -t $HOSTSITEPACKAGES pythran
     # We get linker errors because the following 36 functions are missing
     # Copying them from a more recent LAPACK seems to work fine.
     wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
