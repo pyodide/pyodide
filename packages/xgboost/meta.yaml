@@ -23,6 +23,7 @@ requirements:
   run:
     - numpy
     - scipy
+    - setuptools
 about:
   home: https://github.com/dmlc/xgboost
   PyPI: https://pypi.org/project/xgboost
