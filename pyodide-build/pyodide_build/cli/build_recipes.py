@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from .. import buildall, buildpkg, pywasmcross
-from ..common import init_environment
+from ..common import get_num_cores, init_environment
 from ..logger import logger
 
 
@@ -56,13 +56,17 @@ def recipe(
         "--continue",
         help="Continue a build from the middle. For debugging. Implies '--force-rebuild'",
     ),
-    n_jobs: int = typer.Option(4, help="Number of packages to build in parallel"),
+    n_jobs: int = typer.Option(
+        None,
+        help="Number of packages to build in parallel  (default: # of cores in the system)",
+    ),
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
     root = Path.cwd()
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
     install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
     log_dir_ = None if not log_dir else Path(log_dir).resolve()
+    n_jobs = n_jobs or get_num_cores()
 
     if not recipe_dir_.is_dir():
         raise FileNotFoundError(f"Recipe directory {recipe_dir_} not found")
