@@ -18,7 +18,6 @@ from build.__main__ import (
     _ProjectBuilder,
 )
 from build.env import IsolatedEnv
-
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross
