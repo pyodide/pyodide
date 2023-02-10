@@ -108,6 +108,9 @@ myst:
   CPU cores in the system and uses them for parallel builds.
   {pr}`3559`
 
+- {{ Fix }} Fixed pip install error when installing cross build environment.
+  {pr}`3562`
+
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting

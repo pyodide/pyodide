@@ -51,6 +51,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
         [
             "pip",
             "install",
+            "--no-user",
             "-t",
             host_site_packages,
             "-r",
