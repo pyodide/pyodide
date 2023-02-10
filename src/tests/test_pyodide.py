@@ -1303,11 +1303,13 @@ def test_default_sys_path(selenium):
 
     major = version_info[0]
     minor = version_info[1]
+    prefix = sys.prefix
+    platlibdir = sys.platlibdir
     paths = [
-        f"/lib/python{major}{minor}.zip",
-        f"/lib/python{major}.{minor}",
-        f"/lib/python{major}.{minor}/lib-dynload",
-        f"/lib/python{major}.{minor}/site-packages",
+        f"{prefix}{platlibdir}/python{major}{minor}.zip",
+        f"{prefix}{platlibdir}/python{major}.{minor}",
+        f"{prefix}{platlibdir}/python{major}.{minor}/lib-dynload",
+        f"{prefix}{platlibdir}/python{major}.{minor}/site-packages",
     ]
 
     for path in paths:

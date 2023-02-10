@@ -95,8 +95,10 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   //    the zipfile. _imp._override_frozen_modules_for_tests is a private API,
   //    but it is the only way to disable the frozen modules.
   const code = `
-import sys, _imp, encodings, codecs
+import sys, _imp, encodings, codecs, site
 codecs.unregister(encodings.search_function)
+sitedir = site.getsitepackages()[0]
+if sitedir not in sys.path: sys.path.append(sitedir)
 for f in sys.meta_path: f.invalidate_caches() if hasattr(f, "invalidate_caches") else None
 del sys.modules["encodings"]
 del sys.modules["encodings.utf_8"]
