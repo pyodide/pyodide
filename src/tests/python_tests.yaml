@@ -187,7 +187,9 @@
 - test_codecmaps_jp
 - test_codecmaps_kr
 - test_codecmaps_tw
-- test_codecs
+- test_codecs:
+    skip:
+      - test_write # frozen encodings.utf_8
 - test_codeop
 - test_collections
 - test_colorsys

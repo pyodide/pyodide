@@ -10,6 +10,7 @@ def test_pydoc(selenium):
     ignore_tests = [
         "test_server",  # fork
         "test_synopsis_sourceless",  # expects __pycache__
+        "test_mixed_case_module_names_are_lower_cased",  # incompatible with zipimport
     ]
     try:
         libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
